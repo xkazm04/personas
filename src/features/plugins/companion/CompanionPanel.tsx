@@ -66,7 +66,6 @@ import { InlineChatCard } from './InlineChatCard';
 import { CompanionAssignmentCards } from './CompanionAssignmentCards';
 import { useCompanionAssignmentBridge } from './useCompanionAssignmentBridge';
 import { ProactiveCard } from './ProactiveCard';
-import { stripModelDirectives } from './athenaLabels';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
@@ -1378,26 +1377,22 @@ function Body(props: BodyProps) {
                   />
                 )}
                 <div className="relative group">
+                  {/*
+                    We intentionally do NOT render the live token stream
+                    here — the token-by-token prose reflowed constantly and
+                    leaked Athena's machine grammar (OP:/QR:/TTS: directives)
+                    before the server-side strip. Instead the streaming
+                    bubble shows a single status line: the current phase
+                    ("Searching the web…", "Reading files…") when one has
+                    landed, otherwise "Thinking…". Granular progress comes
+                    from the OperationalThread below; the full prose reply
+                    replaces this bubble in one piece when the turn finishes.
+                    See docs/features/companion/conversation-orchestration.md.
+                  */}
                   <Bubble role="assistant" streaming index={messages.length}>
-                    {/*
-                      Strip OP:/QR:/TTS:/raw {"op": directive lines from
-                      the streaming view so the user never sees Athena's
-                      machine grammar flash. The backend dispatcher does
-                      the same strip server-side when persisting the
-                      episode; the persisted bubble that replaces this
-                      one is already clean.
-
-                      When prose text hasn't arrived yet, fall through
-                      to the streamingPhase placeholder ("Searching the
-                      web…", "Reading files…", etc.) — surfaces what
-                      Athena is currently doing instead of a dead
-                      "Thinking…" string. Final fallback when no phase
-                      has landed either (very first ms of a turn).
-                    */}
-                    {stripModelDirectives(streamingText) ||
-                      (streamingPhase
-                        ? phaseLabel(t, tx, streamingPhase)
-                        : t.plugins.companion.thinking)}
+                    {streamingPhase
+                      ? phaseLabel(t, tx, streamingPhase)
+                      : t.plugins.companion.thinking}
                   </Bubble>
                   <button
                     type="button"

@@ -1,5 +1,6 @@
 import { companionTts, type TtsEngineId, type TtsSettings } from '@/api/companion';
 import { attachPlayback } from './audioLevel';
+import { useSystemStore } from '@/stores/systemStore';
 
 /**
  * Voice-playback helpers for Athena's spoken summaries.
@@ -45,6 +46,10 @@ export async function synthesize(
 export function play(url: string): { audio: HTMLAudioElement; done: Promise<void> } {
   const audio = new Audio(url);
   audio.preload = 'auto';
+  // Apply the user's playback volume (0..1). Read from the store at play
+  // time so a mid-session volume change takes effect on the next clip.
+  const vol = useSystemStore.getState().companionVoiceVolume;
+  audio.volume = typeof vol === 'number' ? Math.min(1, Math.max(0, vol)) : 1;
   // Route through the shared analyser so UI (the orb's glow) can react to
   // the live speech level. Best-effort — never blocks or breaks playback.
   attachPlayback(audio);

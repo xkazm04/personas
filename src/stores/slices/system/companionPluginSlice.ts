@@ -138,6 +138,12 @@ export interface CompanionPluginSlice {
   companionVoiceSpeed: number | null;
   /** 0..1 — only meaningful on multilingual_v2 / v3. `null` omits. */
   companionVoiceStyle: number | null;
+  /**
+   * Playback volume (0..1) applied to every TTS `<audio>` element. Distinct
+   * from the engine tuning above — this is client-side output level, not a
+   * synthesis parameter. Default 1 (full).
+   */
+  companionVoiceVolume: number;
   /** Phase F: pending prefill from Athena's prefill_persona_create op. */
   companionPrefill: CompanionPrefill | null;
   /** Phase F: pending lab-jump from Athena's open_lab op. */
@@ -200,6 +206,7 @@ export interface CompanionPluginSlice {
   setCompanionVoiceSimilarity: (v: number | null) => void;
   setCompanionVoiceSpeed: (v: number | null) => void;
   setCompanionVoiceStyle: (v: number | null) => void;
+  setCompanionVoiceVolume: (v: number) => void;
   /** Reset tuning fields to the app defaults (Stability/Similarity 0.70,
    *  Style 0.05; model + speed inherit the engine default via `null`). */
   resetCompanionVoiceSettings: () => void;
@@ -236,6 +243,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceSimilarity: 0.7,
   companionVoiceSpeed: null,
   companionVoiceStyle: 0.05,
+  companionVoiceVolume: 1,
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,
@@ -268,6 +276,7 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionVoiceSimilarity }),
   setCompanionVoiceSpeed: (companionVoiceSpeed) => set({ companionVoiceSpeed }),
   setCompanionVoiceStyle: (companionVoiceStyle) => set({ companionVoiceStyle }),
+  setCompanionVoiceVolume: (companionVoiceVolume) => set({ companionVoiceVolume }),
   resetCompanionVoiceSettings: () =>
     set({
       companionVoiceModel: null,

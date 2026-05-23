@@ -93,6 +93,7 @@ export const useSystemStore = create<SystemStore>()(
         companionVoiceSimilarity: state.companionVoiceSimilarity,
         companionVoiceSpeed: state.companionVoiceSpeed,
         companionVoiceStyle: state.companionVoiceStyle,
+        companionVoiceVolume: state.companionVoiceVolume,
         companionRecallSynthesisEnabled: state.companionRecallSynthesisEnabled,
         companionAutonomousMode: state.companionAutonomousMode,
         radioEnabled: state.radioEnabled,

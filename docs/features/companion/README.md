@@ -276,6 +276,10 @@ Voice playback dispatches to one of two engines, picked by the user in the Voice
 
 Backend code lives under `src-tauri/src/companion/tts/` with one submodule per engine; `commands/companion/voice.rs` is a thin dispatcher that validates input (text length, voice-id format) and routes to the right impl.
 
+**Chat streaming.** The streaming bubble no longer renders the raw token-by-token text (it reflowed and leaked machine grammar). During a turn it shows a single status line — the current phase (`streamingPhase`), else "Thinking…" — plus the `OperationalThread` checklist; the full prose reply lands in one piece when the turn finishes. Better mid-turn pacing (event-driven status, spoken beats, no-dead-air ack) is designed in [`conversation-orchestration.md`](./conversation-orchestration.md).
+
+**Voice controls popover.** The chat toolbar's audio button (`VoiceControlPopover`, shown when a voice engine is configured for either ElevenLabs or Piper) opens a popover with: enable/disable spoken summaries, a **volume** slider (`companionVoiceVolume`, applied to every TTS `<audio>` in `voicePlayback.play()`), and a **Test voice** button that synthesizes + plays a sample sentence so the user can hear the current engine/voice/volume on demand.
+
 **Settings UX.** All Voice/Setup section headers use a themed (`text-primary`) `SectionCard` title and every dropdown uses the shared `ThemedSelect` (theme-aware) rather than a raw `<select>`. When an ElevenLabs credential scopes resources, both the **voice** and **model** dropdowns populate from the scope — the model dropdown narrows the curated allowlist to the scoped subset (and prefers the scope's live label). Default tuning is Stability 0.70 / Similarity 0.70 / Style 0.05 (`companionPluginSlice` defaults; speed + model inherit the engine default). Speech-to-text setup lives in the same tab via `SttPanel`.
 
 ### ElevenLabs (cloud)

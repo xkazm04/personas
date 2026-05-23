@@ -10934,6 +10934,14 @@ export type Translations = {
       help_capabilities: string;
       voice_enable: string;
       voice_disable: string;
+      voice_controls_label: string;
+      voice_controls_title: string;
+      voice_volume_label: string;
+      voice_test: string;
+      voice_test_synthesizing: string;
+      voice_test_stop: string;
+      voice_test_unconfigured: string;
+      voice_test_sentence: string;
       play_latest: string;
       play_nothing: string;
       brain_open: string;
