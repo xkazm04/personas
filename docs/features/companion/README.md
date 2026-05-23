@@ -90,7 +90,7 @@ Below each assistant bubble, a tiny caption-sized chip (`TurnSummaryChip`) surfa
 
 Source: the backend emits one `companion://turn-summary` event per turn after the dispatcher block, already keyed by the persisted `assistant_episode_id` so the panel can attach the chip to the right bubble without correlating turn ids. Same session-scoped persistence model as the recall preview — lost on app restart.
 
-The clickable parts — `approval`, `card`, `composed dashboard`, `composed cockpit` — are buttons that jump to the corresponding surface: `approval`/`card` smooth-scroll the panel to the approvals or chat-cards container; `dashboard` navigates to plugins → companion → dashboard; `cockpit` navigates to home → cockpit (mirroring the auto-fire targets in `compose_dashboard` / `compose_cockpit`). Parts without a meaningful destination — `navigated` (already happened), `lab` (no agent id carried in the event), `continuation` (informational) — stay as captions.
+The clickable parts — `approval`, `card`, `composed dashboard`, `composed cockpit` — are buttons that jump to the corresponding surface: `approval`/`card` smooth-scroll the panel to the approvals or chat-cards container; both `dashboard` and `cockpit` navigate to home → cockpit. (The dedicated companion **Dashboard tab was retired** — Cockpit is the dynamic dashboard surface now, so a `compose_dashboard` auto-fire and its turn-summary chip both route to Cockpit.) Parts without a meaningful destination — `navigated` (already happened), `lab` (no agent id carried in the event), `continuation` (informational) — stay as captions.
 
 ## Connector-call live status cards
 

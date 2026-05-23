@@ -157,14 +157,14 @@ export const cloudItems: SubNavItem[] = [
 ];
 
 // Companion plugin sub-nav: Setup (toggles), Memory (brain viewer),
-// Voice (ElevenLabs credential picker + voice id), Dashboard (composed
-// widgets), Decisions (Athena's design-decision log). The in-page header
-// tab strip was retired — these all live in the L3 sidebar now.
+// Voice (ElevenLabs credential picker + voice id), Decisions (Athena's
+// design-decision log). The in-page header tab strip was retired — these
+// all live in the L3 sidebar now. (The Dashboard tab was retired — Cockpit
+// is the dynamic dashboard surface.)
 export const companionItems: SubNavItem[] = [
   { id: 'setup', label: 'Setup', icon: Settings },
   { id: 'memory', label: 'Memory', icon: Brain },
   { id: 'voice', label: 'Voice', icon: Mic },
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'decisions', label: 'Decisions', icon: ScrollText },
 ];
 

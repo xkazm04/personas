@@ -663,15 +663,12 @@ function Body(props: BodyProps) {
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
       }
+      // Both 'dashboard' and 'cockpit' route to Home → Cockpit. The
+      // dedicated Dashboard tab was retired; Cockpit is the dynamic
+      // dashboard surface, so a composed-dashboard summary lands there.
       const sys = useSystemStore.getState();
-      if (target === 'dashboard') {
-        sys.setSidebarSection('plugins');
-        sys.setPluginTab('companion');
-        sys.setCompanionPluginTab('dashboard');
-      } else {
-        sys.setSidebarSection('home');
-        sys.setHomeTab('cockpit');
-      }
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
     },
     [],
   );
@@ -956,17 +953,15 @@ function Body(props: BodyProps) {
   );
 
   // Phase F: subscribe to `compose_dashboard` events (auto-fire path).
-  // The spec is already saved server-side — we just navigate the user
-  // to the dashboard tab so they see what Athena built. Same three-
-  // store-call pattern as the OpenCompanionTab client action; kept
-  // inline because this listener fires *without* an approval card.
+  // The dedicated Dashboard tab was retired (Cockpit is the dynamic
+  // dashboard surface), so a composed dashboard now routes the user to
+  // Home → Cockpit — same destination as `compose_cockpit`.
   useTauriEvent<unknown>(
     COMPANION_COMPOSE_DASHBOARD_EVENT,
     useCallback(() => {
       const sys = useSystemStore.getState();
-      sys.setSidebarSection('plugins');
-      sys.setPluginTab('companion');
-      sys.setCompanionPluginTab('dashboard');
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
     }, []),
     'companion_compose_dashboard_listen',
   );

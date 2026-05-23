@@ -5,7 +5,6 @@ export type CompanionPluginTab =
   | 'setup'
   | 'memory'
   | 'voice'
-  | 'dashboard'
   | 'decisions';
 
 /**
