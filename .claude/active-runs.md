@@ -49,14 +49,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Worktree:** `.claude/worktrees/friend-companion-211134/`
   - **Note:** Prior friend-companion entry (130838, 2026-05-16) is >6 days stale, treated as abandoned. Merged companion work since: `f3292ea04` (MCP dispatch + reconciler), `50052d67e` (D6/D7/D9/D10 orchestration) — new surface to build on. Path-disjoint from concurrent /friend-twin (211047), /prototype-persona-overview, /overview-polish, /sidebar-l3. Shared en.json: additive `plugins.companion.*` only. Vault: Session 1 on this machine (fresh Friend tree).
 
-- **[2026-05-22 21:10 — started] /friend — twin plugin (session 2)**
-  - **Source:** `/friend` endless development loop, area `src\features\plugins\twin`
-  - **Paths:** `src/features/plugins/twin/`, possibly `src-tauri/src/twin/`, `src-tauri/src/commands/twin/`, `src/lib/bindings/Twin*.ts`, `src/i18n/locales/en.json` (additive `twin.*` keys only — coordinate with concurrent sessions on shared en.json), `docs/features/twin.md` per cycle
-  - **Status:** started
-  - **Branch:** `worktree-friend-twin-211047`
-  - **Worktree:** `.claude/worktrees/friend-twin-211047/`
-  - **Note:** Prior 2026-05-16 twin /friend entry is stale (>6 days, no commits land on master). Building fresh on `57edb1653`. Bias higher-effort + deepen-existing-surfaces; avoid net-new-surface ideas.
-
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
@@ -125,6 +117,12 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-22 21:10 → 2026-05-23 wrap] /friend — twin plugin (10 cycles total: 5 + 5 continuation)**
+  - **Status:** completed (branch: `worktree-friend-twin-211047`, commits: 10, last: `b44754261`) — NOT merged; left for user merge decision.
+  - **First-pass commits (cycles 1-5, "all design and execute now"):** `fe7804c5b` TwinPicker recency sort + relative timestamp · `53f20304d` ChannelsAtelier last-bridged badge · `eee2a7683` Knowledge reject-reason capture · `e9edc1b59` Recall preview "Save as fact" · `68796a646` Reflections "Dig deeper" → Training handoff.
+  - **Second-pass commits (cycles 6-10, user asked "implement all" again after a fresh scan):** `1f3273c5f` Knowledge memory "Dig deeper" → Training (reuses cycle-5 slot) · `389059c90` Stale-channel amber pulse (30d threshold on cycle-2's surface) · `45968b305` Brain rejection-patterns mini-panel (aggregates cycle-3 reviewer_notes) · `460c9f797` TwinPicker pin-as-favorite (localStorage above cycle-1 recency) · `b44754261` Tone auto-suggest from recent channel messages (LLM call on cycle-2 comms data).
+  - **Note:** 10 cycles, 0 Rust touched, all on the systemStore twin slice + 4 panels + 2 atelier components + 1 new RejectionPatternsPanel + 1 hook. Each second-pass cycle DELIBERATELY built on a first-pass surface — the pattern from the first-pass lesson ("prior /friend cycles often ship API + keys without UI consumer") held: cycle 6 reused cycle 5's pendingTrainingQuestions slot; cycle 7 extended cycle 2's useChannelActivity; cycle 8 aggregated cycle 3's reviewer_notes; cycle 9 layered on cycle 1's recency sort; cycle 10 leveraged cycle 2's comms data. Every commit i18n-complete: 37 new English keys total across 10 cycles, every key translated into all 13 non-English locales via parallel locale-translator subagents inside the same atomic commit. Worktree intact at `.claude/worktrees/friend-twin-211047/`.
 
 - **[2026-05-22] /friend — teams productionization (22 cycles — 5 directions + all caveats + every Stage-2 / 3 / 5 deferral landed)**
   - **Status:** completed (branch: `worktree-friend-teams-prod-125228`, commits: 22, last: `f3e37c5a0`) — NOT merged; left for user merge decision. 823 files changed, +6114/-7681 vs master.
