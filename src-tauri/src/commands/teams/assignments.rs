@@ -207,6 +207,21 @@ pub async fn companion_assign_team(
     title: Option<String>,
 ) -> Result<CompanionAssignTeamResult, AppError> {
     require_auth(&state).await?;
+    companion_assign_team_inner(&state, app, team_id, goal, title).await
+}
+
+/// Shared inner implementation of `companion_assign_team`. Used by both
+/// the Tauri command (above) and the Phase C3 approval executor
+/// (`execute_assign_team` in commands/companion/approvals.rs). The inner
+/// fn intentionally skips the auth check — both callers have already
+/// run their own.
+pub async fn companion_assign_team_inner(
+    state: &State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    team_id: String,
+    goal: String,
+    title: Option<String>,
+) -> Result<CompanionAssignTeamResult, AppError> {
     let goal_trimmed = goal.trim().to_string();
     if goal_trimmed.is_empty() {
         return Err(AppError::Validation("Goal cannot be empty".into()));
@@ -281,7 +296,7 @@ pub async fn companion_assign_team(
     // Spawn the orchestrator just like start_team_assignment does.
     let pool = Arc::new(state.db.clone());
     let engine = state.engine.clone();
-    let embedding_manager = embedding_manager_for_state(&state);
+    let embedding_manager = embedding_manager_for_state(state);
     orchestrator::run_assignment(pool, app, engine, embedding_manager, assignment.id.clone());
 
     Ok(CompanionAssignTeamResult {

@@ -220,6 +220,8 @@ pub async fn companion_approve_action(
         "fleet_dispatch" => execute_fleet_dispatch(&app, &params),
         "fleet_intervene" => execute_fleet_intervene(&app, &params),
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
+        // Phase C3 — Team assignment dispatch.
+        "assign_team" => execute_assign_team(&state, &app, &params).await,
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -1721,4 +1723,49 @@ fn execute_fleet_redirect_op(
         }
     }
     Ok(ExecuteResult::message(msg))
+}
+
+// ----------------------------------------------------------------------------
+// Phase C3 — assign_team (Athena dispatcher op → orchestrator entry)
+// ----------------------------------------------------------------------------
+
+/// Handle the `assign_team` op when the user approves it. Reads
+/// `team_id` + `goal` + optional `title` from params, then delegates to
+/// the shared `companion_assign_team_inner` helper (same path the
+/// `companion_assign_team` Tauri command uses).
+async fn execute_assign_team(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let team_id = params
+        .get("team_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("assign_team: missing `team_id`".into()))?
+        .to_string();
+    let goal = params
+        .get("goal")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("assign_team: missing `goal`".into()))?
+        .to_string();
+    let title = params
+        .get("title")
+        .and_then(|v| v.as_str())
+        .map(String::from);
+
+    let result = crate::commands::teams::assignments::companion_assign_team_inner(
+        state,
+        app.clone(),
+        team_id.clone(),
+        goal.clone(),
+        title,
+    )
+    .await?;
+
+    Ok(ExecuteResult::message(format!(
+        "Dispatched assignment `{}` to team `{}` (op `{}`). The team will run the goal in parallel; results land in the title-bar notification center on failure, and the assignments panel shows live progress.",
+        &result.assignment_id[..result.assignment_id.len().min(8)],
+        &team_id[..team_id.len().min(8)],
+        &result.companion_op_id[..result.companion_op_id.len().min(8)],
+    )))
 }
