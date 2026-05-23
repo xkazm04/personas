@@ -19,5 +19,6 @@
   "signed_in": "Đã đăng nhập",
   "sign_out": "Đăng xuất",
   "offline": "Ngoại tuyến",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Khong co du an (hien thi tat ca)"
 }

@@ -87,6 +87,14 @@ Plus `apply_provider_env` injects per-provider env vars (OLLAMA_*, ANTHROPIC_*, 
 
 `build_resume_cli_args(session_id)` is the parallel function for `--resume` mode and pins the same `--effort medium` default so resumed sessions stay on the same effort policy.
 
+### The companion (Athena) does NOT use `build_cli_args` — it has its own spawn + stream path
+
+Discovered in `/research` run 2026-05-23 (Athena dynamic-chat). The Athena companion is NOT one of the ~30 callers of `build_cli_args`. It spawns the `claude` CLI through its **own bespoke arg builder** at `src-tauri/src/companion/session.rs::run_cli` (~line 766) with a different flag set (`--system-prompt-file`, `--exclude-dynamic-system-prompt-sections`, `--model claude-opus-4-7` pinned, env `CLAUDE_CODE_FORK_SUBAGENT=1`) and its own stream loop (`session.rs:880-945`) that emits `companion://stream` events — **separate from both** the main runner's legacy-text channel and the structured `EXECUTION_EVENT` channel. Implications for `/research` findings about CLI flags or stream parsing:
+- A flag change in `build_cli_args` does NOT reach Athena. Companion-scoped CLI-flag findings must edit `session.rs::run_cli` directly.
+- Athena's frontend stream handling is bespoke (`CompanionPanel.tsx` + `extractAssistantText`/`extractStreamPhase`/`extractAssistantTextDelta` + `operationalSteps`), NOT `useStructuredStream`. Don't assume the main-chat streaming hooks apply.
+- As of 2026-05-23, `run_cli` passes `--include-partial-messages` (token-level `text_delta` streaming) and the panel renders TodoWrite tool calls as an inline operational checklist (`OperationalThread`).
+- Companion background jobs (`companion/jobs/`) only surface as chat cards for the `connector_use` kind; `scan_codebase`/`memory_curation_run` flow to system episodes / dedicated UIs. Jobs can report intermediate progress via the `JobProgress` reporter (event-only `progress_text` on `companion://job`).
+
 **Codex provider was removed (2026-04-27).** Earlier versions of this doc said `engine/provider/codex.rs::build_execution_args` builds Codex args independently. That file no longer exists; only ClaudeProvider remains. CLI-flag changes only need to be evaluated for Claude Code applicability — there is no second provider to coordinate with. If Codex (or any new CLI engine) is re-introduced, sibling providers would need their own `build_execution_args` impl that does NOT call `prompt::build_cli_args` (since that funnel pins Claude-specific flags like `--effort`).
 
 ### Lifecycle hooks: `hooks_sidecar.rs` is narrow (Claude Code's NATIVE hooks only)

@@ -8,6 +8,7 @@ use tauri::State;
 
 use crate::db::models::{CreateApiKeyResponse, ExternalApiKey};
 use crate::db::repos::resources::external_api_keys as repo;
+use crate::db::repos::resources::settings_audit_log;
 use crate::error::AppError;
 use crate::AppState;
 use personas_macros::requires;
@@ -25,6 +26,25 @@ pub fn create_external_api_key(
         prefix = %resp.record.key_prefix,
         "external_api_key created"
     );
+    // Settings → History feed. Audit write is best-effort: a failed insert
+    // must not turn a successful key creation into an error for the caller.
+    let after = serde_json::json!({
+        "name": resp.record.name,
+        "scopes": resp.record.scopes,
+        "prefix": resp.record.key_prefix,
+    })
+    .to_string();
+    if let Err(e) = settings_audit_log::insert(
+        &state.db,
+        "api_keys",
+        &resp.record.name,
+        "create",
+        None,
+        Some(&after),
+        Some("ui"),
+    ) {
+        tracing::warn!(error = %e, "settings_audit_log insert failed for api_key create");
+    }
     Ok(resp)
 }
 
@@ -44,6 +64,18 @@ pub fn revoke_external_api_key(
 ) -> Result<(), AppError> {
     repo::revoke(&state.db, &id)?;
     tracing::info!(api_key_id = %id, "external_api_key revoked");
+    // Settings → History feed; best-effort.
+    if let Err(e) = settings_audit_log::insert(
+        &state.db,
+        "api_keys",
+        &id,
+        "revoke",
+        None,
+        None,
+        Some("ui"),
+    ) {
+        tracing::warn!(error = %e, "settings_audit_log insert failed for api_key revoke");
+    }
     Ok(())
 }
 

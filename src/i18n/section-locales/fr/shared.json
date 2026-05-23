@@ -178,7 +178,19 @@
     "all_prefix": "Tout (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "Selectionner l'icone de persona",
+    "select_persona_icon_desc": "Choisissez une icone integree ou importez votre propre image.",
+    "builtin_icons": "Integrees",
+    "your_icons": "Vos icones",
+    "upload_icon": "Importer une image",
+    "uploading_icon": "Importation...",
+    "no_custom_icons": "Importez une image pour la reutiliser dans vos personas.",
+    "remove_custom_icon": "Supprimer l'icone",
+    "generate_with_ai": "Generer avec l'IA",
+    "generate_icon": "Generer",
+    "generating_icon": "Generation...",
+    "generate_icon_prompt_placeholder": "Decrivez l'icone souhaitee..."
   },
   "reasoning_trace": {
     "system_init": "Initialisation système",
@@ -293,5 +305,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "Redimensionner la colonne - faites glisser pour ajuster, double-cliquez pour reinitialiser"
 }

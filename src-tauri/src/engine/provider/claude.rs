@@ -54,8 +54,24 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.146 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.149 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.147–2.1.150: 2.1.150 is internal-only (no user-facing changes);
+        //   2.1.149 is mostly interactive-TUI (`/usage` per-category breakdown,
+        //   `/diff` keyboard scrolling) — none in the `-p`/stream-json wire — BUT
+        //   ships PowerShell permission-bypass + sandbox-isolation security fixes
+        //   that harden the exact spawn surface personas drives on Windows with
+        //   `--dangerously-skip-permissions`, plus UI-freeze / transcript / Bash-
+        //   perf bug fixes. 2.1.148 fixes a 2.1.147 regression where the Bash tool
+        //   returned exit code 127 on *every* command — directly breaks tool-using
+        //   personas, so pinning anywhere ≤2.1.147 is a known-bad floor. The
+        //   2.1.149 GFM task-list-checkbox render is a non-event for personas: it
+        //   parses stream-json and renders its own markdown via remark-gfm (which
+        //   already supports task lists), never the CLI's TUI render.
+        //   `allowAllClaudeAiMcps` (2.1.149) is an enterprise managed-MCP setting
+        //   loading claude.ai *cloud* connectors — conflicts with the local-first
+        //   credential model, so not adopted. Floor → 2.1.149 (highest release
+        //   with a wrapping-relevant fix; 150 adds none). /research run 2026-05-23.
         // - 2.1.141–2.1.146: six releases, overwhelmingly Claude-Code-internal
         //   (the `claude agents`/`/bg` background-session swath, plugins, themes,
         //   terminal rendering) — none touch personas's `-p`/stream-json wrapping
@@ -120,7 +136,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.146")
+        Some("2.1.149")
     }
 }
 
@@ -207,6 +223,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.146");
+        assert_eq!(min.unwrap(), "2.1.149");
     }
 }

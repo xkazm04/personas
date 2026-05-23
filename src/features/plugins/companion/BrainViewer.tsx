@@ -32,6 +32,7 @@ import {
 } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
 import { titleCase } from './athenaLabels';
+import { BrainLinksStrip } from './BrainLinksStrip';
 
 type KindLabelKey =
   | 'episodes'
@@ -383,8 +384,13 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
         <MarkdownRenderer content={detail.content || '(empty)'} />
+        <BrainLinksStrip
+          content={detail.content || ''}
+          onOpen={(kind, id) => setBrainView({ open: true, kind, id })}
+          variant="card"
+        />
       </div>
       {detail.deletable && (
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0">

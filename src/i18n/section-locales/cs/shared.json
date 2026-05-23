@@ -178,7 +178,19 @@
     "all_prefix": "Vše (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "Vybrat ikonu persony",
+    "select_persona_icon_desc": "Vyberte vestavěnou ikonu nebo nahrajte vlastní obrázek.",
+    "builtin_icons": "Vestavěné",
+    "your_icons": "Vaše ikony",
+    "upload_icon": "Nahrát obrázek",
+    "uploading_icon": "Nahrávání...",
+    "no_custom_icons": "Nahrajte obrázek, který můžete znovu použít u svých person.",
+    "remove_custom_icon": "Odebrat ikonu",
+    "generate_with_ai": "Vygenerovat pomocí AI",
+    "generate_icon": "Vygenerovat",
+    "generating_icon": "Generování...",
+    "generate_icon_prompt_placeholder": "Popište ikonu, kterou chcete..."
   },
   "reasoning_trace": {
     "system_init": "Inicializace systému",
@@ -293,5 +305,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "Změnit velikost sloupce - tažením upravíte, dvojklikem resetujete"
 }

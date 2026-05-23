@@ -19,5 +19,6 @@
   "signed_in": "تم تسجيل الدخول",
   "sign_out": "تسجيل الخروج",
   "offline": "غير متصل بالإنترنت",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "لا مشروع (عرض الكل)"
 }

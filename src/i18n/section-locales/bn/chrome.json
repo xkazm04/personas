@@ -19,5 +19,6 @@
   "signed_in": "সাইন ইন করা হয়েছে",
   "sign_out": "সাইন আউট",
   "offline": "অফলাইন",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "কোনো প্রকল্প নেই (সব দেখান)"
 }

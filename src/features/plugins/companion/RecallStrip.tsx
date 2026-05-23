@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Brain, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { CompanionRecallPreview } from '@/api/companion';
+import type { BrainKind, CompanionRecallPreview } from '@/api/companion';
 
 /**
  * Per-turn rollup of what Athena's brain pulled into the system prompt.
@@ -14,10 +14,18 @@ import type { CompanionRecallPreview } from '@/api/companion';
  * Source: backend's `companion://recall-preview` Tauri event, emitted
  * once per turn right after the prompt builder runs.
  *
- * Stage 1 of 2: surface counts + titles. Stage 2 (future cycle): wire
- * each chip to open the Brain Viewer scoped to that entry.
+ * Stage 2: when `onOpenInBrain` is provided each chip becomes a button
+ * that opens the Brain Viewer scoped to that entry. Stage 1 callers
+ * (tests, plugin-page previews) can omit the prop — the chips degrade
+ * to read-only spans.
  */
-export function RecallStrip({ preview }: { preview: CompanionRecallPreview }) {
+export function RecallStrip({
+  preview,
+  onOpenInBrain,
+}: {
+  preview: CompanionRecallPreview;
+  onOpenInBrain?: (kind: BrainKind, id: string) => void;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
@@ -87,22 +95,32 @@ export function RecallStrip({ preview }: { preview: CompanionRecallPreview }) {
           <ChipGroup
             label={t.plugins.companion.recall_group_doctrine}
             entries={preview.doctrine}
+            kind="doctrine"
+            onOpen={onOpenInBrain}
           />
           <ChipGroup
             label={t.plugins.companion.recall_group_facts}
             entries={preview.facts}
+            kind="fact"
+            onOpen={onOpenInBrain}
           />
           <ChipGroup
             label={t.plugins.companion.recall_group_procedurals}
             entries={preview.procedurals}
+            kind="procedural"
+            onOpen={onOpenInBrain}
           />
           <ChipGroup
             label={t.plugins.companion.recall_group_goals}
             entries={preview.goals}
+            kind="goal"
+            onOpen={onOpenInBrain}
           />
           <ChipGroup
             label={t.plugins.companion.recall_group_backlog}
             entries={preview.backlog}
+            kind="backlog"
+            onOpen={onOpenInBrain}
           />
         </div>
       )}
@@ -113,22 +131,50 @@ export function RecallStrip({ preview }: { preview: CompanionRecallPreview }) {
 function ChipGroup({
   label,
   entries,
+  kind,
+  onOpen,
 }: {
   label: string;
   entries: { id: string; title: string }[];
+  kind: BrainKind;
+  onOpen?: (kind: BrainKind, id: string) => void;
 }) {
+  const { t } = useTranslation();
   if (entries.length === 0) return null;
+  const baseClass =
+    'rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 text-foreground';
   return (
     <div className="flex flex-wrap items-baseline gap-1.5">
       <span className="text-foreground shrink-0">{label}</span>
-      {entries.map((e) => (
-        <span
-          key={e.id || e.title}
-          className="rounded-interactive bg-foreground/[0.06] border border-foreground/10 px-1.5 py-0.5 text-foreground"
-        >
-          {e.title}
-        </span>
-      ))}
+      {entries.map((e) => {
+        const clickable = !!onOpen && !!e.id;
+        if (!clickable) {
+          return (
+            <span key={e.id || e.title} className={baseClass}>
+              {e.title}
+            </span>
+          );
+        }
+        const ariaLabel = t.plugins.companion.recall_open_in_brain.replace(
+          '{title}',
+          e.title,
+        );
+        return (
+          <button
+            key={e.id || e.title}
+            type="button"
+            onClick={() => onOpen!(kind, e.id)}
+            className={`${baseClass} text-left hover:bg-foreground/[0.10] hover:border-primary/30 transition-colors focus-ring cursor-pointer`}
+            title={ariaLabel}
+            aria-label={ariaLabel}
+            data-testid="companion-recall-chip"
+            data-kind={kind}
+            data-id={e.id}
+          >
+            {e.title}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -19,5 +19,6 @@
   "signed_in": "Sesion iniciada",
   "sign_out": "Cerrar sesion",
   "offline": "Sin conexion",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Sin proyecto (mostrar todo)"
 }

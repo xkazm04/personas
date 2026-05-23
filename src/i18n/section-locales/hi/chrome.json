@@ -19,5 +19,6 @@
   "signed_in": "साइन इन किया",
   "sign_out": "साइन आउट करें",
   "offline": "ऑफ़लाइन",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "कोई प्रोजेक्ट नहीं (सभी दिखाएं)"
 }
