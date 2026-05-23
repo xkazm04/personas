@@ -78,6 +78,8 @@ export const useSystemStore = create<SystemStore>()(
         companionPluginTab: state.companionPluginTab,
         companionFooterEnabled: state.companionFooterEnabled,
         companionPanelCompact: state.companionPanelCompact,
+        companionOrbEnabled: state.companionOrbEnabled,
+        companionOrbPos: state.companionOrbPos,
         companionSoundEnabled: state.companionSoundEnabled,
         companionVoiceEnabled: state.companionVoiceEnabled,
         companionVoiceEngine: state.companionVoiceEngine,

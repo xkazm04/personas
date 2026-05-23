@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Play, X, Mic } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -10,7 +10,7 @@ import { playReplyChime } from './chime';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
 import { AthenaAvatar, type AthenaState } from './AthenaAvatar';
-import { useDictation } from './useDictation';
+import { useHoldToTalk } from './useHoldToTalk';
 
 /**
  * Athena's footer cluster. Lives in DesktopFooter's right cluster.
@@ -61,6 +61,7 @@ export default function CompanionFooterIcon() {
   const markFooterNoticeSpoken = useCompanionStore((s) => s.markFooterNoticeSpoken);
   const clearFooterNotice = useCompanionStore((s) => s.clearFooterNotice);
   const footerEnabled = useSystemStore((s) => s.companionFooterEnabled);
+  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
@@ -241,68 +242,30 @@ export default function CompanionFooterIcon() {
   // in docs/features/companion/athena-orb-overlay-plan.md §4. The mic is
   // only ever armed by an explicit press, never on mount.
   // ---------------------------------------------------------------------
-  const setVoiceTurnRequest = useCompanionStore((s) => s.setVoiceTurnRequest);
-  const dictation = useDictation();
-  const [talking, setTalking] = useState(false);
+  const { supported: sttSupported, talking, start: startTalk, stop: stopTalk } =
+    useHoldToTalk();
   const HOLD_MS = 220;
   const holdTimerRef = useRef<number | null>(null);
-  const talkingRef = useRef(false);
   // A hold ends in a `click` (pointerup → click); suppress that synthetic
   // click so releasing a hold doesn't also toggle the panel open.
   const suppressClickRef = useRef(false);
 
-  const startTalk = useCallback(() => {
-    talkingRef.current = true;
-    suppressClickRef.current = true;
-    setTalking(true);
-    dictation.reset();
-    dictation.start();
-  }, [dictation]);
-
   const beginHold = useCallback(() => {
-    if (!dictation.supported || holdTimerRef.current != null) return;
+    if (!sttSupported || holdTimerRef.current != null) return;
     holdTimerRef.current = window.setTimeout(() => {
       holdTimerRef.current = null;
+      suppressClickRef.current = true;
       startTalk();
     }, HOLD_MS);
-  }, [dictation.supported, startTalk]);
+  }, [sttSupported, startTalk]);
 
   const endHold = useCallback(() => {
     if (holdTimerRef.current != null) {
       window.clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
     }
-    if (!talkingRef.current) return;
-    if (dictation.listening) {
-      // Mic is live: stopping flushes the final transcript through `onend`
-      // — the effect below picks it up and fires the turn.
-      dictation.stop();
-    } else {
-      // Armed but never started listening (e.g. the engine threw or mic
-      // permission was refused before a session opened). Reset so the
-      // button doesn't get stuck in the listening visual.
-      talkingRef.current = false;
-      setTalking(false);
-      dictation.reset();
-    }
-  }, [dictation]);
-
-  // When a hold-dictation session ends (listening flips true → false),
-  // hand the final transcript to the always-mounted CompanionPanel via
-  // `voiceTurnRequest`. Reading finalText on the same render is safe: the
-  // engine emits its final `onresult` before `onend` flips listening off.
-  const prevListeningRef = useRef(false);
-  useEffect(() => {
-    const wasListening = prevListeningRef.current;
-    prevListeningRef.current = dictation.listening;
-    if (wasListening && !dictation.listening && talkingRef.current) {
-      const text = dictation.finalText.trim();
-      talkingRef.current = false;
-      setTalking(false);
-      dictation.reset();
-      if (text) setVoiceTurnRequest(text);
-    }
-  }, [dictation.listening, dictation.finalText, dictation, setVoiceTurnRequest]);
+    stopTalk();
+  }, [stopTalk]);
 
   // Clear any pending hold timer on unmount.
   useEffect(() => {
@@ -389,12 +352,19 @@ export default function CompanionFooterIcon() {
       <button
         onClick={() => {
           // A hold ends in a synthetic click — swallow it so releasing a
-          // dictation hold doesn't also toggle the panel.
+          // dictation hold doesn't also toggle anything.
           if (suppressClickRef.current) {
             suppressClickRef.current = false;
             return;
           }
-          setState(isOpen ? 'collapsed' : 'open');
+          // With the floating orb enabled, the footer button summons/hides
+          // the orb (minimized ↔ collapsed); the orb itself opens the full
+          // chat. Without the orb, tap toggles the chat panel directly.
+          if (orbEnabled) {
+            setState(state === 'minimized' ? 'collapsed' : 'minimized');
+          } else {
+            setState(isOpen ? 'collapsed' : 'open');
+          }
         }}
         onPointerDown={beginHold}
         onPointerUp={endHold}
@@ -405,14 +375,14 @@ export default function CompanionFooterIcon() {
         title={
           talking
             ? t.plugins.companion.footer_listening
-            : dictation.supported
+            : sttSupported
               ? t.plugins.companion.footer_hold_to_talk
               : t.plugins.companion.open_label
         }
         aria-label={
           talking
             ? t.plugins.companion.footer_listening
-            : dictation.supported
+            : sttSupported
               ? t.plugins.companion.footer_hold_to_talk
               : t.plugins.companion.open_label
         }

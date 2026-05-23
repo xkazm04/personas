@@ -197,14 +197,19 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 - [ ] Hold-to-talk gesture → shared `send()` → TTS reply.
 - [ ] i18n keys; doc-sync README touch.
 
-**Step 2 (2–4 days)**
-- [ ] `CompanionState` gains `minimized`; store fields (`orbListening`, `orbCaption`, hoist `isSpeaking`).
-- [ ] Persisted orb settings (`companionOrbEnabled`, `companionOrbDock`, STT engine/model).
-- [ ] `AthenaOrbLayer` portal + `AthenaOrb` + `useOrbDrag` + edge snapping + persistence.
-- [ ] Footer cycles `minimized ↔ collapsed`; secondary affordance opens panel.
-- [ ] Orb↔panel morph (framer `layoutId`); panel close → `minimized` when orb enabled.
-- [ ] Minimized voice loop + global shortcut + `Esc` cancel.
-- [ ] (Optional 2.5) reactive glow tapping the TTS analyser.
+**Step 2a — orb shell (shipped)**
+- [x] `CompanionState` gains `minimized`.
+- [x] Persisted orb settings (`companionOrbEnabled`, `companionOrbPos`) + partialize + Setup toggle.
+- [x] `AthenaOrbLayer` portal + `AthenaOrb` (tap/hold/drag in one pointer surface) + edge snapping + persistence; mounted in `App.tsx`.
+- [x] Shared `useHoldToTalk` hook (footer refactored onto it; orb reuses it).
+- [x] Footer cycles `minimized ↔ collapsed` when orb enabled; panel close → `minimized` when orb enabled.
+- [x] Minimized voice loop (hold-to-talk) + interim caption beside the orb.
+
+**Step 2b — orb polish (parked)**
+- [ ] Orb↔panel morph (framer `layoutId`).
+- [ ] Global summon+talk shortcut + `Esc` cancel.
+- [ ] Layer-B-lite reactive glow tapping the TTS analyser.
+- [ ] `prefers-reduced-motion` handling (freeze avatar, disable drag inertia/morph).
 
 **Local STT (parallelizable with Step 2, ~3–5 days incl. backend)**
 - [ ] `companion/stt/` module (mod/whisper/catalog/downloader) + IPC + `ts-rs` bindings + command-names regen.

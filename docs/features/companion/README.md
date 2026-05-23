@@ -22,7 +22,17 @@ The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`
 
 `voiceTurnRequest` is deliberately separate from `pendingPrompt`: `pendingPrompt` seeds the composer draft and is only consumed while the panel (and Composer) is mounted, whereas `voiceTurnRequest` is consumed by an always-mounted effect so a footer-initiated turn works with the panel closed.
 
-**STT engine.** Step 1 uses the browser Web Speech engine (`useDictation`); on WebView2 that forwards audio to the OS vendor's cloud STT. The mic is only ever armed by an explicit press, never on mount. A local, on-device Whisper STT engine (so audio never leaves the machine) is the separate workstream tracked in [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) §4. This footer work is **Step 1** of that plan; Step 2 promotes the avatar into a floating, dockable orb overlay.
+**STT engine.** Both the footer and orb use the browser Web Speech engine (`useDictation`) via the shared `useHoldToTalk` hook; on WebView2 that forwards audio to the OS vendor's cloud STT. The mic is only ever armed by an explicit press, never on mount. A local, on-device Whisper STT engine (so audio never leaves the machine) is the separate workstream tracked in [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) §4.
+
+## Floating dockable orb (`minimized` state)
+
+Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes Athena out of the footer into a first-class overlay. A new `CompanionState` value `minimized` (between `collapsed` and `open`) shows `AthenaOrb` — her avatar as a draggable orb portal'd to `document.body` above all app content (`orb/AthenaOrbLayer.tsx`, `orb/AthenaOrb.tsx`).
+
+- **One pointer surface, three gestures:** tap → open the full chat panel; hold (≥220ms) → dictate a voice turn (via the same `useHoldToTalk` → `voiceTurnRequest` path as the footer); drag past ~6px → relocate. A drag cancels an armed hold so moving never records. While listening, the interim transcript shows as a caption beside the orb.
+- **Dock + persistence:** on drop the X position snaps to the nearest side edge; position is stored as viewport fractions (`companionOrbPos`) and resolved to pixels at render so it survives window resizes and restarts. A hover-revealed `×` dismisses the orb (→ `collapsed`).
+- **Footer + panel wiring:** when the orb is enabled (`companionOrbEnabled`, default on, toggled in Companion → Setup → "Floating avatar"), the footer button summons/hides the orb (`minimized ↔ collapsed`) and the chat panel's close button returns to the orb instead of vanishing. `AthenaOrbLayer` promotes a dormant (`collapsed`) Athena to `minimized` once on mount so the presence is there from launch. With the orb disabled, the footer keeps its classic open/collapse behavior.
+
+Still parked for a follow-up (plan §2.4–2.6, §4): the orb↔panel `layoutId` morph, a global summon+talk shortcut, the Layer-B-lite reactive glow, and the on-device Whisper STT engine.
 
 ## Athena desktop-aware lineage
 

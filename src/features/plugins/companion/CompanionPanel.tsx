@@ -168,6 +168,7 @@ export default function CompanionPanel() {
   const setAutonomousMode = useSystemStore((s) => s.setCompanionAutonomousMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
 
   const isOpen = state === 'open';
 
@@ -216,7 +217,7 @@ export default function CompanionPanel() {
             className="absolute inset-0 -z-10 opacity-[0.05]"
           />
           <Header
-            onClose={() => setState('collapsed')}
+            onClose={() => setState(orbEnabled ? 'minimized' : 'collapsed')}
             onReset={async () => {
               // Clear UI state immediately so the wipe feels instant.
               // Backend wipes both the SQL transcript AND the CLI session

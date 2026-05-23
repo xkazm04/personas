@@ -86,6 +86,18 @@ export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
  */
 export type CompanionTtsEngine = 'elevenlabs' | 'piper';
 
+/**
+ * Persisted floating-orb dock position, expressed as viewport fractions
+ * (0..1) of the orb's top-left corner. `x` snaps to a side edge (≈0 left /
+ * ≈1 right) when the user drops the orb; `y` is free (clamped to the
+ * viewport). Resolved to pixels at render time so it survives window
+ * resizes. Default sits bottom-right, just above the footer.
+ */
+export interface OrbPosition {
+  x: number;
+  y: number;
+}
+
 export interface CompanionPluginSlice {
   companionPluginTab: CompanionPluginTab;
   companionFooterEnabled: boolean;
@@ -127,6 +139,15 @@ export interface CompanionPluginSlice {
    * chat without closing it. Persisted so the preference sticks.
    */
   companionPanelCompact: boolean;
+  /**
+   * Master switch for Athena's floating dockable orb (the minimized
+   * presence that lives as an overlay above app content). When off, the
+   * footer button behaves as the classic open/collapse chat toggle.
+   * Default on — the orb is the headline of the companion-overlay work.
+   */
+  companionOrbEnabled: boolean;
+  /** Persisted orb dock position (viewport fractions). See {@link OrbPosition}. */
+  companionOrbPos: OrbPosition;
   /**
    * Recall synthesis: when true, dense recall (above ~5K tokens) is
    * folded through a one-shot Claude call into a focused briefing
@@ -171,6 +192,8 @@ export interface CompanionPluginSlice {
   setCompanionPrefill: (p: CompanionPrefill | null) => void;
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
   setCompanionPanelCompact: (v: boolean) => void;
+  setCompanionOrbEnabled: (v: boolean) => void;
+  setCompanionOrbPos: (p: OrbPosition) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
   setActiveBuildIntent: (intent: string | null) => void;
@@ -198,6 +221,8 @@ export const createCompanionPluginSlice: StateCreator<
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,
+  companionOrbEnabled: true,
+  companionOrbPos: { x: 1, y: 0.82 },
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
   activeBuildIntent: null,
@@ -234,6 +259,8 @@ export const createCompanionPluginSlice: StateCreator<
   setCompanionPrefill: (companionPrefill) => set({ companionPrefill }),
   setCompanionLabJump: (companionLabJump) => set({ companionLabJump }),
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),
+  setCompanionOrbEnabled: (companionOrbEnabled) => set({ companionOrbEnabled }),
+  setCompanionOrbPos: (companionOrbPos) => set({ companionOrbPos }),
   setCompanionRecallSynthesisEnabled: (companionRecallSynthesisEnabled) =>
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>

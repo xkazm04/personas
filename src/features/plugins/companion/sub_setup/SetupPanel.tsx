@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Terminal, Volume2, Wrench } from 'lucide-react';
+import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useSystemStore } from '@/stores/systemStore';
@@ -36,6 +36,8 @@ export default function SetupPanel() {
   const setFooterEnabled = useSystemStore((s) => s.setCompanionFooterEnabled);
   const soundEnabled = useSystemStore((s) => s.companionSoundEnabled);
   const setSoundEnabled = useSystemStore((s) => s.setCompanionSoundEnabled);
+  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  const setOrbEnabled = useSystemStore((s) => s.setCompanionOrbEnabled);
   const recallSynthesisEnabled = useSystemStore(
     (s) => s.companionRecallSynthesisEnabled,
   );
@@ -141,6 +143,13 @@ export default function SetupPanel() {
           description={t.plugins.companion.setup_footer_desc}
           checked={footerEnabled}
           onChange={() => setFooterEnabled(!footerEnabled)}
+        />
+        <ToggleRow
+          icon={<Sparkles className="w-4 h-4 text-cyan-400" />}
+          label={t.plugins.companion.setup_orb_label}
+          description={t.plugins.companion.setup_orb_desc}
+          checked={orbEnabled}
+          onChange={() => setOrbEnabled(!orbEnabled)}
         />
         <ToggleRow
           icon={<Volume2 className="w-4 h-4 text-cyan-400" />}

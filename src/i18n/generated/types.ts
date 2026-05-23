@@ -10744,6 +10744,8 @@ export type Translations = {
       open_label: string;
       footer_hold_to_talk: string;
       footer_listening: string;
+      orb_talk_hint: string;
+      orb_dismiss: string;
       panel_label: string;
       initializing: string;
       init_failed: string;
@@ -11159,6 +11161,8 @@ export type Translations = {
       setup_chrome_desc: string;
       setup_footer_label: string;
       setup_footer_desc: string;
+      setup_orb_label: string;
+      setup_orb_desc: string;
       setup_sound_label: string;
       setup_sound_desc: string;
       setup_beta_title: string;
