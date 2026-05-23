@@ -32,13 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-24 — started] idea-b2217b3a — tabular-figure numeric system (`<Numeric>` + unit formatter)**
-  - **Source:** Requirement `idea-b2217b3a-tabular-figure-numeric-system`. Add a `<Numeric>` primitive (tabular-nums lining-nums, optional right-align, optional unit formatting) and a shared unit formatter (`formatPercent` + `formatNumeric` dispatcher over ms/s/$/%/count) in `formatters.ts`. Adopt in core numeric surfaces (AnimatedCounter lining-nums consistency, KpiTile static-value path). Right-align infra already exists in DataGrid (`align: 'right'`) — NOT touching DataGrid (owned by idea-7e17e33c SortableHeader session).
-  - **Paths:** `src/features/shared/components/display/Numeric.tsx` (new), `src/lib/utils/formatters.ts`, `src/features/shared/components/display/AnimatedCounter.tsx`, `src/features/overview/components/shared/KpiTile.tsx`, `src/features/shared/components/display/__tests__/Numeric.test.tsx` (new), `src/lib/utils/__tests__/formatters.test.ts` (new), `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** master (staging only own files per parallel-safety primitives)
-  - **Note:** Path-disjoint from all active sessions. Deliberately NOT editing `DataGrid.tsx`/`UnifiedTable`/`DeploymentSubComponents.tsx` (SortableHeader session owns DataGrid + Deployment; align infra already present so no need). No en.json changes (no new user-facing strings — primitive is presentational).
-
 - **[2026-05-24 — started] idea-7e17e33c — SortableHeader primitive (aria-sort + caret motion)**
   - **Source:** Requirement `idea-7e17e33c-sortableheader-primitive-with`. Build a shared `<SortableHeader>` a11y primitive: emits `aria-sort=ascending/descending/none`, descriptive `aria-label`, `focus-ring`, and a 150ms rotate/opacity caret transition (reduced-motion handled by the global CSS reset — Layer 2). Adopt it in DeploymentTable (via `DeploymentSubComponents.SortHeader`) and the shared `DataGrid` sortable header.
   - **Paths:** `src/features/shared/components/display/SortableHeader.tsx` (new), `src/features/shared/components/display/DataGrid.tsx`, `src/features/deployment/components/DeploymentSubComponents.tsx`, `src/i18n/locales/en.json` (additive `shared.sort_active_asc`/`sort_active_desc` only — reuses existing `shared.sort_by`), `.claude/active-runs.md`
@@ -195,6 +188,12 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commit: db1edcb70)] idea-b2217b3a — tabular-figure numeric system (`<Numeric>` + unit formatter)**
+  - **What:** Added a `<Numeric>` primitive (`src/features/shared/components/display/Numeric.tsx`) that renders any number with tabular-nums lining figures (inline-style guarantee + `.font-data`), optional right-align, and optional unit formatting. Added a shared unit formatter to `formatters.ts`: `formatPercent`, `formatCount`, and a `formatNumeric` dispatcher over `ms/s/usd/percent/ratio/count/plain` reusing existing `formatCost`/`formatDuration`. Adopted in `AnimatedCounter` (tabular-nums → tabular-nums lining-nums for consistency) and `KpiTile` (static-value path routes through `<Numeric>`).
+  - **Files:** `src/features/shared/components/display/Numeric.tsx` (new), `src/lib/utils/formatters.ts`, `src/features/shared/components/display/AnimatedCounter.tsx`, `src/features/overview/components/shared/KpiTile.tsx`, `src/lib/utils/__tests__/formatters.test.ts` (new), `src/features/shared/components/display/__tests__/Numeric.test.tsx` (new).
+  - **Validation:** `tsc --noEmit` clean; eslint clean on touched files; 23 new tests pass (17 formatter + 6 Numeric). Single atomic commit, exactly 7 staged files verified before commit.
+  - **Note:** Deliberately did NOT touch `DataGrid.tsx`/`UnifiedTable`/`DeploymentSubComponents.tsx` — DataGrid already supports per-column `align: 'right'` (justify-end) and the SortableHeader session (idea-7e17e33c) owns those files. Adoption beyond AnimatedCounter/KpiTile is incremental (fix-as-touched). Presentational primitive — no en.json/feature-doc/onboarding/marketing coupling.
 
 - **[2026-05-24 — completed (commit: 288176ac1)] idea-8ea8d796 — WCAG AA contrast audit of muted & tinted text**
   - **What:** Token-level a11y fix. `--muted` (text color ~170×) was sub-AA against the canvas in most dark themes (1.8–3.3:1) and `light` (4.48); opacity-tinted `text-muted-foreground/{40-70}` captions fell below AA on light themes. Raised `--muted` to ≥AA (lightness-only, hue preserved, ~4.6:1) in all themes that failed, and darkened `--muted-foreground` on the 5 light themes so `text-muted-foreground/80` clears AA. Established `/80` as the caption-opacity floor.
