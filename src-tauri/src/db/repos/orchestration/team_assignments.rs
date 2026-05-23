@@ -439,6 +439,57 @@ pub fn set_step_execution(
     Ok(())
 }
 
+/// Persist a Phase-B match result onto a step. Called by the orchestrator after
+/// resolve-assignee returns. Leaves status untouched — the orchestrator
+/// transitions through `matching → running` separately.
+pub fn set_step_match_result(
+    pool: &DbPool,
+    step_id: &str,
+    persona_id: &str,
+    use_case_id: Option<&str>,
+    confidence: Option<f64>,
+    rationale: Option<&str>,
+) -> Result<(), AppError> {
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+
+    tx.execute(
+        "UPDATE team_assignment_steps
+         SET assigned_persona_id = ?1,
+             assigned_use_case_id = ?2,
+             match_confidence = ?3,
+             match_rationale = ?4
+         WHERE id = ?5",
+        params![persona_id, use_case_id, confidence, rationale, step_id],
+    )?;
+
+    let assignment_id: String = tx.query_row(
+        "SELECT assignment_id FROM team_assignment_steps WHERE id = ?1",
+        [step_id],
+        |row| row.get(0),
+    )?;
+
+    let event_id = uuid::Uuid::new_v4().to_string();
+    tx.execute(
+        "INSERT INTO team_assignment_events (id, assignment_id, step_id, kind, payload)
+         VALUES (?1, ?2, ?3, 'step_matched', ?4)",
+        params![
+            event_id,
+            assignment_id,
+            step_id,
+            serde_json::json!({
+                "persona_id": persona_id,
+                "use_case_id": use_case_id,
+                "confidence": confidence,
+                "rationale": rationale,
+            }).to_string(),
+        ],
+    )?;
+
+    tx.commit()?;
+    Ok(())
+}
+
 pub fn override_step_assignment(
     pool: &DbPool,
     step_id: &str,

@@ -44,11 +44,35 @@ use crate::db::models::{Persona, PersonaTrustLevel, TeamAssignmentStep};
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::orchestration::team_assignments as assignment_repo;
+use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::resources::tools as tools_repo;
 use crate::db::DbPool;
 use crate::engine::event_registry::event_name;
+use crate::engine::team_assignment_matching::{
+    self as matching, MatchResult, EMBEDDING_FALLBACK_CONFIDENCE,
+};
 use crate::engine::ExecutionEngine;
 use crate::error::AppError;
+
+#[cfg(feature = "ml")]
+use crate::engine::embedder::EmbeddingManager;
+#[cfg(not(feature = "ml"))]
+use crate::engine::team_assignment_matching::EmbeddingManager;
+
+/// Bundle of dependencies the orchestrator threads down to per-step work.
+/// Phase B added the optional embedding manager (only present in builds
+/// compiled with the `ml` feature); Phase C will add the companion bridge.
+#[derive(Clone)]
+pub struct OrchestratorDeps {
+    pub pool: Arc<DbPool>,
+    pub app: AppHandle,
+    pub engine: Arc<ExecutionEngine>,
+    pub embedding_manager: Option<Arc<EmbeddingManager>>,
+}
+
+/// Per-step LLM match timeout. Sonnet usually returns in 5-15s for a short
+/// roster; 90s covers tail latency without blocking the tick loop forever.
+const MATCH_LLM_TIMEOUT_SECS: u64 = 90;
 
 // ----------------------------------------------------------------------------
 // Tunables
@@ -82,22 +106,29 @@ pub fn run_assignment(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
     assignment_id: String,
 ) {
+    let deps = OrchestratorDeps {
+        pool,
+        app,
+        engine,
+        embedding_manager,
+    };
     tokio::spawn(async move {
-        if let Err(e) = tick_loop(&pool, &app, &engine, &assignment_id).await {
+        if let Err(e) = tick_loop(&deps, &assignment_id).await {
             tracing::error!(
                 assignment_id = %assignment_id,
                 error = %e,
                 "Team-assignment orchestrator loop failed",
             );
             let _ = assignment_repo::update_assignment_status(
-                &pool,
+                &deps.pool,
                 &assignment_id,
                 "failed",
                 Some(&e.to_string()),
             );
-            emit_progress(&app, &assignment_id, "failed", None);
+            emit_progress(&deps.app, &assignment_id, "failed", None);
         }
     });
 }
@@ -113,12 +144,13 @@ pub fn resolve_review_edit(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
     step_id: String,
     description: String,
 ) -> Result<(), AppError> {
     assignment_repo::edit_step_description(&pool, &step_id, &description)?;
     let step = assignment_repo::get_step(&pool, &step_id)?;
-    resume_assignment(pool, app, engine, step.assignment_id);
+    resume_assignment(pool, app, engine, embedding_manager, step.assignment_id);
     Ok(())
 }
 
@@ -127,13 +159,14 @@ pub fn resolve_review_reassign(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
     step_id: String,
     persona_id: String,
     use_case_id: Option<String>,
 ) -> Result<(), AppError> {
     assignment_repo::override_step_assignment(&pool, &step_id, &persona_id, use_case_id.as_deref())?;
     let step = assignment_repo::get_step(&pool, &step_id)?;
-    resume_assignment(pool, app, engine, step.assignment_id);
+    resume_assignment(pool, app, engine, embedding_manager, step.assignment_id);
     Ok(())
 }
 
@@ -143,11 +176,12 @@ pub fn resolve_review_skip(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
     step_id: String,
 ) -> Result<(), AppError> {
     assignment_repo::update_step_status(&pool, &step_id, "skipped", None, None)?;
     let step = assignment_repo::get_step(&pool, &step_id)?;
-    resume_assignment(pool, app, engine, step.assignment_id);
+    resume_assignment(pool, app, engine, embedding_manager, step.assignment_id);
     Ok(())
 }
 
@@ -168,10 +202,11 @@ fn resume_assignment(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
     assignment_id: String,
 ) {
     let _ = assignment_repo::update_assignment_status(&pool, &assignment_id, "running", None);
-    run_assignment(pool, app, engine, assignment_id);
+    run_assignment(pool, app, engine, embedding_manager, assignment_id);
 }
 
 // ----------------------------------------------------------------------------
@@ -179,11 +214,11 @@ fn resume_assignment(
 // ----------------------------------------------------------------------------
 
 async fn tick_loop(
-    pool: &Arc<DbPool>,
-    app: &AppHandle,
-    engine: &Arc<ExecutionEngine>,
+    deps: &OrchestratorDeps,
     assignment_id: &str,
 ) -> Result<(), AppError> {
+    let pool = &deps.pool;
+    let app = &deps.app;
     // Transition queued → running on first entry. If already running (resumed),
     // this is a no-op except for emitting the event.
     let assignment = assignment_repo::get_by_id(pool, assignment_id)?;
@@ -221,8 +256,8 @@ async fn tick_loop(
             if step.status != "pending" {
                 continue;
             }
-            let deps = parse_depends_on(step.depends_on.as_deref());
-            if deps.iter().any(|d| skipped_ids.contains(d)) {
+            let step_deps = parse_depends_on(step.depends_on.as_deref());
+            if step_deps.iter().any(|d| skipped_ids.contains(d)) {
                 assignment_repo::update_step_status(
                     pool,
                     &step.id,
@@ -285,21 +320,20 @@ async fn tick_loop(
                 if step.status != "pending" {
                     continue;
                 }
-                let deps = parse_depends_on(step.depends_on.as_deref());
-                if !deps.iter().all(|d| done_ids.contains(d)) {
+                let step_deps = parse_depends_on(step.depends_on.as_deref());
+                if !step_deps.iter().all(|d| done_ids.contains(d)) {
                     continue;
                 }
 
                 // Launch this step.
-                let pool = Arc::clone(pool);
-                let app = app.clone();
-                let engine = Arc::clone(engine);
+                let deps_clone = deps.clone();
                 let step_id = step.id.clone();
                 let step_clone = step.clone();
+                let strategy = assignment.match_strategy.clone();
                 let assignment_id_owned = assignment_id.to_string();
 
                 let handle = tokio::spawn(async move {
-                    let result = run_step(&pool, &app, &engine, step_clone).await;
+                    let result = run_step(&deps_clone, &strategy, step_clone).await;
                     if let Err(e) = result {
                         tracing::error!(
                             step_id = %step_id,
@@ -308,13 +342,13 @@ async fn tick_loop(
                             "Step task failed",
                         );
                         let _ = assignment_repo::update_step_status(
-                            &pool,
+                            &deps_clone.pool,
                             &step_id,
                             "failed",
                             Some(&e.to_string()),
                             None,
                         );
-                        emit_progress(&app, &assignment_id_owned, "running", Some(&step_id));
+                        emit_progress(&deps_clone.app, &assignment_id_owned, "running", Some(&step_id));
                     }
                 });
                 in_flight.insert(step.id.clone(), handle);
@@ -331,22 +365,23 @@ async fn tick_loop(
 // ----------------------------------------------------------------------------
 
 async fn run_step(
-    pool: &Arc<DbPool>,
-    app: &AppHandle,
-    engine: &Arc<ExecutionEngine>,
+    deps: &OrchestratorDeps,
+    strategy: &str,
     step: TeamAssignmentStep,
 ) -> Result<(), AppError> {
-    // Phase A: manual matching. The composer guarantees assigned_persona_id is
-    // set. Phase B will add the auto-match resolution branch here.
-    let persona_id = step
-        .assigned_persona_id
-        .as_ref()
-        .ok_or_else(|| AppError::Validation("Step has no assigned persona".into()))?;
+    let pool = &deps.pool;
+    let app = &deps.app;
+    let engine = &deps.engine;
 
     assignment_repo::update_step_status(pool, &step.id, "matching", None, None)?;
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
 
-    let persona = persona_repo::get_by_id(pool, persona_id)?;
+    // Phase B: resolve (persona, use_case) when the step doesn't already
+    // carry an assignment from the composer (manual mode) OR the user
+    // re-queued via an Edit-requirement (which clears persona+use_case).
+    let (persona_id, use_case_id) = resolve_assignee(deps, strategy, &step).await?;
+
+    let persona = persona_repo::get_by_id(pool, &persona_id)?;
     let preflight = check_persona_eligible(&persona);
     if let Err(reason) = preflight {
         assignment_repo::update_step_status(
@@ -367,16 +402,16 @@ async fn run_step(
     }
 
     // Resolve description into input_data so the persona gets meaningful context.
-    let input_payload = build_step_input(&step);
-    let tools = tools_repo::get_tools_for_persona(pool, persona_id).unwrap_or_default();
+    let input_payload = build_step_input(&step, use_case_id.as_deref());
+    let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
 
     let exec = exec_repo::create(
         pool,
-        persona_id,
+        &persona_id,
         None,
         Some(input_payload.to_string()),
         None,
-        step.assigned_use_case_id.clone(),
+        use_case_id.clone(),
     )?;
 
     assignment_repo::set_step_execution(pool, &step.id, &exec.id)?;
@@ -458,14 +493,150 @@ fn check_persona_eligible(persona: &Persona) -> Result<(), String> {
     Ok(())
 }
 
-fn build_step_input(step: &TeamAssignmentStep) -> serde_json::Value {
+fn build_step_input(step: &TeamAssignmentStep, use_case_id: Option<&str>) -> serde_json::Value {
     json!({
         "assignment_id": step.assignment_id,
         "step_id": step.id,
+        "use_case_id": use_case_id,
         "step_title": step.title,
         "step_description": step.description,
-        "use_case_id": step.assigned_use_case_id,
     })
+}
+
+// ----------------------------------------------------------------------------
+// Phase B — assignee resolution
+// ----------------------------------------------------------------------------
+
+/// Resolve the (persona_id, use_case_id) for a step. Used by `run_step`.
+///
+/// Routing:
+/// - If the step already carries `assigned_persona_id` (manual mode, or
+///   the user just reassigned via the review modal), that wins — we still
+///   honour the user's explicit choice over any embedding/LLM score.
+/// - Otherwise the assignment's `match_strategy` decides. `embedding`
+///   needs the ml-feature embedder; without it, falls back to `llm_eval`.
+///   `llm_eval` is always available (subscription path).
+/// - On success, persists the match to the step (assigned_persona_id +
+///   use_case_id + match_confidence + match_rationale + step_matched event).
+async fn resolve_assignee(
+    deps: &OrchestratorDeps,
+    strategy: &str,
+    step: &TeamAssignmentStep,
+) -> Result<(String, Option<String>), AppError> {
+    // Pre-bound path — manual matching, or a re-queued step that retains
+    // its previous (or just-overridden) persona pick.
+    if let Some(pid) = step.assigned_persona_id.as_ref() {
+        return Ok((pid.clone(), step.assigned_use_case_id.clone()));
+    }
+
+    // Auto-match needs the team's roster. Fetch members + personas + filter
+    // for eligibility (enabled + setup_ready + non-revoked) before handing
+    // to the matching module.
+    let assignment = assignment_repo::get_by_id(&deps.pool, &step.assignment_id)?;
+    let members = team_repo::get_members(&deps.pool, &assignment.team_id)?;
+    let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
+    for m in &members {
+        if let Ok(p) = persona_repo::get_by_id(&deps.pool, &m.persona_id) {
+            if check_persona_eligible(&p).is_ok() {
+                personas.push(p);
+            }
+        }
+    }
+    if personas.is_empty() {
+        return Err(AppError::Validation(
+            "No eligible personas on team for auto-matching".into(),
+        ));
+    }
+
+    let candidates = matching::extract_candidates(&personas);
+    if candidates.is_empty() {
+        return Err(AppError::Validation(
+            "No matchable capabilities on team — every persona has zero enabled use cases and no description".into(),
+        ));
+    }
+
+    let step_text = step
+        .description
+        .clone()
+        .unwrap_or_else(|| step.title.clone());
+
+    let result = match strategy {
+        "embedding" => match deps.embedding_manager.as_ref() {
+            Some(embedder) => {
+                let primary = matching::match_via_embedding(embedder, &step_text, &candidates).await;
+                // Auto-fallback to llm_eval if embedding's confidence is too
+                // low AND there's more than one candidate (otherwise the
+                // single candidate IS the answer regardless of confidence).
+                match primary {
+                    Ok(r) if r.confidence.unwrap_or(0.0) < EMBEDDING_FALLBACK_CONFIDENCE
+                        && candidates.len() > 1 =>
+                    {
+                        tracing::info!(
+                            step_id = %step.id,
+                            confidence = ?r.confidence,
+                            "Embedding match below fallback threshold — escalating to llm_eval",
+                        );
+                        matching::match_via_llm_eval(
+                            &step.title,
+                            &step_text,
+                            &candidates,
+                            MATCH_LLM_TIMEOUT_SECS,
+                        )
+                        .await
+                    }
+                    other => other,
+                }
+            }
+            None => {
+                // No embedder compiled (lite build) — silently degrade to
+                // llm_eval. Phase B2 wires this path; for B1 it still
+                // returns a meaningful error if llm_eval also fails.
+                tracing::info!(
+                    step_id = %step.id,
+                    "Embedding strategy unavailable (ml feature off) — falling back to llm_eval",
+                );
+                matching::match_via_llm_eval(
+                    &step.title,
+                    &step_text,
+                    &candidates,
+                    MATCH_LLM_TIMEOUT_SECS,
+                )
+                .await
+            }
+        },
+        "llm_eval" => {
+            matching::match_via_llm_eval(
+                &step.title,
+                &step_text,
+                &candidates,
+                MATCH_LLM_TIMEOUT_SECS,
+            )
+            .await
+        }
+        // "manual" or unknown — the manual path was taken above when
+        // assigned_persona_id was set; reaching here means manual mode
+        // with a missing persona (composer bug). Surface as validation.
+        _ => Err(AppError::Validation(format!(
+            "Step has no assigned persona and assignment.match_strategy='{strategy}' cannot resolve one",
+        ))),
+    }?;
+
+    // Persist the match.
+    let MatchResult {
+        persona_id,
+        use_case_id,
+        confidence,
+        rationale,
+    } = result;
+    assignment_repo::set_step_match_result(
+        &deps.pool,
+        &step.id,
+        &persona_id,
+        use_case_id.as_deref(),
+        confidence,
+        rationale.as_deref(),
+    )?;
+    Ok((persona_id, use_case_id))
 }
 
 fn emit_progress(app: &AppHandle, assignment_id: &str, status: &str, step_id: Option<&str>) {

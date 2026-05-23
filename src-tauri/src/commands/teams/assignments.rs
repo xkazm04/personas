@@ -99,7 +99,8 @@ pub async fn start_team_assignment(
     // request returns immediately; progress flows via TEAM_ASSIGNMENT_PROGRESS.
     let pool = Arc::new(state.db.clone());
     let engine = state.engine.clone();
-    orchestrator::run_assignment(pool, app, engine, id);
+    let embedding_manager = embedding_manager_for_state(&state);
+    orchestrator::run_assignment(pool, app, engine, embedding_manager, id);
     Ok(())
 }
 
@@ -124,16 +125,25 @@ pub async fn resolve_team_assignment_review(
     require_auth(&state).await?;
     let pool = Arc::new(state.db.clone());
     let engine = state.engine.clone();
+    let embedding_manager = embedding_manager_for_state(&state);
     match action {
         ResolveStepReviewAction::EditRequirement { description } => {
-            orchestrator::resolve_review_edit(pool, app, engine, step_id, description)
+            orchestrator::resolve_review_edit(pool, app, engine, embedding_manager, step_id, description)
         }
         ResolveStepReviewAction::Reassign {
             persona_id,
             use_case_id,
-        } => orchestrator::resolve_review_reassign(pool, app, engine, step_id, persona_id, use_case_id),
+        } => orchestrator::resolve_review_reassign(
+            pool,
+            app,
+            engine,
+            embedding_manager,
+            step_id,
+            persona_id,
+            use_case_id,
+        ),
         ResolveStepReviewAction::Skip => {
-            orchestrator::resolve_review_skip(pool, app, engine, step_id)
+            orchestrator::resolve_review_skip(pool, app, engine, embedding_manager, step_id)
         }
         ResolveStepReviewAction::Abort => {
             // Resolve assignment_id from step before aborting the parent.
@@ -141,6 +151,24 @@ pub async fn resolve_team_assignment_review(
             orchestrator::resolve_review_abort(pool, app, step.assignment_id, None)
         }
     }
+}
+
+/// Wire the optional ml-feature EmbeddingManager from AppState into the
+/// orchestrator. Lite builds compile a no-op stub type so the signature
+/// stays the same; the orchestrator falls back to llm_eval when the
+/// option is None.
+#[cfg(feature = "ml")]
+fn embedding_manager_for_state(
+    state: &State<'_, Arc<AppState>>,
+) -> Option<Arc<crate::engine::embedder::EmbeddingManager>> {
+    state.embedding_manager.clone()
+}
+
+#[cfg(not(feature = "ml"))]
+fn embedding_manager_for_state(
+    _state: &State<'_, Arc<AppState>>,
+) -> Option<Arc<crate::engine::team_assignment_matching::EmbeddingManager>> {
+    None
 }
 
 #[tauri::command]
