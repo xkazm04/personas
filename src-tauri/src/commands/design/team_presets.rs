@@ -106,6 +106,10 @@ pub fn adopt_team_preset(
             std::collections::HashMap<String, serde_json::Value>,
         >,
     >,
+    // Optional subset of manifest roles to adopt. `None` (or omitted) adopts
+    // every member — the default. The preview modal passes the user's
+    // current selection here.
+    roles: Option<Vec<String>>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     require_auth_sync(&state)?;
     team_preset_adopter::adopt_preset(
@@ -114,6 +118,7 @@ pub fn adopt_team_preset(
         &id,
         language.as_deref(),
         parameter_overrides.as_ref(),
+        roles.as_deref(),
     )
 }
 
