@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "Wartet auf Eingabe",
+    "state_working": "Arbeitet",
+    "state_spawning": "Startet",
+    "state_idle": "Inaktiv",
+    "state_stale": "Veraltet",
+    "state_exited": "Beendet",
+    "sessions_one": "{count} Sitzung",
+    "sessions_other": "{count} Sitzungen",
+    "no_project_hint": "Kein Projekt ausgewählt — wählen Sie eines unter Dev Tools → Projects",
+    "filter_by": "Nur {label} anzeigen",
+    "filter_clear": "Filter zurücksetzen",
     "needs_input_one": "{count} Sitzung wartet auf Ihre Eingabe",
     "needs_input_other": "{count} Sitzungen warten auf Ihre Eingabe",
     "needs_you_aria": "Sitzungen, die auf Ihre Eingabe warten",

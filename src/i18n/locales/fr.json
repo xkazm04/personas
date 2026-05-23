@@ -9697,6 +9697,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "En attente de saisie",
+      "state_working": "En cours",
+      "state_spawning": "Démarrage",
+      "state_idle": "Inactif",
+      "state_stale": "Obsolète",
+      "state_exited": "Terminé",
+      "sessions_one": "{count} session",
+      "sessions_other": "{count} sessions",
+      "no_project_hint": "Aucun projet sélectionné — choisissez-en un dans Dev Tools → Projects",
+      "filter_by": "Afficher uniquement {label}",
+      "filter_clear": "Effacer le filtre",
       "needs_input_one": "{count} session attend votre intervention",
       "needs_input_other": "{count} sessions attendent votre intervention",
       "needs_you_aria": "Sessions en attente de votre intervention",

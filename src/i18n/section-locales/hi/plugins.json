@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "इनपुट की प्रतीक्षा",
+    "state_working": "कार्यरत",
+    "state_spawning": "शुरू हो रहा",
+    "state_idle": "निष्क्रिय",
+    "state_stale": "स्थिर",
+    "state_exited": "बंद",
+    "sessions_one": "{count} सत्र",
+    "sessions_other": "{count} सत्र",
+    "no_project_hint": "कोई प्रोजेक्ट चयनित नहीं — Dev Tools → Projects में एक चुनें",
+    "filter_by": "केवल {label} दिखाएँ",
+    "filter_clear": "फ़िल्टर साफ़ करें",
     "needs_input_one": "{count} सत्र को आपके इनपुट की आवश्यकता है",
     "needs_input_other": "{count} सत्रों को आपके इनपुट की आवश्यकता है",
     "needs_you_aria": "आपके इनपुट की प्रतीक्षा कर रहे सत्र",

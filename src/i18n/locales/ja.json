@@ -9773,6 +9773,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "入力待ち",
+      "state_working": "実行中",
+      "state_spawning": "起動中",
+      "state_idle": "アイドル",
+      "state_stale": "停滞",
+      "state_exited": "終了",
+      "sessions_one": "{count} 件のセッション",
+      "sessions_other": "{count} 件のセッション",
+      "no_project_hint": "プロジェクトが未選択です — Dev Tools → Projects で選択してください",
+      "filter_by": "{label} のみ表示",
+      "filter_clear": "フィルターを解除",
       "needs_input_one": "{count} 件のセッションが入力待ちです",
       "needs_input_other": "{count} 件のセッションが入力待ちです",
       "needs_you_aria": "入力待ちのセッション",

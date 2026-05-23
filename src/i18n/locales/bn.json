@@ -9773,6 +9773,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "ইনপুটের অপেক্ষায়",
+      "state_working": "কাজ চলছে",
+      "state_spawning": "শুরু হচ্ছে",
+      "state_idle": "নিষ্ক্রিয়",
+      "state_stale": "স্থবির",
+      "state_exited": "প্রস্থান",
+      "sessions_one": "{count}টি সেশন",
+      "sessions_other": "{count}টি সেশন",
+      "no_project_hint": "কোনো প্রকল্প নির্বাচিত নয় — Dev Tools → Projects-এ একটি বেছে নিন",
+      "filter_by": "শুধু {label} দেখান",
+      "filter_clear": "ফিল্টার সাফ করুন",
       "needs_input_one": "{count}টি সেশনের জন্য আপনার ইনপুট প্রয়োজন",
       "needs_input_other": "{count}টি সেশনের জন্য আপনার ইনপুট প্রয়োজন",
       "needs_you_aria": "আপনার ইনপুটের অপেক্ষায় থাকা সেশন",

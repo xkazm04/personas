@@ -27,6 +27,8 @@ import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
+import { FleetSummaryPills } from '../FleetSummaryPills';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -81,8 +83,10 @@ export default function FleetGridPage() {
   const projects = useSystemStore(useShallow((s) => s.projects));
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
 
+  const { t, tx } = useTranslation();
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [filter, setFilter] = useState<FleetSessionState | null>(null);
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
@@ -173,16 +177,21 @@ export default function FleetGridPage() {
     }
   }, [activeProject, spawning, refresh, setActiveSession]);
 
-  const counts = useMemo(() => {
-    let waiting = 0, working = 0, idle = 0, exited = 0;
-    for (const s of sessions) {
-      if (s.state === 'awaiting_input') waiting += 1;
-      else if (s.state === 'running') working += 1;
-      else if (s.state === 'idle') idle += 1;
-      else if (s.state === 'exited') exited += 1;
-    }
-    return { waiting, working, idle, exited };
+  // Count sessions in every lifecycle state — feeds the summary pills and
+  // the header subtitle. A full Record keeps the pill component honest about
+  // states the subtitle previously ignored (spawning, stale).
+  const stateCounts = useMemo(() => {
+    const c: Record<FleetSessionState, number> = {
+      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, exited: 0,
+    };
+    for (const s of sessions) c[s.state] += 1;
+    return c;
   }, [sessions]);
+
+  const toggleFilter = useCallback(
+    (state: FleetSessionState) => setFilter((cur) => (cur === state ? null : state)),
+    [],
+  );
 
   // Sessions blocked on the operator — drives the "Needs you" attention
   // banner. Newest activity first so the most recent prompt leads.
@@ -208,13 +217,17 @@ export default function FleetGridPage() {
       arr.sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs));
     }
     return GROUP_ORDER
-      .filter((g) => buckets.has(g.id))
+      .filter((g) => buckets.has(g.id) && (filter === null || g.id === filter))
       .map((g) => ({ ...g, sessions: buckets.get(g.id)! }));
-  }, [sessions]);
+  }, [sessions, filter]);
 
+  const sessionCount =
+    sessions.length === 1
+      ? tx(t.plugins.fleet.sessions_one, { count: sessions.length })
+      : tx(t.plugins.fleet.sessions_other, { count: sessions.length });
   const subtitle = activeProject
-    ? `Project: ${activeProject.name} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${counts.waiting} waiting · ${counts.working} working · ${counts.idle} idle${counts.exited > 0 ? ` · ${counts.exited} exited` : ''}`
-    : 'No project selected — pick one in Dev Tools → Projects';
+    ? `${activeProject.name} · ${sessionCount}`
+    : t.plugins.fleet.no_project_hint;
 
   return (
     <ContentBox>
@@ -226,6 +239,8 @@ export default function FleetGridPage() {
       />
       <ContentBody>
         <div data-testid="fleet-grid-page" />
+
+        <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
 
         <FleetNeedsYouBanner waiting={waitingSessions} onJump={handleActivate} />
 

@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "입력 대기",
+    "state_working": "작업 중",
+    "state_spawning": "시작 중",
+    "state_idle": "유휴",
+    "state_stale": "정체",
+    "state_exited": "종료됨",
+    "sessions_one": "{count}개 세션",
+    "sessions_other": "{count}개 세션",
+    "no_project_hint": "선택된 프로젝트 없음 — Dev Tools → Projects에서 선택하세요",
+    "filter_by": "{label}만 표시",
+    "filter_clear": "필터 지우기",
     "needs_input_one": "{count}개 세션이 입력을 기다리고 있습니다",
     "needs_input_other": "{count}개 세션이 입력을 기다리고 있습니다",
     "needs_you_aria": "입력을 기다리는 세션",

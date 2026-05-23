@@ -9802,6 +9802,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "Awaiting input",
+      "state_working": "Working",
+      "state_spawning": "Spawning",
+      "state_idle": "Idle",
+      "state_stale": "Stale",
+      "state_exited": "Exited",
+      "sessions_one": "{count} session",
+      "sessions_other": "{count} sessions",
+      "no_project_hint": "No project selected — pick one in Dev Tools → Projects",
+      "filter_by": "Show only {label}",
+      "filter_clear": "Clear filter",
       "needs_input_one": "{count} session needs your input",
       "needs_input_other": "{count} sessions need your input",
       "needs_you_aria": "Sessions awaiting your input",

@@ -9697,6 +9697,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "等待输入",
+      "state_working": "工作中",
+      "state_spawning": "启动中",
+      "state_idle": "空闲",
+      "state_stale": "停滞",
+      "state_exited": "已退出",
+      "sessions_one": "{count} 个会话",
+      "sessions_other": "{count} 个会话",
+      "no_project_hint": "未选择项目 — 请在“开发工具 → 项目”中选择",
+      "filter_by": "仅显示{label}",
+      "filter_clear": "清除筛选",
       "needs_input_one": "{count} 个会话需要您的输入",
       "needs_input_other": "{count} 个会话需要您的输入",
       "needs_you_aria": "等待您输入的会话",

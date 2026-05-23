@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "Đang chờ nhập",
+    "state_working": "Đang chạy",
+    "state_spawning": "Đang khởi động",
+    "state_idle": "Nhàn rỗi",
+    "state_stale": "Trì trệ",
+    "state_exited": "Đã thoát",
+    "sessions_one": "{count} phiên",
+    "sessions_other": "{count} phiên",
+    "no_project_hint": "Chưa chọn dự án — chọn một dự án trong Dev Tools → Projects",
+    "filter_by": "Chỉ hiển thị {label}",
+    "filter_clear": "Xóa bộ lọc",
     "needs_input_one": "{count} phiên cần bạn nhập",
     "needs_input_other": "{count} phiên cần bạn nhập",
     "needs_you_aria": "Các phiên đang chờ bạn nhập",

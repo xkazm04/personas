@@ -9773,6 +9773,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "Čeká na vstup",
+      "state_working": "Pracuje",
+      "state_spawning": "Spouští se",
+      "state_idle": "Nečinné",
+      "state_stale": "Zastaralé",
+      "state_exited": "Ukončeno",
+      "sessions_one": "{count} relace",
+      "sessions_other": "{count} relací",
+      "no_project_hint": "Není vybrán žádný projekt — vyberte jej v Dev Tools → Projects",
+      "filter_by": "Zobrazit jen {label}",
+      "filter_clear": "Zrušit filtr",
       "needs_input_one": "{count} relace čeká na váš vstup",
       "needs_input_other": "{count} relací čeká na váš vstup",
       "needs_you_aria": "Relace čekající na váš vstup",

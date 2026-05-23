@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "Esperando entrada",
+    "state_working": "Trabajando",
+    "state_spawning": "Iniciando",
+    "state_idle": "Inactivo",
+    "state_stale": "Estancado",
+    "state_exited": "Finalizado",
+    "sessions_one": "{count} sesión",
+    "sessions_other": "{count} sesiones",
+    "no_project_hint": "Ningún proyecto seleccionado — elige uno en Dev Tools → Projects",
+    "filter_by": "Mostrar solo {label}",
+    "filter_clear": "Quitar filtro",
     "needs_input_one": "{count} sesión necesita tu intervención",
     "needs_input_other": "{count} sesiones necesitan tu intervención",
     "needs_you_aria": "Sesiones que esperan tu intervención",

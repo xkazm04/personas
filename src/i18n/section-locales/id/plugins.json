@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "Menunggu masukan",
+    "state_working": "Bekerja",
+    "state_spawning": "Memulai",
+    "state_idle": "Diam",
+    "state_stale": "Basi",
+    "state_exited": "Keluar",
+    "sessions_one": "{count} sesi",
+    "sessions_other": "{count} sesi",
+    "no_project_hint": "Belum ada proyek dipilih — pilih satu di Dev Tools → Projects",
+    "filter_by": "Tampilkan hanya {label}",
+    "filter_clear": "Hapus filter",
     "needs_input_one": "{count} sesi memerlukan masukan Anda",
     "needs_input_other": "{count} sesi memerlukan masukan Anda",
     "needs_you_aria": "Sesi yang menunggu masukan Anda",

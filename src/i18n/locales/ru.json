@@ -9773,6 +9773,17 @@
   },
   "plugins": {
     "fleet": {
+      "state_awaiting_input": "Ожидает ввода",
+      "state_working": "В работе",
+      "state_spawning": "Запуск",
+      "state_idle": "Простой",
+      "state_stale": "Устарел",
+      "state_exited": "Завершён",
+      "sessions_one": "{count} сессия",
+      "sessions_other": "{count} сессий",
+      "no_project_hint": "Проект не выбран — выберите его в «Dev Tools → Projects»",
+      "filter_by": "Показать только {label}",
+      "filter_clear": "Сбросить фильтр",
       "needs_input_one": "{count} сессия ждёт вашего ввода",
       "needs_input_other": "{count} сессий ждут вашего ввода",
       "needs_you_aria": "Сессии, ожидающие вашего ввода",

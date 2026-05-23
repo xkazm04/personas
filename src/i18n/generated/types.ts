@@ -9808,6 +9808,17 @@ export type Translations = {
   };
   plugins: {
     fleet: {
+      state_awaiting_input: string;
+      state_working: string;
+      state_spawning: string;
+      state_idle: string;
+      state_stale: string;
+      state_exited: string;
+      sessions_one: string;
+      sessions_other: string;
+      no_project_hint: string;
+      filter_by: string;
+      filter_clear: string;
       needs_input_one: string;
       needs_input_other: string;
       needs_you_aria: string;

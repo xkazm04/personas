@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "state_awaiting_input": "بانتظار الإدخال",
+    "state_working": "قيد العمل",
+    "state_spawning": "قيد البدء",
+    "state_idle": "خامل",
+    "state_stale": "راكد",
+    "state_exited": "خرج",
+    "sessions_one": "{count} جلسة",
+    "sessions_other": "{count} جلسة",
+    "no_project_hint": "لم يتم اختيار مشروع — اختر واحدًا من أدوات المطور ← المشاريع",
+    "filter_by": "عرض {label} فقط",
+    "filter_clear": "مسح التصفية",
     "needs_input_one": "تتطلب {count} جلسة إدخالك",
     "needs_input_other": "تتطلب {count} جلسات إدخالك",
     "needs_you_aria": "الجلسات التي تنتظر إدخالك",
