@@ -51,6 +51,17 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 
 Priority of signals: **process exit > hooks > JSONL mtime > inactivity ticker**. An Exited session never gets re-animated; a Stale session bounces back to Idle on any transcript append.
 
+## Session overview surfaces
+
+Above the session grid, the Sessions tab carries a set of glanceable read affordances — the desktop groundwork for a future paired mobile companion that surfaces fleet status remotely:
+
+- **Summary pills** (`FleetSummaryPills`) — one colored count pill per active lifecycle state, reusing the per-session dot palette. Each pill is a filter toggle that narrows the grid to that state; clicking the active pill clears the filter.
+- **"Needs you" banner** (`FleetNeedsYouBanner`) — a pulsing violet strip that appears whenever one or more sessions are `awaiting_input`, listing each as a click-to-focus chip. The at-a-glance "something needs a human" signal.
+- **Status legend** (`FleetStatusLegend`) — a hover/focus disclosure in the header decoding the two-axis dots (process: spawning/alive/exited · activity: working/awaiting/idle/stale). Reuses the exact `CONSOLE_DOT` / `BUSINESS_DOT` maps exported from `FleetStatusDots` so palette and labels can't drift.
+- **Mobile companion preview** (`FleetMobilePreview`, in Settings) — a read-only render of the glance view (state count chips + the awaiting list) inside a phone frame, fed by live session data. Non-interactive by design: it mirrors what a phone would show, letting the remote surface be validated locally before any mobile client ships.
+
+All four are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview strings).
+
 ## Hook installer details
 
 Each entry is tagged `_fleet: true` so uninstall is surgical:
