@@ -13496,6 +13496,8 @@
       "allSetTitle": "All set",
       "allSetBody": "Every milestone is complete. This twin is ready to speak.",
       "moreCount": "+{count} more",
+      "showAllGaps": "Show all {count} gaps",
+      "showFewer": "Show fewer",
       "titles": {
         "identityEmpty": "No bio yet",
         "identityPartial": "Bio is short",

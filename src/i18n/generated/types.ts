@@ -13502,6 +13502,8 @@ export type Translations = {
       allSetTitle: string;
       allSetBody: string;
       moreCount: string;
+      showAllGaps: string;
+      showFewer: string;
       titles: {
         identityEmpty: string;
         identityPartial: string;

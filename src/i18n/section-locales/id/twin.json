@@ -486,6 +486,8 @@
     "allSetTitle": "Semua siap",
     "allSetBody": "Setiap tonggak selesai. Twin ini siap berbicara.",
     "moreCount": "+{count} lainnya",
+    "showAllGaps": "Tampilkan semua {count}",
+    "showFewer": "Tampilkan lebih sedikit",
     "titles": {
       "identityEmpty": "Belum ada bio",
       "identityPartial": "Bio terlalu pendek",

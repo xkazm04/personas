@@ -13346,6 +13346,8 @@
       "allSetTitle": "Всё готово",
       "allSetBody": "Все этапы пройдены. Этот twin готов говорить.",
       "moreCount": "+ ещё {count}",
+      "showAllGaps": "Показать все {count}",
+      "showFewer": "Свернуть",
       "titles": {
         "identityEmpty": "Биография ещё не задана",
         "identityPartial": "Биография коротковата",

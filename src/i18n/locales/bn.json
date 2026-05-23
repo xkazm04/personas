@@ -13346,6 +13346,8 @@
       "allSetTitle": "সব প্রস্তুত",
       "allSetBody": "প্রতিটি মাইলফলক সম্পন্ন। এই টুইন কথা বলার জন্য প্রস্তুত।",
       "moreCount": "+আরও {count}টি",
+      "showAllGaps": "সব {count}টি ফাঁক দেখান",
+      "showFewer": "কম দেখান",
       "titles": {
         "identityEmpty": "এখনও কোনো জীবনী নেই",
         "identityPartial": "জীবনী সংক্ষিপ্ত",

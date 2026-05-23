@@ -486,6 +486,8 @@
     "allSetTitle": "Vše hotovo",
     "allSetBody": "Každý milník je dokončen. Tento dvojník je připraven promluvit.",
     "moreCount": "+{count} dalších",
+    "showAllGaps": "Zobrazit všech {count}",
+    "showFewer": "Zobrazit méně",
     "titles": {
       "identityEmpty": "Zatím žádné bio",
       "identityPartial": "Bio je krátké",

@@ -486,6 +486,8 @@
     "allSetTitle": "全部就绪",
     "allSetBody": "每一项里程碑都已完成。该 twin 已可以开口说话。",
     "moreCount": "还有 {count} 项",
+    "showAllGaps": "显示全部 {count} 项",
+    "showFewer": "收起",
     "titles": {
       "identityEmpty": "尚无 bio",
       "identityPartial": "Bio 太短",

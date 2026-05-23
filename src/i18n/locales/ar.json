@@ -13346,6 +13346,8 @@
       "allSetTitle": "كل شيء جاهز",
       "allSetBody": "كل مرحلة مكتملة. هذا التوأم جاهز للتحدث.",
       "moreCount": "+{count} المزيد",
+      "showAllGaps": "عرض كل {count} فجوة",
+      "showFewer": "عرض أقل",
       "titles": {
         "identityEmpty": "لا توجد سيرة بعد",
         "identityPartial": "السيرة قصيرة",

@@ -13346,6 +13346,8 @@
       "allSetTitle": "सब तैयार",
       "allSetBody": "हर मील का पत्थर पूर्ण है। यह ट्विन बोलने के लिए तैयार है।",
       "moreCount": "+{count} और",
+      "showAllGaps": "सभी {count} गैप दिखाएँ",
+      "showFewer": "कम दिखाएँ",
       "titles": {
         "identityEmpty": "अभी तक कोई बायो नहीं",
         "identityPartial": "बायो छोटा है",

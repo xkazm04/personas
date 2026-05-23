@@ -13346,6 +13346,8 @@
       "allSetTitle": "준비 완료",
       "allSetBody": "모든 마일스톤이 완료되었습니다. 이 트윈은 말할 준비가 되었습니다.",
       "moreCount": "+{count}개 더",
+      "showAllGaps": "{count}개 모두 보기",
+      "showFewer": "간단히 보기",
       "titles": {
         "identityEmpty": "아직 bio가 없습니다",
         "identityPartial": "Bio가 짧습니다",

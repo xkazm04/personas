@@ -13346,6 +13346,8 @@
       "allSetTitle": "Đã sẵn sàng",
       "allSetBody": "Mọi mốc đều đã hoàn thành. Twin này sẵn sàng cất tiếng.",
       "moreCount": "+{count} nữa",
+      "showAllGaps": "Hiện tất cả {count}",
+      "showFewer": "Thu gọn",
       "titles": {
         "identityEmpty": "Chưa có tiểu sử",
         "identityPartial": "Tiểu sử còn ngắn",

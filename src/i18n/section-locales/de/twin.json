@@ -486,6 +486,8 @@
     "allSetTitle": "Alles bereit",
     "allSetBody": "Jeder Meilenstein ist abgeschlossen. Dieser Twin ist bereit zu sprechen.",
     "moreCount": "+{count} weitere",
+    "showAllGaps": "Alle {count} anzeigen",
+    "showFewer": "Weniger anzeigen",
     "titles": {
       "identityEmpty": "Noch keine Bio",
       "identityPartial": "Bio ist kurz",

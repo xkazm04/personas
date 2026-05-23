@@ -486,6 +486,8 @@
     "allSetTitle": "Tout est prêt",
     "allSetBody": "Tous les jalons sont complets. Ce twin est prêt à prendre la parole.",
     "moreCount": "+{count} autres",
+    "showAllGaps": "Afficher les {count} écarts",
+    "showFewer": "Afficher moins",
     "titles": {
       "identityEmpty": "Aucune bio pour l'instant",
       "identityPartial": "La bio est courte",

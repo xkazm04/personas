@@ -486,6 +486,8 @@
     "allSetTitle": "準備完了",
     "allSetBody": "すべてのマイルストーンが完了しました。このツインは話す準備ができています。",
     "moreCount": "さらに +{count} 件",
+    "showAllGaps": "{count} 件すべて表示",
+    "showFewer": "折りたたむ",
     "titles": {
       "identityEmpty": "バイオがまだありません",
       "identityPartial": "バイオが短い",

@@ -486,6 +486,8 @@
     "allSetTitle": "Todo listo",
     "allSetBody": "Todos los hitos están completos. Este gemelo está listo para hablar.",
     "moreCount": "+{count} más",
+    "showAllGaps": "Mostrar las {count} brechas",
+    "showFewer": "Mostrar menos",
     "titles": {
       "identityEmpty": "Aún no hay bio",
       "identityPartial": "La bio es corta",
