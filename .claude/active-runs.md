@@ -33,6 +33,14 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-23 18:00 — started] /friend — assignment templates (Phase C4 + docs sync)**
+  - **Source:** Continuation — deferred Phase C items from the team-assignment orchestration arc (merged at master `1bbb2bbc3`). C4 = saved assignment templates (reusable goals + step lists per team). Plus docs sync: extend `docs/features/pipeline/README.md` with the assignments feature + a personas-web guide entry.
+  - **Paths:** `src-tauri/src/db/migrations/incremental.rs`, `src-tauri/src/db/models/team_assignment.rs`, `src-tauri/src/db/repos/orchestration/team_assignments.rs`, `src-tauri/src/commands/teams/assignments.rs`, `src-tauri/src/lib.rs`, `src/api/pipeline/assignments.ts`, `src/stores/slices/pipeline/assignmentSlice.ts`, `src/features/pipeline/sub_assignments/`, `src/i18n/locales/en.json` (additive `pipeline.assignments.*`), `docs/features/pipeline/README.md`, `../personas-web/src/data/guide/content/*.ts`
+  - **Status:** started
+  - **Branch:** `worktree-friend-assign-templates-180056`
+  - **Worktree:** `.claude/worktrees/friend-assign-templates-180056/`
+  - **Note:** Path-disjoint from the active athena-orb session (which touches `src/features/plugins/companion/` + `src-tauri/src/companion/`). Shared en.json: additive `pipeline.assignments.*` keys only. Builds on the merged orchestration system — no rework of A/B/C.
+
 - **[2026-05-23 14:20 — completed (A+B+C, 10 commits)] /friend — orchestration (team assignments, full arc)**
   - **Source:** Continuation of design session — full A→B→C arc of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope; Athena chat dispatch via existing approval flow.
   - **Status:** completed
