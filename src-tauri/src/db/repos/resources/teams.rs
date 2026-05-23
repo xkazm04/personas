@@ -15,6 +15,10 @@ row_mapper!(row_to_team -> PersonaTeam {
     id, project_id, parent_team_id, name, description,
     canvas_data, team_config, icon, color,
     enabled [bool],
+    shared_instructions [opt],
+    default_model_profile [opt],
+    default_max_budget_usd [opt],
+    default_max_turns [opt],
     created_at, updated_at,
 });
 
@@ -52,6 +56,10 @@ crud_update! {
         icon: clone,
         color: clone,
         enabled: bool,
+        shared_instructions: clone,
+        default_model_profile: clone,
+        default_max_budget_usd: copy,
+        default_max_turns: copy,
     }
 }
 

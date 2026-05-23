@@ -2840,6 +2840,67 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Groups → Teams consolidation (ADR 2026-05-23-groups-into-teams),
+    // Phase 1 — additive only. A PersonaTeam gains a "workspace" facet
+    // (shared instructions + new-persona defaults, ported from
+    // PersonaGroup), and a persona gains a single nullable home_team_id
+    // = the team whose workspace settings + injected memory apply at
+    // runtime (resolves the 1:N group vs N:M team cardinality). Injected
+    // memory re-anchors via persona_memories.home_team_id. Nothing is
+    // migrated or dropped here — the group_id columns stay intact.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_teams_workspace_fields",
+            description: "Add workspace settings (shared_instructions + defaults) to persona_teams",
+            already_applied: |conn| has_column(conn, "persona_teams", "shared_instructions"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_teams ADD COLUMN shared_instructions TEXT;
+                     ALTER TABLE persona_teams ADD COLUMN default_model_profile TEXT;
+                     ALTER TABLE persona_teams ADD COLUMN default_max_budget_usd REAL;
+                     ALTER TABLE persona_teams ADD COLUMN default_max_turns INTEGER;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas_home_team_id",
+            description: "Add home_team_id to personas (workspace anchor for the Groups→Teams merge)",
+            already_applied: |conn| has_column(conn, "personas", "home_team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN home_team_id TEXT REFERENCES persona_teams(id) ON DELETE SET NULL;
+                     CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories_home_team_id",
+            description: "Add home_team_id to persona_memories (injected-memory scope re-anchor)",
+            already_applied: |conn| has_column(conn, "persona_memories", "home_team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN home_team_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_persona_memories_home_team_id ON persona_memories(home_team_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

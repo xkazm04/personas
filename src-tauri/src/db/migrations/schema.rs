@@ -40,12 +40,16 @@ CREATE TABLE IF NOT EXISTS personas (
     max_turns               INTEGER,
     design_context          TEXT,
     group_id                TEXT REFERENCES persona_groups(id) ON DELETE SET NULL,
+    -- Workspace anchor (Groups→Teams consolidation, 2026-05-23): the one
+    -- team whose workspace settings + injected memory apply at runtime.
+    home_team_id            TEXT REFERENCES persona_teams(id) ON DELETE SET NULL,
     template_category       TEXT,
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_personas_enabled   ON personas(enabled);
 CREATE INDEX IF NOT EXISTS idx_personas_group_id  ON personas(group_id);
+CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);
 
 -- ============================================================================
 -- Tool Definitions
@@ -450,6 +454,13 @@ CREATE TABLE IF NOT EXISTS persona_teams (
     icon            TEXT,
     color           TEXT NOT NULL DEFAULT '#6B7280',
     enabled         INTEGER NOT NULL DEFAULT 1,
+    -- Workspace facet (Groups→Teams consolidation, 2026-05-23). A team
+    -- can carry shared instructions + new-persona defaults, formerly
+    -- PersonaGroup's role.
+    shared_instructions     TEXT,
+    default_model_profile   TEXT,
+    default_max_budget_usd  REAL,
+    default_max_turns       INTEGER,
     created_at      TEXT NOT NULL,
     updated_at      TEXT NOT NULL
 );

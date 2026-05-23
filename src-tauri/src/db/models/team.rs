@@ -1,5 +1,17 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use ts_rs::TS;
+
+/// Three-state deserializer for nullable update fields (absent = preserve,
+/// `null` = clear, value = set). Mirrors the helper in `group.rs` — kept
+/// local to avoid a cross-module re-export. See group.rs for the full
+/// rationale.
+fn double_option<'de, T, D>(deserializer: D) -> Result<Option<Option<T>>, D::Error>
+where
+    T: Deserialize<'de>,
+    D: Deserializer<'de>,
+{
+    Option::<T>::deserialize(deserializer).map(Some)
+}
 
 // ============================================================================
 // Teams
@@ -18,6 +30,13 @@ pub struct PersonaTeam {
     pub icon: Option<String>,
     pub color: String,
     pub enabled: bool,
+    /// Workspace facet (Groups→Teams consolidation). Shared instructions
+    /// appended to every member persona's prompt; defaults applied to new
+    /// personas. Ported from PersonaGroup.
+    pub shared_instructions: Option<String>,
+    pub default_model_profile: Option<String>,
+    pub default_max_budget_usd: Option<f64>,
+    pub default_max_turns: Option<i32>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -46,6 +65,16 @@ pub struct UpdateTeamInput {
     pub icon: Option<Option<String>>,
     pub color: Option<String>,
     pub enabled: Option<bool>,
+    // Workspace facet — double-Option = three-state (omit/clear/set),
+    // matching the group-update semantics these fields came from.
+    #[serde(default, deserialize_with = "double_option")]
+    pub shared_instructions: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub default_model_profile: Option<Option<String>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub default_max_budget_usd: Option<Option<f64>>,
+    #[serde(default, deserialize_with = "double_option")]
+    pub default_max_turns: Option<Option<i32>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
