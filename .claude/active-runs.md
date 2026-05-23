@@ -33,7 +33,7 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
-- **[2026-05-23 18:00 — completed (C4, 3 commits — unmerged)] /friend — assignment templates (Phase C4 + docs sync)**
+- **[2026-05-23 18:00 — completed (C4, merged 4d3f65e09)] /friend — assignment templates (Phase C4 + docs sync)**
   - **Source:** Continuation — deferred Phase C items from the team-assignment orchestration arc (merged at master `1bbb2bbc3`). C4 = saved assignment templates (reusable goals + step lists per team). Plus docs sync.
   - **Status:** completed (pending user merge decision)
   - **Branch:** `worktree-friend-assign-templates-180056`
@@ -42,7 +42,7 @@ timestamp — the next session can recognize it as abandoned.
     - C4a `be904f9e5` — templates schema + models + repo + 4 commands (team_assignment_templates table, create/list/delete/instantiate)
     - C4b `01178e0f3` — templates frontend (api + slice cache + Save-as-template button + picker chips in AssignmentsPanel)
     - C4c `28cea261d` — docs: pipeline README sub_assignments section + feature-doc-map sourceGlobs. Marketing guide in personas-web `f66a952` (Team Assignments topic across topics.ts / desktop-modules.ts / content/pipelines.ts).
-  - **Note:** Path-disjoint from the active athena-orb session. cargo + tsc clean per commit. Closes the full A→B→C→C4 team-assignment arc. Marketing guide committed in personas-web repo (separate git).
+  - **Note:** Path-disjoint from the active athena-orb session. cargo + tsc clean per commit. Closes the full A→B→C→C4 team-assignment arc. Marketing guide committed in personas-web repo (separate git). Merged into master `4d3f65e09` (two generated-file conflicts — enSectionStrings.ts + commandNames.generated.ts — resolved by regenerating from the cleanly-merged en.json + lib.rs; 1217 commands). Worktree removed + branch deleted.
 
 - **[2026-05-23 14:20 — completed (A+B+C, 10 commits)] /friend — orchestration (team assignments, full arc)**
   - **Source:** Continuation of design session — full A→B→C arc of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope; Athena chat dispatch via existing approval flow.
