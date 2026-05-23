@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Plus, Play, XCircle, ListChecks, Trash2, CircleDot, CircleCheck, CircleX, Loader2, CircleDashed, CircleSlash } from 'lucide-react';
+import { X, Plus, Play, XCircle, ListChecks, Trash2, CircleDot, CircleCheck, CircleX, Loader2, CircleDashed, CircleSlash, Edit3, UserCog, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -438,7 +438,38 @@ interface StepRowProps {
 }
 
 function StepRow({ step, index, teamPersonas }: StepRowProps) {
+  const { t } = useTranslation();
+  const a = t.pipeline.assignments;
+  const resolveReview = usePipelineStore((s) => s.resolveAssignmentReview);
   const persona = teamPersonas.find((p) => p.id === step.assignedPersonaId);
+  const [reviewMode, setReviewMode] = useState<'edit' | 'reassign' | null>(null);
+  const [draftDescription, setDraftDescription] = useState(step.description ?? '');
+  const [draftPersonaId, setDraftPersonaId] = useState<string | null>(step.assignedPersonaId);
+  const canReview = step.status === 'failed' || step.status === 'awaiting_review';
+
+  const startEdit = () => {
+    setDraftDescription(step.description ?? '');
+    setReviewMode('edit');
+  };
+  const startReassign = () => {
+    setDraftPersonaId(step.assignedPersonaId);
+    setReviewMode('reassign');
+  };
+  const cancel = () => setReviewMode(null);
+
+  const saveEdit = async () => {
+    await resolveReview(step.id, { action: 'edit_requirement', data: { description: draftDescription.trim() } });
+    setReviewMode(null);
+  };
+  const saveReassign = async () => {
+    if (!draftPersonaId) return;
+    await resolveReview(step.id, { action: 'reassign', data: { persona_id: draftPersonaId, use_case_id: step.assignedUseCaseId } });
+    setReviewMode(null);
+  };
+  const skip = async () => {
+    await resolveReview(step.id, { action: 'skip' });
+  };
+
   return (
     <li className="flex items-start gap-2 px-2 py-1 rounded-card bg-background/40">
       <StatusDot status={step.status} />
@@ -455,6 +486,69 @@ function StepRow({ step, index, teamPersonas }: StepRowProps) {
         )}
         {step.outputSummary && step.status === 'done' && (
           <p className="typo-caption text-foreground/60 line-clamp-2 italic">{step.outputSummary}</p>
+        )}
+
+        {canReview && !reviewMode && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            <button
+              onClick={startEdit}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption"
+            >
+              <Edit3 className="w-3 h-3" /> {a.edit_requirement}
+            </button>
+            <button
+              onClick={startReassign}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 typo-caption"
+            >
+              <UserCog className="w-3 h-3" /> {a.reassign}
+            </button>
+            <button
+              onClick={skip}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive hover:bg-primary/10 text-foreground/60 typo-caption"
+            >
+              <SkipForward className="w-3 h-3" /> {a.skip_step}
+            </button>
+          </div>
+        )}
+
+        {reviewMode === 'edit' && (
+          <div className="mt-1 space-y-1">
+            <textarea
+              value={draftDescription}
+              onChange={(e) => setDraftDescription(e.target.value)}
+              rows={2}
+              className="w-full px-2 py-1 rounded-input bg-background/60 border border-amber-500/30 typo-caption text-foreground focus:outline-none focus:border-amber-500/60 resize-none"
+            />
+            <div className="flex justify-end gap-1">
+              <button onClick={cancel} className="px-2 py-0.5 typo-caption text-foreground/60 hover:text-foreground/90">{a.cancel}</button>
+              <button onClick={saveEdit} className="px-2 py-0.5 rounded-interactive bg-amber-500/90 text-foreground typo-caption font-medium">{a.edit_requirement_save}</button>
+            </div>
+          </div>
+        )}
+
+        {reviewMode === 'reassign' && (
+          <div className="mt-1 space-y-1">
+            <select
+              value={draftPersonaId ?? ''}
+              onChange={(e) => setDraftPersonaId(e.target.value || null)}
+              className="w-full px-2 py-1 rounded-input bg-background/60 border border-amber-500/30 typo-caption text-foreground focus:outline-none focus:border-amber-500/60"
+            >
+              <option value="">{a.pick_persona}</option>
+              {teamPersonas.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            <div className="flex justify-end gap-1">
+              <button onClick={cancel} className="px-2 py-0.5 typo-caption text-foreground/60 hover:text-foreground/90">{a.cancel}</button>
+              <button
+                onClick={saveReassign}
+                disabled={!draftPersonaId}
+                className="px-2 py-0.5 rounded-interactive bg-amber-500/90 text-foreground typo-caption font-medium disabled:opacity-50"
+              >
+                {a.reassign_save}
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </li>
