@@ -63,6 +63,8 @@ import { ApprovalCard } from './ApprovalCard';
 import { McpRequestPanel } from './mcp/McpRequestPanel';
 import { LiveOpsStrip } from './orchestration/LiveOpsStrip';
 import { InlineChatCard } from './InlineChatCard';
+import { CompanionAssignmentCards } from './CompanionAssignmentCards';
+import { useCompanionAssignmentBridge } from './useCompanionAssignmentBridge';
 import { ProactiveCard } from './ProactiveCard';
 import { stripModelDirectives } from './athenaLabels';
 import { AthenaAvatar } from './AthenaAvatar';
@@ -114,6 +116,9 @@ const VALID_NAV_ROUTES: SidebarSection[] = [
  */
 export default function CompanionPanel() {
   const { t } = useTranslation();
+  // Phase C2 — global TEAM_ASSIGNMENT_PROGRESS listener that populates
+  // the chat-side assignment cards above messages.
+  useCompanionAssignmentBridge();
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
   const initialized = useCompanionStore((s) => s.initialized);
@@ -1238,6 +1243,10 @@ function Body(props: BodyProps) {
             flight.
           */}
           <LiveOpsStrip />
+          {/* Phase C2 — Athena-dispatched team-assignment cards. Renders only
+              when at least one assignment is in flight; click routes to the
+              pipeline page so the user can drill into the full panel. */}
+          <CompanionAssignmentCards />
           {/*
             MCP pending-request strip — pinned above proactive because
             the spawned claude session is *blocked* until it gets an

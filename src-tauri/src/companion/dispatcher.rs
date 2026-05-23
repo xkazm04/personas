@@ -137,6 +137,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // proactive ping needs explicit "yes, ping me about this then"
     // consent.
     "schedule_proactive",
+    // Phase C3 — Team-assignment dispatch. User says "have the X team
+    // handle Y" → Athena emits propose_action{action:"assign_team",
+    // params:{team_id,goal,title?}}. Goes through approval because the
+    // operation spawns multiple persona executions in parallel (real
+    // tool calls + LLM cost via subscription). Approval body is the
+    // proposed step list the user can review before clicking Approve.
+    "assign_team",
     // Phase J — Fleet integration (companion ↔ Claude Code workers).
     // All four go through approval because every one of them moves
     // a real subprocess (writing keystrokes, killing it, spawning

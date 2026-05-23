@@ -1940,6 +1940,18 @@ pub fn run() {
             commands::teams::team_memories::get_team_memory_stats,
             commands::teams::team_memories::list_team_memories_by_run,
             commands::teams::team_memories::evict_team_memories,
+            // Team Assignments (orchestration Phase A)
+            commands::teams::assignments::create_team_assignment,
+            commands::teams::assignments::list_team_assignments,
+            commands::teams::assignments::get_team_assignment_detail,
+            commands::teams::assignments::list_team_assignment_events,
+            commands::teams::assignments::list_team_assignment_steps,
+            commands::teams::assignments::start_team_assignment,
+            commands::teams::assignments::abort_team_assignment,
+            commands::teams::assignments::resolve_team_assignment_review,
+            commands::teams::assignments::delete_team_assignment,
+            commands::teams::assignments::decompose_team_assignment_goal,
+            commands::teams::assignments::companion_assign_team,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,
