@@ -180,3 +180,83 @@ pub struct TeamPresetAdoptProgress {
     pub status: String,
     pub error: Option<String>,
 }
+
+// ============================================================================
+// Adoption-time questionnaire schema
+// ============================================================================
+//
+// Each member template ships `payload.adoption_questions[]` — a list of
+// configuration knobs whose values flow into the persona's parameters at
+// adoption time. For a single-template adoption the ChronologyAdoptionView
+// renders these in a form; for a preset adoption we aggregate every
+// member's questions into one combined form rendered before the per-row
+// member-status table.
+//
+// The `get_preset_adoption_schema` IPC returns this shape. Frontend uses
+// it to render the questionnaire AND to know which question_ids to pass
+// back as overrides during the actual adopt call.
+//
+// `questions` is intentionally passed through as raw JSON values because:
+//   1. The adoption_questions schema is rich (type, options, label, hint,
+//      default, maps_to, vault_category, …) and any typed Rust model
+//      would force the loader to stay in lockstep with template-schema
+//      bumps in the wrong layer.
+//   2. The frontend already has a narrow typed view of the same shape
+//      from the single-template adoption flow (`ChronologyAdoptionView`'s
+//      question consumer) and can reuse it directly.
+//   3. ts-rs models `serde_json::Value` as `any` on the TS side, which
+//      lets the frontend keep its own narrow type without an
+//      intermediate mapping layer here.
+
+/// Per-member subsection of the combined preset questionnaire.
+///
+/// Members with NO adoption_questions still appear in the response
+/// (with an empty `questions` array) so the UI can render the full
+/// member list and let the user verify "no config needed here" instead
+/// of silently dropping the row.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PresetMemberAdoptionSchema {
+    /// The preset-manifest role (`"capture"`, `"triage"`, …) — keys the
+    /// override map returned from the UI back to the right member at
+    /// adopt time.
+    pub role: String,
+    /// Canonical template id (matches `members[].template_id` in the
+    /// preset manifest and the on-disk template filename minus
+    /// `.json`).
+    pub template_id: String,
+    /// Translated template name when locale overlay is active,
+    /// canonical English otherwise. Used as the per-member section
+    /// header in the combined questionnaire.
+    pub template_name: String,
+    /// Short one-line description of the template — surfaced under the
+    /// section header so the user remembers what THIS particular role
+    /// does without expanding the section. Pulled from the template's
+    /// `payload.persona.identity.description` field (truncated to ~120
+    /// chars frontend-side).
+    pub template_description: Option<String>,
+    /// Raw adoption_questions array from the template's design JSON.
+    /// Shape on the wire matches what
+    /// `scripts/templates/<category>/<template>.json :: payload.adoption_questions`
+    /// ships. Empty array when the member has no configurable knobs.
+    pub questions: Vec<serde_json::Value>,
+}
+
+/// Top-level response of `get_preset_adoption_schema`. The per-preset
+/// metadata is duplicated here so the UI can render the questionnaire
+/// modal title + the "X of Y members have configurable inputs" summary
+/// without a separate `get_team_preset` round-trip.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct PresetAdoptionSchema {
+    pub preset_id: String,
+    /// Translated preset name (or canonical English).
+    pub preset_name: String,
+    /// `members.length` total; `members.iter().filter(non-empty
+    /// questions).count()` configurable.
+    pub member_count: i32,
+    pub configurable_member_count: i32,
+    /// Sum of `questions.len()` across all members.
+    pub total_question_count: i32,
+    pub members: Vec<PresetMemberAdoptionSchema>,
+}

@@ -9,7 +9,7 @@
 use std::sync::Arc;
 use tauri::{AppHandle, State};
 
-use crate::db::models::{AdoptedTeamPresetResult, TeamPreset};
+use crate::db::models::{AdoptedTeamPresetResult, PresetAdoptionSchema, TeamPreset};
 use crate::engine::{team_preset_adopter, team_preset_loader};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
@@ -48,6 +48,29 @@ pub fn get_team_preset(
 ) -> Result<TeamPreset, AppError> {
     require_auth_sync(&state)?;
     team_preset_loader::get_preset(&id, language.as_deref())
+}
+
+/// Aggregate every member template's `payload.adoption_questions[]`
+/// into one combined questionnaire schema for the Presets preview
+/// modal. Members whose template files are missing or unparseable are
+/// skipped from the schema view (the adopter surfaces those failures
+/// at adopt time); members with no adoption_questions appear with an
+/// empty `questions` array so the UI can render the full member list
+/// rather than silently dropping rows.
+///
+/// `language` flows through to the preset-level metadata
+/// (preset_name). Template-level translation of question labels is
+/// applied frontend-side via the same template-overlay path the
+/// single-template adoption flow uses, so callers don't need to
+/// thread it twice.
+#[tauri::command]
+pub fn get_preset_adoption_schema(
+    state: State<'_, Arc<AppState>>,
+    preset_id: String,
+    language: Option<String>,
+) -> Result<PresetAdoptionSchema, AppError> {
+    require_auth_sync(&state)?;
+    team_preset_loader::get_adoption_schema(&preset_id, language.as_deref())
 }
 
 /// Run a preset's full adoption flow: create optional group, create team

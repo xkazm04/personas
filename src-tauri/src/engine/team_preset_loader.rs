@@ -54,7 +54,9 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::db::models::TeamPreset;
+use crate::db::models::{
+    PresetAdoptionSchema, PresetMemberAdoptionSchema, TeamPreset,
+};
 use crate::error::AppError;
 
 const PRESETS_RELATIVE_DIR: &str = "scripts/templates/_team_presets";
@@ -370,6 +372,128 @@ pub fn load_template_design_by_id(template_id: &str) -> Result<String, AppError>
     Err(AppError::NotFound(format!(
         "Template '{template_id}' not found under scripts/templates/<category>/"
     )))
+}
+
+/// Truncate a description to ~120 chars on a word boundary, with an
+/// ellipsis if shortened. Used to surface a short reminder of what each
+/// member role does in the combined questionnaire UI without piping the
+/// full multi-paragraph identity description across IPC.
+fn truncate_description(s: &str) -> String {
+    const LIMIT: usize = 120;
+    let trimmed = s.trim();
+    if trimmed.chars().count() <= LIMIT {
+        return trimmed.to_string();
+    }
+    let mut out = String::new();
+    let mut count = 0usize;
+    for ch in trimmed.chars() {
+        if count >= LIMIT {
+            break;
+        }
+        out.push(ch);
+        count += 1;
+    }
+    // Back off to the nearest space so we don't cut a word in half.
+    if let Some(idx) = out.rfind(' ') {
+        out.truncate(idx);
+    }
+    out.push('…');
+    out
+}
+
+/// Build the combined questionnaire schema for `preset_id`. For each
+/// member: locate its template's canonical design JSON, extract
+/// `payload.adoption_questions[]` and the human-readable name +
+/// (truncated) description. Members whose templates are missing or
+/// unreadable are skipped at the LOAD level for the questionnaire view
+/// — the adopter itself surfaces missing-template errors at adopt
+/// time, so this skip is purely UI-cosmetic and avoids breaking the
+/// whole questionnaire on one bad member.
+///
+/// `language` flows through to `get_preset` so the preset-level
+/// metadata (preset_name, member roles) reflects the active locale.
+/// Template-level localization (template_name, adoption_question
+/// labels) is intentionally NOT applied here — those live in the
+/// template's own overlay system which is consumed downstream by the
+/// frontend. Threading it here would require loading every template's
+/// overlay twice, and the frontend already merges overlays for the
+/// single-template adoption flow, so the same code path picks up
+/// translated question labels when it renders.
+pub fn get_adoption_schema(
+    preset_id: &str,
+    language: Option<&str>,
+) -> Result<PresetAdoptionSchema, AppError> {
+    let preset = get_preset(preset_id, language)?;
+
+    let mut members: Vec<PresetMemberAdoptionSchema> =
+        Vec::with_capacity(preset.members.len());
+    let mut total_questions: i32 = 0;
+    let mut configurable: i32 = 0;
+
+    for m in &preset.members {
+        let design_json = match load_template_design_by_id(&m.template_id) {
+            Ok(s) => s,
+            Err(err) => {
+                tracing::warn!(
+                    role = %m.role,
+                    template = %m.template_id,
+                    error = %err,
+                    "preset adoption schema: template not found, skipping member"
+                );
+                continue;
+            }
+        };
+        let design: Value = match serde_json::from_str(&design_json) {
+            Ok(v) => v,
+            Err(err) => {
+                tracing::warn!(
+                    role = %m.role,
+                    template = %m.template_id,
+                    error = %err,
+                    "preset adoption schema: template parse failed, skipping"
+                );
+                continue;
+            }
+        };
+
+        let template_name = design
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or(&m.template_id)
+            .to_string();
+        let template_description = design
+            .pointer("/payload/persona/identity/description")
+            .and_then(|v| v.as_str())
+            .map(truncate_description);
+        let questions: Vec<Value> = design
+            .pointer("/payload/adoption_questions")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+
+        let q_count = questions.len();
+        total_questions += q_count as i32;
+        if q_count > 0 {
+            configurable += 1;
+        }
+
+        members.push(PresetMemberAdoptionSchema {
+            role: m.role.clone(),
+            template_id: m.template_id.clone(),
+            template_name,
+            template_description,
+            questions,
+        });
+    }
+
+    Ok(PresetAdoptionSchema {
+        preset_id: preset.id,
+        preset_name: preset.name,
+        member_count: preset.members.len() as i32,
+        configurable_member_count: configurable,
+        total_question_count: total_questions,
+        members,
+    })
 }
 
 #[cfg(test)]

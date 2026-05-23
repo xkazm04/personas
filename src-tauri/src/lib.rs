@@ -1534,6 +1534,7 @@ pub fn run() {
             // Design -- Team Presets (filesystem-shipped multi-template bundles)
             commands::design::team_presets::list_team_presets,
             commands::design::team_presets::get_team_preset,
+            commands::design::team_presets::get_preset_adoption_schema,
             commands::design::team_presets::adopt_team_preset,
             commands::design::team_presets::retry_team_preset_members,
             commands::design::template_adopt::generate_template_background,

@@ -3,6 +3,7 @@ import { useI18nStore } from "@/stores/i18nStore";
 
 import type { TeamPreset } from "@/lib/bindings/TeamPreset";
 import type { AdoptedTeamPresetResult } from "@/lib/bindings/AdoptedTeamPresetResult";
+import type { PresetAdoptionSchema } from "@/lib/bindings/PresetAdoptionSchema";
 
 /**
  * Resolve the user's current locale to pass to the Rust preset loader.
@@ -36,6 +37,24 @@ export const listTeamPresets = () =>
 
 export const getTeamPreset = (id: string) =>
   invoke<TeamPreset>("get_team_preset", { id, language: currentLanguage() });
+
+/**
+ * Aggregate every member template's `payload.adoption_questions[]` for
+ * the combined preset questionnaire. Returns one row per preset member
+ * (members with no questions appear with an empty `questions` array
+ * rather than being dropped, so the UI can show "no config needed").
+ *
+ * Failures to LOAD a member's template (renamed, deleted, parse error)
+ * silently skip that row at the schema view — the same template will
+ * raise a precise error when the adopter tries to use it. The
+ * questionnaire screen treats schema-load best-effort; the adopt
+ * action is the source of truth for member success/failure.
+ */
+export const getPresetAdoptionSchema = (presetId: string) =>
+  invoke<PresetAdoptionSchema>("get_preset_adoption_schema", {
+    presetId,
+    language: currentLanguage(),
+  });
 
 /**
  * Run a preset's full adoption flow. Emits `team-preset-adopt-progress`
