@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, SlidersHorizontal } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, ArrowLeft } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTeamStudioData } from './useTeamStudioData';
 import {
@@ -29,11 +29,13 @@ import type { StudioMember } from './useTeamStudioData';
 interface TeamStudioSplitVariantProps {
   teamId: string;
   teamName: string;
+  /** Return to the Teams table (deselect the team). */
+  onBack?: () => void;
 }
 
 type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' };
 
-export function TeamStudioSplitVariant({ teamId, teamName }: TeamStudioSplitVariantProps) {
+export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioSplitVariantProps) {
   const { members, toggleUseCase, busyUseCases } = useTeamStudioData();
   const [mode, setMode] = useState<RightMode>({ kind: 'orchestrate' });
 
@@ -54,8 +56,21 @@ export function TeamStudioSplitVariant({ teamId, teamName }: TeamStudioSplitVari
       {/* Left — roster */}
       <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
         <div className="flex-shrink-0 px-4 py-3 border-b border-primary/10">
-          <h2 className="typo-heading font-semibold text-foreground truncate">{teamName}</h2>
-          <p className="typo-caption text-foreground/60">
+          <div className="flex items-center gap-2 min-w-0">
+            {onBack && (
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="Back to teams"
+                title="Back to teams"
+                className="flex-shrink-0 -ml-1 p-1 rounded-interactive text-foreground/60 hover:bg-secondary/40 hover:text-foreground transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            )}
+            <h2 className="typo-heading font-semibold text-foreground truncate">{teamName}</h2>
+          </div>
+          <p className="typo-caption text-foreground/60 mt-0.5">
             {members.length} {members.length === 1 ? 'member' : 'members'}
           </p>
         </div>
