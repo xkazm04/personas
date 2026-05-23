@@ -12,6 +12,20 @@ interface TooltipProps {
   placement?: Placement;
   /** Hover delay in ms before showing the tooltip */
   delay?: number;
+  /**
+   * Make the trigger wrapper a focusable box (`tabIndex=0`, `aria-disabled`) instead of a
+   * layout-transparent `display:contents` span. Use this when the wrapped child is an inert
+   * control — a disabled `<button>` cannot receive focus or fire pointer events, so without a
+   * focusable wrapper the tooltip would never surface on hover OR keyboard focus. The wrapped
+   * control should set `pointer-events-none` so hover falls through to this box.
+   */
+  triggerFocusable?: boolean;
+  /**
+   * Extra classes for the trigger wrapper. Only meaningful when `triggerFocusable` is set
+   * (the default `display:contents` wrapper has no box and ignores layout classes). Pass e.g.
+   * `flex w-full` to keep a full-width disabled button laid out correctly.
+   */
+  triggerClassName?: string;
 }
 
 const OFFSET = 8;
@@ -96,6 +110,8 @@ export function Tooltip({
   children,
   placement = 'top',
   delay = MOTION.delay.tooltip,
+  triggerFocusable = false,
+  triggerClassName,
 }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
@@ -162,7 +178,14 @@ export function Tooltip({
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
-        className="contents"
+        // A disabled control can't take focus itself; when triggerFocusable is set the wrapper
+        // becomes the focus target (tabIndex 0) and announces the wrapped control's inert state
+        // (aria-disabled) so the reason surfaces for keyboard + screen-reader users. Escape
+        // dismisses an open tooltip without moving focus.
+        tabIndex={triggerFocusable ? 0 : undefined}
+        aria-disabled={triggerFocusable || undefined}
+        onKeyDown={triggerFocusable ? (e) => { if (e.key === 'Escape') hide(); } : undefined}
+        className={triggerFocusable ? (triggerClassName ?? 'inline-flex') : 'contents'}
       >
         {children}
       </span>
