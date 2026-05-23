@@ -41,12 +41,6 @@ timestamp — the next session can recognize it as abandoned.
   - **Worktree:** `.claude/worktrees/friend-orchestration-142031/`
   - **Note:** Phase A scope = manual-match orchestrator + schema + Team UI composer + checklist + review modal. Phase B (auto-match + auto-decompose via Sonnet) and Phase C (Athena chat layer) are explicitly OUT of scope for this worktree. Path-disjoint from all 10+ active sessions: /research on `engine/provider/claude.rs` (different file), /prototype on `agents/components/allPersonas/`, overview-polish on `features/overview/`, sidebar-L3 on `features/home/` + `shared/components/layout/sidebar/`, artist-tests on `plugins/artist/`, /friend-{theming,drive,companion,twin} on respective plugin/style dirs. Shared en.json: additive `assignments.*` keys only.
 
-- **[2026-05-23 — started] /research — claude-code-2-1-148-to-150**
-  - **Source:** Claude Code CHANGELOG, versions 2.1.148–2.1.150 (focus: code)
-  - **Paths:** `src-tauri/src/engine/provider/claude.rs` (CLI version floor const + test + comment block — single file), `Obsidian/personas/Research/2026-05-23-claude-code-2-1-148-to-150.md`, `Obsidian/personas/Lessons/2026-05-23-research.md` (Edit/append), `.claude/active-runs.md`
-  - **Status:** started
-  - **Note:** 9th "CLI release log of a wrapped binary" run. Path-disjoint from all active /friend sessions (none touch `src-tauri/src/engine/provider/`). Will NOT touch en.json (code focus, no UI strings). Single-file code change → staying on master per CLAUDE.md.
-
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
   - **Paths:** `src/features/agents/components/allPersonas/PersonaOverviewPage.tsx` (add tab switcher), `src/features/agents/components/allPersonas/PersonaOverviewVariantGrid.tsx` (new), `src/features/agents/components/allPersonas/PersonaOverviewVariantConstellation.tsx` (new), `.claude/active-runs.md`
@@ -115,6 +109,12 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-23] /research — athena-dynamic-chat (started as claude-code-2-1-148-to-150, pivoted)**
+  - **Status:** completed (branch: `worktree-athena-dynamic`, commits: 2, last: `0e6caeb35`) — NOT merged; left for user merge decision.
+  - **Commits:** `e823afd4f` token-level streaming (`--include-partial-messages`) + live TodoWrite operational-thread checklist (Tasks A+B) · `0e6caeb35` intermediate background-job progress (`JobProgress` reporter + event-only `progress_text`; Task C).
+  - **Paths shipped:** `src-tauri/src/companion/session.rs`, `src-tauri/src/companion/jobs/{mod,connector_use,scan_codebase,curation_run}.rs`, `src/features/plugins/companion/{CompanionPanel,ConnectorCallCard,extractAssistantText,operationalSteps,OperationalThread,companionStore}.{ts,tsx}` (2 new), `src/api/companion.ts`, `src/i18n/locales/en.json` (4 additive `plugins.companion.ops_*` keys) + regenerated `generated/types.ts`, `docs/features/companion/README.md`. Obsidian: `Research/2026-05-23-athena-dynamic-chat.md`, `Lessons/2026-05-23-research.md`.
+  - **Note:** User pivoted mid-run from the 9th CLI-changelog floor-bump run to "make Athena chat dynamic" (companion plugin). All 3 findings executed in-session in an isolated worktree (cargo check + tsc + eslint clean per task). Built ON TOP of the now-merged `/friend-companion` work (`01fce7da4`, in the worktree base `2aae23eb7`) — no conflict on the shared CompanionPanel/ConnectorCallCard/companionStore files. Deferred: CLI floor bump 2.1.146→2.1.149 (finding [1], user pivoted before triage — clean single-file follow-up). codebase-stack.md updated (main checkout, uncommitted) with the "companion bypasses build_cli_args + bespoke stream path" structural fact. Phase 12 (release log) not run — offered to user. Worktree intact at `.claude/worktrees/athena-dynamic/`.
 
 - **[2026-05-22 → 2026-05-23 wrap] /friend — settings (7 cycles, merge in progress)**
   - **Status:** completed (branch: `worktree-friend-settings-211251`, commits: 7) — merging now per user "wrap up and merge". Settings module gained two new sub-tabs (History, Limits) plus 5 polish cycles across API Keys, Notifications, Config Resolution, BYOM, and a shared `RecentChangeChip` closing the mutation↔audit loop.
