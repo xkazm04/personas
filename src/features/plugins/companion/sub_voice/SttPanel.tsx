@@ -46,6 +46,7 @@ export default function SttPanel() {
       <SectionCard
         title={t.plugins.companion.stt_title}
         subtitle={t.plugins.companion.stt_desc}
+        titleClassName="text-primary"
       >
         <div className="grid grid-cols-2 gap-2 px-1 py-2">
           <EngineButton
@@ -194,6 +195,7 @@ function WhisperConfig() {
       <SectionCard
         title={t.plugins.companion.stt_engine_status_title}
         subtitle={t.plugins.companion.stt_engine_status_desc}
+        titleClassName="text-primary"
       >
         <div className="px-1 py-2">
           {statusLoading ? (
@@ -239,6 +241,7 @@ function WhisperConfig() {
       <SectionCard
         title={t.plugins.companion.stt_models_title}
         subtitle={t.plugins.companion.stt_models_desc}
+        titleClassName="text-primary"
       >
         <div className="px-1 py-2 space-y-2">
           {modelsError && (

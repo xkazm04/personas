@@ -200,7 +200,8 @@ export interface CompanionPluginSlice {
   setCompanionVoiceSimilarity: (v: number | null) => void;
   setCompanionVoiceSpeed: (v: number | null) => void;
   setCompanionVoiceStyle: (v: number | null) => void;
-  /** Reset all 5 tuning fields back to `null` (server-default behaviour). */
+  /** Reset tuning fields to the app defaults (Stability/Similarity 0.70,
+   *  Style 0.05; model + speed inherit the engine default via `null`). */
   resetCompanionVoiceSettings: () => void;
   setCompanionPrefill: (p: CompanionPrefill | null) => void;
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
@@ -229,10 +230,12 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceId: null,
   companionPiperVoiceId: null,
   companionVoiceModel: null,
-  companionVoiceStability: null,
-  companionVoiceSimilarity: null,
+  // Tuned defaults (vs the engine's own): a touch more stability +
+  // similarity than ElevenLabs' baseline, with a hint of style.
+  companionVoiceStability: 0.7,
+  companionVoiceSimilarity: 0.7,
   companionVoiceSpeed: null,
-  companionVoiceStyle: null,
+  companionVoiceStyle: 0.05,
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,
@@ -268,10 +271,10 @@ export const createCompanionPluginSlice: StateCreator<
   resetCompanionVoiceSettings: () =>
     set({
       companionVoiceModel: null,
-      companionVoiceStability: null,
-      companionVoiceSimilarity: null,
+      companionVoiceStability: 0.7,
+      companionVoiceSimilarity: 0.7,
       companionVoiceSpeed: null,
-      companionVoiceStyle: null,
+      companionVoiceStyle: 0.05,
     }),
   setCompanionPrefill: (companionPrefill) => set({ companionPrefill }),
   setCompanionLabJump: (companionLabJump) => set({ companionLabJump }),

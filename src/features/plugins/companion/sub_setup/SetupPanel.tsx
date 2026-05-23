@@ -136,6 +136,7 @@ export default function SetupPanel() {
       <SectionCard
         title={t.plugins.companion.setup_chrome_title}
         subtitle={t.plugins.companion.setup_chrome_desc}
+        titleClassName="text-primary"
       >
         <ToggleRow
           icon={<Bot className="w-4 h-4 text-cyan-400" />}
@@ -163,6 +164,7 @@ export default function SetupPanel() {
       <SectionCard
         title={t.plugins.companion.setup_memory_title}
         subtitle={t.plugins.companion.setup_memory_desc}
+        titleClassName="text-primary"
       >
         <ToggleRow
           icon={<Brain className="w-4 h-4 text-cyan-400" />}
@@ -176,6 +178,7 @@ export default function SetupPanel() {
       <SectionCard
         title={t.plugins.companion.setup_desktop_title}
         subtitle={t.plugins.companion.setup_desktop_desc}
+        titleClassName="text-primary"
       >
         {sensoryLoadError ? (
           <div className="px-1 py-2 typo-caption text-rose-400">
@@ -262,6 +265,7 @@ export default function SetupPanel() {
       <SectionCard
         title={t.plugins.companion.setup_beta_title}
         subtitle={t.plugins.companion.setup_beta_desc}
+        titleClassName="text-primary"
       >
         <div className="flex items-start gap-3 px-1 py-2">
           <Wrench
@@ -271,7 +275,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption text-foreground mt-0.5">
+            <div className="typo-caption text-foreground mt-1.5">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
@@ -298,6 +302,7 @@ export default function SetupPanel() {
       <SectionCard
         title={t.plugins.companion.tracking_title}
         subtitle={t.plugins.companion.tracking_subtitle}
+        titleClassName="text-primary"
       >
         <div className="flex items-start gap-3 px-1 py-2">
           <Activity
@@ -307,7 +312,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.tracking_master_label}
             </div>
-            <div className="typo-caption text-foreground mt-0.5">
+            <div className="typo-caption text-foreground mt-1.5">
               {trackingEnabled === null
                 ? t.plugins.companion.loading
                 : trackingEnabled
@@ -350,7 +355,7 @@ function ToggleRow({
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
         <div className="typo-body font-medium">{label}</div>
-        <div className="typo-caption text-foreground mt-0.5">
+        <div className="typo-caption text-foreground mt-1.5">
           {description}
         </div>
         {countLabel ? (
