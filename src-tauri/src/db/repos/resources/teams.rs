@@ -848,6 +848,10 @@ mod tests {
                 icon: None,
                 color: None,
                 enabled: Some(false),
+                shared_instructions: None,
+                default_model_profile: None,
+                default_max_budget_usd: None,
+                default_max_turns: None,
             },
         )
         .unwrap();

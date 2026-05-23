@@ -202,6 +202,10 @@ pub fn persist_blueprint(
         icon: None,
         color: "#6B7280".into(),
         enabled: true,
+        shared_instructions: None,
+        default_model_profile: None,
+        default_max_budget_usd: None,
+        default_max_turns: None,
         created_at: team_now.clone(),
         updated_at: team_now,
     };
