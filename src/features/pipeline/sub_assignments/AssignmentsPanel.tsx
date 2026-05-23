@@ -134,17 +134,22 @@ interface ComposerProps {
   createAssignment: (input: CreateTeamAssignmentInput) => Promise<TeamAssignment | null>;
 }
 
+type MatchStrategy = 'manual' | 'embedding' | 'llm_eval';
+
 function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createAssignment }: ComposerProps) {
   const { t } = useTranslation();
   const a = t.pipeline.assignments;
   const [title, setTitle] = useState('');
   const [goal, setGoal] = useState('');
+  const [strategy, setStrategy] = useState<MatchStrategy>('manual');
   const [maxParallel, setMaxParallel] = useState(3);
   const [steps, setSteps] = useState<ComposerStepDraft[]>([
     { id: crypto.randomUUID(), title: '', description: '', personaId: null, useCaseId: null },
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const personaRequired = strategy === 'manual';
 
   const addStep = () =>
     setSteps((rows) => [...rows, { id: crypto.randomUUID(), title: '', description: '', personaId: null, useCaseId: null }]);
@@ -165,8 +170,12 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
       setError(a.error_goal_required);
       return;
     }
-    if (steps.some((s) => !s.title.trim() || !s.personaId)) {
-      setError(a.error_step_incomplete);
+    if (steps.some((s) => !s.title.trim())) {
+      setError(a.error_step_title_required);
+      return;
+    }
+    if (personaRequired && steps.some((s) => !s.personaId)) {
+      setError(a.error_step_persona_required);
       return;
     }
     setSubmitting(true);
@@ -175,15 +184,15 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
         teamId,
         title: title.trim(),
         goal: goal.trim(),
-        matchStrategy: 'manual',
+        matchStrategy: strategy,
         maxParallelSteps: maxParallel,
         source: 'team_ui',
         companionOpId: null,
         steps: steps.map((s) => ({
           title: s.title.trim(),
           description: s.description.trim() ? s.description.trim() : null,
-          assignedPersonaId: s.personaId,
-          assignedUseCaseId: s.useCaseId,
+          assignedPersonaId: personaRequired ? s.personaId : s.personaId,
+          assignedUseCaseId: personaRequired ? s.useCaseId : s.useCaseId,
           dependsOnIndices: null,
         })),
       });
@@ -209,6 +218,24 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
         className="w-full px-2.5 py-1.5 rounded-input bg-secondary/50 border border-primary/15 typo-body text-foreground placeholder-foreground/40 focus:outline-none focus:border-orange-500/40 resize-none"
       />
 
+      <div className="flex items-center gap-2 pt-1">
+        <label className="typo-caption font-medium text-foreground/70">{a.strategy_label}</label>
+        <select
+          value={strategy}
+          onChange={(e) => setStrategy(e.target.value as MatchStrategy)}
+          className="flex-1 px-2 py-1 rounded-input bg-secondary/50 border border-primary/15 typo-caption text-foreground focus:outline-none focus:border-orange-500/40"
+        >
+          <option value="manual">{a.strategy_manual}</option>
+          <option value="embedding">{a.strategy_embedding}</option>
+          <option value="llm_eval">{a.strategy_llm_eval}</option>
+        </select>
+      </div>
+      <p className="typo-caption text-foreground/50 -mt-1">
+        {strategy === 'manual' && a.strategy_manual_hint}
+        {strategy === 'embedding' && a.strategy_embedding_hint}
+        {strategy === 'llm_eval' && a.strategy_llm_eval_hint}
+      </p>
+
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <span className="typo-caption font-medium text-foreground/70">{a.steps_label}</span>
@@ -225,6 +252,7 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
             step={step}
             index={idx}
             teamPersonas={teamPersonas}
+            personaRequired={personaRequired}
             onChange={(patch) => updateStep(step.id, patch)}
             onRemove={steps.length > 1 ? () => removeStep(step.id) : null}
           />
@@ -271,11 +299,12 @@ interface ComposerStepRowProps {
   step: ComposerStepDraft;
   index: number;
   teamPersonas: Persona[];
+  personaRequired: boolean;
   onChange: (patch: Partial<ComposerStepDraft>) => void;
   onRemove: (() => void) | null;
 }
 
-function ComposerStepRow({ step, index, teamPersonas, onChange, onRemove }: ComposerStepRowProps) {
+function ComposerStepRow({ step, index, teamPersonas, personaRequired, onChange, onRemove }: ComposerStepRowProps) {
   const { t } = useTranslation();
   const a = t.pipeline.assignments;
   const selectedPersona = teamPersonas.find((p) => p.id === step.personaId) ?? null;
@@ -323,7 +352,7 @@ function ComposerStepRow({ step, index, teamPersonas, onChange, onRemove }: Comp
           onChange={(e) => onChange({ personaId: e.target.value || null, useCaseId: null })}
           className="flex-1 px-2 py-1 rounded-input bg-background/50 border border-primary/10 typo-caption text-foreground focus:outline-none focus:border-orange-500/30"
         >
-          <option value="">{a.pick_persona}</option>
+          <option value="">{personaRequired ? a.pick_persona : a.auto_match_persona}</option>
           {teamPersonas.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
@@ -479,7 +508,19 @@ function StepRow({ step, index, teamPersonas }: StepRowProps) {
           {step.title}
         </p>
         {persona && (
-          <p className="typo-caption text-foreground/50 truncate">{persona.name}</p>
+          <p className="typo-caption text-foreground/50 truncate">
+            {persona.name}
+            {step.matchConfidence != null && step.status !== 'pending' && (
+              <span className="text-foreground/40 ml-1.5">
+                · {a.match_confidence_label} {Math.round(step.matchConfidence * 100)}%
+              </span>
+            )}
+          </p>
+        )}
+        {step.matchRationale && step.status !== 'pending' && (
+          <p className="typo-caption text-foreground/40 truncate italic">
+            {a.match_rationale_prefix} {step.matchRationale}
+          </p>
         )}
         {step.errorMessage && (
           <p className="typo-caption text-rose-400 truncate">{step.errorMessage}</p>

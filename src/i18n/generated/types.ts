@@ -12516,6 +12516,18 @@ export type Translations = {
       error_title_required: string;
       error_goal_required: string;
       error_step_incomplete: string;
+      error_step_title_required: string;
+      error_step_persona_required: string;
+      strategy_label: string;
+      strategy_manual: string;
+      strategy_embedding: string;
+      strategy_llm_eval: string;
+      strategy_manual_hint: string;
+      strategy_embedding_hint: string;
+      strategy_llm_eval_hint: string;
+      auto_match_persona: string;
+      match_confidence_label: string;
+      match_rationale_prefix: string;
       start: string;
       abort: string;
       delete: string;
