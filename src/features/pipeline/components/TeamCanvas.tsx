@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { LayoutGrid, Columns2, Workflow } from 'lucide-react';
 import {
   useNodesState,
   useEdgesState,
@@ -19,8 +20,20 @@ import CanvasOverlays from './canvas/CanvasOverlays';
 import { useCanvasHandlers, snapToGrid } from './canvas/useCanvasHandlers';
 import { useCanvasPipelineActions } from './canvas/useCanvasPipelineActions';
 import { useCanvasDragDrop } from './canvas/useCanvasDragDrop';
+import { TeamStudioGridVariant } from './teamStudio/TeamStudioGridVariant';
+import { TeamStudioSplitVariant } from './teamStudio/TeamStudioSplitVariant';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { PersonaTeamConnection } from '@/lib/bindings/PersonaTeamConnection';
+
+// /prototype scaffold — throwaway tab switcher to A/B the Team Studio
+// directions against the baseline DAG canvas. Default 'canvas' so the
+// live render is unchanged on load.
+type StudioTab = 'canvas' | 'grid' | 'split';
+const STUDIO_TABS: { id: StudioTab; label: string; icon: typeof Workflow }[] = [
+  { id: 'canvas', label: 'Canvas (baseline)', icon: Workflow },
+  { id: 'grid', label: 'Grid Studio', icon: LayoutGrid },
+  { id: 'split', label: 'Split Studio', icon: Columns2 },
+];
 
 export default function TeamCanvas() {
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
@@ -87,12 +100,67 @@ export default function TeamCanvas() {
 
   const onPaneClick = useCallback(() => { setContextMenu(null); setEdgeTooltip(null); }, [setContextMenu, setEdgeTooltip]);
 
+  const [studioTab, setStudioTab] = useState<StudioTab>('canvas');
+
   if (!selectedTeamId) {
     return <TeamList />;
   }
 
+  const teamName = handlers.selectedTeam?.name || 'Team';
+
+  // /prototype tab strip — switch between baseline canvas and the two
+  // Team Studio directions. Removed at consolidation.
+  const tabStrip = (
+    <div className="flex-shrink-0 flex items-center gap-1 px-4 py-1.5 border-b border-primary/10 bg-secondary/10">
+      {STUDIO_TABS.map((tab) => {
+        const Icon = tab.icon;
+        const active = studioTab === tab.id;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setStudioTab(tab.id)}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive typo-caption font-medium transition-colors ${
+              active
+                ? 'bg-primary/15 text-primary border border-primary/30'
+                : 'text-foreground/60 border border-transparent hover:bg-secondary/30'
+            }`}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+
+  if (studioTab === 'grid') {
+    return (
+      <ContentBox minWidth={0} data-testid="team-canvas">
+        {tabStrip}
+        <TeamStudioGridVariant
+          teamId={selectedTeamId}
+          teamName={teamName}
+        />
+      </ContentBox>
+    );
+  }
+
+  if (studioTab === 'split') {
+    return (
+      <ContentBox minWidth={0} data-testid="team-canvas">
+        {tabStrip}
+        <TeamStudioSplitVariant
+          teamId={selectedTeamId}
+          teamName={teamName}
+        />
+      </ContentBox>
+    );
+  }
+
   return (
     <ContentBox minWidth={0} data-testid="team-canvas">
+      {tabStrip}
       <div className="relative z-10">
         <TeamToolbar
           teamName={handlers.selectedTeam?.name || 'Team'}
