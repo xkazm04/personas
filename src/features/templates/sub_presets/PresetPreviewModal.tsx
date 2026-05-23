@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Layers, Loader2, RotateCcw, Settings2, Users, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2, CheckSquare, Layers, Loader2, RotateCcw, Settings2, Square, Users, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -89,6 +89,11 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
   const [overrides, setOverrides] = useState<PresetParameterOverrides>({});
   const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
 
+  // Which member roles are selected for adoption. Default = all. Clicking
+  // a member row in preview toggles it; the Adopt button + the subset-
+  // adoption backend honour this set.
+  const [selectedRoles, setSelectedRoles] = useState<Set<string>>(new Set());
+
   // Reset whenever the modal re-opens or the preset changes (gallery
   // switches presets without unmounting the modal).
   useEffect(() => {
@@ -100,6 +105,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
         status: 'queued',
       })),
     );
+    setSelectedRoles(new Set(preset.members.map((m) => m.role)));
     setAdoptionState('preview');
     setResult(null);
     setCustomizing(false);
@@ -138,6 +144,14 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
   );
 
   const handleAdopt = useCallback(async () => {
+    // Restrict the live status table to the members actually being
+    // adopted — the backend only emits progress for selected roles, so
+    // an unselected row would otherwise hang on "queued" forever.
+    setRows(
+      preset.members
+        .filter((m) => selectedRoles.has(m.role))
+        .map((m) => ({ role: m.role, templateId: m.template_id, status: 'queued' as RowStatus })),
+    );
     setAdoptionState('adopting');
     setResult(null);
     try {
@@ -148,7 +162,13 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       // logs / Sentry breadcrumbs easier to read.
       const overridePayload =
         Object.keys(overrides).length > 0 ? overrides : null;
-      const res = await adoptTeamPreset(preset.id, overridePayload);
+      // Pass the role subset only when the user has deselected
+      // something; null = adopt all (keeps the common-case wire minimal).
+      const rolesPayload =
+        selectedRoles.size === preset.members.length
+          ? null
+          : Array.from(selectedRoles);
+      const res = await adoptTeamPreset(preset.id, overridePayload, rolesPayload);
       setResult(res);
       // Refresh sidebar / detail stores so the new team + personas appear
       // immediately without a manual reload.
@@ -184,7 +204,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       addToast(t.templates.presets.toast_failure, 'error');
       setAdoptionState('preview'); // allow retry
     }
-  }, [preset, overrides, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+  }, [preset, overrides, selectedRoles, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
 
   const handleOpenTeam = useCallback(() => {
     setSidebarSection('personas');
@@ -270,6 +290,30 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
     [overrides],
   );
 
+  // role → { template_name, template_description } from the adoption
+  // schema, so member rows can show a friendly name + one-line
+  // description instead of the raw template id. Empty until the schema
+  // resolves; rows fall back to the template id meanwhile.
+  const schemaByRole = useMemo(() => {
+    const map = new Map<string, { name: string; description: string | null }>();
+    schema?.members.forEach((m) =>
+      map.set(m.role, { name: m.template_name, description: m.template_description }),
+    );
+    return map;
+  }, [schema]);
+
+  const toggleMemberSelection = useCallback((role: string) => {
+    setSelectedRoles((prev) => {
+      const next = new Set(prev);
+      if (next.has(role)) {
+        next.delete(role);
+      } else {
+        next.add(role);
+      }
+      return next;
+    });
+  }, []);
+
   // Map result.failed_members onto the row state in case any failures
   // arrived faster than the progress events (very small race window).
   const rowsWithResult = useMemo(() => {
@@ -292,6 +336,10 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       onClose={onClose}
       titleId="preset-preview-title"
       size="lg"
+      // Portal to <body> so the overlay sits at z-index 10000, above the
+      // titlebar (z-index 9999). Without this the modal renders in-tree
+      // at z-50 and the app header punches through the top of it.
+      portal
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
     >
       {/* Header */}
@@ -351,30 +399,67 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
             <h3 className="typo-label uppercase tracking-wider text-foreground/70">
               {t.templates.presets.preview_members_heading}
             </h3>
-            <span className="typo-label text-foreground/50">({preset.members.length})</span>
+            <span className="typo-label text-foreground/50">
+              {adoptionState === 'preview'
+                ? `(${selectedRoles.size}/${preset.members.length})`
+                : `(${preset.members.length})`}
+            </span>
+            {adoptionState === 'preview' && (
+              <span className="typo-caption text-foreground/45 ml-auto">
+                {t.templates.presets.preview_members_select_hint}
+              </span>
+            )}
           </div>
           <ul className="space-y-1.5">
-            {rowsWithResult.map((row) => (
-              <li
-                key={row.role}
-                data-testid={`preset-row-${row.role}`}
-                data-status={row.status}
-                className="flex items-center gap-3 px-3 py-2 rounded-card bg-secondary/30 border border-primary/10"
-              >
-                <span
-                  className="typo-body font-medium text-foreground/90 min-w-[100px] uppercase tracking-wider text-[11px]"
-                  style={{ color: teamColor }}
+            {rowsWithResult.map((row) => {
+              const meta = schemaByRole.get(row.role);
+              const selected = selectedRoles.has(row.role);
+              const interactive = adoptionState === 'preview';
+              const RowTag = interactive ? 'button' : 'li';
+              return (
+                <RowTag
+                  key={row.role}
+                  type={interactive ? 'button' : undefined}
+                  onClick={interactive ? () => toggleMemberSelection(row.role) : undefined}
+                  aria-pressed={interactive ? selected : undefined}
+                  data-testid={`preset-row-${row.role}`}
+                  data-status={row.status}
+                  data-selected={interactive ? selected : undefined}
+                  className={`w-full text-left flex items-center gap-3 px-3 py-2 rounded-card border transition-colors ${
+                    interactive
+                      ? selected
+                        ? 'bg-secondary/30 border-primary/15 hover:border-primary/30'
+                        : 'bg-secondary/10 border-primary/5 opacity-55 hover:opacity-80'
+                      : 'bg-secondary/30 border-primary/10'
+                  }`}
                 >
-                  {row.role}
-                </span>
-                <span className="typo-body text-foreground flex-1 truncate font-mono text-[12px]">
-                  {row.templateId}
-                </span>
-                {adoptionState !== 'preview' && (
-                  <StatusBadge row={row} t={t} />
-                )}
-              </li>
-            ))}
+                  {interactive && (
+                    selected ? (
+                      <CheckSquare className="w-4 h-4 flex-shrink-0" style={{ color: teamColor }} />
+                    ) : (
+                      <Square className="w-4 h-4 flex-shrink-0 text-foreground/30" />
+                    )
+                  )}
+                  <span
+                    className="typo-body font-medium min-w-[90px] uppercase tracking-wider text-[11px]"
+                    style={{ color: selected || !interactive ? teamColor : undefined }}
+                  >
+                    {row.role}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="typo-body text-foreground/90 block truncate">
+                      {meta?.name ?? row.templateId}
+                    </span>
+                    {meta?.description && (
+                      <span className="typo-caption text-foreground/55 block truncate">
+                        {meta.description}
+                      </span>
+                    )}
+                  </span>
+                  {adoptionState !== 'preview' && <StatusBadge row={row} t={t} />}
+                </RowTag>
+              );
+            })}
           </ul>
         </section>
       </div>
@@ -429,13 +514,14 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
               size="sm"
               icon={<CheckCircle2 className="w-4 h-4" />}
               onClick={() => void handleAdopt()}
+              disabled={selectedRoles.size === 0}
               data-testid="preset-adopt-all-button"
             >
               {tx(
-                preset.members.length === 1
+                selectedRoles.size === 1
                   ? t.templates.presets.adopt_all_button_one
                   : t.templates.presets.adopt_all_button_other,
-                { count: preset.members.length },
+                { count: selectedRoles.size },
               )}
             </Button>
           )}
