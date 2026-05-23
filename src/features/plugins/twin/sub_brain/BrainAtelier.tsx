@@ -1,4 +1,5 @@
-import { Brain, Database, Link, Unlink, FolderTree, RefreshCw, AlertCircle, BookOpen, Cpu, Network, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { Brain, Database, Eye, BookHeart, Library, Link, Unlink, FolderTree, RefreshCw, AlertCircle, BookOpen, Cpu, Network, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -6,6 +7,11 @@ import { useBrainConnection } from './useBrainConnection';
 import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
 import { BrainDecoration } from '../_shared/decorations';
 import { RejectionPatternsPanel } from './RejectionPatternsPanel';
+import { DistilledFactsPanel } from './DistilledFactsPanel';
+import { RecallPreviewPanel } from './RecallPreviewPanel';
+import { ReflectionsPanel } from './ReflectionsPanel';
+
+type LowerTab = 'distilled' | 'recall' | 'reflections';
 
 /* ------------------------------------------------------------------ *
  *  Atelier — "Cortex"
@@ -21,6 +27,7 @@ export default function BrainAtelier() {
     obsidianBound, kbBound, kbReady,
     refreshKb, loadAllKbs, handleCreateKb, handleBind, handleUnbind,
   } = useBrainConnection();
+  const [lowerTab, setLowerTab] = useState<LowerTab>('distilled');
 
   if (!activeTwinId) return <TwinEmptyState icon={Brain} title={t.brain.title} />;
 
@@ -146,6 +153,43 @@ export default function BrainAtelier() {
             {/* Rejection patterns — aggregate over the reviewer_notes column
                 that the knowledge inbox started populating in cycle 3. */}
             <RejectionPatternsPanel twinId={activeTwinId} />
+
+            {/* Lower workshop — three panels that prior /friend cycles
+                shipped (Cycle 12 distilled, Cycle 15 reflections, Cycle 16
+                recall) but never mounted. Tabbed to keep the surface dense. */}
+            <section className="rounded-card border border-primary/10 bg-card/30 overflow-hidden">
+              <div className="flex items-center gap-0.5 border-b border-primary/10 bg-secondary/10 p-1">
+                {([
+                  { id: 'distilled' as const, label: t.distilled.title, icon: Library },
+                  { id: 'recall' as const, label: t.recall.title, icon: Eye },
+                  { id: 'reflections' as const, label: t.reflections.title, icon: BookHeart },
+                ]).map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = lowerTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setLowerTab(tab.id)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-interactive typo-caption font-medium transition-colors ${
+                        isActive
+                          ? 'bg-violet-500/15 text-violet-200 border border-violet-500/25'
+                          : 'border border-transparent text-foreground hover:bg-secondary/40'
+                      }`}
+                      aria-pressed={isActive}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="p-3">
+                {lowerTab === 'distilled' && <DistilledFactsPanel twinId={activeTwinId} />}
+                {lowerTab === 'recall' && <RecallPreviewPanel twinId={activeTwinId} />}
+                {lowerTab === 'reflections' && <ReflectionsPanel twinId={activeTwinId} />}
+              </div>
+            </section>
           </div>
 
           {/* RIGHT — Story trail */}
