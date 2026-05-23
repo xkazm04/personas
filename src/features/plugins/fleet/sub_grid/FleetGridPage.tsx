@@ -26,6 +26,7 @@ import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -183,6 +184,16 @@ export default function FleetGridPage() {
     return { waiting, working, idle, exited };
   }, [sessions]);
 
+  // Sessions blocked on the operator — drives the "Needs you" attention
+  // banner. Newest activity first so the most recent prompt leads.
+  const waitingSessions = useMemo(
+    () =>
+      sessions
+        .filter((s) => s.state === 'awaiting_input')
+        .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
+    [sessions],
+  );
+
   // Group sessions by lifecycle state. Order matters: attention-grabbing
   // first (awaiting_input → working → spawning → idle → stale → exited).
   // Within a group, newest activity first.
@@ -215,6 +226,8 @@ export default function FleetGridPage() {
       />
       <ContentBody>
         <div data-testid="fleet-grid-page" />
+
+        <FleetNeedsYouBanner waiting={waitingSessions} onJump={handleActivate} />
 
         <ActionRow>
           <Button

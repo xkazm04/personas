@@ -1,4 +1,10 @@
 {
+  "fleet": {
+    "needs_input_one": "{count} session attend votre intervention",
+    "needs_input_other": "{count} sessions attendent votre intervention",
+    "needs_you_aria": "Sessions en attente de votre intervention",
+    "jump_to_session": "Aller à cette session"
+  },
   "title": "Plugins",
   "subtitle": "Étendez votre espace de travail avec des plugins. Activez/désactivez pour afficher ou masquer dans la barre latérale.",
   "artist_label": "Artiste",

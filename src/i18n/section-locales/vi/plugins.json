@@ -1,4 +1,10 @@
 {
+  "fleet": {
+    "needs_input_one": "{count} phiên cần bạn nhập",
+    "needs_input_other": "{count} phiên cần bạn nhập",
+    "needs_you_aria": "Các phiên đang chờ bạn nhập",
+    "jump_to_session": "Chuyển đến phiên này"
+  },
   "title": "Plugin",
   "subtitle": "Mở rộng không gian làm việc với các plugin. Bật/tắt để hiển thị hoặc ẩn khỏi thanh bên.",
   "artist_label": "Artist",

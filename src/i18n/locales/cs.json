@@ -9772,6 +9772,12 @@
     "today_activity_heading": "DNES"
   },
   "plugins": {
+    "fleet": {
+      "needs_input_one": "{count} relace čeká na váš vstup",
+      "needs_input_other": "{count} relací čeká na váš vstup",
+      "needs_you_aria": "Relace čekající na váš vstup",
+      "jump_to_session": "Přejít na tuto relaci"
+    },
     "title": "Pluginy",
     "subtitle": "Rozšiř svůj pracovní prostor o pluginy. Přepni pro zobrazení nebo skrytí z bočního panelu.",
     "artist_label": "Artist",

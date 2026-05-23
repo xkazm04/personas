@@ -1,4 +1,10 @@
 {
+  "fleet": {
+    "needs_input_one": "{count} Sitzung wartet auf Ihre Eingabe",
+    "needs_input_other": "{count} Sitzungen warten auf Ihre Eingabe",
+    "needs_you_aria": "Sitzungen, die auf Ihre Eingabe warten",
+    "jump_to_session": "Zu dieser Sitzung springen"
+  },
   "title": "Plugins",
   "subtitle": "Arbeitsbereich mit Plugins erweitern. Umschalten, um in der Seitenleiste anzuzeigen oder auszublenden.",
   "artist_label": "Künstler",

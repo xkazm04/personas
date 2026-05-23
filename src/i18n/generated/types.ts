@@ -9807,6 +9807,12 @@ export type Translations = {
     enter_slugs_manually: string;
   };
   plugins: {
+    fleet: {
+      needs_input_one: string;
+      needs_input_other: string;
+      needs_you_aria: string;
+      jump_to_session: string;
+    };
     title: string;
     subtitle: string;
     artist_label: string;

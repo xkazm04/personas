@@ -1,4 +1,10 @@
 {
+  "fleet": {
+    "needs_input_one": "{count}টি সেশনের জন্য আপনার ইনপুট প্রয়োজন",
+    "needs_input_other": "{count}টি সেশনের জন্য আপনার ইনপুট প্রয়োজন",
+    "needs_you_aria": "আপনার ইনপুটের অপেক্ষায় থাকা সেশন",
+    "jump_to_session": "এই সেশনে যান"
+  },
   "title": "Plugins",
   "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
   "artist_label": "Artist",

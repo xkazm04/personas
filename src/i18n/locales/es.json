@@ -9772,6 +9772,12 @@
     "today_activity_heading": "HOY"
   },
   "plugins": {
+    "fleet": {
+      "needs_input_one": "{count} sesión necesita tu intervención",
+      "needs_input_other": "{count} sesiones necesitan tu intervención",
+      "needs_you_aria": "Sesiones que esperan tu intervención",
+      "jump_to_session": "Ir a esta sesión"
+    },
     "title": "Plugins",
     "subtitle": "Amplía tu espacio de trabajo con plugins. Actívalos para mostrarlos u ocultarlos de la barra lateral.",
     "artist_label": "Artista",

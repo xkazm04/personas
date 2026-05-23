@@ -9696,6 +9696,12 @@
     "today_activity_heading": "اليوم"
   },
   "plugins": {
+    "fleet": {
+      "needs_input_one": "تتطلب {count} جلسة إدخالك",
+      "needs_input_other": "تتطلب {count} جلسات إدخالك",
+      "needs_you_aria": "الجلسات التي تنتظر إدخالك",
+      "jump_to_session": "الانتقال إلى هذه الجلسة"
+    },
     "title": "الإضافات",
     "subtitle": "وسّع مساحة عملك بالإضافات. بدّل لإظهار أو إخفاء من الشريط الجانبي.",
     "artist_label": "الفنان",

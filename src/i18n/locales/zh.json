@@ -9696,6 +9696,12 @@
     "today_activity_heading": "今天"
   },
   "plugins": {
+    "fleet": {
+      "needs_input_one": "{count} 个会话需要您的输入",
+      "needs_input_other": "{count} 个会话需要您的输入",
+      "needs_you_aria": "等待您输入的会话",
+      "jump_to_session": "跳转到此会话"
+    },
     "title": "插件",
     "subtitle": "通过插件扩展工作区。切换以在侧边栏中显示或隐藏。",
     "artist_label": "Artist",

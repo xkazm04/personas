@@ -9772,6 +9772,12 @@
     "today_activity_heading": "今日"
   },
   "plugins": {
+    "fleet": {
+      "needs_input_one": "{count} 件のセッションが入力待ちです",
+      "needs_input_other": "{count} 件のセッションが入力待ちです",
+      "needs_you_aria": "入力待ちのセッション",
+      "jump_to_session": "このセッションへ移動"
+    },
     "title": "プラグイン",
     "subtitle": "プラグインでワークスペースを拡張します。切り替えてサイドバーに表示または非表示にします。",
     "artist_label": "Artist",

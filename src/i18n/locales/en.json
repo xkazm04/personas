@@ -9801,6 +9801,12 @@
     "enter_slugs_manually": "Enter slugs manually instead"
   },
   "plugins": {
+    "fleet": {
+      "needs_input_one": "{count} session needs your input",
+      "needs_input_other": "{count} sessions need your input",
+      "needs_you_aria": "Sessions awaiting your input",
+      "jump_to_session": "Jump to this session"
+    },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
     "artist_label": "Artist",

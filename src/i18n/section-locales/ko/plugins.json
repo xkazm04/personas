@@ -1,4 +1,10 @@
 {
+  "fleet": {
+    "needs_input_one": "{count}개 세션이 입력을 기다리고 있습니다",
+    "needs_input_other": "{count}개 세션이 입력을 기다리고 있습니다",
+    "needs_you_aria": "입력을 기다리는 세션",
+    "jump_to_session": "이 세션으로 이동"
+  },
   "title": "Plugins",
   "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
   "artist_label": "Artist",

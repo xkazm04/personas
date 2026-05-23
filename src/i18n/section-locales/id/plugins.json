@@ -1,4 +1,10 @@
 {
+  "fleet": {
+    "needs_input_one": "{count} sesi memerlukan masukan Anda",
+    "needs_input_other": "{count} sesi memerlukan masukan Anda",
+    "needs_you_aria": "Sesi yang menunggu masukan Anda",
+    "jump_to_session": "Lompat ke sesi ini"
+  },
   "title": "Plugin",
   "subtitle": "Perluas ruang kerja Anda dengan plugin. Aktifkan untuk menampilkan atau sembunyikan dari bilah sisi.",
   "artist_label": "Artist",
