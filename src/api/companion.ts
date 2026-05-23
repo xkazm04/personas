@@ -1132,6 +1132,13 @@ export interface BackgroundJob {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  /**
+   * Live progress note present only on in-flight `companion://job` events
+   * emitted by a running handler (e.g. "Calling Sentry…", "Scanned 4000
+   * files…"). Absent on rows read from the DB, so the terminal event clears
+   * it.
+   */
+  progressText?: string | null;
 }
 
 /** Tauri event emitted on job status transitions (queued→running, completion). */

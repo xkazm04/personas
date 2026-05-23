@@ -13,9 +13,15 @@ use std::path::{Path, PathBuf};
 use serde_json::Value;
 use walkdir::WalkDir;
 
+use crate::companion::jobs::JobProgress;
 use crate::companion::projects;
 use crate::db::UserDbPool;
 use crate::error::AppError;
+
+/// Emit a progress note every this-many walked entries so a big repo
+/// reports "Scanned N files…" a few times instead of going silent for
+/// the whole walk.
+const PROGRESS_EVERY: usize = 2_000;
 
 /// Soft cap on TODO entries surfaced. The full list lands as a count;
 /// the top N (by file:line, deterministic) appear inline.
@@ -112,6 +118,7 @@ pub async fn run(
     pool: &UserDbPool,
     project_id: Option<&str>,
     params: &Value,
+    progress: &JobProgress,
 ) -> Result<String, AppError> {
     // Resolve target path: explicit param first, project_id second.
     let target_path = if let Some(p) = params.get("path").and_then(|v| v.as_str()) {
@@ -145,7 +152,8 @@ pub async fn run(
     // big repo. The job worker calls us under `tokio::task::spawn`d
     // context already, but block-in-place lets us be polite about it.
     let target_clone = target_path.clone();
-    let report = tokio::task::spawn_blocking(move || walk(&target_clone))
+    let progress_clone = progress.clone();
+    let report = tokio::task::spawn_blocking(move || walk(&target_clone, &progress_clone))
         .await
         .map_err(|e| AppError::Internal(format!("scan_codebase: join error: {e}")))??;
 
@@ -166,7 +174,7 @@ pub async fn run(
     Ok(format_report(&target_path, &report))
 }
 
-fn walk(root: &Path) -> Result<ScanReport, AppError> {
+fn walk(root: &Path, progress: &JobProgress) -> Result<ScanReport, AppError> {
     let mut report = ScanReport::default();
     let mut entries_seen = 0usize;
     let started = std::time::Instant::now();
@@ -186,6 +194,10 @@ fn walk(root: &Path) -> Result<ScanReport, AppError> {
         })
     {
         entries_seen += 1;
+        if entries_seen % PROGRESS_EVERY == 0 {
+            // Operational thread: "still walking — here's the count so far".
+            progress.report(format!("Scanned {} files…", report.file_count));
+        }
         if entries_seen > MAX_FILES_WALKED {
             bailed = Some(format!(
                 "stopped at {entries_seen} entries (cap {MAX_FILES_WALKED})"

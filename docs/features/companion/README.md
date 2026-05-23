@@ -42,9 +42,10 @@ Events:
 
 - `companion://approvals`: newly created approval rows.
 - `companion://navigate`: direct route switch requested by Athena. The route `monitor` is a pseudo-route — it opens the full-screen [Persona Monitor](../monitor.md) overlay instead of switching a sidebar section. Athena fires it (after a short spoken/written summary) when the user asks for a fleet overview.
-- `companion://stream`: streaming turn output from the backend.
+- `companion://stream`: streaming turn output from the backend. With `--include-partial-messages` (see "Token-level streaming" below) it carries `stream_event` lines with `text_delta` chunks so the reply renders token-by-token.
 - `companion://recall-preview`: per-turn rollup of what the brain pulled into the system prompt (counts + titles per memory kind).
 - `companion://turn-summary`: per-turn rollup of dispatcher side-effects keyed by assistant episode id (approvals / navigations / lab opens / dashboards / cockpits / chat cards / continuation flag).
+- `companion://job`: background-job status transitions (queued → running → terminal). In-flight emits may carry a transient `progressText` so a running job reports what it's doing.
 
 Approval outcomes may include a client-side action such as `{ type: "navigate", route }`.
 
@@ -69,11 +70,21 @@ Athena's `use_connector` op auto-fires (no approval, by design — see `src-taur
 Previously the user only saw the result as a system episode after Athena ingested it on her next turn. Now the panel subscribes to the `companion://job` event channel and renders an inline `ConnectorCallCard` per in-flight or terminal `connector_use` job, pinned under the assistant bubble that produced it:
 
 - **queued** — hourglass + neutral border
-- **running** — spinning loader + blue border
+- **running** — spinning loader + blue border; shows the job's live `progressText` ("Calling Sentry…") when present, falling back to the static in-flight hint
 - **completed** — check + green border, result-markdown collapsed until click
 - **failed** — alert + rose border, error text collapsed until click
 
+The running handler reports intermediate progress through a `JobProgress` reporter (`src-tauri/src/companion/jobs/mod.rs`) that re-emits the job row with a transient `progressText` on the same `companion://job` channel — event-only, never persisted, so the terminal emit clears it. `connector_use` reports "Calling {service}…" before the HTTP call; `scan_codebase` reports "Scanned N files…" every 2,000 walked entries.
+
 Cards correlate to turns via the same pending → episode-id promotion the recall strip uses (jobs queued during streaming live in `pendingConnectorJobIds`; at the `finished` stream event they move into `connectorJobIdsByEpisodeId[assistantEpisodeId]`). No new IPC — the existing `companion://job` event channel carries everything the card needs.
+
+## Token-level streaming & the operational thread
+
+Two surfaces keep a long or autonomous turn from going silent between the user's message and the final reply.
+
+**Token-level streaming.** Athena's CLI spawn (`src-tauri/src/companion/session.rs`) passes `--include-partial-messages`, so the CLI emits `stream_event` lines with `content_block_delta` / `text_delta` chunks ahead of the whole `assistant` message. The panel extracts those deltas (`extractAssistantTextDelta`), appends them to the streaming bubble coalesced once per animation frame, and skips the duplicate trailing whole-message text once deltas have streamed. The reply now flows in token-by-token instead of appearing in whole-message jumps. The change is additive: on a CLI that doesn't emit partial messages the panel falls back to the whole-message path unchanged, and the backend's whole-message accumulation (which drives the persisted episode) is untouched.
+
+**Operational thread (live plan).** When Athena calls TodoWrite during a turn, the panel parses the full checklist (`operationalSteps.extractTodoWrite`, latest call wins) and renders it inline under the bubble as an `OperationalThread` — each step shown as pending / in-progress / completed, updating in place. It uses the same `streamingSteps → stepsByEpisodeId` promote-on-`finished` model as the recall strip and connector cards, so the plan pins under the in-flight bubble while running and under the completed bubble afterward. Session-scoped; dropped on app restart.
 
 ## Athena-scheduled proactive check-ins (`schedule_proactive`)
 

@@ -102,7 +102,12 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
       )}
       {!isTerminal && (
         <div className="mt-1 pl-5 typo-caption text-foreground">
-          {t.plugins.companion.connector_call_in_flight_hint}
+          {/*
+            While running, prefer the live progress note the handler emits
+            ("Calling Sentry…") over the static hint, so the card reports
+            what's happening instead of a generic "working" line.
+          */}
+          {job.progressText ?? t.plugins.companion.connector_call_in_flight_hint}
         </div>
       )}
     </div>

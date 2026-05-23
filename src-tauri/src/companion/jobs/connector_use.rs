@@ -14,6 +14,7 @@ use std::time::Duration;
 use serde_json::Value;
 
 use crate::companion::connectors;
+use crate::companion::jobs::JobProgress;
 use crate::db::repos::resources::credentials;
 use crate::db::UserDbPool;
 use crate::error::AppError;
@@ -23,7 +24,11 @@ use crate::error::AppError;
 /// job longer than the user would tolerate.
 const HTTP_TIMEOUT: Duration = Duration::from_secs(20);
 
-pub async fn run(pool: &UserDbPool, params: &Value) -> Result<String, AppError> {
+pub async fn run(
+    pool: &UserDbPool,
+    params: &Value,
+    progress: &JobProgress,
+) -> Result<String, AppError> {
     let connector_name = params
         .get("connector_name")
         .and_then(|v| v.as_str())
@@ -58,6 +63,12 @@ pub async fn run(pool: &UserDbPool, params: &Value) -> Result<String, AppError> 
         ))
     })?;
     let fields = credentials::get_decrypted_fields(pool, &cred)?;
+
+    // Surface what we're about to do while the (up to 20s) HTTP call is in
+    // flight — the inline ConnectorCallCard shows this instead of a bare
+    // spinner. The card already renders backend-generated content
+    // (result/error markdown), so this short note shares that channel.
+    progress.report(format!("Calling {connector_name}…"));
 
     dispatch_capability(connector_name, cap.slug, &args, &fields).await
 }

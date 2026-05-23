@@ -27,6 +27,7 @@
 use serde_json::Value;
 
 use crate::companion::brain::{consolidation, reflection};
+use crate::companion::jobs::JobProgress;
 use crate::db::UserDbPool;
 use crate::error::AppError;
 
@@ -42,7 +43,11 @@ const MAX_INSTRUCTIONS_CHARS: usize = 4096;
 /// Run a curation pass via one of the existing companion curators.
 /// Called from `companion::jobs::dispatch_handler` when a job with
 /// `kind = "memory_curation_run"` reaches the worker.
-pub async fn run(pool: &UserDbPool, params: &Value) -> Result<String, AppError> {
+pub async fn run(
+    pool: &UserDbPool,
+    params: &Value,
+    _progress: &JobProgress,
+) -> Result<String, AppError> {
     let scope = params
         .get("scope")
         .and_then(|v| v.as_str())
