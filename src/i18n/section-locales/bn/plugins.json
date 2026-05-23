@@ -1242,6 +1242,7 @@
     "connector_call_retrying": "পুনরায় চেষ্টা চলছে…",
     "connector_call_retried": "পুনরায় চেষ্টা · নতুন কাজ {id}",
     "connector_call_retry_failed": "পুনরায় চেষ্টা ব্যর্থ: {message}",
+    "connector_call_retry_waiting": "স্ট্যাটাসের জন্য অপেক্ষা…",
     "footer_notice_analysis_completed": "Analysis completed",
     "footer_notice_proactive_default": "Athena has a note for you",
     "footer_notice_dismiss": "Dismiss",

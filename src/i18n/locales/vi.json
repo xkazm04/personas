@@ -10836,6 +10836,7 @@
       "connector_call_retrying": "Đang thử lại…",
       "connector_call_retried": "Đã thử lại · tác vụ mới {id}",
       "connector_call_retry_failed": "Thử lại thất bại: {message}",
+      "connector_call_retry_waiting": "Đang chờ trạng thái…",
       "footer_notice_analysis_completed": "Analysis completed",
       "footer_notice_proactive_default": "Athena has a note for you",
       "footer_notice_dismiss": "Dismiss",

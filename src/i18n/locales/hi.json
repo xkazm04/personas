@@ -10836,6 +10836,7 @@
       "connector_call_retrying": "पुनः प्रयास हो रहा है…",
       "connector_call_retried": "पुनः प्रयास किया · नया कार्य {id}",
       "connector_call_retry_failed": "पुनः प्रयास विफल: {message}",
+      "connector_call_retry_waiting": "स्थिति की प्रतीक्षा…",
       "footer_notice_analysis_completed": "Analysis completed",
       "footer_notice_proactive_default": "Athena has a note for you",
       "footer_notice_dismiss": "Dismiss",

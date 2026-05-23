@@ -1242,6 +1242,7 @@
     "connector_call_retrying": "重试中…",
     "connector_call_retried": "已重试 · 新任务 {id}",
     "connector_call_retry_failed": "重试失败：{message}",
+    "connector_call_retry_waiting": "等待状态…",
     "footer_notice_analysis_completed": "Analysis completed",
     "footer_notice_proactive_default": "Athena has a note for you",
     "footer_notice_dismiss": "Dismiss",

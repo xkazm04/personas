@@ -1242,6 +1242,7 @@
     "connector_call_retrying": "再試行中…",
     "connector_call_retried": "再試行済み · 新ジョブ {id}",
     "connector_call_retry_failed": "再試行失敗: {message}",
+    "connector_call_retry_waiting": "ステータス待機中…",
     "footer_notice_analysis_completed": "Analysis completed",
     "footer_notice_proactive_default": "Athena has a note for you",
     "footer_notice_dismiss": "Dismiss",

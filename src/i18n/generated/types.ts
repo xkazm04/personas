@@ -10742,6 +10742,7 @@ export type Translations = {
       connector_call_retrying: string;
       connector_call_retried: string;
       connector_call_retry_failed: string;
+      connector_call_retry_waiting: string;
       autonomous_toggle_on: string;
       autonomous_toggle_off: string;
       composer_placeholder: string;

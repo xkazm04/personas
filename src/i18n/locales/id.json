@@ -10836,6 +10836,7 @@
       "connector_call_retrying": "Mencoba lagi…",
       "connector_call_retried": "Dicoba ulang · tugas baru {id}",
       "connector_call_retry_failed": "Coba lagi gagal: {message}",
+      "connector_call_retry_waiting": "Menunggu status…",
       "footer_notice_analysis_completed": "Analysis completed",
       "footer_notice_proactive_default": "Athena has a note for you",
       "footer_notice_dismiss": "Dismiss",

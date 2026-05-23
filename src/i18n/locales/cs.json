@@ -10836,6 +10836,7 @@
       "connector_call_retrying": "Probíhá opakování…",
       "connector_call_retried": "Opakováno · nová úloha {id}",
       "connector_call_retry_failed": "Opakování selhalo: {message}",
+      "connector_call_retry_waiting": "Čeká se na stav…",
       "footer_notice_analysis_completed": "Analysis completed",
       "footer_notice_proactive_default": "Athena has a note for you",
       "footer_notice_dismiss": "Dismiss",

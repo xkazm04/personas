@@ -10736,6 +10736,7 @@
       "connector_call_retrying": "Retrying…",
       "connector_call_retried": "Retried · new job {id}",
       "connector_call_retry_failed": "Retry failed: {message}",
+      "connector_call_retry_waiting": "Waiting for status…",
       "autonomous_toggle_on": "Enable autonomous mode (Athena keeps working between turns)",
       "autonomous_toggle_off": "Disable autonomous mode",
       "composer_placeholder": "Talk to Athena. Enter to send, Shift+Enter for a new line.",

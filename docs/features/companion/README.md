@@ -77,7 +77,7 @@ Previously the user only saw the result as a system episode after Athena ingeste
 - **queued** — hourglass + neutral border
 - **running** — spinning loader + blue border
 - **completed** — check + green border, result-markdown collapsed until click
-- **failed** — alert + rose border, error text collapsed until click
+- **failed** — alert + rose border, error text collapsed until click; surfaces a `Retry` button (Cycle 5) that re-enqueues the same paramsJson via `companion_enqueue_job`. The retried job's live status (queued → running → completed / failed) renders inline below the original failed card, subscribed via the global `jobsById` map so the user doesn't have to scroll the panel hunting for the new card (Cycle 10).
 
 Cards correlate to turns via the same pending → episode-id promotion the recall strip uses (jobs queued during streaming live in `pendingConnectorJobIds`; at the `finished` stream event they move into `connectorJobIdsByEpisodeId[assistantEpisodeId]`). No new IPC — the existing `companion://job` event channel carries everything the card needs.
 

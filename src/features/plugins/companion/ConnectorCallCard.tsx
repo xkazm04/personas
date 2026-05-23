@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { companionEnqueueJob, type BackgroundJob } from '@/api/companion';
 import { silentCatch } from '@/lib/silentCatch';
 import { capabilityLabel, connectorDisplayName } from './athenaLabels';
+import { useCompanionStore } from './companionStore';
 
 /**
  * Inline chat-card that surfaces the live state of a `connector_use`
@@ -30,6 +31,16 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
   const [retryingState, setRetryingState] = useState<
     { phase: 'idle' } | { phase: 'firing' } | { phase: 'fired'; newId: string } | { phase: 'error'; message: string }
   >({ phase: 'idle' });
+  // Subscribe to the retried-job's live state from the global jobs map.
+  // When the retry has succeeded (`phase === 'fired'`), we render its
+  // status (queued → running → completed / failed) directly below the
+  // failed card so the user doesn't have to scroll the panel hunting
+  // for the new card. Reads as undefined until the first
+  // companion://job event arrives, which the existing CompanionPanel
+  // listener already feeds into jobsById.
+  const retriedJob = useCompanionStore((s) =>
+    retryingState.phase === 'fired' ? s.jobsById[retryingState.newId] : undefined,
+  );
 
   const { connectorName, capability, rawParams } = useMemo(
     () => parseParams(job.paramsJson),
@@ -163,6 +174,9 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
           )}
         </div>
       )}
+      {retryingState.phase === 'fired' && (
+        <RetriedJobStatus job={retriedJob} />
+      )}
       {!isTerminal && (
         <div className="mt-1 pl-5 typo-caption text-foreground">
           {t.plugins.companion.connector_call_in_flight_hint}
@@ -218,4 +232,62 @@ function iconFor(
     Icon: CheckCircle2,
     accent: 'border-emerald-500/30 bg-emerald-500/[0.06]',
   };
+}
+
+/**
+ * Compact status row rendered below a failed ConnectorCallCard once its
+ * Retry button has fired. Subscribes to the retried job's live state via
+ * the global jobs map (jobsById). Three visible phases:
+ *   - undefined → "Waiting for status…" (the new job's first
+ *     companion://job event hasn't reached the frontend yet)
+ *   - queued/running → spinner + status label
+ *   - terminal → ✓ / ✗ icon + result preview / error message
+ *
+ * Result / error body is line-clamped to keep the inline shape tight;
+ * the original failed card stays the anchor and the user can scroll to
+ * the unclamped pending-card listing if they want the full body.
+ */
+function RetriedJobStatus({ job }: { job: BackgroundJob | undefined }) {
+  const { t } = useTranslation();
+  if (!job) {
+    return (
+      <div
+        className="mt-1 pl-5 typo-caption text-foreground inline-flex items-center gap-1"
+        data-testid="companion-retried-status-waiting"
+      >
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <span>{t.plugins.companion.connector_call_retry_waiting}</span>
+      </div>
+    );
+  }
+  const newFailed = job.status === 'failed';
+  const { Icon } = iconFor(job.status, newFailed);
+  const tone =
+    job.status === 'completed'
+      ? 'text-emerald-300/90'
+      : newFailed
+        ? 'text-rose-300/90'
+        : 'text-foreground';
+  return (
+    <div
+      className="mt-1 pl-5 typo-caption flex items-baseline gap-1"
+      data-testid="companion-retried-status"
+      data-retried-status={job.status}
+    >
+      <Icon
+        className={`w-3 h-3 self-center ${tone} ${
+          job.status === 'running' ? 'animate-spin' : ''
+        }`}
+      />
+      <code className="font-mono text-foreground">{job.id.slice(0, 8)}</code>
+      <span className="text-foreground">·</span>
+      <span className={`${tone} truncate`}>
+        {job.status === 'completed' && job.resultText
+          ? job.resultText.split('\n')[0]?.slice(0, 80) ?? job.status
+          : newFailed && job.errorText
+            ? job.errorText.split('\n')[0]?.slice(0, 80) ?? job.status
+            : job.status}
+      </span>
+    </div>
+  );
 }

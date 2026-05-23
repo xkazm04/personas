@@ -15,6 +15,7 @@ vi.mock('@/api/companion', async () => {
 
 import { ConnectorCallCard } from '../ConnectorCallCard';
 import type { BackgroundJob } from '@/api/companion';
+import { useCompanionStore } from '../companionStore';
 
 function failedJob(over: Partial<BackgroundJob> = {}): BackgroundJob {
   return {
@@ -39,6 +40,7 @@ function failedJob(over: Partial<BackgroundJob> = {}): BackgroundJob {
 
 beforeEach(() => {
   companionEnqueueJob.mockReset();
+  useCompanionStore.getState().clearAllConnectorJobs();
 });
 
 describe('ConnectorCallCard retry', () => {
@@ -88,6 +90,50 @@ describe('ConnectorCallCard retry', () => {
     await waitFor(() => {
       expect(screen.getByText(/worker offline/)).toBeInTheDocument();
     });
+  });
+
+  it('after Retry, shows a "waiting" placeholder until the retried job appears in jobsById', async () => {
+    companionEnqueueJob.mockResolvedValueOnce('job_retrynew12345');
+    render(<ConnectorCallCard job={failedJob()} />);
+    fireEvent.click(screen.getByTestId('companion-connector-retry'));
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('companion-retried-status-waiting'),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('reflects the retried job\'s live status from jobsById', async () => {
+    companionEnqueueJob.mockResolvedValueOnce('job_retrynew12345');
+    render(<ConnectorCallCard job={failedJob()} />);
+    fireEvent.click(screen.getByTestId('companion-connector-retry'));
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('companion-connector-retried'),
+      ).toBeInTheDocument();
+    });
+    // Feed a running update for the retried job into the store.
+    useCompanionStore.getState().upsertJob({
+      ...failedJob({ id: 'job_retrynew12345', status: 'running', errorText: null }),
+    });
+    await waitFor(() => {
+      const row = screen.getByTestId('companion-retried-status');
+      expect(row.getAttribute('data-retried-status')).toBe('running');
+    });
+    // Flip to completed.
+    useCompanionStore.getState().upsertJob({
+      ...failedJob({
+        id: 'job_retrynew12345',
+        status: 'completed',
+        errorText: null,
+        resultText: 'opened issue #42',
+      }),
+    });
+    await waitFor(() => {
+      const row = screen.getByTestId('companion-retried-status');
+      expect(row.getAttribute('data-retried-status')).toBe('completed');
+    });
+    expect(screen.getByText(/opened issue #42/)).toBeInTheDocument();
   });
 
   it('ignores a second click while the first retry is in flight', async () => {

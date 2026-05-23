@@ -10836,6 +10836,7 @@
       "connector_call_retrying": "Wird wiederholt…",
       "connector_call_retried": "Wiederholt · neuer Job {id}",
       "connector_call_retry_failed": "Wiederholung fehlgeschlagen: {message}",
+      "connector_call_retry_waiting": "Warte auf Status…",
       "footer_notice_analysis_completed": "Analysis completed",
       "footer_notice_proactive_default": "Athena has a note for you",
       "footer_notice_dismiss": "Dismiss",

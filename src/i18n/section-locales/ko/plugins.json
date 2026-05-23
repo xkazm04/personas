@@ -1242,6 +1242,7 @@
     "connector_call_retrying": "다시 시도 중…",
     "connector_call_retried": "다시 시도됨 · 새 작업 {id}",
     "connector_call_retry_failed": "다시 시도 실패: {message}",
+    "connector_call_retry_waiting": "상태 대기 중…",
     "footer_notice_analysis_completed": "Analysis completed",
     "footer_notice_proactive_default": "Athena has a note for you",
     "footer_notice_dismiss": "Dismiss",

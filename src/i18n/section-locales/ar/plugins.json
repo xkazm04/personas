@@ -1242,6 +1242,7 @@
     "connector_call_retrying": "جارٍ إعادة المحاولة…",
     "connector_call_retried": "تمت إعادة المحاولة · مهمة جديدة {id}",
     "connector_call_retry_failed": "فشلت إعادة المحاولة: {message}",
+    "connector_call_retry_waiting": "في انتظار الحالة…",
     "footer_notice_analysis_completed": "Analysis completed",
     "footer_notice_proactive_default": "Athena has a note for you",
     "footer_notice_dismiss": "Dismiss",
