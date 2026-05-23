@@ -248,6 +248,19 @@ pub struct CreateTeamAssignmentStepInput {
     pub depends_on_indices: Option<Vec<i32>>,
 }
 
+/// Wire-format detail view returned by `get_team_assignment_detail` —
+/// the assignment header + its full step list + the most recent audit
+/// events. The frontend uses this as the single payload backing the
+/// checklist view + review modal (Phase A3 / A4).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TeamAssignmentDetail {
+    pub assignment: TeamAssignment,
+    pub steps: Vec<TeamAssignmentStep>,
+    pub recent_events: Vec<TeamAssignmentEvent>,
+}
+
 /// Action taken by a user resolving an `awaiting_review` step.
 /// Maps 1:1 to the four buttons in the AssignmentReviewModal (Phase A4).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
