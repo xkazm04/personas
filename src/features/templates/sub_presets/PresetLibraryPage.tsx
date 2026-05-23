@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Layers } from 'lucide-react';
+import { Layers, Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import { listTeamPresets } from '@/api/templates/teamPresets';
@@ -122,40 +122,49 @@ function PresetCard({
         </div>
         <div className="min-w-0 flex-1">
           <h3 className="typo-heading font-semibold text-foreground/90 truncate">{preset.name}</h3>
-          <p className="typo-body text-foreground mt-0.5 line-clamp-3">{preset.description}</p>
         </div>
       </div>
+
+      {/* Meta row — member count (icon) + optional group binding. Description
+          moved to the preview modal; tags moved to their own row below so a
+          long member/group line never squeezes them out. */}
       <div className="flex items-center gap-3 typo-caption text-foreground/60">
-        <span>
-          {tx(
-            preset.members.length === 1
-              ? t.templates.presets.card_member_count_one
-              : t.templates.presets.card_member_count_other,
-            { count: preset.members.length },
-          )}
+        <span className="inline-flex items-center gap-1" title={tx(
+          preset.members.length === 1
+            ? t.templates.presets.card_member_count_one
+            : t.templates.presets.card_member_count_other,
+          { count: preset.members.length },
+        )}>
+          <Users className="w-3.5 h-3.5" />
+          {preset.members.length}
         </span>
         {preset.group && (
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1 min-w-0">
             <span
-              className="w-1.5 h-1.5 rounded-full"
+              className="w-1.5 h-1.5 rounded-full flex-shrink-0"
               style={{ backgroundColor: preset.group.color }}
             />
-            {tx(t.templates.presets.card_group_binding, { name: preset.group.name })}
-          </span>
-        )}
-        {preset.category.length > 0 && (
-          <span className="ml-auto inline-flex items-center gap-1">
-            {preset.category.slice(0, 3).map((c) => (
-              <span
-                key={c}
-                className="px-1.5 py-0.5 rounded-full border border-primary/10 bg-secondary/40 typo-label"
-              >
-                {c}
-              </span>
-            ))}
+            <span className="truncate">
+              {tx(t.templates.presets.card_group_binding, { name: preset.group.name })}
+            </span>
           </span>
         )}
       </div>
+
+      {/* Tags — own last row so they wrap freely instead of overflowing the
+          meta line. */}
+      {preset.category.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1 mt-2">
+          {preset.category.map((c) => (
+            <span
+              key={c}
+              className="px-1.5 py-0.5 rounded-full border border-primary/10 bg-secondary/40 typo-label text-foreground/60"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
     </button>
   );
 }
