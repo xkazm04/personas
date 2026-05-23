@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import { Brain, Database, Eye, BookHeart, Library, Link, Unlink, FolderTree, RefreshCw, AlertCircle, BookOpen, Cpu, Network, Sparkles } from 'lucide-react';
+import { Brain, Check, Database, Eye, BookHeart, Library, Link, Unlink, FolderTree, RefreshCw, AlertCircle, BookOpen, Cpu, Network, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useBrainConnection } from './useBrainConnection';
+import { useTwinReadiness } from '../useTwinReadiness';
+import { useSystemStore } from '@/stores/systemStore';
 import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
 import { BrainDecoration } from '../_shared/decorations';
 import { RejectionPatternsPanel } from './RejectionPatternsPanel';
 import { DistilledFactsPanel } from './DistilledFactsPanel';
 import { RecallPreviewPanel } from './RecallPreviewPanel';
 import { ReflectionsPanel } from './ReflectionsPanel';
+import type { TwinTab } from '@/lib/types/types';
+import type { MilestoneStatus } from '../useTwinReadiness';
 
 type LowerTab = 'distilled' | 'recall' | 'reflections';
 
@@ -28,6 +32,8 @@ export default function BrainAtelier() {
     refreshKb, loadAllKbs, handleCreateKb, handleBind, handleUnbind,
   } = useBrainConnection();
   const [lowerTab, setLowerTab] = useState<LowerTab>('distilled');
+  const readiness = useTwinReadiness();
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
 
   if (!activeTwinId) return <TwinEmptyState icon={Brain} title={t.brain.title} />;
 
@@ -200,17 +206,53 @@ export default function BrainAtelier() {
                 <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.brain.howBrainGrows}</p>
               </div>
               <ol className="space-y-3">
-                {[t.brain.brainStep1, t.brain.brainStep2, t.brain.brainStep3, t.brain.brainStep4, t.brain.brainStep5].map((step, i) => (
-                  <li key={i} className="flex gap-3">
-                    <div className="flex flex-col items-center flex-shrink-0">
-                      <div className="w-6 h-6 rounded-full bg-violet-500/15 border border-violet-400/40 flex items-center justify-center font-mono text-[10px] text-violet-300">
-                        {i + 1}
-                      </div>
-                      {i < 4 && <div className="w-px flex-1 bg-violet-500/15 mt-1.5" />}
-                    </div>
-                    <p className="typo-caption text-foreground/85 leading-relaxed pb-3">{step}</p>
-                  </li>
-                ))}
+                {(() => {
+                  // Map each narrative step to (1) the milestone whose status
+                  // tints the circle and (2) the tab to deep-link to. Steps
+                  // 4-5 are brain-internal so their tab is 'brain' — clicking
+                  // is a no-op nav but still highlights what's done.
+                  const obsidianStatus: MilestoneStatus = obsidianBound ? 'complete' : 'empty';
+                  // Memory partial = "any approved memory exists" (step 2);
+                  // memory complete = "5+ approved memories" (step 3). The
+                  // readiness model already encodes both in one tri-state.
+                  const memoryPartial: MilestoneStatus = readiness.memories === 'empty' ? 'empty' : 'complete';
+                  const stepConfigs: Array<{ status: MilestoneStatus; tab: TwinTab }> = [
+                    { status: readiness.channels, tab: 'channels' },
+                    { status: memoryPartial,      tab: 'knowledge' },
+                    { status: readiness.memories, tab: 'knowledge' },
+                    { status: readiness.brain,    tab: 'brain' },
+                    { status: obsidianStatus,     tab: 'brain' },
+                  ];
+                  const steps = [t.brain.brainStep1, t.brain.brainStep2, t.brain.brainStep3, t.brain.brainStep4, t.brain.brainStep5];
+                  return steps.map((step, i) => {
+                    const cfg = stepConfigs[i]!;
+                    const circleClass =
+                      cfg.status === 'complete' ? 'bg-emerald-500/15 border-emerald-400/50 text-emerald-300'
+                      : cfg.status === 'partial' ? 'bg-amber-500/15 border-amber-400/50 text-amber-300'
+                      : 'bg-violet-500/15 border-violet-400/40 text-violet-300';
+                    const railClass =
+                      cfg.status === 'complete' ? 'bg-emerald-500/25'
+                      : cfg.status === 'partial' ? 'bg-amber-500/25'
+                      : 'bg-violet-500/15';
+                    return (
+                      <li key={i}>
+                        <button
+                          type="button"
+                          onClick={() => setTwinTab(cfg.tab)}
+                          className="w-full flex gap-3 text-left rounded-interactive -mx-1 px-1 py-0.5 hover:bg-secondary/30 transition-colors focus-ring"
+                        >
+                          <div className="flex flex-col items-center flex-shrink-0">
+                            <div className={`w-6 h-6 rounded-full border flex items-center justify-center font-mono text-[10px] ${circleClass}`}>
+                              {cfg.status === 'complete' ? <Check className="w-3 h-3" /> : i + 1}
+                            </div>
+                            {i < 4 && <div className={`w-px flex-1 mt-1.5 ${railClass}`} />}
+                          </div>
+                          <p className="typo-caption text-foreground/85 leading-relaxed pb-3">{step}</p>
+                        </button>
+                      </li>
+                    );
+                  });
+                })()}
               </ol>
             </div>
           </aside>
