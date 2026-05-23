@@ -50,6 +50,7 @@ timestamp — the next session can recognize it as abandoned.
     - C2 `2952a9e72` — companion chat-side cards + bridge (useCompanionAssignmentBridge filters source='athena', AthenaAssignmentRef in companionStore, CompanionAssignmentCards strip above messages)
     - C3 `c5b06b433` — Athena dispatcher intent (assign_team in ALLOWED_ACTIONS, execute_assign_team executor in approvals.rs, constitution.md prompt vocabulary entry)
   - **Stats:** ~70 file-touches across 10 commits, +4,500 lines. End-to-end: user can create assignments from canvas with manual/embedding/llm_eval matching + auto-decompose; failure surfaces through existing notification center with inline review; Athena chat creates assignments via "have the X team handle Y" → approval card → orchestrator. Phases A/B/C arc closed.
+  - **Merged:** master `1bbb2bbc3` (no-ff). Two conflicts auto-resolved on merge: companionStore.ts (concatenated A→A: my athenaAssignments alongside the concurrent session's streamingSteps additions); commandNames.generated.ts (regenerated, 1206 commands). cargo + tsc clean. Worktree removed + branch deleted. Phase C4 (assignment templates) deferred per user.
 
 - **[2026-05-18 — started] /prototype — PersonaOverviewPage A/B variants (Grid + Wildcard)**
   - **Source:** User-driven /prototype skill — directional variants for the All Personas list view. Two variants requested: (1) a uniform card grid with simplified metadata (icon, title, connector icons, status dot, trust level, triggers, last run), (2) a wildcard with a different mental model.
