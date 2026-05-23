@@ -32,6 +32,28 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-24 — started] /architect — encrypted cross-device persona continuity (idea-720932d3)**
+  - **Source:** Routed from `/friend` because the idea is moonshot_architect-scale: extend `engine/p2p/manifest_sync.rs` from one-way exposure-manifest sharing into bidirectional, conflict-aware E2E sync of the persona workspace (definitions/memories/schedules/triggers) across one user's own devices over the LAN/QUIC mesh, zero cloud. This run produces a rigorous ADR + phased rollout and (likely) queues; any execute is limited to a locally-verifiable additive slice (pure merge fn + unit tests, additive schema) — no two-device claims without a harness.
+  - **Paths (read/design):** `src-tauri/src/engine/p2p/**`, `src-tauri/src/commands/network/**`, `src/features/sharing/**`, persona-definition repos/schema under `src-tauri/src/db/**`. Vault: `Architect/{scans,decisions,backlog,weak-patterns}`. Working-tree edits (if any execute): scoped additive only.
+  - **Status:** started
+  - **Branch:** master (design session; ADR in vault)
+  - **Note:** Conceptually adjacent to the active `/friend — fleet (idea-b20a00a0)` P2P-pairing session, but path-disjoint (fleet works `plugins/fleet/` + `settings/`; this works `engine/p2p/` + `features/sharing/`). ADR will cross-reference so the two don't reinvent device-pairing UX.
+
+- **[2026-05-24 00:20 — started] /friend — fleet / mobile-command-companion (idea-b20a00a0)**
+  - **Source:** `/friend` loop seeded by moonshot idea `idea-b20a00a0-mobile-command-companion`. Idea is architect-scale (P2P pairing + Android client); /friend slices it into shippable desktop-side stage-1 surfaces: glanceable fleet status, consolidated "needs you" attention, QR pairing scaffold.
+  - **Paths:** `src/features/plugins/fleet/`, possibly `src/features/settings/` (pairing scaffold), `src/features/plugins/companion/` (approval reuse, read-only), `src/i18n/locales/*.json` (additive `plugins.fleet.*` / `fleet.*` keys), `docs/features/`, `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** worktree-friend-fleet-002036
+  - **Worktree:** .claude/worktrees/friend-fleet-002036/
+  - **Note:** /friend endless development loop. Path-disjoint from active companion-chat / team-studio / vault / goalplan sessions (fleet plugin dir untouched by them). en.json additive only.
+
+- **[2026-05-24 00:20 — started] /friend — goal-to-plan narrated planner (idea-ba306c32, stage 1)**
+  - **Source:** `/friend` seeded with `idea-ba306c32` (moonshot "goal-to-app: app builds itself while you watch"). Stage 1 = read-only narrated planner: natural-language goal → reviewable sequence of in-app actions drawn from the test-automation tool catalog, executing nothing. Endless dev loop, atomic commits.
+  - **Paths:** `src/features/agents/sub_planner/**` (new surface), possibly build-intent components under `src/features/agents/`, `src/i18n/locales/*.json` (additive `planner.*` + 13-locale translations per /friend i18n rule), `docs/features/personas/README.md`, `.claude/active-runs.md`. Read-only refs: `src/test/automation/bridge.ts`, `docs/features/automation-tools.md`.
+  - **Status:** started
+  - **Branch:** worktree-friend-goalplan-002014
+  - **Worktree:** .claude/worktrees/friend-goalplan-002014/
+  - **Note:** /friend endless development loop. Net-new surface; runs in worktree (physical isolation). Path-disjoint from active companion/vault/teams sessions (none touch agents/sub_planner). Shared en.json: additive `planner.*` keys only.
 
 - **[2026-05-23 — started] companion chat UX — remove text stream, voice popover, conversation-orchestration research**
   - **Source:** User-driven. (1) Remove the live token text-stream from the chat bubble (keep phase + operational thread). (2) Right-sidebar audio button → popover with enable/disable + volume slider + "play test sentence". (3) Research 2025/2026 Claude Code releases and propose 3 variants for more granular conversation orchestration (intermediate states/effort hints to TTS/chat) instead of long-pause-then-big-bang.
@@ -159,6 +181,13 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commits: 7bb31ca6d, merge 8710dcfff)] idea-330cd93f — self-scaling RelativeTime primitive with shared ticker**
+  - **Source:** Idea requirement (ui_perfectionist). Dozens of relative-time labels each spun their own `setInterval` (PeerList 15s, RelativeTime 15s, rotation ticker 60s), wasting wake-ups, drifting out of sync, and showing stale labels up to 15s past a boundary.
+  - **Shipped:** New `src/hooks/utility/timing/relativeTimeTicker.ts` — a single app-wide ticker. `useRelativeTimeTick(ts)` derives cadence from a label's age (1s sub-minute, 30s sub-hour, 5m beyond); `useFixedTicker(ms)` subscribes at a constant cadence. The ticker runs at the finest cadence any live subscriber needs and re-renders all of them on one tick (auto-stops when empty). Migrated: `RelativeTime` primitive (was local 15s interval — every `<RelativeTime>` app-wide now benefits), `PeerList` (dropped ad-hoc `useRelativeTime` hook), `ExecutionListRow` mobile card (static `formatRelativeTime()` → live `<RelativeTime>`), `useRotationTicker` (credential countdown now coalesces onto the shared ticker). 12 new unit tests.
+  - **Paths:** `src/hooks/utility/timing/relativeTimeTicker.ts` (+`__tests__/`), `src/features/shared/components/display/RelativeTime.tsx`, `src/features/sharing/components/PeerList.tsx`, `src/features/agents/sub_executions/components/list/ExecutionListRow.tsx`, `src/features/vault/shared/hooks/useRotationTicker.ts`
+  - **Branch:** `worktree-relativetime-prim` (merged no-ff `8710dcfff`, worktree + branch removed).
+  - **Validation:** 12/12 vitest green; `tsc --noEmit` clean; eslint clean on all 5 changed files. Path-disjoint from active /friend fleet/goalplan, companion-chat, and Team-Studio sessions. Internal refactor — labels just update more accurately; no i18n/doc/marketing surface change.
 
 - **[2026-05-24 — completed (commits: 31ead17ac merge, cedc71d4f)] idea-165dceff — disabled-control reason tooltips surface on hover + keyboard**
   - **Source:** Idea requirement (ui_perfectionist). `Button` already had a `disabledReason` prop, but the implementation relied on a native disabled `<button>` (which cannot take focus and swallows pointer events) wrapped by a `display:contents` Tooltip span — so the reason never reliably surfaced on hover OR keyboard focus.
