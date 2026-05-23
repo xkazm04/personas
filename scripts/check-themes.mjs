@@ -7,19 +7,36 @@
  * variable map (overrides layered on root), then computes contrast ratios
  * for the pairs that matter:
  *
- *   foreground / background       (body text — MUST be AA, ideally AAA)
- *   primary    / background       (links, accent text, active states)
- *   status-success / background   (semantic chip on canvas)
- *   status-error   / background
- *   status-warning / background
- *   status-info    / background
+ *   foreground       / background  (body text — MUST be AA, ideally AAA)
+ *   muted-foreground / background  (secondary/helper text — MUST be AA)
+ *   muted-foreground / background  AT the minimum caption opacity (0.8) —
+ *                                  opacity-tinted captions MUST still be AA
+ *   muted            / background  (dim/tertiary text — MUST be AA)
+ *   primary          / background  (links, accent text, active states)
+ *   status-success   / background  (semantic chip on canvas)
+ *   status-error     / background
+ *   status-warning   / background
+ *   status-info      / background
  *
- * Exits 0 if every theme's body contrast (fg/bg) is ≥ 4.5 (AA).
- * Exits 1 if any theme fails body contrast.
+ * AA token-pairing gate (hard fail → exit 1):
+ *   body, muted-foreground, muted-foreground@MIN_CAPTION_OPACITY, and muted
+ *   must each clear 4.5:1 in EVERY theme. These are the text tokens that
+ *   carry readable copy for non-technical users; sub-AA here is an
+ *   accessibility regression, not a style preference.
+ *
+ * The remaining pairs (primary + status colors) stay informational warnings
+ * at the 3.0:1 (AA-large / non-text-UI) threshold.
+ *
+ * Exits 1 if ANY theme fails ANY hard-fail pairing; 0 otherwise.
  * Always prints a readable table; failures are highlighted.
  *
- * No external deps — pure Node. Suitable for pre-release manual run or
- * later wiring into CI via `npm run check:themes`.
+ * No external deps — pure Node. Wired into CI via `npm run check:themes`
+ * (see .github/workflows/ci.yml) and runnable locally the same way.
+ *
+ * Caption-opacity floor: components must keep opacity-tinted muted text at
+ * ≥ MIN_CAPTION_OPACITY (text-muted-foreground/80). Below that the blend
+ * with the canvas drops under AA on the light themes. See
+ * docs/development/contrast.md.
  */
 
 import { readFileSync } from 'node:fs';
@@ -27,7 +44,11 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const CSS_PATH = resolve(__dirname, '..', 'src', 'styles', 'globals.css');
+// CHECK_THEMES_CSS lets a test fixture point the audit at an alternate CSS file
+// (e.g. a deliberately-regressed copy) without touching the real stylesheet.
+const CSS_PATH = process.env.CHECK_THEMES_CSS
+  ? resolve(process.env.CHECK_THEMES_CSS)
+  : resolve(__dirname, '..', 'src', 'styles', 'globals.css');
 
 // --- Contrast math --------------------------------------------------------
 
@@ -58,6 +79,16 @@ function contrastRatio(fg, bg) {
   const l2 = relativeLuminance(bg);
   const [light, dark] = l1 > l2 ? [l1, l2] : [l2, l1];
   return (light + 0.05) / (dark + 0.05);
+}
+
+/** Alpha-composite an opaque fg over an opaque bg, returning the resulting
+ *  opaque hex. Models `color: var(--token); opacity: alpha` (or the Tailwind
+ *  `text-token/NN` modifier) so the audit can score opacity-tinted captions. */
+function blendOver(fgHex, bgHex, alpha) {
+  const f = hexToRgb(fgHex);
+  const b = hexToRgb(bgHex);
+  const mix = [0, 1, 2].map((i) => Math.round(f[i] * alpha + b[i] * (1 - alpha)));
+  return '#' + mix.map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
 function level(ratio) {
@@ -143,13 +174,22 @@ const THEMES = [
   { id: 'light-sand',    selector: '[data-theme="light-sand"]' },
 ];
 
+// Minimum opacity a component may apply to muted text and still hold AA.
+// Tailwind `text-muted-foreground/80` ⇒ 0.8. Anything lower (/70, /60, …)
+// drops the light themes below 4.5:1 — the audit asserts the token clears
+// AA AT this floor so any caption authored at ≥ /80 is guaranteed AA.
+const MIN_CAPTION_OPACITY = 0.8;
+
 const PAIRS = [
-  { id: 'body',     label: 'fg/bg',       fg: 'foreground',     bg: 'background', failBelow: 4.5 },
-  { id: 'primary',  label: 'primary/bg',  fg: 'primary',        bg: 'background', failBelow: 3.0 },
-  { id: 'success',  label: 'success/bg',  fg: 'status-success', bg: 'background', failBelow: 3.0 },
-  { id: 'warning',  label: 'warning/bg',  fg: 'status-warning', bg: 'background', failBelow: 3.0 },
-  { id: 'error',    label: 'error/bg',    fg: 'status-error',   bg: 'background', failBelow: 3.0 },
-  { id: 'info',     label: 'info/bg',     fg: 'status-info',    bg: 'background', failBelow: 3.0 },
+  { id: 'body',      label: 'fg/bg',        fg: 'foreground',      bg: 'background', failBelow: 4.5, hardFail: true },
+  { id: 'muted-fg',  label: 'muted-fg/bg',  fg: 'muted-foreground', bg: 'background', failBelow: 4.5, hardFail: true },
+  { id: 'muted-cap', label: 'muted-fg@80',  fg: 'muted-foreground', bg: 'background', failBelow: 4.5, hardFail: true, tintOpacity: MIN_CAPTION_OPACITY },
+  { id: 'muted',     label: 'muted/bg',     fg: 'muted',           bg: 'background', failBelow: 4.5, hardFail: true },
+  { id: 'primary',   label: 'primary/bg',   fg: 'primary',         bg: 'background', failBelow: 3.0 },
+  { id: 'success',   label: 'success/bg',   fg: 'status-success',  bg: 'background', failBelow: 3.0 },
+  { id: 'warning',   label: 'warning/bg',   fg: 'status-warning',  bg: 'background', failBelow: 3.0 },
+  { id: 'error',     label: 'error/bg',     fg: 'status-error',    bg: 'background', failBelow: 3.0 },
+  { id: 'info',      label: 'info/bg',      fg: 'status-info',     bg: 'background', failBelow: 3.0 },
 ];
 
 const css = readFileSync(CSS_PATH, 'utf8');
@@ -161,8 +201,9 @@ if (!rootBlock) {
 const rootVars = parseVars(rootBlock);
 
 const rows = [];
-let bodyFailures = 0;
+let hardFailures = 0;
 let pairWarnings = 0;
+const hardFailDetail = [];
 
 for (const theme of THEMES) {
   const themeBlock = theme.selector === ':root' ? rootBlock : extractBlock(css, theme.selector);
@@ -176,18 +217,23 @@ for (const theme of THEMES) {
   const row = { id: theme.id, results: {} };
 
   for (const pair of PAIRS) {
-    const fg = effective[pair.fg];
+    const fgRaw = effective[pair.fg];
     const bg = effective[pair.bg];
-    if (!fg || !bg) {
+    if (!fgRaw || !bg) {
       row.results[pair.id] = { ratio: null, level: 'n/a', failed: false };
       continue;
     }
+    const fg = pair.tintOpacity ? blendOver(fgRaw, bg, pair.tintOpacity) : fgRaw;
     const r = contrastRatio(fg, bg);
     const lvl = level(r);
     const failed = r < pair.failBelow;
     if (failed) {
-      if (pair.id === 'body') bodyFailures++;
-      else pairWarnings++;
+      if (pair.hardFail) {
+        hardFailures++;
+        hardFailDetail.push(`${theme.id} · ${pair.label} = ${r.toFixed(2)}:1 (needs ≥ ${pair.failBelow})`);
+      } else {
+        pairWarnings++;
+      }
     }
     row.results[pair.id] = { ratio: r, level: lvl, failed, fg, bg };
   }
@@ -235,12 +281,21 @@ for (const row of rows) {
 }
 
 console.log();
-if (bodyFailures > 0) {
-  console.log(RED + `FAIL: ${bodyFailures} theme(s) have body text contrast below AA (4.5:1)` + RESET);
+if (pairWarnings > 0) {
+  console.log(YELLOW + `${pairWarnings} pair warning(s) — primary/status contrast below 3.0 (informational, not a fail)` + RESET);
+}
+if (hardFailures > 0) {
+  console.log(RED + `FAIL: ${hardFailures} text-token pairing(s) below AA (4.5:1):` + RESET);
+  for (const d of hardFailDetail) console.log(RED + '  • ' + d + RESET);
+  console.log(
+    DIM +
+      '\nText tokens (body / muted-foreground / muted-foreground@' +
+      Math.round(MIN_CAPTION_OPACITY * 100) +
+      '% / muted) must clear AA in every theme.\n' +
+      'Adjust the token in src/styles/globals.css; see docs/development/contrast.md.' +
+      RESET,
+  );
   process.exit(1);
 }
-if (pairWarnings > 0) {
-  console.log(YELLOW + `${pairWarnings} pair warning(s) — non-body contrast below 3.0 (informational, not a fail)` + RESET);
-}
-console.log(GREEN + 'OK: all themes meet AA body contrast' + RESET);
+console.log(GREEN + 'OK: all text-token pairings (body / muted-foreground / muted-foreground@80% / muted) meet AA in every theme' + RESET);
 process.exit(0);

@@ -84,6 +84,14 @@ jobs:
         # architect run 2026-05-10.
         run: npm run check:error-registry
 
+      - name: Check theme contrast (WCAG AA token pairings)
+        # Audits src/styles/globals.css for every theme: body, muted-foreground,
+        # muted-foreground at the minimum caption opacity (80%), and muted text
+        # must each clear AA (4.5:1) against the canvas. Fails the build on any
+        # sub-AA text-token pairing so secondary/helper-text legibility can't
+        # regress per-component. See docs/development/contrast.md.
+        run: npm run check:themes
+
       - name: Validate Tauri config overlays
         # Catches: drift in $schema across the three configs, overlays
         # touching unexpected keys (so the overlay surface stays small),
