@@ -32,6 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-24 — started] idea-7e17e33c — SortableHeader primitive (aria-sort + caret motion)**
+  - **Source:** Requirement `idea-7e17e33c-sortableheader-primitive-with`. Build a shared `<SortableHeader>` a11y primitive: emits `aria-sort=ascending/descending/none`, descriptive `aria-label`, `focus-ring`, and a 150ms rotate/opacity caret transition (reduced-motion handled by the global CSS reset — Layer 2). Adopt it in DeploymentTable (via `DeploymentSubComponents.SortHeader`) and the shared `DataGrid` sortable header.
+  - **Paths:** `src/features/shared/components/display/SortableHeader.tsx` (new), `src/features/shared/components/display/DataGrid.tsx`, `src/features/deployment/components/DeploymentSubComponents.tsx`, `src/i18n/locales/en.json` (additive `shared.sort_active_asc`/`sort_active_desc` only — reuses existing `shared.sort_by`), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (staging only own files per parallel-safety primitives)
+  - **Note:** Path-disjoint from all active sessions: deployment/* and shared/components/display/* are untouched by the WCAG/p2p/fleet/goalplan/companion/team-studio/vault/drive/memories sessions. Deliberately NOT touching `DriveFileList` (active /friend-drive worktree + special grouping semantics) or `MemoriesPageDense` (distinct dual-chevron design) or `UnifiedTable` (sort button intertwined with filter/search affordances). en.json: additive `shared.sort_active_*` only.
+
 - **[2026-05-24 — started] /architect — encrypted cross-device persona continuity (idea-720932d3)**
   - **Source:** Routed from `/friend` because the idea is moonshot_architect-scale: extend `engine/p2p/manifest_sync.rs` from one-way exposure-manifest sharing into bidirectional, conflict-aware E2E sync of the persona workspace (definitions/memories/schedules/triggers) across one user's own devices over the LAN/QUIC mesh, zero cloud. This run produces a rigorous ADR + phased rollout and (likely) queues; any execute is limited to a locally-verifiable additive slice (pure merge fn + unit tests, additive schema) — no two-device claims without a harness.
   - **Paths (read/design):** `src-tauri/src/engine/p2p/**`, `src-tauri/src/commands/network/**`, `src/features/sharing/**`, persona-definition repos/schema under `src-tauri/src/db/**`. Vault: `Architect/{scans,decisions,backlog,weak-patterns}`. Working-tree edits (if any execute): scoped additive only.
@@ -181,6 +188,12 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commit: 288176ac1)] idea-8ea8d796 — WCAG AA contrast audit of muted & tinted text**
+  - **What:** Token-level a11y fix. `--muted` (text color ~170×) was sub-AA against the canvas in most dark themes (1.8–3.3:1) and `light` (4.48); opacity-tinted `text-muted-foreground/{40-70}` captions fell below AA on light themes. Raised `--muted` to ≥AA (lightness-only, hue preserved, ~4.6:1) in all themes that failed, and darkened `--muted-foreground` on the 5 light themes so `text-muted-foreground/80` clears AA. Established `/80` as the caption-opacity floor.
+  - **Files:** `src/styles/globals.css` (13 token lines — staged via filtered patch so the other session's uncommitted reduced-motion hunk at L4546+ stayed untouched), `scripts/check-themes.mjs` (hard-fail gate on body/muted-foreground/muted-foreground@80%/muted sub-AA pairings + `CHECK_THEMES_CSS` test hook), `.github/workflows/ci.yml` (`npm run check:themes` step), `docs/development/contrast.md` (new — AA token policy + caption-opacity floor).
+  - **Validation:** `npm run check:themes` exits 0 (all 4 text-token pairings ≥ AA in all 13 themes); proved the gate exits 1 on a regressed token via the test hook. `tsc` errors present belong to a parallel session's untracked `SortableHeader.tsx` (missing i18n keys) — zero TS touched here. Pre-commit eslint hook clean.
+  - **Note:** Path-disjoint from all active sessions. Did NOT bulk-migrate the 33 components still using sub-/80 tints (house fix-as-touched policy); the token gate guarantees the token supports /80, and contrast.md documents the floor for incremental cleanup. No feature-doc/onboarding/marketing coupling (design-token + tooling change).
 
 - **[2026-05-24 — completed (commits: 7bb31ca6d, merge 8710dcfff)] idea-330cd93f — self-scaling RelativeTime primitive with shared ticker**
   - **Source:** Idea requirement (ui_perfectionist). Dozens of relative-time labels each spun their own `setInterval` (PeerList 15s, RelativeTime 15s, rotation ticker 60s), wasting wake-ups, drifting out of sync, and showing stale labels up to 15s past a boundary.
