@@ -81,6 +81,8 @@ export type Translations = {
     save: string;
     delete: string;
     edit: string;
+    increase: string;
+    decrease: string;
     close: string;
     dismiss: string;
     refresh: string;

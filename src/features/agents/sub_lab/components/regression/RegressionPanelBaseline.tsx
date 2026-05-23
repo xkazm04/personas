@@ -3,6 +3,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ModelToggleGrid } from '../../shared';
 import { RegressionResultsView } from './RegressionResultsView';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
 import { DebtText } from '@/i18n/DebtText';
@@ -71,16 +72,20 @@ export function RegressionPanelBaseline() {
         <ModelToggleGrid selectedModels={s.selectedModels} toggleModel={s.toggleModel} />
       </div>
 
-      <div className="flex items-center gap-3">
-        <p className="typo-caption text-foreground">{t.agents.lab.regression_threshold}</p>
-        <input
-          type="number"
-          value={s.threshold}
-          onChange={(e) => s.setThreshold(Math.max(1, Math.min(50, Number(e.target.value) || REG_DEFAULT_THRESHOLD)))}
-          className="w-16 px-2 py-1 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption text-center focus-ring"
-          min={1}
-          max={50}
-        />
+      <div className="flex items-center gap-3 flex-wrap">
+        <p className="typo-caption text-foreground whitespace-nowrap">{t.agents.lab.regression_threshold}</p>
+        <div className="flex items-center gap-2">
+          <Slider
+            value={s.threshold}
+            onChange={(v) => s.setThreshold(Math.max(1, Math.min(50, v || REG_DEFAULT_THRESHOLD)))}
+            min={1}
+            max={50}
+            step={1}
+            ariaLabel={t.agents.lab.regression_threshold}
+            className="w-40"
+          />
+          <span className="typo-caption text-foreground tabular-nums w-6 text-right">{s.threshold}</span>
+        </div>
         <p className="typo-caption text-foreground">{t.agents.lab.threshold_hint}</p>
       </div>
 

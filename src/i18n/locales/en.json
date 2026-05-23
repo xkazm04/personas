@@ -75,6 +75,8 @@
     "save": "Save",
     "delete": "Delete",
     "edit": "Edit",
+    "increase": "Increase",
+    "decrease": "Decrease",
     "close": "Close",
     "dismiss": "Dismiss",
     "refresh": "Refresh",

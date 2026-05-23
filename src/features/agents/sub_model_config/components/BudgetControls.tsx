@@ -1,6 +1,6 @@
 import { DollarSign } from 'lucide-react';
 import { FieldHint } from '@/features/shared/components/display/FieldHint';
-import { INPUT_FIELD } from '@/lib/utils/designTokens';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface BudgetControlsProps {
@@ -31,18 +31,16 @@ export function BudgetControls({
             />
           </span>
         </label>
-        <input
-          type="number"
-          value={maxBudget ?? ''}
-          onChange={(e) => {
-            if (e.target.value === '') { onMaxBudgetChange(''); return; }
-            const n = parseFloat(e.target.value);
-            onMaxBudgetChange(Number.isNaN(n) ? '' : n);
-          }}
-          placeholder={mc.max_budget_placeholder}
+        <NumberStepper
+          value={typeof maxBudget === 'number' ? maxBudget : null}
+          onChange={(v) => onMaxBudgetChange(v ?? '')}
           min={0}
           step={0.01}
-          className={INPUT_FIELD}
+          allowEmpty
+          prefix="$"
+          placeholder={mc.max_budget_placeholder}
+          ariaLabel={mc.max_budget_label}
+          className="w-full"
         />
       </div>
       <div className="flex-1">
@@ -54,18 +52,15 @@ export function BudgetControls({
             example={mc.max_turns_example}
           />
         </label>
-        <input
-          type="number"
-          value={maxTurns ?? ''}
-          onChange={(e) => {
-            if (e.target.value === '') { onMaxTurnsChange(''); return; }
-            const n = parseInt(e.target.value, 10);
-            onMaxTurnsChange(Number.isNaN(n) ? '' : n);
-          }}
-          placeholder={mc.max_turns_placeholder}
+        <NumberStepper
+          value={typeof maxTurns === 'number' ? maxTurns : null}
+          onChange={(v) => onMaxTurnsChange(v ?? '')}
           min={1}
           step={1}
-          className={INPUT_FIELD}
+          allowEmpty
+          placeholder={mc.max_turns_placeholder}
+          ariaLabel={mc.max_turns_label}
+          className="w-full"
         />
       </div>
     </div>

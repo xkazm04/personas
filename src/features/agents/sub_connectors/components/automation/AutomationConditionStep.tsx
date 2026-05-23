@@ -7,6 +7,7 @@ import type { AutomationFallbackMode } from '@/lib/bindings/AutomationFallbackMo
 import type { CredentialMetadata } from '@/lib/types/types';
 import { PLATFORM_CONFIG } from '../../libs/automationTypes';
 import { FALLBACK_OPTIONS } from '../../libs/useAutomationSetup';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface DesignResult {
@@ -162,9 +163,16 @@ export function AutomationConditionStep({
             <div>
               <label className="typo-body font-medium text-foreground uppercase tracking-wider">{t.agents.connectors.auto_timeout}</label>
               <div className="flex items-center gap-2 mt-1.5">
-                <input type="number" min={1} max={300} value={timeoutSecs} onChange={(e) => setTimeoutSecs(Number(e.target.value) || 30)}
-                  className="w-20 px-3 py-2 typo-body rounded-modal border border-border bg-secondary/20 text-foreground focus-ring" />
-                <span className="typo-body text-foreground">{t.agents.connectors.auto_seconds}</span>
+                <NumberStepper
+                  value={timeoutSecs}
+                  onChange={(v) => setTimeoutSecs(v ?? 30)}
+                  min={1}
+                  max={300}
+                  step={1}
+                  defaultValue={30}
+                  ariaLabel={t.agents.connectors.auto_timeout}
+                  suffix={t.agents.connectors.auto_seconds}
+                />
               </div>
             </div>
           </div>
