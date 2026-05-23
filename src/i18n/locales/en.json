@@ -12583,7 +12583,14 @@
       "notification_failed_title": "Team assignment needs review",
       "notification_failed_summary": "Step \"{step}\" failed. Click to review and adjust.",
       "notification_unmatched_summary": "Step \"{step}\" has no eligible persona. Click to review.",
-      "athena_open_panel": "Open in panel"
+      "athena_open_panel": "Open in panel",
+      "templates_label": "Templates",
+      "save_template": "Save as template",
+      "saving_template": "Saving…",
+      "template_saved": "Saved",
+      "save_template_hint": "Save this title, goal, strategy and steps as a reusable template for this team.",
+      "delete_template": "Delete template",
+      "use_template": "Use template"
     },
     "agent_teams": "Agent Teams",
     "agent_teams_subtitle": "Design multi-agent pipelines with visual canvas",

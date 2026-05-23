@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Plus, Play, XCircle, ListChecks, Trash2, CircleDot, CircleCheck, CircleX, Loader2, CircleDashed, CircleSlash, Edit3, UserCog, SkipForward, Sparkles } from 'lucide-react';
+import { X, Plus, Play, XCircle, ListChecks, Trash2, CircleDot, CircleCheck, CircleX, Loader2, CircleDashed, CircleSlash, Edit3, UserCog, SkipForward, Sparkles, BookMarked } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useAgentStore } from '@/stores/agentStore';
@@ -36,6 +36,11 @@ export default function AssignmentsPanel({ teamId, teamMemberPersonaIds, onClose
   const startAssignment = usePipelineStore((s) => s.startAssignment);
   const abortAssignment = usePipelineStore((s) => s.abortAssignment);
   const deleteAssignment = usePipelineStore((s) => s.deleteAssignment);
+  const templates = usePipelineStore((s) => s.assignmentTemplatesByTeam[teamId] ?? []);
+  const fetchTemplates = usePipelineStore((s) => s.fetchAssignmentTemplates);
+  const saveTemplate = usePipelineStore((s) => s.saveAssignmentTemplate);
+  const deleteTemplate = usePipelineStore((s) => s.deleteAssignmentTemplate);
+  const instantiateTemplate = usePipelineStore((s) => s.instantiateTemplate);
 
   const personas = useAgentStore((s) => s.personas) as Persona[];
   const teamPersonas = useMemo(
@@ -47,7 +52,8 @@ export default function AssignmentsPanel({ teamId, teamMemberPersonaIds, onClose
 
   useEffect(() => {
     void fetchTeamAssignments(teamId);
-  }, [teamId, fetchTeamAssignments]);
+    void fetchTemplates(teamId);
+  }, [teamId, fetchTeamAssignments, fetchTemplates]);
 
   const [composerOpen, setComposerOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -94,7 +100,44 @@ export default function AssignmentsPanel({ teamId, teamMemberPersonaIds, onClose
           }}
           onCancel={() => setComposerOpen(false)}
           createAssignment={createAssignment}
+          saveTemplate={saveTemplate}
         />
+      )}
+
+      {/* Templates strip — saved, reusable assignment shapes for this team */}
+      {!composerOpen && templates.length > 0 && (
+        <div className="border-b border-primary/10 px-3 py-2 space-y-1">
+          <div className="flex items-center gap-1.5 typo-caption font-medium text-foreground/60">
+            <BookMarked className="w-3.5 h-3.5 text-violet-400" />
+            {a.templates_label}
+          </div>
+          <div className="flex flex-wrap gap-1">
+            {templates.map((tpl) => (
+              <div
+                key={tpl.id}
+                className="group inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-interactive bg-violet-500/10 border border-violet-500/20 hover:border-violet-500/40 transition-colors"
+              >
+                <button
+                  onClick={async () => {
+                    const created = await instantiateTemplate(teamId, tpl.id);
+                    if (created) setExpandedId(created.id);
+                  }}
+                  className="typo-caption text-violet-200 max-w-[140px] truncate"
+                  title={tpl.goal}
+                >
+                  {tpl.title}
+                </button>
+                <button
+                  onClick={() => deleteTemplate(teamId, tpl.id)}
+                  className="opacity-0 group-hover:opacity-100 p-0.5 rounded-interactive hover:bg-rose-500/20 text-foreground/40 hover:text-rose-400"
+                  aria-label={a.delete_template}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* List */}
@@ -133,11 +176,14 @@ interface ComposerProps {
   onCreated: (created: TeamAssignment | null) => void;
   onCancel: () => void;
   createAssignment: (input: CreateTeamAssignmentInput) => Promise<TeamAssignment | null>;
+  saveTemplate: (
+    input: import('@/lib/bindings/CreateTeamAssignmentTemplateInput').CreateTeamAssignmentTemplateInput,
+  ) => Promise<import('@/lib/bindings/TeamAssignmentTemplate').TeamAssignmentTemplate | null>;
 }
 
 type MatchStrategy = 'manual' | 'embedding' | 'llm_eval';
 
-function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createAssignment }: ComposerProps) {
+function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createAssignment, saveTemplate }: ComposerProps) {
   const { t } = useTranslation();
   const a = t.pipeline.assignments;
   const [title, setTitle] = useState('');
@@ -149,9 +195,50 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [decomposing, setDecomposing] = useState(false);
+  const [savingTemplate, setSavingTemplate] = useState(false);
+  const [templateSaved, setTemplateSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const personaRequired = strategy === 'manual';
+
+  const saveAsTemplate = async () => {
+    setError(null);
+    if (!title.trim()) {
+      setError(a.error_title_required);
+      return;
+    }
+    if (!goal.trim()) {
+      setError(a.error_goal_required);
+      return;
+    }
+    if (steps.some((s) => !s.title.trim())) {
+      setError(a.error_step_title_required);
+      return;
+    }
+    setSavingTemplate(true);
+    try {
+      const tpl = await saveTemplate({
+        teamId,
+        title: title.trim(),
+        goal: goal.trim(),
+        matchStrategy: strategy,
+        maxParallelSteps: maxParallel,
+        steps: steps.map((s) => ({
+          title: s.title.trim(),
+          description: s.description.trim() ? s.description.trim() : null,
+          assignedPersonaId: s.personaId,
+          assignedUseCaseId: s.useCaseId,
+          dependsOnIndices: null,
+        })),
+      });
+      if (tpl) {
+        setTemplateSaved(true);
+        setTimeout(() => setTemplateSaved(false), 2000);
+      }
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
 
   const autoDecompose = async () => {
     setError(null);
@@ -318,20 +405,31 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
 
       {error && <p className="typo-caption text-rose-400">{error}</p>}
 
-      <div className="flex justify-end gap-2 pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
         <button
-          onClick={onCancel}
-          className="px-3 py-1 rounded-interactive hover:bg-secondary/60 typo-caption text-foreground/70"
+          onClick={saveAsTemplate}
+          disabled={savingTemplate}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive bg-violet-500/15 hover:bg-violet-500/25 text-violet-300 typo-caption disabled:opacity-50"
+          title={a.save_template_hint}
         >
-          {a.cancel}
+          {templateSaved ? <CircleCheck className="w-3 h-3" /> : <BookMarked className="w-3 h-3" />}
+          {templateSaved ? a.template_saved : savingTemplate ? a.saving_template : a.save_template}
         </button>
-        <button
-          onClick={submit}
-          disabled={submitting}
-          className="px-3 py-1 rounded-interactive bg-orange-500/90 hover:bg-orange-500 text-foreground typo-caption font-medium disabled:opacity-50"
-        >
-          {submitting ? a.submitting : a.create_and_start}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="px-3 py-1 rounded-interactive hover:bg-secondary/60 typo-caption text-foreground/70"
+          >
+            {a.cancel}
+          </button>
+          <button
+            onClick={submit}
+            disabled={submitting}
+            className="px-3 py-1 rounded-interactive bg-orange-500/90 hover:bg-orange-500 text-foreground typo-caption font-medium disabled:opacity-50"
+          >
+            {submitting ? a.submitting : a.create_and_start}
+          </button>
+        </div>
       </div>
     </div>
   );
