@@ -13385,6 +13385,7 @@
       "neverBridged": "कभी नहीं",
       "justNow": "अभी-अभी",
       "messageCount": "{count} संदेश",
+      "sparklineAria": "पिछले 7 दिनों में {count} संदेश",
       "aliasPlaceholder": "मैत्रीपूर्ण नाम (जैसे \"Discord से Alice\")",
       "notesPlaceholder": "नोट्स — संदर्भ, प्राथमिकताएँ, महत्वपूर्ण तिथियाँ…",
       "editAria": "उपनाम और नोट्स संपादित करें",

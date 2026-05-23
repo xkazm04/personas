@@ -13385,6 +13385,7 @@
       "neverBridged": "أبدًا",
       "justNow": "الآن",
       "messageCount": "{count} رسالة",
+      "sparklineAria": "{count} رسالة في الأيام السبعة الماضية",
       "aliasPlaceholder": "اسم ودود (مثل \"Alice from Discord\")",
       "notesPlaceholder": "ملاحظات — السياق، التفضيلات، التواريخ المهمة…",
       "editAria": "تعديل الاسم المستعار والملاحظات",

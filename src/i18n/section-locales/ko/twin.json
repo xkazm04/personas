@@ -525,6 +525,7 @@
     "neverBridged": "없음",
     "justNow": "방금 전",
     "messageCount": "메시지 {count}개",
+    "sparklineAria": "지난 7일간 메시지 {count}개",
     "aliasPlaceholder": "친근한 이름 (예: \"Discord의 Alice\")",
     "notesPlaceholder": "메모 — 맥락, 선호 사항, 중요한 날짜…",
     "editAria": "별칭과 메모 편집",

@@ -525,6 +525,7 @@
     "neverBridged": "никогда",
     "justNow": "только что",
     "messageCount": "{count} сообщений",
+    "sparklineAria": "{count} сообщений за последние 7 дней",
     "aliasPlaceholder": "Понятное имя (напр. «Алиса из Discord»)",
     "notesPlaceholder": "Заметки — контекст, предпочтения, важные даты…",
     "editAria": "Изменить алиас и заметки",

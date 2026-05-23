@@ -13385,6 +13385,7 @@
       "neverBridged": "nikdy",
       "justNow": "právě teď",
       "messageCount": "{count} zpráv",
+      "sparklineAria": "{count} zpráv za posledních 7 dní",
       "aliasPlaceholder": "Přátelské jméno (např. \"Alice z Discordu\")",
       "notesPlaceholder": "Poznámky — kontext, preference, důležitá data…",
       "editAria": "Upravit alias a poznámky",

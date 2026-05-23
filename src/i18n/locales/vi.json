@@ -13385,6 +13385,7 @@
       "neverBridged": "chưa bao giờ",
       "justNow": "vừa xong",
       "messageCount": "{count} tin nhắn",
+      "sparklineAria": "{count} tin nhắn trong 7 ngày qua",
       "aliasPlaceholder": "Tên thân mật (ví dụ: \"Alice từ Discord\")",
       "notesPlaceholder": "Ghi chú — ngữ cảnh, sở thích, ngày tháng quan trọng…",
       "editAria": "Chỉnh sửa bí danh và ghi chú",

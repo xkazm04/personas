@@ -13385,6 +13385,7 @@
       "neverBridged": "tidak pernah",
       "justNow": "baru saja",
       "messageCount": "{count} pesan",
+      "sparklineAria": "{count} pesan dalam 7 hari terakhir",
       "aliasPlaceholder": "Nama akrab (mis. \"Alice dari Discord\")",
       "notesPlaceholder": "Catatan — konteks, preferensi, tanggal penting…",
       "editAria": "Edit alias dan catatan",

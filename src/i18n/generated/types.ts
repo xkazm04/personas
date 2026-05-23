@@ -13297,6 +13297,7 @@ export type Translations = {
       neverBridged: string;
       justNow: string;
       messageCount: string;
+      sparklineAria: string;
       aliasPlaceholder: string;
       notesPlaceholder: string;
       editAria: string;

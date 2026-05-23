@@ -13291,6 +13291,7 @@
       "neverBridged": "never",
       "justNow": "just now",
       "messageCount": "{count} messages",
+      "sparklineAria": "{count} messages in the last 7 days",
       "aliasPlaceholder": "Friendly name (e.g. \"Alice from Discord\")",
       "notesPlaceholder": "Notes — context, preferences, dates that matter…",
       "editAria": "Edit alias and notes",

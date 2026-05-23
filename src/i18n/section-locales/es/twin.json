@@ -525,6 +525,7 @@
     "neverBridged": "nunca",
     "justNow": "ahora mismo",
     "messageCount": "{count} mensajes",
+    "sparklineAria": "{count} mensajes en los últimos 7 días",
     "aliasPlaceholder": "Nombre amigable (p. ej. \"Alice de Discord\")",
     "notesPlaceholder": "Notas — contexto, preferencias, fechas que importan…",
     "editAria": "Editar alias y notas",

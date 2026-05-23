@@ -525,6 +525,7 @@
     "neverBridged": "从未",
     "justNow": "刚刚",
     "messageCount": "{count} 条消息",
+    "sparklineAria": "过去 7 天内 {count} 条消息",
     "aliasPlaceholder": "友好名称（例如 \"Discord 上的 Alice\"）",
     "notesPlaceholder": "备注 — 背景、偏好、重要日期…",
     "editAria": "编辑别名和备注",

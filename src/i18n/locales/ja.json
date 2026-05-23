@@ -13385,6 +13385,7 @@
       "neverBridged": "なし",
       "justNow": "たった今",
       "messageCount": "{count} メッセージ",
+      "sparklineAria": "過去7日間で {count} メッセージ",
       "aliasPlaceholder": "わかりやすい名前 (例: 「Discord の Alice」)",
       "notesPlaceholder": "メモ — 文脈、好み、重要な日付…",
       "editAria": "エイリアスとメモを編集",
