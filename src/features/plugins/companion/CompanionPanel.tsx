@@ -66,6 +66,7 @@ import { CompanionToolbar } from './CompanionToolbar';
 import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
 import { RefineChips } from './RefineChips';
+import { BubbleReadAloud } from './BubbleReadAloud';
 import { TurnSummaryChip } from './TurnSummaryChip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -1197,6 +1198,16 @@ function Body(props: BodyProps) {
                       priorUserMessage={priorUser}
                       onSend={send}
                       disabled={!initialized || streaming || improving}
+                    />
+                  )}
+                  {isLastAssistant && !streaming && !improving && m.content.trim() && (
+                    <BubbleReadAloud
+                      content={m.content}
+                      voiceEngine={voiceEngine}
+                      voiceCredentialId={voiceCredentialId}
+                      voiceId={voiceId}
+                      piperVoiceId={piperVoiceId}
+                      voiceSettings={voiceSettings}
                     />
                   )}
                 </div>

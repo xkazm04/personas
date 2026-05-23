@@ -232,6 +232,10 @@ The Send button stays disabled while the palette is open so typing `/` then Ente
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.
 
+## On-demand read-aloud (per assistant bubble)
+
+When voice is configured for the user's chosen engine (ElevenLabs needs credential + voice id; Piper needs a piper voice id), a small `BubbleReadAloud` button renders below the latest completed assistant bubble. Click → synthesizes the message via the existing `companion_tts` IPC, plays through a transient `<audio>` element, swaps to a "Stop" affordance during playback, and reverts to idle on end so the user can replay. Independent of the main TTS pipeline (which fires automatically when `voiceEnabled` is on) — this is for the "I didn't have voice on, but I want to hear what Athena just said" path. Skipped when no engine is configured to avoid hitting the backend just to surface an error.
+
 ## Voice
 
 Voice playback dispatches to one of two engines, picked by the user in the Voice tab's engine selector. The slice persists `companionVoiceEngine: 'elevenlabs' | 'piper'`; per-engine identity (credential, voice id) lives in dedicated slice fields so switching engines doesn't clobber the other side's last selection.
