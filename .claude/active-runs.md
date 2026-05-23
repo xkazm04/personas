@@ -33,13 +33,6 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
-- **[2026-05-23 — started] athena-orb Step 1 — in-footer avatar + hold-to-talk**
-  - **Source:** User-driven implementation of Step 1 from `docs/features/companion/athena-orb-overlay-plan.md`. Swap the footer `<Bot>` glyph for the real `AthenaAvatar`; add press-and-hold dictation that fires a voice turn through the existing `send()` pipeline without opening the panel.
-  - **Paths:** `src/features/plugins/companion/CompanionFooterIcon.tsx`, `src/features/plugins/companion/companionStore.ts` (additive `voiceTurnRequest` field), `src/features/plugins/companion/CompanionPanel.tsx` (one top-level consumer effect), `src/i18n/locales/en.json` (additive `plugins.companion.footer_*` keys only), `docs/features/companion/README.md`, `.claude/active-runs.md`
-  - **Status:** started — Step 1 `e64af71e0`, Step 2a `684fa34e0`, Step 2b `54b366869`. Step 2c (on-device Whisper STT) parked; audio-reactive analyser glow parked (needs centralized playback).
-  - **Branch:** master (small surgical multi-file change, user-driven directly in main checkout so they can test live; staging only my own files per parallel-safety primitives — NOT touching the 50+ in-flight locale edits already in the working tree)
-  - **Note:** Companion `## Active` entry from 2026-05-16 is >2h old (stale/abandoned per the 2-hour rule); recently-completed shows companion work already merged. Step 1 = footer avatar + hold-to-talk. Step 2a = floating dockable orb (`minimized` state, `orb/AthenaOrbLayer`+`orb/AthenaOrb`, shared `useHoldToTalk`, `companionOrbEnabled`/`companionOrbPos`, Setup toggle, App.tsx mount). Browser dictation for now; on-device Whisper STT is Step 2c. Both commits: tsc + eslint clean, 360 companion+store tests green.
-
 - **[2026-05-23 14:20 — completed (A+B+C, 10 commits)] /friend — orchestration (team assignments, full arc)**
   - **Source:** Continuation of design session — full A→B→C arc of team-assignment + orchestration layer. Design locked in conversation: capabilities = existing `DesignUseCase[]` on `persona.design_context`; Sonnet via `ClaudeProvider` (subscription); review surfaced through existing notification center (new `processType` values); parallel DAG runner with `max_parallel_steps` gate; navigation = sub-tab on team page; cascade-skip semantics; per-assignment pause scope; Athena chat dispatch via existing approval flow.
   - **Status:** completed
@@ -126,6 +119,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-23] athena-orb — Athena voice/orb feature (Steps 1 + 2a/2b/2c)**
+  - **Status:** completed — committed on `master`, NOT merged anywhere (already on master). Commits: `e64af71e0` (Step 1 footer avatar + hold-to-talk), `684fa34e0` (Step 2a floating dockable orb), `54b366869` (Step 2b morph/hotkey/reduced-motion), `1e62630f7` (Step 2c on-device Whisper STT).
+  - **Paths shipped:** `src/features/plugins/companion/{CompanionFooterIcon,CompanionPanel,companionStore,types,useDictation,useHoldToTalk,useSpeechInput,useLocalDictation}.{ts,tsx}` + `orb/{AthenaOrbLayer,AthenaOrb}.tsx` + `sub_voice/{VoicePanel,SttPanel}.tsx` + `sub_setup/SetupPanel.tsx`; `src/stores/slices/system/companionPluginSlice.ts` + `systemStore.ts`; `src/api/companion.ts`; `src/App.tsx`; `src-tauri/src/companion/stt/{mod,catalog,downloader,whisper}.rs` + `commands/companion/stt.rs` + mod/lib registration; `src/i18n/locales/en.json` (+`generated/*`, `commandNames.generated.ts`); `docs/features/companion/{README,athena-orb-overlay-plan}.md`.
+  - **Note:** Designed in-session (plan doc `athena-orb-overlay-plan.md`). All 4 commits: tsc + eslint clean; 360 frontend (companion+store) tests + 12 Rust STT unit tests + `cargo check --features desktop` green. Browser dictation cloud-routes on WebView2; local Whisper keeps audio on-device but needs a manually-installed `whisper-cli` binary + downloaded ggml model (same install UX as Piper TTS) — not exercised against a real binary in-session. Parked follow-ups: audio-reactive `AnalyserNode` orb glow (needs centralized `voicePlayback`), a real `athena_speaking_loop.mp4` clip. Staged only own files throughout; never disturbed the 50+ in-flight locale edits from concurrent sessions.
 
 - **[2026-05-23] /research — athena-dynamic-chat (started as claude-code-2-1-148-to-150, pivoted)**
   - **Status:** completed and **merged to master** (FF: `3d6e97bfe`). Companion commits `e823afd4f` + `0e6caeb35`, floor bump `982e2383b`, bookkeeping `93a258af6`, reconcile merge `3d6e97bfe`. Worktree + branch removed.
