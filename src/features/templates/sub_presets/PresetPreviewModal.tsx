@@ -296,6 +296,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
     >
       {/* Header */}
       <div
+        data-testid={`preset-preview-modal-${preset.id}`}
         className="px-5 pt-5 pb-3 border-b border-primary/10 flex items-center justify-between"
         style={{ borderLeft: `3px solid ${colorWithAlpha(teamColor, 0.8)}` }}
       >

@@ -1,0 +1,23 @@
+{
+  "id": "reflective-journaling",
+  "schema_version": 1,
+  "name": "Reflective Journaling",
+  "description": "A single grounded journaling coach that reads your vault, surfaces recurring patterns over time, and reflects them back in your chosen tone. A focused starting point you can grow into a larger team later.",
+  "icon": "NotebookPen",
+  "color": "#8B5CF6",
+  "category": ["productivity", "personal"],
+  "team": {
+    "name": "Reflective Journaling",
+    "description": "Vault-grounded reflection — surface patterns, coach gently",
+    "color": "#8B5CF6"
+  },
+  "members": [
+    {
+      "template_id": "vault-grounded-journal-coach",
+      "role": "coach",
+      "x": 0,
+      "y": 0
+    }
+  ],
+  "connections": []
+}

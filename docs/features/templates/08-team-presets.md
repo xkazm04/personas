@@ -251,11 +251,39 @@ behind a "Customize first" toggle.
    landed correctly on the first attempt's successful members
    also applies to retried failures from the same modal session.
 
+### Override scope (important limitation)
+
+The override channel lands answers via
+`populate_persona_parameters_from_design`, which applies them **only**
+to questions whose `maps_to` is `persona.parameters[KEY]`. As of this
+writing exactly **1 of 109** catalog templates uses that mapping
+(`vault-grounded-journal-coach`); the other 105 map to
+`use_cases[…].sample_input.*`, which the **instant-adopt path does
+not consume** (only the heavier build-session / Glyph flow runs
+`substitute_variables` + sample_input seeding).
+
+Concretely: for a preset whose members all use `use_cases`-mapped
+questions (e.g. `backlog-execution`), the questionnaire still renders
+and collects answers, but those answers have no observable effect on
+the adopted personas. The `reflective-journaling` preset exists partly
+as a working example of the supported path — its single member is the
+one parameter-mapped template, and
+`tests/playwright/preset-questionnaire.spec.ts` asserts an override
+lands as `persona.parameters[KEY].value`.
+
+**Follow-up:** to make `use_cases`-mapped answers effective in preset
+adoption, the adopter would need to apply them into the persona's
+persisted `use_cases[UC].sample_input` after `instant_adopt` returns
+(seeds test runs + the Use Cases tab), or route preset members through
+the build-session flow. Tracked, not yet built.
+
 ### Authoring rules
 
 - New preset members automatically pick up the questionnaire — no
   schema bump needed in the preset manifest. The questions come
-  from the template's own `payload.adoption_questions[]`.
+  from the template's own `payload.adoption_questions[]`. (See the
+  override-scope limitation above — only `persona.parameters`-mapped
+  questions currently take effect through the preset adopter.)
 - If a template has no `adoption_questions`, its member section
   renders "No configuration needed" rather than being hidden, so
   the user sees the full member list and understands the
