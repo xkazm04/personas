@@ -18,8 +18,13 @@ import { useCompanionStore } from './companionStore';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
 import { QuickReplies } from './QuickReplies';
-import { extractAssistantText } from './extractAssistantText';
+import {
+  extractAssistantText,
+  extractAssistantTextDelta,
+} from './extractAssistantText';
 import { extractStreamPhase, phaseLabel } from './extractStreamPhase';
+import { extractTodoWrite } from './operationalSteps';
+import { OperationalThread } from './OperationalThread';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -230,6 +235,7 @@ export default function CompanionPanel() {
               useCompanionStore.getState().clearAllRecall();
               useCompanionStore.getState().clearAllTurnSummaries();
               useCompanionStore.getState().clearAllConnectorJobs();
+              useCompanionStore.getState().clearAllSteps();
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -548,6 +554,10 @@ function Body(props: BodyProps) {
   const connectorJobIdsByEpisodeId = useCompanionStore(
     (s) => s.connectorJobIdsByEpisodeId,
   );
+  // Operational thread (live TodoWrite plan). `streamingSteps` pins under
+  // the in-flight bubble; `stepsByEpisodeId` under the completed one.
+  const streamingSteps = useCompanionStore((s) => s.streamingSteps);
+  const stepsByEpisodeId = useCompanionStore((s) => s.stepsByEpisodeId);
 
   // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
@@ -573,6 +583,17 @@ function Body(props: BodyProps) {
   // stream event, cleared on `finished`/`error`. Ref (not state) so
   // the listener closure stays stable.
   const currentTurnIdRef = useRef<string | null>(null);
+
+  // Token-level streaming bookkeeping (--include-partial-messages).
+  // `sawDeltasRef` flips true the moment a `text_delta` arrives this turn;
+  // once set, we ignore the trailing whole `assistant` message text (it
+  // duplicates what the deltas already appended). `deltaBufferRef` +
+  // `deltaRafRef` coalesce a burst of tiny deltas into one store write per
+  // animation frame so the high-frequency `text_delta` stream can't thrash
+  // the Zustand store. Reset/flushed on `started` and `finished`.
+  const sawDeltasRef = useRef(false);
+  const deltaBufferRef = useRef('');
+  const deltaRafRef = useRef<number | null>(null);
 
   /*
    * Soft progress timeout. If no CLI line arrives for ~30s mid-turn we
@@ -604,6 +625,21 @@ function Body(props: BodyProps) {
     return () => clearInterval(id);
   }, [streaming]);
 
+  // Flush buffered token deltas into the store as one write. Stable
+  // (depends only on appendStreamingText) so the listener closure below
+  // stays stable across renders.
+  const flushDeltaBuffer = useCallback(() => {
+    if (deltaRafRef.current !== null) {
+      cancelAnimationFrame(deltaRafRef.current);
+      deltaRafRef.current = null;
+    }
+    if (deltaBufferRef.current) {
+      const chunk = deltaBufferRef.current;
+      deltaBufferRef.current = '';
+      appendStreamingText(chunk);
+    }
+  }, [appendStreamingText]);
+
   // Subscribe to streaming events from the backend.
   useTauriEvent<CompanionStreamEvent>(
     COMPANION_STREAM_EVENT,
@@ -615,6 +651,14 @@ function Body(props: BodyProps) {
         lastStreamEventAtRef.current = Date.now();
         if (ev.kind === 'started') {
           currentTurnIdRef.current = ev.turnId;
+          // New turn — reset token-streaming bookkeeping and drop any
+          // unflushed deltas from a prior turn.
+          sawDeltasRef.current = false;
+          deltaBufferRef.current = '';
+          if (deltaRafRef.current !== null) {
+            cancelAnimationFrame(deltaRafRef.current);
+            deltaRafRef.current = null;
+          }
           // New turn — drop any leftover in-flight recall strip; the
           // backend will re-emit `recall-preview` once the new prompt
           // is built.
@@ -623,23 +667,53 @@ function Body(props: BodyProps) {
           // starts cleanly on the placeholder until the first CLI line
           // arrives.
           useCompanionStore.getState().setStreamingPhase(null);
+          // Drop the prior turn's operational checklist; the new turn
+          // rebuilds it from its own TodoWrite calls.
+          useCompanionStore.getState().setStreamingSteps([]);
         } else if (ev.kind === 'cli') {
-          // Try to extract assistant text deltas from stream-json.
+          // Operational thread: a TodoWrite tool call republishes Athena's
+          // full plan. Capture it (latest wins) so the inline checklist
+          // tracks progress; the checklist itself is the activity signal,
+          // so don't also surface a generic "Using TodoWrite…" phase.
+          const steps = extractTodoWrite(ev.payload);
+          if (steps) {
+            useCompanionStore.getState().setStreamingSteps(steps);
+            return;
+          }
+          // Token-level path: a `stream_event` text_delta. Append it live
+          // (coalesced per frame) and remember we're streaming deltas so
+          // the trailing whole `assistant` message doesn't double the text.
+          const delta = extractAssistantTextDelta(ev.payload);
+          if (delta) {
+            sawDeltasRef.current = true;
+            useCompanionStore.getState().setStreamingPhase(null);
+            deltaBufferRef.current += delta;
+            if (deltaRafRef.current === null) {
+              deltaRafRef.current = requestAnimationFrame(flushDeltaBuffer);
+            }
+            return;
+          }
+          // Whole-message path (also the only path on CLIs that don't emit
+          // partial messages). Extract assistant text + a progress phase
+          // (thinking / tool_use / etc.) so the bubble reports what Athena
+          // is doing instead of a dead "thinking…" placeholder.
           const text = extractAssistantText(ev.payload);
-          // Also extract a progress phase (thinking / tool_use / etc.)
-          // so the streaming bubble can report what Athena is currently
-          // doing instead of a dead "thinking…" placeholder. Returns
-          // null on text blocks (the visible text is the signal then).
           const phase = extractStreamPhase(ev.payload);
           if (text) {
             // Prose is arriving — clear phase so it doesn't shadow the
             // streaming text below.
             useCompanionStore.getState().setStreamingPhase(null);
-            appendStreamingText(text);
+            // If deltas already streamed this turn, this whole-message text
+            // is a duplicate of what we appended token-by-token — skip it.
+            if (!sawDeltasRef.current) appendStreamingText(text);
           } else if (phase) {
             useCompanionStore.getState().setStreamingPhase(phase);
           }
         } else if (ev.kind === 'finished') {
+          // Land any deltas still buffered before the transcript refetch
+          // swaps the streaming bubble for the persisted episode.
+          flushDeltaBuffer();
+          sawDeltasRef.current = false;
           // Promote the streaming recall AND any pending connector_use
           // jobs onto the just-persisted assistant episode so they pin
           // under the now-completed bubble. Payload is the
@@ -649,19 +723,26 @@ function Body(props: BodyProps) {
             useCompanionStore
               .getState()
               .attachPendingJobsToEpisode(ev.payload);
+            // Pin the operational checklist under the completed bubble.
+            useCompanionStore.getState().attachStepsToEpisode(ev.payload);
           } else {
             useCompanionStore.getState().setStreamingRecall(null);
           }
           useCompanionStore.getState().setStreamingPhase(null);
+          // Clear any in-flight checklist not promoted to an episode.
+          useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
         } else if (ev.kind === 'error') {
+          flushDeltaBuffer();
+          sawDeltasRef.current = false;
           setSendError(ev.payload);
           useCompanionStore.getState().setStreamingRecall(null);
           useCompanionStore.getState().setStreamingPhase(null);
+          useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
         }
       },
-      [appendStreamingText, setSendError],
+      [appendStreamingText, setSendError, flushDeltaBuffer],
     ),
     'companion_stream_listen',
   );
@@ -1124,12 +1205,17 @@ function Body(props: BodyProps) {
                 m.role === 'assistant'
                   ? connectorJobIdsByEpisodeId[m.id] ?? []
                   : [];
+              const steps =
+                m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
               return (
                 <div key={m.id} className="space-y-1">
                   {recall && <RecallStrip preview={recall} />}
                   <Bubble role={m.role} index={i}>
                     {m.content}
                   </Bubble>
+                  {steps && steps.length > 0 && (
+                    <OperationalThread steps={steps} />
+                  )}
                   {connectorJobIds.map((jobId) => {
                     const job = jobsById[jobId];
                     return job ? (
@@ -1192,6 +1278,9 @@ function Body(props: BodyProps) {
                     <Square className="w-3 h-3" fill="currentColor" />
                   </button>
                 </div>
+                {streamingSteps.length > 0 && (
+                  <OperationalThread steps={streamingSteps} />
+                )}
                 {/*
                   Slow-progress hint chip. Surfaces below the streaming
                   bubble when no CLI events have arrived in 30s (soft) /

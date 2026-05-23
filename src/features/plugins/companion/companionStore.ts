@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
+import type { TodoStep } from './operationalSteps';
 import type {
   BackgroundJob,
   BrainKind,
@@ -235,6 +236,20 @@ interface CompanionStore {
   upsertJob: (job: BackgroundJob) => void;
   attachPendingJobsToEpisode: (episodeId: string) => void;
   clearAllConnectorJobs: () => void;
+
+  /**
+   * The "operational thread": Athena's live TodoWrite plan, parsed from
+   * TodoWrite tool calls in the stream. `streamingSteps` is the in-flight
+   * checklist (latest TodoWrite call wins — each call re-sends the full
+   * list); on `finished` it's promoted to `stepsByEpisodeId` keyed by the
+   * assistant episode id so the checklist persists inline under the
+   * completed bubble. Session-scoped, same model as recall/turn-summary.
+   */
+  streamingSteps: TodoStep[];
+  stepsByEpisodeId: Record<string, TodoStep[]>;
+  setStreamingSteps: (steps: TodoStep[]) => void;
+  attachStepsToEpisode: (episodeId: string) => void;
+  clearAllSteps: () => void;
 }
 
 export interface PendingPromptPayload {
@@ -425,4 +440,22 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       pendingConnectorJobIds: [],
       connectorJobIdsByEpisodeId: {},
     }),
+
+  streamingSteps: [],
+  stepsByEpisodeId: {},
+  setStreamingSteps: (streamingSteps) => set({ streamingSteps }),
+  attachStepsToEpisode: (episodeId) =>
+    set((s) => {
+      if (s.streamingSteps.length === 0 || !episodeId) {
+        return { streamingSteps: [] };
+      }
+      return {
+        streamingSteps: [],
+        stepsByEpisodeId: {
+          ...s.stepsByEpisodeId,
+          [episodeId]: s.streamingSteps,
+        },
+      };
+    }),
+  clearAllSteps: () => set({ streamingSteps: [], stepsByEpisodeId: {} }),
 }));
