@@ -1,8 +1,7 @@
-import { useState, useEffect, memo } from 'react';
+import { memo } from 'react';
 import { formatRelativeTime } from '@/lib/utils/formatters';
+import { useRelativeTimeTick } from '@/hooks/utility/timing/relativeTimeTicker';
 import { Tooltip } from './Tooltip';
-
-const TICK_MS = 15_000;
 
 interface RelativeTimeProps {
   /** ISO date string or epoch ms */
@@ -14,8 +13,10 @@ interface RelativeTimeProps {
 }
 
 /**
- * Renders a relative timestamp ("3s ago", "2m ago") that live-updates
- * every 15 seconds so the UI feels alive without excessive re-renders.
+ * Renders a relative timestamp ("3s ago", "2m ago") that live-updates via the
+ * shared, self-scaling ticker (see {@link useRelativeTimeTick}). All labels in
+ * the app re-render on one coalesced tick whose cadence tracks the timestamp's
+ * age — every second while fresh, slowing to minutes once it's hours old.
  */
 export const RelativeTime = memo(function RelativeTime({
   timestamp,
@@ -23,17 +24,12 @@ export const RelativeTime = memo(function RelativeTime({
   className,
   showTooltip = true,
 }: RelativeTimeProps) {
-  const [, tick] = useState(0);
-
-  useEffect(() => {
-    if (timestamp == null) return;
-    const id = setInterval(() => tick((n) => n + 1), TICK_MS);
-    return () => clearInterval(id);
-  }, [timestamp]);
-
   const isoStr = typeof timestamp === 'number'
     ? new Date(timestamp).toISOString()
     : timestamp;
+
+  const ms = isoStr ? Date.parse(isoStr) : NaN;
+  useRelativeTimeTick(Number.isNaN(ms) ? null : ms);
 
   const relative = formatRelativeTime(isoStr, fallback);
 

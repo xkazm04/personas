@@ -2,8 +2,9 @@ import { memo } from 'react';
 import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 import type { ExecutionListItem } from '@/lib/bindings/ExecutionListItem';
 import { ChevronDown, ChevronRight, RotateCw, Copy, Check, RefreshCw, ArrowLeftRight, FlaskConical } from 'lucide-react';
-import { formatTimestamp, formatDuration, formatRelativeTime, getStatusEntry, badgeClass, formatCost } from '@/lib/utils/formatters';
+import { formatTimestamp, formatDuration, getStatusEntry, badgeClass, formatCost } from '@/lib/utils/formatters';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { maskSensitiveJson } from '@/lib/utils/sanitizers/maskSensitive';
 import { sanitizeErrorForDisplay } from '@/lib/utils/sanitizers/sanitizeErrorForDisplay';
 import { formatTokens } from '../../libs/useExecutionList';
@@ -150,7 +151,7 @@ function ExecutionListRowImpl({
             }`}>{compareLabel}</span>
           )}
           {chevron}{statusBadge}{retryBadge}{simulatedBadge}{duration}
-          <span className="typo-body text-foreground ml-auto">{formatRelativeTime(execution.started_at)}</span>
+          <RelativeTime timestamp={execution.started_at} fallback="-" showTooltip={false} className="typo-body text-foreground ml-auto" />
         </div>
         {capabilityTitle && (
           <p className="typo-body text-foreground pl-5.5 truncate">{capabilityTitle}</p>

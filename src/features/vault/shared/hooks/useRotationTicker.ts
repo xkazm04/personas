@@ -1,51 +1,18 @@
-import { useEffect, useReducer } from 'react';
-import { createModuleCache } from '@/hooks/utility/data/useModuleSubscription';
+import { useFixedTicker } from '@/hooks/utility/timing/relativeTimeTicker';
 
 /**
- * Module-level shared ticker that fires every 60 seconds.
- *
- * Instead of N independent setIntervals (one per credential card), all visible
- * cards subscribe to this single ticker and recompute their countdowns when it
- * fires. The ticker auto-starts when the first subscriber registers and
- * auto-stops when the last one unregisters.
- */
-
-const tickerCache = createModuleCache<string, never>();
-let tickerTimer: number | null = null;
-
-function ensureTicker() {
-  if (tickerTimer !== null) return;
-  tickerTimer = window.setInterval(() => {
-    tickerCache.notify();
-  }, 60_000);
-}
-
-function stopTickerIfEmpty() {
-  if (tickerCache.subscriberCount === 0 && tickerTimer !== null) {
-    clearInterval(tickerTimer);
-    tickerTimer = null;
-  }
-}
-
-/**
- * Subscribe to the shared rotation countdown ticker.
+ * Subscribe to the rotation countdown ticker.
  *
  * Returns a tick counter that increments every 60 seconds, causing a re-render.
- * Use `formatCountdown` to derive the display string from a `next_rotation_at` timestamp.
+ * Use `formatCountdown` to derive the display string from a `next_rotation_at`
+ * timestamp.
+ *
+ * Backed by the app-wide shared ticker (see `relativeTimeTicker`), so credential
+ * countdowns coalesce onto the same timer as every other relative-time label
+ * instead of spinning a dedicated 60s interval.
  */
 export function useRotationTicker(): number {
-  const [tick, bump] = useReducer((c: number) => c + 1, 0);
-
-  useEffect(() => {
-    const unsub = tickerCache.subscribe(bump);
-    ensureTicker();
-    return () => {
-      unsub();
-      stopTickerIfEmpty();
-    };
-  }, []);
-
-  return tick;
+  return useFixedTicker(60_000);
 }
 
 /**
