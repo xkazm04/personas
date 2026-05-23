@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "Vorschau des mobilen Begleiters",
+    "preview_desc": "Eine schreibgeschützte Vorschau, wie Ihre Flotte auf dem gekoppelten Telefon-Begleiter aussehen würde.",
+    "preview_all_clear": "Alles in Ordnung",
+    "preview_no_sessions": "Keine aktiven Sitzungen",
     "dot_console_spawning": "Prozess startet",
     "dot_console_alive": "Prozess aktiv",
     "dot_console_exited": "Prozess beendet",

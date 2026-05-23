@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "Xem trước ứng dụng đồng hành di động",
+    "preview_desc": "Bản xem trước chỉ đọc về cách đội phiên của bạn hiển thị trên ứng dụng đồng hành điện thoại đã ghép nối.",
+    "preview_all_clear": "Mọi thứ ổn",
+    "preview_no_sessions": "Không có phiên hoạt động",
     "dot_console_spawning": "Tiến trình đang khởi động",
     "dot_console_alive": "Tiến trình đang hoạt động",
     "dot_console_exited": "Tiến trình đã thoát",

@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "Vista previa del compañero móvil",
+    "preview_desc": "Una vista de solo lectura de cómo se vería tu flota en el compañero de teléfono emparejado.",
+    "preview_all_clear": "Todo en orden",
+    "preview_no_sessions": "No hay sesiones activas",
     "dot_console_spawning": "Iniciando proceso",
     "dot_console_alive": "Proceso activo",
     "dot_console_exited": "Proceso finalizado",

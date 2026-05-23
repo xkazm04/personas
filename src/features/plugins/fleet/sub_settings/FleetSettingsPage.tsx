@@ -6,6 +6,7 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { checkHooks, installHooks, uninstallHooks } from '@/api/fleet/fleet';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
+import { FleetMobilePreview } from '../FleetMobilePreview';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -184,6 +185,9 @@ export default function FleetSettingsPage() {
               </ul>
             </div>
           )}
+
+          {/* Mobile companion glance preview — read-only, fed by live data */}
+          <FleetMobilePreview />
         </div>
       </ContentBody>
     </ContentBox>

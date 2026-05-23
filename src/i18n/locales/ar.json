@@ -9697,6 +9697,10 @@
   },
   "plugins": {
     "fleet": {
+      "preview_title": "معاينة رفيق الجوال",
+      "preview_desc": "نظرة للقراءة فقط على كيفية ظهور أسطولك على رفيق الهاتف المقترن.",
+      "preview_all_clear": "كل شيء على ما يرام",
+      "preview_no_sessions": "لا توجد جلسات نشطة",
       "dot_console_spawning": "بدء العملية",
       "dot_console_alive": "العملية نشطة",
       "dot_console_exited": "خرجت العملية",

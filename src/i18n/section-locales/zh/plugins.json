@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "移动伴侣预览",
+    "preview_desc": "只读预览：您的会话集在已配对手机伴侣上的显示效果。",
+    "preview_all_clear": "一切正常",
+    "preview_no_sessions": "没有活动会话",
     "dot_console_spawning": "进程启动中",
     "dot_console_alive": "进程运行中",
     "dot_console_exited": "进程已退出",

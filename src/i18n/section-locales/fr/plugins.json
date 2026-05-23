@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "Aperçu du compagnon mobile",
+    "preview_desc": "Un aperçu en lecture seule de l'apparence de votre flotte sur le compagnon mobile appairé.",
+    "preview_all_clear": "Tout va bien",
+    "preview_no_sessions": "Aucune session active",
     "dot_console_spawning": "Démarrage du processus",
     "dot_console_alive": "Processus actif",
     "dot_console_exited": "Processus terminé",

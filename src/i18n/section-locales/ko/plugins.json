@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "모바일 컴패니언 미리보기",
+    "preview_desc": "페어링된 휴대폰 컴패니언에서 플릿이 어떻게 보일지에 대한 읽기 전용 미리보기입니다.",
+    "preview_all_clear": "모두 정상",
+    "preview_no_sessions": "활성 세션 없음",
     "dot_console_spawning": "프로세스 시작 중",
     "dot_console_alive": "프로세스 활성",
     "dot_console_exited": "프로세스 종료됨",

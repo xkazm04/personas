@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "preview_title": "মোবাইল সঙ্গী প্রিভিউ",
+    "preview_desc": "পেয়ার করা ফোন সঙ্গীতে আপনার ফ্লিট কেমন দেখাবে তার একটি রিড-অনলি ঝলক।",
+    "preview_all_clear": "সব ঠিক আছে",
+    "preview_no_sessions": "কোনো সক্রিয় সেশন নেই",
     "dot_console_spawning": "প্রসেস শুরু হচ্ছে",
     "dot_console_alive": "প্রসেস সক্রিয়",
     "dot_console_exited": "প্রসেস বন্ধ",
