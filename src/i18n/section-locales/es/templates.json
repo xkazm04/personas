@@ -1117,6 +1117,18 @@
     "retry_failed_button": "Reintentar {count} fallidos",
     "toast_retry_success": "Todos los miembros reintentados adoptados",
     "toast_retry_partial": "Reintentados {ok} miembros, {failed} aún fallan",
-    "toast_retry_failure": "Reintento fallido"
+    "toast_retry_failure": "Reintento fallido",
+    "customize_show": "Personalizar",
+    "customize_hide": "Ocultar personalización",
+    "customize_hide_with_changes": "Ocultar ({count} personalizado)",
+    "questionnaire_heading": "Cuestionario combinado",
+    "questionnaire_summary": "{configurable} de {total} miembros configurables · {questions} preguntas",
+    "questionnaire_expand_all": "Expandir todo",
+    "questionnaire_collapse_all": "Contraer todo",
+    "questionnaire_expand_section": "Expandir sección",
+    "questionnaire_collapse_section": "Contraer sección",
+    "questionnaire_member_summary_default": "{count} preguntas, todas predeterminadas",
+    "questionnaire_member_summary_customized": "{count} preguntas, {customized} personalizadas",
+    "questionnaire_member_no_config": "No requiere configuración"
   }
 }

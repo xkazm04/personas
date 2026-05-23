@@ -7449,7 +7449,19 @@
       "retry_failed_button": "{count} विफल पुनः प्रयास करें",
       "toast_retry_success": "सभी पुनः प्रयासित सदस्य अपनाए गए",
       "toast_retry_partial": "{ok} सदस्य पुनः प्रयासित, {failed} अब भी विफल",
-      "toast_retry_failure": "पुनः प्रयास विफल"
+      "toast_retry_failure": "पुनः प्रयास विफल",
+      "customize_show": "कस्टमाइज़ करें",
+      "customize_hide": "कस्टमाइज़ेशन छुपाएं",
+      "customize_hide_with_changes": "छुपाएं ({count} कस्टमाइज़्ड)",
+      "questionnaire_heading": "संयुक्त प्रश्नावली",
+      "questionnaire_summary": "{total} में से {configurable} सदस्य कॉन्फ़िगर करने योग्य · {questions} प्रश्न",
+      "questionnaire_expand_all": "सभी विस्तृत करें",
+      "questionnaire_collapse_all": "सभी संक्षिप्त करें",
+      "questionnaire_expand_section": "अनुभाग विस्तृत करें",
+      "questionnaire_collapse_section": "अनुभाग संक्षिप्त करें",
+      "questionnaire_member_summary_default": "{count} प्रश्न, सभी डिफ़ॉल्ट",
+      "questionnaire_member_summary_customized": "{count} प्रश्न, {customized} कस्टमाइज़्ड",
+      "questionnaire_member_no_config": "कोई कॉन्फ़िगरेशन आवश्यक नहीं"
     }
   },
   "triggers": {

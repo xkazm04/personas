@@ -195,6 +195,77 @@ fields, translate them, and save as `<id>.<lang>.json`. See
 `scripts/templates/_team_presets/backlog-execution.zh.json` for a
 minimal worked example.
 
+## Combined questionnaire
+
+Member templates ship `payload.adoption_questions[]` — configurable
+knobs the single-template adoption flow surfaces in
+ChronologyAdoptionView. For a preset (a bundle of N templates with
+~5–10 questions each), the **combined questionnaire** aggregates
+every member's questions into one form inside `PresetPreviewModal`,
+behind a "Customize first" toggle.
+
+### Pipeline
+
+1. **`get_preset_adoption_schema(preset_id, language)`** IPC walks
+   every member template, extracts `payload.adoption_questions[]`,
+   and returns a per-role schema (`PresetAdoptionSchema` →
+   `members[]` with `role`, `template_id`, `template_name`,
+   `template_description`, `questions[]`). Members whose template
+   file is missing/unreadable are SKIPPED from the schema view
+   (logged via `tracing::warn`); the adopter surfaces real
+   missing-template errors at adopt time, so the schema endpoint
+   is UX-best-effort.
+
+2. **`PresetPreviewModal`** lazy-fetches the schema when the modal
+   opens. The "Customize" button only renders when
+   `total_question_count > 0`. Clicking it expands
+   `PresetQuestionnaireForm` between the team-graph adapter and the
+   member-rows section. Sections are collapsed by default — for a
+   6-member preset with ~40 questions, expanding everything would
+   overwhelm; the user only opens what they intend to change.
+
+3. **Each control renders per question type** (select / number /
+   boolean / text/string). Numeric `min`/`max`/`unit` from the
+   question schema map to HTML5 input attributes. Validation is
+   intentionally minimal in the UI — server-side normalization in
+   `populate_persona_parameters_from_design` coerces per the
+   question's declared type, so an out-of-range number or a
+   misspelled select value falls back to the template default
+   rather than crashing.
+
+4. **Override channel** (cycle preset/questionnaire-overrides):
+   answers flow through `adoptTeamPreset` →
+   `adopt_team_preset` Tauri command → `team_preset_adopter::
+   adopt_preset` → `instant_adopt_template_inner` with a new
+   optional `parameter_overrides` arg, which forwards to the
+   existing `populate_persona_parameters_from_design(answers)`
+   path. Crucially, the **design JSON bytes are not mutated** —
+   `check_template_integrity` runs FIRST on the design string and
+   would reject any pre-mutation. The override rides as a parallel
+   channel and lands as `persona.parameters[KEY].value` while
+   `default_value` keeps the template original (so a future
+   "Reset to defaults" affordance is well-defined).
+
+5. **Same overrides flow through retry** — `retryTeamPresetMembers`
+   accepts the same override map, so a customized answer that
+   landed correctly on the first attempt's successful members
+   also applies to retried failures from the same modal session.
+
+### Authoring rules
+
+- New preset members automatically pick up the questionnaire — no
+  schema bump needed in the preset manifest. The questions come
+  from the template's own `payload.adoption_questions[]`.
+- If a template has no `adoption_questions`, its member section
+  renders "No configuration needed" rather than being hidden, so
+  the user sees the full member list and understands the
+  questionnaire's scope.
+- Question-label localization is handled by the existing template
+  overlay system (`<id>.<lang>.json` siblings in the template's
+  category dir, not in `_team_presets/`). The frontend reads the
+  passthrough question JSON; translated labels arrive through the
+  same lazy-load pathway the single-template flow uses.
+
 ## End-to-end test
 
 `tests/playwright/preset-team-adoption.spec.ts` drives the live app

@@ -7449,7 +7449,19 @@
       "retry_failed_button": "{count}개 실패 재시도",
       "toast_retry_success": "재시도한 모든 멤버가 채택되었습니다",
       "toast_retry_partial": "{ok}명 멤버 재시도, {failed}명 여전히 실패",
-      "toast_retry_failure": "재시도 실패"
+      "toast_retry_failure": "재시도 실패",
+      "customize_show": "맞춤설정",
+      "customize_hide": "맞춤설정 숨기기",
+      "customize_hide_with_changes": "숨기기 ({count}개 맞춤설정됨)",
+      "questionnaire_heading": "통합 설문",
+      "questionnaire_summary": "{total}명 중 {configurable}명 구성 가능 · {questions}개 질문",
+      "questionnaire_expand_all": "모두 펼치기",
+      "questionnaire_collapse_all": "모두 접기",
+      "questionnaire_expand_section": "섹션 펼치기",
+      "questionnaire_collapse_section": "섹션 접기",
+      "questionnaire_member_summary_default": "{count}개 질문, 모두 기본값",
+      "questionnaire_member_summary_customized": "{count}개 질문, {customized}개 맞춤설정",
+      "questionnaire_member_no_config": "구성 불필요"
     }
   },
   "triggers": {

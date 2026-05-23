@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Layers, Loader2, RotateCcw, Users, X, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Layers, Loader2, RotateCcw, Settings2, Users, X, AlertCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -9,12 +9,22 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import type { TeamPreset } from '@/lib/bindings/TeamPreset';
 import type { AdoptedTeamPresetResult } from '@/lib/bindings/AdoptedTeamPresetResult';
-import { adoptTeamPreset, retryTeamPresetMembers } from '@/api/templates/teamPresets';
+import type { PresetAdoptionSchema } from '@/lib/bindings/PresetAdoptionSchema';
+import {
+  adoptTeamPreset,
+  getPresetAdoptionSchema,
+  retryTeamPresetMembers,
+  type PresetParameterOverrides,
+} from '@/api/templates/teamPresets';
 import { useTypedTauriEvent } from '@/hooks/useTauriEvent';
 import { EventName } from '@/lib/eventRegistry';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import { silentCatch } from '@/lib/silentCatch';
 import { PresetGraphAdapter } from './PresetGraphAdapter';
+import {
+  PresetQuestionnaireBulkControls,
+  PresetQuestionnaireForm,
+} from './PresetQuestionnaireForm';
 
 type RowStatus = 'queued' | 'adopting' | 'done' | 'failed';
 
@@ -69,6 +79,16 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
   const [adoptionState, setAdoptionState] = useState<'preview' | 'adopting' | 'done'>('preview');
   const [result, setResult] = useState<AdoptedTeamPresetResult | null>(null);
 
+  // Combined-questionnaire state. The schema loads lazily on modal
+  // open (it triggers ~6 template-design reads on the Rust side, so
+  // not free); the form only renders when the user explicitly clicks
+  // "Customize" — keeps the default "preview → adopt" path one click
+  // and one render away from the gallery.
+  const [schema, setSchema] = useState<PresetAdoptionSchema | null>(null);
+  const [customizing, setCustomizing] = useState(false);
+  const [overrides, setOverrides] = useState<PresetParameterOverrides>({});
+  const [expandedRoles, setExpandedRoles] = useState<Set<string>>(new Set());
+
   // Reset whenever the modal re-opens or the preset changes (gallery
   // switches presets without unmounting the modal).
   useEffect(() => {
@@ -82,6 +102,19 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
     );
     setAdoptionState('preview');
     setResult(null);
+    setCustomizing(false);
+    setOverrides({});
+    setExpandedRoles(new Set());
+    // Kick off schema fetch in the background — surfaces the
+    // "Customize" affordance with the right question count once
+    // resolved. Failure is logged but non-fatal: the "Adopt with
+    // defaults" path still works without it.
+    getPresetAdoptionSchema(preset.id)
+      .then(setSchema)
+      .catch((err) => {
+        silentCatch('PresetPreviewModal:loadSchema')(err);
+        setSchema(null);
+      });
   }, [open, preset]);
 
   // Listen for per-member progress events. Filter by preset_id so two
@@ -108,7 +141,14 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
     setAdoptionState('adopting');
     setResult(null);
     try {
-      const res = await adoptTeamPreset(preset.id);
+      // Only send overrides if the user actually opened the
+      // questionnaire AND changed at least one value. Sending an
+      // empty {} works fine on the Rust side (it becomes None for
+      // each member) but keeping the wire payload minimal makes
+      // logs / Sentry breadcrumbs easier to read.
+      const overridePayload =
+        Object.keys(overrides).length > 0 ? overrides : null;
+      const res = await adoptTeamPreset(preset.id, overridePayload);
       setResult(res);
       // Refresh sidebar / detail stores so the new team + personas appear
       // immediately without a manual reload.
@@ -144,7 +184,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       addToast(t.templates.presets.toast_failure, 'error');
       setAdoptionState('preview'); // allow retry
     }
-  }, [preset, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+  }, [preset, overrides, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
 
   const handleOpenTeam = useCallback(() => {
     setSidebarSection('personas');
@@ -175,11 +215,20 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       ),
     );
     try {
+      // Forward the same override map to the retry — so a customized
+      // answer that landed correctly on a successful member's first
+      // attempt also applies to retried failures from the same modal
+      // session. If the user had cleared overrides between adopt and
+      // retry, `overrides` would be empty and retry defaults to
+      // template values.
+      const overridePayload =
+        Object.keys(overrides).length > 0 ? overrides : null;
       const res = await retryTeamPresetMembers(
         preset.id,
         result.team_id,
         result.group_id,
         failedRoles,
+        overridePayload,
       );
       setResult(res);
       await Promise.all([
@@ -202,7 +251,24 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       silentCatch('PresetPreviewModal:retry')(err);
       addToast(t.templates.presets.toast_retry_failure, 'error');
     }
-  }, [result, preset.id, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+  }, [result, preset.id, overrides, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+
+  const toggleRole = useCallback((role: string) => {
+    setExpandedRoles((prev) => {
+      const next = new Set(prev);
+      if (next.has(role)) {
+        next.delete(role);
+      } else {
+        next.add(role);
+      }
+      return next;
+    });
+  }, []);
+
+  const overrideCount = useMemo(
+    () => Object.values(overrides).reduce((acc, m) => acc + Object.keys(m).length, 0),
+    [overrides],
+  );
 
   // Map result.failed_members onto the row state in case any failures
   // arrived faster than the progress events (very small race window).
@@ -266,6 +332,16 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           </section>
         )}
 
+        {customizing && schema && adoptionState === 'preview' && (
+          <PresetQuestionnaireForm
+            schema={schema}
+            value={overrides}
+            onChange={setOverrides}
+            expandedRoles={expandedRoles}
+            onToggleRole={toggleRole}
+          />
+        )}
+
         {/* Member rows — preview state shows just role + template; live
             adoption switches to status badges. Same row layout, different
             trailing element. */}
@@ -320,6 +396,32 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
           <Button variant="ghost" size="sm" onClick={onClose}>
             {t.common.close}
           </Button>
+          {adoptionState === 'preview' && schema && schema.total_question_count > 0 && (
+            <>
+              {customizing && (
+                <PresetQuestionnaireBulkControls
+                  schema={schema}
+                  expandedRoles={expandedRoles}
+                  onSetAllExpanded={setExpandedRoles}
+                />
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                icon={<Settings2 className="w-4 h-4" />}
+                onClick={() => setCustomizing((p) => !p)}
+                data-testid="preset-customize-toggle"
+              >
+                {customizing
+                  ? overrideCount > 0
+                    ? tx(t.templates.presets.customize_hide_with_changes, {
+                        count: overrideCount,
+                      })
+                    : t.templates.presets.customize_hide
+                  : t.templates.presets.customize_show}
+              </Button>
+            </>
+          )}
           {adoptionState === 'preview' && (
             <Button
               variant="primary"

@@ -1117,6 +1117,18 @@
     "retry_failed_button": "{count} fehlgeschlagene erneut versuchen",
     "toast_retry_success": "Alle erneut versuchten Mitglieder übernommen",
     "toast_retry_partial": "{ok} Mitglieder erneut versucht, {failed} weiterhin fehlgeschlagen",
-    "toast_retry_failure": "Erneuter Versuch fehlgeschlagen"
+    "toast_retry_failure": "Erneuter Versuch fehlgeschlagen",
+    "customize_show": "Anpassen",
+    "customize_hide": "Anpassung ausblenden",
+    "customize_hide_with_changes": "Ausblenden ({count} angepasst)",
+    "questionnaire_heading": "Kombinierter Fragebogen",
+    "questionnaire_summary": "{configurable} von {total} Mitgliedern konfigurierbar · {questions} Fragen",
+    "questionnaire_expand_all": "Alle ausklappen",
+    "questionnaire_collapse_all": "Alle einklappen",
+    "questionnaire_expand_section": "Abschnitt ausklappen",
+    "questionnaire_collapse_section": "Abschnitt einklappen",
+    "questionnaire_member_summary_default": "{count} Fragen, alle Standardwerte",
+    "questionnaire_member_summary_customized": "{count} Fragen, {customized} angepasst",
+    "questionnaire_member_no_config": "Keine Konfiguration nötig"
   }
 }

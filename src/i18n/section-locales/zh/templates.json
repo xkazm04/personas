@@ -1117,6 +1117,18 @@
     "retry_failed_button": "重试 {count} 个失败",
     "toast_retry_success": "所有重试的成员均已采纳",
     "toast_retry_partial": "重试了 {ok} 个成员，{failed} 个仍失败",
-    "toast_retry_failure": "重试失败"
+    "toast_retry_failure": "重试失败",
+    "customize_show": "自定义",
+    "customize_hide": "隐藏自定义",
+    "customize_hide_with_changes": "隐藏（已自定义 {count} 项）",
+    "questionnaire_heading": "合并问卷",
+    "questionnaire_summary": "{total} 个成员中 {configurable} 个可配置 · {questions} 个问题",
+    "questionnaire_expand_all": "全部展开",
+    "questionnaire_collapse_all": "全部折叠",
+    "questionnaire_expand_section": "展开此部分",
+    "questionnaire_collapse_section": "折叠此部分",
+    "questionnaire_member_summary_default": "{count} 个问题，全部使用默认值",
+    "questionnaire_member_summary_customized": "{count} 个问题，已自定义 {customized} 项",
+    "questionnaire_member_no_config": "无需配置"
   }
 }

@@ -6432,6 +6432,18 @@ export type Translations = {
       toast_retry_success: string;
       toast_retry_partial: string;
       toast_retry_failure: string;
+      customize_show: string;
+      customize_hide: string;
+      customize_hide_with_changes: string;
+      questionnaire_heading: string;
+      questionnaire_summary: string;
+      questionnaire_expand_all: string;
+      questionnaire_collapse_all: string;
+      questionnaire_expand_section: string;
+      questionnaire_collapse_section: string;
+      questionnaire_member_summary_default: string;
+      questionnaire_member_summary_customized: string;
+      questionnaire_member_no_config: string;
     };
     gallery: {
       ready_to_deploy: string;

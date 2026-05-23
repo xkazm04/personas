@@ -7449,7 +7449,19 @@
       "retry_failed_button": "Thử lại {count} đã thất bại",
       "toast_retry_success": "Tất cả thành viên thử lại đã được áp dụng",
       "toast_retry_partial": "Đã thử lại {ok} thành viên, {failed} vẫn thất bại",
-      "toast_retry_failure": "Thử lại thất bại"
+      "toast_retry_failure": "Thử lại thất bại",
+      "customize_show": "Tùy chỉnh",
+      "customize_hide": "Ẩn tùy chỉnh",
+      "customize_hide_with_changes": "Ẩn ({count} đã tùy chỉnh)",
+      "questionnaire_heading": "Bảng câu hỏi tổng hợp",
+      "questionnaire_summary": "{configurable} trên {total} thành viên có thể tùy chỉnh · {questions} câu hỏi",
+      "questionnaire_expand_all": "Mở rộng tất cả",
+      "questionnaire_collapse_all": "Thu gọn tất cả",
+      "questionnaire_expand_section": "Mở rộng phần",
+      "questionnaire_collapse_section": "Thu gọn phần",
+      "questionnaire_member_summary_default": "{count} câu hỏi, tất cả mặc định",
+      "questionnaire_member_summary_customized": "{count} câu hỏi, {customized} đã tùy chỉnh",
+      "questionnaire_member_no_config": "Không cần cấu hình"
     }
   },
   "triggers": {

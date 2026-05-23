@@ -1117,6 +1117,18 @@
     "retry_failed_button": "Opakovat {count} neúspěšných",
     "toast_retry_success": "Všichni opakovaní členové přijati",
     "toast_retry_partial": "Opakováno {ok} členů, {failed} stále neúspěšných",
-    "toast_retry_failure": "Opakování selhalo"
+    "toast_retry_failure": "Opakování selhalo",
+    "customize_show": "Přizpůsobit",
+    "customize_hide": "Skrýt přizpůsobení",
+    "customize_hide_with_changes": "Skrýt ({count} přizpůsobených)",
+    "questionnaire_heading": "Kombinovaný dotazník",
+    "questionnaire_summary": "{configurable} z {total} členů konfigurovatelných · {questions} otázek",
+    "questionnaire_expand_all": "Rozbalit vše",
+    "questionnaire_collapse_all": "Sbalit vše",
+    "questionnaire_expand_section": "Rozbalit sekci",
+    "questionnaire_collapse_section": "Sbalit sekci",
+    "questionnaire_member_summary_default": "{count} otázek, vše výchozí",
+    "questionnaire_member_summary_customized": "{count} otázek, {customized} přizpůsobených",
+    "questionnaire_member_no_config": "Žádná konfigurace není potřeba"
   }
 }

@@ -1117,6 +1117,18 @@
     "retry_failed_button": "{count} 件の失敗を再試行",
     "toast_retry_success": "再試行したメンバーをすべて採用しました",
     "toast_retry_partial": "{ok} メンバーを再試行、{failed} 件は依然失敗",
-    "toast_retry_failure": "再試行に失敗"
+    "toast_retry_failure": "再試行に失敗",
+    "customize_show": "カスタマイズ",
+    "customize_hide": "カスタマイズを非表示",
+    "customize_hide_with_changes": "非表示 ({count}項目カスタマイズ済み)",
+    "questionnaire_heading": "統合アンケート",
+    "questionnaire_summary": "{total}人中{configurable}人が設定可能 · {questions}個の質問",
+    "questionnaire_expand_all": "すべて展開",
+    "questionnaire_collapse_all": "すべて折りたたむ",
+    "questionnaire_expand_section": "セクションを展開",
+    "questionnaire_collapse_section": "セクションを折りたたむ",
+    "questionnaire_member_summary_default": "{count}個の質問、すべてデフォルト",
+    "questionnaire_member_summary_customized": "{count}個の質問、{customized}個カスタマイズ",
+    "questionnaire_member_no_config": "設定不要"
   }
 }

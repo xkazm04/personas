@@ -7449,7 +7449,19 @@
       "retry_failed_button": "Coba ulang {count} yang gagal",
       "toast_retry_success": "Semua anggota dicoba ulang berhasil diadopsi",
       "toast_retry_partial": "Dicoba ulang {ok} anggota, {failed} masih gagal",
-      "toast_retry_failure": "Coba ulang gagal"
+      "toast_retry_failure": "Coba ulang gagal",
+      "customize_show": "Sesuaikan",
+      "customize_hide": "Sembunyikan penyesuaian",
+      "customize_hide_with_changes": "Sembunyikan ({count} disesuaikan)",
+      "questionnaire_heading": "Kuesioner gabungan",
+      "questionnaire_summary": "{configurable} dari {total} anggota dapat dikonfigurasi · {questions} pertanyaan",
+      "questionnaire_expand_all": "Perluas semua",
+      "questionnaire_collapse_all": "Ciutkan semua",
+      "questionnaire_expand_section": "Perluas bagian",
+      "questionnaire_collapse_section": "Ciutkan bagian",
+      "questionnaire_member_summary_default": "{count} pertanyaan, semua default",
+      "questionnaire_member_summary_customized": "{count} pertanyaan, {customized} disesuaikan",
+      "questionnaire_member_no_config": "Tidak perlu konfigurasi"
     }
   },
   "triggers": {

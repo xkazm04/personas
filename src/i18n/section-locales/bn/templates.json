@@ -1117,6 +1117,18 @@
     "retry_failed_button": "{count} ব্যর্থ পুনঃচেষ্টা করুন",
     "toast_retry_success": "সমস্ত পুনঃচেষ্টা সদস্য গৃহীত",
     "toast_retry_partial": "{ok} সদস্য পুনঃচেষ্টা, {failed} এখনও ব্যর্থ",
-    "toast_retry_failure": "পুনঃচেষ্টা ব্যর্থ"
+    "toast_retry_failure": "পুনঃচেষ্টা ব্যর্থ",
+    "customize_show": "কাস্টমাইজ করুন",
+    "customize_hide": "কাস্টমাইজেশন লুকান",
+    "customize_hide_with_changes": "লুকান ({count} কাস্টমাইজড)",
+    "questionnaire_heading": "সম্মিলিত প্রশ্নমালা",
+    "questionnaire_summary": "{total} জন সদস্যের মধ্যে {configurable} জন কনফিগারযোগ্য · {questions} প্রশ্ন",
+    "questionnaire_expand_all": "সব প্রসারিত করুন",
+    "questionnaire_collapse_all": "সব সংকুচিত করুন",
+    "questionnaire_expand_section": "বিভাগ প্রসারিত করুন",
+    "questionnaire_collapse_section": "বিভাগ সংকুচিত করুন",
+    "questionnaire_member_summary_default": "{count}টি প্রশ্ন, সব ডিফল্ট",
+    "questionnaire_member_summary_customized": "{count}টি প্রশ্ন, {customized}টি কাস্টমাইজড",
+    "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই"
   }
 }
