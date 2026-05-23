@@ -187,6 +187,138 @@ pub fn delete_team_assignment(
     repo::delete(&state.db, &id)
 }
 
+/// Phase C1 — Companion bridge. Athena's dispatcher calls this when the
+/// user says "have the X team do Y" in chat. Does end-to-end:
+///   1. Resolves eligible candidates from the team roster
+///   2. Auto-decomposes the goal via Sonnet
+///   3. Creates the TeamAssignment with source='athena' + companion_op_id
+///   4. Begins a dispatched OperativeMemory operation tied to the assignment
+///   5. Starts the orchestrator
+///
+/// Returns both ids so the chat layer can attach the assignment to the
+/// companion operation in its episodic memory + render progress cards
+/// against the right op.
+#[tauri::command]
+pub async fn companion_assign_team(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    team_id: String,
+    goal: String,
+    title: Option<String>,
+) -> Result<CompanionAssignTeamResult, AppError> {
+    require_auth(&state).await?;
+    let goal_trimmed = goal.trim().to_string();
+    if goal_trimmed.is_empty() {
+        return Err(AppError::Validation("Goal cannot be empty".into()));
+    }
+
+    // Resolve candidates first — fail fast if the team can't accept work.
+    let members = team_repo::get_members(&state.db, &team_id)?;
+    let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
+    for m in &members {
+        if let Ok(p) = persona_repo::get_by_id(&state.db, &m.persona_id) {
+            if p.enabled
+                && p.setup_status == "ready"
+                && !matches!(p.trust_level, crate::db::models::PersonaTrustLevel::Revoked)
+            {
+                personas.push(p);
+            }
+        }
+    }
+    if personas.is_empty() {
+        return Err(AppError::Validation(
+            "Team has no eligible personas to receive an assignment".into(),
+        ));
+    }
+    let candidates = matching::extract_candidates(&personas);
+
+    // Decompose via Sonnet.
+    let proposed = matching::decompose_goal(&goal_trimmed, &candidates, DECOMPOSE_TIMEOUT_SECS).await?;
+    if proposed.is_empty() {
+        return Err(AppError::Internal(
+            "Auto-decompose returned zero steps".into(),
+        ));
+    }
+
+    // Open the companion OperativeMemory operation. The chat side will
+    // attach session events / cards under this op_id.
+    let op_id = crate::companion::orchestration::operative_memory::memory()
+        .begin_dispatched_operation(goal_trimmed.clone());
+
+    // Create the assignment in one transaction (via repo::create).
+    let title_final = title
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(String::from)
+        .unwrap_or_else(|| derive_title_from_goal(&goal_trimmed));
+
+    let input = CreateTeamAssignmentInput {
+        team_id: team_id.clone(),
+        title: title_final,
+        goal: goal_trimmed,
+        match_strategy: Some("llm_eval".into()),
+        max_parallel_steps: Some(3),
+        source: Some("athena".into()),
+        companion_op_id: Some(op_id.clone()),
+        steps: proposed
+            .into_iter()
+            .map(|p| crate::db::models::CreateTeamAssignmentStepInput {
+                title: p.title,
+                description: if p.description.trim().is_empty() {
+                    None
+                } else {
+                    Some(p.description)
+                },
+                assigned_persona_id: p.suggested_persona_id,
+                assigned_use_case_id: p.suggested_use_case_id,
+                depends_on_indices: None,
+            })
+            .collect(),
+    };
+    let assignment = repo::create(&state.db, input)?;
+
+    // Spawn the orchestrator just like start_team_assignment does.
+    let pool = Arc::new(state.db.clone());
+    let engine = state.engine.clone();
+    let embedding_manager = embedding_manager_for_state(&state);
+    orchestrator::run_assignment(pool, app, engine, embedding_manager, assignment.id.clone());
+
+    Ok(CompanionAssignTeamResult {
+        assignment_id: assignment.id,
+        companion_op_id: op_id,
+    })
+}
+
+/// Wire-format payload from `companion_assign_team`. Two ids the chat
+/// layer needs in tandem: the assignment for the panel + the operation
+/// id for episodic memory + Athena's reconciliation loop.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct CompanionAssignTeamResult {
+    pub assignment_id: String,
+    pub companion_op_id: String,
+}
+
+/// Generate a short title from a goal text. Trim to ~60 chars and take
+/// the first clause; keeps assignment-list rows readable when Athena
+/// creates an assignment without an explicit title.
+fn derive_title_from_goal(goal: &str) -> String {
+    let trimmed = goal.trim();
+    let first_clause = trimmed
+        .split(|c: char| c == '.' || c == '\n' || c == ';')
+        .next()
+        .unwrap_or(trimmed)
+        .trim();
+    if first_clause.len() <= 60 {
+        first_clause.to_string()
+    } else {
+        let truncated: String = first_clause.chars().take(57).collect();
+        format!("{truncated}…")
+    }
+}
+
 /// Phase B3 — Auto-decompose a natural-language goal into ordered steps
 /// via the existing Claude (subscription) provider. The composer calls
 /// this, lets the user edit the proposal, then submits through the

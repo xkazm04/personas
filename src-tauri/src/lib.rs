@@ -1951,6 +1951,7 @@ pub fn run() {
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
             commands::teams::assignments::decompose_team_assignment_goal,
+            commands::teams::assignments::companion_assign_team,
             // Tools
             commands::tools::tools::list_tool_definitions,
             commands::tools::tools::get_tool_definition,
