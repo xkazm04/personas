@@ -33,13 +33,6 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
-- **[2026-05-23 — started] idea-01db5cb0 — discoverable global shortcut cheat-sheet overlay**
-  - **Source:** Idea requirement (ui_perfectionist). Main app has Cmd+K / Esc but no way to discover shortcuts. Add a global `?` + Cmd+/ handler that opens a BaseModal cheat-sheet grouped by section (Navigation/Agents/Editing), reading from a new keyboard registry (single source of truth), with `<kbd>` chips and a subtle `?` affordance in the footer.
-  - **Paths:** `src/lib/keyboard/shortcutRegistry.ts` (new), `src/lib/keyboard/ShortcutCheatSheet.tsx` (new), `src/App.tsx` (mount), `src/features/shared/components/layout/DesktopFooter.tsx` (footer affordance), `src/features/plugins/dev-tools/sub_triage/IdeaTriagePage.tsx` (consolidate local `?` overlay → global), `src/i18n/locales/en.json` (additive `chrome.shortcuts.*` only), `.claude/active-runs.md`
-  - **Status:** started
-  - **Branch:** master (small surgical multi-file change; additive new files + tiny edits; staging only own files per parallel-safety primitives)
-  - **Note:** Path-disjoint from concurrent companion / team-studio / vault sessions. Shared en.json: additive under `chrome.shortcuts.*` only (others touch `plugins.companion.*`, `vault.*`).
-
 - **[2026-05-23 — started] companion chat UX — remove text stream, voice popover, conversation-orchestration research**
   - **Source:** User-driven. (1) Remove the live token text-stream from the chat bubble (keep phase + operational thread). (2) Right-sidebar audio button → popover with enable/disable + volume slider + "play test sentence". (3) Research 2025/2026 Claude Code releases and propose 3 variants for more granular conversation orchestration (intermediate states/effort hints to TTS/chat) instead of long-pause-then-big-bang.
   - **Paths:** `src/features/plugins/companion/{CompanionPanel,CompanionToolbar,voicePlayback}.tsx/ts` + new `VoiceControlPopover.tsx`, `src/stores/slices/system/companionPluginSlice.ts` (additive `companionVoiceVolume`), `src/i18n/locales/en.json` (additive), `src/stores/systemStore.ts` (partialize), `docs/features/companion/**`, `.claude/active-runs.md`
@@ -166,6 +159,12 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-23 — completed (commit: 4d9a98c8b)] idea-01db5cb0 — discoverable global shortcut cheat-sheet overlay**
+  - **Source:** Idea requirement (ui_perfectionist). The main app exposed Cmd+K / Escape with no way to discover them; only IdeaTriagePage had a bespoke overlay.
+  - **Shipped:** New `src/lib/keyboard/shortcutRegistry.ts` (single source of truth: sections Navigation/Agents/Editing, platform-aware `resolveKeyToken`, `SHORTCUTS_OPEN_EVENT`) + `ShortcutCheatSheet.tsx` (global `?` / Cmd+/ handler via `useAppKeyboard` priority 20, opens a `BaseModal` rendering `<kbd>` chips from the registry; also listens for the open event). Mounted in `App.tsx`. Subtle keyboard-icon affordance added to `DesktopFooter.tsx`. `IdeaTriagePage` local overlay consolidated into the global one (help button dispatches the event; `?`/Esc handled globally; accept/reject keys documented under Agents). i18n additive `chrome.shortcuts.*`. Unit test `__tests__/shortcutRegistry.test.ts` (5 passing).
+  - **Validation:** `tsc --noEmit` clean; eslint clean on touched files (0 warnings after contrast fixes); 5/5 registry tests pass; pre-commit hook green. Not live-tested in the running app (frontend-only; no Tauri/test-bridge running this session).
+  - **Branch:** master (additive new files + tiny edits; staged only own 11 files — left concurrent sessions' Rust `teams.rs`/`workflow_compiler.rs` + `*/deployment.json` locale edits untouched). Doc synced: `docs/features/plugins/dev-tools.md` triage step.
 
 - **[2026-05-23] athena-orb — Athena voice/orb feature (Steps 1 + 2a/2b/2c)**
   - **Status:** completed — committed on `master`, NOT merged anywhere (already on master). Commits: `e64af71e0` (Step 1 footer avatar + hold-to-talk), `684fa34e0` (Step 2a floating dockable orb), `54b366869` (Step 2b morph/hotkey/reduced-motion), `1e62630f7` (Step 2c on-device Whisper STT).
