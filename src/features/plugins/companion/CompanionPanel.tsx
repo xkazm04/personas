@@ -685,6 +685,15 @@ function Body(props: BodyProps) {
   const lastStreamEventAtRef = useRef<number>(0);
   const [slowLevel, setSlowLevel] = useState<0 | 1 | 2>(0);
 
+  // Variant C — spoken "no dead air" progress. While a turn is in flight we
+  // optionally speak a short ack (~2.5s in) and a heartbeat (~30s in), each
+  // once per turn, gated on voice being active and cut off the moment the
+  // real reply starts playing. Refs hold the in-flight progress clip so we
+  // can stop it; `spokenTiersRef` de-dupes tiers within a turn.
+  const progressAudioRef = useRef<HTMLAudioElement | null>(null);
+  const progressUrlRef = useRef<string | null>(null);
+  const spokenTiersRef = useRef<Set<number>>(new Set());
+
   useEffect(() => {
     if (!streaming) {
       setSlowLevel(0);
@@ -762,8 +771,14 @@ function Body(props: BodyProps) {
           // the trailing whole `assistant` message doesn't double the text.
           const delta = extractAssistantTextDelta(ev.payload);
           if (delta) {
+            // First token of the reply — flip the status to "Composing
+            // reply…" once (we no longer render the raw token stream, so
+            // without this the bubble would sit on "Thinking…" through the
+            // whole answer generation). Set once, not per-token.
+            if (!sawDeltasRef.current) {
+              useCompanionStore.getState().setStreamingPhase({ kind: 'responding' });
+            }
             sawDeltasRef.current = true;
-            useCompanionStore.getState().setStreamingPhase(null);
             deltaBufferRef.current += delta;
             if (deltaRafRef.current === null) {
               deltaRafRef.current = requestAnimationFrame(flushDeltaBuffer);
@@ -777,9 +792,9 @@ function Body(props: BodyProps) {
           const text = extractAssistantText(ev.payload);
           const phase = extractStreamPhase(ev.payload);
           if (text) {
-            // Prose is arriving — clear phase so it doesn't shadow the
-            // streaming text below.
-            useCompanionStore.getState().setStreamingPhase(null);
+            // Prose is arriving — show "Composing reply…" (we no longer
+            // render the partial text itself; the full reply lands whole).
+            useCompanionStore.getState().setStreamingPhase({ kind: 'responding' });
             // If deltas already streamed this turn, this whole-message text
             // is a duplicate of what we appended token-by-token — skip it.
             if (!sawDeltasRef.current) appendStreamingText(text);
@@ -1055,6 +1070,48 @@ function Body(props: BodyProps) {
   const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
   const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
 
+  // Stop + release any in-flight spoken-progress clip (ack / heartbeat).
+  const stopProgressAudio = useCallback(() => {
+    progressAudioRef.current?.pause();
+    progressAudioRef.current = null;
+    if (progressUrlRef.current) {
+      URL.revokeObjectURL(progressUrlRef.current);
+      progressUrlRef.current = null;
+    }
+  }, []);
+
+  // Speak one short progress phrase for `tier` (once per turn). Bails when
+  // voice isn't active, or when the real reply is already queued/playing —
+  // we never want a filler line talking over Athena's actual answer.
+  const speakProgress = useCallback(
+    (text: string, tier: number) => {
+      if (!voiceActive || !synthesisVoiceId) return;
+      if (spokenTiersRef.current.has(tier)) return;
+      if (useCompanionStore.getState().pendingPlayback) return;
+      spokenTiersRef.current.add(tier);
+      synthesizeTts(text, synthesisCredentialId, synthesisVoiceId, voiceSettings, voiceEngine)
+        .then((url) => {
+          // Re-check: the reply may have landed while we were synthesizing.
+          if (useCompanionStore.getState().pendingPlayback) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          progressUrlRef.current = url;
+          const { audio, done } = playAudio(url);
+          progressAudioRef.current = audio;
+          done.catch(silentCatch('companion_voice_progress_play')).finally(() => {
+            if (progressUrlRef.current === url) {
+              URL.revokeObjectURL(url);
+              progressUrlRef.current = null;
+              progressAudioRef.current = null;
+            }
+          });
+        })
+        .catch(silentCatch('companion_voice_progress_synthesize'));
+    },
+    [voiceActive, synthesisVoiceId, synthesisCredentialId, voiceSettings, voiceEngine],
+  );
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -1075,6 +1132,10 @@ function Body(props: BodyProps) {
       appendMessage(optimistic);
       setStreaming(true);
       resetStreamingText();
+      // Fresh turn — reset the spoken-progress tiers and silence any
+      // leftover progress clip.
+      spokenTiersRef.current.clear();
+      stopProgressAudio();
       // Seed the soft-progress clock so the chip-threshold effect
       // doesn't trip immediately based on a stale prior-turn timestamp.
       lastStreamEventAtRef.current = Date.now();
@@ -1108,6 +1169,9 @@ function Body(props: BodyProps) {
             audioUrl: null as string | null,
           };
           setPendingPlayback(playback);
+          // The real reply is committed — cut off any ack/heartbeat clip
+          // so it doesn't talk over Athena's answer.
+          stopProgressAudio();
           synthesizeTts(
             result.ttsText,
             synthesisCredentialId,
@@ -1146,8 +1210,30 @@ function Body(props: BodyProps) {
         useCompanionStore.getState().setStreamingPhase(null);
       }
     },
-    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
+    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
+
+  // Spoken ack: ~2.5s into a still-running turn, say a short "one moment"
+  // so a slow turn isn't dead silent. Fast turns (< the delay) never
+  // trigger it; the cleanup clears the timer when the turn ends.
+  useEffect(() => {
+    if (!streaming) {
+      stopProgressAudio();
+      return;
+    }
+    const id = window.setTimeout(() => {
+      speakProgress(t.plugins.companion.voice_progress_ack, 0);
+    }, 2500);
+    return () => window.clearTimeout(id);
+  }, [streaming, speakProgress, stopProgressAudio, t]);
+
+  // Spoken heartbeat: once the silence has crossed the first slow tier
+  // (~30s), say "still working" — once per turn.
+  useEffect(() => {
+    if (streaming && slowLevel >= 1) {
+      speakProgress(t.plugins.companion.voice_progress_working, 1);
+    }
+  }, [streaming, slowLevel, speakProgress, t]);
 
   // Voice turns fired from the footer's hold-to-talk affordance. This panel
   // component is always mounted (only its visible UI is gated on `isOpen`),

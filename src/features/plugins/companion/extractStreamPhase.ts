@@ -22,9 +22,77 @@ type T = ReturnType<typeof useTranslation>['t'];
 type Tx = ReturnType<typeof useTranslation>['tx'];
 
 export interface StreamPhase {
-  kind: 'thinking' | 'tool_use' | 'reviewing';
+  kind: 'thinking' | 'tool_use' | 'reviewing' | 'responding';
   /** Tool name when kind === 'tool_use'. e.g. 'Read', 'WebSearch', 'Task'. */
   toolName?: string;
+  /**
+   * Short, human-readable detail pulled from the tool's input — the search
+   * query, the file being read, the command being run. Lets the status line
+   * say "Searching the web · climate data" instead of just "Searching the
+   * web…". Sanitized + truncated; never raw telemetry.
+   */
+  detail?: string;
+}
+
+function basename(p: string): string {
+  const parts = p.split(/[\\/]/).filter(Boolean);
+  return parts[parts.length - 1] || p;
+}
+
+function clip(s: string, n = 48): string {
+  const oneLine = s.replace(/\s+/g, ' ').trim();
+  return oneLine.length > n ? `${oneLine.slice(0, n - 1)}…` : oneLine;
+}
+
+/**
+ * Pull a short, recognizable detail from a tool's input. Hand-curated per
+ * tool so we surface the *meaningful* field (query / file / pattern /
+ * command) and nothing else. Returns undefined when there's nothing worth
+ * showing — the phase then renders its bare label.
+ */
+function toolDetail(name: string, input: unknown): string | undefined {
+  if (!input || typeof input !== 'object') return undefined;
+  const i = input as Record<string, unknown>;
+  const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v : undefined);
+  switch (name) {
+    case 'WebSearch': {
+      const q = str(i.query);
+      return q ? clip(q) : undefined;
+    }
+    case 'WebFetch': {
+      const u = str(i.url);
+      if (!u) return undefined;
+      try {
+        return new URL(u).hostname;
+      } catch {
+        return clip(u);
+      }
+    }
+    case 'Read':
+    case 'Edit':
+    case 'Write':
+    case 'MultiEdit':
+    case 'NotebookEdit': {
+      const fp = str(i.file_path) ?? str(i.notebook_path);
+      return fp ? clip(basename(fp)) : undefined;
+    }
+    case 'Grep':
+    case 'Glob': {
+      const p = str(i.pattern);
+      return p ? clip(p) : undefined;
+    }
+    case 'Bash':
+    case 'PowerShell': {
+      const cmd = str(i.command);
+      return cmd ? clip(cmd, 40) : undefined;
+    }
+    case 'Task': {
+      const d = str(i.description);
+      return d ? clip(d) : undefined;
+    }
+    default:
+      return undefined;
+  }
 }
 
 /**
@@ -41,31 +109,36 @@ export function phaseLabel(t: T, tx: Tx, phase: StreamPhase): string {
   const c = t.plugins.companion;
   if (phase.kind === 'reviewing') return c.phase_reviewing;
   if (phase.kind === 'thinking') return c.phase_thinking;
+  if (phase.kind === 'responding') return c.phase_responding;
   // tool_use
   const tool = phase.toolName ?? '';
-  switch (tool) {
-    case 'WebSearch':
-      return c.phase_websearch;
-    case 'WebFetch':
-      return c.phase_webfetch;
-    case 'Read':
-      return c.phase_reading;
-    case 'Grep':
-    case 'Glob':
-      return c.phase_searching_code;
-    case 'Edit':
-    case 'Write':
-    case 'MultiEdit':
-    case 'NotebookEdit':
-      return c.phase_editing;
-    case 'Bash':
-    case 'PowerShell':
-      return c.phase_running_command;
-    case 'Task':
-      return c.phase_subagent;
-    default:
-      return tx(c.phase_using_tool, { tool });
-  }
+  const base = ((): string => {
+    switch (tool) {
+      case 'WebSearch':
+        return c.phase_websearch;
+      case 'WebFetch':
+        return c.phase_webfetch;
+      case 'Read':
+        return c.phase_reading;
+      case 'Grep':
+      case 'Glob':
+        return c.phase_searching_code;
+      case 'Edit':
+      case 'Write':
+      case 'MultiEdit':
+      case 'NotebookEdit':
+        return c.phase_editing;
+      case 'Bash':
+      case 'PowerShell':
+        return c.phase_running_command;
+      case 'Task':
+        return c.phase_subagent;
+      default:
+        return tx(c.phase_using_tool, { tool });
+    }
+  })();
+  // Append the tool's input detail when we have one ("Reading · runner.rs").
+  return phase.detail ? `${base} · ${phase.detail}` : base;
 }
 
 export function extractStreamPhase(line: string): StreamPhase | null {
@@ -94,7 +167,7 @@ export function extractStreamPhase(line: string): StreamPhase | null {
       let phase: StreamPhase | null = null;
       for (const b of blocks) {
         if (b?.type === 'tool_use' && typeof b.name === 'string') {
-          return { kind: 'tool_use', toolName: b.name };
+          return { kind: 'tool_use', toolName: b.name, detail: toolDetail(b.name, b.input) };
         }
         if (b?.type === 'thinking') {
           phase = { kind: 'thinking' };

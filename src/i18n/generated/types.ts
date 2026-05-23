@@ -10851,6 +10851,9 @@ export type Translations = {
       phase_running_command: string;
       phase_subagent: string;
       phase_using_tool: string;
+      phase_responding: string;
+      voice_progress_ack: string;
+      voice_progress_working: string;
       ops_thread_label: string;
       ops_status_pending: string;
       ops_status_in_progress: string;

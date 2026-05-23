@@ -18,6 +18,7 @@ const t = {
       phase_running_command: 'Running a command…',
       phase_subagent: 'Asking a subagent…',
       phase_using_tool: 'Using {tool}…',
+      phase_responding: 'Composing reply…',
     },
   },
 } as unknown as Parameters<typeof phaseLabel>[0];
@@ -55,14 +56,32 @@ describe('extractStreamPhase', () => {
     expect(extractStreamPhase(line)).toBeNull();
   });
 
-  it('extracts tool_use phase with the tool name', () => {
+  it('extracts tool_use phase with the tool name + input detail', () => {
     const line = JSON.stringify({
       type: 'assistant',
       message: {
-        content: [{ type: 'tool_use', name: 'Read', input: { file_path: 'x.ts' } }],
+        content: [{ type: 'tool_use', name: 'Read', input: { file_path: 'src/x.ts' } }],
       },
     });
-    expect(extractStreamPhase(line)).toEqual({ kind: 'tool_use', toolName: 'Read' });
+    expect(extractStreamPhase(line)).toEqual({
+      kind: 'tool_use',
+      toolName: 'Read',
+      detail: 'x.ts',
+    });
+  });
+
+  it('extracts a web-search query as the detail', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      message: {
+        content: [{ type: 'tool_use', name: 'WebSearch', input: { query: 'climate data' } }],
+      },
+    });
+    expect(extractStreamPhase(line)).toEqual({
+      kind: 'tool_use',
+      toolName: 'WebSearch',
+      detail: 'climate data',
+    });
   });
 
   it('returns the `thinking` phase for assistant thinking blocks', () => {
@@ -110,5 +129,15 @@ describe('phaseLabel', () => {
     expect(phaseLabel(t, tx, { kind: 'tool_use', toolName: 'WidgetMaker' })).toBe(
       'Using WidgetMaker…',
     );
+  });
+
+  it('maps responding → "Composing reply…"', () => {
+    expect(phaseLabel(t, tx, { kind: 'responding' })).toBe('Composing reply…');
+  });
+
+  it('appends the input detail with a separator when present', () => {
+    expect(
+      phaseLabel(t, tx, { kind: 'tool_use', toolName: 'Read', detail: 'runner.rs' }),
+    ).toBe('Reading files… · runner.rs');
   });
 });

@@ -1,6 +1,16 @@
 # Athena conversation orchestration — replacing long-pause-then-big-bang
 
-**Status:** Proposal (research + 3 variants). Step 1 (remove the raw token stream) shipped.
+**Status:** Variants **A + C shipped**; **B** parked for a likely follow-up. (Step 1 — removing the raw token stream — also shipped.)
+
+## Shipped (A + C)
+
+- **A — event-driven status + tool detail.** `extractStreamPhase` already derived the phase from real `tool_use` blocks; it now also extracts a short **input detail** (search query, file basename, `Grep` pattern, command, `Task` description, `WebFetch` host) so the status line reads "Searching the web · climate data" / "Reading files · runner.rs" rather than a bare label. A new `responding` phase ("Composing reply…") shows while the answer generates (since we no longer render the partial token text). Phase labels still fall through gracefully for unknown tools.
+- **C — spoken "no dead air".** When voice is active, `CompanionPanel` speaks a short ack (`voice_progress_ack`, ~2.5s into a still-running turn) and a heartbeat (`voice_progress_working`, once the silence crosses the ~30s slow tier), each at most once per turn. Both are cut off the instant the real reply is queued (`stopProgressAudio` on `setPendingPlayback`) so filler never talks over Athena's answer; fast turns (< 2.5s) never trigger an ack. Gating reuses the existing `voiceActive` + slow-progress timer.
+
+Still parked: **B** (model-authored progress beats via an `OP: progress { say }` op flushed incrementally to chat + TTS) — the next step if A+C's pacing proves out.
+
+---
+
 **Author:** 2026-05-23
 **Scope:** How Athena's chat turns surface intermediate state / effort to the UI and TTS, instead of a long silent pause followed by one big final message.
 
