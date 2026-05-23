@@ -8641,6 +8641,10 @@
       "no_ceiling_hint": "No ceiling is set. Enter a USD amount above to start tracking against a budget.",
       "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
     },
+    "recent_change": {
+      "label": "Last {action}: {when}",
+      "click_to_open": "Click to open History"
+    },
     "history": {
       "title": "Settings History",
       "subtitle": "Audit log of changes made to settings",

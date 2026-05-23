@@ -6,6 +6,7 @@ import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { WebhookSubscriptionsPanel } from './WebhookSubscriptionsPanel';
+import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 
 type HealingSeverity = 'critical' | 'high' | 'medium' | 'low';
 
@@ -154,6 +155,7 @@ export default function NotificationSettings() {
         iconColor="amber"
         title={s.title}
         subtitle={s.subtitle}
+        actions={<RecentChangeChip category="notifications" />}
       />
 
       <ContentBody centered>

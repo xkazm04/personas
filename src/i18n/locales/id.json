@@ -8580,6 +8580,10 @@
       "no_ceiling_hint": "Tidak ada plafon yang disetel. Masukkan jumlah USD di atas untuk mulai melacak terhadap anggaran.",
       "stage1_note": "Tahap 1: hanya informasional. Tahap 2 akan menggerbangi pengiriman eksekusi ketika plafon terlampaui."
     },
+    "recent_change": {
+      "label": "Terakhir {action}: {when}",
+      "click_to_open": "Klik untuk membuka Riwayat"
+    },
     "history": {
       "title": "Riwayat Pengaturan",
       "subtitle": "Log audit perubahan yang dilakukan pada pengaturan",

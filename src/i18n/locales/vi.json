@@ -8580,6 +8580,10 @@
       "no_ceiling_hint": "Chưa đặt mức trần nào. Nhập một số tiền USD ở trên để bắt đầu theo dõi theo ngân sách.",
       "stage1_note": "Giai đoạn 1: chỉ mang tính thông tin. Giai đoạn 2 sẽ kiểm soát việc điều phối thực thi khi vượt qua mức trần."
     },
+    "recent_change": {
+      "label": "{action} gần nhất: {when}",
+      "click_to_open": "Nhấp để mở Lịch sử"
+    },
     "history": {
       "title": "Lịch sử cài đặt",
       "subtitle": "Nhật ký kiểm tra các thay đổi đối với cài đặt",

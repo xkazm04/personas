@@ -6,6 +6,7 @@ import { getAllMonthlySpend } from '@/api/overview/observability';
 import type { MonthlySpendResult } from '@/lib/bindings/MonthlySpendResult';
 import { formatCost } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 
 const CEILING_KEY = 'monthly_cost_ceiling_usd';
 const WARNING_THRESHOLD = 0.8;
@@ -73,15 +74,18 @@ export default function LimitsSettings() {
         title={s.title}
         subtitle={s.subtitle}
         actions={
-          <button
-            type="button"
-            onClick={() => void loadSpend()}
-            disabled={spendLoading}
-            className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-secondary/40 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3 h-3 ${spendLoading ? 'animate-spin' : ''}`} />
-            {s.refresh}
-          </button>
+          <div className="flex items-center gap-2">
+            <RecentChangeChip category="limits" />
+            <button
+              type="button"
+              onClick={() => void loadSpend()}
+              disabled={spendLoading}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive typo-caption text-foreground hover:text-primary hover:bg-secondary/40 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 ${spendLoading ? 'animate-spin' : ''}`} />
+              {s.refresh}
+            </button>
+          </div>
         }
       />
       <ContentBody>

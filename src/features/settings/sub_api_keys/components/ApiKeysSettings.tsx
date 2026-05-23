@@ -34,6 +34,7 @@ import {
 } from '@/api/auth/externalApiKeys';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
+import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 
 // A key is considered "stale" — i.e. probably forgotten — when it's older than
 // the grace window AND either never used or unused for the inactivity window.
@@ -136,15 +137,18 @@ export default function ApiKeysSettings() {
         title={s.title}
         subtitle={loading ? s.loading : `${activeCount} ${s.active_keys}`}
         actions={
-          <button
-            type="button"
-            onClick={() => setShowCreate(true)}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            {s.create_key}
-          </button>
+          <div className="flex items-center gap-2">
+            <RecentChangeChip category="api_keys" />
+            <button
+              type="button"
+              onClick={() => setShowCreate(true)}
+              disabled={loading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive bg-primary text-primary-foreground typo-caption font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {s.create_key}
+            </button>
+          </div>
         }
       />
       <ContentBody>

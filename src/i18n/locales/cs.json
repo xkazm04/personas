@@ -8580,6 +8580,10 @@
       "no_ceiling_hint": "Není nastaven žádný strop. Zadej výše částku v USD a začni sledovat rozpočet.",
       "stage1_note": "Fáze 1: pouze informativně. Fáze 2 zablokuje odeslání spuštění při překročení stropu."
     },
+    "recent_change": {
+      "label": "Poslední {action}: {when}",
+      "click_to_open": "Kliknutím otevřeš Historii"
+    },
     "history": {
       "title": "Historie nastavení",
       "subtitle": "Audit log změn provedených v nastavení",

@@ -8580,6 +8580,10 @@
       "filtered_empty": "没有 Agent 匹配当前筛选。",
       "showing_count": "显示 {shown} / {total}"
     },
+    "recent_change": {
+      "label": "上次{action}：{when}",
+      "click_to_open": "点击打开历史记录"
+    },
     "history": {
       "title": "设置历史",
       "subtitle": "设置变更的审计日志",

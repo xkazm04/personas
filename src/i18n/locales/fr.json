@@ -8580,6 +8580,10 @@
       "filtered_empty": "Aucun agent ne correspond au filtre actuel.",
       "showing_count": "Affichage de {shown} sur {total}"
     },
+    "recent_change": {
+      "label": "Dernière {action} : {when}",
+      "click_to_open": "Cliquer pour ouvrir l'historique"
+    },
     "history": {
       "title": "Historique des paramètres",
       "subtitle": "Journal d'audit des modifications apportées aux paramètres",

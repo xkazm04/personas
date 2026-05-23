@@ -8580,6 +8580,10 @@
       "filtered_empty": "لا يوجد وكلاء يطابقون المرشح الحالي.",
       "showing_count": "عرض {shown} من {total}"
     },
+    "recent_change": {
+      "label": "آخر {action}: {when}",
+      "click_to_open": "انقر لفتح السجل"
+    },
     "history": {
       "title": "سجل الإعدادات",
       "subtitle": "سجل تدقيق التغييرات التي أُجريت على الإعدادات",

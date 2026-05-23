@@ -8580,6 +8580,10 @@
       "no_ceiling_hint": "No se ha establecido ningún tope. Introduce un importe en USD arriba para empezar a hacer seguimiento frente a un presupuesto.",
       "stage1_note": "Fase 1: solo informativa. La Fase 2 controlará el despacho de ejecuciones cuando se supere el tope."
     },
+    "recent_change": {
+      "label": "Último {action}: {when}",
+      "click_to_open": "Haz clic para abrir el Historial"
+    },
     "history": {
       "title": "Historial de configuración",
       "subtitle": "Registro de auditoría de los cambios realizados en la configuración",

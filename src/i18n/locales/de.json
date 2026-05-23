@@ -8580,6 +8580,10 @@
       "no_ceiling_hint": "Es ist keine Obergrenze festgelegt. Geben Sie oben einen USD-Betrag ein, um mit der Budgetverfolgung zu beginnen.",
       "stage1_note": "Stufe 1: nur informativ. Stufe 2 wird die Ausführungsverteilung blockieren, sobald die Obergrenze überschritten wird."
     },
+    "recent_change": {
+      "label": "Letzte {action}: {when}",
+      "click_to_open": "Klicken, um den Verlauf zu öffnen"
+    },
     "history": {
       "title": "Einstellungsverlauf",
       "subtitle": "Audit-Protokoll der an den Einstellungen vorgenommenen Änderungen",
