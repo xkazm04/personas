@@ -40,6 +40,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Branch:** master (user-driven, testing live; staged only own files per parallel-safety primitives)
   - **Note:** Root-cause of the "unreachable confirm" scope modal was a flexbox bug — `ResourcePicker` body was `flex-1 overflow-y-auto` without `min-h-0`, so it grew past the panel's `max-h-[90vh]` and `overflow-hidden` clipped the footer; added `min-h-0` + `shrink-0` header/footer. Same picker serves catalog-add + edit. Scope editing already existed (`CredentialScopeSection`) but was buried at the bottom of the Overview — moved it up. Concurrent /friend sessions touched plugin dirs + en.json (additive keys only, disjoint).
 
+- **[2026-05-23 22:18 — completed (5 commits, merged)] /friend — team-presets UI polish round**
+  - **Source:** User-driven polish round on the team-presets gallery + adoption modal. A: card list (tags→own row, members→icon, drop description). B: detail modal (z-layering over header, click member to toggle, member descriptions from schema, "Adopt N members" by selection, customization-form readability + transition). Includes a backend addition: optional roles filter on `adopt_team_preset` for honest subset adoption.
+  - **Status:** completed
+  - **Branch:** `worktree-friend-preset-polish-221830`
+  - **Commits:** `39e90c898` card polish · `e02a849f9` backend roles filter · `e1ed83a2f` modal layering/select/descriptions/count · `457c37b49` customization-form animation · `1e133977c` docs. cargo + tsc clean per commit + final.
+  - **Note:** Path-disjoint from the active athena-orb companion session. Branched from master `2aabb2909`. Subset adoption is an honest behavior change (adopt only selected members) — documented in `08-team-presets.md`. Marketing guide unchanged (polish on existing presets flow, no product-level concept change).
+
 - **[2026-05-23 18:00 — completed (C4, merged 4d3f65e09)] /friend — assignment templates (Phase C4 + docs sync)**
   - **Source:** Continuation — deferred Phase C items from the team-assignment orchestration arc (merged at master `1bbb2bbc3`). C4 = saved assignment templates (reusable goals + step lists per team). Plus docs sync.
   - **Status:** completed (pending user merge decision)

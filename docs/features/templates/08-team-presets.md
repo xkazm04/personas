@@ -20,14 +20,17 @@ scripts/templates/_team_presets/<id>.json   (source of truth, hand-authored)
 list_team_presets / get_team_preset (Tauri IPC)
         │
         ▼ PresetLibraryPage (templates → presets sub-tab)
-PresetPreviewModal — graph preview + per-member rows
+PresetPreviewModal — graph preview + per-member rows (each row shows the
+   template name + one-line description from the adoption schema, and is a
+   toggle: click to include / exclude that member from the adoption)
         │
-        ▼ user clicks "Adopt all"
-adopt_team_preset IPC
+        ▼ user clicks "Adopt N members" (label tracks the selection)
+adopt_team_preset IPC  (roles: Option<Vec<String>> — the selected subset,
+   or null to adopt every member)
         │
         ├─ groups::create               (optional)
         ├─ teams::create                (always — kept on partial failure)
-        ├─ FOR each member:
+        ├─ FOR each SELECTED member:
         │    instant_adopt_template_inner
         │    UPDATE personas.group_id   (if bound)
         │    teams::add_member

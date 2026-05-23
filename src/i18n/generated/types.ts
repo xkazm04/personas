@@ -6414,6 +6414,7 @@ export type Translations = {
       preview_graph_aria: string;
       preview_group_binding: string;
       preview_members_heading: string;
+      preview_members_select_hint: string;
       adopt_all_button_one: string;
       adopt_all_button_other: string;
       open_team_button: string;

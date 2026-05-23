@@ -83,11 +83,14 @@ export type PresetParameterOverrides = Record<
 export const adoptTeamPreset = (
   id: string,
   parameterOverrides: PresetParameterOverrides | null = null,
+  /** Subset of manifest roles to adopt. `null` adopts every member. */
+  roles: string[] | null = null,
 ) =>
   invoke<AdoptedTeamPresetResult>("adopt_team_preset", {
     id,
     language: currentLanguage(),
     parameterOverrides,
+    roles,
   });
 
 /**

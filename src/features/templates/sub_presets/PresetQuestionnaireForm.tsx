@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { ChevronDown, ChevronRight, Settings2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronRight, Settings2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import type { PresetAdoptionSchema } from '@/lib/bindings/PresetAdoptionSchema';
@@ -164,7 +165,11 @@ function MemberSection({
   const hasQuestions = questions.length > 0;
 
   return (
-    <div className="rounded-card border border-primary/10 bg-background/40">
+    <div
+      className={`rounded-card border bg-background/40 transition-colors ${
+        expanded && hasQuestions ? 'border-primary/20' : 'border-primary/10'
+      }`}
+    >
       <button
         type="button"
         data-testid={`preset-questionnaire-member-${member.role}`}
@@ -181,11 +186,11 @@ function MemberSection({
         }
       >
         {hasQuestions ? (
-          expanded ? (
-            <ChevronDown className="w-3.5 h-3.5 text-foreground/60 flex-shrink-0" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5 text-foreground/60 flex-shrink-0" />
-          )
+          <ChevronRight
+            className={`w-3.5 h-3.5 text-foreground/60 flex-shrink-0 transition-transform duration-200 ${
+              expanded ? 'rotate-90' : ''
+            }`}
+          />
         ) : (
           <span className="w-3.5 flex-shrink-0" />
         )}
@@ -209,23 +214,34 @@ function MemberSection({
         </span>
       </button>
 
-      {expanded && hasQuestions && (
-        <div className="px-3 pb-3 pt-1 space-y-3 border-t border-primary/10">
-          {member.template_description && (
-            <p className="typo-caption text-foreground/55 italic">
-              {member.template_description}
-            </p>
-          )}
-          {questions.map((q) => (
-            <QuestionField
-              key={q.id}
-              question={q}
-              value={overrides[q.id]}
-              onChange={(v) => onSetOverride(q.id, v)}
-            />
-          ))}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {expanded && hasQuestions && (
+          <motion.div
+            key="member-questions"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className="overflow-hidden"
+          >
+            <div className="px-3 pb-3 pt-2 space-y-3 border-t border-primary/10">
+              {member.template_description && (
+                <p className="typo-caption text-foreground/55 italic leading-relaxed">
+                  {member.template_description}
+                </p>
+              )}
+              {questions.map((q) => (
+                <QuestionField
+                  key={q.id}
+                  question={q}
+                  value={overrides[q.id]}
+                  onChange={(v) => onSetOverride(q.id, v)}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

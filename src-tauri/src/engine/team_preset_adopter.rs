@@ -187,14 +187,27 @@ pub fn adopt_preset(
             std::collections::HashMap<String, serde_json::Value>,
         >,
     >,
+    // When `Some`, adopt only the members whose `role` is in this set
+    // (the preview modal lets the user deselect members before adopting).
+    // `None` adopts every member — the default "Adopt all" path. Connections
+    // are wired only between members that BOTH landed, so deselecting an
+    // endpoint silently drops its edges (existing endpoint-missing skip).
+    roles_filter: Option<&[String]>,
 ) -> Result<AdoptedTeamPresetResult, AppError> {
     let preset: TeamPreset = team_preset_loader::get_preset(preset_id, language)?;
 
-    // 0. Emit a `queued` event per member up-front so the UI's per-row
-    //    status table can render the full skeleton immediately. Then the
+    // A member is in-scope when there's no filter, or its role is listed.
+    let is_selected = |role: &str| {
+        roles_filter
+            .map(|roles| roles.iter().any(|r| r == role))
+            .unwrap_or(true)
+    };
+
+    // 0. Emit a `queued` event per selected member up-front so the UI's
+    //    per-row status table can render the skeleton immediately. Then the
     //    subsequent `adopting` / `done` / `failed` transitions update
     //    rows in place.
-    for m in &preset.members {
+    for m in preset.members.iter().filter(|m| is_selected(&m.role)) {
         emit_progress(
             &app,
             &preset.id,
@@ -259,7 +272,7 @@ pub fn adopt_preset(
     let mut role_to_member_id: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
 
-    for m in &preset.members {
+    for m in preset.members.iter().filter(|m| is_selected(&m.role)) {
         emit_progress(
             &app,
             &preset.id,
