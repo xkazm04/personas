@@ -1,5 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { QualityGateConfig } from "@/lib/bindings/QualityGateConfig";
+import type { SettingsAuditEntry } from "@/lib/bindings/SettingsAuditEntry";
+export type { SettingsAuditEntry };
 
 // ============================================================================
 // Settings (global key-value store)
@@ -52,3 +54,14 @@ export const setQualityGateConfig = (config: QualityGateConfig) =>
 
 export const resetQualityGateConfig = () =>
   invoke<QualityGateConfig>("reset_quality_gate_config");
+
+/**
+ * Newest-first list of settings-audit entries. Pass `category` to scope to one
+ * sub-module (`"api_keys"`, `"notifications"`, …); omit for all.
+ * `limit` is clamped to `[1, 1000]` server-side.
+ */
+export const listSettingsAuditEntries = (limit: number, category?: string) =>
+  invoke<SettingsAuditEntry[]>("list_settings_audit_entries", {
+    limit,
+    category: category ?? null,
+  });

@@ -22,6 +22,7 @@ pub mod playwright_procedures;
 pub mod recipe_suggestions;
 pub mod recipes;
 pub mod rotation;
+pub mod settings_audit_log;
 #[cfg(feature = "p2p")]
 pub mod signing;
 pub mod skills;
