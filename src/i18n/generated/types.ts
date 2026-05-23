@@ -250,6 +250,21 @@ export type Translations = {
     sign_out: string;
     offline: string;
     mobile_preview: string;
+    shortcuts: {
+      title: string;
+      subtitle: string;
+      open_title: string;
+      section_navigation: string;
+      section_agents: string;
+      section_editing: string;
+      command_palette: string;
+      show_shortcuts: string;
+      close_overlay: string;
+      triage_reject: string;
+      triage_accept: string;
+      undo: string;
+      redo: string;
+    };
   };
   sidebar: {
     home: string;

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X } from 'lucide-react';
+import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard } from 'lucide-react';
+import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
@@ -284,6 +285,31 @@ function CollapseFooterIcon() {
 }
 
 // ---------------------------------------------------------------------------
+// Keyboard-shortcuts cheat-sheet trigger -- opens the global `?` overlay.
+// Subtle discoverability affordance so users learn the binding exists.
+// ---------------------------------------------------------------------------
+
+function ShortcutsFooterIcon() {
+  const { t } = useTranslation();
+
+  const handleClick = useCallback(() => {
+    window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT));
+  }, []);
+
+  return (
+    <button
+      onClick={handleClick}
+      data-testid="footer-shortcuts"
+      className="w-7 h-7 rounded-lg flex items-center justify-center text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+      title={`${t.chrome.shortcuts.open_title} (?)`}
+      aria-label={t.chrome.shortcuts.open_title}
+    >
+      <Keyboard className="w-5 h-5" />
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Active Dev Tools project picker -- compact right-side switcher so users
 // can change the active codebase without opening the Dev Tools plugin UI.
 // Hidden when no projects exist (avoids advertising an empty state).
@@ -416,6 +442,8 @@ export default function DesktopFooter() {
         <AccountFooterIcon />
         <div className="w-px h-4 bg-primary/10" />
         <ThemeFooterIcon />
+        <div className="w-px h-4 bg-primary/10" />
+        <ShortcutsFooterIcon />
         {import.meta.env.DEV && (
           <>
             <div className="w-px h-4 bg-primary/10" />

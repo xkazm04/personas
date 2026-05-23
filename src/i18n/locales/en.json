@@ -243,7 +243,22 @@
     "signed_in": "Signed in",
     "sign_out": "Sign out",
     "offline": "Offline",
-    "mobile_preview": "Mobile preview"
+    "mobile_preview": "Mobile preview",
+    "shortcuts": {
+      "title": "Keyboard shortcuts",
+      "subtitle": "Press ? anytime to open this list",
+      "open_title": "Keyboard shortcuts",
+      "section_navigation": "Navigation",
+      "section_agents": "Agents",
+      "section_editing": "Editing",
+      "command_palette": "Open command palette",
+      "show_shortcuts": "Show keyboard shortcuts",
+      "close_overlay": "Close dialog or overlay",
+      "triage_reject": "Reject idea",
+      "triage_accept": "Accept idea",
+      "undo": "Undo",
+      "redo": "Redo"
+    }
   },
   "sidebar": {
     "home": "Home",

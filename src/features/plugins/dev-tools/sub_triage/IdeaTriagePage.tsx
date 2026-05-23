@@ -17,6 +17,7 @@ import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
 import { computeAgentStats } from '../sub_scanner/AgentScoreboard';
+import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -222,7 +223,6 @@ export default function IdeaTriagePage() {
 
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
   const [filterScanType, setFilterScanType] = useState<string | null>(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
   const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
 
@@ -320,14 +320,8 @@ export default function IdeaTriagePage() {
       const target = e.target as HTMLElement;
       if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return;
 
-      if (e.key === '?') {
-        setShowShortcuts((prev) => !prev);
-        return;
-      }
-      if (e.key === 'Escape') {
-        setShowShortcuts(false);
-        return;
-      }
+      // `?` / Escape are handled by the global ShortcutCheatSheet overlay; the
+      // triage page only owns the swipe-action keys below.
       if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
         e.preventDefault();
         handleSwipe('left');
@@ -367,7 +361,7 @@ export default function IdeaTriagePage() {
           }
         >
           <button
-            onClick={() => setShowShortcuts((p) => !p)}
+            onClick={() => window.dispatchEvent(new CustomEvent(SHORTCUTS_OPEN_EVENT))}
             className="w-7 h-7 rounded-card bg-primary/5 border border-primary/10 flex items-center justify-center hover:bg-primary/10 transition-colors"
             title={dt.shortcuts_open_title}
           >
@@ -554,57 +548,6 @@ export default function IdeaTriagePage() {
           </div>
         </div>
       </ContentBody>
-
-      {/* Keyboard shortcut overlay */}
-      <AnimatePresence>
-        {showShortcuts && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 surface-blur-modal"
-            onClick={() => setShowShortcuts(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-80 rounded-2xl border border-primary/15 bg-background/95 surface-blur-modal shadow-elevation-4 p-6"
-            >
-              <h3 className="text-md font-semibold text-primary mb-4">{dt.shortcuts_title}</h3>
-              <div className="space-y-2.5">
-                {[
-                  { keys: ['<-', 'A'], action: dt.shortcuts_reject },
-                  { keys: ['->', 'Z'], action: dt.shortcuts_accept },
-                  { keys: ['?'], action: dt.shortcuts_toggle },
-                  { keys: ['Esc'], action: dt.shortcuts_close },
-                ].map((shortcut) => (
-                  <div key={shortcut.action} className="flex items-center justify-between">
-                    <span className="text-md text-foreground">{shortcut.action}</span>
-                    <div className="flex items-center gap-1">
-                      {shortcut.keys.map((key, ki) => (
-                        <span key={ki}>
-                          {ki > 0 && <span className="text-foreground text-[10px] mx-0.5">/</span>}
-                          <kbd className="inline-block px-1.5 py-0.5 text-md font-mono bg-primary/10 border border-primary/15 rounded text-foreground">
-                            {key}
-                          </kbd>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => setShowShortcuts(false)}
-                className="mt-5 w-full text-center text-md text-foreground hover:text-foreground transition-colors"
-              >
-                {dt.shortcuts_dismiss_hint}
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </ContentBox>
   );
 }

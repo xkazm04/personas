@@ -33,6 +33,13 @@ timestamp — the next session can recognize it as abandoned.
 ## Active
 
 
+- **[2026-05-23 — started] idea-01db5cb0 — discoverable global shortcut cheat-sheet overlay**
+  - **Source:** Idea requirement (ui_perfectionist). Main app has Cmd+K / Esc but no way to discover shortcuts. Add a global `?` + Cmd+/ handler that opens a BaseModal cheat-sheet grouped by section (Navigation/Agents/Editing), reading from a new keyboard registry (single source of truth), with `<kbd>` chips and a subtle `?` affordance in the footer.
+  - **Paths:** `src/lib/keyboard/shortcutRegistry.ts` (new), `src/lib/keyboard/ShortcutCheatSheet.tsx` (new), `src/App.tsx` (mount), `src/features/shared/components/layout/DesktopFooter.tsx` (footer affordance), `src/features/plugins/dev-tools/sub_triage/IdeaTriagePage.tsx` (consolidate local `?` overlay → global), `src/i18n/locales/en.json` (additive `chrome.shortcuts.*` only), `.claude/active-runs.md`
+  - **Status:** started
+  - **Branch:** master (small surgical multi-file change; additive new files + tiny edits; staging only own files per parallel-safety primitives)
+  - **Note:** Path-disjoint from concurrent companion / team-studio / vault sessions. Shared en.json: additive under `chrome.shortcuts.*` only (others touch `plugins.companion.*`, `vault.*`).
+
 - **[2026-05-23 — started] companion chat UX — remove text stream, voice popover, conversation-orchestration research**
   - **Source:** User-driven. (1) Remove the live token text-stream from the chat bubble (keep phase + operational thread). (2) Right-sidebar audio button → popover with enable/disable + volume slider + "play test sentence". (3) Research 2025/2026 Claude Code releases and propose 3 variants for more granular conversation orchestration (intermediate states/effort hints to TTS/chat) instead of long-pause-then-big-bang.
   - **Paths:** `src/features/plugins/companion/{CompanionPanel,CompanionToolbar,voicePlayback}.tsx/ts` + new `VoiceControlPopover.tsx`, `src/stores/slices/system/companionPluginSlice.ts` (additive `companionVoiceVolume`), `src/i18n/locales/en.json` (additive), `src/stores/systemStore.ts` (partialize), `docs/features/companion/**`, `.claude/active-runs.md`

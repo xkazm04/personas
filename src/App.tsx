@@ -21,6 +21,7 @@ import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import { createLogger } from "@/lib/log";
 import { idlePrefetch } from "@/lib/idlePrefetch";
 import { AppKeyboardProvider, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
+import ShortcutCheatSheet from "@/lib/keyboard/ShortcutCheatSheet";
 import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 
@@ -218,6 +219,7 @@ export default function App() {
       <AppKeyboardProvider>
         <ModalStackProvider>
         <DevMobilePreviewShortcut />
+        <ShortcutCheatSheet />
         <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
           <AriaLiveProvider>
         <div
