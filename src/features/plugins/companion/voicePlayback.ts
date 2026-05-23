@@ -1,4 +1,5 @@
 import { companionTts, type TtsEngineId, type TtsSettings } from '@/api/companion';
+import { attachPlayback } from './audioLevel';
 
 /**
  * Voice-playback helpers for Athena's spoken summaries.
@@ -44,6 +45,9 @@ export async function synthesize(
 export function play(url: string): { audio: HTMLAudioElement; done: Promise<void> } {
   const audio = new Audio(url);
   audio.preload = 'auto';
+  // Route through the shared analyser so UI (the orb's glow) can react to
+  // the live speech level. Best-effort — never blocks or breaks playback.
+  attachPlayback(audio);
   const done = new Promise<void>((resolve, reject) => {
     audio.addEventListener('ended', () => resolve(), { once: true });
     audio.addEventListener(

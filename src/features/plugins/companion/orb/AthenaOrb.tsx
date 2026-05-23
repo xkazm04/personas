@@ -6,6 +6,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import type { HoldToTalk } from '../useHoldToTalk';
+import { subscribeAudioLevel } from '../audioLevel';
 import { AthenaAvatar, type AthenaState } from '../AthenaAvatar';
 
 /**
@@ -199,6 +200,22 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
 
   const caption = talking && interimText ? interimText : null;
 
+  // Audio-reactive glow: while a spoken reply plays, drive the bloom's
+  // opacity + scale from the live TTS level (tapped via the shared
+  // analyser in audioLevel.ts). Imperative — we mutate the glow node in the
+  // subscription callback rather than re-rendering at frame rate. Skipped
+  // under reduced motion (the glow stays a static bloom there).
+  const glowRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (reduceMotion || !speaking) return;
+    return subscribeAudioLevel((lvl) => {
+      const el = glowRef.current;
+      if (!el) return;
+      el.style.opacity = String(0.22 + lvl * 0.65);
+      el.style.transform = `scale(${1 + lvl * 0.55})`;
+    });
+  }, [reduceMotion, speaking]);
+
   return (
     <div
       className="group pointer-events-auto absolute select-none touch-none"
@@ -233,17 +250,21 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
         title={t.plugins.companion.orb_talk_hint}
         aria-label={talking ? t.plugins.companion.footer_listening : t.plugins.companion.orb_talk_hint}
       >
-        {/* Speaking glow — a soft pulsing bloom while a spoken reply is
-            queued/playing. CSS-only (not yet audio-reactive: the analyser
-            version is parked in athena-orb-overlay-plan.md §2.6). */}
-        {speaking && (
-          <span
-            aria-hidden
-            className={`absolute -inset-1.5 rounded-full bg-primary/30 blur-md ${
-              reduceMotion ? '' : 'animate-pulse'
-            }`}
-          />
-        )}
+        {/* Speaking glow — a bloom while a spoken reply plays. When motion
+            is allowed it's audio-reactive: the ref'd node's opacity + scale
+            are driven from the live TTS level (see the effect above). Under
+            reduced motion it's a static bloom. */}
+        {speaking &&
+          (reduceMotion ? (
+            <span aria-hidden className="absolute -inset-1.5 rounded-full bg-primary/30 blur-md" />
+          ) : (
+            <span
+              ref={glowRef}
+              aria-hidden
+              className="absolute -inset-1.5 rounded-full bg-primary/40 blur-md"
+              style={{ opacity: 0.3, transform: 'scale(1)', willChange: 'opacity, transform' }}
+            />
+          ))}
         <span className="absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 ring-1 ring-primary/25 bg-primary/10">
           <AthenaAvatar state={avatarState} fill className="absolute inset-0" />
         </span>

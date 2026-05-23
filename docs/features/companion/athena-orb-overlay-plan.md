@@ -209,7 +209,7 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 - [x] Orb→panel morph: panel flies + scales out of the orb's recorded center (anchored to the panel's deterministic bottom-left corner) and collapses back on close. Simpler + more robust than cross-portal `layoutId`.
 - [x] Global summon+talk shortcut (Cmd/Ctrl+Shift+A) + `Esc` cancel (`abort()` on the shared hook discards the transcript). Single `useHoldToTalk` instance lifted to `AthenaOrbLayer` so orb + keyboard share talk state.
 - [x] `prefers-reduced-motion` handling (morph → opacity-only; orb hover-scale / pulse disabled) via framer `useReducedMotion`.
-- [~] Speaking glow: CSS pulse bloom while a spoken reply is queued/playing. **The audio-reactive `AnalyserNode` version is still parked** — `voicePlayback.play()` spins up a fresh `<audio>` per call with no shared analyser, so true level-driven bloom needs playback to be centralized first (§2.6).
+- [x] Speaking glow — **now audio-reactive.** Centralized playback through one shared `AnalyserNode` (`audioLevel.ts`; `voicePlayback.play()` taps every `<audio>`); the orb's bloom opacity/scale track the live TTS level via an imperative `rAF` subscription (no React churn). Best-effort tap (degrades silently), static under reduced motion. This closes the §2.6 follow-up.
 
 **Step 2c — local on-device Whisper STT (shipped)**
 - [x] `companion/stt/` module (mod/whisper/catalog/downloader) + 5 IPC commands + command-names regen. Types hand-mirrored in `api/companion.ts` (no ts-rs needed — matches the Piper TTS convention).
