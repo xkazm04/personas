@@ -22,14 +22,3 @@ export const deleteGroup = (id: string) =>
 
 export const reorderGroups = (orderedIds: string[]) =>
   invoke<void>("reorder_groups", { orderedIds });
-
-/**
- * Explicitly clear the four "default" caps on a group: `defaultModelProfile`,
- * `defaultMaxBudgetUsd`, `defaultMaxTurns`, `sharedInstructions`. Necessary
- * because the regular `update_group` IPC uses single-Option semantics where
- * `null` means "preserve, don't change" — there's no way to actively NULL
- * a field through it. Surfaces as a "Clear all defaults" affordance on
- * the group editor.
- */
-export const clearGroupDefaults = (id: string) =>
-  invoke<PersonaGroup>("clear_group_defaults", { id });

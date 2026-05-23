@@ -88,38 +88,6 @@ pub fn create(pool: &DbPool, input: CreatePersonaGroupInput) -> Result<PersonaGr
     })
 }
 
-/// Explicitly null out the four "default" fields on a group — the
-/// `defaultModelProfile`, `defaultMaxBudgetUsd`, `defaultMaxTurns`, and
-/// `sharedInstructions` caps. Used by the GroupEditModal's "Clear all
-/// defaults" affordance. Necessary because the existing `update_group`
-/// IPC takes `Option<T>` per field where `None` means "preserve" and
-/// there's no way to send `Some(NULL)` through the single-Option contract;
-/// rather than refactor the entire UpdatePersonaGroupInput surface to
-/// `Option<Option<T>>` (the dev_tools::update_project pattern), this
-/// dedicated endpoint surfaces the clear semantics for the only case
-/// the user can reach today — the group defaults editor.
-///
-/// Returns the refreshed group so the slice can patch its in-memory state
-/// without a follow-up fetch.
-pub fn clear_defaults(pool: &DbPool, id: &str) -> Result<PersonaGroup, AppError> {
-    timed_query!("persona_groups", "persona_groups::clear_defaults", {
-        get_by_id(pool, id)?; // 404 if missing
-        let now = chrono::Utc::now().to_rfc3339();
-        let conn = pool.get()?;
-        conn.execute(
-            "UPDATE persona_groups
-             SET default_model_profile = NULL,
-                 default_max_budget_usd = NULL,
-                 default_max_turns = NULL,
-                 shared_instructions = NULL,
-                 updated_at = ?1
-             WHERE id = ?2",
-            params![now, id],
-        )?;
-        get_by_id(pool, id)
-    })
-}
-
 pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("persona_groups", "persona_groups::delete", {
         let mut conn = pool.get()?;
@@ -232,11 +200,11 @@ mod tests {
                 color: None,
                 sort_order: None,
                 collapsed: Some(true),
-                description: Some("Updated workspace".into()),
-                default_model_profile: Some(r#"{"model":"claude-sonnet-4-20250514"}"#.into()),
-                default_max_budget_usd: Some(2.5),
-                default_max_turns: Some(15),
-                shared_instructions: Some("Always be concise.".into()),
+                description: Some(Some("Updated workspace".into())),
+                default_model_profile: Some(Some(r#"{"model":"claude-sonnet-4-20250514"}"#.into())),
+                default_max_budget_usd: Some(Some(2.5)),
+                default_max_turns: Some(Some(15)),
+                shared_instructions: Some(Some("Always be concise.".into())),
             },
         )
         .unwrap();

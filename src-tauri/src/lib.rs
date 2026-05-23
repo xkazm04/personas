@@ -1272,7 +1272,6 @@ pub fn run() {
             commands::core::groups::update_group,
             commands::core::groups::delete_group,
             commands::core::groups::reorder_groups,
-            commands::core::groups::clear_group_defaults,
             // Core -- Memories
             commands::core::memories::list_memory_categories,
             commands::core::memories::list_memories,
