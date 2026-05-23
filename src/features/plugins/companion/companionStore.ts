@@ -205,6 +205,16 @@ interface CompanionStore {
   setVoiceTurnRequest: (text: string | null) => void;
 
   /**
+   * Screen-space center (viewport px) of the orb at the moment the user
+   * tapped it to open the chat. Lets `CompanionPanel` animate its entrance
+   * from the orb's position (and exit back toward it) for an orb→panel
+   * morph. Null when the panel was opened from somewhere other than the orb
+   * (e.g. the footer), in which case the panel uses its default entrance.
+   */
+  orbOpenOrigin: { x: number; y: number } | null;
+  setOrbOpenOrigin: (origin: { x: number; y: number } | null) => void;
+
+  /**
    * Per-turn recall preview surfaced from the backend's `recall-preview`
    * event. `streamingRecall` is the live, in-flight strip shown above the
    * streaming bubble; on the `finished` stream event it's moved into
@@ -382,6 +392,9 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   voiceTurnRequest: null,
   setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
+
+  orbOpenOrigin: null,
+  setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),
 
   streamingRecall: null,
   recallByEpisodeId: {},

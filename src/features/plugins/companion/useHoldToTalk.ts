@@ -33,6 +33,12 @@ export interface HoldToTalk {
    * get stuck in the listening visual.
    */
   stop: () => void;
+  /**
+   * End the session WITHOUT firing a turn — discards the transcript. Used
+   * for explicit cancels (e.g. pressing Esc) and when a drag supersedes an
+   * armed hold.
+   */
+  abort: () => void;
 }
 
 export function useHoldToTalk(): HoldToTalk {
@@ -40,10 +46,14 @@ export function useHoldToTalk(): HoldToTalk {
   const dictation = useDictation();
   const [talking, setTalking] = useState(false);
   const talkingRef = useRef(false);
+  // Set by `abort()` so the listening-end effect discards the transcript
+  // instead of firing a turn.
+  const abortRef = useRef(false);
 
   const start = useCallback(() => {
     if (!dictation.supported || talkingRef.current) return;
     talkingRef.current = true;
+    abortRef.current = false;
     setTalking(true);
     dictation.reset();
     dictation.start();
@@ -60,19 +70,34 @@ export function useHoldToTalk(): HoldToTalk {
     }
   }, [dictation]);
 
+  const abort = useCallback(() => {
+    if (!talkingRef.current) return;
+    abortRef.current = true;
+    if (dictation.listening) {
+      dictation.stop();
+    } else {
+      talkingRef.current = false;
+      setTalking(false);
+      dictation.reset();
+    }
+  }, [dictation]);
+
   // When a session ends (listening flips true → false), hand the final
-  // transcript to the panel. Reading finalText on the same render is safe:
-  // the engine emits its final `onresult` before `onend` flips listening off.
+  // transcript to the panel — unless the session was aborted. Reading
+  // finalText on the same render is safe: the engine emits its final
+  // `onresult` before `onend` flips listening off.
   const prevListeningRef = useRef(false);
   useEffect(() => {
     const wasListening = prevListeningRef.current;
     prevListeningRef.current = dictation.listening;
     if (wasListening && !dictation.listening && talkingRef.current) {
+      const aborted = abortRef.current;
       const text = dictation.finalText.trim();
       talkingRef.current = false;
+      abortRef.current = false;
       setTalking(false);
       dictation.reset();
-      if (text) setVoiceTurnRequest(text);
+      if (!aborted && text) setVoiceTurnRequest(text);
     }
   }, [dictation.listening, dictation.finalText, dictation, setVoiceTurnRequest]);
 
@@ -82,5 +107,6 @@ export function useHoldToTalk(): HoldToTalk {
     interimText: dictation.interimText,
     start,
     stop,
+    abort,
   };
 }

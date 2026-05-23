@@ -32,7 +32,9 @@ Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes 
 - **Dock + persistence:** on drop the X position snaps to the nearest side edge; position is stored as viewport fractions (`companionOrbPos`) and resolved to pixels at render so it survives window resizes and restarts. A hover-revealed `×` dismisses the orb (→ `collapsed`).
 - **Footer + panel wiring:** when the orb is enabled (`companionOrbEnabled`, default on, toggled in Companion → Setup → "Floating avatar"), the footer button summons/hides the orb (`minimized ↔ collapsed`) and the chat panel's close button returns to the orb instead of vanishing. `AthenaOrbLayer` promotes a dormant (`collapsed`) Athena to `minimized` once on mount so the presence is there from launch. With the orb disabled, the footer keeps its classic open/collapse behavior.
 
-Still parked for a follow-up (plan §2.4–2.6, §4): the orb↔panel `layoutId` morph, a global summon+talk shortcut, the Layer-B-lite reactive glow, and the on-device Whisper STT engine.
+**Polish (Step 2b).** Opening from the orb morphs the panel out of the orb's position (it flies + scales from the orb's recorded center, anchored to the panel's bottom-left corner, and collapses back on close). A global **Cmd/Ctrl+Shift+A** summons Athena and starts a voice turn (press again to send, **Esc** to cancel — the shared `useHoldToTalk` instance lives in `AthenaOrbLayer` so the orb and the keyboard drive one session). All of it honors `prefers-reduced-motion`. A CSS bloom pulses the orb while a spoken reply is queued/playing.
+
+Still parked: a true audio-reactive glow driven by an `AnalyserNode` (needs `voicePlayback` centralized first), and the on-device Whisper STT engine (plan §4 / Step 2c).
 
 ## Athena desktop-aware lineage
 

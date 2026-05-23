@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   BookOpen,
   Bot,
@@ -169,6 +169,8 @@ export default function CompanionPanel() {
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  const orbOpenOrigin = useCompanionStore((s) => s.orbOpenOrigin);
+  const reduceMotion = useReducedMotion();
 
   const isOpen = state === 'open';
 
@@ -180,15 +182,56 @@ export default function CompanionPanel() {
       .catch(silentCatch('companion_beta_flags'));
   }, [setBetaSelfImprove]);
 
+  // Orb → panel morph. The panel is anchored bottom-left (`left-4 bottom-12`),
+  // so its bottom-left corner sits at screen (16, vh-48) regardless of the
+  // panel's height. Pinning `transformOrigin` to that corner lets us fly +
+  // scale the panel out of the orb's recorded center for an "orb expands
+  // into chat" feel (and collapse back toward it on close). Falls back to a
+  // plain fade/scale when there's no orb origin, or to opacity-only under
+  // `prefers-reduced-motion`.
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+  const morph = (() => {
+    if (reduceMotion) {
+      return {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.12 },
+        style: undefined,
+      };
+    }
+    if (orbOpenOrigin) {
+      const dx = orbOpenOrigin.x - 16;
+      const dy = orbOpenOrigin.y - (window.innerHeight - 48);
+      return {
+        initial: { opacity: 0, scale: 0.18, x: dx, y: dy },
+        animate: { opacity: 1, scale: 1, x: 0, y: 0 },
+        exit: { opacity: 0, scale: 0.18, x: dx, y: dy },
+        transition: { duration: 0.28, ease },
+        style: { transformOrigin: 'bottom left' },
+      };
+    }
+    return {
+      initial: { opacity: 0, y: 12, scale: 0.98 },
+      animate: { opacity: 1, y: 0, scale: 1 },
+      exit: { opacity: 0, y: 8, scale: 0.98 },
+      transition: { duration: 0.18, ease },
+      style: undefined,
+    };
+  })();
+
   return (
-    <AnimatePresence>
+    <AnimatePresence
+      onExitComplete={() => useCompanionStore.getState().setOrbOpenOrigin(null)}
+    >
       {isOpen && (
         <motion.div
           key="companion-panel"
-          initial={{ opacity: 0, y: 12, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.98 }}
-          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          initial={morph.initial}
+          animate={morph.animate}
+          exit={morph.exit}
+          transition={morph.transition}
+          style={morph.style}
           className={`fixed bottom-12 left-4 z-[60] ${
             panelCompact ? 'w-[380px]' : 'w-[760px]'
           } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}

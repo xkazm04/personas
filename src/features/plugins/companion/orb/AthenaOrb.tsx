@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
-import { useHoldToTalk } from '../useHoldToTalk';
+import type { HoldToTalk } from '../useHoldToTalk';
 import { AthenaAvatar, type AthenaState } from '../AthenaAvatar';
 
 /**
@@ -50,7 +51,7 @@ function fractionToPx(x: number, y: number, vp: Viewport): { left: number; top: 
   };
 }
 
-export function AthenaOrb() {
+export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   const { t } = useTranslation();
   const setState = useCompanionStore((s) => s.setState);
   const streaming = useCompanionStore((s) => s.streaming);
@@ -58,7 +59,9 @@ export function AthenaOrb() {
   const orbPos = useSystemStore((s) => s.companionOrbPos);
   const setOrbPos = useSystemStore((s) => s.setCompanionOrbPos);
 
-  const { talking, interimText, start: startTalk, stop: stopTalk } = useHoldToTalk();
+  const { talking, interimText, start: startTalk, stop: stopTalk, abort: abortTalk } = talk;
+  const reduceMotion = useReducedMotion();
+  const setOrbOpenOrigin = useCompanionStore((s) => s.setOrbOpenOrigin);
 
   const [vp, setVp] = useState<Viewport>(() => readViewport());
   useEffect(() => {
@@ -119,7 +122,7 @@ export function AthenaOrb() {
         clearHoldTimer();
         // Moving cancels an armed talk session so a drag never records.
         if (talkArmedRef.current) {
-          stopTalk();
+          abortTalk();
           talkArmedRef.current = false;
         }
       }
@@ -132,7 +135,7 @@ export function AthenaOrb() {
         });
       }
     },
-    [vp.w, vp.h, clearHoldTimer, stopTalk],
+    [vp.w, vp.h, clearHoldTimer, abortTalk],
   );
 
   const onPointerUp = useCallback(
@@ -168,28 +171,31 @@ export function AthenaOrb() {
         return;
       }
 
-      // Plain tap — open the full chat panel.
+      // Plain tap — open the full chat panel, recording the orb's center so
+      // the panel can morph out from here.
+      setOrbOpenOrigin({ x: left + ORB_SIZE / 2, y: top + ORB_SIZE / 2 });
       setState('open');
     },
-    [dragPx, left, top, vp.w, vp.h, clearHoldTimer, setOrbPos, stopTalk, setState],
+    [dragPx, left, top, vp.w, vp.h, clearHoldTimer, setOrbPos, stopTalk, setState, setOrbOpenOrigin],
   );
 
   const onPointerCancel = useCallback(() => {
     clearHoldTimer();
     startRef.current = null;
     if (talkArmedRef.current) {
-      stopTalk();
+      abortTalk();
       talkArmedRef.current = false;
     }
     setDragPx(null);
     draggingRef.current = false;
-  }, [clearHoldTimer, stopTalk]);
+  }, [clearHoldTimer, abortTalk]);
 
   useEffect(() => () => clearHoldTimer(), [clearHoldTimer]);
 
   const hasUnreadPlayback = pendingPlayback != null && !pendingPlayback.played;
   const avatarState: AthenaState =
     talking || streaming ? 'thinking' : hasUnreadPlayback ? 'speaking' : 'idle';
+  const speaking = avatarState === 'speaking';
 
   const caption = talking && interimText ? interimText : null;
 
@@ -218,11 +224,26 @@ export function AthenaOrb() {
         data-testid="companion-orb"
         aria-pressed={talking}
         className={`relative w-full h-full rounded-full overflow-visible cursor-grab active:cursor-grabbing focus-ring transition-transform ${
-          talking ? 'ring-2 ring-primary/60 animate-pulse' : 'hover:scale-105'
+          talking
+            ? `ring-2 ring-primary/60 ${reduceMotion ? '' : 'animate-pulse'}`
+            : reduceMotion
+              ? ''
+              : 'hover:scale-105'
         }`}
         title={t.plugins.companion.orb_talk_hint}
         aria-label={talking ? t.plugins.companion.footer_listening : t.plugins.companion.orb_talk_hint}
       >
+        {/* Speaking glow — a soft pulsing bloom while a spoken reply is
+            queued/playing. CSS-only (not yet audio-reactive: the analyser
+            version is parked in athena-orb-overlay-plan.md §2.6). */}
+        {speaking && (
+          <span
+            aria-hidden
+            className={`absolute -inset-1.5 rounded-full bg-primary/30 blur-md ${
+              reduceMotion ? '' : 'animate-pulse'
+            }`}
+          />
+        )}
         <span className="absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 ring-1 ring-primary/25 bg-primary/10">
           <AthenaAvatar state={avatarState} fill className="absolute inset-0" />
         </span>

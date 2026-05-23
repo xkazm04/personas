@@ -205,11 +205,11 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 - [x] Footer cycles `minimized ↔ collapsed` when orb enabled; panel close → `minimized` when orb enabled.
 - [x] Minimized voice loop (hold-to-talk) + interim caption beside the orb.
 
-**Step 2b — orb polish (parked)**
-- [ ] Orb↔panel morph (framer `layoutId`).
-- [ ] Global summon+talk shortcut + `Esc` cancel.
-- [ ] Layer-B-lite reactive glow tapping the TTS analyser.
-- [ ] `prefers-reduced-motion` handling (freeze avatar, disable drag inertia/morph).
+**Step 2b — orb polish (shipped)**
+- [x] Orb→panel morph: panel flies + scales out of the orb's recorded center (anchored to the panel's deterministic bottom-left corner) and collapses back on close. Simpler + more robust than cross-portal `layoutId`.
+- [x] Global summon+talk shortcut (Cmd/Ctrl+Shift+A) + `Esc` cancel (`abort()` on the shared hook discards the transcript). Single `useHoldToTalk` instance lifted to `AthenaOrbLayer` so orb + keyboard share talk state.
+- [x] `prefers-reduced-motion` handling (morph → opacity-only; orb hover-scale / pulse disabled) via framer `useReducedMotion`.
+- [~] Speaking glow: CSS pulse bloom while a spoken reply is queued/playing. **The audio-reactive `AnalyserNode` version is still parked** — `voicePlayback.play()` spins up a fresh `<audio>` per call with no shared analyser, so true level-driven bloom needs playback to be centralized first (§2.6).
 
 **Local STT (parallelizable with Step 2, ~3–5 days incl. backend)**
 - [ ] `companion/stt/` module (mod/whisper/catalog/downloader) + IPC + `ts-rs` bindings + command-names regen.
