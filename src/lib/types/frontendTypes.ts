@@ -141,6 +141,15 @@ export interface DesignUseCase {
   tool_hints?: string[];
   /** Phase C5b — per-capability generation policy. */
   generation_settings?: UseCaseGenerationSettings;
+  /** Build-time IR review policy. Recipe-ref templates (and anything
+   *  pre-dating the 2026-05 sigil migration) carry this instead of the v3
+   *  `generation_settings` envelope; the sigil derivation falls back to it
+   *  so the review petal reflects configured state. Mode `always`/`auto_triage`
+   *  ⇒ review on. Mirrors engine/prompt/capabilities.rs. */
+  review_policy?: { mode?: string } | null;
+  /** Build-time IR memory policy — fallback source for the memory sigil when
+   *  `generation_settings.memories` is absent. */
+  memory_policy?: { enabled?: boolean } | null;
 }
 
 /**

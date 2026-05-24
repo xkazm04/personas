@@ -39,7 +39,9 @@ export function ContentHeaderSkeleton({
         IS_MOBILE ? 'px-3 py-2.5' : 'px-4 md:px-6 xl:px-8 py-4',
         // Mirror of ContentHeader: brand-tinted "operator console" band.
         'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
-        'sticky top-0 z-10 backdrop-blur shadow-none',
+        // No `backdrop-blur` — mirrors ContentHeader; see the note there
+        // about the WebView2 backdrop-filter flicker.
+        'sticky top-0 z-10 shadow-none',
       ].join(' ')}
     >
       <div className="flex items-center gap-3 pr-20">

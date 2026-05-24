@@ -11849,6 +11849,8 @@ export type Translations = {
       project_name_placeholder: string;
       project_type: string;
       project_type_optional: string;
+      create_codebase_connector_label: string;
+      create_codebase_connector_desc: string;
       project_created: string;
       project_ready_desc: string;
       generate_context_map: string;

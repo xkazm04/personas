@@ -58,22 +58,36 @@ export function useContextScanBackground() {
   // scan — corrupting Overview metrics. Same shape as the listeners in
   // `useCreativeSession.ts`.
   useEffect(() => {
-    const unsub = listen<{ scan_id: string; success: boolean }>(
+    // The backend emits a `ContextGenSummary` here, NOT a `{ success }` object.
+    // Its `status` is "completed" or "completed_with_warning" on success — and
+    // the failure path never emits this event at all (it surfaces its own OS
+    // notification). The payload has no `success` field, so the previous
+    // `event.payload.success` read was always `undefined` → falsy → every
+    // SUCCESSFUL scan was reported as a failure (false "scan failed" OS
+    // notification + a bogus 'failed' Overview metric), even when the scan
+    // finished correctly. Derive success from `status` instead.
+    //
+    // We intentionally do NOT fire an OS notification from here: the backend
+    // already sends one authoritatively (`crate::notifications::send`, fired
+    // even when no Dev Tools UI is mounted), so calling notifyCompletion here
+    // would double-notify. This listener only updates in-app state. The
+    // start-failure catch in startBackgroundScan still uses notifyCompletion
+    // because the backend never reaches its notification on that path.
+    const unsub = listen<{ scan_id: string; status?: string; error?: string | null }>(
       EventName.CONTEXT_GEN_COMPLETE,
       (event) => {
-        const name = pendingProjectName.current ?? 'project';
         pendingProjectName.current = null;
+        const success = event.payload.status !== 'failed';
         setContextScanActive(false);
-        setContextScanComplete(event.payload.success);
+        setContextScanComplete(success);
         useOverviewStore.getState().processEnded(
           'context_scan',
-          event.payload.success ? 'completed' : 'failed',
+          success ? 'completed' : 'failed',
         );
-        notifyCompletion(name, event.payload.success);
       },
     );
     return () => { unsub.then((fn) => fn()); };
-  }, [setContextScanActive, setContextScanComplete, notifyCompletion]);
+  }, [setContextScanActive, setContextScanComplete]);
 
   const startBackgroundScan = useCallback(
     async (projectId: string, rootPath: string, projectName: string) => {

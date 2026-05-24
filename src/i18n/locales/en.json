@@ -11844,6 +11844,8 @@
       "project_name_placeholder": "My Project",
       "project_type": "Project Type",
       "project_type_optional": "(optional, visual only)",
+      "create_codebase_connector_label": "Create Codebase connector",
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
       "project_created": "Project Created",
       "project_ready_desc": "is ready. Would you like to generate a context map now?",
       "generate_context_map": "Generate Context Map",

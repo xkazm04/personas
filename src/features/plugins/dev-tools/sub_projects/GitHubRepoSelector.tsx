@@ -110,7 +110,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={t.plugins.dev_projects.github_url_placeholder}
-            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-ring"
           />
           {value && (
             <a

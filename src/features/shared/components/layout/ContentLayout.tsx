@@ -137,7 +137,16 @@ export function ContentHeader({
         // "operator console" feel as the Home dashboard. Themes derive
         // these from --color-primary, so each theme paints its own accent.
         'border-b border-primary/10 bg-primary/5 flex-shrink-0 min-w-[80vw]',
-        'sticky top-0 z-10 backdrop-blur',
+        // No `backdrop-blur` here. backdrop-filter re-samples its backdrop on
+        // every compositor frame — and pointer movement / hover repaints
+        // generate those frames — so in WebView2 the frosted layer flickers
+        // as a blinking white band across every module header. The same
+        // lesson was already learned for the page background (see the "blur
+        // removed (causes WebView2 compositor freeze)" note in PersonasPage).
+        // Nothing scrolls *under* this header (ContentBody is a separate
+        // sibling that scrolls in its own clipped box), so the blur was purely
+        // decorative over the static background — dropping it costs nothing.
+        'sticky top-0 z-10',
         'transition-shadow duration-150',
         scrolled ? 'shadow-elevation-2' : 'shadow-none',
       ].join(' ')}

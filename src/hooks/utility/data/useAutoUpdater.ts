@@ -18,9 +18,15 @@ export function useAutoUpdater() {
   const [isInstalling, setIsInstalling] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const updateRef = useRef<Update | null>(null);
+  // In-flight guard kept in a ref (not state) so this callback stays stable.
+  // Depending on `isChecking` state here would give checkForUpdate a new
+  // identity on every toggle, re-running the scheduling effect below and
+  // rescheduling its 5s timeout — turning the 6h poll into a ~5s spam loop.
+  const checkingRef = useRef(false);
 
   const checkForUpdate = useCallback(async (): Promise<CheckOutcome> => {
-    if (isChecking) return "up-to-date";
+    if (checkingRef.current) return "up-to-date";
+    checkingRef.current = true;
     setIsChecking(true);
     setError(null);
     try {
@@ -49,9 +55,10 @@ export function useAutoUpdater() {
       silentCatch("useAutoUpdater:check")(err);
       return "failed";
     } finally {
+      checkingRef.current = false;
       setIsChecking(false);
     }
-  }, [isChecking]);
+  }, []);
 
   const installUpdate = useCallback(async () => {
     const update = updateRef.current;
@@ -91,6 +98,11 @@ export function useAutoUpdater() {
   }, []);
 
   useEffect(() => {
+    // Skip automatic checks in dev: there is no signed release artifact to
+    // update to, and the updater capability only matters for packaged builds.
+    // Manual checkForUpdate() from Settings still works. This is what stops
+    // the recurring "updater.check not allowed" noise during development.
+    if (import.meta.env.DEV) return;
     // Check after a 5-second delay on mount, then every 6 hours.
     // Outcome is intentionally ignored — checkForUpdate already routes
     // failures through silentCatch and successes through Sentry breadcrumbs.

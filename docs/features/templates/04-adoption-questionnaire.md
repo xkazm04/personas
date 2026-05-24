@@ -41,6 +41,34 @@ question panel gets ~60% and the preview ~40%. The preview panel has
 a `bg-white/[0.015]` wash and a `sticky top-0` inner wrapper so it
 stays visible as the left column scrolls.
 
+## Glyph (Persona Layout) variant
+
+`PersonaLayoutAdoption.tsx` is the alternate adoption surface that renders
+the questionnaire around the persona Sigil instead of the Focus two-column
+form. Its chrome was consolidated (2026-05) to a single header:
+
+```
+ PersonaLayoutAdoption
+ ├── topSlot — ONE bordered header band:
+ │     ├── CapabilityTabBar (mini-sigil tab per capability; multi-cap only)
+ │     └── question-order stepper (QuestionnaireHeaderBand, bare)
+ ├── Persona Sigil (hero) — PERSONA metadata band hidden (hideMetadataBand)
+ │     └── center overlay = the flow's PRIMARY ACTION:
+ │           • pending questions → click-to-open count button
+ │           • all answered + unblocked + caps chosen → "Continue to build"
+ │           • answered-but-blocked → the disabled reason
+ ├── leftSlot — answered-value summary
+ └── rightSlot — QuestionnaireStoryThread
+```
+
+Deliberately removed from this variant (they were redundant chrome):
+the duplicate PERSONA metadata band (name + capability counts + "covers
+X dimensions"), the sparkle icon, the answered/total counter, and the
+percentage. `QuestionnaireHeaderBand` gained `hideIdentity` / `hideCounters`
+/ `bare` flags for this — the Classic Focus header passes none of them and
+is unchanged. The "Continue to build" CTA lives in the **sigil center**, not
+a header button.
+
 ## Shared sub-components
 
 Exported from `QuestionnaireFormGrid.tsx`:

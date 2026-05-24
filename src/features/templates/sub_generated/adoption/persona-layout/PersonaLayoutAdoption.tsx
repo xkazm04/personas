@@ -427,32 +427,6 @@ export function PersonaLayoutAdoption({
           : null
     : null;
 
-  const headerAction =
-    totalCount > 0 ? (
-      <div className="flex items-center gap-3 self-center shrink-0">
-        {continueDisabledReason && (
-          <span className="typo-caption text-status-warning inline-flex items-center gap-1.5">
-            <AlertCircle className="w-3.5 h-3.5" />
-            {continueDisabledReason}
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={onContinue}
-          disabled={!canContinue}
-          data-testid="adopt-continue-to-build"
-          className={`inline-flex items-center gap-1.5 px-5 py-2 rounded-full border transition-colors typo-body ${
-            canContinue
-              ? 'bg-primary/25 hover:bg-primary/40 border-primary/40 text-foreground cursor-pointer'
-              : 'bg-secondary/40 border-border/30 text-foreground cursor-not-allowed'
-          }`}
-        >
-          {t.templates.adopt_modal.persona_layout_continue_to_build}
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    ) : null;
-
   // Tab strip rendered above the questionnaire header band when the
   // template ships more than one capability. Single-cap templates skip
   // the strip (zero-info nav). On tab click, swap the active cap; the
@@ -477,27 +451,31 @@ export function PersonaLayoutAdoption({
     />
   ) : null;
 
+  // Single consolidated header: capability tabs + the question-order
+  // stepper, in one bordered band. The sparkle/identity, answered-count,
+  // and percentage are dropped (hideIdentity + hideCounters); the
+  // duplicate PERSONA metadata band is hidden on the hero
+  // (hideMetadataBand) so "covers X dimensions" + capability counts no
+  // longer render. The Continue action moved into the sigil center.
   const topSlot =
     totalCount > 0 ? (
-      <div className="flex flex-col gap-3">
-        {capabilityTabs}
-        <div className="flex items-stretch gap-3 flex-wrap">
-          <div className="flex-1 min-w-0">
-            <QuestionnaireHeaderBand
-              templateName={templateName}
-              questions={filteredQuestions}
-              userAnswers={userAnswers}
-              blockedQuestionIds={blockedQuestionIds}
-              activeIdx={activeStoryIdx}
-              answeredCount={answeredCount}
-              totalCount={totalCount}
-              blockedCount={blockedCount}
-              progressPct={progressPct}
-              onJumpTo={handleHeaderJumpTo}
-            />
-          </div>
-          {headerAction}
-        </div>
+      <div className="rounded-modal border border-card-border bg-foreground/[0.015] overflow-hidden">
+        {capabilityTabs && <div className="px-3 pt-2">{capabilityTabs}</div>}
+        <QuestionnaireHeaderBand
+          templateName={templateName}
+          questions={filteredQuestions}
+          userAnswers={userAnswers}
+          blockedQuestionIds={blockedQuestionIds}
+          activeIdx={activeStoryIdx}
+          answeredCount={answeredCount}
+          totalCount={totalCount}
+          blockedCount={blockedCount}
+          progressPct={progressPct}
+          onJumpTo={handleHeaderJumpTo}
+          hideIdentity
+          hideCounters
+          bare
+        />
       </div>
     ) : capabilityTabs;
 
@@ -536,12 +514,29 @@ export function PersonaLayoutAdoption({
     />
   ) : undefined;
 
-  // Center overlay — sits inside the sigil's inner core. When questions
-  // are pending, surface a click-to-open count button so the user has
-  // a clear "start here" affordance even without targeting a specific
-  // petal. Hidden once every question is answered.
+  // Center overlay — sits inside the sigil's inner core and is the single
+  // home for the flow's primary action (the header "Continue to build"
+  // button was removed):
+  //   • pending questions → a click-to-open count button ("start here")
+  //   • all answered + unblocked + caps chosen → the Continue-to-build CTA
+  //   • answered but still blocked / no caps → the disabled reason
   const unansweredCount = remaining;
-  const centerOverlay = !activeDim && unansweredCount > 0 ? (
+  const centerOverlay = activeDim ? (
+    <span aria-hidden />
+  ) : canContinue ? (
+    <button
+      type="button"
+      onClick={onContinue}
+      data-testid="adopt-continue-to-build"
+      className="pointer-events-auto group flex flex-col items-center gap-1.5 px-6 py-3 rounded-modal bg-primary/20 hover:bg-primary/35 border border-primary/45 hover:border-primary/70 text-foreground cursor-pointer transition-all"
+      title={t.templates.adopt_modal.persona_layout_continue_to_build}
+    >
+      <ChevronRight className="w-5 h-5 text-primary" />
+      <span className="typo-label uppercase tracking-[0.18em] text-foreground">
+        {t.templates.adopt_modal.persona_layout_continue_to_build}
+      </span>
+    </button>
+  ) : unansweredCount > 0 ? (
     <button
       type="button"
       onClick={openFirstUnanswered}
@@ -560,9 +555,10 @@ export function PersonaLayoutAdoption({
         {t.templates.adopt_modal.persona_layout_center_click_to_start}
       </span>
     </button>
-  ) : !activeDim && unansweredCount === 0 && totalCount > 0 ? (
-    <span className="typo-caption text-status-success italic pointer-events-none">
-      {t.templates.adopt_modal.persona_layout_dim_all_answered}
+  ) : continueDisabledReason ? (
+    <span className="typo-caption text-status-warning italic pointer-events-none inline-flex items-center gap-1.5 max-w-[14rem] text-center">
+      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+      {continueDisabledReason}
     </span>
   ) : (
     <span aria-hidden />
@@ -583,6 +579,7 @@ export function PersonaLayoutAdoption({
           topSlot={topSlot}
           leftSlot={leftSlot}
           rightSlot={rightSlot}
+          hideMetadataBand
           heroPetalStatesOverride={petalStates}
           onHeroPetalClick={handlePetalClick}
           heroActiveDim={activeDim}

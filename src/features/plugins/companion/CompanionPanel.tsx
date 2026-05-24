@@ -237,7 +237,7 @@ export default function CompanionPanel() {
           transition={morph.transition}
           style={morph.style}
           className={`fixed bottom-12 left-4 z-[60] ${
-            panelCompact ? 'w-[380px]' : 'w-[760px]'
+            panelCompact ? 'w-[350px]' : 'w-[760px]'
           } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
           role="region"
           aria-label={t.plugins.companion.panel_label}

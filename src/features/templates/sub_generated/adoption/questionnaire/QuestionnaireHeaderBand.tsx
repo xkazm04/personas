@@ -20,6 +20,9 @@ export function QuestionnaireHeaderBand({
   blockedCount,
   progressPct,
   onJumpTo,
+  hideIdentity = false,
+  hideCounters = false,
+  bare = false,
 }: {
   templateName?: string;
   questions: TransformQuestionResponse[];
@@ -31,11 +34,23 @@ export function QuestionnaireHeaderBand({
   blockedCount: number;
   progressPct: number;
   onJumpTo: (idx: number) => void;
+  /** Glyph variant — hide the sparkle + template-name identity block. */
+  hideIdentity?: boolean;
+  /** Glyph variant — hide the answered/total count + percentage counters. */
+  hideCounters?: boolean;
+  /** Glyph variant — drop the band's own border + background so it can be
+   *  nested inside a consolidated header container. */
+  bare?: boolean;
 }) {
   const { t, tx } = useTranslation();
+  // When both identity and counters are hidden the top row carries nothing,
+  // so collapse it entirely and render just the stepper.
+  const showTopRow = !hideIdentity || !hideCounters;
   return (
-    <div className="flex-shrink-0 border-b border-border bg-foreground/[0.015]">
+    <div className={bare ? 'flex-shrink-0' : 'flex-shrink-0 border-b border-border bg-foreground/[0.015]'}>
+      {showTopRow && (
       <div className="flex items-center gap-4 px-5 py-3">
+        {!hideIdentity && (
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0">
             <Sparkles className="w-4 h-4 text-primary" />
@@ -55,7 +70,9 @@ export function QuestionnaireHeaderBand({
             </span>
           </div>
         </div>
+        )}
         <div className="flex-1" />
+        {!hideCounters && (
         <div className="flex items-center gap-4 typo-data text-foreground tabular-nums">
           <span>
             {tx(t.templates.adopt_modal.answered_of_total, {
@@ -73,7 +90,9 @@ export function QuestionnaireHeaderBand({
             {Math.round(progressPct * 100)}%
           </span>
         </div>
+        )}
       </div>
+      )}
 
       {/* Coloured-bar stepper */}
       <div className="px-5 pb-3 flex items-center justify-center gap-1 flex-wrap">

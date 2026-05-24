@@ -3,12 +3,14 @@ import { Compass, Info, MessageCircle } from 'lucide-react';
 
 import {
   companionGetCockpit,
+  COMPANION_COMPOSE_COCKPIT_EVENT,
   type CompanionCockpitSpec,
   type CompanionCockpitSpecBody,
   type CompanionCockpitWidget,
 } from '@/api/companion';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   ContentBody,
@@ -76,6 +78,21 @@ export default function CockpitPanel() {
     window.addEventListener('focus', handler);
     return () => window.removeEventListener('focus', handler);
   }, [load, contextualCockpit]);
+
+  // Athena just composed a cockpit: she persists the spec server-side and
+  // emits this event. If the user was already on the Cockpit tab the panel
+  // is mounted but stale — refetch so the new widgets render immediately
+  // instead of waiting for a window-focus refresh or a forced re-render.
+  // We also drop any transient contextual overlay: compose_cockpit means
+  // "look at the persistent cockpit I just built for you".
+  useTauriEvent<unknown>(
+    COMPANION_COMPOSE_COCKPIT_EVENT,
+    useCallback(() => {
+      setContextualCockpit(null);
+      load();
+    }, [load, setContextualCockpit]),
+    'cockpit_compose_listen',
+  );
 
   // Active spec body: contextual overlay wins.
   let persistentBody: CompanionCockpitSpecBody | null = null;

@@ -179,11 +179,29 @@ function deriveDimensions(uc: DesignUseCase): GlyphDimension[] {
   if ((uc.tool_hints?.length ?? 0) > 0) dims.add('connector');
   if ((uc.notification_channels?.length ?? 0) > 0) dims.add('message');
   if ((uc.event_subscriptions?.length ?? 0) > 0) dims.add('event');
-  // Memory + review only when the explicit policy says yes — otherwise the
-  // persona-level default applies but isn't render-time derivable.
-  if (uc.generation_settings?.memories === 'on') dims.add('memory');
+  // Memory + review: prefer the explicit v3 `generation_settings` envelope.
+  // Recipe-ref templates (and anything pre-dating the 2026-05 sigil
+  // migration, i.e. every template that never received §3 of the migration)
+  // carry only the build-time `review_policy` / `memory_policy` instead — so
+  // fall back to those, mirroring the same fallback the backend already does
+  // in engine/prompt/capabilities.rs. Without this the review/memory petals
+  // stayed dark for the entire recipe-ref catalog even when review was
+  // configured.
+  const memories = uc.generation_settings?.memories;
+  if (memories === 'on') dims.add('memory');
+  else if (memories === undefined && uc.memory_policy?.enabled) dims.add('memory');
+
   const reviews = uc.generation_settings?.reviews;
-  if (reviews === 'on' || reviews === 'trust_llm') dims.add('review');
+  if (reviews === 'on' || reviews === 'trust_llm') {
+    dims.add('review');
+  } else if (reviews === undefined) {
+    // `always` = human-queued review; `auto_triage` = auto-resolved but still
+    // a configured review surface. Both light the petal; `never` does not.
+    const mode = uc.review_policy?.mode?.toLowerCase();
+    if (mode === 'always' || mode === 'auto_triage' || mode === 'autotriage' || mode === 'auto-triage') {
+      dims.add('review');
+    }
+  }
   return Array.from(dims);
 }
 

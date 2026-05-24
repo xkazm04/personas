@@ -84,10 +84,27 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   // Per-persona activity from the same aggregator powering the L1 orbit dots.
   // Here we group by persona so the list shows each agent with one or more
   // colored indicators depending on what it's doing (draft / exec / lab).
+  // Personas that currently have an active draft build session. A draft's
+  // home is the dedicated "Draft" section, so these IDs are excluded from
+  // the Recent and Progress sections below — otherwise a single
+  // (template-adopted or scratch) draft shows up in three places at once.
+  // Matches the activeDrafts phase filter (exclude initializing/promoted).
+  const draftPersonaIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const sess of Object.values(buildSessions)) {
+      if (sess.phase === 'initializing' || sess.phase === 'promoted') continue;
+      ids.add(sess.personaId);
+    }
+    return ids;
+  }, [buildSessions]);
+
   const activities = useSidebarAgentActivity();
   const progressEntries = useMemo(() => {
     const byPersona = new Map<string, { personaId: string; personaName: string; types: Set<AgentActivityType>; labels: string[] }>();
     for (const a of activities) {
+      // Drafts live in the dedicated Draft section — keep Progress to
+      // execution / lab activity only so a draft isn't double-listed.
+      if (draftPersonaIds.has(a.personaId)) continue;
       const existing = byPersona.get(a.personaId);
       if (existing) {
         existing.types.add(a.type);
@@ -111,7 +128,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
       if (pa !== pb) return pa - pb;
       return a.personaName.localeCompare(b.personaName);
     });
-  }, [activities]);
+  }, [activities, draftPersonaIds]);
 
   // Keep the Teams sub-list fresh whenever the Teams tab is active so the
   // sidebar roster matches the management table.
@@ -185,9 +202,10 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const recentPersonas = useMemo(
     () => recentIds
       .filter((id) => !favorites.has(id)) // exclude already-favorited
+      .filter((id) => !draftPersonaIds.has(id)) // exclude active drafts (shown in Draft section)
       .map((id) => personas.find((p) => p.id === id))
       .filter(Boolean) as typeof personas,
-    [personas, recentIds, favorites],
+    [personas, recentIds, favorites, draftPersonaIds],
   );
 
   // Personas attached to the "codebase" built-in connector. Combined with

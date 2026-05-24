@@ -18,11 +18,11 @@ import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker'
 import { CrossProjectMetadataModal } from './CrossProjectMetadataModal';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
-  type Project, type Goal, type ProjectType, type EditProjectData,
-  toProject, toGoal, PROJECT_TYPES, StatusBadge,
+  type Project, type ProjectType, type EditProjectData,
+  toProject, PROJECT_TYPES, StatusBadge,
 } from './projectManagerTypes';
 import { ProjectModal } from './ProjectModal';
-import { GoalBoard, ProjectRowMenu } from './ProjectManagerParts';
+import { ProjectRowMenu } from './ProjectManagerParts';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { Users } from 'lucide-react';
 import { ProjectTeamPreviewModal } from './ProjectTeamPreviewModal';
@@ -37,25 +37,14 @@ export default function ProjectManagerPage() {
   // Store bindings
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const storeProjects = useSystemStore((s) => s.projects);
-  const storeGoals = useSystemStore((s) => s.goals);
-  const storeGoalSignals = useSystemStore((s) => s.goalSignals);
   const storeCreateProject = useSystemStore((s) => s.createProject);
   const storeUpdateProject = useSystemStore((s) => s.updateProject);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
-  const fetchGoals = useSystemStore((s) => s.fetchGoals);
-  const createGoal = useSystemStore((s) => s.createGoal);
-  const updateGoal = useSystemStore((s) => s.updateGoal);
-  const deleteGoal = useSystemStore((s) => s.deleteGoal);
-  const fetchGoalSignals = useSystemStore((s) => s.fetchGoalSignals);
-  const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const { startBackgroundScan } = useContextScanBackground();
 
-  // Map store data into view-models
-  const goals: Goal[] = storeGoals.map((g) => toGoal(g, storeGoalSignals));
-  const projects: Project[] = storeProjects.map((p) => {
-    const goalCount = storeGoals.filter((g) => g.project_id === p.id).length;
-    return toProject(p, goalCount);
-  });
+  // Map store data into view-models. Goals are managed in the dedicated Goals
+  // module (sub_goals), so the project list no longer tracks goal counts here.
+  const projects: Project[] = storeProjects.map((p) => toProject(p, 0));
   const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
 
   // Teams roster for the bound-binding badges in the project table
@@ -74,7 +63,6 @@ export default function ProjectManagerPage() {
   const [showModal, setShowModal] = useState(false);
   const [showCrossProjectMap, setShowCrossProjectMap] = useState(false);
   const [editingProject, setEditingProject] = useState<EditProjectData | null>(null);
-  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
   const [importProjectId, setImportProjectId] = useState<string | null>(null);
   const importProject = projects.find((p) => p.id === importProjectId);
 
@@ -147,14 +135,6 @@ export default function ProjectManagerPage() {
       setLocalActiveProject(storeActiveProjectId);
     }
   }, [activeProjectId, storeActiveProjectId]);
-
-  useEffect(() => {
-    if (activeProjectId) fetchGoals?.(activeProjectId);
-  }, [activeProjectId, fetchGoals]);
-
-  useEffect(() => {
-    if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
-  }, [fetchGoalSignals, selectedGoalId]);
 
   const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
@@ -249,10 +229,10 @@ export default function ProjectManagerPage() {
         </ActionRow>
 
         <div className="space-y-6">
-          {/* Active project — compressed: single thin row, then GoalBoard */}
+          {/* Active project — compact summary row for the selected project. */}
           {activeProject ? (
             <div className="animate-fade-slide-in border border-primary/10 rounded-2xl bg-gradient-to-br from-amber-500/5 to-transparent">
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/10">
+              <div className="flex items-center gap-3 px-4 py-3">
                 <div className="w-8 h-8 rounded-modal bg-amber-500/15 border border-amber-500/25 flex items-center justify-center shrink-0">
                   <Folder className="w-4 h-4 text-amber-400" />
                 </div>
@@ -264,19 +244,6 @@ export default function ProjectManagerPage() {
                   </span>
                 )}
                 <StatusBadge status={activeProject.status} />
-              </div>
-
-              <div className="px-4 pb-4 pt-3">
-                <GoalBoard
-                  goals={goals}
-                  onUpdateGoal={(id, data) => updateGoal?.(id, data)}
-                  onDeleteGoal={(id) => deleteGoal?.(id)}
-                  onCreateGoal={(title) => activeProjectId ? createGoal?.(activeProjectId, title) : undefined}
-                  selectedGoalId={selectedGoalId}
-                  onSelectGoal={setSelectedGoalId}
-                  onAddNote={(goalId, msg) => recordGoalSignal?.(goalId, 'manual_note', 0, msg)}
-                  rawGoalSignals={storeGoalSignals}
-                />
               </div>
             </div>
           ) : (
@@ -337,7 +304,7 @@ export default function ProjectManagerPage() {
                 )}
 
                 {/* Table header */}
-                <div className="grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-modal">
+                <div className="grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.6fr_0.7fr_110px] gap-3 px-4 py-2.5 bg-primary/5 border-b border-primary/10 typo-label font-medium text-primary uppercase tracking-wider rounded-t-modal">
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); toggleSelectAll(); }}
@@ -353,7 +320,6 @@ export default function ProjectManagerPage() {
                   <span>{t.plugins.dev_tools.col_name}</span>
                   <span>{t.plugins.dev_tools.col_path}</span>
                   <span>{t.plugins.dev_tools.col_tech_stack}</span>
-                  <span>{t.plugins.dev_tools.col_goals}</span>
                   <span>{t.plugins.dev_tools.col_status}</span>
                   <span>{t.plugins.dev_tools.col_created}</span>
                   <span></span>
@@ -363,7 +329,7 @@ export default function ProjectManagerPage() {
                   <div
                     key={project.id}
                     onClick={() => handleSetActive(project.id)}
-                    className={`grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.5fr_0.6fr_0.7fr_110px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
+                    className={`grid grid-cols-[28px_1fr_1.2fr_0.8fr_0.6fr_0.7fr_110px] gap-3 px-4 py-3 border-b border-primary/5 last:border-b-0 cursor-pointer transition-colors ${
                       selectedIds.has(project.id)
                         ? 'bg-amber-500/5 ring-1 ring-amber-500/20'
                         : activeProjectId === project.id
@@ -422,7 +388,6 @@ export default function ProjectManagerPage() {
                     </span>
                     <span className="typo-caption text-foreground truncate self-center">{project.path}</span>
                     <span className="typo-caption text-foreground truncate self-center">{project.techStack.join(', ')}</span>
-                    <span className="typo-caption text-foreground self-center">{project.goalCount}</span>
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
                     <div className="self-center flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>

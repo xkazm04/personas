@@ -5,18 +5,20 @@
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/features/shared/components/buttons';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users,
+  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users, CheckSquare, Square, Code2,
 } from 'lucide-react';
 import {
   type ProjectType, type EditProjectData, PROJECT_TYPES,
 } from './projectManagerTypes';
 import { GitHubRepoSelector } from './GitHubRepoSelector';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useVaultStore } from '@/stores/vaultStore';
 
 
 type ModalStep = 'form' | 'created';
@@ -56,6 +58,9 @@ export function ProjectModal({
   const [githubUrl, setGithubUrl] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
   const [nameEdited, setNameEdited] = useState(false);
+  // Opt-in: auto-create a Codebase connector for the new project so the user
+  // doesn't have to open the credential catalog and add one manually.
+  const [createConnector, setCreateConnector] = useState(true);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
   const { shouldAnimate: _shouldAnimate } = useMotion();
 
@@ -124,6 +129,25 @@ export function ProjectModal({
         teamId,
       });
       if (result) {
+        // Optionally create a Codebase connector wired to the new project so
+        // agents can read it without a manual trip to the credential catalog.
+        // Mirrors the data shape produced by CodebaseProjectPicker (single mode).
+        if (createConnector) {
+          try {
+            await useVaultStore.getState().createCredential({
+              name: `Codebase — ${name.trim()}`,
+              service_type: 'codebase',
+              data: {
+                project_id: result.id,
+                project_name: name.trim(),
+                root_path: path.trim(),
+                tech_stack: projectType,
+              },
+            });
+          } catch (err) {
+            toastCatch('Failed to create Codebase connector')(err);
+          }
+        }
         setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
         setStep('created');
       }
@@ -138,6 +162,7 @@ export function ProjectModal({
     setGithubUrl('');
     setTeamId(null);
     setNameEdited(false);
+    setCreateConnector(true);
     setCreatedProject(null);
     onClose();
   };
@@ -154,7 +179,7 @@ export function ProjectModal({
       isOpen={isOpen}
       onClose={handleClose}
       titleId="dev-tools-project-modal-title"
-      size="sm"
+      maxWidthClass="max-w-[33.6rem]"
       panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4"
     >
       <div>
@@ -251,10 +276,9 @@ export function ProjectModal({
                       ({t.plugins.dev_projects.team_binding_optional})
                     </span>
                   </label>
-                  <select
+                  <ThemedSelect
                     value={teamId ?? ''}
-                    onChange={(e) => setTeamId(e.target.value || null)}
-                    className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground focus-ring"
+                    onValueChange={(v) => setTeamId(v || null)}
                   >
                     <option value="">{t.plugins.dev_projects.team_binding_none}</option>
                     {teams.map((team) => (
@@ -262,13 +286,37 @@ export function ProjectModal({
                         {team.name}
                       </option>
                     ))}
-                  </select>
+                  </ThemedSelect>
                   {teams.length === 0 && (
                     <p className="typo-caption text-foreground/60 mt-1">
                       {t.plugins.dev_projects.team_binding_empty}
                     </p>
                   )}
                 </div>
+
+                {/* Auto-create a Codebase connector (create mode only) so the
+                    user skips a manual trip to the credential catalog. */}
+                {!isEdit && (
+                  <button
+                    type="button"
+                    onClick={() => setCreateConnector((v) => !v)}
+                    aria-pressed={createConnector}
+                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left bg-secondary/30 border border-primary/10 rounded-modal hover:bg-secondary/50 transition-colors"
+                  >
+                    {createConnector
+                      ? <CheckSquare className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                      : <Square className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />}
+                    <span className="min-w-0">
+                      <span className="typo-caption font-medium text-foreground flex items-center gap-1.5">
+                        <Code2 className="w-3.5 h-3.5 text-amber-400" />
+                        {t.plugins.dev_projects.create_codebase_connector_label}
+                      </span>
+                      <span className="block typo-caption text-foreground mt-0.5">
+                        {t.plugins.dev_projects.create_codebase_connector_desc.replace('{name}', name.trim() || t.plugins.dev_projects.project_name)}
+                      </span>
+                    </span>
+                  </button>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 mt-6">
