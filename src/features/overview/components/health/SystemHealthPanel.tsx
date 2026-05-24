@@ -5,7 +5,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useAuthStore } from '@/stores/authStore';
 import { useAutoInstaller } from '@/hooks/utility/data/useAutoInstaller';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
-import { ConfigurationPopup } from '@/features/agents/components/onboarding/ConfigurationPopup';
+import { ConfigurationPopup } from '@/features/overview/components/health/ConfigurationPopup';
 
 import { SECTION_ICONS, SECTION_STYLES, DEFAULT_SECTION_STYLE, SKELETON_SECTIONS } from './healthPanelConstants';
 import { OLLAMA_FIELDS, OllamaFooter, LITELLM_FIELDS } from './popupFieldConfigs';

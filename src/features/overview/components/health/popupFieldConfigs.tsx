@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import type { ConfigField } from '@/features/agents/components/onboarding/ConfigurationPopup';
+import type { ConfigField } from '@/features/overview/components/health/ConfigurationPopup';
 
 export const OLLAMA_FIELDS: ConfigField[] = [
   { key: 'ollama_api_key', label: 'API Key', type: 'password', placeholder: 'Paste your key from ollama.com/settings', autoFocus: true },
