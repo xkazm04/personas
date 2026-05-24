@@ -1,5 +1,6 @@
 {
   "fleet": {
+    "history_label": "최근 상태 기록",
     "all_clear": "모두 정상",
     "jump_next": "다음 대기 세션으로 이동",
     "pair_title": "기기 페어링",

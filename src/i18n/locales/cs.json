@@ -9773,6 +9773,7 @@
   },
   "plugins": {
     "fleet": {
+      "history_label": "Nedávná historie stavů",
       "all_clear": "Vše v pořádku",
       "jump_next": "Přejít na další čekající relaci",
       "pair_title": "Spárovat zařízení",

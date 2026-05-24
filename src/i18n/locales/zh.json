@@ -9697,6 +9697,7 @@
   },
   "plugins": {
     "fleet": {
+      "history_label": "近期状态历史",
       "all_clear": "一切就绪",
       "jump_next": "跳转到下一个等待的会话",
       "pair_title": "配对设备",

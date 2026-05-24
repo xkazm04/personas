@@ -86,6 +86,7 @@ export default function FleetGridPage() {
   const refresh = useSystemStore((s) => s.fleetRefresh);
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const removeLocal = useSystemStore((s) => s.fleetRemoveSessionLocal);
+  const recordTransition = useSystemStore((s) => s.fleetRecordTransition);
   const activeSessionId = useSystemStore((s) => s.fleetActiveSessionId);
   const setActiveSession = useSystemStore((s) => s.fleetSetActiveSession);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
@@ -110,8 +111,8 @@ export default function FleetGridPage() {
   // stay attached once for the lifetime of the page. Without this, every
   // sessions-array update would tear down + re-attach the three Tauri
   // listeners (cheap individually but noisy under 5-10 sessions).
-  const actionsRef = useRef({ refresh, patchSession, removeLocal });
-  actionsRef.current = { refresh, patchSession, removeLocal };
+  const actionsRef = useRef({ refresh, patchSession, removeLocal, recordTransition });
+  actionsRef.current = { refresh, patchSession, removeLocal, recordTransition };
 
   // Refs read by the once-attached listener: the live notify preference, a
   // snapshot of sessions (to resolve a name for the alert body), and the set
@@ -136,6 +137,7 @@ export default function FleetGridPage() {
           stateReason: reason ?? null,
           lastActivityMs: BigInt(Date.now()),
         });
+        actionsRef.current.recordTransition(session_id, state as FleetSessionState);
 
         // Desktop "push" alert on entering awaiting_input — once per entry.
         const seen = awaitingSeenRef.current;
@@ -165,6 +167,7 @@ export default function FleetGridPage() {
           exitCode: event.payload.exit_code,
           lastActivityMs: BigInt(Date.now()),
         });
+        actionsRef.current.recordTransition(event.payload.session_id, 'exited' as FleetSessionState);
       },
     );
 

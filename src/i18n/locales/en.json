@@ -9802,6 +9802,7 @@
   },
   "plugins": {
     "fleet": {
+      "history_label": "Recent state history",
       "all_clear": "All clear",
       "jump_next": "Jump to next waiting session",
       "pair_title": "Pair a device",

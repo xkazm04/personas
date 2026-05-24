@@ -1,5 +1,6 @@
 {
   "fleet": {
+    "history_label": "Historial de estado reciente",
     "all_clear": "Todo en orden",
     "jump_next": "Ir a la siguiente sesión en espera",
     "pair_title": "Vincular un dispositivo",

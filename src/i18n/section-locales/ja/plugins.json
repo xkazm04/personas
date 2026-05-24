@@ -1,5 +1,6 @@
 {
   "fleet": {
+    "history_label": "最近の状態履歴",
     "all_clear": "問題なし",
     "jump_next": "次の待機中セッションへ移動",
     "pair_title": "デバイスをペアリング",

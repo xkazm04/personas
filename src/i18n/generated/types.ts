@@ -9808,6 +9808,7 @@ export type Translations = {
   };
   plugins: {
     fleet: {
+      history_label: string;
       all_clear: string;
       jump_next: string;
       pair_title: string;

@@ -1,5 +1,6 @@
 {
   "fleet": {
+    "history_label": "Letzter Statusverlauf",
     "all_clear": "Alles in Ordnung",
     "jump_next": "Zur nächsten wartenden Sitzung springen",
     "pair_title": "Gerät koppeln",

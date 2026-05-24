@@ -1,5 +1,6 @@
 {
   "fleet": {
+    "history_label": "Riwayat status terbaru",
     "all_clear": "Semua aman",
     "jump_next": "Lompat ke sesi menunggu berikutnya",
     "pair_title": "Pasangkan perangkat",
