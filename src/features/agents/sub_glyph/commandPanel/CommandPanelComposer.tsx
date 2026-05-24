@@ -12,8 +12,6 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
-import { usePlannerStore } from "@/features/agents/sub_planner";
 import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
@@ -134,19 +132,6 @@ export function CommandPanelComposer({
     );
   }, [t, tx]);
 
-  // Hand the composed goal to the read-only Goal-to-Plan planner: stash it as
-  // a one-shot prefill and switch to the Plan surface. Builds nothing — it's
-  // the "see the whole plan before committing" escape hatch from the composer.
-  const handlePlanFirst = useCallback(() => {
-    const composed = composeIntent(draft).trim();
-    if (!composed) return;
-    usePlannerStore.getState().setPrefill(composed);
-    const sys = useSystemStore.getState();
-    sys.setIsCreatingPersona(false);
-    sys.setSidebarSection("personas");
-    sys.setAgentTab("planner");
-  }, [draft]);
-
   return (
     <div className="w-full min-w-[640px] md:min-w-[800px] lg:min-w-[912px] 2xl:min-w-[1296px] 3xl:min-w-[1608px] max-w-[1800px] relative">
       <div
@@ -197,20 +182,6 @@ export function CommandPanelComposer({
           onApply={handleApplyRecipe}
           onRunDirect={handleRunDirect}
         />
-
-        {draft.task?.trim() && (
-          <div className="flex justify-center px-5 pb-1">
-            <button
-              type="button"
-              onClick={handlePlanFirst}
-              className="inline-flex items-center gap-1.5 typo-label text-foreground hover:text-primary"
-              data-testid="composer-plan-first"
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {t.planner.page_title}
-            </button>
-          </div>
-        )}
 
         <CommandPanelFooter
           launchDisabled={launchDisabled}

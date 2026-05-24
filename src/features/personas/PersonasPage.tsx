@@ -22,7 +22,6 @@ const HomePage = lazy(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
-const GoalPlannerPanel = lazy(() => import('@/features/agents/sub_planner').then(m => ({ default: m.GoalPlannerPanel })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
@@ -206,10 +205,6 @@ export default function PersonasPage() {
       // Groups→Teams consolidation (Phase 4): the standalone Groups manager
       // is retired — a team is now the workspace. Any lingering
       // agentTab==='groups' falls through to the default Agents view.
-      // Goal-to-Plan — read-only narrated planner (idea-ba306c32, Stage 1)
-      if (agentTab === 'planner') {
-        return <ErrorBoundary name="GoalPlanner"><Suspense fallback={SectionFallback}><GoalPlannerPanel /></Suspense></ErrorBoundary>;
-      }
       if (personasFetched && !isLoading && !error && personas.length === 0) {
         return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
       }
@@ -267,9 +262,17 @@ export default function PersonasPage() {
     <CanvasDragProvider>
       <CredentialNavProvider>
         <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
-          {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64) */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
+          {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64).
+              transform-gpu + backface-hidden isolate each layer onto its own GPU
+              texture so it rasters ONCE. Without isolation these full-screen layers
+              share a paint layer with hover-repainting content, so every pointer-move
+              re-rasterizes the 1px grid gradient — and at fractional Windows DPI
+              (125%/150%) a CSS 1px line maps to non-integer device pixels, so each
+              re-raster shimmers, most visibly as a flickering seam at the top/right
+              edges. Isolation is a lightweight 2D layer promotion, unlike the
+              backdrop-blur removed above. */}
+          <div className="absolute inset-0 transform-gpu backface-hidden bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+          <div className="absolute inset-0 transform-gpu backface-hidden bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
 
           {/* Main layout */}
           <div className="relative z-10 flex flex-1 overflow-hidden">

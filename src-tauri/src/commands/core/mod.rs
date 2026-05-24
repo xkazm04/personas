@@ -1,7 +1,6 @@
 pub mod chat;
 pub mod data_portability;
 pub mod export_types;
-pub mod goal_planner;
 pub mod import_export;
 pub mod memories;
 pub mod memory_compile;

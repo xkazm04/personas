@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2, Sparkles } from 'lucide-react';
+import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -240,21 +240,6 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           <List className="w-4 h-4 flex-shrink-0" />
           {t.shared.sidebar_extra.all_agents_label}
           <span className="ml-auto text-[11px] text-foreground/90">{personas.length}</span>
-        </button>
-
-        {/* Plan a goal — read-only narrated planner (idea-ba306c32) */}
-        <button
-          data-testid="tab-planner"
-          onClick={() => { selectPersona(null); setAgentTab('planner'); useSystemStore.getState().setIsCreatingPersona(false); }}
-          aria-current={agentTab === 'planner' && !isCreatingPersona ? 'page' : undefined}
-          className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            agentTab === 'planner' && !isCreatingPersona
-              ? 'bg-primary/10 text-foreground/90 font-semibold'
-              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 flex-shrink-0" />
-          {t.planner.nav_label}
         </button>
 
         {/* Active draft builds — one row per session in the buildSessions map.
