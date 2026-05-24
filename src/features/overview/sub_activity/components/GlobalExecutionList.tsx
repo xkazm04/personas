@@ -205,23 +205,29 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
         actions={
           <div className="flex items-center gap-2">
             {headerActions}
-            <button
-              onClick={() => setShowDashboard(!showDashboard)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
-              title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
-            >
-              <BarChart3 className="w-5 h-5" />
-              <span className="typo-body font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
-            </button>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
-              title={t.common.refresh}
-            >
-              <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="typo-body font-medium">{t.common.refresh}</span>
-            </button>
+            {/* Metrics + Refresh are only meaningful once executions exist —
+                hide both when the app has recorded none (empty state). */}
+            {globalExecutionCounts.total > 0 && (
+              <>
+                <button
+                  onClick={() => setShowDashboard(!showDashboard)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-modal transition-colors ${showDashboard ? 'text-blue-400 bg-blue-500/15 border border-blue-500/25' : 'text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15'}`}
+                  title={showDashboard ? t.overview.activity.show_list : t.overview.activity.show_metrics}
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  <span className="typo-body font-medium">{showDashboard ? t.overview.activity.list : t.overview.activity.metrics}</span>
+                </button>
+                <button
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 border border-primary/15 disabled:opacity-60 transition-colors"
+                  title={t.common.refresh}
+                >
+                  <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="typo-body font-medium">{t.common.refresh}</span>
+                </button>
+              </>
+            )}
           </div>
         }
       />
