@@ -48,6 +48,17 @@ There is **no whole-card click** — every badge is its own button:
 
 Cards sort worst-first: failures → things needing you → just-busy → idle.
 
+### Group by
+
+If any **persona groups** exist (see [personas](./personas/README.md) §
+Persona Groups), the header shows a **By group** toggle. When enabled,
+the grid is partitioned into sections — one per group, plus an
+**Ungrouped** section for personas with `group_id = null`. Each section
+header carries the group's color stripe and a chevron to collapse the
+section locally (state is per-session, not persisted). Groups with no
+visible personas (after the active-project filter) are hidden so the
+header isn't padded with empty sections.
+
 ### System band
 
 App-level activity not tied to a persona — idea scans, context maps, the task

@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "그룹별",
+  "group_by_toggle_title": "할당된 그룹별로 페르소나 카드 그룹화",
+  "group_ungrouped": "그룹 없음"
+}

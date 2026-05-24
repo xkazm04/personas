@@ -1,0 +1,295 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
+import { X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
+import { useCompanionStore } from '../companionStore';
+import type { HoldToTalk } from '../useHoldToTalk';
+import { subscribeAudioLevel } from '../audioLevel';
+import { AthenaAvatar, type AthenaState } from '../AthenaAvatar';
+
+/**
+ * Athena's floating, dockable orb — the minimized presence that lives as an
+ * overlay above app content (rendered only while `companionState === 'minimized'`).
+ *
+ * One pointer surface, three gestures, discriminated by movement + time:
+ *   - **Tap** (down → up, no move, no hold) → opens the full chat panel.
+ *   - **Hold** (≥ {@link HOLD_MS} in place) → arms dictation; on release the
+ *     transcript fires a voice turn via `useHoldToTalk` (no panel needed).
+ *   - **Drag** (move past {@link DRAG_THRESHOLD}) → relocates the orb; on drop
+ *     the X position snaps to the nearest side edge and persists. A drag
+ *     cancels any armed hold so moving never accidentally records.
+ *
+ * Position is stored as viewport fractions (`companionOrbPos`) and resolved
+ * to pixels here, so it survives window resizes and app restarts.
+ */
+const ORB_SIZE = 60;
+const MARGIN = 16;
+const HOLD_MS = 220;
+const DRAG_THRESHOLD = 6;
+
+interface Viewport {
+  w: number;
+  h: number;
+}
+
+function readViewport(): Viewport {
+  return { w: window.innerWidth, h: window.innerHeight };
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/** Resolve stored fractions → clamped top-left pixels for the current viewport. */
+function fractionToPx(x: number, y: number, vp: Viewport): { left: number; top: number } {
+  const freeW = Math.max(vp.w - ORB_SIZE, 0);
+  const freeH = Math.max(vp.h - ORB_SIZE, 0);
+  return {
+    left: clamp(x * freeW, MARGIN, freeW - MARGIN),
+    top: clamp(y * freeH, MARGIN, freeH - MARGIN),
+  };
+}
+
+export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
+  const { t } = useTranslation();
+  const setState = useCompanionStore((s) => s.setState);
+  const streaming = useCompanionStore((s) => s.streaming);
+  const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
+  const orbPos = useSystemStore((s) => s.companionOrbPos);
+  const setOrbPos = useSystemStore((s) => s.setCompanionOrbPos);
+
+  const { talking, interimText, start: startTalk, stop: stopTalk, abort: abortTalk } = talk;
+  const reduceMotion = useReducedMotion();
+  const setOrbOpenOrigin = useCompanionStore((s) => s.setOrbOpenOrigin);
+
+  const [vp, setVp] = useState<Viewport>(() => readViewport());
+  useEffect(() => {
+    const onResize = () => setVp(readViewport());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Transient drag position (px). Null when not dragging — we render from the
+  // persisted fractions instead.
+  const [dragPx, setDragPx] = useState<{ left: number; top: number } | null>(null);
+
+  const resolved = fractionToPx(orbPos.x, orbPos.y, vp);
+  const left = dragPx?.left ?? resolved.left;
+  const top = dragPx?.top ?? resolved.top;
+  // Docked on the left half? Caption + badges flip to the orb's right.
+  const dockedLeft = left + ORB_SIZE / 2 < vp.w / 2;
+
+  const startRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
+  const holdTimerRef = useRef<number | null>(null);
+  const draggingRef = useRef(false);
+  const talkArmedRef = useRef(false);
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current != null) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      // Ignore non-primary buttons (right-click etc.).
+      if (e.button !== 0) return;
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+      startRef.current = { x: e.clientX, y: e.clientY, left, top };
+      draggingRef.current = false;
+      talkArmedRef.current = false;
+      clearHoldTimer();
+      holdTimerRef.current = window.setTimeout(() => {
+        holdTimerRef.current = null;
+        if (draggingRef.current) return;
+        talkArmedRef.current = true;
+        startTalk();
+      }, HOLD_MS);
+    },
+    [left, top, clearHoldTimer, startTalk],
+  );
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const start = startRef.current;
+      if (!start) return;
+      const dx = e.clientX - start.x;
+      const dy = e.clientY - start.y;
+      if (!draggingRef.current && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
+        draggingRef.current = true;
+        clearHoldTimer();
+        // Moving cancels an armed talk session so a drag never records.
+        if (talkArmedRef.current) {
+          abortTalk();
+          talkArmedRef.current = false;
+        }
+      }
+      if (draggingRef.current) {
+        const freeW = Math.max(vp.w - ORB_SIZE, 0);
+        const freeH = Math.max(vp.h - ORB_SIZE, 0);
+        setDragPx({
+          left: clamp(start.left + dx, 0, freeW),
+          top: clamp(start.top + dy, 0, freeH),
+        });
+      }
+    },
+    [vp.w, vp.h, clearHoldTimer, abortTalk],
+  );
+
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      try {
+        (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      } catch (err) {
+        // Capture may already be released (e.g. pointercancel raced us).
+        silentCatch('companion_orb_release_capture')(err);
+      }
+      clearHoldTimer();
+      startRef.current = null;
+
+      if (draggingRef.current) {
+        // Snap X to the nearer side edge; keep Y where it was dropped.
+        const cur = dragPx ?? { left, top };
+        const freeW = Math.max(vp.w - ORB_SIZE, 0);
+        const freeH = Math.max(vp.h - ORB_SIZE, 0);
+        const snappedLeft =
+          cur.left + ORB_SIZE / 2 < vp.w / 2 ? MARGIN : freeW - MARGIN;
+        setOrbPos({
+          x: freeW > 0 ? snappedLeft / freeW : 1,
+          y: freeH > 0 ? clamp(cur.top, MARGIN, freeH - MARGIN) / freeH : 0.82,
+        });
+        setDragPx(null);
+        draggingRef.current = false;
+        return;
+      }
+
+      if (talkArmedRef.current) {
+        stopTalk();
+        talkArmedRef.current = false;
+        return;
+      }
+
+      // Plain tap — open the full chat panel, recording the orb's center so
+      // the panel can morph out from here.
+      setOrbOpenOrigin({ x: left + ORB_SIZE / 2, y: top + ORB_SIZE / 2 });
+      setState('open');
+    },
+    [dragPx, left, top, vp.w, vp.h, clearHoldTimer, setOrbPos, stopTalk, setState, setOrbOpenOrigin],
+  );
+
+  const onPointerCancel = useCallback(() => {
+    clearHoldTimer();
+    startRef.current = null;
+    if (talkArmedRef.current) {
+      abortTalk();
+      talkArmedRef.current = false;
+    }
+    setDragPx(null);
+    draggingRef.current = false;
+  }, [clearHoldTimer, abortTalk]);
+
+  useEffect(() => () => clearHoldTimer(), [clearHoldTimer]);
+
+  const hasUnreadPlayback = pendingPlayback != null && !pendingPlayback.played;
+  const avatarState: AthenaState =
+    talking || streaming ? 'thinking' : hasUnreadPlayback ? 'speaking' : 'idle';
+  const speaking = avatarState === 'speaking';
+
+  const caption = talking && interimText ? interimText : null;
+
+  // Audio-reactive glow: while a spoken reply plays, drive the bloom's
+  // opacity + scale from the live TTS level (tapped via the shared
+  // analyser in audioLevel.ts). Imperative — we mutate the glow node in the
+  // subscription callback rather than re-rendering at frame rate. Skipped
+  // under reduced motion (the glow stays a static bloom there).
+  const glowRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (reduceMotion || !speaking) return;
+    return subscribeAudioLevel((lvl) => {
+      const el = glowRef.current;
+      if (!el) return;
+      el.style.opacity = String(0.22 + lvl * 0.65);
+      el.style.transform = `scale(${1 + lvl * 0.55})`;
+    });
+  }, [reduceMotion, speaking]);
+
+  return (
+    <div
+      className="group pointer-events-auto absolute select-none touch-none"
+      style={{ left, top, width: ORB_SIZE, height: ORB_SIZE }}
+    >
+      {/* Interim-dictation caption, flips to whichever side has room. */}
+      {caption && (
+        <div
+          className={`absolute top-1/2 -translate-y-1/2 max-w-[220px] px-3 py-1.5 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 typo-caption text-foreground/90 truncate ${
+            dockedLeft ? 'left-full ml-2' : 'right-full mr-2'
+          }`}
+        >
+          {caption}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        data-testid="companion-orb"
+        aria-pressed={talking}
+        className={`relative w-full h-full rounded-full overflow-visible cursor-grab active:cursor-grabbing focus-ring transition-transform ${
+          talking
+            ? `ring-2 ring-primary/60 ${reduceMotion ? '' : 'animate-pulse'}`
+            : reduceMotion
+              ? ''
+              : 'hover:scale-105'
+        }`}
+        title={t.plugins.companion.orb_talk_hint}
+        aria-label={talking ? t.plugins.companion.footer_listening : t.plugins.companion.orb_talk_hint}
+      >
+        {/* Speaking glow — a bloom while a spoken reply plays. When motion
+            is allowed it's audio-reactive: the ref'd node's opacity + scale
+            are driven from the live TTS level (see the effect above). Under
+            reduced motion it's a static bloom. */}
+        {speaking &&
+          (reduceMotion ? (
+            <span aria-hidden className="absolute -inset-1.5 rounded-full bg-primary/30 blur-md" />
+          ) : (
+            <span
+              ref={glowRef}
+              aria-hidden
+              className="absolute -inset-1.5 rounded-full bg-primary/40 blur-md"
+              style={{ opacity: 0.3, transform: 'scale(1)', willChange: 'opacity, transform' }}
+            />
+          ))}
+        <span className="absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 ring-1 ring-primary/25 bg-primary/10">
+          <AthenaAvatar state={avatarState} fill className="absolute inset-0" />
+        </span>
+        {talking && (
+          <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-2 ring-background">
+            <span className="w-1.5 h-1.5 rounded-full bg-background animate-pulse" />
+          </span>
+        )}
+      </button>
+
+      {/* Dismiss → hide the orb (collapsed). Hover-revealed. */}
+      <button
+        type="button"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          setState('collapsed');
+        }}
+        data-testid="companion-orb-dismiss"
+        className="pointer-events-auto absolute -top-1 -right-1 w-5 h-5 rounded-full bg-background border border-primary/20 text-foreground hover:bg-secondary flex items-center justify-center opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity shadow-elevation-2"
+        title={t.plugins.companion.orb_dismiss}
+        aria-label={t.plugins.companion.orb_dismiss}
+      >
+        <X className="w-3 h-3" />
+      </button>
+    </div>
+  );
+}

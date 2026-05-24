@@ -138,6 +138,7 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin;
   const [open, setOpen] = useState(false);
+  const [showAll, setShowAll] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
   // Click-outside + Escape to close.
@@ -158,9 +159,16 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
     };
   }, [open]);
 
+  // Reset to collapsed when the popover closes — re-opening from a fresh
+  // state matches what most users expect (the popover is a quick triage tool;
+  // a remembered expanded state would surprise on re-open weeks later).
+  useEffect(() => {
+    if (!open) setShowAll(false);
+  }, [open]);
+
   const gaps = buildGaps(readiness);
   const allSet = gaps.length === 0;
-  const top = gaps.slice(0, 3);
+  const top = showAll ? gaps : gaps.slice(0, 3);
 
   return (
     <div ref={rootRef} className="relative">
@@ -234,9 +242,17 @@ export function ReadinessGapPopover({ readiness, onJumpTo }: Props) {
                   </li>
                 );
               })}
-              {gaps.length > top.length && (
-                <li className="px-3 py-1.5 text-[10px] text-foreground uppercase tracking-wider border-t border-primary/10">
-                  {tx(t.gaps.moreCount, { count: gaps.length - top.length })}
+              {gaps.length > 3 && (
+                <li className="border-t border-primary/10">
+                  <button
+                    type="button"
+                    onClick={() => setShowAll((v) => !v)}
+                    className="w-full text-left px-3 py-1.5 text-[10px] text-violet-300 hover:text-violet-200 hover:bg-violet-500/8 transition-colors uppercase tracking-wider"
+                  >
+                    {showAll
+                      ? t.gaps.showFewer
+                      : tx(t.gaps.showAllGaps, { count: gaps.length })}
+                  </button>
                 </li>
               )}
             </ul>

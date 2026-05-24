@@ -3,8 +3,6 @@ import {
   Brain,
   HelpCircle,
   Plus,
-  Volume2,
-  VolumeX,
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -23,6 +21,7 @@ import { ComposerConnectorsPickerModal } from '@/features/agents/components/glyp
 import { ComposerBrandIcon } from '@/features/agents/components/glyph/commandPanel/composer/ComposerBrandIcon';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCompanionStore } from './companionStore';
+import { VoiceControlPopover } from './VoiceControlPopover';
 
 /**
  * Right-edge sidebar with three groups:
@@ -55,11 +54,12 @@ export function CompanionToolbar({
   disabled: boolean;
 }) {
   const { t } = useTranslation();
+  const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);
   const voiceId = useSystemStore((s) => s.companionVoiceId);
-  const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
-  const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
-  const voiceConfigured = Boolean(voiceCredentialId && voiceId);
+  const piperVoiceId = useSystemStore((s) => s.companionPiperVoiceId);
+  const voiceConfigured =
+    voiceEngine === 'piper' ? Boolean(piperVoiceId) : Boolean(voiceCredentialId && voiceId);
 
   const connectors = useCompanionStore((s) => s.connectors);
   const setConnectors = useCompanionStore((s) => s.setConnectors);
@@ -150,24 +150,7 @@ export function CompanionToolbar({
         onClick={onOpenBrain}
         active={brainOpen}
       />
-      {voiceConfigured && (
-        <ToolbarButton
-          icon={
-            voiceEnabled ? (
-              <Volume2 className="w-4 h-4" />
-            ) : (
-              <VolumeX className="w-4 h-4" />
-            )
-          }
-          label={
-            voiceEnabled
-              ? t.plugins.companion.voice_disable
-              : t.plugins.companion.voice_enable
-          }
-          onClick={() => setVoiceEnabled(!voiceEnabled)}
-          active={voiceEnabled}
-        />
-      )}
+      {voiceConfigured && <VoiceControlPopover />}
 
       {/* Spacer pushes the connectors group to the bottom. */}
       <div className="flex-1" />

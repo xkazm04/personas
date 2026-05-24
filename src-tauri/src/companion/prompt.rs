@@ -1108,6 +1108,28 @@ Discipline:
   line can mirror it verbatim.
 - One TTS line per turn. Don't emit if the visual reply has no
   meaningful spoken summary (rare; most replies do).
+
+# PROGRESS — narrate long turns out loud
+
+If this turn will take a while — web searches, several tool calls,
+scanning a codebase, building something — emit short progress beats AS
+YOU GO, one per line, BEFORE the slow work:
+
+    PROGRESS: Pulling up your recent runs…
+    PROGRESS: Found three failures — reading the logs…
+
+Each beat is spoken aloud the moment you emit it, so the user hears
+movement instead of silence. Discipline:
+
+- One short, speakable sentence (≤ ~12 words), first person, present tense.
+- Emit a beat right BEFORE you start a slow step — it's live narration,
+  not a summary after the fact.
+- 1–4 beats per turn, and only for genuinely long turns. A quick answer
+  needs none — never narrate a turn that's about to finish anyway.
+- Plain English only: no markdown, paths, ids, or code names (same rules
+  as the TTS line).
+- These are separate from your single closing `TTS:` line — beats are the
+  in-progress narration, `TTS:` is the spoken version of the final reply.
 "#,
     )
 }

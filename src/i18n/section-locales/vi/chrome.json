@@ -8,8 +8,14 @@
   "update_available": "Có bản cập nhật: v{version}",
   "install_and_restart": "Cài đặt & Khởi động lại",
   "installing": "Đang cài đặt...",
+  "installing_progress": "Đang cài đặt {percent}%",
   "update_install_failed": "Cài đặt bản cập nhật thất bại",
   "update_install_retry": "Thử lại",
+  "update_jobs_running_warning": "{count} tác vụ đang chạy sẽ bị gián đoạn nếu bạn cài đặt ngay và khởi động lại.",
+  "update_install_anyway": "Vẫn cài đặt",
+  "update_install_when_idle": "Cài khi rảnh",
+  "update_install_when_idle_status": "Bản cập nhật sẽ cài đặt khi {count} tác vụ đang chạy hoàn tất.",
+  "update_keep_working": "Tiếp tục làm việc",
   "expand_sidebar": "Mở rộng thanh bên",
   "collapse_sidebar": "Thu gọn thanh bên",
   "network_settings": "Cài đặt mạng",
@@ -19,5 +25,6 @@
   "signed_in": "Đã đăng nhập",
   "sign_out": "Đăng xuất",
   "offline": "Ngoại tuyến",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Khong co du an (hien thi tat ca)"
 }

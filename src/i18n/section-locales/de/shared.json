@@ -178,7 +178,19 @@
     "all_prefix": "Alle (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "Persona-Symbol auswaehlen",
+    "select_persona_icon_desc": "Waehlen Sie ein integriertes Symbol oder laden Sie ein eigenes Bild hoch.",
+    "builtin_icons": "Integriert",
+    "your_icons": "Ihre Symbole",
+    "upload_icon": "Bild hochladen",
+    "uploading_icon": "Wird hochgeladen...",
+    "no_custom_icons": "Laden Sie ein Bild hoch, um es fuer Ihre Personas wiederzuverwenden.",
+    "remove_custom_icon": "Symbol entfernen",
+    "generate_with_ai": "Mit KI generieren",
+    "generate_icon": "Generieren",
+    "generating_icon": "Wird generiert...",
+    "generate_icon_prompt_placeholder": "Beschreiben Sie das gewuenschte Symbol..."
   },
   "reasoning_trace": {
     "system_init": "System-Init",
@@ -212,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "Teams",
+    "groups_label": "Gruppen",
+    "cloud_label": "Cloud",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "Kopieren",
@@ -293,5 +309,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "Spaltengroesse aendern - ziehen zum Anpassen, doppelklicken zum Zuruecksetzen"
 }

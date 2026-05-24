@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "按分组",
+  "group_by_toggle_title": "按分配的分组对人格卡片进行分组",
+  "group_ungrouped": "未分组"
+}

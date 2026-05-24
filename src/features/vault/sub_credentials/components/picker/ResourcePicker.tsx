@@ -174,7 +174,7 @@ export function ResourcePicker({
       panelClassName="bg-background border border-primary/15 rounded-2xl shadow-elevation-4 flex flex-col overflow-hidden max-h-[90vh]"
     >
       <div data-testid="resource-picker" className="contents" />
-      <header className="px-6 pt-5 pb-4 border-b border-primary/10 flex items-start justify-between gap-3">
+      <header className="shrink-0 px-6 pt-5 pb-4 border-b border-primary/10 flex items-start justify-between gap-3">
         <div>
           <h2 id="resource-picker-title" className="typo-heading-md text-foreground">
             Scope {connectorLabel}
@@ -192,7 +192,7 @@ export function ResourcePicker({
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-6">
         {orderedSpecs.map((spec) => {
           const st = state[spec.id] ?? { loading: false, items: [], error: null, fetched: false };
           const q = (search[spec.id] ?? '').toLowerCase();
@@ -360,7 +360,7 @@ export function ResourcePicker({
         })}
       </div>
 
-      <footer className="px-6 py-4 border-t border-primary/10 flex items-center justify-between gap-3">
+      <footer className="shrink-0 px-6 py-4 border-t border-primary/10 flex items-center justify-between gap-3">
         <button
           onClick={handleSkip}
           disabled={saving}

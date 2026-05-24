@@ -178,7 +178,19 @@
     "all_prefix": "全部 (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "Select persona icon",
+    "select_persona_icon_desc": "Pick a built-in icon or upload your own image.",
+    "builtin_icons": "Built-in",
+    "your_icons": "Your icons",
+    "upload_icon": "Upload image",
+    "uploading_icon": "Uploading...",
+    "no_custom_icons": "Upload an image to reuse it across your personas.",
+    "remove_custom_icon": "Remove icon",
+    "generate_with_ai": "Generate with AI",
+    "generate_icon": "Generate",
+    "generating_icon": "Generating...",
+    "generate_icon_prompt_placeholder": "Describe the icon you want..."
   },
   "reasoning_trace": {
     "system_init": "系统初始化",
@@ -212,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "团队",
+    "groups_label": "分组",
+    "cloud_label": "云",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "复制",
@@ -293,5 +309,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "调整列大小 - 拖动以调整，双击以重置"
 }

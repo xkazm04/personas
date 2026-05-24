@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "Theo nhóm",
+  "group_by_toggle_title": "Nhóm các thẻ persona theo nhóm được gán",
+  "group_ungrouped": "Không nhóm"
+}

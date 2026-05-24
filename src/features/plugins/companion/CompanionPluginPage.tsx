@@ -12,15 +12,15 @@ import { useTranslation } from '@/i18n/useTranslation';
 const SetupPanel = lazy(() => import('./sub_setup/SetupPanel'));
 const MemoryPanel = lazy(() => import('./sub_memory/MemoryPanel'));
 const VoicePanel = lazy(() => import('./sub_voice/VoicePanel'));
-const DashboardPanel = lazy(() => import('./sub_dashboard/DashboardPanel'));
 const DecisionsPanel = lazy(() => import('./sub_decisions/DecisionsPanel'));
 
 /**
  * Companion plugin page — manager surface for Athena.
  *
- * Sub-tabs (Setup, Memory, Voice, Dashboard, Decisions) live in the L3
- * sidebar (see `companionItems` in sidebarData.ts); the page only renders
- * the active panel.
+ * Sub-tabs (Setup, Memory, Voice, Decisions) live in the L3 sidebar (see
+ * `companionItems` in sidebarData.ts); the page only renders the active
+ * panel. (The former Dashboard tab was retired — Cockpit is the dynamic
+ * dashboard surface now.)
  */
 export default function CompanionPluginPage() {
   const { t } = useTranslation();
@@ -47,7 +47,6 @@ export default function CompanionPluginPage() {
             {tab === 'setup' && <SetupPanel />}
             {tab === 'memory' && <MemoryPanel />}
             {tab === 'voice' && <VoicePanel />}
-            {tab === 'dashboard' && <DashboardPanel />}
             {tab === 'decisions' && <DecisionsPanel />}
           </Suspense>
         </div>

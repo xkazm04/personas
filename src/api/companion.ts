@@ -247,6 +247,81 @@ export async function companionTtsPiperEngineStatus(): Promise<PiperEngineStatus
   return invoke<PiperEngineStatus>('companion_tts_piper_engine_status');
 }
 
+// ── Speech-to-text (voice input) ────────────────────────────────────────
+
+/**
+ * Which engine transcribes the user's voice input.
+ *
+ * - `'browser'`: Web Speech API in the renderer (`useDictation`). Zero
+ *   setup, but on WebView2 the audio is forwarded to the OS vendor's cloud
+ *   STT — it leaves the device.
+ * - `'whisper'`: local whisper.cpp via a sidecar binary. Audio stays
+ *   on-device; requires a one-time binary install + a downloaded model.
+ */
+export type SttEngineId = 'browser' | 'whisper';
+
+/** Catalog row + download status for the whisper-model browser. */
+export interface WhisperModelListing {
+  modelId: string;
+  label: string;
+  multilingual: boolean;
+  approxSizeMb: number;
+  description: string;
+  isDownloaded: boolean;
+}
+
+/** Streaming progress for a whisper-model download (`companion://stt-download`). */
+export interface SttDownloadProgress {
+  modelId: string;
+  state: 'queued' | 'downloading' | 'completed' | 'failed';
+  bytesDownloaded: number;
+  bytesTotal: number | null;
+  error: string | null;
+}
+
+export const STT_DOWNLOAD_EVENT = 'companion://stt-download';
+
+/** Install status of the local whisper engine binary. */
+export interface SttEngineStatus {
+  installed: boolean;
+  binaryPath: string | null;
+  expectedPath: string;
+  expectedFilename: string;
+}
+
+/**
+ * Transcribe a base64-encoded 16 kHz mono PCM WAV with the local whisper
+ * engine. `language` is an optional hint (`en`, `cs`, …); omit to
+ * auto-detect (multilingual models only). Returns the transcript text.
+ */
+export async function companionSttTranscribe(
+  audioBase64: string,
+  modelId: string,
+  language?: string,
+): Promise<string> {
+  return invoke<string>('companion_stt_transcribe', {
+    audioBase64,
+    modelId,
+    language: language ?? null,
+  });
+}
+
+export async function companionSttListModels(): Promise<WhisperModelListing[]> {
+  return invoke<WhisperModelListing[]>('companion_stt_list_models');
+}
+
+export async function companionSttDownloadModel(modelId: string): Promise<void> {
+  return invoke<void>('companion_stt_download_model', { modelId });
+}
+
+export async function companionSttDeleteModel(modelId: string): Promise<void> {
+  return invoke<void>('companion_stt_delete_model', { modelId });
+}
+
+export async function companionSttEngineStatus(): Promise<SttEngineStatus> {
+  return invoke<SttEngineStatus>('companion_stt_engine_status');
+}
+
 // ── Sensory toggles (Phase 2 v2 — desktop-awareness UI) ─────────────────
 
 export type SensorySource =
@@ -1132,6 +1207,13 @@ export interface BackgroundJob {
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
+  /**
+   * Live progress note present only on in-flight `companion://job` events
+   * emitted by a running handler (e.g. "Calling Sentry…", "Scanned 4000
+   * files…"). Absent on rows read from the DB, so the terminal event clears
+   * it.
+   */
+  progressText?: string | null;
 }
 
 /** Tauri event emitted on job status transitions (queued→running, completion). */

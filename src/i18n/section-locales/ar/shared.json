@@ -178,7 +178,19 @@
     "all_prefix": "الكل (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "اختيار أيقونة الشخصية",
+    "select_persona_icon_desc": "اختر أيقونة مدمجة أو ارفع صورتك الخاصة.",
+    "builtin_icons": "مدمجة",
+    "your_icons": "أيقوناتك",
+    "upload_icon": "رفع صورة",
+    "uploading_icon": "جار الرفع...",
+    "no_custom_icons": "ارفع صورة لإعادة استخدامها عبر شخصياتك.",
+    "remove_custom_icon": "إزالة الأيقونة",
+    "generate_with_ai": "توليد بالذكاء الاصطناعي",
+    "generate_icon": "توليد",
+    "generating_icon": "جار التوليد...",
+    "generate_icon_prompt_placeholder": "صف الأيقونة التي تريدها..."
   },
   "reasoning_trace": {
     "system_init": "تهيئة النظام",
@@ -212,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "الفِرَق",
+    "groups_label": "المجموعات",
+    "cloud_label": "السحابة",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "نسخ",
@@ -293,5 +309,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "تغيير حجم العمود - اسحب للضبط، وانقر نقرا مزدوجا لإعادة التعيين"
 }

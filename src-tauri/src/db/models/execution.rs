@@ -20,6 +20,13 @@ pub struct PersonaExecution {
     pub output_data: Option<String>,
     pub claude_session_id: Option<String>,
     pub log_file_path: Option<String>,
+    // ts-rs doesn't resolve the `serde_json/JsonValue` subdir import when the
+    // type is wrapped in `Json<T>` (transparent TS impl visits the dep but
+    // import-path resolution misses it). Pin the TS type to `unknown | null`
+    // for now — the field is a JSON blob in practice, so the type relaxation
+    // is honest. Revisit if ts-rs ever fixes nested-path imports for wrapper
+    // generics.
+    #[ts(type = "unknown")]
     pub execution_flows: Option<Json<serde_json::Value>>,
     pub model_used: Option<String>,
     #[ts(type = "number")]
@@ -116,6 +123,13 @@ pub struct GlobalExecutionRow {
     pub output_data: Option<String>,
     pub claude_session_id: Option<String>,
     pub log_file_path: Option<String>,
+    // ts-rs doesn't resolve the `serde_json/JsonValue` subdir import when the
+    // type is wrapped in `Json<T>` (transparent TS impl visits the dep but
+    // import-path resolution misses it). Pin the TS type to `unknown | null`
+    // for now — the field is a JSON blob in practice, so the type relaxation
+    // is honest. Revisit if ts-rs ever fixes nested-path imports for wrapper
+    // generics.
+    #[ts(type = "unknown")]
     pub execution_flows: Option<Json<serde_json::Value>>,
     pub model_used: Option<String>,
     #[ts(type = "number")]

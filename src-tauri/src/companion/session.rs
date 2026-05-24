@@ -795,6 +795,17 @@ async fn run_cli(
         "--output-format".into(),
         "stream-json".into(),
         "--verbose".into(),
+        // Token-level streaming. With this flag the CLI additionally emits
+        // `{"type":"stream_event", ...}` lines carrying `content_block_delta`
+        // / `text_delta` chunks *before* the final whole `assistant` message.
+        // The frontend renders those deltas live so Athena's reply flows in
+        // token-by-token instead of appearing in whole-message jumps. Purely
+        // additive on this side: the loop below already forwards every line
+        // verbatim as a `Cli` event, and the final `assistant` message still
+        // arrives unchanged to drive `assistant_text` accumulation /
+        // persistence. Harmless on older CLIs that don't recognize the flag's
+        // event type — they simply emit no `stream_event` lines.
+        "--include-partial-messages".into(),
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),

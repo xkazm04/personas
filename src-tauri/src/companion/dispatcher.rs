@@ -137,6 +137,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // proactive ping needs explicit "yes, ping me about this then"
     // consent.
     "schedule_proactive",
+    // Phase C3 — Team-assignment dispatch. User says "have the X team
+    // handle Y" → Athena emits propose_action{action:"assign_team",
+    // params:{team_id,goal,title?}}. Goes through approval because the
+    // operation spawns multiple persona executions in parallel (real
+    // tool calls + LLM cost via subscription). Approval body is the
+    // proposed step list the user can review before clicking Approve.
+    "assign_team",
     // Phase J — Fleet integration (companion ↔ Claude Code workers).
     // All four go through approval because every one of them moves
     // a real subprocess (writing keystrokes, killing it, spawning
@@ -211,6 +218,16 @@ pub fn dispatch(
 
     for line in assistant_text.lines() {
         let trimmed = line.trim_start();
+
+        // PROGRESS line: `PROGRESS: <short update>` — a live narration beat
+        // Athena emits mid-turn (Variant B in
+        // docs/features/companion/conversation-orchestration.md). The
+        // frontend detects + speaks these the instant their line completes
+        // in the stream; here we only strip them from the persisted reply so
+        // they never appear in the final bubble.
+        if trimmed.strip_prefix("PROGRESS:").is_some() {
+            continue;
+        }
 
         // TTS line: `TTS: "..."` — a short, spoken-friendly version of
         // this turn's reply. We accept either a JSON-quoted string or
@@ -1323,6 +1340,27 @@ mod tests {
         let pool = test_pool();
         let text = format!("Some prose.\nOP: {op_json}\nMore prose.");
         dispatch(&pool, "default", &text).expect("dispatch ok")
+    }
+
+    // ── PROGRESS beats (Variant B) ──────────────────────────────────────
+
+    #[test]
+    fn progress_lines_are_stripped_from_cleaned_text() {
+        let pool = test_pool();
+        let text = "PROGRESS: Pulling up your recent runs…\n\
+                    Here are your three failing personas.\n\
+                    PROGRESS: Checking the logs…";
+        let out = dispatch(&pool, "default", text).expect("dispatch ok");
+        assert!(
+            !out.cleaned_text.contains("PROGRESS:"),
+            "PROGRESS beats must not survive into the persisted reply: {:?}",
+            out.cleaned_text
+        );
+        assert!(
+            out.cleaned_text.contains("three failing personas"),
+            "real prose must survive the strip: {:?}",
+            out.cleaned_text
+        );
     }
 
     // ── show_persona_walkthrough ────────────────────────────────────────

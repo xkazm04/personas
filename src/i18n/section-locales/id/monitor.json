@@ -1,1 +1,5 @@
-{}
+{
+  "group_by_toggle": "Per grup",
+  "group_by_toggle_title": "Kelompokkan kartu persona berdasarkan grupnya",
+  "group_ungrouped": "Tanpa grup"
+}

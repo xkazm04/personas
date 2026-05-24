@@ -1,0 +1,95 @@
+{
+  "id": "backlog-execution",
+  "schema_version": 1,
+  "name": "Backlog & Execution",
+  "description": "Capture ideas from any source, triage them into a grounded backlog, track decisions made during execution, and resolve issues automatically. Six pre-wired agents that together turn raw signal into shipped work.",
+  "icon": "ListTodo",
+  "color": "#F59E0B",
+  "category": ["productivity", "development", "project-management"],
+  "team": {
+    "name": "Backlog & Execution",
+    "description": "Capture → triage → grounded backlog → decisions → resolution → reporting",
+    "color": "#F59E0B"
+  },
+  "group": {
+    "name": "Product & Engineering",
+    "color": "#F59E0B",
+    "shared_instructions": "Always link decisions back to the originating idea. Cite codebase evidence whenever feasibility is asserted. Prefer empirical over speculative judgments."
+  },
+  "members": [
+    {
+      "template_id": "personal-capture-bot",
+      "role": "capture",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "template_id": "survey-insights-analyzer",
+      "role": "voc",
+      "x": 0,
+      "y": 200
+    },
+    {
+      "template_id": "idea-harvester",
+      "role": "triage",
+      "x": 240,
+      "y": 100
+    },
+    {
+      "template_id": "technical-decision-tracker",
+      "role": "decisions",
+      "x": 480,
+      "y": 100
+    },
+    {
+      "template_id": "autonomous-issue-resolver",
+      "role": "execution",
+      "x": 720,
+      "y": 0
+    },
+    {
+      "template_id": "daily-standup-compiler",
+      "role": "reporting",
+      "x": 720,
+      "y": 200
+    }
+  ],
+  "connections": [
+    {
+      "from": "capture",
+      "to": "triage",
+      "connection_type": "data",
+      "label": "ad-hoc captures"
+    },
+    {
+      "from": "voc",
+      "to": "triage",
+      "connection_type": "data",
+      "label": "voice-of-customer signals"
+    },
+    {
+      "from": "triage",
+      "to": "decisions",
+      "connection_type": "data",
+      "label": "accepted backlog items"
+    },
+    {
+      "from": "decisions",
+      "to": "execution",
+      "connection_type": "data",
+      "label": "decided + scoped work"
+    },
+    {
+      "from": "execution",
+      "to": "reporting",
+      "connection_type": "data",
+      "label": "resolved issues"
+    },
+    {
+      "from": "reporting",
+      "to": "triage",
+      "connection_type": "feedback",
+      "label": "learned signals from delivery"
+    }
+  ]
+}

@@ -8,8 +8,14 @@
   "update_available": "अपडेट उपलब्ध: v{version}",
   "install_and_restart": "इंस्टॉल करें और पुनः प्रारंभ करें",
   "installing": "इंस्टॉल हो रहा है...",
+  "installing_progress": "इंस्टॉल हो रहा है {percent}%",
   "update_install_failed": "अपडेट इंस्टॉल नहीं हो पाया",
   "update_install_retry": "फिर से प्रयास करें",
+  "update_jobs_running_warning": "यदि आप अभी इंस्टॉल करके पुनः आरंभ करते हैं तो {count} चल रहे कार्य बाधित होंगे।",
+  "update_install_anyway": "फिर भी इंस्टॉल करें",
+  "update_install_when_idle": "निष्क्रिय होने पर इंस्टॉल करें",
+  "update_install_when_idle_status": "{count} चल रहे कार्य पूरे होने पर अपडेट इंस्टॉल होगा।",
+  "update_keep_working": "काम करते रहें",
   "expand_sidebar": "साइडबार विस्तृत करें",
   "collapse_sidebar": "साइडबार संकुचित करें",
   "network_settings": "नेटवर्क सेटिंग्स",
@@ -19,5 +25,6 @@
   "signed_in": "साइन इन किया",
   "sign_out": "साइन आउट करें",
   "offline": "ऑफ़लाइन",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "कोई प्रोजेक्ट नहीं (सभी दिखाएं)"
 }

@@ -912,7 +912,10 @@
     "saving": "保存中...",
     "created_success": "记忆创建成功",
     "fill_required": "填写所有必填字段以保存",
-    "saving_memory": "正在保存记忆..."
+    "saving_memory": "正在保存记忆...",
+    "share_with_group": "共享给",
+    "share_with_group_hint": "此分组中的每个人格都会在其提示中看到该记忆 — 适合风格指南或组织政策等共同上下文。",
+    "share_with_group_title": "由所选人格撰写；该分组每位成员都可见。"
   },
   "memory_filter": {
     "search_placeholder": "搜索记忆...",

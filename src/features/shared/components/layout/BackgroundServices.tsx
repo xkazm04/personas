@@ -12,6 +12,7 @@ import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useLangfuseStackEvents } from "@/features/plugins/langfuse/useLangfuseStackEvents";
+import { useAssignmentNotificationDispatcher } from "@/features/pipeline/sub_assignments";
 
 
 export default function BackgroundServices() {
@@ -28,5 +29,10 @@ export default function BackgroundServices() {
   // start/stop/installer-download progress flows into the global store
   // regardless of which page is currently mounted.
   useLangfuseStackEvents();
+  // Watches TEAM_ASSIGNMENT_PROGRESS globally and dispatches a notification
+  // into the title-bar notification center when any assignment transitions
+  // to awaiting_review. Fires regardless of which page is mounted so the
+  // user is reached even if they're not on the team's canvas.
+  useAssignmentNotificationDispatcher();
   return null;
 }

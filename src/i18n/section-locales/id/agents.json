@@ -2240,7 +2240,12 @@
     "show_only_favorites": "Tampilkan hanya favorit",
     "clear_search": "Hapus pencarian",
     "col_persona": "Persona",
-    "no_connectors_configured": "Tidak ada konektor dikonfigurasi"
+    "no_connectors_configured": "Tidak ada konektor dikonfigurasi",
+    "batch_move_to_group": "Pindahkan ke grup…",
+    "batch_move_to_group_empty": "Belum ada grup — buat di Agen → Grup",
+    "batch_move_to_ungrouped": "Tanpa grup",
+    "batch_moved_success": "Memindahkan {count} persona ke {group}",
+    "batch_moved_partial": "Memindahkan {ok} ke {group}; {failed} gagal"
   },
   "design_preview": {
     "preview": "Pratinjau",
@@ -2444,5 +2449,14 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "Target drop grup persona",
+    "heading": "Grup",
+    "chip_title": "Letakkan kartu persona di sini untuk menetapkannya ke grup ini",
+    "ungrouped_label": "Tanpa grup",
+    "ungrouped_title": "Letakkan kartu persona di sini untuk menghapus ikatan grup-nya",
+    "moved_toast": "{persona} dipindahkan ke {group}",
+    "filter_clear_title": "Klik untuk menghapus filter ini"
+  }
 }

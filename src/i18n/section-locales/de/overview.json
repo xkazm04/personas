@@ -912,7 +912,10 @@
     "saving": "Speichere...",
     "created_success": "Erinnerung erfolgreich erstellt",
     "fill_required": "Alle Pflichtfelder ausfüllen, um zu speichern",
-    "saving_memory": "Erinnerung wird gespeichert..."
+    "saving_memory": "Erinnerung wird gespeichert...",
+    "share_with_group": "Teilen mit",
+    "share_with_group_hint": "Jede Persona dieser Gruppe sieht diese Erinnerung in ihrem Prompt — nützlich für organisationsweiten Kontext wie Stil oder Richtlinien.",
+    "share_with_group_title": "Von der ausgewählten Persona verfasst; erscheint für jedes Mitglied ihrer Gruppe."
   },
   "memory_filter": {
     "search_placeholder": "Erinnerungen suchen...",

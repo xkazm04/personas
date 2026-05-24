@@ -88,6 +88,7 @@ export const EventName = {
   TEMPLATE_GENERATE_OUTPUT: 'template-generate-output',
   TEMPLATE_ADOPT_STATUS: 'template-adopt-status',
   TEMPLATE_ADOPT_OUTPUT: 'template-adopt-output',
+  TEAM_PRESET_ADOPT_PROGRESS: 'team-preset-adopt-progress',
 
   // Knowledge base
   KB_INGEST_PROGRESS: 'kb:ingest_progress',
@@ -179,6 +180,9 @@ export const EventName = {
   PIPELINE_STATUS: 'pipeline-status',
   PIPELINE_CYCLE_WARNING: 'pipeline-cycle-warning',
   PIPELINE_APPROVAL_NEEDED: 'pipeline-approval-needed',
+
+  // Team assignments (orchestration Phase A)
+  TEAM_ASSIGNMENT_PROGRESS: 'team-assignment-progress',
 
   // P2P
   P2P_MANIFEST_SYNC_PROGRESS: 'p2p:manifest-sync-progress',
@@ -682,6 +686,7 @@ export interface EventPayloadMap {
   [EventName.TEMPLATE_GENERATE_OUTPUT]: { job_id: string; line: string };
   [EventName.TEMPLATE_ADOPT_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.TEMPLATE_ADOPT_OUTPUT]: { job_id: string; line: string };
+  [EventName.TEAM_PRESET_ADOPT_PROGRESS]: import('./bindings/TeamPresetAdoptProgress').TeamPresetAdoptProgress;
 
   // Knowledge base
   [EventName.KB_INGEST_PROGRESS]: KbIngestProgressPayload;
@@ -804,6 +809,13 @@ export interface EventPayloadMap {
   [EventName.PIPELINE_STATUS]: PipelineStatusPayload;
   [EventName.PIPELINE_CYCLE_WARNING]: PipelineCycleWarningPayload;
   [EventName.PIPELINE_APPROVAL_NEEDED]: PipelineApprovalNeededPayload;
+
+  // Team assignments (orchestration Phase A)
+  [EventName.TEAM_ASSIGNMENT_PROGRESS]: {
+    assignment_id: string;
+    status: string;
+    step_id: string | null;
+  };
 
   // P2P
   [EventName.P2P_MANIFEST_SYNC_PROGRESS]: {

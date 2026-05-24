@@ -2240,7 +2240,12 @@
     "show_only_favorites": "Nur Favoriten anzeigen",
     "clear_search": "Suche löschen",
     "col_persona": "Persona",
-    "no_connectors_configured": "Keine Konnektoren konfiguriert"
+    "no_connectors_configured": "Keine Konnektoren konfiguriert",
+    "batch_move_to_group": "In Gruppe verschieben…",
+    "batch_move_to_group_empty": "Noch keine Gruppen — erstelle eine unter Agents → Gruppen",
+    "batch_move_to_ungrouped": "Ohne Gruppe",
+    "batch_moved_success": "{count} Personas nach {group} verschoben",
+    "batch_moved_partial": "{ok} nach {group} verschoben; {failed} fehlgeschlagen"
   },
   "design_preview": {
     "preview": "Vorschau",
@@ -2444,5 +2449,14 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "Drop-Ziele für Persona-Gruppen",
+    "heading": "Gruppen",
+    "chip_title": "Eine Persona-Karte hier ablegen, um sie dieser Gruppe zuzuweisen",
+    "ungrouped_label": "Ohne Gruppe",
+    "ungrouped_title": "Eine Persona-Karte hier ablegen, um ihre Gruppenzuordnung zu entfernen",
+    "moved_toast": "{persona} nach {group} verschoben",
+    "filter_clear_title": "Klicken, um diesen Filter zu löschen"
+  }
 }

@@ -4,14 +4,13 @@ import { OverviewTab } from './tabs/OverviewTab';
 import { ApiExplorerTab } from './tabs/ApiExplorerTab';
 import { McpToolsTab } from './tabs/McpToolsTab';
 import { CredentialRotationSection } from '@/features/vault/sub_credentials/components/features/CredentialRotationSection';
-import { CredentialRecipesTab } from './tabs/CredentialRecipesTab';
 import { ExecutionsTab } from './tabs/ExecutionsTab';
 import { CATALOG_API_ENDPOINTS } from '@/lib/credentials/catalogApiEndpoints';
 import type { RotationStatus } from '@/api/vault/rotation';
 import type { CredentialMetadata, ConnectorDefinition } from '@/lib/types/types';
 import type { GoogleOAuthState } from '@/features/vault/shared/hooks/useGoogleOAuth';
 
-type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
+type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'mcp-tools' | 'rotation';
 
 interface PlaygroundTabContentProps {
   activeTab: PlaygroundTab;
@@ -83,9 +82,6 @@ export function PlaygroundTabContent({
             credentialId={credential.id}
             catalogEndpoints={connector ? CATALOG_API_ENDPOINTS[connector.name] : undefined}
           />
-        )}
-        {activeTab === 'recipes' && (
-          <CredentialRecipesTab credentialId={credential.id} />
         )}
         {activeTab === 'mcp-tools' && (
           <McpToolsTab credentialId={credential.id} />

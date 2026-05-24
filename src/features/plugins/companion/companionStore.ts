@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
+import type { TodoStep } from './operationalSteps';
 import type {
   BackgroundJob,
   BrainKind,
@@ -102,6 +103,15 @@ interface CompanionStore {
    * and again when the turn finishes / errors / is interrupted.
    */
   streamingPhase: StreamPhase | null;
+  /**
+   * Latest model-authored progress beat (`PROGRESS:` line) for the current
+   * turn — Athena's own words narrating a long turn ("Reading the logs…").
+   * Shown in the streaming bubble in preference to the derived phase, and
+   * spoken aloud when voice is on (Variant B in
+   * docs/features/companion/conversation-orchestration.md). Cleared on turn
+   * start / finish.
+   */
+  streamingBeat: string | null;
   sendError: string | null;
 
   setState: (state: CompanionState) => void;
@@ -115,6 +125,7 @@ interface CompanionStore {
   appendStreamingText: (chunk: string) => void;
   resetStreamingText: () => void;
   setStreamingPhase: (phase: StreamPhase | null) => void;
+  setStreamingBeat: (beat: string | null) => void;
   setSendError: (err: string | null) => void;
 
   // Phase 3: approvals
@@ -190,6 +201,30 @@ interface CompanionStore {
   consumePendingPrompt: () => PendingPromptPayload | null;
 
   /**
+   * One-shot voice turn fired from outside the chat panel (the footer's
+   * hold-to-talk affordance). Distinct from `pendingPrompt` on purpose:
+   * `pendingPrompt` seeds the composer draft and is only consumed while
+   * the panel — and therefore the Composer — is mounted. `voiceTurnRequest`
+   * is consumed by an always-mounted effect in `CompanionPanel` so the
+   * user can speak to Athena and hear her reply (via the existing TTS +
+   * footer Play / notice pipeline) without ever opening the panel.
+   *
+   * Latest-wins; the consumer clears it before it calls `send()`.
+   */
+  voiceTurnRequest: string | null;
+  setVoiceTurnRequest: (text: string | null) => void;
+
+  /**
+   * Screen-space center (viewport px) of the orb at the moment the user
+   * tapped it to open the chat. Lets `CompanionPanel` animate its entrance
+   * from the orb's position (and exit back toward it) for an orb→panel
+   * morph. Null when the panel was opened from somewhere other than the orb
+   * (e.g. the footer), in which case the panel uses its default entrance.
+   */
+  orbOpenOrigin: { x: number; y: number } | null;
+  setOrbOpenOrigin: (origin: { x: number; y: number } | null) => void;
+
+  /**
    * Per-turn recall preview surfaced from the backend's `recall-preview`
    * event. `streamingRecall` is the live, in-flight strip shown above the
    * streaming bubble; on the `finished` stream event it's moved into
@@ -235,6 +270,42 @@ interface CompanionStore {
   upsertJob: (job: BackgroundJob) => void;
   attachPendingJobsToEpisode: (episodeId: string) => void;
   clearAllConnectorJobs: () => void;
+
+  /**
+   * The "operational thread": Athena's live TodoWrite plan, parsed from
+   * TodoWrite tool calls in the stream. `streamingSteps` is the in-flight
+   * checklist (latest TodoWrite call wins — each call re-sends the full
+   * list); on `finished` it's promoted to `stepsByEpisodeId` keyed by the
+   * assistant episode id so the checklist persists inline under the
+   * completed bubble. Session-scoped, same model as recall/turn-summary.
+   */
+  streamingSteps: TodoStep[];
+  stepsByEpisodeId: Record<string, TodoStep[]>;
+  setStreamingSteps: (steps: TodoStep[]) => void;
+  attachStepsToEpisode: (episodeId: string) => void;
+  clearAllSteps: () => void;
+
+  // Phase C2 — Athena-dispatched team assignments. Cards display inline
+  // above the chat messages; each card is updated by the assignment
+  // progress listener. Bounded to the 6 most-recent so the chat doesn't
+  // get crowded by an old session's history.
+  athenaAssignments: AthenaAssignmentRef[];
+  upsertAthenaAssignment: (ref: AthenaAssignmentRef) => void;
+  dismissAthenaAssignment: (assignmentId: string) => void;
+}
+
+/** Compact projection of an assignment + its current status, surfaced as
+ *  a chat-side card. Populated by `useCompanionAssignmentBridge`. */
+export interface AthenaAssignmentRef {
+  assignmentId: string;
+  teamId: string;
+  title: string;
+  goal: string;
+  status: string;
+  totalSteps: number;
+  doneSteps: number;
+  failedSteps: number;
+  updatedAt: number;
 }
 
 export interface PendingPromptPayload {
@@ -251,6 +322,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   streaming: false,
   streamingText: '',
   streamingPhase: null,
+  streamingBeat: null,
   sendError: null,
 
   setState: (state) => set({ state }),
@@ -266,6 +338,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     set((s) => ({ streamingText: s.streamingText + chunk })),
   resetStreamingText: () => set({ streamingText: '' }),
   setStreamingPhase: (streamingPhase) => set({ streamingPhase }),
+  setStreamingBeat: (streamingBeat) => set({ streamingBeat }),
   setSendError: (sendError) => set({ sendError }),
 
   approvals: [],
@@ -278,6 +351,19 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   chatCards: [],
   setChatCards: (chatCards) => set({ chatCards }),
+
+  athenaAssignments: [],
+  upsertAthenaAssignment: (ref) =>
+    set((s) => {
+      const next = s.athenaAssignments.filter((a) => a.assignmentId !== ref.assignmentId);
+      next.push(ref);
+      next.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+      return { athenaAssignments: next.slice(0, 6) };
+    }),
+  dismissAthenaAssignment: (assignmentId) =>
+    set((s) => ({
+      athenaAssignments: s.athenaAssignments.filter((a) => a.assignmentId !== assignmentId),
+    })),
 
   brainView: { open: false, kind: null, id: null },
   setBrainView: (brainView) => set({ brainView }),
@@ -350,6 +436,12 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     if (prompt !== null) set({ pendingPrompt: null });
     return prompt;
   },
+
+  voiceTurnRequest: null,
+  setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
+
+  orbOpenOrigin: null,
+  setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),
 
   streamingRecall: null,
   recallByEpisodeId: {},
@@ -425,4 +517,22 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       pendingConnectorJobIds: [],
       connectorJobIdsByEpisodeId: {},
     }),
+
+  streamingSteps: [],
+  stepsByEpisodeId: {},
+  setStreamingSteps: (streamingSteps) => set({ streamingSteps }),
+  attachStepsToEpisode: (episodeId) =>
+    set((s) => {
+      if (s.streamingSteps.length === 0 || !episodeId) {
+        return { streamingSteps: [] };
+      }
+      return {
+        streamingSteps: [],
+        stepsByEpisodeId: {
+          ...s.stepsByEpisodeId,
+          [episodeId]: s.streamingSteps,
+        },
+      };
+    }),
+  clearAllSteps: () => set({ streamingSteps: [], stepsByEpisodeId: {} }),
 }));

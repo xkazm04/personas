@@ -2240,7 +2240,12 @@
     "show_only_favorites": "Chỉ hiển thị yêu thích",
     "clear_search": "Xóa tìm kiếm",
     "col_persona": "Tác nhân",
-    "no_connectors_configured": "Chưa cấu hình trình kết nối"
+    "no_connectors_configured": "Chưa cấu hình trình kết nối",
+    "batch_move_to_group": "Chuyển sang nhóm…",
+    "batch_move_to_group_empty": "Chưa có nhóm — tạo trong Agents → Nhóm",
+    "batch_move_to_ungrouped": "Không nhóm",
+    "batch_moved_success": "Đã chuyển {count} persona sang {group}",
+    "batch_moved_partial": "Đã chuyển {ok} sang {group}; {failed} thất bại"
   },
   "design_preview": {
     "preview": "Xem trước",
@@ -2444,5 +2449,14 @@
   },
   "persona_decisions_footer_one": "1 design decision Athena logged",
   "persona_decisions_footer_many": "{count} design decisions Athena logged",
-  "persona_decisions_footer_open_audit": "Open audit"
+  "persona_decisions_footer_open_audit": "Open audit",
+  "persona_groups_rail": {
+    "aria_label": "Mục tiêu thả nhóm persona",
+    "heading": "Nhóm",
+    "chip_title": "Thả thẻ persona vào đây để gán nó vào nhóm này",
+    "ungrouped_label": "Không nhóm",
+    "ungrouped_title": "Thả thẻ persona vào đây để xóa ràng buộc nhóm của nó",
+    "moved_toast": "Đã chuyển {persona} sang {group}",
+    "filter_clear_title": "Nhấp để xóa bộ lọc này"
+  }
 }

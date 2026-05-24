@@ -82,6 +82,33 @@ pub struct BackgroundJob {
     pub created_at: String,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
+    /// Live, in-flight progress note set only on `companion://job` events
+    /// emitted by a running handler (see [`JobProgress`]). Never persisted —
+    /// `map_row` always reads it as `None`, so the terminal re-emit from the
+    /// DB clears it. Lets a long job report "still working — here's where I
+    /// am" between `running` and the terminal status instead of going silent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress_text: Option<String>,
+}
+
+/// Live progress reporter handed to a job handler so it can publish
+/// intermediate updates on the same `companion://job` channel while it runs.
+/// Each `report` re-emits the running job row with `progress_text` set; the
+/// field is event-only, so callers never touch the DB. Cloneable + `Send` so
+/// it can move into a `spawn_blocking` walk.
+#[derive(Clone)]
+pub struct JobProgress {
+    sink: JobEventSink,
+    job: BackgroundJob,
+}
+
+impl JobProgress {
+    pub fn report(&self, message: impl Into<String>) {
+        let mut snapshot = self.job.clone();
+        snapshot.status = "running".into();
+        snapshot.progress_text = Some(message.into());
+        self.sink.emit(&snapshot);
+    }
 }
 
 /// Recover orphaned `running` jobs on startup. A job in `running`
@@ -274,7 +301,13 @@ pub async fn worker_tick(
     // "queued" to "running" without polling. Noop under daemon.
     sink.emit(&job);
 
-    let result = dispatch_handler(pool, &job).await;
+    // Hand the handler a reporter so it can publish intermediate progress
+    // on the same channel while it runs (e.g. "Calling Sentry…").
+    let progress = JobProgress {
+        sink: sink.clone(),
+        job: job.clone(),
+    };
+    let result = dispatch_handler(pool, &job, &progress).await;
 
     match result {
         Ok(report) => {
@@ -341,13 +374,19 @@ pub async fn worker_tick(
     Ok(())
 }
 
-async fn dispatch_handler(pool: &UserDbPool, job: &BackgroundJob) -> Result<String, AppError> {
+async fn dispatch_handler(
+    pool: &UserDbPool,
+    job: &BackgroundJob,
+    progress: &JobProgress,
+) -> Result<String, AppError> {
     let params: serde_json::Value =
         serde_json::from_str(&job.params_json).unwrap_or(serde_json::json!({}));
     match job.kind.as_str() {
-        "scan_codebase" => scan_codebase::run(pool, job.project_id.as_deref(), &params).await,
-        "connector_use" => connector_use::run(pool, &params).await,
-        curation_run::KIND => curation_run::run(pool, &params).await,
+        "scan_codebase" => {
+            scan_codebase::run(pool, job.project_id.as_deref(), &params, progress).await
+        }
+        "connector_use" => connector_use::run(pool, &params, progress).await,
+        curation_run::KIND => curation_run::run(pool, &params, progress).await,
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"
         ))),
@@ -398,6 +437,7 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<BackgroundJob> {
         created_at: row.get(7)?,
         started_at: row.get(8)?,
         completed_at: row.get(9)?,
+        progress_text: None,
     })
 }
 

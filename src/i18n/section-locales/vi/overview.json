@@ -912,7 +912,10 @@
     "saving": "Đang lưu...",
     "created_success": "Đã tạo bộ nhớ thành công",
     "fill_required": "Điền tất cả các trường bắt buộc để lưu",
-    "saving_memory": "Đang lưu bộ nhớ..."
+    "saving_memory": "Đang lưu bộ nhớ...",
+    "share_with_group": "Chia sẻ với",
+    "share_with_group_hint": "Mọi persona trong nhóm này đều thấy ký ức này trong prompt — hữu ích cho bối cảnh cấp tổ chức như phong cách hay chính sách.",
+    "share_with_group_title": "Được persona đã chọn tạo; hiển thị cho mọi thành viên trong nhóm của nó."
   },
   "memory_filter": {
     "search_placeholder": "Tìm kiếm bộ nhớ...",

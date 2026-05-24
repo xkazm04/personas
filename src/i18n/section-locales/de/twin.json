@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "Aktiven Twin auswählen",
     "searchPlaceholder": "Nach Name oder Rolle suchen…",
-    "noMatches": "Keine Twins entsprechen deiner Suche."
+    "noMatches": "Keine Twins entsprechen deiner Suche.",
+    "pinTwin": "Oben anheften",
+    "unpinTwin": "Lösen"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -84,6 +86,7 @@
     "lastMinutesAgo": "vor {count} Min.",
     "lastHoursAgo": "vor {count} Std.",
     "lastDaysAgo": "vor {count} Tagen",
+    "staleTag": "wirkt inaktiv",
     "testTooltip": "Einen synthetischen ausgehenden Ping protokollieren",
     "testDisabledPaused": "Aktiviere den Kanal zuerst, um ihn zu testen",
     "testAria": "Testnachricht senden",
@@ -110,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "Tonfall aus {count} aktuellen {channel}-Nachrichten entwerfen",
+    "autoSuggestButton": "Vorschlagen",
+    "autoSuggestGenerating": "Nachrichten werden gelesen…",
+    "autoSuggestTooltip": "Liest aktuelle ausgehende Nachrichten und entwirft Stimmrichtlinien und Beispiele. Du prüfst und speicherst weiterhin selbst.",
+    "autoSuggestSuccess": "Vorschlag entworfen — prüfen und speichern.",
+    "autoSuggestNoComms": "Noch nicht genügend {channel}-Nachrichten zum Lernen vorhanden.",
+    "autoSuggestError": "Tonfall-Vorschlag konnte nicht entworfen werden."
   },
   "voice": {
     "title": "Voice",
@@ -250,6 +260,20 @@
     "switchToPending": "Switch to \"pending\" to review new items.",
     "approveTitle": "Approve — index into KB",
     "rejectTitle": "Reject — discard",
+    "digDeeperCta": "Tiefer graben",
+    "digDeeperGenerating": "Fragen werden generiert…",
+    "digDeeperTooltip": "Diese Erinnerung genehmigen und KI bitten, weiterführende Trainingsfragen zu entwerfen",
+    "digDeeperToast": "Genehmigt — Training Room wird mit weiterführenden Fragen geöffnet.",
+    "digDeeperError": "Weiterführende Fragen konnten nicht generiert werden.",
+    "rejectReasonHeading": "Warum diese Erinnerung ablehnen?",
+    "rejectReasonIrrelevant": "Irrelevant",
+    "rejectReasonInaccurate": "Ungenau",
+    "rejectReasonPrivate": "Privat",
+    "rejectReasonWrongTone": "Falscher Ton",
+    "rejectReasonNotePlaceholder": "Notiz hinzufügen (optional)…",
+    "rejectReasonConfirm": "Ablehnen",
+    "rejectReasonCancel": "Abbrechen",
+    "rejectedReasonLabel": "Grund: {reason}",
     "priority": "priority",
     "conversationHistory": "Conversation History",
     "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -462,6 +486,8 @@
     "allSetTitle": "Alles bereit",
     "allSetBody": "Jeder Meilenstein ist abgeschlossen. Dieser Twin ist bereit zu sprechen.",
     "moreCount": "+{count} weitere",
+    "showAllGaps": "Alle {count} anzeigen",
+    "showFewer": "Weniger anzeigen",
     "titles": {
       "identityEmpty": "Noch keine Bio",
       "identityPartial": "Bio ist kurz",
@@ -499,6 +525,7 @@
     "neverBridged": "nie",
     "justNow": "gerade eben",
     "messageCount": "{count} Nachrichten",
+    "sparklineAria": "{count} Nachrichten in den letzten 7 Tagen",
     "aliasPlaceholder": "Anzeigename (z. B. \"Alice von Discord\")",
     "notesPlaceholder": "Notizen — Kontext, Vorlieben, wichtige Daten…",
     "editAria": "Alias und Notizen bearbeiten",
@@ -530,6 +557,14 @@
     "emptyBody": "Füge Fakten hinzu, während du Kommunikationen durchsiehst — jeder Fakt zitiert die Nachrichten, aus denen er stammt. Spätere Stufen werden Fakten automatisch vorschlagen.",
     "deleteAria": "Destillierten Fakt löschen"
   },
+  "rejectionPatterns": {
+    "title": "Ablehnungsmuster",
+    "subtitle": "Warum du Erinnerungen zurückgewiesen hast. Ein Hinweis, dass die vorgelagerte Extraktion daneben liegen könnte.",
+    "empty": "Noch keine abgelehnten Erinnerungen — prüfe weiter, um diese Ansicht zu füllen.",
+    "totalRejected": "{count} insgesamt abgelehnt",
+    "otherBucket": "Anderer Grund",
+    "noReasonBucket": "Kein Grund angegeben"
+  },
   "reflections": {
     "title": "Reflexionen",
     "subtitle": "Operator-Audit-Journale. Stelle eine Frage zur jüngsten Aktivität dieses Twins — Claude liest das Twin-Profil + die letzten 40 Kommunikationen und schreibt eine kurze, eingefrorene Antwort.",
@@ -540,6 +575,11 @@
     "reflectCta": "Reflektieren",
     "generating": "Reflektiere…",
     "deleteAria": "Reflexion löschen",
+    "digDeeperCta": "Tiefer graben",
+    "digDeeperGenerating": "Fragen werden generiert…",
+    "digDeeperTooltip": "KI bitten, aus dieser Reflexion weiterführende Training-Fragen zu entwerfen",
+    "digDeeperToast": "Fragen bereit — Training wird geöffnet.",
+    "digDeeperError": "Weiterführende Fragen konnten nicht generiert werden.",
     "suggestedSeedLabels": {
       "voiceChange": "Stimm-Drift",
       "commsCadence": "Kadenz",
@@ -568,6 +608,11 @@
     "commsSection": "Jüngste Kommunikationen ({count})",
     "commsEmpty": "Für diesen Twin sind noch keine Kommunikationen erfasst.",
     "contactsSection": "Top-Kontakte nach Aktivität ({count})",
-    "contactsEmpty": "Noch keine Kontakte bei diesem Twin."
+    "contactsEmpty": "Noch keine Kontakte bei diesem Twin.",
+    "saveAsFact": "Als Fakt speichern",
+    "saveAsFactSaved": "Gespeichert",
+    "saveAsFactToast": "In destillierten Fakten gespeichert.",
+    "saveAsFactTooltip": "Diese Kommunikation als dauerhaften destillierten Fakt übernehmen",
+    "saveAsFactError": "Speichern als Fakt fehlgeschlagen."
   }
 }

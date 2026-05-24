@@ -178,7 +178,19 @@
     "all_prefix": "Todos (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "Seleccionar icono de persona",
+    "select_persona_icon_desc": "Elige un icono integrado o sube tu propia imagen.",
+    "builtin_icons": "Integrados",
+    "your_icons": "Tus iconos",
+    "upload_icon": "Subir imagen",
+    "uploading_icon": "Subiendo...",
+    "no_custom_icons": "Sube una imagen para reutilizarla en tus personas.",
+    "remove_custom_icon": "Quitar icono",
+    "generate_with_ai": "Generar con IA",
+    "generate_icon": "Generar",
+    "generating_icon": "Generando...",
+    "generate_icon_prompt_placeholder": "Describe el icono que quieres..."
   },
   "reasoning_trace": {
     "system_init": "Inicialización del Sistema",
@@ -212,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "Equipos",
+    "groups_label": "Grupos",
+    "cloud_label": "Nube",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "Copiar",
@@ -293,5 +309,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "Cambiar tamano de columna - arrastra para ajustar, doble clic para restablecer"
 }

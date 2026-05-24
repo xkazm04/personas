@@ -1,4 +1,4 @@
-import { memo, useMemo, useState, useCallback } from 'react';
+import { memo, useMemo, useState, useCallback, useEffect } from 'react';
 import { CloudCog, KeyRound } from 'lucide-react';
 import type { ByomPolicy, ProviderUsageStats, ProviderUsageTimeseries, ProviderConnectionResult } from '@/api/system/byom';
 import { testProviderConnection } from '@/api/system/byom';
@@ -57,6 +57,23 @@ type TestState = 'idle' | 'testing' | 'pass' | 'fail';
 interface ConnectionTestResult {
   state: TestState;
   result?: ProviderConnectionResult;
+  /** Wall-clock ms when this result was cached. `0` for transient states. */
+  ts?: number;
+}
+
+// Module-scope health cache. Survives ByomSettings tab unmount/remount within
+// the session — switching to another settings tab and coming back no longer
+// loses the "all-green" state and re-hits every provider. A fresh manual
+// "Test connection" click bypasses the cache (handleTestConnection ignores
+// ts when explicit). The page-reload boundary clears it naturally because
+// it's not persisted.
+const HEALTH_CACHE_TTL_MS = 5 * 60 * 1000;
+const healthCache = new Map<string, ConnectionTestResult>();
+
+function isCacheFresh(entry: ConnectionTestResult | undefined): boolean {
+  if (!entry || entry.ts === undefined) return false;
+  if (entry.state !== 'pass' && entry.state !== 'fail') return false;
+  return Date.now() - entry.ts < HEALTH_CACHE_TTL_MS;
 }
 
 interface ProviderUsageCardProps {
@@ -130,31 +147,65 @@ const ProviderUsageCard = memo(function ProviderUsageCard({
 
 export function ByomProviderList({ policy, usageStats, usageTimeseries, toggleProvider, onAddKey }: ByomProviderListProps) {
   const trendsByEngine = useTimeseriesByEngine(usageTimeseries);
-  const [testResults, setTestResults] = useState<Record<string, ConnectionTestResult>>({});
+  // Seed from the module cache so tab remounts within the session avoid the
+  // initial all-grey + re-test thrash.
+  const [testResults, setTestResults] = useState<Record<string, ConnectionTestResult>>(() => {
+    const initial: Record<string, ConnectionTestResult> = {};
+    for (const [id, entry] of healthCache) initial[id] = entry;
+    return initial;
+  });
   const { t } = useTranslation();
   const s = t.settings.byom;
 
   const handleTestConnection = useCallback(async (providerId: string) => {
-    setTestResults((prev) => ({ ...prev, [providerId]: { state: 'testing' } }));
+    const transient: ConnectionTestResult = { state: 'testing' };
+    healthCache.set(providerId, transient);
+    setTestResults((prev) => ({ ...prev, [providerId]: transient }));
     try {
       const timeout = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error(s.test_timed_out)), 5000),
       );
       const result = await Promise.race([testProviderConnection(providerId), timeout]);
-      setTestResults((prev) => ({
-        ...prev,
-        [providerId]: { state: result.reachable ? 'pass' : 'fail', result },
-      }));
+      const next: ConnectionTestResult = {
+        state: result.reachable ? 'pass' : 'fail',
+        result,
+        ts: Date.now(),
+      };
+      healthCache.set(providerId, next);
+      setTestResults((prev) => ({ ...prev, [providerId]: next }));
     } catch (err) {
-      setTestResults((prev) => ({
-        ...prev,
-        [providerId]: {
-          state: 'fail',
-          result: { provider_id: providerId, reachable: false, latency_ms: null, version: null, error: err instanceof Error ? err.message : s.test_ipc_failed },
-        },
-      }));
+      const next: ConnectionTestResult = {
+        state: 'fail',
+        result: { provider_id: providerId, reachable: false, latency_ms: null, version: null, error: err instanceof Error ? err.message : s.test_ipc_failed },
+        ts: Date.now(),
+      };
+      healthCache.set(providerId, next);
+      setTestResults((prev) => ({ ...prev, [providerId]: next }));
     }
   }, [s]);
+
+  // Auto-test allowed providers whose cache is stale (or absent), staggered
+  // 150ms apart so the IPC fan-out doesn't burst on tab mount.
+  useEffect(() => {
+    const stale = policy.allowed_providers.filter((id) => !isCacheFresh(healthCache.get(id)));
+    if (stale.length === 0) return;
+    const timeouts: number[] = [];
+    stale.forEach((id, i) => {
+      const handle = window.setTimeout(() => {
+        // Re-check freshness at fire-time in case the user clicked Test
+        // manually for this provider between scheduling and firing.
+        if (!isCacheFresh(healthCache.get(id))) {
+          void handleTestConnection(id);
+        }
+      }, i * 150);
+      timeouts.push(handle);
+    });
+    return () => {
+      timeouts.forEach((h) => window.clearTimeout(h));
+    };
+    // We deliberately re-run when the allowed-providers list changes
+    // (e.g. user toggled a provider on) so new entries get auto-tested.
+  }, [policy.allowed_providers, handleTestConnection]);
 
   return (
     <div className="space-y-4">
@@ -172,13 +223,16 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
               <div key={prov.id} className="flex flex-col gap-1.5">
                 <button
                   onClick={() => toggleProvider(prov.id, 'allowed')}
-                  className={`p-3 rounded-card border text-left typo-body transition-all ${
+                  className={`p-3 rounded-card border text-left typo-body transition-all relative ${
                     isAllowed
                       ? 'border-emerald-500/30 bg-emerald-500/10 text-foreground'
                       : 'border-primary/10 text-foreground hover:border-primary/20'
                   }`}
                 >
-                  {prov.label}
+                  <span className="flex items-center gap-2">
+                    {isAllowed && <HealthDot state={test?.state ?? 'idle'} />}
+                    <span>{prov.label}</span>
+                  </span>
                   {isAllowed && <span className="ml-2 text-emerald-400">{s.allowed}</span>}
                 </button>
                 <TestConnectionButton
@@ -250,6 +304,30 @@ export function ByomProviderList({ policy, usageStats, usageTimeseries, togglePr
         )}
       </div>
     </div>
+  );
+}
+
+// =============================================================================
+// Health status dot
+// =============================================================================
+
+function HealthDot({ state }: { state: TestState }) {
+  const { t } = useTranslation();
+  const s = t.settings.byom;
+  const config: Record<TestState, { cls: string; ariaKey: 'health_pending' | 'health_testing' | 'health_pass' | 'health_fail' }> = {
+    idle: { cls: 'bg-foreground/30', ariaKey: 'health_pending' },
+    testing: { cls: 'bg-amber-400 animate-pulse', ariaKey: 'health_testing' },
+    pass: { cls: 'bg-emerald-400', ariaKey: 'health_pass' },
+    fail: { cls: 'bg-red-400', ariaKey: 'health_fail' },
+  };
+  const c = config[state];
+  return (
+    <span
+      role="status"
+      aria-label={s[c.ariaKey]}
+      title={s[c.ariaKey]}
+      className={`inline-block w-2 h-2 rounded-full shrink-0 ${c.cls}`}
+    />
   );
 }
 

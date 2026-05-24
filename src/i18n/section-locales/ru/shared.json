@@ -178,7 +178,19 @@
     "all_prefix": "Все (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "Select persona icon",
+    "select_persona_icon_desc": "Pick a built-in icon or upload your own image.",
+    "builtin_icons": "Built-in",
+    "your_icons": "Your icons",
+    "upload_icon": "Upload image",
+    "uploading_icon": "Uploading...",
+    "no_custom_icons": "Upload an image to reuse it across your personas.",
+    "remove_custom_icon": "Remove icon",
+    "generate_with_ai": "Generate with AI",
+    "generate_icon": "Generate",
+    "generating_icon": "Generating...",
+    "generate_icon_prompt_placeholder": "Describe the icon you want..."
   },
   "reasoning_trace": {
     "system_init": "Инициализация системы",
@@ -212,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "Команды",
+    "groups_label": "Группы",
+    "cloud_label": "Облако",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "Копировать",
@@ -293,5 +309,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "Изменить размер столбца - перетащите для настройки, дважды щелкните для сброса"
 }

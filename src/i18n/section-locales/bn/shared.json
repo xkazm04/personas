@@ -178,7 +178,19 @@
     "all_prefix": "সব (",
     "select_agent_icon": "Select agent icon",
     "select_agent_icon_desc": "Choose an icon for this agent. Themed dark/light variants render automatically.",
-    "clear_icon": "Clear icon"
+    "clear_icon": "Clear icon",
+    "select_persona_icon": "পারসোনা আইকন নির্বাচন করুন",
+    "select_persona_icon_desc": "একটি বিল্ট-ইন আইকন বেছে নিন বা নিজের ছবি আপলোড করুন।",
+    "builtin_icons": "বিল্ট-ইন",
+    "your_icons": "আপনার আইকন",
+    "upload_icon": "ছবি আপলোড করুন",
+    "uploading_icon": "আপলোড হচ্ছে...",
+    "no_custom_icons": "আপনার পারসোনাগুলিতে পুনরায় ব্যবহার করতে একটি ছবি আপলোড করুন।",
+    "remove_custom_icon": "আইকন সরান",
+    "generate_with_ai": "AI দিয়ে তৈরি করুন",
+    "generate_icon": "তৈরি করুন",
+    "generating_icon": "তৈরি হচ্ছে...",
+    "generate_icon_prompt_placeholder": "আপনি যে আইকন চান তা বর্ণনা করুন..."
   },
   "reasoning_trace": {
     "system_init": "System Init",
@@ -212,7 +224,11 @@
     "back_to_home": "Home",
     "whats_new": "What's New",
     "back_to_plugins": "Plugins",
-    "roadmap": "Roadmap"
+    "roadmap": "Roadmap",
+    "teams_label": "টিম",
+    "groups_label": "গ্রুপ",
+    "cloud_label": "ক্লাউড",
+    "cloud_dev_pill": "dev"
   },
   "execution_detail": {
     "copy": "Copy",
@@ -293,5 +309,6 @@
   "density_compact": "Compact",
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
-  "bulk_clear_selection": "Clear selection"
+  "bulk_clear_selection": "Clear selection",
+  "resize_column": "কলামের আকার বদলান - টেনে সামঞ্জস্য করুন, রিসেট করতে ডাবল-ক্লিক করুন"
 }

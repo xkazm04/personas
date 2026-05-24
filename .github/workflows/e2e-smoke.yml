@@ -48,6 +48,7 @@ jobs:
             librsvg2-dev \
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
+            libpipewire-0.3-dev \
             xvfb
 
       - name: npm ci

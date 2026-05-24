@@ -45,6 +45,7 @@ pub fn dev_tools_get_project(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub fn dev_tools_create_project(
     state: State<'_, Arc<AppState>>,
     name: String,
@@ -53,6 +54,8 @@ pub fn dev_tools_create_project(
     status: Option<String>,
     tech_stack: Option<String>,
     github_url: Option<String>,
+    team_id: Option<String>,
+    group_id: Option<String>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::create_project(
@@ -63,6 +66,8 @@ pub fn dev_tools_create_project(
         status.as_deref(),
         tech_stack.as_deref(),
         github_url.as_deref(),
+        team_id.as_deref(),
+        group_id.as_deref(),
     )
 }
 
@@ -78,6 +83,8 @@ pub fn dev_tools_update_project(
     github_url: Option<Option<String>>,
     monitoring_credential_id: Option<Option<String>>,
     monitoring_project_slug: Option<Option<String>>,
+    team_id: Option<Option<String>>,
+    group_id: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -90,6 +97,8 @@ pub fn dev_tools_update_project(
         github_url.as_ref().map(|o| o.as_deref()),
         monitoring_credential_id.as_ref().map(|o| o.as_deref()),
         monitoring_project_slug.as_ref().map(|o| o.as_deref()),
+        team_id.as_ref().map(|o| o.as_deref()),
+        group_id.as_ref().map(|o| o.as_deref()),
     )
 }
 

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Layers, RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Layers, RefreshCw, Globe, FolderOpen, User, Minus, AlertTriangle, Search, X } from 'lucide-react';
 import { listPersonas, resolveEffectiveConfigBulk } from '@/api/agents/personas';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { EffectiveModelConfig } from '@/lib/bindings/EffectiveModelConfig';
@@ -89,8 +89,33 @@ function isFresh(entry: { ts: number } | undefined): entry is { ts: number; conf
 export default function ConfigResolutionPanel() {
   const [rows, setRows] = useState<PersonaRow[]>([]);
   const [globalLoading, setGlobalLoading] = useState(true);
-  const { t } = useTranslation();
+  const [filter, setFilter] = useState('');
+  const [overridesOnly, setOverridesOnly] = useState(false);
+  const { t, tx } = useTranslation();
   const s = t.settings.config;
+
+  const visibleRows = useMemo(() => {
+    const needle = filter.trim().toLowerCase();
+    return rows.filter((row) => {
+      if (needle && !row.persona.name.toLowerCase().includes(needle)) return false;
+      if (overridesOnly) {
+        // "Override" = at least one field on this persona's effective config is
+        // sourced from the agent tier (rather than workspace/global/default).
+        // Loading rows are excluded — we don't yet know what they'll resolve to,
+        // and silently hiding them while their data arrives is more confusing
+        // than just letting them pop in. Same logic for error rows.
+        if (!row.config || row.loading || row.error) return false;
+        const hasAgentOverride = FIELDS.some((f) => {
+          const field = row.config?.[f.key] as ConfigField | undefined;
+          return field?.source === 'agent';
+        });
+        if (!hasAgentOverride) return false;
+      }
+      return true;
+    });
+  }, [rows, filter, overridesOnly]);
+
+  const filtersActive = filter.trim().length > 0 || overridesOnly;
 
   const load = async (forceRefresh = false) => {
     setGlobalLoading(true);
@@ -189,6 +214,48 @@ export default function ConfigResolutionPanel() {
         <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" /> {s.overrides_inherited}</span>
       </div>
 
+      {/* Filter row */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground pointer-events-none" />
+          <input
+            type="text"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder={s.search_placeholder}
+            aria-label={s.search_placeholder}
+            className="w-full pl-7 pr-7 py-1 typo-caption rounded-input bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/50 focus:outline-none focus:border-primary/40"
+          />
+          {filter.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setFilter('')}
+              aria-label={s.clear_filter_aria}
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded text-foreground hover:text-primary hover:bg-secondary/40"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+        <label
+          className="flex items-center gap-1.5 typo-caption text-foreground cursor-pointer select-none"
+          title={s.overrides_only_tooltip}
+        >
+          <input
+            type="checkbox"
+            checked={overridesOnly}
+            onChange={(e) => setOverridesOnly(e.target.checked)}
+            className="w-3 h-3 rounded border-primary/20 bg-secondary/30 text-primary focus:ring-1 focus:ring-primary/40"
+          />
+          {s.overrides_only_label}
+        </label>
+        {filtersActive && rows.length > 0 && (
+          <span className="typo-caption text-foreground ml-auto">
+            {tx(s.showing_count, { shown: visibleRows.length, total: rows.length })}
+          </span>
+        )}
+      </div>
+
       {/* Table */}
       <div className="border border-primary/10 rounded-card overflow-hidden bg-secondary/10">
         <table className="w-full typo-caption">
@@ -216,7 +283,14 @@ export default function ConfigResolutionPanel() {
                 </td>
               </tr>
             )}
-            {rows.map((row) => (
+            {!globalLoading && rows.length > 0 && visibleRows.length === 0 && (
+              <tr>
+                <td colSpan={2 + FIELDS.length} className="px-3 py-6 text-center text-foreground">
+                  {s.filtered_empty}
+                </td>
+              </tr>
+            )}
+            {visibleRows.map((row) => (
               <tr key={row.persona.id} className="border-b border-primary/5 hover:bg-secondary/20 transition-colors">
                 <td className="px-3 py-2 font-medium text-foreground whitespace-nowrap">
                   {row.persona.name}

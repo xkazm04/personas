@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Eye, RotateCw, Globe, Server, BookOpen, History } from 'lucide-react';
+import { Eye, RotateCw, Globe, Server, History } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useCredentialHealth } from '@/features/vault/shared/hooks/health/useCredentialHealth';
@@ -15,7 +15,7 @@ import { PlaygroundTabContent } from './PlaygroundTabContent';
 import { silentCatch } from '@/lib/silentCatch';
 
 
-type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'recipes' | 'mcp-tools' | 'rotation';
+type PlaygroundTab = 'overview' | 'executions' | 'api-explorer' | 'mcp-tools' | 'rotation';
 interface TabDef { id: PlaygroundTab; label: string; icon: typeof Eye; }
 
 function getAvailableTabs(connector: ConnectorDefinition | undefined): TabDef[] {
@@ -24,7 +24,6 @@ function getAvailableTabs(connector: ConnectorDefinition | undefined): TabDef[] 
   const category = connector?.category;
   if (category === 'custom' || (category && !['mcp', 'database'].includes(category))) {
     tabs.push({ id: 'api-explorer', label: 'API Explorer', icon: Globe });
-    tabs.push({ id: 'recipes', label: 'Recipes', icon: BookOpen });
   }
   if (category === 'mcp') tabs.push({ id: 'mcp-tools', label: 'MCP Tools', icon: Server });
   tabs.push({ id: 'rotation', label: 'Rotation', icon: RotateCw });

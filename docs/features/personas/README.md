@@ -170,6 +170,57 @@ to a built-in `agent-icon:` inferred from the persona's `template_category`,
 so a shared persona arrives with a sensible catalog icon rather than a dead
 reference.
 
+## Persona Groups — workspace grouping
+
+`Persona.group_id` is an optional FK to `persona_groups`. A group is a
+**lightweight workspace folder**, not an execution-time construct: it
+exists to organize personas in the UI and to carry a small set of
+group-level defaults that the editor surfaces as a one-stop-edit.
+
+`PersonaGroup` fields (`src-tauri/src/db/models/persona_group.rs`,
+ts-rs binding `src/lib/bindings/PersonaGroup.ts`):
+
+| Field | Purpose |
+|---|---|
+| `name`, `color`, `description` | Display |
+| `sortOrder`, `collapsed` | Sidebar ordering / expand state |
+| `sharedInstructions` | Appended to every member persona's system prompt at runtime |
+| `defaultModelProfile`, `defaultMaxBudgetUsd`, `defaultMaxTurns` | Defaults inherited by new personas added to the group |
+
+**UI surface** (Power tier — `TIERS.TEAM` gate, lifted out of dev-only on
+2026-05-22): the **Groups** entry under Agents → sidebar L2 opens
+`GroupManagerPage` (`src/features/pipeline/components/groups/`). The page
+lists groups with a persona count derived from
+`personas.filter(p => p.group_id === group.id)`, an Ungrouped chip for
+the rest, and a modal editor for name/color/description/sharedInstructions.
+Heavier defaults (model profile, budget, turn cap) are exposed by
+`groupSlice.updateGroup()` but not yet wired into the editor — Stage 2
+work.
+
+Groups are distinct from **Teams** (`PersonaTeam`, sibling concept under
+the same sidebar block): teams are an *execution-time* construct with a
+member graph, edges, pipeline runs, and a canvas editor. A persona can
+belong to at most one group (folder semantics) but participate in many
+teams (pipeline semantics).
+
+### Group-scoped shared memory
+
+`persona_memories.group_id` (added 2026-05-22) is an optional second
+scope alongside `use_case_id`. A memory authored by persona A with
+`group_id = G` is **shared with every other persona in group G** — when
+persona B (also a member of G) runs, the injection path
+(`get_for_injection_v2`) OR-s in `group_id = G` rows alongside B's own
+private memories. Semantics mirror the existing `use_case_id` orphan
+policy: no FK by design, so deleting a group leaves attributions in
+place — orphans simply stop matching live group filters until
+re-attributed.
+
+This is the FIRST direct user-visible payoff of the PersonaGroup
+schema's `sharedInstructions` cousin — a group now carries shared
+*prompt seed* (instructions) AND shared *learned context* (memories).
+See `MEMORY CONTRACT (5)` in `src-tauri/src/db/models/memory.rs` for
+invariants.
+
 ## Gotchas that burn time
 
 1. **`design_context` has two formats.** Old personas store a flat

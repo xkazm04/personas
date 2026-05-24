@@ -8,8 +8,14 @@
   "update_available": "Actualizacion disponible: v{version}",
   "install_and_restart": "Instalar y reiniciar",
   "installing": "Instalando...",
+  "installing_progress": "Instalando {percent}%",
   "update_install_failed": "No se pudo instalar la actualización",
   "update_install_retry": "Reintentar",
+  "update_jobs_running_warning": "{count} tarea(s) en curso se interrumpirán si instalas ahora y reinicias.",
+  "update_install_anyway": "Instalar de todos modos",
+  "update_install_when_idle": "Instalar al desocuparse",
+  "update_install_when_idle_status": "La actualización se instalará cuando terminen {count} tarea(s) en curso.",
+  "update_keep_working": "Seguir trabajando",
   "expand_sidebar": "Expandir barra lateral",
   "collapse_sidebar": "Contraer barra lateral",
   "network_settings": "Configuracion de red",
@@ -19,5 +25,6 @@
   "signed_in": "Sesion iniciada",
   "sign_out": "Cerrar sesion",
   "offline": "Sin conexion",
-  "mobile_preview": "Mobile preview"
+  "mobile_preview": "Mobile preview",
+  "project_picker_none": "Sin proyecto (mostrar todo)"
 }

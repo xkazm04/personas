@@ -2,7 +2,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tauri::State;
 
+use crate::db::models::SettingsAuditEntry;
 use crate::db::repos::core::settings as repo;
+use crate::db::repos::resources::settings_audit_log;
 use crate::db::settings_keys;
 use crate::engine::quality_gate::{self, QualityGateConfig};
 use crate::error::AppError;
@@ -112,4 +114,17 @@ pub fn reset_quality_gate_config(
     let default = QualityGateConfig::default();
     quality_gate::save(&state.db, &default)?;
     Ok(default)
+}
+
+/// Newest-first list of settings-audit entries. Optional `category` filters to
+/// one sub-module (`"api_keys"`, `"notifications"`, etc); when omitted, all
+/// categories are returned. `limit` is clamped to `[1, 1000]` server-side.
+#[tauri::command]
+pub fn list_settings_audit_entries(
+    state: State<'_, Arc<AppState>>,
+    limit: u32,
+    category: Option<String>,
+) -> Result<Vec<SettingsAuditEntry>, AppError> {
+    require_auth_sync(&state)?;
+    settings_audit_log::list(&state.db, limit, category.as_deref())
 }

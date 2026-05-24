@@ -87,10 +87,19 @@ pub struct PersonaManualReview {
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct ManualReviewCounts {
+    // ts-rs 10 maps `i64` to `bigint` for precision-safety, but the review-count
+    // surface is bounded well below 2^53 (per-account workflow queues, not
+    // event-stream counts). Pin to TS `number` so the existing `+`-arithmetic
+    // in ManualReviewList et al. stays valid without coercion.
+    #[ts(type = "number")]
     pub total: i64,
+    #[ts(type = "number")]
     pub pending: i64,
+    #[ts(type = "number")]
     pub approved: i64,
+    #[ts(type = "number")]
     pub rejected: i64,
+    #[ts(type = "number")]
     pub resolved: i64,
 }
 

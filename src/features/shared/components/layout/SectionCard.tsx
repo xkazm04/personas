@@ -22,6 +22,12 @@ interface SectionCardBaseProps {
   className?: string;
   /** Optional status accent — adds a colored left border. */
   status?: SectionCardStatus;
+  /**
+   * Override the title color/weight. Defaults to the monotone
+   * `text-foreground/90`; pass a theme tone (e.g. `text-primary`) to make
+   * section headers read as accented rather than flat.
+   */
+  titleClassName?: string;
 }
 
 interface SectionCardCollapsibleProps extends SectionCardBaseProps {
@@ -80,10 +86,11 @@ function writeStorage(key: string | undefined, collapsed: boolean) {
 }
 
 export function SectionCard(props: SectionCardProps) {
-  const { children, size = 'md', blur = false, className = '', collapsible, title, subtitle, status } = props;
+  const { children, size = 'md', blur = false, className = '', collapsible, title, subtitle, status, titleClassName } = props;
   const blurClass = blur ? 'backdrop-blur-sm' : '';
   const statusClass = status ? STATUS_BORDER[status] : '';
   const base = `bg-secondary/30 border border-primary/12 shadow-elevation-1 ${statusClass}`;
+  const titleClass = titleClassName ?? 'text-foreground/90';
 
   // --- Static (non-collapsible) mode ---
   if (!collapsible) {
@@ -91,7 +98,7 @@ export function SectionCard(props: SectionCardProps) {
       <div className={`${base} ${SIZE_CLASSES[size]} ${blurClass} ${className}`.trim()}>
         {title && (
           <div className="mb-2">
-            <h3 className="typo-heading text-foreground/90">{title}</h3>
+            <h3 className={`typo-heading ${titleClass}`}>{title}</h3>
             {subtitle && <p className="typo-body text-foreground">{subtitle}</p>}
           </div>
         )}
@@ -110,6 +117,7 @@ export function SectionCard(props: SectionCardProps) {
       className={className}
       title={title}
       subtitle={subtitle}
+      titleClassName={titleClass}
       storageKey={props.storageKey}
       defaultCollapsed={props.defaultCollapsed ?? false}
     >
@@ -126,6 +134,7 @@ function CollapsibleBody({
   className,
   title,
   subtitle,
+  titleClassName,
   storageKey,
   defaultCollapsed,
   children,
@@ -137,6 +146,7 @@ function CollapsibleBody({
   className: string;
   title: string;
   subtitle?: string;
+  titleClassName: string;
   storageKey?: string;
   defaultCollapsed: boolean;
   children: ReactNode;
@@ -169,7 +179,7 @@ function CollapsibleBody({
           <ChevronRight className="w-3.5 h-3.5 text-foreground" />
         </motion.span>
         <div className="flex-1 min-w-0">
-          <h3 className="typo-heading text-foreground/90 truncate">{title}</h3>
+          <h3 className={`typo-heading truncate ${titleClassName}`}>{title}</h3>
           {subtitle && (
             <p className="typo-body text-foreground truncate">{subtitle}</p>
           )}

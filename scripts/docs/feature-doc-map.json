@@ -383,7 +383,10 @@
         "src/features/pipeline/**",
         "src-tauri/src/commands/teams/**",
         "src-tauri/src/db/repos/core/teams.rs",
-        "src-tauri/src/db/repos/core/groups.rs"
+        "src-tauri/src/db/repos/core/groups.rs",
+        "src-tauri/src/db/repos/orchestration/**",
+        "src-tauri/src/engine/team_assignment_orchestrator.rs",
+        "src-tauri/src/engine/team_assignment_matching.rs"
       ],
       "marketingModule": "pipeline"
     },

@@ -4,7 +4,9 @@
     "selectTwin": "Select a twin...",
     "pickerLabel": "アクティブなツインを選択",
     "searchPlaceholder": "名前またはロールで検索…",
-    "noMatches": "検索に一致するツインはありません。"
+    "noMatches": "検索に一致するツインはありません。",
+    "pinTwin": "上部に固定",
+    "unpinTwin": "固定を解除"
   },
   "emptyState": {
     "subtitle": "You need an active twin to use this tab.",
@@ -84,6 +86,7 @@
     "lastMinutesAgo": "{count}分前",
     "lastHoursAgo": "{count}時間前",
     "lastDaysAgo": "{count}日前",
+    "staleTag": "停滞気味",
     "testTooltip": "合成アウトバウンド ping をログに記録",
     "testDisabledPaused": "テストする前にチャンネルをアクティブ化してください",
     "testAria": "テストメッセージを送信",
@@ -110,7 +113,14 @@
     "saving": "Saving...",
     "save": "Save",
     "creating": "Creating...",
-    "create": "Create"
+    "create": "Create",
+    "autoSuggestCta": "最近の{channel}メッセージ{count}件からトーンを下書き",
+    "autoSuggestButton": "提案",
+    "autoSuggestGenerating": "メッセージを読み込み中…",
+    "autoSuggestTooltip": "最近の送信メッセージを読み取り、ボイスディレクティブと例を下書きします。確認して保存するのはあなたです。",
+    "autoSuggestSuccess": "提案を下書きしました — 確認して保存してください。",
+    "autoSuggestNoComms": "学習に十分な{channel}メッセージがまだありません。",
+    "autoSuggestError": "トーン提案を下書きできませんでした。"
   },
   "voice": {
     "title": "Voice",
@@ -250,6 +260,20 @@
     "switchToPending": "Switch to \"pending\" to review new items.",
     "approveTitle": "Approve — index into KB",
     "rejectTitle": "Reject — discard",
+    "digDeeperCta": "さらに掘り下げる",
+    "digDeeperGenerating": "質問を生成中…",
+    "digDeeperTooltip": "このメモリを承認し、AIにフォローアップのトレーニング質問の作成を依頼します",
+    "digDeeperToast": "承認しました — フォローアップ質問付きで Training Room を開いています。",
+    "digDeeperError": "フォローアップ質問を生成できませんでした。",
+    "rejectReasonHeading": "このメモリを拒否する理由は？",
+    "rejectReasonIrrelevant": "無関係",
+    "rejectReasonInaccurate": "不正確",
+    "rejectReasonPrivate": "プライベート",
+    "rejectReasonWrongTone": "トーンが不適切",
+    "rejectReasonNotePlaceholder": "メモを追加（任意）…",
+    "rejectReasonConfirm": "拒否",
+    "rejectReasonCancel": "キャンセル",
+    "rejectedReasonLabel": "理由：{reason}",
     "priority": "priority",
     "conversationHistory": "Conversation History",
     "conversationExplanation": "Every message sent or received through the Twin connector is logged here. This is the raw interaction trail — the memory inbox above is the curated extract.",
@@ -462,6 +486,8 @@
     "allSetTitle": "準備完了",
     "allSetBody": "すべてのマイルストーンが完了しました。このツインは話す準備ができています。",
     "moreCount": "さらに +{count} 件",
+    "showAllGaps": "{count} 件すべて表示",
+    "showFewer": "折りたたむ",
     "titles": {
       "identityEmpty": "バイオがまだありません",
       "identityPartial": "バイオが短い",
@@ -499,6 +525,7 @@
     "neverBridged": "なし",
     "justNow": "たった今",
     "messageCount": "{count} メッセージ",
+    "sparklineAria": "過去7日間で {count} メッセージ",
     "aliasPlaceholder": "わかりやすい名前 (例: 「Discord の Alice」)",
     "notesPlaceholder": "メモ — 文脈、好み、重要な日付…",
     "editAria": "エイリアスとメモを編集",
@@ -530,6 +557,14 @@
     "emptyBody": "コミュニケーションをレビューしながら事実を追加し、各事実はその出典となるメッセージを引用します。今後のステージでは事実を自動的に提案します。",
     "deleteAria": "抽出された事実を削除"
   },
+  "rejectionPatterns": {
+    "title": "却下パターン",
+    "subtitle": "メモリーを差し戻した理由。上流の抽出にズレがある兆候です。",
+    "empty": "却下されたメモリーはまだありません — レビューを続けるとここに表示されます。",
+    "totalRejected": "計 {count} 件却下",
+    "otherBucket": "その他の理由",
+    "noReasonBucket": "理由未記入"
+  },
   "reflections": {
     "title": "リフレクション",
     "subtitle": "オペレーター監査ジャーナル。このツインの最近のアクティビティについて質問すると、Claude がツインプロフィールと直近 40 件のコミュニケーションを読み、短く凍結された回答を書き出します。",
@@ -540,6 +575,11 @@
     "reflectCta": "リフレクト",
     "generating": "リフレクション中…",
     "deleteAria": "リフレクションを削除",
+    "digDeeperCta": "深掘りする",
+    "digDeeperGenerating": "質問を生成中…",
+    "digDeeperTooltip": "このリフレクションから Training のフォローアップ質問を AI に作成してもらう",
+    "digDeeperToast": "質問の準備ができました — Training を開きます。",
+    "digDeeperError": "フォローアップ質問を生成できませんでした。",
     "suggestedSeedLabels": {
       "voiceChange": "ボイスのドリフト",
       "commsCadence": "ケイデンス",
@@ -568,6 +608,11 @@
     "commsSection": "最近のコミュニケーション ({count})",
     "commsEmpty": "このツインのコミュニケーションはまだ記録されていません。",
     "contactsSection": "アクティビティ別の上位コンタクト ({count})",
-    "contactsEmpty": "このツインにはまだコンタクトがありません。"
+    "contactsEmpty": "このツインにはまだコンタクトがありません。",
+    "saveAsFact": "ファクトとして保存",
+    "saveAsFactSaved": "保存済み",
+    "saveAsFactToast": "抽出済みファクトに保存しました。",
+    "saveAsFactTooltip": "このコミュニケーションを永続的な抽出ファクトに昇格します",
+    "saveAsFactError": "ファクトとして保存できませんでした。"
   }
 }

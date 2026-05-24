@@ -32,6 +32,7 @@ import {
 } from '@/api/companion';
 import { useCompanionStore } from './companionStore';
 import { titleCase } from './athenaLabels';
+import { BrainLinksStrip } from './BrainLinksStrip';
 
 type KindLabelKey =
   | 'episodes'
@@ -48,24 +49,39 @@ type KindLabelKey =
   | 'backlog'
   | 'design_decisions';
 
-const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey }[] = [
+type KindDescKey =
+  | 'brain_desc_identity'
+  | 'brain_desc_facts_user'
+  | 'brain_desc_facts_project'
+  | 'brain_desc_facts_world'
+  | 'brain_desc_goals'
+  | 'brain_desc_backlog'
+  | 'brain_desc_procedurals'
+  | 'brain_desc_rituals'
+  | 'brain_desc_episodes'
+  | 'brain_desc_reflections'
+  | 'brain_desc_design_decisions'
+  | 'brain_desc_doctrine'
+  | 'brain_desc_constitution';
+
+const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey; descKey: KindDescKey }[] = [
   // Reading order: who I think she is (identity), what she knows about
   // me (facts), what I'm trying to do (goals + backlog), how she's
   // agreed to behave (procedurals + rituals), what she remembers
   // (episodes, reflections), the docs, her contract.
-  { kind: 'identity', icon: User, labelKey: 'identity' },
-  { kind: 'fact:user', icon: UserCircle2, labelKey: 'facts_user' },
-  { kind: 'fact:project', icon: Sparkles, labelKey: 'facts_project' },
-  { kind: 'fact:world', icon: Globe2, labelKey: 'facts_world' },
-  { kind: 'goal', icon: Target, labelKey: 'goals' },
-  { kind: 'backlog', icon: Inbox, labelKey: 'backlog' },
-  { kind: 'procedural', icon: Workflow, labelKey: 'procedurals' },
-  { kind: 'ritual', icon: Compass, labelKey: 'rituals' },
-  { kind: 'episode', icon: Bot, labelKey: 'episodes' },
-  { kind: 'reflection', icon: ListChecks, labelKey: 'reflections' },
-  { kind: 'design_decision', icon: ScrollText, labelKey: 'design_decisions' },
-  { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine' },
-  { kind: 'constitution', icon: Layers, labelKey: 'constitution' },
+  { kind: 'identity', icon: User, labelKey: 'identity', descKey: 'brain_desc_identity' },
+  { kind: 'fact:user', icon: UserCircle2, labelKey: 'facts_user', descKey: 'brain_desc_facts_user' },
+  { kind: 'fact:project', icon: Sparkles, labelKey: 'facts_project', descKey: 'brain_desc_facts_project' },
+  { kind: 'fact:world', icon: Globe2, labelKey: 'facts_world', descKey: 'brain_desc_facts_world' },
+  { kind: 'goal', icon: Target, labelKey: 'goals', descKey: 'brain_desc_goals' },
+  { kind: 'backlog', icon: Inbox, labelKey: 'backlog', descKey: 'brain_desc_backlog' },
+  { kind: 'procedural', icon: Workflow, labelKey: 'procedurals', descKey: 'brain_desc_procedurals' },
+  { kind: 'ritual', icon: Compass, labelKey: 'rituals', descKey: 'brain_desc_rituals' },
+  { kind: 'episode', icon: Bot, labelKey: 'episodes', descKey: 'brain_desc_episodes' },
+  { kind: 'reflection', icon: ListChecks, labelKey: 'reflections', descKey: 'brain_desc_reflections' },
+  { kind: 'design_decision', icon: ScrollText, labelKey: 'design_decisions', descKey: 'brain_desc_design_decisions' },
+  { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine', descKey: 'brain_desc_doctrine' },
+  { kind: 'constitution', icon: Layers, labelKey: 'constitution', descKey: 'brain_desc_constitution' },
 ];
 
 /**
@@ -230,7 +246,7 @@ function TypesView() {
 
   return (
     <div className="grid grid-cols-2 gap-3 p-5">
-      {KINDS.map(({ kind, icon: Icon, labelKey }) => (
+      {KINDS.map(({ kind, icon: Icon, labelKey, descKey }) => (
         <button
           key={kind}
           onClick={() => setBrainView({ open: true, kind, id: null })}
@@ -242,7 +258,10 @@ function TypesView() {
               {t.plugins.companion[labelKey]}
             </span>
           </div>
-          <div className="typo-caption text-foreground">
+          <div className="typo-caption text-foreground mb-1.5">
+            {t.plugins.companion[descKey]}
+          </div>
+          <div className="typo-caption text-primary/80">
             {counts[kind] === undefined
               ? '…'
               : counts[kind] === 1
@@ -383,8 +402,13 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
           </div>
         )}
       </div>
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
         <MarkdownRenderer content={detail.content || '(empty)'} />
+        <BrainLinksStrip
+          content={detail.content || ''}
+          onOpen={(kind, id) => setBrainView({ open: true, kind, id })}
+          variant="card"
+        />
       </div>
       {detail.deletable && (
         <div className="border-t border-foreground/10 px-3 py-3 shrink-0">

@@ -634,8 +634,9 @@ pub async fn run_execution(
         } else {
             match mem_repo::get_for_injection_v2(
                 &pool,
-                &persona.id,
-                execution_use_case_id.as_deref(),
+                mem_repo::InjectionScope::for_persona(&persona.id)
+                    .with_use_case(execution_use_case_id.as_deref())
+                    .with_group(persona.group_id.as_deref()),
                 10,
                 40,
             ) {

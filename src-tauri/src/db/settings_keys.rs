@@ -164,6 +164,15 @@ pub const ONBOARDING_QUEST_STATE: &str = "onboarding_quest_state";
 /// process). Stored as `"true"` / `"false"` strings.
 pub const CLI_SESSION_AWARENESS_ENABLED: &str = "cli_session_awareness_enabled";
 
+/// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
+/// progress bar and warning state. Stage 1 is informational-only; Stage 2
+/// will gate execution dispatch when this is set and the running month
+/// crosses it. Stored as a decimal string (e.g. `"50.00"`). The literal
+/// `"0"` is treated as "no ceiling" by all consumers.
+pub const MONTHLY_COST_CEILING_USD: &str = "monthly_cost_ceiling_usd";
+/// Default monthly cost ceiling in USD. `0.0` means no ceiling.
+pub const MONTHLY_COST_CEILING_USD_DEFAULT: f64 = 0.0;
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -191,6 +200,7 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,
     CLI_SESSION_AWARENESS_ENABLED,
+    MONTHLY_COST_CEILING_USD,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -280,6 +290,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be the literal string 'true' or 'false', got {value:?}"
             )),
         },
+        MONTHLY_COST_CEILING_USD => match value.parse::<f64>() {
+            Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be a non-negative decimal USD amount, got {value:?}"
+            )),
+        },
         _ => Ok(()),
     }
 }
@@ -343,5 +359,24 @@ mod tests {
         // Keys without a typed contract accept any value shape.
         assert!(validate_value(CLI_ENGINE, "whatever").is_ok());
         assert!(validate_value(BYOM_POLICY, "{malformed").is_ok());
+    }
+
+    #[test]
+    fn monthly_cost_ceiling_accepts_non_negative_decimals() {
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "0").is_ok());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "0.0").is_ok());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "50").is_ok());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "50.00").is_ok());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "1234.56").is_ok());
+    }
+
+    #[test]
+    fn monthly_cost_ceiling_rejects_invalid() {
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "-5").is_err());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "nan").is_err());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "inf").is_err());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "abc").is_err());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, "").is_err());
+        assert!(validate_value(MONTHLY_COST_CEILING_USD, " 5 ").is_err());
     }
 }

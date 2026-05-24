@@ -1,8 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2 } from 'lucide-react';
+import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2, Layers } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 import type { CloudTab } from '@/lib/types/types';
 import { useFavoriteAgents as useFavoriteAgentsInline } from '@/hooks/agents/useFavoriteAgents';
 import { usePrefetchOnHover } from '@/hooks/agents/usePrefetchOnHover';
@@ -11,6 +12,8 @@ import { useSidebarAgentActivity, type AgentActivityType } from '@/hooks/sidebar
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { cloudItems } from '../sidebarData';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useTier } from '@/hooks/utility/interaction/useTier';
+import { TIERS, isTierVisible } from '@/lib/constants/uiModes';
 
 // Color classes per activity type — mirror the SidebarLevel1 orbit dots so
 // users see the same signal at both hierarchy levels.
@@ -52,6 +55,11 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const selectedPersonaId = useAgentStore((s) => s.selectedPersonaId);
   const agentTab = useSystemStore((s) => s.agentTab);
   const setAgentTab = useSystemStore((s) => s.setAgentTab);
+  // Team roster for the expandable "Teams" sidebar entry.
+  const teams = usePipelineStore((s) => s.teams);
+  const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
+  const selectTeam = usePipelineStore((s) => s.selectTeam);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   const cloudTab = useSystemStore((s) => s.cloudTab);
   const setCloudTab = useSystemStore((s) => s.setCloudTab);
   const isCreatingPersona = useSystemStore((s) => s.isCreatingPersona);
@@ -69,6 +77,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
   const [progressCollapsed, setProgressCollapsed] = useState(false);
   const [activeProjectCollapsed, setActiveProjectCollapsed] = useState(false);
   const isDev = import.meta.env.DEV;
+  const tier = useTier();
+  const isTeamVisible = isTierVisible(TIERS.TEAM, tier.current);
   const { getPrefetchProps } = usePrefetchOnHover();
 
   // Per-persona activity from the same aggregator powering the L1 orbit dots.
@@ -102,6 +112,12 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
       return a.personaName.localeCompare(b.personaName);
     });
   }, [activities]);
+
+  // Keep the Teams sub-list fresh whenever the Teams tab is active so the
+  // sidebar roster matches the management table.
+  useEffect(() => {
+    if (agentTab === 'team') void fetchTeams();
+  }, [agentTab, fetchTeams]);
 
   // Health grades for per-agent dots (lazy-loaded from overviewStore)
   const [healthGrades, setHealthGrades] = useState<Record<string, string>>({});
@@ -496,33 +512,86 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           </div>
         )}
 
-        {/* Cloud & Teams (dev-only, gold border) */}
-        {isDev && (
-          <div className="mt-3 pt-3 border-t border-amber-500/20 space-y-1">
-            <button
-              onClick={() => { selectPersona(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
-              aria-current={agentTab === 'team' ? 'page' : undefined}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
-                agentTab === 'team'
-                  ? 'bg-amber-500/10 text-foreground/90 font-semibold'
-                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
-              }`}
-            >
-              <Users className="w-4 h-4 flex-shrink-0" />
-              Teams
-            </button>
-            <button
-              onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
-              aria-current={agentTab === 'cloud' ? 'page' : undefined}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
-                agentTab === 'cloud'
-                  ? 'bg-amber-500/10 text-foreground/90 font-semibold'
-                  : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
-              }`}
-            >
-              <Cloud className="w-4 h-4 flex-shrink-0" />
-              Cloud
-            </button>
+        {/* Teams (productionized at TEAM tier) + Cloud (still dev-only) */}
+        {(isTeamVisible || isDev) && (
+          <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
+            {isTeamVisible && (
+              <button
+                onClick={() => { selectPersona(null); setAgentTab('groups'); useSystemStore.getState().setIsCreatingPersona(false); }}
+                aria-current={agentTab === 'groups' ? 'page' : undefined}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                  agentTab === 'groups'
+                    ? 'bg-primary/10 text-foreground/90 font-semibold'
+                    : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                }`}
+              >
+                <Layers className="w-4 h-4 flex-shrink-0" />
+                {t.shared.sidebar_extra.groups_label}
+              </button>
+            )}
+            {isTeamVisible && (
+              <>
+                {/* Teams header → management table (deselects any open team) */}
+                <button
+                  onClick={() => { selectPersona(null); selectTeam(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
+                  aria-current={agentTab === 'team' && !selectedTeamId ? 'page' : undefined}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
+                    agentTab === 'team' && !selectedTeamId
+                      ? 'bg-primary/10 text-foreground/90 font-semibold'
+                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                  }`}
+                >
+                  <Users className="w-4 h-4 flex-shrink-0" />
+                  {t.shared.sidebar_extra.teams_label}
+                  {teams.length > 0 && (
+                    <span className="ml-auto typo-caption text-foreground/45 font-mono">{teams.length}</span>
+                  )}
+                </button>
+                {/* Team roster — click a name to open its Studio. Shown
+                    whenever the Teams section is active. */}
+                {agentTab === 'team' && teams.length > 0 && (
+                  <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
+                    {[...teams]
+                      .sort((a, b) => a.name.localeCompare(b.name))
+                      .map((team) => (
+                        <button
+                          key={team.id}
+                          onClick={() => { selectPersona(null); selectTeam(team.id); setAgentTab('team'); }}
+                          aria-current={selectedTeamId === team.id ? 'page' : undefined}
+                          className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
+                            selectedTeamId === team.id
+                              ? 'bg-primary/10 text-foreground/90 font-medium'
+                              : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
+                          }`}
+                        >
+                          <span
+                            className="flex-shrink-0 w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: team.color }}
+                          />
+                          <span className="truncate">{team.name}</span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </>
+            )}
+            {isDev && (
+              <button
+                onClick={() => { selectPersona(null); setAgentTab('cloud'); useSystemStore.getState().setIsCreatingPersona(false); }}
+                aria-current={agentTab === 'cloud' ? 'page' : undefined}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
+                  agentTab === 'cloud'
+                    ? 'bg-amber-500/10 text-foreground/90 font-semibold'
+                    : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
+                }`}
+              >
+                <Cloud className="w-4 h-4 flex-shrink-0" />
+                <span>{t.shared.sidebar_extra.cloud_label}</span>
+                <span className="ml-auto text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300/80 font-medium">
+                  {t.shared.sidebar_extra.cloud_dev_pill}
+                </span>
+              </button>
+            )}
             {/* Cloud sub-tabs */}
             {agentTab === 'cloud' && (
               <div className="ml-4 space-y-0.5">

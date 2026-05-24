@@ -1,4 +1,6 @@
 import { companionTts, type TtsEngineId, type TtsSettings } from '@/api/companion';
+import { attachPlayback } from './audioLevel';
+import { useSystemStore } from '@/stores/systemStore';
 
 /**
  * Voice-playback helpers for Athena's spoken summaries.
@@ -44,14 +46,28 @@ export async function synthesize(
 export function play(url: string): { audio: HTMLAudioElement; done: Promise<void> } {
   const audio = new Audio(url);
   audio.preload = 'auto';
+  const clampVol = (v: unknown): number =>
+    typeof v === 'number' ? Math.min(1, Math.max(0, v)) : 1;
+  // Apply the user's playback volume (0..1) AND keep it live: subscribe to
+  // the store so dragging the volume slider changes Athena's level *while
+  // she's speaking*, not just on the next clip. Unsubscribed when the clip
+  // ends / errors / is paused.
+  audio.volume = clampVol(useSystemStore.getState().companionVoiceVolume);
+  const unsubVolume = useSystemStore.subscribe((s) => {
+    audio.volume = clampVol(s.companionVoiceVolume);
+  });
+  // Route through the shared analyser so UI (the orb's glow) can react to
+  // the live speech level. Best-effort — never blocks or breaks playback.
+  attachPlayback(audio);
   const done = new Promise<void>((resolve, reject) => {
-    audio.addEventListener('ended', () => resolve(), { once: true });
+    audio.addEventListener('ended', () => { unsubVolume(); resolve(); }, { once: true });
+    audio.addEventListener('pause', () => unsubVolume(), { once: true });
     audio.addEventListener(
       'error',
-      () => reject(new Error('audio playback failed')),
+      () => { unsubVolume(); reject(new Error('audio playback failed')); },
       { once: true },
     );
-    audio.play().catch(reject);
+    audio.play().catch((e) => { unsubVolume(); reject(e); });
   });
   return { audio, done };
 }

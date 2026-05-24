@@ -15,8 +15,8 @@ export interface DevToolsProjectSlice {
   projectsLoading: boolean;
 
   fetchProjects: (status?: string) => Promise<void>;
-  createProject: (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string) => Promise<DevProject>;
-  updateProject: (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string }) => Promise<void>;
+  createProject: (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string, groupId?: string) => Promise<DevProject>;
+  updateProject: (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; teamId?: string | null; groupId?: string | null }) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   setActiveProject: (id: string | null) => Promise<void>;
   scanDirectory: (path: string) => Promise<DirectoryScanResult>;
@@ -57,9 +57,9 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     }
   },
 
-  createProject: async (name, rootPath, description, techStack, githubUrl) => {
+  createProject: async (name, rootPath, description, techStack, githubUrl, teamId, groupId) => {
     try {
-      const project = await devApi.createProject(name, rootPath, description, techStack, githubUrl);
+      const project = await devApi.createProject(name, rootPath, description, techStack, githubUrl, teamId, groupId);
       set((state) => ({ projects: [...state.projects, project], error: null }));
       return project;
     } catch (err) {

@@ -1,0 +1,53 @@
+{
+  "id": "daily-ops",
+  "schema_version": 1,
+  "name": "Daily Ops",
+  "description": "A lightweight three-agent set for daily operational rhythm: morning email digest into a standup compilation into appointment orchestration. Minimal connectors, maximum cadence.",
+  "icon": "Sunrise",
+  "color": "#10B981",
+  "category": ["productivity"],
+  "team": {
+    "name": "Daily Ops",
+    "description": "Morning digest → standup → calendar orchestration",
+    "color": "#10B981"
+  },
+  "group": {
+    "name": "Daily Rhythm",
+    "color": "#10B981",
+    "shared_instructions": "Keep outputs brief — these agents run every weekday morning and the user reads them on a single screen. No headers above level 3. No filler."
+  },
+  "members": [
+    {
+      "template_id": "email-morning-digest",
+      "role": "inbox",
+      "x": 0,
+      "y": 0
+    },
+    {
+      "template_id": "daily-standup-compiler",
+      "role": "standup",
+      "x": 240,
+      "y": 0
+    },
+    {
+      "template_id": "appointment-orchestrator",
+      "role": "calendar",
+      "x": 480,
+      "y": 0
+    }
+  ],
+  "connections": [
+    {
+      "from": "inbox",
+      "to": "standup",
+      "connection_type": "data",
+      "label": "overnight signals"
+    },
+    {
+      "from": "standup",
+      "to": "calendar",
+      "connection_type": "data",
+      "label": "today's commitments"
+    }
+  ]
+}

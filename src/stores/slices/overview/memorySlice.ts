@@ -25,7 +25,7 @@ export interface MemorySlice {
 
   // Actions
   fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; sort_column?: string; sort_direction?: string }) => Promise<void>;
-  createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
+  createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[]; group_id?: string | null }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   mergeMemories: (
     input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] },
@@ -120,6 +120,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         tags: input.tags,
         source_execution_id: null,
         use_case_id: null,
+        group_id: input.group_id ?? null,
       });
       set((state) => ({
         memories: [created, ...state.memories],
@@ -161,6 +162,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
           tags: input.tags,
           source_execution_id: null,
           use_case_id: null,
+          group_id: null,
         },
         deleteIdA,
         deleteIdB,

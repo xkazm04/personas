@@ -18,7 +18,9 @@ export type ProcessType =
   | 'lab-run'
   | 'connector-test'
   | 'creative-session'
-  | 'feedback-chat';
+  | 'feedback-chat'
+  | 'team-assignment-failed'
+  | 'team-assignment-unmatched';
 
 export type PipelineNotificationStatus = 'success' | 'failed' | 'canceled' | 'warning';
 

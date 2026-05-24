@@ -24,7 +24,7 @@ const VALID_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
-const VALID_COMPANION_TABS = ['setup', 'memory', 'voice', 'dashboard'] as const;
+const VALID_COMPANION_TABS = ['setup', 'memory', 'voice', 'decisions'] as const;
 
 function applyClientAction(action: ClientAction) {
   if (action.type === 'navigate') {

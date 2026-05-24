@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   BookOpen,
   Bot,
@@ -18,8 +18,13 @@ import { useCompanionStore } from './companionStore';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
 import { QuickReplies } from './QuickReplies';
-import { extractAssistantText } from './extractAssistantText';
+import {
+  extractAssistantText,
+  extractAssistantTextDelta,
+} from './extractAssistantText';
 import { extractStreamPhase, phaseLabel } from './extractStreamPhase';
+import { extractTodoWrite } from './operationalSteps';
+import { OperationalThread } from './OperationalThread';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -45,6 +50,7 @@ import {
   companionResetConversation,
   companionSendMessage,
   type BackgroundJob,
+  type BrainKind,
   type CompanionRecallPreviewEvent,
   type CompanionStreamEvent,
   type CompanionTurnSummaryEvent,
@@ -57,14 +63,16 @@ import { ApprovalCard } from './ApprovalCard';
 import { McpRequestPanel } from './mcp/McpRequestPanel';
 import { LiveOpsStrip } from './orchestration/LiveOpsStrip';
 import { InlineChatCard } from './InlineChatCard';
+import { CompanionAssignmentCards } from './CompanionAssignmentCards';
+import { useCompanionAssignmentBridge } from './useCompanionAssignmentBridge';
 import { ProactiveCard } from './ProactiveCard';
-import { stripModelDirectives } from './athenaLabels';
 import { AthenaAvatar } from './AthenaAvatar';
 import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
 import { RefineChips } from './RefineChips';
+import { BubbleReadAloud } from './BubbleReadAloud';
 import { TurnSummaryChip } from './TurnSummaryChip';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -107,6 +115,9 @@ const VALID_NAV_ROUTES: SidebarSection[] = [
  */
 export default function CompanionPanel() {
   const { t } = useTranslation();
+  // Phase C2 — global TEAM_ASSIGNMENT_PROGRESS listener that populates
+  // the chat-side assignment cards above messages.
+  useCompanionAssignmentBridge();
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
   const initialized = useCompanionStore((s) => s.initialized);
@@ -161,6 +172,9 @@ export default function CompanionPanel() {
   const setAutonomousMode = useSystemStore((s) => s.setCompanionAutonomousMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  const orbOpenOrigin = useCompanionStore((s) => s.orbOpenOrigin);
+  const reduceMotion = useReducedMotion();
 
   const isOpen = state === 'open';
 
@@ -172,15 +186,56 @@ export default function CompanionPanel() {
       .catch(silentCatch('companion_beta_flags'));
   }, [setBetaSelfImprove]);
 
+  // Orb → panel morph. The panel is anchored bottom-left (`left-4 bottom-12`),
+  // so its bottom-left corner sits at screen (16, vh-48) regardless of the
+  // panel's height. Pinning `transformOrigin` to that corner lets us fly +
+  // scale the panel out of the orb's recorded center for an "orb expands
+  // into chat" feel (and collapse back toward it on close). Falls back to a
+  // plain fade/scale when there's no orb origin, or to opacity-only under
+  // `prefers-reduced-motion`.
+  const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
+  const morph = (() => {
+    if (reduceMotion) {
+      return {
+        initial: { opacity: 0 },
+        animate: { opacity: 1 },
+        exit: { opacity: 0 },
+        transition: { duration: 0.12 },
+        style: undefined,
+      };
+    }
+    if (orbOpenOrigin) {
+      const dx = orbOpenOrigin.x - 16;
+      const dy = orbOpenOrigin.y - (window.innerHeight - 48);
+      return {
+        initial: { opacity: 0, scale: 0.18, x: dx, y: dy },
+        animate: { opacity: 1, scale: 1, x: 0, y: 0 },
+        exit: { opacity: 0, scale: 0.18, x: dx, y: dy },
+        transition: { duration: 0.28, ease },
+        style: { transformOrigin: 'bottom left' },
+      };
+    }
+    return {
+      initial: { opacity: 0, y: 12, scale: 0.98 },
+      animate: { opacity: 1, y: 0, scale: 1 },
+      exit: { opacity: 0, y: 8, scale: 0.98 },
+      transition: { duration: 0.18, ease },
+      style: undefined,
+    };
+  })();
+
   return (
-    <AnimatePresence>
+    <AnimatePresence
+      onExitComplete={() => useCompanionStore.getState().setOrbOpenOrigin(null)}
+    >
       {isOpen && (
         <motion.div
           key="companion-panel"
-          initial={{ opacity: 0, y: 12, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.98 }}
-          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+          initial={morph.initial}
+          animate={morph.animate}
+          exit={morph.exit}
+          transition={morph.transition}
+          style={morph.style}
           className={`fixed bottom-12 left-4 z-[60] ${
             panelCompact ? 'w-[380px]' : 'w-[760px]'
           } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
@@ -209,7 +264,7 @@ export default function CompanionPanel() {
             className="absolute inset-0 -z-10 opacity-[0.05]"
           />
           <Header
-            onClose={() => setState('collapsed')}
+            onClose={() => setState(orbEnabled ? 'minimized' : 'collapsed')}
             onReset={async () => {
               // Clear UI state immediately so the wipe feels instant.
               // Backend wipes both the SQL transcript AND the CLI session
@@ -230,6 +285,7 @@ export default function CompanionPanel() {
               useCompanionStore.getState().clearAllRecall();
               useCompanionStore.getState().clearAllTurnSummaries();
               useCompanionStore.getState().clearAllConnectorJobs();
+              useCompanionStore.getState().clearAllSteps();
               try {
                 await companionResetConversation(true);
               } catch (err: unknown) {
@@ -538,6 +594,7 @@ function Body(props: BodyProps) {
   // Replaces the dead "thinking…" placeholder so the user sees activity
   // even when prose text hasn't started arriving yet.
   const streamingPhase = useCompanionStore((s) => s.streamingPhase);
+  const streamingBeat = useCompanionStore((s) => s.streamingBeat);
   const turnSummaryByEpisodeId = useCompanionStore(
     (s) => s.turnSummaryByEpisodeId,
   );
@@ -548,6 +605,10 @@ function Body(props: BodyProps) {
   const connectorJobIdsByEpisodeId = useCompanionStore(
     (s) => s.connectorJobIdsByEpisodeId,
   );
+  // Operational thread (live TodoWrite plan). `streamingSteps` pins under
+  // the in-flight bubble; `stepsByEpisodeId` under the completed one.
+  const streamingSteps = useCompanionStore((s) => s.streamingSteps);
+  const stepsByEpisodeId = useCompanionStore((s) => s.stepsByEpisodeId);
 
   // Initial transcript + pending approvals fetch — once init is done.
   const fetchedRef = useRef(false);
@@ -574,6 +635,44 @@ function Body(props: BodyProps) {
   // the listener closure stays stable.
   const currentTurnIdRef = useRef<string | null>(null);
 
+  // Token-level streaming bookkeeping (--include-partial-messages).
+  // `sawDeltasRef` flips true the moment a `text_delta` arrives this turn;
+  // once set, we ignore the trailing whole `assistant` message text (it
+  // duplicates what the deltas already appended). `deltaBufferRef` +
+  // `deltaRafRef` coalesce a burst of tiny deltas into one store write per
+  // animation frame so the high-frequency `text_delta` stream can't thrash
+  // the Zustand store. Reset/flushed on `started` and `finished`.
+  const sawDeltasRef = useRef(false);
+  const deltaBufferRef = useRef('');
+  const deltaRafRef = useRef<number | null>(null);
+
+  // TurnSummaryChip jump targets: refs to the in-panel approval and
+  // chat-card containers so the chip can scroll the user there with
+  // smooth `scrollIntoView`. Dashboard / cockpit jumps route through
+  // useSystemStore directly (same setSidebarSection chain the
+  // compose_* auto-fires use).
+  const approvalsAnchorRef = useRef<HTMLDivElement>(null);
+  const chatCardsAnchorRef = useRef<HTMLDivElement>(null);
+  const handleTurnSummaryJump = useCallback(
+    (target: 'approvals' | 'chatCards' | 'dashboard' | 'cockpit') => {
+      if (target === 'approvals' || target === 'chatCards') {
+        const el =
+          target === 'approvals'
+            ? approvalsAnchorRef.current
+            : chatCardsAnchorRef.current;
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      // Both 'dashboard' and 'cockpit' route to Home → Cockpit. The
+      // dedicated Dashboard tab was retired; Cockpit is the dynamic
+      // dashboard surface, so a composed-dashboard summary lands there.
+      const sys = useSystemStore.getState();
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
+    },
+    [],
+  );
+
   /*
    * Soft progress timeout. If no CLI line arrives for ~30s mid-turn we
    * surface a gentle "still working" hint; at ~2min we sharpen the hint
@@ -586,6 +685,21 @@ function Body(props: BodyProps) {
    */
   const lastStreamEventAtRef = useRef<number>(0);
   const [slowLevel, setSlowLevel] = useState<0 | 1 | 2>(0);
+
+  // Variant C — spoken "no dead air" progress. While a turn is in flight we
+  // optionally speak a short ack (~2.5s in) and a heartbeat (~30s in), each
+  // once per turn, gated on voice being active and cut off the moment the
+  // real reply starts playing. Refs hold the in-flight progress clip so we
+  // can stop it; `spokenTiersRef` de-dupes tiers within a turn.
+  const progressAudioRef = useRef<HTMLAudioElement | null>(null);
+  const progressUrlRef = useRef<string | null>(null);
+  const spokenTiersRef = useRef<Set<number>>(new Set());
+  // Variant B — model-authored progress beats. `progressFiredRef` counts the
+  // `PROGRESS:` lines already surfaced this turn (streamingText only grows,
+  // so we re-scan and fire the new tail); `beatFiredRef` records whether any
+  // beat fired (so generic ack/heartbeat filler stands down).
+  const progressFiredRef = useRef(0);
+  const beatFiredRef = useRef(false);
 
   useEffect(() => {
     if (!streaming) {
@@ -604,6 +718,21 @@ function Body(props: BodyProps) {
     return () => clearInterval(id);
   }, [streaming]);
 
+  // Flush buffered token deltas into the store as one write. Stable
+  // (depends only on appendStreamingText) so the listener closure below
+  // stays stable across renders.
+  const flushDeltaBuffer = useCallback(() => {
+    if (deltaRafRef.current !== null) {
+      cancelAnimationFrame(deltaRafRef.current);
+      deltaRafRef.current = null;
+    }
+    if (deltaBufferRef.current) {
+      const chunk = deltaBufferRef.current;
+      deltaBufferRef.current = '';
+      appendStreamingText(chunk);
+    }
+  }, [appendStreamingText]);
+
   // Subscribe to streaming events from the backend.
   useTauriEvent<CompanionStreamEvent>(
     COMPANION_STREAM_EVENT,
@@ -615,6 +744,14 @@ function Body(props: BodyProps) {
         lastStreamEventAtRef.current = Date.now();
         if (ev.kind === 'started') {
           currentTurnIdRef.current = ev.turnId;
+          // New turn — reset token-streaming bookkeeping and drop any
+          // unflushed deltas from a prior turn.
+          sawDeltasRef.current = false;
+          deltaBufferRef.current = '';
+          if (deltaRafRef.current !== null) {
+            cancelAnimationFrame(deltaRafRef.current);
+            deltaRafRef.current = null;
+          }
           // New turn — drop any leftover in-flight recall strip; the
           // backend will re-emit `recall-preview` once the new prompt
           // is built.
@@ -623,23 +760,63 @@ function Body(props: BodyProps) {
           // starts cleanly on the placeholder until the first CLI line
           // arrives.
           useCompanionStore.getState().setStreamingPhase(null);
+          // Drop the prior turn's operational checklist; the new turn
+          // rebuilds it from its own TodoWrite calls.
+          useCompanionStore.getState().setStreamingSteps([]);
+          // Reset Variant B beat bookkeeping for the new turn.
+          useCompanionStore.getState().setStreamingBeat(null);
+          beatFiredRef.current = false;
+          progressFiredRef.current = 0;
         } else if (ev.kind === 'cli') {
-          // Try to extract assistant text deltas from stream-json.
+          // Operational thread: a TodoWrite tool call republishes Athena's
+          // full plan. Capture it (latest wins) so the inline checklist
+          // tracks progress; the checklist itself is the activity signal,
+          // so don't also surface a generic "Using TodoWrite…" phase.
+          const steps = extractTodoWrite(ev.payload);
+          if (steps) {
+            useCompanionStore.getState().setStreamingSteps(steps);
+            return;
+          }
+          // Token-level path: a `stream_event` text_delta. Append it live
+          // (coalesced per frame) and remember we're streaming deltas so
+          // the trailing whole `assistant` message doesn't double the text.
+          const delta = extractAssistantTextDelta(ev.payload);
+          if (delta) {
+            // First token of the reply — flip the status to "Composing
+            // reply…" once (we no longer render the raw token stream, so
+            // without this the bubble would sit on "Thinking…" through the
+            // whole answer generation). Set once, not per-token.
+            if (!sawDeltasRef.current) {
+              useCompanionStore.getState().setStreamingPhase({ kind: 'responding' });
+            }
+            sawDeltasRef.current = true;
+            deltaBufferRef.current += delta;
+            if (deltaRafRef.current === null) {
+              deltaRafRef.current = requestAnimationFrame(flushDeltaBuffer);
+            }
+            return;
+          }
+          // Whole-message path (also the only path on CLIs that don't emit
+          // partial messages). Extract assistant text + a progress phase
+          // (thinking / tool_use / etc.) so the bubble reports what Athena
+          // is doing instead of a dead "thinking…" placeholder.
           const text = extractAssistantText(ev.payload);
-          // Also extract a progress phase (thinking / tool_use / etc.)
-          // so the streaming bubble can report what Athena is currently
-          // doing instead of a dead "thinking…" placeholder. Returns
-          // null on text blocks (the visible text is the signal then).
           const phase = extractStreamPhase(ev.payload);
           if (text) {
-            // Prose is arriving — clear phase so it doesn't shadow the
-            // streaming text below.
-            useCompanionStore.getState().setStreamingPhase(null);
-            appendStreamingText(text);
+            // Prose is arriving — show "Composing reply…" (we no longer
+            // render the partial text itself; the full reply lands whole).
+            useCompanionStore.getState().setStreamingPhase({ kind: 'responding' });
+            // If deltas already streamed this turn, this whole-message text
+            // is a duplicate of what we appended token-by-token — skip it.
+            if (!sawDeltasRef.current) appendStreamingText(text);
           } else if (phase) {
             useCompanionStore.getState().setStreamingPhase(phase);
           }
         } else if (ev.kind === 'finished') {
+          // Land any deltas still buffered before the transcript refetch
+          // swaps the streaming bubble for the persisted episode.
+          flushDeltaBuffer();
+          sawDeltasRef.current = false;
           // Promote the streaming recall AND any pending connector_use
           // jobs onto the just-persisted assistant episode so they pin
           // under the now-completed bubble. Payload is the
@@ -649,19 +826,26 @@ function Body(props: BodyProps) {
             useCompanionStore
               .getState()
               .attachPendingJobsToEpisode(ev.payload);
+            // Pin the operational checklist under the completed bubble.
+            useCompanionStore.getState().attachStepsToEpisode(ev.payload);
           } else {
             useCompanionStore.getState().setStreamingRecall(null);
           }
           useCompanionStore.getState().setStreamingPhase(null);
+          // Clear any in-flight checklist not promoted to an episode.
+          useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
         } else if (ev.kind === 'error') {
+          flushDeltaBuffer();
+          sawDeltasRef.current = false;
           setSendError(ev.payload);
           useCompanionStore.getState().setStreamingRecall(null);
           useCompanionStore.getState().setStreamingPhase(null);
+          useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
         }
       },
-      [appendStreamingText, setSendError],
+      [appendStreamingText, setSendError, flushDeltaBuffer],
     ),
     'companion_stream_listen',
   );
@@ -726,6 +910,16 @@ function Body(props: BodyProps) {
     companionInterruptTurn(turnId).catch(silentCatch('companion_interrupt_turn'));
   }, []);
 
+  // RecallStrip Stage 2: a click on a recall chip opens the Brain Viewer
+  // pinned to that memory id. `setBrainView({ kind, id })` jumps straight
+  // to DetailView; the overlay paints itself over the transcript.
+  const handleOpenInBrain = useCallback(
+    (kind: BrainKind, id: string) => {
+      setBrainView({ open: true, kind, id });
+    },
+    [setBrainView],
+  );
+
   // Subscribe to direct-navigation events fired by Athena's `open_route`
   // op. By design these bypass the approval flow — Athena just switches
   // the sidebar behind the chat. We deliberately do NOT collapse the
@@ -784,17 +978,15 @@ function Body(props: BodyProps) {
   );
 
   // Phase F: subscribe to `compose_dashboard` events (auto-fire path).
-  // The spec is already saved server-side — we just navigate the user
-  // to the dashboard tab so they see what Athena built. Same three-
-  // store-call pattern as the OpenCompanionTab client action; kept
-  // inline because this listener fires *without* an approval card.
+  // The dedicated Dashboard tab was retired (Cockpit is the dynamic
+  // dashboard surface), so a composed dashboard now routes the user to
+  // Home → Cockpit — same destination as `compose_cockpit`.
   useTauriEvent<unknown>(
     COMPANION_COMPOSE_DASHBOARD_EVENT,
     useCallback(() => {
       const sys = useSystemStore.getState();
-      sys.setSidebarSection('plugins');
-      sys.setPluginTab('companion');
-      sys.setCompanionPluginTab('dashboard');
+      sys.setSidebarSection('home');
+      sys.setHomeTab('cockpit');
     }, []),
     'companion_compose_dashboard_listen',
   );
@@ -889,6 +1081,71 @@ function Body(props: BodyProps) {
   const synthesisCredentialId = voiceEngine === 'piper' ? null : voiceCredentialId;
   const synthesisVoiceId = voiceEngine === 'piper' ? piperVoiceId : voiceId;
 
+  // Stop + release any in-flight spoken-progress clip (ack / heartbeat).
+  const stopProgressAudio = useCallback(() => {
+    progressAudioRef.current?.pause();
+    progressAudioRef.current = null;
+    if (progressUrlRef.current) {
+      URL.revokeObjectURL(progressUrlRef.current);
+      progressUrlRef.current = null;
+    }
+  }, []);
+
+  // Synthesize + play one short progress clip on the exclusive progress
+  // channel (latest beat/ack wins — we stop the prior so they never stack).
+  // Bails when voice isn't active or the real reply is already queued.
+  const playProgressClip = useCallback(
+    (text: string) => {
+      if (!voiceActive || !synthesisVoiceId) return;
+      if (useCompanionStore.getState().pendingPlayback) return;
+      stopProgressAudio();
+      synthesizeTts(text, synthesisCredentialId, synthesisVoiceId, voiceSettings, voiceEngine)
+        .then((url) => {
+          // Re-check: the reply may have landed while we were synthesizing.
+          if (useCompanionStore.getState().pendingPlayback) {
+            URL.revokeObjectURL(url);
+            return;
+          }
+          progressUrlRef.current = url;
+          const { audio, done } = playAudio(url);
+          progressAudioRef.current = audio;
+          done.catch(silentCatch('companion_voice_progress_play')).finally(() => {
+            if (progressUrlRef.current === url) {
+              URL.revokeObjectURL(url);
+              progressUrlRef.current = null;
+              progressAudioRef.current = null;
+            }
+          });
+        })
+        .catch(silentCatch('companion_voice_progress_synthesize'));
+    },
+    [voiceActive, synthesisVoiceId, synthesisCredentialId, voiceSettings, voiceEngine, stopProgressAudio],
+  );
+
+  // Generic ack / heartbeat (Variant C). Each tier speaks at most once per
+  // turn — and is suppressed entirely once Athena has emitted her own
+  // progress beat (Variant B), since her words beat generic filler.
+  const speakProgress = useCallback(
+    (text: string, tier: number) => {
+      if (beatFiredRef.current) return;
+      if (spokenTiersRef.current.has(tier)) return;
+      spokenTiersRef.current.add(tier);
+      playProgressClip(text);
+    },
+    [playProgressClip],
+  );
+
+  // Fire a model-authored progress beat (Variant B): show Athena's own words
+  // in the streaming bubble and speak them.
+  const fireBeat = useCallback(
+    (text: string) => {
+      beatFiredRef.current = true;
+      useCompanionStore.getState().setStreamingBeat(text);
+      playProgressClip(text);
+    },
+    [playProgressClip],
+  );
+
   const send = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -909,6 +1166,13 @@ function Body(props: BodyProps) {
       appendMessage(optimistic);
       setStreaming(true);
       resetStreamingText();
+      // Fresh turn — reset spoken-progress tiers + beat bookkeeping and
+      // silence any leftover progress clip.
+      spokenTiersRef.current.clear();
+      beatFiredRef.current = false;
+      progressFiredRef.current = 0;
+      useCompanionStore.getState().setStreamingBeat(null);
+      stopProgressAudio();
       // Seed the soft-progress clock so the chip-threshold effect
       // doesn't trip immediately based on a stale prior-turn timestamp.
       lastStreamEventAtRef.current = Date.now();
@@ -942,6 +1206,9 @@ function Body(props: BodyProps) {
             audioUrl: null as string | null,
           };
           setPendingPlayback(playback);
+          // The real reply is committed — cut off any ack/heartbeat clip
+          // so it doesn't talk over Athena's answer.
+          stopProgressAudio();
           synthesizeTts(
             result.ttsText,
             synthesisCredentialId,
@@ -978,10 +1245,71 @@ function Body(props: BodyProps) {
         // entirely (the backend never got far enough to emit one), so
         // an explicit reset here is the safety net.
         useCompanionStore.getState().setStreamingPhase(null);
+        useCompanionStore.getState().setStreamingBeat(null);
       }
     },
-    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
+    [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
+
+  // Spoken ack: ~2.5s into a still-running turn, say a short "one moment"
+  // so a slow turn isn't dead silent. Fast turns (< the delay) never
+  // trigger it; the cleanup clears the timer when the turn ends.
+  useEffect(() => {
+    if (!streaming) {
+      stopProgressAudio();
+      return;
+    }
+    const id = window.setTimeout(() => {
+      speakProgress(t.plugins.companion.voice_progress_ack, 0);
+    }, 2500);
+    return () => window.clearTimeout(id);
+  }, [streaming, speakProgress, stopProgressAudio, t]);
+
+  // Spoken heartbeat: once the silence has crossed the first slow tier
+  // (~30s), say "still working" — once per turn.
+  useEffect(() => {
+    if (streaming && slowLevel >= 1) {
+      speakProgress(t.plugins.companion.voice_progress_working, 1);
+    }
+  }, [streaming, slowLevel, speakProgress, t]);
+
+  // Variant B — detect model-authored `PROGRESS:` beats as their lines
+  // complete in the streaming text and fire each once (show + speak). A
+  // line is "complete" once a newline follows it, so we scan all but the
+  // last split segment; `streamingText` only grows, so we fire the new
+  // tail past `progressFiredRef`.
+  useEffect(() => {
+    if (!streaming) {
+      progressFiredRef.current = 0;
+      return;
+    }
+    const parts = streamingText.split('\n');
+    const beats: string[] = [];
+    for (let i = 0; i < parts.length - 1; i++) {
+      const m = /^\s*PROGRESS:\s*(.+)$/.exec(parts[i] ?? '');
+      const body = m?.[1]?.trim();
+      if (body) beats.push(body);
+    }
+    if (beats.length > progressFiredRef.current) {
+      for (let i = progressFiredRef.current; i < beats.length; i++) {
+        fireBeat(beats[i]!);
+      }
+      progressFiredRef.current = beats.length;
+    }
+  }, [streamingText, streaming, fireBeat]);
+
+  // Voice turns fired from the footer's hold-to-talk affordance. This panel
+  // component is always mounted (only its visible UI is gated on `isOpen`),
+  // so consuming the request here lets a footer-initiated turn run the full
+  // `send()` pipeline — streaming, transcript persistence, and TTS playback —
+  // without the panel ever opening. The reply surfaces to the user through
+  // the existing footer notice popover + Play button + auto-played TTS.
+  const voiceTurnRequest = useCompanionStore((s) => s.voiceTurnRequest);
+  useEffect(() => {
+    if (!voiceTurnRequest || streaming) return;
+    useCompanionStore.getState().setVoiceTurnRequest(null);
+    void send(voiceTurnRequest);
+  }, [voiceTurnRequest, streaming, send]);
 
   // Wrench-send: pipe the textarea content into the self-improve loop.
   // The improvement runs on a SEPARATE Claude CLI session at repo root
@@ -1058,6 +1386,10 @@ function Body(props: BodyProps) {
             flight.
           */}
           <LiveOpsStrip />
+          {/* Phase C2 — Athena-dispatched team-assignment cards. Renders only
+              when at least one assignment is in flight; click routes to the
+              pipeline page so the user can drill into the full panel. */}
+          <CompanionAssignmentCards />
           {/*
             MCP pending-request strip — pinned above proactive because
             the spawned claude session is *blocked* until it gets an
@@ -1124,24 +1456,53 @@ function Body(props: BodyProps) {
                 m.role === 'assistant'
                   ? connectorJobIdsByEpisodeId[m.id] ?? []
                   : [];
+              const steps =
+                m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
               return (
                 <div key={m.id} className="space-y-1">
-                  {recall && <RecallStrip preview={recall} />}
-                  <Bubble role={m.role} index={i}>
+                  {recall && (
+                    <RecallStrip
+                      preview={recall}
+                      onOpenInBrain={handleOpenInBrain}
+                    />
+                  )}
+                  <Bubble
+                    role={m.role}
+                    index={i}
+                    onOpenInBrain={handleOpenInBrain}
+                  >
                     {m.content}
                   </Bubble>
+                  {steps && steps.length > 0 && (
+                    <OperationalThread steps={steps} />
+                  )}
                   {connectorJobIds.map((jobId) => {
                     const job = jobsById[jobId];
                     return job ? (
                       <ConnectorCallCard key={jobId} job={job} />
                     ) : null;
                   })}
-                  {summary && <TurnSummaryChip summary={summary} />}
+                  {summary && (
+                    <TurnSummaryChip
+                      summary={summary}
+                      onJump={handleTurnSummaryJump}
+                    />
+                  )}
                   {isLastAssistant && priorUser && !streaming && !improving && (
                     <RefineChips
                       priorUserMessage={priorUser}
                       onSend={send}
                       disabled={!initialized || streaming || improving}
+                    />
+                  )}
+                  {isLastAssistant && !streaming && !improving && m.content.trim() && (
+                    <BubbleReadAloud
+                      content={m.content}
+                      voiceEngine={voiceEngine}
+                      voiceCredentialId={voiceCredentialId}
+                      voiceId={voiceId}
+                      piperVoiceId={piperVoiceId}
+                      voiceSettings={voiceSettings}
                     />
                   )}
                 </div>
@@ -1158,25 +1519,29 @@ function Body(props: BodyProps) {
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
               >
-                {streamingRecall && <RecallStrip preview={streamingRecall} />}
+                {streamingRecall && (
+                  <RecallStrip
+                    preview={streamingRecall}
+                    onOpenInBrain={handleOpenInBrain}
+                  />
+                )}
                 <div className="relative group">
+                  {/*
+                    We intentionally do NOT render the live token stream
+                    here — the token-by-token prose reflowed constantly and
+                    leaked Athena's machine grammar (OP:/QR:/TTS: directives)
+                    before the server-side strip. Instead the streaming
+                    bubble shows a single status line: the current phase
+                    ("Searching the web…", "Reading files…") when one has
+                    landed, otherwise "Thinking…". Granular progress comes
+                    from the OperationalThread below; the full prose reply
+                    replaces this bubble in one piece when the turn finishes.
+                    See docs/features/companion/conversation-orchestration.md.
+                  */}
                   <Bubble role="assistant" streaming index={messages.length}>
-                    {/*
-                      Strip OP:/QR:/TTS:/raw {"op": directive lines from
-                      the streaming view so the user never sees Athena's
-                      machine grammar flash. The backend dispatcher does
-                      the same strip server-side when persisting the
-                      episode; the persisted bubble that replaces this
-                      one is already clean.
-
-                      When prose text hasn't arrived yet, fall through
-                      to the streamingPhase placeholder ("Searching the
-                      web…", "Reading files…", etc.) — surfaces what
-                      Athena is currently doing instead of a dead
-                      "Thinking…" string. Final fallback when no phase
-                      has landed either (very first ms of a turn).
-                    */}
-                    {stripModelDirectives(streamingText) ||
+                    {/* Athena's own progress beat (Variant B) wins over the
+                        derived phase; fall back to phase, then "Thinking…". */}
+                    {streamingBeat ??
                       (streamingPhase
                         ? phaseLabel(t, tx, streamingPhase)
                         : t.plugins.companion.thinking)}
@@ -1192,6 +1557,9 @@ function Body(props: BodyProps) {
                     <Square className="w-3 h-3" fill="currentColor" />
                   </button>
                 </div>
+                {streamingSteps.length > 0 && (
+                  <OperationalThread steps={streamingSteps} />
+                )}
                 {/*
                   Slow-progress hint chip. Surfaces below the streaming
                   bubble when no CLI events have arrived in 30s (soft) /
@@ -1237,42 +1605,46 @@ function Body(props: BodyProps) {
               <span>{t.plugins.companion.improving}</span>
             </div>
           )}
-          <AnimatePresence initial={false}>
-            {approvals.map((a) => (
-              <motion.div
-                key={a.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <ApprovalCard
-                  approval={a}
-                  onResolved={(id) => {
-                    removeApproval(id);
-                    // Pull the canonical transcript so the system episode the
-                    // backend just logged (action outcome) shows up.
-                    companionListRecentMessages(50)
-                      .then((msgs) => setMessages(msgs))
-                      .catch(silentCatch('companion_list_recent_messages'));
-                  }}
-                />
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          <AnimatePresence initial={false}>
-            {chatCards.map((card, idx) => (
-              <motion.div
-                key={`${card.kind}-${idx}`}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              >
-                <InlineChatCard card={card} />
-              </motion.div>
-            ))}
-          </AnimatePresence>
+          <div ref={approvalsAnchorRef} data-companion-section="approvals">
+            <AnimatePresence initial={false}>
+              {approvals.map((a) => (
+                <motion.div
+                  key={a.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <ApprovalCard
+                    approval={a}
+                    onResolved={(id) => {
+                      removeApproval(id);
+                      // Pull the canonical transcript so the system episode the
+                      // backend just logged (action outcome) shows up.
+                      companionListRecentMessages(50)
+                        .then((msgs) => setMessages(msgs))
+                        .catch(silentCatch('companion_list_recent_messages'));
+                    }}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+          <div ref={chatCardsAnchorRef} data-companion-section="chat-cards">
+            <AnimatePresence initial={false}>
+              {chatCards.map((card, idx) => (
+                <motion.div
+                  key={`${card.kind}-${idx}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <InlineChatCard card={card} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
           {sendError && (
             <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
               {sendError}

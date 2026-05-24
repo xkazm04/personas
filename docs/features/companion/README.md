@@ -11,7 +11,30 @@ Companion is the Athena assistant plugin. It has two UI surfaces: a plugin setti
 | Memory | Full-page brain viewer over episodes, doctrine, identity, and constitution | `sub_memory/MemoryPanel.tsx`, `BrainViewer.tsx` |
 | Voice | ElevenLabs credential picker and voice-id binding | `sub_voice/VoicePanel.tsx`, `commands/companion/voice.rs` |
 | Panel | Chat, streaming, quick replies, approvals, playback | `CompanionPanel.tsx`, `CompanionToolbar.tsx`, `ApprovalCard.tsx` |
-| Avatar/footer | Athena visual state, footer icon (right cluster), chime, pending playback, notice popover above icon ("Analysis completed" / proactive subject) with optional TTS announcement when voice is enabled | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `companionStore.ts` (`FooterNotice`) |
+| Avatar/footer | Athena's live video avatar **is** the footer button (right cluster) — tap opens/collapses the panel, **press-and-hold dictates a voice turn without opening the panel**. Avatar reflects state (idle/thinking/speaking); chime, pending playback, notice popover above icon ("Analysis completed" / proactive subject) with optional TTS announcement when voice is enabled | `AthenaAvatar.tsx`, `CompanionFooterIcon.tsx`, `chime.ts`, `voicePlayback.ts`, `useDictation.ts`, `companionStore.ts` (`FooterNotice`, `voiceTurnRequest`) |
+
+## Footer avatar & hold-to-talk
+
+The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`), not a generic glyph — her idle/thinking/speaking video reflects what she's doing at a glance. The button has two gestures:
+
+- **Tap** — opens/collapses the chat panel (the original behavior).
+- **Press-and-hold** (≥220ms) — arms dictation; a mic badge + pulse appear on the avatar. On release, the final transcript is handed to the always-mounted `CompanionPanel` via the `voiceTurnRequest` store slot, which runs the standard `send()` pipeline. The reply streams and (when a voice engine is configured) auto-plays, surfacing through the existing notice popover + Play button — **all without the panel ever opening.** A hold's trailing synthetic `click` is suppressed so releasing doesn't also toggle the panel.
+
+`voiceTurnRequest` is deliberately separate from `pendingPrompt`: `pendingPrompt` seeds the composer draft and is only consumed while the panel (and Composer) is mounted, whereas `voiceTurnRequest` is consumed by an always-mounted effect so a footer-initiated turn works with the panel closed.
+
+**STT engine.** Both the footer and orb use the browser Web Speech engine (`useDictation`) via the shared `useHoldToTalk` hook; on WebView2 that forwards audio to the OS vendor's cloud STT. The mic is only ever armed by an explicit press, never on mount. A local, on-device Whisper STT engine (so audio never leaves the machine) is the separate workstream tracked in [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) §4.
+
+## Floating dockable orb (`minimized` state)
+
+Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes Athena out of the footer into a first-class overlay. A new `CompanionState` value `minimized` (between `collapsed` and `open`) shows `AthenaOrb` — her avatar as a draggable orb portal'd to `document.body` above all app content (`orb/AthenaOrbLayer.tsx`, `orb/AthenaOrb.tsx`).
+
+- **One pointer surface, three gestures:** tap → open the full chat panel; hold (≥220ms) → dictate a voice turn (via the same `useHoldToTalk` → `voiceTurnRequest` path as the footer); drag past ~6px → relocate. A drag cancels an armed hold so moving never records. While listening, the interim transcript shows as a caption beside the orb.
+- **Dock + persistence:** on drop the X position snaps to the nearest side edge; position is stored as viewport fractions (`companionOrbPos`) and resolved to pixels at render so it survives window resizes and restarts. A hover-revealed `×` dismisses the orb (→ `collapsed`).
+- **Footer + panel wiring:** when the orb is enabled (`companionOrbEnabled`, default on, toggled in Companion → Setup → "Floating avatar"), the footer button summons/hides the orb (`minimized ↔ collapsed`) and the chat panel's close button returns to the orb instead of vanishing. `AthenaOrbLayer` promotes a dormant (`collapsed`) Athena to `minimized` once on mount so the presence is there from launch. With the orb disabled, the footer keeps its classic open/collapse behavior.
+
+**Polish (Step 2b).** Opening from the orb morphs the panel out of the orb's position (it flies + scales from the orb's recorded center, anchored to the panel's bottom-left corner, and collapses back on close). A global **Cmd/Ctrl+Shift+A** summons Athena and starts a voice turn (press again to send, **Esc** to cancel — the shared `useHoldToTalk` instance lives in `AthenaOrbLayer` so the orb and the keyboard drive one session). All of it honors `prefers-reduced-motion`.
+
+**Audio-reactive glow.** While Athena speaks, a bloom behind the orb pulses with her actual voice level. `voicePlayback.play()` routes every TTS `<audio>` through a single shared `AnalyserNode` (`audioLevel.ts`); the orb subscribes via `subscribeAudioLevel` and drives the glow's opacity + scale imperatively in a `rAF` callback (no per-frame React re-renders). The tap is best-effort — if Web Audio is unavailable it silently degrades and playback is unaffected. Under `prefers-reduced-motion` the glow is a static bloom (no subscription).
 
 ## Athena desktop-aware lineage
 
@@ -42,9 +65,10 @@ Events:
 
 - `companion://approvals`: newly created approval rows.
 - `companion://navigate`: direct route switch requested by Athena. The route `monitor` is a pseudo-route — it opens the full-screen [Persona Monitor](../monitor.md) overlay instead of switching a sidebar section. Athena fires it (after a short spoken/written summary) when the user asks for a fleet overview.
-- `companion://stream`: streaming turn output from the backend.
+- `companion://stream`: streaming turn output from the backend. With `--include-partial-messages` (see "Token-level streaming" below) it carries `stream_event` lines with `text_delta` chunks so the reply renders token-by-token.
 - `companion://recall-preview`: per-turn rollup of what the brain pulled into the system prompt (counts + titles per memory kind).
 - `companion://turn-summary`: per-turn rollup of dispatcher side-effects keyed by assistant episode id (approvals / navigations / lab opens / dashboards / cockpits / chat cards / continuation flag).
+- `companion://job`: background-job status transitions (queued → running → terminal). In-flight emits may carry a transient `progressText` so a running job reports what it's doing.
 
 Approval outcomes may include a client-side action such as `{ type: "navigate", route }`.
 
@@ -54,13 +78,19 @@ Each turn, after the prompt builder runs but before the CLI spawns, the backend 
 
 The panel renders this as a thin `RecallStrip` collapsed above each assistant bubble: a single-line summary ("Athena replayed 5 recent turns and consulted 12 memories") that expands on click to show the actual titles grouped by kind. The strip persists on the bubble for the rest of the session; an app restart drops the strip (recall is ephemeral working memory).
 
-Stage 1 of 2 — chips are read-only. Stage 2 will wire each chip to open the Brain Viewer scoped to that entry.
+Stage 2 wired: each chip is a button that calls `setBrainView({ open: true, kind, id })` to open the Brain Viewer as an overlay over the chat transcript, jumped straight to the detail view for that memory. Group→kind mapping matches the backend's parent kinds (`doctrine`, `fact`, `procedural`, `goal`, `backlog`) — `companion_get_brain_item` dispatches `fact` / `procedural` / `goal` / `backlog` to the scoped fetchers so the parent-kind lookup resolves whichever scoped variant owns the id. Closes the loop from "what did Athena consult this turn" to "what's actually in that memory."
+
+**Detail-view linked memories.** Inside the BrainViewer's DetailView, the rendered markdown is also scanned for memory-id tokens (`goal_xyz`, `procedural_abc`, `design_decision_def`, etc. — see `parseBrainLinks.ts` for the full kind list). Each unique reference becomes a small chip in a "Linked memories" strip below the content (via the shared `BrainLinksStrip` component); click → opens that memory's DetailView in place. Lets the user traverse the brain as a graph instead of a flat list. Orchestration tokens (`op_xxxx`, `sess_yyyy`) are intentionally excluded — they don't have a BrainViewer destination.
+
+**Chat-bubble linked memories.** The same scan runs against the body of every completed assistant bubble — when Athena's reply mentions one or more brain ids, a tighter `inline`-variant chip strip renders directly below the bubble with the same click → setBrainView wiring. Skipped during streaming (partial text would make the chip set flicker as tokens come and go mid-reply). The chat is where Athena names memories most often, so this closes the graph-traversal loop where it pays off most.
 
 ## Turn-summary chip
 
 Below each assistant bubble, a tiny caption-sized chip (`TurnSummaryChip`) surfaces what Athena's reply *did* — distinct from what she *said*. The chip aggregates dispatcher outputs from the same turn (pending approvals, direct navigations, lab tab opens, dashboard / cockpit auto-fires, inline chat-cards) plus a flag for `continue_autonomously`. Total-zero turns render nothing.
 
 Source: the backend emits one `companion://turn-summary` event per turn after the dispatcher block, already keyed by the persisted `assistant_episode_id` so the panel can attach the chip to the right bubble without correlating turn ids. Same session-scoped persistence model as the recall preview — lost on app restart.
+
+The clickable parts — `approval`, `card`, `composed dashboard`, `composed cockpit` — are buttons that jump to the corresponding surface: `approval`/`card` smooth-scroll the panel to the approvals or chat-cards container; both `dashboard` and `cockpit` navigate to home → cockpit. (The dedicated companion **Dashboard tab was retired** — Cockpit is the dynamic dashboard surface now, so a `compose_dashboard` auto-fire and its turn-summary chip both route to Cockpit.) Parts without a meaningful destination — `navigated` (already happened), `lab` (no agent id carried in the event), `continuation` (informational) — stay as captions.
 
 ## Connector-call live status cards
 
@@ -69,11 +99,21 @@ Athena's `use_connector` op auto-fires (no approval, by design — see `src-taur
 Previously the user only saw the result as a system episode after Athena ingested it on her next turn. Now the panel subscribes to the `companion://job` event channel and renders an inline `ConnectorCallCard` per in-flight or terminal `connector_use` job, pinned under the assistant bubble that produced it:
 
 - **queued** — hourglass + neutral border
-- **running** — spinning loader + blue border
+- **running** — spinning loader + blue border; shows the job's live `progressText` ("Calling Sentry…") when present, falling back to the static in-flight hint
 - **completed** — check + green border, result-markdown collapsed until click
-- **failed** — alert + rose border, error text collapsed until click
+- **failed** — alert + rose border, error text collapsed until click; surfaces a `Retry` button (Cycle 5) that re-enqueues the same paramsJson via `companion_enqueue_job`. The retried job's live status (queued → running → completed / failed) renders inline below the original failed card, subscribed via the global `jobsById` map so the user doesn't have to scroll the panel hunting for the new card (Cycle 10).
+
+The running handler reports intermediate progress through a `JobProgress` reporter (`src-tauri/src/companion/jobs/mod.rs`) that re-emits the job row with a transient `progressText` on the same `companion://job` channel — event-only, never persisted, so the terminal emit clears it. `connector_use` reports "Calling {service}…" before the HTTP call; `scan_codebase` reports "Scanned N files…" every 2,000 walked entries.
 
 Cards correlate to turns via the same pending → episode-id promotion the recall strip uses (jobs queued during streaming live in `pendingConnectorJobIds`; at the `finished` stream event they move into `connectorJobIdsByEpisodeId[assistantEpisodeId]`). No new IPC — the existing `companion://job` event channel carries everything the card needs.
+
+## Token-level streaming & the operational thread
+
+Two surfaces keep a long or autonomous turn from going silent between the user's message and the final reply.
+
+**Token-level streaming.** Athena's CLI spawn (`src-tauri/src/companion/session.rs`) passes `--include-partial-messages`, so the CLI emits `stream_event` lines with `content_block_delta` / `text_delta` chunks ahead of the whole `assistant` message. The panel extracts those deltas (`extractAssistantTextDelta`), appends them to the streaming bubble coalesced once per animation frame, and skips the duplicate trailing whole-message text once deltas have streamed. The reply now flows in token-by-token instead of appearing in whole-message jumps. The change is additive: on a CLI that doesn't emit partial messages the panel falls back to the whole-message path unchanged, and the backend's whole-message accumulation (which drives the persisted episode) is untouched.
+
+**Operational thread (live plan).** When Athena calls TodoWrite during a turn, the panel parses the full checklist (`operationalSteps.extractTodoWrite`, latest call wins) and renders it inline under the bubble as an `OperationalThread` — each step shown as pending / in-progress / completed, updating in place. It uses the same `streamingSteps → stepsByEpisodeId` promote-on-`finished` model as the recall strip and connector cards, so the plan pins under the in-flight bubble while running and under the completed bubble afterward. Session-scoped; dropped on app restart.
 
 ## Athena-scheduled proactive check-ins (`schedule_proactive`)
 
@@ -88,6 +128,18 @@ Wire:
 - UI: the existing `ProactiveCard` renders the message — a sky-blue accent + "scheduled by Athena" label disambiguates the kind. Engage / Dismiss work identically.
 
 Why approval-gated when `use_connector` isn't: a scheduled check-in puts a future obligation on the user's attention. Unlike connector calls (which run on pre-greenlit pinned credentials), the consent isn't already present — Athena's "I'll ping you about X in 3 days" needs the user to actually agree before the row lands.
+
+## MCP request panel (D3 — batched approvals)
+
+Pending MCP requests from fleet sessions land in `McpRequestPanel` above the chat transcript: one card per request, with guidance prompts taking text input and approvals taking ✓/✗ + an optional note. The panel groups by `fleetSessionId` so cards from the same session render together — and when a single session has 2+ pending `approval`-kind requests, the group header renders a primary "Approve all" button that fires `resolveMcpRequest(_, { approved: true, note: '' })` for every approval in that group in parallel (`Promise.allSettled` so one failure doesn't stall the rest). Guidance requests are never batched — they need typed answers.
+
+Common case the batch unblocks: a fleet session pauses on 3-5 file-writes / shell commands / API calls in a row. Without batching, the user clicks Approve five times; with batching, one click clears the queue and the session resumes.
+
+## Live ops strip (D7 — operative-memory view)
+
+When orchestration is in flight, the strip above the chat transcript surfaces the same operative-memory digest Athena reads every turn. The frontend now parses the backend's markdown digest into structured rows (`parseDigest.ts`) and renders each in-flight operation as its own collapsible card: status badge, intent, duration, id, and a sessions count. Click an op → expand its sessions; each session shows its state, current tool, intent, latest checkpoint (with blockers if present), files touched, recent failure, and rolling summary — the same fields Athena sees, but navigable instead of one monospace blob.
+
+Defensive: if the parser produces zero ops while the digest is non-empty (i.e. the Rust-side `OperativeMemory::digest_for_prompt` format drifts), the strip falls back to the original `<pre>` block so power users still see the raw view Athena consumes.
 
 ## Persona-design doctrine
 
@@ -176,6 +228,8 @@ Retrieval surface: `companion_list_design_decisions(personaContext?, limit?)` Ta
 
 The Companion plugin page exposes a new **Decisions** sub-tab (`sub_decisions/DecisionsPanel.tsx`) that lists every saved decision grouped by `persona_context`, with a filter input that server-side scopes the query. Rows are immutable in the UI — to "correct" a decision the user asks Athena to re-emit a `show_decision_log` with the updated entry; the original stays put.
 
+**Auto-scope to active build intent.** When the user is mid-build, `UnifiedBuildEntry` mirrors the intent textarea into the system store's `activeBuildIntent` slot. On first mount, the Decisions panel snapshots that slot and pre-fills its filter with it — and renders a fuchsia "Currently designing: …" banner above the filter input with a "Show all" affordance that clears the filter and the slice. Clears automatically on successful build launch (the slot resets to null in `handleLaunch`'s success branch). State is not persisted (session-scoped UI affordance — surprising to resume across app restarts).
+
 ## `show_persona_ready` chat-card — design → build closer
 
 The end-of-design recap. Athena emits `show_persona_ready { intent, summary, recommended_action }` after she's worked the user through the design decomposition (walkthrough → use_cases → triggers → tier → observability) and there's enough decided to commit.
@@ -202,15 +256,31 @@ Lighter cousin of `show_decision_log`. Athena emits `show_recent_decisions { per
 
 Constitution bumped to v18. With this, Athena has two complementary surfaces for recalling design decisions: heavy (`show_decision_log` for a deliberate audit-trail render) and light (`show_recent_decisions` for a glanceable "by the way…" reminder).
 
+## Slash-command palette
+
+Typing `/` as the first character of an empty draft opens a small popover above the composer with a set of preset prompts (`SlashPalette.tsx`): show goals, what's queued, recent decisions, live ops, memory recap, capabilities. Subsequent keystrokes filter the list by case-insensitive substring on label or key; ↑/↓ navigate; Enter picks; Esc clears the draft and closes. Click works the same as Enter. Preset messages are i18n'd so non-English users get prompts in their own locale — Athena handles all 14 supported languages in chat.
+
+The Send button stays disabled while the palette is open so typing `/` then Enter goes through the palette path (pick the active preset) instead of submitting the literal `/` as a chat message.
+
 ## Refine chips
 
 Below the latest completed assistant bubble only, `RefineChips` renders three small affordances — **Shorter**, **More detail**, **Code only** — that resend the prior user message with a localized steering suffix appended ("— much shorter, please.", "— go deeper, with examples.", "— code only, minimal prose."). Click feeds the modified prompt through the same `send()` path used by the composer, so the optimistic-bubble / streaming / TTS pipeline kicks in identically. Disabled while streaming or improving. Older bubbles in scrollback don't render chips — refining a mid-scrollback turn is a different, higher-effort UI that needs to model "which user message do I resend?" carefully.
+
+## On-demand read-aloud (per assistant bubble)
+
+When voice is configured for the user's chosen engine (ElevenLabs needs credential + voice id; Piper needs a piper voice id), a small `BubbleReadAloud` button renders below the latest completed assistant bubble. Click → synthesizes the message via the existing `companion_tts` IPC, plays through a transient `<audio>` element, swaps to a "Stop" affordance during playback, and reverts to idle on end so the user can replay. Independent of the main TTS pipeline (which fires automatically when `voiceEnabled` is on) — this is for the "I didn't have voice on, but I want to hear what Athena just said" path. Skipped when no engine is configured to avoid hitting the backend just to surface an error.
 
 ## Voice
 
 Voice playback dispatches to one of two engines, picked by the user in the Voice tab's engine selector. The slice persists `companionVoiceEngine: 'elevenlabs' | 'piper'`; per-engine identity (credential, voice id) lives in dedicated slice fields so switching engines doesn't clobber the other side's last selection.
 
 Backend code lives under `src-tauri/src/companion/tts/` with one submodule per engine; `commands/companion/voice.rs` is a thin dispatcher that validates input (text length, voice-id format) and routes to the right impl.
+
+**Chat streaming.** The streaming bubble no longer renders the raw token-by-token text (it reflowed and leaked machine grammar). During a turn it shows a single status line plus the `OperationalThread` checklist; the full prose reply lands in one piece when the turn finishes. The status line is **event-driven** (`extractStreamPhase`): it names the real tool with its input detail ("Searching the web · climate data", "Reading files · runner.rs"), shows "Reviewing result…" on tool returns, and "Composing reply…" while the answer generates, falling back to "Thinking…". When voice is active, a short spoken **ack** (~2.5s in) and **heartbeat** (~30s in) fill dead air and are cut off the moment the real reply plays. Athena can also narrate long turns with her own `PROGRESS:` beats — each completed beat shows in the bubble (outranking the derived phase) and is spoken live, suppressing the generic ack/heartbeat. This is all three variants (A + B + C) from [`conversation-orchestration.md`](./conversation-orchestration.md); the `PROGRESS:` grammar is taught in `prompt.rs` and stripped from the persisted reply by `dispatcher.rs`.
+
+**Voice controls popover.** The chat toolbar's audio button (`VoiceControlPopover`, shown when a voice engine is configured for either ElevenLabs or Piper) opens a popover with: enable/disable spoken summaries, a **volume** slider (`companionVoiceVolume`, default 0.5, applied to every TTS `<audio>` in `voicePlayback.play()` — and **live**: `play()` subscribes to the store so dragging the slider changes Athena mid-sentence; the same slider is mirrored in the Voice tab's engine card), and a **Test voice** button that synthesizes + plays a sample sentence so the user can hear the current engine/voice/volume on demand.
+
+**Settings UX.** All Voice/Setup section headers use a themed (`text-primary`) `SectionCard` title and every dropdown uses the shared `ThemedSelect` (theme-aware) rather than a raw `<select>`. When an ElevenLabs credential scopes resources, both the **voice** and **model** dropdowns populate from the scope — the model dropdown narrows the curated allowlist to the scoped subset (and prefers the scope's live label). Default tuning is Stability 0.70 / Similarity 0.70 / Style 0.05 (`companionPluginSlice` defaults; speed + model inherit the engine default). Speech-to-text setup lives in the same tab via `SttPanel`.
 
 ### ElevenLabs (cloud)
 
@@ -231,6 +301,17 @@ Synthesis spawns piper with `--model voice.onnx --config voice.onnx.json --outpu
 ### Language coverage UX
 
 The Piper voice browser groups voices by BCP-47 language. The user's current app locale is matched against voice prefixes (`en` matches `en-US` / `en-GB`, `cs` matches `cs-CZ`); matching groups are promoted to the top with a "Your language" badge. When no Piper voice covers the user's locale, the panel surfaces a fallback callout pointing them at ElevenLabs.
+
+## Voice input (speech-to-text)
+
+Athena's hold-to-talk (footer + orb) routes through `useSpeechInput`, which picks the engine from `companionSttEngine`:
+
+- **`browser`** (default) — the Web Speech API in the renderer (`useDictation`). Zero setup, but on WebView2 the audio is forwarded to the OS vendor's cloud STT (disclosed in the Voice tab).
+- **`whisper`** — on-device transcription via a sidecar `whisper-cli` binary (`useLocalDictation`). The mic is captured through an `AudioContext` pinned to 16 kHz mono, encoded as a WAV in the renderer, and sent to `companion_stt_transcribe` — audio never leaves the machine. It's batch (no live interim), so `listening` stays true through the transcription round-trip to preserve the hold-to-talk contract.
+
+Backend lives under `src-tauri/src/companion/stt/` mirroring the Piper TTS layout: `whisper.rs` (sidecar lookup `PERSONAS_WHISPER_BIN` → `~/.personas/companion-stt/bin/` → PATH; spawns `whisper-cli -m model -f wav -nt -np [-l lang]`), `catalog.rs` (curated ggml model allowlist), `downloader.rs` (atomic `.partial` download from `ggerganov/whisper.cpp`, progress on `companion://stt-download`). Commands: `companion_stt_transcribe`, `companion_stt_list_models`, `companion_stt_download_model`, `companion_stt_delete_model`, `companion_stt_engine_status`. The Voice tab's `SttPanel` exposes the engine selector, install status, and model browser. **Two preconditions for the local engine** (same UX as Piper TTS): a `whisper-cli` binary at `~/.personas/companion-stt/bin/`, and a downloaded model.
+
+**Why subprocess (same rationale as Piper):** users can swap newer whisper.cpp builds without recompiling, and the engine's ggml/BLAS stack stays in its own process.
 
 ## Self-improve loop
 

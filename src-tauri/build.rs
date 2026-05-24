@@ -1,4 +1,25 @@
 fn main() {
+    // ts-rs export-dir contract. The `[env]` table in `.cargo/config.toml`
+    // sets `TS_RS_EXPORT_DIR` for cargo and most subprocesses, but in
+    // practice the proc-macro expansion path (which is what reads this var
+    // to decide where `#[ts(export)]` writes bindings) does NOT reliably
+    // inherit it — the dual-tree drift (`src-tauri/bindings/` AND
+    // `src/lib/bindings/`) documented in earlier session notes traces back
+    // to that. Passing the value via `cargo:rustc-env` here writes it
+    // directly into rustc's compile-time env for THIS crate, which the
+    // ts-rs derive's `env::var` call DOES see. Result: every
+    // `cargo test export_bindings` (or any rebuild that touches a `#[ts(
+    // export)]` type) writes a single source of truth at
+    // `src/lib/bindings/`.
+    //
+    // The path is resolved at build-script run time against the manifest
+    // dir (= `src-tauri/`), so `../src/lib/bindings` lands on repo-root
+    // `src/lib/bindings/`. We also emit a rerun-if-env-changed so a user
+    // who overrides the env (e.g. for a one-off test) gets the build.rs
+    // re-evaluated on the next compile.
+    println!("cargo:rustc-env=TS_RS_EXPORT_DIR=../src/lib/bindings");
+    println!("cargo:rerun-if-env-changed=TS_RS_EXPORT_DIR");
+
     // Load .env and forward selected variables to rustc so that
     // `option_env!("SUPABASE_URL")` etc. resolve at compile time.
     // This embeds credentials into the binary for production installs.

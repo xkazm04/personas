@@ -200,11 +200,11 @@ mod tests {
                 color: None,
                 sort_order: None,
                 collapsed: Some(true),
-                description: Some("Updated workspace".into()),
-                default_model_profile: Some(r#"{"model":"claude-sonnet-4-20250514"}"#.into()),
-                default_max_budget_usd: Some(2.5),
-                default_max_turns: Some(15),
-                shared_instructions: Some("Always be concise.".into()),
+                description: Some(Some("Updated workspace".into())),
+                default_model_profile: Some(Some(r#"{"model":"claude-sonnet-4-20250514"}"#.into())),
+                default_max_budget_usd: Some(Some(2.5)),
+                default_max_turns: Some(Some(15)),
+                shared_instructions: Some(Some("Always be concise.".into())),
             },
         )
         .unwrap();

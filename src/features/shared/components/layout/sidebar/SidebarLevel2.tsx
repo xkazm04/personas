@@ -224,7 +224,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
           items={settingsItems}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
-          devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'admin']) : undefined}
+          devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'history', 'admin']) : undefined}
           accents={SETTINGS_ICON_ACCENTS}
         />
       );

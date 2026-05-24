@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
@@ -16,6 +17,7 @@ import {
   type CompanionVoiceModel,
 } from '@/stores/slices/system/companionPluginSlice';
 import PiperVoicePanel from './PiperVoicePanel';
+import SttPanel from './SttPanel';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -32,6 +34,7 @@ export default function VoicePanel() {
     <div className="space-y-4 max-w-2xl">
       <EngineSelectorCard />
       {engine === 'piper' ? <PiperVoicePanel /> : <ElevenLabsVoicePanel />}
+      <SttPanel />
     </div>
   );
 }
@@ -42,6 +45,8 @@ function EngineSelectorCard() {
   const setEngine = useSystemStore((s) => s.setCompanionVoiceEngine);
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const setVoiceEnabled = useSystemStore((s) => s.setCompanionVoiceEnabled);
+  const volume = useSystemStore((s) => s.companionVoiceVolume);
+  const setVolume = useSystemStore((s) => s.setCompanionVoiceVolume);
 
   // Switching engines invalidates the playback gate — disable until the
   // new engine reports it's configured. Avoids a state where the toggle
@@ -56,6 +61,7 @@ function EngineSelectorCard() {
     <SectionCard
       title={t.plugins.companion.voice_engine_title}
       subtitle={t.plugins.companion.voice_engine_desc}
+      titleClassName="text-primary"
     >
       <div className="grid grid-cols-2 gap-2 px-1 py-2">
         <EngineButton
@@ -71,6 +77,27 @@ function EngineSelectorCard() {
           icon={<HardDrive className="w-4 h-4" />}
           label={t.plugins.companion.voice_engine_piper}
           caption={t.plugins.companion.voice_engine_piper_caption}
+        />
+      </div>
+
+      {/* Playback volume — engine-agnostic; mirrors the chat toolbar's
+          voice popover (both bind `companionVoiceVolume`). */}
+      <div className="px-1 pt-1 pb-2 space-y-1.5">
+        <div className="flex items-center justify-between">
+          <label className="typo-caption text-foreground font-medium">
+            {t.plugins.companion.voice_volume_label}
+          </label>
+          <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
+        </div>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={volume}
+          onChange={(e) => setVolume(Number(e.target.value))}
+          className="w-full accent-primary"
+          aria-label={t.plugins.companion.voice_volume_label}
         />
       </div>
     </SectionCard>
@@ -195,6 +222,14 @@ function ElevenLabsVoicePanel() {
     return picks as ResourceItem[];
   }, [selectedCred]);
 
+  // Models pinned by the scope picker, if any — drives the model dropdown
+  // in VoiceSettingsCard so it reflects what the user scoped (voice already
+  // did; the model didn't).
+  const scopedModels = useMemo<ResourceItem[]>(() => {
+    const picks = selectedCred?.scopedResources?.models ?? [];
+    return picks as ResourceItem[];
+  }, [selectedCred]);
+
   const hasScope = scopedVoices.length > 0;
 
   // Live-list voices when there's no scope (or when the user refreshes).
@@ -267,6 +302,7 @@ function ElevenLabsVoicePanel() {
         <SectionCard
           title={t.plugins.companion.voice_title}
           subtitle={t.plugins.companion.voice_subtitle}
+          titleClassName="text-primary"
         >
           <div className="px-1 py-3 space-y-3">
             <div className="rounded-card border border-amber-500/30 bg-amber-500/5 p-4">
@@ -303,13 +339,14 @@ function ElevenLabsVoicePanel() {
       <SectionCard
         title={t.plugins.companion.voice_credential_title}
         subtitle={t.plugins.companion.voice_credential_desc}
+        titleClassName="text-primary"
       >
         <div className="px-1 py-2 space-y-3">
           {elevenlabsCreds.length > 1 ? (
-            <select
+            <ThemedSelect
               value={credentialId ?? ''}
-              onChange={(e) => {
-                setCredentialId(e.target.value || null);
+              onValueChange={(v) => {
+                setCredentialId(v || null);
                 // Reset the voice selection when the cred changes — the new
                 // cred has a different scope (or none) and a different
                 // voice library, so the previously picked id rarely
@@ -318,7 +355,6 @@ function ElevenLabsVoicePanel() {
                 setVoiceId(null);
                 setShowCustomId(false);
               }}
-              className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-body focus-ring"
               aria-label={t.plugins.companion.voice_credential_picker_label}
             >
               <option value="">
@@ -329,7 +365,7 @@ function ElevenLabsVoicePanel() {
                   {c.name}
                 </option>
               ))}
-            </select>
+            </ThemedSelect>
           ) : (
             <div className="flex items-center gap-2 px-3 py-2 rounded-input bg-secondary/40 border border-foreground/10 typo-body">
               <KeyRound className="w-3.5 h-3.5 text-foreground" />
@@ -356,6 +392,7 @@ function ElevenLabsVoicePanel() {
       <SectionCard
         title={t.plugins.companion.voice_pick_title}
         subtitle={t.plugins.companion.voice_pick_desc}
+        titleClassName="text-primary"
       >
         <div className="px-1 py-2 space-y-2">
           {!credentialId ? (
@@ -365,14 +402,14 @@ function ElevenLabsVoicePanel() {
           ) : (
             <>
               <div className="flex items-center gap-2">
-                <select
+                <ThemedSelect
+                  wrapperClassName="flex-1"
                   value={
                     voiceId && pickerVoices.some((v) => v.id === voiceId)
                       ? voiceId
                       : ''
                   }
-                  onChange={(e) => setVoiceId(e.target.value || null)}
-                  className="flex-1 bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-body focus-ring disabled:opacity-50"
+                  onValueChange={(v) => setVoiceId(v || null)}
                   disabled={voicesLoading || pickerVoices.length === 0}
                   aria-label={t.plugins.companion.voice_pick_title}
                 >
@@ -389,7 +426,7 @@ function ElevenLabsVoicePanel() {
                       {v.sublabel ? ` — ${v.sublabel}` : ''}
                     </option>
                   ))}
-                </select>
+                </ThemedSelect>
                 {!hasScope && (
                   <button
                     onClick={() => fetchLiveVoices(true)}
@@ -446,11 +483,12 @@ function ElevenLabsVoicePanel() {
         </div>
       </SectionCard>
 
-      <VoiceSettingsCard />
+      <VoiceSettingsCard scopedModels={scopedModels} />
 
       <SectionCard
         title={t.plugins.companion.voice_enable_title}
         subtitle={t.plugins.companion.voice_enable_desc}
+        titleClassName="text-primary"
       >
         <div className="flex items-start gap-3 px-1 py-2">
           <Mic
@@ -488,7 +526,7 @@ function ElevenLabsVoicePanel() {
  * default" so a fresh install (or a user who hits Reset) sends the
  * smallest possible payload.
  */
-function VoiceSettingsCard() {
+function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
   const { t } = useTranslation();
 
   const model = useSystemStore((s) => s.companionVoiceModel);
@@ -513,10 +551,20 @@ function VoiceSettingsCard() {
     eleven_v3: t.plugins.companion.voice_settings_model_v3,
   };
 
+  // When the credential scopes models, narrow the dropdown to that subset of
+  // the curated allowlist (and prefer the scope's live label). Falls back to
+  // the full curated list when nothing's scoped or the scope is all
+  // off-allowlist ids. Keeps the value type-safe (CompanionVoiceModel).
+  const scopeLabelById = new Map(scopedModels.map((m) => [m.id, m.label] as const));
+  const scopedIds = new Set(scopedModels.map((m) => m.id));
+  const scopedSubset = COMPANION_VOICE_MODELS.filter((m) => scopedIds.has(m));
+  const modelOptions = scopedSubset.length > 0 ? scopedSubset : COMPANION_VOICE_MODELS;
+
   return (
     <SectionCard
       title={t.plugins.companion.voice_settings_title}
       subtitle={t.plugins.companion.voice_settings_desc}
+      titleClassName="text-primary"
     >
       <div className="px-1 py-2 space-y-4">
         {/* Model dropdown */}
@@ -524,21 +572,20 @@ function VoiceSettingsCard() {
           <label className="typo-caption text-foreground font-medium">
             {t.plugins.companion.voice_settings_model_label}
           </label>
-          <select
+          <ThemedSelect
             value={model ?? ''}
-            onChange={(e) =>
-              setModel(e.target.value === '' ? null : (e.target.value as CompanionVoiceModel))
+            onValueChange={(v) =>
+              setModel(v === '' ? null : (v as CompanionVoiceModel))
             }
-            className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-body focus-ring"
             aria-label={t.plugins.companion.voice_settings_model_label}
           >
             <option value="">{t.plugins.companion.voice_settings_default}</option>
-            {COMPANION_VOICE_MODELS.map((m) => (
+            {modelOptions.map((m) => (
               <option key={m} value={m}>
-                {modelLabel[m]}
+                {scopeLabelById.get(m) ?? modelLabel[m]}
               </option>
             ))}
-          </select>
+          </ThemedSelect>
           <p className="typo-caption text-foreground">
             {t.plugins.companion.voice_settings_model_hint}
           </p>

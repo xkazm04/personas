@@ -980,6 +980,34 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created credential_audit_log table");
     }
 
+    // -- Settings Audit Log (append-only mutation trail per settings sub-module)
+    let has_settings_audit_log: bool = conn
+        .prepare(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='settings_audit_log'",
+        )?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_settings_audit_log {
+        ddl_step(
+            conn,
+            "CREATE TABLE IF NOT EXISTS settings_audit_log (
+                id            TEXT PRIMARY KEY,
+                category      TEXT NOT NULL,
+                setting_key   TEXT NOT NULL,
+                action        TEXT NOT NULL,
+                before_value  TEXT,
+                after_value   TEXT,
+                actor         TEXT,
+                created_at    TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_sal_category ON settings_audit_log(category);
+            CREATE INDEX IF NOT EXISTS idx_sal_created  ON settings_audit_log(created_at DESC);",
+        )?;
+        tracing::info!("Created settings_audit_log table");
+    }
+
     // -- Tool Execution Audit Log (append-only) --------------------------
     let has_tool_audit_log: bool = conn
         .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='tool_execution_audit_log'")?
@@ -2747,6 +2775,132 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Group-scoped shared memory (PersonaGroup productionization, 2026-05-22).
+    // Mirrors the use_case_id pattern from Phase C5: nullable column, no FK
+    // by design — see MEMORY CONTRACT (5) in db/models/memory.rs. Stage 1
+    // ships the schema; Stage 2 will OR-in group_id matches in the injection
+    // hot path so memories authored in group context are shared with every
+    // group member's prompt.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories_group_id",
+            description: "Add group_id column to persona_memories for group-scoped sharing",
+            already_applied: |conn| has_column(conn, "persona_memories", "group_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN group_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_pm_group_id ON persona_memories(group_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Dev-tools project ↔ PersonaTeam binding (2026-05-22). Lets developers
+    // bind a dev_projects row to a PersonaTeam (pipeline) so the project
+    // surface in ProjectManagerPage shows the bound pipeline inline. No FK
+    // by design — the same orphan-tolerance rationale as use_case_id.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_projects_team_id",
+            description: "Add team_id column to dev_projects for pipeline binding",
+            already_applied: |conn| has_column(conn, "dev_projects", "team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_projects ADD COLUMN team_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_dev_projects_team_id ON dev_projects(team_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Dev-tools project ↔ PersonaGroup binding (2026-05-22). Complementary
+    // to team_id: team_id is the execution-time pipeline, group_id is the
+    // design-time workspace folder. Both can be set independently. Same
+    // orphan-tolerance policy.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_projects_group_id",
+            description: "Add group_id column to dev_projects for workspace binding",
+            already_applied: |conn| has_column(conn, "dev_projects", "group_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE dev_projects ADD COLUMN group_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_dev_projects_group_id ON dev_projects(group_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Groups → Teams consolidation (ADR 2026-05-23-groups-into-teams),
+    // Phase 1 — additive only. A PersonaTeam gains a "workspace" facet
+    // (shared instructions + new-persona defaults, ported from
+    // PersonaGroup), and a persona gains a single nullable home_team_id
+    // = the team whose workspace settings + injected memory apply at
+    // runtime (resolves the 1:N group vs N:M team cardinality). Injected
+    // memory re-anchors via persona_memories.home_team_id. Nothing is
+    // migrated or dropped here — the group_id columns stay intact.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_teams_workspace_fields",
+            description: "Add workspace settings (shared_instructions + defaults) to persona_teams",
+            already_applied: |conn| has_column(conn, "persona_teams", "shared_instructions"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_teams ADD COLUMN shared_instructions TEXT;
+                     ALTER TABLE persona_teams ADD COLUMN default_model_profile TEXT;
+                     ALTER TABLE persona_teams ADD COLUMN default_max_budget_usd REAL;
+                     ALTER TABLE persona_teams ADD COLUMN default_max_turns INTEGER;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas_home_team_id",
+            description: "Add home_team_id to personas (workspace anchor for the Groups→Teams merge)",
+            already_applied: |conn| has_column(conn, "personas", "home_team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN home_team_id TEXT REFERENCES persona_teams(id) ON DELETE SET NULL;
+                     CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_memories_home_team_id",
+            description: "Add home_team_id to persona_memories (injected-memory scope re-anchor)",
+            already_applied: |conn| has_column(conn, "persona_memories", "home_team_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_memories ADD COLUMN home_team_id TEXT;
+                     CREATE INDEX IF NOT EXISTS idx_persona_memories_home_team_id ON persona_memories(home_team_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -3320,6 +3474,111 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // is rebuilt independently and idempotently.
     // ADR: 2026-05-02-fk-hygiene-cascade.
     super::fk_hygiene::run(conn)?;
+
+    // -- Team assignments (Phase A orchestration) --------------------------------
+    // Goal-driven workflows on top of PersonaTeams. An assignment is a top-level
+    // goal; steps form a DAG (depends_on JSON array of step ids). The
+    // team_assignment_orchestrator engine module walks the DAG, kicks off
+    // persona executions, and surfaces failures through the existing
+    // notification center for human review. Capabilities resolve to existing
+    // DesignUseCase[] on persona.design_context — no capability_tags column.
+    //
+    // Phase A: manual matching only (user picks persona at composer time).
+    // Phase B will add embedding + llm_eval strategies.
+    // Phase C will populate companion_op_id from Athena dispatcher.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignments (
+            id                  TEXT PRIMARY KEY,
+            team_id             TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            title               TEXT NOT NULL,
+            goal                TEXT NOT NULL,
+            status              TEXT NOT NULL DEFAULT 'queued'
+                                CHECK(status IN ('queued','running','awaiting_review','done','failed','aborted')),
+            match_strategy      TEXT NOT NULL DEFAULT 'manual'
+                                CHECK(match_strategy IN ('manual','embedding','llm_eval')),
+            max_parallel_steps  INTEGER NOT NULL DEFAULT 3,
+            source              TEXT NOT NULL DEFAULT 'team_ui'
+                                CHECK(source IN ('team_ui','athena','api')),
+            companion_op_id     TEXT,
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            started_at          TEXT,
+            completed_at        TEXT,
+            error_message       TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignments_team
+            ON team_assignments(team_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_team_assignments_status
+            ON team_assignments(status) WHERE status IN ('queued','running','awaiting_review');",
+    )?;
+
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignment_steps (
+            id                    TEXT PRIMARY KEY,
+            assignment_id         TEXT NOT NULL REFERENCES team_assignments(id) ON DELETE CASCADE,
+            step_order            INTEGER NOT NULL,
+            title                 TEXT NOT NULL,
+            description           TEXT,
+            status                TEXT NOT NULL DEFAULT 'pending'
+                                  CHECK(status IN ('pending','matching','running','awaiting_review','done','skipped','failed')),
+            assigned_persona_id   TEXT REFERENCES personas(id) ON DELETE SET NULL,
+            assigned_use_case_id  TEXT,
+            match_confidence      REAL,
+            match_rationale       TEXT,
+            execution_id          TEXT REFERENCES persona_executions(id) ON DELETE SET NULL,
+            depends_on            TEXT,
+            output_summary        TEXT,
+            retry_count           INTEGER NOT NULL DEFAULT 0,
+            error_message         TEXT,
+            started_at            TEXT,
+            completed_at          TEXT,
+            UNIQUE(assignment_id, step_order)
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_steps_assignment
+            ON team_assignment_steps(assignment_id, step_order);
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_steps_status
+            ON team_assignment_steps(assignment_id, status);",
+    )?;
+
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignment_events (
+            id              TEXT PRIMARY KEY,
+            assignment_id   TEXT NOT NULL REFERENCES team_assignments(id) ON DELETE CASCADE,
+            step_id         TEXT REFERENCES team_assignment_steps(id) ON DELETE CASCADE,
+            kind            TEXT NOT NULL,
+            payload         TEXT,
+            created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_events_assignment
+            ON team_assignment_events(assignment_id, created_at);",
+    )?;
+
+    // -- Team assignment templates (Phase C4) ------------------------------------
+    // A saved, reusable assignment shape: title + goal + match strategy +
+    // parallelism + the full step list (stored as a JSON array of
+    // CreateTeamAssignmentStepInput). Instantiating a template clones it into
+    // a fresh team_assignments row. Scoped per team (FK CASCADE) so a deleted
+    // team takes its templates with it. No FK from instantiated assignments
+    // back to the template — a template is a stamp, not a parent.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_assignment_templates (
+            id                  TEXT PRIMARY KEY,
+            team_id             TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            title               TEXT NOT NULL,
+            goal                TEXT NOT NULL,
+            match_strategy      TEXT NOT NULL DEFAULT 'manual'
+                                CHECK(match_strategy IN ('manual','embedding','llm_eval')),
+            max_parallel_steps  INTEGER NOT NULL DEFAULT 3,
+            steps_json          TEXT NOT NULL DEFAULT '[]',
+            created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_team_assignment_templates_team
+            ON team_assignment_templates(team_id, updated_at DESC);",
+    )?;
 
     Ok(())
 }

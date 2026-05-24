@@ -19,7 +19,7 @@
 // The canvas grows to fit the longest persona name in the dataset
 // and is allowed to overflow the page — the page wrapper scrolls.
 
-import { memo, useMemo, useState, useCallback } from 'react';
+import { memo, useMemo, useRef, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Activity, ArrowRight, Clock, ExternalLink, Zap } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -28,9 +28,21 @@ import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { getTrustTier } from '@/lib/personas/personaThresholds';
 import { useTranslation } from '@/i18n/useTranslation';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { useToastStore } from '@/stores/toastStore';
+import { silentCatch } from '@/lib/silentCatch';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { DebtText } from '@/i18n/DebtText';
+
+/**
+ * Minimum cursor travel before we treat a node press as a drag (in CSS
+ * pixels). Below this, the press resolves as a click that opens the
+ * dossier; at or above this, the click is suppressed and pointerup
+ * resolves against `data-persona-drop-target` elements via
+ * elementFromPoint — the same chips the HTML5 drop targets use.
+ */
+const CONSTELLATION_DRAG_THRESHOLD_PX = 6;
 
 
 interface PersonaOverviewVariantConstellationProps {
@@ -241,6 +253,105 @@ export function PersonaOverviewVariantConstellation({
     setSelectedId((cur) => (cur === id ? null : id));
   }, []);
 
+  // -- Pointer-event drag (cycle 22) -----------------------------------
+  //
+  // SVG nodes don't participate in HTML5 DnD natively, so the constellation
+  // had to be excluded from cycle 16's coverage. This adds a synthetic
+  // drag using pointer capture: pointerdown records the start; pointermove
+  // checks whether we've crossed the threshold to commit to "drag"; pointerup
+  // either resolves a drop (if a `data-persona-drop-target` ancestor sits
+  // under the release point) or — if the press never exceeded the threshold —
+  // lets the trailing click event run normally to open the dossier.
+  const movePersonaToGroupAction = usePipelineStore((s) => s.movePersonaToGroup);
+  const groupsForToast = usePipelineStore((s) => s.groups);
+  const addToast = useToastStore((s) => s.addToast);
+  const dragStateRef = useRef<{
+    personaId: string;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
+  // True for one click cycle after a drag — suppresses the click that
+  // would otherwise fire on the same node and open its dossier.
+  const justDraggedRef = useRef(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+
+  const handleNodePointerDown = useCallback((id: string, e: React.PointerEvent) => {
+    dragStateRef.current = {
+      personaId: id,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+    };
+    (e.currentTarget as Element).setPointerCapture(e.pointerId);
+  }, []);
+
+  const handleNodePointerMove = useCallback((e: React.PointerEvent) => {
+    const state = dragStateRef.current;
+    if (!state) return;
+    if (state.moved) return;
+    const dx = e.clientX - state.startX;
+    const dy = e.clientY - state.startY;
+    if (Math.hypot(dx, dy) >= CONSTELLATION_DRAG_THRESHOLD_PX) {
+      state.moved = true;
+      setDraggingId(state.personaId);
+    }
+  }, []);
+
+  const handleNodePointerUp = useCallback((e: React.PointerEvent) => {
+    const state = dragStateRef.current;
+    dragStateRef.current = null;
+    if (!state) {
+      setDraggingId(null);
+      return;
+    }
+    try {
+      (e.currentTarget as Element).releasePointerCapture(e.pointerId);
+    } catch {
+      // Pointer wasn't captured (e.g. a programmatic invocation) — harmless.
+    }
+    if (!state.moved) {
+      setDraggingId(null);
+      return; // Let the trailing click fire normally to open the dossier.
+    }
+    setDraggingId(null);
+    justDraggedRef.current = true;
+    // Resolve drop target against the actual document. We hide-then-restore
+    // the dragging persona node from the hit test by toggling pointer-events
+    // is overkill — elementFromPoint walks the topmost element under the
+    // point, which is the rail chip (rendered above the SVG canvas in DOM
+    // order) as long as the user actually moved the cursor onto it.
+    const target = document.elementFromPoint(e.clientX, e.clientY) as Element | null;
+    const dropAttrEl = target?.closest('[data-persona-drop-target]');
+    const rawId = dropAttrEl?.getAttribute('data-persona-drop-target') ?? null;
+    if (!rawId) return;
+    const groupId = rawId === '__ungrouped__' ? null : rawId;
+    void (async () => {
+      try {
+        await movePersonaToGroupAction(state.personaId, groupId);
+        const persona = data.find((p) => p.id === state.personaId);
+        const groupName = groupId
+          ? groupsForToast.find((g) => g.id === groupId)?.name ?? ''
+          : t.agents.persona_groups_rail.ungrouped_label;
+        if (persona) {
+          addToast(
+            t.agents.persona_groups_rail.moved_toast
+              .replace('{persona}', persona.name)
+              .replace('{group}', groupName),
+            'success',
+          );
+        }
+      } catch (err) {
+        silentCatch('features/agents/components/allPersonas/PersonaOverviewVariantConstellation:drop')(err);
+      }
+    })();
+  }, [data, movePersonaToGroupAction, groupsForToast, addToast, t]);
+
+  const handleNodePointerCancel = useCallback(() => {
+    dragStateRef.current = null;
+    setDraggingId(null);
+  }, []);
+
   return (
     <div className="flex-1 flex min-h-0 overflow-hidden">
       {/* Constellation canvas — scrollable wrapper; SVG renders at fixed
@@ -341,10 +452,25 @@ export function PersonaOverviewVariantConstellation({
                 initial={{ opacity: 0, scale: 0.4 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: Math.min(index * 0.008, 0.5), duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                style={{ cursor: 'pointer' }}
+                style={{
+                  cursor: draggingId === id ? 'grabbing' : 'pointer',
+                  opacity: draggingId && draggingId !== id ? 0.4 : undefined,
+                }}
                 onMouseEnter={() => setHoveredId(id)}
                 onMouseLeave={() => setHoveredId((cur) => (cur === id ? null : cur))}
-                onClick={() => handleNodeClick(id)}
+                onPointerDown={(e) => handleNodePointerDown(id, e)}
+                onPointerMove={handleNodePointerMove}
+                onPointerUp={handleNodePointerUp}
+                onPointerCancel={handleNodePointerCancel}
+                onClick={() => {
+                  // Suppress click if it follows a drag — see justDraggedRef
+                  // in the pointer-event handlers above.
+                  if (justDraggedRef.current) {
+                    justDraggedRef.current = false;
+                    return;
+                  }
+                  handleNodeClick(id);
+                }}
               >
                 {/* Outer glow on hover/select */}
                 {emphasised && (

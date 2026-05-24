@@ -5,7 +5,6 @@ export type CompanionPluginTab =
   | 'setup'
   | 'memory'
   | 'voice'
-  | 'dashboard'
   | 'decisions';
 
 /**
@@ -86,6 +85,28 @@ export type CompanionVoiceModel = (typeof COMPANION_VOICE_MODELS)[number];
  */
 export type CompanionTtsEngine = 'elevenlabs' | 'piper';
 
+/**
+ * STT engine for Athena's voice input. Mirrors `SttEngineId` in
+ * `src/api/companion.ts`.
+ *
+ * Defaults to `'browser'` (Web Speech) for zero-setup back-compat; the
+ * user opts into `'whisper'` (local, on-device) once they've installed the
+ * engine binary + downloaded a model from the Voice tab.
+ */
+export type CompanionSttEngine = 'browser' | 'whisper';
+
+/**
+ * Persisted floating-orb dock position, expressed as viewport fractions
+ * (0..1) of the orb's top-left corner. `x` snaps to a side edge (≈0 left /
+ * ≈1 right) when the user drops the orb; `y` is free (clamped to the
+ * viewport). Resolved to pixels at render time so it survives window
+ * resizes. Default sits bottom-right, just above the footer.
+ */
+export interface OrbPosition {
+  x: number;
+  y: number;
+}
+
 export interface CompanionPluginSlice {
   companionPluginTab: CompanionPluginTab;
   companionFooterEnabled: boolean;
@@ -117,6 +138,13 @@ export interface CompanionPluginSlice {
   companionVoiceSpeed: number | null;
   /** 0..1 — only meaningful on multilingual_v2 / v3. `null` omits. */
   companionVoiceStyle: number | null;
+  /**
+   * Playback volume (0..1) applied to every TTS `<audio>` element, live —
+   * `voicePlayback.play()` subscribes so a change affects Athena mid-sentence.
+   * Distinct from the engine tuning above — this is client-side output level,
+   * not a synthesis parameter. Default 0.5.
+   */
+  companionVoiceVolume: number;
   /** Phase F: pending prefill from Athena's prefill_persona_create op. */
   companionPrefill: CompanionPrefill | null;
   /** Phase F: pending lab-jump from Athena's open_lab op. */
@@ -127,6 +155,19 @@ export interface CompanionPluginSlice {
    * chat without closing it. Persisted so the preference sticks.
    */
   companionPanelCompact: boolean;
+  /**
+   * Master switch for Athena's floating dockable orb (the minimized
+   * presence that lives as an overlay above app content). When off, the
+   * footer button behaves as the classic open/collapse chat toggle.
+   * Default on — the orb is the headline of the companion-overlay work.
+   */
+  companionOrbEnabled: boolean;
+  /** Persisted orb dock position (viewport fractions). See {@link OrbPosition}. */
+  companionOrbPos: OrbPosition;
+  /** STT engine for voice input (footer hold-to-talk + orb). */
+  companionSttEngine: CompanionSttEngine;
+  /** Selected local whisper model id (e.g. `base.en`). Null until chosen. */
+  companionSttModelId: string | null;
   /**
    * Recall synthesis: when true, dense recall (above ~5K tokens) is
    * folded through a one-shot Claude call into a focused briefing
@@ -143,6 +184,15 @@ export interface CompanionPluginSlice {
    * UX is "type anything").
    */
   companionAutonomousMode: boolean;
+  /**
+   * Currently-typed intent in `UnifiedBuildEntry`, mirrored into the
+   * slice so the Decisions panel can auto-scope its filter to the
+   * persona the user is actively designing. Not persisted (session-
+   * scoped UI affordance — surprising to resume "currently designing"
+   * state across app restarts). Cleared on launch success and on
+   * `UnifiedBuildEntry` re-mount with an empty initial intent.
+   */
+  activeBuildIntent: string | null;
 
   setCompanionPluginTab: (tab: CompanionPluginTab) => void;
   setCompanionFooterEnabled: (v: boolean) => void;
@@ -157,13 +207,20 @@ export interface CompanionPluginSlice {
   setCompanionVoiceSimilarity: (v: number | null) => void;
   setCompanionVoiceSpeed: (v: number | null) => void;
   setCompanionVoiceStyle: (v: number | null) => void;
-  /** Reset all 5 tuning fields back to `null` (server-default behaviour). */
+  setCompanionVoiceVolume: (v: number) => void;
+  /** Reset tuning fields to the app defaults (Stability/Similarity 0.70,
+   *  Style 0.05; model + speed inherit the engine default via `null`). */
   resetCompanionVoiceSettings: () => void;
   setCompanionPrefill: (p: CompanionPrefill | null) => void;
   setCompanionLabJump: (j: CompanionLabJump | null) => void;
   setCompanionPanelCompact: (v: boolean) => void;
+  setCompanionOrbEnabled: (v: boolean) => void;
+  setCompanionOrbPos: (p: OrbPosition) => void;
+  setCompanionSttEngine: (e: CompanionSttEngine) => void;
+  setCompanionSttModelId: (id: string | null) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
+  setActiveBuildIntent: (intent: string | null) => void;
 }
 
 export const createCompanionPluginSlice: StateCreator<
@@ -181,15 +238,23 @@ export const createCompanionPluginSlice: StateCreator<
   companionVoiceId: null,
   companionPiperVoiceId: null,
   companionVoiceModel: null,
-  companionVoiceStability: null,
-  companionVoiceSimilarity: null,
+  // Tuned defaults (vs the engine's own): a touch more stability +
+  // similarity than ElevenLabs' baseline, with a hint of style.
+  companionVoiceStability: 0.7,
+  companionVoiceSimilarity: 0.7,
   companionVoiceSpeed: null,
-  companionVoiceStyle: null,
+  companionVoiceStyle: 0.05,
+  companionVoiceVolume: 0.5,
   companionPrefill: null,
   companionLabJump: null,
   companionPanelCompact: false,
+  companionOrbEnabled: true,
+  companionOrbPos: { x: 1, y: 0.82 },
+  companionSttEngine: 'browser',
+  companionSttModelId: null,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
+  activeBuildIntent: null,
 
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
   setCompanionFooterEnabled: (companionFooterEnabled) =>
@@ -212,19 +277,25 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionVoiceSimilarity }),
   setCompanionVoiceSpeed: (companionVoiceSpeed) => set({ companionVoiceSpeed }),
   setCompanionVoiceStyle: (companionVoiceStyle) => set({ companionVoiceStyle }),
+  setCompanionVoiceVolume: (companionVoiceVolume) => set({ companionVoiceVolume }),
   resetCompanionVoiceSettings: () =>
     set({
       companionVoiceModel: null,
-      companionVoiceStability: null,
-      companionVoiceSimilarity: null,
+      companionVoiceStability: 0.7,
+      companionVoiceSimilarity: 0.7,
       companionVoiceSpeed: null,
-      companionVoiceStyle: null,
+      companionVoiceStyle: 0.05,
     }),
   setCompanionPrefill: (companionPrefill) => set({ companionPrefill }),
   setCompanionLabJump: (companionLabJump) => set({ companionLabJump }),
   setCompanionPanelCompact: (companionPanelCompact) => set({ companionPanelCompact }),
+  setCompanionOrbEnabled: (companionOrbEnabled) => set({ companionOrbEnabled }),
+  setCompanionOrbPos: (companionOrbPos) => set({ companionOrbPos }),
+  setCompanionSttEngine: (companionSttEngine) => set({ companionSttEngine }),
+  setCompanionSttModelId: (companionSttModelId) => set({ companionSttModelId }),
   setCompanionRecallSynthesisEnabled: (companionRecallSynthesisEnabled) =>
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>
     set({ companionAutonomousMode }),
+  setActiveBuildIntent: (activeBuildIntent) => set({ activeBuildIntent }),
 });
