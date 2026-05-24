@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "Bearbeitet",
+    "reset_plan": "Auf Vorschlag zurücksetzen",
+    "step_remove": "Schritt entfernen",
+    "step_move_up": "Nach oben verschieben",
+    "step_move_down": "Nach unten verschieben",
     "nav_label": "Planen",
     "page_title": "Ziel planen",
     "page_subtitle": "Beschreibe in einfachen Worten, was du möchtest. Wir ordnen es den Schritten zu, die die App ausführen würde – nichts wird gestartet, bis du es bestätigst.",
@@ -27,6 +32,15 @@
     "category_action": "Aktion",
     "category_review": "Prüfung",
     "actions": {
+      "understand_goal_rationale": "Klärt den Umfang, bevor etwas erstellt wird.",
+      "create_persona_rationale": "Die Persona ist der Agent, der das Ziel ausführt.",
+      "connect_service_rationale": "Die Persona benötigt die Berechtigung, diesen Dienst zu nutzen.",
+      "configure_trigger_rationale": "Legt fest, was die Persona auslöst.",
+      "configure_schedule_rationale": "Führt die Persona in regelmäßigen Abständen aus.",
+      "fetch_web_rationale": "Erfasst die aktuelle Seite, um sie später zu vergleichen.",
+      "detect_changes_rationale": "Zeigt nur an, was seit dem letzten Mal neu ist.",
+      "send_notification_rationale": "Liefert das Ergebnis dorthin, wo du es siehst.",
+      "review_confirm_rationale": "Deine Freigabe, bevor etwas erstellt wird.",
       "understand_goal_title": "Das Ziel verstehen",
       "understand_goal_detail": "\"{goal}\" in die Fähigkeiten aufschlüsseln, die eine Persona benötigt.",
       "create_persona_title": "Persona erstellen",

@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "Diubah",
+    "reset_plan": "Atur ulang ke saran",
+    "step_remove": "Hapus langkah",
+    "step_move_up": "Pindah ke atas",
+    "step_move_down": "Pindah ke bawah",
     "nav_label": "Rencana",
     "page_title": "Rencanakan sebuah tujuan",
     "page_subtitle": "Jelaskan apa yang Anda inginkan dengan bahasa biasa. Kami akan memetakannya ke langkah-langkah yang akan dilakukan aplikasi — tidak ada yang berjalan hingga Anda mengonfirmasi.",
@@ -27,6 +32,15 @@
     "category_action": "Tindakan",
     "category_review": "Tinjauan",
     "actions": {
+      "understand_goal_rationale": "Memperjelas cakupan sebelum apa pun dibuat.",
+      "create_persona_rationale": "Persona adalah agen yang menjalankan tujuan tersebut.",
+      "connect_service_rationale": "Persona memerlukan izin untuk menggunakan layanan ini.",
+      "configure_trigger_rationale": "Menentukan apa yang membuat persona berjalan.",
+      "configure_schedule_rationale": "Menjalankan persona secara berkala.",
+      "fetch_web_rationale": "Menangkap halaman saat ini untuk dibandingkan nanti.",
+      "detect_changes_rationale": "Menampilkan hanya hal yang baru sejak terakhir kali.",
+      "send_notification_rationale": "Mengirimkan hasil ke tempat yang akan Anda lihat.",
+      "review_confirm_rationale": "Gerbang persetujuan Anda sebelum apa pun dibuat.",
       "understand_goal_title": "Pahami tujuannya",
       "understand_goal_detail": "Uraikan \"{goal}\" menjadi kemampuan yang dibutuhkan sebuah persona.",
       "create_persona_title": "Buat sebuah persona",

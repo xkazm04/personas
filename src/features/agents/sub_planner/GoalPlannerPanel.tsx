@@ -12,12 +12,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import { generatePlan } from './planProvider';
 import { PlanStepCard } from './PlanStepCard';
-import type { Plan } from './types';
+import type { Plan, PlanStep } from './types';
 
 export function GoalPlannerPanel() {
   const { t, tx } = useTranslation();
   const [goal, setGoal] = useState('');
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [steps, setSteps] = useState<PlanStep[]>([]);
   const [planning, setPlanning] = useState(false);
 
   const handlePreview = useCallback(async () => {
@@ -25,7 +26,9 @@ export function GoalPlannerPanel() {
     // deterministic rule planner otherwise. Async so the LLM swap is free.
     setPlanning(true);
     try {
-      setPlan(await generatePlan(goal));
+      const next = await generatePlan(goal);
+      setPlan(next);
+      setSteps(next?.steps ?? []);
     } finally {
       setPlanning(false);
     }
@@ -34,10 +37,33 @@ export function GoalPlannerPanel() {
   const handleClear = useCallback(() => {
     setGoal('');
     setPlan(null);
+    setSteps([]);
   }, []);
 
+  // Editing only shapes the local preview — the suggested plan stays intact
+  // so "reset" can restore it. Nothing here touches the backend.
+  const removeStep = useCallback((id: string) => {
+    setSteps((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+  const moveStep = useCallback((id: string, dir: -1 | 1) => {
+    setSteps((prev) => {
+      const i = prev.findIndex((s) => s.id === id);
+      const j = i + dir;
+      if (i < 0 || j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j]!, next[i]!];
+      return next;
+    });
+  }, []);
+  const resetPlan = useCallback(() => {
+    if (plan) setSteps(plan.steps);
+  }, [plan]);
+
   const canPreview = goal.trim().length > 0;
-  const stepCount = plan?.steps.length ?? 0;
+  const stepCount = steps.length;
+  const isEdited = plan != null && (
+    steps.length !== plan.steps.length || steps.some((s, i) => plan.steps[i]?.id !== s.id)
+  );
 
   return (
     <div className="mx-auto flex h-full w-full max-w-3xl flex-col gap-5 overflow-y-auto px-6 py-8">
@@ -97,16 +123,35 @@ export function GoalPlannerPanel() {
       {/* Plan / empty state */}
       {plan ? (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <span className="typo-label text-foreground">{t.planner.steps_heading}</span>
-            <span className="typo-label text-foreground">
-              {tx(stepCount === 1 ? t.planner.step_count_one : t.planner.step_count_other, { count: String(stepCount) })}
-              {' · '}
-              {plan.source === 'llm' ? t.planner.source_llm : t.planner.source_rule}
+          <div className="flex items-center justify-between gap-2">
+            <span className="flex items-center gap-2">
+              <span className="typo-label text-foreground">{t.planner.steps_heading}</span>
+              {isEdited && (
+                <span className="rounded-full bg-amber-500/10 px-2 py-0.5 typo-label text-amber-300">{t.planner.edited_badge}</span>
+              )}
+            </span>
+            <span className="flex items-center gap-2">
+              {isEdited && (
+                <Button variant="link" size="xs" onClick={resetPlan}>{t.planner.reset_plan}</Button>
+              )}
+              <span className="typo-label text-foreground">
+                {tx(stepCount === 1 ? t.planner.step_count_one : t.planner.step_count_other, { count: String(stepCount) })}
+                {' · '}
+                {plan.source === 'llm' ? t.planner.source_llm : t.planner.source_rule}
+              </span>
             </span>
           </div>
-          {plan.steps.map((step, i) => (
-            <PlanStepCard key={step.id} step={step} index={i} />
+          {steps.map((step, i) => (
+            <PlanStepCard
+              key={step.id}
+              step={step}
+              index={i}
+              isFirst={i === 0}
+              isLast={i === steps.length - 1}
+              onRemove={removeStep}
+              onMoveUp={(id) => moveStep(id, -1)}
+              onMoveDown={(id) => moveStep(id, 1)}
+            />
           ))}
         </div>
       ) : (

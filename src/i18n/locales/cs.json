@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "Upraveno",
+    "reset_plan": "Obnovit doporučené",
+    "step_remove": "Odebrat krok",
+    "step_move_up": "Posunout nahoru",
+    "step_move_down": "Posunout dolů",
     "nav_label": "Plán",
     "page_title": "Naplánovat cíl",
     "page_subtitle": "Popište, co chcete, běžnými slovy. Převedeme to na kroky, které by aplikace provedla — nic se nespustí, dokud to nepotvrdíte.",
@@ -27,6 +32,15 @@
     "category_action": "Akce",
     "category_review": "Kontrola",
     "actions": {
+      "understand_goal_rationale": "Vyjasní rozsah dříve, než se cokoli vytvoří.",
+      "create_persona_rationale": "Persona je agent, který cíl plní.",
+      "connect_service_rationale": "Persona potřebuje oprávnění tuto službu používat.",
+      "configure_trigger_rationale": "Určuje, co personu spustí.",
+      "configure_schedule_rationale": "Spouští personu v pravidelném intervalu.",
+      "fetch_web_rationale": "Zachytí aktuální stránku pro pozdější porovnání.",
+      "detect_changes_rationale": "Zobrazí jen to, co je od minula nové.",
+      "send_notification_rationale": "Doručí výsledek tam, kde jej uvidíte.",
+      "review_confirm_rationale": "Vaše schválení dříve, než se cokoli vytvoří.",
       "understand_goal_title": "Porozumět cíli",
       "understand_goal_detail": "Rozložit \"{goal}\" na schopnosti, které persona potřebuje.",
       "create_persona_title": "Vytvořit personu",

@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "편집됨",
+    "reset_plan": "제안된 단계로 초기화",
+    "step_remove": "단계 제거",
+    "step_move_up": "위로 이동",
+    "step_move_down": "아래로 이동",
     "nav_label": "계획",
     "page_title": "목표 계획하기",
     "page_subtitle": "원하는 것을 일상 언어로 설명하세요. 앱이 수행할 단계로 변환해 드립니다. 확인하기 전까지는 아무것도 실행되지 않습니다.",
@@ -27,6 +32,15 @@
     "category_action": "작업",
     "category_review": "검토",
     "actions": {
+      "understand_goal_rationale": "무언가를 만들기 전에 범위를 명확히 합니다.",
+      "create_persona_rationale": "페르소나는 목표를 수행하는 에이전트입니다.",
+      "connect_service_rationale": "페르소나가 이 서비스를 사용하려면 권한이 필요합니다.",
+      "configure_trigger_rationale": "페르소나가 실행되는 조건을 정의합니다.",
+      "configure_schedule_rationale": "정해진 주기로 페르소나를 실행합니다.",
+      "fetch_web_rationale": "나중에 비교할 수 있도록 현재 페이지를 캡처합니다.",
+      "detect_changes_rationale": "지난번 이후 새로 추가된 것만 보여줍니다.",
+      "send_notification_rationale": "결과를 볼 수 있는 곳으로 전달합니다.",
+      "review_confirm_rationale": "무언가가 생성되기 전 사용자의 승인 단계입니다.",
       "understand_goal_title": "목표 이해하기",
       "understand_goal_detail": "\"{goal}\"을(를) 페르소나에 필요한 기능으로 분해합니다.",
       "create_persona_title": "페르소나 만들기",

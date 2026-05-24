@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "संपादित",
+    "reset_plan": "सुझाए गए पर रीसेट करें",
+    "step_remove": "चरण हटाएं",
+    "step_move_up": "ऊपर ले जाएं",
+    "step_move_down": "नीचे ले जाएं",
     "nav_label": "योजना",
     "page_title": "एक लक्ष्य की योजना बनाएं",
     "page_subtitle": "आप जो चाहते हैं उसे सरल भाषा में बताएं। हम इसे उन चरणों से मैप करेंगे जो ऐप उठाएगा — जब तक आप पुष्टि नहीं करते तब तक कुछ भी नहीं चलता।",
@@ -27,6 +32,15 @@
     "category_action": "क्रिया",
     "category_review": "समीक्षा",
     "actions": {
+      "understand_goal_rationale": "कुछ भी बनाने से पहले दायरा स्पष्ट करता है।",
+      "create_persona_rationale": "पर्सोना ही वह एजेंट है जो लक्ष्य को पूरा करता है।",
+      "connect_service_rationale": "इस सेवा का उपयोग करने के लिए पर्सोना को अनुमति चाहिए।",
+      "configure_trigger_rationale": "यह तय करता है कि पर्सोना कब चले।",
+      "configure_schedule_rationale": "पर्सोना को नियमित अंतराल पर चलाता है।",
+      "fetch_web_rationale": "बाद में तुलना के लिए मौजूदा पृष्ठ को कैप्चर करता है।",
+      "detect_changes_rationale": "पिछली बार से जो नया है केवल उसे सामने लाता है।",
+      "send_notification_rationale": "परिणाम वहां पहुंचाता है जहां आप उसे देखेंगे।",
+      "review_confirm_rationale": "कुछ भी बनने से पहले आपकी स्वीकृति का चरण।",
       "understand_goal_title": "लक्ष्य को समझें",
       "understand_goal_detail": "\"{goal}\" को उन क्षमताओं में विभाजित करें जिनकी एक पर्सोना को आवश्यकता होती है।",
       "create_persona_title": "एक पर्सोना बनाएं",

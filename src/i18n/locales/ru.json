@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "Изменено",
+    "reset_plan": "Сбросить к предложенному",
+    "step_remove": "Удалить шаг",
+    "step_move_up": "Вверх",
+    "step_move_down": "Вниз",
     "nav_label": "План",
     "page_title": "Запланировать цель",
     "page_subtitle": "Опишите, что вам нужно, обычными словами. Мы сопоставим это с шагами, которые выполнит приложение, — ничего не запустится, пока вы не подтвердите.",
@@ -27,6 +32,15 @@
     "category_action": "Действие",
     "category_review": "Проверка",
     "actions": {
+      "understand_goal_rationale": "Уточняет рамки, прежде чем что-либо создавать.",
+      "create_persona_rationale": "Персона — это агент, который выполняет цель.",
+      "connect_service_rationale": "Персоне нужно разрешение на использование этого сервиса.",
+      "configure_trigger_rationale": "Определяет, что запускает персону.",
+      "configure_schedule_rationale": "Запускает персону с регулярной периодичностью.",
+      "fetch_web_rationale": "Сохраняет текущую страницу для последующего сравнения.",
+      "detect_changes_rationale": "Показывает только то, что появилось с прошлого раза.",
+      "send_notification_rationale": "Доставляет результат туда, где вы его увидите.",
+      "review_confirm_rationale": "Ваш этап подтверждения перед созданием чего-либо.",
       "understand_goal_title": "Понять цель",
       "understand_goal_detail": "Разбить \"{goal}\" на возможности, которые нужны персоне.",
       "create_persona_title": "Создать персону",

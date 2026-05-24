@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "編集済み",
+    "reset_plan": "提案内容にリセット",
+    "step_remove": "ステップを削除",
+    "step_move_up": "上へ移動",
+    "step_move_down": "下へ移動",
     "nav_label": "プラン",
     "page_title": "目標をプランする",
     "page_subtitle": "やりたいことを普通の言葉で説明してください。アプリが実行するステップに変換します。確認するまで何も実行されません。",
@@ -27,6 +32,15 @@
     "category_action": "アクション",
     "category_review": "レビュー",
     "actions": {
+      "understand_goal_rationale": "何かを作り始める前に範囲を明確にします。",
+      "create_persona_rationale": "ペルソナは目標を実行するエージェントです。",
+      "connect_service_rationale": "ペルソナがこのサービスを使うには許可が必要です。",
+      "configure_trigger_rationale": "ペルソナを実行するきっかけを定義します。",
+      "configure_schedule_rationale": "ペルソナを定期的なペースで実行します。",
+      "fetch_web_rationale": "後で比較できるよう現在のページを取得します。",
+      "detect_changes_rationale": "前回からの新しい変更点だけを表示します。",
+      "send_notification_rationale": "結果をあなたが目にする場所へ届けます。",
+      "review_confirm_rationale": "何かが作成される前のあなたの承認ゲートです。",
       "understand_goal_title": "目標を理解する",
       "understand_goal_detail": "「{goal}」をペルソナに必要な機能に分解します。",
       "create_persona_title": "ペルソナを作成する",

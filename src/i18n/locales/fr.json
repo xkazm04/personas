@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "Modifié",
+    "reset_plan": "Rétablir la suggestion",
+    "step_remove": "Supprimer l'étape",
+    "step_move_up": "Monter",
+    "step_move_down": "Descendre",
     "nav_label": "Planifier",
     "page_title": "Planifier un objectif",
     "page_subtitle": "Décrivez ce que vous voulez en langage clair. Nous le traduirons en étapes que l'application suivrait — rien ne s'exécute tant que vous ne confirmez pas.",
@@ -27,6 +32,15 @@
     "category_action": "Action",
     "category_review": "Révision",
     "actions": {
+      "understand_goal_rationale": "Clarifie le périmètre avant toute construction.",
+      "create_persona_rationale": "Le persona est l'agent qui réalise l'objectif.",
+      "connect_service_rationale": "Le persona a besoin de l'autorisation pour utiliser ce service.",
+      "configure_trigger_rationale": "Définit ce qui déclenche l'exécution du persona.",
+      "configure_schedule_rationale": "Exécute le persona à une cadence régulière.",
+      "fetch_web_rationale": "Capture la page actuelle pour comparer plus tard.",
+      "detect_changes_rationale": "Ne fait ressortir que ce qui est nouveau depuis la dernière fois.",
+      "send_notification_rationale": "Livre le résultat là où vous le verrez.",
+      "review_confirm_rationale": "Votre validation avant toute création.",
       "understand_goal_title": "Comprendre l'objectif",
       "understand_goal_detail": "Décomposer \"{goal}\" en capacités dont un persona a besoin.",
       "create_persona_title": "Créer un persona",

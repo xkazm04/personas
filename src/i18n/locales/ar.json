@@ -1,5 +1,10 @@
 {
   "planner": {
+    "edited_badge": "مُعدَّل",
+    "reset_plan": "إعادة إلى المقترح",
+    "step_remove": "إزالة الخطوة",
+    "step_move_up": "نقل لأعلى",
+    "step_move_down": "نقل لأسفل",
     "nav_label": "خطة",
     "page_title": "تخطيط هدف",
     "page_subtitle": "صف ما تريده بلغة بسيطة. سنحوّله إلى الخطوات التي سيتخذها التطبيق — لا شيء يبدأ حتى تؤكد.",
@@ -27,6 +32,15 @@
     "category_action": "إجراء",
     "category_review": "مراجعة",
     "actions": {
+      "understand_goal_rationale": "يوضّح النطاق قبل بناء أي شيء.",
+      "create_persona_rationale": "الشخصية هي الوكيل الذي ينفّذ الهدف.",
+      "connect_service_rationale": "تحتاج الشخصية إلى إذن لاستخدام هذه الخدمة.",
+      "configure_trigger_rationale": "يحدّد ما الذي يجعل الشخصية تعمل.",
+      "configure_schedule_rationale": "يشغّل الشخصية على وتيرة منتظمة.",
+      "fetch_web_rationale": "يلتقط الصفحة الحالية للمقارنة لاحقًا.",
+      "detect_changes_rationale": "يُظهر ما هو جديد فقط منذ آخر مرة.",
+      "send_notification_rationale": "يوصّل النتيجة إلى حيث ستراها.",
+      "review_confirm_rationale": "بوابة موافقتك قبل إنشاء أي شيء.",
       "understand_goal_title": "فهم الهدف",
       "understand_goal_detail": "تقسيم \"{goal}\" إلى القدرات التي تحتاجها الشخصية.",
       "create_persona_title": "إنشاء شخصية",

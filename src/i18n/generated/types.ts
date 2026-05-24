@@ -22,6 +22,11 @@ export type Translations = {
     source_llm: string;
     empty_title: string;
     empty_hint: string;
+    edited_badge: string;
+    reset_plan: string;
+    step_remove: string;
+    step_move_up: string;
+    step_move_down: string;
     confidence_high: string;
     confidence_medium: string;
     confidence_low: string;
@@ -35,22 +40,31 @@ export type Translations = {
     actions: {
       understand_goal_title: string;
       understand_goal_detail: string;
+      understand_goal_rationale: string;
       create_persona_title: string;
       create_persona_detail: string;
+      create_persona_rationale: string;
       connect_service_title: string;
       connect_service_detail: string;
+      connect_service_rationale: string;
       configure_trigger_title: string;
       configure_trigger_detail: string;
+      configure_trigger_rationale: string;
       configure_schedule_title: string;
       configure_schedule_detail: string;
+      configure_schedule_rationale: string;
       fetch_web_title: string;
       fetch_web_detail: string;
+      fetch_web_rationale: string;
       detect_changes_title: string;
       detect_changes_detail: string;
+      detect_changes_rationale: string;
       send_notification_title: string;
       send_notification_detail: string;
+      send_notification_rationale: string;
       review_confirm_title: string;
       review_confirm_detail: string;
+      review_confirm_rationale: string;
     };
   };
   monitor: {
