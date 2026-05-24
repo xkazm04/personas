@@ -471,6 +471,7 @@ pub async fn import_persona(
                 use_case_id: None,
             
                 group_id: None,
+            
             })
             .collect();
         let expected = memory_inputs.len();

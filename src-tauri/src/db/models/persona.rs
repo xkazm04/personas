@@ -486,6 +486,9 @@ pub struct Persona {
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
     pub group_id: Option<String>,
+    /// Workspace anchor (Groups→Teams consolidation): the one team whose
+    /// shared instructions + defaults + injected memory apply at runtime.
+    pub home_team_id: Option<String>,
     pub source_review_id: Option<String>,
     pub trust_level: PersonaTrustLevel,
     pub trust_origin: PersonaTrustOrigin,
@@ -747,6 +750,7 @@ pub struct UpdatePersonaInput {
     pub max_turns: Option<Option<i32>>,
     pub design_context: Option<Option<String>>,
     pub group_id: Option<Option<String>>,
+    pub home_team_id: Option<Option<String>>,
     pub parameters: Option<Option<String>>,
     pub gateway_exposure: Option<PersonaGatewayExposure>,
     /// Phase 5 v1: per-persona Claude CLI session-resume awareness gate.

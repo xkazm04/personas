@@ -319,6 +319,7 @@ Raw memories:
             use_case_id: None,
         
             group_id: None,
+        
         };
 
         match repo::create(&db, input) {

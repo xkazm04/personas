@@ -124,6 +124,7 @@ export interface PartialPersonaUpdate {
   max_turns?: number | null;
   design_context?: string | null;
   group_id?: string | null;
+  home_team_id?: string | null;
   parameters?: string | null;
   /**
    * Visibility to the external management HTTP API ("A2A gateway").
@@ -299,6 +300,7 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     max_turns: partial.max_turns !== undefined ? partial.max_turns : null,
     design_context: partial.design_context !== undefined ? partial.design_context : null,
     group_id: partial.group_id !== undefined ? partial.group_id : null,
+    home_team_id: partial.home_team_id !== undefined ? partial.home_team_id : null,
     parameters: partial.parameters !== undefined ? partial.parameters : null,
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,
     cli_awareness_enabled: partial.cli_awareness_enabled !== undefined ? partial.cli_awareness_enabled : null,

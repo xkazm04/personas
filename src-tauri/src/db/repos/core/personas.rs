@@ -376,6 +376,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         max_turns: row.get("max_turns")?,
         design_context: row.get("design_context")?,
         group_id: row.get("group_id")?,
+        home_team_id: row.get("home_team_id")?,
         source_review_id: row
             .get::<_, Option<String>>("source_review_id")
             .unwrap_or(None),
@@ -841,6 +842,14 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(
             input.group_id,
             "group_id",
+            sets,
+            param_idx,
+            param_values,
+            clone
+        );
+        push_field_param!(
+            input.home_team_id,
+            "home_team_id",
             sets,
             param_idx,
             param_values,

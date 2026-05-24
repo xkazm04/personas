@@ -26,7 +26,6 @@ const GoalPlannerPanel = lazy(() => import('@/features/agents/sub_planner').then
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
-const GroupManagerPage = lazy(() => import('@/features/pipeline/components/groups/GroupManagerPage'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
@@ -204,10 +203,9 @@ export default function PersonasPage() {
       if (agentTab === 'team') {
         return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
       }
-      // Groups manager (tier-gated alongside Teams)
-      if (agentTab === 'groups') {
-        return <ErrorBoundary name="Groups"><Suspense fallback={SectionFallback}><GroupManagerPage /></Suspense></ErrorBoundary>;
-      }
+      // Groups→Teams consolidation (Phase 4): the standalone Groups manager
+      // is retired — a team is now the workspace. Any lingering
+      // agentTab==='groups' falls through to the default Agents view.
       // Goal-to-Plan — read-only narrated planner (idea-ba306c32, Stage 1)
       if (agentTab === 'planner') {
         return <ErrorBoundary name="GoalPlanner"><Suspense fallback={SectionFallback}><GoalPlannerPanel /></Suspense></ErrorBoundary>;

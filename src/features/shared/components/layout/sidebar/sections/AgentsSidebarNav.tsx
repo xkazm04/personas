@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2, Layers, Sparkles } from 'lucide-react';
+import { Users, Plus, List, Star, ChevronDown, Cloud, Clock, Activity, FolderGit2, Sparkles } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -526,23 +526,13 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           </div>
         )}
 
-        {/* Teams (productionized at TEAM tier) + Cloud (still dev-only) */}
+        {/* Teams (productionized at TEAM tier) + Cloud (still dev-only).
+            Groups→Teams consolidation (Phase 4): the standalone "Groups"
+            entry is retired — workspace grouping now lives inside Teams
+            (a team is the workspace). Personas' groups migrated to
+            home-team membership in Phase 3. */}
         {(isTeamVisible || isDev) && (
           <div className="mt-3 pt-3 border-t border-primary/10 space-y-1">
-            {isTeamVisible && (
-              <button
-                onClick={() => { selectPersona(null); setAgentTab('groups'); useSystemStore.getState().setIsCreatingPersona(false); }}
-                aria-current={agentTab === 'groups' ? 'page' : undefined}
-                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-                  agentTab === 'groups'
-                    ? 'bg-primary/10 text-foreground/90 font-semibold'
-                    : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
-                }`}
-              >
-                <Layers className="w-4 h-4 flex-shrink-0" />
-                {t.shared.sidebar_extra.groups_label}
-              </button>
-            )}
             {isTeamVisible && (
               <>
                 {/* Teams header → management table (deselects any open team) */}

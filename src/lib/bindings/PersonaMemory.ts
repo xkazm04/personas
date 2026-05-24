@@ -52,4 +52,11 @@ use_case_id: string | null,
  * Stage 1 (column live, injection path not yet wired); Stage 2 will
  * wire injection.
  */
-group_id: string | null, };
+group_id: string | null, 
+/**
+ * Workspace-scoped injection anchor (Groups→Teams consolidation):
+ * memories with this set inject into every persona whose
+ * home_team_id matches. Re-anchors the group_id injection scope onto
+ * teams. No FK by design (same orphan-tolerance as group_id).
+ */
+home_team_id: string | null, };

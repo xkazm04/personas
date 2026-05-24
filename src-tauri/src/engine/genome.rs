@@ -672,6 +672,7 @@ mod tests {
             max_turns: Some(10),
             design_context: None,
             group_id: None,
+            home_team_id: None,
             source_review_id: None,
             trust_level: PersonaTrustLevel::Verified,
             trust_origin: PersonaTrustOrigin::System,

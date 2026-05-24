@@ -12938,6 +12938,18 @@ export type Translations = {
       empty_roster: string;
       on: string;
       off: string;
+      workspace: string;
+      workspace_settings: string;
+      workspace_hint: string;
+      shared_instructions_label: string;
+      shared_instructions_placeholder: string;
+      default_model_label: string;
+      default_budget_label: string;
+      default_turns_label: string;
+      workspace_save: string;
+      workspace_saved: string;
+      workspace_save_failed: string;
+      workspace_inherit: string;
     };
     category_changes: string;
     importance_shifts: string;
