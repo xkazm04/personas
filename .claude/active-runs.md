@@ -30,8 +30,6 @@ timestamp — the next session can recognize it as abandoned.
   conflict check, retry. The Edit tool's unique-old-string rule prevents
   silent clobbers.
 
-## Active
-
 - **[2026-05-24 — started] fix(db): home_team_id startup regression (base-schema index before column on legacy DBs)**
   - **Source:** User-driven follow-up to the planner verification. Master panics at startup (`no such column: home_team_id`) because base `schema.rs` creates `idx_personas_home_team_id` before the incremental ALTER adds the column on legacy DBs. The Groups→Teams data-migration-ordering fix (`e937b9844`) didn't cover this base-schema-index path.
   - **Paths:** `src-tauri/src/db/migrations/schema.rs` (remove line-52 index), `src-tauri/src/db/migrations/incremental.rs` (add `has_index` helper + make `personas_home_team_id` index-guarded w/ conditional column-add). Verify by launching on the real (legacy) DB.
@@ -179,6 +177,10 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commits: 5edadf2ab, 5b3fb1205)] src/features refactor — unblocked A3 + A6 (post Groups→Teams merge)**
+  - **What:** §A3 monitor→`shared/components/layout/monitor/` (completes chrome consolidation A1–A6); §A6 deployment→`agents/sub_deployment/` (placed under agents/ where the 14 sibling sub_* live + the agentTab='cloud' view renders, not personas/ per plan). Pure moves, tsc clean.
+  - **Deferred (with rationale):** the **executions dead island** — re-baselined on current master (still dead) but it's ~106 files across 6 areas (agents/sub_executions 31, overview/sub_observability 19, triggers/sub_triggers 33 [INTERMIXED with live cron helpers used by schedules/FrequencyEditor], shared/use-cases 5, templates/sub_n8n 16, overview/sub_activity 2) with lazy-load false-positive risk → needs a dedicated worktree pass with `knip→delete→knip` iteration + app launch to verify observability/triggers/executions surfaces. **A7** pipeline + **B1.3** allPersonas deferred (overlap stale `/prototype` sessions: Team Studio, PersonaOverview A/B). NOT pushed.
 
 - **[2026-05-24 — completed (commits: cee33aac9, 3f241fe43, 3efcab756, c3af4b360)] src/features refactor — §B1.2 + §D2 + §G2/§G3**
   - **What:** §G2 lib/theming→lib/theme; §B1.2 extracted matrix quickConfig (quickConfigTypes+useHealthyConnectors) → `agents/shared/quickConfig/` (17 importers); §D2 plugins `_shared`/`_variants`→`shared`/`variants` (research-lab + twin, 53 files); §G3 lib/canvas→triggers/lib/canvas, lib/fleet→overview/libs. tsc clean each.
