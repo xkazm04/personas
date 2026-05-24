@@ -73,7 +73,7 @@ export function agentItem(
     id: `agent:${p.id}`,
     kind: 'agent',
     label: p.name,
-    description: p.group_id ? groupMap[p.group_id] : undefined,
+    description: p.home_team_id ? groupMap[p.home_team_id] : undefined,
     icon: p.enabled ? BotIcon : PowerIcon,
     onSelect: () => { setSidebarSection('personas'); selectPersona(p.id); },
   };

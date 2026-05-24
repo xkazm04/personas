@@ -65,10 +65,11 @@ export default function PersonaOverviewPage() {
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [layout, setLayout] = useState<LayoutVariant>(readPersistedLayout);
-  // Group filter from PersonaGroupDropRail (cycle 19). null = unfiltered;
-  // a group id narrows to members; `'__ungrouped__'` narrows to no-group
-  // personas. Lives here rather than in `AgentListViewConfig` because the
-  // rail owns the toggle UX and it doesn't belong in the saved view preset.
+  // Home-team filter from PersonaGroupDropRail (cycle 19; repointed to home
+  // teams in the Groups→Teams consolidation). null = unfiltered; a team id
+  // narrows to members; `'__ungrouped__'` narrows to personas with no home
+  // team. Lives here rather than in `AgentListViewConfig` because the rail
+  // owns the toggle UX and it doesn't belong in the saved view preset.
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const isMobile = useIsMobile();
 
@@ -99,27 +100,28 @@ export default function PersonaOverviewPage() {
   const { modal, handleBatchDelete, handleDeleteDrafts, draftIds } =
     usePersonaActions({ personas, selectedIds, setSelectedIds, deletePersona, selectPersona, isDraft });
 
-  // Cycle 21 — bulk-assign selected personas to a group (or null to
-  // unassign). Reuses the existing movePersonaToGroup action which already
-  // emits the storeBus event the agentStore listens for. We do the moves
-  // sequentially rather than in parallel to keep the storeBus event order
-  // deterministic; for typical N (≤ a few dozen) this is well under 1s.
-  const movePersonaToGroupAction = usePipelineStore((s) => s.movePersonaToGroup);
-  const pipelineGroups = usePipelineStore((s) => s.groups);
-  const pipelineGroupNameById = useMemo(
-    () => new Map(pipelineGroups.map((g) => [g.id, g.name])),
-    [pipelineGroups],
+  // Cycle 21 — bulk-set the home team of the selected personas (or null to
+  // clear). Repointed from groups to home teams in the Groups→Teams
+  // consolidation; emits the `persona:set-home-team` storeBus event the
+  // agentStore listens for. We do the writes sequentially rather than in
+  // parallel to keep the storeBus event order deterministic; for typical N
+  // (≤ a few dozen) this is well under 1s.
+  const applyPersonaOp = useAgentStore((s) => s.applyPersonaOp);
+  const teams = usePipelineStore((s) => s.teams);
+  const teamNameById = useMemo(
+    () => new Map(teams.map((g) => [g.id, g.name])),
+    [teams],
   );
   const addToast = useToastStore((s) => s.addToast);
   const handleBatchMoveToGroup = useCallback(
-    async (groupId: string | null) => {
+    async (homeTeamId: string | null) => {
       const ids = [...selectedIds];
       if (ids.length === 0) return;
       let ok = 0;
       let failed = 0;
       for (const id of ids) {
         try {
-          await movePersonaToGroupAction(id, groupId);
+          await applyPersonaOp(id, { kind: 'SetHomeTeam', home_team_id: homeTeamId });
           ok += 1;
         } catch {
           failed += 1;
@@ -127,8 +129,8 @@ export default function PersonaOverviewPage() {
       }
       // Selection stays so the user can do a follow-up bulk action; the rail
       // and DataGrid auto-rerender from the agentStore update.
-      const groupName = groupId
-        ? pipelineGroupNameById.get(groupId) ?? ''
+      const groupName = homeTeamId
+        ? teamNameById.get(homeTeamId) ?? ''
         : t.agents.persona_list.batch_move_to_ungrouped;
       if (failed === 0) {
         addToast(
@@ -142,7 +144,7 @@ export default function PersonaOverviewPage() {
         );
       }
     },
-    [selectedIds, movePersonaToGroupAction, addToast, t, tx, pipelineGroupNameById],
+    [selectedIds, applyPersonaOp, addToast, t, tx, teamNameById],
   );
 
   // Drop selections that no longer match the filtered data

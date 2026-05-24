@@ -48,9 +48,8 @@ use tauri::{AppHandle, Emitter};
 use crate::commands::design::template_adopt::instant_adopt_template_inner;
 use crate::db::models::{
     AdoptedTeamPresetFailure, AdoptedTeamPresetMember, AdoptedTeamPresetResult,
-    CreatePersonaGroupInput, CreateTeamInput, TeamPreset, TeamPresetAdoptProgress,
+    CreateTeamInput, TeamPreset, TeamPresetAdoptProgress, UpdateTeamInput,
 };
-use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::engine::event_registry::event_name;
 use crate::engine::team_preset_loader;
@@ -125,19 +124,19 @@ fn emit_progress(
     let _ = app.emit(event_name::TEAM_PRESET_ADOPT_PROGRESS, payload);
 }
 
-/// Stamp `group_id` onto a freshly-adopted persona. Best-effort: a
-/// failure logs and returns Ok(()) so the adopter doesn't fail the
-/// whole member just because the group-binding follow-up tripped.
-fn bind_persona_to_group(
+/// Anchor a freshly-adopted persona to its home team (workspace). Best-effort:
+/// a failure logs and returns Ok(()) so the adopter doesn't fail the whole
+/// member just because the home-team binding follow-up tripped.
+fn bind_persona_home_team(
     state: &Arc<AppState>,
     persona_id: &str,
-    group_id: &str,
+    home_team_id: &str,
 ) -> Result<(), AppError> {
     let conn = state.db.get()?;
     let now = chrono::Utc::now().to_rfc3339();
     conn.execute(
-        "UPDATE personas SET group_id = ?1, updated_at = ?2 WHERE id = ?3",
-        params![group_id, now, persona_id],
+        "UPDATE personas SET home_team_id = ?1, updated_at = ?2 WHERE id = ?3",
+        params![home_team_id, now, persona_id],
     )?;
     Ok(())
 }
@@ -218,37 +217,10 @@ pub fn adopt_preset(
         );
     }
 
-    // 1. Optional group
-    let group_id: Option<String> = if let Some(group_spec) = &preset.group {
-        let created = group_repo::create(
-            &state.db,
-            CreatePersonaGroupInput {
-                name: group_spec.name.clone(),
-                color: Some(group_spec.color.clone()),
-                sort_order: None,
-                description: None,
-            },
-        )?;
-        // sharedInstructions / defaultModelProfile / etc. are stamped via
-        // a follow-up update so the create path stays narrow.
-        if let Some(shared) = &group_spec.shared_instructions {
-            use crate::db::models::UpdatePersonaGroupInput;
-            let _ = group_repo::update(
-                &state.db,
-                &created.id,
-                UpdatePersonaGroupInput {
-                    shared_instructions: Some(Some(shared.clone())),
-                    ..Default::default()
-                },
-            );
-        }
-        Some(created.id)
-    } else {
-        None
-    };
-
-    // 2. Team shell — created unconditionally so the user keeps it on
-    //    partial failure.
+    // 1. Team shell — created unconditionally so the user keeps it on
+    //    partial failure. The team IS the workspace now (Groups→Teams
+    //    consolidation): a manifest `group` spec folds its workspace
+    //    settings onto this team rather than creating a separate group.
     let team = team_repo::create(
         &state.db,
         CreateTeamInput {
@@ -263,6 +235,35 @@ pub fn adopt_preset(
             enabled: Some(true),
         },
     )?;
+
+    // 2. Optional workspace facet. When the manifest declares a `group`
+    //    spec, stamp its shared instructions onto the team and anchor every
+    //    adopted persona's `home_team_id` to this team. `home_team_id` ==
+    //    the team id; `None` means the preset declared no workspace.
+    let home_team_id: Option<String> = if let Some(group_spec) = &preset.group {
+        if let Some(shared) = &group_spec.shared_instructions {
+            let _ = team_repo::update(
+                &state.db,
+                &team.id,
+                UpdateTeamInput {
+                    name: None,
+                    description: None,
+                    canvas_data: None,
+                    team_config: None,
+                    icon: None,
+                    color: None,
+                    enabled: None,
+                    shared_instructions: Some(Some(shared.clone())),
+                    default_model_profile: None,
+                    default_max_budget_usd: None,
+                    default_max_turns: None,
+                },
+            );
+        }
+        Some(team.id.clone())
+    } else {
+        None
+    };
 
     // 3. Per-member adoption. role → team_member_id lookup is built as
     //    we go so step 4 can resolve connection endpoints without a
@@ -360,15 +361,15 @@ pub fn adopt_preset(
             }
         };
 
-        // c. Bind to group if applicable. Best-effort — logged on failure
-        //    but doesn't fail the member.
-        if let Some(gid) = &group_id {
-            if let Err(e) = bind_persona_to_group(state, &persona_id, gid) {
+        // c. Anchor to home team if the preset declared a workspace.
+        //    Best-effort — logged on failure but doesn't fail the member.
+        if let Some(tid) = &home_team_id {
+            if let Err(e) = bind_persona_home_team(state, &persona_id, tid) {
                 tracing::warn!(
                     persona_id = %persona_id,
-                    group_id = %gid,
+                    home_team_id = %tid,
                     error = %e,
-                    "adopt_team_preset: bind_persona_to_group failed (continuing)"
+                    "adopt_team_preset: bind_persona_home_team failed (continuing)"
                 );
             }
         }
@@ -466,7 +467,7 @@ pub fn adopt_preset(
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
         team_id: team.id,
-        group_id,
+        home_team_id,
         members,
         failed_members: failures,
         created_connections,
@@ -494,7 +495,7 @@ pub fn retry_failed_members(
     app: Option<AppHandle>,
     preset_id: &str,
     team_id: &str,
-    group_id: Option<&str>,
+    home_team_id: Option<&str>,
     roles_to_retry: &[String],
     language: Option<&str>,
     parameter_overrides: Option<
@@ -636,13 +637,13 @@ pub fn retry_failed_members(
             }
         };
 
-        if let Some(gid) = group_id {
-            if let Err(e) = bind_persona_to_group(state, &persona_id, gid) {
+        if let Some(tid) = home_team_id {
+            if let Err(e) = bind_persona_home_team(state, &persona_id, tid) {
                 tracing::warn!(
                     persona_id = %persona_id,
-                    group_id = %gid,
+                    home_team_id = %tid,
                     error = %e,
-                    "retry_failed_members: bind_persona_to_group failed (continuing)"
+                    "retry_failed_members: bind_persona_home_team failed (continuing)"
                 );
             }
         }
@@ -740,7 +741,7 @@ pub fn retry_failed_members(
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
         team_id: team_id.to_string(),
-        group_id: group_id.map(|s| s.to_string()),
+        home_team_id: home_team_id.map(|s| s.to_string()),
         members: all_members,
         failed_members: failures,
         created_connections,

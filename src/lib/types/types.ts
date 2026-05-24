@@ -17,7 +17,6 @@ import type { PersonaMessage as RawPersonaMessage } from "@/lib/bindings/Persona
 import type { PersonaMetricsSnapshot } from "@/lib/bindings/PersonaMetricsSnapshot";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
-import type { PersonaGroup } from "@/lib/bindings/PersonaGroup";
 import type { PersonaMemory } from "@/lib/bindings/PersonaMemory";
 import type { PersonaTeam } from "@/lib/bindings/PersonaTeam";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
@@ -38,7 +37,6 @@ export type {
   PersonaMetricsSnapshot,
   PersonaPromptVersion,
   PersonaHealingIssue,
-  PersonaGroup,
   PersonaMemory,
   PersonaTeam,
   PersonaTeamMember,

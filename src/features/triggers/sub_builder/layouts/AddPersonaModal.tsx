@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 import { Search, X, Plus, Users, ChevronLeft, Layers } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useTranslation } from '@/i18n/useTranslation';
 import { parseDesignContext } from '@/features/shared/components/use-cases/UseCasesList';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -19,56 +19,56 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 interface Props {
   open: boolean;
   personas: Persona[];
-  groups: PersonaGroup[];
+  teams: PersonaTeam[];
   alreadyActiveIds: Set<string>;
   eventLabel?: string;
   onAdd: (personaId: string, useCaseId: string | null) => void;
   onClose: () => void;
 }
 
-export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, eventLabel, onAdd, onClose }: Props) {
+export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, eventLabel, onAdd, onClose }: Props) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [capabilityStep, setCapabilityStep] = useState<Persona | null>(null);
 
   const groupMap = useMemo(() => {
-    const m = new Map<string, PersonaGroup>();
-    for (const g of groups) m.set(g.id, g);
+    const m = new Map<string, PersonaTeam>();
+    for (const g of teams) m.set(g.id, g);
     return m;
-  }, [groups]);
+  }, [teams]);
 
-  // Groups that have personas available
+  // Teams (workspaces) that have personas available
   const groupsWithPersonas = useMemo(() => {
-    const groupIds = new Set<string>();
+    const teamIds = new Set<string>();
     for (const p of personas) {
-      if (p.group_id && !alreadyActiveIds.has(p.id)) groupIds.add(p.group_id);
+      if (p.home_team_id && !alreadyActiveIds.has(p.id)) teamIds.add(p.home_team_id);
     }
-    return groups.filter(g => groupIds.has(g.id)).sort((a, b) => a.sortOrder - b.sortOrder);
-  }, [groups, personas, alreadyActiveIds]);
+    return teams.filter(g => teamIds.has(g.id)).sort((a, b) => a.name.localeCompare(b.name));
+  }, [teams, personas, alreadyActiveIds]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
     return personas.filter(p => {
       if (alreadyActiveIds.has(p.id)) return false;
-      if (selectedGroupId && p.group_id !== selectedGroupId) return false;
+      if (selectedGroupId && p.home_team_id !== selectedGroupId) return false;
       if (q && !p.name.toLowerCase().includes(q) && !(p.description ?? '').toLowerCase().includes(q)) return false;
       return true;
     });
   }, [personas, alreadyActiveIds, selectedGroupId, search]);
 
-  // Group the filtered results
+  // Group the filtered results by home team (workspace)
   const grouped = useMemo(() => {
     const buckets = new Map<string | null, Persona[]>();
     for (const p of filtered) {
-      const key = p.group_id;
+      const key = p.home_team_id;
       const arr = buckets.get(key) ?? [];
       arr.push(p);
       buckets.set(key, arr);
     }
-    // Sort groups by sortOrder, ungrouped last
-    const entries: { group: PersonaGroup | null; personas: Persona[] }[] = [];
-    const sortedGroupIds = groups.sort((a, b) => a.sortOrder - b.sortOrder).map(g => g.id);
+    // Sort teams by name, no-workspace last
+    const entries: { group: PersonaTeam | null; personas: Persona[] }[] = [];
+    const sortedGroupIds = [...teams].sort((a, b) => a.name.localeCompare(b.name)).map(g => g.id);
     for (const gid of sortedGroupIds) {
       const ps = buckets.get(gid);
       if (ps?.length) entries.push({ group: groupMap.get(gid) ?? null, personas: ps });
@@ -76,7 +76,7 @@ export function AddPersonaModal({ open, personas, groups, alreadyActiveIds, even
     const ungrouped = buckets.get(null);
     if (ungrouped?.length) entries.push({ group: null, personas: ungrouped });
     return entries;
-  }, [filtered, groups, groupMap]);
+  }, [filtered, teams, groupMap]);
 
   if (!open) return null;
 

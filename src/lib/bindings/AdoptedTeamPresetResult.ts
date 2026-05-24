@@ -5,9 +5,11 @@ import type { AdoptedTeamPresetMember } from "./AdoptedTeamPresetMember";
 /**
  * Aggregate return from `adopt_team_preset`. `team_id` is always set
  * (the team itself is the first thing created and never rolled back);
- * `group_id` is set only when the manifest declared a group spec; the
- * two lists partition the manifest's members into success vs. failure.
- * `created_connections` is the count of edges actually wired (an edge
- * is skipped silently when either endpoint role failed adoption).
+ * `home_team_id` is set only when the manifest declared a workspace
+ * (group) spec — it equals `team_id` and means the adopted personas were
+ * anchored to this team as their workspace. The two lists partition the
+ * manifest's members into success vs. failure. `created_connections` is
+ * the count of edges actually wired (an edge is skipped silently when
+ * either endpoint role failed adoption).
  */
-export type AdoptedTeamPresetResult = { preset_id: string, team_id: string, group_id: string | null, members: Array<AdoptedTeamPresetMember>, failed_members: Array<AdoptedTeamPresetFailure>, created_connections: number, };
+export type AdoptedTeamPresetResult = { preset_id: string, team_id: string, home_team_id: string | null, members: Array<AdoptedTeamPresetMember>, failed_members: Array<AdoptedTeamPresetFailure>, created_connections: number, };

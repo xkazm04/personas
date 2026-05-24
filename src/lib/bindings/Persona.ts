@@ -14,7 +14,7 @@ export type Persona = { id: string, project_id: string, name: string, descriptio
  * `None` for personas that have never run a test (manual templates,
  * legacy installs).
  */
-last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, group_id: string | null, 
+last_test_report: string | null, model_profile: string | null, max_budget_usd: number | null, max_turns: number | null, design_context: string | null, 
 /**
  * Workspace anchor (Groups→Teams consolidation): the one team whose
  * shared instructions + defaults + injected memory apply at runtime.

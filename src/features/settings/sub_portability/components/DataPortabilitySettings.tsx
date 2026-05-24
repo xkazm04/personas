@@ -52,7 +52,6 @@ export default function DataPortabilitySettings() {
                 <StatCard label={s.personas} value={dp.stats.persona_count} />
                 <StatCard label={s.teams} value={dp.stats.team_count} />
                 <StatCard label={s.tools} value={dp.stats.tool_count} />
-                <StatCard label={s.groups} value={dp.stats.group_count} />
                 <StatCard label={s.credentials} value={dp.stats.credential_count} />
                 <StatCard label={s.memories} value={dp.stats.memory_count} />
                 <StatCard label={s.test_suites} value={dp.stats.test_suite_count} />

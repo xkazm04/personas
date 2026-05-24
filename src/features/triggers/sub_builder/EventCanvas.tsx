@@ -14,11 +14,15 @@ interface Props {
 
 export function EventCanvas({ allTriggers: initialTriggers, setHeaderExtra }: Props) {
   const personas = useAgentStore(s => s.personas);
-  const groups = usePipelineStore(s => s.groups);
+  const teams = usePipelineStore(s => s.teams);
+  const fetchTeams = usePipelineStore(s => s.fetchTeams);
   const [triggers, setTriggers] = useState<PersonaTrigger[]>(initialTriggers);
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>([]);
 
   useEffect(() => { setTriggers(initialTriggers); }, [initialTriggers]);
+
+  // Load teams once so the Add-Persona modal can group personas by workspace.
+  useEffect(() => { void fetchTeams(); }, [fetchTeams]);
 
   // Load recently emitted events to discover all event types in the bus —
   // including ones with no current listener (e.g. 'test_event_created').
@@ -35,7 +39,7 @@ export function EventCanvas({ allTriggers: initialTriggers, setHeaderExtra }: Pr
       initialTriggers={triggers}
       initialEvents={recentEvents}
       personas={personas}
-      groups={groups}
+      teams={teams}
       setHeaderExtra={setHeaderExtra}
     />
   );

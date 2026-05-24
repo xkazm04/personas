@@ -15,7 +15,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
-import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import {
@@ -64,10 +64,12 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
 
   // Group-by toggle — when enabled, partition cards by their persona's
-  // group_id and render each group under a collapsible header. State is
-  // persisted in systemStore (cycle 8 promotion) so re-opening the Monitor
-  // preserves the user's last view across the session and across restarts.
-  const groups = usePipelineStore((s) => s.groups);
+  // home_team_id (workspace) and render each team under a collapsible
+  // header. State is persisted in systemStore (cycle 8 promotion) so
+  // re-opening the Monitor preserves the user's last view across the
+  // session and across restarts.
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   const groupBy = useSystemStore((s) => s.monitorGroupBy);
   const setGroupBy = useSystemStore((s) => s.setMonitorGroupBy);
   const collapsedGroupsArr = useSystemStore((s) => s.monitorCollapsedGroups);
@@ -76,15 +78,20 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // the persisted array identity changes (i.e. user toggled).
   const collapsedGroups = useMemo(() => new Set(collapsedGroupsArr), [collapsedGroupsArr]);
 
+  // Load teams once so the group-by toggle has workspace metadata to render.
+  useEffect(() => {
+    void fetchTeams();
+  }, [fetchTeams]);
+
   const groupedDisplay = useMemo(() => {
     if (groupBy === 'none') return null;
     const byGroup = new Map<string, PersonaCardModel[]>();
     const ungrouped: PersonaCardModel[] = [];
-    const personaGroupMap = new Map<string, string | null>();
-    for (const p of personas) personaGroupMap.set(p.id, p.group_id ?? null);
+    const personaTeamMap = new Map<string, string | null>();
+    for (const p of personas) personaTeamMap.set(p.id, p.home_team_id ?? null);
 
     for (const card of displayCards) {
-      const gid = personaGroupMap.get(card.personaId) ?? null;
+      const gid = personaTeamMap.get(card.personaId) ?? null;
       if (gid === null) {
         ungrouped.push(card);
       } else {
@@ -94,15 +101,15 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       }
     }
 
-    const groupOrder = [...groups].sort((a, b) => a.sortOrder - b.sortOrder);
-    const sections: { group: PersonaGroup | null; cards: PersonaCardModel[] }[] = [];
+    const groupOrder = [...teams].sort((a, b) => a.name.localeCompare(b.name));
+    const sections: { group: PersonaTeam | null; cards: PersonaCardModel[] }[] = [];
     for (const g of groupOrder) {
       const bucket = byGroup.get(g.id);
       if (bucket && bucket.length > 0) sections.push({ group: g, cards: bucket });
     }
     if (ungrouped.length > 0) sections.push({ group: null, cards: ungrouped });
     return sections;
-  }, [groupBy, displayCards, personas, groups]);
+  }, [groupBy, displayCards, personas, teams]);
 
   // Tick once a second only while something is running.
   const anyRunning = useMemo(
@@ -186,7 +193,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               </button>
             </span>
           )}
-          {groups.length > 0 && (
+          {teams.length > 0 && (
             <button
               type="button"
               onClick={() => setGroupBy(groupBy === 'group' ? 'none' : 'group')}

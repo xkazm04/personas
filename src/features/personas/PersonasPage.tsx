@@ -105,9 +105,9 @@ export default function PersonasPage() {
       fetchToolDefinitions(),
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchTeams()),
     ]);
-    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
+    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'teams'] as const;
     secondaryResults.forEach((r, i) => {
       if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
     });

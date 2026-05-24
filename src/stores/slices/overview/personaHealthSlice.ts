@@ -457,19 +457,19 @@ export const createPersonaHealthSlice: StateCreator<OverviewStore, [], [], Perso
 // ---------------------------------------------------------------------------
 
 function buildCascadeLinks(personas: Persona[]): CascadeLink[] {
-  // Build links based on persona group relationships
+  // Build links based on persona home-team (workspace) relationships
   const links: CascadeLink[] = [];
   const groupMap = new Map<string, Persona[]>();
 
   for (const p of personas) {
-    if (p.group_id) {
-      const list = groupMap.get(p.group_id) ?? [];
+    if (p.home_team_id) {
+      const list = groupMap.get(p.home_team_id) ?? [];
       list.push(p);
-      groupMap.set(p.group_id, list);
+      groupMap.set(p.home_team_id, list);
     }
   }
 
-  // Within each group, create chain links
+  // Within each home team, create chain links
   for (const members of groupMap.values()) {
     for (let i = 0; i < members.length - 1; i++) {
       links.push({

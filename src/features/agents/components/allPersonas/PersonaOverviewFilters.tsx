@@ -26,9 +26,10 @@ interface UsePersonaListFiltersArgs {
   isDraft: (p: Persona) => boolean;
   isFavorite: (id: string) => boolean;
   /**
-   * Group-id filter from PersonaGroupDropRail (cycle 19). `null` =
-   * unfiltered; a group id narrows to members of that group; the literal
-   * `'__ungrouped__'` narrows to personas without `group_id`.
+   * Home-team filter from PersonaGroupDropRail (cycle 19; repointed to
+   * home teams in the Groups→Teams consolidation). `null` = unfiltered;
+   * a team id narrows to personas with that home team; the literal
+   * `'__ungrouped__'` narrows to personas without a `home_team_id`.
    */
   groupFilter: string | null;
 }
@@ -144,11 +145,12 @@ export function usePersonaListFilters({
     // Favorites
     if (favoriteOnly) result = result.filter((p) => isFavorite(p.id));
 
-    // Group (PersonaGroupDropRail chip selection — cycle 19)
+    // Home team / workspace (PersonaGroupDropRail chip selection — cycle 19,
+    // repointed to home_team_id in the Groups→Teams consolidation)
     if (groupFilter === '__ungrouped__') {
-      result = result.filter((p) => !p.group_id);
+      result = result.filter((p) => !p.home_team_id);
     } else if (groupFilter) {
-      result = result.filter((p) => p.group_id === groupFilter);
+      result = result.filter((p) => p.home_team_id === groupFilter);
     }
 
     return result;

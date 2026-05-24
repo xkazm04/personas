@@ -334,7 +334,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         max_budget_usd: null,
         max_turns: null,
         design_context: input.design_context ?? null,
-        group_id: null,
         notification_channels: null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));

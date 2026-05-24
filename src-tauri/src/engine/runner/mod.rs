@@ -29,8 +29,8 @@ use super::cli_process::{read_line_limited, CliProcessDriver};
 use super::event_registry::event_name;
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
-use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
 use crate::db::repos::resources::connectors as connector_repo;
@@ -108,14 +108,14 @@ pub async fn run_execution(
 
     let log_file_path = logger.path().to_string_lossy().to_string();
 
-    // Resolve workspace (group) defaults via the centralised cascade:
+    // Resolve workspace (home-team) defaults via the centralised cascade:
     // persona-level > workspace-level > global-level.
     // `config_merge::resolve_effective_config` logs which tier supplied each
     // value so the priority order is visible in traces.
     let workspace = persona
-        .group_id
+        .home_team_id
         .as_deref()
-        .and_then(|gid| group_repo::get_by_id(&pool, gid).ok());
+        .and_then(|tid| team_repo::get_by_id(&pool, tid).ok());
 
     let effective =
         super::config_merge::resolve_effective_config(&pool, &persona, workspace.as_ref());
@@ -493,7 +493,7 @@ pub async fn run_execution(
             }
         },
         has_workspace_instructions: workspace_instructions.is_some(),
-        workspace_id: persona.group_id.clone(),
+        workspace_id: persona.home_team_id.clone(),
         tool_names: tools.iter().map(|t| t.name.clone()).collect(),
         credential_connectors: cred_hints.to_vec(),
         routing_rule: None, // Set after BYOM policy evaluation in spawn stage
@@ -636,7 +636,7 @@ pub async fn run_execution(
                 &pool,
                 mem_repo::InjectionScope::for_persona(&persona.id)
                     .with_use_case(execution_use_case_id.as_deref())
-                    .with_group(persona.group_id.as_deref()),
+                    .with_home_team(persona.home_team_id.as_deref()),
                 10,
                 40,
             ) {

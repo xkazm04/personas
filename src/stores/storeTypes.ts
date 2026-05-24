@@ -15,7 +15,6 @@ import type { MessageSlice } from "./slices/overview/messageSlice";
 import type { EventSlice } from "./slices/overview/eventSlice";
 import type { HealingSlice } from "./slices/overview/healingSlice";
 import type { TeamSlice } from "./slices/pipeline/teamSlice";
-import type { GroupSlice } from "./slices/pipeline/groupSlice";
 import type { AssignmentSlice } from "./slices/pipeline/assignmentSlice";
 import type { MemorySlice } from "./slices/overview/memorySlice";
 import type { UiSlice } from "./slices/system/uiSlice";
@@ -209,11 +208,10 @@ export type OverviewStore = CoreState &
   PersonaHealthSlice &
   ProcessActivitySlice;
 
-/** Pipeline domain: triggers, teams, groups, recipes, assignments */
+/** Pipeline domain: triggers, teams, recipes, assignments */
 export type PipelineStore = CoreState &
   TriggerSlice &
   TeamSlice &
-  GroupSlice &
   RecipeSlice &
   AssignmentSlice;
 

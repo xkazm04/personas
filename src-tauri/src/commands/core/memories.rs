@@ -56,19 +56,6 @@ pub fn create_memory(
     repo::create(&state.db, input)
 }
 
-/// List memories shared into a specific group — the cross-persona pool a
-/// PersonaGroup has accumulated. Returns at most `limit` rows (default
-/// 200) in importance-desc / created-at-desc order. Used by the Group
-/// Memories panel in `GroupManagerPage`.
-#[tauri::command]
-pub fn list_group_memories(
-    state: State<'_, Arc<AppState>>,
-    group_id: String,
-    limit: Option<i64>,
-) -> Result<Vec<PersonaMemory>, AppError> {
-    require_auth_sync(&state)?;
-    repo::list_by_group(&state.db, &group_id, limit)
-}
 
 #[tauri::command]
 pub fn get_memory_count(
@@ -195,18 +182,6 @@ pub fn batch_delete_memories(
     repo::batch_delete(&state.db, &ids)
 }
 
-/// Set or clear a memory's `group_id` attribution. Pass `None` to unshare
-/// the memory from its current group (memory reverts to persona-private).
-/// Surfaces as the "Unshare" action on each row in GroupMemoryListModal.
-#[tauri::command]
-pub fn update_memory_group_id(
-    state: State<'_, Arc<AppState>>,
-    id: String,
-    group_id: Option<String>,
-) -> Result<bool, AppError> {
-    require_auth_sync(&state)?;
-    repo::update_group_id(&state.db, &id, group_id.as_deref())
-}
 
 // -- Tier Management --------------------------------------------------------
 
@@ -987,7 +962,6 @@ pub fn seed_mock_memory(_state: State<'_, Arc<AppState>>) -> Result<PersonaMemor
             .to_string()])),
             use_case_id: None,
         
-            group_id: None,
         
         };
 

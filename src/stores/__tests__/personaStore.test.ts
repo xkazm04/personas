@@ -25,7 +25,7 @@ function makePersona(overrides: Partial<Persona> = {}): Persona {
     max_budget_usd: null,
     max_turns: null,
     design_context: null,
-    group_id: null,
+    home_team_id: null,
     created_at: "2025-01-01T00:00:00Z",
     updated_at: "2025-01-01T00:00:00Z",
     ...overrides,

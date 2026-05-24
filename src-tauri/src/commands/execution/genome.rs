@@ -339,9 +339,9 @@ pub fn genome_adopt_offspring(
         "INSERT INTO personas
          (id, project_id, name, description, system_prompt, structured_prompt,
           icon, color, enabled, sensitive, max_concurrent, timeout_ms,
-          model_profile, max_budget_usd, max_turns, design_context, group_id,
+          model_profile, max_budget_usd, max_turns, design_context,
           notification_channels, created_at, updated_at)
-         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)",
+         VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)",
         rusqlite::params![
             persona_id,
             project_id,
@@ -359,7 +359,6 @@ pub fn genome_adopt_offspring(
             genome.model.max_budget_usd,
             genome.model.max_turns,
             Option::<String>::None, // design_context
-            Option::<String>::None, // group_id
             Option::<String>::None, // notification_channels
             now,
         ],

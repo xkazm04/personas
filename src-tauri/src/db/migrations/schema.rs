@@ -1,23 +1,13 @@
 pub(super) const SCHEMA: &str = r#"
 
 -- ============================================================================
--- Persona Groups (must precede personas due to FK)
--- ============================================================================
-
-CREATE TABLE IF NOT EXISTS persona_groups (
-    id          TEXT PRIMARY KEY,
-    name        TEXT NOT NULL,
-    color       TEXT DEFAULT '#6B7280',
-    sort_order  INTEGER DEFAULT 0,
-    collapsed   INTEGER DEFAULT 0,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
-);
-CREATE INDEX IF NOT EXISTS idx_persona_groups_sort ON persona_groups(sort_order);
-
--- ============================================================================
 -- Personas
 -- ============================================================================
+-- NOTE: the legacy `persona_groups` table + `personas.group_id` FK were
+-- retired in the Groups→Teams consolidation (Phase 5, 2026-05-24). The team
+-- (`persona_teams` + `personas.home_team_id`) is now the single workspace
+-- primitive. Existing DBs drop the column/table via the incremental
+-- `retire_persona_groups` migration; fresh DBs simply never create them.
 
 CREATE TABLE IF NOT EXISTS personas (
     id                      TEXT PRIMARY KEY,
@@ -39,7 +29,6 @@ CREATE TABLE IF NOT EXISTS personas (
     max_budget_usd          REAL,
     max_turns               INTEGER,
     design_context          TEXT,
-    group_id                TEXT REFERENCES persona_groups(id) ON DELETE SET NULL,
     -- Workspace anchor (Groups→Teams consolidation, 2026-05-23): the one
     -- team whose workspace settings + injected memory apply at runtime.
     home_team_id            TEXT REFERENCES persona_teams(id) ON DELETE SET NULL,
@@ -48,7 +37,6 @@ CREATE TABLE IF NOT EXISTS personas (
     updated_at              TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_personas_enabled   ON personas(enabled);
-CREATE INDEX IF NOT EXISTS idx_personas_group_id  ON personas(group_id);
 -- idx_personas_home_team_id is created by the incremental `personas_home_team_id`
 -- migration, NOT here: on legacy DBs the personas table pre-dates the
 -- home_team_id column, so creating the index during base-schema bootstrap

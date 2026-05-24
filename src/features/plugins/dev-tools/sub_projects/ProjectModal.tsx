@@ -9,7 +9,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users, Layers,
+  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users,
 } from 'lucide-react';
 import {
   type ProjectType, type EditProjectData, PROJECT_TYPES,
@@ -27,7 +27,6 @@ interface ProjectFormData {
   projectType: ProjectType;
   githubUrl: string;
   teamId: string | null;
-  groupId: string | null;
 }
 
 interface ProjectModalProps {
@@ -56,22 +55,18 @@ export function ProjectModal({
   const [projectType, setProjectType] = useState<ProjectType>('other');
   const [githubUrl, setGithubUrl] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
-  const [groupId, setGroupId] = useState<string | null>(null);
   const [nameEdited, setNameEdited] = useState(false);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
   const { shouldAnimate: _shouldAnimate } = useMotion();
 
-  // Teams + Groups roster for the binding pickers (cycles 5 + 15).
+  // Teams roster for the binding picker (cycle 5).
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
-  const groups = usePipelineStore((s) => s.groups);
-  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
   useEffect(() => {
     if (isOpen) {
       fetchTeams();
-      fetchGroups();
     }
-  }, [isOpen, fetchTeams, fetchGroups]);
+  }, [isOpen, fetchTeams]);
 
   // Pre-fill form when editing
   useEffect(() => {
@@ -81,7 +76,6 @@ export function ProjectModal({
       setProjectType(editProject.projectType);
       setGithubUrl(editProject.githubUrl);
       setTeamId(editProject.teamId);
-      setGroupId(editProject.groupId);
       setNameEdited(true);
     }
   }, [editProject]);
@@ -119,7 +113,6 @@ export function ProjectModal({
         projectType,
         githubUrl: githubUrl.trim(),
         teamId,
-        groupId,
       });
       handleClose();
     } else {
@@ -129,7 +122,6 @@ export function ProjectModal({
         projectType,
         githubUrl: githubUrl.trim(),
         teamId,
-        groupId,
       });
       if (result) {
         setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
@@ -145,7 +137,6 @@ export function ProjectModal({
     setProjectType('other');
     setGithubUrl('');
     setTeamId(null);
-    setGroupId(null);
     setNameEdited(false);
     setCreatedProject(null);
     onClose();
@@ -275,36 +266,6 @@ export function ProjectModal({
                   {teams.length === 0 && (
                     <p className="typo-caption text-foreground/60 mt-1">
                       {t.plugins.dev_projects.team_binding_empty}
-                    </p>
-                  )}
-                </div>
-
-                {/* Group binding — optional; complementary to team_id. Ties
-                    this project to a PersonaGroup (workspace folder with
-                    shared instructions / defaults). Both bindings independent. */}
-                <div>
-                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    <Layers className="w-3.5 h-3.5" />
-                    {t.plugins.dev_projects.group_binding_label}
-                    <span className="text-[10px] text-foreground font-normal">
-                      ({t.plugins.dev_projects.team_binding_optional})
-                    </span>
-                  </label>
-                  <select
-                    value={groupId ?? ''}
-                    onChange={(e) => setGroupId(e.target.value || null)}
-                    className="w-full px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground focus-ring"
-                  >
-                    <option value="">{t.plugins.dev_projects.group_binding_none}</option>
-                    {groups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.name}
-                      </option>
-                    ))}
-                  </select>
-                  {groups.length === 0 && (
-                    <p className="typo-caption text-foreground/60 mt-1">
-                      {t.plugins.dev_projects.group_binding_empty}
                     </p>
                   )}
                 </div>

@@ -628,15 +628,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created test_suites table");
     }
 
-    // Promote persona_groups to workspace containers: add shared resource fields
-    let has_group_description: bool = conn
-        .prepare(
-            "SELECT COUNT(*) FROM pragma_table_info('persona_groups') WHERE name = 'description'",
-        )?
+    // Promote persona_groups to workspace containers: add shared resource fields.
+    // Skipped entirely on fresh post-Phase-5 DBs that never create the table
+    // (Groups→Teams retire). Existing DBs still have it here — it's dropped
+    // later by `retire_persona_groups`.
+    let groups_table_exists: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_groups'")?
         .query_row([], |row| row.get::<_, i64>(0))
         .map(|c| c > 0)
         .unwrap_or(false);
-    if !has_group_description {
+    let has_group_description: bool = !groups_table_exists
+        || conn
+            .prepare(
+                "SELECT COUNT(*) FROM pragma_table_info('persona_groups') WHERE name = 'description'",
+            )?
+            .query_row([], |row| row.get::<_, i64>(0))
+            .map(|c| c > 0)
+            .unwrap_or(false);
+    if groups_table_exists && !has_group_description {
         ddl_step(
                     conn,
                             "ALTER TABLE persona_groups ADD COLUMN description TEXT;
@@ -3072,6 +3081,17 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
             // idempotent regardless.
             already_applied: |_conn| Ok(false),
             apply: |conn| {
+                // Fresh DBs (post-Phase-5 schema) never create `persona_groups`
+                // or `personas.group_id`, so this whole data migration is a
+                // no-op there — guard on the table's existence to avoid a
+                // "no such table" panic. Existing DBs still have both at this
+                // point in the sequence (the drop migration runs LAST).
+                let groups_table_exists: i64 = conn
+                    .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_groups'")?
+                    .query_row([], |row| row.get(0))?;
+                if groups_table_exists == 0 {
+                    return Ok(());
+                }
                 ddl_step(
                     conn,
                     "
@@ -3127,6 +3147,53 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                          WHERE group_id IS NOT NULL AND team_id IS NULL;",
                     )?;
                 }
+                Ok(())
+            },
+        },
+    )?;
+
+    // Groups→Teams Phase 5 — retire the PersonaGroup primitive. Runs AFTER
+    // `groups_to_teams_data_migration` has re-anchored every group onto a
+    // workspace team (home_team_id + membership + memory). Destructive +
+    // irreversible: drops the `persona_groups` table and the orphan-tolerant
+    // `group_id` columns on `persona_memories` and `dev_projects`.
+    //
+    // `personas.group_id` is deliberately NOT dropped: it carries an inline
+    // `REFERENCES persona_groups(id)` FK, and SQLite's `ALTER TABLE DROP
+    // COLUMN` refuses a FK-constrained column without a full rebuild of the
+    // central `personas` table — too risky on a live DB for a column that is
+    // now dead (no Rust struct field, no read, no write) and forced to NULL
+    // below. It is invisible to all code; the concept is fully retired.
+    // ADR: 2026-05-23-groups-into-teams (Phase 5).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "retire_persona_groups",
+            description: "Drop persona_groups table + persona_memories/dev_projects group_id columns (Groups→Teams Phase 5)",
+            already_applied: |_conn| Ok(false),
+            apply: |conn| {
+                // Drop dependent indexes first — SQLite DROP COLUMN refuses an
+                // indexed column. IF EXISTS keeps this safe on fresh DBs.
+                let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_personas_group_id;");
+                let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_pm_group_id;");
+                let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_dev_projects_group_id;");
+
+                // No-FK columns: safe native DROP COLUMN. has_column guard makes
+                // it a no-op on fresh DBs and on re-run.
+                if has_column(conn, "persona_memories", "group_id")? {
+                    let _ = ddl_step(conn, "ALTER TABLE persona_memories DROP COLUMN group_id;");
+                }
+                if has_column(conn, "dev_projects", "group_id")? {
+                    let _ = ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;");
+                }
+
+                // NULL the personas FK column before dropping its parent so the
+                // now-dangling reference can never be enforced (group_id stays
+                // NULL forever — no code writes it).
+                if has_column(conn, "personas", "group_id")? {
+                    let _ = ddl_step(conn, "UPDATE personas SET group_id = NULL;");
+                }
+                let _ = ddl_step(conn, "DROP TABLE IF EXISTS persona_groups;");
                 Ok(())
             },
         },

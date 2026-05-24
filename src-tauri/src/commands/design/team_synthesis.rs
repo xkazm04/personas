@@ -327,7 +327,6 @@ pub async fn synthesize_team_from_templates(
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: Some(design_context_str),
-                group_id: None,
                 notification_channels: None,
             },
         )?;

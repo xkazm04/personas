@@ -24,7 +24,6 @@ pub fn create_test_persona(pool: &DbPool, name: &str, system_prompt: &str) -> Pe
             max_budget_usd: None,
             max_turns: None,
             design_context: None,
-            group_id: None,
             notification_channels: None,
         },
     )

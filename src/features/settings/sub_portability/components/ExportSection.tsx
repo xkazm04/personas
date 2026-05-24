@@ -133,9 +133,6 @@ export function ExportSection({
             {importResult.tools_created > 0 && (
               <span>{s.import_tools.replace('{count}', String(importResult.tools_created))}</span>
             )}
-            {importResult.groups_created > 0 && (
-              <span>{s.import_groups.replace('{count}', String(importResult.groups_created))}</span>
-            )}
             {importResult.credentials_created > 0 && (
               <span>{s.import_credentials_count.replace('{count}', String(importResult.credentials_created))}</span>
             )}

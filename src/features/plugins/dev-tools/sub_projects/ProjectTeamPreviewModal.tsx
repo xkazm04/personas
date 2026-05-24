@@ -42,14 +42,14 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
   const selectPersona = useAgentStore((s) => s.selectPersona);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setAgentTab = useSystemStore((s) => s.setAgentTab);
-  const groups = usePipelineStore((s) => s.groups);
-  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   useEffect(() => {
-    if (open) void fetchGroups();
-  }, [open, fetchGroups]);
+    if (open) void fetchTeams();
+  }, [open, fetchTeams]);
   const groupMetaById = useMemo(
-    () => new Map(groups.map((g) => [g.id, { name: g.name, color: g.color }])),
-    [groups],
+    () => new Map(teams.map((g) => [g.id, { name: g.name, color: g.color }])),
+    [teams],
   );
 
   const [members, setMembers] = useState<PersonaTeamMember[] | null>(null);
@@ -202,7 +202,7 @@ export function ProjectTeamPreviewModal({ open, team, onClose }: ProjectTeamPrev
                 const isExpanded = expandedMemberId === m.id;
                 const health = persona ? personaHealthMap[persona.id] : undefined;
                 const lastRun = persona ? personaLastRun[persona.id] : null;
-                const personaGroup = persona?.group_id ? groupMetaById.get(persona.group_id) : null;
+                const personaGroup = persona?.home_team_id ? groupMetaById.get(persona.home_team_id) : null;
                 return (
                   <li key={m.id} className="rounded-card bg-secondary/30 border border-primary/10">
                     <button
