@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, SlidersHorizontal, ArrowLeft, Users } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, ArrowLeft, Users, Settings } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTeamStudioData } from './useTeamStudioData';
+import { TeamWorkspacePane } from './TeamWorkspacePane';
 import {
   MemberTierChip,
   TrustMeter,
@@ -35,7 +36,7 @@ interface TeamStudioSplitVariantProps {
   onBack?: () => void;
 }
 
-type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' };
+type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' } | { kind: 'workspace' };
 
 export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioSplitVariantProps) {
   const { t, tx } = useTranslation();
@@ -103,6 +104,21 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
             <span className="typo-body font-medium">{ts.orchestrate_assignment}</span>
           </button>
 
+          {/* Workspace settings entry */}
+          <button
+            type="button"
+            onClick={() => setMode({ kind: 'workspace' })}
+            aria-pressed={mode.kind === 'workspace'}
+            className={`flex-shrink-0 mx-2 mb-1 flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
+              mode.kind === 'workspace'
+                ? 'border-primary/40 bg-secondary/40 text-foreground/90'
+                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
+            }`}
+          >
+            <Settings className="w-4 h-4 flex-shrink-0" />
+            <span className="typo-body font-medium">{ts.workspace_settings}</span>
+          </button>
+
           <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 flex flex-col gap-1">
             {members.map((m) => (
               <RosterRow
@@ -122,6 +138,8 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
         <div className="flex-1 min-h-0 overflow-hidden px-5 py-4">
           {mode.kind === 'orchestrate' ? (
             <OrchestrationConsole teamId={teamId} members={members} layout="panel" />
+          ) : mode.kind === 'workspace' ? (
+            <TeamWorkspacePane teamId={teamId} />
           ) : selected ? (
             <MemberAdjustPane
               member={selected}
