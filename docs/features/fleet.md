@@ -69,6 +69,7 @@ The "Needs you" banner does more than list — it's the desktop stand-in for the
 - **Jump-to-next cycler + "All clear"** — when more than one session is awaiting, a skip-forward control cycles terminal focus through them; when sessions exist but nothing's pending, a small emerald "All clear" chip shows instead of the surface vanishing.
 - **Per-session sparkline** (`FleetStateSparkline`) — each session card carries a tiny inline timeline of recent lifecycle transitions (colored ticks, oldest→newest), backed by the in-memory `fleetTransitions` ring-buffer in `fleetSlice` (cap 24/session). Spot a flapping or long-stuck session at a glance.
 - **Plugin-rail badges** — the "needs you" counts also surface on the L2 plugin list: a pulsing violet badge on the Dev Tools row (awaiting sessions) and an amber badge on the Companion row (pending approvals), so you see them without opening either plugin (`PluginsSidebarNav`).
+- **Session filter** — once more than one session is tracked, a search field above the list narrows the grouped grid by project label or custom name (composes with the state-pill filter); the focused session is persisted across reloads (`fleetActiveSessionId`). The sparkline ticks carry "&lt;state&gt; · &lt;Xs ago&gt;" tooltips on hover.
 
 ### Pair a device (stage 1)
 
