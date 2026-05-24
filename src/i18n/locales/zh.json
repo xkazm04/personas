@@ -5085,6 +5085,11 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "舰队",
+      "scope_fleet_hint": "显示所有角色 — 角色筛选器不会改变此项。",
+      "triage_jump": "最紧急",
+      "triage_detail_pipelines": "数据源同步失败",
+      "triage_up_next": "接下来",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {
@@ -5443,6 +5448,7 @@
       "success_badge": "成功",
       "alerts_badge": "告警",
       "agents_badge": "代理",
+      "pipelines_badge": "管道",
       "tool_performance": "Tool Performance",
       "tool_performance_subtitle": "Latency & error rate per tool",
       "tool_performance_col_tool": "Tool",

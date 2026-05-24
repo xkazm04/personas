@@ -304,6 +304,11 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "フリート",
+    "scope_fleet_hint": "すべてのペルソナを表示します — ペルソナフィルターはこれに影響しません。",
+    "triage_jump": "最優先",
+    "triage_detail_pipelines": "データソースの同期に失敗",
+    "triage_up_next": "次",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -662,6 +667,7 @@
     "success_badge": "成功",
     "alerts_badge": "アラート",
     "agents_badge": "エージェント",
+    "pipelines_badge": "パイプライン",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",

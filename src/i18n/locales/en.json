@@ -5146,7 +5146,12 @@
       "from_templates": "From Templates",
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
-      "todos_empty": "All clear."
+      "todos_empty": "All clear.",
+      "scope_fleet": "Fleet",
+      "scope_fleet_hint": "Shows all personas — the persona filter doesn't change this.",
+      "triage_jump": "Most urgent",
+      "triage_detail_pipelines": "data sources failing to sync",
+      "triage_up_next": "Up next"
     },
     "execution_metrics": {
       "title": "Execution Metrics",
@@ -5535,7 +5540,8 @@
       "executions_badge": "Executions",
       "success_badge": "Success",
       "alerts_badge": "Alerts",
-      "agents_badge": "Agents"
+      "agents_badge": "Agents",
+      "pipelines_badge": "Pipelines"
     },
     "cards": {
       "fleet_optimization": "Fleet Optimization",

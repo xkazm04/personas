@@ -7,7 +7,7 @@
 // Labels like "TRIAGE", "VITALS", "STREAM", "STATUS" are prototype-only;
 // they'll be extracted to i18n only if this direction wins.
 
-import { Suspense, useMemo, useCallback, memo } from 'react';
+import { Suspense, useMemo, useState, useEffect, useCallback, memo } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   ClipboardCheck, AlertTriangle, Activity, Cpu, Bell,
@@ -15,9 +15,14 @@ import {
 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import type { OverviewTab } from '@/lib/types/types';
+import { getOverviewBundle } from '@/api/overview/observability';
+import type { OverviewBundle } from '@/lib/bindings/OverviewBundle';
+import { silentCatch } from '@/lib/silentCatch';
 import { useAttention } from '@/hooks/useAttention';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
@@ -46,7 +51,7 @@ const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
 const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
 
-type TriageKind = 'review' | 'alert';
+type TriageKind = 'alert' | 'pipeline' | 'review' | 'message';
 interface TriageItem {
   id: string;
   kind: TriageKind;
@@ -61,8 +66,8 @@ export default function DashboardHomeMissionControl() {
   const personas = useAgentStore((s) => s.personas);
   const {
     globalExecutions, globalExecutionCounts, memoryActions, executionDashboard,
-    pipelineErrors, pipelineFetchedAt, setOverviewTab, dismissMemoryAction,
-    setPipelineError,
+    executionDashboardDays, pipelineErrors, pipelineFetchedAt, setOverviewTab,
+    dismissMemoryAction, setPipelineError,
   } = useOverviewStore(useShallow((s) => ({
     globalExecutions: s.globalExecutions,
     // Use the authoritative server-side counts for any "total executions"
@@ -72,6 +77,7 @@ export default function DashboardHomeMissionControl() {
     globalExecutionCounts: s.globalExecutionCounts,
     memoryActions: s.memoryActions,
     executionDashboard: s.executionDashboard,
+    executionDashboardDays: s.executionDashboardDays,
     pipelineErrors: s.pipelineErrors,
     pipelineFetchedAt: s.pipelineFetchedAt,
     setOverviewTab: s.setOverviewTab,
@@ -85,15 +91,59 @@ export default function DashboardHomeMissionControl() {
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
 
+  // Mission Control panes that derive from the loaded execution feed honour
+  // the header persona filter; fleet-wide aggregates (KPI tiles, traffic
+  // sparkline, triage counts) stay global and carry a <FleetTag/> so the mixed
+  // scope is never ambiguous. Stage 2 gives those aggregates their own
+  // persona-scoped backend query.
+  const personaName = useMemo(
+    () => personas.find((p) => p.id === selectedPersonaId)?.name ?? null,
+    [personas, selectedPersonaId],
+  );
+
   const stats = useMemo(() => {
-    const execs = globalExecutions;
+    const execs = selectedPersonaId
+      ? globalExecutions.filter((e) => e.persona_id === selectedPersonaId)
+      : globalExecutions;
     const successCount = execs.filter((e) => e.status === 'completed').length;
     const successRate = Math.round(resolveMetricPercent(
       SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
       { numerator: successCount, denominator: execs.length },
     ));
     return { successRate, activeAgents: personas.length, recentExecs: execs.slice(0, 20) };
-  }, [globalExecutions, personas]);
+  }, [globalExecutions, personas, selectedPersonaId]);
+
+  // Stage 2 — when a persona is selected, pull that persona's accurate metrics
+  // from get_overview_bundle (already persona-aware on the backend) so the
+  // Vitals success ring and traffic sparkline reflect the full period instead
+  // of the rough recent-feed estimate. The 4 KPI tiles and Triage stay
+  // fleet-wide — those need per-persona attention queries (a later stage).
+  const [personaMetrics, setPersonaMetrics] = useState<OverviewBundle | null>(null);
+  useEffect(() => {
+    if (!selectedPersonaId) { setPersonaMetrics(null); return; }
+    let cancelled = false;
+    setPersonaMetrics(null);
+    getOverviewBundle(executionDashboardDays ?? 30, selectedPersonaId)
+      .then((bundle) => { if (!cancelled) setPersonaMetrics(bundle); })
+      .catch(silentCatch('DashboardHomeMissionControl:personaMetrics'));
+    return () => { cancelled = true; };
+  }, [selectedPersonaId, executionDashboardDays]);
+
+  const vitals = useMemo(() => {
+    const fleetPoints = executionDashboard?.daily_points ?? [];
+    if (!selectedPersonaId || !personaMetrics) {
+      return { successRate: stats.successRate, points: fleetPoints };
+    }
+    const summary = personaMetrics.metricsSummary;
+    const successRate = Math.round(resolveMetricPercent(
+      SUCCESS_RATE_IDENTITIES.dashboardRecentExecutions,
+      { numerator: summary.successfulExecutions, denominator: summary.totalExecutions },
+    ));
+    const points = personaMetrics.metricsChartData.chart_points.map((p) => ({
+      date: p.date, total_executions: p.executions, failed: p.failed,
+    }));
+    return { successRate, points };
+  }, [selectedPersonaId, personaMetrics, executionDashboard, stats.successRate]);
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -104,15 +154,13 @@ export default function DashboardHomeMissionControl() {
 
   const displayName = user?.display_name || user?.email?.split('@')[0] || t.overview.dashboard.default_user;
 
+  const pipelineErrorCount = Object.keys(pipelineErrors).length;
+
+  // Triage is a ranked work queue, not a flat list: items are sorted by
+  // urgency (alert → pipeline → review → message). The pane accents whatever
+  // lands at rank 0 and the header "Most urgent" button jumps straight to it.
   const triageItems = useMemo<TriageItem[]>(() => {
     const out: TriageItem[] = [];
-    if (pendingReviewCount > 0) out.push({
-      id: 'reviews',
-      kind: 'review',
-      title: `${pendingReviewCount} ${t.overview.widgets.reviews_badge}`,
-      detail: 'manual review queue',
-      onClick: () => setOverviewTab('manual-review'),
-    });
     if (activeAlertCount > 0) out.push({
       id: 'alerts',
       kind: 'alert',
@@ -120,22 +168,44 @@ export default function DashboardHomeMissionControl() {
       detail: 'active health alerts',
       onClick: () => setOverviewTab('health'),
     });
+    if (pipelineErrorCount > 0) out.push({
+      id: 'pipelines',
+      kind: 'pipeline',
+      title: `${pipelineErrorCount} ${t.overview.widgets.pipelines_badge}`,
+      detail: t.overview.dashboard.triage_detail_pipelines,
+      onClick: () => setOverviewTab('health'),
+    });
+    if (pendingReviewCount > 0) out.push({
+      id: 'reviews',
+      kind: 'review',
+      title: `${pendingReviewCount} ${t.overview.widgets.reviews_badge}`,
+      detail: 'manual review queue',
+      onClick: () => setOverviewTab('manual-review'),
+    });
     if (unreadMessageCount > 0) out.push({
       id: 'messages',
-      kind: 'review',
+      kind: 'message',
       title: `${unreadMessageCount} ${t.overview.widgets.messages_badge}`,
       detail: 'unread in inbox',
       onClick: () => setOverviewTab('messages'),
     });
     // Memory suggestions get their own detailed panel in the Instruments bay
     // below — they're richer than the triage summary affords.
-    return out;
-  }, [pendingReviewCount, activeAlertCount, unreadMessageCount, t, setOverviewTab]);
+    return out.sort((a, b) => TRIAGE_SEVERITY[a.kind] - TRIAGE_SEVERITY[b.kind]);
+  }, [activeAlertCount, pipelineErrorCount, pendingReviewCount, unreadMessageCount, t, setOverviewTab]);
 
   const chartData = useMemo(() => {
+    // Scope the Instruments traffic chart to the persona filter when a persona
+    // is selected, reusing the same get_overview_bundle data the Vitals
+    // sparkline draws from (see the personaMetrics fetch above).
+    if (selectedPersonaId && personaMetrics) {
+      return personaMetrics.metricsChartData.chart_points.map((p) => ({
+        date: p.date, traffic: p.executions, errors: p.failed,
+      }));
+    }
     const points = executionDashboard?.daily_points ?? [];
     return points.map((p) => ({ date: p.date, traffic: p.total_executions, errors: p.failed }));
-  }, [executionDashboard]);
+  }, [executionDashboard, selectedPersonaId, personaMetrics]);
 
   const chartTotals = useMemo(() => {
     const totalTraffic = chartData.reduce((s, d) => s + d.traffic, 0);
@@ -143,7 +213,6 @@ export default function DashboardHomeMissionControl() {
     return { totalTraffic, totalErrors };
   }, [chartData]);
 
-  const pipelineErrorCount = Object.keys(pipelineErrors).length;
   const lastSyncedIso = Object.values(pipelineFetchedAt).filter(Boolean).sort().pop();
   const lastSyncedLabel = lastSyncedIso
     ? new Date(lastSyncedIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -214,18 +283,20 @@ export default function DashboardHomeMissionControl() {
               <DashboardEmptyState />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(260px,320px)_1fr_minmax(280px,340px)] gap-4">
-                <TriagePane items={triageItems} />
+                <TriagePane items={triageItems} personaScoped={!!personaName} />
                 <VitalsConsole
-                  successRate={stats.successRate}
+                  successRate={vitals.successRate}
                   activeAgents={stats.activeAgents}
                   activeAlertCount={activeAlertCount}
                   totalExecutions={globalExecutionCounts.total}
                   pendingReviews={pendingReviewCount}
-                  points={executionDashboard?.daily_points ?? []}
+                  points={vitals.points}
+                  personaName={personaName}
                 />
                 <ActivityStreamLog
                   executions={stats.recentExecs}
                   onViewAll={goToExecutions}
+                  personaName={personaName}
                 />
               </div>
             )}
@@ -237,6 +308,7 @@ export default function DashboardHomeMissionControl() {
               pipelineErrors={pipelineErrorCount}
               totalExecutions={globalExecutionCounts.total}
               lastSyncedLabel={lastSyncedLabel}
+              onNavigate={setOverviewTab}
             />
           </motion.div>
 
@@ -263,6 +335,8 @@ export default function DashboardHomeMissionControl() {
                     chartTotals={chartTotals}
                     executionDashboardFetchedAt={pipelineFetchedAt.executionDashboard}
                     executionDashboardError={!!pipelineErrors.executionDashboard}
+                    personaName={personaName}
+                    highlightPersonaId={selectedPersonaId}
                   />
                 </motion.div>
               )}
@@ -306,11 +380,14 @@ export default function DashboardHomeMissionControl() {
 
 export const InstrumentsBay = memo(function InstrumentsBay({
   chartData, chartTotals, executionDashboardFetchedAt, executionDashboardError,
+  personaName, highlightPersonaId,
 }: {
   chartData: { date: string; traffic: number; errors: number }[];
   chartTotals: { totalTraffic: number; totalErrors: number };
   executionDashboardFetchedAt: number | undefined;
   executionDashboardError: boolean;
+  personaName: string | null;
+  highlightPersonaId: string | null;
 }) {
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
@@ -318,7 +395,7 @@ export const InstrumentsBay = memo(function InstrumentsBay({
       <div className="p-3 grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Left — leaderboard snapshot */}
         <div>
-          <TopPerformersWidget />
+          <TopPerformersWidget highlightPersonaId={highlightPersonaId} />
         </div>
 
         {/* Center — traffic chart + analytics */}
@@ -329,6 +406,9 @@ export const InstrumentsBay = memo(function InstrumentsBay({
               hasError={executionDashboardError}
               label="Traffic"
             />
+            {personaName && (
+              <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
+            )}
             <TrafficErrorsChart
               chartData={chartData}
               totalTraffic={chartTotals.totalTraffic}
@@ -356,33 +436,60 @@ export const InstrumentsBay = memo(function InstrumentsBay({
 // TriagePane — ranked queue of items needing the operator's attention
 // ---------------------------------------------------------------------------
 
-const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: string; bg: string; border: string; tag: string }> = {
-  review: { Icon: ClipboardCheck, color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20', tag: 'REV' },
-  alert:  { Icon: AlertTriangle,  color: 'text-red-400',   bg: 'bg-red-500/10',   border: 'border-red-500/20',   tag: 'ALT' },
+// Lower rank = more urgent. Drives the triage queue sort + the rank-0 accent.
+const TRIAGE_SEVERITY: Record<TriageKind, number> = {
+  alert: 0, pipeline: 1, review: 2, message: 3,
 };
 
-export const TriagePane = memo(function TriagePane({ items }: { items: TriageItem[] }) {
+const TRIAGE_META: Record<TriageKind, { Icon: typeof ClipboardCheck; color: string; bg: string; border: string; tag: string }> = {
+  alert:    { Icon: AlertTriangle,  color: 'text-red-400',    bg: 'bg-red-500/10',    border: 'border-red-500/20',    tag: 'ALT' },
+  pipeline: { Icon: AlertCircle,    color: 'text-orange-400', bg: 'bg-orange-500/10', border: 'border-orange-500/20', tag: 'SYS' },
+  review:   { Icon: ClipboardCheck, color: 'text-amber-400',  bg: 'bg-amber-500/10',  border: 'border-amber-500/20',  tag: 'REV' },
+  message:  { Icon: Bell,           color: 'text-blue-400',   bg: 'bg-blue-500/10',   border: 'border-blue-500/20',   tag: 'MSG' },
+};
+
+export const TriagePane = memo(function TriagePane({
+  items, personaScoped,
+}: { items: TriageItem[]; personaScoped: boolean }) {
   const { t, tx } = useTranslation();
+  const topItem = items[0];
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
       <PaneHeader
         label={t.overview.dashboard.todos_label}
         subtitle={tx(t.overview.dashboard.todos_subtitle_open, { count: items.length })}
-      />
+      >
+        <div className="flex items-center gap-2">
+          {personaScoped && <FleetTag />}
+          {topItem && (
+            <button
+              onClick={topItem.onClick}
+              className="typo-caption font-mono uppercase tracking-widest text-primary/80 hover:text-primary transition-colors flex items-center gap-1"
+            >
+              {t.overview.dashboard.triage_jump} <ArrowRight className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </PaneHeader>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
           <div className="px-4 py-8 text-center typo-body text-foreground">
             {t.overview.dashboard.todos_empty}
           </div>
         ) : (
-          items.map((item) => {
+          items.map((item, idx) => {
             const meta = TRIAGE_META[item.kind];
             const Icon = meta.Icon;
+            const isTop = idx === 0;
             return (
               <button
                 key={item.id}
                 onClick={item.onClick}
-                className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-primary/[0.04] transition-colors group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30"
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
+                  isTop
+                    ? `${meta.border} bg-primary/[0.04] hover:bg-primary/[0.07]`
+                    : 'border-transparent hover:bg-primary/[0.04]'
+                }`}
               >
                 <span className={`typo-caption font-mono px-1.5 py-0.5 rounded-interactive border ${meta.bg} ${meta.border} ${meta.color} flex-shrink-0`}>
                   {meta.tag}
@@ -394,6 +501,11 @@ export const TriagePane = memo(function TriagePane({ items }: { items: TriageIte
                     <div className="typo-caption text-foreground truncate">{item.detail}</div>
                   )}
                 </div>
+                {isTop && (
+                  <span className="typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive bg-primary/10 text-primary flex-shrink-0">
+                    {t.overview.dashboard.triage_up_next}
+                  </span>
+                )}
                 <ArrowRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground/70 transition-colors flex-shrink-0" />
               </button>
             );
@@ -409,7 +521,7 @@ export const TriagePane = memo(function TriagePane({ items }: { items: TriageIte
 // ---------------------------------------------------------------------------
 
 export const VitalsConsole = memo(function VitalsConsole({
-  successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points,
+  successRate, activeAgents, activeAlertCount, totalExecutions, pendingReviews, points, personaName,
 }: {
   successRate: number;
   activeAgents: number;
@@ -417,6 +529,7 @@ export const VitalsConsole = memo(function VitalsConsole({
   totalExecutions: number;
   pendingReviews: number;
   points: { date: string; total_executions: number; failed: number }[];
+  personaName: string | null;
 }) {
   const formatCount = useCallback((v: number) => Math.round(v).toLocaleString(), []);
 
@@ -434,14 +547,21 @@ export const VitalsConsole = memo(function VitalsConsole({
 
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
-      <PaneHeader label="Vitals" subtitle="fleet health" />
+      <PaneHeader label="Vitals" subtitle={personaName ?? 'fleet health'} />
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <SuccessRing rate={successRate} />
-        <div className="w-full grid grid-cols-2 gap-3">
-          <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
-          <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
-          <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
-          <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
+        <div className="w-full space-y-2">
+          {personaName && (
+            <div className="flex justify-end">
+              <FleetTag />
+            </div>
+          )}
+          <div className="grid grid-cols-2 gap-3">
+            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
+            <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
+            <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
+            <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
+          </div>
         </div>
         {sparkline && (
           <div className="w-full pt-3 border-t border-primary/10">
@@ -497,16 +617,35 @@ function SuccessRing({ rate }: { rate: number }) {
 // ActivityStreamLog — mono-styled execution log
 // ---------------------------------------------------------------------------
 
+type StreamFilter = 'all' | 'completed' | 'failed' | 'running';
+const STREAM_FILTERS: StreamFilter[] = ['all', 'completed', 'failed', 'running'];
+
+// Buckets a raw execution status into a filterable group. Anything that isn't
+// a terminal completed/failed counts as "running" (queued, active, …).
+function streamBucket(status: string): 'completed' | 'failed' | 'running' {
+  if (status === 'completed') return 'completed';
+  if (status === 'failed') return 'failed';
+  return 'running';
+}
+
 export const ActivityStreamLog = memo(function ActivityStreamLog({
-  executions, onViewAll,
+  executions, onViewAll, personaName,
 }: {
   executions: { id: string; status: string; persona_name?: string; created_at: string }[];
   onViewAll: () => void;
+  personaName: string | null;
 }) {
   const { t } = useTranslation();
+  const [filter, setFilter] = useState<StreamFilter>('all');
+  const filtered = filter === 'all'
+    ? executions
+    : executions.filter((e) => streamBucket(e.status) === filter);
   return (
     <div className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden flex flex-col">
-      <PaneHeader label="Stream" subtitle={`${executions.length} events`}>
+      <PaneHeader
+        label="Stream"
+        subtitle={personaName ? `${personaName} · ${executions.length}` : `${executions.length} events`}
+      >
         <button
           onClick={onViewAll}
           className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest"
@@ -514,11 +653,24 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
           {t.overview.widgets.view_all} <ArrowRight className="w-3 h-3" />
         </button>
       </PaneHeader>
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-primary/10 flex-shrink-0">
+        {STREAM_FILTERS.map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
+              filter === f ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-primary/[0.06]'
+            }`}
+          >
+            {f === 'all' ? t.common.all : tokenLabel(t, 'execution', f)}
+          </button>
+        ))}
+      </div>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
-        {executions.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center typo-body text-foreground"><DebtText k="auto_no_events_11afa11c" /></div>
         ) : (
-          executions.map((exec) => {
+          filtered.map((exec) => {
             const time = new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             const color =
               exec.status === 'completed' ? 'text-emerald-400' :
@@ -554,14 +706,18 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
 // ---------------------------------------------------------------------------
 
 export const StatusTicker = memo(function StatusTicker({
-  pipelineSources, pipelineErrors, totalExecutions, lastSyncedLabel,
+  pipelineSources, pipelineErrors, totalExecutions, lastSyncedLabel, onNavigate,
 }: {
   pipelineSources: number;
   pipelineErrors: number;
   totalExecutions: number;
   lastSyncedLabel: string;
+  onNavigate: (tab: OverviewTab) => void;
 }) {
   const fieldCls = 'flex items-center gap-1.5 typo-caption font-mono uppercase tracking-widest';
+  // errors / runs / synced are shortcuts into the tab that owns each metric;
+  // "sources" stays inert — it has no single dedicated destination.
+  const linkCls = `${fieldCls} text-foreground rounded-interactive px-1 -mx-1 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30`;
   return (
     <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-4 py-2 flex items-center gap-5 overflow-x-auto">
       <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground flex-shrink-0">status</span>
@@ -569,18 +725,18 @@ export const StatusTicker = memo(function StatusTicker({
         <span className="text-foreground">sources</span>
         <span className="text-foreground tabular-nums">{pipelineSources}</span>
       </div>
-      <div className={`${fieldCls}`}>
-        <span className="text-foreground">errors</span>
+      <button type="button" onClick={() => onNavigate('health')} className={linkCls}>
+        <span>errors</span>
         <span className={`tabular-nums ${pipelineErrors > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>{pipelineErrors}</span>
-      </div>
-      <div className={`${fieldCls} text-foreground`}>
-        <span className="text-foreground">runs</span>
-        <span className="text-foreground tabular-nums">{totalExecutions.toLocaleString()}</span>
-      </div>
-      <div className={`${fieldCls} text-foreground ml-auto flex-shrink-0`}>
-        <span className="text-foreground">synced</span>
-        <span className="text-foreground tabular-nums">{lastSyncedLabel}</span>
-      </div>
+      </button>
+      <button type="button" onClick={() => onNavigate('executions')} className={linkCls}>
+        <span>runs</span>
+        <span className="tabular-nums">{totalExecutions.toLocaleString()}</span>
+      </button>
+      <button type="button" onClick={() => onNavigate('observability')} className={`${linkCls} ml-auto flex-shrink-0`}>
+        <span>synced</span>
+        <span className="tabular-nums">{lastSyncedLabel}</span>
+      </button>
     </div>
   );
 });
@@ -602,5 +758,20 @@ function PaneHeader({
       </div>
       {children}
     </div>
+  );
+}
+
+// Small chip marking a pane (or sub-section) as fleet-wide — its data ignores
+// the header persona filter. Rendered wherever Mission Control mixes
+// persona-scoped and fleet-scoped readouts so the boundary stays visible.
+function FleetTag() {
+  const { t } = useTranslation();
+  return (
+    <span
+      title={t.overview.dashboard.scope_fleet_hint}
+      className="typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive border border-primary/15 bg-primary/[0.04] text-foreground flex-shrink-0"
+    >
+      {t.overview.dashboard.scope_fleet}
+    </span>
   );
 }

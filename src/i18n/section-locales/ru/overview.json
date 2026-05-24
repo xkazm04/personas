@@ -304,6 +304,11 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "Флот",
+    "scope_fleet_hint": "Показывает все персоны — фильтр персон на это не влияет.",
+    "triage_jump": "Самое срочное",
+    "triage_detail_pipelines": "источники данных не синхронизируются",
+    "triage_up_next": "Далее",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -662,6 +667,7 @@
     "success_badge": "Успех",
     "alerts_badge": "Оповещения",
     "agents_badge": "Агенты",
+    "pipelines_badge": "Конвейеры",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",

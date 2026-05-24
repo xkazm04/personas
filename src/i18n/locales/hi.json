@@ -5085,6 +5085,11 @@
       "todos_label": "Todos",
       "todos_subtitle_open": "{count} open",
       "todos_empty": "All clear.",
+      "scope_fleet": "फ़्लीट",
+      "scope_fleet_hint": "सभी पर्सोना दिखाता है — पर्सोना फ़िल्टर इसे नहीं बदलता।",
+      "triage_jump": "सबसे ज़रूरी",
+      "triage_detail_pipelines": "डेटा स्रोत सिंक होने में विफल",
+      "triage_up_next": "अगला",
       "mission_control_eyebrow": "Mission Control"
     },
     "execution_metrics": {
@@ -5443,6 +5448,7 @@
       "success_badge": "सफल",
       "alerts_badge": "अलर्ट",
       "agents_badge": "एजेंट",
+      "pipelines_badge": "पाइपलाइन",
       "tool_performance": "Tool Performance",
       "tool_performance_subtitle": "Latency & error rate per tool",
       "tool_performance_col_tool": "Tool",
