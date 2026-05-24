@@ -13126,6 +13126,14 @@ export type Translations = {
     empty_alerts_description: string;
     empty_metrics_heading: string;
     empty_metrics_description: string;
+    empty_todos_heading: string;
+    empty_todos_description: string;
+    empty_stream_heading: string;
+    empty_stream_description: string;
+    empty_routines_heading: string;
+    empty_routines_description: string;
+    empty_heatmap_heading: string;
+    empty_heatmap_description: string;
     connectors_and_tools: string;
     general_tools: string;
     events_and_triggers: string;

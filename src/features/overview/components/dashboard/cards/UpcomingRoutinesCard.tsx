@@ -4,6 +4,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { listAllTriggers } from '@/api/pipeline/triggers';
 import { silentCatch } from '@/lib/silentCatch';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 
 const MAX_ROWS = 5;
@@ -80,9 +81,7 @@ export default function UpcomingRoutinesCard() {
           label={t.overview.upcoming_routines.title}
           subtitle={t.overview.upcoming_routines.subtitle}
         />
-        <div className="px-4 py-6 typo-body text-foreground text-center">
-          {t.overview.upcoming_routines.empty}
-        </div>
+        <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} className="py-6" />
       </div>
     );
   }
