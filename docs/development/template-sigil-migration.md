@@ -93,6 +93,21 @@ For templates that use `recipe_ref` to inline a use case from
 fields; no template-side edit is needed unless the template overrides
 specific fields via `bindings`.
 
+> **Post-migration correction (2026-05-24).** §3 was specified but **never
+> written into any template or recipe-seed data** — the Phase 1 fan-out only
+> applied §1 (`use_case_id`) and §2 (`dimension`). No use case carried
+> `generation_settings`, so the memory/review/event petals stayed dark across
+> the entire recipe-ref catalog even when review was configured via the
+> legacy `review_policy` / `memory_policy` fields. Fix:
+> `displayUseCase.deriveDimensions` now **falls back** to
+> `review_policy.mode ∈ {always, auto_triage}` → review petal and
+> `memory_policy.enabled` → memory petal when `generation_settings` is
+> absent — mirroring the fallback `engine/prompt/capabilities.rs` already
+> does on the backend. So configured-but-unmigrated capabilities light
+> correctly with no data migration. New/edited recipe seeds should still
+> carry explicit `generation_settings` (Dev Clone's four capabilities now
+> do); the fallback is the safety net for everything that predates §3.
+
 ### 4. Connector questions stay where they are
 
 Connector-pick questions belong to the Apps petal of the capability that
