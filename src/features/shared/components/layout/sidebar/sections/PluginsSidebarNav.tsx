@@ -22,6 +22,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Puzzle, Palette, Brain, BookOpen, Wrench, HardDrive, Sparkles, Bot, LineChart, type LucideIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
+import { useCompanionStore } from "@/features/plugins/companion/companionStore";
 import type { ArtistTab, DevToolsTab, TwinTab, PluginTab, ResearchLabTab, ObsidianBrainTab } from '@/lib/types/types';
 import type { CompanionPluginTab } from '@/stores/slices/system/companionPluginSlice';
 import { artistItems, companionItems, devToolsItems, obsidianBrainItems, researchLabItems, twinItems } from '../sidebarData';
@@ -49,7 +50,7 @@ const PLUGINS_WITH_SUBITEMS = new Set<PluginTab>([
 ]);
 
 export function PluginsSidebarNav() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const pluginTab = useSystemStore((s) => s.pluginTab);
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const artistTab = useSystemStore((s) => s.artistTab);
@@ -69,6 +70,7 @@ export function PluginsSidebarNav() {
   const setCompanionPluginTab = useSystemStore((s) => s.setCompanionPluginTab);
   const fleetSessions = useSystemStore((s) => s.fleetSessions);
   const fleetWaitingCount = fleetSessions.filter((s) => s.state === 'awaiting_input').length;
+  const companionApprovalsCount = useCompanionStore((s) => s.approvals.length);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
@@ -190,6 +192,28 @@ export function PluginsSidebarNav() {
                   >
                     <Icon className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />
                     <span className="flex-1 text-left truncate">{plugin.label}</span>
+                    {plugin.id === 'dev-tools' && fleetWaitingCount > 0 && (
+                      <span
+                        data-testid="devtools-l2-waiting-badge"
+                        className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-violet-500/25 text-violet-200 typo-caption font-bold border border-violet-500/40 animate-pulse"
+                        title={fleetWaitingCount === 1
+                          ? tx(t.plugins.fleet.needs_input_one, { count: fleetWaitingCount })
+                          : tx(t.plugins.fleet.needs_input_other, { count: fleetWaitingCount })}
+                      >
+                        {fleetWaitingCount}
+                      </span>
+                    )}
+                    {plugin.id === 'companion' && companionApprovalsCount > 0 && (
+                      <span
+                        data-testid="companion-l2-approvals-badge"
+                        className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 typo-caption font-bold border border-amber-500/40"
+                        title={companionApprovalsCount === 1
+                          ? tx(t.plugins.fleet.approvals_pending_one, { count: companionApprovalsCount })
+                          : tx(t.plugins.fleet.approvals_pending_other, { count: companionApprovalsCount })}
+                      >
+                        {companionApprovalsCount}
+                      </span>
+                    )}
                     {plugin.devOnly && (
                       <span
                         className="px-1.5 py-0.5 rounded-full typo-caption font-semibold text-amber-300 bg-amber-400/10 border border-amber-400/40 uppercase tracking-wide"
