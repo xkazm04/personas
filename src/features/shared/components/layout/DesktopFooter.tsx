@@ -14,7 +14,7 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
-const RadioFooter = lazy(() => import('@/features/radio/components/RadioFooter'));
+const RadioFooter = lazy(() => import('@/features/shared/components/layout/radio/components/RadioFooter'));
 
 /** Custom event name used to toggle sidebar collapse from anywhere. */
 export const SIDEBAR_TOGGLE_EVENT = 'personas:sidebar-toggle';

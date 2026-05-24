@@ -9,7 +9,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
-import RadioSettingsCard from '@/features/radio/components/RadioSettingsCard';
+import RadioSettingsCard from '@/features/shared/components/layout/radio/components/RadioSettingsCard';
 
 export default function AccountSettings() {
   const user = useAuthStore((s) => s.user);
