@@ -55,6 +55,15 @@ fn has_table(conn: &Connection, table: &str) -> Result<bool, AppError> {
     Ok(count > 0)
 }
 
+fn has_index(conn: &Connection, index: &str) -> Result<bool, AppError> {
+    let count = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
+        [index],
+        |row| row.get::<_, i64>(0),
+    )?;
+    Ok(count > 0)
+}
+
 /// Rebuild `persona_executions` to widen the status CHECK constraint with
 /// `'incomplete'`. The `ExecutionState` enum has a valid `Incomplete`
 /// terminal state (`Running -> Incomplete`) but the original table CHECK
@@ -2871,13 +2880,26 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         conn,
         IncrementalMigration {
             id: "personas_home_team_id",
-            description: "Add home_team_id to personas (workspace anchor for the Groups→Teams merge)",
-            already_applied: |conn| has_column(conn, "personas", "home_team_id"),
+            // Guarded on the INDEX, not the column: base schema's CREATE TABLE
+            // already defines `home_team_id` for fresh DBs (so a column-guard
+            // would skip here and the index would never be created), while
+            // legacy DBs lack the column entirely. The base-schema CREATE INDEX
+            // line was removed because it ran *before* this ALTER and failed on
+            // legacy DBs that pre-date the column; this migration is now the
+            // sole creator of the index (and adds the column when missing), so
+            // both fresh and legacy DBs converge to column + index.
+            description: "Add home_team_id to personas + its index (workspace anchor for the Groups→Teams merge)",
+            already_applied: |conn| has_index(conn, "idx_personas_home_team_id"),
             apply: |conn| {
+                if !has_column(conn, "personas", "home_team_id")? {
+                    ddl_step(
+                        conn,
+                        "ALTER TABLE personas ADD COLUMN home_team_id TEXT REFERENCES persona_teams(id) ON DELETE SET NULL;",
+                    )?;
+                }
                 ddl_step(
                     conn,
-                    "ALTER TABLE personas ADD COLUMN home_team_id TEXT REFERENCES persona_teams(id) ON DELETE SET NULL;
-                     CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);",
+                    "CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);",
                 )?;
                 Ok(())
             },

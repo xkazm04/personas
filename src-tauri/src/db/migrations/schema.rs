@@ -49,7 +49,10 @@ CREATE TABLE IF NOT EXISTS personas (
 );
 CREATE INDEX IF NOT EXISTS idx_personas_enabled   ON personas(enabled);
 CREATE INDEX IF NOT EXISTS idx_personas_group_id  ON personas(group_id);
-CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);
+-- idx_personas_home_team_id is created by the incremental `personas_home_team_id`
+-- migration, NOT here: on legacy DBs the personas table pre-dates the
+-- home_team_id column, so creating the index during base-schema bootstrap
+-- (before the ALTER adds the column) panicked startup. See incremental.rs.
 
 -- ============================================================================
 -- Tool Definitions
