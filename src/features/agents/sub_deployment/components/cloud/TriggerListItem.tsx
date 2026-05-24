@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import type { CloudTrigger, CloudTriggerFiring } from '@/api/system/cloud';
 import {
   triggerTypeLabel,
@@ -78,7 +79,7 @@ export function TriggerListItem({
             <div><span className="text-foreground">{dt.label_type}</span> <span className="text-foreground">{triggerTypeLabel(trigger.triggerType)}</span></div>
             <div><span className="text-foreground">{dt.label_status}</span> <span className="text-foreground">{trigger.enabled ? 'Enabled' : 'Disabled'}</span></div>
             <div><span className="text-foreground">{dt.label_last_triggered}</span> <span className="text-foreground">{timeAgo(trigger.lastTriggeredAt)}</span></div>
-            <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground">{trigger.nextTriggerAt ? new Date(trigger.nextTriggerAt).toLocaleString() : '-'}</span></div>
+            <div><span className="text-foreground">{dt.label_next_trigger}</span> <span className="text-foreground"><AbsoluteTime timestamp={trigger.nextTriggerAt} /></span></div>
             {config.cron && <div className="col-span-2"><span className="text-foreground">{dt.label_cron}</span> <span className="text-foreground font-mono">{`${config.cron}`}</span></div>}
             {trigger.healthMessage && (
               <div className="col-span-2 p-2 rounded-card bg-amber-500/5 border border-amber-500/10 typo-caption text-amber-400">
