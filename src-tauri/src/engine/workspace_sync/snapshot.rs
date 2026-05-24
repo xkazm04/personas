@@ -50,21 +50,89 @@ pub struct PersonaWorkspaceSnapshot {
     pub updated_at: String,
 }
 
-impl PersonaWorkspaceSnapshot {
-    /// Deterministic SHA-256 content hash, formatted `sha256:<hex>` to match the
-    /// existing convention in `obsidian_brain/markdown.rs:compute_content_hash`.
-    ///
-    /// `updated_at` is excluded from the digest (see the field doc): the hash
-    /// captures *content*, the timestamp captures *recency*. Serialization goes
-    /// through `serde_json::Value`, whose object map yields a stable key order,
-    /// so the digest is reproducible across devices and runs.
-    pub fn content_hash(&self) -> String {
-        let mut value = serde_json::to_value(self).unwrap_or(serde_json::Value::Null);
-        if let Some(obj) = value.as_object_mut() {
-            obj.remove("updatedAt");
-        }
-        let canonical = serde_json::to_string(&value).unwrap_or_default();
-        format!("sha256:{}", hex::encode(Sha256::digest(canonical.as_bytes())))
+/// Deterministic SHA-256 content hash of a snapshot, formatted `sha256:<hex>` to
+/// match the convention in `obsidian_brain/markdown.rs:compute_content_hash`.
+///
+/// The `updatedAt` field is excluded from the digest: the hash captures *content*,
+/// the timestamp captures *recency*. Serialization goes through `serde_json::Value`,
+/// whose object map yields a stable key order, so the digest is reproducible across
+/// devices and runs. Shared by every snapshot type so they hash identically.
+pub(crate) fn canonical_content_hash<T: Serialize>(value: &T) -> String {
+    let mut value = serde_json::to_value(value).unwrap_or(serde_json::Value::Null);
+    if let Some(obj) = value.as_object_mut() {
+        obj.remove("updatedAt");
+    }
+    let canonical = serde_json::to_string(&value).unwrap_or_default();
+    format!("sha256:{}", hex::encode(Sha256::digest(canonical.as_bytes())))
+}
+
+/// Common behaviour every syncable entity snapshot provides so the merge can be
+/// generic over entity type: a content hash (excluding the timestamp) and the
+/// RFC3339 last-modified instant used as the last-writer-wins ordering key.
+pub trait SyncSnapshot {
+    fn content_hash(&self) -> String;
+    fn updated_at(&self) -> &str;
+}
+
+impl SyncSnapshot for PersonaWorkspaceSnapshot {
+    fn content_hash(&self) -> String {
+        canonical_content_hash(self)
+    }
+    fn updated_at(&self) -> &str {
+        &self.updated_at
+    }
+}
+
+/// Sync-safe projection of a `persona_memories` row. Excludes device-local runtime
+/// fields (`access_count`, `last_accessed_at`) — only authored content syncs.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct MemorySnapshot {
+    pub id: String,
+    pub persona_id: String,
+    pub title: String,
+    pub content: String,
+    pub category: Option<String>,
+    pub importance: Option<i32>,
+    /// JSON-encoded tag array.
+    pub tags: Option<String>,
+    pub tier: Option<String>,
+    /// RFC3339 last-modified; the LWW key, excluded from `content_hash`.
+    pub updated_at: String,
+}
+
+impl SyncSnapshot for MemorySnapshot {
+    fn content_hash(&self) -> String {
+        canonical_content_hash(self)
+    }
+    fn updated_at(&self) -> &str {
+        &self.updated_at
+    }
+}
+
+/// Sync-safe projection of a `persona_triggers` row. Excludes device-local runtime
+/// fields (`last_triggered_at`, `next_trigger_at`) — only the definition syncs.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TriggerSnapshot {
+    pub id: String,
+    pub persona_id: String,
+    pub trigger_type: String,
+    /// JSON-encoded trigger config (cron/timezone, webhook, chain conditions, …).
+    pub config: Option<String>,
+    pub enabled: bool,
+    /// RFC3339 last-modified; the LWW key, excluded from `content_hash`.
+    pub updated_at: String,
+}
+
+impl SyncSnapshot for TriggerSnapshot {
+    fn content_hash(&self) -> String {
+        canonical_content_hash(self)
+    }
+    fn updated_at(&self) -> &str {
+        &self.updated_at
     }
 }
 

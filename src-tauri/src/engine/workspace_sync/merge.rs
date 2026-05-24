@@ -11,16 +11,19 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::snapshot::PersonaWorkspaceSnapshot;
+use super::snapshot::SyncSnapshot;
 
-/// One device's view of a persona for a sync round: either a live definition or
-/// a tombstone recording that it was deleted here.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
-#[ts(export)]
-#[serde(rename_all = "camelCase", tag = "kind")]
-pub enum WorkspaceEntity {
+/// One device's view of a syncable entity for a sync round: either a live snapshot
+/// (`S` = any [`SyncSnapshot`] — persona definition, memory, trigger, …) or a
+/// tombstone recording that it was deleted here.
+///
+/// Generic so one merge serves every entity type. This is a pure-Rust merge input
+/// the frontend never sees, so it is intentionally **not** `#[ts(export)]` — only
+/// the concrete snapshots and the `WorkspaceMergeOutcome` cross the IPC boundary.
+#[derive(Debug, Clone, PartialEq)]
+pub enum WorkspaceEntity<S> {
     Live {
-        snapshot: PersonaWorkspaceSnapshot,
+        snapshot: S,
         /// Stable id of the device that authored this state (peer_id).
         device_id: String,
     },
@@ -32,7 +35,7 @@ pub enum WorkspaceEntity {
     },
 }
 
-impl WorkspaceEntity {
+impl<S: SyncSnapshot> WorkspaceEntity<S> {
     /// The content hash this side compares against the recorded base. A live
     /// entity hashes its snapshot; a tombstone has no content, so it carries a
     /// stable sentinel that differs from any live hash for the same id.
@@ -46,7 +49,7 @@ impl WorkspaceEntity {
     /// RFC3339 last-modified instant used for last-writer-wins ordering.
     pub fn modified_at(&self) -> &str {
         match self {
-            WorkspaceEntity::Live { snapshot, .. } => &snapshot.updated_at,
+            WorkspaceEntity::Live { snapshot, .. } => snapshot.updated_at(),
             WorkspaceEntity::Tombstone { deleted_at, .. } => deleted_at,
         }
     }
@@ -95,14 +98,16 @@ pub enum WorkspaceMergeOutcome {
     ConflictResolved { winner: SyncWinner },
 }
 
-/// Three-way merge of one persona across two of a user's devices.
+/// Three-way merge of one entity (persona / memory / trigger / …) across two of a
+/// user's devices. Generic over [`SyncSnapshot`], so the same algorithm serves
+/// every syncable entity type.
 ///
 /// `base_hash` is the content hash recorded at the last successful sync for this
-/// `(persona, remote-device)` pair, or `None` on first contact.
-pub fn merge_persona(
+/// `(entity, remote-device)` pair, or `None` on first contact.
+pub fn merge_entity<S: SyncSnapshot>(
     base_hash: Option<&str>,
-    local: &WorkspaceEntity,
-    remote: &WorkspaceEntity,
+    local: &WorkspaceEntity<S>,
+    remote: &WorkspaceEntity<S>,
 ) -> WorkspaceMergeOutcome {
     let local_hash = local.content_hash();
     let remote_hash = remote.content_hash();
@@ -132,7 +137,10 @@ pub fn merge_persona(
 /// (including unparseable timestamps that compare equal), the lexicographically
 /// **larger** `device_id` wins. Both devices run identical inputs through this
 /// function, so they always agree on the winner without coordination.
-fn last_writer_wins(local: &WorkspaceEntity, remote: &WorkspaceEntity) -> SyncWinner {
+fn last_writer_wins<S: SyncSnapshot>(
+    local: &WorkspaceEntity<S>,
+    remote: &WorkspaceEntity<S>,
+) -> SyncWinner {
     use std::cmp::Ordering;
 
     let ord = compare_rfc3339(local.modified_at(), remote.modified_at())
@@ -163,6 +171,9 @@ fn compare_rfc3339(a: &str, b: &str) -> std::cmp::Ordering {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::workspace_sync::snapshot::{
+        MemorySnapshot, PersonaWorkspaceSnapshot, TriggerSnapshot,
+    };
 
     fn snap(id: &str, prompt: &str, updated_at: &str) -> PersonaWorkspaceSnapshot {
         PersonaWorkspaceSnapshot {
@@ -187,14 +198,19 @@ mod tests {
         }
     }
 
-    fn live(id: &str, prompt: &str, updated_at: &str, device: &str) -> WorkspaceEntity {
+    fn live(
+        id: &str,
+        prompt: &str,
+        updated_at: &str,
+        device: &str,
+    ) -> WorkspaceEntity<PersonaWorkspaceSnapshot> {
         WorkspaceEntity::Live {
             snapshot: snap(id, prompt, updated_at),
             device_id: device.into(),
         }
     }
 
-    fn tomb(id: &str, deleted_at: &str, device: &str) -> WorkspaceEntity {
+    fn tomb(id: &str, deleted_at: &str, device: &str) -> WorkspaceEntity<PersonaWorkspaceSnapshot> {
         WorkspaceEntity::Tombstone {
             id: id.into(),
             deleted_at: deleted_at.into(),
@@ -208,7 +224,7 @@ mod tests {
         let r = live("p", "v1", "2026-05-24T10:00:00Z", "B");
         let base = l.content_hash();
         assert_eq!(
-            merge_persona(Some(&base), &l, &r),
+            merge_entity(Some(&base), &l, &r),
             WorkspaceMergeOutcome::NoChange
         );
     }
@@ -219,7 +235,7 @@ mod tests {
         let l = live("p", "v2", "2026-05-24T11:00:00Z", "A");
         let r = live("p", "v1", "2026-05-24T10:00:00Z", "B");
         assert_eq!(
-            merge_persona(Some(&base), &l, &r),
+            merge_entity(Some(&base), &l, &r),
             WorkspaceMergeOutcome::PushLocal
         );
     }
@@ -230,7 +246,7 @@ mod tests {
         let l = live("p", "v1", "2026-05-24T10:00:00Z", "A");
         let r = live("p", "v2", "2026-05-24T11:00:00Z", "B");
         assert_eq!(
-            merge_persona(Some(&base), &l, &r),
+            merge_entity(Some(&base), &l, &r),
             WorkspaceMergeOutcome::AdoptRemote
         );
     }
@@ -240,7 +256,7 @@ mod tests {
         let base = snap("p", "v0", "2026-05-24T09:00:00Z").content_hash();
         let l = live("p", "shared", "2026-05-24T10:00:00Z", "A");
         let r = live("p", "shared", "2026-05-24T11:00:00Z", "B");
-        match merge_persona(Some(&base), &l, &r) {
+        match merge_entity(Some(&base), &l, &r) {
             WorkspaceMergeOutcome::Converged { hash } => {
                 assert_eq!(hash, l.content_hash());
             }
@@ -254,7 +270,7 @@ mod tests {
         let l = live("p", "local-edit", "2026-05-24T12:00:00Z", "A");
         let r = live("p", "remote-edit", "2026-05-24T11:00:00Z", "B");
         assert_eq!(
-            merge_persona(Some(&base), &l, &r),
+            merge_entity(Some(&base), &l, &r),
             WorkspaceMergeOutcome::ConflictResolved {
                 winner: SyncWinner::Local
             }
@@ -268,7 +284,7 @@ mod tests {
         let l = live("p", "local-edit", "2026-05-24T12:00:00Z", "A");
         let r = live("p", "remote-edit", "2026-05-24T12:00:00Z", "B");
         assert_eq!(
-            merge_persona(Some(&base), &l, &r),
+            merge_entity(Some(&base), &l, &r),
             WorkspaceMergeOutcome::ConflictResolved {
                 winner: SyncWinner::Remote
             }
@@ -282,7 +298,7 @@ mod tests {
         let base = snap("p", "v1", "2026-05-24T10:00:00Z").content_hash();
         let l = live("p", "v1", "2026-05-24T10:00:00Z", "A");
         let r = tomb("p", "2026-05-24T11:00:00Z", "B");
-        let outcome = merge_persona(Some(&base), &l, &r);
+        let outcome = merge_entity(Some(&base), &l, &r);
         assert_eq!(outcome, WorkspaceMergeOutcome::AdoptRemote);
         assert!(r.is_tombstone(), "adopting remote here means deleting locally");
     }
@@ -295,7 +311,7 @@ mod tests {
         let l = live("p", "v2", "2026-05-24T13:00:00Z", "A");
         let r = tomb("p", "2026-05-24T11:00:00Z", "B");
         assert_eq!(
-            merge_persona(Some(&base), &l, &r),
+            merge_entity(Some(&base), &l, &r),
             WorkspaceMergeOutcome::ConflictResolved {
                 winner: SyncWinner::Local
             }
@@ -308,9 +324,83 @@ mod tests {
         // conflict, converge on the shared hash.
         let l = live("p", "v1", "2026-05-24T10:00:00Z", "A");
         let r = live("p", "v1", "2026-05-24T10:30:00Z", "B");
-        match merge_persona(None, &l, &r) {
+        match merge_entity(None, &l, &r) {
             WorkspaceMergeOutcome::Converged { .. } => {}
             other => panic!("expected Converged on first-contact identical, got {other:?}"),
         }
+    }
+
+    // ── Stage 6: the same generic merge serves memories and triggers ──────────
+
+    fn memory(id: &str, content: &str, updated_at: &str) -> MemorySnapshot {
+        MemorySnapshot {
+            id: id.into(),
+            persona_id: "p".into(),
+            title: "note".into(),
+            content: content.into(),
+            category: Some("fact".into()),
+            importance: Some(3),
+            tags: None,
+            tier: Some("active".into()),
+            updated_at: updated_at.into(),
+        }
+    }
+
+    fn trigger(id: &str, config: &str, updated_at: &str) -> TriggerSnapshot {
+        TriggerSnapshot {
+            id: id.into(),
+            persona_id: "p".into(),
+            trigger_type: "schedule".into(),
+            config: Some(config.into()),
+            enabled: true,
+            updated_at: updated_at.into(),
+        }
+    }
+
+    #[test]
+    fn memory_remote_edit_adopts() {
+        let base = memory("m", "v1", "2026-05-24T10:00:00Z").content_hash();
+        let l = WorkspaceEntity::Live {
+            snapshot: memory("m", "v1", "2026-05-24T10:00:00Z"),
+            device_id: "A".into(),
+        };
+        let r = WorkspaceEntity::Live {
+            snapshot: memory("m", "v2", "2026-05-24T11:00:00Z"),
+            device_id: "B".into(),
+        };
+        assert_eq!(
+            merge_entity(Some(&base), &l, &r),
+            WorkspaceMergeOutcome::AdoptRemote
+        );
+    }
+
+    #[test]
+    fn trigger_divergent_edit_resolves_by_lww() {
+        let base = trigger("t", "{\"cron\":\"0 9 * * *\"}", "2026-05-24T09:00:00Z").content_hash();
+        let l = WorkspaceEntity::Live {
+            snapshot: trigger("t", "{\"cron\":\"0 8 * * *\"}", "2026-05-24T12:00:00Z"),
+            device_id: "A".into(),
+        };
+        let r = WorkspaceEntity::Live {
+            snapshot: trigger("t", "{\"cron\":\"0 7 * * *\"}", "2026-05-24T11:00:00Z"),
+            device_id: "B".into(),
+        };
+        // Local is newer → local wins. Proves the generic merge + LWW work
+        // unchanged for triggers, not just personas.
+        assert_eq!(
+            merge_entity(Some(&base), &l, &r),
+            WorkspaceMergeOutcome::ConflictResolved {
+                winner: SyncWinner::Local
+            }
+        );
+    }
+
+    #[test]
+    fn memory_hash_excludes_timestamp_like_persona() {
+        let a = memory("m", "same", "2026-05-24T10:00:00Z");
+        let mut b = memory("m", "same", "2030-01-01T00:00:00Z");
+        assert_eq!(a.content_hash(), b.content_hash());
+        b.content = "different".into();
+        assert_ne!(a.content_hash(), b.content_hash());
     }
 }
