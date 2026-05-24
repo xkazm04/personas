@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MessageSquare, CheckCheck, RefreshCw, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
@@ -280,7 +280,7 @@ export default function MessageList() {
           /* ==================== THREADED VIEW ==================== */
           threadSummaries.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <EmptyStateVariantHost
+              <IllustrationEmptyState
                 motif="messages"
                 content={{
                   icon: GitBranch,
@@ -399,7 +399,7 @@ export default function MessageList() {
           /* ==================== FLAT VIEW (original) ==================== */
           filteredMessages.length === 0 && !hasActiveFilters ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <EmptyStateVariantHost
+              <IllustrationEmptyState
                 motif="messages"
                 content={{
                   icon: MessageSquare,

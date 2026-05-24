@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -254,7 +254,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               null
             ) : filteredExecutions.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-                <EmptyStateVariantHost
+                <MotionEmptyState
                   motif="activity"
                   content={{
                     icon: Bot,

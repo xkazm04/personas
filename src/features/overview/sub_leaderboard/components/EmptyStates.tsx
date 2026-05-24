@@ -2,13 +2,13 @@ import { Trophy, Users } from 'lucide-react';
 import type { LeaderboardEntry } from '../libs/leaderboardScoring';
 import { ScoreRadar } from './ScoreRadar';
 import { DebtText, debtText } from '@/i18n/DebtText';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 
 
 export function EmptyState() {
   return (
     <div className="flex items-center justify-center py-12">
-      <EmptyStateVariantHost
+      <IllustrationEmptyState
         motif="leaderboard"
         content={{
           icon: Trophy,

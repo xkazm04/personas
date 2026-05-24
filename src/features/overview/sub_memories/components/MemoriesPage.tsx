@@ -9,7 +9,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
@@ -320,7 +320,7 @@ function MemoriesPageBaseline() {
 
           {memories.length === 0 && !hasFilters ? (
             <div className="flex-1 flex items-center justify-center">
-              <EmptyStateVariantHost
+              <MotionEmptyState
                 motif="memories"
                 content={{
                   icon: Brain,

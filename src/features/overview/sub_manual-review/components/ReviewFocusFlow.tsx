@@ -10,7 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
@@ -262,7 +262,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   if (pending.length === 0) {
     return (
       <div className="flex items-center justify-center h-full py-12">
-        <EmptyStateVariantHost
+        <IllustrationEmptyState
           motif="approval"
           content={{
             icon: Check,

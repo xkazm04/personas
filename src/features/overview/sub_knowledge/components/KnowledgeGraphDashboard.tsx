@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from "@/stores/agentStore";
 import { getKnowledgeSummary, listExecutionKnowledge, seedMockKnowledge } from '@/api/overview/intelligence/knowledge';
@@ -259,7 +259,7 @@ export default function KnowledgeGraphDashboard() {
             </div>
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-              <EmptyStateVariantHost
+              <MotionEmptyState
                 motif="knowledge"
                 content={{
                   icon: Brain,

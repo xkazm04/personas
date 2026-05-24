@@ -2,30 +2,24 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 /**
- * Prototype scaffold for Overview empty states (/prototype run 2026-05-24).
+ * Overview empty-state variant system.
  *
- * Each module's empty state is rendered through {@link EmptyStateVariantHost},
- * which tab-switches between two *directional* variants:
- *   - Motion        — framer-motion + SVG + lucide animated "coded illustration"
- *   - Illustration  — a dominant Leonardo-generated hero image as the focal point
+ * Each module's empty state renders one of two presentational variants,
+ * decided per module during the /prototype run (2026-05-24):
+ *   - {@link MotionEmptyState}        — framer-motion + SVG + lucide motif
+ *   - {@link IllustrationEmptyState}  — a Leonardo-generated hero image
  *
- * Both variants consume the same {@link EmptyStateContent}, so call sites pass
- * their existing i18n copy + store-action CTAs once. The accent palette is
- * derived from the {@link EmptyStateMotif}, keeping one source of truth.
- *
- * This whole folder is throwaway-by-design: at consolidation the winning
- * variant per module replaces the host and the loser is deleted.
+ * Winners: Motion → activity / knowledge / memories; Illustration → approval /
+ * messages / leaderboard. The motif union is split accordingly so each
+ * component only accepts the motifs it can render. Both variants consume the
+ * same {@link EmptyStateContent} and derive their accent from the motif.
  */
 
-export type EmptyStateMotif =
-  | 'activity'
-  | 'approval'
-  | 'messages'
-  | 'knowledge'
-  | 'memories'
-  | 'leaderboard';
-
-export type EmptyStateVariant = 'motion' | 'illustration';
+/** Motifs rendered by the animated-SVG variant. */
+export type MotionMotif = 'activity' | 'knowledge' | 'memories';
+/** Motifs rendered by the Leonardo-hero variant. */
+export type IllustrationMotif = 'approval' | 'messages' | 'leaderboard';
+export type EmptyStateMotif = MotionMotif | IllustrationMotif;
 
 export interface EmptyStateAction {
   label: string;
@@ -33,7 +27,7 @@ export interface EmptyStateAction {
   icon?: LucideIcon;
 }
 
-/** Tailwind class fragments for a module's accent, derived from its motif. */
+/** Tailwind class fragments + raw colors for a module's accent, derived from its motif. */
 export interface EmptyStateAccent {
   /** Foreground for icons / SVG strokes, e.g. `text-primary`. */
   text: string;
@@ -41,8 +35,10 @@ export interface EmptyStateAccent {
   soft: string;
   /** Border tint for chips / frames, e.g. `border-primary/20`. */
   border: string;
-  /** Raw CSS color string for SVG stroke/fill (theme-adaptive via var). */
+  /** Raw SVG stroke/fill color for the dark theme. */
   stroke: string;
+  /** Darker SVG stroke/fill color for the light theme (contrast on white). */
+  strokeLight: string;
   /** Radial-glow color stop for the illustration hero halo. */
   glow: string;
 }
@@ -58,13 +54,14 @@ export interface EmptyStateContent {
   children?: ReactNode;
 }
 
-/** Accent palette per motif. Uses semantic tokens; SVG colors use CSS vars so they track the theme. */
+/** Accent palette per motif. SVG colors use a dark + light pair so motifs keep contrast across themes. */
 export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
   activity: {
     text: 'text-primary',
     soft: 'bg-primary/10',
     border: 'border-primary/20',
     stroke: 'var(--primary)',
+    strokeLight: '#0e7490', // cyan-700
     glow: 'color-mix(in srgb, var(--primary) 45%, transparent)',
   },
   approval: {
@@ -72,6 +69,7 @@ export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
     soft: 'bg-status-success/10',
     border: 'border-status-success/20',
     stroke: 'var(--status-success)',
+    strokeLight: '#047857', // emerald-700
     glow: 'color-mix(in srgb, var(--status-success) 42%, transparent)',
   },
   messages: {
@@ -79,6 +77,7 @@ export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
     soft: 'bg-status-info/10',
     border: 'border-status-info/20',
     stroke: 'var(--status-info)',
+    strokeLight: '#1d4ed8', // blue-700
     glow: 'color-mix(in srgb, var(--status-info) 42%, transparent)',
   },
   knowledge: {
@@ -86,6 +85,7 @@ export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
     soft: 'bg-violet-500/10',
     border: 'border-violet-500/20',
     stroke: '#a78bfa',
+    strokeLight: '#7c3aed', // violet-600
     glow: 'color-mix(in srgb, #a78bfa 45%, transparent)',
   },
   memories: {
@@ -93,6 +93,7 @@ export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
     soft: 'bg-fuchsia-500/10',
     border: 'border-fuchsia-500/20',
     stroke: '#e879f9',
+    strokeLight: '#c026d3', // fuchsia-600
     glow: 'color-mix(in srgb, #e879f9 42%, transparent)',
   },
   leaderboard: {
@@ -100,6 +101,7 @@ export const MOTIF_ACCENTS: Record<EmptyStateMotif, EmptyStateAccent> = {
     soft: 'bg-amber-500/10',
     border: 'border-amber-500/20',
     stroke: '#fbbf24',
+    strokeLight: '#b45309', // amber-700
     glow: 'color-mix(in srgb, #fbbf24 45%, transparent)',
   },
 };

@@ -1,4 +1,9 @@
-export { EmptyStateVariantHost } from './EmptyStateVariantHost';
 export { MotionEmptyState } from './MotionEmptyState';
 export { IllustrationEmptyState } from './IllustrationEmptyState';
-export type { EmptyStateContent, EmptyStateMotif, EmptyStateVariant, EmptyStateAction } from './types';
+export type {
+  EmptyStateContent,
+  EmptyStateMotif,
+  MotionMotif,
+  IllustrationMotif,
+  EmptyStateAction,
+} from './types';

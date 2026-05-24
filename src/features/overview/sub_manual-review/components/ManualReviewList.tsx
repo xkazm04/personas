@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, Plus, BookOpen, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
+import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from "@/stores/systemStore";
@@ -311,7 +311,7 @@ export default function ManualReviewList() {
             animate="show"
             exit={shouldAnimate ? "exit" : undefined}
           >
-            <EmptyStateVariantHost
+            <IllustrationEmptyState
               motif="approval"
               content={{
                 icon: ClipboardCheck,
