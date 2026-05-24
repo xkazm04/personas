@@ -818,6 +818,7 @@ mod tests {
             template_category: None,
             group_id: None,
             cli_awareness_enabled: false,
+            langfuse_export_enabled: true,
             setup_status: "ready".to_string(),
             setup_detail: None,
             disabled_dims_json: None,

@@ -3325,6 +3325,25 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added cli_awareness_enabled column to personas (Phase 5 v1)");
     }
 
+    // -- Per-persona Langfuse export gate ---------------------------------------
+    // Default 1 (ON): existing personas continue exporting traces if the user
+    // has the Langfuse plugin enabled and a connection configured. The toggle
+    // on the persona settings tab lets users opt INDIVIDUAL personas out of
+    // export — useful for personas handling sensitive content the user doesn't
+    // want shipped, even when the plugin's global redact_content is off.
+    let has_langfuse_export: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('personas') WHERE name = 'langfuse_export_enabled'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_langfuse_export {
+        conn.execute_batch(
+            "ALTER TABLE personas ADD COLUMN langfuse_export_enabled INTEGER NOT NULL DEFAULT 1;",
+        )?;
+        tracing::info!("Added langfuse_export_enabled column to personas");
+    }
+
     // -- Drop retired desktop-bridge catalog entries -----------------------------
     // `desktop_terminal` and `desktop_vscode` were removed from the credential
     // catalog; existing installs may still have the seeded rows. Remove them so

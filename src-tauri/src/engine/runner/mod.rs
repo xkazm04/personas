@@ -398,7 +398,10 @@ pub async fn run_execution(
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let final_trace = trace.finalize(None, None, None, Some(msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        crate::langfuse::exporter::export_trace(&final_trace);
+        crate::langfuse::exporter::export_trace_for_persona(
+            persona.langfuse_export_enabled,
+            &final_trace,
+        );
 
         emit_to(
             &*emitter,
@@ -1119,7 +1122,10 @@ pub async fn run_execution(
         trace.end_span_error(&spawn_engine_stage, &error_msg);
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        crate::langfuse::exporter::export_trace(&final_trace);
+        crate::langfuse::exporter::export_trace_for_persona(
+            persona.langfuse_export_enabled,
+            &final_trace,
+        );
 
         // tracing::error! goes to the sentry_tracing layer (src/logging.rs) as
         // a full Sentry event; logger.log() writes to the per-execution disk
@@ -1348,7 +1354,10 @@ pub async fn run_execution(
         let duration_ms = start_time.elapsed().as_millis() as u64;
         let final_trace = trace.finalize(None, None, None, Some(error_msg.clone()));
         let _ = crate::db::repos::execution::traces::save(&pool, &final_trace);
-        crate::langfuse::exporter::export_trace(&final_trace);
+        crate::langfuse::exporter::export_trace_for_persona(
+            persona.langfuse_export_enabled,
+            &final_trace,
+        );
         emit_to(
             &*emitter,
             event_name::EXECUTION_STATUS,
@@ -2164,8 +2173,12 @@ pub async fn run_execution(
     if let Err(e) = crate::db::repos::execution::traces::save(&pool, &final_trace) {
         tracing::warn!(execution_id = %execution_id, "Failed to save execution trace: {}", e);
     }
-    // Best-effort export to Langfuse. No-op when not configured.
-    crate::langfuse::exporter::export_trace(&final_trace);
+    // Best-effort export to Langfuse. No-op when the plugin is not configured
+    // OR when this persona has langfuse_export_enabled = false.
+    crate::langfuse::exporter::export_trace_for_persona(
+        persona.langfuse_export_enabled,
+        &final_trace,
+    );
     // Emit the complete trace to frontend
     emit_to(&*emitter, event_name::EXECUTION_TRACE, &final_trace);
 

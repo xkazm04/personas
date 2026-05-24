@@ -28,6 +28,12 @@ pub struct LangfuseConfig {
     pub project_id: Option<String>,
     pub last_tested_at: Option<i64>,
     pub last_test_outcome: Option<String>,
+    /// Opt-in: push Lab evaluation scores (`tool_accuracy`, `output_quality`,
+    /// `protocol_compliance`) to Langfuse's `/api/public/scores` endpoint
+    /// after each scored scenario. Off by default. Stage 1 of N — the toggle
+    /// is plumbed through config + UI; the call from the lab path is wired
+    /// in a follow-up.
+    pub push_lab_scores: bool,
 }
 
 /// Payload sent from the frontend when saving a Langfuse connection
@@ -45,6 +51,9 @@ pub struct LangfuseSaveRequest {
     /// Optional project id for "Open in Langfuse" deep links. Empty / absent
     /// means we don't know — the deep-link button is hidden in that case.
     pub project_id: Option<String>,
+    /// Opt-in: push Lab evaluation scores to Langfuse Scores API after each
+    /// scored scenario. Off by default. See [`LangfuseConfig::push_lab_scores`].
+    pub push_lab_scores: bool,
 }
 
 /// Result of probing a Langfuse host with a given key pair.
@@ -56,6 +65,74 @@ pub struct LangfuseTestResult {
     pub http_status: Option<u16>,
     pub message: String,
     pub project_name: Option<String>,
+}
+
+/// Compact view of a single trace returned by `GET /api/public/traces`.
+/// Keep this narrow: the trace-list panel only needs enough to render a row
+/// and build a deep-link. Anything richer belongs in the Langfuse UI itself.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseTraceSummary {
+    pub id: String,
+    pub name: Option<String>,
+    /// ISO-8601 timestamp string as returned by Langfuse.
+    pub timestamp: Option<String>,
+    pub session_id: Option<String>,
+    pub user_id: Option<String>,
+    pub project_id: Option<String>,
+    pub latency_seconds: Option<f64>,
+    pub total_cost: Option<f64>,
+}
+
+/// Result of `langfuse_smoke_trace`: the 32-hex trace id Langfuse received,
+/// plus the project id so the frontend can build a deep-link to it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseSmokeTraceResult {
+    pub trace_id: String,
+    pub project_id: Option<String>,
+}
+
+/// Rolling export-health stats for the plugin page. All counts are
+/// process-lifetime (reset on app restart). `successLastHour` counts
+/// successful exports in the last 3600 seconds via a bounded ring buffer.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseExportStats {
+    pub success_total: u64,
+    pub failure_total: u64,
+    pub success_last_hour: u64,
+    /// Unix seconds. Null when nothing has been exported this session.
+    pub last_export_at: Option<i64>,
+    pub last_error_at: Option<i64>,
+    pub last_error: Option<String>,
+    /// Pulled from current config so the panel can show a single coherent
+    /// health line without two round-trips.
+    pub enabled: bool,
+    pub redact_content: bool,
+    /// `true` once the exporter has been installed in this process — i.e.
+    /// init_from_config succeeded or a save took effect. When false, traces
+    /// won't ship even if `enabled` is true (e.g. config saved but app
+    /// hasn't restarted yet).
+    pub exporter_installed: bool,
+    /// Mirrors [`LangfuseConfig::push_lab_scores`] for the health badge.
+    pub push_lab_scores: bool,
+    /// Newest first, capped at 10. Powers the health-bar Errors-tile drill-down.
+    pub recent_failures: Vec<LangfuseExportFailure>,
+}
+
+/// A single recent export failure for the health-bar drill-down. Trimmed
+/// to a 200-char message at record time so the IPC payload stays small.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LangfuseExportFailure {
+    /// Unix seconds.
+    pub at: i64,
+    pub message: String,
 }
 
 /// Plaintext admin credentials for the managed stack. Returned only when

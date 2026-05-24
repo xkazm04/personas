@@ -17,6 +17,9 @@ Detailed design rationale (path A → A+ probe → decision B) lives in `docs/co
 | Stack progress | Phase-aware progress bar driven by streaming events | `StackProgress.tsx` |
 | Status panel | Compact status surface for sidebar/footer use | `StatusPanel.tsx` |
 | Open-in-Langfuse | Button that opens the user's default browser to the Langfuse UI, auto-signed-in via nonce | `OpenInLangfuseButton.tsx` |
+| Recent traces panel | Mini-table of the last 10 traces shipped to Langfuse, each row deep-links into the trace via the auto-login flow (managed) or `openExternal` (manual). Only rendered when an instance is reachable — for the managed stack this means it appears once the stack is Running. | `TraceListPanel.tsx` |
+| Smoke trace button | "Send test trace" action that fires a synthetic one-span OTLP trace at the configured Langfuse host and shows result + deep-link to the new trace. Auto-remounts the recent-traces panel on success so the smoke trace shows up immediately. | `SmokeTraceButton.tsx` |
+| Export health bar | At-a-glance counters (total this session, last hour, errors) plus enabled/redaction/lab-scores badges and a last-error line. Clicking the Errors tile expands the last 5 failures (timestamp + 200-char message) for diagnosing patterns. Refreshes every 30 s while open; backed by a process-lifetime ring buffer inside the exporter worker. | `ExportHealthBar.tsx` |
 
 `LangfusePage.tsx` collapses the manual section by default for first-run users (when `config.host` is empty), and expands it when an existing manual config is detected.
 
@@ -33,7 +36,7 @@ Detailed design rationale (path A → A+ probe → decision B) lives in `docs/co
 
 | Family | Commands |
 | --- | --- |
-| Manual config | `langfuse_test_connection`, `langfuse_save_config`, `langfuse_get_config`, `langfuse_clear_config`, `langfuse_save_preferred_port` |
+| Manual config | `langfuse_test_connection`, `langfuse_save_config`, `langfuse_get_config`, `langfuse_clear_config`, `langfuse_save_preferred_port`, `langfuse_recent_traces`, `langfuse_smoke_trace`, `langfuse_get_export_stats` |
 | Managed stack | `langfuse_stack_get_info`, `langfuse_stack_start`, `langfuse_stack_stop`, `langfuse_stack_get_admin_credentials`, `langfuse_stack_open_ui`, `langfuse_stack_reset`, `langfuse_stack_refresh_images` |
 | Docker bootstrap | `langfuse_docker_download_installer`, `langfuse_docker_run_installer` (used when Docker isn't installed) |
 | Auth | `langfuse_open_authenticated_ui` (single-use nonce-based auto-login) |
@@ -51,6 +54,23 @@ The frontend wrappers live in `src/api/langfuse.ts`.
 | `templates.rs` | Compose-template rendering with port substitution |
 | `client.rs` | Langfuse HTTP client (test connection, fetch admin credentials) |
 | `exporter.rs` | Trace exporter shipped with each persona execution |
+| `lab_score.rs` | Per-scenario score-push helper (`engine::test_runner::score_result` → synthetic trace + Scores API POST) |
+
+### Exporter lifecycle invariants
+
+The in-process OTLP exporter is installed and uninstalled in lockstep with the user's connection state, so traces never queue against a dead endpoint:
+
+| Event | Exporter action |
+| --- | --- |
+| App boot with saved + enabled config | `init_from_config` → install |
+| `langfuse_save_config` with enabled = true | install |
+| `langfuse_save_config` with enabled = false | uninstall |
+| `langfuse_clear_config` | uninstall |
+| Managed stack first start (`run_start_internal`) | install |
+| Managed stack stop (`run_stop`) | uninstall |
+| Managed stack reset (`reset_volumes`, `compose down -v`) | uninstall |
+
+The health bar's "configured but not running" hint surfaces the rare case where `config.enabled = true` but `exporter::is_installed() = false` — typically after a stop, until the next start re-installs.
 
 ## Auto-login flow (`local_http/langfuse_routes.rs`)
 
@@ -73,4 +93,5 @@ No embedded webview, no manual sign-in form — the user lands inside Langfuse a
 
 - Manual mode currently relies on the user typing their secret API key once. There is no OAuth flow for cloud Langfuse.
 - The managed stack assumes Docker Engine is available; on Windows/macOS the bootstrap commands open Docker Desktop's installer.
-- Trace export from personas is wired through the engine exporter; per-persona enable/disable is not yet a first-class control.
+- **Per-persona export gate** — first-class. Each persona has a `langfuse_export_enabled` field (default ON) surfaced as a toggle on the persona settings tab. `engine::runner::run_execution` routes its four export-trace call sites through `exporter::export_trace_for_persona` which honors the flag; the Lab scoring path threads it through `lab_score::ship_lab_score` too. Turning it off keeps THIS persona's traces local without disabling the integration globally — useful for personas handling sensitive content.
+- **Lab score push** — wired end-to-end. When the `push_lab_scores` toggle is on, `engine::test_runner::score_result` fires a synthetic single-span trace (carrying persona, scenario name + description, cost, tokens) via the existing exporter channel AND POSTs the three rubrics to `/api/public/scores` with a matching `traceId` via `langfuse::lab_score::ship_lab_score`. Both calls are fire-and-forget; the per-persona gate fires first, then the gate inside `exporter::push_lab_scores` keeps everything no-op when the toggle is off.

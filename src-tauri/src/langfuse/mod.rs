@@ -9,6 +9,7 @@ pub mod client;
 pub mod config;
 pub mod docker;
 pub mod exporter;
+pub mod lab_score;
 pub mod lifecycle;
 pub mod templates;
 pub mod types;

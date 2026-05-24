@@ -964,10 +964,33 @@ pub(crate) async fn score_result(
         "protocol": llm_result.protocol_rationale,
     });
 
+    let tool_accuracy = Some(llm_result.tool_accuracy.clamp(0, 100));
+    let output_quality = Some(llm_result.output_quality.clamp(0, 100));
+    let protocol_compliance = Some(llm_result.protocol_compliance.clamp(0, 100));
+
+    // Stage 2: fire-and-forget ship the score + a synthetic trace to Langfuse.
+    // No-ops unless the user has both connected and opted into push_lab_scores
+    // in the plugin settings AND this persona has langfuse_export_enabled.
+    crate::langfuse::lab_score::ship_lab_score(
+        &persona.id,
+        &persona.name,
+        persona.langfuse_export_enabled,
+        &scenario.name,
+        &scenario.description,
+        tool_accuracy,
+        output_quality,
+        protocol_compliance,
+        Some(llm_result.rationale.clone()),
+        output.input_tokens,
+        output.output_tokens,
+        output.cost_usd,
+        output.duration_ms,
+    );
+
     ScoreResult {
-        tool_accuracy: Some(llm_result.tool_accuracy.clamp(0, 100)),
-        output_quality: Some(llm_result.output_quality.clamp(0, 100)),
-        protocol_compliance: Some(llm_result.protocol_compliance.clamp(0, 100)),
+        tool_accuracy,
+        output_quality,
+        protocol_compliance,
         output_preview: preview,
         tool_calls_actual: tool_calls_json,
         input_tokens: output.input_tokens as i64,
