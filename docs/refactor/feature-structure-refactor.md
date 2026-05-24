@@ -348,6 +348,18 @@ component leaks. Keep the taxonomy.
 
 ## G. `src/lib/` reorganization
 
+> **Progress (2026-05-24):** ✅ **G2** lib/theming merged into lib/theme (`cee33aac9`).
+> ✅ **G3** lib/canvas→triggers/lib, lib/fleet→overview/libs (`c3af4b360`); the
+> cross-feature libs (eval, execution, personas, credentials, templates) stay.
+> ⏸️ **G1 DEFERRED** — grouping the ~25 loose root files into `lib/shared/` is a
+> ~180-import-site rewrite (`log` 106, `eventRegistry` 52, `storeBus` 21). That
+> blast radius will collide with the concurrent Groups→Teams session, and broad
+> path-rewrites proved hazardous this session (two silent over-matches recovered:
+> `sub_shared`→`subshared`, `recipe_shared` i18n key). Do G1 as ONE coherent pass
+> on a calm tree in a dedicated worktree, re-running codegen — not piecemeal.
+> Note: `analytics.ts` and `throttledStorage.ts` showed **0 importers** — check
+> with knip; they may be dead (delete) rather than relocate.
+
 ### G1 — Create `src/lib/shared/` and group the ~25 loose root `.ts` files `[P2, M, med]`
 **Finding:** ~25 loose files at `lib/` root (`analytics.ts`, `eventBridge.ts`,
 `eventRegistry.ts`, `sentry.ts`, `log.ts`, `fsm.ts`, `storeBus.ts`,
