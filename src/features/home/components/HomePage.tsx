@@ -1,10 +1,10 @@
 import { lazy, Suspense } from 'react';
 import { useSystemStore } from "@/stores/systemStore";
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
-import HomeWelcome from '@/features/home/components/HomeWelcome';
+import HomeWelcome from '@/features/home/sub_welcome/HomeWelcome';
 
 const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
-const HomeLearning = lazy(() => import('@/features/home/components/HomeLearning'));
+const HomeLearning = lazy(() => import('@/features/home/sub_learning/HomeLearning'));
 const Cockpit = lazy(() => import('@/features/home/sub_cockpit/CockpitPanel'));
 
 

@@ -4,7 +4,7 @@ import type { SystemStore } from '../../storeTypes';
 /**
  * Data layer for the **home-page first-run Setup Cards stepper** — the
  * three-step "Role → Tool → Goal" wizard rendered by
- * `src/features/home/components/SetupCards.tsx` (`SetupStepper` modal).
+ * `src/features/home/sub_welcome/SetupCards.tsx` (`SetupStepper` modal).
  *
  * Live consumers (verified 2026-05-05):
  * - `SetupCards.tsx` reads all four fields and calls every action; it is

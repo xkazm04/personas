@@ -423,6 +423,7 @@ export type Translations = {
     greeting_afternoon: string;
     greeting_evening: string;
     operator: string;
+    commander: string;
     summary_empty: string;
     summary_stats: string;
     quick_navigation: string;
@@ -523,6 +524,7 @@ export type Translations = {
       restart: string;
       start_tour: string;
       steps_count: string;
+      tour_steps_label: string;
       tricks_tips: string;
       guides_count: string;
       how_to_use: string;
@@ -5456,6 +5458,7 @@ export type Translations = {
       linked_decisions_reject: string;
       linked_memories_title: string;
       linked_memories_empty: string;
+      compose_personas_prompt: string;
     };
     events: {
       title: string;

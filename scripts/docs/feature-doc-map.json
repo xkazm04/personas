@@ -231,7 +231,7 @@
     {
       "doc": "docs/features/cockpit.md",
       "sourceGlobs": [
-        "src/features/home/components/cockpit/**",
+        "src/features/home/sub_cockpit/**",
         "src/features/plugins/companion/inbox/**",
         "src/features/plugins/companion/InlineChatCard.tsx",
         "src-tauri/src/companion/brain/cockpit.rs"

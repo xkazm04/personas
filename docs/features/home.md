@@ -8,15 +8,15 @@ Home tabs are declared in `homeItems` in `src/features/shared/components/layout/
 
 | Tab | Behavior | Implementation |
 | --- | --- | --- |
-| Welcome | First-run/home layout, hero header, setup cards, resume banner, fleet health strip, navigation grid | `HomeWelcome.tsx`, `WelcomeLayout.tsx`, `HeroHeader.tsx`, `SetupCards.tsx`, `ResumeBanner.tsx`, `NavigationGrid.tsx` |
-| Cockpit | Companion-driven dynamic UI surface — Athena composes the page contents via `compose_cockpit`. See [cockpit.md](cockpit.md). | `home/components/cockpit/CockpitPanel.tsx` + widget registry |
-| Learning | Learning resources and guided education | `HomeLearning.tsx` |
-| What's New | Release notes and roadmap | `components/releases/*` |
+| Welcome | First-run/home layout, hero header, setup cards, resume banner, fleet health strip, navigation grid. The hero greeting addresses the user as **"Commander"** (an Athena-themed honorific) with a time-of-day prefix (Good Morning/Afternoon/Evening), not by account name. | `sub_welcome/HomeWelcome.tsx`, `sub_welcome/WelcomeLayout.tsx`, `sub_welcome/HeroHeader.tsx`, `sub_welcome/SetupCards.tsx`, `sub_welcome/ResumeBanner.tsx`, `sub_welcome/NavigationGrid.tsx` |
+| Cockpit | Companion-driven dynamic UI surface — Athena composes the page contents via `compose_cockpit`. The empty state shows the Athena portrait as an atmospheric background; its "Talk to Athena" button presets and auto-sends a "compose a persona-overview cockpit" request. See [cockpit.md](cockpit.md). | `sub_cockpit/CockpitPanel.tsx` + widget registry |
+| Learning | Guided tours + quick tricks. Tours render as compact one-row cards (icon, title, step count, completion badge); clicking a card opens a modal with the tour description, its step list, and a Start/Restart button. A vertical timeline with completed/pending nodes runs alongside the tour cards (replacing the old divider). Tricks are grouped by category as compact, subtitle-free rows that open a detail modal. | `sub_learning/HomeLearning.tsx`, `sub_learning/{TourDetailModal,TrickModal}.tsx`, `sub_learning/data.ts` |
+| What's New | Release notes and roadmap | `sub_releases/*` |
 | System Check | Dev-only diagnostics entry. `SystemHealthPanel` ships environment checks, a dev-only `CrashLogsSection`, and an always-visible `LogDiskUsageSection` (powered by `get_log_directory_stats`) that reports tracing-log + crash-log directory bytes/file counts and the configured retention caps. | added to `homeItems` only in `import.meta.env.DEV` |
 
 ## Resume and prefetch
 
-`useResumeContext.ts` detects unfinished work and drives the resume banner/cards. `lib/prefetch.ts` preloads likely next views so the home-to-workflow transition is fast.
+`sub_welcome/useResumeContext.ts` detects unfinished work and drives the resume banner/cards. `lib/prefetch.ts` preloads likely next views so the home-to-workflow transition is fast.
 
 ## Releases and live roadmap
 

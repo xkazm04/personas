@@ -124,11 +124,11 @@ function walk(dir, out = []) {
 // Allow useReleasesTranslation.ts even though it lives under features/.../i18n/
 // — it's the one sanctioned shape-adapter and contains live `t.releases.whats_new.*`
 // references. The skip above only fires on bare directory name 'i18n'; since
-// useReleasesTranslation.ts is at src/features/home/components/releases/i18n/,
+// useReleasesTranslation.ts is at src/features/home/sub_releases/i18n/,
 // it WOULD be skipped. Re-include it explicitly.
 function collectExtraFiles() {
   const extras = [
-    resolve(ROOT, 'src/features/home/components/releases/i18n/useReleasesTranslation.ts'),
+    resolve(ROOT, 'src/features/home/sub_releases/i18n/useReleasesTranslation.ts'),
     // Also the i18n shape adapters that reference live keys:
     resolve(ROOT, 'src/i18n/useSidebarTranslation.ts'),
     // useTranslatedError + tokenMaps are parsed separately for their
