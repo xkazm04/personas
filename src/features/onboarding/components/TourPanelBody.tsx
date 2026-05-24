@@ -57,7 +57,7 @@ export function TourPanelBody({
       </div>
 
       {/* Step header */}
-      <div className="px-4 pt-3 pb-2">
+      <div className="px-4 pt-3 pb-2 border-b border-primary/5">
         <h4 className="typo-heading text-foreground/90 flex items-center gap-2">
           {currentStep.title}
           {isStepCompleted && (
@@ -72,7 +72,7 @@ export function TourPanelBody({
 
       {/* Sub-step indicators */}
       {currentStep.subSteps.length > 0 && (
-        <div className="px-4 pb-2 flex flex-wrap items-center gap-1.5">
+        <div className="px-4 pt-2 pb-2 flex flex-wrap items-center gap-1.5 border-b border-primary/5">
           {currentStep.subSteps.map((sub, i) => (
             <div
               key={sub.id}
