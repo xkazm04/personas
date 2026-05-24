@@ -5,6 +5,77 @@
 // ============================================================================
 
 export type Translations = {
+  planner: {
+    nav_label: string;
+    page_title: string;
+    page_subtitle: string;
+    goal_placeholder: string;
+    preview_button: string;
+    preview_disabled_reason: string;
+    clear: string;
+    readonly_badge: string;
+    readonly_note: string;
+    steps_heading: string;
+    step_count_one: string;
+    step_count_other: string;
+    source_rule: string;
+    source_llm: string;
+    empty_title: string;
+    empty_hint: string;
+    examples_heading: string;
+    example_1: string;
+    example_2: string;
+    example_3: string;
+    edited_badge: string;
+    reset_plan: string;
+    step_remove: string;
+    step_move_up: string;
+    step_move_down: string;
+    watch_button: string;
+    watch_stop: string;
+    watch_step_of: string;
+    watch_done: string;
+    opens_in: string;
+    confidence_high: string;
+    confidence_medium: string;
+    confidence_low: string;
+    category_persona: string;
+    category_connector: string;
+    category_trigger: string;
+    category_schedule: string;
+    category_navigation: string;
+    category_action: string;
+    category_review: string;
+    actions: {
+      understand_goal_title: string;
+      understand_goal_detail: string;
+      understand_goal_rationale: string;
+      create_persona_title: string;
+      create_persona_detail: string;
+      create_persona_rationale: string;
+      connect_service_title: string;
+      connect_service_detail: string;
+      connect_service_rationale: string;
+      configure_trigger_title: string;
+      configure_trigger_detail: string;
+      configure_trigger_rationale: string;
+      configure_schedule_title: string;
+      configure_schedule_detail: string;
+      configure_schedule_rationale: string;
+      fetch_web_title: string;
+      fetch_web_detail: string;
+      fetch_web_rationale: string;
+      detect_changes_title: string;
+      detect_changes_detail: string;
+      detect_changes_rationale: string;
+      send_notification_title: string;
+      send_notification_detail: string;
+      send_notification_rationale: string;
+      review_confirm_title: string;
+      review_confirm_detail: string;
+      review_confirm_rationale: string;
+    };
+  };
   monitor: {
     title: string;
     subtitle: string;

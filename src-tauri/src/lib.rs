@@ -1959,6 +1959,7 @@ pub fn run() {
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
             commands::teams::assignments::decompose_team_assignment_goal,
+            commands::core::goal_planner::plan_goal_llm,
             commands::teams::assignments::companion_assign_team,
             commands::teams::assignments::create_assignment_template,
             commands::teams::assignments::list_assignment_templates,
