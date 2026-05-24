@@ -35,7 +35,7 @@ export function PeerList() {
     try {
       await fetchNetworkSnapshot();
       setLastScannedAt(Date.now());
-    } catch (err) { silentCatch("features/sharing/components/PeerList:catch1")(err); }
+    } catch (err) { silentCatch("features/settings/sub_network/components/PeerList:catch1")(err); }
   }, [fetchNetworkSnapshot]);
 
   // No interval here — NetworkDashboard drives the shared 5s snapshot poll.

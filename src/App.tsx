@@ -74,7 +74,7 @@ const ExecutionMiniPlayer = lazy(() => import("@/features/shared/components/over
 const HealingToast = lazy(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
-const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
+const ShareLinkHandler = lazy(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazy(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
@@ -91,7 +91,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
-  () => import("@/features/sharing/components/ShareLinkHandler"),
+  () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
   () => import("@/features/plugins/companion/CompanionPanel"),
   () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),
 ] as const;
