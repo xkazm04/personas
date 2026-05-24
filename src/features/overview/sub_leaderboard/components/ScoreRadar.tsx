@@ -41,12 +41,18 @@ export function ScoreRadar({ entries, size = 200 }: ScoreRadarProps) {
   const maxRadius = size * 0.38;
   const labelOffset = size * 0.46;
   const gridLevels = [25, 50, 75, 100];
+  // Axis labels sit just outside the chart radius and were being clipped by a
+  // tight `0 0 size size` viewBox (most visible in the single-persona view,
+  // where "Success" / "Activity" ran off the edge). Pad the viewBox
+  // symmetrically so every label has room; width/height stay `size` so the
+  // rendered footprint is unchanged for all callers.
+  const pad = size * 0.18;
 
   return (
     <svg
       width={size}
       height={size}
-      viewBox={`0 0 ${size} ${size}`}
+      viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
       className="select-none"
       data-testid="score-radar"
     >

@@ -29,7 +29,7 @@ export function SingleAgentView({ entry }: { entry: LeaderboardEntry }) {
         <strong className="text-foreground font-semibold">{entry.personaName}</strong> <DebtText k="auto_has_data_819c84f9" />
       </p>
       <div className="flex justify-center">
-        <ScoreRadar entries={[entry]} size={220} />
+        <ScoreRadar entries={[entry]} size={300} />
       </div>
     </div>
   );
