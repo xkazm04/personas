@@ -13,7 +13,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import { ACTION_CATALOG, CATEGORY_STYLE } from './actionCatalog';
+import { stepDestination } from './destinations';
 import { confidenceLevel, type PlanStep } from './types';
 
 const ICONS: Record<string, LucideIcon> = {
@@ -108,6 +110,14 @@ export function PlanStepCard({ step, index, isFirst, isLast, active = false, onR
                 : t.planner.category_navigation;
 
   const hasDestination = DESTINATION_CATEGORIES.has(action.category);
+  const dest = stepDestination(action.category);
+  const openDestination = () => {
+    if (!dest) return;
+    const sys = useSystemStore.getState();
+    sys.setIsCreatingPersona(false);
+    if (dest.agentTab) sys.setAgentTab(dest.agentTab);
+    sys.setSidebarSection(dest.section);
+  };
 
   return (
     <div
@@ -133,12 +143,22 @@ export function PlanStepCard({ step, index, isFirst, isLast, active = false, onR
         </div>
         <p className="mt-1 typo-body text-foreground">{detail}</p>
         <p className="mt-0.5 typo-label italic text-foreground">{rationale}</p>
-        {hasDestination && (
+        {dest ? (
+          <button
+            type="button"
+            onClick={openDestination}
+            title={tx(t.planner.opens_in, { location: categoryLabel })}
+            className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 typo-label text-foreground hover:bg-secondary/80 hover:text-primary"
+          >
+            <CornerDownRight className="h-3 w-3" />
+            {tx(t.planner.opens_in, { location: categoryLabel })}
+          </button>
+        ) : hasDestination ? (
           <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 typo-label text-foreground">
             <CornerDownRight className="h-3 w-3" />
             {tx(t.planner.opens_in, { location: categoryLabel })}
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Inline edit controls — reveal on hover/focus, keyboard reachable */}
