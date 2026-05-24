@@ -1,6 +1,6 @@
 import { ListTodo, Calendar, MessageSquare, Plug, UserCheck, Send } from "lucide-react";
 import type { GlyphDimension } from "@/features/shared/glyph";
-import type { Frequency } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { Frequency } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 
 // ---------------------------------------------------------------------------
 // Prompt rows

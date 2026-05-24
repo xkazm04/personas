@@ -14,7 +14,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Zap } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
-import type { EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerEventPersonaList, type PersonaSummary } from "./ComposerEventPersonaList";
 import { ComposerEventTemplateList, EVENT_TEMPLATES } from "./ComposerEventTemplateList";

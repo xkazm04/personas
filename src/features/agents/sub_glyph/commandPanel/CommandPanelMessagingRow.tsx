@@ -10,7 +10,7 @@
  */
 import { useMemo } from "react";
 import { MessageSquare, X, Inbox, Plug, AlertCircle } from "lucide-react";
-import { useHealthyConnectors } from "@/features/agents/components/matrix/useHealthyConnectors";
+import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { ChannelSpecV2Type } from "@/lib/bindings/ChannelSpecV2Type";
 import { useTranslation } from "@/i18n/useTranslation";

@@ -5,7 +5,7 @@
  * questions are gathered through the glyph (petal click → overlay card),
  * not through a refine step inside the panel — see GlyphFullLayout.
  */
-import type { QuickConfigState } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { QuickConfigState } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 
 export interface CommandPanelProps {

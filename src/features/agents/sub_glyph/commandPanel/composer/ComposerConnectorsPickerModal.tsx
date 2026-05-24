@@ -14,7 +14,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Plug, Package } from "lucide-react";
-import { useHealthyConnectors } from "@/features/agents/components/matrix/useHealthyConnectors";
+import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerConnectorCard } from "./ComposerConnectorCard";
 import { ComposerConnectorsSearchBar } from "./ComposerConnectorsSearchBar";

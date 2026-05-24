@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Plug, X } from "lucide-react";
-import { useHealthyConnectors } from "@/features/agents/components/matrix/useHealthyConnectors";
+import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import { CommandPanelRow, CommandPanelAttachButton } from "./CommandPanelRow";
 import { ComposerBrandIcon } from "./composer/ComposerBrandIcon";
 import type { IntentRowDef } from "./commandPanelHelpers";

@@ -1,5 +1,5 @@
 import { Check, Users } from "lucide-react";
-import type { EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { PersonaSummary } from "./ComposerEventPersonaList";
 import { DebtText, debtText } from '@/i18n/DebtText';
 

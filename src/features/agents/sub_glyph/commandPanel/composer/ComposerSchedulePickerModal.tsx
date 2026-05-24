@@ -14,7 +14,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, Calendar, CalendarDays, CalendarRange, ChevronLeft } from "lucide-react";
-import type { Frequency } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { Frequency } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerScheduleRhythmCard, type Rhythm } from "./ComposerScheduleRhythmCard";
 import { ComposerScheduleDetailForm, DAY_OPTIONS } from "./ComposerScheduleDetailForm";

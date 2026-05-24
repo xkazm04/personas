@@ -25,9 +25,9 @@ import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSim
 import { TestReportModal } from "@/features/templates/sub_generated/adoption/chronology/TestReportModal";
 import { CapabilityAddModal } from "@/features/agents/sub_new_persona/capabilityView";
 import type { GlyphDimension } from "@/features/shared/glyph";
-import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
-import { describeTriggerConfig, describeSelectedConnectors } from "@/features/agents/components/matrix/quickConfigTypes";
-import { useHealthyConnectors } from "@/features/agents/components/matrix/useHealthyConnectors";
+import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
+import { describeTriggerConfig, describeSelectedConnectors } from "@/features/agents/shared/quickConfig/quickConfigTypes";
+import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import { GlyphTopBar } from "./GlyphTopBar";
 import { GlyphRowStrip } from "./GlyphRowStrip";

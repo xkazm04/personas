@@ -1,6 +1,6 @@
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { BuildQuestion, CellBuildStatus, BuildPhase, ToolTestResult } from "@/lib/types/buildTypes";
-import type { QuickConfigState } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { QuickConfigState } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { PetalState } from "@/features/shared/glyph/persona-sigil/types";
 

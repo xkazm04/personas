@@ -1,5 +1,5 @@
 import { Clock, Zap, X } from "lucide-react";
-import type { Frequency, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { Frequency, EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { CommandPanelRow, CommandPanelAttachButton } from "./CommandPanelRow";
 import type { IntentRowDef } from "./commandPanelHelpers";
 import { debtText } from '@/i18n/DebtText';

@@ -14,7 +14,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { usePlannerStore } from "@/features/agents/sub_planner";
-import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { RecipeMatch } from "@/lib/bindings/RecipeMatch";
 import { getRecipe } from "@/api/recipes/recipes";

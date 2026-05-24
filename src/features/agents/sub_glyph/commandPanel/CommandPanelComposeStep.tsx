@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import type { Frequency, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
+import type { Frequency, EventSubscription } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import { CommandPanelRow } from "./CommandPanelRow";
 import { CommandPanelWhenRow } from "./CommandPanelWhenRow";

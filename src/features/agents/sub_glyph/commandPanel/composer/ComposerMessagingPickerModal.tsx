@@ -21,7 +21,7 @@ import { MessageSquare, Inbox, Plug, Check, AlertCircle, X } from "lucide-react"
 import {
   useHealthyConnectors,
   type HealthyConnector,
-} from "@/features/agents/components/matrix/useHealthyConnectors";
+} from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { ChannelSpecV2Type } from "@/lib/bindings/ChannelSpecV2Type";
 import type { JsonValue } from "@/lib/bindings/serde_json/JsonValue";

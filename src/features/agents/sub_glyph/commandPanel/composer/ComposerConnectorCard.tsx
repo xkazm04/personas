@@ -1,5 +1,5 @@
 import { Plug, Check } from "lucide-react";
-import type { HealthyConnector } from "@/features/agents/components/matrix/useHealthyConnectors";
+import type { HealthyConnector } from "@/features/agents/shared/quickConfig/useHealthyConnectors";
 import { ComposerBrandIcon } from "./ComposerBrandIcon";
 
 export function humanizeCategory(slug: string): string {

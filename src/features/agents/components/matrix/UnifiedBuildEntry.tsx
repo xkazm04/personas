@@ -18,7 +18,7 @@ import { useUseCaseChronology } from "@/features/templates/sub_generated/adoptio
 import {
   serializeQuickConfig,
   type QuickConfigState,
-} from "@/features/agents/components/matrix/quickConfigTypes";
+} from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import {
