@@ -5,7 +5,7 @@ import { getMetricsSummary } from '@/api/overview/observability';
 import { listCredentials } from '@/api/vault/credentials';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
-import { hasFailureSpike } from '@/features/home/lib/fleetHealth';
+import { hasFailureSpike } from './lib/fleetHealth';
 import type { SidebarSection } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -39,7 +39,7 @@ function useFleetMetrics() {
         credentialCount: credentials.length,
         hasFailureSpike: hasFailureSpike(summary.totalExecutions, summary.failedExecutions),
       });
-    } catch (err) { silentCatch("features/home/components/FleetHealthStrip:catch1")(err); }
+    } catch (err) { silentCatch("features/home/sub_welcome/FleetHealthStrip:catch1")(err); }
   }, []);
 
   useEffect(() => { load(); }, [load]);

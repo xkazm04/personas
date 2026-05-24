@@ -44,12 +44,12 @@ CockpitPanel calls companionGetCockpit(), parses spec_json,
 
 | File | Role |
 | --- | --- |
-| `src/features/home/components/cockpit/CockpitPanel.tsx` | Reads spec, parses JSON, renders widgets in 12-col grid. Auto-reloads on window focus. Empty state CTAs to chat. |
-| `src/features/home/components/cockpit/widgetRegistry.ts` | Map from widget `kind` string → React component. |
-| `src/features/home/components/cockpit/widgets/PersonaOverviewWidget.tsx` | Illustrated persona card grid. Click → Agents → that persona. Config: `{limit, filter}`. |
-| `src/features/home/components/cockpit/widgets/ConnectedServicesWidget.tsx` | Credentials + per-cred persona usage counts + health pill. Click → Connections page. Config: `{limit}`. |
-| `src/features/home/components/cockpit/widgets/DecisionsPanelWidget.tsx` | Flat list of `UnifiedInboxItem`s (approvals + messages + healing + outputs). Click row → opens `DecisionDrawer`. Config: `{limit}`. |
-| `src/features/home/components/cockpit/widgets/DecisionDrawer.tsx` | Modal drawer with full body + per-kind action buttons (approve/reject/resolve/mark-read). Uses `useInboxActions` from the companion inbox lib. |
+| `src/features/home/sub_cockpit/CockpitPanel.tsx` | Reads spec, parses JSON, renders widgets in 12-col grid. Auto-reloads on window focus. Empty state renders the Athena portrait (`/athena/athena_baseline.jpg`) as an atmospheric background; its "Talk to Athena" CTA presets a "compose a persona-overview cockpit" prompt with `autoSend: true` and opens the chat panel (same `setPendingPrompt` pattern as `MessageDetailModal`). |
+| `src/features/home/sub_cockpit/widgetRegistry.ts` | Map from widget `kind` string → React component. |
+| `src/features/home/sub_cockpit/widgets/PersonaOverviewWidget.tsx` | Illustrated persona card grid. Click → Agents → that persona. Config: `{limit, filter}`. |
+| `src/features/home/sub_cockpit/widgets/ConnectedServicesWidget.tsx` | Credentials + per-cred persona usage counts + health pill. Click → Connections page. Config: `{limit}`. |
+| `src/features/home/sub_cockpit/widgets/DecisionsPanelWidget.tsx` | Flat list of `UnifiedInboxItem`s (approvals + messages + healing + outputs). Click row → opens `DecisionDrawer`. Config: `{limit}`. |
+| `src/features/home/sub_cockpit/widgets/DecisionDrawer.tsx` | Modal drawer with full body + per-kind action buttons (approve/reject/resolve/mark-read). Uses `useInboxActions` from the companion inbox lib. |
 | `src/api/companion.ts` | `CompanionCockpitSpec`, `CompanionCockpitWidget`, `companionGetCockpit()`, `COMPANION_COMPOSE_COCKPIT_EVENT`. |
 
 ## Inline chat cards (related but separate)
@@ -80,7 +80,7 @@ All user-visible widget labels in `CockpitPanel`, `PersonaOverviewWidget`, `Conn
 
 ## Adding a new widget kind
 
-1. Implement a React component in `src/features/home/components/cockpit/widgets/` accepting `CockpitWidgetProps` (`title`, `config`).
+1. Implement a React component in `src/features/home/sub_cockpit/widgets/` accepting `CockpitWidgetProps` (`title`, `config`).
 2. Register it in `widgetRegistry.ts` under a stable string key.
 3. Document the kind + its config schema in `constitution.md`'s "Cockpit composition" section so Athena knows it exists.
 4. Optionally allow it as an inline chat card by mapping a new `show_*` action to the kind in `dispatcher.rs`'s show-card match arm.

@@ -68,7 +68,7 @@ function subscribeLastEdited(listener: EditListener): () => void {
 
 function notifyLastEditedChange(): void {
   for (const l of editListeners) {
-    try { l(); } catch (err) { silentCatch("features/home/components/useResumeContext:catch1")(err); }
+    try { l(); } catch (err) { silentCatch("features/home/sub_welcome/useResumeContext:catch1")(err); }
   }
 }
 
@@ -95,12 +95,12 @@ export function readLastEdited(): PersistedEdit | null {
 export function markPersonaEdited(personaId: string): void {
   try {
     localStorage.setItem(LAST_EDITED_KEY, JSON.stringify({ personaId, at: Date.now() }));
-  } catch (err) { silentCatch("features/home/components/useResumeContext:catch2")(err); }
+  } catch (err) { silentCatch("features/home/sub_welcome/useResumeContext:catch2")(err); }
   notifyLastEditedChange();
 }
 
 export function clearLastEdited(): void {
-  try { localStorage.removeItem(LAST_EDITED_KEY); } catch (err) { silentCatch("features/home/components/useResumeContext:catch3")(err); }
+  try { localStorage.removeItem(LAST_EDITED_KEY); } catch (err) { silentCatch("features/home/sub_welcome/useResumeContext:catch3")(err); }
   notifyLastEditedChange();
 }
 

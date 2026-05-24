@@ -371,7 +371,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       // editing X" on next launch. localStorage write — best-effort, never
       // throws back to the caller.
       try {
-        const { markPersonaEdited } = await import("@/features/home/components/useResumeContext");
+        const { markPersonaEdited } = await import("@/features/home/sub_welcome/useResumeContext");
         markPersonaEdited(id);
       } catch (err) { silentCatch("stores/slices/agents/personaSlice:catch1")(err); }
     } catch (err) {

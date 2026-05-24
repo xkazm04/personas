@@ -41,6 +41,18 @@ export default function CockpitPanel() {
   const contextualCockpit = useSystemStore((s) => s.contextualCockpit);
   const setContextualCockpit = useSystemStore((s) => s.setContextualCockpit);
 
+  // Empty-state CTA: seed Athena with a concrete "compose a persona overview
+  // cockpit" request and auto-send it, then open the chat panel so the user
+  // sees the composition stream in. Mirrors MessageDetailModal's "Play in
+  // chat" preset+autoSend pattern.
+  const composePersonaCockpit = useCallback(() => {
+    useCompanionStore.getState().setPendingPrompt({
+      text: t.overview.cockpit.compose_personas_prompt,
+      autoSend: true,
+    });
+    setCompanionState('open');
+  }, [t, setCompanionState]);
+
   const load = useCallback(() => {
     setLoading(true);
     companionGetCockpit()
@@ -132,7 +144,7 @@ export default function CockpitPanel() {
             <LoadingSpinner size="lg" />
           </div>
         ) : !contextualCockpit && !spec ? (
-          <CockpitEmptyState onTalk={() => setCompanionState('open')} />
+          <CockpitEmptyState onTalk={composePersonaCockpit} />
         ) : (
           <div className="grid grid-cols-12 gap-3 auto-rows-[180px]">
             {widgets.map((w) => (
@@ -147,22 +159,40 @@ export default function CockpitPanel() {
 
 function CockpitEmptyState({ onTalk }: { onTalk: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-foreground gap-4">
-      <Compass className="w-10 h-10 text-foreground" />
-      <div className="typo-body font-medium text-foreground/85"><DebtText k="auto_your_cockpit_is_empty_88e25bb2" /></div>
-      <div className="typo-caption text-foreground max-w-md text-center">
-        <DebtText k="auto_ask_athena_to_compose_a_cockpit_view_try_fcc2f4df" />
-        <span className="text-foreground"> <DebtText k="auto_show_me_my_personas_796e0c66" /> </span>
-        or <span className="text-foreground"><DebtText k="auto_what_needs_my_attention_70790810" /></span>.
+    <div
+      data-testid="cockpit-empty-state"
+      className="relative overflow-hidden rounded-modal border border-primary/10 min-h-[440px] flex flex-col items-center justify-end text-center"
+    >
+      {/* Athena baseline portrait as an atmospheric background. The gradient
+          overlay below it keeps the foreground copy legible across themes. */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <img
+          src="/athena/athena_baseline.jpg"
+          alt=""
+          aria-hidden="true"
+          className="w-full h-full object-cover object-top opacity-60"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/85 to-background/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/40 via-transparent to-background/40" />
       </div>
-      <button
-        type="button"
-        onClick={onTalk}
-        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption font-medium bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 hover:border-primary/30 transition-colors"
-      >
-        <MessageCircle className="w-3.5 h-3.5" />
-        <DebtText k="auto_talk_to_athena_4a34b995" />
-      </button>
+
+      <div className="relative z-10 flex flex-col items-center gap-4 px-6 pb-10 max-w-md">
+        <div className="typo-body font-medium text-foreground/90"><DebtText k="auto_your_cockpit_is_empty_88e25bb2" /></div>
+        <div className="typo-caption text-foreground">
+          <DebtText k="auto_ask_athena_to_compose_a_cockpit_view_try_fcc2f4df" />
+          <span className="text-foreground"> <DebtText k="auto_show_me_my_personas_796e0c66" /> </span>
+          or <span className="text-foreground"><DebtText k="auto_what_needs_my_attention_70790810" /></span>.
+        </div>
+        <button
+          type="button"
+          onClick={onTalk}
+          data-testid="cockpit-empty-talk-to-athena"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-input typo-caption font-medium bg-primary/15 hover:bg-primary/25 text-primary border border-primary/25 hover:border-primary/40 shadow-elevation-2 transition-colors"
+        >
+          <MessageCircle className="w-3.5 h-3.5" />
+          <DebtText k="auto_talk_to_athena_4a34b995" />
+        </button>
+      </div>
     </div>
   );
 }

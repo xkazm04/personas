@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ConnectorCallCard } from '../../../../../plugins/companion/ConnectorCallCard';
+import { ConnectorCallCard } from '@/features/plugins/companion/ConnectorCallCard';
 import type { BackgroundJob } from '@/api/companion';
 
 function job(over: Partial<BackgroundJob> = {}): BackgroundJob {

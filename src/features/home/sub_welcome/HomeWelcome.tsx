@@ -1,6 +1,5 @@
 import { BarChart3, Bot, Zap, Key, FlaskConical, Settings, Puzzle } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import { useAuthStore } from '@/stores/authStore';
 import { useEffect, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { schedulePrefetchOtherHomeTabs } from '../lib/prefetch';
@@ -21,7 +20,6 @@ const NAV_CARDS: NavCard[] = [
 
 export default function HomeWelcome() {
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const user = useAuthStore((s) => s.user);
   const { t: globalT } = useTranslation();
   const t = globalT.home;
 
@@ -32,7 +30,10 @@ export default function HomeWelcome() {
     return t.greeting_evening;
   }, [t]);
 
-  const displayName = user?.display_name || user?.email?.split('@')[0] || t.operator;
+  // The user is always addressed as "Commander" on the Welcome hero — an
+  // Athena-themed honorific — rather than by account name. The time-of-day
+  // prefix above stays dynamic (Good Morning / Afternoon / Evening).
+  const displayName = t.commander;
 
   useEffect(() => schedulePrefetchOtherHomeTabs(), []);
 
