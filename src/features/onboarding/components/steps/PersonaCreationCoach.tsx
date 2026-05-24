@@ -10,15 +10,19 @@ const SUB_STEPS = [
   { id: 'test-promote', labelKey: 'coach_substep_promote', icon: Rocket },
 ] as const;
 
+// The eight Glyph sigils, in petal order (see shared/glyph/dimMeta.ts).
+// `key` MUST match the build engine's `buildCellStates` keys so each
+// sigil's resolved-tick lights up as the build fills it in; colors mirror
+// DIM_META so the coach reads as the same glyph the user is watching.
 const MATRIX_DIMENSIONS = [
-  { key: 'use-cases', labelKey: 'dim_use_cases', descKey: 'dim_use_cases_desc', color: '#8b5cf6' },
-  { key: 'connectors', labelKey: 'dim_connectors', descKey: 'dim_connectors_desc', color: '#06b6d4' },
-  { key: 'triggers', labelKey: 'dim_triggers', descKey: 'dim_triggers_desc', color: '#f59e0b' },
-  { key: 'human-review', labelKey: 'dim_human_review', descKey: 'dim_human_review_desc', color: '#f43f5e' },
-  { key: 'messages', labelKey: 'dim_messages', descKey: 'dim_messages_desc', color: '#3b82f6' },
-  { key: 'memory', labelKey: 'dim_memory', descKey: 'dim_memory_desc', color: '#a855f7' },
-  { key: 'error-handling', labelKey: 'dim_error_handling', descKey: 'dim_error_handling_desc', color: '#f97316' },
-  { key: 'events', labelKey: 'dim_events', descKey: 'dim_events_desc', color: '#14b8a6' },
+  { key: 'trigger', labelKey: 'dim_triggers', descKey: 'dim_triggers_desc', color: '#fbbf24' },
+  { key: 'task', labelKey: 'dim_use_cases', descKey: 'dim_use_cases_desc', color: '#a78bfa' },
+  { key: 'connector', labelKey: 'dim_connectors', descKey: 'dim_connectors_desc', color: '#22d3ee' },
+  { key: 'message', labelKey: 'dim_messages', descKey: 'dim_messages_desc', color: '#60a5fa' },
+  { key: 'review', labelKey: 'dim_human_review', descKey: 'dim_human_review_desc', color: '#fb7185' },
+  { key: 'memory', labelKey: 'dim_memory', descKey: 'dim_memory_desc', color: '#c084fc' },
+  { key: 'event', labelKey: 'dim_events', descKey: 'dim_events_desc', color: '#2dd4bf' },
+  { key: 'error', labelKey: 'dim_error_handling', descKey: 'dim_error_handling_desc', color: '#fb923c' },
 ] as const;
 
 const EXAMPLE_INTENT_KEYS = ['example_intent_1', 'example_intent_2', 'example_intent_3'] as const;

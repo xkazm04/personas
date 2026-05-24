@@ -9039,7 +9039,7 @@
     "questions_waiting_other": "{count} questions waiting",
     "answer_questions_hint": "Answer them in the matrix to shape your agent's design.",
     "answers_help_hint": "Your answers help the AI choose the right connectors, triggers, and policies.",
-    "matrix_heading": "The 8-dimension agent matrix:",
+    "matrix_heading": "Your agent's eight sigils:",
     "matrix_completeness": "{pct}% complete",
     "dim_use_cases": "Use Cases",
     "dim_use_cases_desc": "What workflows your agent handles",
