@@ -244,6 +244,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
 
         {/* Plan a goal — read-only narrated planner (idea-ba306c32) */}
         <button
+          data-testid="tab-planner"
           onClick={() => { selectPersona(null); setAgentTab('planner'); useSystemStore.getState().setIsCreatingPersona(false); }}
           aria-current={agentTab === 'planner' && !isCreatingPersona ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
