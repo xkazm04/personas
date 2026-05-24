@@ -24,8 +24,8 @@ export function OperationRow({
   const { t, tx } = useTranslation();
   const s = t.settings.engine;
   return (
-    <tr className="border-b border-primary/5 hover:bg-primary/[0.02] transition-colors">
-      <td className="py-2.5 pr-4">
+    <tr className="group even:bg-secondary/20 hover:bg-primary/[0.06] transition-colors">
+      <td className="sticky left-0 z-10 bg-background group-hover:bg-primary/[0.06] py-2.5 pr-4 pl-3 border-b border-primary/5 border-r border-r-primary/10 transition-colors">
         <div className="flex flex-col">
           <span className="typo-body text-foreground/90">{label}</span>
           <span className="text-[11px] text-foreground leading-tight">{description}</span>
@@ -38,7 +38,7 @@ export function OperationRow({
         const locked = !defaultEnabled;
 
         return (
-          <td key={p.id} className="py-2.5 px-2 text-center">
+          <td key={p.id} className="py-2.5 px-2 text-center border-b border-primary/5">
             {!installed ? (
               <div className="flex justify-center">
                 <span className="w-6 h-6 rounded bg-secondary/20 border border-primary/5 flex items-center justify-center cursor-not-allowed">

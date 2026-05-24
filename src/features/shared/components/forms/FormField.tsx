@@ -1,8 +1,28 @@
 import { useId, useEffect, useState, useRef, type ReactNode, type RefObject } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, AlertCircle } from 'lucide-react';
 import { SuccessCheck } from './SuccessCheck';
 import { CharBudget } from './CharBudget';
+import { useFormErrorRegistry } from './FormErrorContext';
 import type { ValidationState } from './useFieldValidation';
+import type { AvailabilityStatus } from './useAsyncFieldValidation';
+
+/**
+ * Inline name-availability feedback rendered below the input, driven by
+ * `useAsyncFieldValidation`. Distinct from `error` (blocking, red) and the
+ * label spinner: it surfaces a gentle, advisory spinner → emerald check →
+ * amber "try X" line that fades in without flickering between keystrokes.
+ */
+export interface FieldAvailability {
+  /** Current availability state. `idle` renders nothing. */
+  status: AvailabilityStatus;
+  /**
+   * Resolved (i18n'd) message for the active non-idle status. The caller owns
+   * the wording so FormField stays translation-free — typically
+   * `t.common.field_checking_availability` / `field_name_available` /
+   * `tx(t.common.field_name_taken_suggestion, { name: suggestion })`.
+   */
+  message?: string;
+}
 
 /** Props injected into the render-prop children for accessible input binding. */
 export interface FormFieldInputProps {
@@ -49,6 +69,13 @@ export interface FormFieldProps {
    * When provided, this takes precedence over the `valid` prop.
    */
   validationState?: ValidationState;
+  /**
+   * Debounced inline name-availability feedback (spinner → emerald check →
+   * amber "try X"), driven by `useAsyncFieldValidation`. Rendered in the
+   * feedback row below the input and wired to `aria-describedby`. Takes
+   * precedence over `helpText` while active; `error` still wins over it.
+   */
+  availability?: FieldAvailability;
   /**
    * Ref returned by `useShakeError()`.  When an error prop is set and this
    * ref is provided, the wrapper will shake to draw attention to the error.
@@ -106,6 +133,7 @@ export function FormField({
   className,
   valid,
   validationState,
+  availability,
   shakeRef,
   validateOn = 'blur',
   forceValidation = false,
@@ -117,10 +145,12 @@ export function FormField({
   const fieldId = `ff-${autoId}`;
   const errorId = `${fieldId}-err`;
   const helpId = `${fieldId}-help`;
+  const availId = `${fieldId}-avail`;
   const [focused, setFocused] = useState(false);
   const [hasInteracted, setHasInteracted] = useState(false);
   const [showSuccessPop, setShowSuccessPop] = useState(false);
   const prevEffectiveErrorRef = useRef<string | undefined>(undefined);
+  const errorRegistry = useFormErrorRegistry();
 
   // Gate the error / aria-invalid / shake on the validateOn policy. After
   // first blur (or on submit) we behave like 'change' — live feedback as the
@@ -134,13 +164,38 @@ export function FormField({
     typeof maxLength === 'number' && maxLength > 0 && typeof value !== 'undefined';
   const charLength = typeof value === 'string' ? value.length : Number(value ?? 0);
 
-  const describedBy = effectiveError ? errorId : helpText ? helpId : undefined;
+  const availabilityActive = !!availability && availability.status !== 'idle' && !!availability.message;
+  const describedBy = effectiveError
+    ? errorId
+    : availabilityActive
+      ? availId
+      : helpText
+        ? helpId
+        : undefined;
 
   const inputProps: FormFieldInputProps = {
     id: fieldId,
     ...(effectiveError ? { 'aria-invalid': true } : {}),
     ...(describedBy ? { 'aria-describedby': describedBy } : {}),
   };
+
+  // Register/unregister this field with a surrounding FormErrorProvider so a
+  // FormErrorSummary banner can list it and jump to the input. No-op when there
+  // is no provider (errorRegistry is null). Keep this in sync with the visible
+  // error only — fields whose error is still gated by validateOn shouldn't
+  // appear in the summary yet.
+  useEffect(() => {
+    if (!errorRegistry) return;
+    if (effectiveError) errorRegistry.register(fieldId, label, effectiveError);
+    else errorRegistry.unregister(fieldId);
+  }, [errorRegistry, fieldId, label, effectiveError]);
+
+  // Drop the registration when the field unmounts (e.g. a conditionally-rendered
+  // field disappears) so its error doesn't linger in the summary.
+  useEffect(() => {
+    if (!errorRegistry) return;
+    return () => errorRegistry.unregister(fieldId);
+  }, [errorRegistry, fieldId]);
 
   // Shake on transitions to a *visible* error.
   useEffect(() => {
@@ -215,7 +270,7 @@ export function FormField({
 
       {typeof children === 'function' ? children(inputProps) : children}
 
-      {(effectiveError || helpText || showCharBudget) && (
+      {(effectiveError || availabilityActive || helpText || showCharBudget) && (
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {effectiveError ? (
@@ -227,6 +282,12 @@ export function FormField({
               >
                 {effectiveError}
               </p>
+            ) : availabilityActive ? (
+              <AvailabilityLine
+                id={availId}
+                status={availability!.status}
+                message={availability!.message!}
+              />
             ) : helpText ? (
               <p id={helpId} className="typo-body text-foreground">
                 {helpText}
@@ -239,5 +300,48 @@ export function FormField({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * Inline availability status line. Keyed by `status` so each transition fades
+ * in gently; because the spinner stays mounted as `checking` while the user
+ * types, it never re-animates between keystrokes. `aria-live="polite"` lets
+ * screen readers announce the outcome without interrupting typing.
+ */
+function AvailabilityLine({
+  id,
+  status,
+  message,
+}: {
+  id: string;
+  status: AvailabilityStatus;
+  message: string;
+}) {
+  const tone =
+    status === 'available'
+      ? 'text-emerald-400'
+      : status === 'taken'
+        ? 'text-amber-400'
+        : 'text-foreground/60';
+
+  return (
+    <p
+      id={id}
+      key={status}
+      aria-live="polite"
+      className={`animate-fade-in flex items-center gap-1.5 typo-body ${tone}`}
+    >
+      {status === 'checking' && (
+        <Loader2 aria-hidden="true" className="w-3.5 h-3.5 shrink-0 animate-spin" />
+      )}
+      {status === 'available' && (
+        <Check aria-hidden="true" className="w-3.5 h-3.5 shrink-0" />
+      )}
+      {status === 'taken' && (
+        <AlertCircle aria-hidden="true" className="w-3.5 h-3.5 shrink-0" />
+      )}
+      <span>{message}</span>
+    </p>
   );
 }

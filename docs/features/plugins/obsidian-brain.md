@@ -42,8 +42,9 @@ The plugin is organised as four tabs: **Setup**, **Sync**, **Browse Vault**, and
 1. Open the **Sync** tab. The active vault name is shown above the actions.
 2. **Push to Vault** writes app-side changes (memories, personas, connectors) into the vault as markdown. Optionally pick specific personas first; otherwise everything that has changed since the last sync is pushed.
 3. **Pull from Vault** reads the markdown files back, parses frontmatter, and updates the app. If a note has been edited on *both* sides since the last sync, a **Conflict** card appears with the App version and Vault version side by side and three buttons: **Keep App**, **Keep Vault**, **Skip**.
-4. Every action is recorded in the **Sync Log** (created / updated / conflict / skipped), with timestamps and the entity it touched.
-5. Switching the active vault from the sidebar reloads the log automatically.
+4. After each push or pull a **result summary card** stays on the page (it does not auto-dismiss like the toast). The headline reads e.g. *"Pushed 5"* with semantic-colored count pills (created / updated / skipped / converged / conflicts / errors), and expands to a per-category breakdown plus the individual error messages. Push and pull each get their own card with a distinct direction glyph and accent (↑ violet for push, ↓ emerald for pull) so the two directions never blur together; the most recent of each stays visible.
+5. Every action is recorded in the **Sync Log** (created / updated / conflict / skipped), with timestamps and the entity it touched.
+6. Switching the active vault from the sidebar reloads the log automatically.
 
 ### 3. Browse Vault — read-only file explorer
 
@@ -221,6 +222,8 @@ src/features/plugins/obsidian-brain/
 ├── useVisibleConnectorDefinitions.ts  # plugin-gated connector filter hook
 ├── sub_setup/SetupPanel.tsx           # detect/test/save flow
 ├── sub_sync/SyncPanel.tsx             # push/pull/conflict resolution
+├── sub_sync/SyncResultCard.tsx        # persistent direction-tagged result summary
+
 ├── sub_browse/BrowsePanel.tsx         # vault tree + markdown preview
 ├── sub_graph/GraphPanel.tsx           # search, stats, orphans/MOCs, journal, meeting capture
 └── sub_cloud/CloudSyncPanel.tsx       # Google Drive backup + sign-in CTA

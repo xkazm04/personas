@@ -96,9 +96,9 @@ export function ExecutionPreviewPanel({ personaId, inputData, useCaseId }: Execu
         </div>
         <div className="flex items-center gap-1.5 text-foreground">
           <Zap className="w-3 h-3" />
-          <span className="font-mono">{fmtTokens(preview.estimated_input_tokens)}</span>
+          <span className="font-mono">{fmtTokens(Number(preview.estimated_input_tokens))}</span>
           <span>in</span>
-          <span className="font-mono">{fmtTokens(preview.estimated_output_tokens)}</span>
+          <span className="font-mono">{fmtTokens(Number(preview.estimated_output_tokens))}</span>
           <span>out</span>
         </div>
         <div className="flex items-center gap-1.5 text-foreground">

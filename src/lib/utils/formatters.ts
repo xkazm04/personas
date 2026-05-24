@@ -273,15 +273,63 @@ export function formatCount(
 }
 
 /**
+ * Format a count with compact notation (`12.3K`, `4.5M`, `1.2B`) once it grows
+ * past the point where a full grouped figure would overflow a fixed-width KPI
+ * tile.
+ *
+ * Below `threshold` (default 10,000) the full grouped number is kept — small
+ * counts read more precisely as `1,234` than `1.2K`, and there's no overflow
+ * risk yet. At or above the threshold the value collapses to compact notation
+ * with at most one fraction digit so the tile width stays constant as the
+ * magnitude grows.
+ *
+ * Always pair this with the exact value as a `title` tooltip so hovering
+ * recovers full precision — {@link compactWithTitle} returns both strings, and
+ * `<Numeric unit="compact">` / `<AnimatedCounter title>` wire it up for you.
+ *
+ * Null / NaN render as an em dash.
+ */
+export function formatCompactNumber(
+  value: number | null | undefined,
+  opts?: { language?: string; precision?: number; threshold?: number },
+): string {
+  if (value == null || Number.isNaN(value)) return '—';
+  const { language = 'en', precision = 1, threshold = 10_000 } = opts ?? {};
+  if (Math.abs(value) < threshold) {
+    return new Intl.NumberFormat(language, { maximumFractionDigits: 0 }).format(value);
+  }
+  return new Intl.NumberFormat(language, {
+    notation: 'compact',
+    maximumFractionDigits: precision,
+  }).format(value);
+}
+
+/**
+ * Compact display string + full-precision grouped string, the canonical pairing
+ * for a KPI tile that shows the compact figure and reveals the exact value on
+ * hover. `display` feeds the visible glyph; `title` feeds the native tooltip.
+ */
+export function compactWithTitle(
+  value: number | null | undefined,
+  opts?: { language?: string; precision?: number; threshold?: number },
+): { display: string; title: string } {
+  return {
+    display: formatCompactNumber(value, opts),
+    title: formatCount(value, { language: opts?.language ?? 'en', precision: 0 }),
+  };
+}
+
+/**
  * Unit kinds understood by {@link formatNumeric} and the `<Numeric>` primitive.
  * - `ms` / `s` — duration (delegates to {@link formatDuration})
  * - `usd`       — US-dollar cost (delegates to {@link formatCost})
  * - `percent`   — percentage magnitude (delegates to {@link formatPercent})
  * - `ratio`     — 0–1 ratio rendered as a percent
  * - `count`     — grouped integer/quantity (delegates to {@link formatCount})
+ * - `compact`   — compact-notation count for KPI tiles (delegates to {@link formatCompactNumber})
  * - `plain`     — grouped number, no unit
  */
-export type NumericUnit = 'ms' | 's' | 'usd' | 'percent' | 'ratio' | 'count' | 'plain';
+export type NumericUnit = 'ms' | 's' | 'usd' | 'percent' | 'ratio' | 'count' | 'compact' | 'plain';
 
 /**
  * One entry point for the handful of units that show up on metric surfaces
@@ -307,6 +355,8 @@ export function formatNumeric(
       return formatPercent(value, { precision, language });
     case 'ratio':
       return formatPercent(value, { fromRatio: true, precision, language });
+    case 'compact':
+      return formatCompactNumber(value, { language, precision });
     case 'count':
     case 'plain':
     default:

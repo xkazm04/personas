@@ -213,6 +213,24 @@
   --spacing-12: 3rem;
   --spacing-16: 4rem;
 
+  /* Density tokens — app-wide spacing rhythm driven by the Appearance
+     "Density" setting (data-density on <html>). The :root values below ARE
+     the "comfortable" default (identical to the historical p-4 / space-y-4 /
+     space-y-6 / p-3 hardcodes), so the default appearance is unchanged.
+     [data-density="cozy"] loosens and [data-density="compact"] tightens the
+     same variables. CARD_PADDING / SECTION_GAP in designTokens.ts emit
+     arbitrary-value classes (p-[var(--density-pad)], …) bound to these. */
+  --density-pad: 1rem;
+  /* 16px — standard card padding (CARD_PADDING.standard, was p-4) */
+  --density-pad-sm: 0.75rem;
+  /* 12px — compact card / dense padding (CARD_PADDING.compact|dense, was p-3) */
+  --density-gap: 1rem;
+  /* 16px — within-panel section gap (SECTION_GAP.within, was space-y-4) */
+  --density-gap-lg: 1.5rem;
+  /* 24px — between page-level sections (SECTION_GAP.between, was space-y-6) */
+  --density-row-py: 0.5rem;
+  /* 8px — table/list row vertical padding for density-aware rows */
+
   /* Semantic spacing scale — t-shirt size aliases for the numeric scale */
   --space-xs: 0.25rem;
   /* 4px  — tight gaps, icon padding */
@@ -629,6 +647,36 @@ html {
 [data-text-scale="xl"] .text-\[15px\] {
   font-size: 18px;
 }
+
+/* -- Density --
+   Global spacing rhythm. `comfortable` is the :root default (unchanged from
+   the historical hardcodes); `cozy` loosens and `compact` tightens. The
+   variables feed CARD_PADDING / SECTION_GAP arbitrary-value classes and the
+   density-aware row padding. No global padding transition — animating
+   padding across the whole node tree triggers expensive layout recalcs
+   (same freeze class the brightness path avoids), so the reflow is instant. */
+[data-density="cozy"] {
+  --density-pad: 1.25rem;     /* 20px */
+  --density-pad-sm: 1rem;     /* 16px */
+  --density-gap: 1.25rem;     /* 20px */
+  --density-gap-lg: 1.75rem;  /* 28px */
+  --density-row-py: 0.75rem;  /* 12px */
+}
+
+[data-density="compact"] {
+  --density-pad: 0.625rem;    /* 10px */
+  --density-pad-sm: 0.5rem;   /* 8px  */
+  --density-gap: 0.625rem;    /* 10px */
+  --density-gap-lg: 1rem;     /* 16px */
+  --density-row-py: 0.25rem;  /* 4px  */
+}
+
+/* Line-height follows density: compact tightens body leading for more rows
+   per fold, cozy opens it up. Mirrors the data-text-scale typo overrides. */
+[data-density="compact"] .typo-body { line-height: 1.45; }
+[data-density="compact"] .typo-body-lg { line-height: 1.5; }
+[data-density="cozy"] .typo-body { line-height: 1.75; }
+[data-density="cozy"] .typo-body-lg { line-height: 1.8; }
 
 /* -- Brightness --
    Driven by --app-brightness CSS variable (set from JS).
@@ -1423,6 +1471,25 @@ body[data-drag-active="true"] * {
 
 .animate-avatar-breathe {
   animation: avatar-breathe 2s ease-in-out infinite;
+}
+
+/* Stage progress shimmer — a light streak sweeps the current pipeline segment
+   then rests, signalling ongoing work during unknown-duration stages. The
+   transparent gradient ends make the loop reset invisible. Neutralised by the
+   reduced-motion gate (iteration-count: 1 + 0.01ms duration). */
+@keyframes stage-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-stage-shimmer {
+  animation: stage-shimmer 1.4s ease-in-out infinite;
 }
 
 /* Sidebar icon animations — hoisted from inline <style> in SidebarIconStyles.
@@ -4545,4 +4612,30 @@ html[data-motion="reduce"] *::after {
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
+}
+
+/* Mirror the SVG SMIL + infinite-loop handling of the OS-level
+   `prefers-reduced-motion` media query so the user-controlled toggle is just
+   as thorough. Without these, looping decorative animations (glow, orbit,
+   shimmer) keep cycling at 0.01ms — a busy CPU/paint loop with no visible
+   benefit — and SVG SMIL animations ignore the duration override entirely. */
+html[data-motion="reduce"] animate,
+html[data-motion="reduce"] animateTransform,
+html[data-motion="reduce"] animateMotion {
+  display: none !important;
+}
+
+html[data-motion="reduce"] .animate-glow-pulse,
+html[data-motion="reduce"] .animate-glow-breathe,
+html[data-motion="reduce"] .animate-emerald-flash,
+html[data-motion="reduce"] .cell-glow-filling::before,
+html[data-motion="reduce"] .cell-edge-shimmer::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+}
+
+/* Keep fade-slide-in content visible immediately (no off-screen start state). */
+html[data-motion="reduce"] .animate-fade-slide-in {
+  opacity: 1 !important;
+  transform: none !important;
 }

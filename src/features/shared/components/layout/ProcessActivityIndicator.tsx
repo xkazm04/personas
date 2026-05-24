@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import { ActivityPulseIcon } from "@/features/shared/components/icons/ActivityPulseIcon";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useSystemStore } from "@/stores/systemStore";
@@ -17,6 +18,9 @@ import { PersonaMonitor } from "@/features/monitor";
  */
 export default function ProcessActivityIndicator() {
   const { t, tx } = useTranslation();
+  // The pulse loops on opacity, which the global <MotionConfig reducedMotion>
+  // does NOT disable (it only stops one-shot transforms). Gate it explicitly.
+  const prefersReducedMotion = useReducedMotion();
   const monitorOpen = useSystemStore((s) => s.monitorOpen);
   const setMonitorOpen = useSystemStore((s) => s.setMonitorOpen);
 
@@ -45,12 +49,20 @@ export default function ProcessActivityIndicator() {
         title={attention > 0 ? tx(t.monitor.titlebar_tooltip, { count: attention }) : t.monitor.titlebar}
       >
         {running && (
-          <motion.span
-            aria-hidden
-            className="absolute inset-[5px] rounded-lg border border-primary/60 pointer-events-none"
-            animate={{ opacity: [0.15, 0.7, 0.15], scale: [0.82, 1.1, 0.82] }}
-            transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
-          />
+          prefersReducedMotion ? (
+            // Static "busy" affordance — a steady ring at the pulse's mid opacity.
+            <span
+              aria-hidden
+              className="absolute inset-[5px] rounded-lg border border-primary/60 opacity-50 pointer-events-none"
+            />
+          ) : (
+            <motion.span
+              aria-hidden
+              className="absolute inset-[5px] rounded-lg border border-primary/60 pointer-events-none"
+              animate={{ opacity: [0.15, 0.7, 0.15], scale: [0.82, 1.1, 0.82] }}
+              transition={{ duration: 1.9, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )
         )}
         <ActivityPulseIcon
           width={22}

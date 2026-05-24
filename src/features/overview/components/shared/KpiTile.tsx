@@ -2,6 +2,7 @@ import { memo, useMemo, type ReactNode } from 'react';
 import { TrendingUp, TrendingDown, type LucideIcon } from 'lucide-react';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { formatCompactNumber, formatCount } from '@/lib/utils/formatters';
 
 /**
  * Unified KPI tile primitive — replaces 3 hand-rolled stat-tile shapes
@@ -44,8 +45,16 @@ export interface KpiTileProps {
   value?: string;
   /** When set, the value animates from previous to current via AnimatedCounter. */
   numericValue?: number;
-  /** Required when numericValue is set. */
+  /** Required when numericValue is set (ignored when `compact` is true). */
   format?: (n: number) => string;
+  /**
+   * Render `numericValue` with compact notation (`12.3K`, `4.5M`) so large
+   * counts never overflow or wrap the tile, with the exact value surfaced as a
+   * hover tooltip. Overrides `format`. Counts below 10k stay fully grouped.
+   */
+  compact?: boolean;
+  /** BCP-47 locale for compact/grouped figures. Pass `language` from useTranslation(). */
+  language?: string;
 
   /**
    * For `console` density: a Tailwind class (e.g. 'text-emerald-400').
@@ -119,12 +128,29 @@ function renderValue(
   numericValue: number | undefined,
   format: ((n: number) => string) | undefined,
   density: KpiDensity,
+  compact: boolean,
+  language: string | undefined,
 ) {
   if (numericValue !== undefined) {
     // Headline card densities get the slot-machine roll for emotional weight;
     // the dense `console` density keeps the cheaper fade so list rows don't
     // each fire a 280ms animation when refreshes batch.
     const mode = density === 'console' ? 'fade' : 'roll';
+    if (compact) {
+      const full = formatCount(numericValue, { language, precision: 0 });
+      const display = formatCompactNumber(numericValue, { language });
+      // Only attach the tooltip when compaction actually hid digits, so small
+      // counts don't get a redundant "1,234 → 1,234" hover.
+      const title = display !== full ? full : undefined;
+      return (
+        <AnimatedCounter
+          value={numericValue}
+          formatFn={(v) => formatCompactNumber(v, { language })}
+          mode={mode}
+          title={title}
+        />
+      );
+    }
     return <AnimatedCounter value={numericValue} formatFn={format} mode={mode} />;
   }
   // Static value: route through <Numeric> so the figure style is explicit and
@@ -133,7 +159,7 @@ function renderValue(
 }
 
 export const KpiTile = memo(function KpiTile({
-  icon, label, value, numericValue, format, color,
+  icon, label, value, numericValue, format, compact = false, language, color,
   density = 'card', trend, sparklineData, subtitle, subtitleColor,
 }: KpiTileProps) {
   const trendDisplay = useMemo(() => {
@@ -154,7 +180,7 @@ export const KpiTile = memo(function KpiTile({
         <div className="flex-1 min-w-0">
           <div className="typo-caption uppercase tracking-widest text-foreground font-mono">{label}</div>
           <div className={`font-mono text-xl tabular-nums ${color}`}>
-            {renderValue(value, numericValue, format, density)}
+            {renderValue(value, numericValue, format, density, compact, language)}
           </div>
         </div>
       </div>
@@ -170,7 +196,7 @@ export const KpiTile = memo(function KpiTile({
         <div className="min-w-0">
           <p className="typo-body text-foreground truncate">{label}</p>
           <p className={`typo-heading ${palette.text}`}>
-            {renderValue(value, numericValue, format, density)}
+            {renderValue(value, numericValue, format, density, compact, language)}
           </p>
         </div>
       </div>
@@ -195,7 +221,7 @@ export const KpiTile = memo(function KpiTile({
         </div>
         <div className="mt-auto">
           <div className="typo-data-lg tracking-tight text-foreground/90">
-            {renderValue(value, numericValue, format, density)}
+            {renderValue(value, numericValue, format, density, compact, language)}
           </div>
           <div className="flex items-center gap-2.5 mt-1.5 min-h-[18px]">
             {trendDisplay ? (

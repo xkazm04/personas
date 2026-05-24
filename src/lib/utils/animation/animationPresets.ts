@@ -1,8 +1,14 @@
 import { useMemo } from 'react';
 import type { Variants } from 'framer-motion';
-import { useMotion, type MotionConfig } from '@/hooks/utility/interaction/useMotion';
+import {
+  useMotion,
+  useMotionVariants,
+  useReducedMotion,
+  toReducedVariants,
+  type MotionConfig,
+} from '@/hooks/utility/interaction/useMotion';
 
-export { useMotion, type MotionConfig };
+export { useMotion, useMotionVariants, useReducedMotion, toReducedVariants, type MotionConfig };
 
 export const CSS_DURATION_CLASS = {
   snappy: 'duration-snap motion-reduce:duration-0 motion-reduce:transition-none',

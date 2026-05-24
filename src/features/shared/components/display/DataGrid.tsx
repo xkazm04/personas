@@ -63,6 +63,14 @@ export interface DataGridProps<T> {
    * referentially stable across renders or React will re-spread on every tick.
    */
   getRowProps?: (row: T) => React.HTMLAttributes<HTMLDivElement> | undefined;
+  /**
+   * Key of the row currently being dragged (when the consumer wires HTML5 drag
+   * via `getRowProps`). Drives the drag-affordance treatment: the dragged row
+   * lifts (`scale-[0.98]` + `shadow-elevation-3`) and every sibling dims to
+   * `opacity-70` so the operation reads clearly. Leave undefined when not
+   * dragging.
+   */
+  draggingRowKey?: string | null;
   /** Optional className for the outer container */
   className?: string;
   /** When true, hides column filters and reduces page size to 5. */
@@ -136,6 +144,7 @@ export function DataGrid<T>({
   emptyDescription,
   getRowClassName,
   getRowProps,
+  draggingRowKey,
   className,
   simplified = false,
   selectAll,
@@ -318,6 +327,14 @@ export function DataGrid<T>({
             : (getRowAccent?.(row) ?? '');
           const rowCls = getRowClassName?.(row) ?? '';
           const extraRowProps = getRowProps?.(row);
+          // Drag-affordance treatment: the dragged row lifts; siblings dim.
+          const isDragging = draggingRowKey != null && getRowKey(row) === draggingRowKey;
+          const isDragSibling = draggingRowKey != null && !isDragging;
+          const dragCls = isDragging
+            ? 'scale-[0.98] shadow-elevation-3 relative z-10'
+            : isDragSibling
+              ? 'opacity-70'
+              : '';
           return (
             <motion.div
               key={getRowKey(row)}
@@ -331,7 +348,7 @@ export function DataGrid<T>({
               {...(extraRowProps as React.ComponentProps<typeof motion.div>)}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
               data-selected={selected || undefined}
-              className={`row-hover-lift grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.12] ${accent} ${rowCls} ${
+              className={`row-hover-lift grid gap-0 border-b border-primary/5 border-l-2 border-l-transparent hover:bg-primary/[0.12] transition-[transform,opacity,box-shadow] duration-150 ${accent} ${rowCls} ${dragCls} ${
                 onRowClick ? 'cursor-pointer' : ''
               } ${idx % 2 === 0 && !selected ? 'bg-primary/[0.03]' : ''}`}
               style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}

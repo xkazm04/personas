@@ -418,7 +418,7 @@ export const VitalsConsole = memo(function VitalsConsole({
   pendingReviews: number;
   points: { date: string; total_executions: number; failed: number }[];
 }) {
-  const formatCount = useCallback((v: number) => Math.round(v).toLocaleString(), []);
+  const { language } = useTranslation();
 
   // Build a tiny static sparkline of traffic vs errors for context
   const sparkline = useMemo(() => {
@@ -438,7 +438,7 @@ export const VitalsConsole = memo(function VitalsConsole({
       <div className="flex-1 flex flex-col items-center gap-5 px-4 py-6">
         <SuccessRing rate={successRate} />
         <div className="w-full grid grid-cols-2 gap-3">
-          <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} format={formatCount} color="text-emerald-400" />
+          <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} compact language={language} color="text-emerald-400" />
           <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
           <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
           <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />

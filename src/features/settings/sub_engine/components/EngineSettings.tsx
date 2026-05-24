@@ -62,18 +62,19 @@ export default function EngineSettings() {
               }
             />
 
-            {/* Matrix grid */}
-            <div className="overflow-x-auto">
-              <table className="w-full typo-body">
+            {/* Matrix grid — sticky axes + zebra striping keep each cell traceable
+                to its operation (frozen first column) and provider (frozen header). */}
+            <div className="overflow-auto max-h-[28rem] rounded-input border border-primary/5">
+              <table className="w-full typo-body border-separate border-spacing-0">
                 <thead>
-                  <tr className="border-b border-primary/10">
-                    <th className="text-left py-2 pr-4 text-foreground font-medium w-[45%]">
+                  <tr>
+                    <th className="sticky left-0 top-0 z-20 bg-background text-left py-2 pr-4 pl-3 text-foreground font-medium w-[45%] border-b border-primary/10 border-r border-r-primary/10">
                       {s.operation}
                     </th>
                     {PROVIDERS.map((p) => {
                       const installed = installedProviders.has(p.id);
                       return (
-                        <th key={p.id} className="py-2 px-2 text-center font-medium min-w-[90px]">
+                        <th key={p.id} className="sticky top-0 z-10 bg-background py-2 px-2 text-center font-medium min-w-[90px] border-b border-primary/10">
                           <div className="flex flex-col items-center gap-0.5">
                             <span className="text-foreground">
                               {p.shortLabel}

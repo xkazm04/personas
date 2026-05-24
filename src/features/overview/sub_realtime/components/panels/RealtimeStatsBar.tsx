@@ -4,6 +4,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { StatusDot } from '@/features/shared/components/display/StatusDot';
 import type { RealtimeStats } from '@/hooks/realtime/useRealtimeEvents';
 import { useTranslation } from '@/i18n/useTranslation';
+import { compactWithTitle } from '@/lib/utils/formatters';
 
 interface Props {
   stats: RealtimeStats;
@@ -14,10 +15,11 @@ interface Props {
   onTestFlow: () => void;
 }
 
-const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: string | number; color?: string }) {
+const AnimatedNumber = memo(function AnimatedNumber({ value, color, title }: { value: string | number; color?: string; title?: string }) {
   return (
     <span
         key={String(value)}
+        title={title}
         className={`animate-fade-slide-in font-bold typo-heading ${color ?? 'text-foreground'}`}
       >
         {value}
@@ -26,7 +28,12 @@ const AnimatedNumber = memo(function AnimatedNumber({ value, color }: { value: s
 });
 
 export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlowLoading, onPause, onTestFlow }: Props) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+  // Compact the volume readouts so large counts stay crisp inside the
+  // fixed-width tiles; the exact value rides along as a hover tooltip.
+  const eventsPerMin = compactWithTitle(stats.eventsPerMinute, { language });
+  const pending = compactWithTitle(stats.pendingCount, { language });
+  const inWindow = compactWithTitle(stats.totalInWindow, { language });
   return (
     <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 md:py-4 bg-gradient-to-b from-secondary/40 to-secondary/10 border-b border-primary/10 shadow-[0_1px_2px_rgba(0,0,0,0.1)] relative z-20">
       <div className="flex items-center gap-2 sm:gap-3 md:gap-6">
@@ -47,7 +54,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             <Zap className="w-3 h-3 md:w-4 md:h-4 text-purple-400" />
           </div>
           <div className="flex flex-col">
-            <AnimatedNumber value={stats.eventsPerMinute} color="text-purple-400 text-[15px]" />
+            <AnimatedNumber value={eventsPerMin.display} title={eventsPerMin.title} color="text-purple-400 text-[15px]" />
             <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.events_per_min}</span>
           </div>
         </div>
@@ -59,7 +66,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             <Clock className="w-3 h-3 md:w-4 md:h-4 text-amber-400" />
           </div>
           <div className="flex flex-col">
-            <AnimatedNumber value={stats.pendingCount} color="text-amber-400 text-[15px]" />
+            <AnimatedNumber value={pending.display} title={pending.title} color="text-amber-400 text-[15px]" />
             <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.pending}</span>
           </div>
         </div>
@@ -83,7 +90,7 @@ export default function RealtimeStatsBar({ stats, isPaused, isConnected, testFlo
             <TrendingUp className="w-3 h-3 md:w-4 md:h-4 text-blue-400" />
           </div>
           <div className="flex flex-col">
-            <AnimatedNumber value={stats.totalInWindow} color="text-blue-400 text-[15px]" />
+            <AnimatedNumber value={inWindow.display} title={inWindow.title} color="text-blue-400 text-[15px]" />
             <span className="typo-heading text-foreground font-semibold uppercase tracking-widest -mt-0.5 hidden md:block">{t.overview.realtime_stats.in_window}</span>
           </div>
         </div>

@@ -16,6 +16,12 @@ interface AnimatedCounterProps {
   /** Pass-through className for the wrapping span */
   className?: string;
   /**
+   * Native `title` tooltip on the wrapping span. Used to surface the
+   * full-precision value when `formatFn` emits a compact/abbreviated figure
+   * (e.g. `12.3K` displayed, `12,345` on hover).
+   */
+  title?: string;
+  /**
    * `fade` (default) — per-digit cross-fade via popLayout. Cheap, works for
    * any text shape (formatters that emit currency, percentages, etc.).
    * `roll` — slot-machine column per digit position. Each digit slot is an
@@ -47,6 +53,7 @@ export function AnimatedCounter({
   value,
   formatFn = defaultFormat,
   className,
+  title,
   mode = 'fade',
 }: AnimatedCounterProps) {
   const formatRef = useRef(formatFn);
@@ -78,12 +85,13 @@ export function AnimatedCounter({
   const effectiveMode: AnimatedCounterMode = reducedMotion ? 'fade' : mode;
 
   if (effectiveMode === 'roll') {
-    return <RollCounter text={text} className={className} />;
+    return <RollCounter text={text} className={className} title={title} />;
   }
 
   return (
     <span
       className={className}
+      title={title}
       style={{
         fontVariantNumeric: 'tabular-nums lining-nums',
         display: 'inline-flex',
@@ -120,12 +128,13 @@ export function AnimatedCounter({
  * roll distance matches the actual line-box height of the surrounding
  * typography. No layout re-measurement on text change — the column
  * animates within the measured window. */
-function RollCounter({ text, className }: { text: string; className?: string }) {
+function RollCounter({ text, className, title }: { text: string; className?: string; title?: string }) {
   const positions = useMemo(() => Array.from(text), [text]);
 
   return (
     <span
       className={className}
+      title={title}
       style={{
         fontVariantNumeric: 'tabular-nums lining-nums',
         display: 'inline-flex',

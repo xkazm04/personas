@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, memo, useMemo } from 'react';
-import { Check, Globe, Palette, Sun, Type } from 'lucide-react';
+import { AlignJustify, Check, Globe, Palette, Rows2, Rows3, Sun, Type } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useThemeStore, THEMES, TEXT_SCALES, DARK_BRIGHTNESS_LEVELS, LIGHT_BRIGHTNESS_LEVELS, BRIGHTNESS_ICON_OPACITY_BY_INDEX, customThemeDef, useIsDarkTheme } from '@/stores/themeStore';
-import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel } from '@/stores/themeStore';
+import type { ThemeId, ThemeDefinition, TextScale, TimezoneMode, BrightnessLevel, Density } from '@/stores/themeStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { Button } from '@/features/shared/components/buttons';
@@ -290,6 +290,8 @@ export default function AppearanceSettings() {
   const setTheme = useThemeStore((s) => s.setTheme);
   const textScale = useThemeStore((s) => s.textScale);
   const setTextScale = useThemeStore((s) => s.setTextScale);
+  const density = useThemeStore((s) => s.density);
+  const setDensity = useThemeStore((s) => s.setDensity);
   const timezone = useThemeStore((s) => s.timezone);
   const setTimezone = useThemeStore((s) => s.setTimezone);
 
@@ -308,6 +310,14 @@ export default function AppearanceSettings() {
   const customTheme = useThemeStore((s) => s.customTheme);
 
   const s = t.settings.appearance;
+
+  // Tight → roomy. Labels reuse the shared density strings; descriptions are
+  // appearance-scoped. Icons match the standalone DensityToggle.
+  const densityOptions: Array<{ value: Density; Icon: typeof Rows2; label: string; description: string }> = [
+    { value: 'compact', Icon: AlignJustify, label: t.shared.density_compact, description: s.density_compact_desc },
+    { value: 'comfortable', Icon: Rows2, label: t.shared.density_comfortable, description: s.density_comfortable_desc },
+    { value: 'cozy', Icon: Rows3, label: t.shared.density_cozy, description: s.density_cozy_desc },
+  ];
 
   const customDef = useMemo(() => customTheme ? customThemeDef(customTheme) : null, [customTheme]);
   const { darkWithCustom, lightWithCustom } = useMemo(() => {
@@ -360,6 +370,45 @@ export default function AppearanceSettings() {
                     </span>
                     <span className="text-[11px] text-foreground leading-snug">
                       {scale.description}
+                    </span>
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <Check className="w-3.5 h-3.5 text-primary" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Density — scales spacing tokens app-wide via --density-* CSS vars */}
+          <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
+            <SectionHeading title={s.density} icon={<Rows2 />} />
+            <p className="typo-caption text-foreground">
+              {s.density_hint}
+            </p>
+            <div className="grid grid-cols-3 gap-3">
+              {densityOptions.map(({ value, Icon, label, description }) => {
+                const isActive = density === value;
+                return (
+                  <button
+                    type="button"
+                    key={value}
+                    onClick={() => setDensity(value)}
+                    aria-pressed={isActive}
+                    className={`relative flex flex-col items-center gap-2 p-4 rounded-modal border transition-colors text-center ${
+                      isActive
+                        ? 'border-primary/30 bg-primary/5'
+                        : 'border-primary/10 hover:border-primary/20 hover:bg-primary/5'
+                    }`}
+                  >
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-foreground'}`} />
+                    <span className={`typo-heading ${isActive ? 'text-foreground/90 font-medium' : 'text-foreground'}`}>
+                      {label}
+                    </span>
+                    <span className="text-[11px] text-foreground leading-snug">
+                      {description}
                     </span>
                     {isActive && (
                       <div className="absolute top-2 right-2">

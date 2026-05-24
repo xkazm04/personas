@@ -56,20 +56,29 @@ export type MotionDelayToken = keyof typeof MOTION.delay;
 // Use these instead of raw p-*, px-*, py-*, space-y-*, gap-* classes.
 // Each token encodes design intent so the "why" is clear at the call site.
 
-/** Card internal padding — compact variant for dense UIs, standard for normal cards. */
+/** Card internal padding — compact variant for dense UIs, standard for normal cards.
+ *
+ *  `standard`/`compact`/`dense` are bound to the app-wide density CSS variables
+ *  (`--density-pad`, `--density-pad-sm`) set by the Appearance "Density" setting,
+ *  so flipping density reflows every card that uses these tokens. The default
+ *  ("comfortable") resolves to the historical values (p-4 / p-3), so appearance
+ *  is unchanged out of the box. `modalSection` stays fixed — modal chrome bands
+ *  should not breathe with content density. */
 export const CARD_PADDING = {
-  compact: 'p-3',
-  standard: 'p-4',
+  compact: 'p-[var(--density-pad-sm)]',
+  standard: 'p-[var(--density-pad)]',
   /** Mobile-compact card body: full horizontal padding with tighter vertical rhythm. */
-  dense: 'px-4 py-3',
+  dense: 'px-4 py-[var(--density-pad-sm)]',
   /** Modal header/tabs/footer bands — wider horizontal padding, standard vertical rhythm. */
   modalSection: 'px-6 py-4',
 } as const;
 
-/** Vertical gap between sections — within a panel vs between page-level sections. */
+/** Vertical gap between sections — within a panel vs between page-level sections.
+ *  Density-aware via `--density-gap` / `--density-gap-lg`; default resolves to
+ *  the historical space-y-4 / space-y-6. */
 export const SECTION_GAP = {
-  within: 'space-y-4',
-  between: 'space-y-6',
+  within: 'space-y-[var(--density-gap)]',
+  between: 'space-y-[var(--density-gap-lg)]',
 } as const;
 
 /** Gap between list items — dense for tight lists, cards for spaced card grids. */

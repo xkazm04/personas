@@ -3,7 +3,10 @@ import { persist } from 'zustand/middleware';
 import type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 import { deriveCustomThemeVars, injectCustomThemeStyle, removeCustomThemeStyle } from '@/lib/theme/deriveCustomTheme';
 import { storeBus } from '@/lib/storeBus';
+import { DEFAULT_DENSITY, isDensity, type Density } from '@/lib/density';
 import { createDedupedJSONStorage } from './util/dedupedStorage';
+
+export type { Density } from '@/lib/density';
 
 export type { CustomThemeConfig } from '@/lib/theme/deriveCustomTheme';
 
@@ -195,6 +198,14 @@ function applyReduceMotion(reduceMotion: boolean) {
   }
 }
 
+/** Drive the app-wide density CSS variables (--density-pad/-gap/…) via the
+ *  data-density attribute on <html>. See the [data-density=…] blocks in
+ *  globals.css. `comfortable` is the :root default, so the attribute is still
+ *  set for it (inspectable + future-proof) but matches no override block. */
+function applyDensity(density: Density) {
+  document.documentElement.setAttribute('data-density', density);
+}
+
 function isLightTheme(id: ThemeId, customConfig?: CustomThemeConfig | null): boolean {
   if (id === 'custom') return customConfig?.baseMode === 'light';
   return id.startsWith('light');
@@ -239,6 +250,7 @@ interface ThemeState {
   cvdSafe: boolean;
   highContrast: boolean;
   reduceMotion: boolean;
+  density: Density;
   setTheme: (id: ThemeId) => void;
   setTextScale: (scale: TextScale) => void;
   setTimezone: (tz: TimezoneMode) => void;
@@ -250,6 +262,7 @@ interface ThemeState {
   setCvdSafe: (enabled: boolean) => void;
   setHighContrast: (enabled: boolean) => void;
   setReduceMotion: (enabled: boolean) => void;
+  setDensity: (density: Density) => void;
 }
 
 /** Derived selector: true when the active theme is dark. */
@@ -275,6 +288,7 @@ export const useThemeStore = create<ThemeState>()(
       cvdSafe: false,
       highContrast: false,
       reduceMotion: false,
+      density: DEFAULT_DENSITY,
       setTheme: (id: ThemeId) => {
         applyThemeToDOM(id, get().customTheme);
         applyBrightness(get().brightness, id, get().customTheme);
@@ -330,6 +344,11 @@ export const useThemeStore = create<ThemeState>()(
         set({ reduceMotion: enabled });
         storeBus.emit('appearance:changed', { field: 'reduceMotion', value: enabled ? 'on' : 'off' });
       },
+      setDensity: (density: Density) => {
+        applyDensity(density);
+        set({ density });
+        storeBus.emit('appearance:changed', { field: 'density', value: density });
+      },
     }),
     {
       name: 'persona-theme',
@@ -350,6 +369,7 @@ export const useThemeStore = create<ThemeState>()(
           applyCvdSafe(state.cvdSafe ?? false);
           applyHighContrast(state.highContrast ?? false);
           applyReduceMotion(state.reduceMotion ?? false);
+          applyDensity(isDensity(state.density) ? state.density : DEFAULT_DENSITY);
         }
       },
     }

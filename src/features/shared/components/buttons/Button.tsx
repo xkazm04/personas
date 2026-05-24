@@ -24,17 +24,20 @@ export type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'icon-sm' | 'icon-md' | 'ic
 
 // -- Style maps ------------------------------------------------
 
+// NOTE: the active:scale-[0.98] press response lives in the base class list (see `classes`
+// below) so every variant gets identical tactile feedback in one place. Variant entries only
+// declare their color/border/shadow surface.
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    'brightness-lock bg-btn-primary text-btn-primary-fg hover:bg-btn-primary/90 shadow-elevation-1 hover:shadow-elevation-2 active:scale-[0.98]',
+    'brightness-lock bg-btn-primary text-btn-primary-fg hover:bg-btn-primary/90 shadow-elevation-1 hover:shadow-elevation-2',
   secondary:
-    'border border-border bg-secondary/40 text-foreground/90 hover:bg-secondary/70 hover:border-border/80 active:scale-[0.98]',
+    'border border-border bg-secondary/40 text-foreground/90 hover:bg-secondary/70 hover:border-border/80',
   ghost:
     'text-foreground hover:text-foreground hover:bg-secondary/50 active:bg-secondary/70',
   danger:
-    'brightness-lock bg-red-600/90 text-btn-danger-fg hover:bg-red-600 border border-red-500/30 shadow-elevation-1 active:scale-[0.98]',
+    'brightness-lock bg-red-600/90 text-btn-danger-fg hover:bg-red-600 border border-red-500/30 shadow-elevation-1',
   accent:
-    'border text-foreground/90 active:scale-[0.98]',
+    'border text-foreground/90',
   link:
     'text-primary hover:text-primary/80 underline-offset-2 hover:underline p-0 h-auto rounded-none',
 };
@@ -155,7 +158,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       : '';
 
     const classes = [
-      'inline-flex items-center font-medium transition-all',
+      // transition-all carries hover color/shadow; duration-100 + active:scale gives every button
+      // a snappy tactile press response (disabled buttons are pointer-events-none, so :active never
+      // fires on them). Defined once here rather than per-variant.
+      'inline-flex items-center font-medium transition-all duration-100 active:scale-[0.98]',
       'focus-ring',
       VARIANT_CLASSES[variant],
       variant === 'accent' ? accentClasses : '',
@@ -202,8 +208,8 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
                 <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="opacity-75" />
               </svg>
             )}
-            {icon ? (
-              <span className={`flex-shrink-0 ${dimClass}`.trim()}>{icon}</span>
+            {icon && !loading ? (
+              <span className="flex-shrink-0">{icon}</span>
             ) : null}
             {labelContent != null && labelContent !== false ? (
               <span className={dimClass || undefined}>{labelContent}</span>

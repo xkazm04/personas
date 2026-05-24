@@ -14,10 +14,10 @@ import {
   obsidianBrainResolveConflict,
   type SyncLogEntry,
   type SyncConflict,
-  type PushSyncResult,
   type ObsidianConflictResolution,
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
+import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
 
 export default function SyncPanel() {
   const { t } = useTranslation();
@@ -34,9 +34,15 @@ export default function SyncPanel() {
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
   const [pushing, setPushing] = useState(false);
   const [pulling, setPulling] = useState(false);
-  const [pushResult, setPushResult] = useState<PushSyncResult | null>(null);
+  // Most recent result per direction, newest first. Persisted in state (not
+  // just a toast) so the user can review what changed at their own pace.
+  const [syncResults, setSyncResults] = useState<SyncResultSummary[]>([]);
   const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
+
+  const recordResult = useCallback((summary: SyncResultSummary) => {
+    setSyncResults((prev) => [summary, ...prev.filter((r) => r.direction !== summary.direction)]);
+  }, []);
 
   useEffect(() => {
     if (connected) {
@@ -71,7 +77,14 @@ export default function SyncPanel() {
       // their vault. The API short-circuits an empty array to a no-op result.
       const ids = [...selectedPersonaIds];
       const result = await obsidianBrainPushSync(ids);
-      setPushResult(result);
+      recordResult({
+        direction: 'push',
+        created: result.created,
+        updated: result.updated,
+        skipped: result.skipped,
+        errors: result.errors,
+        at: new Date().toISOString(),
+      });
       setLastSyncAt(new Date().toISOString());
       addToast(`Push: ${result.created} created, ${result.updated} updated, ${result.skipped} skipped${result.errors.length > 0 ? `, ${result.errors.length} errors` : ''}`, result.errors.length > 0 ? 'error' : 'success');
       obsidianBrainGetSyncLog(50).then(setSyncLog).catch(() => {});
@@ -81,7 +94,7 @@ export default function SyncPanel() {
       setPushing(false);
       setSyncRunning(false);
     }
-  }, [selectedPersonaIds, addToast, setSyncRunning, setLastSyncAt]);
+  }, [selectedPersonaIds, addToast, recordResult, setSyncRunning, setLastSyncAt]);
 
   const pullSync = useCallback(async () => {
     setPulling(true);
@@ -90,6 +103,15 @@ export default function SyncPanel() {
       const result = await obsidianBrainPullSync();
       setConflicts(result.conflicts);
       setPendingConflicts(result.conflicts.length);
+      recordResult({
+        direction: 'pull',
+        created: result.created,
+        updated: result.updated,
+        conflicts: result.conflicts.length,
+        converged: result.converged ?? 0,
+        errors: result.errors,
+        at: new Date().toISOString(),
+      });
       setLastSyncAt(new Date().toISOString());
       addToast(`Pull: ${result.created} created, ${result.updated} updated${result.conflicts.length > 0 ? `, ${result.conflicts.length} conflicts` : ''}`, result.conflicts.length > 0 ? 'error' : 'success');
       // Lucky-convergence audit trail: both sides edited but ended up
@@ -109,7 +131,7 @@ export default function SyncPanel() {
       setPulling(false);
       setSyncRunning(false);
     }
-  }, [addToast, setSyncRunning, setLastSyncAt, setPendingConflicts]);
+  }, [addToast, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts]);
 
   const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: ObsidianConflictResolution) => {
     try {
@@ -213,21 +235,13 @@ export default function SyncPanel() {
         </div>
       </SectionCard>
 
-      {/* Last Sync Result */}
-      {pushResult && (
-        <SectionCard status="success">
-          <div className="space-y-1">
-            <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.last_push_result}</p>
-            <div className="flex gap-4 typo-body">
-              <span className="text-emerald-400">{pushResult.created} created</span>
-              <span className="text-blue-400">{pushResult.updated} updated</span>
-              <span className="text-foreground">{pushResult.skipped} skipped</span>
-              {pushResult.errors.length > 0 && (
-                <span className="text-red-400">{pushResult.errors.length} errors</span>
-              )}
-            </div>
-          </div>
-        </SectionCard>
+      {/* Sync Result Summaries — persistent, reviewable, direction-distinct */}
+      {syncResults.length > 0 && (
+        <div className="space-y-2">
+          {syncResults.map((r) => (
+            <SyncResultCard key={r.direction} summary={r} />
+          ))}
+        </div>
       )}
 
       {/* Conflicts */}

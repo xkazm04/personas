@@ -137,6 +137,10 @@ export type Translations = {
     hide_password: string;
     rename: string;
     rename_to: string;
+    field_checking_availability: string;
+    field_name_available: string;
+    field_name_taken: string;
+    field_name_taken_suggestion: string;
     off: string;
     enable_item: string;
     disable_item: string;
@@ -164,6 +168,8 @@ export type Translations = {
     edge_count_other: string;
     adoption_count_one: string;
     adoption_count_other: string;
+    form_error_summary_title_one: string;
+    form_error_summary_title_other: string;
     selected: string;
     all: string;
     none: string;
@@ -8301,6 +8307,11 @@ export type Translations = {
       reduce_motion_hint: string;
       reduce_motion_on: string;
       reduce_motion_off: string;
+      density: string;
+      density_hint: string;
+      density_compact_desc: string;
+      density_comfortable_desc: string;
+      density_cozy_desc: string;
       custom_theme: string;
       custom_theme_active: string;
       custom_theme_hint: string;
@@ -8880,6 +8891,7 @@ export type Translations = {
     interface_mode_description: string;
     language_label: string;
     text_size_label: string;
+    density_label: string;
     dark_label: string;
     light_label: string;
     brightness_label: string;
@@ -10757,6 +10769,15 @@ export type Translations = {
       select_all: string;
       no_personas_found: string;
       last_push_result: string;
+      result_pushed_headline: string;
+      result_pulled_headline: string;
+      result_created: string;
+      result_updated: string;
+      result_skipped: string;
+      result_converged: string;
+      result_conflicts: string;
+      result_errors: string;
+      result_error_detail: string;
       app_version: string;
       vault_version: string;
       keep_app: string;
@@ -12984,6 +13005,7 @@ export type Translations = {
     blast_safe_to_delete: string;
     blast_impact: string;
     density_toggle_aria: string;
+    drag_handle_aria: string;
     density_cozy: string;
     density_comfortable: string;
     density_compact: string;

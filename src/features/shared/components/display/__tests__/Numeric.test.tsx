@@ -41,4 +41,21 @@ describe('Numeric', () => {
     const el = screen.getByText('7');
     expect(el.tagName).toBe('TD');
   });
+
+  it('compact unit shows abbreviated figure with full-precision title', () => {
+    render(<Numeric value={12_345} unit="compact" />);
+    const el = screen.getByText('12.3K');
+    expect(el.getAttribute('title')).toBe('12,345');
+  });
+
+  it('compact unit omits the title when nothing was abbreviated', () => {
+    render(<Numeric value={1234} unit="compact" />);
+    const el = screen.getByText('1,234');
+    expect(el.getAttribute('title')).toBe('1,234');
+  });
+
+  it('an explicit title overrides the compact auto-title', () => {
+    render(<Numeric value={12_345} unit="compact" title="exact: 12345" />);
+    expect(screen.getByText('12.3K').getAttribute('title')).toBe('exact: 12345');
+  });
 });

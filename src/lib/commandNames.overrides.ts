@@ -27,6 +27,4 @@ export type UnregisteredCommand =
   | "zapier_create_zap"
   | "zapier_list_zaps"
   | "zapier_trigger_webhook"
-  | "get_setting"
-  | "set_setting"
   | "lab_create_version_snapshot";

@@ -130,27 +130,6 @@
     "active_execution": "活跃执行",
     "claude_token": "Claude 令牌"
   },
-  "limits": {
-    "title": "支出限额",
-    "subtitle": "每月成本上限与预算跟踪",
-    "description": "为您的 Personas 支出设置每月 USD 上限。第 1 阶段（当前版本）仅供参考——它会显示进度和警告，但不会阻止运行。第 2 阶段将在执行调度时强制执行该上限。",
-    "refresh": "刷新",
-    "ceiling_section": "每月上限",
-    "ceiling_hint": "所有智能体的综合成本，重新打开此选项卡时刷新。设置为 0 可禁用上限。",
-    "ceiling_placeholder": "0.00",
-    "ceiling_aria": "每月成本上限（USD）",
-    "ceiling_unit": "USD / 月",
-    "set": "设置",
-    "saved": "已保存",
-    "unlimited": "（无上限）",
-    "usage_section": "本月",
-    "of_ceiling": "占 {ceiling}",
-    "progress_aria": "已使用每月上限的 {pct}%",
-    "over_budget": "您已超过每月上限。第 2 阶段将在发生此情况时阻止新的执行；目前请将此视为警告。",
-    "approaching_budget": "您即将达到每月上限。请考虑检查最近的运行。",
-    "no_ceiling_hint": "未设置上限。在上方输入 USD 金额即可开始按预算进行跟踪。",
-    "stage1_note": "第 1 阶段：仅供参考。第 2 阶段将在超过上限时拦截执行调度。"
-  },
   "history": {
     "just_now": "刚刚",
     "minutes_ago": "{minutes} 分钟前",

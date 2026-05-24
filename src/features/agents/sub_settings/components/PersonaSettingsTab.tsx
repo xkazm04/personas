@@ -57,7 +57,7 @@ export function PersonaSettingsTab({
 
   useEffect(() => {
     if (!personaId) return;
-    invokeWithTimeout<string | null>('get_setting', { key: `execution_retention_months:${personaId}` })
+    invokeWithTimeout<string | null>('get_app_setting', { key: `execution_retention_months:${personaId}` })
       .then((val: string | null) => { if (val) setRetentionMonths(parseInt(val, 10) || 2); })
       .catch(() => { /* use default */ });
   }, [personaId]);
@@ -65,7 +65,7 @@ export function PersonaSettingsTab({
   const handleRetentionChange = useCallback((months: number) => {
     setRetentionMonths(months);
     if (!personaId) return;
-    invokeWithTimeout('set_setting', { key: `execution_retention_months:${personaId}`, value: String(months) }).catch(() => { /* ignore */ });
+    invokeWithTimeout('set_app_setting', { key: `execution_retention_months:${personaId}`, value: String(months) }).catch(() => { /* ignore */ });
   }, [personaId]);
 
   return (

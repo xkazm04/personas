@@ -1,5 +1,9 @@
 import { Check } from 'lucide-react';
-import { FormField } from '@/features/shared/components/forms/FormField';
+import { FormField, type FieldAvailability } from '@/features/shared/components/forms/FormField';
+import {
+  useAsyncFieldValidation,
+  suggestAlternativeName,
+} from '@/features/shared/components/forms/useAsyncFieldValidation';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -24,6 +28,8 @@ interface CreateTeamFormProps {
   onColorChange: (color: string) => void;
   onSubmit: () => void;
   onCancel: () => void;
+  /** Existing team names, used to flag duplicates inline as the user types. */
+  existingNames?: string[];
 }
 
 export function CreateTeamForm({
@@ -35,20 +41,49 @@ export function CreateTeamForm({
   onColorChange,
   onSubmit,
   onCancel,
+  existingNames = [],
 }: CreateTeamFormProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+
+  const nameCheck = useAsyncFieldValidation({
+    check: (value) => {
+      const lower = value.toLowerCase();
+      const taken = existingNames.some((n) => n.trim().toLowerCase() === lower);
+      return taken
+        ? { available: false, suggestion: suggestAlternativeName(value, existingNames) }
+        : { available: true };
+    },
+  });
+
+  const availability: FieldAvailability = {
+    status: nameCheck.status,
+    message:
+      nameCheck.status === 'checking'
+        ? t.common.field_checking_availability
+        : nameCheck.status === 'available'
+          ? t.common.field_name_available
+          : nameCheck.status === 'taken'
+            ? nameCheck.suggestion
+              ? tx(t.common.field_name_taken_suggestion, { name: nameCheck.suggestion })
+              : t.common.field_name_taken
+            : undefined,
+  };
+
   return (
     <div
       className="animate-fade-slide-in mb-6 p-4 rounded-modal bg-secondary/40 backdrop-blur-sm border border-indigo-500/20"
     >
       <div className="space-y-4">
-        <FormField label={t.pipeline.team_name} required>
+        <FormField label={t.pipeline.team_name} required availability={availability}>
           {(inputProps) => (
             <input
               {...inputProps}
               type="text"
               value={newName}
-              onChange={(e) => onNameChange(e.target.value)}
+              onChange={(e) => {
+                onNameChange(e.target.value);
+                nameCheck.onChange(e.target.value);
+              }}
               placeholder={t.pipeline.team_name_placeholder}
               className={INPUT_FIELD}
               autoFocus

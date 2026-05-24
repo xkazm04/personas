@@ -3,6 +3,7 @@ import { Activity, AlertCircle, Flame, Snowflake, TrendingDown, TrendingUp } fro
 import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionHeatmap } from '@/api/overview/observability';
 import { silentCatch } from '@/lib/silentCatch';
+import { compactWithTitle } from '@/lib/utils/formatters';
 import type { ExecutionHeatmapData } from '@/lib/bindings/ExecutionHeatmapData';
 import type { HeatmapDay } from '@/lib/bindings/HeatmapDay';
 import type { HeatmapInsights } from '@/lib/bindings/HeatmapInsights';
@@ -167,7 +168,7 @@ export function ExecutionHeatmap({
   compact = false,
   className,
 }: ExecutionHeatmapProps) {
-  const { t, tx } = useTranslation();
+  const { t, tx, language } = useTranslation();
   const [data, setData] = useState<ExecutionHeatmapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -202,12 +203,16 @@ export function ExecutionHeatmap({
   const isEmpty = !loading && totalExecutions === 0;
 
   const title = personaId ? t.overview.heatmap.title_persona : t.overview.heatmap.title_global;
+  // Compact the headline execution total so it never overflows the card header;
+  // the exact figure rides along as a tooltip on the subtitle.
+  const { display: execDisplay, title: execFull } = compactWithTitle(totalExecutions, { language });
+  const subtitleTitle = execDisplay !== execFull ? execFull : undefined;
   const subtitle = totalCost > 0
     ? tx(t.overview.heatmap.subtitle_executions_with_cost, {
-        count: totalExecutions,
+        count: execDisplay,
         cost: totalCost.toFixed(2),
       })
-    : tx(t.overview.heatmap.subtitle_executions, { count: totalExecutions });
+    : tx(t.overview.heatmap.subtitle_executions, { count: execDisplay });
 
   return (
     <div
@@ -217,7 +222,7 @@ export function ExecutionHeatmap({
       <div className="flex items-baseline justify-between gap-3 mb-3">
         <div className="min-w-0">
           <div className="typo-label text-foreground/90 truncate">{title}</div>
-          <div className="typo-caption text-foreground mt-0.5">{subtitle}</div>
+          <div className="typo-caption text-foreground mt-0.5" title={subtitleTitle}>{subtitle}</div>
         </div>
         {data?.insights && !isEmpty && !compact && (
           <Legend />

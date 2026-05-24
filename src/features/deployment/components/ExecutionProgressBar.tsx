@@ -82,10 +82,14 @@ export function ExecutionProgressBar({ executionId }: Props) {
           return (
             <div key={stage} className="flex items-center gap-1 flex-1">
               <div
-                className={`h-1.5 flex-1 rounded-full transition-all ${
+                className={`relative h-1.5 flex-1 overflow-hidden rounded-full transition-all duration-500 ease-out ${
                   isPast ? 'bg-emerald-500' : isCurrent ? 'bg-indigo-500' : 'bg-secondary/50'
                 }`}
-              />
+              >
+                {isCurrent && isAnimated && (
+                  <span className="animate-stage-shimmer pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-foreground/40 to-transparent" />
+                )}
+              </div>
             </div>
           );
         })}

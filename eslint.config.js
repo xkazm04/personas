@@ -17,6 +17,7 @@ const noSilentCatch = require("./eslint-rules/no-silent-catch.cjs");
 const noDirectWhiteColors = require("./eslint-rules/no-direct-white-colors.cjs");
 const roleButtonRequiresKeydown = require("./eslint-rules/role-button-requires-keydown.cjs");
 const noWholeStoreSubscription = require("./eslint-rules/no-whole-store-subscription.cjs");
+const enforceReducedMotionFallback = require("./eslint-rules/enforce-reduced-motion-fallback.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -44,6 +45,7 @@ export default tseslint.config(
           "no-direct-white-colors": noDirectWhiteColors,
           "role-button-requires-keydown": roleButtonRequiresKeydown,
           "no-whole-store-subscription": noWholeStoreSubscription,
+          "enforce-reduced-motion-fallback": enforceReducedMotionFallback,
         },
       },
     },
@@ -89,6 +91,7 @@ export default tseslint.config(
       "custom/no-direct-white-colors": "warn",
       "custom/role-button-requires-keydown": "error",
       "custom/no-whole-store-subscription": "warn",
+      "custom/enforce-reduced-motion-fallback": "warn",
     },
   },
   // Shared design-system primitives may import Tauri IPC for nothing —

@@ -1,5 +1,5 @@
 import { createElement, type ElementType, type ReactNode } from 'react';
-import { formatNumeric, type NumericUnit } from '@/lib/utils/formatters';
+import { formatNumeric, formatCount, type NumericUnit } from '@/lib/utils/formatters';
 
 /**
  * `<Numeric>` — the canonical primitive for any number shown in the UI.
@@ -60,6 +60,15 @@ export function Numeric({
   const content =
     children ?? formatNumeric(value, unit, { precision, language });
 
+  // For compact-notation figures, default the tooltip to the full-precision
+  // grouped value so the exact number is always one hover away — unless the
+  // caller supplied an explicit title or its own pre-formatted children.
+  const resolvedTitle =
+    title ??
+    (children == null && unit === 'compact' && value != null && !Number.isNaN(value)
+      ? formatCount(value, { language, precision: 0 })
+      : undefined);
+
   return createElement(
     tag,
     {
@@ -68,7 +77,7 @@ export function Numeric({
       // resets font-variant-numeric. `.font-data` carries the matching
       // font-feature-settings (tnum/lnum) for browsers honoring those.
       style: { fontVariantNumeric: 'tabular-nums lining-nums' },
-      title,
+      title: resolvedTitle,
     },
     content,
   );

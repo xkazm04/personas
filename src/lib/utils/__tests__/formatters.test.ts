@@ -3,6 +3,8 @@ import {
   formatPercent,
   formatCount,
   formatNumeric,
+  formatCompactNumber,
+  compactWithTitle,
 } from '../formatters';
 
 describe('formatPercent', () => {
@@ -40,6 +42,48 @@ describe('formatCount', () => {
   });
 });
 
+describe('formatCompactNumber', () => {
+  it('keeps full grouping below the 10k threshold', () => {
+    expect(formatCompactNumber(0)).toBe('0');
+    expect(formatCompactNumber(999)).toBe('999');
+    expect(formatCompactNumber(1234)).toBe('1,234');
+    expect(formatCompactNumber(9999)).toBe('9,999');
+  });
+
+  it('switches to compact notation at and above the threshold', () => {
+    expect(formatCompactNumber(10_000)).toBe('10K');
+    expect(formatCompactNumber(12_345)).toBe('12.3K');
+    expect(formatCompactNumber(1_200_000)).toBe('1.2M');
+    expect(formatCompactNumber(3_400_000_000)).toBe('3.4B');
+  });
+
+  it('honors a custom threshold and precision', () => {
+    expect(formatCompactNumber(1500, { threshold: 1000 })).toBe('1.5K');
+    expect(formatCompactNumber(1_234_567, { precision: 2 })).toBe('1.23M');
+  });
+
+  it('handles negatives by magnitude', () => {
+    expect(formatCompactNumber(-12_345)).toBe('-12.3K');
+    expect(formatCompactNumber(-1234)).toBe('-1,234');
+  });
+
+  it('renders an em dash for null / NaN', () => {
+    expect(formatCompactNumber(null)).toBe('—');
+    expect(formatCompactNumber(undefined)).toBe('—');
+    expect(formatCompactNumber(NaN)).toBe('—');
+  });
+});
+
+describe('compactWithTitle', () => {
+  it('pairs the compact display with a full-precision title', () => {
+    expect(compactWithTitle(12_345)).toEqual({ display: '12.3K', title: '12,345' });
+  });
+
+  it('returns identical display and title below the threshold', () => {
+    expect(compactWithTitle(1234)).toEqual({ display: '1,234', title: '1,234' });
+  });
+});
+
 describe('formatNumeric', () => {
   it('dispatches ms / s durations', () => {
     expect(formatNumeric(4200, 'ms')).toBe('4s');
@@ -59,6 +103,11 @@ describe('formatNumeric', () => {
     expect(formatNumeric(1234, 'count')).toBe('1,234');
     expect(formatNumeric(1234, 'plain')).toBe('1,234');
     expect(formatNumeric(1234)).toBe('1,234');
+  });
+
+  it('dispatches compact for large counts', () => {
+    expect(formatNumeric(12_345, 'compact')).toBe('12.3K');
+    expect(formatNumeric(1234, 'compact')).toBe('1,234');
   });
 
   it('renders an em dash for null / NaN regardless of unit', () => {

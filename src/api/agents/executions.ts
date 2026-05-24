@@ -10,6 +10,7 @@ import type { ExecutionTrace } from "@/lib/bindings/ExecutionTrace";
 import type { DreamReplaySession } from "@/lib/bindings/DreamReplaySession";
 import type { CircuitBreakerStatus } from "@/lib/bindings/CircuitBreakerStatus";
 import type { DryRunReport } from "@/lib/bindings/DryRunReport";
+import type { ExecutionPreview } from "@/lib/bindings/ExecutionPreview";
 
 // ============================================================================
 // Executions
@@ -122,19 +123,11 @@ export const getCircuitBreakerStatus = () =>
 // Execution Preview
 // ============================================================================
 
-export interface ExecutionPreview {
-  prompt_preview: string;
-  estimated_input_tokens: number;
-  estimated_output_tokens: number;
-  estimated_input_cost: number;
-  estimated_output_cost: number;
-  estimated_total_cost: number;
-  model: string;
-  memory_count: number;
-  tool_count: number;
-  monthly_spend: number;
-  budget_limit: number;
-}
+// Re-export the generated binding (single source of truth) under the api/ path
+// so existing `import { ExecutionPreview } from '@/api/agents/executions'`
+// consumers keep working. The hand-rolled duplicate previously drifted: it typed
+// the token counts as `number` where the Rust u64 generates `bigint`.
+export type { ExecutionPreview };
 
 export const previewExecution = (personaId: string, inputData?: string, useCaseId?: string) =>
   invoke<ExecutionPreview>("preview_execution", { personaId, inputData, useCaseId });

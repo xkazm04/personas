@@ -99,6 +99,7 @@ export default function TeamList() {
               newDescription={newDescription} onDescriptionChange={setNewDescription}
               newColor={newColor} onColorChange={setNewColor}
               onSubmit={handleCreate} onCancel={() => setShowCreate(false)}
+              existingNames={teams.map((tm) => tm.name)}
             />
           </div>
         )}

@@ -1,7 +1,9 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useEffect, useState } from 'react';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { DragHandle } from '@/features/shared/components/display/DragHandle';
+import { DropIndicator } from '@/features/shared/components/display/DropIndicator';
 
 export interface SchemaField {
   key: string;
@@ -61,27 +63,23 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
               key={`${index}-${field.key || 'new'}`}
               value={field}
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{
+                opacity: isReordering && index !== draggingIndex ? 0.7 : 1,
+                height: 'auto',
+                scale: index === draggingIndex ? 0.98 : 1,
+              }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
               onDragStart={() => setDraggingIndex(index)}
               onDragEnd={() => setDraggingIndex(null)}
-              className="relative flex items-center gap-2"
+              className={`group relative flex items-center gap-2 rounded-card ${
+                index === draggingIndex ? 'shadow-elevation-3 z-10' : ''
+              }`}
             >
               {isReordering && index !== draggingIndex && (
-                <motion.div
-                  aria-hidden
-                  initial={{ opacity: 0, scaleX: 0.6 }}
-                  animate={{ opacity: 1, scaleX: 1 }}
-                  exit={{ opacity: 0, scaleX: 0.6, transition: { duration: 0.12 } }}
-                  transition={{ duration: 0.18 }}
-                  className="pointer-events-none absolute -top-[5px] left-6 right-6 h-[2px] rounded-full bg-primary/40"
-                  style={{ transformOrigin: 'center' }}
-                />
+                <DropIndicator layoutId={`schema-field-drop-${index}`} inset="1.5rem" className="-top-[5px]" />
               )}
-              <div className="cursor-grab active:cursor-grabbing text-foreground hover:text-muted-foreground transition-colors">
-                <GripVertical className="w-4 h-4" />
-              </div>
+              <DragHandle reveal="always" className="hover:text-muted-foreground" />
 
               <div className="flex-1 grid grid-cols-[1fr_100px_1fr] gap-2">
                 <input

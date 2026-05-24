@@ -50,6 +50,38 @@ describe('Button disabledReason', () => {
     expect(btn.parentElement?.getAttribute('aria-disabled')).toBeNull();
   });
 
+  it('marks the button aria-busy + disabled while loading and blocks re-clicks', () => {
+    const onClick = vi.fn();
+    render(
+      <Button loading onClick={onClick}>
+        Save
+      </Button>,
+    );
+    const btn = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
+    expect(btn.getAttribute('aria-busy')).toBe('true');
+    expect(btn.disabled).toBe(true);
+    fireEvent.click(btn);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it('swaps the leading icon for the spinner while loading (icon hidden, spinner shown)', () => {
+    const { rerender } = render(
+      <Button icon={<span data-testid="leading-icon">x</span>}>Save</Button>,
+    );
+    expect(screen.queryByTestId('leading-icon')).toBeTruthy();
+
+    rerender(
+      <Button loading icon={<span data-testid="leading-icon">x</span>}>
+        Save
+      </Button>,
+    );
+    // The original icon is unmounted...
+    expect(screen.queryByTestId('leading-icon')).toBeNull();
+    // ...and an animate-spin spinner takes its place.
+    const btn = screen.getByRole('button', { name: 'Save' });
+    expect(btn.querySelector('.animate-spin')).toBeTruthy();
+  });
+
   it('surfaces the reason text after hovering past the tooltip delay', () => {
     vi.useFakeTimers();
     render(

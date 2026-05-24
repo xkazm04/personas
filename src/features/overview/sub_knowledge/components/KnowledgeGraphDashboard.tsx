@@ -26,7 +26,7 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 const logger = createLogger("knowledge-graph");
 
 export default function KnowledgeGraphDashboard() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const [summary, setSummary] = useState<KnowledgeGraphSummary | null>(null);
   const [entries, setEntries] = useState<ExecutionKnowledge[]>([]);
@@ -147,11 +147,11 @@ export default function KnowledgeGraphDashboard() {
         <div className="space-y-6 pb-6">
           {summary && (
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <KpiTile density="card-rich" icon={Network} label="Total Patterns" numericValue={summary.total_entries} format={(n) => String(Math.round(n))} color="primary" />
-              <KpiTile density="card-rich" icon={ArrowRight} label="Tool Sequences" numericValue={summary.tool_sequence_count} format={(n) => String(Math.round(n))} subtitle="Learned tool chains" color="emerald" />
-              <KpiTile density="card-rich" icon={AlertTriangle} label="Failure Patterns" numericValue={summary.failure_pattern_count} format={(n) => String(Math.round(n))} subtitle="Known error signatures" color="red" />
-              <KpiTile density="card-rich" icon={Cpu} label="Model Insights" numericValue={summary.model_performance_count} format={(n) => String(Math.round(n))} subtitle="Performance by model" color="violet" />
-              <KpiTile density="card-rich" icon={MessageSquare} label="Annotations" numericValue={summary.annotation_count} format={(n) => String(Math.round(n))} subtitle="Shared knowledge" color="cyan" />
+              <KpiTile density="card-rich" icon={Network} label="Total Patterns" numericValue={summary.total_entries} compact language={language} color="primary" />
+              <KpiTile density="card-rich" icon={ArrowRight} label="Tool Sequences" numericValue={summary.tool_sequence_count} compact language={language} subtitle="Learned tool chains" color="emerald" />
+              <KpiTile density="card-rich" icon={AlertTriangle} label="Failure Patterns" numericValue={summary.failure_pattern_count} compact language={language} subtitle="Known error signatures" color="red" />
+              <KpiTile density="card-rich" icon={Cpu} label="Model Insights" numericValue={summary.model_performance_count} compact language={language} subtitle="Performance by model" color="violet" />
+              <KpiTile density="card-rich" icon={MessageSquare} label="Annotations" numericValue={summary.annotation_count} compact language={language} subtitle="Shared knowledge" color="cyan" />
             </div>
           )}
 
