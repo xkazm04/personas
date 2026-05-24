@@ -10,7 +10,7 @@ import { useState, useCallback } from 'react';
 import { Sparkles, ShieldCheck, ListChecks, Eraser } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
-import { planFromGoal } from './rulePlanner';
+import { generatePlan } from './planProvider';
 import { PlanStepCard } from './PlanStepCard';
 import type { Plan } from './types';
 
@@ -18,9 +18,17 @@ export function GoalPlannerPanel() {
   const { t, tx } = useTranslation();
   const [goal, setGoal] = useState('');
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [planning, setPlanning] = useState(false);
 
-  const handlePreview = useCallback(() => {
-    setPlan(planFromGoal(goal));
+  const handlePreview = useCallback(async () => {
+    // Resolve through the provider seam: the LLM brain when available, the
+    // deterministic rule planner otherwise. Async so the LLM swap is free.
+    setPlanning(true);
+    try {
+      setPlan(await generatePlan(goal));
+    } finally {
+      setPlanning(false);
+    }
   }, [goal]);
 
   const handleClear = useCallback(() => {
@@ -49,7 +57,7 @@ export function GoalPlannerPanel() {
           value={goal}
           onChange={(e) => setGoal(e.target.value)}
           onKeyDown={(e) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canPreview) handlePreview();
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && canPreview && !planning) void handlePreview();
           }}
           placeholder={t.planner.goal_placeholder}
           rows={3}
@@ -61,7 +69,9 @@ export function GoalPlannerPanel() {
             size="sm"
             icon={<ListChecks className="h-4 w-4" />}
             onClick={handlePreview}
-            disabled={!canPreview}
+            disabled={!canPreview || planning}
+            loading={planning}
+            loadingLabel={t.common.loading}
             disabledReason={t.planner.preview_disabled_reason}
             data-testid="planner-preview-button"
           >

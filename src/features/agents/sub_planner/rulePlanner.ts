@@ -1,11 +1,12 @@
 /**
- * Goal-to-Plan — deterministic rule-based planner (Stage 1).
+ * Goal-to-Plan — deterministic rule-based planner (Stage 1, enhanced in
+ * Stage 2).
  *
- * Maps a natural-language goal onto an ordered, reviewable sequence of
- * plan steps using keyword heuristics over the action catalog. No LLM, no
+ * Maps a natural-language goal onto an ordered, reviewable sequence of plan
+ * steps using keyword heuristics over the action catalog. No LLM, no
  * network, no execution — fully deterministic so the preview is instant and
- * testable. The LLM brain (Stage 2) layers over this with the same Plan
- * shape and falls back here when unavailable.
+ * testable. The LLM provider (see `planProvider.ts`) layers over this with
+ * the same Plan shape and falls back here when unavailable.
  */
 import type { Plan, PlanStep } from './types';
 
@@ -28,6 +29,8 @@ const NOTIFY_SERVICES: ServiceMatch[] = [
   { label: 'Microsoft Teams', re: /\b(ms ?teams|microsoft teams)\b/i },
   { label: 'Telegram', re: /\btelegram\b/i },
   { label: 'SMS', re: /\b(sms|text message)\b/i },
+  { label: 'Notion', re: /\bnotion\b/i },
+  { label: 'GitHub', re: /\bgithub\b/i },
 ];
 
 const SCHEDULE_PATTERNS: { cadence: string; re: RegExp }[] = [
@@ -41,10 +44,12 @@ const SCHEDULE_PATTERNS: { cadence: string; re: RegExp }[] = [
 
 const WEB_RE = /\b(watch|monitor|track|scrape|crawl|website|web ?page|url|https?:\/\/|price|pricing|stock|availability)\b/i;
 const CHANGE_RE = /\b(change|changes|diff|new|update|updated|drop|increase|decrease|alert me|notify me)\b/i;
-const EVENT_RE = /\b(when|whenever|on (a )?new|incoming|receive|arrives?|webhook|is created|is posted|mentions?)\b/i;
+// An *input* trigger: something arrives and should kick off the persona.
+const EVENT_RE = /\b(when|whenever|on (a )?new|incoming|receive|arrives?|webhook|is created|is posted|mentions?|replies?)\b/i;
 
-function detectService(goal: string): ServiceMatch | null {
-  return NOTIFY_SERVICES.find((s) => s.re.test(goal)) ?? null;
+/** Detect every distinct service named in the goal, in catalog order. */
+function detectServices(goal: string): ServiceMatch[] {
+  return NOTIFY_SERVICES.filter((s) => s.re.test(goal));
 }
 
 function detectCadence(goal: string): string | null {
@@ -83,22 +88,25 @@ export function planFromGoal(goal: string): Plan | null {
     }
   }
 
-  // 4 — Output channel. If a concrete service is named, connect + notify.
-  const service = detectService(clean);
-  if (service) {
+  // 4 — Output channels. Every named service gets a connect + a send step,
+  //     in catalog order, deduped by the detector. Confidence tapers for
+  //     additional channels since multi-channel intent is less certain.
+  const services = detectServices(clean);
+  services.forEach((service, i) => {
+    const taper = i === 0 ? 0 : 0.1;
     steps.push({
       id: nextId(),
       actionId: 'connect_service',
-      confidence: 0.8,
+      confidence: 0.8 - taper,
       params: { service: service.label },
     });
     steps.push({
       id: nextId(),
       actionId: 'send_notification',
-      confidence: 0.75,
+      confidence: 0.75 - taper,
       params: { service: service.label },
     });
-  }
+  });
 
   // 5 — How it starts: a cadence wins over an event trigger when both read.
   const cadence = detectCadence(clean);
