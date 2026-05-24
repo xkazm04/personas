@@ -4,9 +4,9 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
-import { TextField, TextAreaField, SelectField, Field } from '../_shared/FormField';
-import { DOMAINS, domainLabel, type Domain } from '../_shared/tokens';
+import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
+import { TextField, TextAreaField, SelectField, Field } from '../shared/FormField';
+import { DOMAINS, domainLabel, type Domain } from '../shared/tokens';
 import type { ResearchProject } from '@/api/researchLab/researchLab';
 
 interface Props {

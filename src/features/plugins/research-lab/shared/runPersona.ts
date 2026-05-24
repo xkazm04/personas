@@ -52,7 +52,7 @@ export async function runPersonaAndWait(opts: RunPersonaOptions): Promise<RunPer
       latest = await getExecution(started.id, callerPersonaId);
       opts.onStatus?.(latest.status);
       if (TERMINAL.has(latest.status)) break;
-    } catch (err) { silentCatch("features/plugins/research-lab/_shared/runPersona:catch1")(err); }
+    } catch (err) { silentCatch("features/plugins/research-lab/shared/runPersona:catch1")(err); }
   }
 
   return {

@@ -11,7 +11,7 @@ import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinChannelKind } from '@/api/enums';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../_shared/channels';
+import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../shared/channels';
 import { silentCatch } from '@/lib/silentCatch';
 import { useChannelActivity } from './useChannelActivity';
 

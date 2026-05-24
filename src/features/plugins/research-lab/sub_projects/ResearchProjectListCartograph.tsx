@@ -25,7 +25,7 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 import {
   domainLabel, projectStatusLabel, projectStatusColor,
   type ProjectStatus, type Domain, DOMAINS,
-} from '../_shared/tokens';
+} from '../shared/tokens';
 
 const ResearchProjectForm = lazy(() => import('./ResearchProjectForm'));
 

@@ -3,8 +3,8 @@ import { Target, Trash2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { SectionHeader } from '../_shared/SectionHeader';
-import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
+import { SectionHeader } from '../shared/SectionHeader';
+import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import type { ResearchFinding } from '@/api/researchLab/researchLab';
 
 const AddFindingForm = lazy(() => import('./AddFindingForm'));

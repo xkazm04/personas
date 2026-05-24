@@ -7,7 +7,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
-import { TONE_CHANNELS, paletteOf, type ChannelPalette } from '../_shared/channels';
+import { TONE_CHANNELS, paletteOf, type ChannelPalette } from '../shared/channels';
 import * as twinApi from '@/api/twin/twin';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';

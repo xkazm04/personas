@@ -5,10 +5,10 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
-import { SectionHeader } from '../_shared/SectionHeader';
-import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
-import { parseExperimentConfig, evaluatePass } from '../_shared/experimentConfig';
-import { runPersonaAndWait } from '../_shared/runPersona';
+import { SectionHeader } from '../shared/SectionHeader';
+import { EmptyState, NoActiveProject } from '../shared/EmptyState';
+import { parseExperimentConfig, evaluatePass } from '../shared/experimentConfig';
+import { runPersonaAndWait } from '../shared/runPersona';
 import { createExperimentRun } from '@/api/researchLab/researchLab';
 import type { ResearchExperiment } from '@/api/researchLab/researchLab';
 

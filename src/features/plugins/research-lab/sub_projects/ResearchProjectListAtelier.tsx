@@ -22,7 +22,7 @@ import type { ResearchProject } from '@/api/researchLab/researchLab';
 import {
   domainLabel, projectStatusLabel, projectStatusColor,
   type ProjectStatus,
-} from '../_shared/tokens';
+} from '../shared/tokens';
 
 const ResearchProjectForm = lazy(() => import('./ResearchProjectForm'));
 

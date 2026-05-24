@@ -11,7 +11,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { NoActiveProject } from '../_shared/EmptyState';
+import { NoActiveProject } from '../shared/EmptyState';
 import { ResearchNode } from './ResearchNode';
 import { buildGraph, type GraphNodeKind, type GraphNodeData } from './graphLayout';
 

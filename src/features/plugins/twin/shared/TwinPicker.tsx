@@ -14,7 +14,7 @@ function readPinned(): Set<string> {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return new Set(parsed.filter((x): x is string => typeof x === 'string'));
   } catch (err) {
-    silentCatch('features/plugins/twin/_shared/TwinPicker:readPinned')(err);
+    silentCatch('features/plugins/twin/shared/TwinPicker:readPinned')(err);
   }
   return new Set();
 }
@@ -24,7 +24,7 @@ function writePinned(pinned: Set<string>): void {
   try {
     window.localStorage.setItem(PINNED_TWINS_LS_KEY, JSON.stringify(Array.from(pinned)));
   } catch (err) {
-    silentCatch('features/plugins/twin/_shared/TwinPicker:writePinned')(err);
+    silentCatch('features/plugins/twin/shared/TwinPicker:writePinned')(err);
   }
 }
 

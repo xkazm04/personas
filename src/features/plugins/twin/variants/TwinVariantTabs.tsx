@@ -36,13 +36,13 @@ export function TwinVariantTabs({ storageKey, children, defaultVariant = 'atelie
     try {
       const raw = localStorage.getItem(`twin-variant:${storageKey}`);
       if (raw === 'atelier' || raw === 'console' || raw === 'baseline') return raw;
-    } catch (err) { silentCatch("features/plugins/twin/_variants/TwinVariantTabs:catch1")(err); }
+    } catch (err) { silentCatch("features/plugins/twin/variants/TwinVariantTabs:catch1")(err); }
     return defaultVariant;
   });
 
   const select = (id: TwinVariantId) => {
     setVariant(id);
-    try { localStorage.setItem(`twin-variant:${storageKey}`, id); } catch (err) { silentCatch("features/plugins/twin/_variants/TwinVariantTabs:catch2")(err); }
+    try { localStorage.setItem(`twin-variant:${storageKey}`, id); } catch (err) { silentCatch("features/plugins/twin/variants/TwinVariantTabs:catch2")(err); }
   };
 
   const VARIANTS: VariantDef[] = useMemo(() => [

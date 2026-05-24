@@ -4,7 +4,7 @@ import { ArrowRightCircle, BookOpen, CheckCircle2, XCircle, Clock, Loader2, Mess
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { TwinEmptyState } from '../TwinEmptyState';
-import { TwinWikiPanel } from '../_shared/TwinWikiPanel';
+import { TwinWikiPanel } from '../shared/TwinWikiPanel';
 import { useTranslation } from '@/i18n/useTranslation';
 import * as twinApi from '@/api/twin/twin';
 import { ingestDoctrineDocs } from '@/api/twin/twin';

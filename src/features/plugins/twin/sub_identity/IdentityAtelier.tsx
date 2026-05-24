@@ -7,7 +7,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
-import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender } from '../_shared/gender';
+import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender } from '../shared/gender';
 import { DebtText } from '@/i18n/DebtText';
 
 

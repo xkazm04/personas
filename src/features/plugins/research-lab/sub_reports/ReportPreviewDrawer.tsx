@@ -5,7 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { compileReport } from './compileReport';
-import { downloadStringAsFile, copyToClipboard } from '../_shared/downloadFile';
+import { downloadStringAsFile, copyToClipboard } from '../shared/downloadFile';
 import type { ResearchReport } from '@/api/researchLab/researchLab';
 import { DebtText } from '@/i18n/DebtText';
 

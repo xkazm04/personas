@@ -3,9 +3,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
-import { TextField, TextAreaField, SelectField } from '../_shared/FormField';
-import { serializeExperimentConfig } from '../_shared/experimentConfig';
+import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
+import { TextField, TextAreaField, SelectField } from '../shared/FormField';
+import { serializeExperimentConfig } from '../shared/experimentConfig';
 
 interface Props {
   projectId: string;

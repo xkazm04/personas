@@ -7,8 +7,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
-import { GENDERS, pronounsFromGender, type Gender } from '../_shared/gender';
-import { DEPLOYMENT_CHANNELS } from '../_shared/channels';
+import { GENDERS, pronounsFromGender, type Gender } from '../shared/gender';
+import { DEPLOYMENT_CHANNELS } from '../shared/channels';
 import { silentCatch } from '@/lib/silentCatch';
 
 
