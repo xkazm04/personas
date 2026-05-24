@@ -11,7 +11,7 @@ import { ChartGradientDefs } from "@/features/overview/sub_usage/components/Char
 import { ResourcePickerHost } from "@/features/vault/sub_credentials/components/picker/ResourcePickerHost";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
-import TitleBar from "@/features/app-shell/components/TitleBar";
+import TitleBar from "@/features/shared/components/layout/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
 import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';

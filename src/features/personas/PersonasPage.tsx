@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
-import Sidebar from '@/features/app-shell/components/Sidebar';
+import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
