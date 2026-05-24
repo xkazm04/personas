@@ -7,7 +7,7 @@
  * that earns trust before any future "watch the app build it" stage.
  */
 import { useState, useCallback, useEffect } from 'react';
-import { Sparkles, ShieldCheck, ListChecks, Eraser, Play, Square, CheckCircle2, History } from 'lucide-react';
+import { Sparkles, ShieldCheck, ListChecks, Eraser, Play, Pause, Square, CheckCircle2, History } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import Button from '@/features/shared/components/buttons/Button';
@@ -34,6 +34,7 @@ export function GoalPlannerPanel() {
   const [planning, setPlanning] = useState(false);
   // Watch player: index of the step currently highlighted, or null when idle.
   const [watchIndex, setWatchIndex] = useState<number | null>(null);
+  const [watchPaused, setWatchPaused] = useState(false);
 
   const handlePreview = useCallback(async () => {
     // Resolve through the provider seam: the LLM brain when available, the
@@ -83,18 +84,44 @@ export function GoalPlannerPanel() {
   // Watch player — auto-advances through the steps, highlighting each in turn.
   // Pure UI: navigates nothing, writes nothing. Stops at the end.
   const startWatch = useCallback(() => {
-    if (steps.length > 0) setWatchIndex(0);
+    if (steps.length > 0) { setWatchPaused(false); setWatchIndex(0); }
   }, [steps.length]);
-  const stopWatch = useCallback(() => setWatchIndex(null), []);
+  const stopWatch = useCallback(() => { setWatchIndex(null); setWatchPaused(false); }, []);
 
   useEffect(() => {
-    if (watchIndex === null || watchIndex >= steps.length) return;
+    if (watchIndex === null || watchIndex >= steps.length || watchPaused) return;
     const ms = shouldAnimate ? 1600 : 900;
     const id = setTimeout(() => {
       setWatchIndex((i) => (i === null ? null : i + 1));
     }, ms);
     return () => clearTimeout(id);
-  }, [watchIndex, steps.length, shouldAnimate]);
+  }, [watchIndex, steps.length, shouldAnimate, watchPaused]);
+
+  // Keyboard control while watching: Space = play/pause, ←/→ = step, Esc = stop.
+  // Ignored when focus is in a text field so typing a goal isn't hijacked.
+  useEffect(() => {
+    if (watchIndex === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.isContentEditable)) return;
+      if (e.key === ' ' || e.key === 'Spacebar') {
+        e.preventDefault();
+        setWatchPaused((p) => !p);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        setWatchPaused(true);
+        setWatchIndex((i) => (i === null ? null : Math.min(i + 1, steps.length)));
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        setWatchPaused(true);
+        setWatchIndex((i) => (i === null ? null : Math.max(i - 1, 0)));
+      } else if (e.key === 'Escape') {
+        stopWatch();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [watchIndex, steps.length, stopWatch]);
 
   const canPreview = goal.trim().length > 0;
   const stepCount = steps.length;
@@ -224,6 +251,13 @@ export function GoalPlannerPanel() {
                 <>
                   <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-300" />
                   <span className="typo-heading text-foreground">{t.planner.watch_done}</span>
+                </>
+              ) : watchPaused ? (
+                <>
+                  <Pause className="h-4 w-4 shrink-0 text-violet-300" />
+                  <span className="typo-heading text-foreground">
+                    {tx(t.planner.watch_step_of, { current: String(Math.min(watchIndex! + 1, stepCount)), total: String(stepCount) })}
+                  </span>
                 </>
               ) : (
                 <>
