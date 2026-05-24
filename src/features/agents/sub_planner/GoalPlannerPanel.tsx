@@ -194,31 +194,6 @@ export function GoalPlannerPanel() {
         </div>
       </div>
 
-      {/* Recent goals — click to refill. Goal text is user content, untranslated. */}
-      {recentGoals.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <History className="h-3.5 w-3.5 text-foreground" />
-          {recentGoals.map((g) => (
-            <button
-              key={g}
-              type="button"
-              onClick={() => setGoal(g)}
-              title={g}
-              className="max-w-[16rem] truncate rounded-full bg-secondary/40 px-2.5 py-1 typo-label text-foreground hover:bg-secondary/70"
-            >
-              {g}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={clearRecent}
-            className="rounded-full px-2 py-1 typo-label text-foreground hover:bg-secondary/50"
-          >
-            {t.common.clear}
-          </button>
-        </div>
-      )}
-
       {/* Read-only banner */}
       <div className="flex items-start gap-2.5 rounded-card bg-emerald-500/5 p-3 ring-1 ring-emerald-500/20">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
@@ -309,6 +284,32 @@ export function GoalPlannerPanel() {
           <ListChecks className="h-6 w-6 text-foreground" />
           <span className="typo-heading text-foreground">{t.planner.empty_title}</span>
           <span className="typo-body text-foreground">{t.planner.empty_hint}</span>
+
+          {/* Recent goals (if any) — click to refill. Goal text is user content. */}
+          {recentGoals.length > 0 && (
+            <div className="mt-2 flex w-full flex-wrap items-center justify-center gap-1.5">
+              <History className="h-3.5 w-3.5 text-foreground" />
+              {recentGoals.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setGoal(g)}
+                  title={g}
+                  className="max-w-[16rem] truncate rounded-full bg-secondary/40 px-2.5 py-1 typo-label text-foreground hover:bg-secondary/70"
+                >
+                  {g}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={clearRecent}
+                className="rounded-full px-2 py-1 typo-label text-foreground hover:bg-secondary/50"
+              >
+                {t.common.clear}
+              </button>
+            </div>
+          )}
+
           {/* Starter-goal gallery — click to prefill the box and beat the blank page */}
           <div className="mt-2 flex w-full flex-col gap-2">
             <span className="typo-label text-foreground">{t.planner.examples_heading}</span>
