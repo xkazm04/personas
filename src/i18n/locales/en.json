@@ -9011,6 +9011,8 @@
     "connector_count_hint": "Pre-configured with auth fields and health checks",
     "categories_label": "Categories",
     "browsed_progress": "Browsed {count}/2",
+    "local_tooling_label": "Built-in tooling",
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
     "connection_types_label": "Connection Types",
     "conn_api_key": "API Key / Token",
     "conn_api_key_desc": "Standard authentication — paste your key and go.",

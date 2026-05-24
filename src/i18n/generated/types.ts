@@ -9017,6 +9017,8 @@ export type Translations = {
     connector_count_hint: string;
     categories_label: string;
     browsed_progress: string;
+    local_tooling_label: string;
+    local_tooling_sentence: string;
     connection_types_label: string;
     conn_api_key: string;
     conn_api_key_desc: string;
