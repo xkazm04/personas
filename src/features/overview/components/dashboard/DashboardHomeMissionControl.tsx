@@ -30,7 +30,7 @@ import { StalenessIndicator } from '@/features/shared/components/feedback/Stalen
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
-import { HealthDigestPanel } from '@/features/agents/health';
+import { HealthDigestPanel } from '@/features/agents/sub_health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';

@@ -9,7 +9,7 @@ import { useTier } from '@/hooks/utility/interaction/useTier';
 import type { Tier } from '@/lib/constants/uiModes';
 import { TIERS } from '@/lib/constants/uiModes';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useHealthCheck } from '@/features/agents/health';
+import { useHealthCheck } from '@/features/agents/sub_health';
 
 type TabDefBase = { id: EditorTab; labelKey: string; icon: typeof FileText; devOnly?: boolean; minTier?: Tier };
 const tabDefs: TabDefBase[] = [

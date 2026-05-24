@@ -28,7 +28,7 @@ import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { ALL_MODELS, selectedModelsToConfigs, ANTHROPIC_MODELS, OLLAMA_LOCAL_MODELS } from '@/lib/models/modelCatalog';
 import type { ModelOption } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
-import { useHealthCheck } from '@/features/agents/health';
+import { useHealthCheck } from '@/features/agents/sub_health';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ArenaHistory } from './ArenaHistory';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
