@@ -81,7 +81,7 @@ export default function UpcomingRoutinesCard() {
           label={t.overview.upcoming_routines.title}
           subtitle={t.overview.upcoming_routines.subtitle}
         />
-        <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} className="py-6" />
+        <EmptyState variant="routines" heading={t.overview.upcoming_routines.empty} dominant className="py-6" />
       </div>
     );
   }

@@ -71,7 +71,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
             )} />
           </ChartErrorBoundary>
         ) : (
-          <EmptyState variant="chart" className="py-6" />
+          <EmptyState variant="chart" dominant className="py-6" />
         )}
       </div>
 

@@ -227,12 +227,34 @@ interface EmptyStateProps {
   description?: string;
   /** Extra CSS classes on the outer container. */
   className?: string;
+  /**
+   * Dominant layout: the illustration is enlarged into a faint, full-bleed
+   * watermark behind a single heading (no description). Used by the Home
+   * dashboard widgets so the empty state reads as a promoted background rather
+   * than a small centered glyph. Leaves the default centered layout untouched
+   * for the other consumers (alerts / metrics panels, etc.).
+   */
+  dominant?: boolean;
 }
 
-export function EmptyState({ variant = 'chart', heading, description, className = '' }: EmptyStateProps) {
+export function EmptyState({ variant = 'chart', heading, description, className = '', dominant = false }: EmptyStateProps) {
   const variantMap = useVariantMap();
   const preset = variantMap[variant];
   const { Svg } = preset;
+
+  if (dominant) {
+    return (
+      <div className={`relative flex items-center justify-center overflow-hidden min-h-[7rem] ${className}`}>
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-20"
+          aria-hidden
+        >
+          <div className="origin-center scale-[3.25]"><Svg /></div>
+        </div>
+        <h4 className="relative typo-heading text-foreground text-center px-4">{heading ?? preset.heading}</h4>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-col items-center justify-center py-12 gap-3 ${className}`}>

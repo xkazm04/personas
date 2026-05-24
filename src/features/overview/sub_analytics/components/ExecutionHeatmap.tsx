@@ -238,7 +238,7 @@ export function ExecutionHeatmap({
           <span>{error}</span>
         </div>
       ) : isEmpty ? (
-        <EmptyState variant="heatmap" heading={t.overview.heatmap.no_activity} className="py-8" />
+        <EmptyState variant="heatmap" heading={t.overview.heatmap.no_activity} dominant className="py-8" />
       ) : grid && data ? (
         <>
           {!compact && (

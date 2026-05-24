@@ -372,7 +372,7 @@ export const TriagePane = memo(function TriagePane({ items }: { items: TriageIte
       />
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
-          <EmptyState variant="todos" heading={t.overview.dashboard.todos_empty} className="py-8" />
+          <EmptyState variant="todos" heading={t.overview.dashboard.todos_empty} dominant className="flex-1 py-8" />
         ) : (
           items.map((item) => {
             const meta = TRIAGE_META[item.kind];
@@ -515,7 +515,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
       </PaneHeader>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
         {executions.length === 0 ? (
-          <EmptyState variant="stream" className="py-8" />
+          <EmptyState variant="stream" dominant className="flex-1 py-8" />
         ) : (
           executions.map((exec) => {
             const time = new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
