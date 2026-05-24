@@ -9,17 +9,18 @@
  */
 import {
   Sparkles, Bot, Plug, Zap, Clock, Globe, GitCompare, Send, ShieldCheck,
-  Trash2, ChevronUp, ChevronDown, CornerDownRight,
+  Trash2, ChevronUp, ChevronDown, CornerDownRight, MessageCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { ACTION_CATALOG, CATEGORY_STYLE } from './actionCatalog';
 import { stepDestination } from './destinations';
+import { guessPersona } from './intentSignals';
 import { confidenceLevel, type PlanStep } from './types';
 
 const ICONS: Record<string, LucideIcon> = {
-  Sparkles, Bot, Plug, Zap, Clock, Globe, GitCompare, Send, ShieldCheck,
+  Sparkles, Bot, Plug, Zap, Clock, Globe, GitCompare, Send, ShieldCheck, MessageCircle,
 };
 
 interface StepText { title: string; detail: string; rationale: string }
@@ -111,6 +112,10 @@ export function PlanStepCard({ step, index, isFirst, isLast, active = false, onR
 
   const hasDestination = DESTINATION_CATEGORIES.has(action.category);
   const dest = stepDestination(action.category);
+  // For the create_persona step, preview the agent we'd build: a name from
+  // the user's own goal words + a signal-derived icon.
+  const personaGuess = step.actionId === 'create_persona' ? guessPersona(step.params?.goal ?? '') : null;
+  const GuessIcon = personaGuess ? (ICONS[personaGuess.icon] ?? Bot) : null;
   const openDestination = () => {
     if (!dest) return;
     const sys = useSystemStore.getState();
@@ -143,6 +148,12 @@ export function PlanStepCard({ step, index, isFirst, isLast, active = false, onR
         </div>
         <p className="mt-1 typo-body text-foreground">{detail}</p>
         <p className="mt-0.5 typo-label italic text-foreground">{rationale}</p>
+        {personaGuess && personaGuess.name && GuessIcon && (
+          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 typo-label text-violet-300">
+            <GuessIcon className="h-3 w-3" />
+            {personaGuess.name}
+          </span>
+        )}
         {dest ? (
           <button
             type="button"

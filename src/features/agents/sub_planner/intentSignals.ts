@@ -63,6 +63,46 @@ export interface IntentSignals {
   monitorsWeb: boolean;
 }
 
+/** A suggested persona identity previewed on the create_persona step. */
+export interface PersonaGuess {
+  /** Title-cased from the goal's own words — user content, not translated. */
+  name: string;
+  /** lucide-react icon name, chosen from the detected signals. */
+  icon: string;
+}
+
+const NAME_STOPWORDS = new Set([
+  'a', 'an', 'the', 'to', 'me', 'my', 'i', 'and', 'of', 'for', 'on', 'in',
+  'when', 'whenever', 'every', 'each', 'with', 'that', 'this', 'get', 'gets',
+]);
+
+/** Guess a persona name + icon from a goal. Name is built from the user's own
+ *  words (so it needs no translation); icon reflects the dominant signal. */
+export function guessPersona(goal: string): PersonaGuess {
+  const s = inferIntentSignals(goal);
+  const icon = s.monitorsWeb
+    ? 'Globe'
+    : s.services.length > 0
+      ? 'MessageCircle'
+      : s.hasSchedule
+        ? 'Clock'
+        : s.hasTrigger
+          ? 'Zap'
+          : 'Bot';
+  const words = goal
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1 && !NAME_STOPWORDS.has(w));
+  const name = words
+    .slice(0, 3)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+    .slice(0, 28);
+  return { name, icon };
+}
+
 /** Lightweight inference for the live chip strip. */
 export function inferIntentSignals(text: string): IntentSignals {
   const clean = text.trim();
