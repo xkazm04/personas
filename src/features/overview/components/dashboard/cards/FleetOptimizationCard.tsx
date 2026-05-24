@@ -25,7 +25,7 @@ import {
   generateFleetRecommendation,
   type FleetRecommendation,
   type RecommendationType,
-} from '@/lib/fleet/fleetOptimizer';
+} from '@/features/overview/libs/fleetOptimizer';
 
 // -- Icon/style mapping ----------------------------------------------
 
