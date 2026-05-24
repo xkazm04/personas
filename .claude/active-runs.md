@@ -30,6 +30,13 @@ timestamp — the next session can recognize it as abandoned.
   conflict check, retry. The Edit tool's unique-old-string rule prevents
   silent clobbers.
 
+- **[2026-05-24 — started] /prototype — Overview empty states (Activity / Approval / Messages / Knowledge / Memories / Leaderboard)**
+  - **Source:** User-driven /prototype skill. Improve the empty states of 6 Overview submodules. Two directional variants per module behind a tab switcher: (1) framer-motion + SVG + lucide animated coded illustration (Remotion declined — not installed + video-export tool, framer-motion is the app idiom); (2) /leonardo-generated custom hero illustration. Strategy: scaffold both variants across all 6 modules first (Leonardo as placeholder), then batch-generate the Leonardo images.
+  - **Paths:** `src/features/overview/sub_activity/components/GlobalExecutionList.tsx`, `src/features/overview/sub_manual-review/components/{ManualReviewList,ReviewFocusFlow}.tsx`, `src/features/overview/sub_messages/components/MessageList.tsx`, `src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx`, `src/features/overview/sub_memories/components/{MemoriesPage,MemoryEmptyState}.tsx`, `src/features/overview/sub_leaderboard/components/EmptyStates.tsx`, new sibling `*EmptyState*Variant{Motion,Illustration}.tsx` files + a shared empty-state-variant primitive, generated Leonardo assets under `src/assets/` or `public/`, `.claude/active-runs.md`. Worktree: `.claude/worktrees/prototype-overview-empty-states`.
+  - **Status:** started
+  - **Branch:** worktree-prototype-overview-empty-states
+  - **Note:** Path-disjoint from active sessions (DB schema, athena-tour, density, companion — none touch overview empty states). The 2026-05-17 overview-polish entry that touched sub_knowledge is 7d stale. Variant scaffolds + tab switchers are throwaway, removed at consolidation.
+
 - **[2026-05-24 — started] fix(db): home_team_id startup regression (base-schema index before column on legacy DBs)**
   - **Source:** User-driven follow-up to the planner verification. Master panics at startup (`no such column: home_team_id`) because base `schema.rs` creates `idx_personas_home_team_id` before the incremental ALTER adds the column on legacy DBs. The Groups→Teams data-migration-ordering fix (`e937b9844`) didn't cover this base-schema-index path.
   - **Paths:** `src-tauri/src/db/migrations/schema.rs` (remove line-52 index), `src-tauri/src/db/migrations/incremental.rs` (add `has_index` helper + make `personas_home_team_id` index-guarded w/ conditional column-add). Verify by launching on the real (legacy) DB.
