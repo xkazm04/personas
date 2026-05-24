@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Hourglass, MessageSquare, Send, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import { useNowTick, formatAgo } from './relativeAgo';
 
 /**
  * Attention banner — the desktop precursor to the "something needs a human"
@@ -25,6 +26,7 @@ interface FleetNeedsYouBannerProps {
 
 export function FleetNeedsYouBanner({ waiting, onJump, onReply }: FleetNeedsYouBannerProps) {
   const { t, tx } = useTranslation();
+  const now = useNowTick();
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
@@ -85,6 +87,7 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply }: FleetNeedsYouB
                   className="px-2 py-0.5 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
                 >
                   {name}
+                  <span className="ml-1 text-violet-300/80">· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
                 </button>
                 <button
                   type="button"

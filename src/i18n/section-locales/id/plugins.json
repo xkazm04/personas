@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "ago_just_now": "baru saja",
+    "ago_seconds": "{n} dtk lalu",
+    "ago_minutes": "{n} mnt lalu",
+    "ago_hours": "{n} jam lalu",
     "reply_to": "Balas {name}",
     "reply_placeholder": "Balas {name}…",
     "reply_send": "Kirim",

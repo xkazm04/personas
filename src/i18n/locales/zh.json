@@ -9697,6 +9697,10 @@
   },
   "plugins": {
     "fleet": {
+      "ago_just_now": "刚刚",
+      "ago_seconds": "{n} 秒前",
+      "ago_minutes": "{n} 分钟前",
+      "ago_hours": "{n} 小时前",
       "reply_to": "回复 {name}",
       "reply_placeholder": "回复 {name}…",
       "reply_send": "发送",

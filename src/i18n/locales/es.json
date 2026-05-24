@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "ago_just_now": "ahora mismo",
+      "ago_seconds": "hace {n}s",
+      "ago_minutes": "hace {n}min",
+      "ago_hours": "hace {n}h",
       "reply_to": "Responder a {name}",
       "reply_placeholder": "Responder a {name}…",
       "reply_send": "Enviar",

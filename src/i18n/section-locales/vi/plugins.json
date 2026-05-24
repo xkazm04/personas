@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "ago_just_now": "vừa xong",
+    "ago_seconds": "{n} giây trước",
+    "ago_minutes": "{n} phút trước",
+    "ago_hours": "{n} giờ trước",
     "reply_to": "Trả lời {name}",
     "reply_placeholder": "Trả lời {name}…",
     "reply_send": "Gửi",

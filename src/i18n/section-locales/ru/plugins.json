@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "ago_just_now": "только что",
+    "ago_seconds": "{n} с назад",
+    "ago_minutes": "{n} мин назад",
+    "ago_hours": "{n} ч назад",
     "reply_to": "Ответить {name}",
     "reply_placeholder": "Ответить {name}…",
     "reply_send": "Отправить",

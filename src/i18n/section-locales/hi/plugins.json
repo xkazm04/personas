@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "ago_just_now": "अभी",
+    "ago_seconds": "{n} सेकंड पहले",
+    "ago_minutes": "{n} मिनट पहले",
+    "ago_hours": "{n} घंटे पहले",
     "reply_to": "{name} को उत्तर दें",
     "reply_placeholder": "{name} को उत्तर दें…",
     "reply_send": "भेजें",

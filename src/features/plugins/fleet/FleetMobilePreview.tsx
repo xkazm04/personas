@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetLabelKey } from './FleetStatusDots';
+import { useNowTick, formatAgo } from './relativeAgo';
 
 /**
  * Mobile companion preview — a read-only render of the fleet glance view
@@ -25,18 +26,21 @@ const GLANCE_STATES: ReadonlyArray<{ id: FleetSessionState; dot: string; labelKe
 
 export function FleetMobilePreview() {
   const { t, tx } = useTranslation();
+  const now = useNowTick();
   const sessions = useSystemStore(useShallow((s) => s.fleetSessions));
 
-  const { counts, total, waitingNames } = useMemo(() => {
+  const { counts, total, waitingItems } = useMemo(() => {
     const c: Record<FleetSessionState, number> = {
       spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, exited: 0,
     };
-    const waiting: string[] = [];
+    const waiting: { name: string; lastActivityMs: number }[] = [];
     for (const s of sessions) {
       c[s.state] += 1;
-      if (s.state === 'awaiting_input') waiting.push(s.name ?? s.projectLabel);
+      if (s.state === 'awaiting_input') {
+        waiting.push({ name: s.name ?? s.projectLabel, lastActivityMs: Number(s.lastActivityMs) });
+      }
     }
-    return { counts: c, total: sessions.length, waitingNames: waiting };
+    return { counts: c, total: sessions.length, waitingItems: waiting };
   }, [sessions]);
 
   const sessionCount =
@@ -85,21 +89,22 @@ export function FleetMobilePreview() {
                 <div className="flex items-center gap-1.5 mb-1.5">
                   <Hourglass className="w-3 h-3 text-violet-400" />
                   <span className="typo-label uppercase tracking-wider text-foreground">
-                    {waitingNames.length === 1
-                      ? tx(t.plugins.fleet.needs_input_one, { count: waitingNames.length })
-                      : tx(t.plugins.fleet.needs_input_other, { count: waitingNames.length })}
+                    {waitingItems.length === 1
+                      ? tx(t.plugins.fleet.needs_input_one, { count: waitingItems.length })
+                      : tx(t.plugins.fleet.needs_input_other, { count: waitingItems.length })}
                   </span>
                 </div>
-                {waitingNames.length === 0 ? (
+                {waitingItems.length === 0 ? (
                   <p className="text-[12px] text-emerald-300">{t.plugins.fleet.preview_all_clear}</p>
                 ) : (
                   <ul className="space-y-1">
-                    {waitingNames.map((name, i) => (
+                    {waitingItems.map((item, i) => (
                       <li
-                        key={`${name}-${i}`}
-                        className="rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[12px] text-violet-100 truncate"
+                        key={`${item.name}-${i}`}
+                        className="flex items-center justify-between gap-2 rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[12px] text-violet-100"
                       >
-                        {name}
+                        <span className="truncate">{item.name}</span>
+                        <span className="shrink-0 text-violet-300/80">{formatAgo(t, item.lastActivityMs, now)}</span>
                       </li>
                     ))}
                   </ul>

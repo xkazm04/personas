@@ -9802,6 +9802,10 @@
   },
   "plugins": {
     "fleet": {
+      "ago_just_now": "just now",
+      "ago_seconds": "{n}s ago",
+      "ago_minutes": "{n}m ago",
+      "ago_hours": "{n}h ago",
       "reply_to": "Reply to {name}",
       "reply_placeholder": "Reply to {name}…",
       "reply_send": "Send",

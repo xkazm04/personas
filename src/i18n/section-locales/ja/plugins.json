@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "ago_just_now": "たった今",
+    "ago_seconds": "{n}秒前",
+    "ago_minutes": "{n}分前",
+    "ago_hours": "{n}時間前",
     "reply_to": "{name} に返信",
     "reply_placeholder": "{name} に返信…",
     "reply_send": "送信",

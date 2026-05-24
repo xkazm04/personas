@@ -9808,6 +9808,10 @@ export type Translations = {
   };
   plugins: {
     fleet: {
+      ago_just_now: string;
+      ago_seconds: string;
+      ago_minutes: string;
+      ago_hours: string;
       reply_to: string;
       reply_placeholder: string;
       reply_send: string;

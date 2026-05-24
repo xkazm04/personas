@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "ago_just_now": "à l'instant",
+    "ago_seconds": "il y a {n}s",
+    "ago_minutes": "il y a {n}min",
+    "ago_hours": "il y a {n}h",
     "reply_to": "Répondre à {name}",
     "reply_placeholder": "Répondre à {name}…",
     "reply_send": "Envoyer",
