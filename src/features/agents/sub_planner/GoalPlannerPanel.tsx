@@ -7,19 +7,28 @@
  * that earns trust before any future "watch the app build it" stage.
  */
 import { useState, useCallback, useEffect } from 'react';
-import { Sparkles, ShieldCheck, ListChecks, Eraser, Play, Square, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ShieldCheck, ListChecks, Eraser, Play, Square, CheckCircle2, History } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import Button from '@/features/shared/components/buttons/Button';
 import { generatePlan } from './planProvider';
 import { PlanStepCard } from './PlanStepCard';
 import { IntentSignalChips } from './IntentSignalChips';
+import { usePlannerStore } from './plannerStore';
 import type { Plan, PlanStep } from './types';
 
 export function GoalPlannerPanel() {
   const { t, tx } = useTranslation();
   const { shouldAnimate } = useMotion();
-  const [goal, setGoal] = useState('');
+  // Restore the last goal on mount, or a one-shot prefill handed in from
+  // another surface (the build composer's "Plan this first"). Runs once.
+  const [goal, setGoal] = useState(() => {
+    const s = usePlannerStore.getState();
+    return s.consumePrefill() ?? s.lastGoal;
+  });
+  const recentGoals = usePlannerStore((s) => s.recentGoals);
+  const rememberGoal = usePlannerStore((s) => s.rememberGoal);
+  const clearRecent = usePlannerStore((s) => s.clearRecent);
   const [plan, setPlan] = useState<Plan | null>(null);
   const [steps, setSteps] = useState<PlanStep[]>([]);
   const [planning, setPlanning] = useState(false);
@@ -35,10 +44,11 @@ export function GoalPlannerPanel() {
       const next = await generatePlan(goal);
       setPlan(next);
       setSteps(next?.steps ?? []);
+      if (next) rememberGoal(goal);
     } finally {
       setPlanning(false);
     }
-  }, [goal]);
+  }, [goal, rememberGoal]);
 
   const handleClear = useCallback(() => {
     setGoal('');
@@ -141,6 +151,31 @@ export function GoalPlannerPanel() {
           )}
         </div>
       </div>
+
+      {/* Recent goals — click to refill. Goal text is user content, untranslated. */}
+      {recentGoals.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <History className="h-3.5 w-3.5 text-foreground" />
+          {recentGoals.map((g) => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setGoal(g)}
+              title={g}
+              className="max-w-[16rem] truncate rounded-full bg-secondary/40 px-2.5 py-1 typo-label text-foreground hover:bg-secondary/70"
+            >
+              {g}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={clearRecent}
+            className="rounded-full px-2 py-1 typo-label text-foreground hover:bg-secondary/50"
+          >
+            {t.common.clear}
+          </button>
+        </div>
+      )}
 
       {/* Read-only banner */}
       <div className="flex items-start gap-2.5 rounded-card bg-emerald-500/5 p-3 ring-1 ring-emerald-500/20">

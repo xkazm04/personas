@@ -7,4 +7,5 @@ export { ACTION_CATALOG } from './actionCatalog';
 export { inferIntentSignals } from './intentSignals';
 export type { IntentSignals } from './intentSignals';
 export { IntentSignalChips } from './IntentSignalChips';
+export { usePlannerStore } from './plannerStore';
 export type { Plan, PlanStep, PlanAction, PlanActionId } from './types';
