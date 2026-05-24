@@ -1,10 +1,10 @@
 import { useMemo, useCallback } from 'react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
-import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
+import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import { useOverviewFilterValues, useOverviewFilterActions } from '@/features/overview/components/dashboard/OverviewFilterContext';
 import { mergePreviousPeriod } from '@/features/overview/sub_usage/libs/periodComparison';
-import { computePeriodTrends } from '@/features/overview/utils/computeTrends';
+import { computePeriodTrends } from '@/features/overview/libs/computeTrends';
 import { resolveTimeRange, type TimeRange } from '@/lib/types/timeRange';
 import { fmtDate } from './executionMetricsHelpers';
 

@@ -27,7 +27,7 @@ import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCo
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
-import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
+import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
 import { HealthDigestPanel } from '@/features/agents/sub_health';

@@ -5,7 +5,7 @@ import { DayRangePicker } from '@/features/overview/sub_usage/components/DayRang
 import { CompareToggle } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useExecutionMetrics } from '../libs/useExecutionMetrics';
 import { fmtCost, fmtMs } from '../libs/executionMetricsHelpers';
-import { SUMMARY_GRID } from '@/features/overview/utils/dashboardGrid';
+import { SUMMARY_GRID } from '@/features/overview/libs/dashboardGrid';
 import { AnomalyBadge } from './MetricsCards';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
