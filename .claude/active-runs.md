@@ -185,6 +185,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-24 — completed (merge: a652a27a2; feature commit: 948be771a)] home redesign — Welcome/Cockpit/Learning + sub_* split**
+  - **What:** (1) Welcome hero greeting now addresses the user as "Commander" (dynamic time-of-day prefix kept; new `home.commander` key). (2) Cockpit empty state renders the Athena portrait as background + "Talk to Athena" presets/auto-sends a compose-persona-overview request (`overview.cockpit.compose_personas_prompt`). (3) Learning redesigned: compact one-row tour cards → `TourDetailModal` (desc + steps + start); divider replaced by a completed/pending timeline synced to the cards; tricks rows lost subtitles. (4) Refactor: added `home/sub_welcome/` (welcome cluster + lib/fleetHealth) and `home/sub_learning/` (HomeLearning + data.ts/TourDetailModal/TrickModal); updated all importers + silentCatch labels.
+  - **Coordination:** picked up mid-flight against the parallel §C2 refactor (kept §C2's `sub_releases` over the requested `sub_roadmap`, per user). Fixed three §C2-stale items: `components/cockpit/**` doc-map glob, `components/releases/i18n` path in the dead-key scanner, and a §C2-broken deep relative import in `ConnectorCallCard.test` (→ `@/` alias). Rebased onto moving master twice (5b3fb1205 → 2e610454 → 1af5e208d); merged non-ff (zero file overlap with the concurrent /prototype overview-empty-states + active-runs registration).
+  - **Validation:** tsc clean; eslint 0 errors/0 warnings on changed files; home tests 63 pass. One pre-existing failure remains in `plugins/companion` `ConnectorCallCard.test` ("multiple buttons" getByRole) — unrelated, previously masked by the §C2 broken import; left per don't-fix-pre-existing. docs/features/home.md + cockpit.md updated. NOT pushed.
+
 - **[2026-05-24 — completed (commits: a1989e4e7, 41d0fdda4)] src/features refactor — §D1 + §C2**
   - **What:** §D1 merged `overview/utils/` (computeTrends, dashboardGrid, metricIdentity) into `overview/libs/` (9 import refs); §C2 promoted `home/components/{cockpit,releases}` → `home/sub_cockpit`/`sub_releases` (35+6 files; 5 importer refs + 2 stale breadcrumbs; releases/i18n adapter rode along). tsc clean each. home/components/ now holds only home-shell components.
   - NOT pushed.
