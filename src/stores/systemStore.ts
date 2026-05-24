@@ -55,6 +55,7 @@ export const useSystemStore = create<SystemStore>()(
       partialize: (state) => ({
         sidebarSection: state.sidebarSection,
         fleetNotifyAwaiting: state.fleetNotifyAwaiting,
+        fleetActiveSessionId: state.fleetActiveSessionId,
         homeTab: state.homeTab,
         editorTab: state.editorTab,
         designSubTab: state.designSubTab,
