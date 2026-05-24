@@ -218,6 +218,40 @@ pub fn discard_dead_letter_event(
     Ok(true)
 }
 
+/// Upper bound on a single bulk DLQ batch — protects the IPC payload, the
+/// SQLite transaction size, and the CDC event burst. Operators rarely select
+/// more than this from a 100-event window; if they do, they can chunk.
+const MAX_BULK_DLQ_BATCH: usize = 200;
+
+#[tauri::command]
+pub fn bulk_retry_dead_letter_events(
+    _app: AppHandle,
+    state: State<'_, Arc<AppState>>,
+    ids: Vec<String>,
+) -> Result<repo::BulkDeadLetterOutcome, AppError> {
+    require_auth_sync(&state)?;
+    if ids.len() > MAX_BULK_DLQ_BATCH {
+        return Err(AppError::Validation(format!(
+            "Bulk retry exceeds {MAX_BULK_DLQ_BATCH} events per call"
+        )));
+    }
+    repo::bulk_retry_dead_letter(&state.db, &ids)
+}
+
+#[tauri::command]
+pub fn bulk_discard_dead_letter_events(
+    state: State<'_, Arc<AppState>>,
+    ids: Vec<String>,
+) -> Result<repo::BulkDeadLetterOutcome, AppError> {
+    require_auth_sync(&state)?;
+    if ids.len() > MAX_BULK_DLQ_BATCH {
+        return Err(AppError::Validation(format!(
+            "Bulk discard exceeds {MAX_BULK_DLQ_BATCH} events per call"
+        )));
+    }
+    repo::bulk_discard_dead_letter(&state.db, &ids)
+}
+
 /// Configuration values the dead-letter UI needs to mirror exactly.
 ///
 /// Exposed as a runtime ts-rs binding so the frontend never hardcodes a
