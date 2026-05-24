@@ -8,6 +8,7 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 import { useSystemStore } from "@/stores/systemStore";
+import { getActiveTourSteps } from "@/stores/slices/system/tourSlice";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useVaultStore } from "@/stores/vaultStore";
@@ -108,6 +109,20 @@ interface TestBridge {
   setPluginTab(tab: string): { success: boolean; tab?: string; error?: string };
   setTwinTab(tab: string): { success: boolean; tab?: string; error?: string };
   seedTwin(name?: string): Promise<{ success: boolean; twinId?: string | null; error?: string }>;
+  // -- Guided-tour helpers (E2E) --
+  tourStart(tourId?: string): { success: boolean };
+  tourReset(tourId?: string): { success: boolean };
+  tourEmit(eventKey: string): { success: boolean };
+  tourState(): {
+    active: boolean;
+    tourId: string;
+    currentStepIndex: number;
+    completed: boolean;
+    dismissed: boolean;
+    stepIds: string[];
+    stepCompleted: Array<{ id: string; done: boolean }>;
+    allCompleted: boolean;
+  };
   [key: string]: unknown;
 }
 
@@ -2083,6 +2098,38 @@ const bridge: TestBridge = {
       streamingText,
       approvals: panel.querySelectorAll("[data-companion-approval]").length,
       brain: await collectBrainCounts(),
+    };
+  },
+
+  // -- Guided-tour helpers (E2E) -------------------------------------------
+  // The tour engine still owns advancement; these just start/reset/inspect
+  // it deterministically so a spec can drive the real getting-started flow
+  // and assert progress. `tourEmit` fires a completion event directly (used
+  // when a step's natural completion is impractical to drive in-test).
+  tourStart(tourId?: string) {
+    useSystemStore.getState().startTour(tourId as Parameters<ReturnType<typeof useSystemStore.getState>['startTour']>[0]);
+    return { success: true };
+  },
+  tourReset(tourId?: string) {
+    useSystemStore.getState().resetTour(tourId as Parameters<ReturnType<typeof useSystemStore.getState>['resetTour']>[0]);
+    return { success: true };
+  },
+  tourEmit(eventKey: string) {
+    useSystemStore.getState().emitTourEvent(eventKey as Parameters<ReturnType<typeof useSystemStore.getState>['emitTourEvent']>[0]);
+    return { success: true };
+  },
+  tourState() {
+    const s = useSystemStore.getState();
+    const steps = getActiveTourSteps(s.tourActiveTourId);
+    return {
+      active: s.tourActive,
+      tourId: s.tourActiveTourId,
+      currentStepIndex: s.tourCurrentStepIndex,
+      completed: s.tourCompleted,
+      dismissed: s.tourDismissed,
+      stepIds: steps.map((st) => st.id),
+      stepCompleted: steps.map((st) => ({ id: st.id, done: !!s.tourStepCompleted[st.id] })),
+      allCompleted: steps.length > 0 && steps.every((st) => !!s.tourStepCompleted[st.id]),
     };
   },
 

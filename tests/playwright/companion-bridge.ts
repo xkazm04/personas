@@ -60,6 +60,17 @@ export interface CompanionPanelState {
   brain: BrainCounts;
 }
 
+export interface TourStateSnapshot {
+  active: boolean;
+  tourId: string;
+  currentStepIndex: number;
+  completed: boolean;
+  dismissed: boolean;
+  stepIds: string[];
+  stepCompleted: Array<{ id: string; done: boolean }>;
+  allCompleted: boolean;
+}
+
 export class CompanionBridge {
   constructor(private readonly baseUrl: string = BASE_URL) {}
 
@@ -407,6 +418,63 @@ export class CompanionBridge {
       throw new Error(`invokeCommand(${command}) failed: ${r.error ?? 'unknown'}`);
     }
     return r.result as T;
+  }
+
+  // ── Guided-tour helpers ────────────────────────────────────────────
+
+  /** Start (or resume) a guided tour. Omit `tourId` to use the active one. */
+  tourStart(tourId?: string): Promise<{ success: boolean }> {
+    return this.bridgeExec('tourStart', tourId ? { tourId } : {});
+  }
+
+  /** Reset a tour's persisted progress so a spec starts from a clean slate. */
+  tourReset(tourId?: string): Promise<{ success: boolean }> {
+    return this.bridgeExec('tourReset', tourId ? { tourId } : {});
+  }
+
+  /** Fire a tour completion event directly (advances the current step if it matches). */
+  tourEmit(eventKey: string): Promise<{ success: boolean }> {
+    return this.bridgeExec('tourEmit', { eventKey });
+  }
+
+  /** Snapshot the guided-tour state for assertions. */
+  tourState(): Promise<TourStateSnapshot> {
+    return this.bridgeExec<TourStateSnapshot>('tourState');
+  }
+
+  // ── Persona build helpers (real build → promote) ───────────────────
+
+  /** Fill the intent field + launch a real build session. */
+  startBuildFromIntent(
+    intent: string,
+    timeoutMs = 60_000,
+  ): Promise<{ success: boolean; sessionId?: string; personaId?: string | null; phase?: string; error?: string }> {
+    return this.bridgeExec('startBuildFromIntent', { intent, timeoutMs }, Math.ceil(timeoutMs / 1000) + 10);
+  }
+
+  /** Answer any currently-pending build questions (cellKey → free text). */
+  answerPendingBuildQuestions(
+    answers: Record<string, string>,
+  ): Promise<{ success: boolean; answered?: string[]; pendingKeys?: string[]; error?: string }> {
+    return this.bridgeExec('answerPendingBuildQuestions', { answers });
+  }
+
+  /** Wait until the build reaches one of `phases`. */
+  waitForBuildPhase(
+    phases: string[] | string,
+    timeoutMs = 120_000,
+  ): Promise<{ success: boolean; phase?: string; pendingCount?: number; error?: string }> {
+    return this.bridgeExec('waitForBuildPhase', { phases, timeoutMs }, Math.ceil(timeoutMs / 1000) + 10);
+  }
+
+  /** List the build questions currently awaiting an answer. */
+  listPendingBuildQuestions(): Promise<{ success: boolean; questions: unknown[] }> {
+    return this.bridgeExec('listPendingBuildQuestions');
+  }
+
+  /** Promote the current draft to a live persona. Returns its id. */
+  promoteBuildDraft(): Promise<{ success: boolean; personaId?: string; error?: string }> {
+    return this.bridgeExec('promoteBuildDraft', {}, 120);
   }
 
   /** Whether the chat panel currently shows a `sendError` chip. */

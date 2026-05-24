@@ -22,7 +22,7 @@ Seven tours are registered in `TOUR_REGISTRY` (`src/stores/slices/system/tourSli
 
 | Tour id | Surface color | Purpose |
 | --- | --- | --- |
-| `getting-started` | violet | First-run for Power tier: appearance → credentials → first agent (3 steps). |
+| `getting-started` | violet | First-run for Power tier: appearance → credentials → build first agent on the Glyph → run it manually (4 steps). |
 | `getting-started-simple` | violet | First-run for Starter tier: same arc, simpler language (3 steps). Tier-partner of `getting-started` — completed step ids migrate when tier flips. |
 | `execution-observability` | blue | Overview dashboard, activity, messages, health monitoring, Lab (5 steps). |
 | `orchestration-events` | teal | Event bus log, trigger types, chaining via the event canvas, live-stream + dead-letter (4 steps). |
@@ -43,6 +43,23 @@ The guided tour can speak each step in Athena's voice while keeping the existing
 - **`TourNarrationButton`** (panel header) exposes a replay button and a session-scoped mute toggle; the speaker icon pulses while Athena speaks. It renders nothing when narration is unavailable.
 
 Keeping narration as per-step metadata (rather than baked audio clips, as the marketing-site tour does) is what will let Athena later answer free-form questions mid-tour through the same synthesis path.
+
+## Panel UX
+
+- The tour panel (and its minimized rail) is fully opaque (`bg-background`, no backdrop blur) for readability over busy app surfaces.
+- `StepProgress` renders steps as a vertical **number + name** list (not icon-only), with a thin divider between each row; the panel's header and sub-step sections are separated by thin dividers too.
+- A **Resume tour** action appears in the desktop footer (`TourResumeFooterIcon`, `data-testid="footer-resume-tour"`) when a tour was started, made partial progress, and then dismissed without completing. Clicking it un-dismisses and resumes from the last unfinished step.
+
+## Getting Started flow (4 steps)
+
+1. **Make It Yours** — appearance (`tour:appearance-changed`).
+2. **Your Integration Hub** — credentials. The in-panel content (`CredentialsTourContent`) shows the connector categories, a **Built-in tooling** section (Messaging, Database, Vector, Filesystem, Schedule, Memory — local tooling wired up with no credential), and the connection types. Completes on `tour:credentials-explored`.
+3. **Build Your First Agent** — the Glyph build. `PersonaCreationCoach` mirrors the live build phases and the eight sigils (trigger/task/connector/message/review/memory/event/error, keyed to `buildCellStates`). Completes only on an actual **promote** (`tour:persona-promoted` now fires on `promoted`, not `test_complete`), which also records the new persona via `setTourCreatedPersona`.
+4. **Run Your Agent** — opens the new agent's Use Cases tab and completes when the user runs it (`tour:execution-complete`).
+
+## End-to-end test
+
+`tests/playwright/getting-started-tour.spec.ts` drives the whole flow against a real running app (`npm run tauri:dev:test`, then `npm run test:playwright:tour`). It performs a **real** Opus build → smoke test → promote → execution. Tour control + assertions go through `window.__TEST__` helpers (`tourStart`/`tourReset`/`tourEmit`/`tourState`) exposed in `src/test/automation/bridge.ts` and wrapped in `tests/playwright/companion-bridge.ts`.
 
 ## State and persistence
 
