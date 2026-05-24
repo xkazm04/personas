@@ -46,6 +46,43 @@ after each cluster, commit atomically. Never bulk-delete the whole 455 list.
 | `agents/components/` root strays | **3** | `ChatThread.tsx`, `ChatMessageContent.tsx`, `designUtils.ts`. |
 | `agents/components/glyph/**` (subset) | up to 9 | Several glyph helpers flagged — verify against the live editor before deleting (some may be lazy/JSX-only). |
 
+## Progress log
+
+| Date | Commit | Removed | Net dead files |
+|---|---|---|---|
+| baseline | `b352d5e28` | — | 455 |
+| 2026-05-24 | `f48a069ba` | 6: agents `designUtils` + `onboarding/{Checklist,useChecklist,TemplateStep}` + `preview/{Panel,Section}` | 449 |
+| 2026-05-24 | `f16cbd8c7` | 9: agents `components/glyph/**` forked/dead leaves | 440 |
+
+## ⚠️ The "executions dead island" — mapped, deferred (do NOT partial-delete)
+
+The 31-file old `agents/sub_executions` runner/list cluster (`PersonaRunner`,
+`ExecutionList`, `runner/*`, `list/*`, comparison libs, `comparisonDiff.worker`,
+`ExecutionTerminal`, the `index.ts` barrel) is genuinely dead **but cannot be
+deleted in isolation** — its only consumers are themselves dead, forming a
+closed subgraph that spans **five features**:
+
+- `agents/sub_executions/**` (31)
+- `shared/components/use-cases/UseCaseExecutionPanel.tsx`
+- `templates/sub_n8n/steps/N8nEditStep.tsx`
+- `overview/sub_activity/{ExecutionRow.tsx, index.ts, …}`
+- `overview/sub_observability/{SystemTraceViewer.tsx, ObservabilityDashboard.tsx, …}`
+- `triggers/sub_triggers/{TriggerExecutionHistory.tsx, TriggerDetailDrawer.tsx, …}`
+
+Apparent live edges are **false positives**: Playwright specs define a *local*
+`interface ExecutionRow` (name collision, not an import); `traceInspectorTypes.ts`
+and `lib/execution/systemTrace.ts` only mention `SystemTraceViewer` **in comments**.
+
+**Why deferred:** (1) it can only be deleted as a whole closed set — removing the
+agents 31 alone leaves the dead consumers with broken imports; (2) it bleeds into
+the large `overview` (83) and `triggers` (37) dead pools and should be cleared
+*with* them in one iterative `knip → delete → knip` pass; (3) `overview` is
+concurrently edited by the Groups→Teams retire session — wait until that lands.
+Recommended: do this in its own worktree once `overview` is calm. The LIVE
+execution UI (`ExecutionDetail`, inspector, `ExecutionDetailModal`,
+`ExecutionMiniPlayer`, `CircuitBreakerIndicator`, `traceHelpers`) is untouched by
+this island.
+
 ## Larger candidate pools (need review, NOT all dead)
 
 These totals are file-mode counts; treat as a review queue, not a delete list:

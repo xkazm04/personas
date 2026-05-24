@@ -32,12 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-24 — started] src/features structure refactor — Phase 0 (tooling) + Phase 1 (dead-code, disjoint clusters)**
-  - **Source:** User-driven deep refactor of `src/features`. Phase 0 (knip tooling + plan/baseline docs) committed `b352d5e28`. Phase 1 deletes/relocates ONLY clusters disjoint from the concurrent Groups→Teams retire session — explicitly **excludes all of `src/features/pipeline/**`** (owned by that session). Per user: analyze each candidate as truly-dead vs misplaced-but-live before deleting.
-  - **Paths:** `src/features/agents/sub_executions/**` (old PersonaRunner/ExecutionList runner+list cluster — verify truly dead), `src/features/agents/components/{onboarding/**,preview/**,ChatThread.tsx,ChatMessageContent.tsx,designUtils.ts}`, `docs/refactor/*`, `.claude/active-runs.md`. Read-only elsewhere.
-  - **Status:** started.
-  - **Note:** Does NOT touch pipeline/, groups, pipelineStore, monitor, or allPersonas/* (all owned by the Groups→Teams session). Atomic commit per cluster; tsc+test between.
-
 - **[2026-05-24 — started] Groups→Teams Phase 5 (destructive retire of PersonaGroup)**
   - **Source:** User-driven — final phase of the Groups→Teams consolidation (ADR `2026-05-23-groups-into-teams.md`), authorized after live verification of Phases 1–4. Drops the entire PersonaGroup primitive: `persona_groups` table + `personas.group_id`/`persona_memories.group_id`/`dev_projects.group_id` columns; switches runtime memory injection (`get_for_injection_v2`/`build_scope_predicates`/`InjectionScope`) from group_id → home_team_id; deletes group commands/models/repos/bindings; repoints the Monitor "group by" + persona drop-rail + batch "Move to group" + overview filters from group_id → home_team_id (the Phase-4 UI cutover that wasn't done); removes orphaned GroupManagerPage + group UI + i18n.
   - **Paths (Rust):** `src-tauri/src/db/migrations/{incremental.rs,schema.rs}`, `src-tauri/src/db/models/{persona.rs,memory.rs,dev_tools.rs}`, `src-tauri/src/db/repos/core/{personas.rs,memories.rs,groups.rs (delete)}`, `src-tauri/src/db/repos/dev_tools.rs`, `src-tauri/src/commands/core/{groups.rs (delete),personas.rs,memories.rs,data_portability.rs,import_export.rs}`, `src-tauri/src/commands/{execution/genome.rs,infrastructure/cloud.rs}`, `src-tauri/src/db/models/group.rs (delete)`, `src-tauri/src/lib.rs`, assorted test fixtures (`group_id: None` removal — compiler-driven).
@@ -193,6 +187,12 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commits: b352d5e28, f48a069ba, f16cbd8c7)] src/features structure refactor — Phase 0 + Phase 1 (partial)**
+  - **What:** Phase 0: added `knip` dead-code tooling (`knip.json`, `check:dead`/`check:dead:files`), authored the refactor plan + dead-code baseline under `docs/refactor/`. Baseline 455 unused files. Phase 1: deleted two knip-verified + path-precise-checked dead clusters in `agents/components/` — 6 files (`designUtils`, `onboarding/{Checklist,useChecklist,TemplateStep}`, `preview/{Panel,Section}`) and 9 forked/dead `components/glyph/**` leaves. Dead-file count 455→440; tsc clean throughout.
+  - **Files:** `knip.json`, `package.json`/`package-lock.json`, `docs/refactor/{feature-structure-refactor.md,dead-code-baseline.md}`, 15 deleted files under `src/features/agents/components/`.
+  - **Deferred (mapped, not done):** the cross-feature "executions dead island" (31 `agents/sub_executions` files + dead consumers in shared/templates/overview/triggers) — can only be deleted as a closed set, bleeds into the overview(83)/triggers(37) dead pools, and overlaps the concurrent Groups→Teams session's overview edits. See `docs/refactor/dead-code-baseline.md`. Also deferred: `ChatThread`/`ChatMessageContent` (entangled with `lib/harness` filename string). NOT pushed.
+  - **Scope discipline:** explicitly avoided all of `pipeline/`, groups, pipelineStore, monitor, allPersonas/* (Groups→Teams session). Staged only own files per commit.
 
 - **[2026-05-24 — completed (commits: e937b9844, 459aa6b6b)] /architect resume — DM-F2 team_memories FK (+ discovered migration ship-blocker)**
   - **What:** Drained backlog DM-F2. Added `ON DELETE CASCADE` FK to `team_memories.team_id` via the proven `recreate_with_fk` helper (closes a coverage gap in the 2026-05-02 FK-hygiene ADR). **While doing so, discovered + fixed a pre-existing ship-blocker:** the Groups→Teams Phase-3 data migration (from merge `ffdb0ce8d`) lived in phase-1 `ensure_composite_fires_table` but read columns (`*.shared_instructions`, `*.home_team_id`) added only in phase-2 `run_incremental` — so every fresh-DB migration / `init_test_db` / CI aborted with "no such column: g.shared_instructions". Relocated the block to the end of `run_incremental`.
