@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback, lazy, Suspense, useMemo } from 'react';
-import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard } from 'lucide-react';
+import { Palette, Check, Share2, LogOut, PanelLeftClose, PanelLeft, FolderGit2, ChevronUp, X, Keyboard, Map } from 'lucide-react';
 import { SHORTCUTS_OPEN_EVENT } from '@/lib/keyboard/shortcutRegistry';
+import { getActiveTourSteps } from '@/stores/slices/system/tourSlice';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore, THEMES } from '@/stores/themeStore';
 import type { ThemeId } from '@/stores/themeStore';
@@ -426,6 +427,48 @@ function ProjectPickerFooterIcon() {
 }
 
 // ---------------------------------------------------------------------------
+// Resume-tour action — appears only when a guided tour was started, made
+// partial progress, and was then dismissed (not completed). Lets the user
+// pick the tour back up from the footer without hunting for the launcher.
+// ---------------------------------------------------------------------------
+
+function TourResumeFooterIcon() {
+  const { t } = useTranslation();
+  const tourActive = useSystemStore((s) => s.tourActive);
+  const tourDismissed = useSystemStore((s) => s.tourDismissed);
+  const tourCompleted = useSystemStore((s) => s.tourCompleted);
+  const tourId = useSystemStore((s) => s.tourActiveTourId);
+  const stepCompleted = useSystemStore((s) => s.tourStepCompleted);
+
+  const steps = getActiveTourSteps(tourId);
+  const total = steps.length;
+  const done = steps.filter((s) => stepCompleted[s.id]).length;
+  const partial = done > 0 && done < total;
+  const show = !tourActive && !tourCompleted && tourDismissed && partial;
+
+  const handleClick = useCallback(() => {
+    useSystemStore.setState({ tourDismissed: false });
+    useSystemStore.getState().startTour(tourId);
+  }, [tourId]);
+
+  if (!show) return null;
+
+  const label = `${t.onboarding.resume_tour} · ${done}/${total}`;
+  return (
+    <button
+      onClick={handleClick}
+      data-testid="footer-resume-tour"
+      className="h-7 px-2 rounded-lg flex items-center gap-1.5 text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+      title={label}
+      aria-label={label}
+    >
+      <Map className="w-4 h-4" />
+      <span className="typo-caption font-medium">{done}/{total}</span>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Desktop footer bar
 // ---------------------------------------------------------------------------
 
@@ -467,6 +510,7 @@ export default function DesktopFooter() {
           rightmost so the notice popover anchors against the window edge
           and never collides with sibling footer popovers. */}
       <div className="flex items-center gap-1.5">
+        <TourResumeFooterIcon />
         <ProjectPickerFooterIcon />
         <div className="w-px h-4 bg-primary/10" />
         <Suspense fallback={null}>

@@ -8996,6 +8996,7 @@
     "narration_replay": "Replay narration",
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
+    "resume_tour": "Resume your tour",
     "back": "Back",
     "complete_tour": "Complete Tour",
     "tour_loading": "Loading...",

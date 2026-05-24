@@ -9002,6 +9002,7 @@ export type Translations = {
     narration_replay: string;
     narration_mute: string;
     narration_unmute: string;
+    resume_tour: string;
     back: string;
     complete_tour: string;
     tour_loading: string;
@@ -9010,7 +9011,6 @@ export type Translations = {
     auto_complete_hint: string;
     tour_explore_to_continue: string;
     tour_acknowledge: string;
-    resume_tour: string;
     start_tour: string;
     tour_storage_unavailable_toast: string;
     connector_count_stat: string;
