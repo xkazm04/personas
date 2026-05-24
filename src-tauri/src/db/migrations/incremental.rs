@@ -3187,11 +3187,16 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                     let _ = ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;");
                 }
 
-                // NULL the personas FK column before dropping its parent so the
-                // now-dangling reference can never be enforced (group_id stays
-                // NULL forever — no code writes it).
+                // Drop the personas.group_id FK column outright. NULLing it is
+                // NOT enough: with `PRAGMA foreign_keys = ON`, every INSERT into
+                // personas resolves the FK's parent table, so leaving the FK in
+                // place while dropping `persona_groups` breaks ALL persona
+                // creation with "no such table: persona_groups". DROP COLUMN
+                // removes the dangling FK (mirrors persona_memories/dev_projects
+                // above; the index was already dropped). Guarded + idempotent.
                 if has_column(conn, "personas", "group_id")? {
                     let _ = ddl_step(conn, "UPDATE personas SET group_id = NULL;");
+                    let _ = ddl_step(conn, "ALTER TABLE personas DROP COLUMN group_id;");
                 }
                 let _ = ddl_step(conn, "DROP TABLE IF EXISTS persona_groups;");
                 Ok(())
