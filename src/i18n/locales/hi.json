@@ -9773,6 +9773,8 @@
   },
   "plugins": {
     "fleet": {
+      "search_placeholder": "सत्र फ़िल्टर करें…",
+      "search_no_matches": "कोई सत्र मेल नहीं खाता",
       "history_label": "हाल का स्थिति इतिहास",
       "all_clear": "सब ठीक है",
       "jump_next": "अगले प्रतीक्षारत सत्र पर जाएँ",

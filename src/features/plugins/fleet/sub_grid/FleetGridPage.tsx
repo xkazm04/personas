@@ -14,6 +14,7 @@ import {
   Sparkle,
   Bell,
   BellOff,
+  Search,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -101,6 +102,7 @@ export default function FleetGridPage() {
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [filter, setFilter] = useState<FleetSessionState | null>(null);
+  const [query, setQuery] = useState('');
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
@@ -302,8 +304,10 @@ export default function FleetGridPage() {
   // first (awaiting_input → working → spawning → idle → stale → exited).
   // Within a group, newest activity first.
   const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
     const buckets = new Map<FleetSessionState, FleetSession[]>();
     for (const s of sessions) {
+      if (q && !`${s.projectLabel} ${s.name ?? ''}`.toLowerCase().includes(q)) continue;
       const arr = buckets.get(s.state) ?? [];
       arr.push(s);
       buckets.set(s.state, arr);
@@ -314,7 +318,7 @@ export default function FleetGridPage() {
     return GROUP_ORDER
       .filter((g) => buckets.has(g.id) && (filter === null || g.id === filter))
       .map((g) => ({ ...g, sessions: buckets.get(g.id)! }));
-  }, [sessions, filter]);
+  }, [sessions, filter, query]);
 
   const sessionCount =
     sessions.length === 1
@@ -417,6 +421,20 @@ export default function FleetGridPage() {
             data-testid="fleet-session-list"
             className="col-span-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1"
           >
+            {sessions.length > 1 && (
+              <div className="relative mb-2">
+                <Search className="pointer-events-none absolute left-2 top-1/2 w-3.5 h-3.5 -translate-y-1/2 text-foreground" aria-hidden="true" />
+                <input
+                  type="text"
+                  data-testid="fleet-session-search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label={t.plugins.fleet.search_placeholder}
+                  placeholder={t.plugins.fleet.search_placeholder}
+                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+                />
+              </div>
+            )}
             {sessions.length === 0 ? (
               <div className="text-center py-8 border border-dashed border-primary/10 rounded-modal">
                 <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
@@ -428,6 +446,10 @@ export default function FleetGridPage() {
                     ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
                     : 'Pick a project in Dev Tools → Projects.'}
                 </p>
+              </div>
+            ) : groups.length === 0 ? (
+              <div className="text-center py-6 text-[11px] text-foreground" data-testid="fleet-no-matches">
+                {t.plugins.fleet.search_no_matches}
               </div>
             ) : (
               groups.map((g, idx) => {

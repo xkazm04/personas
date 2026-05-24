@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "search_placeholder": "Sitzungen filtern…",
+    "search_no_matches": "Keine passenden Sitzungen",
     "history_label": "Letzter Statusverlauf",
     "all_clear": "Alles in Ordnung",
     "jump_next": "Zur nächsten wartenden Sitzung springen",

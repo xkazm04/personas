@@ -9697,6 +9697,8 @@
   },
   "plugins": {
     "fleet": {
+      "search_placeholder": "Filtrer les sessions…",
+      "search_no_matches": "Aucune session correspondante",
       "history_label": "Historique d'état récent",
       "all_clear": "Tout va bien",
       "jump_next": "Aller à la prochaine session en attente",

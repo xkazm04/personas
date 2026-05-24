@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "search_placeholder": "세션 필터…",
+    "search_no_matches": "일치하는 세션 없음",
     "history_label": "최근 상태 기록",
     "all_clear": "모두 정상",
     "jump_next": "다음 대기 세션으로 이동",

@@ -9773,6 +9773,8 @@
   },
   "plugins": {
     "fleet": {
+      "search_placeholder": "セッションを絞り込み…",
+      "search_no_matches": "一致するセッションがありません",
       "history_label": "最近の状態履歴",
       "all_clear": "問題なし",
       "jump_next": "次の待機中セッションへ移動",

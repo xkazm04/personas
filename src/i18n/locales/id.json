@@ -9773,6 +9773,8 @@
   },
   "plugins": {
     "fleet": {
+      "search_placeholder": "Filter sesi…",
+      "search_no_matches": "Tidak ada sesi yang cocok",
       "history_label": "Riwayat status terbaru",
       "all_clear": "Semua aman",
       "jump_next": "Lompat ke sesi menunggu berikutnya",

@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "search_placeholder": "Filtrovat relace…",
+    "search_no_matches": "Žádné odpovídající relace",
     "history_label": "Nedávná historie stavů",
     "all_clear": "Vše v pořádku",
     "jump_next": "Přejít na další čekající relaci",

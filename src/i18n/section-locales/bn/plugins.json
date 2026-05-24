@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "search_placeholder": "সেশন ফিল্টার করুন…",
+    "search_no_matches": "কোনো সেশন মেলে না",
     "history_label": "সাম্প্রতিক অবস্থার ইতিহাস",
     "all_clear": "সব ঠিক আছে",
     "jump_next": "পরবর্তী অপেক্ষমাণ সেশনে যান",

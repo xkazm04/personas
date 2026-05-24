@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "search_placeholder": "Lọc phiên…",
+    "search_no_matches": "Không có phiên nào khớp",
     "history_label": "Lịch sử trạng thái gần đây",
     "all_clear": "Mọi thứ ổn",
     "jump_next": "Chuyển đến phiên đang chờ tiếp theo",

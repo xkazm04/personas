@@ -9697,6 +9697,8 @@
   },
   "plugins": {
     "fleet": {
+      "search_placeholder": "تصفية الجلسات…",
+      "search_no_matches": "لا توجد جلسات مطابقة",
       "history_label": "سجل الحالة الأخير",
       "all_clear": "كل شيء على ما يرام",
       "jump_next": "الانتقال إلى الجلسة المنتظرة التالية",

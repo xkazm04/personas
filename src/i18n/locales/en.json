@@ -9802,6 +9802,8 @@
   },
   "plugins": {
     "fleet": {
+      "search_placeholder": "Filter sessions…",
+      "search_no_matches": "No sessions match",
       "history_label": "Recent state history",
       "all_clear": "All clear",
       "jump_next": "Jump to next waiting session",
