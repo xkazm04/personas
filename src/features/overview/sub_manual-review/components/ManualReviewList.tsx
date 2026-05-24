@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ClipboardCheck, Plus, BookOpen, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useSystemStore } from "@/stores/systemStore";
@@ -311,12 +311,15 @@ export default function ManualReviewList() {
             animate="show"
             exit={shouldAnimate ? "exit" : undefined}
           >
-            <EmptyState
-              icon={ClipboardCheck}
-              title={t.overview.review.empty_title}
-              subtitle={t.overview.review.empty_subtitle}
-              action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-              secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+            <EmptyStateVariantHost
+              motif="approval"
+              content={{
+                icon: ClipboardCheck,
+                title: t.overview.review.empty_title,
+                subtitle: t.overview.review.empty_subtitle,
+                action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+              }}
             />
           </motion.div>
         ) : filter === 'pending' ? (

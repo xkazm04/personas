@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Network, AlertTriangle, Cpu, ArrowRight, RefreshCw, X, Plus, MessageSquare, Brain, BookOpen } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from "@/stores/agentStore";
 import { getKnowledgeSummary, listExecutionKnowledge, seedMockKnowledge } from '@/api/overview/intelligence/knowledge';
@@ -259,21 +259,23 @@ export default function KnowledgeGraphDashboard() {
             </div>
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
-              <EmptyState
-                icon={Brain}
-                title={debtText("auto_no_knowledge_patterns_yet_fab2639a")}
-                subtitle="Run agent executions to build up knowledge patterns. Agents get smarter over time."
-                iconColor="text-violet-400/80"
-                iconContainerClassName="bg-violet-500/10 border-violet-500/20"
-                action={{ label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-                secondaryAction={{ label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              <EmptyStateVariantHost
+                motif="knowledge"
+                content={{
+                  icon: Brain,
+                  title: debtText("auto_no_knowledge_patterns_yet_fab2639a"),
+                  subtitle: "Run agent executions to build up knowledge patterns. Agents get smarter over time.",
+                  action: { label: 'Create Persona', onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                  secondaryAction: { label: 'From Templates', onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                  // Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article).
+                  // Curated docs belong in the Obsidian vault — cheaper + better for <1000 notes.
+                  children: (
+                    <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
+                      <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
+                    </div>
+                  ),
+                }}
               />
-              {/* Wiki-vs-vector guidance (research run 2026-04-08, Karpathy article). */}
-              {/* This dashboard surfaces auto-extracted execution knowledge. For curated docs,
-                  personas also offers an Obsidian vault — cheaper and better for <1000 notes. */}
-              <div className="max-w-md typo-caption text-foreground text-center px-4 py-2 rounded-card bg-violet-500/5 border border-violet-500/10">
-                <span className="font-medium text-foreground"><DebtText k="auto_curating_documents_manually_2fb8d7db" /></span> <DebtText k="auto_for_fewer_than_1000_notes_an_obsidian_vaul_a955006d" />
-              </div>
             </div>
           ) : allEntries.length === 0 ? (
             <div className="py-8 text-center">

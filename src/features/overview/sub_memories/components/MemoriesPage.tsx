@@ -9,6 +9,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
+import { EmptyStateVariantHost } from '@/features/overview/shared/emptyStatePrototype';
 import { MemoryRow } from './MemoryCard';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
@@ -318,14 +319,15 @@ function MemoriesPageBaseline() {
           </div>
 
           {memories.length === 0 && !hasFilters ? (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 text-foreground">
-              <div className="w-16 h-16 rounded-modal bg-violet-500/10 border border-violet-500/15 flex items-center justify-center">
-                <Brain className="w-8 h-8 text-violet-400/40" />
-              </div>
-              <div className="text-center">
-                <p className="typo-body font-medium text-foreground"><DebtText k="auto_no_memories_yet_775ad944" /></p>
-                <p className="typo-body text-foreground mt-1 max-w-xs"><DebtText k="auto_when_agents_run_they_can_store_valuable_no_4c99046a" /></p>
-              </div>
+            <div className="flex-1 flex items-center justify-center">
+              <EmptyStateVariantHost
+                motif="memories"
+                content={{
+                  icon: Brain,
+                  title: debtText("auto_no_memories_yet_775ad944"),
+                  subtitle: debtText("auto_when_agents_run_they_can_store_valuable_no_4c99046a"),
+                }}
+              />
             </div>
           ) : (
             <>
