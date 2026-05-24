@@ -6,6 +6,8 @@ import {
   Package, Clock,
 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { TrustVerifiedIcon, TrustUnknownIcon, NodeConnectedIcon, NodeDisconnectedIcon } from './NetworkIcons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -215,13 +217,13 @@ export function PeerDetailDrawer({
               <div className="flex justify-between">
                 <span className="text-foreground">{st.first_seen}</span>
                 <span className="text-foreground">
-                  {new Date(peer.first_seen_at).toLocaleDateString()}
+                  <AbsoluteTime timestamp={peer.first_seen_at} variant="date" />
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-foreground">{st.last_seen}</span>
                 <span className="text-foreground">
-                  {new Date(peer.last_seen_at).toLocaleString()}
+                  <RelativeTime timestamp={peer.last_seen_at} />
                 </span>
               </div>
               {addresses.length > 0 && (
@@ -321,7 +323,7 @@ function ManifestEntryRow({ entry }: { entry: PeerManifestEntry }) {
       </div>
       <div className="flex items-center gap-1 text-[10px] text-foreground flex-shrink-0">
         <Clock className="w-3 h-3" />
-        {new Date(entry.synced_at).toLocaleDateString()}
+        <AbsoluteTime timestamp={entry.synced_at} variant="date" />
       </div>
     </div>
   );

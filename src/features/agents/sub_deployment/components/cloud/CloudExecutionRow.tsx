@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { ChevronDown, ChevronRight, Terminal, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { statusIcon, formatDuration, formatCost, timeAgo } from './CloudHistoryHelpers';
 import type { CloudExecution } from '@/api/system/cloud';
 
@@ -40,8 +41,8 @@ export function CloudExecutionRow({ exec, personaName, isExpanded, onToggle, out
             <div><span className="text-foreground">{dt.label_duration}</span> <span className="text-foreground">{formatDuration(Number(exec.durationMs))}</span></div>
             <div><span className="text-foreground">{dt.label_cost}</span> <span className="text-foreground">{formatCost(exec.costUsd)}</span></div>
             <div><span className="text-foreground">{dt.label_tokens}</span> <span className="text-foreground">{Number(exec.inputTokens ?? 0) + Number(exec.outputTokens ?? 0)}</span></div>
-            <div><span className="text-foreground">{dt.label_started}</span> <span className="text-foreground">{exec.startedAt ? new Date(exec.startedAt).toLocaleString() : '-'}</span></div>
-            <div><span className="text-foreground">{dt.label_completed}</span> <span className="text-foreground">{exec.completedAt ? new Date(exec.completedAt).toLocaleString() : '-'}</span></div>
+            <div><span className="text-foreground">{dt.label_started}</span> <span className="text-foreground"><AbsoluteTime timestamp={exec.startedAt} /></span></div>
+            <div><span className="text-foreground">{dt.label_completed}</span> <span className="text-foreground"><AbsoluteTime timestamp={exec.completedAt} /></span></div>
           </div>
           {exec.errorMessage && (
             <div className="p-2 rounded-card bg-red-500/5 border border-red-500/10 typo-caption text-red-400">

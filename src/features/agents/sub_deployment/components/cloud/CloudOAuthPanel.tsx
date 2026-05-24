@@ -1,6 +1,8 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw, ExternalLink, Shield, ShieldAlert, ShieldCheck, ShieldX } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { formatTimestamp } from '@/lib/utils/formatters';
 import { DEPLOYMENT_TOKENS } from '../deploymentTokens';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
@@ -118,7 +120,7 @@ export function CloudOAuthPanel({
         {isExpired && (
           <div className="p-4 rounded-card bg-amber-500/10 border border-amber-500/25">
             <p className="typo-body text-amber-200/90 leading-relaxed">
-              {`${dt.token_expired_msg_prefix}${oauthStatus.expiresAt ? ` (expired ${new Date(oauthStatus.expiresAt).toLocaleString()})` : ''}`}
+              {`${dt.token_expired_msg_prefix}${oauthStatus.expiresAt ? ` (expired ${formatTimestamp(oauthStatus.expiresAt)})` : ''}`}
             </p>
           </div>
         )}
@@ -153,7 +155,7 @@ export function CloudOAuthPanel({
           <div>
             <SectionHeading className={DEPLOYMENT_TOKENS.sectionHeadingGap}>{dt.expires}</SectionHeading>
             <p className="typo-body text-foreground/90">
-              {new Date(oauthStatus.expiresAt).toLocaleString()}
+              <AbsoluteTime timestamp={oauthStatus.expiresAt} />
             </p>
           </div>
         )}
