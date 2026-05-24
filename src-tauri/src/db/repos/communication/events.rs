@@ -694,6 +694,158 @@ pub fn discard_dead_letter(pool: &DbPool, id: &str) -> Result<(), AppError> {
     })
 }
 
+/// Per-id outcome returned by the bulk DLQ commands.
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkDeadLetterOutcome {
+    /// Event ids that were successfully retried / discarded.
+    pub succeeded: Vec<String>,
+    /// Event ids that could not be retried / discarded, paired with a short
+    /// `reason` token (`not_found`, `retry_exhausted`, `wrong_status`).
+    pub failed: Vec<BulkDeadLetterFailure>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, ts_rs::TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct BulkDeadLetterFailure {
+    pub id: String,
+    /// Short machine-readable token (`not_found`, `retry_exhausted`,
+    /// `wrong_status`). The frontend maps this through `tokenLabel`.
+    pub reason: String,
+}
+
+/// Retry many dead-lettered events in a single transaction. Each id is
+/// evaluated independently — exhausted retries or missing ids land in
+/// `failed` rather than aborting the batch, so an operator clicking
+/// "Retry selected" never gets stuck on one stale row. The whole
+/// commit happens at once so observers never see a half-retried batch.
+pub fn bulk_retry_dead_letter(
+    pool: &DbPool,
+    ids: &[String],
+) -> Result<BulkDeadLetterOutcome, AppError> {
+    timed_query!("persona_events", "persona_events::bulk_retry_dead_letter", {
+        if ids.is_empty() {
+            return Ok(BulkDeadLetterOutcome {
+                succeeded: Vec::new(),
+                failed: Vec::new(),
+            });
+        }
+
+        let mut conn = pool.get()?;
+        let tx = conn.transaction().map_err(AppError::Database)?;
+
+        let mut succeeded: Vec<String> = Vec::new();
+        let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
+
+        for id in ids {
+            let rows = tx.execute(
+                "UPDATE persona_events
+                 SET status = 'pending',
+                     retry_count = retry_count + 1,
+                     error_message = CASE
+                         WHEN error_message IS NOT NULL
+                         THEN '[Retry #' || (retry_count + 1) || ' — previous error: ' || error_message || ']'
+                         ELSE NULL
+                     END,
+                     processed_at = NULL
+                 WHERE id = ?1
+                   AND status = 'dead_letter'
+                   AND retry_count < ?2",
+                params![id, MAX_MANUAL_RETRIES],
+            )?;
+
+            if rows == 1 {
+                succeeded.push(id.clone());
+            } else {
+                let current: Option<(String, i32)> = tx
+                    .query_row(
+                        "SELECT status, retry_count FROM persona_events WHERE id = ?1",
+                        params![id],
+                        |row| Ok((row.get(0)?, row.get(1)?)),
+                    )
+                    .optional()?;
+
+                let reason = match current {
+                    None => "not_found",
+                    Some((status, _)) if status != "dead_letter" => "wrong_status",
+                    Some((_, rc)) if rc >= MAX_MANUAL_RETRIES => "retry_exhausted",
+                    Some(_) => "wrong_status",
+                };
+                failed.push(BulkDeadLetterFailure {
+                    id: id.clone(),
+                    reason: reason.into(),
+                });
+            }
+        }
+
+        tx.commit().map_err(AppError::Database)?;
+
+        Ok(BulkDeadLetterOutcome { succeeded, failed })
+    })
+}
+
+/// Discard many dead-lettered events in a single transaction. Same
+/// per-id partial-failure shape as `bulk_retry_dead_letter`.
+pub fn bulk_discard_dead_letter(
+    pool: &DbPool,
+    ids: &[String],
+) -> Result<BulkDeadLetterOutcome, AppError> {
+    timed_query!(
+        "persona_events",
+        "persona_events::bulk_discard_dead_letter",
+        {
+            if ids.is_empty() {
+                return Ok(BulkDeadLetterOutcome {
+                    succeeded: Vec::new(),
+                    failed: Vec::new(),
+                });
+            }
+
+            let mut conn = pool.get()?;
+            let tx = conn.transaction().map_err(AppError::Database)?;
+
+            let now = chrono::Utc::now().to_rfc3339();
+            let mut succeeded: Vec<String> = Vec::new();
+            let mut failed: Vec<BulkDeadLetterFailure> = Vec::new();
+
+            for id in ids {
+                let rows = tx.execute(
+                    "UPDATE persona_events
+                     SET status = 'discarded', processed_at = ?1
+                     WHERE id = ?2 AND status = 'dead_letter'",
+                    params![now, id],
+                )?;
+
+                if rows == 1 {
+                    succeeded.push(id.clone());
+                } else {
+                    let status: Option<String> = tx
+                        .query_row(
+                            "SELECT status FROM persona_events WHERE id = ?1",
+                            params![id],
+                            |row| row.get(0),
+                        )
+                        .optional()?;
+                    let reason = match status {
+                        None => "not_found",
+                        Some(_) => "wrong_status",
+                    };
+                    failed.push(BulkDeadLetterFailure {
+                        id: id.clone(),
+                        reason: reason.into(),
+                    });
+                }
+            }
+
+            tx.commit().map_err(AppError::Database)?;
+
+            Ok(BulkDeadLetterOutcome { succeeded, failed })
+        }
+    )
+}
+
 /// Increment retry_count for a failed event. If retry_count reaches max_retries,
 /// move it to dead_letter status. Returns true if moved to DLQ.
 pub fn increment_retry_or_dead_letter(

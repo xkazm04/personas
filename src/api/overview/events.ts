@@ -7,6 +7,7 @@ import type { PersonaEventSubscription } from "@/lib/bindings/PersonaEventSubscr
 import type { CreateEventSubscriptionInput } from "@/lib/bindings/CreateEventSubscriptionInput";
 import type { UpdateEventSubscriptionInput } from "@/lib/bindings/UpdateEventSubscriptionInput";
 import type { DeadLetterConfig } from "@/lib/bindings/DeadLetterConfig";
+import type { BulkDeadLetterOutcome } from "@/lib/bindings/BulkDeadLetterOutcome";
 
 // ============================================================================
 // Events
@@ -75,3 +76,19 @@ export const discardDeadLetterEvent = (id: string) =>
  */
 export const getDeadLetterConfig = () =>
   invoke<DeadLetterConfig>("get_dead_letter_config");
+
+/**
+ * Retry many dead-lettered events in a single backend transaction.
+ * Returns per-id outcomes — `succeeded` ids are gone from the queue,
+ * `failed` ids carry a short reason token (`retry_exhausted`,
+ * `not_found`, `wrong_status`) the UI can surface verbatim.
+ */
+export const bulkRetryDeadLetterEvents = (ids: string[]) =>
+  invoke<BulkDeadLetterOutcome>("bulk_retry_dead_letter_events", { ids });
+
+/**
+ * Discard many dead-lettered events in a single backend transaction.
+ * Same per-id partial-failure shape as `bulkRetryDeadLetterEvents`.
+ */
+export const bulkDiscardDeadLetterEvents = (ids: string[]) =>
+  invoke<BulkDeadLetterOutcome>("bulk_discard_dead_letter_events", { ids });
