@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Sparkles, ArrowRight, Check, CircleDot, Plus } from 'lucide-react';
-import { decomposeTeamAssignmentGoal, companionAssignTeam } from '@/api/pipeline/assignments';
+import { decomposeTeamAssignmentGoal, createTeamAssignment, startTeamAssignment } from '@/api/pipeline/assignments';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -213,10 +213,16 @@ interface OrchestrationConsoleProps {
   layout?: 'panel' | 'band';
 }
 
-export function OrchestrationConsole({ teamId, members, layout = 'panel' }: OrchestrationConsoleProps) {
+type MatchStrategy = 'manual' | 'embedding' | 'llm_eval';
+const STRATEGIES: readonly MatchStrategy[] = ['llm_eval', 'embedding', 'manual'];
+
+export function OrchestrationConsole({ teamId, members }: OrchestrationConsoleProps) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
+  const a = t.pipeline.assignments;
   const [goal, setGoal] = useState('');
+  const [strategy, setStrategy] = useState<MatchStrategy>('llm_eval');
+  const [maxParallel, setMaxParallel] = useState(3);
   const [decomposing, setDecomposing] = useState(false);
   const [steps, setSteps] = useState<DecomposedStep[] | null>(null);
   const [running, setRunning] = useState(false);
@@ -226,6 +232,11 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
     (id: string | null) => (id ? members.find((m) => m.personaId === id)?.name ?? null : null),
     [members],
   );
+
+  const strategyLabel = (s: MatchStrategy) =>
+    s === 'manual' ? a.strategy_manual : s === 'embedding' ? a.strategy_embedding : a.strategy_llm_eval;
+  const strategyHint =
+    strategy === 'manual' ? a.strategy_manual_hint : strategy === 'embedding' ? a.strategy_embedding_hint : a.strategy_llm_eval_hint;
 
   const handleDecompose = useCallback(async () => {
     if (!goal.trim()) return;
@@ -243,41 +254,98 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
     }
   }, [teamId, goal]);
 
-  const handleRun = useCallback(async () => {
-    if (!goal.trim()) return;
+  // Write the goal to the orchestration layer: decompose (if not already
+  // previewed) into steps, create a team assignment with the chosen match
+  // strategy + parallelism, then start the orchestrator. Steps carry a
+  // manual persona assignment only under the manual strategy; embedding /
+  // llm_eval leave it for the orchestrator to resolve at match time.
+  const handleAssign = useCallback(async () => {
+    const g = goal.trim();
+    if (!g) return;
     setRunning(true);
     try {
-      const res = await companionAssignTeam(teamId, goal.trim());
-      setLaunched(res.assignmentId);
+      let decomposed = steps;
+      if (!decomposed) {
+        decomposed = await decomposeTeamAssignmentGoal(teamId, g);
+        setSteps(decomposed);
+      }
+      const stepInputs = (decomposed ?? []).map((s) => ({
+        title: s.title,
+        description: s.description || null,
+        assignedPersonaId: strategy === 'manual' ? s.suggestedPersonaId : null,
+        assignedUseCaseId: strategy === 'manual' ? s.suggestedUseCaseId : null,
+        dependsOnIndices: null,
+      }));
+      const assignment = await createTeamAssignment({
+        teamId,
+        title: g.length > 60 ? `${g.slice(0, 57)}…` : g,
+        goal: g,
+        matchStrategy: strategy,
+        maxParallelSteps: maxParallel,
+        source: 'team_ui',
+        companionOpId: null,
+        steps: stepInputs,
+      });
+      await startTeamAssignment(assignment.id);
+      setLaunched(assignment.id);
     } catch (err) {
-      silentCatch('teamStudio/OrchestrationConsole:run')(err);
+      silentCatch('teamStudio/OrchestrationConsole:assign')(err);
     } finally {
       setRunning(false);
     }
-  }, [teamId, goal]);
+  }, [teamId, goal, steps, strategy, maxParallel]);
 
   return (
-    <div className={layout === 'band' ? 'flex flex-col gap-3' : 'flex flex-col gap-4 h-full'}>
-      <div className="flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-violet-300" />
-        <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.orchestrate}</h3>
-        <span className="typo-caption text-foreground/50">{ts.orchestrate_subtitle}</span>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <textarea
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          rows={layout === 'band' ? 2 : 3}
-          placeholder={ts.orchestrate_placeholder}
-          className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
-        />
+    <div className="flex h-full gap-4">
+      {/* LEFT — orchestration options + actions */}
+      <div className="flex-shrink-0 w-[210px] flex flex-col gap-4 border-r border-primary/10 pr-4 overflow-y-auto">
         <div className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-violet-300" />
+          <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.orchestrate}</h3>
+        </div>
+
+        {/* Match strategy — how steps get routed to personas */}
+        <div className="flex flex-col gap-1.5">
+          <label className="typo-caption font-medium text-foreground/70">{a.strategy_label}</label>
+          {STRATEGIES.map((s) => (
+            <button
+              key={s}
+              type="button"
+              aria-pressed={strategy === s}
+              onClick={() => setStrategy(s)}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border typo-body text-left transition-colors ${
+                strategy === s
+                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-200 font-medium'
+                  : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
+              }`}
+            >
+              {strategy === s ? <Check className="w-3.5 h-3.5 flex-shrink-0" /> : <CircleDot className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />}
+              {strategyLabel(s)}
+            </button>
+          ))}
+          <p className="typo-caption text-foreground/55">{strategyHint}</p>
+        </div>
+
+        {/* Max parallel steps */}
+        <div className="flex flex-col gap-1.5">
+          <label className="typo-caption font-medium text-foreground/70">{a.max_parallel_label}</label>
+          <input
+            type="number"
+            min={1}
+            max={8}
+            value={maxParallel}
+            onChange={(e) => setMaxParallel(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
+            className="w-20 rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-2 py-1 focus:outline-none focus:border-primary/60"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="mt-auto flex flex-col gap-2 pt-2">
           <button
             type="button"
             disabled={!goal.trim() || decomposing}
             onClick={() => void handleDecompose()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
           >
             {decomposing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CircleDot className="w-3.5 h-3.5" />}
             {ts.preview_routing}
@@ -285,8 +353,8 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
           <button
             type="button"
             disabled={!goal.trim() || running}
-            onClick={() => void handleRun()}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
+            onClick={() => void handleAssign()}
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
           >
             {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
             {ts.assign_and_run}
@@ -294,62 +362,74 @@ export function OrchestrationConsole({ teamId, members, layout = 'panel' }: Orch
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        {launched && (
-          <motion.div
-            key="launched"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-card border border-emerald-500/25 bg-emerald-950/30 px-3 py-2 typo-body text-emerald-300"
-          >
-            {ts.assignment_dispatched}
-          </motion.div>
-        )}
+      {/* RIGHT — goal definition + routed-step preview */}
+      <div className="flex-1 min-h-0 flex flex-col gap-3">
+        <span className="typo-caption text-foreground/50">{ts.orchestrate_subtitle}</span>
+        <textarea
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          rows={4}
+          placeholder={ts.orchestrate_placeholder}
+          className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+        />
 
-        {steps && !launched && (
-          <motion.div
-            key="steps"
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2"
-          >
-            {steps.length === 0 ? (
-              <p className="typo-body text-foreground/50 px-1">{ts.no_routing}</p>
-            ) : (
-              steps.map((step, i) => {
-                const who = personaName(step.suggestedPersonaId);
-                return (
-                  <div
-                    key={i}
-                    className="rounded-card border border-primary/12 bg-secondary/20 px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 text-primary typo-caption font-bold flex items-center justify-center">
-                        {i + 1}
-                      </span>
-                      <span className="typo-body font-medium text-foreground truncate flex-1">
-                        {step.title}
-                      </span>
-                      {who ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 typo-caption text-indigo-300">
-                          → {who}
+        <AnimatePresence mode="wait">
+          {launched && (
+            <motion.div
+              key="launched"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="rounded-card border border-emerald-500/25 bg-emerald-950/30 px-3 py-2 typo-body text-emerald-300"
+            >
+              {ts.assignment_dispatched}
+            </motion.div>
+          )}
+
+          {steps && !launched && (
+            <motion.div
+              key="steps"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2"
+            >
+              {steps.length === 0 ? (
+                <p className="typo-body text-foreground/50 px-1">{ts.no_routing}</p>
+              ) : (
+                steps.map((step, i) => {
+                  const who = personaName(step.suggestedPersonaId);
+                  return (
+                    <div
+                      key={i}
+                      className="rounded-card border border-primary/12 bg-secondary/20 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 text-primary typo-caption font-bold flex items-center justify-center">
+                          {i + 1}
                         </span>
-                      ) : (
-                        <span className="typo-caption text-amber-300/80">{ts.step_unrouted}</span>
+                        <span className="typo-body font-medium text-foreground truncate flex-1">
+                          {step.title}
+                        </span>
+                        {who ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 typo-caption text-indigo-300">
+                            → {who}
+                          </span>
+                        ) : (
+                          <span className="typo-caption text-amber-300/80">{ts.step_unrouted}</span>
+                        )}
+                      </div>
+                      {step.description && (
+                        <p className="mt-1 pl-7 typo-caption text-foreground/55 line-clamp-2">
+                          {step.description}
+                        </p>
                       )}
                     </div>
-                    {step.description && (
-                      <p className="mt-1 pl-7 typo-caption text-foreground/55 line-clamp-2">
-                        {step.description}
-                      </p>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+                  );
+                })
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
