@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { BookOpen, Settings, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -72,8 +73,8 @@ export function RecipeListItem({
                 <PromptTemplateRenderer content={recipe.prompt_template || t.vault.playground.mcp_empty} maxHeight="max-h-40" />
               </div>
               <div className="flex gap-4 typo-body text-foreground">
-                <span>{sh.created_label} {new Date(recipe.created_at).toLocaleDateString()}</span>
-                <span>{sh.updated_label} {new Date(recipe.updated_at).toLocaleDateString()}</span>
+                <span>{sh.created_label} {<AbsoluteTime timestamp={recipe.created_at} variant="date" />}</span>
+                <span>{sh.updated_label} {<AbsoluteTime timestamp={recipe.updated_at} variant="date" />}</span>
               </div>
             </div>
           </div>

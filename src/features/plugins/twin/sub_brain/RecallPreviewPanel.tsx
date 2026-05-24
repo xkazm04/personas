@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ArrowDownLeft, ArrowUpRight, BookmarkPlus, Check, Eye, Loader2, Mic, RefreshCw, Sparkles, User, Users } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -189,7 +190,7 @@ export function RecallPreviewPanel({ twinId }: Props) {
                         : <ArrowDownLeft className="w-3 h-3 text-cyan-400 mt-0.5 flex-shrink-0" />}
                       <span className="flex-1 min-w-0">
                         <span className="text-[10px] text-foreground">
-                          {c.channel} · {c.contact_handle ?? '—'} · {new Date(c.occurred_at).toLocaleDateString()}
+                          {c.channel} · {c.contact_handle ?? '—'} · {<AbsoluteTime timestamp={c.occurred_at} variant="date" />}
                         </span>
                         <span className="block line-clamp-2">{c.content}</span>
                       </span>

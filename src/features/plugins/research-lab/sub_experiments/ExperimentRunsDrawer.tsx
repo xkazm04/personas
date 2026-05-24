@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { X, CheckCircle2, XCircle, Clock, Coins } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -98,7 +99,7 @@ function RunCard({ run }: { run: ResearchExperimentRun }) {
       <div className="flex items-center gap-4 typo-caption text-foreground">
         <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {durationLabel}</span>
         <span className="flex items-center gap-1"><Coins className="w-3 h-3" /> {costLabel}</span>
-        <span className="ml-auto">{new Date(run.createdAt).toLocaleString()}</span>
+        <span className="ml-auto">{<AbsoluteTime timestamp={run.createdAt} />}</span>
       </div>
       {run.outputs && (
         <details className="mt-3">

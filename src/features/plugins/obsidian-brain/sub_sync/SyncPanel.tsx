@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -308,7 +309,7 @@ export default function SyncPanel() {
                   )}
                 </div>
                 <span className="typo-caption text-foreground flex-shrink-0 tabular-nums">
-                  {new Date(entry.createdAt).toLocaleTimeString()}
+                  {<AbsoluteTime timestamp={entry.createdAt} variant="time" />}
                 </span>
               </div>
             ))}

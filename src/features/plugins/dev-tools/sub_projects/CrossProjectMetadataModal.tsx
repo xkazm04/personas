@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import {
   X, RefreshCw, Network, Layers, Tag, Database, Globe,
   FolderTree, Target, Link2, Sparkles, Clock, AlertCircle,
@@ -366,7 +367,7 @@ export function CrossProjectMetadataModal({ open, onClose }: CrossProjectMetadat
               {/* Generated timestamp */}
               <div className="flex items-center gap-2 text-md text-foreground">
                 <Clock className="w-3.5 h-3.5" />
-                Generated {new Date(map.generated_at).toLocaleString()}
+                Generated {<AbsoluteTime timestamp={map.generated_at} />}
               </div>
 
               {/* Tech distribution */}

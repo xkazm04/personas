@@ -1,4 +1,5 @@
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { HighlightedJson } from './HighlightedJson';
@@ -40,7 +41,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
                 <span className="typo-code font-mono text-foreground font-medium">{t.overview.events.processed}</span>
                 <span className="ml-2 typo-body text-foreground">
-                  {new Date(event.processed_at).toLocaleString()}
+                  {<AbsoluteTime timestamp={event.processed_at} />}
                 </span>
               </div>
             )}

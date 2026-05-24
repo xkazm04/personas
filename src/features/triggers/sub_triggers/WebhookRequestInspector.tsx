@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import {
   Radio, ChevronDown, ChevronRight, AlertTriangle,
@@ -115,7 +116,7 @@ function RequestRow({ entry, isExpanded, onToggle, onReplay, onCopyCurl, isRepla
             <div className="px-3 pb-2.5 pt-1 space-y-2 border-t border-primary/5">
               <div className="flex flex-wrap gap-x-4 gap-y-1 typo-caption text-foreground">
                 <span className="font-mono">{entry.id.slice(0, 12)}</span>
-                <span>{new Date(entry.receivedAt).toLocaleString()}</span>
+                <span>{<AbsoluteTime timestamp={entry.receivedAt} />}</span>
               </div>
 
               <JsonBlock label="Headers" data={entry.headers} />

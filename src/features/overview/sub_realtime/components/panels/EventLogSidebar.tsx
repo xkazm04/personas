@@ -1,4 +1,5 @@
 import { useMemo, useRef, useEffect, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ChevronRight, ArrowRight, Search } from 'lucide-react';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS, resolveStatusIcon } from '@/features/overview/shared/eventVisuals';
@@ -152,7 +153,7 @@ export default function EventLogSidebar({ events, onSelectEvent }: Props) {
                       <span className="typo-code font-mono text-foreground truncate">{entry.target}</span>
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[10px] font-mono text-foreground">{new Date(entry.timestamp).toLocaleTimeString()}</span>
+                      <span className="text-[10px] font-mono text-foreground">{<AbsoluteTime timestamp={entry.timestamp} variant="time" />}</span>
                       <span className="text-[10px] font-mono text-foreground">from {clampLabel(entry.source, 15)}</span>
                     </div>
                     {payloadPreview && !isExpanded && (

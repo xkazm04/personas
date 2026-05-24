@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AlertCircle, CheckCircle2, Clock, Server, Copy, Check } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -86,7 +87,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
           <div className="rounded-modal border border-primary/10 bg-background/30 px-2.5 py-2">
             <span className="typo-code font-mono text-foreground font-medium">{t.overview.event_log_item.processed}</span>
             <span className="ml-2 typo-body text-foreground">
-              {new Date(event.processed_at).toLocaleString()}
+              {<AbsoluteTime timestamp={event.processed_at} />}
             </span>
           </div>
         )}
@@ -198,7 +199,7 @@ export function EventRow({ event, index, start, size, getPersona, onClick }: Eve
       </td>
       <td className="px-4 py-2.5 text-right">
         <span className="typo-body text-foreground">
-          {new Date(event.created_at).toLocaleString()}
+          {<AbsoluteTime timestamp={event.created_at} />}
         </span>
       </td>
     </tr>

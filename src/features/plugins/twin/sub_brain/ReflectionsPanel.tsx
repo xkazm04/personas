@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { ArrowRightCircle, BookHeart, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -177,7 +178,7 @@ Reflection: ${reflection.content}`;
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-[0.18em] text-foreground mb-1">
-                      {new Date(r.created_at).toLocaleString()}
+                      {<AbsoluteTime timestamp={r.created_at} />}
                     </p>
                     <p className="typo-caption text-violet-300 italic mb-1.5">&ldquo;{r.prompt_seed}&rdquo;</p>
                     <p className="typo-body text-foreground whitespace-pre-wrap leading-relaxed">{r.content}</p>

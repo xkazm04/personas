@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { X, AlertTriangle, Wrench, CheckCircle, Copy, ClipboardCheck, Zap, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -158,7 +159,7 @@ function ModalContent({ issue, sev, cat, isAutoFixed, isAutoFixPending, isCircui
             <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-sm font-mono uppercase rounded-card border ${cat.bg} ${cat.text} ${cat.border}`}>
               {issue.category}
             </span>
-            <span className="typo-body text-foreground">{new Date(issue.created_at).toLocaleDateString()}</span>
+            <span className="typo-body text-foreground">{<AbsoluteTime timestamp={issue.created_at} variant="date" />}</span>
           </div>
         </div>
         <button onClick={onClose} className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground/95 transition-colors focus-ring" aria-label="Close">

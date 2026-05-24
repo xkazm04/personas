@@ -14,6 +14,7 @@
  * lights (right).
  */
 import { useMemo } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Star, Play, Shield, AlertTriangle, Gauge, Lightbulb, Target, FileText, ShieldCheck } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -157,7 +158,7 @@ export function RegressionPanelConsole() {
             </div>
             <div className="typo-data-lg text-amber-300 mt-0.5">v{s.baselinePin.versionNumber}</div>
             <div className="typo-caption text-foreground">
-              pinned {new Date(s.baselinePin.pinnedAt).toLocaleDateString()}
+              pinned {<AbsoluteTime timestamp={s.baselinePin.pinnedAt} variant="date" />}
             </div>
           </div>
           <div className="rounded-card border border-primary/12 bg-background/30 px-3 py-3">

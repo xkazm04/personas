@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Copy, FileText, Info, Play } from "lucide-react";
 
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
@@ -108,7 +109,7 @@ export function DriveDetailsPane({
               </DetailRow>
             )}
             <DetailRow label={t.plugins.drive.details_modified}>
-              {new Date(primary.modified).toLocaleString()}
+              {<AbsoluteTime timestamp={primary.modified} />}
             </DetailRow>
             <DetailRow label={t.plugins.drive.details_path}>
               <div className="flex items-start gap-1.5">

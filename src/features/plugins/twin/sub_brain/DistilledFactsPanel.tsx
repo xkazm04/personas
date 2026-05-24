@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Sparkles, Plus, Trash2, FileText, X } from 'lucide-react';
 import * as twinApi from '@/api/twin/twin';
 import { useSystemStore } from '@/stores/systemStore';
@@ -185,7 +186,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
                           <span className="px-1 py-0.5 text-[9px] rounded bg-secondary/40">{c.channel}</span>
                           <span>{c.direction === 'out' ? t.distilled.sent : t.distilled.received}</span>
                           {c.contact_handle && <span className="truncate">{c.contact_handle}</span>}
-                          <span className="ml-auto text-[10px] flex-shrink-0">{new Date(c.occurred_at).toLocaleDateString()}</span>
+                          <span className="ml-auto text-[10px] flex-shrink-0">{<AbsoluteTime timestamp={c.occurred_at} variant="date" />}</span>
                         </span>
                         <span className="block typo-caption text-foreground line-clamp-2 mt-0.5">{c.content}</span>
                       </span>
@@ -245,7 +246,7 @@ export function DistilledFactsPanel({ twinId }: Props) {
                     <span className="text-[10px] text-foreground">
                       {tx(t.distilled.sourceCount, { count: sourceCount })}
                     </span>
-                    <span className="text-[10px] text-foreground">{new Date(fact.created_at).toLocaleDateString()}</span>
+                    <span className="text-[10px] text-foreground">{<AbsoluteTime timestamp={fact.created_at} variant="date" />}</span>
                   </div>
                 </div>
                 <button

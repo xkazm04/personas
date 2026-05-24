@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Copy, Check } from 'lucide-react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
@@ -55,7 +56,7 @@ export function RecipeOutputSection({
       {result && (
         <div className="mx-4 mt-3 flex items-center gap-3 typo-body text-foreground">
           <span>{t.recipes.recipe_label} {result.recipe_name}</span>
-          <span>{t.recipes.executed_label} {new Date(result.executed_at).toLocaleTimeString()}</span>
+          <span>{t.recipes.executed_label} {<AbsoluteTime timestamp={result.executed_at} variant="time" />}</span>
         </div>
       )}
 

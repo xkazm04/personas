@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useOverviewStore } from '@/stores/overviewStore';
@@ -175,7 +176,7 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
             {competition.task_title}
           </p>
           <p className="typo-body text-foreground truncate">
-            {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {new Date(competition.created_at).toLocaleString()}
+            {competition.slot_count} {t.plugins.dev_tools.competitors_dot} {<AbsoluteTime timestamp={competition.created_at} />}
           </p>
         </div>
         <span className={`rounded-full px-2.5 py-0.5 typo-caption font-medium border shrink-0 ${badge.color}`}>

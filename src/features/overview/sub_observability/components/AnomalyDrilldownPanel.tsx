@@ -1,4 +1,5 @@
 import { memo, useMemo } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { X, Search, AlertTriangle, Clock, ArrowRight, Zap, Shield, RefreshCw, Bell, HelpCircle } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -78,7 +79,7 @@ const CorrelatedEventRow = memo(function CorrelatedEventRow({ event }: { event: 
         )}
         <div className="flex items-center gap-3 mt-1">
           <span className="text-[10px] text-foreground">
-            {new Date(event.timestamp).toLocaleString()}
+            {<AbsoluteTime timestamp={event.timestamp} />}
           </span>
           {confidenceBar(event.relevance)}
         </div>
@@ -111,7 +112,7 @@ const RootCauseCard = memo(function RootCauseCard({ suggestion }: { suggestion: 
       {suggestion.relatedEventTimestamp && (
         <div className="flex items-center gap-1.5 text-[10px] text-foreground">
           <Clock className="w-3 h-3" />
-          {new Date(suggestion.relatedEventTimestamp).toLocaleString()}
+          {<AbsoluteTime timestamp={suggestion.relatedEventTimestamp} />}
         </div>
       )}
     </div>

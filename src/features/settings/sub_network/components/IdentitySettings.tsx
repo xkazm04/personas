@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Copy, Check, UserPlus, Trash2, Fingerprint } from 'lucide-react';
 import { TrustVerifiedIcon, TrustUnknownIcon, TrustRevokedIcon } from './NetworkIcons';
 import { useSystemStore } from "@/stores/systemStore";
@@ -145,7 +146,7 @@ export default function IdentitySettings() {
               </div>
 
               <div className="typo-caption text-foreground">
-                Created {new Date(localIdentity.created_at).toLocaleDateString()}
+                Created {<AbsoluteTime timestamp={localIdentity.created_at} variant="date" />}
               </div>
             </>
           ) : (

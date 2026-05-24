@@ -1,4 +1,5 @@
 import { Tag, Cpu, FileText } from 'lucide-react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
 import { parseTags, parseInputSchema } from '@/features/recipes/shared/recipeParseUtils';
@@ -25,7 +26,7 @@ export function RecipeOverviewTab({ recipe }: RecipeOverviewTabProps) {
           </div>
           <div className="rounded-card border border-border/40 bg-card/30 p-3">
             <p className="typo-body text-foreground mb-1">{t.recipes.created}</p>
-            <p className="typo-body text-foreground">{new Date(recipe.created_at).toLocaleDateString()}</p>
+            <p className="typo-body text-foreground">{<AbsoluteTime timestamp={recipe.created_at} variant="date" />}</p>
           </div>
         </div>
       </div>

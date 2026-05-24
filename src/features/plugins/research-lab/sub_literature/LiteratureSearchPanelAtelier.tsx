@@ -6,6 +6,7 @@
  * the visible chronology.
  */
 import { useEffect, useMemo, useState, lazy, Suspense } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Plus, ExternalLink, Database, Trash2, Quote, ArrowRight, Sparkles,
@@ -342,7 +343,7 @@ function SourceHero({
 
       <div className="flex items-center justify-between gap-3 pt-2 flex-wrap">
         <span className="typo-caption text-foreground">
-          Added {new Date(source.createdAt).toLocaleDateString()}
+          Added {<AbsoluteTime timestamp={source.createdAt} variant="date" />}
         </span>
         <div className="flex items-center gap-2">
           {source.status === 'pending' && (

@@ -1,4 +1,5 @@
 import { Shield, Star, Play, AlertTriangle } from 'lucide-react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ModelToggleGrid } from '../../shared';
@@ -39,7 +40,7 @@ export function RegressionPanelBaseline() {
         <div className="flex-1">
           <p className="typo-heading text-amber-400"><DebtText k="auto_baseline_v_5c0d5af6" />{s.baselinePin.versionNumber}</p>
           <p className="typo-caption text-foreground">
-            Pinned {new Date(s.baselinePin.pinnedAt).toLocaleDateString()}
+            Pinned {<AbsoluteTime timestamp={s.baselinePin.pinnedAt} variant="date" />}
             {s.baselinePin.runId ? ` · Eval run: ${s.baselinePin.runId.slice(0, 8)}...` : ' · No eval run linked'}
           </p>
         </div>

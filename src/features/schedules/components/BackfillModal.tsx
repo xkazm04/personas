@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { X, History, Check, AlertTriangle } from 'lucide-react';
 import type { CronAgent } from '@/lib/bindings/CronAgent';
 import type { BackfillResult } from '@/api/pipeline/scheduler';
@@ -175,7 +176,7 @@ export default function BackfillModal({
                   <div className="mt-2 max-h-32 overflow-y-auto space-y-0.5">
                     {lastResult.slotTimes.slice(0, 50).map((iso) => (
                       <p key={iso} className="font-mono text-[11px] text-foreground">
-                        {new Date(iso).toLocaleString()}
+                        {<AbsoluteTime timestamp={iso} />}
                       </p>
                     ))}
                   </div>

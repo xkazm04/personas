@@ -12,6 +12,7 @@
  * a deliberate, sequenced QA step, surfacing the user's progress through it.
  */
 import { useMemo, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Shield, Star, Play, ShieldCheck, ShieldAlert, AlertTriangle, Loader2, Lock, ChevronRight } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -114,7 +115,7 @@ export function RegressionPanelGate() {
               <p className="typo-caption text-amber-300/80">Baseline</p>
               <p className="typo-heading text-amber-300">v{s.baselinePin.versionNumber}</p>
               <p className="typo-caption text-foreground">
-                pinned {new Date(s.baselinePin.pinnedAt).toLocaleDateString()}
+                pinned {<AbsoluteTime timestamp={s.baselinePin.pinnedAt} variant="date" />}
               </p>
             </div>
           </div>

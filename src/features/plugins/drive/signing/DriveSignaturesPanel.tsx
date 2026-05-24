@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   FileSignature,
@@ -138,7 +139,7 @@ export function DriveSignaturesPanel({
                     </span>
                     <span className="flex items-center gap-1 tabular-nums">
                       <Clock className="w-3 h-3" />
-                      {new Date(sig.signed_at).toLocaleString()}
+                      {<AbsoluteTime timestamp={sig.signed_at} />}
                     </span>
                   </div>
                   <div className="mt-1 font-mono typo-caption text-foreground truncate">

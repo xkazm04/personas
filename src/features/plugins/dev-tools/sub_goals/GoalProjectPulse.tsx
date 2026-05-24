@@ -15,6 +15,7 @@
  * to trace edges.
  */
 import { useMemo, useState, useEffect } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { motion } from 'framer-motion';
 import {
   Target, AlertCircle, Clock, CheckCircle2, Circle,
@@ -362,7 +363,7 @@ function SpotlightPane({
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-foreground" />
             <span className="typo-body text-foreground">
-              <DebtText k="auto_target_652ac2cb" /> {new Date(goal.target_date).toLocaleDateString()}
+              <DebtText k="auto_target_652ac2cb" /> {<AbsoluteTime timestamp={goal.target_date} variant="date" />}
             </span>
             {days !== null && (
               <span className={`typo-caption font-medium ${
@@ -379,8 +380,8 @@ function SpotlightPane({
         {/* Activity timestamps */}
         {(goal.started_at || goal.completed_at) && (
           <div className="flex items-center gap-3 typo-body text-foreground">
-            {goal.started_at && <span><Activity className="w-3 h-3 inline mr-1" />Started {new Date(goal.started_at).toLocaleDateString()}</span>}
-            {goal.completed_at && <span><CheckCircle2 className="w-3 h-3 inline mr-1 text-emerald-400" />Done {new Date(goal.completed_at).toLocaleDateString()}</span>}
+            {goal.started_at && <span><Activity className="w-3 h-3 inline mr-1" />Started {<AbsoluteTime timestamp={goal.started_at} variant="date" />}</span>}
+            {goal.completed_at && <span><CheckCircle2 className="w-3 h-3 inline mr-1 text-emerald-400" />Done {<AbsoluteTime timestamp={goal.completed_at} variant="date" />}</span>}
           </div>
         )}
 

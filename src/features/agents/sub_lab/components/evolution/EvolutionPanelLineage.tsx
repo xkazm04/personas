@@ -11,6 +11,7 @@
  * and turns fitness weights into a tangible visual rather than three sliders.
  */
 import { Loader2, Sparkles, Play, ToggleLeft, ToggleRight, TrendingUp, CheckCircle2, XCircle, Zap, Target, DollarSign, ChevronDown, FlaskConical, GitCommit } from 'lucide-react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useEvolutionPanelState } from './useEvolutionPanelState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { EvolutionCycle } from '@/lib/bindings/EvolutionCycle';
@@ -52,7 +53,7 @@ function GenerationNode({ cycle, idx, isLatest }: { cycle: EvolutionCycle; idx: 
             )}
           </div>
           <span className="typo-caption text-foreground">
-            {new Date(cycle.startedAt).toLocaleDateString()}
+            {<AbsoluteTime timestamp={cycle.startedAt} variant="date" />}
           </span>
         </div>
 
