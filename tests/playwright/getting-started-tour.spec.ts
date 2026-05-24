@@ -77,7 +77,11 @@ test.describe('Getting Started guided tour — full real build', () => {
   });
 
   test('appearance → credentials → build & promote agent → run it', async () => {
-    // Clean slate, then start.
+    // Clean slate, then start. Reset the tier partner too: startTour
+    // migrates completed shared step ids from `getting-started-simple`, so a
+    // stale partner would otherwise pre-complete appearance and resume at
+    // step 2.
+    await app.tourReset('getting-started-simple');
     await app.tourReset(TOUR_ID);
     await app.tourStart(TOUR_ID);
     await waitPresent('[data-testid="tour-panel"]', 10_000);
