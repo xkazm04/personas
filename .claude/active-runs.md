@@ -30,6 +30,8 @@ timestamp — the next session can recognize it as abandoned.
   conflict check, retry. The Edit tool's unique-old-string rule prevents
   silent clobbers.
 
+## Active
+
 - **[2026-05-24 — started] /prototype — Overview empty states (Activity / Approval / Messages / Knowledge / Memories / Leaderboard)**
   - **Source:** User-driven /prototype skill. Improve the empty states of 6 Overview submodules. Two directional variants per module behind a tab switcher: (1) framer-motion + SVG + lucide animated coded illustration (Remotion declined — not installed + video-export tool, framer-motion is the app idiom); (2) /leonardo-generated custom hero illustration. Strategy: scaffold both variants across all 6 modules first (Leonardo as placeholder), then batch-generate the Leonardo images.
   - **Paths:** `src/features/overview/sub_activity/components/GlobalExecutionList.tsx`, `src/features/overview/sub_manual-review/components/{ManualReviewList,ReviewFocusFlow}.tsx`, `src/features/overview/sub_messages/components/MessageList.tsx`, `src/features/overview/sub_knowledge/components/KnowledgeGraphDashboard.tsx`, `src/features/overview/sub_memories/components/{MemoriesPage,MemoryEmptyState}.tsx`, `src/features/overview/sub_leaderboard/components/EmptyStates.tsx`, new sibling `*EmptyState*Variant{Motion,Illustration}.tsx` files + a shared empty-state-variant primitive, generated Leonardo assets under `src/assets/` or `public/`, `.claude/active-runs.md`. Worktree: `.claude/worktrees/prototype-overview-empty-states`.
@@ -184,6 +186,10 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commits: 2c9f4310b, 50aeb22d1, 33fe35a3b)] shared-component reuse harness**
+  - **What:** Built the discoverability layer so new code stops reinventing shared components. (1) `scripts/docs/gen-shared-catalog.mjs` → generated `src/features/shared/components/CATALOG.md` (173 components, curated descriptions for ~35 key primitives, `@catalog` tag convention for the rest), wired into predev/prebuild codegen + a `check:catalog` drift gate in `npm run check`. (2) MANDATORY "Reusing shared components" section in CLAUDE.md (anti-reinvention table → catalog). (3) `docs/refactor/shared-component-reuse.md` — audit (≈2154 raw buttons, 240 numeric, 141 spinners, 38 clipboard) + use-X-not-Y quick ref + create/consolidate backlog (PanelShell, ContentCard, EmptyState merge, FilterToolbar, MetricCard). (4) `custom/prefer-shared-clipboard` ESLint rule (warn, 38 sites) enforcing CopyButton/useCopyToClipboard.
+  - **Migration backlog NOT executed** (documented for later): the high-count swaps (Numeric, full-element LoadingSpinner, CopyButton adoption) + extractions. **EmptyState consolidation intentionally left to the concurrent /prototype overview-empty-states session.** NOT pushed.
 
 - **[2026-05-24 — completed (merge: a652a27a2; feature commit: 948be771a)] home redesign — Welcome/Cockpit/Learning + sub_* split**
   - **What:** (1) Welcome hero greeting now addresses the user as "Commander" (dynamic time-of-day prefix kept; new `home.commander` key). (2) Cockpit empty state renders the Athena portrait as background + "Talk to Athena" presets/auto-sends a compose-persona-overview request (`overview.cockpit.compose_personas_prompt`). (3) Learning redesigned: compact one-row tour cards → `TourDetailModal` (desc + steps + start); divider replaced by a completed/pending timeline synced to the cards; tricks rows lost subtitles. (4) Refactor: added `home/sub_welcome/` (welcome cluster + lib/fleetHealth) and `home/sub_learning/` (HomeLearning + data.ts/TourDetailModal/TrickModal); updated all importers + silentCatch labels.
