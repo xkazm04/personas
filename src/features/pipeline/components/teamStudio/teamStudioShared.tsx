@@ -213,16 +213,10 @@ interface OrchestrationConsoleProps {
   layout?: 'panel' | 'band';
 }
 
-type MatchStrategy = 'manual' | 'embedding' | 'llm_eval';
-const STRATEGIES: readonly MatchStrategy[] = ['llm_eval', 'embedding', 'manual'];
-
 export function OrchestrationConsole({ teamId, members }: OrchestrationConsoleProps) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
-  const a = t.pipeline.assignments;
   const [goal, setGoal] = useState('');
-  const [strategy, setStrategy] = useState<MatchStrategy>('llm_eval');
-  const [maxParallel, setMaxParallel] = useState(3);
   const [decomposing, setDecomposing] = useState(false);
   const [steps, setSteps] = useState<DecomposedStep[] | null>(null);
   const [running, setRunning] = useState(false);
@@ -232,11 +226,6 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
     (id: string | null) => (id ? members.find((m) => m.personaId === id)?.name ?? null : null),
     [members],
   );
-
-  const strategyLabel = (s: MatchStrategy) =>
-    s === 'manual' ? a.strategy_manual : s === 'embedding' ? a.strategy_embedding : a.strategy_llm_eval;
-  const strategyHint =
-    strategy === 'manual' ? a.strategy_manual_hint : strategy === 'embedding' ? a.strategy_embedding_hint : a.strategy_llm_eval_hint;
 
   const handleDecompose = useCallback(async () => {
     if (!goal.trim()) return;
@@ -255,10 +244,10 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
   }, [teamId, goal]);
 
   // Write the goal to the orchestration layer: decompose (if not already
-  // previewed) into steps, create a team assignment with the chosen match
-  // strategy + parallelism, then start the orchestrator. Steps carry a
-  // manual persona assignment only under the manual strategy; embedding /
-  // llm_eval leave it for the orchestrator to resolve at match time.
+  // previewed) into steps, then create + start a team assignment. Routing is
+  // AI-resolved (Sonnet / llm_eval) and parallelism is unconstrained (the
+  // MAX_PARALLEL ceiling), so there are no per-goal knobs here — the Claude
+  // model is overridable in Workspace settings, not per-goal.
   const handleAssign = useCallback(async () => {
     const g = goal.trim();
     if (!g) return;
@@ -272,16 +261,17 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
       const stepInputs = (decomposed ?? []).map((s) => ({
         title: s.title,
         description: s.description || null,
-        assignedPersonaId: strategy === 'manual' ? s.suggestedPersonaId : null,
-        assignedUseCaseId: strategy === 'manual' ? s.suggestedUseCaseId : null,
+        // AI routing resolves the persona at match time; no manual binding.
+        assignedPersonaId: null,
+        assignedUseCaseId: null,
         dependsOnIndices: null,
       }));
       const assignment = await createTeamAssignment({
         teamId,
         title: g.length > 60 ? `${g.slice(0, 57)}…` : g,
         goal: g,
-        matchStrategy: strategy,
-        maxParallelSteps: maxParallel,
+        matchStrategy: 'llm_eval',
+        maxParallelSteps: 16,
         source: 'team_ui',
         companionOpId: null,
         steps: stepInputs,
@@ -293,86 +283,46 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
     } finally {
       setRunning(false);
     }
-  }, [teamId, goal, steps, strategy, maxParallel]);
+  }, [teamId, goal, steps]);
 
   return (
-    <div className="flex h-full gap-4">
-      {/* LEFT — orchestration options + actions */}
-      <div className="flex-shrink-0 w-[210px] flex flex-col gap-4 border-r border-primary/10 pr-4 overflow-y-auto">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-violet-300" />
-          <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.orchestrate}</h3>
-        </div>
-
-        {/* Match strategy — how steps get routed to personas */}
-        <div className="flex flex-col gap-1.5">
-          <label className="typo-caption font-medium text-foreground/70">{a.strategy_label}</label>
-          {STRATEGIES.map((s) => (
-            <button
-              key={s}
-              type="button"
-              aria-pressed={strategy === s}
-              onClick={() => setStrategy(s)}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive border typo-body text-left transition-colors ${
-                strategy === s
-                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-200 font-medium'
-                  : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
-              }`}
-            >
-              {strategy === s ? <Check className="w-3.5 h-3.5 flex-shrink-0" /> : <CircleDot className="w-3.5 h-3.5 flex-shrink-0 opacity-50" />}
-              {strategyLabel(s)}
-            </button>
-          ))}
-          <p className="typo-caption text-foreground/55">{strategyHint}</p>
-        </div>
-
-        {/* Max parallel steps */}
-        <div className="flex flex-col gap-1.5">
-          <label className="typo-caption font-medium text-foreground/70">{a.max_parallel_label}</label>
-          <input
-            type="number"
-            min={1}
-            max={8}
-            value={maxParallel}
-            onChange={(e) => setMaxParallel(Math.max(1, Math.min(8, Number(e.target.value) || 1)))}
-            className="w-20 rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-2 py-1 focus:outline-none focus:border-primary/60"
-          />
-        </div>
-
-        {/* Actions */}
-        <div className="mt-auto flex flex-col gap-2 pt-2">
-          <button
-            type="button"
-            disabled={!goal.trim() || decomposing}
-            onClick={() => void handleDecompose()}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
-          >
-            {decomposing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CircleDot className="w-3.5 h-3.5" />}
-            {ts.preview_routing}
-          </button>
-          <button
-            type="button"
-            disabled={!goal.trim() || running}
-            onClick={() => void handleAssign()}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
-          >
-            {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
-            {ts.assign_and_run}
-          </button>
-        </div>
+    <div className="flex flex-col gap-3 h-full">
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-violet-300" />
+        <h3 className="typo-label uppercase tracking-wider text-foreground/80">{ts.orchestrate}</h3>
+        <span className="typo-caption text-foreground/50">{ts.orchestrate_subtitle}</span>
       </div>
 
-      {/* RIGHT — goal definition + routed-step preview */}
-      <div className="flex-1 min-h-0 flex flex-col gap-3">
-        <span className="typo-caption text-foreground/50">{ts.orchestrate_subtitle}</span>
-        <textarea
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          rows={4}
-          placeholder={ts.orchestrate_placeholder}
-          className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
-        />
+      <textarea
+        value={goal}
+        onChange={(e) => setGoal(e.target.value)}
+        rows={4}
+        placeholder={ts.orchestrate_placeholder}
+        className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
+      />
 
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          disabled={!goal.trim() || decomposing}
+          onClick={() => void handleDecompose()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
+        >
+          {decomposing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CircleDot className="w-3.5 h-3.5" />}
+          {ts.preview_routing}
+        </button>
+        <button
+          type="button"
+          disabled={!goal.trim() || running}
+          onClick={() => void handleAssign()}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
+        >
+          {running ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+          {ts.assign_and_run}
+        </button>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <AnimatePresence mode="wait">
           {launched && (
             <motion.div
