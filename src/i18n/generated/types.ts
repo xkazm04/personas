@@ -8999,6 +8999,9 @@ export type Translations = {
     tour_step_of: string;
     minimize: string;
     end_tour: string;
+    narration_replay: string;
+    narration_mute: string;
+    narration_unmute: string;
     back: string;
     complete_tour: string;
     tour_loading: string;

@@ -9,6 +9,8 @@ import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlic
 import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
+import { useTourNarration } from './useTourNarration';
+import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const DEFAULT_PANEL_WIDTH = 440;
@@ -75,6 +77,15 @@ export default function GuidedTour() {
   const allCompleted = visibleSteps.every((s) => completedSteps[s.id] ?? false);
   const completedCount = visibleSteps.filter((s) => completedSteps[s.id]).length;
   const panelWidth = currentStep?.panelWidth ?? DEFAULT_PANEL_WIDTH;
+
+  // Athena-narrated tour (prototype): speak each step via live TTS when the
+  // companion's voice is configured. Silent + inert otherwise. Called
+  // unconditionally (before the early returns below) to respect hook rules.
+  const narration = useTourNarration({
+    active: tourActive && !isMinimized && !onboardingActive,
+    stepId: currentStep?.id ?? null,
+    narration: currentStep?.narration,
+  });
 
   const navigateToStep = useCallback(
     (stepIndex: number) => {
@@ -171,6 +182,7 @@ export default function GuidedTour() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <TourNarrationButton control={narration} accentTextClass={colors.text} />
             <Button variant="ghost" size="icon-sm" onClick={() => setIsMinimized(true)} title={t.onboarding.minimize} data-testid="tour-panel-minimize">
               <ChevronRight className="w-3.5 h-3.5" />
             </Button>

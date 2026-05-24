@@ -161,6 +161,22 @@ export interface TourStepDef {
   subSteps: TourSubStepDef[];
   panelWidth?: number;
   highlightTestId?: string;
+  /**
+   * Spoken narration for this step, written for the ear rather than the
+   * eye — conversational, 1-3 sentences, distinct from the on-screen
+   * `description`. When the companion's voice is configured
+   * (`companionVoiceEnabled` + a usable engine/voice), `useTourNarration`
+   * synthesizes this through Athena's live TTS (`companion_tts`) as the
+   * step activates. Absent / undefined → the step is silent (the tour is
+   * a normal text coach-mark, exactly as before voice was added).
+   *
+   * NOTE: like `title`/`description`, narration text currently lives
+   * inline in English here pending the tracked tour-string i18n
+   * extraction (see `src/features/onboarding/README.md`). Athena's TTS
+   * engines are multilingual, so once these move to `en.json` the spoken
+   * text localizes with the rest of the tour for free.
+   */
+  narration?: string;
 }
 
 export interface TourDef {
@@ -184,6 +200,7 @@ const GETTING_STARTED_STEPS: TourStepDef[] = [
     completeOn: "tour:appearance-changed",
     subSteps: [],
     highlightTestId: "settings-appearance-panel",
+    narration: "Welcome to Personas — I'm Athena, and I'll walk you through it. Let's start by making the app yours: pick a theme, nudge the text size, and set the brightness until it feels right. Change any one setting and we'll move on.",
   },
   {
     id: "credentials-intro",
@@ -192,6 +209,7 @@ const GETTING_STARTED_STEPS: TourStepDef[] = [
     hint: "Browse the categories and click a connector to see its details.",
     nav: { sidebarSection: "credentials" },
     completeOn: "tour:credentials-explored",
+    narration: "This is your integration hub. Personas talks to over two hundred services right out of the box — databases, messaging, dev tools, and AI providers. Browse a category, then open any connector to see how it authenticates.",
     subSteps: [
       { id: "browse-categories", label: "Browse categories", hint: "Click different categories in the catalog.", highlightTestId: "credential-manager" },
       { id: "view-connector", label: "View a connector", hint: "Click any connector card to see its auth fields." },
@@ -206,6 +224,7 @@ const GETTING_STARTED_STEPS: TourStepDef[] = [
     nav: { sidebarSection: "personas" },
     completeOn: "tour:persona-promoted",
     panelWidth: 320,
+    narration: "Now for the fun part — let's build your first agent together. Describe what you want it to do in one line. I'll ask a few clarifying questions, draft its full specification, and run a quick smoke test. When the report is green, promote it and it goes live.",
     subSteps: [
       { id: "enter-intent", label: "Describe your agent", hint: "Type a one-line job description. Be concrete — \"summarize my GitHub PR reviews each morning\" beats \"helps with code\".", highlightTestId: "agent-intent-input" },
       { id: "answer-questions", label: "Answer follow-ups", hint: "The system asks clarifying questions in-line. Each answer narrows what the draft will look like." },
@@ -353,6 +372,7 @@ const GETTING_STARTED_SIMPLE_STEPS: TourStepDef[] = [
     completeOn: "tour:appearance-changed",
     subSteps: [],
     highlightTestId: "settings-appearance-panel",
+    narration: "Hi, I'm Athena — let's get you set up. First, pick a look you like: choose a color theme and a comfortable text size. Change anything and we'll keep going.",
   },
   {
     id: "credentials-intro",
@@ -361,6 +381,7 @@ const GETTING_STARTED_SIMPLE_STEPS: TourStepDef[] = [
     hint: "Click \"Add new\" and follow the steps.",
     nav: { sidebarSection: "credentials" },
     completeOn: "tour:credentials-explored",
+    narration: "Your agents need access to the services you use to be helpful. Let's connect one — maybe a Slack workspace, an email account, or an API key. Pick a service and follow the steps.",
     subSteps: [
       { id: "browse-categories", label: "Browse services", hint: "Scroll through the available services.", highlightTestId: "credential-manager" },
       { id: "view-connector", label: "Pick one", hint: "Click any service to see how to connect it." },
@@ -374,6 +395,7 @@ const GETTING_STARTED_SIMPLE_STEPS: TourStepDef[] = [
     nav: { sidebarSection: "personas" },
     completeOn: "tour:persona-promoted",
     panelWidth: 320,
+    narration: "Time to create your first agent. Just describe what you'd like it to do in plain language — something like \"summarize my daily emails.\" I'll draft it, run a quick test, and you can promote it live when it looks good.",
     subSteps: [
       { id: "enter-intent", label: "Describe it", hint: "What should your agent do?", highlightTestId: "agent-intent-input" },
       { id: "review-draft", label: "Review the draft", hint: "Skim the matrix — each cell is a behavior the agent will follow." },
