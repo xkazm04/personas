@@ -66,6 +66,9 @@ The "Needs you" banner does more than list — it's the desktop stand-in for the
 - **Relative "Xs ago"** — chips (and the mobile preview rows) show how long a session has been blocked, from `lastActivityMs`, refreshed every 30s via a shared `useNowTick` hook (`relativeAgo.ts`).
 - **Desktop alert on awaiting_input** (`notifyFleetAwaiting`) — entering `awaiting_input` raises an OS notification once per entry; a bell toggle in the Sessions header (persisted as `fleetNotifyAwaiting`) mutes it. This is the desktop form of the companion's "push when something needs a human".
 - **Companion approvals** — pending companion (Athena) approvals are folded into the same banner with inline Approve/Reject (wired to `companion_approve_action` / `companion_reject_action`), unifying "a session needs input" and "an action needs sign-off".
+- **Jump-to-next cycler + "All clear"** — when more than one session is awaiting, a skip-forward control cycles terminal focus through them; when sessions exist but nothing's pending, a small emerald "All clear" chip shows instead of the surface vanishing.
+- **Per-session sparkline** (`FleetStateSparkline`) — each session card carries a tiny inline timeline of recent lifecycle transitions (colored ticks, oldest→newest), backed by the in-memory `fleetTransitions` ring-buffer in `fleetSlice` (cap 24/session). Spot a flapping or long-stuck session at a glance.
+- **Plugin-rail badges** — the "needs you" counts also surface on the L2 plugin list: a pulsing violet badge on the Dev Tools row (awaiting sessions) and an amber badge on the Companion row (pending approvals), so you see them without opening either plugin (`PluginsSidebarNav`).
 
 ### Pair a device (stage 1)
 
