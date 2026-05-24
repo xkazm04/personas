@@ -12,13 +12,13 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
 import { useLifecycle } from "@/features/agents/components/matrix/useLifecycle";
-import { GlyphFullLayout } from "@/features/agents/components/glyph/GlyphFullLayout";
-import { GlyphPrototypeLayout } from "@/features/agents/components/glyph/GlyphPrototypeLayout";
+import { GlyphFullLayout } from "@/features/agents/sub_glyph/GlyphFullLayout";
+import { GlyphPrototypeLayout } from "@/features/agents/sub_glyph/GlyphPrototypeLayout";
 import { useUseCaseChronology } from "@/features/templates/sub_generated/adoption/chronology/useUseCaseChronology";
 import {
   serializeQuickConfig,
   type QuickConfigState,
-} from "@/features/agents/components/matrix/quickConfigTypes";
+} from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import {

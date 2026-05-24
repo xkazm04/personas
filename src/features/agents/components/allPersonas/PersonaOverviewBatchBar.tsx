@@ -10,11 +10,11 @@ interface PersonaOverviewBatchBarProps {
   onDelete: () => void;
   onClear: () => void;
   /**
-   * Bulk-move handler — called with the target group id (or `null` to
-   * unassign). When omitted, the move-to-group button is hidden so the
-   * bar gracefully degrades for any other batch-bar consumers.
+   * Bulk home-team handler — called with the target team id (or `null` to
+   * clear the home team). When omitted, the set-home-team button is hidden
+   * so the bar gracefully degrades for any other batch-bar consumers.
    */
-  onMoveToGroup?: (groupId: string | null) => Promise<void> | void;
+  onMoveToGroup?: (homeTeamId: string | null) => Promise<void> | void;
 }
 
 export function PersonaOverviewBatchBar({
@@ -24,16 +24,16 @@ export function PersonaOverviewBatchBar({
   onMoveToGroup,
 }: PersonaOverviewBatchBarProps) {
   const { t, tx } = useTranslation();
-  const { groups, fetchGroups } = usePipelineStore(
-    useShallow((s) => ({ groups: s.groups, fetchGroups: s.fetchGroups })),
+  const { teams, fetchTeams } = usePipelineStore(
+    useShallow((s) => ({ teams: s.teams, fetchTeams: s.fetchTeams })),
   );
   const [menuOpen, setMenuOpen] = useState(false);
   const [moving, setMoving] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (onMoveToGroup) void fetchGroups();
-  }, [fetchGroups, onMoveToGroup]);
+    if (onMoveToGroup) void fetchTeams();
+  }, [fetchTeams, onMoveToGroup]);
 
   // Close menu on outside click + Escape.
   useEffect(() => {
@@ -55,18 +55,18 @@ export function PersonaOverviewBatchBar({
   }, [menuOpen]);
 
   const sortedGroups = useMemo(
-    () => [...groups].sort((a, b) => a.sortOrder - b.sortOrder),
-    [groups],
+    () => [...teams].sort((a, b) => a.name.localeCompare(b.name)),
+    [teams],
   );
 
   if (count === 0) return null;
 
-  const handleMove = async (groupId: string | null) => {
+  const handleMove = async (homeTeamId: string | null) => {
     if (!onMoveToGroup) return;
     setMoving(true);
     setMenuOpen(false);
     try {
-      await onMoveToGroup(groupId);
+      await onMoveToGroup(homeTeamId);
     } finally {
       setMoving(false);
     }

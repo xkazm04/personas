@@ -10,7 +10,7 @@ import {
   type IpcCallRecord,
 } from '@/lib/ipcMetrics';
 import { latencyToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
-import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
+import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function useIpcSnapshot() {

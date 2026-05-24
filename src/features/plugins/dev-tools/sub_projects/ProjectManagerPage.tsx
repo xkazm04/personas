@@ -24,7 +24,7 @@ import {
 import { ProjectModal } from './ProjectModal';
 import { GoalBoard, ProjectRowMenu } from './ProjectManagerParts';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { Users, Layers } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { ProjectTeamPreviewModal } from './ProjectTeamPreviewModal';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
@@ -58,18 +58,14 @@ export default function ProjectManagerPage() {
   });
   const storeActiveProjectId = useSystemStore((s) => s.activeProjectId);
 
-  // Teams + Groups rosters for the bound-binding badges in the project
-  // table (cycles 5 + 15). Both fetched on mount so the pills resolve
-  // immediately without per-row async lookups.
+  // Teams roster for the bound-binding badges in the project table
+  // (cycle 5). Fetched on mount so the pills resolve immediately without
+  // per-row async lookups.
   const teamsList = usePipelineStore((s) => s.teams);
   const fetchTeamsForBadge = usePipelineStore((s) => s.fetchTeams);
-  const groupsList = usePipelineStore((s) => s.groups);
-  const fetchGroupsForBadge = usePipelineStore((s) => s.fetchGroups);
   useEffect(() => { void fetchTeamsForBadge(); }, [fetchTeamsForBadge]);
-  useEffect(() => { void fetchGroupsForBadge(); }, [fetchGroupsForBadge]);
   const teamNameById = new Map(teamsList.map((tm) => [tm.id, { name: tm.name, color: tm.color }]));
   const teamFullById = new Map<string, PersonaTeam>(teamsList.map((tm) => [tm.id, tm]));
-  const groupMetaById = new Map(groupsList.map((g) => [g.id, { name: g.name, color: g.color }]));
 
   // Click-to-open team preview (cycle 11). Holds the team whose preview
   // modal is open; closing nulls it.
@@ -160,7 +156,7 @@ export default function ProjectManagerPage() {
     if (selectedGoalId) fetchGoalSignals?.(selectedGoalId);
   }, [fetchGoalSignals, selectedGoalId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null; groupId: string | null }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -176,7 +172,6 @@ export default function ProjectManagerPage() {
         data.projectType,
         data.githubUrl || undefined,
         data.teamId ?? undefined,
-        data.groupId ?? undefined,
       );
       return { id: project.id };
     } catch {
@@ -184,13 +179,12 @@ export default function ProjectManagerPage() {
     }
   }, [storeCreateProject, storeProjects, setActiveProject]);
 
-  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null; groupId: string | null }) => {
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
     await storeUpdateProject(id, {
       name: data.name,
       techStack: data.projectType,
       githubUrl: data.githubUrl || undefined,
       teamId: data.teamId,
-      groupId: data.groupId,
     });
   }, [storeUpdateProject]);
 
@@ -207,7 +201,6 @@ export default function ProjectManagerPage() {
       projectType: matchedType?.id ?? 'other',
       githubUrl: raw.github_url ?? '',
       teamId: raw.team_id ?? null,
-      groupId: raw.group_id ?? null,
     });
     setShowModal(true);
   }, [storeProjects]);
@@ -423,37 +416,6 @@ export default function ProjectManagerPage() {
                           >
                             <Users className="w-3 h-3" />
                             {t.plugins.dev_projects.team_binding_orphan_label}
-                          </span>
-                        );
-                      })()}
-                      {project.groupId && (() => {
-                        const meta = groupMetaById.get(project.groupId);
-                        const baseClass =
-                          'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border typo-caption font-medium flex-shrink-0';
-                        if (!meta) {
-                          return (
-                            <span
-                              className={baseClass}
-                              style={{ borderColor: 'rgb(107 114 128 / 0.4)', color: 'rgb(107 114 128)' }}
-                              title={t.plugins.dev_projects.group_binding_orphan}
-                            >
-                              <Layers className="w-3 h-3" />
-                              {t.plugins.dev_projects.group_binding_orphan_label}
-                            </span>
-                          );
-                        }
-                        return (
-                          <span
-                            className={baseClass}
-                            style={{
-                              backgroundColor: `${meta.color}1a`,
-                              borderColor: `${meta.color}66`,
-                              color: meta.color,
-                            }}
-                            title={t.plugins.dev_projects.group_binding_bound}
-                          >
-                            <Layers className="w-3 h-3" />
-                            {meta.name}
                           </span>
                         );
                       })()}

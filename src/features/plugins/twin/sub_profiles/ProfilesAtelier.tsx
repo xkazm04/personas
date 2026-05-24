@@ -10,9 +10,9 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useProfileDashboards } from '../useProfileDashboards';
-import { genderDefFromPronouns } from '../_shared/gender';
-import { TwinHeaderBand } from '../_shared/TwinHeaderBand';
-import { ConstellationDecoration } from '../_shared/decorations';
+import { genderDefFromPronouns } from '../shared/gender';
+import { TwinHeaderBand } from '../shared/TwinHeaderBand';
+import { ConstellationDecoration } from '../shared/decorations';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';

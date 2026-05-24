@@ -27,12 +27,4 @@ pr_credential_id: string | null,
  * orphan-bound; UI treats unresolved team_ids as "(team removed)" and
  * the user can re-bind. Added 2026-05-22.
  */
-team_id: string | null, 
-/**
- * Optional binding to a `PersonaGroup` (workspace folder). Complementary
- * to `team_id`: team_id ties the project to an *execution-time* pipeline
- * while group_id ties it to a *design-time* workspace with shared
- * instructions and defaults. Both can be set independently. No FK by
- * design — same orphan-tolerance rationale as team_id. Added 2026-05-22.
- */
-group_id: string | null, created_at: string, updated_at: string, };
+team_id: string | null, created_at: string, updated_at: string, };

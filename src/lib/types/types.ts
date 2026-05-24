@@ -17,7 +17,6 @@ import type { PersonaMessage as RawPersonaMessage } from "@/lib/bindings/Persona
 import type { PersonaMetricsSnapshot } from "@/lib/bindings/PersonaMetricsSnapshot";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
-import type { PersonaGroup } from "@/lib/bindings/PersonaGroup";
 import type { PersonaMemory } from "@/lib/bindings/PersonaMemory";
 import type { PersonaTeam } from "@/lib/bindings/PersonaTeam";
 import type { PersonaTeamMember } from "@/lib/bindings/PersonaTeamMember";
@@ -38,7 +37,6 @@ export type {
   PersonaMetricsSnapshot,
   PersonaPromptVersion,
   PersonaHealingIssue,
-  PersonaGroup,
   PersonaMemory,
   PersonaTeam,
   PersonaTeamMember,
@@ -406,7 +404,7 @@ export type TemplateTab = "n8n" | "generated" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys" | "history" | "limits";
 export type DevToolsTab = "overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills" | "fleet";
-export type AgentTab = "all" | "create" | "team" | "groups" | "cloud" | "planner";
+export type AgentTab = "all" | "create" | "team" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "langfuse";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud";

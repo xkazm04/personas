@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
-import { deriveVibe, VIBE_THEMES, type VibeId, type VibeTheme } from '@/lib/theming/vibeThemes';
+import { deriveVibe, VIBE_THEMES, type VibeId, type VibeTheme } from '@/lib/theme/vibeThemes';
 
 const warnedMissingVibes = new Set<string>();
 

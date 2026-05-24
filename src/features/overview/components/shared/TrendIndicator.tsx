@@ -1,5 +1,5 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
-import type { TrendValue } from '@/features/overview/utils/computeTrends';
+import type { TrendValue } from '@/features/overview/libs/computeTrends';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface TrendIndicatorProps {

@@ -1,4 +1,5 @@
 import { Copy, Check, Cloud, Unplug, AlertCircle, Clock, Hash, FolderOpen } from 'lucide-react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { UuidLabel } from '@/features/shared/components/display/UuidLabel';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -61,7 +62,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
               <Clock className="w-3 h-3" />
               <span>{formatRelativeTime(event.created_at)}</span>
               <span className="text-foreground">&middot;</span>
-              <span className="font-mono">{new Date(event.created_at).toLocaleString()}</span>
+              <span className="font-mono">{<AbsoluteTime timestamp={event.created_at} />}</span>
             </div>
           </div>
           <button
@@ -99,7 +100,7 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
             {event.processed_at && (
               <MetaCell icon={Clock} label={t.triggers.meta_processed}>
                 <span className="font-mono text-foreground">
-                  {new Date(event.processed_at).toLocaleString()}
+                  {<AbsoluteTime timestamp={event.processed_at} />}
                 </span>
               </MetaCell>
             )}

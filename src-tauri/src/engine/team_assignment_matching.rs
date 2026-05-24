@@ -174,7 +174,7 @@ pub async fn match_via_embedding(
         let cosine = cosine_similarity(step_vec, cand_vec);
         // Trust-score tie-break: nudges identical-cosine candidates toward
         // the more-trusted persona without overpowering the semantic signal.
-        let composite = cosine + (candidates[idx].trust_score * 1e-4);
+        let composite = cosine as f64 + (candidates[idx].trust_score * 1e-4);
         match best {
             Some((_, current)) if composite <= current => {}
             _ => best = Some((idx, composite)),

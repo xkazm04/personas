@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { DebtText } from '@/i18n/DebtText';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 
 
 interface Props {
@@ -60,10 +61,7 @@ export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Prop
                   {sub.eventsRelayed}
                 </td>
                 <td className="px-4 py-2.5 text-foreground">
-                  {sub.lastEventAt
-                    ? new Date(sub.lastEventAt).toLocaleString()
-                    : t.triggers.subscription_list.never
-                  }
+                  <AbsoluteTime timestamp={sub.lastEventAt} fallback={t.triggers.subscription_list.never} />
                 </td>
                 <td className="px-4 py-2.5">
                   {sub.error ? (

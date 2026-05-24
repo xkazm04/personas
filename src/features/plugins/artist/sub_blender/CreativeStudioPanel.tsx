@@ -9,6 +9,7 @@ import { useCreativeConnectors } from '../hooks/useCreativeConnectors';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { getConnectorMeta, ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ConnectorInfo } from '@/stores/slices/system/artistSlice';
@@ -316,8 +317,7 @@ function CreativeSessionChat({
               <button
                 onClick={() => {
                   const md = sessionOutputToMarkdown(output);
-                  navigator.clipboard
-                    .writeText(md)
+                  copyText(md)
                     .then(() =>
                       useToastStore
                         .getState()

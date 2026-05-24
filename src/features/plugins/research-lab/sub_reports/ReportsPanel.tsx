@@ -3,8 +3,8 @@ import { FileText, Trash2, Eye } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { SectionHeader } from '../_shared/SectionHeader';
-import { EmptyState, NoActiveProject } from '../_shared/EmptyState';
+import { SectionHeader } from '../shared/SectionHeader';
+import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import type { ResearchReport } from '@/api/researchLab/researchLab';
 import type { Translations } from '@/i18n/en';
 

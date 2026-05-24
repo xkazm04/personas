@@ -1186,7 +1186,7 @@ const bridge: TestBridge = {
           id: p.id,
           name: p.name,
           enabled: p.enabled,
-          group_id: p.group_id ?? null,
+          home_team_id: p.home_team_id ?? null,
           template_category: p.template_category ?? null,
           trust_origin: p.trust_origin ?? null,
           created_at: p.created_at ?? null,

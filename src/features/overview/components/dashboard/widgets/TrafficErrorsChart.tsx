@@ -7,7 +7,7 @@ import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/Cha
 import { ChartTooltip } from '@/features/overview/sub_usage/components/ChartTooltip';
 import { CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
 import { useScaledFontSize } from '@/stores/themeStore';
-import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
+import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { useOverviewFilterValues } from '../OverviewFilterContext';
 import { debtText } from '@/i18n/DebtText';
@@ -71,7 +71,7 @@ export const TrafficErrorsChart = memo(function TrafficErrorsChart({ chartData, 
             )} />
           </ChartErrorBoundary>
         ) : (
-          <EmptyState variant="chart" className="py-6" />
+          <EmptyState variant="chart" dominant className="py-6" />
         )}
       </div>
 

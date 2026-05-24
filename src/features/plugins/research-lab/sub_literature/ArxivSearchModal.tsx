@@ -4,7 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
-import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
+import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
 import { searchArxiv, type ArxivResult } from './arxivClient';
 
 interface Props {

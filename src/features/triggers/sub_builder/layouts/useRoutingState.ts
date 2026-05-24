@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import type { PersonaEventSubscription } from '@/lib/bindings/PersonaEventSubscription';
 import {
@@ -34,7 +34,7 @@ export interface RoutingStateProps {
   initialTriggers: PersonaTrigger[];
   initialEvents: PersonaEvent[];
   personas: Persona[];
-  groups: PersonaGroup[];
+  teams: PersonaTeam[];
 }
 
 export interface AddPersonaTarget { eventType: string }
@@ -51,7 +51,7 @@ export interface RenameTarget {
 }
 
 export function useRoutingState({
-  initialTriggers, initialEvents, personas, groups,
+  initialTriggers, initialEvents, personas, teams,
 }: RoutingStateProps) {
   const [allTriggers, setAllTriggers] = useState<PersonaTrigger[]>(initialTriggers);
   const [recentEvents, setRecentEvents] = useState<PersonaEvent[]>(initialEvents);
@@ -167,7 +167,7 @@ export function useRoutingState({
   }, [addPersonaForEvent, rows]);
 
   return {
-    personas, groups, personaMap,
+    personas, teams, personaMap,
     rows, recentEvents,
     reload,
     isBackfilling, handleInitializeHandlers,

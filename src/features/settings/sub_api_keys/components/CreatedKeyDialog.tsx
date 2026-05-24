@@ -11,6 +11,7 @@
  * config file.
  */
 import { useCallback, useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, Check, AlertTriangle, X } from 'lucide-react';
 import type { CreateApiKeyResponse } from '@/api/auth/externalApiKeys';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -51,7 +52,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
 
   const copyKey = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(response.plaintext_token);
+      await copyText(response.plaintext_token);
       setKeyCopied(true);
       setTimeout(() => setKeyCopied(false), 2000);
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/CreatedKeyDialog:catch1")(err); }
@@ -59,7 +60,7 @@ export function CreatedKeyDialog({ response, onClose }: CreatedKeyDialogProps) {
 
   const copyConfig = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(mcpConfig);
+      await copyText(mcpConfig);
       setConfigCopied(true);
       setTimeout(() => setConfigCopied(false), 2000);
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/CreatedKeyDialog:catch2")(err); }

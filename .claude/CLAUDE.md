@@ -99,6 +99,40 @@ src-tauri/
 - Never use `text-white/*` or `bg-white/*` directly — use `text-foreground/*` or `bg-secondary/*`
 - ESLint warns on raw Tailwind classes that have semantic equivalents (see Design.md §8 Do's and Don'ts)
 
+### Reusing shared components — MANDATORY before building UI
+
+> **Before you write any UI, check whether a shared component already exists.**
+> The project has **173 reusable components** under `src/features/shared/components/`,
+> catalogued in **[`src/features/shared/components/CATALOG.md`](../src/features/shared/components/CATALOG.md)**
+> (auto-generated, always fresh). The #1 source of UI drift is new code re-implementing
+> a spinner / empty state / button / modal / tooltip / badge / copy-button / relative-time
+> / number-format that already exists.
+
+**Do NOT hand-roll these — import the shared one** (full table + import paths in
+[`docs/refactor/shared-component-reuse.md`](../docs/refactor/shared-component-reuse.md)):
+
+| Don't hand-roll | Use |
+|---|---|
+| `animate-spin` / local spinner | `feedback/LoadingSpinner` |
+| "no data" block | `feedback/EmptyState` |
+| styled `<button>` | `buttons/Button` / `buttons/AsyncButton` |
+| `navigator.clipboard.writeText` | `buttons/CopyButton` / `useCopyToClipboard` |
+| `fixed inset-0` modal backdrop | `modals/BaseModal` / `feedback/ConfirmDialog` (enforced by `custom/enforce-base-modal`) |
+| `title=` / custom tooltip | `display/Tooltip` |
+| `new Date().toLocaleString()` / "ago" | `display/RelativeTime` |
+| `.toFixed()` / `.toLocaleString()` for display | `display/Numeric` |
+| checkbox styled as switch | `forms/AccessibleToggle` |
+| `<select>` / custom dropdown | `forms/Listbox` |
+| label+input+error | `forms/FormField` |
+| custom tab strip | `layout/PanelTabBar` / `layout/SegmentedTabs` |
+
+Import as `@/features/shared/components/<category>/<Name>`. If a genuinely new
+reusable pattern is needed, **add it to `shared/components/` (not a feature folder)**
+and give it a `@catalog <one-line>` JSDoc tag so it appears in the catalog. After
+adding/removing a shared component run `npm run gen:catalog` (also auto-runs in
+predev/prebuild; `npm run check` fails on a stale catalog). Extraction/consolidation
+backlog (PanelShell, ContentCard, EmptyState merge, …) lives in the reuse doc above.
+
 ### Error Handling
 - `toastCatch()` from `src/lib/silentCatch.ts` for user-facing errors (Sentry + toast)
 - `silentCatch()` for background errors (Sentry + console only)

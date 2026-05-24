@@ -269,7 +269,6 @@ fn record_session_capture(
             hook_event.to_string(),
         ])),
         use_case_id: None,
-        group_id: None,
     };
 
     let memory = mem_repo::create(pool, input)?;
@@ -396,7 +395,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -466,7 +464,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -516,7 +513,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )

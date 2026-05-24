@@ -16,7 +16,6 @@ export interface Project {
   createdAt: string;
   githubUrl?: string;
   teamId?: string;
-  groupId?: string;
 }
 
 export interface Goal {
@@ -51,7 +50,6 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     createdAt: dp.created_at.slice(0, 10),
     githubUrl: dp.github_url ?? undefined,
     teamId: dp.team_id ?? undefined,
-    groupId: dp.group_id ?? undefined,
   };
 }
 
@@ -135,5 +133,4 @@ export interface EditProjectData {
   projectType: ProjectType;
   githubUrl: string;
   teamId: string | null;
-  groupId: string | null;
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { CheckCircle2, AlertTriangle, X, FlaskConical, Copy, FileText, Wrench, Shield, Cpu } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import type { DryRunReport } from '@/lib/bindings/DryRunReport';
@@ -21,7 +22,7 @@ export function DryRunModal({ open, loading, report, errorMessage, onClose }: Dr
   const handleCopyPrompt = async () => {
     if (!report?.prompt) return;
     try {
-      await navigator.clipboard.writeText(report.prompt);
+      await copyText(report.prompt);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {

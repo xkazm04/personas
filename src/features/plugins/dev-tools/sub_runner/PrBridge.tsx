@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import {
   GitPullRequest, Copy, GitBranch, ExternalLink,
@@ -224,7 +225,7 @@ export function PrBridge({ task }: { task: DevTask }) {
 
   const handleCopyBody = async () => {
     try {
-      await navigator.clipboard.writeText(content.prBody);
+      await copyText(content.prBody);
       addToast(dt.pr_bridge_copied, 'success');
       markDone('copy_body');
     } catch {
@@ -235,7 +236,7 @@ export function PrBridge({ task }: { task: DevTask }) {
   const handleCopyAll = async () => {
     const combined = `# ${content.prTitle}\n\nBranch: \`${content.branchName}\`\n\nCommit:\n\`\`\`\n${content.commitMessage}\n\`\`\`\n\n${content.prBody}`;
     try {
-      await navigator.clipboard.writeText(combined);
+      await copyText(combined);
       addToast(dt.pr_bridge_copied, 'success');
       markDone('copy_all');
     } catch {
@@ -246,7 +247,7 @@ export function PrBridge({ task }: { task: DevTask }) {
   const handleCopyReasoning = async () => {
     if (!idea?.reasoning) return;
     try {
-      await navigator.clipboard.writeText(idea.reasoning);
+      await copyText(idea.reasoning);
       addToast(dt.pr_bridge_reasoning_copied, 'success');
       markDone('copy_reasoning');
     } catch {
@@ -282,7 +283,7 @@ export function PrBridge({ task }: { task: DevTask }) {
     }
     const block = lines.join('\n');
     try {
-      await navigator.clipboard.writeText(block);
+      await copyText(block);
       addToast(dt.pr_bridge_git_block_copied, 'success');
       markDone('copy_git');
     } catch {

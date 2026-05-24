@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Activity, Trash2, AlertCircle, ChevronDown, ChevronRight, Clock } from 'lucide-react';
 import { useSystemTraces } from '@/hooks/execution/useSystemTrace';
 import { SYSTEM_OPERATION_CONFIG, getSpanConfig } from '@/features/agents/sub_executions/libs/traceHelpers';
@@ -89,7 +90,7 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
         </span>
 
         <span className="typo-code text-foreground shrink-0">
-          {new Date(trace.startedAt).toLocaleTimeString()}
+          {<AbsoluteTime timestamp={trace.startedAt} variant="time" />}
         </span>
       </button>
 

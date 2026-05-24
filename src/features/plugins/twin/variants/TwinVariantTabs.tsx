@@ -1,0 +1,97 @@
+import { useMemo, useState, type ReactNode } from 'react';
+import { Sparkles, Terminal, Archive } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
+
+
+export type TwinVariantId = 'atelier' | 'console' | 'baseline';
+
+interface VariantDef {
+  id: TwinVariantId;
+  label: string;
+  hint: string;
+  icon: typeof Sparkles;
+}
+
+interface TwinVariantTabsProps {
+  /** ID used to namespace localStorage so each page remembers its own pick. */
+  storageKey: string;
+  /** Render-prop receives the selected variant. */
+  children: (variant: TwinVariantId) => ReactNode;
+  /** Default variant if storage is empty. Defaults to 'atelier'. */
+  defaultVariant?: TwinVariantId;
+}
+
+/**
+ * Prototype tab strip. Renders a pill row at the very top of the page so
+ * the user can A/B between variants without leaving the surface. The choice
+ * is persisted per-page so reloading lands on the last selection.
+ *
+ * This is throwaway scaffolding — once a winner is picked the wrapper is
+ * collapsed and only the chosen variant remains.
+ */
+export function TwinVariantTabs({ storageKey, children, defaultVariant = 'atelier' }: TwinVariantTabsProps) {
+  const t = useTranslation().t.twin;
+  const [variant, setVariant] = useState<TwinVariantId>(() => {
+    try {
+      const raw = localStorage.getItem(`twin-variant:${storageKey}`);
+      if (raw === 'atelier' || raw === 'console' || raw === 'baseline') return raw;
+    } catch (err) { silentCatch("features/plugins/twin/variants/TwinVariantTabs:catch1")(err); }
+    return defaultVariant;
+  });
+
+  const select = (id: TwinVariantId) => {
+    setVariant(id);
+    try { localStorage.setItem(`twin-variant:${storageKey}`, id); } catch (err) { silentCatch("features/plugins/twin/variants/TwinVariantTabs:catch2")(err); }
+  };
+
+  const VARIANTS: VariantDef[] = useMemo(() => [
+    { id: 'atelier', label: t.variantTabs.atelier, hint: t.variantTabs.atelierHint, icon: Sparkles },
+    { id: 'console', label: t.variantTabs.console, hint: t.variantTabs.consoleHint, icon: Terminal },
+    { id: 'baseline', label: t.variantTabs.baseline, hint: t.variantTabs.baselineHint, icon: Archive },
+  ], [t]);
+
+  const active = VARIANTS.find((v) => v.id === variant) ?? VARIANTS[0]!;
+
+  return (
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* Slim variant strip — tucked above the page body */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-card/40 backdrop-blur">
+        <span className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium mr-1 hidden sm:inline">
+          {t.variantTabs.prototype}
+        </span>
+        <div className="flex items-center gap-1 rounded-full border border-primary/15 bg-secondary/30 p-0.5">
+          {VARIANTS.map((v) => {
+            const Icon = v.icon;
+            const isActive = v.id === variant;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => select(v.id)}
+                title={v.hint}
+                className={[
+                  'flex items-center gap-1.5 px-3 py-1 rounded-full typo-caption font-medium transition-all',
+                  isActive
+                    ? 'bg-violet-500/20 text-violet-300 shadow-elevation-1'
+                    : 'text-foreground hover:text-foreground hover:bg-secondary/50',
+                ].join(' ')}
+              >
+                <Icon className="w-3 h-3" />
+                <span>{v.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <span className="hidden md:inline text-[11px] text-foreground ml-2 truncate">
+          {active.hint}
+        </span>
+      </div>
+
+      {/* Variant body */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {children(variant)}
+      </div>
+    </div>
+  );
+}

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
-import Sidebar from '@/features/app-shell/components/Sidebar';
+import Sidebar from '@/features/shared/components/layout/sidebar/Sidebar';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
@@ -22,16 +22,15 @@ const HomePage = lazy(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
-const GoalPlannerPanel = lazy(() => import('@/features/agents/sub_planner').then(m => ({ default: m.GoalPlannerPanel })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
-const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
+const CloudDeployPanel = lazy(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
-const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
+const UnifiedDeploymentDashboard = lazy(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
@@ -105,9 +104,9 @@ export default function PersonasPage() {
       fetchToolDefinitions(),
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
       import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchRecipes()),
-      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchGroups()),
+      import("@/stores/pipelineStore").then(m => m.usePipelineStore.getState().fetchTeams()),
     ]);
-    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'groups'] as const;
+    const SECONDARY_LABELS = ['tools', 'credentials', 'recipes', 'teams'] as const;
     secondaryResults.forEach((r, i) => {
       if (r.status === 'rejected' && SECONDARY_LABELS[i]) failed.push(SECONDARY_LABELS[i]);
     });
@@ -142,7 +141,7 @@ export default function PersonasPage() {
     });
     // Tier 2: prefetch after a short delay so tier 1 chunks land first
     const id2 = requestIdleCallback(() => {
-      import('@/features/deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
+      import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
       import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
       import('@/features/triggers/TriggersPage').catch(silentCatch("PersonasPage:prefetchEvents"));
     });
@@ -206,10 +205,6 @@ export default function PersonasPage() {
       // Groups→Teams consolidation (Phase 4): the standalone Groups manager
       // is retired — a team is now the workspace. Any lingering
       // agentTab==='groups' falls through to the default Agents view.
-      // Goal-to-Plan — read-only narrated planner (idea-ba306c32, Stage 1)
-      if (agentTab === 'planner') {
-        return <ErrorBoundary name="GoalPlanner"><Suspense fallback={SectionFallback}><GoalPlannerPanel /></Suspense></ErrorBoundary>;
-      }
       if (personasFetched && !isLoading && !error && personas.length === 0) {
         return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
       }
@@ -267,9 +262,17 @@ export default function PersonasPage() {
     <CanvasDragProvider>
       <CredentialNavProvider>
         <div className="flex flex-col h-full bg-background text-foreground overflow-hidden" style={{ contain: 'layout style' }}>
-          {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64) */}
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
+          {/* Background effects — blur removed (causes WebView2 compositor freeze on ARM64).
+              transform-gpu + backface-hidden isolate each layer onto its own GPU
+              texture so it rasters ONCE. Without isolation these full-screen layers
+              share a paint layer with hover-repainting content, so every pointer-move
+              re-rasterizes the 1px grid gradient — and at fractional Windows DPI
+              (125%/150%) a CSS 1px line maps to non-integer device pixels, so each
+              re-raster shimmers, most visibly as a flickering seam at the top/right
+              edges. Isolation is a lightweight 2D layer promotion, unlike the
+              backdrop-blur removed above. */}
+          <div className="absolute inset-0 transform-gpu backface-hidden bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none" />
+          <div className="absolute inset-0 transform-gpu backface-hidden bg-gradient-to-b from-background/0 via-background/0 to-background/80 pointer-events-none" />
 
           {/* Main layout */}
           <div className="relative z-10 flex flex-1 overflow-hidden">

@@ -228,7 +228,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -254,7 +253,6 @@ mod tests {
                 importance: Some(importance),
                 tags: None,
                 use_case_id: None,
-                group_id: None,
             },
         )
         .unwrap();

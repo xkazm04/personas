@@ -6,13 +6,13 @@ import { listHealingIssues } from "@/api/overview/healing";
 import {
   computeHealthScore,
   makeIssueId,
-} from "@/features/agents/health/useHealthCheck";
+} from "@/features/agents/sub_health/useHealthCheck";
 import type {
   PersonaHealthCheck,
   AgentHealthDigest,
   DryRunIssue,
   DryRunResult,
-} from "@/features/agents/health/types";
+} from "@/features/agents/sub_health/types";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { PersonaHealingIssue } from "@/lib/bindings/PersonaHealingIssue";
 import type { PersonaHealthSignal } from "@/stores/slices/overview/personaHealthSlice";

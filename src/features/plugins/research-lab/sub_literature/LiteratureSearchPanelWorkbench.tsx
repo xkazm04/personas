@@ -21,9 +21,9 @@ import type { ResearchSource } from '@/api/researchLab/researchLab';
 import {
   sourceStatusColor, sourceStatusLabel, sourceTypeLabel,
   type SourceType, SOURCE_TYPES,
-} from '../_shared/tokens';
-import { NoActiveProject } from '../_shared/EmptyState';
-import { useIngestSource } from '../_shared/useIngestSource';
+} from '../shared/tokens';
+import { NoActiveProject } from '../shared/EmptyState';
+import { useIngestSource } from '../shared/useIngestSource';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 

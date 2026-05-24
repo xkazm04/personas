@@ -16,7 +16,7 @@ use ts_rs::TS;
 use crate::db::repos::communication::events as event_repo;
 use crate::engine::persona_icon::export_safe_icon;
 use crate::db::repos::core::{
-    groups as group_repo, memories as memory_repo, personas as persona_repo,
+    memories as memory_repo, personas as persona_repo,
 };
 use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::{
@@ -55,7 +55,6 @@ const MAX_CREDENTIAL_IMPORT_BYTES: u64 = 2 * 1024 * 1024;
 
 // Array size caps specific to data_portability
 const MAX_PERSONAS: usize = 200;
-const MAX_GROUPS: usize = 100;
 const MAX_TOOLS: usize = 500;
 const MAX_TEAMS: usize = 50;
 const MAX_CREDENTIALS: usize = 500;
@@ -79,7 +78,6 @@ pub struct PortabilityBundle {
     pub app_version: String,
     pub scope: ExportScope,
     pub personas: Vec<PersonaExport>,
-    pub groups: Vec<GroupExport>,
     pub tool_definitions: Vec<ToolDefinitionExport>,
     pub teams: Vec<TeamExport>,
     pub credentials: Vec<CredentialMetaExport>,
@@ -115,7 +113,6 @@ pub struct PersonaExport {
     pub max_budget_usd: Option<f64>,
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
-    pub group_id: Option<String>,
     pub triggers: Vec<TriggerExport>,
     pub subscriptions: Vec<SubscriptionExport>,
     pub memories: Vec<MemoryExport>,
@@ -131,15 +128,6 @@ pub struct TestSuiteExport {
     pub description: Option<String>,
     pub scenarios: String,
     pub scenario_count: i32,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GroupExport {
-    pub id: String,
-    pub name: String,
-    pub color: Option<String>,
-    pub sort_order: i32,
-    pub description: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -203,7 +191,6 @@ pub struct PortabilityImportResult {
     pub personas_created: u32,
     pub teams_created: u32,
     pub tools_created: u32,
-    pub groups_created: u32,
     pub credentials_created: u32,
     pub warnings: Vec<String>,
     pub id_mapping: std::collections::HashMap<String, String>,
@@ -217,7 +204,6 @@ pub struct PortabilityImportResult {
 #[ts(export)]
 pub struct ExportStats {
     pub persona_count: u32,
-    pub group_count: u32,
     pub tool_count: u32,
     pub team_count: u32,
     pub credential_count: u32,
@@ -235,7 +221,6 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
     require_auth_sync(&state)?;
     let pool = &state.db;
     let personas = persona_repo::get_all(pool)?;
-    let groups = group_repo::get_all(pool)?;
     let tools = tool_repo::get_all_definitions(pool)?;
     let teams = team_repo::get_all(pool)?;
     let credentials = cred_repo::get_all(pool)?;
@@ -249,7 +234,6 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
 
     Ok(ExportStats {
         persona_count: personas.len() as u32,
-        group_count: groups.len() as u32,
         tool_count: tools.len() as u32,
         team_count: teams.len() as u32,
         credential_count: credentials.len() as u32,
@@ -569,7 +553,6 @@ pub async fn import_portability_bundle_from_path(
 
 fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityBundle, AppError> {
     let all_personas = persona_repo::get_all(pool)?;
-    let all_groups = group_repo::get_all(pool)?;
     let all_tools = tool_repo::get_all_definitions(pool)?;
     let all_teams = team_repo::get_all(pool)?;
     let all_credentials = cred_repo::get_all(pool)?;
@@ -658,7 +641,6 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
             max_budget_usd: p.max_budget_usd,
             max_turns: p.max_turns,
             design_context: p.design_context.clone(),
-            group_id: p.group_id.clone(),
             triggers: triggers
                 .iter()
                 .map(|t| TriggerExport {
@@ -699,24 +681,6 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
                 .collect(),
         });
     }
-
-    // Collect only referenced group IDs
-    let referenced_group_ids: std::collections::HashSet<String> = persona_exports
-        .iter()
-        .filter_map(|p| p.group_id.clone())
-        .collect();
-
-    let group_exports: Vec<GroupExport> = all_groups
-        .iter()
-        .filter(|g| matches!(&scope, ExportScope::Full) || referenced_group_ids.contains(&g.id))
-        .map(|g| GroupExport {
-            id: g.id.clone(),
-            name: g.name.clone(),
-            color: Some(g.color.clone()),
-            sort_order: g.sort_order,
-            description: g.description.clone(),
-        })
-        .collect();
 
     // Collect only referenced tool IDs
     let referenced_tool_ids: std::collections::HashSet<String> = persona_exports
@@ -805,7 +769,6 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         app_version: env!("CARGO_PKG_VERSION").to_string(),
         scope,
         personas: persona_exports,
-        groups: group_exports,
         tool_definitions: tool_exports,
         teams: team_exports,
         credentials: credential_exports,
@@ -910,26 +873,9 @@ fn read_zip_bundle(path: &std::path::Path) -> Result<String, AppError> {
 fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
     // Top-level array caps
     validation::require_max_count("personas", &bundle.personas, MAX_PERSONAS)?;
-    validation::require_max_count("groups", &bundle.groups, MAX_GROUPS)?;
     validation::require_max_count("tool_definitions", &bundle.tool_definitions, MAX_TOOLS)?;
     validation::require_max_count("teams", &bundle.teams, MAX_TEAMS)?;
     validation::require_max_count("credentials", &bundle.credentials, MAX_CREDENTIALS)?;
-
-    // Validate groups
-    for (i, g) in bundle.groups.iter().enumerate() {
-        validation::require_non_empty(&format!("group[{i}].name"), &g.name)?;
-        validation::require_max_len(&format!("group[{i}].name"), &g.name, MAX_NAME_LEN)?;
-        validation::require_optional_max_len(
-            &format!("group[{i}].color"),
-            &g.color,
-            MAX_SHORT_FIELD_LEN,
-        )?;
-        validation::require_optional_max_len(
-            &format!("group[{i}].description"),
-            &g.description,
-            MAX_DESCRIPTION_LEN,
-        )?;
-    }
 
     // Validate tool definitions
     for (i, t) in bundle.tool_definitions.iter().enumerate() {
@@ -1235,33 +1181,12 @@ fn import_bundle(
         personas_created: 0,
         teams_created: 0,
         tools_created: 0,
-        groups_created: 0,
         credentials_created: 0,
         warnings: Vec::new(),
         id_mapping: std::collections::HashMap::new(),
     };
 
     let now = chrono::Utc::now().to_rfc3339();
-
-    // Phase 1: Import groups (map old IDs to new IDs)
-    for g in &bundle.groups {
-        let id = uuid::Uuid::new_v4().to_string();
-        let name = format!("{} (imported)", g.name);
-        let color = g.color.as_deref().unwrap_or("#6B7280");
-        match tx.execute(
-            "INSERT INTO persona_groups (id, name, color, sort_order, collapsed, description, created_at, updated_at)
-             VALUES (?1, ?2, ?3, ?4, 0, ?5, ?6, ?6)",
-            rusqlite::params![id, name, color, g.sort_order, g.description, now],
-        ) {
-            Ok(_) => {
-                result.id_mapping.insert(g.id.clone(), id);
-                result.groups_created += 1;
-            }
-            Err(e) => result
-                .warnings
-                .push(format!("Group '{}': {}", g.name, e)),
-        }
-    }
 
     // Phase 2: Import tool definitions (map old IDs to new IDs, skip builtins)
     for t in &bundle.tool_definitions {
@@ -1350,14 +1275,8 @@ fn import_bundle(
         }
     }
 
-    // Phase 4: Import personas (map old IDs to new, remap group_id)
+    // Phase 4: Import personas (map old IDs to new)
     for p in &bundle.personas {
-        let mapped_group_id = p
-            .group_id
-            .as_ref()
-            .and_then(|gid| result.id_mapping.get(gid))
-            .cloned();
-
         let new_id = uuid::Uuid::new_v4().to_string();
         let persona_name = format!("{} (imported)", p.name);
         let enabled_i = 0i32; // imported personas start disabled
@@ -1391,9 +1310,9 @@ fn import_bundle(
             "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, max_concurrent, timeout_ms,
-              model_profile, max_budget_usd, max_turns, design_context, group_id,
+              model_profile, max_budget_usd, max_turns, design_context,
               notification_channels, created_at, updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)",
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,0,?10,?11,?12,?13,?14,?15,?16,?17,?17)",
             rusqlite::params![
                 new_id,
                 "default",
@@ -1410,7 +1329,6 @@ fn import_bundle(
                 p.max_budget_usd,
                 p.max_turns,
                 p.design_context,
-                mapped_group_id,
                 encrypted_channels,
                 now,
             ],

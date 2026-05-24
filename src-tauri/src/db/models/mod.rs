@@ -21,7 +21,6 @@ mod exposure;
 mod external_api_key;
 mod frontend_crash;
 mod genome;
-mod group;
 mod healing;
 #[cfg(feature = "p2p")]
 mod identity;
@@ -93,7 +92,6 @@ pub use exposure::*;
 pub use external_api_key::*;
 pub use frontend_crash::*;
 pub use genome::*;
-pub use group::*;
 pub use healing::*;
 #[cfg(feature = "p2p")]
 pub use identity::*;

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import type { RealtimeEvent } from '@/hooks/realtime/useRealtimeEvents';
 import { EVENT_TYPE_HEX_COLORS, resolveStatusIcon } from '@/features/overview/shared/eventVisuals';
 import { formatRelativeTime } from '@/lib/utils/formatters';
@@ -82,12 +83,12 @@ export default function EventDetailDrawer({ event, onClose }: Props) {
           </div>
           <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
             <span className="typo-code font-mono uppercase text-foreground">Created</span>
-            <p className="typo-code font-mono text-foreground">{new Date(event.created_at).toLocaleTimeString()}</p>
+            <p className="typo-code font-mono text-foreground">{<AbsoluteTime timestamp={event.created_at} variant="time" />}</p>
           </div>
           {event.processed_at && (
             <div className="rounded-modal border border-primary/10 bg-secondary/20 px-2.5 py-2">
               <span className="typo-code font-mono uppercase text-foreground">Processed</span>
-              <p className="typo-code font-mono text-foreground">{new Date(event.processed_at).toLocaleTimeString()}</p>
+              <p className="typo-code font-mono text-foreground">{<AbsoluteTime timestamp={event.processed_at} variant="time" />}</p>
             </div>
           )}
         </div>

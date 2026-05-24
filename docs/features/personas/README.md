@@ -89,28 +89,17 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
-## Goal-to-Plan — narrated planner (preview)
+## Goal planning is a team concern, not a persona one
 
-Personas sidebar → **Plan** (`agentTab === 'planner'`) opens a **read-only**
-goal-to-plan surface (`src/features/agents/sub_planner/`). The user states an
-outcome in plain language ("watch a competitor's pricing page daily and email
-me the changes"); the planner maps it to a reviewable, numbered sequence of
-in-app action steps — create a persona, connect a service, configure a
-trigger/schedule, review & confirm — drawn from the automation tool catalog
-that the test-automation bridge drives (`src/test/automation/bridge.ts`).
-
-**Nothing executes.** The plan is produced behind a `PlanProvider` seam
-(`planProvider.ts`): the `plan_goal_llm` Tauri command (Sonnet via the Claude
-CLI) is tried first, with the deterministic `planFromGoal()` rule planner as
-an automatic fallback when the CLI is unavailable. Each `PlanStep` records the
-automation-bridge primitive it *would* drive (`bridgeRef`) purely for
-traceability. Steps carry a confidence score + rationale, can be reordered or
-removed, and a read-only "Watch" player walks through them with a "would open
-in…" destination per step. A live chip strip narrates detected signals under
-the goal box as you type, and the build composer offers a "Plan a goal"
-hand-off into this surface. This is the trust-building front half of
-idea-ba306c32 ("the app builds itself while you watch") — every path here is
-read-only; no execution path is wired yet.
+Defining a plain-language goal and decomposing it into work belongs to the
+**orchestration layer** that coordinates *multiple* personas, not to a single
+agent. It lives in **Team detail → Orchestrate** (`teamStudio/OrchestrationConsole`):
+a split surface — match-strategy + parallelism options on the left, the goal
+definition + routed-step preview on the right — that writes the goal to the
+team-assignment orchestrator (`decompose_team_assignment_goal` →
+`create_team_assignment` → `start_team_assignment`). The earlier agent-level
+"Plan" tab + `sub_planner/` surface were removed in favour of this. See the
+orchestration/teams docs for the assignment model.
 
 ## Editor UI — the Design hub
 
@@ -193,56 +182,52 @@ to a built-in `agent-icon:` inferred from the persona's `template_category`,
 so a shared persona arrives with a sensible catalog icon rather than a dead
 reference.
 
-## Persona Groups — workspace grouping
+## Home team — workspace anchor
 
-`Persona.group_id` is an optional FK to `persona_groups`. A group is a
-**lightweight workspace folder**, not an execution-time construct: it
-exists to organize personas in the UI and to carry a small set of
-group-level defaults that the editor surfaces as a one-stop-edit.
+> **History:** the standalone **PersonaGroup** primitive (a `persona_groups`
+> table + `personas.group_id` folder) was retired in the Groups→Teams
+> consolidation (2026-05, ADR `2026-05-23-groups-into-teams`). The team is
+> now the single workspace + orchestration primitive; what follows is the
+> post-consolidation model.
 
-`PersonaGroup` fields (`src-tauri/src/db/models/persona_group.rs`,
-ts-rs binding `src/lib/bindings/PersonaGroup.ts`):
+`Persona.home_team_id` is an optional FK to `persona_teams`. It is the
+persona's **workspace anchor** — the one team whose workspace settings and
+shared injected memory apply to the persona at runtime. Two relationships
+stay deliberately separate:
+
+- **Membership** (`persona_team_members`, N:M) — orchestration: a persona
+  can be on many teams.
+- **Home team** (`personas.home_team_id`, 1:N) — workspace: exactly one
+  team supplies the persona's defaults + injected memory.
+
+A team carries the workspace facet that groups used to (ported onto
+`persona_teams`, ts-rs binding `src/lib/bindings/PersonaTeam.ts`):
 
 | Field | Purpose |
 |---|---|
-| `name`, `color`, `description` | Display |
-| `sortOrder`, `collapsed` | Sidebar ordering / expand state |
+| `name`, `color`, `icon` | Display |
 | `sharedInstructions` | Appended to every member persona's system prompt at runtime |
-| `defaultModelProfile`, `defaultMaxBudgetUsd`, `defaultMaxTurns` | Defaults inherited by new personas added to the group |
+| `defaultModelProfile`, `defaultMaxBudgetUsd`, `defaultMaxTurns` | Workspace defaults (resolved by `config_merge` against the home team) |
 
-**UI surface** (Power tier — `TIERS.TEAM` gate, lifted out of dev-only on
-2026-05-22): the **Groups** entry under Agents → sidebar L2 opens
-`GroupManagerPage` (`src/features/pipeline/components/groups/`). The page
-lists groups with a persona count derived from
-`personas.filter(p => p.group_id === group.id)`, an Ungrouped chip for
-the rest, and a modal editor for name/color/description/sharedInstructions.
-Heavier defaults (model profile, budget, turn cap) are exposed by
-`groupSlice.updateGroup()` but not yet wired into the editor — Stage 2
-work.
+**UI surface:** the **Teams** entry under Agents → sidebar L2 lists teams
+(management table + Split Studio); the Studio's **Workspace** pane edits a
+team's shared instructions + defaults (`TeamWorkspacePane`). A persona's
+home team is set via the persona drop-rail / batch bar on the All-agents
+overview (drag onto a team chip, or batch "Set home team"), and Monitor's
+**By home team** toggle groups the grid by it.
 
-Groups are distinct from **Teams** (`PersonaTeam`, sibling concept under
-the same sidebar block): teams are an *execution-time* construct with a
-member graph, edges, pipeline runs, and a canvas editor. A persona can
-belong to at most one group (folder semantics) but participate in many
-teams (pipeline semantics).
+### Home-team-scoped shared memory
 
-### Group-scoped shared memory
-
-`persona_memories.group_id` (added 2026-05-22) is an optional second
-scope alongside `use_case_id`. A memory authored by persona A with
-`group_id = G` is **shared with every other persona in group G** — when
-persona B (also a member of G) runs, the injection path
-(`get_for_injection_v2`) OR-s in `group_id = G` rows alongside B's own
-private memories. Semantics mirror the existing `use_case_id` orphan
-policy: no FK by design, so deleting a group leaves attributions in
-place — orphans simply stop matching live group filters until
-re-attributed.
-
-This is the FIRST direct user-visible payoff of the PersonaGroup
-schema's `sharedInstructions` cousin — a group now carries shared
-*prompt seed* (instructions) AND shared *learned context* (memories).
-See `MEMORY CONTRACT (5)` in `src-tauri/src/db/models/memory.rs` for
-invariants.
+`persona_memories.home_team_id` is an optional second injection scope
+alongside `use_case_id`. A memory attributed to home team `T` is **shared
+with every persona whose `home_team_id = T`** — when such a persona runs,
+the injection path (`get_for_injection_v2`) OR-s in `home_team_id = T` rows
+alongside the persona's own private memories. No FK by design (orphan
+policy mirrors `use_case_id`). Attribution is populated by the
+groups→teams data migration; there is no in-app "share to team" affordance
+post-consolidation, so this surfaces migrated group-shared memory rather
+than newly-authored team memory. See `MEMORY CONTRACT (5)` in
+`src-tauri/src/db/models/memory.rs` for invariants.
 
 ## Gotchas that burn time
 

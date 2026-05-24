@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
-import { TextField, TextAreaField } from '../_shared/FormField';
+import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
+import { TextField, TextAreaField } from '../shared/FormField';
 
 interface Props {
   projectId: string;

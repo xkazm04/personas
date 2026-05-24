@@ -245,7 +245,6 @@ export function MessageDetailModal({
           importance: stars,
           tags: [RATING_MEMORY_TAG],
           use_case_id: null,
-          group_id: null,
         });
         setRatingMemoryId(created.id);
       }

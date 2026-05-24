@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Calendar, Clock, Inbox, Plug, Star, Zap } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -15,7 +16,7 @@ import { DENSITY_TOKENS, type DensityTokens } from '@/lib/density';
 async function copyDescription(text: string, t: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
   try {
-    await navigator.clipboard.writeText(text);
+    await copyText(text);
     addToast(t.description_copied, 'success');
   } catch {
     addToast(t.copy_failed, 'error');

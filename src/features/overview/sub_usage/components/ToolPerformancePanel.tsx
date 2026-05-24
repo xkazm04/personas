@@ -3,7 +3,7 @@ import { Activity } from 'lucide-react';
 import type { ToolPerformanceSummary } from '@/lib/bindings/ToolPerformanceSummary';
 import { getToolPerformanceSummary } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
-import { CARD_CONTAINER } from '@/features/overview/utils/dashboardGrid';
+import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { silentCatch } from '@/lib/silentCatch';

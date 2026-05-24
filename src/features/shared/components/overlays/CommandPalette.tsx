@@ -49,7 +49,7 @@ export default function CommandPalette() {
   const listRef = useRef<HTMLDivElement>(null);
 
   const personas = useAgentStore((s) => s.personas);
-  const groups = usePipelineStore((s) => s.groups);
+  const teams = usePipelineStore((s) => s.teams);
   const recipes = usePipelineStore((s) => s.recipes);
   const credentials = useVaultStore((s) => s.credentials);
   const automations = useVaultStore((s) => s.automations);
@@ -84,9 +84,9 @@ export default function CommandPalette() {
 
   const groupMap = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const g of groups) map[g.id] = g.name;
+    for (const g of teams) map[g.id] = g.name;
     return map;
-  }, [groups]);
+  }, [teams]);
 
   const paletteIcons = useMemo(() => ({
     bot: <Bot className="w-4 h-4" />,
@@ -219,7 +219,7 @@ export default function CommandPalette() {
             score: Math.max(
               fuzzyScore(searchQuery, p.name),
               fuzzyScore(searchQuery, p.description ?? ''),
-              p.group_id && groupMap[p.group_id] ? fuzzyScore(searchQuery, groupMap[p.group_id]!) * 0.6 : 0,
+              p.home_team_id && groupMap[p.home_team_id] ? fuzzyScore(searchQuery, groupMap[p.home_team_id]!) * 0.6 : 0,
             ),
           };
         })

@@ -9,6 +9,7 @@ import type { HeatmapDay } from '@/lib/bindings/HeatmapDay';
 import type { HeatmapInsights } from '@/lib/bindings/HeatmapInsights';
 import type { Translations } from '@/i18n/en';
 import { debtText } from '@/i18n/DebtText';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 
 
 interface ExecutionHeatmapProps {
@@ -237,10 +238,7 @@ export function ExecutionHeatmap({
           <span>{error}</span>
         </div>
       ) : isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-8 text-foreground">
-          <Activity className="w-6 h-6 mb-2 opacity-50" />
-          <span className="typo-caption">{t.overview.heatmap.no_activity}</span>
-        </div>
+        <EmptyState variant="heatmap" heading={t.overview.heatmap.no_activity} dominant className="py-8" />
       ) : grid && data ? (
         <>
           {!compact && (

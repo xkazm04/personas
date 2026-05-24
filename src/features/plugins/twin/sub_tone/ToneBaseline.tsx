@@ -7,7 +7,7 @@ import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CoachMark } from '../CoachMark';
-import { TONE_CHANNELS, paletteOf } from '../_shared/channels';
+import { TONE_CHANNELS, paletteOf } from '../shared/channels';
 import type { TwinTone } from '@/lib/bindings/TwinTone';
 import type { TwinChannelKind } from '@/api/enums';
 

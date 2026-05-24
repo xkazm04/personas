@@ -98,7 +98,7 @@ export const DEFAULT_SOURCE_COLOR = 'text-violet-400';
 // Canvas grid
 // ---------------------------------------------------------------------------
 
-export { GRID_SIZE } from '@/lib/canvas/gridUtils';
+export { GRID_SIZE } from '@/features/triggers/lib/canvas/gridUtils';
 export const LAYOUT_STORAGE_KEY = 'event_canvas_layout';
 export const LAYOUT_VERSION = 2; // bumped for sticky notes support
 

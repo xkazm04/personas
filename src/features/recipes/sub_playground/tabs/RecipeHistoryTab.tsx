@@ -1,4 +1,5 @@
 import { Clock, Play, Trash2 } from 'lucide-react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { PromptTemplateRenderer } from '@/features/shared/components/editors/PromptTemplateRenderer';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import type { RecipeExecutionResult } from '@/lib/bindings/RecipeExecutionResult';
@@ -52,7 +53,7 @@ export function RecipeHistoryTab({ history, onClear, onTryIt }: RecipeHistoryTab
           >
             <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 bg-muted/10">
               <span className="typo-body text-foreground">
-                {new Date(run.executed_at).toLocaleString()}
+                {<AbsoluteTime timestamp={run.executed_at} />}
               </span>
               <span className="typo-body text-foreground">
                 {Object.keys(run.input_data).length} input{Object.keys(run.input_data).length !== 1 ? 's' : ''}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Sparkles, Check, RotateCcw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { RecipePageFlipLoader } from '../../shared/RecipePageFlipLoader';
@@ -272,7 +273,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                           )}
                         </div>
                         <span className="typo-body text-foreground">
-                          {new Date(version.created_at).toLocaleDateString()}
+                          {<AbsoluteTime timestamp={version.created_at} variant="date" />}
                         </span>
                       </div>
 

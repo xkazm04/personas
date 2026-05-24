@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { TwinVariantTabs } from '../_variants/TwinVariantTabs';
+import { TwinVariantTabs } from '../variants/TwinVariantTabs';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 
 const ToneAtelier = lazy(() => import('./ToneAtelier'));

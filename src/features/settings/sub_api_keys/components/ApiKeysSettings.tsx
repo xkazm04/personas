@@ -32,7 +32,7 @@ import {
   type ExternalApiKey,
   type CreateApiKeyResponse,
 } from '@/api/auth/externalApiKeys';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 
@@ -240,10 +240,10 @@ function ApiKeyRow({ apiKey, actioning, onRevoke, onDelete }: ApiKeyRowProps) {
     dateFallbackDays: 30,
   });
   const lastUsedAbsolute = apiKey.last_used_at
-    ? new Date(apiKey.last_used_at).toLocaleString()
+    ? formatTimestamp(apiKey.last_used_at)
     : null;
   const createdRelative = formatRelativeTime(apiKey.created_at, '', { dateFallbackDays: 60 });
-  const createdAbsolute = new Date(apiKey.created_at).toLocaleString();
+  const createdAbsolute = formatTimestamp(apiKey.created_at);
   const stale = !isRevoked && isStaleKey(apiKey);
 
   return (

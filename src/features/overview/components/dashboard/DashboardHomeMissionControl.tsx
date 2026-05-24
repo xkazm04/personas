@@ -24,13 +24,14 @@ import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaS
 import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { EmptyState } from '@/features/shared/components/display/EmptyState';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
-import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/utils/metricIdentity';
+import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
-import { HealthDigestPanel } from '@/features/agents/health';
+import { HealthDigestPanel } from '@/features/agents/sub_health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';
@@ -371,9 +372,7 @@ export const TriagePane = memo(function TriagePane({ items }: { items: TriageIte
       />
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto">
         {items.length === 0 ? (
-          <div className="px-4 py-8 text-center typo-body text-foreground">
-            {t.overview.dashboard.todos_empty}
-          </div>
+          <EmptyState variant="todos" heading={t.overview.dashboard.todos_empty} dominant className="flex-1 py-8" />
         ) : (
           items.map((item) => {
             const meta = TRIAGE_META[item.kind];
@@ -516,7 +515,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
       </PaneHeader>
       <div className="flex-1 divide-y divide-primary/5 max-h-[28rem] overflow-y-auto font-mono text-xs">
         {executions.length === 0 ? (
-          <div className="px-4 py-8 text-center typo-body text-foreground"><DebtText k="auto_no_events_11afa11c" /></div>
+          <EmptyState variant="stream" dominant className="flex-1 py-8" />
         ) : (
           executions.map((exec) => {
             const time = new Date(exec.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });

@@ -9,6 +9,7 @@
  *   - BreedingEmptyState — placeholder shown when no runs exist
  */
 import { useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import {
   Dna, Loader2, CheckCircle2,
   Trash2, Plus, Sparkles, Zap, DollarSign, Target,
@@ -332,7 +333,7 @@ export function RunCard({
         <p className="typo-caption text-foreground mt-1 truncate">{run.summary}</p>
       )}
       <p className="typo-caption text-foreground mt-0.5">
-        {new Date(run.createdAt).toLocaleDateString()}
+        {<AbsoluteTime timestamp={run.createdAt} variant="date" />}
       </p>
     </button>
   );

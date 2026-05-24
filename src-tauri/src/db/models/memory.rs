@@ -200,22 +200,15 @@ pub struct PersonaMemory {
     /// for injection until re-attributed.
     #[serde(default)]
     pub use_case_id: Option<String>,
-    /// Group attribution. Memories with `group_id = Some(_)` are shared with
-    /// every persona that belongs to that group — when persona X (a member
-    /// of group Y) runs, the injection path will fetch X's own memories AND
-    /// every memory where `group_id = Y`, regardless of which group member
-    /// authored it. `None` means persona-private (default — existing rows
-    /// pre-2026-05-22 are private by definition).
+    /// Workspace-scoped injection anchor. Memories with `home_team_id =
+    /// Some(T)` are shared with every persona whose `home_team_id = T` — when
+    /// such a persona runs, the injection path fetches its own memories AND
+    /// every memory attributed to T, regardless of author. `None` means
+    /// persona-private (the default). This replaced the retired `group_id`
+    /// scope in the Groups→Teams consolidation (Phase 5).
     ///
     /// MEMORY CONTRACT (5): no FK by design — mirrors (2) for use_case_id.
-    /// Stage 1 (column live, injection path not yet wired); Stage 2 will
-    /// wire injection.
-    #[serde(default)]
-    pub group_id: Option<String>,
-    /// Workspace-scoped injection anchor (Groups→Teams consolidation):
-    /// memories with this set inject into every persona whose
-    /// home_team_id matches. Re-anchors the group_id injection scope onto
-    /// teams. No FK by design (same orphan-tolerance as group_id).
+    /// Populated by the groups_to_teams data migration; no runtime writer.
     #[serde(default)]
     pub home_team_id: Option<String>,
 }
@@ -232,8 +225,4 @@ pub struct CreatePersonaMemoryInput {
     pub tags: Option<Json<Vec<String>>>,
     #[serde(default)]
     pub use_case_id: Option<String>,
-    /// Optional group attribution — memories with this set are shared with
-    /// every persona in the same group. See MEMORY CONTRACT (5).
-    #[serde(default)]
-    pub group_id: Option<String>,
 }

@@ -334,7 +334,6 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
         max_budget_usd: null,
         max_turns: null,
         design_context: input.design_context ?? null,
-        group_id: null,
         notification_channels: null,
       });
       set((state) => ({ personas: [persona, ...state.personas] }));
@@ -372,7 +371,7 @@ export const createPersonaSlice: StateCreator<AgentStore, [], [], PersonaSlice> 
       // editing X" on next launch. localStorage write — best-effort, never
       // throws back to the caller.
       try {
-        const { markPersonaEdited } = await import("@/features/home/components/useResumeContext");
+        const { markPersonaEdited } = await import("@/features/home/sub_welcome/useResumeContext");
         markPersonaEdited(id);
       } catch (err) { silentCatch("stores/slices/agents/personaSlice:catch1")(err); }
     } catch (err) {

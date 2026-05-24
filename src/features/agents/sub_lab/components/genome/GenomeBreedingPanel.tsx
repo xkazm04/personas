@@ -11,6 +11,7 @@
  * (ranked offspring with plain-language "inherits" callouts).
  */
 import { useEffect, useMemo, useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dna, Sparkles, Play, Loader2, CheckCircle2, Plus, Target, Zap,
@@ -773,7 +774,7 @@ export function GenomeBreedingPanel() {
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="typo-caption text-foreground">
-                        {new Date(run.createdAt).toLocaleDateString()}
+                        {<AbsoluteTime timestamp={run.createdAt} variant="date" />}
                       </span>
                       {run.summary && (
                         <span className="typo-caption text-foreground truncate max-w-[50%]">{run.summary}</span>

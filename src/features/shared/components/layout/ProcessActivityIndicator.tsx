@@ -4,7 +4,7 @@ import { ActivityPulseIcon } from "@/features/shared/components/icons/ActivityPu
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from "@/i18n/useTranslation";
-import { PersonaMonitor } from "@/features/monitor";
+import { PersonaMonitor } from "@/features/shared/components/layout/monitor";
 
 /**
  * Titlebar entry point for the Persona Monitor.

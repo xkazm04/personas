@@ -416,7 +416,6 @@ pub async fn import_persona(
             max_budget_usd: p.max_budget_usd,
             max_turns: p.max_turns,
             design_context: p.design_context.clone(),
-            group_id: None,
             notification_channels: p.notification_channels.clone(),
         },
     )?;
@@ -470,7 +469,6 @@ pub async fn import_persona(
                 tags: m.tags.clone(),
                 use_case_id: None,
             
-                group_id: None,
             
             })
             .collect();

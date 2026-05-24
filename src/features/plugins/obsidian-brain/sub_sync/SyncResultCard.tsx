@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, ArrowUpFromLine, ArrowDownToLine, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -101,7 +102,7 @@ export default function SyncResultCard({ summary }: { summary: SyncResultSummary
         </div>
 
         <span className="typo-caption text-foreground flex-shrink-0 tabular-nums">
-          {new Date(summary.at).toLocaleTimeString()}
+          {<AbsoluteTime timestamp={summary.at} variant="time" />}
         </span>
         {hasBreakdown && (
           <motion.span

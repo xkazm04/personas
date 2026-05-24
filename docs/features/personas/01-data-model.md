@@ -30,7 +30,7 @@ row; a dozen join tables hang off `persona_id`.
 | `max_budget_usd` | `Option<f64>` | Optional hard cap on monthly cost. Executions fail fast if current spend ≥ this. |
 | `max_turns` | `Option<i32>` | Optional cap on agentic loop iterations (tool calls) per execution. |
 | `design_context` | `Option<String>` | JSON envelope (`DesignContextData`) with design files, credential links, use cases, twin pin, connector pipeline. |
-| `group_id` | `Option<String>` | FK to `persona_groups` — organizes personas into collapsible UI groups (workspaces). |
+| `home_team_id` | `Option<String>` | FK to `persona_teams` — the persona's workspace anchor (the one team whose shared instructions + defaults + injected memory apply at runtime). Replaced the retired `group_id`/PersonaGroup in the Groups→Teams consolidation. |
 | `source_review_id` | `Option<String>` | FK back to the `persona_design_reviews` row that created this persona via adoption. |
 | `trust_level` | `PersonaTrustLevel` | `manual` \| `verified` \| `revoked` — gates tool-call auto-approval. |
 | `trust_origin` | `PersonaTrustOrigin` | `builtin` \| `user` \| `system` — where trust was assigned. |
@@ -64,12 +64,12 @@ CREATE TABLE IF NOT EXISTS personas (
     max_budget_usd          REAL,
     max_turns               INTEGER,
     design_context          TEXT,
-    group_id                TEXT REFERENCES persona_groups(id) ON DELETE SET NULL,
+    home_team_id            TEXT REFERENCES persona_teams(id) ON DELETE SET NULL,
     created_at              TEXT NOT NULL,
     updated_at              TEXT NOT NULL
 );
 CREATE INDEX idx_personas_enabled ON personas(enabled);
-CREATE INDEX idx_personas_group_id ON personas(group_id);
+CREATE INDEX idx_personas_home_team_id ON personas(home_team_id);
 ```
 
 Fields added via migrations (see `incremental.rs`): `headless`,

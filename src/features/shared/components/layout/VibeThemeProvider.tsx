@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { usePersonaVibe } from '@/hooks/theming/usePersonaVibe';
-import type { VibeTheme } from '@/lib/theming/vibeThemes';
+import type { VibeTheme } from '@/lib/theme/vibeThemes';
 
 /**
  * Applies persona-derived "vibe" CSS custom properties to a wrapper element.

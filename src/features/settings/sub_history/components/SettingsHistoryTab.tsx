@@ -5,7 +5,7 @@ import {
   listSettingsAuditEntries,
   type SettingsAuditEntry,
 } from '@/api/system/settings';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatRelativeTime, formatTimestamp } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const PAGE_SIZE = 100;
@@ -164,7 +164,7 @@ export default function SettingsHistoryTab() {
                   )}
                   <span
                     className="typo-caption text-foreground shrink-0"
-                    title={new Date(entry.createdAt).toLocaleString()}
+                    title={formatTimestamp(entry.createdAt)}
                   >
                     {formatRelativeTime(entry.createdAt, '', { dateFallbackDays: 30 })}
                   </span>

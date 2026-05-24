@@ -3,6 +3,7 @@ import { Smartphone, QrCode, RefreshCw, Copy, Check, Lock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 
 /**
  * "Pair a device" — stage 1 of the mobile companion pairing flow.
@@ -36,8 +37,7 @@ export function FleetPairDevice() {
   }, []);
 
   const copy = useCallback(() => {
-    navigator.clipboard
-      .writeText(`${endpoint}|${token}`)
+    copyText(`${endpoint}|${token}`)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);

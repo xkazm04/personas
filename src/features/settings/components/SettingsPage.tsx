@@ -12,7 +12,7 @@ const tabComponents: Record<SettingsTab, React.LazyExoticComponent<React.Compone
   engine: lazy(() => import('@/features/settings/sub_engine/components/EngineSettings')),
   byom: lazy(() => import('@/features/settings/sub_byom/components/ByomSettings')),
   portability: lazy(() => import('@/features/settings/sub_portability/components/DataPortabilitySettings')),
-  network: lazy(() => import('@/features/sharing/components/ExposureManager')),
+  network: lazy(() => import('@/features/settings/sub_network/components/ExposureManager')),
   admin: lazy(() => import('@/features/settings/sub_admin/components/AdminSettings')),
   config: lazy(() => import('@/features/settings/sub_config/components/ConfigResolutionPanel')),
   'api-keys': lazy(() => import('@/features/settings/sub_api_keys/components/ApiKeysSettings')),

@@ -11,7 +11,7 @@ import { ChartGradientDefs } from "@/features/overview/sub_usage/components/Char
 import { ResourcePickerHost } from "@/features/vault/sub_credentials/components/picker/ResourcePickerHost";
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
-import TitleBar from "@/features/app-shell/components/TitleBar";
+import TitleBar from "@/features/shared/components/layout/TitleBar";
 import { useTranslation } from '@/i18n/useTranslation';
 import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';
@@ -70,11 +70,11 @@ const BackgroundServices = lazy(() => import("@/features/shared/components/layou
 const CommandPalette = lazy(() => import("@/features/shared/components/overlays/CommandPalette"));
 const GuidedTour = lazy(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazy(() => import("@/features/onboarding/components/TourSpotlight"));
-const ExecutionMiniPlayer = lazy(() => import("@/features/execution/components/ExecutionMiniPlayer"));
+const ExecutionMiniPlayer = lazy(() => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"));
 const HealingToast = lazy(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
-const ShareLinkHandler = lazy(() => import("@/features/sharing/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
+const ShareLinkHandler = lazy(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazy(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
@@ -87,11 +87,11 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/components/overlays/CommandPalette"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
-  () => import("@/features/execution/components/ExecutionMiniPlayer"),
+  () => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
-  () => import("@/features/sharing/components/ShareLinkHandler"),
+  () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
   () => import("@/features/plugins/companion/CompanionPanel"),
   () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),
 ] as const;

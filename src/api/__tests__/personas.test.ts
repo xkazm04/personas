@@ -39,7 +39,7 @@ const stubPersona = {
   max_budget_usd: null,
   max_turns: null,
   design_context: null,
-  group_id: null,
+  home_team_id: null,
   created_at: "2025-01-01T00:00:00Z",
   updated_at: "2025-01-01T00:00:00Z",
 };
@@ -172,7 +172,7 @@ describe("api/agents/personas", () => {
         max_budget_usd: null,
         max_turns: null,
         design_context: null,
-        group_id: null,
+        home_team_id: null,
       });
 
       // When the caller explicitly passes null, buildUpdateInput should
@@ -185,7 +185,7 @@ describe("api/agents/personas", () => {
       expect(input.max_budget_usd).toBeNull();
       expect(input.max_turns).toBeNull();
       expect(input.design_context).toBeNull();
-      expect(input.group_id).toBeNull();
+      expect(input.home_team_id).toBeNull();
     });
 
     it("skips a field when key is omitted (undefined)", () => {

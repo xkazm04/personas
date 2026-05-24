@@ -22,7 +22,7 @@ import type { Translations } from '@/i18n/en';
 import type { ResearchProject } from '@/api/researchLab/researchLab';
 import {
   domainLabel, type ProjectStatus, type Domain, DOMAINS,
-} from '../_shared/tokens';
+} from '../shared/tokens';
 
 type PhaseId = ProjectStatus;
 

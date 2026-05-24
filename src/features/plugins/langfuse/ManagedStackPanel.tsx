@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -77,7 +78,7 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
 
   const copy = async (kind: "email" | "password", value: string) => {
     try {
-      await navigator.clipboard.writeText(value);
+      await copyText(value);
       setCopied(kind);
       setTimeout(() => setCopied(null), 1800);
     } catch (err) { silentCatch("features/plugins/langfuse/ManagedStackPanel:catch1")(err); }

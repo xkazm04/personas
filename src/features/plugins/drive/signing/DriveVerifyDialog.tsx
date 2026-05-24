@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -215,7 +216,7 @@ function VerifyResultCard({ result }: { result: VerifyDocumentResult }) {
           {t.plugins.doc_signing.signed_at}
         </dt>
         <dd className="text-foreground tabular-nums">
-          {new Date(result.signed_at).toLocaleString()}
+          {<AbsoluteTime timestamp={result.signed_at} />}
         </dd>
 
         <dt className="text-foreground">

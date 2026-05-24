@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { FileDown, ClipboardCopy, Check, Loader2 } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
 import { LIST_ITEM_GAP, TOOLS_BTN_STANDARD } from '@/lib/utils/designTokens';
@@ -40,7 +41,7 @@ export function ExportReportButton({ mode, run, results }: ExportReportButtonPro
 
   const handleCopyMarkdown = useCallback(async () => {
     const md = generateMarkdownReport(mode, run, results, personaName);
-    await navigator.clipboard.writeText(md);
+    await copyText(md);
     setCopyState('copied');
     setTimeout(() => setCopyState('idle'), 2000);
   }, [mode, run, results, personaName]);

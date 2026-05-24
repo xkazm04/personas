@@ -5,9 +5,9 @@ import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
-import { ResearchLabFormModal } from '../_shared/ResearchLabFormModal';
-import { SelectField, TextAreaField } from '../_shared/FormField';
-import { runPersonaAndWait } from '../_shared/runPersona';
+import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
+import { SelectField, TextAreaField } from '../shared/FormField';
+import { runPersonaAndWait } from '../shared/runPersona';
 import { parseHypothesesOutput } from './parseHypotheses';
 import type { ResearchProject } from '@/api/researchLab/researchLab';
 

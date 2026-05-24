@@ -817,7 +817,6 @@ mod tests {
             trust_score: 0.0,
             source_review_id: None,
             template_category: None,
-            group_id: None,
             cli_awareness_enabled: false,
             setup_status: "ready".to_string(),
             setup_detail: None,

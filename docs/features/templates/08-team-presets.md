@@ -5,7 +5,7 @@
 
 A **team preset** is a filesystem-shipped manifest that bundles N
 persona templates plus the team wiring (PersonaTeam metadata +
-members + connections, optionally a PersonaGroup binding) needed to
+members + connections, optionally a workspace spec) needed to
 land them as a working multi-agent setup in one click. Presets live
 parallel to single-template `.json` files but in a private folder
 (`scripts/templates/_team_presets/`) so the existing template loader
@@ -28,11 +28,12 @@ PresetPreviewModal — graph preview + per-member rows (each row shows the
 adopt_team_preset IPC  (roles: Option<Vec<String>> — the selected subset,
    or null to adopt every member)
         │
-        ├─ groups::create               (optional)
         ├─ teams::create                (always — kept on partial failure)
+        ├─ if manifest has a `group` (workspace) spec: stamp the team's
+        │    shared_instructions + use the team as the members' home team
         ├─ FOR each SELECTED member:
         │    instant_adopt_template_inner
-        │    UPDATE personas.group_id   (if bound)
+        │    UPDATE personas.home_team_id (if the preset declared a workspace)
         │    teams::add_member
         │    emit `team-preset-adopt-progress` (queued | adopting | done | failed)
         └─ FOR each connection:
@@ -64,10 +65,15 @@ shape. Authoring guide:
     "color": "#F59E0B"             // overrides outer color for PersonaTeam.color
   },
 
-  "group": {                       // OPTIONAL — omit if no group binding
+  "group": {                       // OPTIONAL — declares a workspace. Post
+                                   // Groups→Teams, `shared_instructions` is
+                                   // stamped onto the TEAM and adopted members
+                                   // get this team as their home_team_id.
+                                   // `name`/`color` are vestigial (the team
+                                   // carries its own); kept for manifest compat.
     "name": "Product & Engineering",
     "color": "#F59E0B",
-    "shared_instructions": "..."   // stamped via update_group post-create
+    "shared_instructions": "..."   // stamped onto persona_teams post-create
   },
 
   "members": [
@@ -129,10 +135,10 @@ whole flow — too many sub-IPCs to wrap in one tx. The contract:
 - **Connections are silently skipped when either endpoint role
   failed.** The edge can't resolve to a member id on at least one
   side; rendering a stale edge would just create UI clutter.
-- **Group binding is best-effort.** If the post-adopt
-  `UPDATE personas.group_id` fails, the failure is logged but doesn't
+- **Home-team binding is best-effort.** If the post-adopt
+  `UPDATE personas.home_team_id` fails, the failure is logged but doesn't
   fail the member (the persona itself is still real and usable; the
-  group binding just didn't take).
+  workspace anchor just didn't take).
 
 The preview modal handles this contract by rendering `failed_members`
 inline next to their role rows so the user can decide whether to

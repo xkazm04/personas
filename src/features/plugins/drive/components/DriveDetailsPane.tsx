@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
+import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { Copy, FileText, Info, Play } from "lucide-react";
 
 import { driveFormatBytes, driveReadText, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch } from "@/lib/silentCatch";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   formatRelativeTime,
   kindBucketWeight,
@@ -107,7 +109,7 @@ export function DriveDetailsPane({
               </DetailRow>
             )}
             <DetailRow label={t.plugins.drive.details_modified}>
-              {new Date(primary.modified).toLocaleString()}
+              {<AbsoluteTime timestamp={primary.modified} />}
             </DetailRow>
             <DetailRow label={t.plugins.drive.details_path}>
               <div className="flex items-start gap-1.5">
@@ -117,8 +119,7 @@ export function DriveDetailsPane({
                 <button
                   type="button"
                   onClick={() => {
-                    navigator.clipboard
-                      .writeText(primary.path || "/")
+                    copyText(primary.path || "/")
                       .catch(silentCatch("drive:copy-path"));
                   }}
                   className="p-1 rounded text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors flex-shrink-0"

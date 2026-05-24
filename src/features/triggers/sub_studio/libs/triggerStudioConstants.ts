@@ -13,7 +13,7 @@ export const NODE_TYPE_PERSONA_STEP = 'personaStep' as const;
 export const NODE_TYPE_CONDITION_GATE = 'conditionGate' as const;
 export const EDGE_TYPE_CHAIN = 'chainEdge' as const;
 
-export { GRID_SIZE } from '@/lib/canvas/gridUtils';
+export { GRID_SIZE } from '@/features/triggers/lib/canvas/gridUtils';
 export const STUDIO_LAYOUT_KEY = 'trigger_studio_layout';
 export const STUDIO_LAYOUT_VERSION = 1;
 

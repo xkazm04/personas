@@ -55,6 +55,15 @@ fn has_table(conn: &Connection, table: &str) -> Result<bool, AppError> {
     Ok(count > 0)
 }
 
+fn has_index(conn: &Connection, index: &str) -> Result<bool, AppError> {
+    let count = conn.query_row(
+        "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = ?1",
+        [index],
+        |row| row.get::<_, i64>(0),
+    )?;
+    Ok(count > 0)
+}
+
 /// Rebuild `persona_executions` to widen the status CHECK constraint with
 /// `'incomplete'`. The `ExecutionState` enum has a valid `Incomplete`
 /// terminal state (`Running -> Incomplete`) but the original table CHECK
@@ -619,15 +628,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Created test_suites table");
     }
 
-    // Promote persona_groups to workspace containers: add shared resource fields
-    let has_group_description: bool = conn
-        .prepare(
-            "SELECT COUNT(*) FROM pragma_table_info('persona_groups') WHERE name = 'description'",
-        )?
+    // Promote persona_groups to workspace containers: add shared resource fields.
+    // Skipped entirely on fresh post-Phase-5 DBs that never create the table
+    // (Groups→Teams retire). Existing DBs still have it here — it's dropped
+    // later by `retire_persona_groups`.
+    let groups_table_exists: bool = conn
+        .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_groups'")?
         .query_row([], |row| row.get::<_, i64>(0))
         .map(|c| c > 0)
         .unwrap_or(false);
-    if !has_group_description {
+    let has_group_description: bool = !groups_table_exists
+        || conn
+            .prepare(
+                "SELECT COUNT(*) FROM pragma_table_info('persona_groups') WHERE name = 'description'",
+            )?
+            .query_row([], |row| row.get::<_, i64>(0))
+            .map(|c| c > 0)
+            .unwrap_or(false);
+    if groups_table_exists && !has_group_description {
         ddl_step(
                     conn,
                             "ALTER TABLE persona_groups ADD COLUMN description TEXT;
@@ -2871,13 +2889,26 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         conn,
         IncrementalMigration {
             id: "personas_home_team_id",
-            description: "Add home_team_id to personas (workspace anchor for the Groups→Teams merge)",
-            already_applied: |conn| has_column(conn, "personas", "home_team_id"),
+            // Guarded on the INDEX, not the column: base schema's CREATE TABLE
+            // already defines `home_team_id` for fresh DBs (so a column-guard
+            // would skip here and the index would never be created), while
+            // legacy DBs lack the column entirely. The base-schema CREATE INDEX
+            // line was removed because it ran *before* this ALTER and failed on
+            // legacy DBs that pre-date the column; this migration is now the
+            // sole creator of the index (and adds the column when missing), so
+            // both fresh and legacy DBs converge to column + index.
+            description: "Add home_team_id to personas + its index (workspace anchor for the Groups→Teams merge)",
+            already_applied: |conn| has_index(conn, "idx_personas_home_team_id"),
             apply: |conn| {
+                if !has_column(conn, "personas", "home_team_id")? {
+                    ddl_step(
+                        conn,
+                        "ALTER TABLE personas ADD COLUMN home_team_id TEXT REFERENCES persona_teams(id) ON DELETE SET NULL;",
+                    )?;
+                }
                 ddl_step(
                     conn,
-                    "ALTER TABLE personas ADD COLUMN home_team_id TEXT REFERENCES persona_teams(id) ON DELETE SET NULL;
-                     CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);",
+                    "CREATE INDEX IF NOT EXISTS idx_personas_home_team_id ON personas(home_team_id);",
                 )?;
                 Ok(())
             },
@@ -3014,6 +3045,155 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                     CREATE INDEX IF NOT EXISTS idx_owned_devices_group
                         ON owned_devices(device_group_id);",
                 )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Groups → Teams consolidation, Phase 3 — DATA MIGRATION (guarded,
+    // reversible). Each PersonaGroup becomes a connection-less "workspace
+    // team" carrying its settings; members get home_team_id + a membership
+    // row; injected memories + dev_projects re-point onto the new team.
+    //
+    // MUST run here at the end of `run_incremental` (phase 2), NOT in
+    // `ensure_composite_fires_table` (phase 1) where it originally lived: it
+    // reads `persona_groups.shared_instructions` / `persona_teams.shared_instructions`
+    // / `personas.home_team_id` / `persona_memories.home_team_id`, all of which
+    // are added by earlier `run_incremental` steps. Relocated 2026-05-24 to fix a
+    // fresh-DB startup abort ("no such column: g.shared_instructions").
+    //
+    // Reversibility: the source columns (personas.group_id,
+    // persona_memories.group_id, persona_groups table, dev_projects.group_id)
+    // are KEPT INTACT — this migration only POPULATES the new home_team_id /
+    // membership / team rows. The destructive drop of group_id + persona_groups
+    // is a separate, later phase. Every statement is idempotent (guarded by
+    // `NOT EXISTS` / `home_team_id IS NULL`), so a re-run is a no-op.
+    //
+    // Workspace-team id is deterministic: 'wsteam-' || group.id, so the
+    // mapping is stable across re-runs without a side table.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "groups_to_teams_data_migration",
+            description: "Migrate PersonaGroups into workspace PersonaTeams (home_team_id + membership + memory re-anchor)",
+            // No clean boolean marker (zero groups = legitimate no-op), so
+            // rely on run_step's id-tracking to run once; the SQL is
+            // idempotent regardless.
+            already_applied: |_conn| Ok(false),
+            apply: |conn| {
+                // Fresh DBs (post-Phase-5 schema) never create `persona_groups`
+                // or `personas.group_id`, so this whole data migration is a
+                // no-op there — guard on the table's existence to avoid a
+                // "no such table" panic. Existing DBs still have both at this
+                // point in the sequence (the drop migration runs LAST).
+                let groups_table_exists: i64 = conn
+                    .prepare("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='persona_groups'")?
+                    .query_row([], |row| row.get(0))?;
+                if groups_table_exists == 0 {
+                    return Ok(());
+                }
+                ddl_step(
+                    conn,
+                    "
+                    -- 1. group → workspace team (carry settings; disabled so it
+                    --    doesn't appear as a runnable pipeline until the user
+                    --    opts in — workspace teams have no connections).
+                    INSERT INTO persona_teams
+                        (id, name, color, enabled, shared_instructions,
+                         default_model_profile, default_max_budget_usd,
+                         default_max_turns, created_at, updated_at)
+                    SELECT 'wsteam-' || g.id, g.name, g.color, 1,
+                           g.shared_instructions, g.default_model_profile,
+                           g.default_max_budget_usd, g.default_max_turns,
+                           g.created_at, g.updated_at
+                    FROM persona_groups g
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM persona_teams t WHERE t.id = 'wsteam-' || g.id
+                    );
+
+                    -- 2. personas: set home_team_id from their group.
+                    UPDATE personas
+                    SET home_team_id = 'wsteam-' || group_id
+                    WHERE group_id IS NOT NULL AND home_team_id IS NULL;
+
+                    -- 3. membership row per grouped persona (idempotent).
+                    INSERT INTO persona_team_members
+                        (id, team_id, persona_id, role, position_x, position_y, created_at)
+                    SELECT lower(hex(randomblob(16))), 'wsteam-' || p.group_id,
+                           p.id, 'worker', 0, 0, datetime('now')
+                    FROM personas p
+                    WHERE p.group_id IS NOT NULL
+                      AND NOT EXISTS (
+                        SELECT 1 FROM persona_team_members m
+                        WHERE m.team_id = 'wsteam-' || p.group_id AND m.persona_id = p.id
+                    );
+
+                    -- 4. injected memories re-anchor onto the workspace team.
+                    UPDATE persona_memories
+                    SET home_team_id = 'wsteam-' || group_id
+                    WHERE group_id IS NOT NULL AND home_team_id IS NULL;
+                    ",
+                )?;
+                // 5. dev_projects: re-point the group binding to the team
+                //    binding, but only when dev_projects actually has both
+                //    columns (group_id was added late; team_id earlier).
+                if has_column(conn, "dev_projects", "group_id")?
+                    && has_column(conn, "dev_projects", "team_id")?
+                {
+                    ddl_step(
+                        conn,
+                        "UPDATE dev_projects
+                         SET team_id = 'wsteam-' || group_id
+                         WHERE group_id IS NOT NULL AND team_id IS NULL;",
+                    )?;
+                }
+                Ok(())
+            },
+        },
+    )?;
+
+    // Groups→Teams Phase 5 — retire the PersonaGroup primitive. Runs AFTER
+    // `groups_to_teams_data_migration` has re-anchored every group onto a
+    // workspace team (home_team_id + membership + memory). Destructive +
+    // irreversible: drops the `persona_groups` table and the orphan-tolerant
+    // `group_id` columns on `persona_memories` and `dev_projects`.
+    //
+    // `personas.group_id` is deliberately NOT dropped: it carries an inline
+    // `REFERENCES persona_groups(id)` FK, and SQLite's `ALTER TABLE DROP
+    // COLUMN` refuses a FK-constrained column without a full rebuild of the
+    // central `personas` table — too risky on a live DB for a column that is
+    // now dead (no Rust struct field, no read, no write) and forced to NULL
+    // below. It is invisible to all code; the concept is fully retired.
+    // ADR: 2026-05-23-groups-into-teams (Phase 5).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "retire_persona_groups",
+            description: "Drop persona_groups table + persona_memories/dev_projects group_id columns (Groups→Teams Phase 5)",
+            already_applied: |_conn| Ok(false),
+            apply: |conn| {
+                // Drop dependent indexes first — SQLite DROP COLUMN refuses an
+                // indexed column. IF EXISTS keeps this safe on fresh DBs.
+                let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_personas_group_id;");
+                let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_pm_group_id;");
+                let _ = ddl_step(conn, "DROP INDEX IF EXISTS idx_dev_projects_group_id;");
+
+                // No-FK columns: safe native DROP COLUMN. has_column guard makes
+                // it a no-op on fresh DBs and on re-run.
+                if has_column(conn, "persona_memories", "group_id")? {
+                    let _ = ddl_step(conn, "ALTER TABLE persona_memories DROP COLUMN group_id;");
+                }
+                if has_column(conn, "dev_projects", "group_id")? {
+                    let _ = ddl_step(conn, "ALTER TABLE dev_projects DROP COLUMN group_id;");
+                }
+
+                // NULL the personas FK column before dropping its parent so the
+                // now-dangling reference can never be enforced (group_id stays
+                // NULL forever — no code writes it).
+                if has_column(conn, "personas", "group_id")? {
+                    let _ = ddl_step(conn, "UPDATE personas SET group_id = NULL;");
+                }
+                let _ = ddl_step(conn, "DROP TABLE IF EXISTS persona_groups;");
                 Ok(())
             },
         },
@@ -3698,90 +3878,14 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             ON team_assignment_templates(team_id, updated_at DESC);",
     )?;
 
-    // Groups → Teams consolidation, Phase 3 — DATA MIGRATION (guarded,
-    // reversible). Each PersonaGroup becomes a connection-less "workspace
-    // team" carrying its settings; members get home_team_id + a membership
-    // row; injected memories + dev_projects re-point onto the new team.
-    //
-    // Reversibility: the source columns (personas.group_id,
-    // persona_memories.group_id, persona_groups table, dev_projects.group_id)
-    // are KEPT INTACT — this migration only POPULATES the new home_team_id /
-    // membership / team rows. The destructive drop of group_id + persona_groups
-    // is a separate, later phase. Every statement is idempotent (guarded by
-    // `NOT EXISTS` / `home_team_id IS NULL`), so a re-run is a no-op.
-    //
-    // Workspace-team id is deterministic: 'wsteam-' || group.id, so the
-    // mapping is stable across re-runs without a side table.
-    run_step(
-        conn,
-        IncrementalMigration {
-            id: "groups_to_teams_data_migration",
-            description: "Migrate PersonaGroups into workspace PersonaTeams (home_team_id + membership + memory re-anchor)",
-            // No clean boolean marker (zero groups = legitimate no-op), so
-            // rely on run_step's id-tracking to run once; the SQL is
-            // idempotent regardless.
-            already_applied: |_conn| Ok(false),
-            apply: |conn| {
-                ddl_step(
-                    conn,
-                    "
-                    -- 1. group → workspace team (carry settings; disabled so it
-                    --    doesn't appear as a runnable pipeline until the user
-                    --    opts in — workspace teams have no connections).
-                    INSERT INTO persona_teams
-                        (id, name, color, enabled, shared_instructions,
-                         default_model_profile, default_max_budget_usd,
-                         default_max_turns, created_at, updated_at)
-                    SELECT 'wsteam-' || g.id, g.name, g.color, 1,
-                           g.shared_instructions, g.default_model_profile,
-                           g.default_max_budget_usd, g.default_max_turns,
-                           g.created_at, g.updated_at
-                    FROM persona_groups g
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM persona_teams t WHERE t.id = 'wsteam-' || g.id
-                    );
-
-                    -- 2. personas: set home_team_id from their group.
-                    UPDATE personas
-                    SET home_team_id = 'wsteam-' || group_id
-                    WHERE group_id IS NOT NULL AND home_team_id IS NULL;
-
-                    -- 3. membership row per grouped persona (idempotent).
-                    INSERT INTO persona_team_members
-                        (id, team_id, persona_id, role, position_x, position_y, created_at)
-                    SELECT lower(hex(randomblob(16))), 'wsteam-' || p.group_id,
-                           p.id, 'worker', 0, 0, datetime('now')
-                    FROM personas p
-                    WHERE p.group_id IS NOT NULL
-                      AND NOT EXISTS (
-                        SELECT 1 FROM persona_team_members m
-                        WHERE m.team_id = 'wsteam-' || p.group_id AND m.persona_id = p.id
-                    );
-
-                    -- 4. injected memories re-anchor onto the workspace team.
-                    UPDATE persona_memories
-                    SET home_team_id = 'wsteam-' || group_id
-                    WHERE group_id IS NOT NULL AND home_team_id IS NULL;
-                    ",
-                )?;
-                // 5. dev_projects: re-point the group binding to the team
-                //    binding, but only when dev_projects actually has both
-                //    columns (group_id was added late; team_id earlier).
-                if has_column(conn, "dev_projects", "group_id")?
-                    && has_column(conn, "dev_projects", "team_id")?
-                {
-                    ddl_step(
-                        conn,
-                        "UPDATE dev_projects
-                         SET team_id = 'wsteam-' || group_id
-                         WHERE group_id IS NOT NULL AND team_id IS NULL;",
-                    )?;
-                }
-                Ok(())
-            },
-        },
-    )?;
-
+    // NOTE: the Groups→Teams Phase-3 DATA MIGRATION that used to live here was
+    // relocated to the end of `run_incremental` (2026-05-24). It reads columns
+    // (`persona_groups.shared_instructions`, `persona_teams.shared_instructions`,
+    // `personas.home_team_id`, `persona_memories.home_team_id`) that are only
+    // added by `run_incremental` — but `ensure_composite_fires_table` runs in the
+    // earlier `initial::run` phase, so on a fresh DB those columns did not yet
+    // exist and the migration aborted startup with "no such column:
+    // g.shared_instructions". Moving it to phase 2 satisfies every dependency.
     Ok(())
 }
 

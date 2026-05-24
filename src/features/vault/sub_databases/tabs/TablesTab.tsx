@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useVaultStore } from "@/stores/vaultStore";
 import { useTranslation } from '@/i18n/useTranslation';
 import { getSelectAllQuery, isApiFamily } from '../introspectionQueries';
@@ -73,11 +74,11 @@ export function TablesTab({ credentialId, serviceType }: TablesTabProps) {
   }, []);
 
   const handleCopyQuery = useCallback((tableName: string) => {
-    navigator.clipboard.writeText(getSelectAllQuery(serviceType, tableName));
+    copyText(getSelectAllQuery(serviceType, tableName));
   }, [serviceType]);
 
   const handleCopyName = useCallback((tableName: string) => {
-    navigator.clipboard.writeText(tableName);
+    copyText(tableName);
   }, []);
 
   const { t } = useTranslation();

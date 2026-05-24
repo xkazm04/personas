@@ -1039,7 +1039,6 @@ pub fn update_manual_review_status(
                     decision.to_string(),
                 ])),
                 use_case_id: None,
-                group_id: None,
             },
         );
 

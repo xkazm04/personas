@@ -71,7 +71,6 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
   const setAgentTab = useSystemStore((s) => s.setAgentTab);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
-  const fetchGroups = usePipelineStore((s) => s.fetchGroups);
   const addToast = useToastStore((s) => s.addToast);
 
   // Per-member row state. Seeded from preset.members in declaration order
@@ -176,7 +175,6 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       await Promise.all([
         fetchPersonas?.().catch(silentCatch('PresetPreviewModal:fetchPersonas')),
         fetchTeams().catch(silentCatch('PresetPreviewModal:fetchTeams')),
-        fetchGroups().catch(silentCatch('PresetPreviewModal:fetchGroups')),
       ]);
       setAdoptionState('done');
       if (res.failed_members.length === 0) {
@@ -205,7 +203,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       addToast(t.templates.presets.toast_failure, 'error');
       setAdoptionState('preview'); // allow retry
     }
-  }, [preset, overrides, selectedRoles, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+  }, [preset, overrides, selectedRoles, fetchPersonas, fetchTeams, addToast, t, tx]);
 
   const handleOpenTeam = useCallback(() => {
     setSidebarSection('personas');
@@ -247,7 +245,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       const res = await retryTeamPresetMembers(
         preset.id,
         result.team_id,
-        result.group_id,
+        result.home_team_id,
         failedRoles,
         overridePayload,
       );
@@ -255,7 +253,6 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       await Promise.all([
         fetchPersonas?.().catch(silentCatch('PresetPreviewModal:fetchPersonas')),
         fetchTeams().catch(silentCatch('PresetPreviewModal:fetchTeams')),
-        fetchGroups().catch(silentCatch('PresetPreviewModal:fetchGroups')),
       ]);
       if (res.failed_members.length === 0) {
         addToast(t.templates.presets.toast_retry_success, 'success');
@@ -272,7 +269,7 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
       silentCatch('PresetPreviewModal:retry')(err);
       addToast(t.templates.presets.toast_retry_failure, 'error');
     }
-  }, [result, preset.id, overrides, fetchPersonas, fetchTeams, fetchGroups, addToast, t, tx]);
+  }, [result, preset.id, overrides, fetchPersonas, fetchTeams, addToast, t, tx]);
 
   const toggleRole = useCallback((role: string) => {
     setExpandedRoles((prev) => {
