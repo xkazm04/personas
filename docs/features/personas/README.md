@@ -89,28 +89,17 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
-## Goal-to-Plan — narrated planner (preview)
+## Goal planning is a team concern, not a persona one
 
-Personas sidebar → **Plan** (`agentTab === 'planner'`) opens a **read-only**
-goal-to-plan surface (`src/features/agents/sub_planner/`). The user states an
-outcome in plain language ("watch a competitor's pricing page daily and email
-me the changes"); the planner maps it to a reviewable, numbered sequence of
-in-app action steps — create a persona, connect a service, configure a
-trigger/schedule, review & confirm — drawn from the automation tool catalog
-that the test-automation bridge drives (`src/test/automation/bridge.ts`).
-
-**Nothing executes.** The plan is produced behind a `PlanProvider` seam
-(`planProvider.ts`): the `plan_goal_llm` Tauri command (Sonnet via the Claude
-CLI) is tried first, with the deterministic `planFromGoal()` rule planner as
-an automatic fallback when the CLI is unavailable. Each `PlanStep` records the
-automation-bridge primitive it *would* drive (`bridgeRef`) purely for
-traceability. Steps carry a confidence score + rationale, can be reordered or
-removed, and a read-only "Watch" player walks through them with a "would open
-in…" destination per step. A live chip strip narrates detected signals under
-the goal box as you type, and the build composer offers a "Plan a goal"
-hand-off into this surface. This is the trust-building front half of
-idea-ba306c32 ("the app builds itself while you watch") — every path here is
-read-only; no execution path is wired yet.
+Defining a plain-language goal and decomposing it into work belongs to the
+**orchestration layer** that coordinates *multiple* personas, not to a single
+agent. It lives in **Team detail → Orchestrate** (`teamStudio/OrchestrationConsole`):
+a split surface — match-strategy + parallelism options on the left, the goal
+definition + routed-step preview on the right — that writes the goal to the
+team-assignment orchestrator (`decompose_team_assignment_goal` →
+`create_team_assignment` → `start_team_assignment`). The earlier agent-level
+"Plan" tab + `sub_planner/` surface were removed in favour of this. See the
+orchestration/teams docs for the assignment model.
 
 ## Editor UI — the Design hub
 
