@@ -228,8 +228,14 @@
     "update_available": "Update available: v{version}",
     "install_and_restart": "Install & Restart",
     "installing": "Installing...",
+    "installing_progress": "Installing {percent}%",
     "update_install_failed": "Update install failed",
     "update_install_retry": "Retry",
+    "update_jobs_running_warning": "{count} running task(s) will be interrupted if you install now and restart.",
+    "update_install_anyway": "Install anyway",
+    "update_install_when_idle": "Install when idle",
+    "update_install_when_idle_status": "Update will install once {count} running task(s) finish.",
+    "update_keep_working": "Keep working",
     "expand_sidebar": "Expand sidebar",
     "collapse_sidebar": "Collapse sidebar",
     "network_settings": "Network settings",
@@ -8163,7 +8169,10 @@
       "updates_checking": "Checking...",
       "updates_up_to_date": "You're up to date",
       "updates_available_toast": "Update available — see the banner at the top to install",
-      "updates_check_failed": "Couldn't check for updates. Try again in a moment."
+      "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+      "updates_current_version": "You're on v{version}",
+      "updates_last_checked": "Last checked {time}",
+      "updates_history_title": "Recent updates"
     },
     "appearance_extra": {
       "simple": "Simple",
