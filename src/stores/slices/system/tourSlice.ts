@@ -230,7 +230,21 @@ const GETTING_STARTED_STEPS: TourStepDef[] = [
       { id: "answer-questions", label: "Answer follow-ups", hint: "I ask clarifying questions in-line. Each answer lights up another sigil on the Glyph." },
       { id: "review-draft", label: "Inspect the sigils", hint: "The Glyph's eight sigils are your agent's full specification — Trigger (when it runs), Task (what it does), Apps (its tools), Message (how it reports), Review (human approval), Memory, Events, and Errors. Each petal lights up as the build resolves it; click a sigil to refine it.", highlightTestId: "build-layout-prototype" },
       { id: "open-test-report", label: "Open the test report", hint: "Once the smoke test finishes, click here to see what passed and what to fix.", highlightTestId: "build-test-report-open" },
-      { id: "promote", label: "Promote to production", hint: "When the test report is green, promote the build. The agent goes live and the tour completes." },
+      { id: "promote", label: "Promote to production", hint: "When the test report is green, promote the build. Your agent goes live — then we'll run it together." },
+    ],
+  },
+  {
+    id: "first-execution",
+    title: "Run Your Agent",
+    description: "Your agent is live. Open its Use Cases tab in the Agents module and run it once by hand — that's how you trigger any agent on demand, separate from its schedules and events.",
+    hint: "Open the agent's Use Cases tab and run a use case.",
+    nav: { sidebarSection: "personas" },
+    completeOn: "tour:execution-complete",
+    narration: "Last step — your agent is live, so let's run it once by hand. I've opened its Use Cases tab in the Agents module. Pick a use case and hit Run Now. This is how you trigger any agent on demand, separate from its schedules and events. When the run finishes, you've completed the tour.",
+    highlightTestId: "design-subtab-use-cases",
+    subSteps: [
+      { id: "open-use-cases", label: "Open Use Cases", hint: "Your new agent's editor is open on the Use Cases tab — it lists every capability the agent can run.", highlightTestId: "design-subtab-use-cases" },
+      { id: "run-now", label: "Run it", hint: "Pick a use case and click \"Run Now\" to execute it manually. The run streams its result inline.", highlightTestId: "use-case-run-now" },
     ],
   },
 ];

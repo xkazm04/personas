@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
@@ -116,6 +117,13 @@ export default function GuidedTour() {
         scheduleTourTimeout(() => storeBus.emit('tour:navigate-credential-view', { key: 'from-template' }), 150);
       } else if (step.id === 'persona-creation') {
         scheduleTourTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
+      } else if (step.id === 'first-execution') {
+        // Open the agent we just built on its Use Cases tab so the user can
+        // run it by hand. selectPersona emits persona:selected (which routes
+        // to the Activity tab), so flip to use-cases just after it settles.
+        const createdId = useSystemStore.getState().tourCreatedPersonaId;
+        if (createdId) useAgentStore.getState().selectPersona(createdId);
+        scheduleTourTimeout(() => useSystemStore.getState().setEditorTab('use-cases'), 300);
       }
 
       // Set initial spotlight

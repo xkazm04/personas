@@ -3,7 +3,7 @@ import {
   BarChart3, Radio, Link, Zap, Eye,
   Puzzle, Bot, User, Wrench, Layers,
   CalendarClock, CalendarRange, Clock,
-  LayoutGrid, Wand2, BookOpen,
+  LayoutGrid, Wand2, BookOpen, Rocket,
 } from 'lucide-react';
 import {
   getTourSurface,
@@ -18,6 +18,7 @@ const ICON_MAP: Record<string, typeof Key> = {
   'appearance-setup': Palette,
   'credentials-intro': Key,
   'persona-creation': Sparkles,
+  'first-execution': Rocket,
   // Execution & Observability
   'overview-dashboard': BarChart3,
   'execution-activity': Activity,
@@ -53,7 +54,7 @@ export function getStepIcon(stepId: string): typeof Key {
 
 /** Step-ID → surface key (StepProgress renders each step in its tour's color). */
 const STEP_TO_SURFACE: Record<string, TourSurfaceKey> = {
-  'appearance-setup': 'violet', 'credentials-intro': 'violet', 'persona-creation': 'violet',
+  'appearance-setup': 'violet', 'credentials-intro': 'violet', 'persona-creation': 'violet', 'first-execution': 'violet',
   'overview-dashboard': 'blue', 'execution-activity': 'blue', 'messages-tab': 'blue', 'health-monitoring': 'blue', 'lab-arena': 'blue',
   'events-intro': 'teal', 'trigger-types': 'teal', 'event-chaining': 'teal', 'live-stream': 'teal',
   'plugins-browse': 'amber', 'plugin-companion': 'amber', 'plugin-twin': 'amber', 'plugin-dev-tools': 'amber', 'plugin-others': 'amber',
