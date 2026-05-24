@@ -188,6 +188,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-24 — completed (commits: 19f7e91e4, b1c44706d, 9f06a70d0, 72e768158)] src/features refactor — Phase 4 (agents/ internal restructure, §B)**
+  - **What:** Promoted sub-feature trees out of `agents/components/` into `sub_*` + cleaned the health dup (renames/moves, tsc clean each): §B4 `health/`→`sub_health/` + deleted dead `HealthTab` stub; §B2 `components/glyph/`→`sub_glyph/`; §B1.1 `components/newPersona/`→`sub_new_persona/`; §B3 relocated lone `ConfigurationPopup`→`overview/components/health/` and removed empty `onboarding/`.
+  - **Importers updated:** healthCheckSlice + 4 health-barrel consumers; 3 glyph importers (matrix/companion/templates); 3 newPersona importers (sub_glyph); 2 ConfigurationPopup importers (overview health). Doc §B progress block.
+  - **Remaining in agents/components/:** `allPersonas/` (⛔ Groups→Teams session), `matrix/` (deferred §B1.2 — 20-importer quickConfig extraction, not a rename), loose `ChatThread`/`ChatMessageContent` (§B5 deferred — `lib/harness` string ref). NOT pushed.
+
 - **[2026-05-24 — completed (commits: e5a30d85d, 6387e544e, 88feb69bd, 7e59db98a)] src/features refactor — Phase 2 (chrome consolidation)**
   - **What:** Moved orphan chrome/non-section folders into their correct homes (pure file moves + import-path updates, zero behavior change, tsc clean each step): §A1 `app-shell/{Sidebar,TitleBar}` → `shared/components/layout/`; §A2 `execution/{ExecutionMiniPlayer,PipelineDots}` → `shared/components/overlays/executionPlayer/`; §A4 `radio/**` → `shared/components/layout/radio/`; §A5 `sharing/**` (16 files, P2P network) → `settings/sub_network/` (Network is a Settings tab; ShareLinkHandler's hard dep on BundleImportDialog ruled out a shared/overlays split).
   - **Importers updated:** `App.tsx`, `personas/PersonasPage.tsx`, `shared/components/layout/DesktopFooter.tsx`, `settings/sub_account/.../AccountSettings.tsx`, `settings/components/SettingsPage.tsx`, one stale silentCatch breadcrumb. Doc: `docs/refactor/feature-structure-refactor.md` §A progress block.

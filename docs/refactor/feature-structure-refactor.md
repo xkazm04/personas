@@ -169,6 +169,15 @@ The `agents/components/` folder (~104 files) is the biggest internal antipattern
 it holds entire sub-feature trees instead of only agent-shell components, sitting
 beside the proper `sub_*` siblings.
 
+> **Phase 4 progress (2026-05-24):** ✅ **B4** health/→sub_health/ + dead-stub
+> delete (`19f7e91e4`), ✅ **B2** components/glyph→sub_glyph (`b1c44706d`),
+> ✅ **B1.1** components/newPersona→sub_new_persona (`9f06a70d0`), ✅ **B3**
+> ConfigurationPopup→overview/health + onboarding/ removed (`72e768158`).
+> `agents/components/` now holds only: `allPersonas/` (⛔ owned by Groups→Teams
+> session), `matrix/` (deferred — **B1.2** is a 20-importer extraction, not a
+> rename), and loose `ChatThread`/`ChatMessageContent` (**B5**, deferred — string
+> reference in `lib/harness`). preview/ already removed in Phase 1.
+
 ### B1 — Promote sub-feature trees out of `agents/components/` `[P1, L, med]`
 - [ ] **B1.1** `agents/components/newPersona/` (+ `capabilityView/`) → `agents/sub_new_persona/`.
       It's a distinct creation flow, not a shared component.
