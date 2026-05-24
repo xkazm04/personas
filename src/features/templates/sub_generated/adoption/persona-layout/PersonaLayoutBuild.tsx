@@ -12,7 +12,7 @@ import type {
   CellBuildStatus,
   ToolTestResult,
 } from '@/lib/types/buildTypes';
-import { GlyphAnswerCard } from '@/features/agents/components/glyph/GlyphAnswerCard';
+import { GlyphAnswerCard } from '@/features/agents/sub_glyph/GlyphAnswerCard';
 import { TestReportModal } from '../chronology/TestReportModal';
 import { useUseCaseChronology } from '../chronology/useUseCaseChronology';
 import {
@@ -43,7 +43,7 @@ interface PersonaLayoutBuildProps {
 }
 
 // Map cellState keys (the build-engine vocabulary) onto persona-sigil
-// dimensions. Mirrors `agents/components/glyph/glyphLayoutHelpers.ts`
+// dimensions. Mirrors `agents/sub_glyph/glyphLayoutHelpers.ts`
 // CELL_KEY_TO_DIM but kept local so this surface doesn't reach into the
 // scratch flow's helpers.
 const CELL_KEY_TO_DIM: Record<string, GlyphDimension> = {

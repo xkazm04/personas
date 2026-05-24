@@ -17,8 +17,8 @@ import {
   companionSetConnectorEnabled,
   companionSetPluginEnabled,
 } from '@/api/companion';
-import { ComposerConnectorsPickerModal } from '@/features/agents/components/glyph/commandPanel/composer/ComposerConnectorsPickerModal';
-import { ComposerBrandIcon } from '@/features/agents/components/glyph/commandPanel/composer/ComposerBrandIcon';
+import { ComposerConnectorsPickerModal } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerConnectorsPickerModal';
+import { ComposerBrandIcon } from '@/features/agents/sub_glyph/commandPanel/composer/ComposerBrandIcon';
 import { getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import { useCompanionStore } from './companionStore';
 import { VoiceControlPopover } from './VoiceControlPopover';
