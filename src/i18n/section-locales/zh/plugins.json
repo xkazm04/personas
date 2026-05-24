@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "{count} 项待批准",
+    "approvals_pending_other": "{count} 项待批准",
+    "approve": "批准",
+    "reject": "拒绝",
     "ago_just_now": "刚刚",
     "ago_seconds": "{n} 秒前",
     "ago_minutes": "{n} 分钟前",

@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "{count}টি অনুমোদন বাকি",
+    "approvals_pending_other": "{count}টি অনুমোদন বাকি",
+    "approve": "অনুমোদন",
+    "reject": "প্রত্যাখ্যান",
     "ago_just_now": "এইমাত্র",
     "ago_seconds": "{n} সে আগে",
     "ago_minutes": "{n} মি আগে",

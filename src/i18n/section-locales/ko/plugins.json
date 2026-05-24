@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "승인 대기 {count}건",
+    "approvals_pending_other": "승인 대기 {count}건",
+    "approve": "승인",
+    "reject": "거부",
     "ago_just_now": "방금",
     "ago_seconds": "{n}초 전",
     "ago_minutes": "{n}분 전",

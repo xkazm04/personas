@@ -29,6 +29,9 @@ import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { companionApproveAction, companionRejectAction } from '@/api/companion';
+import { actionLabel } from '@/features/plugins/companion/athenaLabels';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { FleetSummaryPills } from '../FleetSummaryPills';
 import { FleetStatusLegend } from '../FleetStatusLegend';
@@ -90,6 +93,8 @@ export default function FleetGridPage() {
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const notifyAwaiting = useSystemStore((s) => s.fleetNotifyAwaiting);
   const setNotifyAwaiting = useSystemStore((s) => s.fleetSetNotifyAwaiting);
+  const companionApprovals = useCompanionStore(useShallow((s) => s.approvals));
+  const removeApproval = useCompanionStore((s) => s.removeApproval);
 
   const { t, tx } = useTranslation();
   const [spawning, setSpawning] = useState(false);
@@ -205,6 +210,37 @@ export default function FleetGridPage() {
     }
   }, []);
 
+  // Companion approvals folded into the same "Needs you" surface — the
+  // idea's "approve/reject companion actions" half. Read-only on the
+  // companion store except for removing the row once resolved.
+  const approvalItems = useMemo(
+    () =>
+      companionApprovals.map((a) => ({
+        id: a.id,
+        label: actionLabel(t, a.action),
+        rationale: a.rationale,
+      })),
+    [companionApprovals, t],
+  );
+
+  const handleApprove = useCallback(async (id: string) => {
+    try {
+      await companionApproveAction(id);
+      removeApproval(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:approve', 'Failed to approve action')(e);
+    }
+  }, [removeApproval]);
+
+  const handleRejectApproval = useCallback(async (id: string) => {
+    try {
+      await companionRejectAction(id);
+      removeApproval(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:rejectApproval', 'Failed to reject action')(e);
+    }
+  }, [removeApproval]);
+
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
@@ -307,7 +343,14 @@ export default function FleetGridPage() {
 
         <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
 
-        <FleetNeedsYouBanner waiting={waitingSessions} onJump={handleActivate} onReply={handleReply} />
+        <FleetNeedsYouBanner
+          waiting={waitingSessions}
+          onJump={handleActivate}
+          onReply={handleReply}
+          approvals={approvalItems}
+          onApprove={handleApprove}
+          onReject={handleRejectApproval}
+        />
 
         <ActionRow>
           <Button

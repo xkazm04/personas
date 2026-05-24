@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "{count} موافقة معلقة",
+    "approvals_pending_other": "{count} موافقات معلقة",
+    "approve": "موافقة",
+    "reject": "رفض",
     "ago_just_now": "الآن",
     "ago_seconds": "منذ {n} ث",
     "ago_minutes": "منذ {n} د",

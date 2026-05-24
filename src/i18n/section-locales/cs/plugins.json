@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "{count} schválení čeká",
+    "approvals_pending_other": "{count} schválení čeká",
+    "approve": "Schválit",
+    "reject": "Zamítnout",
     "ago_just_now": "právě teď",
     "ago_seconds": "před {n}s",
     "ago_minutes": "před {n}min",

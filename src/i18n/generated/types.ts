@@ -9808,6 +9808,10 @@ export type Translations = {
   };
   plugins: {
     fleet: {
+      approvals_pending_one: string;
+      approvals_pending_other: string;
+      approve: string;
+      reject: string;
       ago_just_now: string;
       ago_seconds: string;
       ago_minutes: string;

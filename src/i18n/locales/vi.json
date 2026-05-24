@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "approvals_pending_one": "{count} phê duyệt đang chờ",
+      "approvals_pending_other": "{count} phê duyệt đang chờ",
+      "approve": "Phê duyệt",
+      "reject": "Từ chối",
       "ago_just_now": "vừa xong",
       "ago_seconds": "{n} giây trước",
       "ago_minutes": "{n} phút trước",

@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "{count} अनुमोदन लंबित",
+    "approvals_pending_other": "{count} अनुमोदन लंबित",
+    "approve": "स्वीकृत करें",
+    "reject": "अस्वीकार करें",
     "ago_just_now": "अभी",
     "ago_seconds": "{n} सेकंड पहले",
     "ago_minutes": "{n} मिनट पहले",

@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "approvals_pending_one": "{count} persetujuan tertunda",
+    "approvals_pending_other": "{count} persetujuan tertunda",
+    "approve": "Setujui",
+    "reject": "Tolak",
     "ago_just_now": "baru saja",
     "ago_seconds": "{n} dtk lalu",
     "ago_minutes": "{n} mnt lalu",

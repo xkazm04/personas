@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "approvals_pending_one": "{count} подтверждение ожидает",
+      "approvals_pending_other": "{count} подтверждений ожидают",
+      "approve": "Одобрить",
+      "reject": "Отклонить",
       "ago_just_now": "только что",
       "ago_seconds": "{n} с назад",
       "ago_minutes": "{n} мин назад",
