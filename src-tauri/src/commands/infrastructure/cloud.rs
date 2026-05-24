@@ -843,7 +843,7 @@ pub async fn cloud_deploy_persona(
         "maxBudgetUsd": persona.max_budget_usd,
         "maxTurns": persona.max_turns,
         "designContext": persona.design_context,
-        "groupId": persona.group_id,
+        "homeTeamId": persona.home_team_id,
     });
 
     client.upsert_persona(&persona_body).await?;
@@ -902,7 +902,7 @@ pub async fn cloud_sync_persona(
         "maxBudgetUsd": persona.max_budget_usd,
         "maxTurns": persona.max_turns,
         "designContext": persona.design_context,
-        "groupId": persona.group_id,
+        "homeTeamId": persona.home_team_id,
     });
 
     client.upsert_persona(&persona_body).await?;

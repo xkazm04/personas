@@ -2,7 +2,6 @@ pub mod build_sessions;
 pub mod curation_schedule;
 pub mod design_conversations;
 pub mod frontend_crashes;
-pub mod groups;
 pub mod memories;
 pub mod memory_review_proposal;
 pub mod personas;

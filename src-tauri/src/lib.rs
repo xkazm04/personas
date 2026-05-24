@@ -1266,12 +1266,6 @@ pub fn run() {
             commands::core::use_cases::set_use_case_generation_settings,
             commands::core::use_cases::count_event_listeners,
             commands::core::use_cases::rename_event_listeners,
-            // Core -- Groups
-            commands::core::groups::list_groups,
-            commands::core::groups::create_group,
-            commands::core::groups::update_group,
-            commands::core::groups::delete_group,
-            commands::core::groups::reorder_groups,
             // Core -- Memories
             commands::core::memories::list_memory_categories,
             commands::core::memories::list_memories,
@@ -1279,8 +1273,6 @@ pub fn run() {
             commands::core::memories::get_memory_count,
             commands::core::memories::get_memory_stats,
             commands::core::memories::list_memories_by_execution,
-            commands::core::memories::list_group_memories,
-            commands::core::memories::update_memory_group_id,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
             commands::core::memories::merge_memories,

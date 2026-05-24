@@ -1922,7 +1922,6 @@ mod tests {
             max_budget_usd: None,
             max_turns: None,
             design_context: None,
-            group_id: None,
             home_team_id: None,
             source_review_id: None,
             trust_level: crate::db::models::PersonaTrustLevel::Verified,

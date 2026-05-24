@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 use crate::db::models::Persona;
-use crate::db::models::PersonaGroup;
+use crate::db::models::PersonaTeam;
 use crate::db::repos::core::settings;
 use crate::db::settings_keys;
 use crate::db::DbPool;
@@ -101,7 +101,7 @@ impl GlobalConfigContext {
 pub fn resolve_effective_config(
     pool: &DbPool,
     persona: &Persona,
-    workspace: Option<&PersonaGroup>,
+    workspace: Option<&PersonaTeam>,
 ) -> EffectiveModelConfig {
     let ctx = GlobalConfigContext::load(pool);
     resolve_effective_config_with_globals(persona, workspace, &ctx)
@@ -112,7 +112,7 @@ pub fn resolve_effective_config(
 /// is the hot path for bulk resolution — zero DB reads per persona.
 pub fn resolve_effective_config_with_globals(
     persona: &Persona,
-    workspace: Option<&PersonaGroup>,
+    workspace: Option<&PersonaTeam>,
     ctx: &GlobalConfigContext,
 ) -> EffectiveModelConfig {
     // Parse model profiles at each level

@@ -4,15 +4,15 @@ use tauri::State;
 use ts_rs::TS;
 
 use crate::db::models::{
-    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription, PersonaGroup,
-    PersonaSummary, PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus,
+    CreatePersonaInput, Persona, PersonaAutomation, PersonaEventSubscription,
+    PersonaSummary, PersonaTeam, PersonaToolDefinition, PersonaTrigger, UpdateExecutionStatus,
     UpdatePersonaInput,
 };
 use crate::db::repos::communication::events as event_repo;
-use crate::db::repos::core::groups as group_repo;
 use crate::db::repos::core::personas as repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::resources::automations as automation_repo;
+use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::engine;
@@ -168,7 +168,7 @@ pub fn update_persona(
             "maxBudgetUsd": sync_persona.max_budget_usd,
             "maxTurns": sync_persona.max_turns,
             "designContext": sync_persona.design_context,
-            "groupId": sync_persona.group_id,
+            "homeTeamId": sync_persona.home_team_id,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed");
@@ -272,7 +272,7 @@ pub fn update_persona_parameters(
             "maxBudgetUsd": sync_persona.max_budget_usd,
             "maxTurns": sync_persona.max_turns,
             "designContext": sync_persona.design_context,
-            "groupId": sync_persona.group_id,
+            "homeTeamId": sync_persona.home_team_id,
         });
         if let Err(e) = client.upsert_persona(&body).await {
             tracing::warn!(persona_id = %sync_id, error = %e, "Background cloud sync failed after parameter update");
@@ -609,9 +609,9 @@ pub fn resolve_effective_config(
 ) -> Result<EffectiveModelConfig, AppError> {
     let persona = repo::get_by_id(&state.db, &persona_id)?;
     let workspace = persona
-        .group_id
+        .home_team_id
         .as_deref()
-        .and_then(|gid| group_repo::get_by_id(&state.db, gid).ok());
+        .and_then(|tid| team_repo::get_by_id(&state.db, tid).ok());
     Ok(config_merge::resolve_effective_config(
         &state.db,
         &persona,
@@ -640,13 +640,13 @@ pub fn resolve_effective_config_bulk(
     // Global tier — three DB reads, shared across every persona below.
     let ctx = config_merge::GlobalConfigContext::load(&state.db);
 
-    // One query each for personas and groups; index by id for O(1) lookup.
+    // One query each for personas and home-teams; index by id for O(1) lookup.
     let personas = repo::get_all(&state.db)?;
     let persona_by_id: std::collections::HashMap<&str, &Persona> =
         personas.iter().map(|p| (p.id.as_str(), p)).collect();
-    let groups = group_repo::get_all(&state.db)?;
-    let group_by_id: std::collections::HashMap<&str, &PersonaGroup> =
-        groups.iter().map(|g| (g.id.as_str(), g)).collect();
+    let teams = team_repo::get_all(&state.db)?;
+    let team_by_id: std::collections::HashMap<&str, &PersonaTeam> =
+        teams.iter().map(|t| (t.id.as_str(), t)).collect();
 
     let mut out = Vec::with_capacity(persona_ids.len());
     for id in &persona_ids {
@@ -654,9 +654,9 @@ pub fn resolve_effective_config_bulk(
             continue;
         };
         let workspace = persona
-            .group_id
+            .home_team_id
             .as_deref()
-            .and_then(|gid| group_by_id.get(gid).copied());
+            .and_then(|tid| team_by_id.get(tid).copied());
         out.push(config_merge::resolve_effective_config_with_globals(
             persona, workspace, &ctx,
         ));

@@ -485,7 +485,6 @@ pub struct Persona {
     pub max_budget_usd: Option<f64>,
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
-    pub group_id: Option<String>,
     /// Workspace anchor (Groups→Teams consolidation): the one team whose
     /// shared instructions + defaults + injected memory apply at runtime.
     pub home_team_id: Option<String>,
@@ -690,7 +689,6 @@ pub struct CreatePersonaInput {
     pub max_budget_usd: Option<f64>,
     pub max_turns: Option<i32>,
     pub design_context: Option<String>,
-    pub group_id: Option<String>,
     pub notification_channels: Option<String>,
 }
 
@@ -749,7 +747,6 @@ pub struct UpdatePersonaInput {
     pub max_budget_usd: Option<Option<f64>>,
     pub max_turns: Option<Option<i32>>,
     pub design_context: Option<Option<String>>,
-    pub group_id: Option<Option<String>>,
     pub home_team_id: Option<Option<String>>,
     pub parameters: Option<Option<String>>,
     pub gateway_exposure: Option<PersonaGatewayExposure>,

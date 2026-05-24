@@ -151,16 +151,18 @@ pub struct AdoptedTeamPresetFailure {
 
 /// Aggregate return from `adopt_team_preset`. `team_id` is always set
 /// (the team itself is the first thing created and never rolled back);
-/// `group_id` is set only when the manifest declared a group spec; the
-/// two lists partition the manifest's members into success vs. failure.
-/// `created_connections` is the count of edges actually wired (an edge
-/// is skipped silently when either endpoint role failed adoption).
+/// `home_team_id` is set only when the manifest declared a workspace
+/// (group) spec — it equals `team_id` and means the adopted personas were
+/// anchored to this team as their workspace. The two lists partition the
+/// manifest's members into success vs. failure. `created_connections` is
+/// the count of edges actually wired (an edge is skipped silently when
+/// either endpoint role failed adoption).
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct AdoptedTeamPresetResult {
     pub preset_id: String,
     pub team_id: String,
-    pub group_id: Option<String>,
+    pub home_team_id: Option<String>,
     pub members: Vec<AdoptedTeamPresetMember>,
     pub failed_members: Vec<AdoptedTeamPresetFailure>,
     pub created_connections: i32,

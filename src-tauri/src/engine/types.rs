@@ -442,7 +442,6 @@ impl EphemeralPersona {
             max_budget_usd: draft.max_budget_usd,
             max_turns: Some(1),
             design_context: draft.design_context,
-            group_id: None,
             home_team_id: None,
             source_review_id: None,
             trust_level: PersonaTrustLevel::Verified,

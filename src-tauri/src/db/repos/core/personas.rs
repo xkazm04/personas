@@ -375,7 +375,6 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         max_budget_usd: row.get("max_budget_usd")?,
         max_turns: row.get("max_turns")?,
         design_context: row.get("design_context")?,
-        group_id: row.get("group_id")?,
         home_team_id: row.get("home_team_id")?,
         source_review_id: row
             .get::<_, Option<String>>("source_review_id")
@@ -614,9 +613,9 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
             "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, max_concurrent, timeout_ms,
-              model_profile, max_budget_usd, max_turns, design_context, group_id,
+              model_profile, max_budget_usd, max_turns, design_context,
               notification_channels, created_at, updated_at)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?19)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?18)
              RETURNING *",
             params![
                 id,
@@ -635,7 +634,6 @@ pub fn create(pool: &DbPool, mut input: CreatePersonaInput) -> Result<Persona, A
                 input.max_budget_usd,
                 input.max_turns,
                 input.design_context,
-                input.group_id,
                 encrypted_channels,
                 now,
             ],
@@ -834,14 +832,6 @@ pub fn update(pool: &DbPool, id: &str, input: UpdatePersonaInput) -> Result<Pers
         push_field_param!(
             input.design_context,
             "design_context",
-            sets,
-            param_idx,
-            param_values,
-            clone
-        );
-        push_field_param!(
-            input.group_id,
-            "group_id",
             sets,
             param_idx,
             param_values,
@@ -1278,13 +1268,13 @@ pub fn duplicate(pool: &DbPool, source_id: &str) -> Result<Persona, AppError> {
             "INSERT INTO personas
              (id, project_id, name, description, system_prompt, structured_prompt,
               icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
-              model_profile, max_budget_usd, max_turns, design_context, group_id,
+              model_profile, max_budget_usd, max_turns, design_context,
               notification_channels, parameters, trust_level, trust_origin,
               trust_verified_at, trust_score, source_review_id, last_design_result,
               template_category, cli_awareness_enabled, created_at, updated_at)
              SELECT ?1, project_id, name || ' (Copy)', description, system_prompt, structured_prompt,
                     icon, color, enabled, sensitive, headless, max_concurrent, timeout_ms,
-                    model_profile, max_budget_usd, max_turns, design_context, group_id,
+                    model_profile, max_budget_usd, max_turns, design_context,
                     notification_channels, parameters, trust_level, trust_origin,
                     trust_verified_at, trust_score, source_review_id, last_design_result,
                     template_category, cli_awareness_enabled, ?2, ?2
@@ -1458,7 +1448,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1518,7 +1507,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1557,7 +1545,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1626,7 +1613,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         );
@@ -1653,7 +1639,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1706,7 +1691,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1758,7 +1742,6 @@ mod tests {
             max_budget_usd: None,
             max_turns: None,
             design_context: None,
-            group_id: None,
             notification_channels: None,
         };
 
@@ -1816,7 +1799,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1879,7 +1861,6 @@ mod tests {
                 max_budget_usd: Some(5.0),
                 max_turns: Some(10),
                 design_context: Some(r#"{"use_cases":[]}"#.into()),
-                group_id: None,
                 notification_channels: None,
             },
         )

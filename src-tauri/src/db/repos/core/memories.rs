@@ -100,7 +100,6 @@ row_mapper!(row_to_memory -> PersonaMemory {
     last_accessed_at [opt],
     created_at, updated_at,
     use_case_id [opt],
-    group_id [opt],
     home_team_id [opt],
 });
 
@@ -290,8 +289,8 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
 
         conn.execute(
             "INSERT INTO persona_memories
-             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, group_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)",
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
             params![
                 id,
                 input.persona_id,
@@ -303,7 +302,6 @@ pub fn create(pool: &DbPool, input: CreatePersonaMemoryInput) -> Result<PersonaM
                 normalize_tags(input.tags.map(|j| serde_json::to_string(&j.0).unwrap_or_default())),
                 now,
                 input.use_case_id,
-                input.group_id,
             ],
         )?;
 
@@ -356,8 +354,8 @@ pub fn batch_create(
         {
             let mut stmt = tx.prepare(
                 "INSERT INTO persona_memories
-                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, group_id)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)",
+                 (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
             )?;
 
             for (index, input) in inputs.into_iter().enumerate() {
@@ -412,7 +410,6 @@ pub fn batch_create(
                     ),
                     now,
                     input.use_case_id,
-                    input.group_id,
                 ])?;
                 count += 1;
             }
@@ -723,8 +720,8 @@ pub fn merge(
 
         tx.execute(
             "INSERT INTO persona_memories
-             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id, group_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)",
+             (id, persona_id, title, content, category, source_execution_id, importance, tags, created_at, updated_at, use_case_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10)",
             params![
                 id,
                 input.persona_id,
@@ -736,7 +733,6 @@ pub fn merge(
                 tags,
                 now,
                 input.use_case_id,
-                input.group_id,
             ],
         )?;
 
@@ -755,28 +751,6 @@ pub fn merge(
 }
 
 // -- Tier management ----------------------------------------------------------
-
-/// Update the tier of a single memory.
-/// Set or clear a memory's `group_id` attribution. `Some(group_id)` shares
-/// the memory with that group (surfaces in the group-scoped injection path
-/// for every member's prompt); `None` reverts the memory to persona-private.
-/// Returns `Ok(true)` if a row was updated. Used by the GroupMemoryListModal
-/// "Unshare" action (cycle 14).
-pub fn update_group_id(
-    pool: &DbPool,
-    id: &str,
-    group_id: Option<&str>,
-) -> Result<bool, AppError> {
-    timed_query!("persona_memories", "persona_memories::update_group_id", {
-        let conn = pool.get()?;
-        let now = chrono::Utc::now().to_rfc3339();
-        let rows = conn.execute(
-            "UPDATE persona_memories SET group_id = ?1, updated_at = ?2 WHERE id = ?3",
-            params![group_id, now, id],
-        )?;
-        Ok(rows > 0)
-    })
-}
 
 pub fn update_tier(pool: &DbPool, id: &str, tier: &str) -> Result<bool, AppError> {
     // Validate tier value
@@ -810,7 +784,7 @@ pub struct TieredMemories {
 
 /// Scope filter for memory injection. `persona_id` is always required —
 /// a persona's own memories are always in scope. Additional optional axes
-/// (capability + group) layer on top via OR clauses in the WHERE.
+/// (capability + home-team) layer on top via OR clauses in the WHERE.
 ///
 /// Adding a new scope axis is a 3-line change: a new `Option<&str>` field,
 /// a `with_*` builder method, and a `push` line in
@@ -823,10 +797,10 @@ pub struct InjectionScope<'a> {
     /// When `Some(uc)`: active/working memories match `use_case_id = uc OR use_case_id IS NULL`.
     /// When `None`: active/working memories match `use_case_id IS NULL`.
     pub use_case_id: Option<&'a str>,
-    /// When `Some(g)`: rows owned by ANY persona but attributed to group `g`
-    /// also surface (group-shared memory, MEMORY CONTRACT §5).
+    /// When `Some(t)`: rows owned by ANY persona but attributed to home-team
+    /// `t` also surface (team-shared injected memory, MEMORY CONTRACT §5).
     /// When `None`: only persona-private rows surface.
-    pub group_id: Option<&'a str>,
+    pub home_team_id: Option<&'a str>,
 }
 
 impl<'a> InjectionScope<'a> {
@@ -835,15 +809,15 @@ impl<'a> InjectionScope<'a> {
         Self {
             persona_id,
             use_case_id: None,
-            group_id: None,
+            home_team_id: None,
         }
     }
     pub fn with_use_case(mut self, uc: Option<&'a str>) -> Self {
         self.use_case_id = uc;
         self
     }
-    pub fn with_group(mut self, gid: Option<&'a str>) -> Self {
-        self.group_id = gid;
+    pub fn with_home_team(mut self, tid: Option<&'a str>) -> Self {
+        self.home_team_id = tid;
         self
     }
 }
@@ -864,11 +838,11 @@ fn build_scope_predicates<'a>(
     let mut extra: Vec<&str> = Vec::new();
     let mut next_idx: usize = 4; // ?1..?3 reserved
 
-    let persona_scope_sql = if let Some(gid) = scope.group_id {
+    let persona_scope_sql = if let Some(tid) = scope.home_team_id {
         let idx = next_idx;
         next_idx += 1;
-        extra.push(gid);
-        format!("(persona_id = ?1 OR group_id = ?{idx})")
+        extra.push(tid);
+        format!("(persona_id = ?1 OR home_team_id = ?{idx})")
     } else {
         "persona_id = ?1".to_string()
     };
@@ -888,8 +862,8 @@ fn build_scope_predicates<'a>(
 
 /// Fetch memories suitable for injection into a prompt, split by tier.
 ///
-/// Persona-wide convenience — no capability scope, no group scope. Forwards
-/// to [`get_for_injection_v2`] with `InjectionScope::for_persona(...)`.
+/// Persona-wide convenience — no capability scope, no home-team scope.
+/// Forwards to [`get_for_injection_v2`] with `InjectionScope::for_persona(...)`.
 ///
 /// * `core_limit` — max number of core-tier memories to return.
 /// * `active_limit` — max number of active-tier memories to return (scored by
@@ -903,7 +877,7 @@ pub fn get_for_injection(
     get_for_injection_v2(pool, InjectionScope::for_persona(persona_id), core_limit, active_limit)
 }
 
-/// Capability- and group-aware memory fetch for prompt injection.
+/// Capability- and home-team-aware memory fetch for prompt injection.
 ///
 /// Tier rules:
 /// - **Core** memories are always persona-wide regardless of `use_case_id`.
@@ -915,9 +889,9 @@ pub fn get_for_injection(
 ///   - When `scope.use_case_id = None`, fetch only persona-wide rows
 ///     (`use_case_id IS NULL`).
 ///
-/// When `scope.group_id = Some(g)`, OR-in `group_id = g` at every tier so
-/// memories authored in group context are shared across every member's
-/// prompt assembly (MEMORY CONTRACT §5).
+/// When `scope.home_team_id = Some(t)`, OR-in `home_team_id = t` at every
+/// tier so memories authored in the home-team workspace are shared across
+/// every member's prompt assembly (MEMORY CONTRACT §5).
 ///
 /// Ordering: importance DESC, access_count DESC, created_at DESC for active;
 /// importance DESC, created_at DESC for core.
@@ -956,7 +930,7 @@ pub fn get_for_injection_v2(
             // Assemble the final params slice in the order the SQL expects:
             // ?1 = persona_id, ?2 = core_limit, ?3 = active_limit, then the
             // extras the scope builder produced in declaration order
-            // (group_id before use_case_id).
+            // (home_team_id before use_case_id).
             let mut boxed_params: Vec<Box<dyn rusqlite::ToSql>> = Vec::with_capacity(3 + extra_params.len());
             boxed_params.push(Box::new(scope.persona_id.to_string()));
             boxed_params.push(Box::new(core_limit));
@@ -975,36 +949,6 @@ pub fn get_for_injection_v2(
             let (core, active) = all.into_iter().partition(|m| m.tier == "core");
 
             Ok(TieredMemories { core, active })
-        }
-    )
-}
-
-/// Fetch every memory authored with `group_id = ?` — used by the Group
-/// Memories panel in `GroupManagerPage` to show the cross-persona shared
-/// pool a group has accumulated. Returns rows in importance-desc /
-/// created-at-desc order so the highest-value items lead. No tier filter
-/// because the editor surface wants to show core/active/working all in
-/// one place — promotions/demotions happen via the per-persona editor,
-/// not from the group view.
-pub fn list_by_group(
-    pool: &DbPool,
-    group_id: &str,
-    limit: Option<i64>,
-) -> Result<Vec<PersonaMemory>, AppError> {
-    timed_query!(
-        "persona_memories",
-        "persona_memories::list_by_group",
-        {
-            let limit = limit.unwrap_or(200);
-            let conn = pool.get()?;
-            let mut stmt = conn.prepare_cached(
-                "SELECT * FROM persona_memories
-                 WHERE group_id = ?1
-                 ORDER BY importance DESC, created_at DESC
-                 LIMIT ?2",
-            )?;
-            let rows = stmt.query_map(params![group_id, limit], row_to_memory)?;
-            Ok(collect_rows(rows, "memories::list_by_group"))
         }
     )
 }
@@ -1155,7 +1099,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1174,7 +1117,6 @@ mod tests {
                 tags: Some(Json(vec!["ui".to_string(), "preference".to_string()])),
                 use_case_id: None,
             
-                group_id: None,
             
             },
         )
@@ -1195,7 +1137,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
         )
@@ -1274,7 +1215,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1290,7 +1230,6 @@ mod tests {
             tags: None,
             use_case_id: None,
         
-            group_id: None,
         
         };
 
@@ -1334,7 +1273,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1352,7 +1290,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
         )
@@ -1370,7 +1307,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
         )
@@ -1432,7 +1368,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1458,7 +1393,6 @@ mod tests {
                 importance: Some(3),
                 tags: None,
                 use_case_id: use_case_id.map(|s| s.to_string()),
-                group_id: None,
             },
         )
         .unwrap();
@@ -1552,83 +1486,74 @@ mod tests {
         assert_eq!(v1.active.len(), v2.active.len());
     }
 
-    /// 2026-05-22 — group-scoped injection: when running persona X (member of
-    /// group G), the active-tier fetch should include persona-private rows
-    /// AND group-shared rows authored by ANY group member, but not memories
-    /// belonging to another group or to other personas with no group.
+    /// Home-team-scoped injection: when running persona X (home team T), the
+    /// active-tier fetch should include persona-private rows AND team-shared
+    /// rows attributed to T (authored by ANY member), but not memories
+    /// attributed to another home team or to personas with no team.
+    ///
+    /// Memory home-team attribution has no runtime writer post Groups→Teams
+    /// retire (it arrives only via the groups_to_teams data migration), so the
+    /// test seeds `home_team_id` with a direct UPDATE, mirroring the migration.
     #[test]
-    fn test_get_for_injection_v2_group_scoped() {
+    fn test_get_for_injection_v2_home_team_scoped() {
         let pool = init_test_db().unwrap();
-        let persona_a = make_persona(&pool, "group-A persona 1");
-        let persona_b = make_persona(&pool, "group-A persona 2");
+        let persona_a = make_persona(&pool, "team-A persona 1");
+        let persona_b = make_persona(&pool, "team-A persona 2");
         let outsider = make_persona(&pool, "outsider");
 
-        // persona_a's private memory
-        let priv_a = create(
-            &pool,
-            CreatePersonaMemoryInput {
-                persona_id: persona_a.clone(),
-                title: "private to A".into(),
-                content: "x".into(),
-                category: Some("fact".into()),
-                source_execution_id: None,
-                importance: Some(3),
-                tags: None,
-                use_case_id: None,
-                group_id: None,
-            },
-        )
-        .unwrap()
-        .id;
+        let mk = |persona: &str, title: &str| -> String {
+            create(
+                &pool,
+                CreatePersonaMemoryInput {
+                    persona_id: persona.to_string(),
+                    title: title.into(),
+                    content: "x".into(),
+                    category: Some("fact".into()),
+                    source_execution_id: None,
+                    importance: Some(3),
+                    tags: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap()
+            .id
+        };
+        let set_team = |id: &str, team: &str| {
+            pool.get()
+                .unwrap()
+                .execute(
+                    "UPDATE persona_memories SET home_team_id = ?1 WHERE id = ?2",
+                    params![team, id],
+                )
+                .unwrap();
+        };
 
-        // persona_b authors a group-shared memory in group-X
-        let shared_in_x = create(
-            &pool,
-            CreatePersonaMemoryInput {
-                persona_id: persona_b.clone(),
-                title: "shared in X".into(),
-                content: "y".into(),
-                category: Some("fact".into()),
-                source_execution_id: None,
-                importance: Some(3),
-                tags: None,
-                use_case_id: None,
-                group_id: Some("group-X".into()),
-            },
-        )
-        .unwrap()
-        .id;
+        // persona_a's private memory (no team)
+        let priv_a = mk(&persona_a, "private to A");
+        // persona_b authors a team-shared memory attributed to team-X
+        let shared_in_x = mk(&persona_b, "shared in X");
+        set_team(&shared_in_x, "team-X");
+        // outsider's team-Y memory should NEVER leak into team-X queries
+        let shared_in_y = mk(&outsider, "shared in Y");
+        set_team(&shared_in_y, "team-Y");
 
-        // outsider's group-Y memory should NEVER leak into group-X queries
-        let shared_in_y = create(
+        // Run injection for persona_a as if their home team were team-X.
+        let tiered = get_for_injection_v2(
             &pool,
-            CreatePersonaMemoryInput {
-                persona_id: outsider.clone(),
-                title: "shared in Y".into(),
-                content: "z".into(),
-                category: Some("fact".into()),
-                source_execution_id: None,
-                importance: Some(3),
-                tags: None,
-                use_case_id: None,
-                group_id: Some("group-Y".into()),
-            },
+            InjectionScope::for_persona(&persona_a).with_home_team(Some("team-X")),
+            10,
+            40,
         )
-        .unwrap()
-        .id;
-
-        // Run injection for persona_a as if they were in group-X.
-        let tiered =
-            get_for_injection_v2(&pool, InjectionScope::for_persona(&persona_a).with_group(Some("group-X")), 10, 40).unwrap();
+        .unwrap();
         let ids: Vec<&str> = tiered.active.iter().map(|m| m.id.as_str()).collect();
         assert!(ids.contains(&priv_a.as_str()), "persona's own memory missing");
         assert!(
             ids.contains(&shared_in_x.as_str()),
-            "group-X shared memory not surfaced for member"
+            "team-X shared memory not surfaced for member"
         );
         assert!(
             !ids.contains(&shared_in_y.as_str()),
-            "group-Y memory leaked into group-X injection"
+            "team-Y memory leaked into team-X injection"
         );
     }
 
@@ -1664,7 +1589,6 @@ mod tests {
                 tags: None,
                 use_case_id: Some("uc-x".into()),
             
-                group_id: None,
             
             },
         )
@@ -1698,7 +1622,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1716,7 +1639,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
             // 1: empty content after strip → empty_title_or_content
@@ -1730,7 +1652,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
             // 2: bogus category → invalid_category
@@ -1744,7 +1665,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
             // 3: valid
@@ -1758,7 +1678,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
         ];
@@ -1804,7 +1723,6 @@ mod tests {
                 max_budget_usd: None,
                 max_turns: None,
                 design_context: None,
-                group_id: None,
                 notification_channels: None,
             },
         )
@@ -1824,7 +1742,6 @@ mod tests {
                 tags: None,
                 use_case_id: Some("uc-deleted-on-purpose".into()),
             
-                group_id: None,
             
             },
         )
@@ -1841,7 +1758,6 @@ mod tests {
                 tags: None,
                 use_case_id: None,
             
-                group_id: None,
             
             },
         )

@@ -142,7 +142,7 @@ pub fn retry_team_preset_members(
     app: AppHandle,
     preset_id: String,
     team_id: String,
-    group_id: Option<String>,
+    home_team_id: Option<String>,
     roles: Vec<String>,
     language: Option<String>,
     parameter_overrides: Option<
@@ -158,7 +158,7 @@ pub fn retry_team_preset_members(
         Some(app),
         &preset_id,
         &team_id,
-        group_id.as_deref(),
+        home_team_id.as_deref(),
         &roles,
         language.as_deref(),
         parameter_overrides.as_ref(),
