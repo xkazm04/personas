@@ -249,7 +249,7 @@ tabs, which are different. So it is correctly *not* a home sub-feature.
       "chrome, not a section" nature explicit. **Recommend: move under `shared/`**,
       consistent with principle #2. Add a README either way.
 
-### C2 — `home/components/cockpit/` and `releases/` are sub-features `[P2, M, high]`
+### C2 — ✅ DONE (`41d0fdda4`) `home/components/cockpit/` and `releases/` are sub-features `[P2, M, high]`
 **Finding:** `home/components/cockpit/widgets/**` and `home/components/releases/**`
 are deeply nested sub-feature trees inside `components/`.
 
@@ -264,7 +264,7 @@ are deeply nested sub-feature trees inside `components/`.
 
 ## D. Other feature folders — internal consistency
 
-### D1 — `overview/`: collapse `utils/` into `libs/` `[P2, S, med]`
+### D1 — ✅ DONE (`a1989e4e7`) `overview/`: collapse `utils/` into `libs/` `[P2, S, med]`
 **Finding:** Both `overview/libs/` and `overview/utils/` exist with no clear
 split principle. `overview/shared/` (e.g. `eventVisuals.ts`) is overview-internal
 only — correctly scoped, keep.

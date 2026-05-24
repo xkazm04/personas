@@ -178,6 +178,10 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-24 — completed (commits: a1989e4e7, 41d0fdda4)] src/features refactor — §D1 + §C2**
+  - **What:** §D1 merged `overview/utils/` (computeTrends, dashboardGrid, metricIdentity) into `overview/libs/` (9 import refs); §C2 promoted `home/components/{cockpit,releases}` → `home/sub_cockpit`/`sub_releases` (35+6 files; 5 importer refs + 2 stale breadcrumbs; releases/i18n adapter rode along). tsc clean each. home/components/ now holds only home-shell components.
+  - NOT pushed.
+
 - **[2026-05-24 — completed (commits: 5edadf2ab, 5b3fb1205)] src/features refactor — unblocked A3 + A6 (post Groups→Teams merge)**
   - **What:** §A3 monitor→`shared/components/layout/monitor/` (completes chrome consolidation A1–A6); §A6 deployment→`agents/sub_deployment/` (placed under agents/ where the 14 sibling sub_* live + the agentTab='cloud' view renders, not personas/ per plan). Pure moves, tsc clean.
   - **Deferred (with rationale):** the **executions dead island** — re-baselined on current master (still dead) but it's ~106 files across 6 areas (agents/sub_executions 31, overview/sub_observability 19, triggers/sub_triggers 33 [INTERMIXED with live cron helpers used by schedules/FrequencyEditor], shared/use-cases 5, templates/sub_n8n 16, overview/sub_activity 2) with lazy-load false-positive risk → needs a dedicated worktree pass with `knip→delete→knip` iteration + app launch to verify observability/triggers/executions surfaces. **A7** pipeline + **B1.3** allPersonas deferred (overlap stale `/prototype` sessions: Team Studio, PersonaOverview A/B). NOT pushed.
