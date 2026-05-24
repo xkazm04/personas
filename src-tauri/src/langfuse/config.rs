@@ -34,6 +34,8 @@ const KEY_ADMIN_PASSWORD: &str = "langfuse-admin-password";
 const KEY_PREFERRED_PORT: &str = "langfuse-preferred-port";
 #[cfg(feature = "desktop")]
 const KEY_PROJECT_ID: &str = "langfuse-project-id";
+#[cfg(feature = "desktop")]
+const KEY_PUSH_LAB_SCORES: &str = "langfuse-push-lab-scores";
 
 #[cfg(feature = "desktop")]
 fn put(name: &str, value: &str) -> Result<(), String> {
@@ -133,6 +135,24 @@ pub fn load_redact() -> bool {
 }
 #[cfg(not(feature = "desktop"))]
 pub fn load_redact() -> bool {
+    false
+}
+
+#[cfg(feature = "desktop")]
+pub fn store_push_lab_scores(push: bool) -> Result<(), String> {
+    put(KEY_PUSH_LAB_SCORES, if push { "true" } else { "false" })
+}
+#[cfg(not(feature = "desktop"))]
+pub fn store_push_lab_scores(_push: bool) -> Result<(), String> {
+    Ok(())
+}
+
+#[cfg(feature = "desktop")]
+pub fn load_push_lab_scores() -> bool {
+    matches!(get(KEY_PUSH_LAB_SCORES).as_deref(), Some("true"))
+}
+#[cfg(not(feature = "desktop"))]
+pub fn load_push_lab_scores() -> bool {
     false
 }
 
@@ -284,6 +304,7 @@ pub fn clear_all() {
         KEY_ADMIN_PASSWORD,
         KEY_PREFERRED_PORT,
         KEY_PROJECT_ID,
+        KEY_PUSH_LAB_SCORES,
     ] {
         drop_key(key);
     }

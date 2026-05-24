@@ -20,6 +20,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
   const [redactContent, setRedactContent] = useState(() => initial?.redactContent ?? false);
   const [enabled, setEnabled] = useState(() => initial?.enabled ?? true);
   const [projectId, setProjectId] = useState(() => initial?.projectId ?? "");
+  const [pushLabScores, setPushLabScores] = useState(() => initial?.pushLabScores ?? false);
 
   // Saving requires a fresh successful test against the current values, so the
   // on-disk state never reflects untested keys.
@@ -35,6 +36,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
       setRedactContent(initial.redactContent);
       setEnabled(initial.enabled);
       setProjectId(initial.projectId ?? "");
+      setPushLabScores(initial.pushLabScores);
     }
   }, [initial]);
 
@@ -51,6 +53,7 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
       redactContent,
       enabled,
       projectId: projectId.trim() ? projectId.trim() : null,
+      pushLabScores,
     });
   };
 
@@ -170,6 +173,18 @@ export function ConnectionForm({ settings, initial }: ConnectionFormProps) {
           <div className="flex-1">
             <div className="typo-body text-foreground">{t.plugins.langfuse.redact_label}</div>
             <div className="typo-caption text-foreground">{t.plugins.langfuse.redact_desc}</div>
+          </div>
+        </label>
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={pushLabScores}
+            onChange={(e) => setPushLabScores(e.target.checked)}
+            className="mt-1"
+          />
+          <div className="flex-1">
+            <div className="typo-body text-foreground">{t.plugins.langfuse.push_lab_scores_label}</div>
+            <div className="typo-caption text-foreground/80">{t.plugins.langfuse.push_lab_scores_desc}</div>
           </div>
         </label>
       </div>

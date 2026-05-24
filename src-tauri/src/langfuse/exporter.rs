@@ -27,8 +27,9 @@
 
 use base64::{engine::general_purpose::STANDARD as B64, Engine as _};
 use serde_json::{json, Value};
-use std::sync::{Arc, OnceLock, RwLock};
-use std::time::Duration;
+use std::collections::VecDeque;
+use std::sync::{Arc, Mutex, OnceLock, RwLock};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::sync::mpsc;
 
 use crate::engine::trace::{ExecutionTrace, SpanType, TraceSpan};
@@ -47,6 +48,139 @@ static EXPORTER: OnceLock<RwLock<Option<Arc<LangfuseExporter>>>> = OnceLock::new
 /// [`EXPORTER`] so non-trace API calls (Scores etc.) can reach Langfuse
 /// without the channel ceremony the trace path uses.
 static HTTP_CONFIG: OnceLock<RwLock<Option<HttpConfig>>> = OnceLock::new();
+/// Process-lifetime rolling stats so the plugin page can render an honest
+/// "is this thing actually working?" view without round-tripping to Langfuse.
+static EXPORT_STATS: OnceLock<Mutex<ExportStatsInner>> = OnceLock::new();
+
+/// Cap on stored recent-success timestamps. A desktop user driving real
+/// executions will not exceed this in an hour; cap keeps RAM bounded if
+/// they do.
+const RECENT_SUCCESS_CAP: usize = 1000;
+/// Cap on stored recent failures. Surfaces to the UI drill-down so users
+/// can read patterns in why things fail. Tight cap because each entry holds
+/// a 200-char error string.
+const RECENT_FAILURE_CAP: usize = 20;
+const ONE_HOUR_SECS: i64 = 3600;
+
+#[derive(Default)]
+struct ExportStatsInner {
+    success_total: u64,
+    failure_total: u64,
+    last_export_at: Option<i64>,
+    last_error_at: Option<i64>,
+    last_error: Option<String>,
+    recent_success_ts: VecDeque<i64>,
+    /// Newest first; bounded at [`RECENT_FAILURE_CAP`]. The IPC payload
+    /// trims to the top N — keeping the in-process tail bigger lets a
+    /// future "show me 20" drill-down work without re-recording.
+    recent_failures: VecDeque<RecentFailure>,
+}
+
+#[derive(Debug, Clone)]
+struct RecentFailure {
+    at: i64,
+    message: String,
+}
+
+fn stats_cell() -> &'static Mutex<ExportStatsInner> {
+    EXPORT_STATS.get_or_init(|| Mutex::new(ExportStatsInner::default()))
+}
+
+fn unix_secs_now() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0)
+}
+
+fn record_export_success() {
+    let now = unix_secs_now();
+    let mut g = match stats_cell().lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    g.success_total = g.success_total.saturating_add(1);
+    g.last_export_at = Some(now);
+    if g.recent_success_ts.len() >= RECENT_SUCCESS_CAP {
+        g.recent_success_ts.pop_front();
+    }
+    g.recent_success_ts.push_back(now);
+}
+
+fn record_export_failure(msg: impl Into<String>) {
+    let now = unix_secs_now();
+    let mut g = match stats_cell().lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    g.failure_total = g.failure_total.saturating_add(1);
+    g.last_error_at = Some(now);
+    let trimmed: String = msg.into().chars().take(200).collect();
+    g.last_error = Some(trimmed.clone());
+    if g.recent_failures.len() >= RECENT_FAILURE_CAP {
+        g.recent_failures.pop_front();
+    }
+    g.recent_failures.push_back(RecentFailure {
+        at: now,
+        message: trimmed,
+    });
+}
+
+/// Snapshot of the in-process exporter stats. Returned by
+/// `langfuse_get_export_stats`; intentionally narrow so the wire payload
+/// stays small. `recent_failures` ships the newest-first slice (cap 10) so
+/// the health-bar drill-down can render without a follow-up call.
+pub fn snapshot_stats() -> ExportStatsSnapshot {
+    let cutoff = unix_secs_now() - ONE_HOUR_SECS;
+    let g = match stats_cell().lock() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    let success_last_hour = g
+        .recent_success_ts
+        .iter()
+        .filter(|t| **t >= cutoff)
+        .count() as u64;
+    // Newest first, capped at 10 — the UI only renders 5 by default but a
+    // little headroom keeps "Show more" cheap when we add it.
+    let recent_failures: Vec<RecentFailureSnapshot> = g
+        .recent_failures
+        .iter()
+        .rev()
+        .take(10)
+        .map(|f| RecentFailureSnapshot {
+            at: f.at,
+            message: f.message.clone(),
+        })
+        .collect();
+    ExportStatsSnapshot {
+        success_total: g.success_total,
+        failure_total: g.failure_total,
+        success_last_hour,
+        last_export_at: g.last_export_at,
+        last_error_at: g.last_error_at,
+        last_error: g.last_error.clone(),
+        recent_failures,
+    }
+}
+
+/// Plain-data flat view of [`ExportStatsInner`] for the IPC layer.
+#[derive(Debug, Clone)]
+pub struct ExportStatsSnapshot {
+    pub success_total: u64,
+    pub failure_total: u64,
+    pub success_last_hour: u64,
+    pub last_export_at: Option<i64>,
+    pub last_error_at: Option<i64>,
+    pub last_error: Option<String>,
+    pub recent_failures: Vec<RecentFailureSnapshot>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RecentFailureSnapshot {
+    pub at: i64,
+    pub message: String,
+}
 
 fn cell() -> &'static RwLock<Option<Arc<LangfuseExporter>>> {
     EXPORTER.get_or_init(|| RwLock::new(None))
@@ -111,6 +245,7 @@ impl LangfuseExporter {
 
                 match result {
                     Ok(resp) if resp.status().is_success() => {
+                        record_export_success();
                         tracing::debug!(
                             trace_id = %trace.trace_id,
                             execution_id = %trace.execution_id,
@@ -120,14 +255,17 @@ impl LangfuseExporter {
                     Ok(resp) => {
                         let status = resp.status();
                         let body = resp.text().await.unwrap_or_default();
+                        let snippet: String = body.chars().take(200).collect();
+                        record_export_failure(format!("HTTP {status}: {snippet}"));
                         tracing::warn!(
                             trace_id = %trace.trace_id,
                             status = %status,
-                            body = %body.chars().take(200).collect::<String>(),
+                            body = %snippet,
                             "Langfuse rejected trace"
                         );
                     }
                     Err(e) => {
+                        record_export_failure(format!("Transport error: {e}"));
                         tracing::warn!(
                             trace_id = %trace.trace_id,
                             error = %e,
@@ -187,6 +325,16 @@ pub fn install(host: String, public_key: String, secret_key: String) {
     tracing::info!("Langfuse exporter installed");
 }
 
+/// Is the global exporter currently installed? Useful for the health bar to
+/// distinguish "config saved but not yet active" from "actively exporting."
+pub fn is_installed() -> bool {
+    let guard = match cell().read() {
+        Ok(g) => g,
+        Err(p) => p.into_inner(),
+    };
+    guard.is_some()
+}
+
 /// Tear down the global exporter (no-op if none installed).
 pub fn uninstall() {
     let mut guard = match cell().write() {
@@ -201,6 +349,18 @@ pub fn uninstall() {
         Err(p) => p.into_inner(),
     };
     *http_guard = None;
+}
+
+/// Per-persona-gated wrapper around [`export_trace`]. When
+/// `persona_export_enabled` is `false`, the call is a no-op — the trace is
+/// neither queued nor recorded in stats. Use this from the runner so users
+/// can opt individual personas out of Langfuse export without disabling the
+/// integration globally.
+pub fn export_trace_for_persona(persona_export_enabled: bool, trace: &ExecutionTrace) {
+    if !persona_export_enabled {
+        return;
+    }
+    export_trace(trace);
 }
 
 /// Fire-and-forget export of a finalized trace. No-op when nothing is
@@ -230,6 +390,12 @@ pub fn push_lab_scores(
     protocol_compliance: Option<i32>,
     rationale: Option<String>,
 ) {
+    // Honor the user's opt-in flag. Default is OFF; turning it on requires
+    // a deliberate toggle in the plugin's connection form. This gate fires
+    // before any HTTP work so disabled state costs nothing.
+    if !config::load_push_lab_scores() {
+        return;
+    }
     let cfg = {
         let guard = match http_cell().read() {
             Ok(g) => g,

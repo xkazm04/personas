@@ -96,6 +96,7 @@ export function useEditorSave({ draft, baseline, setDraft, setBaseline, pendingP
       enabled: d.enabled,
       sensitive: d.sensitive,
       cli_awareness_enabled: d.cliAwarenessEnabled,
+      langfuse_export_enabled: d.langfuseExportEnabled,
     };
     await applyPersonaOp(savePersonaId, op);
     // Guard: bail if persona switched during the IPC await. The setBaseline /

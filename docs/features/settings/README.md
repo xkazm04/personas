@@ -12,7 +12,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 
 | Tab | Availability | Behavior | Implementation |
 | --- | --- | --- | --- |
-| Account | Starter+ | Auth/account state | `sub_account/components/AccountSettings.tsx` |
+| Account | Starter+ | Auth/account state, telemetry toggle, radio, and software-update controls (see [Software updates](#software-updates)) | `sub_account/components/AccountSettings.tsx` |
 | Appearance | Starter+ | Theme, custom theme creator, text size, **density** (Compact / Comfortable / Cozy), timezone, brightness, dim/CVD-safe/high-contrast/reduce-motion toggles, pseudo-locale toggle, translation contributor | `sub_appearance/components/*` |
 | Notifications | Starter+ | Notification preferences, weekly health digest, outbound webhook subscriptions (Slack/Discord/Teams/generic JSON). Each severity row has a "Test" button that fires a synthetic healing toast at that severity — useful to preview what an alert looks like without waiting for a real one. | `sub_notifications/components/NotificationSettings.tsx`, `WebhookSubscriptionsPanel.tsx`, `src-tauri/src/notifications.rs`, `src-tauri/src/engine/webhook_notifier.rs` |
 | Engine | Dev-only | Runtime capability badges and operation rows | `sub_engine/components/*`, `libs/engineCapabilities.ts` |
@@ -30,6 +30,12 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 ## Density
 
 The Appearance tab's **Density** control (Compact / Comfortable / Cozy) is app-wide, not a per-table affordance. It's persisted in the theme store (`persona-theme`) and applied as `data-density` on `<html>`, which switches a single set of CSS custom properties defined in `globals.css` (`--density-pad`, `--density-pad-sm`, `--density-gap`, `--density-gap-lg`, `--density-row-py`). The shared spacing tokens `CARD_PADDING` and `SECTION_GAP` (in `src/lib/utils/designTokens.ts`) emit arbitrary-value classes bound to those vars (`p-[var(--density-pad)]`, `space-y-[var(--density-gap)]`, …), so any surface built on those tokens reflows coherently when density changes. `comfortable` is the default and resolves to the historical `p-4` / `space-y-4` / `space-y-6` values, so the out-of-the-box appearance is unchanged. Compact also tightens `.typo-body` line-heights; Cozy loosens them. The control also appears in the onboarding Appearance step (`AppearanceStep.tsx`).
+
+## Software updates
+
+The Account tab's **Updates** card is the user-facing surface for the Tauri auto-updater (`tauri-plugin-updater`, configured in `src-tauri/tauri.conf.json` against the GitHub releases endpoint). `useAutoUpdater` (`src/hooks/utility/data/useAutoUpdater.ts`) checks 5 seconds after launch and then every 6 hours; a manual **Check for Updates** button forces a check on demand.
+
+The card shows the current installed version (via `getVersion()`) and a relative "last checked" timestamp so the user can confirm the background poll is running. After a manual check it also shows the result inline (up-to-date / failed) for a few seconds, so the outcome persists past the toast. A **Recent updates** list below the button shows the version-upgrade timeline, recorded in `localStorage` by `src/lib/updateHistory.ts` — `useAutoUpdater` calls `recordVersion()` once per launch, appending an entry the first time the app runs on each new version. A **Clear** control resets the list (`clearUpdateHistory()`). When an update is found, `UpdateBanner` (`src/features/shared/components/feedback/UpdateBanner.tsx`) appears at the top of the app with the release notes, a live download-progress bar during install, and (when personas are mid-execution) a preflight warning before the app restarts. The preflight offers three choices — install anyway, defer until running tasks finish (auto-installs once the running count hits zero), or keep working.
 
 ## Ambient context
 

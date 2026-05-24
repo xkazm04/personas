@@ -1851,6 +1851,8 @@ pub fn run() {
             commands::communication::events::count_dead_letter_events,
             commands::communication::events::retry_dead_letter_event,
             commands::communication::events::discard_dead_letter_event,
+            commands::communication::events::bulk_retry_dead_letter_events,
+            commands::communication::events::bulk_discard_dead_letter_events,
             commands::communication::events::get_dead_letter_config,
             // Communication -- Shared Events
             commands::communication::shared_events::shared_events_browse_catalog,
@@ -2344,6 +2346,9 @@ pub fn run() {
             commands::infrastructure::langfuse::langfuse_get_config,
             commands::infrastructure::langfuse::langfuse_clear_config,
             commands::infrastructure::langfuse::langfuse_save_preferred_port,
+            commands::infrastructure::langfuse::langfuse_recent_traces,
+            commands::infrastructure::langfuse::langfuse_smoke_trace,
+            commands::infrastructure::langfuse::langfuse_get_export_stats,
             commands::infrastructure::langfuse::langfuse_stack_get_info,
             commands::infrastructure::langfuse::langfuse_stack_start,
             commands::infrastructure::langfuse::langfuse_stack_stop,

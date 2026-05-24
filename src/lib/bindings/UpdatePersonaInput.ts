@@ -12,4 +12,4 @@ cli_awareness_enabled: boolean | null,
  * unchanged); inner `Option<String>` lets callers explicitly clear
  * the column with `Some(None)`. Set by the View-mode SigilEditModal.
  */
-disabled_dims_json: string | null | null, };
+disabled_dims_json: string | null | null, langfuse_export_enabled: boolean | null, };

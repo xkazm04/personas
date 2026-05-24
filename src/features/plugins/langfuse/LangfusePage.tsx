@@ -4,8 +4,11 @@ import { ContentBox, ContentHeader, ContentBody } from "@/features/shared/compon
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
 import { useTranslation } from "@/i18n/useTranslation";
 import { ConnectionForm } from "./ConnectionForm";
+import { ExportHealthBar } from "./ExportHealthBar";
 import { ManagedStackPanel } from "./ManagedStackPanel";
+import { SmokeTraceButton } from "./SmokeTraceButton";
 import { StatusPanel } from "./StatusPanel";
+import { TraceListPanel } from "./TraceListPanel";
 import { useLangfuseSettings } from "./hooks/useLangfuseSettings";
 import { useLangfuseStack } from "./hooks/useLangfuseStack";
 
@@ -19,7 +22,21 @@ export default function LangfusePage() {
   const hasManual =
     !!settings.config && !settings.config.managed && settings.config.host.length > 0;
   const [advancedOpen, setAdvancedOpen] = useState(!!hasManual);
+  // Bumped after a successful smoke trace to force-remount TraceListPanel
+  // so the new trace shows up without the user clicking Refresh manually.
+  const [traceListNonce, setTraceListNonce] = useState(0);
   const preferredPort = settings.config?.preferredPort ?? 3000;
+
+  // Trace-list is only meaningful when the user has a reachable instance.
+  // For the managed stack we wait until it's actually Running; for manual
+  // we trust the user's enabled flag — the fetch will surface an error if
+  // the host is offline.
+  const stackRunning = stack.info?.state === "running";
+  const showTraceList =
+    !!settings.config &&
+    settings.config.enabled &&
+    settings.config.host.length > 0 &&
+    (settings.config.managed ? stackRunning : true);
 
   return (
     <ContentBox>
@@ -49,6 +66,18 @@ export default function LangfusePage() {
               <ManagedStackPanel stack={stack} preferredPort={preferredPort} />
             )}
           </section>
+
+          {/* Health → smoke trace → recent traces — only when reachable */}
+          {showTraceList && settings.config && (
+            <>
+              <ExportHealthBar />
+              <SmokeTraceButton
+                config={settings.config}
+                onSent={() => setTraceListNonce((n) => n + 1)}
+              />
+              <TraceListPanel key={traceListNonce} config={settings.config} />
+            </>
+          )}
 
           {/* Advanced: bring-your-own */}
           <section className="rounded-card border border-primary/10 bg-secondary/5">

@@ -272,6 +272,23 @@ export function PersonaSettingsTab({
               />
             </div>
           )}
+
+          {!isSimple && (
+            <div className="flex items-center justify-between gap-3 py-1">
+              <div>
+                <span className="typo-body font-medium text-foreground">{t.agents.settings_status.langfuse_export}</span>
+                <p className="typo-body text-foreground">{t.agents.settings_status.langfuse_export_desc}</p>
+              </div>
+              <AccessibleToggle
+                checked={draft.langfuseExportEnabled}
+                onChange={() => patch({ langfuseExportEnabled: !draft.langfuseExportEnabled })}
+                label={t.agents.settings_status.langfuse_export}
+                data-testid="agent-langfuse-export"
+                size="md"
+                className="flex-shrink-0"
+              />
+            </div>
+          )}
         </div>
       </div>
 

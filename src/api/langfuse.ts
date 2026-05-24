@@ -1,10 +1,13 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { LangfuseAdminCredentials } from "@/lib/bindings/LangfuseAdminCredentials";
 import type { LangfuseConfig } from "@/lib/bindings/LangfuseConfig";
+import type { LangfuseExportStats } from "@/lib/bindings/LangfuseExportStats";
 import type { LangfuseJobHandle } from "@/lib/bindings/LangfuseJobHandle";
 import type { LangfuseSaveRequest } from "@/lib/bindings/LangfuseSaveRequest";
+import type { LangfuseSmokeTraceResult } from "@/lib/bindings/LangfuseSmokeTraceResult";
 import type { LangfuseStackInfo } from "@/lib/bindings/LangfuseStackInfo";
 import type { LangfuseTestResult } from "@/lib/bindings/LangfuseTestResult";
+import type { LangfuseTraceSummary } from "@/lib/bindings/LangfuseTraceSummary";
 
 // ---------------------------------------------------------------------------
 // Manual connection (advanced flow)
@@ -30,6 +33,28 @@ export async function langfuseSaveConfig(
 
 export async function langfuseGetConfig(): Promise<LangfuseConfig | null> {
   return invoke<LangfuseConfig | null>("langfuse_get_config");
+}
+
+/// Fetch the last N traces from the configured Langfuse host. Default 10.
+/// Backend caps at 100 to keep the network hop bounded.
+export async function langfuseRecentTraces(
+  limit?: number,
+): Promise<LangfuseTraceSummary[]> {
+  return invoke<LangfuseTraceSummary[]>("langfuse_recent_traces", {
+    limit: limit ?? null,
+  });
+}
+
+/// Fire a synthetic one-span trace at the configured Langfuse host to verify
+/// the integration end-to-end. Returns the 32-hex trace id Langfuse received
+/// + the configured project id, so callers can deep-link straight to it.
+export async function langfuseSmokeTrace(): Promise<LangfuseSmokeTraceResult> {
+  return invoke<LangfuseSmokeTraceResult>("langfuse_smoke_trace");
+}
+
+/// In-process exporter health snapshot. Counters reset on app restart.
+export async function langfuseGetExportStats(): Promise<LangfuseExportStats> {
+  return invoke<LangfuseExportStats>("langfuse_get_export_stats");
 }
 
 export async function langfuseClearConfig(): Promise<void> {

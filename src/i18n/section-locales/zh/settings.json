@@ -26,6 +26,9 @@
     "updates_up_to_date": "You're up to date",
     "updates_available_toast": "Update available — see the banner at the top to install",
     "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+    "updates_current_version": "当前版本 v{version}",
+    "updates_last_checked": "上次检查 {time}",
+    "updates_history_title": "近期更新",
     "avatar_alt": "Profile picture"
   },
   "appearance_extra": {

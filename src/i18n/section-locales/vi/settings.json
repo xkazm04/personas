@@ -26,6 +26,9 @@
     "updates_up_to_date": "You're up to date",
     "updates_available_toast": "Update available — see the banner at the top to install",
     "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
+    "updates_current_version": "Bạn đang dùng v{version}",
+    "updates_last_checked": "Kiểm tra lần cuối {time}",
+    "updates_history_title": "Cập nhật gần đây",
     "avatar_alt": "Profile picture"
   },
   "appearance_extra": {

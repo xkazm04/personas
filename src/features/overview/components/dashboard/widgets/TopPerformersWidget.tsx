@@ -17,7 +17,7 @@ const TREND_ICON = {
   degrading: { Icon: TrendingDown, color: 'text-red-400' },
 };
 
-export function TopPerformersWidget() {
+export function TopPerformersWidget({ highlightPersonaId }: { highlightPersonaId?: string | null }) {
   const { t } = useTranslation();
   const healthSignals = useOverviewStore((s) => s.healthSignals);
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
@@ -46,14 +46,18 @@ export function TopPerformersWidget() {
 
       <div className="space-y-2">
         {topEntries.map((entry) => (
-          <TopPerformerRow key={entry.personaId} entry={entry} />
+          <TopPerformerRow
+            key={entry.personaId}
+            entry={entry}
+            highlighted={!!highlightPersonaId && entry.personaId === highlightPersonaId}
+          />
         ))}
       </div>
     </div>
   );
 }
 
-function TopPerformerRow({ entry }: { entry: LeaderboardEntry }) {
+function TopPerformerRow({ entry, highlighted }: { entry: LeaderboardEntry; highlighted: boolean }) {
   const medal = entry.medal ? MEDAL_STYLES[entry.medal] : null;
   const trend = TREND_ICON[entry.trend];
   const TrendIcon = trend.Icon;
@@ -62,7 +66,9 @@ function TopPerformerRow({ entry }: { entry: LeaderboardEntry }) {
                      entry.compositeScore >= 40 ? 'text-amber-400' : 'text-red-400';
 
   return (
-    <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-card hover:bg-primary/[0.03] transition-colors">
+    <div className={`flex items-center gap-2.5 px-2 py-1.5 rounded-card transition-colors ${
+      highlighted ? 'bg-primary/10 ring-1 ring-primary/30' : 'hover:bg-primary/[0.03]'
+    }`}>
       {/* Medal / rank */}
       <div className="w-7 flex-shrink-0 text-center">
         {medal ? (

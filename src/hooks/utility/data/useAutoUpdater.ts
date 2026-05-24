@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { check, type Update } from "@tauri-apps/plugin-updater";
+import { check, type Update, type DownloadEvent } from "@tauri-apps/plugin-updater";
+import { getVersion } from "@tauri-apps/api/app";
 import * as Sentry from "@sentry/react";
 import { silentCatch } from "@/lib/silentCatch";
+import { recordVersion } from "@/lib/updateHistory";
 
 export interface UpdateInfo {
   version: string;
@@ -16,7 +18,14 @@ export function useAutoUpdater() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isInstalling, setIsInstalling] = useState(false);
+  // 0–100 while the update payload is downloading, or null when the total
+  // size is unknown / not downloading. Drives the banner's progress bar.
+  const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Epoch ms of the last completed check (any outcome), or null before the
+  // first check resolves. Surfaced in Settings so the user can confirm the
+  // background poll is actually running.
+  const [lastChecked, setLastChecked] = useState<number | null>(null);
   const updateRef = useRef<Update | null>(null);
   // In-flight guard kept in a ref (not state) so this callback stays stable.
   // Depending on `isChecking` state here would give checkForUpdate a new
@@ -57,6 +66,7 @@ export function useAutoUpdater() {
     } finally {
       checkingRef.current = false;
       setIsChecking(false);
+      setLastChecked(Date.now());
     }
   }, []);
 
@@ -65,6 +75,7 @@ export function useAutoUpdater() {
     if (!update) return;
     const installVersion = update.version;
     setIsInstalling(true);
+    setDownloadProgress(null);
     setError(null);
     Sentry.addBreadcrumb({
       category: "update",
@@ -72,7 +83,31 @@ export function useAutoUpdater() {
       level: "info",
     });
     try {
-      await update.downloadAndInstall();
+      let downloaded = 0;
+      let contentLength = 0;
+      await update.downloadAndInstall((event: DownloadEvent) => {
+        switch (event.event) {
+          case "Started":
+            downloaded = 0;
+            contentLength = event.data.contentLength ?? 0;
+            // 0 when the server omitted Content-Length — keep null so the
+            // banner shows an indeterminate "Installing…" rather than a bar
+            // stuck at a bogus percentage.
+            setDownloadProgress(contentLength > 0 ? 0 : null);
+            break;
+          case "Progress":
+            downloaded += event.data.chunkLength;
+            if (contentLength > 0) {
+              setDownloadProgress(
+                Math.min(100, Math.round((downloaded / contentLength) * 100)),
+              );
+            }
+            break;
+          case "Finished":
+            setDownloadProgress(100);
+            break;
+        }
+      });
       // downloadAndInstall typically relaunches the app; this breadcrumb only
       // fires if install completed without an immediate restart.
       Sentry.addBreadcrumb({
@@ -84,6 +119,7 @@ export function useAutoUpdater() {
       const message = err instanceof Error ? err.message : "Failed to install update";
       setError(message);
       setIsInstalling(false);
+      setDownloadProgress(null);
       Sentry.captureException(err, {
         tags: { event: "update.install.failed" },
         extra: { version: installVersion },
@@ -98,11 +134,19 @@ export function useAutoUpdater() {
   }, []);
 
   useEffect(() => {
+    // Record the running version once per launch so Settings can show an
+    // update-history timeline. Idempotent — only appends on version change.
+    // Runs even in dev (it's just localStorage) so the timeline stays accurate.
+    getVersion()
+      .then((v) => { recordVersion(v); })
+      .catch(silentCatch("useAutoUpdater:recordVersion"));
+
     // Skip automatic checks in dev: there is no signed release artifact to
     // update to, and the updater capability only matters for packaged builds.
     // Manual checkForUpdate() from Settings still works. This is what stops
     // the recurring "updater.check not allowed" noise during development.
     if (import.meta.env.DEV) return;
+
     // Check after a 5-second delay on mount, then every 6 hours.
     // Outcome is intentionally ignored — checkForUpdate already routes
     // failures through silentCatch and successes through Sentry breadcrumbs.
@@ -123,7 +167,9 @@ export function useAutoUpdater() {
     updateInfo,
     isChecking,
     isInstalling,
+    downloadProgress,
     error,
+    lastChecked,
     checkForUpdate,
     installUpdate,
     dismissUpdate,

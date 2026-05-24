@@ -24,4 +24,12 @@ preferredPort: number,
  * connections the user can supply their project's id so
  * "Open in Langfuse" links land on the right project.
  */
-projectId: string | null, lastTestedAt: bigint | null, lastTestOutcome: string | null, };
+projectId: string | null, lastTestedAt: bigint | null, lastTestOutcome: string | null, 
+/**
+ * Opt-in: push Lab evaluation scores (`tool_accuracy`, `output_quality`,
+ * `protocol_compliance`) to Langfuse's `/api/public/scores` endpoint
+ * after each scored scenario. Off by default. Stage 1 of N — the toggle
+ * is plumbed through config + UI; the call from the lab path is wired
+ * in a follow-up.
+ */
+pushLabScores: boolean, };

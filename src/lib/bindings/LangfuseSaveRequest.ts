@@ -10,4 +10,9 @@ export type LangfuseSaveRequest = { host: string, publicKey: string, secretKey: 
  * Optional project id for "Open in Langfuse" deep links. Empty / absent
  * means we don't know — the deep-link button is hidden in that case.
  */
-projectId: string | null, };
+projectId: string | null, 
+/**
+ * Opt-in: push Lab evaluation scores to Langfuse Scores API after each
+ * scored scenario. Off by default. See [`LangfuseConfig::push_lab_scores`].
+ */
+pushLabScores: boolean, };

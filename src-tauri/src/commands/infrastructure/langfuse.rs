@@ -16,15 +16,17 @@ use tauri::{AppHandle, Manager, State};
 use url::Url;
 
 use crate::error::AppError;
-use crate::langfuse::client::probe;
+use crate::ipc_auth::require_privileged;
+use crate::langfuse::client::{fetch_recent_traces, probe, send_smoke_trace};
 use crate::langfuse::config;
 use crate::langfuse::docker;
 use crate::langfuse::exporter;
 use crate::langfuse::lifecycle;
 use crate::langfuse::templates;
 use crate::langfuse::types::{
-    LangfuseAdminCredentials, LangfuseConfig, LangfuseJobHandle, LangfuseJobKind,
-    LangfuseSaveRequest, LangfuseStackInfo, LangfuseStackState, LangfuseTestResult,
+    LangfuseAdminCredentials, LangfuseConfig, LangfuseExportFailure, LangfuseExportStats,
+    LangfuseJobHandle, LangfuseJobKind, LangfuseSaveRequest, LangfuseSmokeTraceResult,
+    LangfuseStackInfo, LangfuseStackState, LangfuseTestResult, LangfuseTraceSummary,
 };
 use crate::AppState;
 use personas_macros::requires;
@@ -95,6 +97,7 @@ pub async fn langfuse_save_config(
         redact_content,
         enabled,
         project_id,
+        push_lab_scores,
     } = request;
 
     let trimmed_host = host.trim().trim_end_matches('/').to_string();
@@ -129,6 +132,7 @@ pub async fn langfuse_save_config(
             .filter(|s| !s.is_empty()),
     )
     .map_err(AppError::Langfuse)?;
+    config::store_push_lab_scores(push_lab_scores).map_err(AppError::Langfuse)?;
     config::store_last_test(Utc::now().timestamp(), &result.message).map_err(AppError::Langfuse)?;
 
     if enabled {
@@ -145,6 +149,88 @@ pub async fn langfuse_save_config(
     );
 
     Ok(result)
+}
+
+/// Snapshot of in-process exporter health. Stats are reset on app restart;
+/// for persistent counters we'd need a SQLite-backed approach (deferred).
+#[tauri::command]
+pub async fn langfuse_get_export_stats() -> Result<LangfuseExportStats, AppError> {
+    let snap = exporter::snapshot_stats();
+    Ok(LangfuseExportStats {
+        success_total: snap.success_total,
+        failure_total: snap.failure_total,
+        success_last_hour: snap.success_last_hour,
+        last_export_at: snap.last_export_at,
+        last_error_at: snap.last_error_at,
+        last_error: snap.last_error,
+        enabled: config::load_enabled(),
+        redact_content: config::load_redact(),
+        exporter_installed: exporter::is_installed(),
+        push_lab_scores: config::load_push_lab_scores(),
+        recent_failures: snap
+            .recent_failures
+            .into_iter()
+            .map(|f| LangfuseExportFailure {
+                at: f.at,
+                message: f.message,
+            })
+            .collect(),
+    })
+}
+
+/// Send a synthetic one-span trace to the configured Langfuse instance so
+/// the user can verify the integration without running a real persona.
+/// Returns the trace id Langfuse received plus the project id for deep-linking.
+#[tauri::command]
+pub async fn langfuse_smoke_trace(
+    state: State<'_, Arc<AppState>>,
+) -> Result<LangfuseSmokeTraceResult, AppError> {
+    require_privileged(&state, "langfuse_smoke_trace").await?;
+
+    let host = config::load_host()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("Langfuse is not connected.".into()))?;
+    let public_key = config::load_public_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse public key on file.".into()))?;
+    let secret_key = config::load_secret_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse secret key on file.".into()))?;
+
+    let trace_id = send_smoke_trace(&host, &public_key, &secret_key)
+        .await
+        .map_err(AppError::Langfuse)?;
+
+    Ok(LangfuseSmokeTraceResult {
+        trace_id,
+        project_id: config::load_project_id(),
+    })
+}
+
+/// Fetch the most-recent traces from the configured Langfuse host so the
+/// plugin page can render a deep-link list without the user opening Langfuse
+/// first. Uses the stored public+secret keys; rejects when no connection is
+/// configured. Caps at 100 to avoid pulling unbounded history.
+#[tauri::command]
+pub async fn langfuse_recent_traces(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<u32>,
+) -> Result<Vec<LangfuseTraceSummary>, AppError> {
+    require_privileged(&state, "langfuse_recent_traces").await?;
+
+    let host = config::load_host()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("Langfuse is not connected.".into()))?;
+    let public_key = config::load_public_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse public key on file.".into()))?;
+    let secret_key = config::load_secret_key()
+        .filter(|s| !s.is_empty())
+        .ok_or_else(|| AppError::Langfuse("No Langfuse secret key on file.".into()))?;
+
+    fetch_recent_traces(&host, &public_key, &secret_key, limit.unwrap_or(10))
+        .await
+        .map_err(AppError::Langfuse)
 }
 
 #[tauri::command]
@@ -169,6 +255,7 @@ pub async fn langfuse_get_config() -> Result<Option<LangfuseConfig>, AppError> {
                 project_id,
                 last_tested_at,
                 last_test_outcome,
+                push_lab_scores: config::load_push_lab_scores(),
             }))
         }
         _ => {
@@ -185,6 +272,7 @@ pub async fn langfuse_get_config() -> Result<Option<LangfuseConfig>, AppError> {
                 project_id: None,
                 last_tested_at: None,
                 last_test_outcome: None,
+                push_lab_scores: false,
             }))
         }
     }

@@ -304,6 +304,11 @@
     "todos_label": "Todos",
     "todos_subtitle_open": "{count} open",
     "todos_empty": "All clear.",
+    "scope_fleet": "Flotte",
+    "scope_fleet_hint": "Affiche toutes les personas — le filtre de persona ne modifie pas ceci.",
+    "triage_jump": "Le plus urgent",
+    "triage_detail_pipelines": "sources de données en échec de synchronisation",
+    "triage_up_next": "Suivant",
     "mission_control_eyebrow": "Mission Control"
   },
   "execution_metrics": {
@@ -662,6 +667,7 @@
     "success_badge": "Succès",
     "alerts_badge": "Alertes",
     "agents_badge": "Agents",
+    "pipelines_badge": "Pipelines",
     "tool_performance": "Tool Performance",
     "tool_performance_subtitle": "Latency & error rate per tool",
     "tool_performance_col_tool": "Tool",
