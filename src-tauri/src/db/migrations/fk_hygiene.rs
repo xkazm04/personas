@@ -22,6 +22,7 @@ pub(super) fn run(conn: &Connection) -> Result<(), AppError> {
     migrate_persona_prompt_versions(conn)?;
     migrate_pipeline_runs(conn)?;
     migrate_persona_events(conn)?;
+    migrate_team_memories(conn)?;
     Ok(())
 }
 
@@ -433,6 +434,50 @@ fn migrate_persona_memories(conn: &Connection) -> Result<(), AppError> {
     )
 }
 
+fn migrate_team_memories(conn: &Connection) -> Result<(), AppError> {
+    // team_memories.team_id was NOT NULL but FK-less — a coverage gap in the
+    // original FK-hygiene sweep (DM-F2, data-modeling scan 2026-05-24). It's an
+    // owned child (a memory belongs to exactly one team), so CASCADE. The other
+    // *_id columns (run_id, member_id, persona_id) are nullable/loosely-coupled
+    // and intentionally stay FK-less. `teams.rs::delete` keeps its manual
+    // `DELETE FROM team_memories` as belt-and-suspenders; this FK makes orphans
+    // structurally impossible regardless of the delete path.
+    recreate_with_fk(
+        conn,
+        "team_memories",
+        1,
+        &[
+            "DELETE FROM team_memories \
+             WHERE team_id NOT IN (SELECT id FROM persona_teams);",
+        ],
+        "CREATE TABLE team_memories_new (
+            id          TEXT PRIMARY KEY,
+            team_id     TEXT NOT NULL REFERENCES persona_teams(id) ON DELETE CASCADE,
+            run_id      TEXT,
+            member_id   TEXT,
+            persona_id  TEXT,
+            title       TEXT NOT NULL,
+            content     TEXT NOT NULL,
+            category    TEXT NOT NULL DEFAULT 'observation',
+            importance  INTEGER NOT NULL DEFAULT 3,
+            tags        TEXT,
+            created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+        "id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at",
+        &[
+            "CREATE INDEX IF NOT EXISTS idx_tm_team       ON team_memories(team_id);",
+            "CREATE INDEX IF NOT EXISTS idx_tm_run        ON team_memories(run_id);",
+            "CREATE INDEX IF NOT EXISTS idx_tm_category   ON team_memories(category);",
+            "CREATE INDEX IF NOT EXISTS idx_tm_importance ON team_memories(importance DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_tm_team_cat   ON team_memories(team_id, category);",
+            "CREATE INDEX IF NOT EXISTS idx_tm_team_importance_created \
+             ON team_memories(team_id, importance DESC, created_at DESC);",
+            "CREATE INDEX IF NOT EXISTS idx_tm_team_run   ON team_memories(team_id, run_id);",
+        ],
+    )
+}
+
 #[cfg(test)]
 mod tests {
     //! Orphan-prevention tests for the FK hygiene ADR
@@ -701,5 +746,47 @@ mod tests {
             fk_count >= 1,
             "persona_memories should still have FK after re-run"
         );
+    }
+
+    #[test]
+    fn deleting_team_cascades_team_memories() {
+        let pool = init_test_db().expect("init_test_db");
+        insert_team(&pool, "t1");
+        {
+            let conn = pool.get().expect("pool.get");
+            conn.execute(
+                "INSERT INTO team_memories (id, team_id, title, content) \
+                 VALUES ('tm1', 't1', 't', 'c')",
+                [],
+            )
+            .expect("insert team_memory");
+            conn.execute("DELETE FROM persona_teams WHERE id = 't1'", [])
+                .expect("delete team");
+        }
+        assert_eq!(
+            count(
+                &pool,
+                "SELECT COUNT(*) FROM team_memories WHERE team_id = ?1",
+                "t1",
+            ),
+            0,
+            "team_memories should cascade-delete when its team is deleted"
+        );
+    }
+
+    #[test]
+    fn team_memories_fk_present_and_rerun_is_noop() {
+        let pool = init_test_db().expect("init_test_db");
+        let conn = pool.get().expect("pool.get");
+        let fk_count: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM pragma_foreign_key_list('team_memories')",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(fk_count, 1, "team_memories should declare exactly 1 FK");
+        // Re-running the sweep must be a no-op (idempotency via FK-count guard).
+        super::super::fk_hygiene::run(&conn).expect("re-run fk_hygiene");
     }
 }
