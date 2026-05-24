@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { LogIn, LogOut, Key, ArrowRight, Globe } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
+import { DEPLOYMENT_TOKENS } from '@/features/agents/sub_deployment/components/deploymentTokens';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCredentialNav } from '@/features/vault/shared/hooks/CredentialNavContext';

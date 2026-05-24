@@ -6,15 +6,15 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { ConnectionStatusBadge } from '@/features/shared/components/feedback/ConnectionStatusBadge';
 import { PanelTabBar } from '@/features/shared/components/layout/PanelTabBar';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
-import { CloudConnectionForm } from '@/features/deployment/components/cloud/CloudConnectionForm';
-import { CloudStatusPanel } from '@/features/deployment/components/cloud/CloudStatusPanel';
-import { CloudOAuthPanel } from '@/features/deployment/components/cloud/CloudOAuthPanel';
-import { CloudDeploymentsPanel } from '@/features/deployment/components/cloud/CloudDeploymentsPanel';
-import { CloudHistoryPanel } from '@/features/deployment/components/cloud/CloudHistoryPanel';
-import { CloudSchedulesPanel } from '@/features/deployment/components/cloud/CloudSchedulesPanel';
+import { CloudConnectionForm } from '@/features/agents/sub_deployment/components/cloud/CloudConnectionForm';
+import { CloudStatusPanel } from '@/features/agents/sub_deployment/components/cloud/CloudStatusPanel';
+import { CloudOAuthPanel } from '@/features/agents/sub_deployment/components/cloud/CloudOAuthPanel';
+import { CloudDeploymentsPanel } from '@/features/agents/sub_deployment/components/cloud/CloudDeploymentsPanel';
+import { CloudHistoryPanel } from '@/features/agents/sub_deployment/components/cloud/CloudHistoryPanel';
+import { CloudSchedulesPanel } from '@/features/agents/sub_deployment/components/cloud/CloudSchedulesPanel';
 import { cloudDiagnose, type CloudDiagnostics } from '@/api/system/cloud';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
-import { useCloudHealthMonitor } from '@/features/deployment/hooks/useCloudHealthMonitor';
+import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/useCloudHealthMonitor';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 

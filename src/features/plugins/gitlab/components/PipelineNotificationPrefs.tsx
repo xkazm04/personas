@@ -5,7 +5,7 @@ import {
   savePipelineNotificationPrefs,
   type PipelineNotificationPrefs as Prefs,
 } from '../hooks/usePipelineNotifications';
-import { DEPLOYMENT_TOKENS } from '@/features/deployment/components/deploymentTokens';
+import { DEPLOYMENT_TOKENS } from '@/features/agents/sub_deployment/components/deploymentTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function Toggle({ checked, onChange, label, id }: {

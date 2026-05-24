@@ -29,9 +29,9 @@ const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
-const CloudDeployPanel = lazy(() => import('@/features/deployment/components/cloud/CloudDeployPanel'));
+const CloudDeployPanel = lazy(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
 const GitLabPanel = lazy(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
-const UnifiedDeploymentDashboard = lazy(() => import('@/features/deployment/components/UnifiedDeploymentDashboard'));
+const UnifiedDeploymentDashboard = lazy(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
 const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
 const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
 const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
@@ -142,7 +142,7 @@ export default function PersonasPage() {
     });
     // Tier 2: prefetch after a short delay so tier 1 chunks land first
     const id2 = requestIdleCallback(() => {
-      import('@/features/deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
+      import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
       import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
       import('@/features/triggers/TriggersPage').catch(silentCatch("PersonasPage:prefetchEvents"));
     });
