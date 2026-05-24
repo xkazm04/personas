@@ -1,3 +1,5 @@
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+
 export function downloadStringAsFile(filename: string, content: string, mimeType = 'text/markdown'): void {
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -10,11 +12,5 @@ export function downloadStringAsFile(filename: string, content: string, mimeType
   URL.revokeObjectURL(url);
 }
 
-export async function copyToClipboard(content: string): Promise<boolean> {
-  try {
-    await navigator.clipboard.writeText(content);
-    return true;
-  } catch {
-    return false;
-  }
-}
+/** @deprecated use `copyText` from @/hooks/utility/interaction/useCopyToClipboard directly. */
+export const copyToClipboard = copyText;

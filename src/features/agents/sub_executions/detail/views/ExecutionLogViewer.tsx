@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ChevronDown, ChevronRight, FileText, Loader2 } from 'lucide-react';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -20,7 +21,7 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
 
   const handleCopyLog = useCallback(() => {
     if (logContent) {
-      navigator.clipboard.writeText(logContent).then(() => {
+      copyText(logContent).then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }).catch(() => { /* ignore */ });
@@ -28,7 +29,7 @@ export function ExecutionLogViewer({ executionId, personaId }: ExecutionLogViewe
       getExecutionLog(executionId, personaId ?? '').then((content) => {
         setLogContent(content ?? '');
         if (content) {
-          navigator.clipboard.writeText(content).then(() => {
+          copyText(content).then(() => {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
           }).catch(() => {});

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ScrollText, ShieldCheck, Copy, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 
 import * as twinApi from '@/api/twin/twin';
@@ -60,7 +61,7 @@ export function TwinWikiPanel({ activeTwinId }: { activeTwinId: string | null })
 
   const handleCopy = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      await copyText(text);
       addToast(t.wiki.copied, 'success');
     } catch (err) {
       silentCatch('twin:wiki-copy')(err);

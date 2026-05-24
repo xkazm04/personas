@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   FileSignature,
   Download,
@@ -50,7 +51,7 @@ export function DriveSignaturesPanel({
   const handleExport = async (id: string) => {
     try {
       const json = await signing.exportSidecarJson(id);
-      await navigator.clipboard.writeText(json);
+      await copyText(json);
       addToast(t.plugins.doc_signing.export_sig, "success");
     } catch (e) {
       toastCatch("drive:signatures-export")(e);

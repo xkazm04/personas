@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Package, Check, AlertTriangle, Lock, Shield, Clipboard, Link2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { save } from '@tauri-apps/plugin-dialog';
@@ -25,7 +26,7 @@ async function scheduleSensitiveClipboardClear(payload: string): Promise<void> {
     try {
       const current = await navigator.clipboard.readText();
       if (current === payload) {
-        await navigator.clipboard.writeText('');
+        await copyText('');
       }
       // current !== payload: the user already copied something else.
       // Leave it; trampling a verified-different clipboard is rude.
@@ -39,7 +40,7 @@ async function scheduleSensitiveClipboardClear(payload: string): Promise<void> {
       // cannot be undone.
       logger.warn('clipboard verify-before-wipe failed; force-wiping', { reason: readErr });
       try {
-        await navigator.clipboard.writeText('');
+        await copyText('');
       } catch (wipeErr) {
         logger.error('failed to wipe sensitive clipboard payload', { reason: wipeErr });
       }
@@ -162,7 +163,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     try {
       setCopying(true);
       const result = await exportBundleToClipboard(Array.from(selected));
-      await navigator.clipboard.writeText(result.base64);
+      await copyText(result.base64);
       void scheduleSensitiveClipboardClear(result.base64);
       setCopied(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
@@ -184,7 +185,7 @@ export function BundleExportDialog({ isOpen, onClose }: BundleExportDialogProps)
     try {
       setCreatingLink(true);
       const result = await createShareLink(Array.from(selected));
-      await navigator.clipboard.writeText(result.deep_link);
+      await copyText(result.deep_link);
       void scheduleSensitiveClipboardClear(result.deep_link);
       setLinkCopied(true);
       if (linkCopiedTimerRef.current) clearTimeout(linkCopiedTimerRef.current);

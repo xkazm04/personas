@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { FileSignature, CheckCircle2, Copy, Download, X } from "lucide-react";
 
 import type { DriveEntry } from "@/api/drive";
@@ -72,7 +73,7 @@ export function DriveSignDialog({
   const handleCopy = async () => {
     if (!sidecarJson) return;
     try {
-      await navigator.clipboard.writeText(sidecarJson);
+      await copyText(sidecarJson);
       addToast(t.plugins.doc_signing.copy, "success");
     } catch (err) { silentCatch("features/plugins/drive/signing/DriveSignDialog:catch1")(err); }
   };

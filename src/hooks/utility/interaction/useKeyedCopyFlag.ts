@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { silentCatch } from '@/lib/silentCatch';
+import { copyText } from './useCopyToClipboard';
 
 /**
  * Keyed variant of useCopyToClipboard for list/table UIs that need to show
@@ -32,11 +32,12 @@ export function useKeyedCopyFlag<K = string>(timeout = 2000) {
 
   const copy = useCallback(
     (key: K, text: string) => {
-      navigator.clipboard.writeText(text).then(() => {
+      void copyText(text).then((ok) => {
+        if (!ok) return;
         setCopiedKey(key);
         clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => setCopiedKey(null), timeout);
-      }).catch(silentCatch('useKeyedCopyFlag:writeText'));
+      });
     },
     [timeout],
   );

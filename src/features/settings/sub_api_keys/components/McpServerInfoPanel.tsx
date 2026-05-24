@@ -8,6 +8,7 @@
  * users know what to configure their MCP client with.
  */
 import { useCallback, useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, Check, ExternalLink, Server } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -43,7 +44,7 @@ export function McpServerInfoPanel() {
 
   const copyUrl = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(MCP_BASE_URL);
+      await copyText(MCP_BASE_URL);
       setUrlCopied(true);
       setTimeout(() => setUrlCopied(false), 2000);
     } catch (err) { silentCatch("features/settings/sub_api_keys/components/McpServerInfoPanel:catch1")(err); }

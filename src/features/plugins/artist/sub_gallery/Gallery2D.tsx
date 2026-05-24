@@ -22,6 +22,7 @@ import type { ArtistAsset } from '@/api/artist';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { useGallerySelection } from '../hooks/useGallerySelection';
 import { useLocalImage } from '../hooks/useLocalImage';
 import { mergeTagAcross } from './tagOps';
@@ -194,8 +195,7 @@ function LightboxOverlay({ asset, index, total, onClose, onNext, onPrev }: Light
   }, []);
 
   const copyPath = useCallback(() => {
-    navigator.clipboard
-      .writeText(asset.filePath)
+    copyText(asset.filePath)
       .then(() => useToastStore.getState().addToast(t.plugins.artist.lightbox_path_copied, 'success'))
       .catch(silentCatch('Copy asset path'));
   }, [asset.filePath, t]);

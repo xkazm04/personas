@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Terminal, CheckCircle2, AlertCircle, Loader2, Copy, ExternalLink, RefreshCw } from 'lucide-react';
 import {
   cliCheckInstalled,
@@ -96,7 +97,7 @@ export function CliConnectionPanel({
   const copyInstallHint = () => {
     // Strip markdown bold/headers for a cleaner clipboard copy.
     const plain = spec.install_hint.replace(/\*\*/g, '').trim();
-    void navigator.clipboard.writeText(plain);
+    void copyText(plain);
   };
 
   return (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, ClipboardPaste, Eye, EyeOff, Check } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -86,7 +87,7 @@ export function FieldActionButtons({
   const handleCopy = async () => {
     if (!value) return;
     try {
-      await navigator.clipboard.writeText(value);
+      await copyText(value);
       setCopied(true);
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       copiedTimerRef.current = setTimeout(() => setCopied(false), 1500);
@@ -100,7 +101,7 @@ export function FieldActionButtons({
           try {
             const current = await navigator.clipboard.readText();
             if (current === copiedValue) {
-              await navigator.clipboard.writeText('');
+              await copyText('');
             }
           } catch (err) { silentCatch("features/vault/sub_credentials/components/forms/FieldCaptureHelpers:catch2")(err); }
         }, SECRET_CLIPBOARD_TTL_MS);

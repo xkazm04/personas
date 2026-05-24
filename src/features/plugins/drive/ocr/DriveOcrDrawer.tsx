@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import {
   ScanLine,
   X,
@@ -129,7 +130,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
   const handleCopy = async () => {
     if (!result) return;
     try {
-      await navigator.clipboard.writeText(result.document.extracted_text);
+      await copyText(result.document.extracted_text);
       addToast(t.plugins.drive.ocr_copied, "success");
     } catch (err) { silentCatch("features/plugins/drive/ocr/DriveOcrDrawer:catch1")(err); }
   };

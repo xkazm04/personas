@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AlertCircle, CheckCircle2, Clock, Server, Copy, Check } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -97,7 +98,7 @@ export function EventDetailContent({ event, copiedPayload, setCopiedPayload }: E
             <span className="typo-body text-foreground font-medium">{t.overview.event_log_item.event_data}</span>
             <button
               onClick={() => {
-                navigator.clipboard.writeText(
+                copyText(
                   (() => { try { return JSON.stringify(JSON.parse(event.payload!), null, 2); } catch { return event.payload!; } })()
                 ).then(() => {
                   setCopiedPayload(true);

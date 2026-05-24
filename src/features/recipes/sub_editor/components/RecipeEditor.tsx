@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { ArrowLeft, Save } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
@@ -121,7 +122,7 @@ export function RecipeEditor({ recipe, onSaved, onCancel }: RecipeEditorProps) {
       // user previously saw 'Failed to save recipe' with no recovery path).
       const msg = err instanceof Error ? err.message : String(err);
       const draftJson = JSON.stringify(payload, null, 2);
-      try { await navigator.clipboard.writeText(draftJson); } catch (err) { silentCatch("features/recipes/sub_editor/components/RecipeEditor:catch1")(err); }
+      try { await copyText(draftJson); } catch (err) { silentCatch("features/recipes/sub_editor/components/RecipeEditor:catch1")(err); }
       useToastStore.getState().addToast(
         `Failed to save recipe: ${msg}. Draft copied to clipboard.`,
         'error',

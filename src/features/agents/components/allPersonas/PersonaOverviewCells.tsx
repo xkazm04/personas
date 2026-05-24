@@ -1,4 +1,5 @@
 import { Plug, Star } from 'lucide-react';
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { AnimatePresence, motion } from 'framer-motion';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
@@ -14,7 +15,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 async function copyDescriptionToClipboard(text: string, labels: { description_copied: string; copy_failed: string }) {
   const addToast = useToastStore.getState().addToast;
   try {
-    await navigator.clipboard.writeText(text);
+    await copyText(text);
     addToast(labels.description_copied, 'success');
   } catch {
     addToast(labels.copy_failed, 'error');

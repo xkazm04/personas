@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, HardDrive, Scissors, Trash2, Upload, X } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
@@ -309,7 +310,7 @@ export default function DrivePage() {
   const handleCopyPath = useCallback(
     async (entry: DriveEntry) => {
       try {
-        await navigator.clipboard.writeText(entry.path);
+        await copyText(entry.path);
       } catch (err) {
         silentCatch("drive:copy-path")(err);
       }
