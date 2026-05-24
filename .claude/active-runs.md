@@ -32,13 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-24 — started] /architect scan ipc-boundary — execute F1/F3/F5**
-  - **Source:** `/architect scan` theme=ipc-boundary; user chose execute F1 (binding-drift), F3 (feature-invoke bypass), F5 (missing settings command). Clean parts shipping: F5 (rename `get_setting`/`set_setting` → real `get_app_setting`/`set_app_setting`; drop stale forward-refs) + F1-bugfix (align `executions.ts`/`artist/index.ts` to ts-rs bindings + `Number()` consumers). F1-guard + F3 lint rules BLOCKED — need `eslint.config.js`, which holds the completed reduced-motion session's stranded 3-line registration (won't sweep it).
-  - **Paths:** `src/features/agents/sub_settings/components/PersonaSettingsTab.tsx`, `src/lib/commandNames.overrides.ts`, `src/api/agents/executions.ts`, `src/api/artist/index.ts`, `src/features/agents/sub_executions/components/runner/ExecutionPreviewPanel.tsx`, `src/features/plugins/artist/sub_gallery/{AssetCard,Gallery3D,GalleryPage}.tsx`. (NOT eslint.config.js — contended.) Vault `Architect/*`.
-  - **Status:** started
-  - **Branch:** master
-  - **Note:** Path-disjoint from active sessions; eslint.config.js contention surfaced to user, lint-guard deferred.
-
 - **[2026-05-24 — started] idea-57446a97 — app-wide density mode wired into spacing tokens**
   - **Source:** requirement idea-57446a97. Promote density (cozy/comfortable/compact) to a first-class Appearance setting that scales JS spacing tokens (CARD_PADDING, SECTION_GAP) + typo line-heights via CSS custom properties (`--density-pad`, `--density-gap`, …) on the root, so one switch reflows the whole app coherently.
   - **Paths:** `src/styles/globals.css` (density CSS vars), `src/lib/utils/designTokens.ts` (token rewire), `src/stores/themeStore.ts` (global density state + DOM apply + rehydrate), `src/features/settings/sub_appearance/components/AppearanceSettings.tsx` + `src/features/onboarding/components/AppearanceStep.tsx` (UI), `src/i18n/locales/en.json` (additive `settings.appearance.density_*`, `onboarding.density_label`), `docs/features/settings/README.md`, `.claude/active-runs.md`. Additive, ungated (verified in lite: tsc clean, themeStore test 6/6, i18n coverage 0 extras, eslint 0 errors).
@@ -172,6 +165,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commits: adf77499d [swept], d7516f24b)] /architect scan ipc-boundary — F1 + F5 (F3/F1-guard deferred)**
+  - **What:** Scanned ipc-boundary (4 angles); boundary itself healthy. Executed F5 (`PersonaSettingsTab` was calling nonexistent `get_setting`/`set_setting` → fixed to real `get_app_setting`/`set_app_setting`; per-persona execution-retention control was silently broken; dropped 2 stale forward-refs) and F1 bug-fix (`ExecutionPreview` + `ArtistAsset` now re-export the ts-rs bindings instead of hand-rolled dups that drifted `number` vs `bigint`; `Number()` at 5 consumers). tsc clean; eslint-staged ✔️.
+  - **Commits:** F5 + F1-`executions` landed in `adf77499d` — a **concurrent Fleet-merge session swept my uncommitted edits into its "chore: snapshot in-flight changes" commit (58 files)** before I could stage them (content verified correct in HEAD; 4th `add -A`-class sweep this month). F1-`artist` in my own `d7516f24b`.
+  - **Deferred/queued:** F1-guard + F3 (lint rules) blocked on contended `eslint.config.js` (stranded reduced-motion registration) → queued in backlog. F2 (mgmt-API key scopes unenforced — security) + F4 (timeout string-match) queued. 2 strong patterns noted. **Lesson recorded:** on hot shared master, commit each finding immediately after its edits — don't leave multiple findings' edits in the working tree where a sweep can grab them.
 
 - **[2026-05-24 00:20 — completed (branch: worktree-friend-goalplan-002014, commits: 14, range a318e674b..1315342c1)] /friend — goal-to-app planner (idea-ba306c32)**
   - **Outcome:** Built a self-contained, **read-only** Goal-to-Plan planner under `src/features/agents/sub_planner/` (new Personas → **Plan** tab) and round-tripped it with the build flow. 14 atomic cycles: stage-1 narrated planner → PlanProvider seam (LLM-first / rule-fallback) → confidence + rationale + editable steps → "Watch the plan" walkthrough (keyboard-driven) → live intent chips → persisted goal/recents → composer↔planner hand-offs → starter-goal gallery → **real `plan_goal_llm` Rust command (Sonnet via CLI)** → click-to-open step navigation → suggested persona name/icon. Nothing executes; graduation is a gated hand-off into the existing composer.
