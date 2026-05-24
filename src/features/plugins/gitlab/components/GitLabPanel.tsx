@@ -16,6 +16,7 @@ import { DeploymentHistoryTab } from '@/features/plugins/gitlab/components/Deplo
 import type { CiCdTemplate } from '../data/cicdTemplates';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { getBrandTokens } from '@/lib/connectors/brandTokens';
 
 
 // ---------------------------------------------------------------------------
@@ -31,6 +32,10 @@ type TabId = 'connection' | 'agents' | 'deploy' | 'history' | 'pipelines' | 'git
 export default function GitLabPanel() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabId>('connection');
+
+  // Single source of brand colour for GitLab (orange #FC6D26). Drives both the
+  // header icon and the active-tab underline so they no longer mismatch.
+  const brand = getBrandTokens('gitlab');
 
   const TABS = [
     { id: 'connection' as TabId, label: t.gitlab.tab_connection, disabledWhenOffline: false },
@@ -115,8 +120,8 @@ export default function GitLabPanel() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<GitBranch className="w-5 h-5 text-amber-400" />}
-        iconColor="amber"
+        icon={<GitBranch className={`w-5 h-5 ${brand.icon}`} />}
+        iconColor="orange"
         title={t.gitlab.integration_title}
         subtitle={t.gitlab.integration_subtitle}
         actions={<ConnectionStatusBadge connected={isConnected} isBusy={isConnecting} />}
@@ -125,7 +130,7 @@ export default function GitLabPanel() {
           tabs={TABS.map((tab) => ({ ...tab, disabled: tab.disabledWhenOffline && !isConnected }))}
           activeTab={activeTab}
           onTabChange={setActiveTab}
-          underlineClass="bg-orange-500"
+          underlineClass={brand.underline}
           idPrefix="gitlab-deploy"
           layoutIdPrefix="gitlab-tab"
         />

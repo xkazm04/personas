@@ -25,6 +25,8 @@ const ICON_COLOR_MAP = {
   indigo: { bg: 'bg-indigo-500/15', border: 'border-indigo-500/25' },
   amber: { bg: 'bg-amber-500/15', border: 'border-amber-500/25' },
   cyan: { bg: 'bg-cyan-500/15', border: 'border-cyan-500/25' },
+  orange: { bg: 'bg-orange-500/15', border: 'border-orange-500/25' },
+  sky: { bg: 'bg-sky-500/15', border: 'border-sky-500/25' },
   red: { bg: 'bg-red-500/15', border: 'border-red-500/25' },
   primary: { bg: 'bg-primary/10', border: 'border-primary/20' },
 } as const;
