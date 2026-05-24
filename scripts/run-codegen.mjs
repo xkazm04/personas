@@ -40,11 +40,15 @@ const TASKS = {
   // `npm run predev` did not). Listing here keeps the documented codegen
   // surface in sync with what actually runs.
   sprites:   "scripts/generate-agent-icon-sprites.mjs",
+  // Regenerates src/features/shared/components/CATALOG.md — the discoverable
+  // index of shared components (referenced from CLAUDE.md). Keeps it fresh so
+  // new/removed shared components surface without a manual step.
+  catalog:   "scripts/docs/gen-shared-catalog.mjs",
 };
 
 const PRESETS = {
-  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "cache-budget", "sprites"],
-  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "cache-budget", "sprites"],
+  predev:   ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "host-check", "cache-budget", "sprites", "catalog"],
+  prebuild: ["commands", "i18n", "i18n-split", "connectors", "n8n-limits", "checksums", "cache-budget", "sprites", "catalog"],
 };
 
 const TIMEOUT_MS = Number(process.env.CODEGEN_TIMEOUT_MS) || 60_000;
