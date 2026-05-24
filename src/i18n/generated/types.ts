@@ -27,6 +27,11 @@ export type Translations = {
     step_remove: string;
     step_move_up: string;
     step_move_down: string;
+    watch_button: string;
+    watch_stop: string;
+    watch_step_of: string;
+    watch_done: string;
+    opens_in: string;
     confidence_high: string;
     confidence_medium: string;
     confidence_low: string;

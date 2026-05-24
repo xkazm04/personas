@@ -1,4 +1,9 @@
 {
+  "watch_button": "观看方案演示",
+  "watch_stop": "停止",
+  "watch_step_of": "第 {current} 步，共 {total} 步",
+  "watch_done": "演示完成",
+  "opens_in": "在 {location} 中打开",
   "edited_badge": "已编辑",
   "reset_plan": "重置为建议方案",
   "step_remove": "移除步骤",

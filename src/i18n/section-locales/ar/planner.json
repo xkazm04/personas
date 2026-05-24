@@ -1,4 +1,9 @@
 {
+  "watch_button": "شاهد الخطة",
+  "watch_stop": "إيقاف",
+  "watch_step_of": "الخطوة {current} من {total}",
+  "watch_done": "اكتملت الجولة",
+  "opens_in": "يفتح في {location}",
   "edited_badge": "مُعدَّل",
   "reset_plan": "إعادة إلى المقترح",
   "step_remove": "إزالة الخطوة",

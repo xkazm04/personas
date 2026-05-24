@@ -1,4 +1,9 @@
 {
+  "watch_button": "Xem kế hoạch",
+  "watch_stop": "Dừng",
+  "watch_step_of": "Bước {current} trên {total}",
+  "watch_done": "Đã hoàn tất hướng dẫn",
+  "opens_in": "Mở trong {location}",
   "edited_badge": "Đã chỉnh sửa",
   "reset_plan": "Đặt lại về đề xuất",
   "step_remove": "Xóa bước",

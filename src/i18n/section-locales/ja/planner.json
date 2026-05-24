@@ -1,4 +1,9 @@
 {
+  "watch_button": "プランを再生",
+  "watch_stop": "停止",
+  "watch_step_of": "ステップ {current} / {total}",
+  "watch_done": "ウォークスルー完了",
+  "opens_in": "{location} で開きます",
   "edited_badge": "編集済み",
   "reset_plan": "提案内容にリセット",
   "step_remove": "ステップを削除",

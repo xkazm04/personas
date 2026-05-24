@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "Ver el plan",
+    "watch_stop": "Detener",
+    "watch_step_of": "Paso {current} de {total}",
+    "watch_done": "Recorrido completado",
+    "opens_in": "Se abre en {location}",
     "edited_badge": "Editado",
     "reset_plan": "Restablecer a lo sugerido",
     "step_remove": "Eliminar paso",

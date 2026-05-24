@@ -1,4 +1,9 @@
 {
+  "watch_button": "योजना देखें",
+  "watch_stop": "रोकें",
+  "watch_step_of": "{total} में से चरण {current}",
+  "watch_done": "वॉकथ्रू पूर्ण",
+  "opens_in": "{location} में खुलता है",
   "edited_badge": "संपादित",
   "reset_plan": "सुझाए गए पर रीसेट करें",
   "step_remove": "चरण हटाएं",

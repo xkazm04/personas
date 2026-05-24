@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "Tonton rencana",
+    "watch_stop": "Berhenti",
+    "watch_step_of": "Langkah {current} dari {total}",
+    "watch_done": "Panduan selesai",
+    "opens_in": "Terbuka di {location}",
     "edited_badge": "Diubah",
     "reset_plan": "Atur ulang ke saran",
     "step_remove": "Hapus langkah",

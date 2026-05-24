@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "계획 살펴보기",
+    "watch_stop": "중지",
+    "watch_step_of": "{total}단계 중 {current}단계",
+    "watch_done": "둘러보기 완료",
+    "opens_in": "{location}에서 열림",
     "edited_badge": "편집됨",
     "reset_plan": "제안된 단계로 초기화",
     "step_remove": "단계 제거",

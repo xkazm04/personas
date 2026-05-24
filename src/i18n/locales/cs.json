@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "Přehrát plán",
+    "watch_stop": "Zastavit",
+    "watch_step_of": "Krok {current} z {total}",
+    "watch_done": "Průvodce dokončen",
+    "opens_in": "Otevře se v {location}",
     "edited_badge": "Upraveno",
     "reset_plan": "Obnovit doporučené",
     "step_remove": "Odebrat krok",

@@ -9,7 +9,7 @@
  */
 import {
   Sparkles, Bot, Plug, Zap, Clock, Globe, GitCompare, Send, ShieldCheck,
-  Trash2, ChevronUp, ChevronDown,
+  Trash2, ChevronUp, ChevronDown, CornerDownRight,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -70,18 +70,23 @@ function ConfidenceBar({ score, label }: { score: number; label: string }) {
   );
 }
 
+/** Categories that map to a concrete app destination the step would open. */
+const DESTINATION_CATEGORIES = new Set(['persona', 'connector', 'trigger', 'schedule', 'action']);
+
 export interface PlanStepCardProps {
   step: PlanStep;
   index: number;
   isFirst: boolean;
   isLast: boolean;
+  /** True while the watch player is highlighting this step. */
+  active?: boolean;
   onRemove: (id: string) => void;
   onMoveUp: (id: string) => void;
   onMoveDown: (id: string) => void;
 }
 
-export function PlanStepCard({ step, index, isFirst, isLast, onRemove, onMoveUp, onMoveDown }: PlanStepCardProps) {
-  const { t } = useTranslation();
+export function PlanStepCard({ step, index, isFirst, isLast, active = false, onRemove, onMoveUp, onMoveDown }: PlanStepCardProps) {
+  const { t, tx } = useTranslation();
   const action = ACTION_CATALOG[step.actionId];
   const style = CATEGORY_STYLE[action.category];
   const Icon = ICONS[action.icon] ?? Sparkles;
@@ -102,8 +107,16 @@ export function PlanStepCard({ step, index, isFirst, isLast, onRemove, onMoveUp,
               : action.category === 'action' ? t.planner.category_action
                 : t.planner.category_navigation;
 
+  const hasDestination = DESTINATION_CATEGORIES.has(action.category);
+
   return (
-    <div className={`group flex gap-3 rounded-card bg-secondary/30 ring-1 ${style.ring} p-3`}>
+    <div
+      className={`group flex gap-3 rounded-card p-3 transition-all ${
+        active
+          ? 'bg-primary/10 ring-2 ring-primary/50 shadow-elevation-2'
+          : `bg-secondary/30 ring-1 ${style.ring}`
+      }`}
+    >
       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary/70 typo-label text-foreground">
         {index + 1}
       </span>
@@ -120,6 +133,12 @@ export function PlanStepCard({ step, index, isFirst, isLast, onRemove, onMoveUp,
         </div>
         <p className="mt-1 typo-body text-foreground">{detail}</p>
         <p className="mt-0.5 typo-label italic text-foreground">{rationale}</p>
+        {hasDestination && (
+          <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-secondary/50 px-2 py-0.5 typo-label text-foreground">
+            <CornerDownRight className="h-3 w-3" />
+            {tx(t.planner.opens_in, { location: categoryLabel })}
+          </span>
+        )}
       </div>
 
       {/* Inline edit controls — reveal on hover/focus, keyboard reachable */}

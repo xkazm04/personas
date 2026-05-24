@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "Посмотреть план",
+    "watch_stop": "Остановить",
+    "watch_step_of": "Шаг {current} из {total}",
+    "watch_done": "Обзор завершён",
+    "opens_in": "Откроется в {location}",
     "edited_badge": "Изменено",
     "reset_plan": "Сбросить к предложенному",
     "step_remove": "Удалить шаг",

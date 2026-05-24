@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "পরিকল্পনাটি দেখুন",
+    "watch_stop": "থামুন",
+    "watch_step_of": "ধাপ {current} / {total}",
+    "watch_done": "ওয়াকথ্রু সম্পূর্ণ হয়েছে",
+    "opens_in": "{location}-এ খোলে",
     "edited_badge": "সম্পাদিত",
     "reset_plan": "প্রস্তাবিত অবস্থায় রিসেট করুন",
     "step_remove": "ধাপ সরান",

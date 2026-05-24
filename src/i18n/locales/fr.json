@@ -1,5 +1,10 @@
 {
   "planner": {
+    "watch_button": "Regarder le plan",
+    "watch_stop": "Arrêter",
+    "watch_step_of": "Étape {current} sur {total}",
+    "watch_done": "Visite guidée terminée",
+    "opens_in": "S'ouvre dans {location}",
     "edited_badge": "Modifié",
     "reset_plan": "Rétablir la suggestion",
     "step_remove": "Supprimer l'étape",
