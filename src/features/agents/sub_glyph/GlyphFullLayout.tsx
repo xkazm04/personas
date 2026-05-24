@@ -17,7 +17,7 @@ import { BaseModal } from "@/lib/ui/BaseModal";
 import { TestReportModal } from "@/features/templates/sub_generated/adoption/chronology/TestReportModal";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import { useAgentStore } from "@/stores/agentStore";
-import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";
+import { CapabilityAddModal } from "@/features/agents/sub_new_persona/capabilityView";
 import { CommandPanel } from "./commandPanel";
 import { GlyphTopBar } from "./GlyphTopBar";
 import { GlyphRowStrip } from "./GlyphRowStrip";

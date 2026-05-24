@@ -2,7 +2,7 @@ import { Plus } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { BehaviorCoreEditor } from "@/features/agents/components/matrix/BehaviorCoreEditor";
 import { SharedResourcesPanel } from "@/features/agents/components/matrix/SharedResourcesPanel";
-import { CapabilityRow } from "@/features/agents/components/newPersona/capabilityView";
+import { CapabilityRow } from "@/features/agents/sub_new_persona/capabilityView";
 import { DebtText } from '@/i18n/DebtText';
 
 

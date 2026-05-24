@@ -23,7 +23,7 @@ import { AlertCircle, Send } from "lucide-react";
 import { useAgentStore } from "@/stores/agentStore";
 import { BuildSimulatePanel } from "@/features/agents/components/matrix/BuildSimulatePanel";
 import { TestReportModal } from "@/features/templates/sub_generated/adoption/chronology/TestReportModal";
-import { CapabilityAddModal } from "@/features/agents/components/newPersona/capabilityView";
+import { CapabilityAddModal } from "@/features/agents/sub_new_persona/capabilityView";
 import type { GlyphDimension } from "@/features/shared/glyph";
 import type { Frequency, QuickConfigState, EventSubscription } from "@/features/agents/components/matrix/quickConfigTypes";
 import { describeTriggerConfig, describeSelectedConnectors } from "@/features/agents/components/matrix/quickConfigTypes";
