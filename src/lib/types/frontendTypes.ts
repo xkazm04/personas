@@ -3,66 +3,6 @@
  * Includes model configuration, credential templates, and notification channels.
  */
 
-// -- Sidebar Tree ------------------------------------------------------
-
-import type { Persona, PersonaGroup } from "./types";
-
-export interface GroupNode {
-  kind: 'group';
-  group: PersonaGroup;
-  children: Persona[];
-}
-
-export interface UngroupedNode {
-  kind: 'ungrouped';
-  children: Persona[];
-}
-
-export type SidebarNode = GroupNode | UngroupedNode;
-
-// -- Drag Payloads (discriminated union) -------------------------------
-
-export type DragPayload =
-  | { type: 'persona'; personaId: string }
-  | { type: 'group-reorder'; groupId: string };
-
-export type DropPayload =
-  | { type: 'group'; groupId: string }
-  | { type: 'group-reorder'; groupId: string }
-  | { type: 'persona'; personaId: string }
-  | { type: 'ungrouped' };
-
-/** Build a tree of sidebar nodes from flat groups + personas arrays. */
-export function buildSidebarTree(
-  groups: PersonaGroup[],
-  personas: Persona[],
-): SidebarNode[] {
-  const sortedGroups = [...groups].sort((a, b) => a.sortOrder - b.sortOrder);
-
-  const groupMap = new Map<string, Persona[]>();
-  for (const g of sortedGroups) groupMap.set(g.id, []);
-  const ungrouped: Persona[] = [];
-
-  for (const p of personas) {
-    const gid = p.group_id;
-    if (gid && groupMap.has(gid)) {
-      groupMap.get(gid)!.push(p);
-    } else {
-      ungrouped.push(p);
-    }
-  }
-
-  const nodes: SidebarNode[] = sortedGroups.map((group) => ({
-    kind: 'group' as const,
-    group,
-    children: groupMap.get(group.id) ?? [],
-  }));
-
-  nodes.push({ kind: 'ungrouped', children: ungrouped });
-
-  return nodes;
-}
-
 // -- Model Configuration ------------------------------------------------
 
 export type ModelProvider = "anthropic" | "ollama" | "litellm" | "copilot" | "custom";

@@ -13,7 +13,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Radio } from 'lucide-react';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { PersonaGroup } from '@/lib/bindings/PersonaGroup';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import type { PersonaTrigger } from '@/lib/bindings/PersonaTrigger';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import { findTemplateByEventType } from '../../libs/eventCanvasConstants';
@@ -33,7 +33,7 @@ interface Props {
   initialTriggers: PersonaTrigger[];
   initialEvents: PersonaEvent[];
   personas: Persona[];
-  groups: PersonaGroup[];
+  teams: PersonaTeam[];
   /** Page-level slot. RoutingView publishes the class-pill bar into the page header. */
   setHeaderExtra?: (node: ReactNode) => void;
 }
@@ -41,7 +41,7 @@ interface Props {
 export function RoutingView(props: Props) {
   const state = useRoutingState(props);
   const {
-    personas, groups, rows, recentEvents, personaMap,
+    personas, teams, rows, recentEvents, personaMap,
     reload, isBackfilling, handleInitializeHandlers,
     addPersonaForEvent, setAddPersonaForEvent,
     disconnectTarget, setDisconnectTarget,
@@ -145,7 +145,7 @@ export function RoutingView(props: Props) {
       <AddPersonaModal
         open={!!addPersonaForEvent}
         personas={personas}
-        groups={groups}
+        teams={teams}
         alreadyActiveIds={connectedPersonaIdsForRow}
         eventLabel={addPersonaForEvent ? (findTemplateByEventType(addPersonaForEvent.eventType)?.label ?? addPersonaForEvent.eventType) : ''}
         onAdd={handleAddPersona}

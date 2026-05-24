@@ -62,7 +62,7 @@ export const getPresetAdoptionSchema = (presetId: string) =>
  * `useTypedTauriEvent(EventName.TEAM_PRESET_ADOPT_PROGRESS, ...)` to
  * drive per-row status badges in the preview modal.
  *
- * Returns an aggregate result with the new team_id, optional group_id,
+ * Returns an aggregate result with the new team_id, optional home_team_id,
  * successfully-adopted members, and any per-template failures. The team
  * shell is created unconditionally — partial failures leave the user
  * with the team + the members that did succeed so they can retry the
@@ -107,14 +107,14 @@ export const adoptTeamPreset = (
 export const retryTeamPresetMembers = (
   presetId: string,
   teamId: string,
-  groupId: string | null,
+  homeTeamId: string | null,
   roles: string[],
   parameterOverrides: PresetParameterOverrides | null = null,
 ) =>
   invoke<AdoptedTeamPresetResult>("retry_team_preset_members", {
     presetId,
     teamId,
-    groupId,
+    homeTeamId,
     roles,
     language: currentLanguage(),
     parameterOverrides,

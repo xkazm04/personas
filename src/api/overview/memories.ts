@@ -95,22 +95,6 @@ export const listMemoriesWithStats = (
 export const listMemoriesByExecution = (executionId: string) =>
   invoke<PersonaMemory[]>("list_memories_by_execution", { executionId });
 
-/**
- * List memories shared into a PersonaGroup — the cross-persona pool a group
- * has accumulated. Wraps `list_group_memories` (commands/core/memories.rs).
- * `limit` defaults to 200 server-side.
- */
-export const listGroupMemories = (groupId: string, limit?: number) =>
-  invoke<PersonaMemory[]>("list_group_memories", { groupId, limit });
-
-/**
- * Set or clear a memory's group attribution. Pass `null` to unshare the
- * memory from its current group (reverts to persona-private). Surfaces as
- * the "Unshare" action on each row of GroupMemoryListModal.
- */
-export const updateMemoryGroupId = (id: string, groupId: string | null) =>
-  invoke<boolean>("update_memory_group_id", { id, groupId });
-
 export const deleteMemory = (id: string) =>
   invoke<boolean>("delete_memory", { id });
 

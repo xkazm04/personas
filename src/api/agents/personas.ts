@@ -123,7 +123,6 @@ export interface PartialPersonaUpdate {
   max_budget_usd?: number | null;
   max_turns?: number | null;
   design_context?: string | null;
-  group_id?: string | null;
   home_team_id?: string | null;
   parameters?: string | null;
   /**
@@ -158,10 +157,10 @@ export interface SwitchModelOp {
   max_turns?: number | null;
 }
 
-/** Move persona to a different group. */
-export interface MoveToGroupOp {
-  kind: 'MoveToGroup';
-  group_id: string | null;
+/** Set the persona's home team (workspace). `null` clears it. */
+export interface SetHomeTeamOp {
+  kind: 'SetHomeTeam';
+  home_team_id: string | null;
 }
 
 /** Toggle enabled/disabled. */
@@ -228,7 +227,7 @@ export interface UpdateParametersOp {
  */
 export type PersonaOperation =
   | SwitchModelOp
-  | MoveToGroupOp
+  | SetHomeTeamOp
   | ToggleEnabledOp
   | UpdatePromptOp
   | UpdateSettingsOp
@@ -243,8 +242,8 @@ export function operationToPartial(op: PersonaOperation): PartialPersonaUpdate {
   switch (op.kind) {
     case 'SwitchModel':
       return { model_profile: op.model_profile, max_budget_usd: op.max_budget_usd, max_turns: op.max_turns };
-    case 'MoveToGroup':
-      return { group_id: op.group_id };
+    case 'SetHomeTeam':
+      return { home_team_id: op.home_team_id };
     case 'ToggleEnabled':
       return { enabled: op.enabled };
     case 'UpdatePrompt':
@@ -299,7 +298,6 @@ export function buildUpdateInput(partial: PartialPersonaUpdate): UpdatePersonaIn
     max_budget_usd: partial.max_budget_usd !== undefined ? partial.max_budget_usd : null,
     max_turns: partial.max_turns !== undefined ? partial.max_turns : null,
     design_context: partial.design_context !== undefined ? partial.design_context : null,
-    group_id: partial.group_id !== undefined ? partial.group_id : null,
     home_team_id: partial.home_team_id !== undefined ? partial.home_team_id : null,
     parameters: partial.parameters !== undefined ? partial.parameters : null,
     gateway_exposure: partial.gateway_exposure !== undefined ? partial.gateway_exposure : null,

@@ -34,8 +34,8 @@ export interface StoreBusEventMap {
   /** A trigger was created / updated / deleted (agentStore subscribes to refresh detail). */
   'trigger:changed': { personaId: string };
 
-  /** Move a persona into a group (agentStore subscribes to apply the operation). */
-  'persona:move-to-group': { personaId: string; groupId: string | null };
+  /** Set a persona's home team / workspace (agentStore subscribes to apply the operation). */
+  'persona:set-home-team': { personaId: string; homeTeamId: string | null };
 
   /** A pipeline stage finished with high-resolution timing (observability subscribers). */
   'pipeline:stage-complete': { executionId: string; stage: string; durationMs: number };

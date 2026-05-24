@@ -44,7 +44,7 @@ const mockBuildUpdateInput = vi.fn((partial: Record<string, unknown>) => ({
   max_budget_usd: null,
   max_turns: null,
   design_context: partial.design_context !== undefined ? partial.design_context : null,
-  group_id: null,
+  home_team_id: null,
 }));
 
 const mockCancelBuildSession = vi.fn().mockResolvedValue(undefined);

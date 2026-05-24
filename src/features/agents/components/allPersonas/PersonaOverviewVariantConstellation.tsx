@@ -31,6 +31,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
+import { storeBus } from '@/lib/storeBus';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaHealth } from '@/lib/bindings/PersonaHealth';
 import { DebtText } from '@/i18n/DebtText';
@@ -262,8 +263,7 @@ export function PersonaOverviewVariantConstellation({
   // either resolves a drop (if a `data-persona-drop-target` ancestor sits
   // under the release point) or — if the press never exceeded the threshold —
   // lets the trailing click event run normally to open the dossier.
-  const movePersonaToGroupAction = usePipelineStore((s) => s.movePersonaToGroup);
-  const groupsForToast = usePipelineStore((s) => s.groups);
+  const teamsForToast = usePipelineStore((s) => s.teams);
   const addToast = useToastStore((s) => s.addToast);
   const dragStateRef = useRef<{
     personaId: string;
@@ -325,13 +325,13 @@ export function PersonaOverviewVariantConstellation({
     const dropAttrEl = target?.closest('[data-persona-drop-target]');
     const rawId = dropAttrEl?.getAttribute('data-persona-drop-target') ?? null;
     if (!rawId) return;
-    const groupId = rawId === '__ungrouped__' ? null : rawId;
+    const homeTeamId = rawId === '__ungrouped__' ? null : rawId;
     void (async () => {
       try {
-        await movePersonaToGroupAction(state.personaId, groupId);
+        storeBus.emit('persona:set-home-team', { personaId: state.personaId, homeTeamId });
         const persona = data.find((p) => p.id === state.personaId);
-        const groupName = groupId
-          ? groupsForToast.find((g) => g.id === groupId)?.name ?? ''
+        const groupName = homeTeamId
+          ? teamsForToast.find((g) => g.id === homeTeamId)?.name ?? ''
           : t.agents.persona_groups_rail.ungrouped_label;
         if (persona) {
           addToast(
@@ -345,7 +345,7 @@ export function PersonaOverviewVariantConstellation({
         silentCatch('features/agents/components/allPersonas/PersonaOverviewVariantConstellation:drop')(err);
       }
     })();
-  }, [data, movePersonaToGroupAction, groupsForToast, addToast, t]);
+  }, [data, teamsForToast, addToast, t]);
 
   const handleNodePointerCancel = useCallback(() => {
     dragStateRef.current = null;

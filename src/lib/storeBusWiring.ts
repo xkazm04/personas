@@ -67,9 +67,9 @@ export function initStoreBus(): void {
     void useAgentStore.getState().fetchDetail(personaId);
   });
 
-  // Move persona to group — agentStore applies the operation
-  storeBus.on('persona:move-to-group', ({ personaId, groupId }) => {
-    void useAgentStore.getState().applyPersonaOp(personaId, { kind: 'MoveToGroup', group_id: groupId ?? '' });
+  // Set persona home team — agentStore applies the operation
+  storeBus.on('persona:set-home-team', ({ personaId, homeTeamId }) => {
+    void useAgentStore.getState().applyPersonaOp(personaId, { kind: 'SetHomeTeam', home_team_id: homeTeamId });
   });
 
   // Appearance changed — systemStore emits tour event for appearance step completion
