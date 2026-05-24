@@ -24,8 +24,10 @@
 //! restored implicitly once Stage 3 references these items.
 #![allow(dead_code, unused_imports)]
 
+pub mod crypto;
 pub mod merge;
 pub mod snapshot;
 
+pub use crypto::{open_snapshot, seal_snapshot, SealedPayload, SyncKey};
 pub use merge::{merge_persona, SyncWinner, WorkspaceEntity, WorkspaceMergeOutcome};
 pub use snapshot::PersonaWorkspaceSnapshot;
