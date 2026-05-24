@@ -21,7 +21,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession } from '@/api/fleet/fleet';
+import { spawnSession, writeInput } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FleetSessionCard } from '../FleetSessionCard';
@@ -195,6 +195,16 @@ export default function FleetGridPage() {
     [removeLocal],
   );
 
+  // Inline reply from the "Needs you" banner — write the line to the
+  // session's PTY (trailing \r submits, mirroring the broadcast composer).
+  const handleReply = useCallback(async (id: string, replyText: string) => {
+    try {
+      await writeInput(id, `${replyText}\r`);
+    } catch (e) {
+      toastCatch('FleetGridPage:reply', 'Failed to send reply to session')(e);
+    }
+  }, []);
+
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
@@ -297,7 +307,7 @@ export default function FleetGridPage() {
 
         <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
 
-        <FleetNeedsYouBanner waiting={waitingSessions} onJump={handleActivate} />
+        <FleetNeedsYouBanner waiting={waitingSessions} onJump={handleActivate} onReply={handleReply} />
 
         <ActionRow>
           <Button

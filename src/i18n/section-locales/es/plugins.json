@@ -1,5 +1,10 @@
 {
   "fleet": {
+    "reply_to": "Responder a {name}",
+    "reply_placeholder": "Responder a {name}…",
+    "reply_send": "Enviar",
+    "reply_sending": "Enviando…",
+    "reply_cancel": "Cancelar",
     "notify_title": "La sesión necesita tu intervención",
     "notify_body": "{name} te está esperando",
     "notify_enable": "Activar alertas de espera de entrada",

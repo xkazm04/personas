@@ -9697,6 +9697,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "Répondre à {name}",
+      "reply_placeholder": "Répondre à {name}…",
+      "reply_send": "Envoyer",
+      "reply_sending": "Envoi…",
+      "reply_cancel": "Annuler",
       "notify_title": "La session attend votre saisie",
       "notify_body": "{name} vous attend",
       "notify_enable": "Activer les alertes d'attente de saisie",

@@ -9697,6 +9697,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "الرد على {name}",
+      "reply_placeholder": "الرد على {name}…",
+      "reply_send": "إرسال",
+      "reply_sending": "جارٍ الإرسال…",
+      "reply_cancel": "إلغاء",
       "notify_title": "الجلسة تحتاج إلى إدخالك",
       "notify_body": "{name} في انتظارك",
       "notify_enable": "تفعيل تنبيهات انتظار الإدخال",

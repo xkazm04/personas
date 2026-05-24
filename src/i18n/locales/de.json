@@ -9773,6 +9773,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "An {name} antworten",
+      "reply_placeholder": "An {name} antworten…",
+      "reply_send": "Senden",
+      "reply_sending": "Senden…",
+      "reply_cancel": "Abbrechen",
       "notify_title": "Sitzung wartet auf Ihre Eingabe",
       "notify_body": "{name} wartet auf Sie",
       "notify_enable": "Eingabe-Warte-Benachrichtigungen aktivieren",

@@ -9773,6 +9773,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "{name} को उत्तर दें",
+      "reply_placeholder": "{name} को उत्तर दें…",
+      "reply_send": "भेजें",
+      "reply_sending": "भेजा जा रहा है…",
+      "reply_cancel": "रद्द करें",
       "notify_title": "सत्र को आपके इनपुट की आवश्यकता है",
       "notify_body": "{name} आपकी प्रतीक्षा कर रहा है",
       "notify_enable": "इनपुट-प्रतीक्षा अलर्ट सक्षम करें",

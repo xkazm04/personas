@@ -1,5 +1,10 @@
 {
   "fleet": {
+    "reply_to": "{name} に返信",
+    "reply_placeholder": "{name} に返信…",
+    "reply_send": "送信",
+    "reply_sending": "送信中…",
+    "reply_cancel": "キャンセル",
     "notify_title": "セッションが入力を待っています",
     "notify_body": "{name} があなたを待っています",
     "notify_enable": "入力待ちアラートを有効化",

@@ -1,5 +1,10 @@
 {
   "fleet": {
+    "reply_to": "Trả lời {name}",
+    "reply_placeholder": "Trả lời {name}…",
+    "reply_send": "Gửi",
+    "reply_sending": "Đang gửi…",
+    "reply_cancel": "Hủy",
     "notify_title": "Phiên cần bạn nhập",
     "notify_body": "{name} đang chờ bạn",
     "notify_enable": "Bật cảnh báo chờ nhập",

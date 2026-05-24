@@ -9773,6 +9773,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "Odpovědět {name}",
+      "reply_placeholder": "Odpovědět {name}…",
+      "reply_send": "Odeslat",
+      "reply_sending": "Odesílání…",
+      "reply_cancel": "Zrušit",
       "notify_title": "Relace čeká na váš vstup",
       "notify_body": "{name} na vás čeká",
       "notify_enable": "Zapnout upozornění na čekání na vstup",

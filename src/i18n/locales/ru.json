@@ -9773,6 +9773,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "Ответить {name}",
+      "reply_placeholder": "Ответить {name}…",
+      "reply_send": "Отправить",
+      "reply_sending": "Отправка…",
+      "reply_cancel": "Отмена",
       "notify_title": "Сессия ждёт вашего ввода",
       "notify_body": "{name} ожидает вас",
       "notify_enable": "Включить оповещения об ожидании ввода",

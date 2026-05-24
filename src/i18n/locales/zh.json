@@ -9697,6 +9697,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "回复 {name}",
+      "reply_placeholder": "回复 {name}…",
+      "reply_send": "发送",
+      "reply_sending": "发送中…",
+      "reply_cancel": "取消",
       "notify_title": "会话需要您的输入",
       "notify_body": "{name} 正在等待您",
       "notify_enable": "开启等待输入提醒",

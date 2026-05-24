@@ -9808,6 +9808,11 @@ export type Translations = {
   };
   plugins: {
     fleet: {
+      reply_to: string;
+      reply_placeholder: string;
+      reply_send: string;
+      reply_sending: string;
+      reply_cancel: string;
       notify_title: string;
       notify_body: string;
       notify_enable: string;

@@ -9802,6 +9802,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "Reply to {name}",
+      "reply_placeholder": "Reply to {name}…",
+      "reply_send": "Send",
+      "reply_sending": "Sending…",
+      "reply_cancel": "Cancel",
       "notify_title": "Session needs your input",
       "notify_body": "{name} is waiting for you",
       "notify_enable": "Enable awaiting-input alerts",

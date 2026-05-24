@@ -9773,6 +9773,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "Balas {name}",
+      "reply_placeholder": "Balas {name}…",
+      "reply_send": "Kirim",
+      "reply_sending": "Mengirim…",
+      "reply_cancel": "Batal",
       "notify_title": "Sesi memerlukan masukan Anda",
       "notify_body": "{name} sedang menunggu Anda",
       "notify_enable": "Aktifkan peringatan menunggu masukan",

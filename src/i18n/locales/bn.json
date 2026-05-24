@@ -9773,6 +9773,11 @@
   },
   "plugins": {
     "fleet": {
+      "reply_to": "{name}-কে উত্তর দিন",
+      "reply_placeholder": "{name}-কে উত্তর দিন…",
+      "reply_send": "পাঠান",
+      "reply_sending": "পাঠানো হচ্ছে…",
+      "reply_cancel": "বাতিল",
       "notify_title": "সেশনের জন্য আপনার ইনপুট প্রয়োজন",
       "notify_body": "{name} আপনার অপেক্ষায় আছে",
       "notify_enable": "ইনপুট-অপেক্ষা সতর্কতা চালু করুন",

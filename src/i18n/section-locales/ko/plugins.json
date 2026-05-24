@@ -1,5 +1,10 @@
 {
   "fleet": {
+    "reply_to": "{name}에게 답장",
+    "reply_placeholder": "{name}에게 답장…",
+    "reply_send": "보내기",
+    "reply_sending": "보내는 중…",
+    "reply_cancel": "취소",
     "notify_title": "세션이 입력을 기다립니다",
     "notify_body": "{name}이(가) 당신을 기다리고 있습니다",
     "notify_enable": "입력 대기 알림 켜기",
