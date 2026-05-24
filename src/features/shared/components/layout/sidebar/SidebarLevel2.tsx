@@ -11,7 +11,7 @@ import { useOverviewStore } from "@/stores/overviewStore";
 import type { HomeTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { getNavReleases, RELEASE_STATUS_META, type Release } from '@/data/releases';
-import { useReleasesTranslation } from '@/features/home/components/releases/i18n/useReleasesTranslation';
+import { useReleasesTranslation } from '@/features/home/sub_releases/i18n/useReleasesTranslation';
 
 import SidebarSubNav from './SidebarSubNav';
 import SidebarLevel3 from './SidebarLevel3';

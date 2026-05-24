@@ -54,7 +54,7 @@ export function ConnectedServicesWidget({ config, title }: CockpitWidgetProps) {
             }
           }
         }
-      } catch (err) { silentCatch("features/home/components/cockpit/widgets/ConnectedServicesWidget:catch1")(err); }
+      } catch (err) { silentCatch("features/home/sub_cockpit/widgets/ConnectedServicesWidget:catch1")(err); }
     }
     return counts;
   }, [personas]);

@@ -17,7 +17,7 @@ function cache(fn: Prefetcher): Prefetcher {
 }
 
 // Home tabs
-export const prefetchHomeReleases = cache(() => import('@/features/home/components/releases/HomeReleases'));
+export const prefetchHomeReleases = cache(() => import('@/features/home/sub_releases/HomeReleases'));
 export const prefetchHomeLearning = cache(() => import('@/features/home/components/HomeLearning'));
 
 // Top-level sidebar section targets (mirrors the lazy imports in PersonasPage).

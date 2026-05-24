@@ -70,7 +70,7 @@ export default function CockpitPanel() {
   if (spec) {
     try {
       persistentBody = JSON.parse(spec.specJson) as CompanionCockpitSpecBody;
-    } catch (err) { silentCatch("features/home/components/cockpit/CockpitPanel:catch1")(err); }
+    } catch (err) { silentCatch("features/home/sub_cockpit/CockpitPanel:catch1")(err); }
   }
   const body = contextualCockpit ? contextualCockpit.spec : persistentBody;
   const widgets = body?.widgets ?? [];

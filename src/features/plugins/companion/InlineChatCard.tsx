@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Check, Pin, Loader2 } from 'lucide-react';
-import { cockpitWidgetRegistry } from '@/features/home/components/cockpit/widgetRegistry';
+import { cockpitWidgetRegistry } from '@/features/home/sub_cockpit/widgetRegistry';
 import { companionPinWidgetToCockpit, type ChatCard } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';

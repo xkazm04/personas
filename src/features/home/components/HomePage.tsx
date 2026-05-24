@@ -3,9 +3,9 @@ import { useSystemStore } from "@/stores/systemStore";
 import { SystemHealthPanel } from '@/features/overview/components/health/SystemHealthPanel';
 import HomeWelcome from '@/features/home/components/HomeWelcome';
 
-const HomeReleases = lazy(() => import('@/features/home/components/releases/HomeReleases'));
+const HomeReleases = lazy(() => import('@/features/home/sub_releases/HomeReleases'));
 const HomeLearning = lazy(() => import('@/features/home/components/HomeLearning'));
-const Cockpit = lazy(() => import('@/features/home/components/cockpit/CockpitPanel'));
+const Cockpit = lazy(() => import('@/features/home/sub_cockpit/CockpitPanel'));
 
 
 export default function HomePage() {
