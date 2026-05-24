@@ -4,15 +4,13 @@ import type { PluginTab } from '@/lib/types/types';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Puzzle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { getBrandTokens } from '@/lib/connectors/brandTokens';
 
 interface PluginDef {
   id: PluginTab;
   label: string;
   description: string;
   icon: LucideIcon;
-  color: string;
-  activeBg: string;
-  activeBorder: string;
 }
 
 export default function PluginBrowsePage() {
@@ -23,13 +21,16 @@ export default function PluginBrowsePage() {
   // via `localeCompare`. Artist + Research Lab are in-development plugins
   // (DEV-builds-only); they're hidden from Browse entirely and surfaced
   // only via the L2 sidebar with a golden border.
+  // Card colours are derived per-plugin from the central brand-token registry
+  // (`getBrandTokens`) rather than hardcoded here, so each plugin's icon, tint,
+  // and border stay consistent with its panel and badges elsewhere in the app.
   const PLUGINS: PluginDef[] = ([
-    { id: 'dev-tools', label: t.plugins.dev_tools_label, description: t.plugins.dev_tools_desc, icon: Wrench, color: 'text-amber-400', activeBg: 'bg-amber-500/10', activeBorder: 'border-amber-500/20' },
-    { id: 'obsidian-brain', label: t.plugins.obsidian_brain_label, description: t.plugins.obsidian_brain_desc, icon: Brain, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
-    { id: 'drive', label: t.plugins.drive_label, description: t.plugins.drive_desc, icon: HardDrive, color: 'text-sky-400', activeBg: 'bg-sky-500/10', activeBorder: 'border-sky-500/20' },
-    { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: Sparkles, color: 'text-violet-400', activeBg: 'bg-violet-500/10', activeBorder: 'border-violet-500/20' },
-    { id: 'companion', label: t.plugins.companion_label, description: t.plugins.companion_desc, icon: Bot, color: 'text-cyan-400', activeBg: 'bg-cyan-500/10', activeBorder: 'border-cyan-500/20' },
-    { id: 'langfuse', label: t.plugins.langfuse_label, description: t.plugins.langfuse_desc, icon: LineChart, color: 'text-indigo-400', activeBg: 'bg-indigo-500/10', activeBorder: 'border-indigo-500/20' },
+    { id: 'dev-tools', label: t.plugins.dev_tools_label, description: t.plugins.dev_tools_desc, icon: Wrench },
+    { id: 'obsidian-brain', label: t.plugins.obsidian_brain_label, description: t.plugins.obsidian_brain_desc, icon: Brain },
+    { id: 'drive', label: t.plugins.drive_label, description: t.plugins.drive_desc, icon: HardDrive },
+    { id: 'twin', label: t.plugins.twin_label, description: t.plugins.twin_desc, icon: Sparkles },
+    { id: 'companion', label: t.plugins.companion_label, description: t.plugins.companion_desc, icon: Bot },
+    { id: 'langfuse', label: t.plugins.langfuse_label, description: t.plugins.langfuse_desc, icon: LineChart },
   ] satisfies PluginDef[]).slice().sort((a, b) => a.label.localeCompare(b.label));
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
   const togglePlugin = useSystemStore((s) => s.togglePlugin);
@@ -48,18 +49,19 @@ export default function PluginBrowsePage() {
           {PLUGINS.map((plugin) => {
             const Icon = plugin.icon;
             const enabled = enabledPlugins.has(plugin.id);
+            const brand = getBrandTokens(plugin.id);
             return (
               <div
                 key={plugin.id}
                 className={`rounded-modal border transition-all ${
                   enabled
-                    ? `${plugin.activeBorder} ${plugin.activeBg}`
+                    ? `${brand.badgeBorder} ${brand.badgeBg}`
                     : 'border-primary/10 bg-card/40 opacity-60'
                 }`}
               >
                 <div className="flex items-start gap-4 p-5">
-                  <div className={`w-10 h-10 rounded-modal ${plugin.activeBg} ${plugin.activeBorder} border flex items-center justify-center flex-shrink-0`}>
-                    <Icon className={`w-5 h-5 ${plugin.color}`} />
+                  <div className={`w-10 h-10 rounded-modal ${brand.badgeBg} ${brand.badgeBorder} border flex items-center justify-center flex-shrink-0`}>
+                    <Icon className={`w-5 h-5 ${brand.icon}`} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
