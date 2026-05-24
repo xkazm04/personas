@@ -1,4 +1,8 @@
 {
+  "examples_heading": "Prueba un ejemplo",
+  "example_1": "Vigila a diario la página de precios de un competidor y envíame por correo los cambios",
+  "example_2": "Cuando reciba una nueva incidencia de GitHub, resúmela y publícala en Slack",
+  "example_3": "Cada lunes, recopila mis tareas pendientes de Notion y envíame un resumen",
   "watch_button": "Ver el plan",
   "watch_stop": "Detener",
   "watch_step_of": "Paso {current} de {total}",

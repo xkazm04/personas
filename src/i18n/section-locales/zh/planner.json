@@ -1,4 +1,8 @@
 {
+  "examples_heading": "试试示例",
+  "example_1": "每天监控竞争对手的定价页面，并将变化通过电子邮件发送给我",
+  "example_2": "当我收到新的 GitHub issue 时，对其进行总结并发布到 Slack",
+  "example_3": "每周一汇总我未读的 Notion 任务，并向我发送摘要消息",
   "watch_button": "观看方案演示",
   "watch_stop": "停止",
   "watch_step_of": "第 {current} 步，共 {total} 步",

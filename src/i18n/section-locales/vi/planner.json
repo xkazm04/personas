@@ -1,4 +1,8 @@
 {
+  "examples_heading": "Thử một ví dụ",
+  "example_1": "Theo dõi trang giá của đối thủ hằng ngày và gửi email cho tôi về các thay đổi",
+  "example_2": "Khi tôi nhận được một GitHub issue mới, hãy tóm tắt nó và đăng lên Slack",
+  "example_3": "Mỗi thứ Hai, tổng hợp các nhiệm vụ Notion chưa đọc của tôi và gửi cho tôi một bản tóm lược",
   "watch_button": "Xem kế hoạch",
   "watch_stop": "Dừng",
   "watch_step_of": "Bước {current} trên {total}",

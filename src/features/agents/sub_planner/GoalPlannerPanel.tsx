@@ -251,10 +251,25 @@ export function GoalPlannerPanel() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-2 rounded-card border border-dashed border-primary/15 px-6 py-10 text-center">
+        <div className="flex flex-col items-center justify-center gap-3 rounded-card border border-dashed border-primary/15 px-6 py-10 text-center">
           <ListChecks className="h-6 w-6 text-foreground" />
           <span className="typo-heading text-foreground">{t.planner.empty_title}</span>
           <span className="typo-body text-foreground">{t.planner.empty_hint}</span>
+          {/* Starter-goal gallery — click to prefill the box and beat the blank page */}
+          <div className="mt-2 flex w-full flex-col gap-2">
+            <span className="typo-label text-foreground">{t.planner.examples_heading}</span>
+            {[t.planner.example_1, t.planner.example_2, t.planner.example_3].map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                onClick={() => setGoal(ex)}
+                className="rounded-input bg-secondary/40 px-3 py-2 text-left typo-body text-foreground ring-1 ring-primary/10 hover:bg-secondary/70 hover:ring-primary/30"
+                data-testid="planner-example-goal"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </div>

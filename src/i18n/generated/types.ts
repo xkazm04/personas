@@ -22,6 +22,10 @@ export type Translations = {
     source_llm: string;
     empty_title: string;
     empty_hint: string;
+    examples_heading: string;
+    example_1: string;
+    example_2: string;
+    example_3: string;
     edited_badge: string;
     reset_plan: string;
     step_remove: string;

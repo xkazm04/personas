@@ -1,4 +1,8 @@
 {
+  "examples_heading": "예시 사용해보기",
+  "example_1": "경쟁사의 가격 페이지를 매일 확인하고 변경 사항을 이메일로 보내주세요",
+  "example_2": "새 GitHub 이슈가 생기면 요약해서 Slack에 게시해주세요",
+  "example_3": "매주 월요일, 읽지 않은 Notion 작업을 정리해서 요약본을 보내주세요",
   "watch_button": "계획 살펴보기",
   "watch_stop": "중지",
   "watch_step_of": "{total}단계 중 {current}단계",

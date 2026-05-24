@@ -1,5 +1,9 @@
 {
   "planner": {
+    "examples_heading": "Coba contoh",
+    "example_1": "Pantau halaman harga pesaing setiap hari dan kirimkan email perubahannya kepada saya",
+    "example_2": "Saat saya mendapat GitHub issue baru, ringkas dan kirim ke Slack",
+    "example_3": "Setiap Senin, kumpulkan tugas Notion saya yang belum dibaca dan kirimkan ringkasannya kepada saya",
     "watch_button": "Tonton rencana",
     "watch_stop": "Berhenti",
     "watch_step_of": "Langkah {current} dari {total}",

@@ -1,4 +1,8 @@
 {
+  "examples_heading": "Vyzkoušejte příklad",
+  "example_1": "Denně sleduj cenovou stránku konkurence a posílej mi e-mailem změny",
+  "example_2": "Když dostanu nový issue na GitHub, shrň ho a zveřejni do Slack",
+  "example_3": "Každé pondělí sestav mé nepřečtené úkoly z Notion a pošli mi přehled",
   "watch_button": "Přehrát plán",
   "watch_stop": "Zastavit",
   "watch_step_of": "Krok {current} z {total}",

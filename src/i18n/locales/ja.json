@@ -1,5 +1,9 @@
 {
   "planner": {
+    "examples_heading": "例を試す",
+    "example_1": "競合の価格ページを毎日チェックして、変更点をメールで送って",
+    "example_2": "新しい GitHub の issue が来たら、要約して Slack に投稿して",
+    "example_3": "毎週月曜日に、未読の Notion タスクをまとめてダイジェストを送って",
     "watch_button": "プランを再生",
     "watch_stop": "停止",
     "watch_step_of": "ステップ {current} / {total}",

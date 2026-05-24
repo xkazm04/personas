@@ -1,5 +1,9 @@
 {
   "planner": {
+    "examples_heading": "Essayez un exemple",
+    "example_1": "Surveiller quotidiennement la page de tarification d'un concurrent et m'envoyer les changements par e-mail",
+    "example_2": "Quand je reçois une nouvelle issue GitHub, la résumer et la publier sur Slack",
+    "example_3": "Chaque lundi, compiler mes tâches Notion non lues et m'envoyer un résumé",
     "watch_button": "Regarder le plan",
     "watch_stop": "Arrêter",
     "watch_step_of": "Étape {current} sur {total}",
