@@ -2901,6 +2901,124 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // ── Cross-device persona continuity, Stage 1 (ADR
+    // 2026-05-24-cross-device-persona-continuity). Additive only: a sync-state
+    // ledger mirroring `obsidian_sync_state`, content-hash / origin-device
+    // columns on personas, and an explicit tombstone table so hard-deletes can
+    // propagate across devices instead of resurrecting on the next pull.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas_sync_columns",
+            description: "Add content_hash + last_modified_device to personas (cross-device sync)",
+            already_applied: |conn| has_column(conn, "personas", "content_hash"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN content_hash TEXT;
+                     ALTER TABLE personas ADD COLUMN last_modified_device TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_sync_state",
+            description: "Per-(persona, remote-device) sync ledger for cross-device continuity",
+            already_applied: |conn| has_table(conn, "persona_sync_state"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS persona_sync_state (
+                        id              TEXT PRIMARY KEY,
+                        persona_id      TEXT NOT NULL,
+                        remote_device   TEXT NOT NULL,
+                        base_hash       TEXT NOT NULL,
+                        sync_direction  TEXT,
+                        synced_at       TEXT NOT NULL DEFAULT (datetime('now')),
+                        UNIQUE(persona_id, remote_device)
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_persona_sync_state_persona
+                        ON persona_sync_state(persona_id);
+                    CREATE INDEX IF NOT EXISTS idx_persona_sync_state_device
+                        ON persona_sync_state(remote_device);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_tombstones",
+            description: "Tombstones for deleted personas so deletes propagate across devices",
+            already_applied: |conn| has_table(conn, "persona_tombstones"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS persona_tombstones (
+                        persona_id   TEXT PRIMARY KEY,
+                        deleted_at   TEXT NOT NULL,
+                        device_id    TEXT NOT NULL
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_persona_tombstones_deleted_at
+                        ON persona_tombstones(deleted_at);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // ── Cross-device persona continuity, Stage 2 (same ADR): the
+    // device-ownership data model. `local_identity.device_group_id` is the shared
+    // anchor that marks a set of peers as "the same user's devices"; the
+    // `owned_devices` registry is what a pairing flow (this stage's commands, or
+    // the fleet `/friend` QR-pairing UI) writes into. Backend model only — no
+    // pairing handshake here.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "local_identity_device_group_id",
+            description: "Add device_group_id to local_identity (cross-device ownership anchor)",
+            already_applied: |conn| has_column(conn, "local_identity", "device_group_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE local_identity ADD COLUMN device_group_id TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "owned_devices",
+            description: "Registry of a user's own paired devices for workspace sync",
+            already_applied: |conn| has_table(conn, "owned_devices"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS owned_devices (
+                        peer_id          TEXT PRIMARY KEY,
+                        device_group_id  TEXT NOT NULL,
+                        display_name     TEXT NOT NULL,
+                        added_at         TEXT NOT NULL,
+                        last_synced_at   TEXT
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_owned_devices_group
+                        ON owned_devices(device_group_id);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

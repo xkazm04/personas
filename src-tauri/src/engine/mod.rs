@@ -177,6 +177,7 @@ pub mod vector_store;
 pub mod webhook;
 pub mod webhook_notifier;
 pub mod workflow_compiler;
+pub mod workspace_sync;
 pub mod worktree_settings;
 
 #[cfg(test)]

@@ -8,3 +8,5 @@ pub mod enclave;
 pub mod exposure;
 #[cfg(feature = "p2p")]
 pub mod identity;
+#[cfg(feature = "p2p")]
+pub mod owned_devices;

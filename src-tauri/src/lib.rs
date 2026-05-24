@@ -2597,6 +2597,15 @@ pub fn run() {
             commands::network::identity::revoke_peer_trust,
             #[cfg(feature = "p2p")]
             commands::network::identity::delete_trusted_peer,
+            // Network -- Owned Devices (cross-device persona continuity, ADR 2026-05-24 Stage 2)
+            #[cfg(feature = "p2p")]
+            commands::network::owned_devices::get_device_group_id,
+            #[cfg(feature = "p2p")]
+            commands::network::owned_devices::list_owned_devices,
+            #[cfg(feature = "p2p")]
+            commands::network::owned_devices::register_owned_device,
+            #[cfg(feature = "p2p")]
+            commands::network::owned_devices::forget_owned_device,
             // Network -- Exposure Manifest (Invisible Apps Phase 1)
             #[cfg(feature = "p2p")]
             commands::network::exposure::list_exposed_resources,
