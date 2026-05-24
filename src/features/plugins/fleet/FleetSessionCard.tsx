@@ -5,6 +5,7 @@ import { killSession, removeSession, renameSession } from '@/api/fleet/fleet';
 import { useSystemStore } from '@/stores/systemStore';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { FleetStatusDots } from './FleetStatusDots';
+import { FleetStateSparkline } from './FleetStateSparkline';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -35,6 +36,7 @@ interface Props {
 
 function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }: Props) {
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
+  const transitions = useSystemStore((s) => s.fleetTransitions[session.id]);
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -154,6 +156,8 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
 
       {/* Actions — only render the buttons when not editing to keep the
           inline input full-width. */}
+      {!editing && transitions && <FleetStateSparkline transitions={transitions} />}
+
       {!editing && (
         <>
           <span

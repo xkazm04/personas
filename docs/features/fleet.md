@@ -51,6 +51,32 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 
 Priority of signals: **process exit > hooks > JSONL mtime > inactivity ticker**. An Exited session never gets re-animated; a Stale session bounces back to Idle on any transcript append.
 
+## Session overview surfaces
+
+Above the session grid, the Sessions tab carries a set of glanceable read affordances — the desktop groundwork for a future paired mobile companion that surfaces fleet status remotely:
+
+- **Summary pills** (`FleetSummaryPills`) — one colored count pill per active lifecycle state, reusing the per-session dot palette. Each pill is a filter toggle that narrows the grid to that state; clicking the active pill clears the filter.
+- **"Needs you" banner** (`FleetNeedsYouBanner`) — a pulsing violet strip that appears whenever one or more sessions are `awaiting_input`, listing each as a click-to-focus chip. The at-a-glance "something needs a human" signal.
+- **Status legend** (`FleetStatusLegend`) — a hover/focus disclosure in the header decoding the two-axis dots (process: spawning/alive/exited · activity: working/awaiting/idle/stale). Reuses the exact `CONSOLE_DOT` / `BUSINESS_DOT` maps exported from `FleetStatusDots` so palette and labels can't drift.
+- **Mobile companion preview** (`FleetMobilePreview`, in Settings) — a read-only render of the glance view (state count chips + the awaiting list) inside a phone frame, fed by live session data. Non-interactive by design: it mirrors what a phone would show, letting the remote surface be validated locally before any mobile client ships.
+
+The "Needs you" banner does more than list — it's the desktop stand-in for the companion's remote-approve surface:
+
+- **Inline quick-reply** — each awaiting chip carries a reply affordance that opens an inline input writing straight to that session's PTY (`writeInput`, trailing `\r`), so you can unblock a session without opening its terminal. The chip name still jumps to the terminal.
+- **Relative "Xs ago"** — chips (and the mobile preview rows) show how long a session has been blocked, from `lastActivityMs`, refreshed every 30s via a shared `useNowTick` hook (`relativeAgo.ts`).
+- **Desktop alert on awaiting_input** (`notifyFleetAwaiting`) — entering `awaiting_input` raises an OS notification once per entry; a bell toggle in the Sessions header (persisted as `fleetNotifyAwaiting`) mutes it. This is the desktop form of the companion's "push when something needs a human".
+- **Companion approvals** — pending companion (Athena) approvals are folded into the same banner with inline Approve/Reject (wired to `companion_approve_action` / `companion_reject_action`), unifying "a session needs input" and "an action needs sign-off".
+- **Jump-to-next cycler + "All clear"** — when more than one session is awaiting, a skip-forward control cycles terminal focus through them; when sessions exist but nothing's pending, a small emerald "All clear" chip shows instead of the surface vanishing.
+- **Per-session sparkline** (`FleetStateSparkline`) — each session card carries a tiny inline timeline of recent lifecycle transitions (colored ticks, oldest→newest), backed by the in-memory `fleetTransitions` ring-buffer in `fleetSlice` (cap 24/session). Spot a flapping or long-stuck session at a glance.
+- **Plugin-rail badges** — the "needs you" counts also surface on the L2 plugin list: a pulsing violet badge on the Dev Tools row (awaiting sessions) and an amber badge on the Companion row (pending approvals), so you see them without opening either plugin (`PluginsSidebarNav`).
+- **Session filter** — once more than one session is tracked, a search field above the list narrows the grouped grid by project label or custom name (composes with the state-pill filter); the focused session is persisted across reloads (`fleetActiveSessionId`). The sparkline ticks carry "&lt;state&gt; · &lt;Xs ago&gt;" tooltips on hover.
+
+### Pair a device (stage 1)
+
+Fleet Settings also carries `FleetPairDevice` — a **stage-1 scaffold** for pairing a phone. It mints an ephemeral local pairing code, shows the endpoint a phone would dial, and renders a QR placeholder with explainer copy (credentials never leave the desktop). It's UI only: no new dependency, no backend call. The secure handshake (relay/P2P), live QR encoding, and the mobile client are architect-scale and tracked for a later stage.
+
+All of the above are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview/reply/alert/pairing strings).
+
 ## Hook installer details
 
 Each entry is tagged `_fleet: true` so uninstall is surgical:

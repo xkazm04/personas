@@ -12,6 +12,9 @@ import {
   Clock,
   Ban,
   Sparkle,
+  Bell,
+  BellOff,
+  Search,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -19,13 +22,22 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession } from '@/api/fleet/fleet';
+import { spawnSession, writeInput } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { companionApproveAction, companionRejectAction } from '@/api/companion';
+import { actionLabel } from '@/features/plugins/companion/athenaLabels';
+import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
+import { FleetSummaryPills } from '../FleetSummaryPills';
+import { FleetStatusLegend } from '../FleetStatusLegend';
+import type { FleetLabelKey } from '../FleetStatusDots';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -33,17 +45,18 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 // in the left list. Attention-grabbing first; terminal states last.
 const GROUP_ORDER: ReadonlyArray<{
   id: FleetSessionState;
-  label: string;
+  /** plugins.fleet key for the group header label. */
+  labelKey: FleetLabelKey;
   icon: typeof Hourglass;
   /** Tailwind text-color class for the icon + count badge. */
   accent: string;
 }> = [
-  { id: 'awaiting_input', label: 'Awaiting input', icon: Hourglass,    accent: 'text-violet-400' },
-  { id: 'running',        label: 'Working',        icon: Loader2,      accent: 'text-blue-400' },
-  { id: 'spawning',       label: 'Spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
-  { id: 'idle',           label: 'Idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
-  { id: 'stale',          label: 'Stale',          icon: Clock,        accent: 'text-orange-400' },
-  { id: 'exited',         label: 'Exited',         icon: Ban,          accent: 'text-foreground' },
+  { id: 'awaiting_input', labelKey: 'state_awaiting_input', icon: Hourglass,    accent: 'text-violet-400' },
+  { id: 'running',        labelKey: 'state_working',        icon: Loader2,      accent: 'text-blue-400' },
+  { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
+  { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
+  { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
+  { id: 'exited',         labelKey: 'state_exited',         icon: Ban,          accent: 'text-foreground' },
 ];
 
 /**
@@ -74,14 +87,22 @@ export default function FleetGridPage() {
   const refresh = useSystemStore((s) => s.fleetRefresh);
   const patchSession = useSystemStore((s) => s.fleetPatchSession);
   const removeLocal = useSystemStore((s) => s.fleetRemoveSessionLocal);
+  const recordTransition = useSystemStore((s) => s.fleetRecordTransition);
   const activeSessionId = useSystemStore((s) => s.fleetActiveSessionId);
   const setActiveSession = useSystemStore((s) => s.fleetSetActiveSession);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore(useShallow((s) => s.projects));
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const notifyAwaiting = useSystemStore((s) => s.fleetNotifyAwaiting);
+  const setNotifyAwaiting = useSystemStore((s) => s.fleetSetNotifyAwaiting);
+  const companionApprovals = useCompanionStore(useShallow((s) => s.approvals));
+  const removeApproval = useCompanionStore((s) => s.removeApproval);
 
+  const { t, tx } = useTranslation();
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [filter, setFilter] = useState<FleetSessionState | null>(null);
+  const [query, setQuery] = useState('');
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
@@ -92,8 +113,18 @@ export default function FleetGridPage() {
   // stay attached once for the lifetime of the page. Without this, every
   // sessions-array update would tear down + re-attach the three Tauri
   // listeners (cheap individually but noisy under 5-10 sessions).
-  const actionsRef = useRef({ refresh, patchSession, removeLocal });
-  actionsRef.current = { refresh, patchSession, removeLocal };
+  const actionsRef = useRef({ refresh, patchSession, removeLocal, recordTransition });
+  actionsRef.current = { refresh, patchSession, removeLocal, recordTransition };
+
+  // Refs read by the once-attached listener: the live notify preference, a
+  // snapshot of sessions (to resolve a name for the alert body), and the set
+  // of ids we've already alerted on so a re-emitted awaiting_input event
+  // doesn't double-notify. `t`/`tx` are stable proxies, safe to close over.
+  const notifyRef = useRef(notifyAwaiting);
+  notifyRef.current = notifyAwaiting;
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
+  const awaitingSeenRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     actionsRef.current.refresh();
@@ -102,11 +133,31 @@ export default function FleetGridPage() {
     const unStateP = listen<{ session_id: string; state: string; reason?: string }>(
       EventName.FLEET_SESSION_STATE,
       (event) => {
-        actionsRef.current.patchSession(event.payload.session_id, {
-          state: event.payload.state as FleetSessionState,
-          stateReason: event.payload.reason ?? null,
+        const { session_id, state, reason } = event.payload;
+        actionsRef.current.patchSession(session_id, {
+          state: state as FleetSessionState,
+          stateReason: reason ?? null,
           lastActivityMs: BigInt(Date.now()),
         });
+        actionsRef.current.recordTransition(session_id, state as FleetSessionState);
+
+        // Desktop "push" alert on entering awaiting_input — once per entry.
+        const seen = awaitingSeenRef.current;
+        if (state === 'awaiting_input') {
+          if (!seen.has(session_id)) {
+            seen.add(session_id);
+            if (notifyRef.current) {
+              const sess = sessionsRef.current.find((s) => s.id === session_id);
+              const name = sess?.name ?? sess?.projectLabel ?? '';
+              notifyFleetAwaiting(
+                t.plugins.fleet.notify_title,
+                tx(t.plugins.fleet.notify_body, { name }),
+              );
+            }
+          }
+        } else {
+          seen.delete(session_id);
+        }
       },
     );
 
@@ -118,6 +169,7 @@ export default function FleetGridPage() {
           exitCode: event.payload.exit_code,
           lastActivityMs: BigInt(Date.now()),
         });
+        actionsRef.current.recordTransition(event.payload.session_id, 'exited' as FleetSessionState);
       },
     );
 
@@ -153,6 +205,47 @@ export default function FleetGridPage() {
     [removeLocal],
   );
 
+  // Inline reply from the "Needs you" banner — write the line to the
+  // session's PTY (trailing \r submits, mirroring the broadcast composer).
+  const handleReply = useCallback(async (id: string, replyText: string) => {
+    try {
+      await writeInput(id, `${replyText}\r`);
+    } catch (e) {
+      toastCatch('FleetGridPage:reply', 'Failed to send reply to session')(e);
+    }
+  }, []);
+
+  // Companion approvals folded into the same "Needs you" surface — the
+  // idea's "approve/reject companion actions" half. Read-only on the
+  // companion store except for removing the row once resolved.
+  const approvalItems = useMemo(
+    () =>
+      companionApprovals.map((a) => ({
+        id: a.id,
+        label: actionLabel(t, a.action),
+        rationale: a.rationale,
+      })),
+    [companionApprovals, t],
+  );
+
+  const handleApprove = useCallback(async (id: string) => {
+    try {
+      await companionApproveAction(id);
+      removeApproval(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:approve', 'Failed to approve action')(e);
+    }
+  }, [removeApproval]);
+
+  const handleRejectApproval = useCallback(async (id: string) => {
+    try {
+      await companionRejectAction(id);
+      removeApproval(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:rejectApproval', 'Failed to reject action')(e);
+    }
+  }, [removeApproval]);
+
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
@@ -172,23 +265,49 @@ export default function FleetGridPage() {
     }
   }, [activeProject, spawning, refresh, setActiveSession]);
 
-  const counts = useMemo(() => {
-    let waiting = 0, working = 0, idle = 0, exited = 0;
-    for (const s of sessions) {
-      if (s.state === 'awaiting_input') waiting += 1;
-      else if (s.state === 'running') working += 1;
-      else if (s.state === 'idle') idle += 1;
-      else if (s.state === 'exited') exited += 1;
-    }
-    return { waiting, working, idle, exited };
+  // Count sessions in every lifecycle state — feeds the summary pills and
+  // the header subtitle. A full Record keeps the pill component honest about
+  // states the subtitle previously ignored (spawning, stale).
+  const stateCounts = useMemo(() => {
+    const c: Record<FleetSessionState, number> = {
+      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, exited: 0,
+    };
+    for (const s of sessions) c[s.state] += 1;
+    return c;
   }, [sessions]);
+
+  const toggleFilter = useCallback(
+    (state: FleetSessionState) => setFilter((cur) => (cur === state ? null : state)),
+    [],
+  );
+
+  // Sessions blocked on the operator — drives the "Needs you" attention
+  // banner. Newest activity first so the most recent prompt leads.
+  const waitingSessions = useMemo(
+    () =>
+      sessions
+        .filter((s) => s.state === 'awaiting_input')
+        .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
+    [sessions],
+  );
+
+  // Cycle focus through the waiting sessions, wrapping around from the
+  // currently-focused one — fast triage when several are blocked at once.
+  const handleCycleNext = useCallback(() => {
+    if (waitingSessions.length === 0) return;
+    const idx = waitingSessions.findIndex((s) => s.id === activeSessionId);
+    const next = waitingSessions[(idx + 1) % waitingSessions.length];
+    if (next) setActiveSession(next.id);
+  }, [waitingSessions, activeSessionId, setActiveSession]);
 
   // Group sessions by lifecycle state. Order matters: attention-grabbing
   // first (awaiting_input → working → spawning → idle → stale → exited).
   // Within a group, newest activity first.
   const groups = useMemo(() => {
+    const q = query.trim().toLowerCase();
     const buckets = new Map<FleetSessionState, FleetSession[]>();
     for (const s of sessions) {
+      if (q && !`${s.projectLabel} ${s.name ?? ''}`.toLowerCase().includes(q)) continue;
       const arr = buckets.get(s.state) ?? [];
       arr.push(s);
       buckets.set(s.state, arr);
@@ -197,13 +316,17 @@ export default function FleetGridPage() {
       arr.sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs));
     }
     return GROUP_ORDER
-      .filter((g) => buckets.has(g.id))
+      .filter((g) => buckets.has(g.id) && (filter === null || g.id === filter))
       .map((g) => ({ ...g, sessions: buckets.get(g.id)! }));
-  }, [sessions]);
+  }, [sessions, filter, query]);
 
+  const sessionCount =
+    sessions.length === 1
+      ? tx(t.plugins.fleet.sessions_one, { count: sessions.length })
+      : tx(t.plugins.fleet.sessions_other, { count: sessions.length });
   const subtitle = activeProject
-    ? `Project: ${activeProject.name} · ${sessions.length} session${sessions.length === 1 ? '' : 's'} · ${counts.waiting} waiting · ${counts.working} working · ${counts.idle} idle${counts.exited > 0 ? ` · ${counts.exited} exited` : ''}`
-    : 'No project selected — pick one in Dev Tools → Projects';
+    ? `${activeProject.name} · ${sessionCount}`
+    : t.plugins.fleet.no_project_hint;
 
   return (
     <ContentBox>
@@ -211,10 +334,50 @@ export default function FleetGridPage() {
         icon={<TerminalIcon className="w-5 h-5 text-primary" />}
         title={debtText("auto_fleet_sessions_691c1118")}
         subtitle={subtitle}
-        actions={<FleetHooksPill />}
+        actions={
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              data-testid="fleet-notify-toggle"
+              aria-pressed={notifyAwaiting}
+              aria-label={notifyAwaiting ? t.plugins.fleet.notify_disable : t.plugins.fleet.notify_enable}
+              title={notifyAwaiting ? t.plugins.fleet.notify_disable : t.plugins.fleet.notify_enable}
+              onClick={() => setNotifyAwaiting(!notifyAwaiting)}
+              className="flex items-center rounded-interactive px-1.5 py-1 text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            >
+              {notifyAwaiting
+                ? <Bell className="w-3.5 h-3.5" />
+                : <BellOff className="w-3.5 h-3.5" />}
+            </button>
+            <FleetStatusLegend />
+            <FleetHooksPill />
+          </div>
+        }
       />
       <ContentBody>
         <div data-testid="fleet-grid-page" />
+
+        <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
+
+        <FleetNeedsYouBanner
+          waiting={waitingSessions}
+          onJump={handleActivate}
+          onReply={handleReply}
+          approvals={approvalItems}
+          onApprove={handleApprove}
+          onReject={handleRejectApproval}
+          onCycleNext={handleCycleNext}
+        />
+
+        {sessions.length > 0 && waitingSessions.length === 0 && approvalItems.length === 0 && (
+          <div
+            data-testid="fleet-all-clear"
+            className="mb-3 inline-flex items-center gap-1.5 rounded-card border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 typo-caption text-emerald-300"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+            {t.plugins.fleet.all_clear}
+          </div>
+        )}
 
         <ActionRow>
           <Button
@@ -258,6 +421,20 @@ export default function FleetGridPage() {
             data-testid="fleet-session-list"
             className="col-span-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-1"
           >
+            {sessions.length > 1 && (
+              <div className="relative mb-2">
+                <Search className="pointer-events-none absolute left-2 top-1/2 w-3.5 h-3.5 -translate-y-1/2 text-foreground" aria-hidden="true" />
+                <input
+                  type="text"
+                  data-testid="fleet-session-search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  aria-label={t.plugins.fleet.search_placeholder}
+                  placeholder={t.plugins.fleet.search_placeholder}
+                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+                />
+              </div>
+            )}
             {sessions.length === 0 ? (
               <div className="text-center py-8 border border-dashed border-primary/10 rounded-modal">
                 <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
@@ -269,6 +446,10 @@ export default function FleetGridPage() {
                     ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
                     : 'Pick a project in Dev Tools → Projects.'}
                 </p>
+              </div>
+            ) : groups.length === 0 ? (
+              <div className="text-center py-6 text-[11px] text-foreground" data-testid="fleet-no-matches">
+                {t.plugins.fleet.search_no_matches}
               </div>
             ) : (
               groups.map((g, idx) => {
@@ -283,11 +464,15 @@ export default function FleetGridPage() {
                     <div className="flex items-center gap-1.5 px-2 mb-1">
                       <GroupIcon className={`w-3 h-3 ${g.accent} ${g.id === 'running' ? 'animate-spin' : ''}`} />
                       <span className="typo-label uppercase tracking-wider text-foreground">
-                        {g.label}
+                        {t.plugins.fleet[g.labelKey]}
                       </span>
                       <span
                         className={`ml-auto text-[10px] font-semibold ${g.accent}`}
-                        aria-label={`${g.sessions.length} session${g.sessions.length === 1 ? '' : 's'}`}
+                        aria-label={
+                          g.sessions.length === 1
+                            ? tx(t.plugins.fleet.sessions_one, { count: g.sessions.length })
+                            : tx(t.plugins.fleet.sessions_other, { count: g.sessions.length })
+                        }
                       >
                         {g.sessions.length}
                       </span>
