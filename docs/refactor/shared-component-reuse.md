@@ -22,7 +22,9 @@ the **audit** (what's actually being reinvented, with counts), and the **backlog
 | `navigator.clipboard.writeText(…)` + feedback | `CopyButton` / `useCopyToClipboard` | `@/features/shared/components/buttons/CopyButton` |
 | `fixed inset-0` backdrop + escape handling | `BaseModal` / `ConfirmDialog` | `@/features/shared/components/modals/BaseModal` |
 | `title="…"` / custom hover tooltip | `Tooltip` | `@/features/shared/components/display/Tooltip` |
-| `new Date().toLocaleString()` / "ago" logic | `RelativeTime` | `@/features/shared/components/display/RelativeTime` |
+| `new Date().toLocaleString()` "ago"/recency display | `RelativeTime` | `@/features/shared/components/display/RelativeTime` |
+| `new Date().toLocaleString()` fixed date in JSX | `AbsoluteTime` | `@/features/shared/components/display/AbsoluteTime` |
+| date formatting in a string (non-JSX) | `formatTimestamp` / `formatRelativeTime` | `@/lib/utils/formatters` |
 | `value.toFixed(n)` / `toLocaleString()` for display | `Numeric` (+ `formatters` in `@/lib/utils/formatters`) | `@/features/shared/components/display/Numeric` |
 | `<input type="checkbox">` styled as a switch | `AccessibleToggle` | `@/features/shared/components/forms/AccessibleToggle` |
 | `<select>` / custom dropdown | `Listbox` | `@/features/shared/components/forms/Listbox` |
@@ -35,6 +37,24 @@ overlays), `custom/no-direct-white-colors`, `custom/no-raw-*-classes` (design
 tokens), `custom/role-button-requires-keydown`.
 
 ---
+
+## Migration status (2026-05-24)
+
+- ✅ **Clipboard — DONE.** Added `copyText()` as the single canonical owner of
+  `navigator.clipboard.writeText`; both hooks (`useCopyToClipboard`,
+  `useKeyedCopyFlag`) delegate to it; 25 feature call sites migrated. Enforced
+  going forward by `custom/prefer-shared-clipboard`. (Only an e2e test + the
+  deferred-dead `ChatMessageContent` retain a raw call.)
+- 🟡 **Dates — primitive built + representative batch done.** Created
+  `display/AbsoluteTime` (the missing fixed-date component). Migrated a 4-file /
+  9-site batch (PeerDetailDrawer, CloudExecutionRow, CloudOAuthPanel,
+  ApiKeysSettings) establishing the JSX→component / string→formatter pattern.
+  ~35 genuine date files remain (mechanical follow-up). **Caveat:** the "131"
+  count over-counts — many `toLocaleString()` hits are on **numbers** (e.g.
+  NetworkDashboard) → those belong to the Numeric backlog, not dates.
+- ⏸️ **Spinners — LEAVE (design decision 2026-05-24).** `LoadingSpinner` is an
+  intentional no-op ("spinners disabled app-wide"); inline `Loader2` is accepted.
+  Not migrating — converting to the no-op would silently strip 141 loaders.
 
 ## 2. Audit — what's being reinvented (2026-05-24 scan of `src/features/*`, excl. `shared/`)
 

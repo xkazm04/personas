@@ -187,6 +187,10 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-24 — completed (commits: b4b0307e8, 83b572738, b84e0dbbe)] shared-component reuse migration — clipboard + dates**
+  - **What:** (clipboard) added `copyText()` canonical owner in useCopyToClipboard.ts; both clipboard hooks delegate; migrated 25 feature call sites off raw `navigator.clipboard.writeText`. (dates) created `display/AbsoluteTime` primitive + migrated a representative 4-file/9-site batch (PeerDetailDrawer, CloudExecutionRow, CloudOAuthPanel, ApiKeysSettings). tsc clean each; interaction-hook tests 6/6.
+  - **Decisions (user):** spinners — **LEAVE** (LoadingSpinner is an intentional no-op; don't strip 141 loaders); scope — clipboard fully + date batch (rest of dates ≈35 files mechanical follow-up; NetworkDashboard etc. toLocaleString are NUMBERS → Numeric backlog). NOT pushed.
+
 - **[2026-05-24 — completed (commits: 2c9f4310b, 50aeb22d1, 33fe35a3b)] shared-component reuse harness**
   - **What:** Built the discoverability layer so new code stops reinventing shared components. (1) `scripts/docs/gen-shared-catalog.mjs` → generated `src/features/shared/components/CATALOG.md` (173 components, curated descriptions for ~35 key primitives, `@catalog` tag convention for the rest), wired into predev/prebuild codegen + a `check:catalog` drift gate in `npm run check`. (2) MANDATORY "Reusing shared components" section in CLAUDE.md (anti-reinvention table → catalog). (3) `docs/refactor/shared-component-reuse.md` — audit (≈2154 raw buttons, 240 numeric, 141 spinners, 38 clipboard) + use-X-not-Y quick ref + create/consolidate backlog (PanelShell, ContentCard, EmptyState merge, FilterToolbar, MetricCard). (4) `custom/prefer-shared-clipboard` ESLint rule (warn, 38 sites) enforcing CopyButton/useCopyToClipboard.
   - **Migration backlog NOT executed** (documented for later): the high-count swaps (Numeric, full-element LoadingSpinner, CopyButton adoption) + extractions. **EmptyState consolidation intentionally left to the concurrent /prototype overview-empty-states session.** NOT pushed.
