@@ -10,8 +10,37 @@
  * automatic fallback.
  */
 import { silentCatch } from '@/lib/silentCatch';
+import { invokeWithTimeout } from '@/lib/tauriInvoke';
 import { planFromGoal } from './rulePlanner';
-import type { Plan, PlanSource } from './types';
+import { ACTION_CATALOG } from './actionCatalog';
+import type { Plan, PlanSource, PlanActionId, PlanStep } from './types';
+
+/** Wire shape of the `plan_goal_llm` command result. Mirrors the ts-rs
+ *  binding `LlmPlanResult` (src/lib/bindings/) — kept local so the planner
+ *  compiles independently of binding-generation timing. */
+interface LlmPlanStepWire {
+  actionId: string;
+  params?: Record<string, string>;
+  confidence: number;
+}
+interface LlmPlanResultWire {
+  steps: LlmPlanStepWire[];
+}
+
+/** Map a validated wire result onto the Plan shape, dropping any unknown
+ *  action ids the catalog doesn't recognise. */
+function wireToPlan(goal: string, wire: LlmPlanResultWire): Plan | null {
+  const steps: PlanStep[] = wire.steps
+    .filter((s): s is LlmPlanStepWire => (s.actionId as PlanActionId) in ACTION_CATALOG)
+    .map((s, i) => ({
+      id: `llm-${Date.now().toString(36)}-${i}`,
+      actionId: s.actionId as PlanActionId,
+      params: s.params ?? {},
+      confidence: Math.max(0, Math.min(1, s.confidence ?? 0.7)),
+    }));
+  if (steps.length === 0) return null;
+  return { id: `plan-${Date.now().toString(36)}`, goal, steps, source: 'llm', createdAt: Date.now() };
+}
 
 export interface PlanProvider {
   readonly source: PlanSource;
@@ -39,8 +68,15 @@ export const rulePlanProvider: PlanProvider = {
  */
 export const llmPlanProvider: PlanProvider = {
   source: 'llm',
-  isAvailable: () => false,
-  generate: async () => null,
+  // Try the LLM brain first; `generatePlan` falls back to the rule planner if
+  // the command errors (e.g. the Claude CLI isn't authed in this build).
+  isAvailable: () => true,
+  generate: async (goal) => {
+    const clean = goal.trim();
+    if (!clean) return null;
+    const wire = await invokeWithTimeout<LlmPlanResultWire>('plan_goal_llm', { goal: clean }, { timeoutMs: 60_000 });
+    return wireToPlan(clean, wire);
+  },
 };
 
 /** Preference order: richest brain first, deterministic fallback last. */

@@ -99,13 +99,18 @@ in-app action steps — create a persona, connect a service, configure a
 trigger/schedule, review & confirm — drawn from the automation tool catalog
 that the test-automation bridge drives (`src/test/automation/bridge.ts`).
 
-**Nothing executes.** Stage 1 is a preview only: `planFromGoal()` in
-`rulePlanner.ts` produces the plan via deterministic keyword heuristics over
-`ACTION_CATALOG`, and each `PlanStep` records the bridge primitive it *would*
-drive (`bridgeRef`) purely for traceability. This is the trust-building front
-half of idea-ba306c32 ("the app builds itself while you watch") — later stages
-add an LLM planner brain and a visual dry-run walkthrough before any
-execution path is wired.
+**Nothing executes.** The plan is produced behind a `PlanProvider` seam
+(`planProvider.ts`): the `plan_goal_llm` Tauri command (Sonnet via the Claude
+CLI) is tried first, with the deterministic `planFromGoal()` rule planner as
+an automatic fallback when the CLI is unavailable. Each `PlanStep` records the
+automation-bridge primitive it *would* drive (`bridgeRef`) purely for
+traceability. Steps carry a confidence score + rationale, can be reordered or
+removed, and a read-only "Watch" player walks through them with a "would open
+in…" destination per step. A live chip strip narrates detected signals under
+the goal box as you type, and the build composer offers a "Plan a goal"
+hand-off into this surface. This is the trust-building front half of
+idea-ba306c32 ("the app builds itself while you watch") — every path here is
+read-only; no execution path is wired yet.
 
 ## Editor UI — the Design hub
 
