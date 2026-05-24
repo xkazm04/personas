@@ -60,7 +60,18 @@ Above the session grid, the Sessions tab carries a set of glanceable read afford
 - **Status legend** (`FleetStatusLegend`) — a hover/focus disclosure in the header decoding the two-axis dots (process: spawning/alive/exited · activity: working/awaiting/idle/stale). Reuses the exact `CONSOLE_DOT` / `BUSINESS_DOT` maps exported from `FleetStatusDots` so palette and labels can't drift.
 - **Mobile companion preview** (`FleetMobilePreview`, in Settings) — a read-only render of the glance view (state count chips + the awaiting list) inside a phone frame, fed by live session data. Non-interactive by design: it mirrors what a phone would show, letting the remote surface be validated locally before any mobile client ships.
 
-All four are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview strings).
+The "Needs you" banner does more than list — it's the desktop stand-in for the companion's remote-approve surface:
+
+- **Inline quick-reply** — each awaiting chip carries a reply affordance that opens an inline input writing straight to that session's PTY (`writeInput`, trailing `\r`), so you can unblock a session without opening its terminal. The chip name still jumps to the terminal.
+- **Relative "Xs ago"** — chips (and the mobile preview rows) show how long a session has been blocked, from `lastActivityMs`, refreshed every 30s via a shared `useNowTick` hook (`relativeAgo.ts`).
+- **Desktop alert on awaiting_input** (`notifyFleetAwaiting`) — entering `awaiting_input` raises an OS notification once per entry; a bell toggle in the Sessions header (persisted as `fleetNotifyAwaiting`) mutes it. This is the desktop form of the companion's "push when something needs a human".
+- **Companion approvals** — pending companion (Athena) approvals are folded into the same banner with inline Approve/Reject (wired to `companion_approve_action` / `companion_reject_action`), unifying "a session needs input" and "an action needs sign-off".
+
+### Pair a device (stage 1)
+
+Fleet Settings also carries `FleetPairDevice` — a **stage-1 scaffold** for pairing a phone. It mints an ephemeral local pairing code, shows the endpoint a phone would dial, and renders a QR placeholder with explainer copy (credentials never leave the desktop). It's UI only: no new dependency, no backend call. The secure handshake (relay/P2P), live QR encoding, and the mobile client are architect-scale and tracked for a later stage.
+
+All of the above are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview/reply/alert/pairing strings).
 
 ## Hook installer details
 
