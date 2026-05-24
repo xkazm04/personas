@@ -45,13 +45,18 @@ tokens), `custom/role-button-requires-keydown`.
   `useKeyedCopyFlag`) delegate to it; 25 feature call sites migrated. Enforced
   going forward by `custom/prefer-shared-clipboard`. (Only an e2e test + the
   deferred-dead `ChatMessageContent` retain a raw call.)
-- 🟡 **Dates — primitive built + representative batch done.** Created
-  `display/AbsoluteTime` (the missing fixed-date component). Migrated a 4-file /
-  9-site batch (PeerDetailDrawer, CloudExecutionRow, CloudOAuthPanel,
-  ApiKeysSettings) establishing the JSX→component / string→formatter pattern.
-  ~35 genuine date files remain (mechanical follow-up). **Caveat:** the "131"
-  count over-counts — many `toLocaleString()` hits are on **numbers** (e.g.
-  NetworkDashboard) → those belong to the Numeric backlog, not dates.
+- ✅ **Dates — sweep done (meaningful sites migrated).** Created
+  `display/AbsoluteTime`. Migrated **~58 JSX date-display sites** across ~44 files
+  to `<AbsoluteTime>` (fixed) / `<RelativeTime>` (recency) / `formatTimestamp`
+  (string contexts). The **32 remaining `new Date().toLocale*` sites are left by
+  design**, not debt: 13 are bespoke compact-format JSX (`{month:'short',hour:'2-digit'}`
+  — deliberate, AbsoluteTime's 4 variants don't match), 6 are `.ts` local string
+  formatters, 5 are in the active overview-empty-states / twin prototypes, and 8
+  are string-context (`.replace`, `title={tx()}`) marginal swaps. **Optional future
+  unification:** extend `AbsoluteTime` with a custom-`Intl.DateTimeFormatOptions`
+  passthrough to absorb the 13 bespoke-format ones. **Caveat:** the original "131"
+  count over-counted — many `toLocaleString()` hits are on **numbers** (e.g.
+  NetworkDashboard) → those are the Numeric backlog, not dates.
 - ⏸️ **Spinners — LEAVE (design decision 2026-05-24).** `LoadingSpinner` is an
   intentional no-op ("spinners disabled app-wide"); inline `Loader2` is accepted.
   Not migrating — converting to the no-op would silently strip 141 loaders.
