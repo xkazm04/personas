@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Clock, Zap, ChevronDown, Sparkles, Code2, CalendarClock } from 'lucide-react';
+import { Clock, Zap, ChevronDown, Sparkles, Code2, CalendarClock, Info } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { useAgentStore } from '@/stores/agentStore';
+import { getUseCaseById } from '../../libs/useCaseHelpers';
 import { previewCronSchedule, type CronPreview } from '@/api/pipeline/triggers';
 import {
   DAYS, TIMEZONES,
@@ -11,6 +13,11 @@ import { PresetPanel, VisualPanel, CronPanel } from './ScheduleModePanels';
 import { NextRunsPreview } from './SchedulePreview';
 
 export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isActivating }: ScheduleBuilderProps) {
+  const selectedPersona = useAgentStore((s) => s.selectedPersona);
+  const useCase = getUseCaseById(selectedPersona?.design_context, useCaseId);
+  const personaName = selectedPersona?.name;
+  const useCaseTitle = useCase?.title;
+
   const initialCron = suggestedTrigger.cron || '0 9 * * *';
   const [mode, setMode] = useState<BuilderMode>(() => parseCronToVisual(initialCron) ? 'presets' : 'cron');
   const [cronExpression, setCronExpression] = useState(initialCron);
@@ -112,6 +119,15 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
         )}
 
       {cronPreview?.valid && cronPreview.next_runs.length > 0 && <NextRunsPreview preview={cronPreview} />}
+
+      {useCaseTitle && personaName && (
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
+          <Info className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
+          <span className="text-sm text-muted-foreground/70">
+            This will run <span className="font-medium text-foreground/80">{useCaseTitle}</span> for <span className="font-medium text-foreground/80">{personaName}</span>
+          </span>
+        </div>
+      )}
 
       <button onClick={handleActivate} disabled={isActivating || !isValid}
         className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium transition-all border disabled:opacity-40 disabled:cursor-not-allowed bg-amber-500/12 text-amber-300 border-amber-500/25 hover:bg-amber-500/20">
