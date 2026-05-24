@@ -2139,9 +2139,16 @@ const bridge: TestBridge = {
    * Includes a 25s timeout to prevent bridge queue blocking.
    */
   async __exec__(id: string, method: string, params: Record<string, unknown>) {
-    // Long-running methods like openMatrixAdoption need more time
+    // Long-running methods like openMatrixAdoption need more time. Methods
+    // that take an explicit timeout param (build drivers, waits) are honored
+    // up to that bound + a small buffer so a real Opus build session (which
+    // can take well over 25s to start) isn't killed by the dispatcher cap.
     const LONG_METHODS = new Set(['openMatrixAdoption', 'adoptTemplate', 'promoteBuildDraft']);
-    const EXEC_TIMEOUT = LONG_METHODS.has(method) ? 90000 : 25000;
+    const paramTimeout = Number(params.timeoutMs ?? params.timeout_ms ?? 0);
+    const base = LONG_METHODS.has(method) ? 90000 : 25000;
+    const EXEC_TIMEOUT = Number.isFinite(paramTimeout) && paramTimeout > 0
+      ? Math.max(base, paramTimeout + 5000)
+      : base;
     try {
       const fn = (this as unknown as Record<string, unknown>)[method];
       if (typeof fn !== "function") throw new Error(`Unknown method: ${method}`);
