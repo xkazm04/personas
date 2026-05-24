@@ -32,6 +32,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+- **[2026-05-24 — started] src/features structure refactor — Phase 0 (tooling) + Phase 1 (dead-code, disjoint clusters)**
+  - **Source:** User-driven deep refactor of `src/features`. Phase 0 (knip tooling + plan/baseline docs) committed `b352d5e28`. Phase 1 deletes/relocates ONLY clusters disjoint from the concurrent Groups→Teams retire session — explicitly **excludes all of `src/features/pipeline/**`** (owned by that session). Per user: analyze each candidate as truly-dead vs misplaced-but-live before deleting.
+  - **Paths:** `src/features/agents/sub_executions/**` (old PersonaRunner/ExecutionList runner+list cluster — verify truly dead), `src/features/agents/components/{onboarding/**,preview/**,ChatThread.tsx,ChatMessageContent.tsx,designUtils.ts}`, `docs/refactor/*`, `.claude/active-runs.md`. Read-only elsewhere.
+  - **Status:** started.
+  - **Note:** Does NOT touch pipeline/, groups, pipelineStore, monitor, or allPersonas/* (all owned by the Groups→Teams session). Atomic commit per cluster; tsc+test between.
+
 - **[2026-05-24 — started] Groups→Teams Phase 5 (destructive retire of PersonaGroup)**
   - **Source:** User-driven — final phase of the Groups→Teams consolidation (ADR `2026-05-23-groups-into-teams.md`), authorized after live verification of Phases 1–4. Drops the entire PersonaGroup primitive: `persona_groups` table + `personas.group_id`/`persona_memories.group_id`/`dev_projects.group_id` columns; switches runtime memory injection (`get_for_injection_v2`/`build_scope_predicates`/`InjectionScope`) from group_id → home_team_id; deletes group commands/models/repos/bindings; repoints the Monitor "group by" + persona drop-rail + batch "Move to group" + overview filters from group_id → home_team_id (the Phase-4 UI cutover that wasn't done); removes orphaned GroupManagerPage + group UI + i18n.
   - **Paths (Rust):** `src-tauri/src/db/migrations/{incremental.rs,schema.rs}`, `src-tauri/src/db/models/{persona.rs,memory.rs,dev_tools.rs}`, `src-tauri/src/db/repos/core/{personas.rs,memories.rs,groups.rs (delete)}`, `src-tauri/src/db/repos/dev_tools.rs`, `src-tauri/src/commands/core/{groups.rs (delete),personas.rs,memories.rs,data_portability.rs,import_export.rs}`, `src-tauri/src/commands/{execution/genome.rs,infrastructure/cloud.rs}`, `src-tauri/src/db/models/group.rs (delete)`, `src-tauri/src/lib.rs`, assorted test fixtures (`group_id: None` removal — compiler-driven).
