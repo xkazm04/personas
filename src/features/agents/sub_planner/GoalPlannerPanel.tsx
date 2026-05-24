@@ -13,6 +13,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import Button from '@/features/shared/components/buttons/Button';
 import { generatePlan } from './planProvider';
 import { PlanStepCard } from './PlanStepCard';
+import { IntentSignalChips } from './IntentSignalChips';
 import type { Plan, PlanStep } from './types';
 
 export function GoalPlannerPanel() {
@@ -117,6 +118,8 @@ export function GoalPlannerPanel() {
           rows={3}
           className="w-full resize-none rounded-input bg-background/60 px-3 py-2 typo-body text-foreground placeholder:text-foreground/40 outline-none ring-1 ring-primary/10 focus:ring-primary/30"
         />
+        {/* Live inference strip — narrates detected signals as you type, before Preview */}
+        <IntentSignalChips text={goal} />
         <div className="flex items-center gap-2">
           <Button
             variant="primary"

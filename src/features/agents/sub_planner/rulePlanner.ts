@@ -9,57 +9,12 @@
  * the same Plan shape and falls back here when unavailable.
  */
 import type { Plan, PlanStep } from './types';
+import { detectServices, detectCadence, summarize, WEB_RE, CHANGE_RE, EVENT_RE } from './intentSignals';
 
 let stepSeq = 0;
 function nextId(): string {
   stepSeq += 1;
   return `step-${Date.now().toString(36)}-${stepSeq}`;
-}
-
-/** A detected output/input service, with the brand label to echo back. */
-interface ServiceMatch {
-  label: string;
-  re: RegExp;
-}
-
-const NOTIFY_SERVICES: ServiceMatch[] = [
-  { label: 'Email', re: /\b(e-?mail|gmail|inbox|mailbox)\b/i },
-  { label: 'Slack', re: /\bslack\b/i },
-  { label: 'Discord', re: /\bdiscord\b/i },
-  { label: 'Microsoft Teams', re: /\b(ms ?teams|microsoft teams)\b/i },
-  { label: 'Telegram', re: /\btelegram\b/i },
-  { label: 'SMS', re: /\b(sms|text message)\b/i },
-  { label: 'Notion', re: /\bnotion\b/i },
-  { label: 'GitHub', re: /\bgithub\b/i },
-];
-
-const SCHEDULE_PATTERNS: { cadence: string; re: RegExp }[] = [
-  { cadence: 'every morning', re: /\bevery morning\b/i },
-  { cadence: 'daily', re: /\b(daily|every day|each day)\b/i },
-  { cadence: 'hourly', re: /\b(hourly|every hour)\b/i },
-  { cadence: 'weekly', re: /\b(weekly|every week)\b/i },
-  { cadence: 'monthly', re: /\b(monthly|every month)\b/i },
-  { cadence: 'on a schedule', re: /\b(periodically|on a schedule|scheduled|recurring|cron)\b/i },
-];
-
-const WEB_RE = /\b(watch|monitor|track|scrape|crawl|website|web ?page|url|https?:\/\/|price|pricing|stock|availability)\b/i;
-const CHANGE_RE = /\b(change|changes|diff|new|update|updated|drop|increase|decrease|alert me|notify me)\b/i;
-// An *input* trigger: something arrives and should kick off the persona.
-const EVENT_RE = /\b(when|whenever|on (a )?new|incoming|receive|arrives?|webhook|is created|is posted|mentions?|replies?)\b/i;
-
-/** Detect every distinct service named in the goal, in catalog order. */
-function detectServices(goal: string): ServiceMatch[] {
-  return NOTIFY_SERVICES.filter((s) => s.re.test(goal));
-}
-
-function detectCadence(goal: string): string | null {
-  return SCHEDULE_PATTERNS.find((s) => s.re.test(goal))?.cadence ?? null;
-}
-
-/** Trim the goal to a compact phrase for step detail interpolation. */
-function summarize(goal: string): string {
-  const trimmed = goal.trim().replace(/\s+/g, ' ');
-  return trimmed.length > 120 ? `${trimmed.slice(0, 117)}…` : trimmed;
 }
 
 /**
