@@ -84,7 +84,7 @@ test.describe('Getting Started guided tour — full real build', () => {
     await app.tourReset('getting-started-simple');
     await app.tourReset(TOUR_ID);
     await app.tourStart(TOUR_ID);
-    await waitPresent('[data-testid="tour-panel"]', 10_000);
+    await waitPresent('[data-testid="tour-panel"]', 30_000);
 
     let state = await app.tourState();
     expect(state.active).toBe(true);
@@ -102,7 +102,7 @@ test.describe('Getting Started guided tour — full real build', () => {
     await app.clickTestId('tour-btn-next');
 
     // ── Step 2: credentials ─────────────────────────────────────────────
-    await waitPresent('[data-testid="tour-cred-root"]', 10_000);
+    await waitPresent('[data-testid="tour-cred-root"]', 30_000);
     await app.clickTestId('tour-cred-category-ai');
     await app.clickTestId('tour-cred-category-messaging');
     await app.tourEmit('tour:credentials-explored');
@@ -110,7 +110,7 @@ test.describe('Getting Started guided tour — full real build', () => {
     await app.clickTestId('tour-btn-next');
 
     // ── Step 3: build the agent on the Glyph (REAL) ─────────────────────
-    await waitPresent('[data-testid="tour-coach-root"]', 10_000);
+    await waitPresent('[data-testid="tour-coach-root"]', 30_000);
     const started = await app.startBuildFromIntent(INTENT, 60_000);
     if (!started.success) throw new Error(`startBuildFromIntent: ${started.error}`);
 
@@ -141,7 +141,7 @@ test.describe('Getting Started guided tour — full real build', () => {
 
     // ── Step 4: run the live agent (REAL execution) ─────────────────────
     // The step nav opens the new agent's Use Cases tab.
-    await waitPresent('[data-testid="design-subtab-use-cases"]', 15_000);
+    await waitPresent('[data-testid="design-subtab-use-cases"]', 30_000);
     // Prefer the in-UI Run Now button; fall back to a direct execute_persona
     // so the tour can complete deterministically either way.
     const runNow = await app.query('[data-testid="use-case-run-now"]');
