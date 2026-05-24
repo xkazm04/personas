@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "Gerät koppeln",
+    "pair_preview_badge": "Vorschau",
+    "pair_desc": "Koppeln Sie ein Telefon, um von überall zu überwachen und zu genehmigen. Scannen Sie diesen Code mit dem mobilen Personas-Begleiter.",
+    "pair_qr_placeholder": "QR erscheint hier, sobald die Kopplung aktiviert ist",
+    "pair_token_label": "Kopplungscode",
+    "pair_endpoint_label": "Endpunkt",
+    "pair_regenerate": "Neuer Code",
+    "pair_copy": "Kopieren",
+    "pair_copied": "Kopiert",
+    "pair_credentials_note": "Ihre Anmeldedaten verlassen diesen Desktop niemals.",
+    "pair_preview_note": "Nur Vorschau — sicherer Handshake, Live-QR und mobiler Client folgen in einem späteren Update.",
     "approvals_pending_one": "{count} Genehmigung ausstehend",
     "approvals_pending_other": "{count} Genehmigungen ausstehend",
     "approve": "Genehmigen",

@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "Vincular un dispositivo",
+    "pair_preview_badge": "Vista previa",
+    "pair_desc": "Vincula un teléfono para supervisar y aprobar desde cualquier lugar. Escanea este código con el compañero móvil de Personas.",
+    "pair_qr_placeholder": "El QR aparece aquí cuando se habilita la vinculación",
+    "pair_token_label": "Código de vinculación",
+    "pair_endpoint_label": "Punto de conexión",
+    "pair_regenerate": "Nuevo código",
+    "pair_copy": "Copiar",
+    "pair_copied": "Copiado",
+    "pair_credentials_note": "Tus credenciales nunca salen de este escritorio.",
+    "pair_preview_note": "Solo vista previa — el handshake seguro, el QR en vivo y el cliente móvil llegan en una actualización posterior.",
     "approvals_pending_one": "{count} aprobación pendiente",
     "approvals_pending_other": "{count} aprobaciones pendientes",
     "approve": "Aprobar",

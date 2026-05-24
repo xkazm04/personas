@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "配对设备",
+    "pair_preview_badge": "预览",
+    "pair_desc": "连接手机，随时随地监控与批准。用 Personas 移动伴侣扫描此代码。",
+    "pair_qr_placeholder": "启用配对后此处显示二维码",
+    "pair_token_label": "配对码",
+    "pair_endpoint_label": "端点",
+    "pair_regenerate": "新代码",
+    "pair_copy": "复制",
+    "pair_copied": "已复制",
+    "pair_credentials_note": "您的凭据绝不会离开此桌面设备。",
+    "pair_preview_note": "仅为预览 — 安全握手、实时二维码和移动客户端将在后续更新中推出。",
     "approvals_pending_one": "{count} 项待批准",
     "approvals_pending_other": "{count} 项待批准",
     "approve": "批准",

@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "デバイスをペアリング",
+    "pair_preview_badge": "プレビュー",
+    "pair_desc": "スマートフォンを連携して、どこからでも監視・承認できます。Personas モバイルコンパニオンでこのコードをスキャンしてください。",
+    "pair_qr_placeholder": "ペアリングを有効にすると QR がここに表示されます",
+    "pair_token_label": "ペアリングコード",
+    "pair_endpoint_label": "エンドポイント",
+    "pair_regenerate": "新しいコード",
+    "pair_copy": "コピー",
+    "pair_copied": "コピーしました",
+    "pair_credentials_note": "認証情報がこのデスクトップから出ることはありません。",
+    "pair_preview_note": "プレビューのみ — 安全なハンドシェイク、ライブ QR、モバイルクライアントは今後のアップデートで提供されます。",
     "approvals_pending_one": "承認待ち {count} 件",
     "approvals_pending_other": "承認待ち {count} 件",
     "approve": "承認",

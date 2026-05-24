@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "إقران جهاز",
+    "pair_preview_badge": "معاينة",
+    "pair_desc": "اربط هاتفًا للمراقبة والموافقة من أي مكان. امسح هذا الرمز باستخدام رفيق Personas للجوال.",
+    "pair_qr_placeholder": "يظهر رمز QR هنا عند تفعيل الإقران",
+    "pair_token_label": "رمز الإقران",
+    "pair_endpoint_label": "نقطة النهاية",
+    "pair_regenerate": "رمز جديد",
+    "pair_copy": "نسخ",
+    "pair_copied": "تم النسخ",
+    "pair_credentials_note": "بيانات اعتمادك لا تغادر هذا الجهاز المكتبي أبدًا.",
+    "pair_preview_note": "معاينة فقط — المصافحة الآمنة ورمز QR المباشر وتطبيق الجوال ستصدر في تحديث لاحق.",
     "approvals_pending_one": "{count} موافقة معلقة",
     "approvals_pending_other": "{count} موافقات معلقة",
     "approve": "موافقة",

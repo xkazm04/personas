@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "Spárovat zařízení",
+    "pair_preview_badge": "Náhled",
+    "pair_desc": "Připojte telefon pro sledování a schvalování odkudkoli. Naskenujte tento kód mobilním společníkem Personas.",
+    "pair_qr_placeholder": "QR se zde zobrazí po zapnutí párování",
+    "pair_token_label": "Párovací kód",
+    "pair_endpoint_label": "Koncový bod",
+    "pair_regenerate": "Nový kód",
+    "pair_copy": "Kopírovat",
+    "pair_copied": "Zkopírováno",
+    "pair_credentials_note": "Vaše přihlašovací údaje nikdy neopustí tento počítač.",
+    "pair_preview_note": "Pouze náhled — zabezpečený handshake, živý QR a mobilní klient přijdou v pozdější aktualizaci.",
     "approvals_pending_one": "{count} schválení čeká",
     "approvals_pending_other": "{count} schválení čeká",
     "approve": "Schválit",

@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "Associer un appareil",
+    "pair_preview_badge": "Aperçu",
+    "pair_desc": "Associez un téléphone pour surveiller et approuver de partout. Scannez ce code avec le compagnon mobile Personas.",
+    "pair_qr_placeholder": "Le QR apparaît ici une fois l'association activée",
+    "pair_token_label": "Code d'association",
+    "pair_endpoint_label": "Point de terminaison",
+    "pair_regenerate": "Nouveau code",
+    "pair_copy": "Copier",
+    "pair_copied": "Copié",
+    "pair_credentials_note": "Vos identifiants ne quittent jamais ce poste.",
+    "pair_preview_note": "Aperçu uniquement — la poignée de main sécurisée, le QR en direct et le client mobile arrivent dans une prochaine mise à jour.",
     "approvals_pending_one": "{count} approbation en attente",
     "approvals_pending_other": "{count} approbations en attente",
     "approve": "Approuver",

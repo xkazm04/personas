@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "Pasangkan perangkat",
+    "pair_preview_badge": "Pratinjau",
+    "pair_desc": "Tautkan ponsel untuk memantau dan menyetujui dari mana saja. Pindai kode ini dengan pendamping seluler Personas.",
+    "pair_qr_placeholder": "QR muncul di sini setelah penyandingan diaktifkan",
+    "pair_token_label": "Kode penyandingan",
+    "pair_endpoint_label": "Endpoint",
+    "pair_regenerate": "Kode baru",
+    "pair_copy": "Salin",
+    "pair_copied": "Disalin",
+    "pair_credentials_note": "Kredensial Anda tidak pernah meninggalkan desktop ini.",
+    "pair_preview_note": "Hanya pratinjau — handshake aman, QR langsung, dan klien seluler hadir di pembaruan berikutnya.",
     "approvals_pending_one": "{count} persetujuan tertunda",
     "approvals_pending_other": "{count} persetujuan tertunda",
     "approve": "Setujui",

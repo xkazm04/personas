@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "डिवाइस पेयर करें",
+    "pair_preview_badge": "पूर्वावलोकन",
+    "pair_desc": "कहीं से भी निगरानी और अनुमोदन के लिए फ़ोन लिंक करें। इस कोड को Personas मोबाइल साथी से स्कैन करें।",
+    "pair_qr_placeholder": "पेयरिंग सक्षम होने पर यहाँ QR दिखेगा",
+    "pair_token_label": "पेयरिंग कोड",
+    "pair_endpoint_label": "एंडपॉइंट",
+    "pair_regenerate": "नया कोड",
+    "pair_copy": "कॉपी करें",
+    "pair_copied": "कॉपी हो गया",
+    "pair_credentials_note": "आपके क्रेडेंशियल कभी इस डेस्कटॉप से बाहर नहीं जाते।",
+    "pair_preview_note": "केवल पूर्वावलोकन — सुरक्षित हैंडशेक, लाइव QR और मोबाइल क्लाइंट बाद के अपडेट में आएंगे।",
     "approvals_pending_one": "{count} अनुमोदन लंबित",
     "approvals_pending_other": "{count} अनुमोदन लंबित",
     "approve": "स्वीकृत करें",

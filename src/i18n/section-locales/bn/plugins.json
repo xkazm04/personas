@@ -1,5 +1,16 @@
 {
   "fleet": {
+    "pair_title": "একটি ডিভাইস পেয়ার করুন",
+    "pair_preview_badge": "প্রিভিউ",
+    "pair_desc": "যেকোনো জায়গা থেকে নিরীক্ষণ ও অনুমোদনের জন্য একটি ফোন লিঙ্ক করুন। Personas মোবাইল সঙ্গী দিয়ে এই কোডটি স্ক্যান করুন।",
+    "pair_qr_placeholder": "পেয়ারিং সক্ষম হলে এখানে QR দেখা যাবে",
+    "pair_token_label": "পেয়ারিং কোড",
+    "pair_endpoint_label": "এন্ডপয়েন্ট",
+    "pair_regenerate": "নতুন কোড",
+    "pair_copy": "কপি",
+    "pair_copied": "কপি হয়েছে",
+    "pair_credentials_note": "আপনার ক্রেডেনশিয়াল কখনো এই ডেস্কটপ ছাড়ে না।",
+    "pair_preview_note": "শুধু প্রিভিউ — নিরাপদ হ্যান্ডশেক, লাইভ QR ও মোবাইল ক্লায়েন্ট পরবর্তী আপডেটে আসবে।",
     "approvals_pending_one": "{count}টি অনুমোদন বাকি",
     "approvals_pending_other": "{count}টি অনুমোদন বাকি",
     "approve": "অনুমোদন",
