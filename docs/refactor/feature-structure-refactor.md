@@ -62,6 +62,14 @@ work the clusters in `dead-code-baseline.md`, not the hand-grepped guesses here.
 
 ## A. Orphan / misplaced top-level folders
 
+> **Phase 2 progress (2026-05-24):** ✅ **A1** app-shell→shared/layout (`e5a30d85d`),
+> ✅ **A2** execution→shared/overlays (`6387e544e`), ✅ **A4** radio→shared/layout/radio
+> (`88feb69bd`), ✅ **A5** sharing→settings/sub_network (`7e59db98a`). ⛔ **A3**
+> monitor — BLOCKED (`monitor/PersonaMonitor.tsx` owned by the concurrent
+> Groups→Teams session); do after it merges. Deferred: **A6** deployment, **A7**
+> pipeline (pipeline owned by Groups→Teams session), **A8** schedules (needs a
+> product decision — see below).
+
 ### A1 — `app-shell/` → fold into `shared/components/layout` `[P1, M, high]`
 **Finding:** `app-shell/` contains only `Sidebar.tsx` and `TitleBar.tsx`. But the
 sidebar *primitives, section renderers, and `sidebarData.ts` already live in

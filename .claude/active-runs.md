@@ -32,12 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-24 — started] src/features refactor — Phase 2 (chrome consolidation into shared/components/layout)**
-  - **Source:** User-driven, continuation of the structure refactor (Phase 0/1 done: `aacf136ce`). Moves orphan chrome folders into `shared/components/layout`: §A1 `app-shell/{Sidebar,TitleBar}.tsx`, §A2 `execution/{ExecutionMiniPlayer,PipelineDots}`, §A4 `radio/**`. Pure file moves + import-path updates; no behavior change.
-  - **Paths:** `src/features/app-shell/**` (delete after move), `src/features/execution/**` (delete after move), `src/features/radio/**` (move), `src/features/shared/components/layout/**` (move targets), import-site updates in `src/App.tsx`, `src/features/personas/PersonasPage.tsx`, `src/features/shared/components/layout/DesktopFooter.tsx`, `src/features/settings/sub_account/**` (radio settings card), `.claude/active-runs.md`.
-  - **Status:** started.
-  - **Note:** Explicitly SKIPS §A3 `monitor/` — `monitor/PersonaMonitor.tsx` is owned by the concurrent Groups→Teams session. Also skips §A5 `sharing/` this pass. Atomic commit per move; tsc between.
-
 - **[2026-05-24 — started] Groups→Teams Phase 5 (destructive retire of PersonaGroup)**
   - **Source:** User-driven — final phase of the Groups→Teams consolidation (ADR `2026-05-23-groups-into-teams.md`), authorized after live verification of Phases 1–4. Drops the entire PersonaGroup primitive: `persona_groups` table + `personas.group_id`/`persona_memories.group_id`/`dev_projects.group_id` columns; switches runtime memory injection (`get_for_injection_v2`/`build_scope_predicates`/`InjectionScope`) from group_id → home_team_id; deletes group commands/models/repos/bindings; repoints the Monitor "group by" + persona drop-rail + batch "Move to group" + overview filters from group_id → home_team_id (the Phase-4 UI cutover that wasn't done); removes orphaned GroupManagerPage + group UI + i18n.
   - **Paths (Rust):** `src-tauri/src/db/migrations/{incremental.rs,schema.rs}`, `src-tauri/src/db/models/{persona.rs,memory.rs,dev_tools.rs}`, `src-tauri/src/db/repos/core/{personas.rs,memories.rs,groups.rs (delete)}`, `src-tauri/src/db/repos/dev_tools.rs`, `src-tauri/src/commands/core/{groups.rs (delete),personas.rs,memories.rs,data_portability.rs,import_export.rs}`, `src-tauri/src/commands/{execution/genome.rs,infrastructure/cloud.rs}`, `src-tauri/src/db/models/group.rs (delete)`, `src-tauri/src/lib.rs`, assorted test fixtures (`group_id: None` removal — compiler-driven).
@@ -193,6 +187,11 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-24 — completed (commits: e5a30d85d, 6387e544e, 88feb69bd, 7e59db98a)] src/features refactor — Phase 2 (chrome consolidation)**
+  - **What:** Moved orphan chrome/non-section folders into their correct homes (pure file moves + import-path updates, zero behavior change, tsc clean each step): §A1 `app-shell/{Sidebar,TitleBar}` → `shared/components/layout/`; §A2 `execution/{ExecutionMiniPlayer,PipelineDots}` → `shared/components/overlays/executionPlayer/`; §A4 `radio/**` → `shared/components/layout/radio/`; §A5 `sharing/**` (16 files, P2P network) → `settings/sub_network/` (Network is a Settings tab; ShareLinkHandler's hard dep on BundleImportDialog ruled out a shared/overlays split).
+  - **Importers updated:** `App.tsx`, `personas/PersonasPage.tsx`, `shared/components/layout/DesktopFooter.tsx`, `settings/sub_account/.../AccountSettings.tsx`, `settings/components/SettingsPage.tsx`, one stale silentCatch breadcrumb. Doc: `docs/refactor/feature-structure-refactor.md` §A progress block.
+  - **Deferred/blocked:** ⛔ §A3 `monitor/` (PersonaMonitor owned by Groups→Teams session — do after merge); §A6 deployment, §A7 pipeline (pipeline owned by Groups→Teams), §A8 schedules (needs product decision). NOT pushed.
 
 - **[2026-05-24 — completed (commits: b352d5e28, f48a069ba, f16cbd8c7)] src/features structure refactor — Phase 0 + Phase 1 (partial)**
   - **What:** Phase 0: added `knip` dead-code tooling (`knip.json`, `check:dead`/`check:dead:files`), authored the refactor plan + dead-code baseline under `docs/refactor/`. Baseline 455 unused files. Phase 1: deleted two knip-verified + path-precise-checked dead clusters in `agents/components/` — 6 files (`designUtils`, `onboarding/{Checklist,useChecklist,TemplateStep}`, `preview/{Panel,Section}`) and 9 forked/dead `components/glyph/**` leaves. Dead-file count 455→440; tsc clean throughout.
