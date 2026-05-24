@@ -569,6 +569,7 @@ export type Translations = {
     persona_groups_rail: {
       aria_label: string;
       heading: string;
+      filter_all: string;
       chip_title: string;
       ungrouped_label: string;
       ungrouped_title: string;

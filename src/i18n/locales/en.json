@@ -129,9 +129,9 @@
     "status_completed": "Completed",
     "status_failed": "Failed",
     "status_cancelled": "Cancelled",
-    "group_by_toggle": "By workspace",
+    "group_by_toggle": "By team",
     "group_by_toggle_title": "Group persona cards by their home team",
-    "group_ungrouped": "No workspace"
+    "group_ungrouped": "No team"
   },
   "common": {
     "unknown_error": "Unknown error",
@@ -561,10 +561,11 @@
     "persona_decisions_footer_many": "{count} design decisions Athena logged",
     "persona_decisions_footer_open_audit": "Open audit",
     "persona_groups_rail": {
-      "aria_label": "Persona home-team drop targets",
-      "heading": "Workspaces",
+      "aria_label": "Filter personas by team",
+      "heading": "Teams",
+      "filter_all": "No preference",
       "chip_title": "Click to filter to this workspace, or drop a persona card to set it as the home team",
-      "ungrouped_label": "No workspace",
+      "ungrouped_label": "No team",
       "ungrouped_title": "Click to show only personas without a home team, or drop a card to clear its home team",
       "moved_toast": "Moved {persona} to {group}",
       "filter_clear_title": "Click to clear this filter"
