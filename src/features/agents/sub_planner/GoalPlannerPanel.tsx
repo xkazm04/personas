@@ -10,7 +10,9 @@ import { useState, useCallback, useEffect } from 'react';
 import { Sparkles, ShieldCheck, ListChecks, Eraser, Play, Pause, Square, CheckCircle2, History } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
+import { useSystemStore } from '@/stores/systemStore';
 import Button from '@/features/shared/components/buttons/Button';
+import { Bot } from 'lucide-react';
 import { generatePlan } from './planProvider';
 import { PlanStepCard } from './PlanStepCard';
 import { IntentSignalChips } from './IntentSignalChips';
@@ -79,6 +81,19 @@ export function GoalPlannerPanel() {
   const resetPlan = useCallback(() => {
     setWatchIndex(null);
     if (plan) setSteps(plan.steps);
+  }, [plan]);
+
+  // Graduate from preview to the real build flow: prefill the composer with
+  // the goal (autoLaunch=false, so the user still confirms by launching) and
+  // navigate there. agentTab must leave 'planner' or PersonasPage keeps this
+  // pane mounted.
+  const startBuildFromPlan = useCallback(() => {
+    if (!plan) return;
+    const sys = useSystemStore.getState();
+    sys.setCompanionPrefill({ intent: plan.goal, name: null, autoLaunch: false });
+    sys.setAgentTab('all');
+    sys.setIsCreatingPersona(true);
+    sys.setSidebarSection('personas');
   }, [plan]);
 
   // Watch player — auto-advances through the steps, highlighting each in turn.
@@ -226,6 +241,11 @@ export function GoalPlannerPanel() {
             <span className="flex items-center gap-2">
               {isEdited && !isWatching && (
                 <Button variant="link" size="xs" onClick={resetPlan}>{t.planner.reset_plan}</Button>
+              )}
+              {!isWatching && (
+                <Button variant="primary" size="xs" icon={<Bot className="h-3.5 w-3.5" />} onClick={startBuildFromPlan} data-testid="planner-start-build">
+                  {t.planner.actions.create_persona_title}
+                </Button>
               )}
               {!isWatching ? (
                 <Button variant="accent" accentColor="violet" size="xs" icon={<Play className="h-3.5 w-3.5" />} onClick={startWatch} data-testid="planner-watch-button">
