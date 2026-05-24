@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "all_clear": "Tout va bien",
+    "jump_next": "Aller à la prochaine session en attente",
     "pair_title": "Associer un appareil",
     "pair_preview_badge": "Aperçu",
     "pair_desc": "Associez un téléphone pour surveiller et approuver de partout. Scannez ce code avec le compagnon mobile Personas.",

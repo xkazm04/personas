@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "all_clear": "Mọi thứ ổn",
+    "jump_next": "Chuyển đến phiên đang chờ tiếp theo",
     "pair_title": "Ghép nối thiết bị",
     "pair_preview_badge": "Xem trước",
     "pair_desc": "Liên kết điện thoại để giám sát và phê duyệt từ bất cứ đâu. Quét mã này bằng ứng dụng đồng hành Personas.",

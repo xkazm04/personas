@@ -9773,6 +9773,8 @@
   },
   "plugins": {
     "fleet": {
+      "all_clear": "Todo en orden",
+      "jump_next": "Ir a la siguiente sesión en espera",
       "pair_title": "Vincular un dispositivo",
       "pair_preview_badge": "Vista previa",
       "pair_desc": "Vincula un teléfono para supervisar y aprobar desde cualquier lugar. Escanea este código con el compañero móvil de Personas.",

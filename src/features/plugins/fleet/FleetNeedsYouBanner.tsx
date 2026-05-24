@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Hourglass, MessageSquare, Send, X, Check, ShieldAlert } from 'lucide-react';
+import { Hourglass, MessageSquare, Send, X, Check, ShieldAlert, SkipForward } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useNowTick, formatAgo } from './relativeAgo';
@@ -34,9 +34,11 @@ interface FleetNeedsYouBannerProps {
   /** Approve / reject a companion action by id. */
   onApprove: (id: string) => Promise<void>;
   onReject: (id: string) => Promise<void>;
+  /** Focus the next awaiting session, cycling from the current one. */
+  onCycleNext: () => void;
 }
 
-export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApprove, onReject }: FleetNeedsYouBannerProps) {
+export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApprove, onReject, onCycleNext }: FleetNeedsYouBannerProps) {
   const { t, tx } = useTranslation();
   const now = useNowTick();
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -100,6 +102,18 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
         </span>
         <Hourglass className="w-3.5 h-3.5 text-violet-300 shrink-0" aria-hidden="true" />
         <span className="typo-caption font-semibold text-violet-200 mr-1">{label}</span>
+        {waiting.length > 1 && (
+          <button
+            type="button"
+            data-testid="fleet-needs-you-cycle-next"
+            onClick={onCycleNext}
+            aria-label={t.plugins.fleet.jump_next}
+            title={t.plugins.fleet.jump_next}
+            className="mr-1 flex items-center rounded-interactive border border-violet-400/30 bg-violet-400/10 p-1 text-violet-100 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+          >
+            <SkipForward className="w-3 h-3" aria-hidden="true" />
+          </button>
+        )}
         <div className="flex flex-wrap items-center gap-1.5">
           {waiting.map((s) => {
             const name = s.name ?? s.projectLabel;

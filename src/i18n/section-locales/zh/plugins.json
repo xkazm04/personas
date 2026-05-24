@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "all_clear": "一切就绪",
+    "jump_next": "跳转到下一个等待的会话",
     "pair_title": "配对设备",
     "pair_preview_badge": "预览",
     "pair_desc": "连接手机，随时随地监控与批准。用 Personas 移动伴侣扫描此代码。",

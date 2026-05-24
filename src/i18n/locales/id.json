@@ -9773,6 +9773,8 @@
   },
   "plugins": {
     "fleet": {
+      "all_clear": "Semua aman",
+      "jump_next": "Lompat ke sesi menunggu berikutnya",
       "pair_title": "Pasangkan perangkat",
       "pair_preview_badge": "Pratinjau",
       "pair_desc": "Tautkan ponsel untuk memantau dan menyetujui dari mana saja. Pindai kode ini dengan pendamping seluler Personas.",

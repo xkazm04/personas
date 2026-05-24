@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "all_clear": "Vše v pořádku",
+    "jump_next": "Přejít na další čekající relaci",
     "pair_title": "Spárovat zařízení",
     "pair_preview_badge": "Náhled",
     "pair_desc": "Připojte telefon pro sledování a schvalování odkudkoli. Naskenujte tento kód mobilním společníkem Personas.",

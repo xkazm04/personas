@@ -1,5 +1,7 @@
 {
   "fleet": {
+    "all_clear": "Alles in Ordnung",
+    "jump_next": "Zur nächsten wartenden Sitzung springen",
     "pair_title": "Gerät koppeln",
     "pair_preview_badge": "Vorschau",
     "pair_desc": "Koppeln Sie ein Telefon, um von überall zu überwachen und zu genehmigen. Scannen Sie diesen Code mit dem mobilen Personas-Begleiter.",

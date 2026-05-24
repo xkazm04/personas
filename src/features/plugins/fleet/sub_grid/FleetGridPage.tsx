@@ -286,6 +286,15 @@ export default function FleetGridPage() {
     [sessions],
   );
 
+  // Cycle focus through the waiting sessions, wrapping around from the
+  // currently-focused one — fast triage when several are blocked at once.
+  const handleCycleNext = useCallback(() => {
+    if (waitingSessions.length === 0) return;
+    const idx = waitingSessions.findIndex((s) => s.id === activeSessionId);
+    const next = waitingSessions[(idx + 1) % waitingSessions.length];
+    if (next) setActiveSession(next.id);
+  }, [waitingSessions, activeSessionId, setActiveSession]);
+
   // Group sessions by lifecycle state. Order matters: attention-grabbing
   // first (awaiting_input → working → spawning → idle → stale → exited).
   // Within a group, newest activity first.
@@ -350,7 +359,18 @@ export default function FleetGridPage() {
           approvals={approvalItems}
           onApprove={handleApprove}
           onReject={handleRejectApproval}
+          onCycleNext={handleCycleNext}
         />
+
+        {sessions.length > 0 && waitingSessions.length === 0 && approvalItems.length === 0 && (
+          <div
+            data-testid="fleet-all-clear"
+            className="mb-3 inline-flex items-center gap-1.5 rounded-card border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-1 typo-caption text-emerald-300"
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+            {t.plugins.fleet.all_clear}
+          </div>
+        )}
 
         <ActionRow>
           <Button
