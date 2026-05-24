@@ -1,23 +1,14 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 import type { RenderPlan } from "@/lib/bindings/RenderPlan";
 import type { CompositionLoad } from "@/lib/bindings/CompositionLoad";
+import type { ArtistAsset } from "@/lib/bindings/ArtistAsset";
 
 // -- Types ------------------------------------------------------------------
 
-export interface ArtistAsset {
-  id: string;
-  fileName: string;
-  filePath: string;
-  assetType: "2d" | "3d";
-  mimeType: string | null;
-  fileSize: number;
-  width: number | null;
-  height: number | null;
-  thumbnailPath: string | null;
-  tags: string | null;
-  source: string | null;
-  createdAt: string;
-}
+// Re-export the generated binding (single source of truth). The hand-rolled
+// duplicate previously drifted: it typed `fileSize` as `number` where the Rust
+// u64 generates `bigint`, and narrowed `assetType` to "2d"|"3d".
+export type { ArtistAsset };
 
 export interface BlenderMcpStatus {
   installed: boolean;

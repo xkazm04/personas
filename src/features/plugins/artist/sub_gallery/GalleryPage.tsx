@@ -35,7 +35,7 @@ export default function GalleryPage() {
     list.sort((a, b) => {
       const cmp = sortBy === 'name' ? a.fileName.localeCompare(b.fileName)
         : sortBy === 'date' ? a.createdAt.localeCompare(b.createdAt)
-        : a.fileSize - b.fileSize;
+        : Number(a.fileSize) - Number(b.fileSize);
       return sortDir === 'desc' ? -cmp : cmp;
     });
     return list;

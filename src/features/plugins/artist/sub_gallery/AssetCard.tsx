@@ -81,7 +81,7 @@ export default function AssetCard({
   const queueMediaStudioAsset = useSystemStore((s) => s.queueMediaStudioAsset);
   const setArtistTab = useSystemStore((s) => s.setArtistTab);
   const isImage = asset.assetType === '2d';
-  const sizeStr = formatFileSize(asset.fileSize);
+  const sizeStr = formatFileSize(Number(asset.fileSize));
   const ext = asset.fileName.split('.').pop()?.toUpperCase() ?? '';
   const dataUrl = useLocalImage(isImage ? asset.filePath : null);
 

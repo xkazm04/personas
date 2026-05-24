@@ -229,7 +229,7 @@ export default function Gallery3D({ assets, onDelete, onUpdateTags, onRename }: 
 
             {/* Footer metadata */}
             <div className="px-4 py-2 border-t border-primary/10 flex items-center gap-4 text-md text-foreground">
-              <span>{formatFileSize(selectedAsset.fileSize)}</span>
+              <span>{formatFileSize(Number(selectedAsset.fileSize))}</span>
               <span>{selectedAsset.createdAt}</span>
               {selectedAsset.tags && <span>{t.plugins.artist.tags_label} {selectedAsset.tags}</span>}
             </div>
