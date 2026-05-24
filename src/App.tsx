@@ -70,7 +70,7 @@ const BackgroundServices = lazy(() => import("@/features/shared/components/layou
 const CommandPalette = lazy(() => import("@/features/shared/components/overlays/CommandPalette"));
 const GuidedTour = lazy(() => import("@/features/onboarding/components/GuidedTour"));
 const TourSpotlight = lazy(() => import("@/features/onboarding/components/TourSpotlight"));
-const ExecutionMiniPlayer = lazy(() => import("@/features/execution/components/ExecutionMiniPlayer"));
+const ExecutionMiniPlayer = lazy(() => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"));
 const HealingToast = lazy(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
 const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
 const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
@@ -87,7 +87,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/shared/components/overlays/CommandPalette"),
   () => import("@/features/onboarding/components/GuidedTour"),
   () => import("@/features/onboarding/components/TourSpotlight"),
-  () => import("@/features/execution/components/ExecutionMiniPlayer"),
+  () => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"),
   () => import("@/features/overview/components/feedback/HealingToast"),
   () => import("@/features/overview/sub_observability/components/AlertToastContainer"),
   () => import("@/features/shared/components/feedback/notifications/NotificationCenter"),
