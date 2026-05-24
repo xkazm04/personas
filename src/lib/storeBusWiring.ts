@@ -77,11 +77,19 @@ export function initStoreBus(): void {
     useSystemStore.getState().emitTourEvent('tour:appearance-changed');
   });
 
-  // Build phase changed — systemStore advances tour sub-steps for persona creation
+  // Build phase changed — systemStore advances tour sub-steps for persona creation.
+  // The persona-creation step only completes on an actual PROMOTE (not the
+  // earlier test_complete): the next tour step runs the live agent, which
+  // requires it to be promoted. Promotion also records the created persona id
+  // so the run step can open exactly that agent.
   storeBus.on('build:phase-changed', ({ phase }) => {
     const sys = useSystemStore.getState();
     if (!sys.tourActive) return;
     if (phase === 'draft_ready') sys.emitTourEvent('tour:persona-draft-ready');
-    if (phase === 'test_complete' || phase === 'promoted') sys.emitTourEvent('tour:persona-promoted');
+    if (phase === 'promoted') {
+      const pid = useAgentStore.getState().selectedPersona?.id;
+      if (pid) sys.setTourCreatedPersona(pid);
+      sys.emitTourEvent('tour:persona-promoted');
+    }
   });
 }

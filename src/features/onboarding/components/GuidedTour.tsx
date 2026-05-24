@@ -119,9 +119,13 @@ export default function GuidedTour() {
         scheduleTourTimeout(() => useSystemStore.setState({ isCreatingPersona: true }), 150);
       } else if (step.id === 'first-execution') {
         // Open the agent we just built on its Use Cases tab so the user can
-        // run it by hand. selectPersona emits persona:selected (which routes
-        // to the Activity tab), so flip to use-cases just after it settles.
-        const createdId = useSystemStore.getState().tourCreatedPersonaId;
+        // run it by hand. Prefer the tour-recorded persona; fall back to the
+        // currently-selected one (promote already selects the new agent).
+        // selectPersona emits persona:selected (which routes to the Activity
+        // tab), so flip to use-cases just after it settles.
+        const createdId = useSystemStore.getState().tourCreatedPersonaId
+          ?? useAgentStore.getState().selectedPersona?.id
+          ?? null;
         if (createdId) useAgentStore.getState().selectPersona(createdId);
         scheduleTourTimeout(() => useSystemStore.getState().setEditorTab('use-cases'), 300);
       }
