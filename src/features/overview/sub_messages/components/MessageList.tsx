@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MessageSquare, CheckCheck, RefreshCw, Plus, List, GitBranch, ChevronRight, ChevronDown, MessageCircle, BookOpen, Eye, EyeOff } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
@@ -280,12 +280,15 @@ export default function MessageList() {
           /* ==================== THREADED VIEW ==================== */
           threadSummaries.length === 0 ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <EmptyState
-                icon={GitBranch}
-                title={t.overview.messages_view.no_threads}
-                subtitle={t.overview.messages_view.no_threads_hint}
-                action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-                secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              <IllustrationEmptyState
+                motif="messages"
+                content={{
+                  icon: GitBranch,
+                  title: t.overview.messages_view.no_threads,
+                  subtitle: t.overview.messages_view.no_threads_hint,
+                  action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                  secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                }}
               />
             </div>
           ) : (
@@ -396,12 +399,15 @@ export default function MessageList() {
           /* ==================== FLAT VIEW (original) ==================== */
           filteredMessages.length === 0 && !hasActiveFilters ? (
             <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-              <EmptyState
-                icon={MessageSquare}
-                title={t.overview.messages_view.no_messages}
-                subtitle={t.overview.messages_view.no_messages_hint}
-                action={{ label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-                secondaryAction={{ label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+              <IllustrationEmptyState
+                motif="messages"
+                content={{
+                  icon: MessageSquare,
+                  title: t.overview.messages_view.no_messages,
+                  subtitle: t.overview.messages_view.no_messages_hint,
+                  action: { label: t.overview.dashboard.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                  secondaryAction: { label: t.overview.dashboard.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                }}
               />
             </div>
           ) : (

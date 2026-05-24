@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
-import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
@@ -254,12 +254,15 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
               null
             ) : filteredExecutions.length === 0 ? (
               <div className="flex-1 flex items-center justify-center p-4 md:p-6">
-                <EmptyState
-                  icon={Bot}
-                  title={personas.length === 0 ? t.overview.activity.no_agents : t.overview.activity.no_executions}
-                  subtitle={personas.length === 0 ? t.overview.activity.no_agents_hint : t.overview.activity.no_executions_hint}
-                  action={{ label: t.overview.activity.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus }}
-                  secondaryAction={{ label: t.overview.activity.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen }}
+                <MotionEmptyState
+                  motif="activity"
+                  content={{
+                    icon: Bot,
+                    title: personas.length === 0 ? t.overview.activity.no_agents : t.overview.activity.no_executions,
+                    subtitle: personas.length === 0 ? t.overview.activity.no_agents_hint : t.overview.activity.no_executions_hint,
+                    action: { label: t.overview.activity.create_persona, onClick: () => useSystemStore.getState().setSidebarSection('personas'), icon: Plus },
+                    secondaryAction: { label: t.overview.activity.from_templates, onClick: () => useSystemStore.getState().setSidebarSection('design-reviews'), icon: BookOpen },
+                  }}
                 />
               </div>
             ) : (

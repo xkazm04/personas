@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import Button from '@/features/shared/components/buttons/Button';
+import { IllustrationEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
@@ -260,12 +261,15 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   // -----------------------------------------------------------------------
   if (pending.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-full gap-4 py-20">
-        <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center">
-          <Check className="w-8 h-8 text-emerald-400" />
-        </div>
-        <p className="typo-body-lg font-medium text-foreground">{t.overview.review_focus.all_caught_up}</p>
-        <p className="typo-body text-foreground">{t.overview.review_focus.no_pending}</p>
+      <div className="flex items-center justify-center h-full py-12">
+        <IllustrationEmptyState
+          motif="approval"
+          content={{
+            icon: Check,
+            title: t.overview.review_focus.all_caught_up,
+            subtitle: t.overview.review_focus.no_pending,
+          }}
+        />
       </div>
     );
   }
