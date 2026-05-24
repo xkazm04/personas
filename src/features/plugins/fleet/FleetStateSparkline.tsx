@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import type { FleetTransition } from '@/stores/slices/system/fleetSlice';
 import type { FleetLabelKey } from './FleetStatusDots';
+import { formatAgo } from './relativeAgo';
 
 /**
  * Tiny inline timeline of a session's recent lifecycle transitions — one
@@ -28,6 +29,9 @@ export function FleetStateSparkline({ transitions }: { transitions: FleetTransit
   const { t } = useTranslation();
   if (transitions.length < 2) return null;
   const recent = transitions.slice(-MAX_TICKS);
+  // Computed at render (not on a timer) — the tooltip is hover-only, and
+  // cards re-render on any activity, so this stays fresh without per-card ticks.
+  const now = Date.now();
   return (
     <span
       role="img"
@@ -40,7 +44,7 @@ export function FleetStateSparkline({ transitions }: { transitions: FleetTransit
         return (
           <span
             key={`${tr.at}-${i}`}
-            title={t.plugins.fleet[cfg.labelKey]}
+            title={`${t.plugins.fleet[cfg.labelKey]} · ${formatAgo(t, tr.at, now)}`}
             className={`h-3 w-0.5 rounded-full ${cfg.bg} ${i === recent.length - 1 ? '' : 'opacity-60'}`}
           />
         );
