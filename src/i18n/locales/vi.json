@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "notify_title": "Phiên cần bạn nhập",
+      "notify_body": "{name} đang chờ bạn",
+      "notify_enable": "Bật cảnh báo chờ nhập",
+      "notify_disable": "Tắt cảnh báo chờ nhập",
       "preview_title": "Xem trước ứng dụng đồng hành di động",
       "preview_desc": "Bản xem trước chỉ đọc về cách đội phiên của bạn hiển thị trên ứng dụng đồng hành điện thoại đã ghép nối.",
       "preview_all_clear": "Mọi thứ ổn",

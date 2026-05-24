@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "notify_title": "세션이 입력을 기다립니다",
+      "notify_body": "{name}이(가) 당신을 기다리고 있습니다",
+      "notify_enable": "입력 대기 알림 켜기",
+      "notify_disable": "입력 대기 알림 음소거",
       "preview_title": "모바일 컴패니언 미리보기",
       "preview_desc": "페어링된 휴대폰 컴패니언에서 플릿이 어떻게 보일지에 대한 읽기 전용 미리보기입니다.",
       "preview_all_clear": "모두 정상",

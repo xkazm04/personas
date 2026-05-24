@@ -12,6 +12,8 @@ import {
   Clock,
   Ban,
   Sparkle,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -26,6 +28,7 @@ import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { FleetSummaryPills } from '../FleetSummaryPills';
 import { FleetStatusLegend } from '../FleetStatusLegend';
@@ -85,6 +88,8 @@ export default function FleetGridPage() {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore(useShallow((s) => s.projects));
   const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const notifyAwaiting = useSystemStore((s) => s.fleetNotifyAwaiting);
+  const setNotifyAwaiting = useSystemStore((s) => s.fleetSetNotifyAwaiting);
 
   const { t, tx } = useTranslation();
   const [spawning, setSpawning] = useState(false);
@@ -103,6 +108,16 @@ export default function FleetGridPage() {
   const actionsRef = useRef({ refresh, patchSession, removeLocal });
   actionsRef.current = { refresh, patchSession, removeLocal };
 
+  // Refs read by the once-attached listener: the live notify preference, a
+  // snapshot of sessions (to resolve a name for the alert body), and the set
+  // of ids we've already alerted on so a re-emitted awaiting_input event
+  // doesn't double-notify. `t`/`tx` are stable proxies, safe to close over.
+  const notifyRef = useRef(notifyAwaiting);
+  notifyRef.current = notifyAwaiting;
+  const sessionsRef = useRef(sessions);
+  sessionsRef.current = sessions;
+  const awaitingSeenRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     actionsRef.current.refresh();
     fetchProjects().catch(silentCatch('FleetGridPage:fetchProjects'));
@@ -110,11 +125,30 @@ export default function FleetGridPage() {
     const unStateP = listen<{ session_id: string; state: string; reason?: string }>(
       EventName.FLEET_SESSION_STATE,
       (event) => {
-        actionsRef.current.patchSession(event.payload.session_id, {
-          state: event.payload.state as FleetSessionState,
-          stateReason: event.payload.reason ?? null,
+        const { session_id, state, reason } = event.payload;
+        actionsRef.current.patchSession(session_id, {
+          state: state as FleetSessionState,
+          stateReason: reason ?? null,
           lastActivityMs: BigInt(Date.now()),
         });
+
+        // Desktop "push" alert on entering awaiting_input — once per entry.
+        const seen = awaitingSeenRef.current;
+        if (state === 'awaiting_input') {
+          if (!seen.has(session_id)) {
+            seen.add(session_id);
+            if (notifyRef.current) {
+              const sess = sessionsRef.current.find((s) => s.id === session_id);
+              const name = sess?.name ?? sess?.projectLabel ?? '';
+              notifyFleetAwaiting(
+                t.plugins.fleet.notify_title,
+                tx(t.plugins.fleet.notify_body, { name }),
+              );
+            }
+          }
+        } else {
+          seen.delete(session_id);
+        }
       },
     );
 
@@ -240,6 +274,19 @@ export default function FleetGridPage() {
         subtitle={subtitle}
         actions={
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              data-testid="fleet-notify-toggle"
+              aria-pressed={notifyAwaiting}
+              aria-label={notifyAwaiting ? t.plugins.fleet.notify_disable : t.plugins.fleet.notify_enable}
+              title={notifyAwaiting ? t.plugins.fleet.notify_disable : t.plugins.fleet.notify_enable}
+              onClick={() => setNotifyAwaiting(!notifyAwaiting)}
+              className="flex items-center rounded-interactive px-1.5 py-1 text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            >
+              {notifyAwaiting
+                ? <Bell className="w-3.5 h-3.5" />
+                : <BellOff className="w-3.5 h-3.5" />}
+            </button>
             <FleetStatusLegend />
             <FleetHooksPill />
           </div>

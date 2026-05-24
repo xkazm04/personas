@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "notify_title": "Relace čeká na váš vstup",
+      "notify_body": "{name} na vás čeká",
+      "notify_enable": "Zapnout upozornění na čekání na vstup",
+      "notify_disable": "Ztlumit upozornění na čekání na vstup",
       "preview_title": "Náhled mobilního společníka",
       "preview_desc": "Náhled (jen pro čtení), jak by vaše flotila vypadala na spárovaném telefonním společníkovi.",
       "preview_all_clear": "Vše v pořádku",

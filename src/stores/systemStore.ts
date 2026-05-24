@@ -54,6 +54,7 @@ export const useSystemStore = create<SystemStore>()(
       storage: createDedupedJSONStorage(),
       partialize: (state) => ({
         sidebarSection: state.sidebarSection,
+        fleetNotifyAwaiting: state.fleetNotifyAwaiting,
         homeTab: state.homeTab,
         editorTab: state.editorTab,
         designSubTab: state.designSubTab,

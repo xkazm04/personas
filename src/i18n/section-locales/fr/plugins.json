@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "notify_title": "La session attend votre saisie",
+    "notify_body": "{name} vous attend",
+    "notify_enable": "Activer les alertes d'attente de saisie",
+    "notify_disable": "Couper les alertes d'attente de saisie",
     "preview_title": "Aperçu du compagnon mobile",
     "preview_desc": "Un aperçu en lecture seule de l'apparence de votre flotte sur le compagnon mobile appairé.",
     "preview_all_clear": "Tout va bien",

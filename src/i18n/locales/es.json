@@ -9773,6 +9773,10 @@
   },
   "plugins": {
     "fleet": {
+      "notify_title": "La sesión necesita tu intervención",
+      "notify_body": "{name} te está esperando",
+      "notify_enable": "Activar alertas de espera de entrada",
+      "notify_disable": "Silenciar alertas de espera de entrada",
       "preview_title": "Vista previa del compañero móvil",
       "preview_desc": "Una vista de solo lectura de cómo se vería tu flota en el compañero de teléfono emparejado.",
       "preview_all_clear": "Todo en orden",

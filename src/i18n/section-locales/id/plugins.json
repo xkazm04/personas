@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "notify_title": "Sesi memerlukan masukan Anda",
+    "notify_body": "{name} sedang menunggu Anda",
+    "notify_enable": "Aktifkan peringatan menunggu masukan",
+    "notify_disable": "Bisukan peringatan menunggu masukan",
     "preview_title": "Pratinjau pendamping seluler",
     "preview_desc": "Tampilan hanya-baca tentang bagaimana armada Anda akan terlihat di pendamping ponsel yang dipasangkan.",
     "preview_all_clear": "Semua aman",

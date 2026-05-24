@@ -9802,6 +9802,10 @@
   },
   "plugins": {
     "fleet": {
+      "notify_title": "Session needs your input",
+      "notify_body": "{name} is waiting for you",
+      "notify_enable": "Enable awaiting-input alerts",
+      "notify_disable": "Mute awaiting-input alerts",
       "preview_title": "Mobile companion preview",
       "preview_desc": "A read-only look at how your fleet would appear on the paired phone companion.",
       "preview_all_clear": "All clear",

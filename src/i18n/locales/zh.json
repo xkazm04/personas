@@ -9697,6 +9697,10 @@
   },
   "plugins": {
     "fleet": {
+      "notify_title": "会话需要您的输入",
+      "notify_body": "{name} 正在等待您",
+      "notify_enable": "开启等待输入提醒",
+      "notify_disable": "静音等待输入提醒",
       "preview_title": "移动伴侣预览",
       "preview_desc": "只读预览：您的会话集在已配对手机伴侣上的显示效果。",
       "preview_all_clear": "一切正常",

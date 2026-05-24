@@ -1,5 +1,9 @@
 {
   "fleet": {
+    "notify_title": "セッションが入力を待っています",
+    "notify_body": "{name} があなたを待っています",
+    "notify_enable": "入力待ちアラートを有効化",
+    "notify_disable": "入力待ちアラートをミュート",
     "preview_title": "モバイルコンパニオンのプレビュー",
     "preview_desc": "ペアリングしたスマートフォンコンパニオンでフリートがどう表示されるかの読み取り専用プレビューです。",
     "preview_all_clear": "問題なし",

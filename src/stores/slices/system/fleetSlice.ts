@@ -20,9 +20,12 @@ export interface FleetSlice {
   fleetSessionsLoading: boolean;
   /** Currently-focused session in the grid — the one whose terminal pane renders. */
   fleetActiveSessionId: string | null;
+  /** Fire an OS notification when a session enters awaiting_input. Persisted. */
+  fleetNotifyAwaiting: boolean;
 
   fleetRefresh: () => Promise<void>;
   fleetSetActiveSession: (id: string | null) => void;
+  fleetSetNotifyAwaiting: (on: boolean) => void;
   /** Patch a single session by id in place (used by event handlers). */
   fleetPatchSession: (id: string, patch: Partial<FleetSession>) => void;
   fleetRemoveSessionLocal: (id: string) => void;
@@ -35,6 +38,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetHooksInstalled: false,
   fleetSessionsLoading: false,
   fleetActiveSessionId: null,
+  fleetNotifyAwaiting: true,
 
   fleetRefresh: async () => {
     set({ fleetSessionsLoading: true });
@@ -55,6 +59,8 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   },
 
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
+
+  fleetSetNotifyAwaiting: (on) => set({ fleetNotifyAwaiting: on }),
 
   fleetPatchSession: (id, patch) =>
     set((state) => ({
