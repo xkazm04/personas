@@ -301,7 +301,7 @@ const EXECUTION_OBSERVABILITY_STEPS: TourStepDef[] = [
   {
     id: "lab-arena",
     title: "Lab: Test & Optimize",
-    description: "The Lab is where you sharpen a live agent: compare models head-to-head in Arena, A/B-test prompt variants, browse the full version history, and watch how use-cases score across changes.",
+    description: "The Lab is where you sharpen a live agent: compare models head-to-head in Arena, A/B-test prompt variants, browse the full version history, and let AI optimize the agent for you — Improve, Breed, and Evolve — with a Regression guard that re-scores use-cases after every change.",
     hint: "Select an agent, open the Lab tab, and explore Arena mode.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:lab-explored",
@@ -311,6 +311,7 @@ const EXECUTION_OBSERVABILITY_STEPS: TourStepDef[] = [
       { id: "open-lab", label: "Open the Lab tab", hint: "Click the flask icon in the editor tab bar. Lab is Team-tier and up.", highlightTestId: "editor-tab-lab" },
       { id: "arena-mode", label: "Run Arena", hint: "Arena pits multiple models against the same use-case in parallel. Pick 2–3 models and hit start to see side-by-side outputs." },
       { id: "ab-mode", label: "Try A/B mode", hint: "A/B compares two prompt variants on the same model. Useful when you're tightening copy rather than swapping providers." },
+      { id: "ai-optimize", label: "AI optimization modes", hint: "Beyond Arena and A/B: Improve rewrites a weak prompt, Breed crosses two strong variants, Evolve iterates over generations, and Regression re-checks every use-case after a change so you don't ship a quiet regression." },
       { id: "versions", label: "Browse version history", hint: "Every promote creates a version. Diff any two, rollback, or send a pair to Arena to back up the rollback decision with data." },
     ],
   },
@@ -334,15 +335,15 @@ const ORCHESTRATION_EVENTS_STEPS: TourStepDef[] = [
   {
     id: "trigger-types",
     title: "Trigger Types: Pull, Push & Compose",
-    description: "Triggers define when an agent activates. PULL watches for changes (schedule, polling), PUSH receives signals (webhook, event_listener), COMPOSE chains agents (chain trigger). Every agent has at least one.",
-    hint: "Open an agent's Design > Triggers tab to see what it listens to.",
+    description: "Triggers define when an agent activates. PULL watches for changes (schedule, polling), PUSH receives signals (webhook, event_listener), COMPOSE chains agents (chain trigger). Every agent has at least one — set when you build it on the Glyph.",
+    hint: "Look at how triggers are categorized, then see them wired on the Event Canvas.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:triggers-explored",
     panelWidth: 360,
     subSteps: [
-      { id: "view-triggers", label: "Open Design > Triggers", hint: "Select an agent → editor opens → click Design tab → Triggers sub-tab. The list shows every trigger currently attached." },
-      { id: "trigger-categories", label: "Three trigger families", hint: "Schedule/cron = Pull. Webhook/email/event_listener = Push. Chain = Compose. The badge color on each card hints at the family." },
-      { id: "add-trigger", label: "Add a trigger", hint: "The \"Add trigger\" picker shows every available type with its required credentials. Most need only a service connection in the Vault." },
+      { id: "trigger-categories", label: "Three trigger families", hint: "Schedule/cron = Pull. Webhook/email/event_listener = Push. Chain = Compose. Each family answers \"what wakes this agent up?\"." },
+      { id: "set-on-build", label: "Set on the Glyph", hint: "An agent's trigger is chosen during the build — the \"When\" row / Trigger sigil. Pick a schedule, a webhook, or an event to listen for; it's baked into the agent at promote time." },
+      { id: "see-on-canvas", label: "See them on the canvas", hint: "The Events → Builder canvas (next step) shows every agent's triggers as a live routing graph — the clearest place to see what listens to what." },
     ],
   },
   {
@@ -432,7 +433,7 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
     subSteps: [
       { id: "scan-catalog", label: "Scan the catalog", hint: "Each card shows what the plugin does in one line. Disabled cards are dimmed; enabled ones get a colored border." },
       { id: "toggle-plugin", label: "Toggle one on", hint: "Flip the switch on any plugin to add it to your workspace. The sidebar updates immediately." },
-      { id: "tier-gating", label: "Tier gates", hint: "Some plugins (Twin, Research Lab, Fleet) require Team tier or higher. The catalog still shows them — useful for understanding what's available." },
+      { id: "tier-gating", label: "Tier gates", hint: "Some plugins require Team tier or higher; the catalog still shows them so you can see what's available. (Artist and Research Lab are dev-build-only and are hidden from the catalog in production.)" },
     ],
   },
   {
@@ -467,8 +468,8 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   {
     id: "plugin-dev-tools",
     title: "Dev Tools — projects, ideas, runners",
-    description: "Dev Tools is the workspace-management plugin. Track local projects, scan a repo for idea seeds, triage the backlog, and dispatch task-runners. Useful when an agent's job is to wrangle code.",
-    hint: "Open Dev Tools and skim the seven sub-tabs.",
+    description: "Dev Tools is the workspace-management plugin. Track local projects, scan a repo for idea seeds, triage the backlog, dispatch task-runners, and watch your Claude Code sessions in the Fleet sub-tab. Useful when an agent's job is to wrangle code.",
+    hint: "Open Dev Tools and skim its sub-tabs.",
     nav: { sidebarSection: "plugins", subTab: "dev-tools" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "dev-tools-page",
@@ -481,17 +482,16 @@ const PLUGINS_EXPLORER_STEPS: TourStepDef[] = [
   {
     id: "plugin-others",
     title: "The Rest of the Plugins",
-    description: "Five more plugins round out the catalog: Artist (image generation), Drive (file sync), Obsidian Brain (note vault), Research Lab (literature → hypotheses → experiments), Langfuse (observability), and Fleet (multi-agent orchestration).",
+    description: "Three more plugins round out the production catalog: Drive (file sync), Obsidian Brain (note-vault indexing + graph), and Langfuse (external observability for traces, cost, and latency). In dev builds you'll also find Artist (image/video generation) and Research Lab (literature → hypotheses → experiments). Fleet — multi-session Claude Code orchestration — lives as a sub-tab of Dev Tools, not a standalone plugin.",
     hint: "Browse each plugin from the catalog and enable any that look useful.",
     nav: { sidebarSection: "plugins", subTab: "browse" },
     completeOn: "tour:plugin-surface-visited",
     highlightTestId: "plugin-browse-page",
     panelWidth: 360,
     subSteps: [
-      { id: "artist", label: "Artist", hint: "Leonardo + Blender + media studio. Agents that produce images or video assets use this." },
       { id: "drive-obsidian", label: "Drive & Obsidian Brain", hint: "Drive syncs files; Obsidian Brain indexes your vault for knowledge retrieval and graph navigation." },
-      { id: "research-fleet", label: "Research Lab & Fleet", hint: "Research Lab structures literature reviews and experiments. Fleet orchestrates many agents on a grid with shared decisions." },
       { id: "langfuse", label: "Langfuse", hint: "External observability. Pipe execution traces to Langfuse for cost, latency, and prompt analysis." },
+      { id: "dev-extras", label: "Dev-build extras", hint: "Artist (Leonardo + Blender + media studio) and Research Lab (structured literature reviews + experiments) ship in dev builds only — handy to know they exist." },
     ],
   },
 ];
@@ -528,16 +528,16 @@ const SCHEDULES_MASTERY_STEPS: TourStepDef[] = [
   {
     id: "schedules-attach",
     title: "Attach a Schedule to an Agent",
-    description: "Schedules are just triggers under the hood. Open any agent's Design > Triggers tab, add a schedule trigger, set a cron expression or fixed interval, and save. It appears here on the next refresh.",
-    hint: "Open an agent's Design > Triggers tab and add a schedule trigger.",
+    description: "Schedules attach per use-case. Open an agent, go to its Use Cases tab, pick a use case, and add a schedule subscription — a cron expression or a fixed interval. It shows up here on the Schedules dashboard on the next refresh.",
+    hint: "Open an agent's Use Cases tab and schedule one of its use cases.",
     nav: { sidebarSection: "personas" },
     completeOn: "tour:schedule-attached",
     panelWidth: 360,
     subSteps: [
       { id: "open-agent", label: "Open an agent", hint: "Pick any agent from the list to enter its editor." },
-      { id: "open-design-triggers", label: "Open Design > Triggers", hint: "Click the Design tab, then the Triggers sub-tab. The current trigger list shows what already fires the agent." },
-      { id: "add-schedule", label: "Add a schedule trigger", hint: "Hit \"Add trigger\" → pick Schedule. Choose cron or interval, set the frequency, save." },
-      { id: "verify-in-list", label: "Verify on the dashboard", hint: "Navigate back to Schedules. Your new trigger appears with its next fire time and a fresh \"active\" badge." },
+      { id: "open-use-cases", label: "Open the Use Cases tab", hint: "Each capability can run on its own schedule. The Use Cases tab is where you wire that up.", highlightTestId: "design-subtab-use-cases" },
+      { id: "add-schedule", label: "Add a schedule", hint: "Open a use case and add a schedule subscription — choose cron or a fixed interval and set the frequency." },
+      { id: "verify-in-list", label: "Verify on the dashboard", hint: "Navigate back to Schedules. Your new schedule appears with its next fire time and a fresh \"active\" badge." },
     ],
   },
 ];
