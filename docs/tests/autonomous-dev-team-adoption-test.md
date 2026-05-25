@@ -100,6 +100,15 @@ All steps via `POST http://127.0.0.1:17320/<endpoint>`:
 > allowed by the protocol): Adopt button, sigil center continue/count, answer-card
 > submit, per-question inputs, Promote. Add `data-testid`s where the driver can't
 > reliably target an element, then re-run.
+>
+> ⚠️ **HARNESS LANDMINE — scope every close click to the modal.** `chrome.close_window`
+> resolves to the literal string **"Close"**, so `document.querySelector('[aria-label="Close"]')`
+> matches the **custom titlebar's OS window-close button** (it precedes the answer
+> card in the DOM). Clicking it closes the Tauri window → the app exits cleanly
+> (exit 0) — indistinguishable from a crash. This was misdiagnosed as a modal
+> "freeze/crash" for a whole session. **Always scope:**
+> `document.querySelector('[aria-labelledby="adoption-matrix-title"]').querySelector('[aria-label="Close"]')`.
+> The driver's `closeAnswerCard()` / `clickModalButtonByText()` helpers do this.
 
 ---
 
@@ -158,7 +167,7 @@ When a goal fails:
 
 | Pass | Date | Personas adopted | Capabilities Keep / Iterate / Cut | Key gaps + fixes | Verdict |
 |---|---|---|---|---|---|
-| 1 | _2026-05-25_ | _in progress_ | — | — | — |
+| 1 | 2026-05-25 | Dev Clone (1/7) — built + promoted | build: 4/4 caps, 8/8 dims, gate TEST COMPLETE | "Crash/freeze" was a HARNESS bug (clicked titlebar `[aria-label="Close"]` → app exit 0) + an always-on freezeDetector amplifying GC jank (reverted, commit `072fd846b`). No real leak (forced-GC floor flat ~104MB). | Adoption pipeline ✅ proven E2E; remaining 6 templates + capability execution pending |
 
 ---
 

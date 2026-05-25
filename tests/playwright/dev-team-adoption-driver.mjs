@@ -95,6 +95,32 @@ async function clickButtonByText(text) {
   );
 }
 
+// ── Modal-scoped helpers ────────────────────────────────────────────────
+// DANGER: never click a close affordance globally. `chrome.close_window` is
+// literally "Close", so document.querySelector('[aria-label="Close"]') matches
+// the custom TITLEBAR window-close button — clicking it exits the whole Tauri
+// app (clean exit 0, looks exactly like a crash). Always scope to the adoption
+// modal subtree. This bit us twice and was misdiagnosed as a modal "freeze".
+const MODAL = '[aria-labelledby="adoption-matrix-title"]';
+
+/** Click a button by text, restricted to the adoption-modal subtree. */
+async function clickModalButtonByText(text) {
+  return evalJs(
+    `(() => { const root = document.querySelector(${JSON.stringify(MODAL)}); if (!root) return 'no-modal';` +
+    ` const b = Array.from(root.querySelectorAll('button'))` +
+    `.find((x) => ((x.innerText || '').replace(/\\s+/g,' ').trim().includes(${JSON.stringify(text)})));` +
+    ` if (!b) return 'no-button'; b.click(); return 'clicked'; })()`,
+  );
+}
+
+/** Close the open answer card via ITS close button (scoped to the modal, never the titlebar). */
+async function closeAnswerCard() {
+  return evalJs(
+    `(() => { const root = document.querySelector(${JSON.stringify(MODAL)}); if (!root) return 'no-modal';` +
+    ` const b = root.querySelector('[aria-label="Close"]'); if (!b) return 'no-close'; b.click(); return 'closed'; })()`,
+  );
+}
+
 const dumpTestids = async () => {
   const nodes = await query('[data-testid]');
   return nodes.filter((n) => n.visible).map((n) => ({ id: n.testId, text: (n.text || '').slice(0, 50) }));
