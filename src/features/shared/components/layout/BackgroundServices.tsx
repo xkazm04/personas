@@ -12,7 +12,7 @@ import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/sub_health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useLangfuseStackEvents } from "@/features/plugins/langfuse/useLangfuseStackEvents";
-import { useAssignmentNotificationDispatcher } from "@/features/pipeline/sub_assignments";
+import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/pipeline/sub_assignments";
 
 
 export default function BackgroundServices() {
@@ -34,5 +34,10 @@ export default function BackgroundServices() {
   // to awaiting_review. Fires regardless of which page is mounted so the
   // user is reached even if they're not on the team's canvas.
   useAssignmentNotificationDispatcher();
+  // Keeps team-assignment state (per-team lists + tracked detail) fresh from
+  // the orchestrator's background progress events regardless of the active
+  // module, so the live checklist + assignment board reflect reality the
+  // instant the user returns to the team.
+  useGlobalAssignmentProgressListener();
   return null;
 }

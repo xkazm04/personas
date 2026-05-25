@@ -258,12 +258,31 @@ export const createAssignmentSlice: StateCreator<
   },
 
   applyAssignmentProgress: (payload) => {
-    // Best-effort merge: trigger a detail re-fetch if cached. The progress
-    // event carries assignment_id + status; the full step state lives in
-    // the DB and is the source of truth. Re-fetching the detail keeps the
-    // checklist + step rows accurate without us trying to evolve a giant
-    // local state machine.
+    // The progress event carries assignment_id + status; the full step state
+    // lives in the DB and is the source of truth.
     const id = payload.assignment_id;
+    // Assignment-level transitions (step_id === null) flip the lifecycle
+    // status — patch it directly into the per-team lists so the board/list
+    // auto-flow between columns without a round-trip. Idempotent: only writes
+    // when the status actually changed.
+    if (payload.step_id === null) {
+      set((state) => {
+        let changed = false;
+        const next: Record<string, TeamAssignment[]> = {};
+        for (const [teamId, list] of Object.entries(state.assignmentsByTeam)) {
+          next[teamId] = list.map((a) => {
+            if (a.id === id && a.status !== payload.status) {
+              changed = true;
+              return { ...a, status: payload.status };
+            }
+            return a;
+          });
+        }
+        return changed ? { assignmentsByTeam: next } : {};
+      });
+    }
+    // Re-fetch the detail (steps + events) when it's being viewed/tracked, so
+    // the live checklist stays accurate without a local step state machine.
     if (get().assignmentDetails[id]) {
       void get().fetchAssignmentDetail(id);
     }

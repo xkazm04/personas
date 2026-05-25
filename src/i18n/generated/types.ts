@@ -13025,6 +13025,15 @@ export type Translations = {
       add_persona: string;
       add_persona_none: string;
       add_persona_draft_hint: string;
+      checklist_heading: string;
+      checklist_background_note: string;
+      step_status_pending: string;
+      step_status_matching: string;
+      step_status_running: string;
+      step_status_done: string;
+      step_status_skipped: string;
+      step_status_failed: string;
+      step_status_awaiting_review: string;
       back_to_teams: string;
       orchestrate: string;
       orchestrate_assignment: string;

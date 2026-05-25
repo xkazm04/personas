@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Sparkles, ArrowRight, Check, CircleDot, Plus } from 'lucide-react';
-import { decomposeTeamAssignmentGoal, createTeamAssignment, startTeamAssignment } from '@/api/pipeline/assignments';
+import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -224,14 +224,54 @@ interface OrchestrationConsoleProps {
   layout?: 'panel' | 'band';
 }
 
+/** Per-step status dot + label. Status strings come straight from the
+ *  orchestrator (TeamAssignmentStep.status); unknown values fall back to a
+ *  neutral pending style. */
+const STEP_STATUS_FALLBACK = { dot: 'bg-foreground/30', text: 'text-foreground/60' };
+const STEP_STATUS_STYLE: Record<string, { dot: string; text: string }> = {
+  pending: STEP_STATUS_FALLBACK,
+  matching: { dot: 'bg-amber-400', text: 'text-amber-300' },
+  running: { dot: 'bg-blue-400 animate-pulse', text: 'text-blue-300' },
+  done: { dot: 'bg-emerald-400', text: 'text-emerald-300' },
+  skipped: { dot: 'bg-foreground/30', text: 'text-foreground/50' },
+  failed: { dot: 'bg-red-400', text: 'text-red-300' },
+  awaiting_review: { dot: 'bg-amber-400', text: 'text-amber-300' },
+};
+
+export function StepStatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const ts = t.pipeline.team_studio;
+  const labelMap: Record<string, string> = {
+    pending: ts.step_status_pending,
+    matching: ts.step_status_matching,
+    running: ts.step_status_running,
+    done: ts.step_status_done,
+    skipped: ts.step_status_skipped,
+    failed: ts.step_status_failed,
+    awaiting_review: ts.step_status_awaiting_review,
+  };
+  const style = STEP_STATUS_STYLE[status] ?? STEP_STATUS_FALLBACK;
+  return (
+    <span className={`inline-flex items-center gap-1.5 typo-caption ${style.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+      {labelMap[status] ?? status}
+    </span>
+  );
+}
+
 export function OrchestrationConsole({ teamId, members }: OrchestrationConsoleProps) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
+  const createAssignment = usePipelineStore((s) => s.createTeamAssignment);
+  const startAssignment = usePipelineStore((s) => s.startAssignment);
   const [goal, setGoal] = useState('');
   const [decomposing, setDecomposing] = useState(false);
   const [steps, setSteps] = useState<DecomposedStep[] | null>(null);
   const [running, setRunning] = useState(false);
   const [launched, setLaunched] = useState<string | null>(null);
+  // Live detail for the launched assignment — kept fresh by the global
+  // progress listener (BackgroundServices) even if the user leaves this view.
+  const liveDetail = usePipelineStore((s) => (launched ? s.assignmentDetails[launched] : undefined));
 
   const personaName = useCallback(
     (id: string | null) => (id ? members.find((m) => m.personaId === id)?.name ?? null : null),
@@ -277,7 +317,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         assignedUseCaseId: null,
         dependsOnIndices: null,
       }));
-      const assignment = await createTeamAssignment({
+      const assignment = await createAssignment({
         teamId,
         title: g.length > 60 ? `${g.slice(0, 57)}…` : g,
         goal: g,
@@ -287,14 +327,16 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         companionOpId: null,
         steps: stepInputs,
       });
-      await startTeamAssignment(assignment.id);
+      if (!assignment) return;
+      // startAssignment caches the detail; the global listener keeps it live.
+      await startAssignment(assignment.id);
       setLaunched(assignment.id);
     } catch (err) {
       silentCatch('teamStudio/OrchestrationConsole:assign')(err);
     } finally {
       setRunning(false);
     }
-  }, [teamId, goal, steps]);
+  }, [teamId, goal, steps, createAssignment, startAssignment]);
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -337,12 +379,41 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         <AnimatePresence mode="wait">
           {launched && (
             <motion.div
-              key="launched"
+              key="live"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-card border border-emerald-500/25 bg-emerald-950/30 px-3 py-2 typo-body text-emerald-300"
+              className="flex flex-col gap-2"
             >
-              {ts.assignment_dispatched}
+              <div className="flex items-center justify-between">
+                <span className="typo-label uppercase tracking-wider text-foreground/70">{ts.checklist_heading}</span>
+                <span className="typo-caption text-foreground/50">{ts.checklist_background_note}</span>
+              </div>
+              {(liveDetail?.steps ?? []).length === 0 ? (
+                <p className="typo-body text-foreground/50 px-1">{ts.assignment_dispatched}</p>
+              ) : (
+                (liveDetail?.steps ?? []).map((step, i) => {
+                  const who = personaName(step.assignedPersonaId);
+                  return (
+                    <div key={step.id} className="rounded-card border border-primary/12 bg-secondary/20 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 text-primary typo-caption font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <span className="typo-body font-medium text-foreground truncate flex-1">{step.title}</span>
+                        {who && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 typo-caption text-indigo-300">
+                            → {who}
+                          </span>
+                        )}
+                        <StepStatusBadge status={step.status} />
+                      </div>
+                      {step.description && (
+                        <p className="mt-1 pl-7 typo-caption text-foreground/55 line-clamp-2">{step.description}</p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </motion.div>
           )}
 
