@@ -36,7 +36,6 @@ import { StalenessIndicator } from '@/features/shared/components/feedback/Stalen
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
-import { HealthDigestPanel } from '@/features/agents/sub_health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';
@@ -374,9 +373,9 @@ export default function DashboardHomeMissionControl() {
 }
 
 // ---------------------------------------------------------------------------
-// InstrumentsBay — secondary row with Top Performers, Traffic chart, Health
-// Digest, and analytics inserts. Mirrors the three-column content the
-// baseline renders in its main grid, styled as a cockpit sub-panel.
+// InstrumentsBay — secondary row with Top Performers, Traffic chart, and the
+// rotation-overview panel. Mirrors the three-column content the baseline
+// renders in its main grid, styled as a cockpit sub-panel.
 // ---------------------------------------------------------------------------
 
 export const InstrumentsBay = memo(function InstrumentsBay({
@@ -399,33 +398,27 @@ export const InstrumentsBay = memo(function InstrumentsBay({
           <TopPerformersWidget highlightPersonaId={highlightPersonaId} />
         </div>
 
-        {/* Center — traffic chart + analytics */}
-        <div className="space-y-4">
-          <div className="relative">
-            <StalenessIndicator
-              fetchedAt={executionDashboardFetchedAt}
-              hasError={executionDashboardError}
-              label="Traffic"
-            />
-            {personaName && (
-              <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
-            )}
-            <TrafficErrorsChart
-              chartData={chartData}
-              totalTraffic={chartTotals.totalTraffic}
-              totalErrors={chartTotals.totalErrors}
-            />
-          </div>
-          <Suspense fallback={null}>
-            <AnalyticsInserts position="center" />
-          </Suspense>
+        {/* Center — traffic chart */}
+        <div className="relative">
+          <StalenessIndicator
+            fetchedAt={executionDashboardFetchedAt}
+            hasError={executionDashboardError}
+            label="Traffic"
+          />
+          {personaName && (
+            <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
+          )}
+          <TrafficErrorsChart
+            chartData={chartData}
+            totalTraffic={chartTotals.totalTraffic}
+            totalErrors={chartTotals.totalErrors}
+          />
         </div>
 
-        {/* Right — health digest + analytics */}
+        {/* Right — rotation overview */}
         <div className="space-y-4">
-          <HealthDigestPanel />
           <Suspense fallback={null}>
-            <AnalyticsInserts position="right" />
+            <AnalyticsInserts />
           </Suspense>
         </div>
       </div>
