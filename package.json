@@ -47,6 +47,7 @@
     "test:playwright": "playwright test --config=playwright.config.ts",
     "test:playwright:companion": "playwright test --config=playwright.config.ts athena-conversation",
     "test:playwright:tour": "playwright test --config=playwright.config.ts getting-started-tour",
+    "test:playwright:tours": "playwright test --config=playwright.config.ts tours-explore",
     "test:watch": "vitest",
     "test:e2e:cli": "vitest run --config vitest.e2e.config.ts",
     "test:integration:cli": "vitest run --config vitest.integration.config.ts",
