@@ -1,7 +1,12 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 /**
- * Hook that wraps an async function with loading + error state management.
+ * Canonical hook for one-shot async actions: wraps an async function with
+ * loading + error state and automatic set-state-after-unmount safety.
+ *
+ * Prefer this over hand-rolling a `useState` loading/error pair (the codebase
+ * has ~70% of component fetches doing so). It is unmount-safe by default — no
+ * caller wiring required.
  *
  * Replaces the common pattern:
  * ```ts
@@ -33,8 +38,17 @@ export function useAsyncAction<T = void>(
   const [error, setError] = useState<string | null>(null);
   const mountedRef = useRef(true);
 
-  // Track mount state to avoid set-state-after-unmount
-  // Using a ref + cleanup instead of useEffect to keep the hook lightweight
+  // Auto unmount-safety: flip mountedRef on real unmount so execute() never
+  // set-states after unmount, with zero caller wiring. (Previously this was
+  // opt-in via the returned `cleanup`, which most call sites never invoked —
+  // so the guard silently did nothing.) The effect re-sets true on mount to
+  // stay correct under StrictMode's mount→unmount→mount double-invoke.
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  // Retained for back-compat / manual early teardown; unmount no longer needs it.
   const cleanup = useCallback(() => { mountedRef.current = false; }, []);
 
   const execute = useCallback(async () => {

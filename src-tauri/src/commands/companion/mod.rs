@@ -24,9 +24,12 @@ pub mod stt;
 pub mod templates;
 pub mod voice;
 
+use std::panic::AssertUnwindSafe;
 use std::sync::Arc;
 use std::sync::OnceLock;
 use std::time::Duration;
+
+use futures_util::FutureExt;
 use tauri::{AppHandle, Emitter, State};
 
 use crate::companion::brain::doctrine;
@@ -93,7 +96,12 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
             // orphan recovery). 30s is enough.
             tokio::time::sleep(Duration::from_secs(30)).await;
             loop {
-                let res = {
+                // Panic boundary: a panicking tick would otherwise kill this
+                // spawned task silently, stopping proactive scheduling until the
+                // process restarts. catch_unwind lets the loop survive — mirrors
+                // engine::subscription::run_single's panic guard. The trailing
+                // interval sleep prevents tight-looping on a persistent panic.
+                let tick_result = AssertUnwindSafe(async {
                     #[cfg(feature = "desktop")]
                     {
                         run_proactive_tick(&pool, &app_handle, Some(&ambient_ctx), Some(&rule_engine)).await
@@ -102,9 +110,19 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                     {
                         run_proactive_tick(&pool, &app_handle).await
                     }
-                };
-                if let Err(e) = res {
-                    tracing::warn!(error = %e, "proactive scheduler tick failed");
+                })
+                .catch_unwind()
+                .await;
+                match tick_result {
+                    Ok(Ok(_)) => {}
+                    Ok(Err(e)) => {
+                        tracing::warn!(error = %e, "proactive scheduler tick failed");
+                    }
+                    Err(_) => {
+                        tracing::error!(
+                            "proactive scheduler tick panicked — loop will continue on next interval"
+                        );
+                    }
                 }
                 tokio::time::sleep(PROACTIVE_TICK_INTERVAL).await;
             }
@@ -125,13 +143,31 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
             // Short startup delay so the bridge boot logs land first.
             tokio::time::sleep(Duration::from_secs(2)).await;
             loop {
-                #[cfg(feature = "ml")]
-                let res =
-                    crate::companion::jobs::worker_tick(&pool, embedder.as_ref(), &sink).await;
-                #[cfg(not(feature = "ml"))]
-                let res = crate::companion::jobs::worker_tick(&pool, &sink).await;
-                if let Err(e) = res {
-                    tracing::warn!(error = %e, "job worker tick failed");
+                // Panic boundary (see proactive scheduler above): keep the
+                // job-worker loop alive across a panicking tick instead of
+                // silently dropping the task and stalling the queue.
+                let tick_result = AssertUnwindSafe(async {
+                    #[cfg(feature = "ml")]
+                    {
+                        crate::companion::jobs::worker_tick(&pool, embedder.as_ref(), &sink).await
+                    }
+                    #[cfg(not(feature = "ml"))]
+                    {
+                        crate::companion::jobs::worker_tick(&pool, &sink).await
+                    }
+                })
+                .catch_unwind()
+                .await;
+                match tick_result {
+                    Ok(Ok(_)) => {}
+                    Ok(Err(e)) => {
+                        tracing::warn!(error = %e, "job worker tick failed");
+                    }
+                    Err(_) => {
+                        tracing::error!(
+                            "job worker tick panicked — loop will continue on next interval"
+                        );
+                    }
                 }
                 tokio::time::sleep(JOB_WORKER_INTERVAL).await;
             }
