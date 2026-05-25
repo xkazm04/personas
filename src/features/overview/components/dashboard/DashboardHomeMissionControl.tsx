@@ -38,6 +38,7 @@ import ResumeSetupCard from '@/features/overview/components/dashboard/cards/Resu
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
+import { DashboardRangeSwitch } from './widgets/DashboardRangeSwitch';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';
 import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { lazyRetry } from '@/lib/lazyRetry';
@@ -412,6 +413,7 @@ export const InstrumentsBay = memo(function InstrumentsBay({
             chartData={chartData}
             totalTraffic={chartTotals.totalTraffic}
             totalErrors={chartTotals.totalErrors}
+            rangeControl={<DashboardRangeSwitch />}
           />
         </div>
 
