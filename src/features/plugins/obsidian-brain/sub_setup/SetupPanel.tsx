@@ -4,6 +4,7 @@ import { Search, FolderOpen, CheckCircle2, XCircle, Save } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
+import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -173,8 +174,13 @@ export default function SetupPanel() {
                       : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
                   }`}
                 >
-                  <p className="typo-heading typo-card-label">{v.name}</p>
-                  <p className="typo-caption text-foreground/60 truncate">{v.path}</p>
+                  <div className="flex items-center gap-2.5">
+                    <ActivityDot tone={vaultPath === v.path ? 'active' : 'off'} />
+                    <div className="min-w-0">
+                      <p className="typo-heading typo-card-label truncate">{v.name}</p>
+                      <p className="typo-caption text-foreground/60 truncate">{v.path}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
