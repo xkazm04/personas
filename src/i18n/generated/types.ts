@@ -13034,6 +13034,13 @@ export type Translations = {
       step_status_skipped: string;
       step_status_failed: string;
       step_status_awaiting_review: string;
+      board_label: string;
+      board_col_queued: string;
+      board_col_running: string;
+      board_col_review: string;
+      board_col_done: string;
+      board_col_stopped: string;
+      board_empty: string;
       back_to_teams: string;
       orchestrate: string;
       orchestrate_assignment: string;
