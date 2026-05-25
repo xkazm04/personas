@@ -48,13 +48,20 @@ export function SettingRow({
   toggleSize = 'md',
   statusDot,
 }: SettingRowProps) {
+  const interactive = !disabled;
   const wrap =
     variant === 'card'
       ? 'flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors'
-      : 'flex items-start gap-3 px-1 py-2 border-b border-foreground/5 last:border-b-0';
+      : 'flex items-start gap-3 px-1 py-2 border-b border-foreground/5 last:border-b-0 transition-colors hover:bg-secondary/10';
 
   return (
-    <div className={wrap}>
+    // The whole row is a mouse hit-target that toggles; the AccessibleToggle
+    // below stays the single focusable/keyboard control (its own click stops
+    // propagation so the switch doesn't double-fire onChange).
+    <div
+      className={`${wrap}${interactive ? ' cursor-pointer select-none' : ''}`}
+      onClick={interactive ? onChange : undefined}
+    >
       {icon ? <div className="mt-0.5 shrink-0">{icon}</div> : null}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -68,7 +75,7 @@ export function SettingRow({
           <div className="typo-caption text-foreground/50 mt-1">{countLabel}</div>
         ) : null}
       </div>
-      <div className="shrink-0">
+      <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
         <AccessibleToggle
           checked={checked}
           onChange={onChange}
