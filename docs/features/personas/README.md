@@ -258,3 +258,9 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    Adoption answers are set once during template adoption and baked
    into the prompt. See
    [templates/07-adoption-answer-pipeline.md](../templates/07-adoption-answer-pipeline.md).
+7. **Deleting a persona shows a blast radius — including team membership.**
+   `persona_blast_radius` (`db/repos/core/personas.rs`) is the pre-delete
+   impact summary the All Personas delete-confirm modal renders. It now
+   includes a `team` impact ("Member of team(s): … — will be removed from
+   them") so removing an agent that belongs to a team warns first. The
+   `persona_team_members` rows cascade on delete; the warning is informational.
