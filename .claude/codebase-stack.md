@@ -417,8 +417,13 @@ npm run check:budget
 # Security audit
 npm run audit:security
 
-# Backend type check
-cd src-tauri && cargo check
+# Backend type check — MUST pass --features desktop.
+# Bare `cargo check` FAILS: Cargo.toml default=[] omits `desktop`, but a
+# capability references `updater:default` which only compiles under that
+# feature, so the tauri permission build-script errors with
+# "Permission updater:default not found" (added to stack 2026-05-25 after it
+# cost an /architect run two dead-end rebuilds). Mirrors the tauri:dev:lite profile.
+cd src-tauri && cargo check --features desktop
 
 # Tier-specific builds
 npm run build:starter   # starter tier
