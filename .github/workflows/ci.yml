@@ -98,16 +98,19 @@ jobs:
         # and feature names that don't match Cargo.toml [features].
         run: npm run check:tauri-configs
 
+      - name: Validate tier builds (starter / team)
+        # Tier variants flip frontend gating via VITE_APP_TIER and tree-shake
+        # disabled features. Validate starter + team compile here so a broken
+        # tier-gate import doesn't slip through. The builder tier is NOT built
+        # here — the canonical `npm run build` step below produces it, so
+        # building it again would be redundant (~one extra full Vite build per
+        # CI run). check:tiers writes to dist/ as a side effect, so it must run
+        # BEFORE the canonical build, which leaves dist/ as the builder bundle
+        # for the bundle-budget / baseline steps that read it.
+        run: npm run check:tiers starter team
+
       - name: Build
         run: npm run build
-
-      - name: Validate tier builds (starter / team / builder)
-        # The default `npm run build` produces the builder-tier bundle. Tier
-        # variants (starter/team) flip frontend gating via VITE_APP_TIER and
-        # tree-shake disabled features. Validate each tier compiles so a
-        # broken tier-gate import doesn't slip through. Same script developers
-        # run locally via `npm run check:tiers`.
-        run: npm run check:tiers
 
       - name: Check bundle size budget
         # Budget: 850 KB per chunk (main index is ~778 KB: systemStore + agentStore + Sidebar).
