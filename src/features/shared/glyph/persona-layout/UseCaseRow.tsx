@@ -81,6 +81,7 @@ export function UseCaseRow({
     <div
       role="button"
       tabIndex={0}
+      data-testid={`uc-row-${uc.id}`}
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -187,6 +188,7 @@ export function UseCaseRow({
           {onRun && (
             <button
               type="button"
+              data-testid={`uc-row-run-${uc.id}`}
               onClick={handleRunClick}
               disabled={isDisabled || isRunning}
               className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:cursor-not-allowed ${
