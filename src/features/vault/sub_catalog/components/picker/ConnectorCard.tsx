@@ -1,6 +1,7 @@
 import { Plug, Monitor, BadgeCheck, Sparkles } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import type { ConnectorDefinition } from '@/lib/types/types';
 import { getAuthMethods } from '@/lib/types/types';
 import { getAuthBadgeClasses, getAuthIcon } from '@/features/vault/shared/utils/authMethodStyles';
@@ -77,25 +78,27 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
       className={`group relative flex flex-col items-center gap-2 p-3 rounded-modal text-center min-h-[9rem] justify-between transition-[background-color,box-shadow] duration-200 hover:shadow-elevation-2 ${ringClass} ${bgClass}`}
     >
       {/* License tier badge (top-right) — first in stagger order */}
-      <motion.span
-        variants={badgeSubtle}
-        className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-card border ${tierMeta.bgClass} ${tierMeta.borderClass}`}
-        title={tx(ps.tier_license_tooltip, { tier: tierMeta.label })}
-      >
-        <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
-      </motion.span>
+      <Tooltip content={tx(ps.tier_license_tooltip, { tier: tierMeta.label })}>
+        <motion.span
+          variants={badgeSubtle}
+          className={`absolute top-1.5 right-1.5 inline-flex items-center justify-center w-6 h-6 rounded-card border ${tierMeta.bgClass} ${tierMeta.borderClass}`}
+        >
+          <TierIcon className={`w-3 h-3 ${tierMeta.textClass}`} />
+        </motion.span>
+      </Tooltip>
 
       {/* "New" ribbon (top-center) — connector added in last 30 days */}
       {isNew && (
-        <motion.span
-          variants={badgeStrong}
-          data-testid={`catalog-connector-new-${connector.name}`}
-          className="absolute -top-1.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-semibold uppercase tracking-wide bg-violet-500/15 border-violet-500/30 text-violet-300"
-          title={ps.new_connector_tooltip}
-        >
-          <Sparkles className="w-2.5 h-2.5" />
-          {ps.new_connector_ribbon}
-        </motion.span>
+        <Tooltip content={ps.new_connector_tooltip}>
+          <motion.span
+            variants={badgeStrong}
+            data-testid={`catalog-connector-new-${connector.name}`}
+            className="absolute -top-1.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-semibold uppercase tracking-wide bg-violet-500/15 border-violet-500/30 text-violet-300"
+          >
+            <Sparkles className="w-2.5 h-2.5" />
+            {ps.new_connector_ribbon}
+          </motion.span>
+        </Tooltip>
       )}
 
       {/* Auth method icons (top-left) */}
@@ -106,13 +109,13 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
         {authMethods.map((m) => {
           const Icon = getAuthIcon(m);
           return (
-            <span
-              key={m.id}
-              title={m.label}
-              className={`inline-flex items-center justify-center w-7 h-7 rounded-card backdrop-blur-sm border ${getAuthBadgeClasses(m)}`}
-            >
-              <Icon className="w-3.5 h-3.5" />
-            </span>
+            <Tooltip key={m.id} content={m.label}>
+              <span
+                className={`inline-flex items-center justify-center w-7 h-7 rounded-card backdrop-blur-sm border ${getAuthBadgeClasses(m)}`}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </span>
+            </Tooltip>
           );
         })}
       </motion.div>
@@ -130,17 +133,20 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
 
       {/* Recipe reuse indicator (bottom-right) */}
       {recipeIndicator && (
-        <motion.span
-          variants={badgeStrong}
-          className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-medium bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-          title={tx(
+        <Tooltip
+          content={tx(
             recipeIndicator.usageCount === 1 ? ps.recipe_used_one : ps.recipe_used_other,
             { count: recipeIndicator.usageCount },
           )}
         >
-          <BadgeCheck className="w-2.5 h-2.5" />
-          {recipeIndicator.usageCount > 0 ? recipeIndicator.usageCount : ps.recipe_cached}
-        </motion.span>
+          <motion.span
+            variants={badgeStrong}
+            className="absolute bottom-1.5 right-1.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input border text-[10px] font-medium bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+          >
+            <BadgeCheck className="w-2.5 h-2.5" />
+            {recipeIndicator.usageCount > 0 ? recipeIndicator.usageCount : ps.recipe_cached}
+          </motion.span>
+        </Tooltip>
       )}
 
       {/* Large icon */}
