@@ -136,6 +136,12 @@ export function MemoryRow({
 
   const scopeBadge = <CapabilityScopeBadge useCaseId={memory.use_case_id} />;
 
+  // Status-accent left border (matches the Activity/Messages tables): only
+  // high-importance memories (>=4 of 5) carry the rose gutter accent that the
+  // ImportanceBar already uses, so the rows that matter most are scannable down
+  // the left edge. Lower-importance rows stay neutral to avoid gutter noise.
+  const importanceAccent = memory.importance >= 4 ? getImportanceColor(memory.importance) : 'transparent';
+
   const deleteButton = (
     <div className="flex-shrink-0" onClick={(e) => e.stopPropagation()}>
       {confirmDelete ? (
@@ -152,7 +158,7 @@ export function MemoryRow({
   );
 
   return (
-    <div data-testid={`memory-row-${memory.id}`} className={`animate-fade-slide-in border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}>
+    <div data-testid={`memory-row-${memory.id}`} style={{ borderLeftColor: importanceAccent }} className={`animate-fade-slide-in border-l-2 border-b border-primary/10 hover:bg-white/[0.05] transition-colors ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}>
       {/* Desktop row — grid columns mirror the table header in MemoriesPage */}
       <div className="hidden md:grid items-center py-3 cursor-pointer" style={{ gridTemplateColumns: gridTemplate }} onClick={onSelect}>
         <div className="px-4 flex items-center gap-2 min-w-0"><span className="typo-body text-foreground/90 truncate">{personaName}</span></div>
