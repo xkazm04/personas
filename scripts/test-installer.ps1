@@ -18,7 +18,9 @@
 # `powershell.exe` (5.1) and `pwsh` (7+).
 
 param(
-    [string]$Installer
+    [string]$Installer,
+    [ValidateSet('x64', 'arm64')]
+    [string]$Arch = 'x64'
 )
 
 $ErrorActionPreference = "Stop"
@@ -41,7 +43,7 @@ Write-Host "`n=== Personas Installer Acceptance Test ===" -ForegroundColor Cyan
 
 # -- Resolve installer path -------------------------------------------
 if (-not $Installer) {
-    $Installer = Get-ChildItem -Path "src-tauri\target\release\bundle\nsis\Personas_*_x64-setup.exe" -ErrorAction SilentlyContinue |
+    $Installer = Get-ChildItem -Path "src-tauri\target\release\bundle\nsis\Personas_*_$Arch-setup.exe" -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTime -Descending |
         Select-Object -First 1 -ExpandProperty FullName
 }
@@ -85,6 +87,17 @@ Test-Step "binary-size" {
     # Binary should be at least 20 MB (catches truncated/corrupt installs)
     if ($size -lt 20MB) { throw "binary is only $([math]::Round($size / 1MB, 1)) MB -- expected >20 MB" }
     Write-Host "($([math]::Round($size / 1MB, 1)) MB) " -NoNewline
+}
+
+Test-Step "onnxruntime-dll" {
+    # The ML feature (sqlite-vec + fastembed/ort) needs onnxruntime.dll next to
+    # the exe; ort's copy-dylibs places it in the build dir and NSIS packages it.
+    # verify-onnxruntime-bundling.mjs checks the BUILD dir, but nothing checked
+    # the INSTALLED tree -- if NSIS ever drops it, the build-dir gate passes and
+    # the app boot-crashes ("ONNX Runtime binary not found"). Assert it on disk.
+    $dll = Join-Path $installDir "onnxruntime.dll"
+    if (-not (Test-Path $dll)) { throw "onnxruntime.dll not found at $dll -- ML features will crash at boot" }
+    Write-Host "($([math]::Round((Get-Item $dll).Length / 1MB, 1)) MB) " -NoNewline
 }
 
 # -- 3. Registry verification -----------------------------------------
