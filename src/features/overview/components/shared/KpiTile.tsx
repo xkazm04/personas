@@ -179,8 +179,16 @@ export const KpiTile = memo(function KpiTile({
         <span className={color}>{renderIcon(icon)}</span>
         <div className="flex-1 min-w-0">
           <div className="typo-caption uppercase tracking-widest text-foreground font-mono">{label}</div>
-          <div className={`font-mono text-xl tabular-nums ${color}`}>
-            {renderValue(value, numericValue, format, density, compact, language)}
+          <div className="flex items-baseline gap-1.5">
+            <span className={`font-mono text-xl tabular-nums ${color}`}>
+              {renderValue(value, numericValue, format, density, compact, language)}
+            </span>
+            {trendDisplay && (
+              <span className={`flex items-center gap-0.5 typo-caption font-mono ${trendDisplay.trendColor}`}>
+                <trendDisplay.TIcon className="w-3 h-3" />
+                {trendDisplay.text}
+              </span>
+            )}
           </div>
         </div>
       </div>

@@ -30,7 +30,7 @@ import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/compon
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
-import { KpiTile } from '@/features/overview/components/shared/KpiTile';
+import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
@@ -527,6 +527,19 @@ export const VitalsConsole = memo(function VitalsConsole({
 }) {
   const { language } = useTranslation();
 
+  // Recent-momentum delta for the Runs tile: compare the back half of the
+  // selected window against the front half. Gives the cumulative total a
+  // direction-of-travel signal without a backend period-comparison query.
+  const runsTrend = useMemo<KpiTrend | null>(() => {
+    if (points.length < 4) return null;
+    const mid = Math.floor(points.length / 2);
+    const sum = (arr: typeof points) => arr.reduce((s, p) => s + p.total_executions, 0);
+    const prev = sum(points.slice(0, mid));
+    const recent = sum(points.slice(mid));
+    if (prev === 0) return null;
+    return { pct: ((recent - prev) / prev) * 100, invertColor: false };
+  }, [points]);
+
   // Build a tiny static sparkline of traffic vs errors for context. The traffic
   // series gets a gradient-filled area (so the pane's only chart reads as
   // finished, not a bare polyline); errors stay a thin overlaid line. Both
@@ -566,7 +579,7 @@ export const VitalsConsole = memo(function VitalsConsole({
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} compact language={language} color="text-emerald-400" />
+            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} compact language={language} color="text-emerald-400" trend={runsTrend} />
             <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
             <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
             <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
