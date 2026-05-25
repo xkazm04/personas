@@ -138,19 +138,28 @@ export function useAutomationSetup(personaId: string, editAutomationId?: string 
     if (platform !== 'github_actions' || !platformCredentialId) {
       setGithubRepos([]); setGithubPerms(null); setGithubRepo(null); return;
     }
+    // Guard against a stale resolve overwriting state after platform /
+    // credential changes mid-flight (canonical shape: subscriptionLifecycle.ts).
+    let cancelled = false;
     setLoadingRepos(true);
     Promise.all([
       githubListRepos(platformCredentialId).catch(silentCatchNull("useAutomationSetup:githubListRepos")) as Promise<GitHubRepo[] | null>,
       githubCheckPermissions(platformCredentialId).catch(silentCatchNull("useAutomationSetup:githubCheckPermissions")),
-    ]).then(([repos, perms]) => { setGithubRepos(repos ?? []); setGithubPerms(perms); setLoadingRepos(false); });
+    ]).then(([repos, perms]) => {
+      if (cancelled) return;
+      setGithubRepos(repos ?? []); setGithubPerms(perms); setLoadingRepos(false);
+    });
+    return () => { cancelled = true; };
   }, [platform, platformCredentialId]);
 
   useEffect(() => {
     if (platform !== 'zapier' || !platformCredentialId) { setZapierZaps([]); return; }
+    let cancelled = false;
     setLoadingZaps(true);
     zapierListZaps(platformCredentialId)
-      .then((zaps) => { setZapierZaps(zaps); setLoadingZaps(false); })
-      .catch(() => { setZapierZaps([]); setLoadingZaps(false); });
+      .then((zaps) => { if (cancelled) return; setZapierZaps(zaps); setLoadingZaps(false); })
+      .catch(() => { if (cancelled) return; setZapierZaps([]); setLoadingZaps(false); });
+    return () => { cancelled = true; };
   }, [platform, platformCredentialId]);
 
   useEffect(() => {
