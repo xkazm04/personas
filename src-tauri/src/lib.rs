@@ -1226,9 +1226,18 @@ pub fn run() {
                 });
             }
 
-            // Attempt auth session restore from keyring
+            // Attempt auth session restore from keyring, then keep the session
+            // refreshed proactively. The Supabase JWT lives ~1h; without this
+            // loop it was only minted at startup and never renewed, so a
+            // long-running session 401'd ~1h after launch.
+            let refresh_loop_handle = restore_handle.clone();
+            let refresh_loop_state = restore_state.clone();
             tauri::async_runtime::spawn(async move {
                 commands::infrastructure::auth::try_restore_session(&restore_handle, &restore_state).await;
+                commands::infrastructure::auth::spawn_session_refresh_loop(
+                    refresh_loop_handle,
+                    refresh_loop_state,
+                );
             });
 
             Ok(())

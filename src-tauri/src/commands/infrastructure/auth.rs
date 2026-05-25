@@ -63,7 +63,11 @@ pub struct AuthStateInner {
     pub user: Option<AuthUser>,
     pub subscription: Option<AuthSubscription>,
     pub is_offline: bool,
-    pub token_expires_at: Option<std::time::Instant>,
+    /// Absolute wall-clock expiry of the Supabase access token. Wall-clock
+    /// (not `Instant`) on purpose: a monotonic clock does not advance while the
+    /// machine sleeps, so an `Instant` deadline made an overnight-suspended
+    /// session look valid while the server had already expired the JWT.
+    pub token_expires_at: Option<chrono::DateTime<chrono::Utc>>,
     /// Cryptographic nonce generated before initiating an OAuth flow.
     /// Validated against the `state` parameter returned in the deep-link callback
     /// to prevent token injection via crafted deep links (RFC 6749 §10.12).
@@ -79,7 +83,7 @@ pub struct AuthStateInner {
 impl AuthStateInner {
     fn is_token_expired(&self) -> bool {
         match self.token_expires_at {
-            Some(expires_at) => std::time::Instant::now() >= expires_at,
+            Some(expires_at) => chrono::Utc::now() >= expires_at,
             None => false,
         }
     }
@@ -666,13 +670,27 @@ pub async fn refresh_session(
     {
         let auth = state.auth.read().await;
         if let Some(expires_at) = auth.token_expires_at {
-            if expires_at > std::time::Instant::now() + std::time::Duration::from_secs(30) {
+            if expires_at > chrono::Utc::now() + chrono::Duration::seconds(30) {
                 tracing::debug!("Token already refreshed by a concurrent caller, skipping");
                 return Ok(auth.to_response());
             }
         }
     }
 
+    do_token_refresh(state.inner(), &app).await
+}
+
+/// Core token-refresh routine: exchange the stored refresh token for a fresh
+/// Supabase JWT, update in-memory auth state, push the JWT to the cloud client,
+/// and emit `AUTH_STATE_CHANGED`. Shared by `refresh_session` (command) and the
+/// proactive `session_refresh_loop`.
+///
+/// The caller MUST hold `state.refresh_lock` — this function does not lock, so
+/// it can run inside an already-locked critical section without deadlocking.
+async fn do_token_refresh(
+    state: &Arc<AppState>,
+    app: &AppHandle,
+) -> Result<AuthStateResponse, AppError> {
     let refresh_token =
         load_refresh_token().ok_or_else(|| AppError::Auth("No refresh token stored".into()))?;
 
@@ -685,7 +703,7 @@ pub async fn refresh_session(
             cache_user(&user);
 
             let expires_at =
-                std::time::Instant::now() + std::time::Duration::from_secs(token_resp.expires_in);
+                chrono::Utc::now() + chrono::Duration::seconds(token_resp.expires_in as i64);
 
             let access_token = SecureString::new(token_resp.access_token);
             let response = {
@@ -725,6 +743,55 @@ pub async fn refresh_session(
             Err(e)
         }
     }
+}
+
+/// Proactively renew the Supabase access token shortly before it expires.
+///
+/// The JWT lives ~1 hour; previously it was minted only at app startup
+/// (`try_restore_session`) and never renewed, so a session left running 401'd
+/// ~1h after launch with no recovery short of restart/re-login. This loop wakes
+/// every 60s, and when the token is within `REFRESH_LEAD_SECS` of expiry (and we
+/// have one), refreshes it via the same path as the manual command.
+pub fn spawn_session_refresh_loop(app: AppHandle, state: Arc<AppState>) {
+    /// Refresh when the access token has this little time left (5 minutes).
+    const REFRESH_LEAD_SECS: i64 = 300;
+
+    tauri::async_runtime::spawn(async move {
+        let mut ticker = tokio::time::interval(std::time::Duration::from_secs(60));
+        loop {
+            ticker.tick().await;
+
+            // Cheap pre-check: only proceed if authenticated and near expiry.
+            let near_expiry = {
+                let auth = state.auth.read().await;
+                auth.access_token.is_some()
+                    && auth.token_expires_at.is_some_and(|e| {
+                        e <= chrono::Utc::now() + chrono::Duration::seconds(REFRESH_LEAD_SECS)
+                    })
+            };
+            if !near_expiry {
+                continue;
+            }
+
+            let _guard = state.refresh_lock.lock().await;
+            // Re-check under the lock — a concurrent refresh may have just run.
+            let still_near = {
+                let auth = state.auth.read().await;
+                auth.access_token.is_some()
+                    && auth.token_expires_at.is_some_and(|e| {
+                        e <= chrono::Utc::now() + chrono::Duration::seconds(REFRESH_LEAD_SECS)
+                    })
+            };
+            if !still_near {
+                continue;
+            }
+
+            match do_token_refresh(&state, &app).await {
+                Ok(_) => tracing::debug!("Proactive session refresh succeeded"),
+                Err(e) => tracing::warn!(error = %e, "Proactive session refresh failed"),
+            }
+        }
+    });
 }
 
 // ---------------------------------------------------------------------------
@@ -812,7 +879,7 @@ pub async fn handle_auth_callback(app: &AppHandle, url_str: &str) -> Result<(), 
     let user = fetch_user_profile(&access_token).await?;
     cache_user(&user);
 
-    let expires_at = std::time::Instant::now() + std::time::Duration::from_secs(expires_in);
+    let expires_at = chrono::Utc::now() + chrono::Duration::seconds(expires_in as i64);
 
     // Update in-memory state
     let access_token = SecureString::new(access_token);
@@ -880,7 +947,7 @@ pub async fn try_restore_session(app: &AppHandle, state: &Arc<AppState>) {
             cache_user(&user);
 
             let expires_at =
-                std::time::Instant::now() + std::time::Duration::from_secs(token_resp.expires_in);
+                chrono::Utc::now() + chrono::Duration::seconds(token_resp.expires_in as i64);
 
             let response = {
                 let mut auth = state.auth.write().await;
