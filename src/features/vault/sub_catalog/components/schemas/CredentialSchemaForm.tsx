@@ -51,7 +51,20 @@ export function CredentialSchemaForm({
         case 'key-value-list': init[ef.key] = []; break;
       }
     }
-    return { ...init, ...initialExtras };
+    const merged = { ...init, ...initialExtras };
+    // Ensure every key-value-list pair carries a stable id so the renderer can
+    // key rows by id (index keys mis-attach row state after a delete). Pairs
+    // arriving via initialExtras (edit flows) may lack one.
+    for (const ef of config.extraFields ?? []) {
+      if (ef.kind === 'key-value-list' && Array.isArray(merged[ef.key])) {
+        merged[ef.key] = (merged[ef.key] as Array<{ id?: string; key?: string; value?: string }>).map((p) => ({
+          id: p.id ?? crypto.randomUUID(),
+          key: p.key ?? '',
+          value: p.value ?? '',
+        }));
+      }
+    }
+    return merged;
   });
 
   const createCredential = useVaultStore((s) => s.createCredential);

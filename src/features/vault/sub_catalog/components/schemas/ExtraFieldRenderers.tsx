@@ -25,6 +25,7 @@ export function ExtraFieldRenderer({
               value={(state[def.key] as string) ?? ''}
               onChange={(e) => setState((prev) => ({ ...prev, [def.key]: e.target.value }))}
               placeholder={def.placeholder}
+              aria-label={def.sectionTitle}
               rows={def.rows ?? 4}
               className="w-full px-3 py-2 bg-background/50 border border-border/50 rounded-modal text-foreground typo-code font-mono focus-ring focus-visible:border-primary/40 transition-all placeholder-muted-foreground/30 resize-y"
             />
@@ -63,19 +64,24 @@ function KeyValueListField({
   setState: React.Dispatch<React.SetStateAction<Record<string, unknown>>>;
 }) {
   const { t } = useTranslation();
-  const pairs = (state[def.key] as { key: string; value: string }[]) ?? [];
-  const [visibleIndices, setVisibleIndices] = useState<Set<number>>(new Set());
+  const s = t.vault.schemas;
+  type Pair = { id: string; key: string; value: string };
+  const pairs = (state[def.key] as Pair[]) ?? [];
+  // Track which values are revealed by stable id, not array index — index keys
+  // mis-attach DOM state (focus, the visibility toggle) to the wrong row after
+  // a delete shifts everything down.
+  const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
 
   const update = useCallback(
-    (next: { key: string; value: string }[]) => setState((prev) => ({ ...prev, [def.key]: next })),
+    (next: Pair[]) => setState((prev) => ({ ...prev, [def.key]: next })),
     [def.key, setState],
   );
 
-  const toggleVisibility = useCallback((index: number) => {
-    setVisibleIndices((prev) => {
+  const toggleVisibility = useCallback((id: string) => {
+    setVisibleIds((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   }, []);
@@ -89,13 +95,14 @@ function KeyValueListField({
             {def.sectionTitle}
           </h4>
           <button
-            onClick={() => update([...pairs, { key: '', value: '' }])}
+            type="button"
+            onClick={() => update([...pairs, { id: crypto.randomUUID(), key: '', value: '' }])}
             className={`flex items-center gap-1.5 px-2.5 py-1 typo-body rounded-modal border transition-colors ${
               def.addButtonClass ?? 'text-primary hover:text-primary/80 bg-primary/10 hover:bg-primary/15 border-primary/20'
             }`}
           >
             <Plus className="w-3 h-3" />
-            {def.addLabel ?? 'Add'}
+            {def.addLabel ?? s.kv_add}
           </button>
         </div>
 
@@ -104,8 +111,10 @@ function KeyValueListField({
         )}
 
         <div className="space-y-2">
-          {pairs.map((pair, i) => (
-            <div key={i} className="flex items-center gap-2">
+          {pairs.map((pair, i) => {
+            const revealed = visibleIds.has(pair.id);
+            return (
+            <div key={pair.id} className="flex items-center gap-2">
               <input
                 type="text"
                 value={pair.key}
@@ -114,48 +123,51 @@ function KeyValueListField({
                   next[i] = { ...pair, key: e.target.value };
                   update(next);
                 }}
-                placeholder="KEY"
+                placeholder={s.kv_key_placeholder}
+                aria-label={s.kv_key_label}
                 className="flex-1 px-2.5 py-1.5 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground font-mono focus-ring placeholder-muted-foreground/30"
               />
               <span className="text-foreground">=</span>
               <div className="flex-1 relative">
                 <input
-                  type={visibleIndices.has(i) ? 'text' : 'password'}
+                  type={revealed ? 'text' : 'password'}
                   value={pair.value}
                   onChange={(e) => {
                     const next = [...pairs];
                     next[i] = { ...pair, value: e.target.value };
                     update(next);
                   }}
-                  placeholder="value"
+                  placeholder={s.kv_value_placeholder}
+                  aria-label={s.kv_value_label}
                   className="w-full px-2.5 py-1.5 pr-8 bg-background/50 border border-border/50 rounded-modal typo-code text-foreground font-mono focus-ring placeholder-muted-foreground/30"
                 />
                 <button
                   type="button"
-                  onClick={() => toggleVisibility(i)}
+                  onClick={() => toggleVisibility(pair.id)}
+                  aria-label={revealed ? s.kv_hide_value : s.kv_show_value}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-foreground hover:text-foreground/80 transition-colors"
                 >
-                  {visibleIndices.has(i) ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  {revealed ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
               <button
+                type="button"
                 onClick={() => {
-                  update(pairs.filter((_, j) => j !== i));
-                  setVisibleIndices((prev) => {
-                    const next = new Set<number>();
-                    for (const idx of prev) {
-                      if (idx < i) next.add(idx);
-                      else if (idx > i) next.add(idx - 1);
-                    }
+                  update(pairs.filter((p) => p.id !== pair.id));
+                  setVisibleIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(pair.id);
                     return next;
                   });
                 }}
+                aria-label={s.kv_remove}
                 className="p-1 text-foreground hover:text-red-400 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </>
