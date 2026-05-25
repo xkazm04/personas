@@ -1463,7 +1463,10 @@ pub fn auto_provision_single(pool: &DbPool, credential_id: &str) {
 }
 
 /// Check if a credential is OAuth-based (has a refresh_token in its stored fields).
-fn is_oauth_credential(pool: &DbPool, cred: &crate::db::models::PersonaCredential) -> bool {
+pub(crate) fn is_oauth_credential(
+    pool: &DbPool,
+    cred: &crate::db::models::PersonaCredential,
+) -> bool {
     // First check metadata for oauth_type hint
     if let Some(ref meta_str) = cred.metadata {
         if let Ok(meta) = serde_json::from_str::<serde_json::Value>(meta_str) {

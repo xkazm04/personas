@@ -84,23 +84,28 @@ pub async fn startup_oauth_sweep(pool: &DbPool, app: Option<&AppHandle>) -> (u32
 
         let expires_at = meta.as_ref().and_then(extract_expires_at);
 
-        let Some(expires_at) = expires_at else {
-            continue;
+        let needs_refresh = match expires_at {
+            Some(expires_at) => {
+                let remaining = expires_at.signed_duration_since(now);
+                // Refresh if expiring within the (wider, startup) threshold or
+                // already expired but still within the staleness ceiling.
+                remaining.num_seconds() <= startup_threshold_secs
+                    && remaining.num_seconds() >= -STALENESS_CEILING_SECS
+            }
+            // No expiry metadata yet → seed un-seeded OAuth credentials so a
+            // connector that was connected while the app was closed (or before
+            // this seeding existed) starts being tracked immediately on launch.
+            None => crate::engine::rotation::is_oauth_credential(pool, cred),
         };
 
-        let remaining = expires_at.signed_duration_since(now);
-        // Refresh if expired (up to STALENESS_CEILING) or expiring within threshold
-        if remaining.num_seconds() > startup_threshold_secs
-            || remaining.num_seconds() < -STALENESS_CEILING_SECS
-        {
+        if !needs_refresh {
             continue;
         }
 
         tracing::info!(
             credential_id = %cred.id,
             credential_name = %cred.name,
-            expires_in_secs = remaining.num_seconds(),
-            "Startup OAuth sweep: refreshing expired/expiring token"
+            "Startup OAuth sweep: refreshing expired/expiring/unseeded token"
         );
 
         match refresh_single_credential(pool, cred).await {
@@ -166,17 +171,32 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
 
         let expires_at = meta.as_ref().and_then(extract_expires_at);
 
-        let Some(expires_at) = expires_at else {
-            continue;
+        let needs_refresh = match expires_at {
+            Some(expires_at) => {
+                oauth_eligible += 1;
+                let remaining = expires_at.signed_duration_since(now);
+                // Refresh if expiring soon, but not if expired beyond the
+                // staleness ceiling (those need re-auth, not a refresh).
+                remaining.num_seconds() <= REFRESH_THRESHOLD_SECS
+                    && remaining.num_seconds() >= -STALENESS_CEILING_SECS
+            }
+            None => {
+                // No expiry metadata yet. For an OAuth credential this means it
+                // was just connected and never seeded — refresh once now so the
+                // proactive path can track its expiry from here on. Without this
+                // seed, a freshly connected connector wasn't refreshed until the
+                // 1-day keepalive policy first fired (~24h later), which is the
+                // window where access tokens silently expired → daily 401s.
+                // Non-OAuth credentials (API keys, etc.) are skipped cheaply.
+                let is_oauth = crate::engine::rotation::is_oauth_credential(pool, cred);
+                if is_oauth {
+                    oauth_eligible += 1;
+                }
+                is_oauth
+            }
         };
 
-        oauth_eligible += 1;
-
-        let remaining = expires_at.signed_duration_since(now);
-        if remaining.num_seconds() > REFRESH_THRESHOLD_SECS
-            || remaining.num_seconds() < -STALENESS_CEILING_SECS
-        {
-            // Not expiring soon, or expired beyond staleness ceiling (skip)
+        if !needs_refresh {
             continue;
         }
 
