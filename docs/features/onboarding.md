@@ -61,6 +61,10 @@ Keeping narration as per-step metadata (rather than baked audio clips, as the ma
 
 `tests/playwright/getting-started-tour.spec.ts` drives the whole flow against a real running app (`npm run tauri:dev:test`, then `npm run test:playwright:tour`). It performs a **real** Opus build → smoke test → promote → execution. Tour control + assertions go through `window.__TEST__` helpers (`tourStart`/`tourReset`/`tourEmit`/`tourState`) exposed in `src/test/automation/bridge.ts` and wrapped in `tests/playwright/companion-bridge.ts`.
 
+`tests/playwright/tours-explore.spec.ts` (`npm run test:playwright:tours`) covers the five exploration tours (execution-observability, orchestration-events, plugins-explorer, schedules-mastery, templates-recipes) **read-only** — navigate + acknowledge each step start→finish, asserting structural validity. No builds, no mutation, so it's safe to run alongside other read-only smoke. Both specs share the single test shell — only one CLI runs Playwright at a time (see `docs/tests/parallel-cli-workflow.md`).
+
+The five exploration tours' copy was reviewed against the current app (2026-05-25). Notable corrections: Lab now lists the AI optimization modes (Improve/Breed/Evolve) + Regression; trigger setup happens on the Glyph build (the "When"/Trigger sigil) and is visualized on the Events Builder canvas, not in the placeholder Design→Triggers tab; schedules attach **per use-case** via the Use Cases tab (`UseCaseSubscriptions`); Fleet is a Dev Tools sub-tab (not a plugin), and Artist + Research Lab are dev-build-only.
+
 ## State and persistence
 
 Tour/onboarding state is split between local hook state and system slices:
