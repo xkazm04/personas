@@ -309,7 +309,15 @@
     "triage_jump": "সবচেয়ে জরুরি",
     "triage_detail_pipelines": "ডেটা উৎস সিঙ্ক হতে ব্যর্থ",
     "triage_up_next": "পরবর্তী",
-    "mission_control_eyebrow": "Mission Control"
+    "mission_control_eyebrow": "Mission Control",
+    "customize_label": "কাস্টমাইজ করুন",
+    "customize_title": "বিভাগ দেখান",
+    "customize_reset": "সব দেখান",
+    "section_heatmap": "কার্যক্রম হিটম্যাপ",
+    "section_instruments": "যন্ত্রপাতি",
+    "section_memory": "মেমরি পরামর্শ",
+    "section_fleet": "ফ্লিট অপ্টিমাইজেশন",
+    "section_routines": "রুটিন ও ভল্ট পরিবর্তন"
   },
   "execution_metrics": {
     "title": "এক্সিকিউশন মেট্রিক্স",

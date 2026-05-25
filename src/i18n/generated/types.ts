@@ -5328,6 +5328,14 @@ export type Translations = {
       todos_empty: string;
       scope_fleet: string;
       scope_fleet_hint: string;
+      customize_label: string;
+      customize_title: string;
+      customize_reset: string;
+      section_heatmap: string;
+      section_instruments: string;
+      section_memory: string;
+      section_fleet: string;
+      section_routines: string;
       triage_jump: string;
       triage_detail_pipelines: string;
       triage_up_next: string;

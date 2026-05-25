@@ -5268,7 +5268,15 @@
       "triage_jump": "Nejnaléhavější",
       "triage_detail_pipelines": "zdroje dat se nedaří synchronizovat",
       "triage_up_next": "Další",
-      "mission_control_eyebrow": "Mission Control"
+      "mission_control_eyebrow": "Mission Control",
+      "customize_label": "Přizpůsobit",
+      "customize_title": "Zobrazit sekce",
+      "customize_reset": "Zobrazit vše",
+      "section_heatmap": "Heatmapa aktivity",
+      "section_instruments": "Nástroje",
+      "section_memory": "Návrhy paměti",
+      "section_fleet": "Optimalizace flotily",
+      "section_routines": "Rutiny a změny trezoru"
     },
     "execution_metrics": {
       "title": "Metriky spouštění",

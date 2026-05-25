@@ -309,7 +309,15 @@
     "triage_jump": "가장 긴급",
     "triage_detail_pipelines": "동기화에 실패한 데이터 소스",
     "triage_up_next": "다음",
-    "mission_control_eyebrow": "Mission Control"
+    "mission_control_eyebrow": "Mission Control",
+    "customize_label": "맞춤 설정",
+    "customize_title": "섹션 표시",
+    "customize_reset": "모두 표시",
+    "section_heatmap": "활동 히트맵",
+    "section_instruments": "계측 도구",
+    "section_memory": "메모리 제안",
+    "section_fleet": "플릿 최적화",
+    "section_routines": "루틴 및 보관소 변경"
   },
   "execution_metrics": {
     "title": "실행 메트릭",

@@ -5268,7 +5268,15 @@
       "triage_jump": "Самое срочное",
       "triage_detail_pipelines": "источники данных не синхронизируются",
       "triage_up_next": "Далее",
-      "mission_control_eyebrow": "Mission Control"
+      "mission_control_eyebrow": "Mission Control",
+      "customize_label": "Настроить",
+      "customize_title": "Показать разделы",
+      "customize_reset": "Показать все",
+      "section_heatmap": "Тепловая карта активности",
+      "section_instruments": "Инструменты",
+      "section_memory": "Предложения памяти",
+      "section_fleet": "Оптимизация флота",
+      "section_routines": "Рутины и изменения хранилища"
     },
     "execution_metrics": {
       "title": "Метрики выполнения",

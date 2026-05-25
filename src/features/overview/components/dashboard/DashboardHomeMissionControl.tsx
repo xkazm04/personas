@@ -19,6 +19,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useSystemStore } from '@/stores/systemStore';
 import type { OverviewTab } from '@/lib/types/types';
 import { getOverviewBundle } from '@/api/overview/observability';
 import type { OverviewBundle } from '@/lib/bindings/OverviewBundle';
@@ -30,21 +31,22 @@ import { ContentBox, ContentBody, ContentHeader } from '@/features/shared/compon
 import { HeroMesh } from '@/features/shared/components/display/HeroMesh';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
-import { KpiTile } from '@/features/overview/components/shared/KpiTile';
+import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/KpiTile';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
-import { HealthDigestPanel } from '@/features/agents/sub_health';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
+import { DashboardRangeSwitch } from './widgets/DashboardRangeSwitch';
 import { TopPerformersWidget } from './widgets/TopPerformersWidget';
 import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { HomeCustomizePopover } from './HomeCustomizePopover';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -91,6 +93,7 @@ export default function DashboardHomeMissionControl() {
   const activeAlertCount = attention.active_alerts;
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
+  const hiddenSections = useSystemStore((s) => s.homeHiddenSections);
 
   // Mission Control panes that derive from the loaded execution feed honour
   // the header persona filter; fleet-wide aggregates (KPI tiles, traffic
@@ -238,7 +241,10 @@ export default function DashboardHomeMissionControl() {
         title={t.overview.dashboard.mission_control_eyebrow}
         subtitle={`${greeting}, ${displayName}`}
         actions={
-          <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+          <div className="flex items-center gap-2">
+            <HomeCustomizePopover />
+            <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+          </div>
         }
       />
 
@@ -320,7 +326,7 @@ export default function DashboardHomeMissionControl() {
               initial={enterInitial}
               animate="visible"
             >
-              {!isEmpty && (
+              {!isEmpty && !hiddenSections.includes('heatmap') && (
                 <motion.div variants={fadeUp}>
                   <ExecutionHeatmap
                     personaId={selectedPersonaId || undefined}
@@ -329,7 +335,7 @@ export default function DashboardHomeMissionControl() {
                 </motion.div>
               )}
 
-              {!isEmpty && (
+              {!isEmpty && !hiddenSections.includes('instruments') && (
                 <motion.div variants={fadeUp}>
                   <InstrumentsBay
                     chartData={chartData}
@@ -342,7 +348,7 @@ export default function DashboardHomeMissionControl() {
                 </motion.div>
               )}
 
-              {memoryActions.length > 0 && (
+              {memoryActions.length > 0 && !hiddenSections.includes('memory') && (
                 <motion.div variants={fadeUp} className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
                   <PaneHeader label="Memory" subtitle={`${memoryActions.length} suggestions`} />
                   <div className="p-3">
@@ -351,11 +357,13 @@ export default function DashboardHomeMissionControl() {
                 </motion.div>
               )}
 
-              <motion.div variants={fadeUp}>
-                <FleetOptimizationCard />
-              </motion.div>
+              {!hiddenSections.includes('fleet') && (
+                <motion.div variants={fadeUp}>
+                  <FleetOptimizationCard />
+                </motion.div>
+              )}
 
-              {!isEmpty && (
+              {!isEmpty && !hiddenSections.includes('routines') && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Suspense fallback={null}>
                     <UpcomingRoutinesCard />
@@ -374,9 +382,9 @@ export default function DashboardHomeMissionControl() {
 }
 
 // ---------------------------------------------------------------------------
-// InstrumentsBay — secondary row with Top Performers, Traffic chart, Health
-// Digest, and analytics inserts. Mirrors the three-column content the
-// baseline renders in its main grid, styled as a cockpit sub-panel.
+// InstrumentsBay — secondary row with Top Performers, Traffic chart, and the
+// rotation-overview panel. Mirrors the three-column content the baseline
+// renders in its main grid, styled as a cockpit sub-panel.
 // ---------------------------------------------------------------------------
 
 export const InstrumentsBay = memo(function InstrumentsBay({
@@ -399,33 +407,28 @@ export const InstrumentsBay = memo(function InstrumentsBay({
           <TopPerformersWidget highlightPersonaId={highlightPersonaId} />
         </div>
 
-        {/* Center — traffic chart + analytics */}
-        <div className="space-y-4">
-          <div className="relative">
-            <StalenessIndicator
-              fetchedAt={executionDashboardFetchedAt}
-              hasError={executionDashboardError}
-              label="Traffic"
-            />
-            {personaName && (
-              <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
-            )}
-            <TrafficErrorsChart
-              chartData={chartData}
-              totalTraffic={chartTotals.totalTraffic}
-              totalErrors={chartTotals.totalErrors}
-            />
-          </div>
-          <Suspense fallback={null}>
-            <AnalyticsInserts position="center" />
-          </Suspense>
+        {/* Center — traffic chart */}
+        <div className="relative">
+          <StalenessIndicator
+            fetchedAt={executionDashboardFetchedAt}
+            hasError={executionDashboardError}
+            label="Traffic"
+          />
+          {personaName && (
+            <div className="typo-caption text-foreground mb-1 truncate">{personaName}</div>
+          )}
+          <TrafficErrorsChart
+            chartData={chartData}
+            totalTraffic={chartTotals.totalTraffic}
+            totalErrors={chartTotals.totalErrors}
+            rangeControl={<DashboardRangeSwitch />}
+          />
         </div>
 
-        {/* Right — health digest + analytics */}
+        {/* Right — rotation overview */}
         <div className="space-y-4">
-          <HealthDigestPanel />
           <Suspense fallback={null}>
-            <AnalyticsInserts position="right" />
+            <AnalyticsInserts />
           </Suspense>
         </div>
       </div>
@@ -532,16 +535,44 @@ export const VitalsConsole = memo(function VitalsConsole({
 }) {
   const { language } = useTranslation();
 
-  // Build a tiny static sparkline of traffic vs errors for context
+  // Recent-momentum delta for the Runs tile: compare the back half of the
+  // selected window against the front half. Gives the cumulative total a
+  // direction-of-travel signal without a backend period-comparison query.
+  const runsTrend = useMemo<KpiTrend | null>(() => {
+    if (points.length < 4) return null;
+    const mid = Math.floor(points.length / 2);
+    const sum = (arr: typeof points) => arr.reduce((s, p) => s + p.total_executions, 0);
+    const prev = sum(points.slice(0, mid));
+    const recent = sum(points.slice(mid));
+    if (prev === 0) return null;
+    return { pct: ((recent - prev) / prev) * 100, invertColor: false };
+  }, [points]);
+
+  // Build a tiny static sparkline of traffic vs errors for context. The traffic
+  // series gets a gradient-filled area (so the pane's only chart reads as
+  // finished, not a bare polyline); errors stay a thin overlaid line. Both
+  // series mark their latest value with an end dot.
   const sparkline = useMemo(() => {
     if (!points.length) return null;
     const max = Math.max(...points.map((p) => p.total_executions), 1);
     const w = 200, h = 40;
+    const pad = 2; // keep end dots + stroke off the top/bottom edge
     const step = w / Math.max(points.length - 1, 1);
-    const toY = (v: number) => h - (v / max) * h;
-    const traffic = points.map((p, i) => `${i * step},${toY(p.total_executions).toFixed(1)}`).join(' ');
-    const errors = points.map((p, i) => `${i * step},${toY(p.failed).toFixed(1)}`).join(' ');
-    return { traffic, errors, w, h };
+    const toY = (v: number) => h - pad - (v / max) * (h - pad * 2);
+    const xy = (v: number, i: number) => ({ x: i * step, y: toY(v) });
+    const trafficPts = points.map((p, i) => xy(p.total_executions, i));
+    const errorPts = points.map((p, i) => xy(p.failed, i));
+    const toStr = (pts: { x: number; y: number }[]) => pts.map((p) => `${p.x},${p.y.toFixed(1)}`).join(' ');
+    const lastX = (points.length - 1) * step;
+    const area = `M0,${h} L${toStr(trafficPts).replace(/ /g, ' L')} L${lastX},${h} Z`;
+    return {
+      traffic: toStr(trafficPts),
+      errors: toStr(errorPts),
+      area,
+      trafficEnd: trafficPts[trafficPts.length - 1]!,
+      errorEnd: errorPts[errorPts.length - 1]!,
+      w, h,
+    };
   }, [points]);
 
   return (
@@ -556,7 +587,7 @@ export const VitalsConsole = memo(function VitalsConsole({
             </div>
           )}
           <div className="grid grid-cols-2 gap-3">
-            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} compact language={language} color="text-emerald-400" />
+            <KpiTile density="console" icon={<Activity className="w-3.5 h-3.5" />} label="Runs" numericValue={totalExecutions} compact language={language} color="text-emerald-400" trend={runsTrend} />
             <KpiTile density="console" icon={<Cpu className="w-3.5 h-3.5" />} label="Agents" numericValue={activeAgents} color="text-violet-400" />
             <KpiTile density="console" icon={<Bell className="w-3.5 h-3.5" />} label="Alerts" numericValue={activeAlertCount} color={activeAlertCount > 0 ? 'text-red-400' : 'text-foreground'} />
             <KpiTile density="console" icon={<ClipboardCheck className="w-3.5 h-3.5" />} label="Reviews" numericValue={pendingReviews} color={pendingReviews > 0 ? 'text-amber-400' : 'text-foreground'} />
@@ -569,8 +600,19 @@ export const VitalsConsole = memo(function VitalsConsole({
               <span>{points.length}d</span>
             </div>
             <svg viewBox={`0 0 ${sparkline.w} ${sparkline.h}`} className="w-full h-10" preserveAspectRatio="none" aria-hidden="true">
-              <polyline fill="none" stroke="#06b6d4" strokeWidth="1.5" points={sparkline.traffic} />
-              <polyline fill="none" stroke="#f43f5e" strokeWidth="1.5" points={sparkline.errors} />
+              <defs>
+                <linearGradient id="vitals-spark-traffic" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* baseline */}
+              <line x1="0" y1={sparkline.h - 2} x2={sparkline.w} y2={sparkline.h - 2} stroke="currentColor" className="text-primary/10" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <path d={sparkline.area} fill="url(#vitals-spark-traffic)" stroke="none" />
+              <polyline fill="none" stroke="#06b6d4" strokeWidth="1.5" points={sparkline.traffic} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+              <polyline fill="none" stroke="#f43f5e" strokeWidth="1.5" points={sparkline.errors} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx={sparkline.trafficEnd.x} cy={sparkline.trafficEnd.y} r="2" fill="#06b6d4" />
+              <circle cx={sparkline.errorEnd.x} cy={sparkline.errorEnd.y} r="2" fill="#f43f5e" />
             </svg>
           </div>
         )}

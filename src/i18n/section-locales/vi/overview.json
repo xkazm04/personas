@@ -309,7 +309,15 @@
     "triage_jump": "Khẩn cấp nhất",
     "triage_detail_pipelines": "nguồn dữ liệu không đồng bộ được",
     "triage_up_next": "Tiếp theo",
-    "mission_control_eyebrow": "Mission Control"
+    "mission_control_eyebrow": "Mission Control",
+    "customize_label": "Tùy chỉnh",
+    "customize_title": "Hiển thị các phần",
+    "customize_reset": "Hiển thị tất cả",
+    "section_heatmap": "Biểu đồ nhiệt hoạt động",
+    "section_instruments": "Công cụ đo lường",
+    "section_memory": "Gợi ý bộ nhớ",
+    "section_fleet": "Tối ưu hóa đội",
+    "section_routines": "Thói quen & thay đổi kho lưu trữ"
   },
   "execution_metrics": {
     "title": "Số liệu thực thi",

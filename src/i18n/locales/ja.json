@@ -5268,7 +5268,15 @@
       "triage_jump": "最優先",
       "triage_detail_pipelines": "データソースの同期に失敗",
       "triage_up_next": "次",
-      "mission_control_eyebrow": "Mission Control"
+      "mission_control_eyebrow": "Mission Control",
+      "customize_label": "カスタマイズ",
+      "customize_title": "セクションを表示",
+      "customize_reset": "すべて表示",
+      "section_heatmap": "アクティビティヒートマップ",
+      "section_instruments": "インストゥルメント",
+      "section_memory": "メモリ候補",
+      "section_fleet": "フリート最適化",
+      "section_routines": "ルーティンとVault変更"
     },
     "execution_metrics": {
       "title": "実行メトリクス",
