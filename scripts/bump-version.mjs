@@ -111,6 +111,25 @@ let cargo = readFileSync(cargoPath, "utf-8");
 cargo = cargo.replace(/^(version\s*=\s*")([^"]+)(")/m, `$1${next}$3`);
 writeFileSync(cargoPath, cargo);
 
-// ── 7. Print new version for CI to capture ─────────────────────────
+// ── 7. Update src-tauri/Cargo.lock (personas-desktop entry) ─────────
+//
+// Cargo.lock pins the workspace package's own version. If we bump Cargo.toml
+// but leave the lock stale, master's lockfile permanently lags: every
+// developer's next `cargo build` rewrites Cargo.lock (dirtying the tree) and
+// `--locked`/`--frozen` builds fail. The bump job runs on Node only (no Rust
+// toolchain), so we can't `cargo update` — do a targeted regex bump of the
+// personas-desktop package block instead. (\r? tolerates CRLF checkouts.)
+
+const lockPath = join(ROOT, "src-tauri", "Cargo.lock");
+let lock = readFileSync(lockPath, "utf-8");
+const lockRe = /(name = "personas-desktop"\r?\nversion = ")[^"]+(")/;
+if (!lockRe.test(lock)) {
+  console.error(`[bump-version] Could not find personas-desktop version in Cargo.lock — aborting so the lockfile can't silently drift.`);
+  process.exit(1);
+}
+lock = lock.replace(lockRe, `$1${next}$2`);
+writeFileSync(lockPath, lock);
+
+// ── 8. Print new version for CI to capture ─────────────────────────
 
 console.log(next);
