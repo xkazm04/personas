@@ -166,6 +166,7 @@ export function DevToolsProjectDropdown({
                   <button
                     key={project.id}
                     type="button"
+                    data-testid={`devtools-project-option-${project.id}`}
                     onClick={() => {
                       onSelect(project);
                       close();
