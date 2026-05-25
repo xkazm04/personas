@@ -370,10 +370,15 @@ pub fn get_stats(
 
         let where_clause = qb.where_clause();
 
-        // Total + avg importance + auto-generated count
+        // Total + avg importance + auto-generated count.
+        // `SUM(...)` over zero rows yields NULL (the aggregate row still exists
+        // with COUNT=0), so a team with no memories would make `row.get::<i64>`
+        // fail with InvalidColumnType — surfacing a spurious "Failed to load
+        // team memories" toast on every empty-team open. COALESCE it to 0, the
+        // same guard already applied to AVG above.
         let sql_agg = format!(
             "SELECT COUNT(*), COALESCE(AVG(importance), 0),
-                    SUM(CASE WHEN run_id IS NOT NULL THEN 1 ELSE 0 END)
+                    COALESCE(SUM(CASE WHEN run_id IS NOT NULL THEN 1 ELSE 0 END), 0)
              FROM team_memories {where_clause}"
         );
         let (total, avg_importance, auto_generated): (i64, f64, i64) =
