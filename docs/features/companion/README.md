@@ -36,6 +36,10 @@ Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes 
 
 **Audio-reactive glow.** While Athena speaks, a bloom behind the orb pulses with her actual voice level. `voicePlayback.play()` routes every TTS `<audio>` through a single shared `AnalyserNode` (`audioLevel.ts`); the orb subscribes via `subscribeAudioLevel` and drives the glow's opacity + scale imperatively in a `rAF` callback (no per-frame React re-renders). The tap is best-effort — if Web Audio is unavailable it silently degrades and playback is unaffected. Under `prefers-reduced-motion` the glow is a static bloom (no subscription).
 
+**Message reaction.** When a reply finishes (streaming `true → false`), the orb bumps a `messageNonce` that `AthenaAvatar` consumes to play a one-shot `athena_message_loop.mp4` clip: it crossfades in immediately, plays one loop (~10s, raises arms and back), then reverts to the sticky state. For that one loop the orb border glows in the theme `primary` colour (the avatar fires `onMessageActiveChange(true/false)` at clip start/end so the glow lasts exactly one loop). No-op under `prefers-reduced-motion`.
+
+**Avatar resource discipline (`AthenaAvatar`).** The footer + orb videos are a nice-to-have in a tiny space, so: only one clip plays at a time (others paused at frame 0); **playback pauses whenever the document is hidden** (`visibilitychange`) and resumes on return — zero decode while backgrounded; and under `prefers-reduced-motion` **no `<video>` mounts at all** — just the static poster (`athena_baseline.jpg`), so reduced-motion users pay no decode and get no animation. Clips are 320×320 / 12fps / CRF 30 / no-audio ping-pong (~110–160 KB), hardware-decoded.
+
 ## Athena desktop-aware lineage
 
 Companion's awareness of the user's desktop activity ships in phases. The decision-gate audit lives at [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md); the two shipped feature deliverables sit alongside this README:

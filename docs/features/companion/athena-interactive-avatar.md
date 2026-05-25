@@ -48,10 +48,13 @@ Today: `athena_idle.mp4`, `athena_thinking.mp4` (each ~1.4MB, locally bundled). 
 |---|---|---|---|
 | `idle` | default | yes | currently shipped |
 | `thinking` | persona is generating | yes | currently shipped |
-| `speaking` | TTS playback active | yes | needed |
+| `message` | reply finished (orb reaction) | one-shot | **shipped** — `athena_message_loop.mp4`; plays one loop then reverts to idle (see `AthenaAvatar`'s `messageNonce` one-shot + the orb's theme-colour border glow) |
+| `speaking` | TTS playback active | yes | needed (falls back to idle) |
 | `greeting` | session start | no | one-shot, transitions back to idle |
 | `acknowledging` | task accepted | no | brief nod / glow pulse |
 | `dismissive` | task rejected / cancelled | no | optional, low priority |
+
+> **Resource discipline (shipped in `AthenaAvatar`):** only one clip plays at a time; playback pauses on `document.hidden` (no decode while backgrounded); `prefers-reduced-motion` mounts no `<video>` (static poster only). This addresses the §Part 7 "GPU thermals on laptops" risk for the always-mounted footer/orb avatars.
 
 New clips can be generated offline by feeding the baseline JPG + a prompt to an image-to-video model (Runway Gen-3, Kling, Pika 2). Estimated cost ~$0.05–0.25 per clip, batch overnight. Clips ship in `public/athena/` — no runtime cloud dependency.
 

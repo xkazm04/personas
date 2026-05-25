@@ -216,6 +216,20 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     });
   }, [reduceMotion, speaking]);
 
+  // Message reaction: when a reply finishes (streaming true → false), bump a
+  // nonce so AthenaAvatar plays the one-shot `message` clip, and glow the orb
+  // border in the theme color for that single loop. The avatar flips
+  // `messageActive` on at clip start and off after one loop (and never fires
+  // under reduced motion, so the glow stays calm there too).
+  const [messageNonce, setMessageNonce] = useState(0);
+  const [messageActive, setMessageActive] = useState(false);
+  const prevStreamingRef = useRef(streaming);
+  useEffect(() => {
+    const wasStreaming = prevStreamingRef.current;
+    prevStreamingRef.current = streaming;
+    if (wasStreaming && !streaming) setMessageNonce((n) => n + 1);
+  }, [streaming]);
+
   return (
     <div
       className="group pointer-events-auto absolute select-none touch-none"
@@ -265,8 +279,23 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
               style={{ opacity: 0.3, transform: 'scale(1)', willChange: 'opacity, transform' }}
             />
           ))}
-        <span className="absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 ring-1 ring-primary/25 bg-primary/10">
-          <AthenaAvatar state={avatarState} fill className="absolute inset-0" />
+        {/* Message-reaction glow — theme-color border pulse while the
+            one-shot `message` clip plays (one loop). */}
+        {messageActive && (
+          <span aria-hidden className="absolute -inset-1.5 rounded-full bg-primary/55 blur-md animate-pulse" />
+        )}
+        <span
+          className={`absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 bg-primary/10 transition-[box-shadow] ${
+            messageActive ? 'ring-2 ring-primary' : 'ring-1 ring-primary/25'
+          }`}
+        >
+          <AthenaAvatar
+            state={avatarState}
+            fill
+            className="absolute inset-0"
+            messageNonce={messageNonce}
+            onMessageActiveChange={setMessageActive}
+          />
         </span>
         {talking && (
           <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-2 ring-background">

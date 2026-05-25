@@ -1,58 +1,54 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { silentCatch } from '@/lib/silentCatch';
 
 
 /**
- * Athena's video avatar — two stacked `<video>` elements that crossfade
- * between an idle loop and a thinking loop driven by `state`.
+ * Athena's video avatar — stacked `<video>` elements that crossfade between
+ * an idle loop and a thinking loop driven by `state`, plus a one-shot
+ * `message` clip the orb fires when Athena's reply lands.
  *
- * **Loop-boundary swap discipline.** Earlier iterations let the
- * crossfade fire mid-clip; the user saw "the video cuts in half"
- * because the thinking clip has a dramatic arc (calm → climax → calm
- * via ping-pong) and crossfading at frame 50/241 reveals a halo'd
- * climax pose right as the panel is supposed to settle. We now:
+ * **Loop-boundary swap discipline (idle ⇄ thinking).** Earlier iterations
+ * let the crossfade fire mid-clip; the user saw "the video cuts in half"
+ * because the thinking clip has a dramatic arc (calm → climax → calm via
+ * ping-pong) and crossfading at frame 50/241 reveals a halo'd climax pose.
+ * So idle↔thinking swaps only commit at a loop boundary (the active clip's
+ * `ended`). `displayState` (what's visible) is tracked separately from
+ * `state` (what the caller wants); a `state` change updates a ref and the
+ * swap lands at frame 0 of both clips. The `message` one-shot is the
+ * exception — it crossfades in *immediately* so the reaction feels prompt.
  *
- * 1. Drop the `loop` attribute. Each video manually replays from
- *    frame 0 in its `onEnded` handler. This means `ended` actually
- *    fires (HTMLMediaElement suppresses `ended` while `loop=true`),
- *    giving us a deterministic "loop boundary" event.
- * 2. Track `displayState` (what's visible) separately from `state`
- *    (what the caller wants). `state` changes update a ref;
- *    `displayState` only flips on the active video's `ended` event.
- *    Result: the swap always lands at frame 0 of both clips, the
- *    crossfade is between two matching poses, and the user never
- *    sees a mid-arc cut.
- * 3. Inactive video is paused at frame 0. No background CPU; the
- *    incoming clip is always pre-rolled to a clean starting frame.
+ * Source files (`/public/athena/`, all 320×320 / 12fps / CRF 30 / no audio,
+ * ping-pong so the end blends back to the start pose):
+ *   - `athena_idle_loop.mp4`, `athena_thinking_loop.mp4`
+ *   - `athena_message_loop.mp4` — one-shot reaction (raises arms and back).
  *
- * Source files (`/public/athena/`):
- *   - `athena_idle_loop.mp4` — 10s ping-pong (forward+reverse), 320×320,
- *     12fps, CRF 30, audio stripped. Re-encoded from a 960×960 master.
- *   - `athena_thinking_loop.mp4` — same encode pipeline; ping-pong so
- *     the dramatic ending blends back into the calm starting pose
- *     without a hard cut.
- *
- * Performance:
- *   - Lazy mount: this component only renders while the panel is
- *     open (panel is `lazy()` in App.tsx). 50ms tick before mount
- *     so the open-animation isn't competing with video decode.
- *   - Single decode: each video element decodes its own clip once.
- *     At 80px square the cost is <1% CPU; the watermark `fill` mode
- *     stretches them but that's still a single hardware-accelerated
- *     decode.
+ * **Resource discipline.** These videos are a nice-to-have in a tiny space;
+ * they must not burn CPU/GPU:
+ *   - Only ONE clip plays at a time; the others are paused at frame 0.
+ *   - Playback pauses whenever the document is hidden (tab/window in the
+ *     background) and resumes on return — zero decode when unseen.
+ *   - `prefers-reduced-motion` mounts NO `<video>` at all — just the static
+ *     poster — so there's no decode for users who opt out (and no message
+ *     reaction).
+ *   - Hardware-decoded at orb/footer sizes the cost is a fraction of 1% CPU.
  */
 export type AthenaState = 'idle' | 'thinking' | 'speaking';
 
 /**
- * Internal state — which clip is actually rendered. `speaking` is part of
- * the public {@link AthenaState} surface but no `athena_speaking_loop.mp4`
- * exists in the asset library yet (see
- * `docs/features/companion/athena-interactive-avatar.md` §Part 2.1). Until
- * the clip ships, `speaking` falls back to the idle clip so the prop is
- * accepted without runtime error. Once the clip lands, expand `ClipState`
- * to include `'speaking'` and add a third `<video>` ref.
+ * Which clip is actually rendered. `speaking` (part of {@link AthenaState})
+ * has no dedicated clip yet, so it falls back to idle. `message` is never a
+ * sticky `state` — it's driven only by the `messageNonce` one-shot.
  */
-type ClipState = 'idle' | 'thinking';
+type ClipState = 'idle' | 'thinking' | 'message';
+
+const CLIP_SRC: Record<ClipState, string> = {
+  idle: '/athena/athena_idle_loop.mp4',
+  thinking: '/athena/athena_thinking_loop.mp4',
+  message: '/athena/athena_message_loop.mp4',
+};
+
+const CLIP_ORDER: ClipState[] = ['idle', 'thinking', 'message'];
 
 function clipFor(state: AthenaState): ClipState {
   return state === 'speaking' ? 'idle' : state;
@@ -63,6 +59,8 @@ export function AthenaAvatar({
   size = 36,
   fill = false,
   className,
+  messageNonce,
+  onMessageActiveChange,
 }: {
   state: AthenaState;
   size?: number;
@@ -75,7 +73,17 @@ export function AthenaAvatar({
   fill?: boolean;
   /** Extra classes (positioning, opacity overrides) for the outer wrapper. */
   className?: string;
+  /**
+   * Increment to fire the one-shot `message` clip: it crossfades in
+   * immediately, plays one loop, then reverts to `state`. The orb bumps
+   * this when Athena's reply lands. No-op under reduced motion.
+   */
+  messageNonce?: number;
+  /** Fired `true` when the message clip starts, `false` after its one loop. */
+  onMessageActiveChange?: (active: boolean) => void;
 }) {
+  const reduce = useReducedMotion() ?? false;
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setMounted(true), 50);
@@ -84,108 +92,148 @@ export function AthenaAvatar({
 
   const idleRef = useRef<HTMLVideoElement>(null);
   const thinkingRef = useRef<HTMLVideoElement>(null);
+  const messageRef = useRef<HTMLVideoElement>(null);
+  const refFor = useCallback((c: ClipState): HTMLVideoElement | null => {
+    return c === 'idle'
+      ? idleRef.current
+      : c === 'thinking'
+        ? thinkingRef.current
+        : messageRef.current;
+  }, []);
 
-  // What the caller wants, narrowed to a renderable clip. Captured via
-  // ref so the `onEnded` handler (created once per render) sees the
-  // latest value without churn.
+  // What the caller wants, narrowed to a sticky clip (idle/thinking).
   const pendingRef = useRef<ClipState>(clipFor(state));
   useEffect(() => {
     pendingRef.current = clipFor(state);
   }, [state]);
 
-  // What's actually visible right now. Flips on the active video's
-  // `ended` event; never mid-clip.
+  // What's actually visible. Flips at a loop boundary for idle↔thinking, or
+  // immediately for the message one-shot.
   const [displayState, setDisplayState] = useState<ClipState>(clipFor(state));
 
   /**
-   * Drive the active/inactive split. The active clip plays from where
-   * it is (or from frame 0 on a fresh swap); the inactive clip pauses
-   * at frame 0 so it's pre-rolled for the next swap.
+   * Drive the active/inactive split. The active clip plays from frame 0
+   * (only while the document is visible); the others pause at frame 0 so
+   * they're pre-rolled for the next swap.
    */
-  const playActive = useCallback((which: ClipState) => {
-    const active = which === 'idle' ? idleRef.current : thinkingRef.current;
-    const inactive = which === 'idle' ? thinkingRef.current : idleRef.current;
-    if (active) {
-      active.currentTime = 0;
-      // Autoplay can be blocked until the WebView gets a user gesture;
-      // the panel-open click already provides one in normal flow, but
-      // we tolerate a rejection silently — the next state change retries.
-      active.play().catch(() => {});
-    }
-    if (inactive) {
-      try {
-        inactive.pause();
-      } catch (err) { silentCatch("features/plugins/companion/AthenaAvatar:catch1")(err); }
-      inactive.currentTime = 0;
-    }
-  }, []);
+  const playActive = useCallback(
+    (which: ClipState) => {
+      for (const c of CLIP_ORDER) {
+        const el = refFor(c);
+        if (!el) continue;
+        if (c === which) {
+          el.currentTime = 0;
+          // Autoplay can be blocked until a user gesture; tolerate rejection
+          // silently. Don't start playback while the tab is hidden.
+          if (!document.hidden) el.play().catch(() => {});
+        } else {
+          try {
+            el.pause();
+          } catch (err) {
+            silentCatch('features/plugins/companion/AthenaAvatar:catch1')(err);
+          }
+          el.currentTime = 0;
+        }
+      }
+    },
+    [refFor],
+  );
 
-  // Whenever the visible state changes (mount, or a swap committed by
-  // onEnded), reset both videos to the active/inactive split.
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || reduce) return;
     playActive(displayState);
-  }, [mounted, displayState, playActive]);
+  }, [mounted, reduce, displayState, playActive]);
 
-  /**
-   * Active video finished a loop. Decision: swap to the requested
-   * state if it differs from what we're showing, otherwise replay
-   * the same clip from frame 0 (manual loop).
-   */
+  // Pause/resume the active clip with document visibility — no decode while
+  // the app is backgrounded (the biggest resource win for an always-mounted
+  // footer/orb video).
+  useEffect(() => {
+    if (reduce) return;
+    const onVis = () => {
+      const el = refFor(displayState);
+      if (!el) return;
+      if (document.hidden) {
+        try {
+          el.pause();
+        } catch (err) {
+          silentCatch('features/plugins/companion/AthenaAvatar:visibility')(err);
+        }
+      } else {
+        el.play().catch(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [reduce, displayState, refFor]);
+
+  // One-shot message clip: crossfade in immediately on a fresh nonce, play
+  // one loop, then `onEnded` reverts to the sticky state. Skipped under
+  // reduced motion (no swap, no `onMessageActiveChange`).
+  const prevNonceRef = useRef(messageNonce);
+  useEffect(() => {
+    if (reduce) return;
+    if (messageNonce === undefined || messageNonce === prevNonceRef.current) return;
+    prevNonceRef.current = messageNonce;
+    onMessageActiveChange?.(true);
+    setDisplayState('message');
+  }, [messageNonce, reduce, onMessageActiveChange]);
+
   const onEnded = useCallback(
     (which: ClipState) => {
-      // Hidden clip's `ended` is irrelevant — only act for the active.
+      // Hidden clip's `ended` is irrelevant — only act for the active one.
       if (which !== displayState) return;
+      if (which === 'message') {
+        // One loop done — hand the display back to the sticky state.
+        onMessageActiveChange?.(false);
+        setDisplayState(pendingRef.current);
+        return;
+      }
       const target = pendingRef.current;
       if (target !== displayState) {
-        // Commit the swap. The `displayState` effect above resets both
-        // refs (active to currentTime=0+play, inactive to pause+0).
         setDisplayState(target);
       } else {
-        // Same state — manual self-loop.
-        const el = which === 'idle' ? idleRef.current : thinkingRef.current;
+        const el = refFor(which);
         if (el) {
           el.currentTime = 0;
           el.play().catch(() => {});
         }
       }
     },
-    [displayState],
+    [displayState, refFor, onMessageActiveChange],
   );
 
-  const videos = mounted ? (
+  // Reduced motion: render the static poster only — no <video> mounts.
+  const content = reduce ? (
+    <img
+      src="/athena/athena_baseline.jpg"
+      alt=""
+      className="absolute inset-0 w-full h-full object-cover"
+    />
+  ) : !mounted ? null : (
     <>
-      <video
-        ref={idleRef}
-        src="/athena/athena_idle_loop.mp4"
-        // baseline.jpg matches the first frame of both clips, so the
-        // still→video handoff is invisible while the browser decodes.
-        poster="/athena/athena_baseline.jpg"
-        muted
-        playsInline
-        preload="auto"
-        onEnded={() => onEnded('idle')}
-        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ease-out"
-        style={{ opacity: displayState === 'idle' ? 1 : 0 }}
-      />
-      <video
-        ref={thinkingRef}
-        src="/athena/athena_thinking_loop.mp4"
-        poster="/athena/athena_baseline.jpg"
-        muted
-        playsInline
-        preload="auto"
-        onEnded={() => onEnded('thinking')}
-        className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ease-out"
-        style={{ opacity: displayState === 'thinking' ? 1 : 0 }}
-      />
+      {CLIP_ORDER.map((c) => (
+        <video
+          key={c}
+          ref={c === 'idle' ? idleRef : c === 'thinking' ? thinkingRef : messageRef}
+          src={CLIP_SRC[c]}
+          // baseline.jpg matches the first frame of every clip, so the
+          // still→video handoff is invisible while the browser decodes.
+          poster="/athena/athena_baseline.jpg"
+          muted
+          playsInline
+          preload="auto"
+          onEnded={() => onEnded(c)}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-200 ease-out"
+          style={{ opacity: displayState === c ? 1 : 0 }}
+        />
+      ))}
     </>
-  ) : null;
+  );
 
   if (fill) {
     return (
       <div className={`pointer-events-none ${className ?? ''}`} aria-hidden>
-        {videos}
+        {content}
       </div>
     );
   }
@@ -196,7 +244,7 @@ export function AthenaAvatar({
       style={{ width: size, height: size }}
       aria-hidden
     >
-      {videos}
+      {content}
     </span>
   );
 }
