@@ -4,6 +4,7 @@ import { usePipelineStore } from '@/stores/pipelineStore';
 import { useToastStore } from '@/stores/toastStore';
 import { updateTeam } from '@/api/pipeline/teams';
 import { useTranslation } from '@/i18n/useTranslation';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { silentCatch } from '@/lib/silentCatch';
 import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
 
@@ -129,17 +130,13 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
       <div className="grid grid-cols-3 gap-3">
         <label className="flex flex-col gap-1.5">
           <span className="typo-label text-foreground/85">{ts.default_model_label}</span>
-          <select
-            value={modelKey}
-            onChange={(e) => setModelKey(e.target.value)}
-            className="rounded-input bg-secondary/30 border border-primary/20 text-foreground/90 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
-          >
+          <ThemedSelect value={modelKey} onValueChange={setModelKey}>
             {MODEL_OPTIONS.map((m) => (
               <option key={m.key} value={m.key}>
                 {m.key === 'inherit' ? ts.workspace_inherit : m.key.charAt(0).toUpperCase() + m.key.slice(1)}
               </option>
             ))}
-          </select>
+          </ThemedSelect>
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="typo-label text-foreground/85">{ts.default_budget_label}</span>
