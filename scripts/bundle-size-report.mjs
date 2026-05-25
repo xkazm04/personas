@@ -20,14 +20,13 @@
 import { readdirSync, statSync, readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { MAX_CHUNK_KB, MAX_TOTAL_KB } from "./lib/bundle-budget.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const ASSETS_DIR = join(ROOT, "dist", "assets");
 const BASELINE_PATH = join(__dirname, "bundle-baseline.json");
 
-const MAX_CHUNK_KB = 850;
-const MAX_TOTAL_KB = 5000;
 const TOP_N = 10;
 
 const args = process.argv.slice(2);

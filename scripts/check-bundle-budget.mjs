@@ -17,6 +17,10 @@
 
 import { readdirSync, statSync } from "fs";
 import { join } from "path";
+import {
+  MAX_CHUNK_KB as DEFAULT_MAX_CHUNK_KB,
+  MAX_TOTAL_KB as DEFAULT_MAX_TOTAL_KB,
+} from "./lib/bundle-budget.mjs";
 
 const args = process.argv.slice(2);
 
@@ -25,8 +29,10 @@ function flag(name, fallback) {
   return found ? Number(found.split("=")[1]) : fallback;
 }
 
-const MAX_CHUNK_KB = flag("max-chunk-kb", 850);
-const MAX_TOTAL_KB = flag("max-total-kb", 5000);
+// Flags still override (handy for ad-hoc local checks), but the defaults are
+// the shared budget — CI no longer needs to pass them.
+const MAX_CHUNK_KB = flag("max-chunk-kb", DEFAULT_MAX_CHUNK_KB);
+const MAX_TOTAL_KB = flag("max-total-kb", DEFAULT_MAX_TOTAL_KB);
 const ASSETS_DIR = join(process.cwd(), "dist", "assets");
 
 let files;
