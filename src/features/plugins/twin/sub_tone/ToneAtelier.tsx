@@ -219,7 +219,7 @@ ${transcript}`;
           <div className="flex-1 min-w-0">
             <p className={`text-[10px] uppercase tracking-[0.22em] ${palette.text} font-medium`}><DebtText k="auto_voice_studio_fee2fee9" /></p>
             <h1 className="typo-heading-lg text-foreground/95">{t.tone.title}</h1>
-            <p className="typo-caption text-foreground mt-0.5">{t.tone.subtitle}</p>
+            <p className="typo-caption text-foreground/60 mt-0.5">{t.tone.subtitle}</p>
           </div>
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40">
             <Stat label="configured" value={`${stats.configured}/${CHANNELS.length}`} />
@@ -257,7 +257,7 @@ ${transcript}`;
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="typo-caption font-medium text-foreground">{c.label}</p>
-                    <p className="text-[10px] text-foreground">{c.id === 'generic' ? 'default fallback' : has ? 'overrides generic' : 'falls back to generic'}</p>
+                    <p className="text-[10px] text-foreground/60">{c.id === 'generic' ? 'default fallback' : has ? 'overrides generic' : 'falls back to generic'}</p>
                   </div>
                   <span className={`w-1.5 h-1.5 rounded-full ${has ? cPalette.dot : 'bg-foreground/15'}`} />
                 </button>
@@ -319,7 +319,7 @@ ${transcript}`;
                             ? tx(t.tone.autoSuggestCta, { count: msgCount, channel: active.label })
                             : tx(t.tone.autoSuggestNoComms, { channel: active.label })}
                         </p>
-                        <p className="text-[10px] text-foreground mt-0.5">{t.tone.autoSuggestTooltip}</p>
+                        <p className="text-[10px] text-foreground/60 mt-0.5">{t.tone.autoSuggestTooltip}</p>
                       </div>
                       <Button
                         onClick={() => void handleAutoSuggest(active.id, active.label)}
