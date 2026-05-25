@@ -471,11 +471,19 @@ export default function MessageList() {
                     {virtualizer.getVirtualItems().map((virtualRow) => {
                       const message = filteredMessages[virtualRow.index]!;
                       const priority = priorityConfig[message.priority] ?? defaultPriority;
+                      // Status-accent left border (matches the Activity table):
+                      // high-priority rows read red, other unread rows read blue,
+                      // already-read rows stay neutral.
+                      const rowAccent = message.priority === 'high'
+                        ? 'border-l-red-400/70'
+                        : !message.is_read
+                          ? 'border-l-blue-400/70'
+                          : 'border-l-transparent';
                       return (
                         <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
                           onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
                           style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
-                          className={`grid items-center hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                          className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                         >
                           <div role="gridcell" className="flex items-center gap-2 px-4 min-w-0">
                             <PersonaIcon icon={message.persona_icon ?? null} color={message.persona_color ?? null} display="framed" frameSize="lg" />
