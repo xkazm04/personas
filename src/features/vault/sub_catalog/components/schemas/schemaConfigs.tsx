@@ -2,6 +2,7 @@ import { Server, Link, Database } from 'lucide-react';
 import type { SchemaFormConfig } from './schemaFormTypes';
 import { buildEnvMap, buildCustomHealthcheck } from './schemaFormTypes';
 import { healthcheckMcpPreview } from '@/api/agents/mcpTools';
+import { interpolate } from '@/i18n/useTranslation';
 import type { Translations } from '@/i18n/en';
 
 // Schemas are factory functions so each schema's prose, labels, and helpText
@@ -125,10 +126,10 @@ export function getCustomSchema(t: Translations): SchemaFormConfig {
         id: 'custom-headers', label: s.subtype_custom_headers_label, description: s.subtype_custom_headers_description,
         fields: [
           { key: 'base_url', label: s.field_base_url_label, type: 'url', required: true, placeholder: 'https://api.example.com', helpText: s.field_base_url_help },
-          { key: 'header_1_name', label: s.field_header_n_name_label.replace('{n}', '1'), type: 'text', required: true, placeholder: 'X-Custom-Key' },
-          { key: 'header_1_value', label: s.field_header_n_value_label.replace('{n}', '1'), type: 'password', required: true, placeholder: 'value' },
-          { key: 'header_2_name', label: s.field_header_n_name_label.replace('{n}', '2'), type: 'text', required: false, placeholder: 'X-Custom-Secret' },
-          { key: 'header_2_value', label: s.field_header_n_value_label.replace('{n}', '2'), type: 'password', required: false, placeholder: 'value' },
+          { key: 'header_1_name', label: interpolate(s.field_header_n_name_label, { n: 1 }), type: 'text', required: true, placeholder: 'X-Custom-Key' },
+          { key: 'header_1_value', label: interpolate(s.field_header_n_value_label, { n: 1 }), type: 'password', required: true, placeholder: 'value' },
+          { key: 'header_2_name', label: interpolate(s.field_header_n_name_label, { n: 2 }), type: 'text', required: false, placeholder: 'X-Custom-Secret' },
+          { key: 'header_2_value', label: interpolate(s.field_header_n_value_label, { n: 2 }), type: 'password', required: false, placeholder: 'value' },
         ],
         healthcheck: (values) => buildCustomHealthcheck('custom-headers', values),
       },
