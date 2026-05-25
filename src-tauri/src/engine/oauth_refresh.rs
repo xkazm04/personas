@@ -296,6 +296,34 @@ pub async fn force_refresh_single_credential(
     refresh_single_credential_inner(pool, cred, true).await
 }
 
+/// Fire-and-forget: immediately refresh a just-(re)connected OAuth credential so
+/// its `oauth_token_expires_at` metadata is CURRENT.
+///
+/// Without this, reconnecting a connector saves a fresh refresh_token but leaves
+/// the expiry metadata frozen at the last engine refresh. The proactive refresh
+/// engine's staleness-ceiling guard then skips the credential (its expiry looks
+/// days-stale), so the new 1-hour access token dies un-refreshed — the daily-401.
+/// Forcing one refresh here stamps a current expiry; the proactive path takes
+/// over from there. Errors are logged, not fatal: a revoked/expired refresh token
+/// surfaces via the normal needs-reauth flow on the next tick.
+pub fn spawn_connect_seed(pool: DbPool, cred: crate::db::models::PersonaCredential) {
+    tauri::async_runtime::spawn(async move {
+        match force_refresh_single_credential(&pool, &cred).await {
+            Ok(_) => tracing::info!(
+                credential_id = %cred.id,
+                service_type = %cred.service_type,
+                "OAuth connect-seed: stamped fresh token expiry on (re)connect"
+            ),
+            Err(e) => tracing::warn!(
+                credential_id = %cred.id,
+                service_type = %cred.service_type,
+                error = %e,
+                "OAuth connect-seed: refresh failed (token may be revoked — will need re-auth)"
+            ),
+        }
+    });
+}
+
 async fn refresh_single_credential_inner(
     pool: &DbPool,
     cred: &crate::db::models::PersonaCredential,

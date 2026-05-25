@@ -86,6 +86,14 @@ pub fn create_credential(
     // Auto-provision a keepalive rotation policy for OAuth credentials
     crate::engine::rotation::auto_provision_single(&state.db, &cred.id);
 
+    // Stamp a CURRENT oauth_token_expires_at for freshly-connected OAuth creds.
+    // A connect saves the refresh_token but no live expiry; without this the
+    // proactive refresh engine's staleness guard skips the credential and the
+    // 1-hour access token dies un-refreshed (the daily-401).
+    if crate::engine::rotation::is_oauth_credential(&state.db, &cred) {
+        crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone());
+    }
+
     Ok(cred)
 }
 
@@ -140,6 +148,13 @@ pub fn update_credential(
     // Auto-provision a keepalive rotation policy if this is now an OAuth credential
     if has_data_change {
         crate::engine::rotation::auto_provision_single(&state.db, &id);
+
+        // Re-stamp a current expiry on reconnect (the data change carries a new
+        // refresh_token). Otherwise the stale expiry keeps the proactive engine
+        // skipping this credential — the reconnect "works" but 401s within ~1h.
+        if crate::engine::rotation::is_oauth_credential(&state.db, &cred) {
+            crate::engine::oauth_refresh::spawn_connect_seed(state.db.clone(), cred.clone());
+        }
     }
 
     Ok(cred)
