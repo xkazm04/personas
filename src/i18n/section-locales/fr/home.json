@@ -110,7 +110,8 @@
     "pro_tip": "Conseil pro : ",
     "cat_agent_craft": "Création d'agents",
     "cat_observability": "Observabilité & Événements",
-    "cat_platform": "Plateforme & Configuration"
+    "cat_platform": "Plateforme & Configuration",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Votre profil",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (Animés)",
     "lucide_footer": "lucide-react -- bibliothèque icônes générique -- statique",
     "personas_footer": "9 icônes personnalisées -- motifs neuronaux/circuits -- animées CSS -- adaptatives au thème"
-  }
+  },
+  "commander": "Commander"
 }

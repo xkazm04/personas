@@ -132,7 +132,12 @@
     "reduce_motion_label": "मोशन घटाएं",
     "reduce_motion_hint": "पूरे ऐप में ट्रांज़िशन और एनिमेशन अक्षम करता है। टॉगल और थीम स्विच अभी भी लागू होते हैं, लेकिन बिना किसी हलचल के।",
     "reduce_motion_on": "पर",
-    "reduce_motion_off": "बंद"
+    "reduce_motion_off": "बंद",
+    "density": "घनत्व",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "सूचनाएं",

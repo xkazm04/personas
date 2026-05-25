@@ -26,5 +26,20 @@
   "sign_out": "로그아웃",
   "offline": "오프라인",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "프로젝트 없음(모두 표시)"
+  "project_picker_none": "프로젝트 없음(모두 표시)",
+  "shortcuts": {
+    "title": "키보드 단축키",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "키보드 단축키",
+    "section_navigation": "탐색",
+    "section_agents": "에이전트",
+    "section_editing": "편집",
+    "command_palette": "열기 command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "닫기 dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "실행 취소",
+    "redo": "다시 실행"
+  }
 }

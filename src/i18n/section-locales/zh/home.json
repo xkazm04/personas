@@ -110,7 +110,8 @@
     "pro_tip": "专业提示：",
     "cat_agent_craft": "代理构建",
     "cat_observability": "可观测性与事件",
-    "cat_platform": "平台与设置"
+    "cat_platform": "平台与设置",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "您的个人资料",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas（动画）",
     "lucide_footer": "lucide-react -- 通用图标库 -- 静态",
     "personas_footer": "9 个自定义图标 -- 神经/电路主题 -- CSS 动画 -- 主题自适应"
-  }
+  },
+  "commander": "Commander"
 }

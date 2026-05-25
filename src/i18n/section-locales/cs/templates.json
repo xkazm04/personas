@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Sbalit sekci",
     "questionnaire_member_summary_default": "{count} otázek, vše výchozí",
     "questionnaire_member_summary_customized": "{count} otázek, {customized} přizpůsobených",
-    "questionnaire_member_no_config": "Žádná konfigurace není potřeba"
+    "questionnaire_member_no_config": "Žádná konfigurace není potřeba",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

@@ -2078,7 +2078,9 @@
     "no_twins_configured": "Chưa cấu hình bản sao nào. Mở plugin Twin để tạo một bản sao — tác nhân này sau đó có thể áp dụng nó.",
     "twin_profile_aria": "Hồ sơ bản sao mà tác nhân này nói với tư cách",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
+    "langfuse_export": "Export traces to Langfuse",
+    "langfuse_export_desc": "Ship this persona's execution traces to your configured Langfuse instance. Off keeps THIS persona's traces local without disabling the integration globally — useful for persona handling sensitive content. On by default."
   },
   "tool_runner": {
     "no_tools": "Không có công cụ nào được gán cho tác nhân này.",
@@ -2457,6 +2459,7 @@
     "ungrouped_label": "Không nhóm",
     "ungrouped_title": "Thả thẻ persona vào đây để xóa ràng buộc nhóm của nó",
     "moved_toast": "Đã chuyển {persona} sang {group}",
-    "filter_clear_title": "Nhấp để xóa bộ lọc này"
+    "filter_clear_title": "Nhấp để xóa bộ lọc này",
+    "filter_all": "Không có preference"
   }
 }

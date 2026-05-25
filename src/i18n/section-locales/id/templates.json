@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Ciutkan bagian",
     "questionnaire_member_summary_default": "{count} pertanyaan, semua default",
     "questionnaire_member_summary_customized": "{count} pertanyaan, {customized} disesuaikan",
-    "questionnaire_member_no_config": "Tidak perlu konfigurasi"
+    "questionnaire_member_no_config": "Tidak perlu konfigurasi",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

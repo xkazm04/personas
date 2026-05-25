@@ -155,5 +155,13 @@
   "_comment_reject": "Generic reject action used in adoption build phase",
   "reject": "Reject",
   "_comment_refine": "Generic refine action used in adoption + scratch build phases",
-  "refine": "Refine"
+  "refine": "Refine",
+  "increase": "늘리기",
+  "decrease": "줄이기",
+  "field_checking_availability": "확인 중…",
+  "field_name_available": "이름 사용 가능",
+  "field_name_taken": "이미 사용 중",
+  "field_name_taken_suggestion": "Already in use — try {name}",
+  "form_error_summary_title_one": "{count} field needs your attention",
+  "form_error_summary_title_other": "{count} fields need your attention"
 }

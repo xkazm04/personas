@@ -26,5 +26,20 @@
   "sign_out": "Odhlásit se",
   "offline": "Offline",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "Žádný projekt (zobrazit vše)"
+  "project_picker_none": "Žádný projekt (zobrazit vše)",
+  "shortcuts": {
+    "title": "Klávesové zkratky",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "Klávesové zkratky",
+    "section_navigation": "Navigace",
+    "section_agents": "Agenti",
+    "section_editing": "Úpravy",
+    "command_palette": "Otevřít command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "Zavřít dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "Zpět",
+    "redo": "Znovu"
+  }
 }

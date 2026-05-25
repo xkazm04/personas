@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "セクションを折りたたむ",
     "questionnaire_member_summary_default": "{count}個の質問、すべてデフォルト",
     "questionnaire_member_summary_customized": "{count}個の質問、{customized}個カスタマイズ",
-    "questionnaire_member_no_config": "設定不要"
+    "questionnaire_member_no_config": "設定不要",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

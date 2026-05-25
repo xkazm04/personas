@@ -2078,7 +2078,9 @@
     "no_twins_configured": "未配置孪生体。打开孪生插件创建一个——此代理即可采用它。",
     "twin_profile_aria": "此代理以哪个孪生配置文件发言",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
+    "langfuse_export": "Export 跟踪s to Langfuse",
+    "langfuse_export_desc": "Ship this 人格's execution 跟踪s to your configured Langfuse instance. Off keeps THIS 人格's 跟踪s local without disabling the integration globally — useful for 人格s handling sensitive content. On by default."
   },
   "tool_runner": {
     "no_tools": "此代理未分配工具。",
@@ -2457,6 +2459,7 @@
     "ungrouped_label": "未分组",
     "ungrouped_title": "将人格卡片拖到此处以清除其分组",
     "moved_toast": "已将 {persona} 移至 {group}",
-    "filter_clear_title": "点击以清除此筛选"
+    "filter_clear_title": "点击以清除此筛选",
+    "filter_all": "无preference"
   }
 }

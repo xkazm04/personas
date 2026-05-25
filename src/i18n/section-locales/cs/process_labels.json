@@ -14,5 +14,7 @@
   "complete_suffix": "Dokončeno",
   "failed_suffix": "Selhalo",
   "pending_reviews_one": "{count} čekající kontrola čeká na schválení",
-  "pending_reviews_other": "{count} čekajících kontrol čeká na schválení"
+  "pending_reviews_other": "{count} čekajících kontrol čeká na schválení",
+  "team_assignment_failed": "Team Assignment",
+  "team_assignment_unmatched": "Team Assignment"
 }

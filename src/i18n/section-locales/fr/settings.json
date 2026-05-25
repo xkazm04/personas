@@ -132,7 +132,12 @@
     "reduce_motion_label": "Réduire les mouvements",
     "reduce_motion_hint": "Désactive les transitions et les animations dans l'application. Les bascules et les commutateurs de thème s'appliquent toujours, mais sans mouvement.",
     "reduce_motion_on": "Sur",
-    "reduce_motion_off": "Désactivé"
+    "reduce_motion_off": "Désactivé",
+    "density": "Densité",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "Notifications",
@@ -585,5 +590,26 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "limits": {
+    "title": "Limites de dépense",
+    "subtitle": "Monthly cost ceiling and budget tracking",
+    "description": "Set a monthly USD ceiling on your Personas spend. Stage 1 (this build) is informational — it shows progress and warnings but does not block runs. Stage 2 will enforce the ceiling at execution-dispatch time.",
+    "refresh": "Actualiser",
+    "ceiling_section": "Monthly ceiling",
+    "ceiling_hint": "Combined cost across all personas, refreshed when you reopen this tab. Set to 0 to disable the ceiling.",
+    "ceiling_placeholder": "0.00",
+    "ceiling_aria": "Monthly cost ceiling in USD",
+    "ceiling_unit": "USD / month",
+    "set": "Définir",
+    "saved": "Enregistré",
+    "unlimited": "(no ceiling)",
+    "usage_section": "Current month",
+    "of_ceiling": "of {ceiling}",
+    "progress_aria": "{pct}% of monthly ceiling used",
+    "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
+    "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
+    "no_ceiling_hint": "Aucun ceiling is set. Enter a USD amount above to start tracking against a budget.",
+    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
   }
 }

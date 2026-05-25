@@ -14,5 +14,7 @@
   "complete_suffix": "完成",
   "failed_suffix": "失败",
   "pending_reviews_one": "{count} 条待审核等待批准",
-  "pending_reviews_other": "{count} 条待审核等待批准"
+  "pending_reviews_other": "{count} 条待审核等待批准",
+  "team_assignment_failed": "Team Assignment",
+  "team_assignment_unmatched": "Team Assignment"
 }

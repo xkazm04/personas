@@ -132,7 +132,12 @@
     "reduce_motion_label": "Reducir el movimiento",
     "reduce_motion_hint": "Desactiva transiciones y animaciones en toda la aplicación. Se siguen aplicando alternancias y cambios de tema, pero sin movimiento.",
     "reduce_motion_on": "En",
-    "reduce_motion_off": "Apagado"
+    "reduce_motion_off": "Apagado",
+    "density": "Densidad",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "Notificaciones",

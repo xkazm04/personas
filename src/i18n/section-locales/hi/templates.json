@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "अनुभाग संक्षिप्त करें",
     "questionnaire_member_summary_default": "{count} प्रश्न, सभी डिफ़ॉल्ट",
     "questionnaire_member_summary_customized": "{count} प्रश्न, {customized} कस्टमाइज़्ड",
-    "questionnaire_member_no_config": "कोई कॉन्फ़िगरेशन आवश्यक नहीं"
+    "questionnaire_member_no_config": "कोई कॉन्फ़िगरेशन आवश्यक नहीं",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

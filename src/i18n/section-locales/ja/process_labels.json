@@ -14,5 +14,7 @@
   "complete_suffix": "完了",
   "failed_suffix": "失敗",
   "pending_reviews_one": "{count}件の承認待ちレビューがあります",
-  "pending_reviews_other": "{count}件の承認待ちレビューがあります"
+  "pending_reviews_other": "{count}件の承認待ちレビューがあります",
+  "team_assignment_failed": "Team Assignment",
+  "team_assignment_unmatched": "Team Assignment"
 }

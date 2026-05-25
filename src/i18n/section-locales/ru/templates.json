@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Свернуть раздел",
     "questionnaire_member_summary_default": "{count} вопросов, все по умолчанию",
     "questionnaire_member_summary_customized": "{count} вопросов, {customized} настроено",
-    "questionnaire_member_no_config": "Настройка не требуется"
+    "questionnaire_member_no_config": "Настройка не требуется",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

@@ -132,7 +132,12 @@
     "reduce_motion_label": "Giảm chuyển động",
     "reduce_motion_hint": "Vô hiệu hóa chuyển tiếp và hoạt ảnh trên ứng dụng. Các nút chuyển đổi và chuyển đổi chủ đề vẫn được áp dụng nhưng không có chuyển động.",
     "reduce_motion_on": "TRÊN",
-    "reduce_motion_off": "Tắt"
+    "reduce_motion_off": "Tắt",
+    "density": "Mật độ",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "Thông báo",

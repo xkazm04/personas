@@ -1459,6 +1459,7 @@
     "linked_decisions_approve": "Approve",
     "linked_decisions_reject": "Reject",
     "linked_memories_title": "Linked memories",
-    "linked_memories_empty": "No memories recorded for this execution."
+    "linked_memories_empty": "No memories recorded for this execution.",
+    "compose_personas_prompt": "Compose a cockpit with an overview of all my 人格s — show their status, recent activity, and anything that needs my attention."
   }
 }

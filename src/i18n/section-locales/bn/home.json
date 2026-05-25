@@ -110,7 +110,8 @@
     "pro_tip": "প্রো টিপ: ",
     "cat_agent_craft": "এজেন্ট ক্রাফট",
     "cat_observability": "পর্যবেক্ষণযোগ্যতা ও ইভেন্ট",
-    "cat_platform": "প্ল্যাটফর্ম ও সেটআপ"
+    "cat_platform": "প্ল্যাটফর্ম ও সেটআপ",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "আপনার প্রোফাইল",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (অ্যানিমেটেড)",
     "lucide_footer": "lucide-react -- সাধারণ আইকন লাইব্রেরি -- স্ট্যাটিক",
     "personas_footer": "৯টি কাস্টম আইকন -- নিউরাল/সার্কিট মোটিফ -- CSS-অ্যানিমেটেড -- থিম-অ্যাডাপ্টিভ"
-  }
+  },
+  "commander": "Commander"
 }

@@ -110,7 +110,8 @@
     "pro_tip": "Совет: ",
     "cat_agent_craft": "Создание агентов",
     "cat_observability": "Мониторинг и события",
-    "cat_platform": "Платформа и настройка"
+    "cat_platform": "Платформа и настройка",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Ваш профиль",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (анимированные)",
     "lucide_footer": "lucide-react — универсальная библиотека иконок — статические",
     "personas_footer": "9 пользовательских иконок — нейронные/схемные мотивы — CSS-анимация — адаптивная тема"
-  }
+  },
+  "commander": "Commander"
 }

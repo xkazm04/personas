@@ -110,7 +110,8 @@
     "pro_tip": "Consejo profesional: ",
     "cat_agent_craft": "Diseño de agentes",
     "cat_observability": "Observabilidad y eventos",
-    "cat_platform": "Plataforma y configuración"
+    "cat_platform": "Plataforma y configuración",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Tu perfil",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (Animado)",
     "lucide_footer": "lucide-react -- biblioteca de íconos genérica -- estático",
     "personas_footer": "9 íconos personalizados -- motivos neurales/circuitos -- animados con CSS -- adaptativos al tema"
-  }
+  },
+  "commander": "Commander"
 }

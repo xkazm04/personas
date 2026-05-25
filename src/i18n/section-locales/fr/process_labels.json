@@ -14,5 +14,7 @@
   "complete_suffix": "Terminé",
   "failed_suffix": "Échoué",
   "pending_reviews_one": "{count} révision en attente d'approbation",
-  "pending_reviews_other": "{count} révisions en attente d'approbation"
+  "pending_reviews_other": "{count} révisions en attente d'approbation",
+  "team_assignment_failed": "Team Assignment",
+  "team_assignment_unmatched": "Team Assignment"
 }

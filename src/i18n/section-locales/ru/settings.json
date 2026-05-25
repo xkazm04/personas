@@ -132,7 +132,12 @@
     "reduce_motion_label": "Уменьшите движение",
     "reduce_motion_hint": "Отключает переходы и анимацию в приложении. Переключатели и переключатели тем по-прежнему применяются, но без движения.",
     "reduce_motion_on": "На",
-    "reduce_motion_off": "Выключенный"
+    "reduce_motion_off": "Выключенный",
+    "density": "Плотность",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "Уведомления",

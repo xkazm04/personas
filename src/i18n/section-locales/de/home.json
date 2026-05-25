@@ -110,7 +110,8 @@
     "pro_tip": "Profi-Tipp: ",
     "cat_agent_craft": "Agenten-Craft",
     "cat_observability": "Observability & Ereignisse",
-    "cat_platform": "Plattform & Einrichtung"
+    "cat_platform": "Plattform & Einrichtung",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Ihr Profil",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (Animiert)",
     "lucide_footer": "lucide-react -- allgemeine Icon-Bibliothek -- statisch",
     "personas_footer": "9 benutzerdefinierte Icons -- neuronale/Schaltkreismotive -- CSS-animiert -- themenadaptiv"
-  }
+  },
+  "commander": "Commander"
 }

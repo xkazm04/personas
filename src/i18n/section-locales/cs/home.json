@@ -110,7 +110,8 @@
     "pro_tip": "Tip odborníka: ",
     "cat_agent_craft": "Tvorba agentů",
     "cat_observability": "Pozorovatelnost a události",
-    "cat_platform": "Platforma a nastavení"
+    "cat_platform": "Platforma a nastavení",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Váš profil",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (Animované)",
     "lucide_footer": "lucide-react – univerzální knihovna ikon – statická",
     "personas_footer": "9 vlastních ikon – neuronové motivy – CSS animované – adaptivní téma"
-  }
+  },
+  "commander": "Commander"
 }

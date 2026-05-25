@@ -132,7 +132,12 @@
     "reduce_motion_label": "减少运动",
     "reduce_motion_hint": "禁用整个应用程序的过渡和动画。切换和主题切换仍然适用，但没有移动。",
     "reduce_motion_on": "在",
-    "reduce_motion_off": "离开"
+    "reduce_motion_off": "离开",
+    "density": "密度",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "通知",
@@ -585,5 +590,26 @@
     "endpoint_build_promote": "Promote a tested draft",
     "server_auth_label": "Auth",
     "server_auth_description": "Send your key as Authorization: Bearer <token> on every request. Health is the only unauthenticated endpoint."
+  },
+  "limits": {
+    "title": "Spending Limits",
+    "subtitle": "Monthly cost ceiling and budget tracking",
+    "description": "Set a monthly USD ceiling on your Personas spend. Stage 1 (this build) is informational — it shows progress and warnings but does not block runs. Stage 2 will enforce the ceiling at execution-dispatch time.",
+    "refresh": "刷新",
+    "ceiling_section": "Monthly ceiling",
+    "ceiling_hint": "Combined cost across all 人格s, refreshed when you reopen this tab. Set to 0 to disable the ceiling.",
+    "ceiling_placeholder": "0.00",
+    "ceiling_aria": "Monthly cost ceiling in USD",
+    "ceiling_unit": "USD / month",
+    "set": "设置",
+    "saved": "已保存",
+    "unlimited": "(no ceiling)",
+    "usage_section": "Current month",
+    "of_ceiling": "of {ceiling}",
+    "progress_aria": "{pct}% of monthly ceiling used",
+    "over_budget": "You have exceeded your monthly ceiling. Stage 2 will block new executions when this happens; for now, treat this as a warning.",
+    "approaching_budget": "You are approaching your monthly ceiling. Consider reviewing recent runs.",
+    "no_ceiling_hint": "无ceiling is set. Enter a USD amount above to start tracking against a budget.",
+    "stage1_note": "Stage 1: informational only. Stage 2 will gate execution dispatch when the ceiling is crossed."
   }
 }

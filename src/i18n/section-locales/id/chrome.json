@@ -26,5 +26,20 @@
   "sign_out": "Keluar",
   "offline": "Luring",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "Tidak ada proyek (tampilkan semua)"
+  "project_picker_none": "Tidak ada proyek (tampilkan semua)",
+  "shortcuts": {
+    "title": "Pintasan keyboard",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "Pintasan keyboard",
+    "section_navigation": "Navigasi",
+    "section_agents": "Agen",
+    "section_editing": "Pengeditan",
+    "command_palette": "Buka command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "Tutup dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "Urungkan",
+    "redo": "Ulangi"
+  }
 }

@@ -110,7 +110,8 @@
     "pro_tip": "프로 팁: ",
     "cat_agent_craft": "에이전트 제작",
     "cat_observability": "관측성 & 이벤트",
-    "cat_platform": "플랫폼 & 설정"
+    "cat_platform": "플랫폼 & 설정",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "프로필",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (애니메이션)",
     "lucide_footer": "lucide-react -- 일반 아이콘 라이브러리 -- 정적",
     "personas_footer": "커스텀 아이콘 9개 -- 신경/회로 모티프 -- CSS 애니메이션 -- 테마 적응형"
-  }
+  },
+  "commander": "Commander"
 }

@@ -2078,7 +2078,9 @@
     "no_twins_configured": "ツインが設定されていません。Twinプラグインを開いて作成してください — その後このペルソナが採用できるようになります。",
     "twin_profile_aria": "このペルソナが話者として使うツインプロファイル",
     "cli_awareness": "Claude CLI session awareness",
-    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified."
+    "cli_awareness_desc": "Let this persona read recent turns from your active interactive Claude CLI session as additional context. Requires the global toggle in Companion → Setup → Sensory signals to also be ON. Read-only — your CLI session is never modified.",
+    "langfuse_export": "Export トレースs to Langfuse",
+    "langfuse_export_desc": "Ship this ペルソナ's execution トレースs to your configured Langfuse instance. Off keeps THIS ペルソナ's トレースs local without disabling the integration globally — useful for ペルソナs handling sensitive content. On by default."
   },
   "tool_runner": {
     "no_tools": "このペルソナにツールが割り当てられていません。",
@@ -2457,6 +2459,7 @@
     "ungrouped_label": "グループなし",
     "ungrouped_title": "ペルソナカードをここにドロップしてグループ割り当てを解除します",
     "moved_toast": "{persona} を {group} に移動しました",
-    "filter_clear_title": "クリックしてこのフィルターを解除"
+    "filter_clear_title": "クリックしてこのフィルターを解除",
+    "filter_all": "preference"
   }
 }

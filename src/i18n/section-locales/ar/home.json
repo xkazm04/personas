@@ -110,7 +110,8 @@
     "pro_tip": "نصيحة احترافية: ",
     "cat_agent_craft": "بناء الوكلاء",
     "cat_observability": "المراقبة والأحداث",
-    "cat_platform": "المنصة والإعداد"
+    "cat_platform": "المنصة والإعداد",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "ملفك الشخصي",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (متحركة)",
     "lucide_footer": "lucide-react -- مكتبة أيقونات عامة -- ثابتة",
     "personas_footer": "9 أيقونات مخصصة -- تصميمات عصبية/دائرية -- CSS متحرك -- متكيف مع المظهر"
-  }
+  },
+  "commander": "القائد"
 }

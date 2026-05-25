@@ -26,5 +26,20 @@
   "sign_out": "Cerrar sesion",
   "offline": "Sin conexion",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "Sin proyecto (mostrar todo)"
+  "project_picker_none": "Sin proyecto (mostrar todo)",
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "Atajos de teclado",
+    "section_navigation": "Navegación",
+    "section_agents": "Agentes",
+    "section_editing": "Edición",
+    "command_palette": "Abrir command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "Cerrar dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "Deshacer",
+    "redo": "Rehacer"
+  }
 }

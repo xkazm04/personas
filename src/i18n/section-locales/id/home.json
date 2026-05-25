@@ -110,7 +110,8 @@
     "pro_tip": "Tips pro: ",
     "cat_agent_craft": "Pembuatan Agen",
     "cat_observability": "Observabilitas & Acara",
-    "cat_platform": "Platform & Pengaturan"
+    "cat_platform": "Platform & Pengaturan",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Profil Anda",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (Animasi)",
     "lucide_footer": "lucide-react -- pustaka ikon generik -- statis",
     "personas_footer": "9 ikon kustom -- motif neural/sirkuit -- animasi CSS -- adaptif tema"
-  }
+  },
+  "commander": "Commander"
 }

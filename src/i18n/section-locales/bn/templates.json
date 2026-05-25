@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "বিভাগ সংকুচিত করুন",
     "questionnaire_member_summary_default": "{count}টি প্রশ্ন, সব ডিফল্ট",
     "questionnaire_member_summary_customized": "{count}টি প্রশ্ন, {customized}টি কাস্টমাইজড",
-    "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই"
+    "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

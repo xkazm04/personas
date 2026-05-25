@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Réduire la section",
     "questionnaire_member_summary_default": "{count} questions, toutes par défaut",
     "questionnaire_member_summary_customized": "{count} questions, {customized} personnalisées",
-    "questionnaire_member_no_config": "Aucune configuration requise"
+    "questionnaire_member_no_config": "Aucune configuration requise",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

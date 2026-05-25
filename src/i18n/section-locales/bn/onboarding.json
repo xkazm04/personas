@@ -141,5 +141,11 @@
   "tour_storage_unavailable_toast": "Your browser blocked our local storage, so the tour will restart each session. Try clearing site data or leaving private browsing.",
   "app_running_tooltip": "Running",
   "because_you_connected": "Because you connected {apps}, these templates fit best:",
-  "recommended_match_badge": "Matches {apps}"
+  "recommended_match_badge": "Matches {apps}",
+  "density_label": "ঘনত্ব",
+  "narration_replay": "Replay narration",
+  "narration_mute": "Mute narration",
+  "narration_unmute": "Unmute narration",
+  "local_tooling_label": "Built-in tooling",
+  "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
 }

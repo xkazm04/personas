@@ -26,5 +26,20 @@
   "sign_out": "تسجيل الخروج",
   "offline": "غير متصل بالإنترنت",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "لا مشروع (عرض الكل)"
+  "project_picker_none": "لا مشروع (عرض الكل)",
+  "shortcuts": {
+    "title": "اختصارات لوحة المفاتيح",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "اختصارات لوحة المفاتيح",
+    "section_navigation": "التنقل",
+    "section_agents": "الوكلاء",
+    "section_editing": "التحرير",
+    "command_palette": "فتح command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "إغلاق dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "تراجع",
+    "redo": "إعادة"
+  }
 }

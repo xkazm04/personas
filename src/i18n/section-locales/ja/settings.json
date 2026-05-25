@@ -132,7 +132,12 @@
     "reduce_motion_label": "動きを減らす",
     "reduce_motion_hint": "アプリ全体でトランジションとアニメーションを無効にします。トグルとテーマのスイッチは引き続き適用されますが、動きはありません。",
     "reduce_motion_on": "の上",
-    "reduce_motion_off": "オフ"
+    "reduce_motion_off": "オフ",
+    "density": "密度",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "通知",

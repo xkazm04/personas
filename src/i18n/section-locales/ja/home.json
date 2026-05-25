@@ -110,7 +110,8 @@
     "pro_tip": "プロのヒント: ",
     "cat_agent_craft": "エージェントクラフト",
     "cat_observability": "オブザーバビリティとイベント",
-    "cat_platform": "プラットフォームとセットアップ"
+    "cat_platform": "プラットフォームとセットアップ",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "プロフィール",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas（アニメーション）",
     "lucide_footer": "lucide-react -- 汎用アイコンライブラリ -- 静的",
     "personas_footer": "9つのカスタムアイコン -- ニューラル/サーキットモチーフ -- CSSアニメーション -- テーマ適応"
-  }
+  },
+  "commander": "Commander"
 }

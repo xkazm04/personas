@@ -26,5 +26,20 @@
   "sign_out": "退出登录",
   "offline": "离线",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "无项目（显示全部）"
+  "project_picker_none": "无项目（显示全部）",
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "键盘快捷键",
+    "section_navigation": "导航",
+    "section_agents": "代理",
+    "section_editing": "编辑",
+    "command_palette": "打开command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "关闭dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "撤销",
+    "redo": "重做"
+  }
 }

@@ -26,5 +26,20 @@
   "sign_out": "সাইন আউট",
   "offline": "অফলাইন",
   "mobile_preview": "Mobile preview",
-  "project_picker_none": "কোনো প্রকল্প নেই (সব দেখান)"
+  "project_picker_none": "কোনো প্রকল্প নেই (সব দেখান)",
+  "shortcuts": {
+    "title": "কীবোর্ড শর্টকাট",
+    "subtitle": "Press ? anytime to open this list",
+    "open_title": "কীবোর্ড শর্টকাট",
+    "section_navigation": "নেভিগেশন",
+    "section_agents": "এজেন্ট",
+    "section_editing": "সম্পাদনা",
+    "command_palette": "খুলুন command palette",
+    "show_shortcuts": "Show keyboard shortcuts",
+    "close_overlay": "বন্ধ করুন dialog or overlay",
+    "triage_reject": "Reject idea",
+    "triage_accept": "Accept idea",
+    "undo": "পূর্বাবস্থায় ফেরান",
+    "redo": "আবার করুন"
+  }
 }

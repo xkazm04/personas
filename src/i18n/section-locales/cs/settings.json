@@ -132,7 +132,12 @@
     "reduce_motion_label": "Snižte pohyb",
     "reduce_motion_hint": "Zakáže přechody a animace v celé aplikaci. Přepínače a přepínače motivů stále platí, ale bez pohybu.",
     "reduce_motion_on": "Na",
-    "reduce_motion_off": "Vypnuto"
+    "reduce_motion_off": "Vypnuto",
+    "density": "Hustota",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "Notifikace",

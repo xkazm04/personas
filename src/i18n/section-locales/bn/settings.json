@@ -132,7 +132,12 @@
     "reduce_motion_label": "গতি কমানো",
     "reduce_motion_hint": "অ্যাপ জুড়ে ট্রানজিশন এবং অ্যানিমেশন অক্ষম করে। টগল এবং থিম সুইচ এখনও প্রযোজ্য, কিন্তু নড়াচড়া ছাড়া।",
     "reduce_motion_on": "চালু",
-    "reduce_motion_off": "বন্ধ"
+    "reduce_motion_off": "বন্ধ",
+    "density": "ঘনত্ব",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "বিজ্ঞপ্তি",

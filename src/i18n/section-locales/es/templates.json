@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Contraer sección",
     "questionnaire_member_summary_default": "{count} preguntas, todas predeterminadas",
     "questionnaire_member_summary_customized": "{count} preguntas, {customized} personalizadas",
-    "questionnaire_member_no_config": "No requiere configuración"
+    "questionnaire_member_no_config": "No requiere configuración",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

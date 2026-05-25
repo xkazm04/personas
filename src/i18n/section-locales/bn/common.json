@@ -155,5 +155,13 @@
   "_comment_reject": "Generic reject action used in adoption build phase",
   "reject": "Reject",
   "_comment_refine": "Generic refine action used in adoption + scratch build phases",
-  "refine": "Refine"
+  "refine": "Refine",
+  "increase": "বাড়ান",
+  "decrease": "কমান",
+  "field_checking_availability": "পরীক্ষা করা হচ্ছে…",
+  "field_name_available": "নাম উপলভ্য",
+  "field_name_taken": "ইতিমধ্যে ব্যবহৃত",
+  "field_name_taken_suggestion": "Already in use — try {name}",
+  "form_error_summary_title_one": "{count} field needs your attention",
+  "form_error_summary_title_other": "{count} fields need your attention"
 }

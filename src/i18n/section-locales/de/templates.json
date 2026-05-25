@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Abschnitt einklappen",
     "questionnaire_member_summary_default": "{count} Fragen, alle Standardwerte",
     "questionnaire_member_summary_customized": "{count} Fragen, {customized} angepasst",
-    "questionnaire_member_no_config": "Keine Konfiguration nötig"
+    "questionnaire_member_no_config": "Keine Konfiguration nötig",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

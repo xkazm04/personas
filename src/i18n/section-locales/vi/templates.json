@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "Thu gọn phần",
     "questionnaire_member_summary_default": "{count} câu hỏi, tất cả mặc định",
     "questionnaire_member_summary_customized": "{count} câu hỏi, {customized} đã tùy chỉnh",
-    "questionnaire_member_no_config": "Không cần cấu hình"
+    "questionnaire_member_no_config": "Không cần cấu hình",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

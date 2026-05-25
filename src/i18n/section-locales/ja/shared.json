@@ -310,5 +310,17 @@
   "bulk_toolbar_aria": "Bulk actions",
   "bulk_selected": "{count} selected",
   "bulk_clear_selection": "Clear selection",
-  "resize_column": "列幅を変更 - ドラッグで調整、ダブルクリックでリセット"
+  "resize_column": "列幅を変更 - ドラッグで調整、ダブルクリックでリセット",
+  "drag_handle_aria": "Drag to reorder",
+  "empty_todos_heading": "All caught up",
+  "empty_todos_description": "reviews or alerts need your attention right now.",
+  "empty_stream_heading": "activity yet",
+  "empty_stream_description": "Live agent runs will stream in here as they happen.",
+  "empty_routines_heading": "routines scheduled",
+  "empty_routines_description": "Scheduled and recurring triggers will show up here.",
+  "empty_heatmap_heading": "activity yet",
+  "empty_heatmap_description": "Your agents' execution history will fill in over the year.",
+  "sort_active_asc": "Sorted by {label}, ascending. Activate to sort descending.",
+  "sort_active_desc": "Sorted by {label}, descending. Activate to sort ascending.",
+  "devtools_no_projects_action": "Add a Codebase connector"
 }

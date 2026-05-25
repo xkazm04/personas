@@ -14,5 +14,7 @@
   "complete_suffix": "पूर्ण",
   "failed_suffix": "विफल",
   "pending_reviews_one": "{count} लंबित समीक्षा अनुमोदन की प्रतीक्षा में",
-  "pending_reviews_other": "{count} लंबित समीक्षाएं अनुमोदन की प्रतीक्षा में"
+  "pending_reviews_other": "{count} लंबित समीक्षाएं अनुमोदन की प्रतीक्षा में",
+  "team_assignment_failed": "Team Assignment",
+  "team_assignment_unmatched": "Team Assignment"
 }

@@ -1129,6 +1129,7 @@
     "questionnaire_collapse_section": "طي القسم",
     "questionnaire_member_summary_default": "{count} أسئلة، كل الإعدادات الافتراضية",
     "questionnaire_member_summary_customized": "{count} أسئلة، {customized} مخصصة",
-    "questionnaire_member_no_config": "لا يلزم أي تكوين"
+    "questionnaire_member_no_config": "لا يلزم أي تكوين",
+    "preview_members_select_hint": "Click to include / exclude"
   }
 }

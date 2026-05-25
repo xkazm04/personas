@@ -110,7 +110,8 @@
     "pro_tip": "Mẹo chuyên gia: ",
     "cat_agent_craft": "Xây dựng tác nhân",
     "cat_observability": "Quan sát & Sự kiện",
-    "cat_platform": "Nền tảng & Cài đặt"
+    "cat_platform": "Nền tảng & Cài đặt",
+    "tour_steps_label": "What you'll learn"
   },
   "setup_stepper": {
     "your_profile": "Hồ sơ của bạn",
@@ -137,5 +138,6 @@
     "personas_tab": "Personas (Hoạt hình)",
     "lucide_footer": "lucide-react -- thư viện biểu tượng chung -- tĩnh",
     "personas_footer": "9 biểu tượng tùy chỉnh -- motif thần kinh/mạch -- CSS hoạt hình -- thích ứng chủ đề"
-  }
+  },
+  "commander": "Commander"
 }

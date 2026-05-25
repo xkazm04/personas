@@ -14,5 +14,7 @@
   "complete_suffix": "Selesai",
   "failed_suffix": "Gagal",
   "pending_reviews_one": "{count} tinjauan tertunda menunggu persetujuan",
-  "pending_reviews_other": "{count} tinjauan tertunda menunggu persetujuan"
+  "pending_reviews_other": "{count} tinjauan tertunda menunggu persetujuan",
+  "team_assignment_failed": "Team Assignment",
+  "team_assignment_unmatched": "Team Assignment"
 }

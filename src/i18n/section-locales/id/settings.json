@@ -132,7 +132,12 @@
     "reduce_motion_label": "Kurangi gerakan",
     "reduce_motion_hint": "Menonaktifkan transisi dan animasi di seluruh aplikasi. Tombol dan pengalih tema masih berlaku, namun tidak ada pergerakan.",
     "reduce_motion_on": "Pada",
-    "reduce_motion_off": "Mati"
+    "reduce_motion_off": "Mati",
+    "density": "Kepadatan",
+    "density_hint": "Controls how much spacing the app uses. Compact fits more on screen; Cozy gives everything more room to breathe.",
+    "density_compact_desc": "More rows per screen",
+    "density_comfortable_desc": "Balanced — the default",
+    "density_cozy_desc": "Extra breathing room"
   },
   "notifications": {
     "title": "Notifikasi",
