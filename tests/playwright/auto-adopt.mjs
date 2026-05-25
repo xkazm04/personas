@@ -153,7 +153,7 @@ async function navOpen(name) {
   // generously and only treat an actual "Approve Anyway" button as ready (the
   // TESTING phase has no Approve button; matching bare "Approve" mis-fired).
   console.log('Continue→', JSON.stringify(await clickModal('CONTINUE TO BUILD')));
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 100; i++) {
     await sleep(3000);
     if (!(await alive())) { console.log('APP DIED during build'); return; }
     const ready = JSON.stringify(await evalJs(inModal(`return Array.from(r.querySelectorAll('button')).some(b=>/approve anyway/i.test(b.innerText||''))?'yes':'no'`)));
