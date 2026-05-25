@@ -5,6 +5,7 @@ import { getToolPerformanceSummary } from '@/api/agents/tools';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
 import { EmptyState } from '@/features/shared/components/display/EmptyState';
+import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { CARD_PADDING } from '@/lib/utils/designTokens';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -75,6 +76,85 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
     [rows],
   );
 
+  const columns = useMemo<TableColumn<ToolPerformanceSummary>[]>(() => {
+    const ms = t.overview.widgets.tool_performance_unit_ms;
+    return [
+      {
+        key: 'tool',
+        label: t.overview.widgets.tool_performance_col_tool,
+        width: 'minmax(120px, 1.6fr)',
+        sortable: true,
+        sortFn: (a, b) => a.tool_name.localeCompare(b.tool_name),
+        render: (row) => (
+          <span className="inline-flex items-baseline gap-2 min-w-0">
+            <span className="text-foreground truncate">{row.tool_name}</span>
+            <span className="typo-caption text-foreground shrink-0">{row.tool_type}</span>
+          </span>
+        ),
+      },
+      {
+        key: 'runs',
+        label: t.overview.widgets.tool_performance_col_runs,
+        width: 'minmax(64px, 0.7fr)',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => Number(a.total_runs) - Number(b.total_runs),
+        render: (row) => (
+          <span className="tabular-nums text-foreground">{Number(row.total_runs).toLocaleString()}</span>
+        ),
+      },
+      {
+        key: 'avg',
+        label: t.overview.widgets.tool_performance_col_avg,
+        width: 'minmax(64px, 0.7fr)',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => (Number(a.avg_duration_ms) || 0) - (Number(b.avg_duration_ms) || 0),
+        render: (row) => (
+          <span className="tabular-nums text-foreground">{formatMs(row.avg_duration_ms ?? null, ms)}</span>
+        ),
+      },
+      {
+        key: 'max',
+        label: t.overview.widgets.tool_performance_col_max,
+        width: 'minmax(64px, 0.7fr)',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => (Number(a.max_duration_ms) || 0) - (Number(b.max_duration_ms) || 0),
+        render: (row) => (
+          <span className="tabular-nums text-foreground">
+            {formatMs(
+              row.max_duration_ms === null || row.max_duration_ms === undefined
+                ? null
+                : Number(row.max_duration_ms),
+              ms,
+            )}
+          </span>
+        ),
+      },
+      {
+        key: 'errors',
+        label: t.overview.widgets.tool_performance_col_errors,
+        width: 'minmax(80px, 1fr)',
+        align: 'right',
+        sortable: true,
+        sortFn: (a, b) => errorRatePercent(a) - errorRatePercent(b),
+        render: (row) => {
+          const errPct = errorRatePercent(row);
+          const errClass =
+            errPct >= 10 ? 'text-rose-400' : errPct >= 1 ? 'text-amber-400' : 'text-foreground';
+          return (
+            <span className={`tabular-nums ${errClass}`}>
+              {Number(row.error_runs) === 0
+                ? '0'
+                : `${Number(row.error_runs).toLocaleString()} (${errPct.toFixed(1)}%)`}
+            </span>
+          );
+        },
+      },
+    ];
+  }, [t]);
+
   return (
     <div
       className={`${CARD_CONTAINER} ${CARD_PADDING.standard} space-y-3 relative overflow-hidden`}
@@ -98,74 +178,13 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         ) : sortedRows.length === 0 ? (
           <EmptyState variant="chart" className="py-6" />
         ) : (
-          <table className="w-full typo-caption text-foreground" aria-busy={loading}>
-            <thead>
-              <tr className="text-foreground border-b border-primary/10">
-                <th className="text-left font-normal pb-1">
-                  {t.overview.widgets.tool_performance_col_tool}
-                </th>
-                <th className="text-right font-normal pb-1">
-                  {t.overview.widgets.tool_performance_col_runs}
-                </th>
-                <th className="text-right font-normal pb-1">
-                  {t.overview.widgets.tool_performance_col_avg}
-                </th>
-                <th className="text-right font-normal pb-1">
-                  {t.overview.widgets.tool_performance_col_max}
-                </th>
-                <th className="text-right font-normal pb-1">
-                  {t.overview.widgets.tool_performance_col_errors}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedRows.map((row) => {
-                const errPct = errorRatePercent(row);
-                const errClass =
-                  errPct >= 10
-                    ? 'text-rose-400'
-                    : errPct >= 1
-                      ? 'text-amber-400'
-                      : 'text-foreground';
-                return (
-                  <tr
-                    key={`${row.tool_name}-${row.tool_type}`}
-                    className="border-b border-primary/5 last:border-b-0"
-                  >
-                    <td className="py-1 pr-2">
-                      <span className="text-foreground">{row.tool_name}</span>
-                      <span className="ml-2 typo-caption text-foreground">
-                        {row.tool_type}
-                      </span>
-                    </td>
-                    <td className="text-right py-1 tabular-nums">
-                      {Number(row.total_runs).toLocaleString()}
-                    </td>
-                    <td className="text-right py-1 tabular-nums">
-                      {formatMs(
-                        row.avg_duration_ms ?? null,
-                        t.overview.widgets.tool_performance_unit_ms,
-                      )}
-                    </td>
-                    <td className="text-right py-1 tabular-nums">
-                      {formatMs(
-                        row.max_duration_ms === null ||
-                          row.max_duration_ms === undefined
-                          ? null
-                          : Number(row.max_duration_ms),
-                        t.overview.widgets.tool_performance_unit_ms,
-                      )}
-                    </td>
-                    <td className={`text-right py-1 tabular-nums ${errClass}`}>
-                      {Number(row.error_runs) === 0
-                        ? '0'
-                        : `${Number(row.error_runs).toLocaleString()} (${errPct.toFixed(1)}%)`}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <UnifiedTable<ToolPerformanceSummary>
+            columns={columns}
+            data={sortedRows}
+            getRowKey={(row) => `${row.tool_name}-${row.tool_type}`}
+            density="compact"
+            className="typo-caption"
+          />
         )}
       </div>
     </div>
