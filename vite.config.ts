@@ -137,6 +137,12 @@ export default defineConfig(async () => ({
                 ],
                 "vendor-chart": ["recharts"],
                 "vendor-flow": ["@xyflow/react", "@xyflow/system"],
+                // three.js is ~1MB. Without this it lands entirely inside the
+                // lazy ThreeViewer chunk, so any edit to that wrapper component
+                // re-downloads the whole engine. Rollup hoists shared vendor
+                // out of dynamic chunks, so splitting here lets the (stable)
+                // three runtime cache independently across releases.
+                "vendor-three": ["three", "@react-three/fiber", "@react-three/drei"],
                 "vendor-markdown": [
                   "react-markdown",
                   "remark-gfm",
