@@ -3,7 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Search, FolderOpen, CheckCircle2, XCircle, Save } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -235,13 +235,15 @@ export default function SetupPanel() {
             { label: t.plugins.obsidian_brain.connectors, desc: t.plugins.obsidian_brain.connectors_desc, checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
             { label: t.plugins.obsidian_brain.auto_sync, desc: t.plugins.obsidian_brain.auto_sync_desc, checked: autoSync, onChange: () => setAutoSync(!autoSync) },
           ].map((opt) => (
-            <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors">
-              <div className="min-w-0">
-                <p className="typo-heading typo-card-label">{opt.label}</p>
-                <p className="typo-caption text-foreground/60">{opt.desc}</p>
-              </div>
-              <AccessibleToggle checked={opt.checked} onChange={opt.onChange} label={opt.label} size="sm" />
-            </div>
+            <SettingRow
+              key={opt.label}
+              variant="card"
+              toggleSize="sm"
+              label={opt.label}
+              description={opt.desc}
+              checked={opt.checked}
+              onChange={opt.onChange}
+            />
           ))}
         </div>
       </SectionCard>

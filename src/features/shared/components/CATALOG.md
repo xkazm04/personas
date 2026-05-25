@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**174 reusable components** live under `src/features/shared/components/`.
+**175 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -126,6 +126,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PillGroup` | _(add a `@catalog` tag)_ |
 | `PopupColorPicker` | _(add a `@catalog` tag)_ |
 | `PopupIconSelector` | _(add a `@catalog` tag)_ |
+| `SettingRow` | Label + description + toggle settings row with one consistent type ramp; shared across plugin setup panels. |
 | `Slider` | Accessible name for the slider. |
 | `SortableColumnHeader` | _(add a `@catalog` tag)_ |
 | `SourceDefinitionInput` | _(add a `@catalog` tag)_ |
@@ -253,4 +254,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_174 components, 93 without a `@catalog` description._
+_175 components, 93 without a `@catalog` description._
