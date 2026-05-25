@@ -61,6 +61,27 @@ pub trait ReactiveSubscription: Send + Sync + 'static {
     async fn tick(&self);
 }
 
+/// Run a blocking, DB-heavy tick body on the blocking thread pool.
+///
+/// rusqlite is synchronous: calling repo functions directly inside an
+/// `async fn tick()` occupies a tokio worker thread for the whole query
+/// (up to `POOL_ACQUIRE_TIMEOUT` under pool contention). Offloading to
+/// `spawn_blocking` keeps async workers free for IPC and other tasks.
+///
+/// If the blocking closure panics, the panic is re-propagated onto the
+/// tick future so `run_single`'s `catch_unwind` still records the crash
+/// and applies backoff — preserving the existing crash-surfacing behavior.
+async fn run_blocking_tick<F>(f: F)
+where
+    F: FnOnce() + Send + 'static,
+{
+    if let Err(join_err) = tokio::task::spawn_blocking(f).await {
+        if join_err.is_panic() {
+            std::panic::resume_unwind(join_err.into_panic());
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Concrete subscriptions
 // ---------------------------------------------------------------------------
@@ -276,7 +297,12 @@ impl ReactiveSubscription for TriggerSchedulerSubscription {
     }
 
     async fn tick(&self) {
-        super::background::trigger_scheduler_tick(&self.scheduler, &self.pool);
+        let scheduler = self.scheduler.clone();
+        let pool = self.pool.clone();
+        run_blocking_tick(move || {
+            super::background::trigger_scheduler_tick(&scheduler, &pool)
+        })
+        .await;
     }
 }
 
@@ -314,7 +340,8 @@ impl ReactiveSubscription for CleanupSubscription {
     }
 
     async fn tick(&self) {
-        super::background::cleanup_tick(&self.pool);
+        let pool = self.pool.clone();
+        run_blocking_tick(move || super::background::cleanup_tick(&pool)).await;
     }
 }
 
@@ -804,7 +831,12 @@ impl ReactiveSubscription for CompositeSubscription {
     }
 
     async fn tick(&self) {
-        super::composite::composite_tick(&self.pool, &self.composite_state);
+        let pool = self.pool.clone();
+        let composite_state = self.composite_state.clone();
+        run_blocking_tick(move || {
+            super::composite::composite_tick(&pool, &composite_state)
+        })
+        .await;
     }
 }
 
@@ -825,7 +857,12 @@ impl ReactiveSubscription for AutoRollbackSubscription {
     }
 
     async fn tick(&self) {
-        super::auto_rollback::auto_rollback_tick(&self.pool, &self.app);
+        let pool = self.pool.clone();
+        let app = self.app.clone();
+        run_blocking_tick(move || {
+            super::auto_rollback::auto_rollback_tick(&pool, &app)
+        })
+        .await;
     }
 }
 
@@ -863,8 +900,13 @@ impl ReactiveSubscription for ZombieExecutionSubscription {
     }
 
     async fn tick(&self) {
-        super::background::zombie_execution_tick(&self.pool, &self.app);
-        super::background::silent_execution_tick(&self.pool, &self.app);
+        let pool = self.pool.clone();
+        let app = self.app.clone();
+        run_blocking_tick(move || {
+            super::background::zombie_execution_tick(&pool, &app);
+            super::background::silent_execution_tick(&pool, &app);
+        })
+        .await;
     }
 }
 
@@ -895,11 +937,11 @@ impl ReactiveSubscription for HealingTtlSubscription {
 
     async fn tick(&self) {
         let pool = self.pool.clone();
-        let _ = tokio::task::spawn_blocking(move || {
-            crate::db::repos::execution::healing::revert_all_stale_auto_fix_pending(
+        run_blocking_tick(move || {
+            let _ = crate::db::repos::execution::healing::revert_all_stale_auto_fix_pending(
                 &pool,
                 crate::db::repos::execution::healing::AUTO_FIX_PENDING_TTL_MINUTES,
-            )
+            );
         })
         .await;
     }
@@ -922,7 +964,9 @@ impl ReactiveSubscription for DigestSubscription {
     }
 
     async fn tick(&self) {
-        super::digest::digest_tick(&self.pool, &self.app);
+        let pool = self.pool.clone();
+        let app = self.app.clone();
+        run_blocking_tick(move || super::digest::digest_tick(&pool, &app)).await;
     }
 }
 
