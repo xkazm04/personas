@@ -201,6 +201,7 @@ use crate::db::models::{
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::healing as healing_repo;
+use crate::db::repos::execution::audit_incidents as incidents_repo;
 use crate::db::repos::lab::evolution as evolution_repo;
 use crate::db::repos::resources::tools as tool_repo;
 use crate::db::DbPool;
@@ -2072,6 +2073,52 @@ fn check_budget_enforcement(pool: &DbPool, persona_id: &str, exec_id: &str) {
     }
 }
 
+/// Per-capability "Errors" sigil routing, resolved from the persona's
+/// `design_context.use_cases[i].error_policy` (set during adoption). Returns
+/// `(incident, lab, escalate_after)`. Absent policy falls back to the same
+/// default the adoption card shows: incident on, lab off, escalate after 3 —
+/// so every persona's recurring terminal failures surface in the inbox
+/// without requiring per-template metadata.
+fn resolve_error_policy(
+    pool: &DbPool,
+    persona_id: &str,
+    use_case_id: Option<&str>,
+) -> (bool, bool, u32) {
+    const DEFAULT: (bool, bool, u32) = (true, false, 3);
+    let Ok(persona) = persona_repo::get_by_id(pool, persona_id) else {
+        return DEFAULT;
+    };
+    let Some(dc) = persona.design_context.as_deref() else {
+        return DEFAULT;
+    };
+    let Ok(val) = serde_json::from_str::<serde_json::Value>(dc) else {
+        return DEFAULT;
+    };
+    let Some(use_cases) = design_context::pick_use_cases_array(&val) else {
+        return DEFAULT;
+    };
+    // Prefer the capability that actually failed; fall back to the first one
+    // (single-capability personas, or executions without a use_case tag).
+    let uc = use_case_id
+        .and_then(|id| {
+            use_cases
+                .iter()
+                .find(|u| u.get("id").and_then(|v| v.as_str()) == Some(id))
+        })
+        .or_else(|| use_cases.first());
+    let Some(ep) = uc.and_then(|u| u.get("error_policy")) else {
+        return DEFAULT;
+    };
+    let incident = ep.get("incident").and_then(|v| v.as_bool()).unwrap_or(true);
+    let lab = ep.get("lab").and_then(|v| v.as_bool()).unwrap_or(false);
+    let escalate_after = ep
+        .get("escalate_after")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(3)
+        .max(1) as u32;
+    (incident, lab, escalate_after)
+}
+
 /// Evaluate a failed execution for healing opportunities and spawn retries.
 #[allow(clippy::too_many_arguments)]
 fn evaluate_healing_and_retry(
@@ -2191,6 +2238,71 @@ fn evaluate_healing_and_retry(
         .as_ref()
         .map(|p| p.name.clone())
         .unwrap_or_else(|| "Agent".into());
+
+    // --- "Errors" sigil routing: escalate recurring terminal failures per the
+    // failed capability's error_policy (configured at adoption). Best-effort;
+    // never affects the run. Real executions only (skip simulations). Gated by
+    // escalate_after consecutive failures so a single blip doesn't escalate.
+    {
+        let failed_exec = exec_repo::get_by_id(pool, exec_id).ok();
+        let is_simulation = failed_exec.as_ref().map(|e| e.is_simulation).unwrap_or(false);
+        let use_case_id = failed_exec.as_ref().and_then(|e| e.use_case_id.clone());
+        if !is_simulation {
+            let (route_incident, route_lab, escalate_after) =
+                resolve_error_policy(pool, persona_id, use_case_id.as_deref());
+            if consecutive >= escalate_after {
+                if route_incident {
+                    let detail = serde_json::json!({
+                        "use_case_id": use_case_id,
+                        "category": diagnosis.db_category,
+                        "consecutive_failures": consecutive,
+                        "description": diagnosis.description,
+                        // Surfaced for an inbox "Send to Lab" action when the
+                        // capability opted into lab routing.
+                        "lab_requested": route_lab,
+                    })
+                    .to_string();
+                    // dedup_key is `execution_error:{exec_id}` → one incident per
+                    // failed execution (idempotent under retries).
+                    if let Err(e) = incidents_repo::promote(
+                        pool,
+                        crate::db::models::CreateAuditIncidentInput {
+                            source_table: "execution_error".into(),
+                            source_id: exec_id.into(),
+                            persona_id: Some(persona_id.into()),
+                            persona_name: persona_for_heal.as_ref().map(|p| p.name.clone()),
+                            execution_id: Some(exec_id.into()),
+                            severity: diagnosis.severity.clone(),
+                            kind: diagnosis.db_category.clone(),
+                            title: diagnosis.title.clone(),
+                            detail: Some(detail),
+                        },
+                    ) {
+                        tracing::warn!(execution_id = %exec_id, error = %e, "error_policy: failed to open incident");
+                    }
+                }
+                if route_lab {
+                    // The capability opted into Lab auto-improvement — enable the
+                    // persona's evolution policy so the Lab improves it over time.
+                    if let Err(e) = evolution_repo::upsert_policy(
+                        pool,
+                        &crate::db::models::UpsertEvolutionPolicyInput {
+                            persona_id: persona_id.into(),
+                            enabled: Some(true),
+                            fitness_objective: None,
+                            mutation_rate: None,
+                            variants_per_cycle: None,
+                            improvement_threshold: None,
+                            min_executions_between: None,
+                            mutation_strategy: None,
+                        },
+                    ) {
+                        tracing::warn!(persona_id = %persona_id, error = %e, "error_policy: failed to enable lab auto-improve");
+                    }
+                }
+            }
+        }
+    }
 
     // Circuit breaker: disable persona after too many consecutive failures.
     if matches!(
