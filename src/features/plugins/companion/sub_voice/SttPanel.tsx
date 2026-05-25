@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -104,7 +105,7 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
           {label}
         </span>
       </div>
-      <p className="typo-caption text-foreground mt-1">{caption}</p>
+      <p className="typo-caption text-foreground/60 mt-1">{caption}</p>
     </button>
   );
 }
@@ -199,7 +200,7 @@ function WhisperConfig() {
       >
         <div className="px-1 py-2">
           {statusLoading ? (
-            <div className="flex items-center gap-2 typo-caption text-foreground">
+            <div className="flex items-center gap-2 typo-caption text-foreground/60">
               <LoadingSpinner size="sm" />
               {t.plugins.companion.stt_loading}
             </div>
@@ -215,7 +216,7 @@ function WhisperConfig() {
                     : t.plugins.companion.stt_not_installed}
                 </div>
                 {!status?.installed && (
-                  <p className="typo-caption text-foreground mt-1">
+                  <p className="typo-caption text-foreground/60 mt-1">
                     {t.plugins.companion.stt_install_hint}
                   </p>
                 )}
@@ -248,7 +249,7 @@ function WhisperConfig() {
             <p className="typo-caption text-status-warning">{modelsError}</p>
           )}
           {models === null ? (
-            <div className="flex items-center gap-2 typo-caption text-foreground">
+            <div className="flex items-center gap-2 typo-caption text-foreground/60">
               <LoadingSpinner size="sm" />
               {t.plugins.companion.stt_loading}
             </div>
@@ -266,15 +267,16 @@ function WhisperConfig() {
               return (
                 <div
                   key={m.modelId}
-                  className={`rounded-card border p-3 ${
+                  className={`rounded-card border p-2.5 ${
                     selected ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-foreground/10'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
+                        <ActivityDot tone={selected ? 'active' : m.isDownloaded ? 'idle' : 'off'} size="xs" />
                         <span className="typo-body font-medium truncate">{m.label}</span>
-                        <span className="typo-caption text-foreground">{m.approxSizeMb} MB</span>
+                        <span className="typo-caption text-foreground/60">{m.approxSizeMb} MB</span>
                         {selected && (
                           <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300">
                             <CheckCircle2 className="w-3 h-3" />
@@ -282,7 +284,7 @@ function WhisperConfig() {
                           </span>
                         )}
                       </div>
-                      <p className="typo-caption text-foreground mt-0.5">{m.description}</p>
+                      <p className="typo-caption text-foreground/60 mt-0.5">{m.description}</p>
                     </div>
                     <div className="shrink-0 flex items-center gap-1.5">
                       {m.isDownloaded ? (
@@ -292,9 +294,7 @@ function WhisperConfig() {
                             disabled={selected}
                             className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
                           >
-                            {selected
-                              ? t.plugins.companion.stt_model_selected
-                              : t.plugins.companion.stt_model_select}
+                            {t.plugins.companion.stt_model_select}
                           </button>
                           <button
                             onClick={() => void onDelete(m.modelId)}
@@ -306,7 +306,7 @@ function WhisperConfig() {
                           </button>
                         </>
                       ) : downloading ? (
-                        <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+                        <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/60">
                           <Loader2 className="w-3.5 h-3.5 animate-spin" />
                           {pct != null ? `${pct}%` : t.plugins.companion.stt_model_downloading}
                         </span>

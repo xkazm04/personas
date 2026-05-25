@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Activity, AppWindow, Bot, Brain, Clipboard, Eye, FileText, Sparkles, Terminal, Volume2, Wrench } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
@@ -138,21 +139,21 @@ export default function SetupPanel() {
         subtitle={t.plugins.companion.setup_chrome_desc}
         titleClassName="text-primary"
       >
-        <ToggleRow
+        <SettingRow
           icon={<Bot className="w-4 h-4 text-cyan-400" />}
           label={t.plugins.companion.setup_footer_label}
           description={t.plugins.companion.setup_footer_desc}
           checked={footerEnabled}
           onChange={() => setFooterEnabled(!footerEnabled)}
         />
-        <ToggleRow
+        <SettingRow
           icon={<Sparkles className="w-4 h-4 text-cyan-400" />}
           label={t.plugins.companion.setup_orb_label}
           description={t.plugins.companion.setup_orb_desc}
           checked={orbEnabled}
           onChange={() => setOrbEnabled(!orbEnabled)}
         />
-        <ToggleRow
+        <SettingRow
           icon={<Volume2 className="w-4 h-4 text-cyan-400" />}
           label={t.plugins.companion.setup_sound_label}
           description={t.plugins.companion.setup_sound_desc}
@@ -166,7 +167,7 @@ export default function SetupPanel() {
         subtitle={t.plugins.companion.setup_memory_desc}
         titleClassName="text-primary"
       >
-        <ToggleRow
+        <SettingRow
           icon={<Brain className="w-4 h-4 text-cyan-400" />}
           label={t.plugins.companion.setup_recall_synthesis_label}
           description={t.plugins.companion.setup_recall_synthesis_desc}
@@ -186,11 +187,12 @@ export default function SetupPanel() {
           </div>
         ) : (
           <>
-            <ToggleRow
+            <SettingRow
               icon={<Clipboard className="w-4 h-4 text-cyan-400" />}
               label={t.plugins.companion.setup_desktop_clipboard_label}
               description={t.plugins.companion.setup_desktop_clipboard_desc}
               countLabel={signalsCountLabel(t, sensory?.clipboardSignalsInWindow)}
+              statusDot={sensoryDot(sensory?.clipboardEnabled, sensory?.clipboardSignalsInWindow)}
               checked={sensory?.clipboardEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -200,11 +202,12 @@ export default function SetupPanel() {
                 )
               }
             />
-            <ToggleRow
+            <SettingRow
               icon={<FileText className="w-4 h-4 text-cyan-400" />}
               label={t.plugins.companion.setup_desktop_file_changes_label}
               description={t.plugins.companion.setup_desktop_file_changes_desc}
               countLabel={signalsCountLabel(t, sensory?.fileChangesSignalsInWindow)}
+              statusDot={sensoryDot(sensory?.fileChangesEnabled, sensory?.fileChangesSignalsInWindow)}
               checked={sensory?.fileChangesEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -214,11 +217,12 @@ export default function SetupPanel() {
                 )
               }
             />
-            <ToggleRow
+            <SettingRow
               icon={<AppWindow className="w-4 h-4 text-cyan-400" />}
               label={t.plugins.companion.setup_desktop_app_focus_label}
               description={t.plugins.companion.setup_desktop_app_focus_desc}
               countLabel={signalsCountLabel(t, sensory?.appFocusSignalsInWindow)}
+              statusDot={sensoryDot(sensory?.appFocusEnabled, sensory?.appFocusSignalsInWindow)}
               checked={sensory?.appFocusEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -228,10 +232,11 @@ export default function SetupPanel() {
                 )
               }
             />
-            <ToggleRow
+            <SettingRow
               icon={<Terminal className="w-4 h-4 text-cyan-400" />}
               label={t.plugins.companion.setup_desktop_cli_session_label}
               description={t.plugins.companion.setup_desktop_cli_session_desc}
+              statusDot={sensoryDot(sensory?.cliSessionEnabled, undefined)}
               checked={sensory?.cliSessionEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -275,7 +280,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption text-foreground mt-1.5">
+            <div className="typo-caption text-foreground/60 mt-1.5">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
@@ -312,7 +317,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.tracking_master_label}
             </div>
-            <div className="typo-caption text-foreground mt-1.5">
+            <div className="typo-caption text-foreground/60 mt-1.5">
               {trackingEnabled === null
                 ? t.plugins.companion.loading
                 : trackingEnabled
@@ -332,48 +337,18 @@ export default function SetupPanel() {
   );
 }
 
-function ToggleRow({
-  icon,
-  label,
-  description,
-  countLabel,
-  checked,
-  disabled,
-  onChange,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  description: string;
-  /** Optional badge text below the description (e.g. "3 signals in the rolling window"). */
-  countLabel?: string | null;
-  checked: boolean;
-  disabled?: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <div className="flex items-start gap-3 px-1 py-2 border-b border-foreground/5 last:border-b-0">
-      <div className="mt-0.5 shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <div className="typo-body font-medium">{label}</div>
-        <div className="typo-caption text-foreground mt-1.5">
-          {description}
-        </div>
-        {countLabel ? (
-          <div className="typo-caption text-foreground mt-1">
-            {countLabel}
-          </div>
-        ) : null}
-      </div>
-      <div className="shrink-0">
-        <AccessibleToggle
-          checked={checked}
-          onChange={onChange}
-          label={label}
-          disabled={disabled}
-        />
-      </div>
-    </div>
-  );
+/**
+ * Map a sensory source's enabled flag + rolling-window count to a status
+ * dot: `active` (enabled and capturing), `idle` (enabled but quiet), or
+ * null (disabled — no dot). Sources without a count (e.g. CLI session) pass
+ * `undefined` and read as `idle` while enabled.
+ */
+function sensoryDot(
+  enabled: boolean | undefined,
+  count: number | undefined,
+): 'active' | 'idle' | null {
+  if (!enabled) return null;
+  return (count ?? 0) > 0 ? 'active' : 'idle';
 }
 
 /**

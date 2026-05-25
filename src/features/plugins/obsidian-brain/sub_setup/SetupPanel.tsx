@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Search, FolderOpen, CheckCircle2, XCircle, Save } from 'lucide-react';
+import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
-import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { SettingRow } from '@/features/shared/components/forms/SettingRow';
+import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -139,7 +140,7 @@ export default function SetupPanel() {
     <div className="flex gap-4 py-2">
       <div className="flex-1 min-w-0 max-w-2xl space-y-5">
       {/* Vault Connection */}
-      <SectionCard collapsible title={t.plugins.obsidian_brain.vault_connection} subtitle={t.plugins.obsidian_brain.vault_connection_subtitle} storageKey="obsidian-setup-vault">
+      <SectionCard collapsible title={t.plugins.obsidian_brain.vault_connection} subtitle={t.plugins.obsidian_brain.vault_connection_subtitle} storageKey="obsidian-setup-vault" titleClassName="text-primary">
         <div className="space-y-4">
           <div className="flex gap-2">
             <button
@@ -173,8 +174,13 @@ export default function SetupPanel() {
                       : 'border-primary/10 hover:border-primary/20 hover:bg-secondary/20'
                   }`}
                 >
-                  <p className="typo-heading typo-card-label">{v.name}</p>
-                  <p className="typo-caption text-foreground truncate">{v.path}</p>
+                  <div className="flex items-center gap-2.5">
+                    <ActivityDot tone={vaultPath === v.path ? 'active' : 'off'} />
+                    <div className="min-w-0">
+                      <p className="typo-heading typo-card-label truncate">{v.name}</p>
+                      <p className="typo-caption text-foreground/60 truncate">{v.path}</p>
+                    </div>
+                  </div>
                 </button>
               ))}
             </div>
@@ -187,7 +193,7 @@ export default function SetupPanel() {
               value={vaultPath}
               onChange={(e) => { setVaultPath(e.target.value); setConnectionResult(null); }}
               placeholder={t.plugins.obsidian_brain.vault_path_placeholder}
-              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+              className="flex-1 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <button
               onClick={testConnection}
@@ -215,7 +221,7 @@ export default function SetupPanel() {
                 {connectionResult.valid ? (
                   <>
                     <p className="typo-heading text-emerald-400">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
-                    <p className="typo-caption text-foreground">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
+                    <p className="typo-caption text-foreground/60">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
                   </>
                 ) : (
                   <p className="typo-heading text-red-400">{connectionResult.error}</p>
@@ -227,27 +233,30 @@ export default function SetupPanel() {
       </SectionCard>
 
       {/* Sync Options */}
-      <SectionCard collapsible title={t.plugins.obsidian_brain.sync_options} subtitle={t.plugins.obsidian_brain.sync_options_subtitle} storageKey="obsidian-setup-sync">
+      <SectionCard collapsible title={t.plugins.obsidian_brain.sync_options} subtitle={t.plugins.obsidian_brain.sync_options_subtitle} storageKey="obsidian-setup-sync" titleClassName="text-primary">
         <div className="space-y-3">
           {[
-            { label: t.plugins.obsidian_brain.memories, desc: t.plugins.obsidian_brain.memories_desc, checked: syncMemories, onChange: () => setSyncMemories(!syncMemories) },
-            { label: t.plugins.obsidian_brain.persona_profiles, desc: t.plugins.obsidian_brain.persona_profiles_desc, checked: syncPersonas, onChange: () => setSyncPersonas(!syncPersonas) },
-            { label: t.plugins.obsidian_brain.connectors, desc: t.plugins.obsidian_brain.connectors_desc, checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
-            { label: t.plugins.obsidian_brain.auto_sync, desc: t.plugins.obsidian_brain.auto_sync_desc, checked: autoSync, onChange: () => setAutoSync(!autoSync) },
+            { icon: <Brain className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.memories, desc: t.plugins.obsidian_brain.memories_desc, checked: syncMemories, onChange: () => setSyncMemories(!syncMemories) },
+            { icon: <Users className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.persona_profiles, desc: t.plugins.obsidian_brain.persona_profiles_desc, checked: syncPersonas, onChange: () => setSyncPersonas(!syncPersonas) },
+            { icon: <Plug className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.connectors, desc: t.plugins.obsidian_brain.connectors_desc, checked: syncConnectors, onChange: () => setSyncConnectors(!syncConnectors) },
+            { icon: <RefreshCw className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.auto_sync, desc: t.plugins.obsidian_brain.auto_sync_desc, checked: autoSync, onChange: () => setAutoSync(!autoSync) },
           ].map((opt) => (
-            <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors">
-              <div className="min-w-0">
-                <p className="typo-heading typo-card-label">{opt.label}</p>
-                <p className="typo-caption text-foreground">{opt.desc}</p>
-              </div>
-              <AccessibleToggle checked={opt.checked} onChange={opt.onChange} label={opt.label} size="sm" />
-            </div>
+            <SettingRow
+              key={opt.label}
+              variant="card"
+              toggleSize="sm"
+              icon={opt.icon}
+              label={opt.label}
+              description={opt.desc}
+              checked={opt.checked}
+              onChange={opt.onChange}
+            />
           ))}
         </div>
       </SectionCard>
 
       {/* Folder Mapping */}
-      <SectionCard collapsible title={t.plugins.obsidian_brain.folder_structure} subtitle={t.plugins.obsidian_brain.folder_structure_subtitle} storageKey="obsidian-setup-folders" defaultCollapsed>
+      <SectionCard collapsible title={t.plugins.obsidian_brain.folder_structure} subtitle={t.plugins.obsidian_brain.folder_structure_subtitle} storageKey="obsidian-setup-folders" defaultCollapsed titleClassName="text-primary">
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             {[
@@ -266,9 +275,13 @@ export default function SetupPanel() {
               </div>
             ))}
           </div>
-          <p className="typo-caption text-foreground">
-            <DebtText k="auto_preview_4bf30626" /> <code className="text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
-          </p>
+          <div className="space-y-1.5 typo-caption text-foreground/60">
+            <p><DebtText k="auto_preview_4bf30626" /></p>
+            <code className="block text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
+            {syncConnectors && (
+              <code className="block text-violet-400/60">{`${connectorsFolder}/`}</code>
+            )}
+          </div>
         </div>
       </SectionCard>
 

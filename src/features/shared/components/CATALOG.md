@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**175 reusable components** live under `src/features/shared/components/`.
+**177 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -26,6 +26,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | Component | What it's for |
 |---|---|
 | `AbsoluteTime` | Fixed absolute timestamp (date / time / datetime) with relative time on hover. Use instead of raw new Date().toLocaleString() for  |
+| `ActivityDot` | Decorative on/off activity dot (active glows emerald, pending amber, idle/off muted) for dense inline state hints. |
 | `AnimatedCounter` | Number that animates from previous to new value. |
 | `AnimatedList` | Max items that receive a stagger delay. |
 | `Badge` | Small labeled pill. Use for tags/counts; for status use StatusBadge/StatusDot. |
@@ -126,6 +127,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PillGroup` | _(add a `@catalog` tag)_ |
 | `PopupColorPicker` | _(add a `@catalog` tag)_ |
 | `PopupIconSelector` | _(add a `@catalog` tag)_ |
+| `SettingRow` | Label + description + toggle settings row with one consistent type ramp; shared across plugin setup panels. |
 | `Slider` | Accessible name for the slider. |
 | `SortableColumnHeader` | _(add a `@catalog` tag)_ |
 | `SourceDefinitionInput` | _(add a `@catalog` tag)_ |
@@ -259,4 +261,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_175 components, 93 without a `@catalog` description._
+_177 components, 93 without a `@catalog` description._

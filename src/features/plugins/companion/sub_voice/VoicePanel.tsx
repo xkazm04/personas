@@ -132,7 +132,7 @@ function EngineButton({ active, onClick, icon, label, caption }: EngineButtonPro
           {label}
         </span>
       </div>
-      <p className="typo-caption text-foreground mt-1">{caption}</p>
+      <p className="typo-caption text-foreground/60 mt-1">{caption}</p>
     </button>
   );
 }
@@ -312,7 +312,7 @@ function ElevenLabsVoicePanel() {
                   <div className="typo-body font-medium text-foreground">
                     {t.plugins.companion.voice_empty_title}
                   </div>
-                  <p className="typo-caption text-foreground mt-1">
+                  <p className="typo-caption text-foreground/60 mt-1">
                     {t.plugins.companion.voice_empty_desc}
                   </p>
                   <button
@@ -396,7 +396,7 @@ function ElevenLabsVoicePanel() {
       >
         <div className="px-1 py-2 space-y-2">
           {!credentialId ? (
-            <p className="typo-caption text-foreground">
+            <p className="typo-caption text-foreground/60">
               {t.plugins.companion.voice_credential_pick}
             </p>
           ) : (
@@ -442,7 +442,7 @@ function ElevenLabsVoicePanel() {
                 )}
               </div>
 
-              <p className="typo-caption text-foreground">
+              <p className="typo-caption text-foreground/60">
                 {hasScope
                   ? t.plugins.companion.voice_pick_scoped_hint
                   : t.plugins.companion.voice_pick_unscoped_hint}
@@ -473,7 +473,7 @@ function ElevenLabsVoicePanel() {
                     className="w-full bg-secondary/40 border border-foreground/10 rounded-input px-3 py-2 typo-code focus-ring"
                     aria-label={t.plugins.companion.voice_id_label}
                   />
-                  <p className="typo-caption text-foreground">
+                  <p className="typo-caption text-foreground/60">
                     {t.plugins.companion.voice_id_hint}
                   </p>
                 </div>
@@ -498,7 +498,7 @@ function ElevenLabsVoicePanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.voice_enable_label}
             </div>
-            <div className="typo-caption text-foreground mt-0.5">
+            <div className="typo-caption text-foreground/60 mt-0.5">
               {!canEnable
                 ? t.plugins.companion.voice_enable_blocked
                 : enabled
@@ -586,11 +586,14 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
               </option>
             ))}
           </ThemedSelect>
-          <p className="typo-caption text-foreground">
+          <p className="typo-caption text-foreground/60">
             {t.plugins.companion.voice_settings_model_hint}
           </p>
         </div>
 
+        {/* Fine-tuning sliders — grouped under a hairline divider so they
+            read as one band, separated from the model selector above. */}
+        <div className="space-y-3 border-t border-primary/8 pt-3">
         <SliderRow
           label={t.plugins.companion.voice_settings_stability_label}
           hint={t.plugins.companion.voice_settings_stability_hint}
@@ -631,6 +634,7 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
           step={0.05}
           defaultLabel={t.plugins.companion.voice_settings_default}
         />
+        </div>
 
         {isCustomized && (
           <button
@@ -693,7 +697,7 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
           </button>
         )}
       </div>
-      <p className="typo-caption text-foreground">{hint}</p>
+      <p className="typo-caption text-foreground/60">{hint}</p>
     </div>
   );
 }

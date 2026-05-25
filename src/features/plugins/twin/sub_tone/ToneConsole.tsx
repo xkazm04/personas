@@ -21,6 +21,10 @@ import { DebtText } from '@/i18n/DebtText';
 
 const CHANNELS = TONE_CHANNELS;
 
+/** Shared overline micro-label treatment for the Tone Matrix column headers,
+ *  stat tiles, field labels, and tip row — one source so they can't drift. */
+const OVERLINE = 'text-[10px] uppercase tracking-[0.16em]';
+
 interface ToneForm { voiceDirectives: string; examplesJson: string; constraintsJson: string; lengthHint: string; }
 const EMPTY: ToneForm = { voiceDirectives: '', examplesJson: '', constraintsJson: '', lengthHint: '' };
 function toneToForm(tn: TwinTone): ToneForm {
@@ -121,22 +125,22 @@ export default function ToneConsole() {
           <thead className="sticky top-0 z-[2] bg-background/95 backdrop-blur">
             <tr className="border-b border-primary/15 text-foreground">
               <th className="text-left font-medium px-3 py-2 pl-4 md:pl-6 xl:pl-8 w-44">
-                <span className="text-[10px] uppercase tracking-[0.16em]">channel</span>
+                <span className={OVERLINE}>channel</span>
               </th>
               <th className="text-left font-medium px-3 py-2">
-                <div className="flex items-center gap-1.5"><Sparkles className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]">{t.tone.voiceDirectives}</span></div>
+                <div className="flex items-center gap-1.5"><Sparkles className="w-3 h-3" /><span className={OVERLINE}>{t.tone.voiceDirectives}</span></div>
               </th>
               <th className="text-left font-medium px-3 py-2 w-36 hidden md:table-cell">
-                <div className="flex items-center gap-1.5"><Ruler className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]">{t.tone.lengthHint}</span></div>
+                <div className="flex items-center gap-1.5"><Ruler className="w-3 h-3" /><span className={OVERLINE}>{t.tone.lengthHint}</span></div>
               </th>
               <th className="text-left font-medium px-3 py-2 w-36 hidden lg:table-cell">
-                <div className="flex items-center gap-1.5"><ListChecks className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]">{t.tone.constraints}</span></div>
+                <div className="flex items-center gap-1.5"><ListChecks className="w-3 h-3" /><span className={OVERLINE}>{t.tone.constraints}</span></div>
               </th>
               <th className="text-center font-medium px-3 py-2 w-20 hidden md:table-cell">
-                <div className="flex items-center justify-center gap-1.5"><Quote className="w-3 h-3" /><span className="text-[10px] uppercase tracking-[0.16em]"><DebtText k="auto_ex_8463eaf7" /></span></div>
+                <div className="flex items-center justify-center gap-1.5"><Quote className="w-3 h-3" /><span className={OVERLINE}><DebtText k="auto_ex_8463eaf7" /></span></div>
               </th>
               <th className="text-right font-medium px-3 py-2 pr-4 md:pr-6 xl:pr-8 w-32">
-                <span className="text-[10px] uppercase tracking-[0.16em]">status</span>
+                <span className={OVERLINE}>status</span>
               </th>
             </tr>
           </thead>
@@ -183,7 +187,7 @@ export default function ToneConsole() {
                       </span>
                     </td>
                     <td className="px-3 py-2.5 text-center hidden md:table-cell">
-                      <span className={`tabular-nums typo-caption ${exCount > 0 ? 'text-foreground' : 'text-foreground'}`}>{exCount || '—'}</span>
+                      <span className={`tabular-nums typo-caption ${exCount > 0 ? 'text-foreground' : 'text-foreground/40'}`}>{exCount || '—'}</span>
                     </td>
                     <td className="pr-4 md:pr-6 xl:pr-8 pl-3 py-2.5 text-right">
                       {exists ? (
@@ -244,7 +248,7 @@ export default function ToneConsole() {
           </tbody>
         </table>
         <div className="px-4 md:px-6 xl:px-8 py-3 border-t border-primary/10 flex items-center gap-3 text-[11px] text-foreground">
-          <span className="font-medium uppercase tracking-[0.16em] text-[10px]">tip</span>
+          <span className={`${OVERLINE} font-medium`}>tip</span>
           <span><DebtText k="auto_click_any_row_to_inline_edit_generic_is_th_166e15d9" /></span>
         </div>
       </div>
@@ -257,7 +261,7 @@ function Tile({ label, value, accent = 'violet' }: { label: string; value: numbe
   return (
     <div className={`rounded-interactive border ${tone} bg-card/40 px-2.5 py-1 flex flex-col items-center min-w-[64px]`}>
       <span className="typo-data-lg tabular-nums leading-none">{value}</span>
-      <span className="text-[9px] uppercase tracking-[0.16em] text-foreground mt-0.5">{label}</span>
+      <span className={`${OVERLINE} text-foreground mt-0.5`}>{label}</span>
     </div>
   );
 }
@@ -267,7 +271,7 @@ function FieldCell({ span, label, required, children }: { span: 6 | 12; label: s
   return (
     <label className={`block space-y-1 ${SPAN[span] ?? SPAN[12]}`}>
       <div className="flex items-center gap-1.5">
-        <span className="text-[10px] uppercase tracking-[0.16em] text-foreground font-medium">{label}</span>
+        <span className={`${OVERLINE} text-foreground font-medium`}>{label}</span>
         {required && <span className="text-[10px] text-amber-300">*</span>}
       </div>
       {children}

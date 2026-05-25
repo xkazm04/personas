@@ -173,7 +173,7 @@ export default function BrowsePanel() {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t.plugins.obsidian_brain.filter_notes}
-            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground focus-ring transition-all"
+            className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground/40 focus-ring transition-all"
           />
         </div>
 
