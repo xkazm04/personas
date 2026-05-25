@@ -48,7 +48,20 @@ async function answerCard() {
     return `radio[${idx}]→${(want || '').slice(0, 30)}`;
   }
   if (ri.n > 0 && ri.checked) return 'radio(already-set)';
-  // 3) dynamic SelectPills (async-loaded option buttons) — only for questions
+  // 3) free-text questions — a genuine <textarea> or text <input> (never a
+  // number/select). Type a sensible generic answer only when EMPTY, so we
+  // unblock required free-text config questions without clobbering defaults.
+  const textState = await readStr(inModal(`const i=r.querySelector('textarea, input[type="text"]:not([data-testid="template-search-input"])');if(!i)return 'none';return (i.value&&i.value.trim())?'filled':'empty';`), 30);
+  if (textState.includes('empty')) {
+    let val = 'all relevant sources';
+    if (/email|sender/i.test(q)) val = 'all senders';
+    else if (/signal|profil|market|competitor/i.test(q)) val = 'pricing changes, feature launches, competitor mentions';
+    else if (/url|domain|site/i.test(q)) val = 'all configured sources';
+    await evalJs(inModal(`const i=r.querySelector('textarea, input[type="text"]:not([data-testid="template-search-input"])');if(i){const set=Object.getOwnPropertyDescriptor(Object.getPrototypeOf(i),'value').set;set.call(i,${JSON.stringify(val)});i.dispatchEvent(new Event('input',{bubbles:true}));}`));
+    return `text→"${val.slice(0, 24)}"`;
+  }
+  if (textState.includes('filled')) return 'text(already-filled)';
+  // 4) dynamic SelectPills (async-loaded option buttons) — only for questions
   // whose source is dynamic (codebase / repository / project / channel). Poll
   // for the option to appear, then click the pill matching intent.
   if (/codebase|repository|\brepo\b|registered|project|channel|which .* should/.test(q)) {
@@ -136,14 +149,16 @@ async function navOpen(name) {
     }
     await sleep(600);
   }
-  // build
+  // build — the test gate can take ~120-150s (longer than Dev Clone), so poll
+  // generously and only treat an actual "Approve Anyway" button as ready (the
+  // TESTING phase has no Approve button; matching bare "Approve" mis-fired).
   console.log('Continue→', JSON.stringify(await clickModal('CONTINUE TO BUILD')));
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     await sleep(3000);
     if (!(await alive())) { console.log('APP DIED during build'); return; }
-    const t = await modalText();
-    if (/TEST COMPLETE|Approve Anyway|Approve/i.test(t)) { console.log(`[t+${i*3}s] build gate ready`); break; }
-    if (i % 3 === 0) console.log(`[t+${i*3}s] building...`);
+    const ready = JSON.stringify(await evalJs(inModal(`return Array.from(r.querySelectorAll('button')).some(b=>/approve anyway/i.test(b.innerText||''))?'yes':'no'`)));
+    if (ready.includes('yes')) { console.log(`[t+${i*3}s] build gate ready`); break; }
+    if (i % 4 === 0) console.log(`[t+${i*3}s] building...`);
   }
   console.log('Approve→', JSON.stringify(await clickModal('Approve Anyway'))); await sleep(2500);
   const modalGone = (await query(MODAL)).length === 0;
