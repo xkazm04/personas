@@ -48,7 +48,7 @@ Keeping narration as per-step metadata (rather than baked audio clips, as the ma
 
 - The tour panel (and its minimized rail) is fully opaque (`bg-background`, no backdrop blur) for readability over busy app surfaces.
 - `StepProgress` renders steps as a vertical **number + name** list (not icon-only), with a thin divider between each row; the panel's header and sub-step sections are separated by thin dividers too.
-- A **Resume tour** action appears in the desktop footer (`TourResumeFooterIcon`, `data-testid="footer-resume-tour"`) when a tour was started, made partial progress, and then dismissed without completing. Clicking it un-dismisses and resumes from the last unfinished step.
+- A **Resume tour** action appears in the desktop footer (`TourResumeFooterIcon`, `data-testid="footer-resume-tour"`) when a tour was started, made partial progress, and then dismissed without completing. Clicking it un-dismisses and resumes from the last unfinished step. Rather than jumping the route immediately, resuming sets `tourResumePending`: `GuidedTour` first shows a "Pick up where you left off" interstitial (`data-testid="tour-resume-interstitial"`) and only navigates to the resume step after the user clicks **Continue** (which clears the flag). The footer label/tooltip interpolates progress via `tx(t.onboarding.resume_tour, { completed, total })`.
 
 ## Getting Started flow (4 steps)
 

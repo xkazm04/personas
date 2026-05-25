@@ -28,10 +28,11 @@ const IS_MAC =
 export function resolveKeyToken(token: string): string {
   if (token === 'mod') return IS_MAC ? '⌘' : 'Ctrl';
   if (token === 'shift') return IS_MAC ? '⇧' : 'Shift';
+  if (token === 'alt') return IS_MAC ? '⌥' : 'Alt';
   return token;
 }
 
-export type ShortcutSectionId = 'navigation' | 'agents' | 'editing';
+export type ShortcutSectionId = 'navigation' | 'workspace' | 'agents' | 'editing';
 
 export interface ShortcutBinding {
   /**
@@ -58,6 +59,18 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
       { combos: [['mod', 'K']], describe: (t) => t.chrome.shortcuts.command_palette },
       { combos: [['?'], ['mod', '/']], describe: (t) => t.chrome.shortcuts.show_shortcuts },
       { combos: [['Esc']], describe: (t) => t.chrome.shortcuts.close_overlay },
+    ],
+  },
+  {
+    section: 'workspace',
+    title: (t) => t.chrome.shortcuts.section_workspace,
+    bindings: [
+      // Windows-focused, collision-aware (WebView2 is Edge-based): Ctrl+B is
+      // the VS Code sidebar convention; Ctrl+M has no Edge/Windows default;
+      // Alt+A avoids Ctrl+A (select-all) and Ctrl+J (Edge downloads).
+      { combos: [['mod', 'B']], describe: (t) => t.chrome.shortcuts.toggle_sidebar },
+      { combos: [['mod', 'M']], describe: (t) => t.chrome.shortcuts.toggle_monitor },
+      { combos: [['alt', 'A']], describe: (t) => t.chrome.shortcuts.toggle_athena },
     ],
   },
   {

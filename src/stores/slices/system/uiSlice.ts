@@ -1,5 +1,6 @@
 import { startTransition } from "react";
 import type { StateCreator } from "zustand";
+import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { SystemStore } from "../../storeTypes";
 import type { SidebarSection, HomeTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
@@ -172,20 +173,54 @@ export interface UiSlice {
   setContextualCockpit: (c: ContextualCockpit | null) => void;
 
   /**
-   * Most-recent-first stack of sidebar sections the user navigated *away
-   * from*. Capped at {@link NAV_HISTORY_MAX} so memory pressure stays
-   * trivial. `setSidebarSection` pushes the previous section before
-   * swapping; `navigateBack` pops the head and applies it without
-   * re-pushing.
+   * Most-recent-first stack of locations the user navigated *away from*.
+   * Capped at {@link NAV_HISTORY_MAX} so memory pressure stays trivial.
+   *
+   * A {@link NavEntry} is module-aware: it pairs the sidebar section with the
+   * selected persona id, so the back button can step back through agents the
+   * user was viewing inside the Agents module — not just across sidebar
+   * sections. `setSidebarSection` pushes the outgoing location on a section
+   * change; the `persona:selected` storeBus handler pushes it on a persona
+   * switch; `navigateBack` pops the head and restores both without re-pushing.
    */
-  navigationHistory: SidebarSection[];
+  navigationHistory: NavEntry[];
+  /** Append an outgoing location to the back stack (dedups the consecutive head). */
+  pushNavEntry: (entry: NavEntry) => void;
   navigateBack: () => void;
+}
+
+/** A single back-history location — section + which persona was selected there. */
+export interface NavEntry {
+  section: SidebarSection;
+  personaId: string | null;
 }
 
 /** Cap on the back-history depth. */
 export const NAV_HISTORY_MAX = 5;
 
-export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) => ({
+/**
+ * True while {@link UiSlice.navigateBack} is restoring a location. The
+ * `persona:selected` storeBus handler consults this so the `selectPersona`
+ * call it makes during a restore does NOT push a fresh history entry (which
+ * would make "back" un-poppable). Module-scoped rather than store state so
+ * cross-store wiring can read it without a circular import.
+ */
+let navRestoring = false;
+export function isNavRestoring(): boolean {
+  return navRestoring;
+}
+
+/** Current selected persona id, read via storeBus so uiSlice avoids importing agentStore. */
+function currentSelectedPersonaId(): string | null {
+  try {
+    return storeBus.get<string | undefined>(AccessorKey.AGENTS_SELECTED_PERSONA_ID) ?? null;
+  } catch {
+    // Accessor not yet registered (e.g. unit tests, pre-initStoreBus boot).
+    return null;
+  }
+}
+
+export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, get) => ({
   sidebarSection: "home" as SidebarSection,
   monitorOpen: false,
   monitorGroupBy: 'none' as const,
@@ -238,7 +273,11 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setSidebarSection: (section) => startTransition(() => set((state) => {
     // Idempotent — re-clicking the current section is a no-op for history.
     if (state.sidebarSection === section) return { sidebarSection: section };
-    const next = [state.sidebarSection, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX);
+    // While restoring a back-step, swap the section without recording it.
+    if (navRestoring) return { sidebarSection: section };
+    // Capture the full outgoing location (section + which persona was open).
+    const entry: NavEntry = { section: state.sidebarSection, personaId: currentSelectedPersonaId() };
+    const next = [entry, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX);
     return { sidebarSection: section, navigationHistory: next };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
@@ -305,9 +344,30 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   setContextualCockpit: (contextualCockpit) => set({ contextualCockpit }),
 
   navigationHistory: [],
-  navigateBack: () => startTransition(() => set((state) => {
-    const [head, ...rest] = state.navigationHistory;
-    if (!head) return state;
-    return { sidebarSection: head, navigationHistory: rest };
-  })),
+
+  pushNavEntry: (entry) => set((state) => {
+    if (navRestoring) return state;
+    const head = state.navigationHistory[0];
+    // Dedup the consecutive head — repeated identical locations add no value.
+    if (head && head.section === entry.section && head.personaId === entry.personaId) {
+      return state;
+    }
+    return { navigationHistory: [entry, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX) };
+  }),
+
+  navigateBack: () => startTransition(() => {
+    const [head, ...rest] = get().navigationHistory;
+    if (!head) return;
+    navRestoring = true;
+    try {
+      // Restore persona selection first. selectPersona emits `persona:selected`,
+      // which the storeBus handler turns into a section→personas swap; the
+      // navRestoring guard keeps that from pushing a fresh entry. We then set
+      // the section explicitly to the recorded one (which may not be personas).
+      storeBus.emit('nav:select-persona', { personaId: head.personaId });
+      set({ sidebarSection: head.section, navigationHistory: rest });
+    } finally {
+      navRestoring = false;
+    }
+  }),
 });

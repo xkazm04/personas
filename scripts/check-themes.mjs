@@ -170,8 +170,6 @@ const THEMES = [
   { id: 'light',         selector: '[data-theme="light"]' },
   { id: 'light-ice',     selector: '[data-theme="light-ice"]' },
   { id: 'light-news',    selector: '[data-theme="light-news"]' },
-  { id: 'light-sage',    selector: '[data-theme="light-sage"]' },
-  { id: 'light-sand',    selector: '[data-theme="light-sand"]' },
 ];
 
 // Minimum opacity a component may apply to muted text and still hold AA.

@@ -12,6 +12,7 @@ import { X, Activity, Mail, FolderGit2, Layers, ChevronDown } from 'lucide-react
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
+import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
@@ -150,6 +151,11 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     [personas, selection],
   );
 
+  // Faint network-of-agents backdrop — dark mode only (the light-theme
+  // alternative is a follow-up). Rendered behind everything at low opacity so
+  // it reads as premium texture, not a competing foreground.
+  const isDark = useIsDarkTheme();
+
   const attentionCards = displayCards.filter((c) => c.attentionCount > 0).length;
   const runningCount = useMemo(
     () => Object.values(activeProcesses).filter((p) => p.status === 'running').length,
@@ -165,8 +171,19 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       className="fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-50 bg-background/98 backdrop-blur-xl flex flex-col"
       data-testid="persona-monitor"
     >
+      {/* Faint interconnected-agents backdrop (dark mode only). */}
+      {isDark && (
+        <img
+          aria-hidden
+          src="/illustrations/monitor-network-dark.png"
+          alt=""
+          draggable={false}
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full object-cover opacity-[0.07]"
+        />
+      )}
+
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
+      <div className="relative z-10 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Activity className="w-4 h-4 text-primary" />
@@ -241,7 +258,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       <SystemBand processes={systemProcesses} now={now} />
 
       {/* Body — persona grid with the drawer layered over it */}
-      <div className="relative flex-1 min-h-0 overflow-hidden">
+      <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
         <div className="absolute inset-0 overflow-y-auto px-5 py-4">
           {displayCards.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center gap-3 typo-body text-foreground">
@@ -356,7 +373,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
       </div>
 
       {/* Footer hint */}
-      <div className="flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground">
+      <div className="relative z-10 flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground">
         <span>{t.monitor.footer_legend}</span>
         <span>{tx(t.monitor.footer_counts, { reviews: reviews.length, system: systemProcesses.length })}</span>
       </div>
@@ -372,7 +389,7 @@ function SystemBand({ processes, now }: { processes: ProcessEntry[]; now: number
   const { t } = useTranslation();
   if (processes.length === 0) return null;
   return (
-    <div className="flex-shrink-0 flex items-center gap-2 px-5 py-2 border-b border-primary/8 bg-secondary/12 overflow-x-auto">
+    <div className="relative z-10 flex-shrink-0 flex items-center gap-2 px-5 py-2 border-b border-primary/8 bg-secondary/12 overflow-x-auto">
       <span className="flex-shrink-0 flex items-center gap-1.5 typo-caption uppercase tracking-wider text-foreground">
         <Activity className="w-3 h-3" /> {t.monitor.system}
       </span>

@@ -13,8 +13,17 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useToastStore } from '@/stores/toastStore';
+import { isNavRestoring } from '@/stores/slices/system/uiSlice';
 
 let initialized = false;
+
+/**
+ * Last persona id observed by the nav-history capture. Lets the
+ * `persona:selected` handler record the *outgoing* persona (the one we're
+ * leaving) when the user switches agents — the event payload only carries the
+ * incoming id. Module-scoped so it survives across emissions for the session.
+ */
+let lastNavPersonaId: string | null = null;
 
 export function initStoreBus(): void {
   if (initialized) return;
@@ -50,11 +59,27 @@ export function initStoreBus(): void {
     useSystemStore.getState().emitTourEvent('tour:execution-complete');
   });
 
-  // Persona selected — systemStore updates navigation chrome
+  // Persona selected — systemStore updates navigation chrome + records the
+  // outgoing location for the back button (module-aware history). The event
+  // payload is the INCOMING persona, so we push the location we're leaving
+  // (current section + the previously-selected persona) before switching.
+  // Skipped while a back-step is restoring, so "back" stays poppable.
   storeBus.on('persona:selected', ({ personaId }) => {
-    useSystemStore.getState().setEditorTab('activity');
+    const sys = useSystemStore.getState();
+    if (!isNavRestoring() && personaId !== lastNavPersonaId) {
+      sys.pushNavEntry({ section: sys.sidebarSection, personaId: lastNavPersonaId });
+    }
+    lastNavPersonaId = personaId;
+    sys.setEditorTab('activity');
     if (personaId) useSystemStore.setState({ sidebarSection: 'personas' });
     useSystemStore.setState({ isCreatingPersona: false });
+  });
+
+  // Back-history restore — agentStore (re)selects the persona recorded in the
+  // popped NavEntry. navigateBack sets isNavRestoring() first, so the
+  // resulting persona:selected above won't push a new entry.
+  storeBus.on('nav:select-persona', ({ personaId }) => {
+    useAgentStore.getState().selectPersona(personaId);
   });
 
   // Network change (bundle import / share link import) — agentStore refreshes personas

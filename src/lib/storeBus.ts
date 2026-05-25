@@ -28,6 +28,11 @@ export interface StoreBusEventMap {
   /** User selected/deselected a persona (systemStore subscribes for nav state). */
   'persona:selected': { personaId: string | null };
 
+  /** Back-history restore wants a persona (re)selected (agentStore subscribes,
+   *  calls selectPersona). Emitted by `navigateBack` while `isNavRestoring()`
+   *  is true so the resulting `persona:selected` does NOT push a new entry. */
+  'nav:select-persona': { personaId: string | null };
+
   /** Bundle import / share-link import finished (agentStore subscribes to refresh personas). */
   'network:personas-changed': undefined;
 

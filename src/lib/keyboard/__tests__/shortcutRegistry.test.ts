@@ -11,18 +11,20 @@ describe('shortcutRegistry', () => {
     expect(SHORTCUTS_OPEN_EVENT).toBe('personas:shortcuts-open');
   });
 
-  it('resolveKeyToken maps mod/shift to a platform glyph and passes others through', () => {
+  it('resolveKeyToken maps mod/shift/alt to a platform glyph and passes others through', () => {
     // In jsdom navigator.platform is non-mac → spelled-out modifiers.
     expect(resolveKeyToken('mod')).toBe('Ctrl');
     expect(resolveKeyToken('shift')).toBe('Shift');
+    expect(resolveKeyToken('alt')).toBe('Alt');
     expect(resolveKeyToken('K')).toBe('K');
     expect(resolveKeyToken('?')).toBe('?');
     expect(resolveKeyToken('←')).toBe('←');
   });
 
-  it('declares the three documented sections in order', () => {
+  it('declares the documented sections in order', () => {
     expect(SHORTCUT_GROUPS.map((g) => g.section)).toEqual([
       'navigation',
+      'workspace',
       'agents',
       'editing',
     ]);
@@ -48,11 +50,15 @@ describe('shortcutRegistry', () => {
       chrome: {
         shortcuts: {
           section_navigation: 'Navigation',
+          section_workspace: 'Workspace',
           section_agents: 'Agents',
           section_editing: 'Editing',
           command_palette: 'Open command palette',
           show_shortcuts: 'Show keyboard shortcuts',
           close_overlay: 'Close dialog or overlay',
+          toggle_sidebar: 'Collapse / expand sidebar',
+          toggle_monitor: 'Open / close Persona Monitor',
+          toggle_athena: 'Open / close Athena chat',
           triage_reject: 'Reject idea',
           triage_accept: 'Accept idea',
           undo: 'Undo',

@@ -14,7 +14,9 @@ const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 export default function TitleBar() {
   const [maximized, setMaximized] = useState(false);
   const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
-  const toggleNotifications = useNotificationCenterStore((s) => s.toggle);
+  const notificationsOpen = useNotificationCenterStore((s) => s.isOpen);
+  const setNotificationsOpen = useNotificationCenterStore((s) => s.setOpen);
+  const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
@@ -46,6 +48,18 @@ export default function TitleBar() {
 
   const { t } = useTranslation();
 
+  // Opening the bell marks everything read (clears the unread badge); closing
+  // is a plain toggle. Mirrors how most notification trays behave — surfacing
+  // the panel is the acknowledgement.
+  const handleToggleNotifications = () => {
+    if (!notificationsOpen) {
+      markAllNotificationsRead();
+      setNotificationsOpen(true);
+    } else {
+      setNotificationsOpen(false);
+    }
+  };
+
   if (!IS_DESKTOP) return null;
 
   const isScheduleActive = sidebarSection === 'schedules';
@@ -73,8 +87,8 @@ export default function TitleBar() {
           className="titlebar-btn ml-1"
           data-testid="titlebar-back"
           onClick={navigateBack}
-          aria-label={`Back to ${navigationHistory[0]}`}
-          title={`Back to ${navigationHistory[0]} (${navigationHistory.length} in history)`}
+          aria-label={t.common.back}
+          title={t.common.back}
         >
           <ArrowLeft size={20} strokeWidth={1.5} />
         </button>
@@ -110,11 +124,11 @@ export default function TitleBar() {
         {/* Process activity indicator */}
         <ProcessActivityIndicator />
 
-        {/* Notification bell */}
+        {/* Notification bell — stroke takes the theme color while the center is open */}
         <button
-          className="titlebar-btn relative"
+          className={`titlebar-btn relative transition-colors ${notificationsOpen ? 'text-primary' : ''}`}
           data-testid="titlebar-notifications"
-          onClick={toggleNotifications}
+          onClick={handleToggleNotifications}
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
           title={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
         >

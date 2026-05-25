@@ -82,7 +82,10 @@ function AccountFooterIcon() {
 
       {open && isAuthenticated && (
           <div
-            className="animate-fade-slide-in absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50"
+            /* Anchor to the button's left edge and expand rightward — the
+               account icon sits near the window's left corner, so centering
+               (left-1/2 -translate-x-1/2) used to push the popover off-screen. */
+            className="animate-fade-slide-in absolute bottom-full left-0 mb-2 w-48 rounded-xl border border-primary/15 bg-background shadow-elevation-3 p-2 z-50"
           >
             <div className="px-2 py-1.5 mb-1 border-b border-primary/10">
               <p className="typo-caption text-foreground/90 truncate">{user?.display_name ?? 'User'}</p>
@@ -433,7 +436,7 @@ function ProjectPickerFooterIcon() {
 // ---------------------------------------------------------------------------
 
 function TourResumeFooterIcon() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const tourActive = useSystemStore((s) => s.tourActive);
   const tourDismissed = useSystemStore((s) => s.tourDismissed);
   const tourCompleted = useSystemStore((s) => s.tourCompleted);
@@ -447,13 +450,18 @@ function TourResumeFooterIcon() {
   const show = !tourActive && !tourCompleted && tourDismissed && partial;
 
   const handleClick = useCallback(() => {
-    useSystemStore.setState({ tourDismissed: false });
+    // Resume WITHOUT an aggressive route jump: startTour reactivates the tour,
+    // then tourResumePending makes GuidedTour show its "continue where you left
+    // off" window first and redirect only after the user confirms.
     useSystemStore.getState().startTour(tourId);
+    useSystemStore.setState({ tourDismissed: false, tourResumePending: true });
   }, [tourId]);
 
   if (!show) return null;
 
-  const label = `${t.onboarding.resume_tour} · ${done}/${total}`;
+  // tx() interpolates {completed}/{total} — the label string carries the
+  // placeholders, so a plain `t.onboarding.resume_tour` would render them raw.
+  const label = tx(t.onboarding.resume_tour, { completed: done, total });
   return (
     <button
       onClick={handleClick}
