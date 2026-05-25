@@ -703,7 +703,6 @@ fn import_persona_from_value(pool: &DbPool, value: &serde_json::Value) -> Result
             .get("max_turns")
             .and_then(|v| v.as_i64())
             .map(|n| n as i32),
-        group_id: None,
         project_id: None,
         enabled: Some(true),
         max_concurrent: None,
