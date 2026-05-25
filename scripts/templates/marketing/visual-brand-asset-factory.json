@@ -240,6 +240,32 @@
         "dimension": "task"
       },
       {
+        "id": "aq_target_codebase",
+        "scope": "connector",
+        "use_case_ids": [
+          "uc_brief_generation"
+        ],
+        "use_case_id": "uc_brief_generation",
+        "connector_names": [
+          "codebase"
+        ],
+        "category": "configuration",
+        "question": "Which registered codebase should the Design DNA brief be extracted from?",
+        "type": "select",
+        "optional": true,
+        "allow_custom": true,
+        "default": "codebase",
+        "maps_to": "use_cases[uc_brief_generation].sample_input.target_codebase",
+        "variable_name": "target_codebase",
+        "context": "Optional. Pick from your registered Codebase connectors so the Design DNA brief is grounded in the real source (auto-from-codebase) and brand drift-checks can run against it. If left unset, the brief falls back to the brief-source intent above without codebase grounding.",
+        "dimension": "connector",
+        "dynamic_source": {
+          "service_type": "development",
+          "operation": "list_credentials",
+          "source": "vault"
+        }
+      },
+      {
         "id": "aq_asset_type",
         "scope": "capability",
         "use_case_ids": [
