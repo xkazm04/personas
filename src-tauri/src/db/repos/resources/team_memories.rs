@@ -488,3 +488,25 @@ pub fn evict_excess(
         Ok(deleted as i64)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    /// Regression: opening a team that has no memories used to surface a
+    /// spurious "Failed to load team memories" toast, because the aggregate
+    /// `SUM(...)` returns NULL over zero rows and `row.get::<i64>` then failed
+    /// with InvalidColumnType. `get_stats` must return a zeroed Ok instead.
+    #[test]
+    fn get_stats_on_empty_team_returns_zeroed_not_error() {
+        let pool = init_test_db().unwrap();
+        let stats = get_stats(&pool, "team-with-no-memories", None, None)
+            .expect("get_stats must not error on a team with zero memories");
+        assert_eq!(stats.total, 0);
+        assert_eq!(stats.auto_generated, 0);
+        assert_eq!(stats.avg_importance, 0.0);
+        assert!(stats.category_counts.is_empty());
+        assert!(stats.run_counts.is_empty());
+    }
+}

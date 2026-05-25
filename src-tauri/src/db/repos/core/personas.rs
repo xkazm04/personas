@@ -1463,6 +1463,13 @@ mod tests {
     use super::*;
     use crate::db::init_test_db;
 
+    // NOTE: `blast_radius` is not unit-tested here — `init_test_db`'s reduced
+    // schema lacks columns the function queries (e.g. `persona_triggers.name`),
+    // so the call errors before reaching any new logic. The team-membership
+    // branch is a straight INNER JOIN mirroring the existing `chain_dependents`
+    // query and is covered by `cargo check`; verify end-to-end via the delete
+    // confirm modal.
+
     #[test]
     fn test_crud_persona() {
         let pool = init_test_db().unwrap();
