@@ -10,9 +10,11 @@ name: E2E Smoke (live-app)
 #   3. Promote installer-test.yml from post-release to pre-release gate.
 
 on:
+  # PR-only while non-blocking: triggering on both pull_request and push:master
+  # ran this 30-min Tauri-build smoke job twice per change (once per PR commit,
+  # again on the merge push). Re-add the push trigger when promoted to a
+  # blocking gate per the ADR.
   pull_request:
-    branches: [master]
-  push:
     branches: [master]
 
 concurrency:
