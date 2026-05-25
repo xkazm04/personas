@@ -234,7 +234,7 @@ export default function GraphPanel() {
                     if (e.key === 'Enter') runSearch();
                   }}
                   placeholder={t.plugins.obsidian_brain.search_vault_placeholder}
-                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+                  className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
                 />
               </div>
               <button
@@ -310,7 +310,7 @@ export default function GraphPanel() {
                 value={journalSection}
                 onChange={(e) => setJournalSection(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.journal_section_placeholder}
-                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+                className="w-48 px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
               <button
                 onClick={appendJournal}
@@ -326,7 +326,7 @@ export default function GraphPanel() {
               onChange={(e) => setJournalBody(e.target.value)}
               placeholder={t.plugins.obsidian_brain.journal_body_placeholder}
               rows={4}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />
           </div>
         </SectionCard>
@@ -339,7 +339,7 @@ export default function GraphPanel() {
               value={meetingTitle}
               onChange={(e) => setMeetingTitle(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_title_placeholder}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
             />
             <div className="relative">
               <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
@@ -348,7 +348,7 @@ export default function GraphPanel() {
                 value={meetingAttendees}
                 onChange={(e) => setMeetingAttendees(e.target.value)}
                 placeholder={t.plugins.obsidian_brain.meeting_attendees_placeholder}
-                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all"
+                className="w-full pl-9 pr-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all"
               />
             </div>
             <textarea
@@ -356,7 +356,7 @@ export default function GraphPanel() {
               onChange={(e) => setMeetingBody(e.target.value)}
               placeholder={t.plugins.obsidian_brain.meeting_body_placeholder}
               rows={5}
-              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground focus-ring transition-all resize-none"
+              className="w-full px-3 py-2 rounded-modal bg-background/50 border border-primary/12 text-foreground typo-body placeholder:text-foreground/40 focus-ring transition-all resize-none"
             />
             <button
               onClick={writeMeeting}
