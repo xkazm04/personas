@@ -541,6 +541,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
               <>
                 {/* Teams header → management table (deselects any open team) */}
                 <button
+                  data-testid="team-nav"
                   onClick={() => { selectPersona(null); selectTeam(null); setAgentTab('team'); useSystemStore.getState().setIsCreatingPersona(false); }}
                   aria-current={agentTab === 'team' && !selectedTeamId ? 'page' : undefined}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
@@ -564,6 +565,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                       .map((team) => (
                         <button
                           key={team.id}
+                          data-testid={`team-row-${team.id}`}
                           onClick={() => { selectPersona(null); selectTeam(team.id); setAgentTab('team'); }}
                           aria-current={selectedTeamId === team.id ? 'page' : undefined}
                           className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${

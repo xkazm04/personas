@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Sparkles, ArrowRight, Check, CircleDot, Plus } from 'lucide-react';
-import { decomposeTeamAssignmentGoal, createTeamAssignment, startTeamAssignment } from '@/api/pipeline/assignments';
+import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
@@ -120,9 +120,15 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  const available = useMemo(() => {
+  const { available, excludedDrafts } = useMemo(() => {
     const taken = new Set(teamMembers.map((m) => m.persona_id));
-    return personas.filter((p) => !taken.has(p.id));
+    const candidates = personas.filter((p) => !taken.has(p.id));
+    // Draft / not-yet-ready personas can't run inside an assignment — the
+    // orchestrator rejects any member whose setup_status != "ready" (or that
+    // is disabled). Exclude them here so they never get added in the first
+    // place, and surface why with a hint.
+    const ready = candidates.filter((p) => p.setup_status === 'ready' && p.enabled);
+    return { available: ready, excludedDrafts: candidates.length - ready.length };
   }, [personas, teamMembers]);
 
   const handleAdd = useCallback(
@@ -144,6 +150,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
     appearance === 'dashed' ? (
       <button
         type="button"
+        data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-primary/20 text-foreground/60 hover:bg-secondary/30 hover:text-foreground transition-colors typo-body"
       >
@@ -153,6 +160,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
     ) : (
       <button
         type="button"
+        data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
       >
@@ -182,6 +190,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 available.map((p) => (
                   <button
                     key={p.id}
+                    data-testid="team-add-item"
                     type="button"
                     disabled={adding}
                     onClick={() => void handleAdd(p.id)}
@@ -191,6 +200,11 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                     <span className="typo-body text-foreground truncate">{p.name}</span>
                   </button>
                 ))
+              )}
+              {excludedDrafts > 0 && (
+                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground/50">
+                  {ts.add_persona_draft_hint}
+                </p>
               )}
             </motion.div>
           </>
@@ -213,14 +227,54 @@ interface OrchestrationConsoleProps {
   layout?: 'panel' | 'band';
 }
 
+/** Per-step status dot + label. Status strings come straight from the
+ *  orchestrator (TeamAssignmentStep.status); unknown values fall back to a
+ *  neutral pending style. */
+const STEP_STATUS_FALLBACK = { dot: 'bg-foreground/30', text: 'text-foreground/60' };
+const STEP_STATUS_STYLE: Record<string, { dot: string; text: string }> = {
+  pending: STEP_STATUS_FALLBACK,
+  matching: { dot: 'bg-amber-400', text: 'text-amber-300' },
+  running: { dot: 'bg-blue-400 animate-pulse', text: 'text-blue-300' },
+  done: { dot: 'bg-emerald-400', text: 'text-emerald-300' },
+  skipped: { dot: 'bg-foreground/30', text: 'text-foreground/50' },
+  failed: { dot: 'bg-red-400', text: 'text-red-300' },
+  awaiting_review: { dot: 'bg-amber-400', text: 'text-amber-300' },
+};
+
+export function StepStatusBadge({ status }: { status: string }) {
+  const { t } = useTranslation();
+  const ts = t.pipeline.team_studio;
+  const labelMap: Record<string, string> = {
+    pending: ts.step_status_pending,
+    matching: ts.step_status_matching,
+    running: ts.step_status_running,
+    done: ts.step_status_done,
+    skipped: ts.step_status_skipped,
+    failed: ts.step_status_failed,
+    awaiting_review: ts.step_status_awaiting_review,
+  };
+  const style = STEP_STATUS_STYLE[status] ?? STEP_STATUS_FALLBACK;
+  return (
+    <span className={`inline-flex items-center gap-1.5 typo-caption ${style.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+      {labelMap[status] ?? status}
+    </span>
+  );
+}
+
 export function OrchestrationConsole({ teamId, members }: OrchestrationConsoleProps) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
+  const createAssignment = usePipelineStore((s) => s.createTeamAssignment);
+  const startAssignment = usePipelineStore((s) => s.startAssignment);
   const [goal, setGoal] = useState('');
   const [decomposing, setDecomposing] = useState(false);
   const [steps, setSteps] = useState<DecomposedStep[] | null>(null);
   const [running, setRunning] = useState(false);
   const [launched, setLaunched] = useState<string | null>(null);
+  // Live detail for the launched assignment — kept fresh by the global
+  // progress listener (BackgroundServices) even if the user leaves this view.
+  const liveDetail = usePipelineStore((s) => (launched ? s.assignmentDetails[launched] : undefined));
 
   const personaName = useCallback(
     (id: string | null) => (id ? members.find((m) => m.personaId === id)?.name ?? null : null),
@@ -266,7 +320,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         assignedUseCaseId: null,
         dependsOnIndices: null,
       }));
-      const assignment = await createTeamAssignment({
+      const assignment = await createAssignment({
         teamId,
         title: g.length > 60 ? `${g.slice(0, 57)}…` : g,
         goal: g,
@@ -276,14 +330,16 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         companionOpId: null,
         steps: stepInputs,
       });
-      await startTeamAssignment(assignment.id);
+      if (!assignment) return;
+      // startAssignment caches the detail; the global listener keeps it live.
+      await startAssignment(assignment.id);
       setLaunched(assignment.id);
     } catch (err) {
       silentCatch('teamStudio/OrchestrationConsole:assign')(err);
     } finally {
       setRunning(false);
     }
-  }, [teamId, goal, steps]);
+  }, [teamId, goal, steps, createAssignment, startAssignment]);
 
   return (
     <div className="flex flex-col gap-3 h-full">
@@ -294,6 +350,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
       </div>
 
       <textarea
+        data-testid="team-goal-input"
         value={goal}
         onChange={(e) => setGoal(e.target.value)}
         rows={4}
@@ -304,6 +361,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
       <div className="flex items-center gap-2">
         <button
           type="button"
+          data-testid="team-preview-button"
           disabled={!goal.trim() || decomposing}
           onClick={() => void handleDecompose()}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
@@ -313,6 +371,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         </button>
         <button
           type="button"
+          data-testid="team-assign-button"
           disabled={!goal.trim() || running}
           onClick={() => void handleAssign()}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
@@ -326,12 +385,42 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         <AnimatePresence mode="wait">
           {launched && (
             <motion.div
-              key="launched"
+              key="live"
+              data-testid="team-live-checklist"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-card border border-emerald-500/25 bg-emerald-950/30 px-3 py-2 typo-body text-emerald-300"
+              className="flex flex-col gap-2"
             >
-              {ts.assignment_dispatched}
+              <div className="flex items-center justify-between">
+                <span className="typo-label uppercase tracking-wider text-foreground/70">{ts.checklist_heading}</span>
+                <span className="typo-caption text-foreground/50">{ts.checklist_background_note}</span>
+              </div>
+              {(liveDetail?.steps ?? []).length === 0 ? (
+                <p className="typo-body text-foreground/50 px-1">{ts.assignment_dispatched}</p>
+              ) : (
+                (liveDetail?.steps ?? []).map((step, i) => {
+                  const who = personaName(step.assignedPersonaId);
+                  return (
+                    <div key={step.id} className="rounded-card border border-primary/12 bg-secondary/20 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/15 text-primary typo-caption font-bold flex items-center justify-center">
+                          {i + 1}
+                        </span>
+                        <span className="typo-body font-medium text-foreground truncate flex-1">{step.title}</span>
+                        {who && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-500/15 border border-indigo-500/30 typo-caption text-indigo-300">
+                            → {who}
+                          </span>
+                        )}
+                        <StepStatusBadge status={step.status} />
+                      </div>
+                      {step.description && (
+                        <p className="mt-1 pl-7 typo-caption text-foreground/55 line-clamp-2">{step.description}</p>
+                      )}
+                    </div>
+                  );
+                })
+              )}
             </motion.div>
           )}
 
