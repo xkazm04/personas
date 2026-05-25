@@ -5,11 +5,34 @@
  * Features: column sorting, dropdown filters, search, virtual list, row click.
  * Column headers show distinct action icons: ArrowUpDown (sort), Filter (dropdown), Search.
  */
-import { useState, useMemo, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('unified-table');
+const SORT_STORAGE_PREFIX = 'table-sort:';
+
+/** Read a persisted {key,dir} sort for a table, or null if absent/unparseable. */
+function readPersistedSort(tableId?: string): { key: string | null; dir: 'asc' | 'desc' } | null {
+  if (!tableId) return null;
+  try {
+    const raw = localStorage.getItem(SORT_STORAGE_PREFIX + tableId);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const p = parsed as { key?: unknown; dir?: unknown };
+    return {
+      key: typeof p.key === 'string' ? p.key : null,
+      dir: p.dir === 'asc' ? 'asc' : 'desc',
+    };
+  } catch (err) {
+    logger.warn('Failed to read persisted table sort', { error: err });
+    return null;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -242,8 +265,21 @@ export function UnifiedTable<T>({
 }: UnifiedTableProps<T>) {
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
-  const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(defaultSortDir);
+  // A persisted sort (keyed by tableId) wins over defaultSortKey on first
+  // render, so a user's chosen column/direction survives reload.
+  const persistedSort = useMemo(() => readPersistedSort(tableId), [tableId]);
+  const [sortKey, setSortKey] = useState<string | null>(persistedSort?.key ?? defaultSortKey ?? null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(persistedSort?.dir ?? defaultSortDir);
+
+  // Persist the active sort whenever it changes (no-op without a tableId).
+  useEffect(() => {
+    if (!tableId || sortKey === null) return;
+    try {
+      localStorage.setItem(SORT_STORAGE_PREFIX + tableId, JSON.stringify({ key: sortKey, dir: sortDir }));
+    } catch (err) {
+      logger.warn('Failed to persist table sort', { error: err });
+    }
+  }, [tableId, sortKey, sortDir]);
   const resize = useColumnWidths(tableId ?? '');
   const resizable = !!tableId;
 
