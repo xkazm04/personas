@@ -40,6 +40,15 @@ fn main() {
         "MICROSOFT_CLIENT_SECRET",
         "SENTRY_DSN",
     ] {
+        // Re-run this build script (and re-embed the value) whenever the var's
+        // VALUE changes — not just when the .env file path changes. Without
+        // this, a rotated secret (e.g. CI swapping SENTRY_DSN) is ignored:
+        // Cargo, having emitted at least one rerun-if-* directive, only re-runs
+        // build.rs on the triggers it was told about, so a cached build-script
+        // output silently ships the previous (or empty) value. swatinem/rust-
+        // cache restores target/ across CI runs, making this a live release
+        // hazard rather than a theoretical one.
+        println!("cargo:rerun-if-env-changed={key}");
         if let Ok(val) = std::env::var(key) {
             if !val.trim().is_empty() {
                 println!("cargo:rustc-env={key}={val}");
