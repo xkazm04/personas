@@ -73,6 +73,36 @@ pub fn list_team_assignment_events(
     repo::list_events(&state.db, &assignment_id, limit)
 }
 
+/// Athena post-run reconciliation (Phase 4). When an Athena-dispatched
+/// assignment (`companion_op_id` set) reaches a terminal status, record a
+/// compact outcome digest onto its OperativeMemory operation so Athena's chat
+/// can reason about what the team accomplished. No-op (returns `false`) for
+/// team-UI assignments with no operation to reconcile into — those surface via
+/// the live checklist + assignment board instead. Sonnet still does the
+/// up-front decompose; this is reflection, not orchestration.
+#[tauri::command]
+pub fn companion_record_assignment_outcome(
+    state: State<'_, Arc<AppState>>,
+    assignment_id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    let assignment = repo::get_by_id(&state.db, &assignment_id)?;
+    let Some(op_id) = assignment.companion_op_id.clone() else {
+        return Ok(false); // not Athena-dispatched — nothing to reconcile
+    };
+    let steps = repo::list_steps(&state.db, &assignment_id)?;
+
+    let mut lines = vec![format!("Team assignment \"{}\" — {}", assignment.title, assignment.status)];
+    lines.push(format!("Goal: {}", assignment.goal));
+    for (i, s) in steps.iter().enumerate() {
+        lines.push(format!("{}. [{}] {}", i + 1, s.status, s.title));
+    }
+    let failed = assignment.status == "failed";
+    let recorded = crate::companion::orchestration::operative_memory::memory()
+        .complete_operation_with_summary(&op_id, lines.join("\n"), failed);
+    Ok(recorded)
+}
+
 #[tauri::command]
 pub fn list_team_assignment_steps(
     state: State<'_, Arc<AppState>>,

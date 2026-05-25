@@ -13,6 +13,7 @@ import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/ag
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useLangfuseStackEvents } from "@/features/plugins/langfuse/useLangfuseStackEvents";
 import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/pipeline/sub_assignments";
+import { useAthenaAssignmentReconciliation } from "@/features/plugins/companion/useAthenaAssignmentReconciliation";
 
 
 export default function BackgroundServices() {
@@ -39,5 +40,8 @@ export default function BackgroundServices() {
   // module, so the live checklist + assignment board reflect reality the
   // instant the user returns to the team.
   useGlobalAssignmentProgressListener();
+  // Phase 4 — when an Athena-dispatched assignment finishes, record its outcome
+  // into OperativeMemory so Athena's chat can reason about the team's result.
+  useAthenaAssignmentReconciliation();
   return null;
 }

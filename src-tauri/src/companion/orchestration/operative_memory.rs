@@ -722,6 +722,33 @@ impl OperativeMemory {
         Some(summary)
     }
 
+    /// Athena post-run reconciliation: record a team-assignment's terminal
+    /// outcome onto the operation it was dispatched under (`companion_op_id`).
+    /// Stamps the supplied digest as the completion summary + sets the
+    /// terminal status + end time. Returns false when no op with that id
+    /// exists (e.g. a non-Athena, team-UI assignment). Unlike
+    /// `synthesize_operation_summary` (derives from sessions), the caller
+    /// supplies the assignment digest here.
+    pub fn complete_operation_with_summary(
+        &self,
+        operation_id: &str,
+        summary: String,
+        failed: bool,
+    ) -> bool {
+        let mut ops = self.operations.write().unwrap_or_else(|e| e.into_inner());
+        let Some(op) = ops.get_mut(operation_id) else {
+            return false;
+        };
+        op.completion_summary = Some(summary);
+        op.status = if failed {
+            OperationStatus::Failed
+        } else {
+            OperationStatus::Completed
+        };
+        op.ended_at_ms = Some(now_ms());
+        true
+    }
+
     // ── D9 — intervention bookkeeping ─────────────────────────────────
 
     /// Try to record a `fleet_intervene` call against `fleet_session_id`.

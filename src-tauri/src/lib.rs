@@ -1947,6 +1947,7 @@ pub fn run() {
             commands::teams::assignments::list_team_assignments,
             commands::teams::assignments::get_team_assignment_detail,
             commands::teams::assignments::list_team_assignment_events,
+            commands::teams::assignments::companion_record_assignment_outcome,
             commands::teams::assignments::list_team_assignment_steps,
             commands::teams::assignments::start_team_assignment,
             commands::teams::assignments::abort_team_assignment,
