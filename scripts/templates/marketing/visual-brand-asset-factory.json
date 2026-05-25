@@ -240,6 +240,23 @@
         "dimension": "task"
       },
       {
+        "id": "aq_brief_content",
+        "scope": "capability",
+        "use_case_ids": [
+          "uc_brief_generation"
+        ],
+        "use_case_id": "uc_brief_generation",
+        "category": "domain",
+        "question": "Paste your design.md / brand brief (only if you chose \"I'll paste my own\" above)",
+        "type": "textarea",
+        "optional": true,
+        "default": "",
+        "maps_to": "use_cases[uc_brief_generation].sample_input.brief_content",
+        "variable_name": "brief_content",
+        "context": "Optional. If you picked \"I'll paste my own design.md\" for the brief mode, paste the full brief here (from Stitch, Figma, Gemini, or hand-written) and the agent uses it verbatim as the empathy + sensory-language source — no codebase extraction. Leave blank for auto-extract or on-demand modes.",
+        "dimension": "task"
+      },
+      {
         "id": "aq_target_codebase",
         "scope": "connector",
         "use_case_ids": [
