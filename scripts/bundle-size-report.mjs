@@ -17,7 +17,7 @@
  * Output:    Markdown report to stdout.
  */
 
-import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync } from "fs";
+import { readdirSync, statSync, readFileSync, writeFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -25,7 +25,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
 const ASSETS_DIR = join(ROOT, "dist", "assets");
 const BASELINE_PATH = join(__dirname, "bundle-baseline.json");
-const SIZES_OUTPUT = join(ROOT, "dist", "bundle-sizes.json");
 
 const MAX_CHUNK_KB = 850;
 const MAX_TOTAL_KB = 5000;
@@ -109,14 +108,14 @@ if (saveBaseline) {
     totalKB: Math.round(totalKB),
     chunks: chunkMap,
   };
-  try {
-    mkdirSync(dirname(SIZES_OUTPUT), { recursive: true });
-  } catch {
-    // dist/ may already exist
-  }
-  writeFileSync(SIZES_OUTPUT, JSON.stringify(output, null, 2) + "\n");
-  // Also stderr so stdout stays clean for markdown
-  process.stderr.write(`Saved bundle sizes to ${SIZES_OUTPUT}\n`);
+  // Write to the SAME file the delta comparison reads from. This previously
+  // wrote dist/bundle-sizes.json while deltas read scripts/bundle-baseline.json,
+  // so --save-baseline never actually refreshed the baseline. scripts/ always
+  // exists (no mkdir needed). Refreshing the baseline is now a deliberate
+  // `--save-baseline` + commit action, not a per-PR CI side effect.
+  writeFileSync(BASELINE_PATH, JSON.stringify(output, null, 2) + "\n");
+  // stderr so stdout stays clean for the markdown report
+  process.stderr.write(`Saved bundle baseline to ${BASELINE_PATH}\n`);
 }
 
 // ── Generate markdown report ─────────────────────────────────────────

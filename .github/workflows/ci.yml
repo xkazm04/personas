@@ -118,9 +118,6 @@ jobs:
         # Total: 5000 KB across all chunks.
         run: node scripts/check-bundle-budget.mjs --max-chunk-kb=850 --max-total-kb=5000
 
-      - name: Save bundle baseline
-        run: node scripts/bundle-size-report.mjs --save-baseline
-
       - name: Comment bundle size on PR
         if: github.event_name == 'pull_request'
         env:
