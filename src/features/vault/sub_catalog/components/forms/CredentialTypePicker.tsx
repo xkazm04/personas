@@ -89,8 +89,10 @@ export function CredentialTypePicker({
     >
       <div className="flex items-center gap-3">
         <button
+          type="button"
           onClick={onBack}
           data-testid="vault-back-btn"
+          aria-label={t.common.back}
           className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />

@@ -1,4 +1,6 @@
+import { useId } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import type { SchemaFormConfig, SchemaSubType } from './schemaFormTypes';
 
 interface SchemaFormHeaderProps {
@@ -7,10 +9,13 @@ interface SchemaFormHeaderProps {
 }
 
 export function SchemaFormHeader({ config, onBack }: SchemaFormHeaderProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3">
       <button
+        type="button"
         onClick={onBack}
+        aria-label={t.common.back}
         className="p-1.5 rounded-card hover:bg-secondary/60 text-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -33,12 +38,14 @@ interface SchemaNameFieldProps {
 }
 
 export function SchemaNameField({ name, onNameChange, nameLabel, namePlaceholder, error }: SchemaNameFieldProps) {
+  const inputId = useId();
   return (
     <div>
-      <label className="block typo-body font-medium text-foreground mb-1.5">
+      <label htmlFor={inputId} className="block typo-body font-medium text-foreground mb-1.5">
         {nameLabel} <span className="text-red-400 ml-1">*</span>
       </label>
       <input
+        id={inputId}
         type="text"
         value={name}
         onChange={(e) => onNameChange(e.target.value)}
@@ -74,6 +81,8 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
             {config.subTypes.map((st) => (
               <button
                 key={st.id}
+                type="button"
+                aria-pressed={subTypeId === st.id}
                 onClick={() => onSubTypeChange(st.id)}
                 className={`flex-1 px-4 py-2.5 rounded-modal typo-body font-medium border transition-all ${
                   subTypeId === st.id
@@ -92,6 +101,8 @@ export function SchemaSubTypeSelector({ config, subTypeId, activeSubType, onSubT
           {config.subTypes.map((st) => (
             <button
               key={st.id}
+              type="button"
+              aria-pressed={subTypeId === st.id}
               onClick={() => onSubTypeChange(st.id)}
               className={`text-left px-3 py-2.5 rounded-modal typo-body border transition-all ${
                 subTypeId === st.id

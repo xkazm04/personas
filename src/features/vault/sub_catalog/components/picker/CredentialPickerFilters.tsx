@@ -111,6 +111,7 @@ export function CredentialPickerFilters({
             onClick={() => onRoleToggle(role)}
             title={label}
             aria-label={label}
+            aria-pressed={activeRole === role}
             className={`p-1.5 rounded-card border transition-colors ${
               activeRole === role
                 ? 'bg-violet-500/15 border-violet-500/30 text-violet-400'
