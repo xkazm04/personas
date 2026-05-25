@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
   severityBadgeClass,
+  severityRank,
   sourceTableIcon,
   sourceTableLabel,
   relativeTime,
@@ -33,8 +34,20 @@ export function IncidentRow({
   const isAcknowledged = incident.status === 'acknowledged';
   const isClosed = incident.status === 'resolved' || incident.status === 'dismissed';
 
+  // Severity gutter-accent, matching the overview tables: critical/high read
+  // red, medium reads amber, and closed incidents are muted to neutral so the
+  // open work stands out.
+  const rank = severityRank(incident.severity);
+  const accent = isClosed
+    ? 'border-l-transparent'
+    : rank >= 3
+      ? 'border-l-red-400/70'
+      : rank === 2
+        ? 'border-l-amber-400/70'
+        : 'border-l-transparent';
+
   return (
-    <div className="flex items-start gap-3 px-4 py-3 hover:bg-secondary/20 transition-colors">
+    <div className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 hover:bg-secondary/20 transition-colors`}>
       <input
         type="checkbox"
         checked={selected}

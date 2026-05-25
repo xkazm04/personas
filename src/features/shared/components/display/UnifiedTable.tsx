@@ -5,11 +5,34 @@
  * Features: column sorting, dropdown filters, search, virtual list, row click.
  * Column headers show distinct action icons: ArrowUpDown (sort), Filter (dropdown), Search.
  */
-import { useState, useMemo, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
+import { createLogger } from '@/lib/log';
+
+const logger = createLogger('unified-table');
+const SORT_STORAGE_PREFIX = 'table-sort:';
+
+/** Read a persisted {key,dir} sort for a table, or null if absent/unparseable. */
+function readPersistedSort(tableId?: string): { key: string | null; dir: 'asc' | 'desc' } | null {
+  if (!tableId) return null;
+  try {
+    const raw = localStorage.getItem(SORT_STORAGE_PREFIX + tableId);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    const p = parsed as { key?: unknown; dir?: unknown };
+    return {
+      key: typeof p.key === 'string' ? p.key : null,
+      dir: p.dir === 'asc' ? 'asc' : 'desc',
+    };
+  } catch (err) {
+    logger.warn('Failed to read persisted table sort', { error: err });
+    return null;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,6 +86,30 @@ export interface UnifiedTableProps<T> {
    * localStorage under this id. Omit for a fixed-width table.
    */
   tableId?: string;
+  /**
+   * Vertical density. 'comfortable' (default) preserves the original spacing;
+   * 'compact' tightens header + row padding for data-dense panels.
+   */
+  density?: 'comfortable' | 'compact';
+  /**
+   * Per-row left-accent border class (e.g. 'border-l-emerald-400'). Return
+   * undefined for no accent. Mirrors the Activity table's status-accent rows.
+   */
+  rowAccent?: (row: T, index: number) => string | undefined;
+  /**
+   * Pin the header to the top of the nearest scrolling ancestor. Default true —
+   * harmless in virtual mode (header sits outside the scroll container) and
+   * keeps column labels visible while a fixed-height table scrolls.
+   */
+  stickyHeader?: boolean;
+  /** Accessible name for the table region. When set, the container gets role="table". */
+  ariaLabel?: string;
+  /** Drop the default border + rounded corners (for tables embedded inside a card). */
+  borderless?: boolean;
+  /** Column key to sort by on first render, so the header reflects the initial order. */
+  defaultSortKey?: string;
+  /** Initial sort direction when defaultSortKey is set. Defaults to 'desc'. */
+  defaultSortDir?: 'asc' | 'desc';
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +117,7 @@ export interface UnifiedTableProps<T> {
 // ---------------------------------------------------------------------------
 
 function ColumnHeader<T>({
-  col, sortKey, sortDir, onSort, resizeHandle,
+  col, sortKey, sortDir, onSort, resizeHandle, density = 'comfortable',
 }: {
   col: TableColumn<T>;
   sortKey: string | null;
@@ -78,11 +125,13 @@ function ColumnHeader<T>({
   onSort: (key: string) => void;
   /** Drag-divider rendered on the cell's right edge (omitted for the last column). */
   resizeHandle?: ReactNode;
+  density?: 'comfortable' | 'compact';
 }) {
   const { t } = useTranslation();
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const headPad = density === 'compact' ? 'px-3 py-1.5' : 'px-4 py-2.5';
 
   // Close filter dropdown on outside click
   const handleBlur = useCallback((e: React.FocusEvent) => {
@@ -100,7 +149,7 @@ function ColumnHeader<T>({
   // Custom filter component takes full control
   if (col.filterComponent) {
     return (
-      <div className={`relative flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
+      <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
         {col.filterComponent}
         {resizeHandle}
       </div>
@@ -108,7 +157,7 @@ function ColumnHeader<T>({
   }
 
   return (
-    <div className={`relative flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
+    <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
       <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
 
       {/* Sort icon */}
@@ -206,9 +255,31 @@ export function UnifiedTable<T>({
   isLoading,
   className,
   tableId,
+  density = 'comfortable',
+  rowAccent,
+  stickyHeader = true,
+  ariaLabel,
+  borderless = false,
+  defaultSortKey,
+  defaultSortDir = 'desc',
 }: UnifiedTableProps<T>) {
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const compact = density === 'compact';
+  const rowPadY = compact ? 'py-1' : 'py-2';
+  // A persisted sort (keyed by tableId) wins over defaultSortKey on first
+  // render, so a user's chosen column/direction survives reload.
+  const persistedSort = useMemo(() => readPersistedSort(tableId), [tableId]);
+  const [sortKey, setSortKey] = useState<string | null>(persistedSort?.key ?? defaultSortKey ?? null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(persistedSort?.dir ?? defaultSortDir);
+
+  // Persist the active sort whenever it changes (no-op without a tableId).
+  useEffect(() => {
+    if (!tableId || sortKey === null) return;
+    try {
+      localStorage.setItem(SORT_STORAGE_PREFIX + tableId, JSON.stringify({ key: sortKey, dir: sortDir }));
+    } catch (err) {
+      logger.warn('Failed to persist table sort', { error: err });
+    }
+  }, [tableId, sortKey, sortDir]);
   const resize = useColumnWidths(tableId ?? '');
   const resizable = !!tableId;
 
@@ -248,6 +319,33 @@ export function UnifiedTable<T>({
   const useVirtual = rowHeight > 0;
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
 
+  // Keyboard row navigation — only when rows are interactive (onRowClick set).
+  // Arrow keys move a focus ring; Enter/Space activates the focused row. The
+  // hand-rolled Activity/Memories lists already do this; this brings the shared
+  // primitive to parity.
+  const navigable = !!onRowClick;
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const handleKeyNav = useCallback((e: React.KeyboardEvent) => {
+    if (!navigable || sortedData.length === 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => {
+        const start = prev < 0 ? (e.key === 'ArrowDown' ? -1 : 0) : prev;
+        const next = e.key === 'ArrowDown'
+          ? Math.min(start + 1, sortedData.length - 1)
+          : Math.max(start - 1, 0);
+        if (useVirtual) virtualizer.scrollToIndex(next);
+        return next;
+      });
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      if (focusedIndex >= 0 && focusedIndex < sortedData.length) {
+        e.preventDefault();
+        onRowClick!(sortedData[focusedIndex]!);
+      }
+    }
+  }, [navigable, sortedData, useVirtual, virtualizer, focusedIndex, onRowClick]);
+  const focusClass = (i: number) => (i === focusedIndex ? 'ring-1 ring-inset ring-primary/40 z-[1]' : '');
+
   const { t } = useTranslation();
 
   if (isLoading) {
@@ -255,10 +353,14 @@ export function UnifiedTable<T>({
   }
 
   return (
-    <div className={`border border-primary/10 rounded-xl overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}>
+    <div
+      role={ariaLabel ? 'table' : undefined}
+      aria-label={ariaLabel}
+      className={`${borderless ? '' : 'border border-primary/10 rounded-xl'} overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}
+    >
       {/* Header */}
       <div
-        className="grid bg-primary/5 border-b border-primary/10"
+        className={`grid border-b border-primary/10 ${stickyHeader ? 'sticky top-0 z-20 bg-background/95 backdrop-blur-sm' : 'bg-primary/5'}`}
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {columns.map((col, i) => (
@@ -268,6 +370,7 @@ export function UnifiedTable<T>({
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={handleSort}
+            density={density}
             resizeHandle={resizable && i < columns.length - 1 ? (
               <ColumnResizeHandle
                 label={t.shared.resize_column}
@@ -288,16 +391,22 @@ export function UnifiedTable<T>({
 
       {/* Rows */}
       {sortedData.length > 0 && (useVirtual ? (
-        <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0">
+        <div
+          ref={parentRef}
+          className="flex-1 overflow-y-auto min-h-0 focus:outline-none"
+          tabIndex={navigable ? 0 : undefined}
+          onKeyDown={navigable ? handleKeyNav : undefined}
+        >
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const row = sortedData[vRow.index]!;
+              const accent = rowAccent?.(row, vRow.index);
               return (
                 <div
                   key={getRowKey(row)}
                   onClick={() => onRowClick?.(row)}
                   style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
-                  className={`row-hover-lift grid items-center border-l-2 border-transparent hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                  className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focusClass(vRow.index)} ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                 >
                   {columns.map((col) => (
                     <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -310,13 +419,19 @@ export function UnifiedTable<T>({
           </div>
         </div>
       ) : (
-        <div>
-          {sortedData.map((row, idx) => (
+        <div
+          className="focus:outline-none"
+          tabIndex={navigable ? 0 : undefined}
+          onKeyDown={navigable ? handleKeyNav : undefined}
+        >
+          {sortedData.map((row, idx) => {
+            const accent = rowAccent?.(row, idx);
+            return (
             <div
               key={getRowKey(row)}
               onClick={() => onRowClick?.(row)}
               style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
-              className={`row-hover-lift grid items-center px-0 py-2 border-l-2 border-transparent hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+              className={`row-hover-lift grid items-center px-0 ${rowPadY} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focusClass(idx)} ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
             >
               {columns.map((col) => (
                 <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -324,7 +439,8 @@ export function UnifiedTable<T>({
                 </div>
               ))}
             </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>

@@ -406,6 +406,13 @@ export default function EventLogList() {
               isLoading={isLoading}
               emptyTitle={t.overview.events.no_filter_match}
               rowHeight={44}
+              rowAccent={(e) =>
+                e.status === 'failed'
+                  ? 'border-l-red-400/70'
+                  : e.status === 'pending' || e.status === 'processing'
+                    ? 'border-l-amber-400/70'
+                    : undefined
+              }
               className="flex-1"
               tableId="overview-events"
             />

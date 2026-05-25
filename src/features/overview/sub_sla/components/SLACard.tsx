@@ -48,12 +48,20 @@ export function PersonaRow({ stats, expanded, onToggle }: {
   stats: PersonaSlaStats; expanded: boolean; onToggle: () => void;
 }) {
   const { t } = useTranslation();
-  const rateHealth = HEALTH_STATUS_TOKEN[rateToHealth(stats.success_rate)];
+  const health = rateToHealth(stats.success_rate);
+  const rateHealth = HEALTH_STATUS_TOKEN[health];
   const rateColor = rateHealth.text;
   const rateBg = `${rateHealth.bg} ${rateHealth.border}`;
+  // Success-rate gutter accent (matches the overview tables): agents below the
+  // healthy threshold read amber (warning) or red (critical), healthy stay neutral.
+  const accent = health === 'critical'
+    ? 'border-l-red-400/70'
+    : health === 'warning'
+      ? 'border-l-amber-400/70'
+      : 'border-l-transparent';
 
   return (
-    <div>
+    <div className={`border-l-2 ${accent}`}>
       <button onClick={onToggle} className="w-full px-5 py-3 flex items-center gap-4 hover:bg-primary/5 transition-colors text-left">
         <div className="flex-1 min-w-0">
           <span className="typo-heading text-foreground/90 truncate block">{stats.persona_name}</span>
