@@ -3,7 +3,7 @@ import { ChevronRight, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { PersonaSigilSummary, type PersonaSigilSummaryEntry } from '@/features/shared/glyph/persona-layout/PersonaSigilSummary';
-import { CapabilityTabBar } from '@/features/shared/glyph/persona-layout/CapabilityTabBar';
+import { CapabilityTagSwitcher } from './CapabilityTagSwitcher';
 import { updateBuildSessionDisabledDims } from '@/api/agents/buildSession';
 import { silentCatch } from '@/lib/silentCatch';
 import { useAgentStore } from '@/stores/agentStore';
@@ -14,17 +14,17 @@ import {
   toDisplayUseCase,
   type DisplayUseCase,
 } from '@/features/agents/sub_use_cases/components/recipes-prototype/shared/displayUseCase';
-import type { DesignUseCase } from '@/lib/types/frontendTypes';
+import type { DesignUseCase, UseCaseErrorPolicy } from '@/lib/types/frontendTypes';
 import type { TransformQuestionResponse } from '@/api/templates/n8nTransform';
 
 /** Loose template design-result shape. The n8n transform's output doesn't
  *  conform to the strict `AgentIR` interface (use_cases lives at the top
  *  level here, not under design_context), so callers pass a Record. */
 type TemplateDesignResult = Record<string, unknown>;
-import { QuestionnaireHeaderBand } from '../questionnaire/QuestionnaireHeaderBand';
 import { QuestionnaireStoryThread } from '../questionnaire/QuestionnaireStoryThread';
 import type { DynamicOptionState } from '../useDynamicQuestionOptions';
 import { AdoptionAnswerCard } from './AdoptionAnswerCard';
+import { ErrorPolicyCard } from './ErrorPolicyCard';
 import { groupQuestionsByDimension, questionToDimension } from './questionDimMap';
 
 interface PersonaLayoutAdoptionProps {
@@ -63,6 +63,11 @@ interface PersonaLayoutAdoptionProps {
   onContinue: () => void;
   /** Close the adoption modal. */
   onClose: () => void;
+  /** Per-capability "Errors" sigil routing policy (capability id → policy). */
+  errorPolicyByCap?: Record<string, UseCaseErrorPolicy>;
+  /** Persist a capability's error-routing policy (lifted to the parent so it
+   *  rides onto the design IR at seed time). */
+  onErrorPolicyChange?: (capabilityId: string, policy: UseCaseErrorPolicy) => void;
 }
 
 /**
@@ -102,6 +107,8 @@ export function PersonaLayoutAdoption({
   useCaseTitleById,
   onContinue,
   onClose,
+  errorPolicyByCap,
+  onErrorPolicyChange,
 }: PersonaLayoutAdoptionProps) {
   const { t, tx } = useTranslation();
   const [activeDim, setActiveDim] = useState<GlyphDimension | null>(null);
@@ -257,6 +264,13 @@ export function PersonaLayoutAdoption({
 
     const out = {} as Record<GlyphDimension, PetalState>;
     for (const dim of GLYPH_DIMENSIONS) {
+      // Error handling (retry + self-healing) is a built-in, automatic part
+      // of every persona — the Error petal is always resolved and clickable
+      // to configure post-error escalation routing (incident / lab).
+      if (dim === 'error') {
+        out[dim] = 'resolved';
+        continue;
+      }
       // Disabled-dim trumps everything — render as idle so the petal
       // visually communicates "off" regardless of underlying question
       // state. The dim's questions are already filtered out of
@@ -314,12 +328,6 @@ export function PersonaLayoutAdoption({
     [filteredQuestions],
   );
 
-  // Header-band stepper click → same behaviour as the story thread.
-  const handleHeaderJumpTo = useCallback(
-    (idx: number) => handleStoryJumpTo(idx),
-    [handleStoryJumpTo],
-  );
-
   const answeredCount = useMemo(
     () => filteredQuestions.filter((q) => !!userAnswers[q.id]).length,
     [filteredQuestions, userAnswers],
@@ -332,21 +340,76 @@ export function PersonaLayoutAdoption({
   // the vault (the credential add can happen post-adoption). Subtract
   // answered questions from the blocking set so picking a valid option
   // actually clears the gate.
-  const blockedCount = useMemo(
-    () => Array.from(blockedQuestionIds).filter((id) => !userAnswers[id]).length,
-    [blockedQuestionIds, userAnswers],
+  // ---- Per-capability + cross-capability state -------------------------
+  // Whether a question belongs to a capability's tab — mirrors the
+  // `filteredQuestions` rule: untagged questions show under every cap; a
+  // question whose dim is disabled for its cap is excluded.
+  const matchesCap = useCallback(
+    (q: TransformQuestionResponse, capId: string) => {
+      const ucId = (q as { use_case_id?: string }).use_case_id;
+      const dim = (q as { dimension?: string }).dimension;
+      if (ucId && items.length > 1 && ucId !== capId) return false;
+      if (ucId && dim) {
+        const dis = disabledDimsByCap[ucId];
+        if (dis && dis.has(dim as GlyphDimension)) return false;
+      }
+      return true;
+    },
+    [items.length, disabledDimsByCap],
   );
-  const progressPct = totalCount === 0 ? 1 : answeredCount / totalCount;
-  const remaining = totalCount - answeredCount;
+
+  // One tag per capability: title + answered/total + per-question segments
+  // for that capability's individual stepper.
+  const perCapability = useMemo(
+    () =>
+      items.map((uc) => {
+        const capQs = questions.filter((q) => matchesCap(q, uc.id));
+        let answered = 0;
+        let blocked = 0;
+        const segments = capQs.map((q) => {
+          if (userAnswers[q.id]) { answered++; return 'answered' as const; }
+          if (blockedQuestionIds.has(q.id)) { blocked++; return 'blocked' as const; }
+          return 'pending' as const;
+        });
+        return { id: uc.id, title: uc.title, total: capQs.length, answered, blocked, segments };
+      }),
+    [items, questions, matchesCap, userAnswers, blockedQuestionIds],
+  );
+
+  // Cross-capability gate: every mandatory question across ALL enabled
+  // capabilities must be answered before Continue is allowed — not just the
+  // active capability's. A question is gated unless its dim is disabled for
+  // its own capability. The parent already provides a flat, deduped set.
+  const gatedQuestions = useMemo(
+    () =>
+      questions.filter((q) => {
+        const ucId = (q as { use_case_id?: string }).use_case_id;
+        const dim = (q as { dimension?: string }).dimension;
+        if (ucId && dim) {
+          const dis = disabledDimsByCap[ucId];
+          if (dis && dis.has(dim as GlyphDimension)) return false;
+        }
+        return true;
+      }),
+    [questions, disabledDimsByCap],
+  );
+  const globalRemaining = useMemo(
+    () => gatedQuestions.filter((q) => !userAnswers[q.id]).length,
+    [gatedQuestions, userAnswers],
+  );
+  const globalBlocked = useMemo(
+    () => gatedQuestions.filter((q) => blockedQuestionIds.has(q.id) && !userAnswers[q.id]).length,
+    [gatedQuestions, blockedQuestionIds, userAnswers],
+  );
+
   // Templates without declared use_cases (recipe-driven templates) produce
   // an empty `items` array — there's nothing for the user to enable. Don't
-  // gate Continue on `selectedUseCaseIds.size > 0` in that case; the
-  // adoption flow seeds capabilities at build time. When the template DOES
-  // declare use cases, keep the original gate so the user must enable at
-  // least one.
+  // gate Continue on `selectedUseCaseIds.size > 0` in that case. Otherwise
+  // require every capability's mandatory questions answered (cross-cap), so
+  // an unanswered question in a non-active capability still blocks build.
   const canContinue =
-    remaining === 0 &&
-    blockedCount === 0 &&
+    globalRemaining === 0 &&
+    globalBlocked === 0 &&
     (items.length === 0 || selectedUseCaseIds.size > 0);
 
   const activeStoryIdx = useMemo(() => {
@@ -383,6 +446,10 @@ export function PersonaLayoutAdoption({
       const ans = userAnswers[q.id];
       if (!ans) continue;
       const dim = questionToDimension(q);
+      // Skip the "Task" (What) dimension in the left summary — it's usually a
+      // long free-form description that's better surfaced elsewhere and just
+      // clutters the at-a-glance value list.
+      if (dim === 'task') continue;
       const list = byDim.get(dim);
       if (list) list.push(ans);
       else byDim.set(dim, [ans]);
@@ -403,25 +470,27 @@ export function PersonaLayoutAdoption({
   // (2026-05-17): the action panel below the sigil and the band above
   // it were doing two-bar duty; merge into one.
 
-  const rightSlot =
-    totalCount > 0 ? (
-      <QuestionnaireStoryThread
-        questions={filteredQuestions}
-        userAnswers={userAnswers}
-        activeIdx={activeStoryIdx}
-        autoDetectedIds={autoDetectedIds}
-        blockedQuestionIds={blockedQuestionIds}
-        answeredCount={answeredCount}
-        totalCount={totalCount}
-        onJumpTo={handleStoryJumpTo}
-      />
-    ) : null;
+  // Always rendered — even when the active capability has no questions — so
+  // the user can see "no questions for this capability" instead of the rail
+  // silently vanishing.
+  const rightSlot = (
+    <QuestionnaireStoryThread
+      questions={filteredQuestions}
+      userAnswers={userAnswers}
+      activeIdx={activeStoryIdx}
+      autoDetectedIds={autoDetectedIds}
+      blockedQuestionIds={blockedQuestionIds}
+      answeredCount={answeredCount}
+      totalCount={totalCount}
+      onJumpTo={handleStoryJumpTo}
+    />
+  );
 
   const continueDisabledReason = !canContinue
-    ? blockedCount > 0
-      ? tx(t.templates.adopt_modal.persona_layout_continue_blocked, { count: blockedCount })
-      : remaining > 0
-        ? tx(t.templates.adopt_modal.persona_layout_continue_remaining, { count: remaining })
+    ? globalBlocked > 0
+      ? tx(t.templates.adopt_modal.persona_layout_continue_blocked, { count: globalBlocked })
+      : globalRemaining > 0
+        ? tx(t.templates.adopt_modal.persona_layout_continue_remaining, { count: globalRemaining })
         : selectedUseCaseIds.size === 0
           ? t.templates.adopt_modal.persona_layout_continue_no_capabilities
           : null
@@ -443,54 +512,46 @@ export function PersonaLayoutAdoption({
     [],
   );
 
-  const capabilityTabs = items.length > 1 ? (
-    <CapabilityTabBar
-      items={items}
+  // The capability switcher is the ONLY thing above the glyph now: name
+  // tags with an answered/total count (coloured per state) and each
+  // capability's own progress stepper underneath. This replaces both the
+  // sigil-tab strip and the single consolidated stepper — per-capability
+  // state lives in each tag. The Continue action lives in the sigil center.
+  const topSlot = items.length > 0 ? (
+    <CapabilityTagSwitcher
+      items={perCapability}
       activeId={activeCapabilityId}
       onActiveChange={handleActiveCapChange}
     />
   ) : null;
 
-  // Single consolidated header: capability tabs + the question-order
-  // stepper, in one bordered band. The sparkle/identity, answered-count,
-  // and percentage are dropped (hideIdentity + hideCounters); the
-  // duplicate PERSONA metadata band is hidden on the hero
-  // (hideMetadataBand) so "covers X dimensions" + capability counts no
-  // longer render. The Continue action moved into the sigil center.
-  const topSlot =
-    totalCount > 0 ? (
-      <div className="rounded-modal border border-card-border bg-foreground/[0.015] overflow-hidden">
-        {capabilityTabs && <div className="px-3 pt-2">{capabilityTabs}</div>}
-        <QuestionnaireHeaderBand
-          templateName={templateName}
-          questions={filteredQuestions}
-          userAnswers={userAnswers}
-          blockedQuestionIds={blockedQuestionIds}
-          activeIdx={activeStoryIdx}
-          answeredCount={answeredCount}
-          totalCount={totalCount}
-          blockedCount={blockedCount}
-          progressPct={progressPct}
-          onJumpTo={handleHeaderJumpTo}
-          hideIdentity
-          hideCounters
-          bare
-        />
-      </div>
-    ) : capabilityTabs;
-
-  // Open the first unanswered question (regardless of which dim it
-  // lands on) when the user clicks the center count-button.
+  // Open the first unanswered question across ALL capabilities when the user
+  // clicks the center count-button — switching capability first when the
+  // next unanswered question lives in a non-active one.
   const openFirstUnanswered = useCallback(() => {
-    const next = filteredQuestions.find((q) => !userAnswers[q.id]);
+    const next = gatedQuestions.find((q) => !userAnswers[q.id]);
     if (!next) return;
+    const ucId = (next as { use_case_id?: string }).use_case_id;
+    if (ucId && ucId !== activeCapabilityId && items.some((u) => u.id === ucId)) {
+      setActiveCapabilityId(ucId);
+    }
     setActiveDim(questionToDimension(next));
-  }, [filteredQuestions, userAnswers]);
+    setActiveQuestionId(next.id);
+  }, [gatedQuestions, userAnswers, activeCapabilityId, items]);
 
   // Wide overlay — the answer card, positioned absolute over the sigil
   // stage so it can be wider than the sigil itself (target: ~1280px on
-  // desktop, capped by PersonaHero's overlay container).
-  const wideOverlay = activeDim ? (
+  // desktop, capped by PersonaHero's overlay container). The Error petal
+  // opens the ErrorPolicyCard instead (no questions — it's a routing config).
+  const activeCapTitle = items.find((u) => u.id === activeCapabilityId)?.title ?? templateName;
+  const wideOverlay = activeDim === 'error' ? (
+    <ErrorPolicyCard
+      capabilityTitle={activeCapTitle}
+      policy={activeCapabilityId ? errorPolicyByCap?.[activeCapabilityId] : undefined}
+      onChange={(next) => { if (activeCapabilityId) onErrorPolicyChange?.(activeCapabilityId, next); }}
+      onClose={() => { setActiveDim(null); setActiveQuestionId(null); }}
+    />
+  ) : activeDim ? (
     <AdoptionAnswerCard
       dim={activeDim}
       questions={questionsByDim[activeDim]}
@@ -520,7 +581,7 @@ export function PersonaLayoutAdoption({
   //   • pending questions → a click-to-open count button ("start here")
   //   • all answered + unblocked + caps chosen → the Continue-to-build CTA
   //   • answered but still blocked / no caps → the disabled reason
-  const unansweredCount = remaining;
+  const unansweredCount = globalRemaining;
   const centerOverlay = activeDim ? (
     <span aria-hidden />
   ) : canContinue ? (

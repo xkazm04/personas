@@ -63,10 +63,10 @@ export const homeItems: Array<{ id: HomeTab; icon: LucideIcon; label: string }> 
 
 export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: string; minTier?: Tier; simpleHidden?: boolean; devOnly?: boolean }> = [
   { id: 'home', icon: LayoutDashboard, label: 'Dashboard' },
-  // Incidents has no data source wired yet — dev-only until the feature
-  // lands. In DEV the L2 sidebar marks it with a golden border so it's
-  // recognizably not user-facing; in production builds it's hidden entirely.
-  { id: 'incidents', icon: AlertOctagon, label: 'Incidents', minTier: TIERS.TEAM, devOnly: true },
+  // Incidents inbox — shipped now that the Errors-sigil routing can open
+  // incidents per capability. Backend IPC (list/ack/resolve/dismiss) is wired;
+  // the execution-failure → incident promotion is the remaining runtime hook.
+  { id: 'incidents', icon: AlertOctagon, label: 'Incidents', minTier: TIERS.TEAM },
   { id: 'executions', icon: Activity, label: 'Activity', minTier: TIERS.TEAM },
   { id: 'manual-review', icon: ClipboardCheck, label: 'Approvals', minTier: TIERS.TEAM },
   { id: 'messages', icon: MessageSquare, label: 'Messages' },

@@ -82,6 +82,7 @@ export function DevToolsProjectDropdown({
   return (
     <Listbox
       className={className}
+      portal
       itemCount={projects.length}
       onSelectFocused={handleSelect}
       ariaLabel="Select DevTools project"

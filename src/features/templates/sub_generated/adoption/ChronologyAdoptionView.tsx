@@ -11,9 +11,7 @@ import { createLogger } from "@/lib/log";
 import { useVaultStore } from "@/stores/vaultStore";
 
 const logger = createLogger("template-adoption");
-import { PersonaChronologyGlyph } from "./glyph";
-import { QuestionnaireForm } from "./questionnaire";
-import { UseCasePickerStep, type UseCaseOption } from "./ucPicker";
+import { type UseCaseOption } from "./ucPicker";
 import { PersonaLayoutAdoption } from "./persona-layout";
 import { PersonaLayoutBuild } from "./persona-layout/PersonaLayoutBuild";
 import { useBuild } from "@/features/agents/components/matrix/useBuild";
@@ -25,7 +23,6 @@ import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import type { TransformQuestionResponse } from "@/api/templates/n8nTransform";
-import type { AgentIR } from "@/lib/types/designTypes";
 import {
   deriveCredentialBindings,
   hasMatchingCredential,
@@ -38,6 +35,7 @@ import type { Translations } from '@/i18n/generated/types';
 import { QuickAddCredentialModal } from "./QuickAddCredentialModal";
 import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/builtinConnectors";
 import type { TriggerSelection } from "./useCasePickerShared";
+import type { UseCaseErrorPolicy } from "@/lib/types/frontendTypes";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch } from '@/lib/silentCatch';
 import { useHydratedDesignResult } from './useHydratedDesignResult';
@@ -238,30 +236,6 @@ function extractDimensionData(
   return data;
 }
 
-/**
- * Parse a cron string into a TriggerSelection the UC picker can use as
- * its initial state. Only recognizes the three common v3.1 authoring
- * shapes (hourly, daily, weekly); anything else collapses to "custom"
- * so the user can keep the exact expression.
- */
-function inferSelectionFromCron(cron: string): TriggerSelection {
-  const parts = cron.trim().split(/\s+/);
-  if (parts.length !== 5) return { customCron: cron };
-  const [minute, hour, dom, , dow] = parts;
-  if (minute === "0" && hour === "*" && dom === "*" && dow === "*") {
-    return { time: { preset: "hourly" } };
-  }
-  const hourNum = parseInt(hour ?? "", 10);
-  if (!Number.isNaN(hourNum) && dom === "*") {
-    if (dow === "*") return { time: { preset: "daily", hourOfDay: hourNum } };
-    const dowNum = parseInt(dow ?? "", 10);
-    if (!Number.isNaN(dowNum)) {
-      return { time: { preset: "weekly", hourOfDay: hourNum, weekday: dowNum } };
-    }
-  }
-  return { customCron: cron };
-}
-
 type TriggerIR = { trigger_type: string; config: Record<string, string>; description: string };
 
 /**
@@ -379,6 +353,24 @@ function triggerSelectionToTriggers(
  * Leaves use cases without a selection untouched — manual-only UCs the
  * user never configured stay on their template default.
  */
+/** Write the user's per-capability Error-sigil routing policy onto each use
+ *  case so it persists in the seeded persona's IR (the runtime failure hook
+ *  reads `use_cases[i].error_policy`). Returns a shallow clone; a no-op when
+ *  nothing was configured. */
+function applyErrorPolicies(
+  designResult: Record<string, unknown>,
+  byCap: Record<string, UseCaseErrorPolicy>,
+): Record<string, unknown> {
+  if (Object.keys(byCap).length === 0) return designResult;
+  const ucRaw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
+  const nextUseCases = ucRaw.map((uc) => {
+    const id = String(uc.id ?? "");
+    const policy = byCap[id];
+    return policy ? { ...uc, error_policy: policy } : uc;
+  });
+  return { ...designResult, use_cases: nextUseCases };
+}
+
 function applyTriggerSelections(
   designResult: Record<string, unknown>,
   perUseCase: Record<string, TriggerSelection>,
@@ -428,35 +420,11 @@ function applyTriggerSelections(
   };
 }
 
-type AdoptionLayout = 'classic' | 'persona-layout';
-const ADOPTION_LAYOUT_STORAGE_KEY = 'personas:adoption-layout';
-
-function readAdoptionLayout(): AdoptionLayout {
-  try {
-    const raw = localStorage.getItem(ADOPTION_LAYOUT_STORAGE_KEY);
-    if (raw === 'classic' || raw === 'persona-layout') return raw;
-    // Migrate the previous 'consolidated' value (renamed to 'persona-layout'
-    // when the dictionary was clarified — Persona Layout is the canonical name).
-    if (raw === 'consolidated') return 'persona-layout';
-  } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch1")(err); }
-  return 'classic';
-}
-
-function writeAdoptionLayout(value: AdoptionLayout): void {
-  try {
-    localStorage.setItem(ADOPTION_LAYOUT_STORAGE_KEY, value);
-  } catch (err) { silentCatch("features/templates/sub_generated/adoption/ChronologyAdoptionView:catch2")(err); }
-}
-
 export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: ChronologyAdoptionViewProps) {
   const { t, tx } = useTranslation();
   const [seeded, setSeeded] = useState(false);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [fadeOut, setFadeOut] = useState(false);
-  const [layout, setLayout] = useState<AdoptionLayout>(() => readAdoptionLayout());
-  useEffect(() => {
-    writeAdoptionLayout(layout);
-  }, [layout]);
   const createPersona = useAgentStore((s) => s.createPersona);
   const seedDone = useRef(false);
   const seedInFlight = useRef(false);
@@ -468,11 +436,6 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   const designResult = useHydratedDesignResult(review.design_result);
 
   const templateName = review.test_case_name ?? "Template";
-  const templateGoal = (() => {
-    const persona = designResult?.persona as Record<string, unknown> | undefined;
-    const goal = persona?.goal;
-    return typeof goal === 'string' && goal.trim() ? goal.trim() : null;
-  })();
 
   // Adoption questions from template — memoized so dependent hooks (filter,
   // dynamic-options, seed) don't see a new array identity on every render.
@@ -594,63 +557,22 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   // Trigger composition — merged onto the UC picker page. The user's
   // per-UC selections are materialized onto designResult before the
   // persona is seeded (via applyTriggerSelections). No separate step.
-  const [perUseCaseTriggerSelections, setPerUseCaseTriggerSelections] = useState<Record<string, TriggerSelection>>({});
+  // Per-UC trigger selections still feed the seed (applyTriggerSelections);
+  // the picker UI that set them was removed with the Classic layout, so the
+  // setter is gone and the map stays at its default.
+  const [perUseCaseTriggerSelections] = useState<Record<string, TriggerSelection>>({});
   const triggerSelections = useMemo(
     () => ({ perUseCase: perUseCaseTriggerSelections }),
     [perUseCaseTriggerSelections],
   );
 
-  const triggerComposition = useMemo<"shared" | "per_use_case">(() => {
-    const persona = (designResult?.persona ?? {}) as Record<string, unknown>;
-    return persona.trigger_composition === "shared" ? "shared" : "per_use_case";
-  }, [designResult]);
-
-  // Cross-UC event options — every emit from ANY capability in the
-  // template becomes a candidate for event-driven triggers, regardless
-  // of whether the emitting UC is currently enabled. Reason: the user
-  // may have a capability turned off at adoption time but still want
-  // another capability to react if/when it starts firing later (via
-  // separate activation, cross-persona events, or re-enabling through
-  // settings). Filtering here would silently hide cross-chain options
-  // the template explicitly documented.
-  const availableEventTypes = useMemo<string[]>(() => {
-    if (!designResult) return [];
-    const ucs = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
-    const out = new Set<string>();
-    for (const uc of ucs) {
-      const subs = (uc.event_subscriptions ?? []) as Array<Record<string, unknown>>;
-      for (const s of subs) {
-        if (s.direction === "emit" && typeof s.event_type === "string") {
-          out.add(s.event_type);
-        }
-      }
-    }
-    return Array.from(out);
-  }, [designResult]);
-
-  // Enrich availableUseCases with a defaultSelection inferred from the
-  // template's suggested_trigger cron so the combined step shows the
-  // author's recommended cadence as the starting state.
-  const availableUseCasesWithDefaults = useMemo(() => {
-    if (!designResult) return availableUseCases.map((u) => ({ ...u }));
-    const raw = (designResult.use_cases ?? []) as Array<Record<string, unknown>>;
-    const rawById = new Map(raw.map((uc) => [String(uc.id ?? ""), uc]));
-    return availableUseCases.map((u) => {
-      const rawUc = rawById.get(u.id);
-      const suggested = (rawUc?.suggested_trigger ?? {}) as Record<string, unknown>;
-      const cfg = (suggested.config ?? {}) as Record<string, unknown>;
-      const triggerType = String(suggested.trigger_type ?? "manual");
-      let defaultSelection: TriggerSelection | undefined;
-      if (triggerType === "event_listener" && typeof cfg.event_type === "string") {
-        defaultSelection = { event: { eventType: cfg.event_type } };
-      } else if (triggerType === "manual") {
-        defaultSelection = {};
-      } else if (typeof cfg.cron === "string") {
-        defaultSelection = inferSelectionFromCron(cfg.cron);
-      }
-      return { ...u, defaultSelection };
-    });
-  }, [availableUseCases, designResult]);
+  // Per-capability "Errors" sigil routing policy. Edited via the Error petal
+  // in the Persona Layout; applied onto effectiveDesignResult.use_cases at
+  // seed time (applyErrorPolicies) so it rides into the persona's IR.
+  const [errorPolicyByCap, setErrorPolicyByCap] = useState<Record<string, UseCaseErrorPolicy>>({});
+  const handleErrorPolicyChange = useCallback((capId: string, policy: UseCaseErrorPolicy) => {
+    setErrorPolicyByCap((prev) => ({ ...prev, [capId]: policy }));
+  }, []);
 
   const toggleUseCase = useCallback((id: string) => {
     setSelectedUseCaseIds((prev) => {
@@ -887,9 +809,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
     // before extracting cell data — otherwise the persona gets built with
     // the template's default cadences and the user's choices in the
     // trigger-composition step evaporate.
-    const effectiveDesignResult = triggerSelections?.perUseCase
+    const withTriggers = triggerSelections?.perUseCase
       ? applyTriggerSelections(designResult, triggerSelections.perUseCase, t, tx)
       : designResult;
+    // Also bake the per-capability Error-sigil routing policy onto the IR.
+    const effectiveDesignResult = applyErrorPolicies(withTriggers, errorPolicyByCap);
     const dimensionData = extractDimensionData(
       effectiveDesignResult,
       credentialBindings,
@@ -1012,7 +936,7 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
         seedInFlight.current = false;
       }
     })();
-  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, t, tx]);
+  }, [designResult, templateName, review.instruction, createPersona, hasFilteredQuestions, questionsComplete, useCaseStepDone, showUseCasePicker, selectedUseCaseIds, filteredAdoptionQuestions, adoptionAnswers, triggerSelections, errorPolicyByCap, t, tx]);
 
   const build = useBuild({ personaId });
   const lifecycle = useLifecycle({ personaId });
@@ -1258,54 +1182,9 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   }, [designResult, triggerSelections.perUseCase, t, tx, showUseCasePicker, selectedUseCaseIds]);
 
   if (!seeded) {
-    // Pre-seed surface — wrapped in a layout switcher so the user can opt
-    // into the Consolidated prototype without losing the proven 3-step
-    // Classic flow. Both branches read the same state (selectedUseCaseIds,
-    // adoptionAnswers, ...) so switching tabs preserves all input.
-    const classicBranch = (() => {
-      if (showUseCasePicker && !useCasesPicked) {
-        return (
-          <UseCasePickerStep
-            templateName={templateName}
-            templateGoal={templateGoal}
-            useCases={availableUseCasesWithDefaults}
-            selectedIds={selectedUseCaseIds}
-            availableEvents={availableEventTypes}
-            triggerComposition={triggerComposition}
-            triggerSelections={perUseCaseTriggerSelections}
-            onToggle={toggleUseCase}
-            onTriggerChange={setPerUseCaseTriggerSelections}
-            onContinue={() => setUseCasesPicked(true)}
-          />
-        );
-      }
-      if (hasFilteredQuestions && !questionsComplete) {
-        return (
-          <QuestionnaireForm
-            questions={filteredAdoptionQuestions}
-            userAnswers={adoptionAnswers}
-            designResult={designResult as unknown as AgentIR | null}
-            autoDetectedIds={autoDetectedIds}
-            blockedQuestionIds={blockedQuestionIds}
-            filteredOptions={filteredOptions}
-            dynamicOptions={dynamicOptions}
-            onRetryDynamic={retryDynamic}
-            onAddCredential={handleAddCredentialForCategory}
-            onAnswerUpdated={handleAnswerUpdated}
-            onSubmit={() => setQuestionsComplete(true)}
-            onClose={onClose}
-            templateName={templateName}
-            useCaseTitleById={useCaseTitleById}
-          />
-        );
-      }
-      return (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="typo-body text-foreground animate-pulse">{t.templates.adopt_modal.loading_template}</div>
-        </div>
-      );
-    })();
-
+    // Pre-seed surface — Persona Layout is the only adoption layout. It
+    // handles capability selection + the questionnaire inline (its single
+    // Continue advances both the use-case-picker step and questionsComplete).
     const personaLayoutBranch = (
       <PersonaLayoutAdoption
         designResult={designResult}
@@ -1327,6 +1206,8 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
           if (hasFilteredQuestions && !questionsComplete) setQuestionsComplete(true);
         }}
         onClose={onClose}
+        errorPolicyByCap={errorPolicyByCap}
+        onErrorPolicyChange={handleErrorPolicyChange}
       />
     );
 
@@ -1338,9 +1219,8 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
       // container, the inner scroll container's parent never had a bounded
       // height, and the main content (sigil + rows) wasn't scrollable.
       <div className="flex-1 min-h-0 flex flex-col">
-        <AdoptionLayoutSwitcher value={layout} onChange={setLayout} />
         <div className="flex-1 min-h-0 flex flex-col">
-          {layout === 'classic' ? classicBranch : personaLayoutBranch}
+          {personaLayoutBranch}
         </div>
         {/* QuickAddCredentialModal is needed in BOTH branches (Classic and
          *  Persona Layout fire `handleAddCredentialForCategory` which sets
@@ -1360,56 +1240,31 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
 
   return (
     <div className={`flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-auto px-4 pt-2 transition-opacity duration-400 ${fadeOut ? 'opacity-0' : 'opacity-100'}`}>
-      {layout === 'persona-layout' ? (
-        // Build / test / promote phases live INSIDE the Persona Layout
-        // shell — Persona Sigil hero + capability rows + phase-aware
-        // controls below. Mirrors the user's intent that the adoption
-        // build runs in the same screen the user just configured.
-        <PersonaLayoutBuild
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isBuilding={build.isBuilding}
-          buildActivity={build.buildActivity}
-          cellStates={build.cellStates}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onDeleteDraft={handleDeleteDraft}
-          onRefine={lifecycle.handleRefine}
-          onViewAgent={handleViewAgent}
-          templateName={templateName}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-        />
-      ) : (
-        <PersonaChronologyGlyph
-          buildPhase={build.buildPhase}
-          completeness={build.completeness}
-          isRunning={build.isBuilding}
-          buildActivity={build.buildActivity}
-          pendingQuestions={build.pendingQuestions}
-          onAnswerBuildQuestion={build.handleAnswer}
-          onSubmitAllAnswers={build.handleSubmitAnswers}
-          onStartTest={lifecycle.handleStartTest}
-          onApproveTest={lifecycle.handlePromote}
-          onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
-          onRejectTest={lifecycle.handleRejectTest}
-          onDeleteDraft={handleDeleteDraft}
-          onRefine={lifecycle.handleRefine}
-          testOutputLines={build.buildTestOutputLines}
-          testPassed={build.buildTestPassed}
-          testError={build.buildTestError}
-          toolTestResults={lifecycle.buildToolTestResults}
-          testSummary={lifecycle.buildTestSummary}
-          onViewAgent={handleViewAgent}
-        />
-      )}
+      {/* Build / test / promote phases live INSIDE the Persona Layout shell —
+          Persona Sigil hero + capability rows + phase-aware controls below,
+          the same screen the user just configured. */}
+      <PersonaLayoutBuild
+        buildPhase={build.buildPhase}
+        completeness={build.completeness}
+        isBuilding={build.isBuilding}
+        buildActivity={build.buildActivity}
+        cellStates={build.cellStates}
+        pendingQuestions={build.pendingQuestions}
+        onAnswerBuildQuestion={build.handleAnswer}
+        onStartTest={lifecycle.handleStartTest}
+        onApproveTest={lifecycle.handlePromote}
+        onApproveTestAnyway={() => { void lifecycle.handlePromote({ force: true }); }}
+        onRejectTest={lifecycle.handleRejectTest}
+        onDeleteDraft={handleDeleteDraft}
+        onRefine={lifecycle.handleRefine}
+        onViewAgent={handleViewAgent}
+        templateName={templateName}
+        testOutputLines={build.buildTestOutputLines}
+        testPassed={build.buildTestPassed}
+        testError={build.buildTestError}
+        toolTestResults={lifecycle.buildToolTestResults}
+        testSummary={lifecycle.buildTestSummary}
+      />
       {/* Legacy: handleApplyEdits / handleDiscardEdits were wired to the
           original PersonaMatrix variant; keep the callbacks live for build
           flow even though no surface currently invokes them. */}
@@ -1430,58 +1285,3 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   );
 }
 
-interface AdoptionLayoutSwitcherProps {
-  value: AdoptionLayout;
-  onChange: (next: AdoptionLayout) => void;
-}
-
-/**
- * Tab switcher rendered above the pre-seed adoption surface so the user
- * can opt into the Persona Layout prototype without losing the proven
- * 3-step Classic flow. Persisted via localStorage so the choice survives
- * modal reopens. Hidden after seed.
- */
-function AdoptionLayoutSwitcher({ value, onChange }: AdoptionLayoutSwitcherProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-center gap-2 px-5 pt-3 pb-2 shrink-0">
-      <span className="typo-label uppercase tracking-[0.18em] text-foreground">
-        {t.templates.adopt_modal.layout_tab_label}
-      </span>
-      <div
-        role="tablist"
-        className="inline-flex items-center rounded-full border border-card-border bg-secondary/40 p-0.5"
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={value === 'classic'}
-          onClick={() => onChange('classic')}
-          className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
-            value === 'classic'
-              ? 'bg-primary/20 text-foreground'
-              : 'text-foreground hover:text-foreground hover:bg-secondary/60'
-          }`}
-        >
-          {t.templates.adopt_modal.layout_tab_classic}
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={value === 'persona-layout'}
-          onClick={() => onChange('persona-layout')}
-          className={`relative inline-flex items-center px-3 py-1 rounded-full typo-caption transition-colors cursor-pointer ${
-            value === 'persona-layout'
-              ? 'bg-primary/20 text-foreground'
-              : 'text-foreground hover:text-foreground hover:bg-secondary/60'
-          }`}
-        >
-          {t.templates.adopt_modal.layout_tab_persona_layout}
-          <span className="ml-1.5 typo-label uppercase tracking-wider text-primary/85">
-            {t.templates.adopt_modal.layout_tab_prototype_badge}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}

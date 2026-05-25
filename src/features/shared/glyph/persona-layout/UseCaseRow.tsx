@@ -219,7 +219,7 @@ export function UseCaseRow({
             disabled={isPendingToggle}
             className={`inline-flex items-center justify-center w-8 h-8 rounded-full border transition-colors cursor-pointer disabled:opacity-50 ${
               isDisabled
-                ? 'border-status-success/30 bg-status-success/10 text-status-success hover:bg-status-success/20'
+                ? 'border-status-error/40 bg-status-error/10 text-status-error hover:bg-status-error/20'
                 : 'border-card-border bg-secondary/80 text-foreground hover:text-foreground hover:border-primary/40'
             }`}
             title={

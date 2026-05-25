@@ -150,6 +150,24 @@ export interface DesignUseCase {
   /** Build-time IR memory policy — fallback source for the memory sigil when
    *  `generation_settings.memories` is absent. */
   memory_policy?: { enabled?: boolean } | null;
+  /** Post-error escalation routing for this capability (the "Errors" sigil).
+   *  Error *handling* (retry/heal) stays automatic; this only controls what
+   *  happens to failures that can't auto-recover. Read by the runtime
+   *  execution-failure hook. */
+  error_policy?: UseCaseErrorPolicy | null;
+}
+
+/**
+ * "Errors" sigil configuration — where a capability's unrecovered failures
+ * escalate. Set during adoption; persisted on the use case in the persona IR.
+ */
+export interface UseCaseErrorPolicy {
+  /** Open an entry in the Incidents inbox when a failure can't auto-recover. */
+  incident?: boolean;
+  /** Queue the capability for improvement in the Lab when failures recur. */
+  lab?: boolean;
+  /** Escalate (incident/lab) only after this many consecutive failures. */
+  escalate_after?: number;
 }
 
 /**
