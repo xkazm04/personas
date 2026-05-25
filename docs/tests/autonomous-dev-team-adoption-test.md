@@ -168,6 +168,7 @@ When a goal fails:
 | Pass | Date | Personas adopted | Capabilities Keep / Iterate / Cut | Key gaps + fixes | Verdict |
 |---|---|---|---|---|---|
 | 1 | 2026-05-25 | Dev Clone (1/7) — built + promoted | build: 4/4 caps, 8/8 dims, gate TEST COMPLETE | "Crash/freeze" was a HARNESS bug (clicked titlebar `[aria-label="Close"]` → app exit 0) + an always-on freezeDetector amplifying GC jank (reverted, commit `072fd846b`). No real leak (forced-GC floor flat ~104MB). | Adoption pipeline ✅ proven E2E; remaining 6 templates + capability execution pending |
+| 1 | 2026-05-25 | QA Guardian (2/7) — built + promoted | build: 2/2 caps, 7/8 dims, gate TEST COMPLETE | Codebase question was `type:select` + empty `options[]` + dead `list_codebases` source → no control + required → hard-blocked adoption. Shipped a general fix (commit `1c892a00a`): `optional` question flag (never gates build) + vault-sourced codebase/source connector picker (default + custom), connector slot `required:false`+`fallback_note`. Applied to qa-guardian + idea-harvester. | Codebase binding now optional for any template ✅; remaining 5 templates + execution pending |
 
 ---
 
