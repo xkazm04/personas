@@ -36,7 +36,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/feature-flag-experiment-analyst.json", "00161084f0ebe683");
     m.insert("development/feature-flag-governance-use-case.json", "0003e753113b0ecc");
     m.insert("development/lean-codebase-sentinel.json", "000af68557f2d526");
-    m.insert("development/qa-guardian.json", "001e33f175cd5b57");
+    m.insert("development/qa-guardian.json", "0018093cccefdaf8");
     m.insert("development/real-time-database-watcher.json", "000a8316306b346b");
     m.insert("development/self-evolving-codebase-memory.json", "0010964654a6eac8");
     m.insert("development/skill-librarian.json", "001715cb96cae02f");
