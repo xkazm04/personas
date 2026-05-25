@@ -19,6 +19,12 @@ interface SettingRowProps {
    */
   variant?: 'divider' | 'card';
   toggleSize?: 'sm' | 'md';
+  /**
+   * Optional leading status dot on the label line. `active` glows emerald
+   * (e.g. a source enabled and currently capturing), `idle` is a muted dot
+   * (enabled but quiet), `null`/omitted renders nothing.
+   */
+  statusDot?: 'active' | 'idle' | null;
 }
 
 /**
@@ -39,6 +45,7 @@ export function SettingRow({
   onChange,
   variant = 'divider',
   toggleSize = 'md',
+  statusDot,
 }: SettingRowProps) {
   const wrap =
     variant === 'card'
@@ -49,7 +56,19 @@ export function SettingRow({
     <div className={wrap}>
       {icon ? <div className="mt-0.5 shrink-0">{icon}</div> : null}
       <div className="min-w-0 flex-1">
-        <div className="typo-body font-medium">{label}</div>
+        <div className="flex items-center gap-2">
+          {statusDot ? (
+            <span
+              aria-hidden
+              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                statusDot === 'active'
+                  ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]'
+                  : 'bg-foreground/25'
+              }`}
+            />
+          ) : null}
+          <span className="typo-body font-medium">{label}</span>
+        </div>
         {description ? (
           <div className="typo-caption text-foreground/60 mt-1.5">{description}</div>
         ) : null}

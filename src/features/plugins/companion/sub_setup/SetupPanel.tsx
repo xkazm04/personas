@@ -192,6 +192,7 @@ export default function SetupPanel() {
               label={t.plugins.companion.setup_desktop_clipboard_label}
               description={t.plugins.companion.setup_desktop_clipboard_desc}
               countLabel={signalsCountLabel(t, sensory?.clipboardSignalsInWindow)}
+              statusDot={sensoryDot(sensory?.clipboardEnabled, sensory?.clipboardSignalsInWindow)}
               checked={sensory?.clipboardEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -206,6 +207,7 @@ export default function SetupPanel() {
               label={t.plugins.companion.setup_desktop_file_changes_label}
               description={t.plugins.companion.setup_desktop_file_changes_desc}
               countLabel={signalsCountLabel(t, sensory?.fileChangesSignalsInWindow)}
+              statusDot={sensoryDot(sensory?.fileChangesEnabled, sensory?.fileChangesSignalsInWindow)}
               checked={sensory?.fileChangesEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -220,6 +222,7 @@ export default function SetupPanel() {
               label={t.plugins.companion.setup_desktop_app_focus_label}
               description={t.plugins.companion.setup_desktop_app_focus_desc}
               countLabel={signalsCountLabel(t, sensory?.appFocusSignalsInWindow)}
+              statusDot={sensoryDot(sensory?.appFocusEnabled, sensory?.appFocusSignalsInWindow)}
               checked={sensory?.appFocusEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -233,6 +236,7 @@ export default function SetupPanel() {
               icon={<Terminal className="w-4 h-4 text-cyan-400" />}
               label={t.plugins.companion.setup_desktop_cli_session_label}
               description={t.plugins.companion.setup_desktop_cli_session_desc}
+              statusDot={sensoryDot(sensory?.cliSessionEnabled, undefined)}
               checked={sensory?.cliSessionEnabled ?? false}
               disabled={sensory === null}
               onChange={() =>
@@ -331,6 +335,20 @@ export default function SetupPanel() {
       </SectionCard>
     </div>
   );
+}
+
+/**
+ * Map a sensory source's enabled flag + rolling-window count to a status
+ * dot: `active` (enabled and capturing), `idle` (enabled but quiet), or
+ * null (disabled — no dot). Sources without a count (e.g. CLI session) pass
+ * `undefined` and read as `idle` while enabled.
+ */
+function sensoryDot(
+  enabled: boolean | undefined,
+  count: number | undefined,
+): 'active' | 'idle' | null {
+  if (!enabled) return null;
+  return (count ?? 0) > 0 ? 'active' : 'idle';
 }
 
 /**
