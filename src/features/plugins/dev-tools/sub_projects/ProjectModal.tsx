@@ -19,6 +19,7 @@ import { GitHubRepoSelector } from './GitHubRepoSelector';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { listCredentials } from '@/api/vault/credentials';
 
 
 type ModalStep = 'form' | 'created';
@@ -29,6 +30,8 @@ interface ProjectFormData {
   projectType: ProjectType;
   githubUrl: string;
   teamId: string | null;
+  /** Vault GitHub PAT credential id bound for PR / source-control ops. */
+  prCredentialId: string | null;
 }
 
 interface ProjectModalProps {
@@ -57,6 +60,10 @@ export function ProjectModal({
   const [projectType, setProjectType] = useState<ProjectType>('other');
   const [githubUrl, setGithubUrl] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
+  const [prCredentialId, setPrCredentialId] = useState<string | null>(null);
+  // Vault GitHub PAT credentials, offered as the project's source-control
+  // connector (persisted as pr_credential_id — authorises PR / git ops).
+  const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
   const [nameEdited, setNameEdited] = useState(false);
   // Opt-in: auto-create a Codebase connector for the new project so the user
   // doesn't have to open the credential catalog and add one manually.
@@ -70,6 +77,16 @@ export function ProjectModal({
   useEffect(() => {
     if (isOpen) {
       fetchTeams();
+      // Load vault GitHub PAT credentials for the connector picker.
+      listCredentials()
+        .then((creds) =>
+          setGithubCreds(
+            creds
+              .filter((c) => c.serviceType === 'github' || c.serviceType === 'github_actions')
+              .map((c) => ({ id: c.id, name: c.name })),
+          ),
+        )
+        .catch(silentCatch('ProjectModal:listGithubCreds'));
     }
   }, [isOpen, fetchTeams]);
 
@@ -81,6 +98,7 @@ export function ProjectModal({
       setProjectType(editProject.projectType);
       setGithubUrl(editProject.githubUrl);
       setTeamId(editProject.teamId);
+      setPrCredentialId(editProject.prCredentialId);
       setNameEdited(true);
     }
   }, [editProject]);
@@ -118,6 +136,7 @@ export function ProjectModal({
         projectType,
         githubUrl: githubUrl.trim(),
         teamId,
+        prCredentialId,
       });
       handleClose();
     } else {
@@ -127,6 +146,7 @@ export function ProjectModal({
         projectType,
         githubUrl: githubUrl.trim(),
         teamId,
+        prCredentialId,
       });
       if (result) {
         // Optionally create a Codebase connector wired to the new project so
@@ -161,6 +181,7 @@ export function ProjectModal({
     setProjectType('other');
     setGithubUrl('');
     setTeamId(null);
+    setPrCredentialId(null);
     setNameEdited(false);
     setCreateConnector(true);
     setCreatedProject(null);
@@ -261,6 +282,29 @@ export function ProjectModal({
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* GitHub connector — bind a vault GitHub PAT so the project's
+                    PR / source-control operations (auto-PR, review comments)
+                    can authenticate. Persisted as pr_credential_id. */}
+                <div data-testid="project-github-connector">
+                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                    {t.plugins.dev_projects.github_connector_label}
+                    <span className="text-[10px] text-foreground font-normal">
+                      ({t.plugins.dev_projects.team_binding_optional})
+                    </span>
+                  </label>
+                  <ThemedSelect
+                    value={prCredentialId ?? ''}
+                    onValueChange={(v) => setPrCredentialId(v || null)}
+                  >
+                    <option value="">{t.plugins.dev_projects.team_binding_none}</option>
+                    {githubCreds.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </ThemedSelect>
                 </div>
 
                 {/* GitHub URL -- repo selector (if PAT available) or manual input */}

@@ -133,4 +133,6 @@ export interface EditProjectData {
   projectType: ProjectType;
   githubUrl: string;
   teamId: string | null;
+  /** Vault GitHub PAT credential id bound for PR / source-control operations. */
+  prCredentialId: string | null;
 }

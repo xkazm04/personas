@@ -340,11 +340,15 @@ export type Translations = {
       subtitle: string;
       open_title: string;
       section_navigation: string;
+      section_workspace: string;
       section_agents: string;
       section_editing: string;
       command_palette: string;
       show_shortcuts: string;
       close_overlay: string;
+      toggle_sidebar: string;
+      toggle_monitor: string;
+      toggle_athena: string;
       triage_reject: string;
       triage_accept: string;
       undo: string;
@@ -9131,6 +9135,8 @@ export type Translations = {
     narration_mute: string;
     narration_unmute: string;
     resume_tour: string;
+    resume_continue_title: string;
+    resume_continue_cta: string;
     back: string;
     complete_tour: string;
     tour_loading: string;
@@ -12021,6 +12027,7 @@ export type Translations = {
       scan_codebase: string;
       loading_repositories: string;
       github_url_label: string;
+      github_connector_label: string;
       optional: string;
       github_url_placeholder: string;
       github_repository: string;

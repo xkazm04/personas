@@ -136,7 +136,7 @@ export default function ProjectManagerPage() {
     }
   }, [activeProjectId, storeActiveProjectId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -159,12 +159,13 @@ export default function ProjectManagerPage() {
     }
   }, [storeCreateProject, storeProjects, setActiveProject]);
 
-  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null }) => {
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null }) => {
     await storeUpdateProject(id, {
       name: data.name,
       techStack: data.projectType,
       githubUrl: data.githubUrl || undefined,
       teamId: data.teamId,
+      prCredentialId: data.prCredentialId,
     });
   }, [storeUpdateProject]);
 
@@ -181,6 +182,7 @@ export default function ProjectManagerPage() {
       projectType: matchedType?.id ?? 'other',
       githubUrl: raw.github_url ?? '',
       teamId: raw.team_id ?? null,
+      prCredentialId: raw.pr_credential_id ?? null,
     });
     setShowModal(true);
   }, [storeProjects]);
