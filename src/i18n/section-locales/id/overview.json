@@ -309,7 +309,15 @@
     "triage_jump": "Paling mendesak",
     "triage_detail_pipelines": "sumber data gagal disinkronkan",
     "triage_up_next": "Berikutnya",
-    "mission_control_eyebrow": "Mission Control"
+    "mission_control_eyebrow": "Mission Control",
+    "customize_label": "Sesuaikan",
+    "customize_title": "Tampilkan bagian",
+    "customize_reset": "Tampilkan semua",
+    "section_heatmap": "Peta aktivitas",
+    "section_instruments": "Instrumen",
+    "section_memory": "Saran memori",
+    "section_fleet": "Optimasi armada",
+    "section_routines": "Rutinitas & perubahan vault"
   },
   "execution_metrics": {
     "title": "Metrik Eksekusi",

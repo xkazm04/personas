@@ -19,6 +19,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { useAgentStore } from '@/stores/agentStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useSystemStore } from '@/stores/systemStore';
 import type { OverviewTab } from '@/lib/types/types';
 import { getOverviewBundle } from '@/api/overview/observability';
 import type { OverviewBundle } from '@/lib/bindings/OverviewBundle';
@@ -45,6 +46,7 @@ import { lazyRetry } from '@/lib/lazyRetry';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
 import { DashboardEmptyState } from './DashboardEmptyState';
+import { HomeCustomizePopover } from './HomeCustomizePopover';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -91,6 +93,7 @@ export default function DashboardHomeMissionControl() {
   const activeAlertCount = attention.active_alerts;
   const { selectedPersonaId } = useOverviewFilterValues();
   const { setSelectedPersonaId } = useOverviewFilterActions();
+  const hiddenSections = useSystemStore((s) => s.homeHiddenSections);
 
   // Mission Control panes that derive from the loaded execution feed honour
   // the header persona filter; fleet-wide aggregates (KPI tiles, traffic
@@ -238,7 +241,10 @@ export default function DashboardHomeMissionControl() {
         title={t.overview.dashboard.mission_control_eyebrow}
         subtitle={`${greeting}, ${displayName}`}
         actions={
-          <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+          <div className="flex items-center gap-2">
+            <HomeCustomizePopover />
+            <PersonaSelect value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
+          </div>
         }
       />
 
@@ -320,7 +326,7 @@ export default function DashboardHomeMissionControl() {
               initial={enterInitial}
               animate="visible"
             >
-              {!isEmpty && (
+              {!isEmpty && !hiddenSections.includes('heatmap') && (
                 <motion.div variants={fadeUp}>
                   <ExecutionHeatmap
                     personaId={selectedPersonaId || undefined}
@@ -329,7 +335,7 @@ export default function DashboardHomeMissionControl() {
                 </motion.div>
               )}
 
-              {!isEmpty && (
+              {!isEmpty && !hiddenSections.includes('instruments') && (
                 <motion.div variants={fadeUp}>
                   <InstrumentsBay
                     chartData={chartData}
@@ -342,7 +348,7 @@ export default function DashboardHomeMissionControl() {
                 </motion.div>
               )}
 
-              {memoryActions.length > 0 && (
+              {memoryActions.length > 0 && !hiddenSections.includes('memory') && (
                 <motion.div variants={fadeUp} className="rounded-modal border border-primary/10 bg-secondary/[0.03] overflow-hidden">
                   <PaneHeader label="Memory" subtitle={`${memoryActions.length} suggestions`} />
                   <div className="p-3">
@@ -351,11 +357,13 @@ export default function DashboardHomeMissionControl() {
                 </motion.div>
               )}
 
-              <motion.div variants={fadeUp}>
-                <FleetOptimizationCard />
-              </motion.div>
+              {!hiddenSections.includes('fleet') && (
+                <motion.div variants={fadeUp}>
+                  <FleetOptimizationCard />
+                </motion.div>
+              )}
 
-              {!isEmpty && (
+              {!isEmpty && !hiddenSections.includes('routines') && (
                 <motion.div variants={fadeUp} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   <Suspense fallback={null}>
                     <UpcomingRoutinesCard />

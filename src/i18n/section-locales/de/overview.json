@@ -309,7 +309,15 @@
     "triage_jump": "Dringendste",
     "triage_detail_pipelines": "Datenquellen synchronisieren nicht",
     "triage_up_next": "Als Nächstes",
-    "mission_control_eyebrow": "Mission Control"
+    "mission_control_eyebrow": "Mission Control",
+    "customize_label": "Anpassen",
+    "customize_title": "Abschnitte anzeigen",
+    "customize_reset": "Alle anzeigen",
+    "section_heatmap": "Aktivitäts-Heatmap",
+    "section_instruments": "Instrumente",
+    "section_memory": "Speichervorschläge",
+    "section_fleet": "Flottenoptimierung",
+    "section_routines": "Routinen & Tresor-Änderungen"
   },
   "execution_metrics": {
     "title": "Ausführungsmetriken",

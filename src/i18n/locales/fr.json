@@ -5268,7 +5268,15 @@
       "triage_jump": "Le plus urgent",
       "triage_detail_pipelines": "sources de données en échec de synchronisation",
       "triage_up_next": "Suivant",
-      "mission_control_eyebrow": "Mission Control"
+      "mission_control_eyebrow": "Mission Control",
+      "customize_label": "Personnaliser",
+      "customize_title": "Afficher les sections",
+      "customize_reset": "Tout afficher",
+      "section_heatmap": "Carte de chaleur d'activité",
+      "section_instruments": "Instruments",
+      "section_memory": "Suggestions de mémoire",
+      "section_fleet": "Optimisation de la flotte",
+      "section_routines": "Routines et modifications du coffre"
     },
     "execution_metrics": {
       "title": "Métriques d'exécution",

@@ -104,6 +104,7 @@ export const useSystemStore = create<SystemStore>()(
         collapsedSourceKinds: state.collapsedSourceKinds,
         monitorGroupBy: state.monitorGroupBy,
         monitorCollapsedGroups: state.monitorCollapsedGroups,
+        homeHiddenSections: state.homeHiddenSections,
       }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;

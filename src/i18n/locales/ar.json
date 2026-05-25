@@ -5268,7 +5268,15 @@
       "triage_jump": "الأكثر إلحاحًا",
       "triage_detail_pipelines": "مصادر بيانات تفشل في المزامنة",
       "triage_up_next": "التالي",
-      "mission_control_eyebrow": "Mission Control"
+      "mission_control_eyebrow": "Mission Control",
+      "customize_label": "تخصيص",
+      "customize_title": "إظهار الأقسام",
+      "customize_reset": "إظهار الكل",
+      "section_heatmap": "خريطة النشاط الحراري",
+      "section_instruments": "الأدوات",
+      "section_memory": "اقتراحات الذاكرة",
+      "section_fleet": "تحسين الأسطول",
+      "section_routines": "الروتين وتغييرات الخزينة"
     },
     "execution_metrics": {
       "title": "مقاييس التنفيذ",

@@ -118,11 +118,20 @@ export interface UiSlice {
    */
   monitorCollapsedGroups: string[];
 
+  /**
+   * Ids of below-the-fold Home (Mission Control) sections the user has hidden
+   * via the dashboard Customize popover. Stored as a string[] (not Set) so the
+   * persist middleware can JSON-serialize it. Empty = every section visible.
+   */
+  homeHiddenSections: string[];
+
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
   setMonitorOpen: (open: boolean) => void;
   setMonitorGroupBy: (mode: 'none' | 'group') => void;
   toggleMonitorGroupCollapsed: (groupId: string) => void;
+  toggleHomeSection: (sectionId: string) => void;
+  resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
   setHomeReleaseVersion: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
@@ -190,6 +199,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
   monitorOpen: false,
   monitorGroupBy: 'none' as const,
   monitorCollapsedGroups: [],
+  homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   homeReleaseVersion: "roadmap",
   templateTab: "generated" as TemplateTab,
@@ -227,6 +237,14 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set) =
 
   setMonitorOpen: (open) => set({ monitorOpen: open }),
   setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
+  toggleHomeSection: (sectionId) =>
+    set((state) => {
+      const idx = state.homeHiddenSections.indexOf(sectionId);
+      return idx >= 0
+        ? { homeHiddenSections: state.homeHiddenSections.filter((_, i) => i !== idx) }
+        : { homeHiddenSections: [...state.homeHiddenSections, sectionId] };
+    }),
+  resetHomeSections: () => set({ homeHiddenSections: [] }),
   toggleMonitorGroupCollapsed: (groupId) =>
     set((state) => {
       const idx = state.monitorCollapsedGroups.indexOf(groupId);

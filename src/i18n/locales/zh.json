@@ -5268,7 +5268,15 @@
       "triage_jump": "最紧急",
       "triage_detail_pipelines": "数据源同步失败",
       "triage_up_next": "接下来",
-      "mission_control_eyebrow": "Mission Control"
+      "mission_control_eyebrow": "Mission Control",
+      "customize_label": "自定义",
+      "customize_title": "显示板块",
+      "customize_reset": "显示全部",
+      "section_heatmap": "活动热图",
+      "section_instruments": "仪器面板",
+      "section_memory": "记忆建议",
+      "section_fleet": "舰队优化",
+      "section_routines": "例程与保险库变更"
     },
     "execution_metrics": {
       "title": "执行指标",
