@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { AccessibleToggle } from './AccessibleToggle';
+import { ActivityDot } from '../display/ActivityDot';
 
 interface SettingRowProps {
   /** Primary label — always full-opacity, leads the row. */
@@ -57,16 +58,7 @@ export function SettingRow({
       {icon ? <div className="mt-0.5 shrink-0">{icon}</div> : null}
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          {statusDot ? (
-            <span
-              aria-hidden
-              className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                statusDot === 'active'
-                  ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]'
-                  : 'bg-foreground/25'
-              }`}
-            />
-          ) : null}
+          {statusDot ? <ActivityDot tone={statusDot} size="xs" /> : null}
           <span className="typo-body font-medium">{label}</span>
         </div>
         {description ? (

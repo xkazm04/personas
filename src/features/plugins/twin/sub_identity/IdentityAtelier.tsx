@@ -6,6 +6,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { generateBio } from '@/api/twin/twin';
 import { TwinEmptyState } from '../TwinEmptyState';
+import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GENDERS, genderFromPronouns, pronounsFromGender, genderDef, type Gender } from '../shared/gender';
 import { DebtText } from '@/i18n/DebtText';
@@ -334,7 +335,7 @@ function Stat({ label, value, accent = 'violet' }: { label: string; value: numbe
 function Pulse({ label, on, pending }: { label: string; on: boolean; pending?: boolean }) {
   return (
     <div className="flex items-center gap-2.5 typo-caption">
-      <span className={`relative w-2 h-2 rounded-full ${on ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]' : pending ? 'bg-amber-400' : 'bg-foreground/15'}`} />
+      <ActivityDot tone={on ? 'active' : pending ? 'pending' : 'off'} />
       <span className="text-foreground">{label}</span>
       <span className="ml-auto text-[10px] uppercase tracking-wider text-foreground">{on ? 'set' : pending ? 'draft' : 'empty'}</span>
     </div>
