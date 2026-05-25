@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Terminal, CheckCircle2, AlertCircle, Loader2, Copy, ExternalLink, RefreshCw } from 'lucide-react';
 import {
@@ -11,6 +11,7 @@ import {
 } from '@/api/auth/cliCapture';
 import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
+import { resolveErrorTranslated } from '@/i18n/useTranslatedError';
 import type { ConnectorDefinition } from '@/lib/types/types';
 
 type PanelState =
@@ -41,8 +42,14 @@ export function CliConnectionPanel({
 }: CliConnectionPanelProps) {
   const { t, tx } = useTranslation();
   const l = t.vault.cli_panel;
+  const nameId = useId();
   const [state, setState] = useState<PanelState>({ kind: 'checking' });
   const [saving, setSaving] = useState(false);
+
+  const toErrorState = useCallback((err: unknown): PanelState => {
+    const { message } = resolveErrorTranslated(t, err instanceof Error ? err.message : String(err));
+    return { kind: 'error', message };
+  }, [t]);
 
   const runInstallCheck = useCallback(async () => {
     setState({ kind: 'checking' });
@@ -54,9 +61,9 @@ export function CliConnectionPanel({
         setState({ kind: 'installed_unverified', status });
       }
     } catch (err) {
-      setState({ kind: 'error', message: String(err) });
+      setState(toErrorState(err));
     }
-  }, [spec.service_type]);
+  }, [spec.service_type, toErrorState]);
 
   const runVerify = useCallback(async () => {
     setState({ kind: 'verifying' });
@@ -64,9 +71,9 @@ export function CliConnectionPanel({
       const verify = await cliVerifyAuth(spec.service_type);
       setState({ kind: verify.authenticated ? 'authenticated' : 'unauthenticated', verify });
     } catch (err) {
-      setState({ kind: 'error', message: String(err) });
+      setState(toErrorState(err));
     }
-  }, [spec.service_type]);
+  }, [spec.service_type, toErrorState]);
 
   useEffect(() => {
     void runInstallCheck();
@@ -104,10 +111,11 @@ export function CliConnectionPanel({
     <div className="space-y-4">
       {/* Credential name input */}
       <div>
-        <label className="block typo-caption font-medium text-foreground mb-1">
+        <label htmlFor={nameId} className="block typo-caption font-medium text-foreground mb-1">
           {l.credential_name}
         </label>
         <input
+          id={nameId}
           type="text"
           value={credentialName}
           onChange={(e) => onCredentialNameChange(e.target.value)}
