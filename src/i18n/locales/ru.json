@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "Отменить",
-      "redo": "Повторить"
+      "redo": "Повторить",
+      "section_workspace": "Рабочая область",
+      "toggle_sidebar": "Свернуть / развернуть боковую панель",
+      "toggle_monitor": "Открыть / закрыть Persona Monitor",
+      "toggle_athena": "Открыть / закрыть чат Athena"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "Проверить все учётные данные",
       "test_all": "Проверить все",
       "daily_progress": "Ежедневно {done}/{total}",
-      "testing_progress": "Проверка {done}/{total}"
+      "testing_progress": "Проверка {done}/{total}",
+      "title_catalog": "Каталог",
+      "title_dependencies": "Зависимости",
+      "title_databases": "Базы данных"
     },
     "bulk_healthcheck": {
       "title": "Результаты проверки здоровья",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "Не настроено.",
-      "required_badge": "ОБЯ"
+      "required_badge": "ОБЯ",
+      "kv_key_label": "Ключ",
+      "kv_value_label": "Значение",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "Показать значение",
+      "kv_hide_value": "Скрыть значение",
+      "kv_remove": "Удалить переменную",
+      "kv_add": "Добавить"
     },
     "design_phases": {
       "saving": "Сохранение учётных данных...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "Реклама",
+      "ai": "ИИ",
+      "analytics": "Аналитика",
+      "automation": "Автоматизация",
+      "bi": "Бизнес-аналитика",
+      "browser_automation": "Автоматизация браузера",
+      "calendar": "Календарь",
+      "ci_cd": "CI/CD",
+      "cloud": "Облако",
+      "containers": "Контейнеры",
+      "crm": "CRM",
+      "custom": "Пользовательское",
+      "database": "База данных",
+      "design": "Дизайн",
+      "development": "Разработка",
+      "ecommerce": "Электронная коммерция",
+      "email": "Электронная почта",
+      "finance": "Финансы",
+      "forms": "Формы",
+      "integration": "Интеграция",
+      "knowledge_base": "База знаний",
+      "mcp": "MCP",
+      "messaging": "Сообщения",
+      "monitoring": "Мониторинг",
+      "notifications": "Уведомления",
+      "personalization": "Персонализация",
+      "productivity": "Продуктивность",
+      "project_management": "Управление проектами",
+      "research": "Исследования",
+      "scheduling": "Планирование",
+      "social": "Социальные сети",
+      "source_control": "Контроль исходного кода",
+      "spreadsheet": "Электронная таблица",
+      "storage": "Хранилище",
+      "support": "Поддержка",
+      "time_tracking": "Учет времени",
+      "vector_search": "Векторный поиск",
+      "web_scraping": "Веб-скрейпинг"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "Журнал восстановления",
       "source_provider": "Провайдер",
       "source_policy": "Политика",
-      "source_healing_issue": "Проблема восстановления"
+      "source_healing_issue": "Проблема восстановления",
+      "source_execution_error": "Ошибка выполнения"
     },
     "observability": {
       "title": "Мониторинг",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "Для этой возможности нет вопросов.",
+      "error_policy": {
+        "title": "Обработка ошибок",
+        "intro": "Повторы и самовосстановление выполняются автоматически. Выберите, что произойдет, если сбой не сможет восстановиться сам.",
+        "incident_label": "Создать инцидент",
+        "incident_desc": "Показывать невосстановленные сбои во входящих инцидентов для триажа.",
+        "lab_label": "Отправить в Lab",
+        "lab_desc": "Включить автоулучшение Lab (эволюцию промптов) для этой персоны, когда сбои повторяются.",
+        "escalate_after_label": "Эскалировать после",
+        "escalate_after_desc": "Количество последовательных сбоев перед созданием инцидента или отправкой в Lab."
+      }
     },
     "scan": {
       "scanning_draft": "Сканирование черновика агента...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse группа",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "Нет события match the current filters",
-    "dead_letter_clear_filters_to_see": "Очистить filters to see all dead-lettered события"
+    "dead_letter_clear_filters_to_see": "Очистить filters to see all dead-lettered события",
+    "col_event": "Событие",
+    "col_listeners": "Слушатели",
+    "source_personas_filter": "Исходные персоны",
+    "listeners_filter": "Слушатели",
+    "filter_events_placeholder": "Фильтровать события..."
   },
   "settings": {
     "title": "Настройки",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "Продолжить с места остановки",
+    "resume_continue_cta": "Продолжить тур"
   },
   "system_health": {
     "title": "Проверки системы",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "Сбросить",
       "team_preview_canvas_reset_title": "Сбросить масштаб и панораму",
       "create_codebase_connector_label": "Создать Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "Коннектор GitHub"
     },
     "dev_runner": {
       "self_healing": "Самовосстановление",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace настройки saved",
       "workspace_save_failed": "Couldn't save workspace настройки",
-      "workspace_inherit": "Наследовать"
+      "workspace_inherit": "Наследовать",
+      "add_persona_draft_hint": "Черновики персон нужно продвинуть, прежде чем они смогут присоединиться к команде.",
+      "checklist_heading": "Прогресс в реальном времени",
+      "checklist_background_note": "Выполняется в фоне",
+      "step_status_pending": "Ожидает",
+      "step_status_matching": "Сопоставление",
+      "step_status_running": "Выполняется",
+      "step_status_done": "Готово",
+      "step_status_skipped": "Пропущено",
+      "step_status_failed": "Сбой",
+      "step_status_awaiting_review": "Требует проверки",
+      "board_label": "Доска назначений",
+      "board_col_queued": "В очереди",
+      "board_col_running": "Выполняется",
+      "board_col_review": "Требует проверки",
+      "board_col_done": "Готово",
+      "board_col_stopped": "Остановлено",
+      "board_empty": "Назначений пока нет. Задайте цель в Orchestrate, чтобы начать."
     }
   },
   "auth": {

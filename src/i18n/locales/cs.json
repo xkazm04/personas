@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "Zpět",
-      "redo": "Znovu"
+      "redo": "Znovu",
+      "section_workspace": "Pracovní prostor",
+      "toggle_sidebar": "Sbalit / rozbalit postranní panel",
+      "toggle_monitor": "Otevřít / zavřít Monitor person",
+      "toggle_athena": "Otevřít / zavřít chat Athena"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "Testovat všechny údaje",
       "test_all": "Testovat vše",
       "daily_progress": "Denně {done}/{total}",
-      "testing_progress": "Testování {done}/{total}"
+      "testing_progress": "Testování {done}/{total}",
+      "title_catalog": "Katalog",
+      "title_dependencies": "Závislosti",
+      "title_databases": "Databáze"
     },
     "bulk_healthcheck": {
       "title": "Výsledky kontroly",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "Nic není nakonfigurováno.",
-      "required_badge": "POV"
+      "required_badge": "POV",
+      "kv_key_label": "Klíč",
+      "kv_value_label": "Hodnota",
+      "kv_key_placeholder": "KLÍČ",
+      "kv_value_placeholder": "hodnota",
+      "kv_show_value": "Zobrazit hodnotu",
+      "kv_hide_value": "Skrýt hodnotu",
+      "kv_remove": "Odebrat proměnnou",
+      "kv_add": "Přidat"
     },
     "design_phases": {
       "saving": "Ukládání přihlašovacího údaje...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "Reklama",
+      "ai": "AI",
+      "analytics": "Analytika",
+      "automation": "Automatizace",
+      "bi": "Business Intelligence",
+      "browser_automation": "Automatizace prohlížeče",
+      "calendar": "Kalendář",
+      "ci_cd": "CI/CD",
+      "cloud": "Cloud",
+      "containers": "Kontejnery",
+      "crm": "CRM",
+      "custom": "Vlastní",
+      "database": "Databáze",
+      "design": "Design",
+      "development": "Vývoj",
+      "ecommerce": "E-commerce",
+      "email": "E-mail",
+      "finance": "Finance",
+      "forms": "Formuláře",
+      "integration": "Integrace",
+      "knowledge_base": "Znalostní báze",
+      "mcp": "MCP",
+      "messaging": "Zprávy",
+      "monitoring": "Monitoring",
+      "notifications": "Oznámení",
+      "personalization": "Personalizace",
+      "productivity": "Produktivita",
+      "project_management": "Řízení projektů",
+      "research": "Výzkum",
+      "scheduling": "Plánování",
+      "social": "Sociální sítě",
+      "source_control": "Správa zdrojového kódu",
+      "spreadsheet": "Tabulky",
+      "storage": "Úložiště",
+      "support": "Podpora",
+      "time_tracking": "Sledování času",
+      "vector_search": "Vektorové vyhledávání",
+      "web_scraping": "Web scraping"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "Protokol léčení",
       "source_provider": "Poskytovatel",
       "source_policy": "Zásada",
-      "source_healing_issue": "Problém léčení"
+      "source_healing_issue": "Problém léčení",
+      "source_execution_error": "Chyba spuštění"
     },
     "observability": {
       "title": "Pozorovatelnost",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "Pro tuto schopnost nejsou žádné otázky.",
+      "error_policy": {
+        "title": "Zpracování chyb",
+        "intro": "Opakování a samooprava jsou automatické. Zvolte, co se stane, když se selhání nedokáže samo obnovit.",
+        "incident_label": "Vytvořit incident",
+        "incident_desc": "Zobrazit neobnovená selhání ve schránce incidentů pro triáž.",
+        "lab_label": "Poslat do Labu",
+        "lab_desc": "Zapnout automatické zlepšování v Labu (evoluci promptů) pro tuto personu, když se selhání opakují.",
+        "escalate_after_label": "Eskalovat po",
+        "escalate_after_desc": "Počet po sobě jdoucích selhání před vytvořením incidentu nebo odesláním do Labu."
+      }
     },
     "scan": {
       "scanning_draft": "Skenování návrhu persony...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse skupina",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "Žádné události match the current filters",
-    "dead_letter_clear_filters_to_see": "Vymazat filters to see all dead-lettered události"
+    "dead_letter_clear_filters_to_see": "Vymazat filters to see all dead-lettered události",
+    "col_event": "Událost",
+    "col_listeners": "Posluchači",
+    "source_personas_filter": "Zdrojové persony",
+    "listeners_filter": "Posluchači",
+    "filter_events_placeholder": "Filtrovat události..."
   },
   "settings": {
     "title": "Nastavení",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "Pokračujte tam, kde jste skončili",
+    "resume_continue_cta": "Pokračovat v prohlídce"
   },
   "system_health": {
     "title": "Systémové kontroly",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "Reset",
       "team_preview_canvas_reset_title": "Resetovat přiblížení a posun na výchozí",
       "create_codebase_connector_label": "Vytvořit Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "Konektor GitHub"
     },
     "dev_runner": {
       "self_healing": "Self-healing",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace nastavení saved",
       "workspace_save_failed": "Couldn't save workspace nastavení",
-      "workspace_inherit": "Zdědit"
+      "workspace_inherit": "Zdědit",
+      "add_persona_draft_hint": "Koncepty person musí být před přidáním do týmu povýšeny.",
+      "checklist_heading": "Živý průběh",
+      "checklist_background_note": "Běží na pozadí",
+      "step_status_pending": "Čeká",
+      "step_status_matching": "Párování",
+      "step_status_running": "Běží",
+      "step_status_done": "Hotovo",
+      "step_status_skipped": "Přeskočeno",
+      "step_status_failed": "Selhalo",
+      "step_status_awaiting_review": "Vyžaduje kontrolu",
+      "board_label": "Tabule úkolů",
+      "board_col_queued": "Ve frontě",
+      "board_col_running": "Běží",
+      "board_col_review": "Vyžaduje kontrolu",
+      "board_col_done": "Hotovo",
+      "board_col_stopped": "Zastaveno",
+      "board_empty": "Zatím žádné úkoly. Začněte definováním cíle v Orchestrate."
     }
   },
   "auth": {

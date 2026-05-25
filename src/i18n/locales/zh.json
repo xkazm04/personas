@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "撤销",
-      "redo": "重做"
+      "redo": "重做",
+      "section_workspace": "工作区",
+      "toggle_sidebar": "折叠 / 展开侧边栏",
+      "toggle_monitor": "打开 / 关闭 Persona Monitor",
+      "toggle_athena": "打开 / 关闭 Athena 聊天"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "测试所有凭据",
       "test_all": "全部测试",
       "daily_progress": "每日 {done}/{total}",
-      "testing_progress": "测试 {done}/{total}"
+      "testing_progress": "测试 {done}/{total}",
+      "title_catalog": "目录",
+      "title_dependencies": "依赖项",
+      "title_databases": "数据库"
     },
     "bulk_healthcheck": {
       "title": "健康检查结果",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "未配置。",
-      "required_badge": "必填"
+      "required_badge": "必填",
+      "kv_key_label": "键",
+      "kv_value_label": "值",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "显示值",
+      "kv_hide_value": "隐藏值",
+      "kv_remove": "移除变量",
+      "kv_add": "添加"
     },
     "design_phases": {
       "saving": "正在保存凭据...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "广告",
+      "ai": "AI",
+      "analytics": "分析",
+      "automation": "自动化",
+      "bi": "商业智能",
+      "browser_automation": "浏览器自动化",
+      "calendar": "日历",
+      "ci_cd": "CI/CD",
+      "cloud": "云",
+      "containers": "容器",
+      "crm": "CRM",
+      "custom": "自定义",
+      "database": "数据库",
+      "design": "设计",
+      "development": "开发",
+      "ecommerce": "电子商务",
+      "email": "电子邮件",
+      "finance": "财务",
+      "forms": "表单",
+      "integration": "集成",
+      "knowledge_base": "知识库",
+      "mcp": "MCP",
+      "messaging": "消息",
+      "monitoring": "监控",
+      "notifications": "通知",
+      "personalization": "个性化",
+      "productivity": "生产力",
+      "project_management": "项目管理",
+      "research": "研究",
+      "scheduling": "排程",
+      "social": "社交",
+      "source_control": "源代码控制",
+      "spreadsheet": "电子表格",
+      "storage": "存储",
+      "support": "支持",
+      "time_tracking": "时间跟踪",
+      "vector_search": "向量搜索",
+      "web_scraping": "网页抓取"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "修复日志",
       "source_provider": "提供商",
       "source_policy": "策略",
-      "source_healing_issue": "修复问题"
+      "source_healing_issue": "修复问题",
+      "source_execution_error": "执行错误"
     },
     "observability": {
       "title": "可观测性",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "此能力没有问题。",
+      "error_policy": {
+        "title": "错误处理",
+        "intro": "重试和自愈会自动进行。请选择当故障无法自行恢复时要发生的操作。",
+        "incident_label": "创建事件",
+        "incident_desc": "在事件收件箱中显示未恢复的故障以便分诊。",
+        "lab_label": "发送到 Lab",
+        "lab_desc": "当故障反复出现时，为此 persona 启用 Lab 自动改进（提示词演化）。",
+        "escalate_after_label": "升级处理时间",
+        "escalate_after_desc": "创建事件或发送到 Lab 前的连续失败次数。"
+      }
     },
     "scan": {
       "scanning_draft": "扫描代理草稿中...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse 组",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "无事件 match the current filters",
-    "dead_letter_clear_filters_to_see": "清除 filters to see all dead-lettered 事件"
+    "dead_letter_clear_filters_to_see": "清除 filters to see all dead-lettered 事件",
+    "col_event": "事件",
+    "col_listeners": "监听器",
+    "source_personas_filter": "源 personas",
+    "listeners_filter": "监听器",
+    "filter_events_placeholder": "筛选事件..."
   },
   "settings": {
     "title": "设置",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "从上次中断处继续",
+    "resume_continue_cta": "继续导览"
   },
   "system_health": {
     "title": "系统检查",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "重置",
       "team_preview_canvas_reset_title": "重置缩放和平移为默认值",
       "create_codebase_connector_label": "创建 Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "GitHub 连接器"
     },
     "dev_runner": {
       "self_healing": "自愈",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace 设置 saved",
       "workspace_save_failed": "Couldn't save workspace 设置",
-      "workspace_inherit": "继承"
+      "workspace_inherit": "继承",
+      "add_persona_draft_hint": "草稿 persona 必须先提升，才能加入团队。",
+      "checklist_heading": "实时进度",
+      "checklist_background_note": "在后台运行",
+      "step_status_pending": "待处理",
+      "step_status_matching": "匹配中",
+      "step_status_running": "运行中",
+      "step_status_done": "完成",
+      "step_status_skipped": "已跳过",
+      "step_status_failed": "失败",
+      "step_status_awaiting_review": "需要审查",
+      "board_label": "任务看板",
+      "board_col_queued": "已排队",
+      "board_col_running": "运行中",
+      "board_col_review": "需要审查",
+      "board_col_done": "完成",
+      "board_col_stopped": "已停止",
+      "board_empty": "还没有任务。在 Orchestrate 中定义目标以开始。"
     }
   },
   "auth": {

@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "실행 취소",
-      "redo": "다시 실행"
+      "redo": "다시 실행",
+      "section_workspace": "작업 영역",
+      "toggle_sidebar": "사이드바 접기 / 펼치기",
+      "toggle_monitor": "Persona Monitor 열기 / 닫기",
+      "toggle_athena": "Athena 채팅 열기 / 닫기"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "모든 자격 증명 테스트",
       "test_all": "전체 테스트",
       "daily_progress": "일일 {done}/{total}",
-      "testing_progress": "테스트 중 {done}/{total}"
+      "testing_progress": "테스트 중 {done}/{total}",
+      "title_catalog": "카탈로그",
+      "title_dependencies": "종속성",
+      "title_databases": "데이터베이스"
     },
     "bulk_healthcheck": {
       "title": "상태 확인 결과",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "구성된 것 없음.",
-      "required_badge": "필수"
+      "required_badge": "필수",
+      "kv_key_label": "키",
+      "kv_value_label": "값",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "값 표시",
+      "kv_hide_value": "값 숨기기",
+      "kv_remove": "변수 제거",
+      "kv_add": "추가"
     },
     "design_phases": {
       "saving": "자격 증명 저장 중...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "광고",
+      "ai": "AI",
+      "analytics": "분석",
+      "automation": "자동화",
+      "bi": "비즈니스 인텔리전스",
+      "browser_automation": "브라우저 자동화",
+      "calendar": "캘린더",
+      "ci_cd": "CI/CD",
+      "cloud": "클라우드",
+      "containers": "컨테이너",
+      "crm": "CRM",
+      "custom": "사용자 지정",
+      "database": "데이터베이스",
+      "design": "디자인",
+      "development": "개발",
+      "ecommerce": "전자상거래",
+      "email": "이메일",
+      "finance": "금융",
+      "forms": "양식",
+      "integration": "통합",
+      "knowledge_base": "지식 베이스",
+      "mcp": "MCP",
+      "messaging": "메시징",
+      "monitoring": "모니터링",
+      "notifications": "알림",
+      "personalization": "개인화",
+      "productivity": "생산성",
+      "project_management": "프로젝트 관리",
+      "research": "리서치",
+      "scheduling": "일정 관리",
+      "social": "소셜",
+      "source_control": "소스 제어",
+      "spreadsheet": "스프레드시트",
+      "storage": "스토리지",
+      "support": "지원",
+      "time_tracking": "시간 추적",
+      "vector_search": "벡터 검색",
+      "web_scraping": "웹 스크래핑"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "복구 로그",
       "source_provider": "제공자",
       "source_policy": "정책",
-      "source_healing_issue": "복구 문제"
+      "source_healing_issue": "복구 문제",
+      "source_execution_error": "실행 오류"
     },
     "observability": {
       "title": "관측성",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "이 기능에는 질문이 없습니다.",
+      "error_policy": {
+        "title": "오류 처리",
+        "intro": "재시도와 자가 복구는 자동입니다. 실패가 스스로 복구되지 않을 때 수행할 작업을 선택하세요.",
+        "incident_label": "인시던트 생성",
+        "incident_desc": "복구되지 않은 실패를 분류할 수 있도록 인시던트 받은 편지함에 표시합니다.",
+        "lab_label": "Lab으로 보내기",
+        "lab_desc": "실패가 반복될 때 이 페르소나에 대해 Lab 자동 개선(프롬프트 진화)을 켭니다.",
+        "escalate_after_label": "다음 이후 에스컬레이션",
+        "escalate_after_desc": "인시던트를 생성하거나 Lab으로 보내기 전의 연속 실패 횟수입니다."
+      }
     },
     "scan": {
       "scanning_draft": "페르소나 초안 검사 중...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse 그룹",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "이벤트 match the current filters",
-    "dead_letter_clear_filters_to_see": "지우기 filters to see all dead-lettered 이벤트"
+    "dead_letter_clear_filters_to_see": "지우기 filters to see all dead-lettered 이벤트",
+    "col_event": "이벤트",
+    "col_listeners": "리스너",
+    "source_personas_filter": "소스 페르소나",
+    "listeners_filter": "리스너",
+    "filter_events_placeholder": "이벤트 필터..."
   },
   "settings": {
     "title": "설정",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "중단한 위치에서 계속",
+    "resume_continue_cta": "투어 계속"
   },
   "system_health": {
     "title": "시스템 점검",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "초기화",
       "team_preview_canvas_reset_title": "확대/축소 및 이동을 기본값으로 초기화",
       "create_codebase_connector_label": "생성 Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "GitHub 커넥터"
     },
     "dev_runner": {
       "self_healing": "자가 복구",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace 설정 saved",
       "workspace_save_failed": "Couldn't save workspace 설정",
-      "workspace_inherit": "상속"
+      "workspace_inherit": "상속",
+      "add_persona_draft_hint": "초안 페르소나는 팀에 참여하기 전에 승격되어야 합니다.",
+      "checklist_heading": "실시간 진행 상황",
+      "checklist_background_note": "백그라운드에서 실행",
+      "step_status_pending": "대기 중",
+      "step_status_matching": "매칭 중",
+      "step_status_running": "실행 중",
+      "step_status_done": "완료",
+      "step_status_skipped": "건너뜀",
+      "step_status_failed": "실패",
+      "step_status_awaiting_review": "검토 필요",
+      "board_label": "할당 보드",
+      "board_col_queued": "대기열",
+      "board_col_running": "실행 중",
+      "board_col_review": "검토 필요",
+      "board_col_done": "완료",
+      "board_col_stopped": "중지됨",
+      "board_empty": "아직 할당이 없습니다. 시작하려면 Orchestrate에서 목표를 정의하세요."
     }
   },
   "auth": {

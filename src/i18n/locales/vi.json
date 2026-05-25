@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "Hoàn tác",
-      "redo": "Làm lại"
+      "redo": "Làm lại",
+      "section_workspace": "Không gian làm việc",
+      "toggle_sidebar": "Thu gọn / mở rộng thanh bên",
+      "toggle_monitor": "Mở / đóng Persona Monitor",
+      "toggle_athena": "Mở / đóng trò chuyện Athena"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "Kiểm tra tất cả thông tin xác thực",
       "test_all": "Kiểm tra tất cả",
       "daily_progress": "Hàng ngày {done}/{total}",
-      "testing_progress": "Đang kiểm tra {done}/{total}"
+      "testing_progress": "Đang kiểm tra {done}/{total}",
+      "title_catalog": "Danh mục",
+      "title_dependencies": "Phụ thuộc",
+      "title_databases": "Cơ sở dữ liệu"
     },
     "bulk_healthcheck": {
       "title": "Kết quả kiểm tra sức khỏe",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "Chưa cấu hình.",
-      "required_badge": "BẮT BUỘC"
+      "required_badge": "BẮT BUỘC",
+      "kv_key_label": "Khóa",
+      "kv_value_label": "Giá trị",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "Hiển thị giá trị",
+      "kv_hide_value": "Ẩn giá trị",
+      "kv_remove": "Xóa biến",
+      "kv_add": "Thêm"
     },
     "design_phases": {
       "saving": "Đang lưu thông tin xác thực...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "Quảng cáo",
+      "ai": "AI",
+      "analytics": "Phân tích",
+      "automation": "Tự động hóa",
+      "bi": "Business Intelligence",
+      "browser_automation": "Tự động hóa trình duyệt",
+      "calendar": "Lịch",
+      "ci_cd": "CI/CD",
+      "cloud": "Đám mây",
+      "containers": "Container",
+      "crm": "CRM",
+      "custom": "Tùy chỉnh",
+      "database": "Cơ sở dữ liệu",
+      "design": "Thiết kế",
+      "development": "Phát triển",
+      "ecommerce": "Thương mại điện tử",
+      "email": "Email",
+      "finance": "Tài chính",
+      "forms": "Biểu mẫu",
+      "integration": "Tích hợp",
+      "knowledge_base": "Cơ sở tri thức",
+      "mcp": "MCP",
+      "messaging": "Nhắn tin",
+      "monitoring": "Giám sát",
+      "notifications": "Thông báo",
+      "personalization": "Cá nhân hóa",
+      "productivity": "Năng suất",
+      "project_management": "Quản lý dự án",
+      "research": "Nghiên cứu",
+      "scheduling": "Lập lịch",
+      "social": "Mạng xã hội",
+      "source_control": "Quản lý mã nguồn",
+      "spreadsheet": "Bảng tính",
+      "storage": "Lưu trữ",
+      "support": "Hỗ trợ",
+      "time_tracking": "Theo dõi thời gian",
+      "vector_search": "Tìm kiếm vector",
+      "web_scraping": "Web scraping"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "Nhật ký tự sửa",
       "source_provider": "Nhà cung cấp",
       "source_policy": "Chính sách",
-      "source_healing_issue": "Vấn đề tự sửa"
+      "source_healing_issue": "Vấn đề tự sửa",
+      "source_execution_error": "Lỗi thực thi"
     },
     "observability": {
       "title": "Khả năng quan sát",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "Không có câu hỏi cho năng lực này.",
+      "error_policy": {
+        "title": "Xử lý lỗi",
+        "intro": "Thử lại và tự khôi phục là tự động. Chọn điều sẽ xảy ra khi lỗi không thể tự phục hồi.",
+        "incident_label": "Tạo sự cố",
+        "incident_desc": "Hiển thị các lỗi chưa phục hồi trong hộp thư Sự cố để phân loại.",
+        "lab_label": "Gửi đến Lab",
+        "lab_desc": "Bật tự cải thiện Lab (tiến hóa prompt) cho persona này khi lỗi lặp lại.",
+        "escalate_after_label": "Nâng cấp sau",
+        "escalate_after_desc": "Số lỗi liên tiếp trước khi tạo sự cố hoặc gửi đến Lab."
+      }
     },
     "scan": {
       "scanning_draft": "Đang quét bản nháp persona...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse nhóm",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "Không có sự kiện match the current filters",
-    "dead_letter_clear_filters_to_see": "Xóa filters to see all dead-lettered sự kiện"
+    "dead_letter_clear_filters_to_see": "Xóa filters to see all dead-lettered sự kiện",
+    "col_event": "Sự kiện",
+    "col_listeners": "Listener",
+    "source_personas_filter": "Persona nguồn",
+    "listeners_filter": "Listener",
+    "filter_events_placeholder": "Lọc sự kiện..."
   },
   "settings": {
     "title": "Cài đặt",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "Tiếp tục từ nơi bạn đã dừng",
+    "resume_continue_cta": "Tiếp tục hướng dẫn"
   },
   "system_health": {
     "title": "Kiểm tra hệ thống",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "Đặt lại",
       "team_preview_canvas_reset_title": "Đặt lại zoom và pan về mặc định",
       "create_codebase_connector_label": "Tạo Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "Trình kết nối GitHub"
     },
     "dev_runner": {
       "self_healing": "Tự phục hồi",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace cài đặt saved",
       "workspace_save_failed": "Couldn't save workspace cài đặt",
-      "workspace_inherit": "Kế thừa"
+      "workspace_inherit": "Kế thừa",
+      "add_persona_draft_hint": "Persona nháp phải được thăng cấp trước khi có thể tham gia nhóm.",
+      "checklist_heading": "Tiến trình trực tiếp",
+      "checklist_background_note": "Chạy trong nền",
+      "step_status_pending": "Đang chờ",
+      "step_status_matching": "Đang khớp",
+      "step_status_running": "Đang chạy",
+      "step_status_done": "Hoàn tất",
+      "step_status_skipped": "Đã bỏ qua",
+      "step_status_failed": "Thất bại",
+      "step_status_awaiting_review": "Cần xem xét",
+      "board_label": "Bảng phân công",
+      "board_col_queued": "Đang xếp hàng",
+      "board_col_running": "Đang chạy",
+      "board_col_review": "Cần xem xét",
+      "board_col_done": "Hoàn tất",
+      "board_col_stopped": "Đã dừng",
+      "board_empty": "Chưa có phân công nào. Xác định mục tiêu trong Orchestrate để bắt đầu."
     }
   },
   "auth": {

@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "元に戻す",
-      "redo": "やり直し"
+      "redo": "やり直し",
+      "section_workspace": "ワークスペース",
+      "toggle_sidebar": "サイドバーを折りたたむ / 展開する",
+      "toggle_monitor": "Persona Monitor を開く / 閉じる",
+      "toggle_athena": "Athena チャットを開く / 閉じる"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "すべての認証情報をテスト",
       "test_all": "すべてテスト",
       "daily_progress": "1日 {done}/{total}",
-      "testing_progress": "{done}/{total}をテスト中"
+      "testing_progress": "{done}/{total}をテスト中",
+      "title_catalog": "カタログ",
+      "title_dependencies": "依存関係",
+      "title_databases": "データベース"
     },
     "bulk_healthcheck": {
       "title": "ヘルスチェック結果",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "設定なし。",
-      "required_badge": "必須"
+      "required_badge": "必須",
+      "kv_key_label": "キー",
+      "kv_value_label": "値",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "値を表示",
+      "kv_hide_value": "値を非表示",
+      "kv_remove": "変数を削除",
+      "kv_add": "追加"
     },
     "design_phases": {
       "saving": "認証情報を保存中...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "広告",
+      "ai": "AI",
+      "analytics": "分析",
+      "automation": "自動化",
+      "bi": "ビジネスインテリジェンス",
+      "browser_automation": "ブラウザー自動化",
+      "calendar": "カレンダー",
+      "ci_cd": "CI/CD",
+      "cloud": "クラウド",
+      "containers": "コンテナー",
+      "crm": "CRM",
+      "custom": "カスタム",
+      "database": "データベース",
+      "design": "デザイン",
+      "development": "開発",
+      "ecommerce": "Eコマース",
+      "email": "メール",
+      "finance": "財務",
+      "forms": "フォーム",
+      "integration": "統合",
+      "knowledge_base": "ナレッジベース",
+      "mcp": "MCP",
+      "messaging": "メッセージング",
+      "monitoring": "監視",
+      "notifications": "通知",
+      "personalization": "パーソナライズ",
+      "productivity": "生産性",
+      "project_management": "プロジェクト管理",
+      "research": "リサーチ",
+      "scheduling": "スケジューリング",
+      "social": "ソーシャル",
+      "source_control": "ソース管理",
+      "spreadsheet": "スプレッドシート",
+      "storage": "ストレージ",
+      "support": "サポート",
+      "time_tracking": "時間追跡",
+      "vector_search": "ベクトル検索",
+      "web_scraping": "Webスクレイピング"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "修復ログ",
       "source_provider": "プロバイダー",
       "source_policy": "ポリシー",
-      "source_healing_issue": "修復問題"
+      "source_healing_issue": "修復問題",
+      "source_execution_error": "実行エラー"
     },
     "observability": {
       "title": "オブザーバビリティ",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "この機能には質問がありません。",
+      "error_policy": {
+        "title": "エラー処理",
+        "intro": "再試行と自己修復は自動です。障害が自力で回復できない場合の動作を選択してください。",
+        "incident_label": "インシデントを作成",
+        "incident_desc": "回復できなかった障害をトリアージ用にインシデント受信箱へ表示します。",
+        "lab_label": "Lab に送信",
+        "lab_desc": "障害が繰り返される場合、このペルソナの Lab 自動改善 (プロンプト進化) を有効にします。",
+        "escalate_after_label": "エスカレーションまで",
+        "escalate_after_desc": "インシデント作成または Lab 送信までの連続失敗回数。"
+      }
     },
     "scan": {
       "scanning_draft": "ペルソナのドラフトをスキャン中...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse グループ",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "イベント match the current filters",
-    "dead_letter_clear_filters_to_see": "クリア filters to see all dead-lettered イベント"
+    "dead_letter_clear_filters_to_see": "クリア filters to see all dead-lettered イベント",
+    "col_event": "イベント",
+    "col_listeners": "リスナー",
+    "source_personas_filter": "ソースペルソナ",
+    "listeners_filter": "リスナー",
+    "filter_events_placeholder": "イベントをフィルター..."
   },
   "settings": {
     "title": "設定",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "中断したところから再開",
+    "resume_continue_cta": "ツアーを続行"
   },
   "system_health": {
     "title": "システムチェック",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "リセット",
       "team_preview_canvas_reset_title": "ズームとパンをデフォルトにリセット",
       "create_codebase_connector_label": "作成 Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "GitHub コネクター"
     },
     "dev_runner": {
       "self_healing": "自己修復",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace 設定 saved",
       "workspace_save_failed": "Couldn't save workspace 設定",
-      "workspace_inherit": "継承"
+      "workspace_inherit": "継承",
+      "add_persona_draft_hint": "下書きペルソナは、チームに参加する前に昇格する必要があります。",
+      "checklist_heading": "ライブ進行状況",
+      "checklist_background_note": "バックグラウンドで実行中",
+      "step_status_pending": "保留中",
+      "step_status_matching": "照合中",
+      "step_status_running": "実行中",
+      "step_status_done": "完了",
+      "step_status_skipped": "スキップ済み",
+      "step_status_failed": "失敗",
+      "step_status_awaiting_review": "レビューが必要",
+      "board_label": "割り当てボード",
+      "board_col_queued": "キュー済み",
+      "board_col_running": "実行中",
+      "board_col_review": "レビューが必要",
+      "board_col_done": "完了",
+      "board_col_stopped": "停止済み",
+      "board_empty": "割り当てはまだありません。開始するには Orchestrate で目標を定義してください。"
     }
   },
   "auth": {

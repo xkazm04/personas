@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "Deshacer",
-      "redo": "Rehacer"
+      "redo": "Rehacer",
+      "section_workspace": "Espacio de trabajo",
+      "toggle_sidebar": "Contraer / expandir barra lateral",
+      "toggle_monitor": "Abrir / cerrar Monitor de personas",
+      "toggle_athena": "Abrir / cerrar chat de Athena"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "Probar todas las credenciales",
       "test_all": "Probar todas",
       "daily_progress": "Diario {done}/{total}",
-      "testing_progress": "Probando {done}/{total}"
+      "testing_progress": "Probando {done}/{total}",
+      "title_catalog": "Catálogo",
+      "title_dependencies": "Dependencias",
+      "title_databases": "Bases de datos"
     },
     "bulk_healthcheck": {
       "title": "Resultados de verificación de salud",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "Ninguno configurado.",
-      "required_badge": "REQ"
+      "required_badge": "REQ",
+      "kv_key_label": "Clave",
+      "kv_value_label": "Valor",
+      "kv_key_placeholder": "CLAVE",
+      "kv_value_placeholder": "valor",
+      "kv_show_value": "Mostrar valor",
+      "kv_hide_value": "Ocultar valor",
+      "kv_remove": "Eliminar variable",
+      "kv_add": "Agregar"
     },
     "design_phases": {
       "saving": "Guardando credencial...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "Publicidad",
+      "ai": "IA",
+      "analytics": "Analítica",
+      "automation": "Automatización",
+      "bi": "Inteligencia empresarial",
+      "browser_automation": "Automatización de navegador",
+      "calendar": "Calendario",
+      "ci_cd": "CI/CD",
+      "cloud": "Nube",
+      "containers": "Contenedores",
+      "crm": "CRM",
+      "custom": "Personalizado",
+      "database": "Base de datos",
+      "design": "Diseño",
+      "development": "Desarrollo",
+      "ecommerce": "Comercio electrónico",
+      "email": "Correo electrónico",
+      "finance": "Finanzas",
+      "forms": "Formularios",
+      "integration": "Integración",
+      "knowledge_base": "Base de conocimiento",
+      "mcp": "MCP",
+      "messaging": "Mensajería",
+      "monitoring": "Monitoreo",
+      "notifications": "Notificaciones",
+      "personalization": "Personalización",
+      "productivity": "Productividad",
+      "project_management": "Gestión de proyectos",
+      "research": "Investigación",
+      "scheduling": "Programación",
+      "social": "Social",
+      "source_control": "Control de código fuente",
+      "spreadsheet": "Hoja de cálculo",
+      "storage": "Almacenamiento",
+      "support": "Soporte",
+      "time_tracking": "Seguimiento de tiempo",
+      "vector_search": "Búsqueda vectorial",
+      "web_scraping": "Web scraping"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "Registro de reparación",
       "source_provider": "Proveedor",
       "source_policy": "Política",
-      "source_healing_issue": "Problema de reparación"
+      "source_healing_issue": "Problema de reparación",
+      "source_execution_error": "Error de ejecución"
     },
     "observability": {
       "title": "Observabilidad",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "No hay preguntas para esta capacidad.",
+      "error_policy": {
+        "title": "Manejo de errores",
+        "intro": "Los reintentos y la autorrecuperación son automáticos. Elige qué ocurre cuando un fallo no puede recuperarse por sí solo.",
+        "incident_label": "Crear incidente",
+        "incident_desc": "Muestra los fallos no recuperados en la bandeja de Incidentes para su triaje.",
+        "lab_label": "Enviar al Lab",
+        "lab_desc": "Activa la mejora automática del Lab (evolución de prompts) para esta persona cuando los fallos se repiten.",
+        "escalate_after_label": "Escalar después de",
+        "escalate_after_desc": "Fallos consecutivos antes de crear un incidente o enviar al Lab."
+      }
     },
     "scan": {
       "scanning_draft": "Escaneando borrador de persona...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse grupo",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "Sin eventoos match the current filters",
-    "dead_letter_clear_filters_to_see": "Borrar filters to see all dead-lettered eventoos"
+    "dead_letter_clear_filters_to_see": "Borrar filters to see all dead-lettered eventoos",
+    "col_event": "Evento",
+    "col_listeners": "Oyentes",
+    "source_personas_filter": "Personas de origen",
+    "listeners_filter": "Oyentes",
+    "filter_events_placeholder": "Filtrar eventos..."
   },
   "settings": {
     "title": "Ajustes",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "Retoma donde lo dejaste",
+    "resume_continue_cta": "Continuar recorrido"
   },
   "system_health": {
     "title": "Verificaciones del sistema",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "Restablecer",
       "team_preview_canvas_reset_title": "Restablecer zoom y pan a valores por defecto",
       "create_codebase_connector_label": "Crear Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "Conector de GitHub"
     },
     "dev_runner": {
       "self_healing": "Auto-Sanación",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace configuración saved",
       "workspace_save_failed": "Couldn't save workspace configuración",
-      "workspace_inherit": "Heredar"
+      "workspace_inherit": "Heredar",
+      "add_persona_draft_hint": "Las personas en borrador deben promocionarse antes de poder unirse a un equipo.",
+      "checklist_heading": "Progreso en vivo",
+      "checklist_background_note": "Se ejecuta en segundo plano",
+      "step_status_pending": "Pendiente",
+      "step_status_matching": "Emparejando",
+      "step_status_running": "En ejecución",
+      "step_status_done": "Hecho",
+      "step_status_skipped": "Omitido",
+      "step_status_failed": "Fallido",
+      "step_status_awaiting_review": "Necesita revisión",
+      "board_label": "Tablero de asignaciones",
+      "board_col_queued": "En cola",
+      "board_col_running": "En ejecución",
+      "board_col_review": "Necesita revisión",
+      "board_col_done": "Hecho",
+      "board_col_stopped": "Detenido",
+      "board_empty": "Aún no hay asignaciones. Define un objetivo en Orchestrate para iniciar una."
     }
   },
   "auth": {

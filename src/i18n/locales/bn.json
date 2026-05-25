@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "পূর্বাবস্থায় ফেরান",
-      "redo": "আবার করুন"
+      "redo": "আবার করুন",
+      "section_workspace": "ওয়ার্কস্পেস",
+      "toggle_sidebar": "সাইডবার সংকুচিত / প্রসারিত করুন",
+      "toggle_monitor": "Persona Monitor খুলুন / বন্ধ করুন",
+      "toggle_athena": "Athena চ্যাট খুলুন / বন্ধ করুন"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "সব ক্রেডেনশিয়াল পরীক্ষা করুন",
       "test_all": "সব পরীক্ষা করুন",
       "daily_progress": "প্রতিদিন {done}/{total}",
-      "testing_progress": "পরীক্ষা করা হচ্ছে {done}/{total}"
+      "testing_progress": "পরীক্ষা করা হচ্ছে {done}/{total}",
+      "title_catalog": "ক্যাটালগ",
+      "title_dependencies": "নির্ভরতা",
+      "title_databases": "ডেটাবেস"
     },
     "bulk_healthcheck": {
       "title": "হেলথচেক ফলাফল",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "কিছু কনফিগার নেই।",
-      "required_badge": "প্রয়োজনীয়"
+      "required_badge": "প্রয়োজনীয়",
+      "kv_key_label": "কী",
+      "kv_value_label": "মান",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "মান দেখান",
+      "kv_hide_value": "মান লুকান",
+      "kv_remove": "ভেরিয়েবল সরান",
+      "kv_add": "যোগ করুন"
     },
     "design_phases": {
       "saving": "ক্রেডেনশিয়াল সংরক্ষণ হচ্ছে...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "বিজ্ঞাপন",
+      "ai": "AI",
+      "analytics": "অ্যানালিটিক্স",
+      "automation": "অটোমেশন",
+      "bi": "বিজনেস ইন্টেলিজেন্স",
+      "browser_automation": "ব্রাউজার অটোমেশন",
+      "calendar": "ক্যালেন্ডার",
+      "ci_cd": "CI/CD",
+      "cloud": "ক্লাউড",
+      "containers": "কনটেইনার",
+      "crm": "CRM",
+      "custom": "কাস্টম",
+      "database": "ডেটাবেস",
+      "design": "ডিজাইন",
+      "development": "ডেভেলপমেন্ট",
+      "ecommerce": "ই-কমার্স",
+      "email": "ইমেইল",
+      "finance": "ফাইন্যান্স",
+      "forms": "ফর্ম",
+      "integration": "ইন্টিগ্রেশন",
+      "knowledge_base": "নলেজ বেস",
+      "mcp": "MCP",
+      "messaging": "মেসেজিং",
+      "monitoring": "মনিটরিং",
+      "notifications": "নোটিফিকেশন",
+      "personalization": "পার্সোনালাইজেশন",
+      "productivity": "প্রোডাক্টিভিটি",
+      "project_management": "প্রজেক্ট ম্যানেজমেন্ট",
+      "research": "রিসার্চ",
+      "scheduling": "শিডিউলিং",
+      "social": "সোশ্যাল",
+      "source_control": "সোর্স কন্ট্রোল",
+      "spreadsheet": "স্প্রেডশিট",
+      "storage": "স্টোরেজ",
+      "support": "সাপোর্ট",
+      "time_tracking": "সময় ট্র্যাকিং",
+      "vector_search": "ভেক্টর সার্চ",
+      "web_scraping": "ওয়েব স্ক্র্যাপিং"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "হিলিং লগ",
       "source_provider": "প্রদানকারী",
       "source_policy": "নীতি",
-      "source_healing_issue": "হিলিং সমস্যা"
+      "source_healing_issue": "হিলিং সমস্যা",
+      "source_execution_error": "এক্সিকিউশন ত্রুটি"
     },
     "observability": {
       "title": "অবজার্ভেবিলিটি",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "এই সক্ষমতার জন্য কোনো প্রশ্ন নেই।",
+      "error_policy": {
+        "title": "ত্রুটি পরিচালনা",
+        "intro": "পুনরায় চেষ্টা এবং স্ব-নিরাময় স্বয়ংক্রিয়। কোনো ব্যর্থতা নিজে থেকে সেরে উঠতে না পারলে কী হবে তা বেছে নিন।",
+        "incident_label": "ইনসিডেন্ট তৈরি করুন",
+        "incident_desc": "ত্রিয়াজের জন্য ইনসিডেন্ট ইনবক্সে পুনরুদ্ধার না হওয়া ব্যর্থতা দেখান।",
+        "lab_label": "ল্যাবে পাঠান",
+        "lab_desc": "ব্যর্থতা বারবার হলে এই পারসোনার জন্য Lab auto-improvement (prompt evolution) চালু করুন।",
+        "escalate_after_label": "এর পরে এসকেলেট করুন",
+        "escalate_after_desc": "ইনসিডেন্ট তৈরি বা ল্যাবে পাঠানোর আগে ধারাবাহিক ব্যর্থতার সংখ্যা।"
+      }
     },
     "scan": {
       "scanning_draft": "পার্সোনা ড্রাফট স্ক্যান হচ্ছে...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse গ্রুপ",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "কোনো ইভেন্ট match the current filters",
-    "dead_letter_clear_filters_to_see": "সাফ করুন filters to see all dead-lettered ইভেন্ট"
+    "dead_letter_clear_filters_to_see": "সাফ করুন filters to see all dead-lettered ইভেন্ট",
+    "col_event": "ইভেন্ট",
+    "col_listeners": "লিসেনার",
+    "source_personas_filter": "সোর্স পারসোনা",
+    "listeners_filter": "লিসেনার",
+    "filter_events_placeholder": "ইভেন্ট ফিল্টার করুন..."
   },
   "settings": {
     "title": "সেটিংস",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "যেখান থেকে থেমেছিলেন সেখান থেকে শুরু করুন",
+    "resume_continue_cta": "ট্যুর চালিয়ে যান"
   },
   "system_health": {
     "title": "সিস্টেম পরীক্ষা",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "রিসেট",
       "team_preview_canvas_reset_title": "জুম এবং প্যান ডিফল্টে রিসেট করুন",
       "create_codebase_connector_label": "তৈরি করুন Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "GitHub কানেক্টর"
     },
     "dev_runner": {
       "self_healing": "স্ব-নিরাময়",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace সেটিংস saved",
       "workspace_save_failed": "Couldn't save workspace সেটিংস",
-      "workspace_inherit": "উত্তরাধিকার"
+      "workspace_inherit": "উত্তরাধিকার",
+      "add_persona_draft_hint": "ড্রাফ্ট পারসোনাগুলো টিমে যোগ দেওয়ার আগে প্রোমোট করতে হবে।",
+      "checklist_heading": "লাইভ অগ্রগতি",
+      "checklist_background_note": "পটভূমিতে চলছে",
+      "step_status_pending": "অপেক্ষমাণ",
+      "step_status_matching": "ম্যাচিং",
+      "step_status_running": "চলছে",
+      "step_status_done": "সম্পন্ন",
+      "step_status_skipped": "এড়িয়ে গেছে",
+      "step_status_failed": "ব্যর্থ",
+      "step_status_awaiting_review": "রিভিউ দরকার",
+      "board_label": "অ্যাসাইনমেন্ট বোর্ড",
+      "board_col_queued": "কিউতে",
+      "board_col_running": "চলছে",
+      "board_col_review": "রিভিউ দরকার",
+      "board_col_done": "সম্পন্ন",
+      "board_col_stopped": "থামানো হয়েছে",
+      "board_empty": "এখনও কোনো অ্যাসাইনমেন্ট নেই। একটি শুরু করতে Orchestrate-এ লক্ষ্য নির্ধারণ করুন।"
     }
   },
   "auth": {

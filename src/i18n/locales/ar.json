@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "تراجع",
-      "redo": "إعادة"
+      "redo": "إعادة",
+      "section_workspace": "مساحة العمل",
+      "toggle_sidebar": "طي / توسيع الشريط الجانبي",
+      "toggle_monitor": "فتح / إغلاق مراقب الشخصيات",
+      "toggle_athena": "فتح / إغلاق دردشة Athena"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "اختبار جميع بيانات الاعتماد",
       "test_all": "اختبار الكل",
       "daily_progress": "يومي {done}/{total}",
-      "testing_progress": "جارٍ الاختبار {done}/{total}"
+      "testing_progress": "جارٍ الاختبار {done}/{total}",
+      "title_catalog": "الكتالوج",
+      "title_dependencies": "التبعيات",
+      "title_databases": "قواعد البيانات"
     },
     "bulk_healthcheck": {
       "title": "نتائج فحص الصحة",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "لا شيء مضبوط.",
-      "required_badge": "مطلوب"
+      "required_badge": "مطلوب",
+      "kv_key_label": "المفتاح",
+      "kv_value_label": "القيمة",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "إظهار القيمة",
+      "kv_hide_value": "إخفاء القيمة",
+      "kv_remove": "إزالة المتغير",
+      "kv_add": "إضافة"
     },
     "design_phases": {
       "saving": "جارٍ حفظ بيانات الاعتماد...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "الإعلانات",
+      "ai": "الذكاء الاصطناعي",
+      "analytics": "التحليلات",
+      "automation": "الأتمتة",
+      "bi": "ذكاء الأعمال",
+      "browser_automation": "أتمتة المتصفح",
+      "calendar": "التقويم",
+      "ci_cd": "CI/CD",
+      "cloud": "السحابة",
+      "containers": "الحاويات",
+      "crm": "CRM",
+      "custom": "مخصص",
+      "database": "قاعدة البيانات",
+      "design": "التصميم",
+      "development": "التطوير",
+      "ecommerce": "التجارة الإلكترونية",
+      "email": "البريد الإلكتروني",
+      "finance": "المالية",
+      "forms": "النماذج",
+      "integration": "التكامل",
+      "knowledge_base": "قاعدة المعرفة",
+      "mcp": "MCP",
+      "messaging": "المراسلة",
+      "monitoring": "المراقبة",
+      "notifications": "الإشعارات",
+      "personalization": "التخصيص",
+      "productivity": "الإنتاجية",
+      "project_management": "إدارة المشاريع",
+      "research": "البحث",
+      "scheduling": "الجدولة",
+      "social": "التواصل الاجتماعي",
+      "source_control": "إدارة المصدر",
+      "spreadsheet": "جدول البيانات",
+      "storage": "التخزين",
+      "support": "الدعم",
+      "time_tracking": "تتبع الوقت",
+      "vector_search": "البحث المتجهي",
+      "web_scraping": "كشط الويب"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "سجل المعالجة",
       "source_provider": "المزوّد",
       "source_policy": "سياسة",
-      "source_healing_issue": "مشكلة معالجة"
+      "source_healing_issue": "مشكلة معالجة",
+      "source_execution_error": "خطأ في التنفيذ"
     },
     "observability": {
       "title": "المراقبة",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "لا توجد أسئلة لهذه الإمكانية.",
+      "error_policy": {
+        "title": "معالجة الأخطاء",
+        "intro": "إعادة المحاولة والتعافي الذاتي تلقائيان. اختر ما يحدث عندما يتعذر على الفشل التعافي بمفرده.",
+        "incident_label": "رفع حادثة",
+        "incident_desc": "إظهار الإخفاقات غير المتعافية في صندوق الحوادث للفرز.",
+        "lab_label": "إرسال إلى المختبر",
+        "lab_desc": "تشغيل التحسين التلقائي في المختبر (تطوير المطالبات) لهذه الشخصية عند تكرر الإخفاقات.",
+        "escalate_after_label": "التصعيد بعد",
+        "escalate_after_desc": "عدد الإخفاقات المتتالية قبل رفع حادثة أو إرسالها إلى المختبر."
+      }
     },
     "scan": {
       "scanning_draft": "جارٍ مسح مسودة الوكيل...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse مجموعة",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "لا أحداث match the current filters",
-    "dead_letter_clear_filters_to_see": "مسح filters to see all dead-lettered أحداث"
+    "dead_letter_clear_filters_to_see": "مسح filters to see all dead-lettered أحداث",
+    "col_event": "الحدث",
+    "col_listeners": "المستمعون",
+    "source_personas_filter": "الشخصيات المصدر",
+    "listeners_filter": "المستمعون",
+    "filter_events_placeholder": "تصفية الأحداث..."
   },
   "settings": {
     "title": "الإعدادات",
@@ -9139,7 +9211,9 @@
     "narration_mute": "كتم السرد",
     "narration_unmute": "إلغاء كتم السرد",
     "local_tooling_label": "أدوات مدمجة",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "تابع من حيث توقفت",
+    "resume_continue_cta": "متابعة الجولة"
   },
   "system_health": {
     "title": "فحوصات النظام",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "إعادة تعيين",
       "team_preview_canvas_reset_title": "إعادة تعيين التكبير والتحريك إلى الافتراضي",
       "create_codebase_connector_label": "إنشاء Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "موصل GitHub"
     },
     "dev_runner": {
       "self_healing": "المعالجة الذاتية",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace إعدادات saved",
       "workspace_save_failed": "Couldn't save workspace إعدادات",
-      "workspace_inherit": "وراثة"
+      "workspace_inherit": "وراثة",
+      "add_persona_draft_hint": "يجب ترقية الشخصيات المسودة قبل أن تتمكن من الانضمام إلى فريق.",
+      "checklist_heading": "التقدم المباشر",
+      "checklist_background_note": "يعمل في الخلفية",
+      "step_status_pending": "معلق",
+      "step_status_matching": "مطابقة",
+      "step_status_running": "قيد التشغيل",
+      "step_status_done": "تم",
+      "step_status_skipped": "تم التخطي",
+      "step_status_failed": "فشل",
+      "step_status_awaiting_review": "يحتاج إلى مراجعة",
+      "board_label": "لوحة المهام",
+      "board_col_queued": "في قائمة الانتظار",
+      "board_col_running": "قيد التشغيل",
+      "board_col_review": "يحتاج إلى مراجعة",
+      "board_col_done": "تم",
+      "board_col_stopped": "متوقف",
+      "board_empty": "لا توجد مهام بعد. حدد هدفا في التنسيق لبدء مهمة."
     }
   },
   "auth": {

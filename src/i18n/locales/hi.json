@@ -342,7 +342,11 @@
       "triage_reject": "Reject idea",
       "triage_accept": "Accept idea",
       "undo": "पूर्ववत",
-      "redo": "फिर करें"
+      "redo": "फिर करें",
+      "section_workspace": "वर्कस्पेस",
+      "toggle_sidebar": "साइडबार समेटें / फैलाएं",
+      "toggle_monitor": "Persona Monitor खोलें / बंद करें",
+      "toggle_athena": "Athena चैट खोलें / बंद करें"
     }
   },
   "sidebar": {
@@ -3735,7 +3739,10 @@
       "test_all_credentials": "सभी क्रेडेंशियल परीक्षण करें",
       "test_all": "सभी परीक्षण करें",
       "daily_progress": "दैनिक {done}/{total}",
-      "testing_progress": "परीक्षण {done}/{total}"
+      "testing_progress": "परीक्षण {done}/{total}",
+      "title_catalog": "कैटलॉग",
+      "title_dependencies": "निर्भरताएं",
+      "title_databases": "डेटाबेस"
     },
     "bulk_healthcheck": {
       "title": "हेल्थचेक परिणाम",
@@ -4188,7 +4195,15 @@
     },
     "schemas": {
       "none_configured": "कोई कॉन्फ़िगर नहीं।",
-      "required_badge": "आवश्यक"
+      "required_badge": "आवश्यक",
+      "kv_key_label": "कुंजी",
+      "kv_value_label": "मान",
+      "kv_key_placeholder": "KEY",
+      "kv_value_placeholder": "value",
+      "kv_show_value": "मान दिखाएं",
+      "kv_hide_value": "मान छिपाएं",
+      "kv_remove": "वैरिएबल हटाएं",
+      "kv_add": "जोड़ें"
     },
     "design_phases": {
       "saving": "क्रेडेंशियल सहेजा जा रहा है...",
@@ -4541,6 +4556,46 @@
       "tip_restart_app": "After installing, restart the app and try again.",
       "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
       "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+    },
+    "connector_categories": {
+      "advertising": "विज्ञापन",
+      "ai": "AI",
+      "analytics": "एनालिटिक्स",
+      "automation": "ऑटोमेशन",
+      "bi": "बिजनेस इंटेलिजेंस",
+      "browser_automation": "ब्राउज़र ऑटोमेशन",
+      "calendar": "कैलेंडर",
+      "ci_cd": "CI/CD",
+      "cloud": "क्लाउड",
+      "containers": "कंटेनर",
+      "crm": "CRM",
+      "custom": "कस्टम",
+      "database": "डेटाबेस",
+      "design": "डिज़ाइन",
+      "development": "डेवलपमेंट",
+      "ecommerce": "ई-कॉमर्स",
+      "email": "ईमेल",
+      "finance": "वित्त",
+      "forms": "फ़ॉर्म",
+      "integration": "इंटीग्रेशन",
+      "knowledge_base": "नॉलेज बेस",
+      "mcp": "MCP",
+      "messaging": "मैसेजिंग",
+      "monitoring": "मॉनिटरिंग",
+      "notifications": "नोटिफिकेशन",
+      "personalization": "पर्सनलाइजेशन",
+      "productivity": "प्रोडक्टिविटी",
+      "project_management": "प्रोजेक्ट मैनेजमेंट",
+      "research": "रिसर्च",
+      "scheduling": "शेड्यूलिंग",
+      "social": "सोशल",
+      "source_control": "सोर्स कंट्रोल",
+      "spreadsheet": "स्प्रेडशीट",
+      "storage": "स्टोरेज",
+      "support": "सपोर्ट",
+      "time_tracking": "समय ट्रैकिंग",
+      "vector_search": "वेक्टर खोज",
+      "web_scraping": "वेब स्क्रैपिंग"
     }
   },
   "deployment": {
@@ -5048,7 +5103,8 @@
       "source_healing_log": "हीलिंग लॉग",
       "source_provider": "प्रदाता",
       "source_policy": "नीति",
-      "source_healing_issue": "हीलिंग समस्या"
+      "source_healing_issue": "हीलिंग समस्या",
+      "source_execution_error": "निष्पादन त्रुटि"
     },
     "observability": {
       "title": "अवलोकनशीलता",
@@ -7302,7 +7358,18 @@
       "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
       "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
       "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-      "persona_layout_build_refine_send": "Send & rebuild"
+      "persona_layout_build_refine_send": "Send & rebuild",
+      "story_no_questions": "इस क्षमता के लिए कोई प्रश्न नहीं हैं।",
+      "error_policy": {
+        "title": "त्रुटि प्रबंधन",
+        "intro": "रीट्राई और सेल्फ-हीलिंग स्वचालित हैं। चुनें कि जब कोई विफलता खुद ठीक न हो सके तो क्या हो।",
+        "incident_label": "इंसिडेंट बनाएं",
+        "incident_desc": "ट्रायाज के लिए Incidents इनबॉक्स में रिकवर न हुई विफलताएं दिखाएं।",
+        "lab_label": "Lab में भेजें",
+        "lab_desc": "विफलताएं दोहराने पर इस persona के लिए Lab auto-improvement (prompt evolution) चालू करें।",
+        "escalate_after_label": "इसके बाद एस्केलेट करें",
+        "escalate_after_desc": "इंसिडेंट बनाने या Lab में भेजने से पहले लगातार विफलताओं की संख्या।"
+      }
     },
     "scan": {
       "scanning_draft": "एजेंट ड्राफ्ट स्कैन हो रहा है...",
@@ -8357,7 +8424,12 @@
     "dead_letter_group_collapse": "Collapse समूह",
     "dead_letter_group_other": "Other errors",
     "dead_letter_no_matches": "कोई इवेंट match the current filters",
-    "dead_letter_clear_filters_to_see": "साफ़ करें filters to see all dead-lettered इवेंट"
+    "dead_letter_clear_filters_to_see": "साफ़ करें filters to see all dead-lettered इवेंट",
+    "col_event": "इवेंट",
+    "col_listeners": "लिसनर",
+    "source_personas_filter": "स्रोत personas",
+    "listeners_filter": "लिसनर",
+    "filter_events_placeholder": "इवेंट फ़िल्टर करें..."
   },
   "settings": {
     "title": "सेटिंग्स",
@@ -9139,7 +9211,9 @@
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
     "local_tooling_label": "Built-in tooling",
-    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+    "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+    "resume_continue_title": "जहां छोड़ा था वहीं से जारी रखें",
+    "resume_continue_cta": "टूर जारी रखें"
   },
   "system_health": {
     "title": "सिस्टम जाँच",
@@ -11843,7 +11917,8 @@
       "team_preview_canvas_reset": "रीसेट",
       "team_preview_canvas_reset_title": "ज़ूम और पैन को डिफ़ॉल्ट पर रीसेट करें",
       "create_codebase_connector_label": "बनाएँ Codebase connector",
-      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+      "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+      "github_connector_label": "GitHub कनेक्टर"
     },
     "dev_runner": {
       "self_healing": "Self-Healing",
@@ -13189,7 +13264,24 @@
       "workspace_save": "Save workspace",
       "workspace_saved": "Workspace सेटिंग्स saved",
       "workspace_save_failed": "Couldn't save workspace सेटिंग्स",
-      "workspace_inherit": "विरासत में लें"
+      "workspace_inherit": "विरासत में लें",
+      "add_persona_draft_hint": "ड्राफ्ट personas को टीम में शामिल होने से पहले प्रमोट करना होगा।",
+      "checklist_heading": "लाइव प्रगति",
+      "checklist_background_note": "पृष्ठभूमि में चलता है",
+      "step_status_pending": "लंबित",
+      "step_status_matching": "मिलान",
+      "step_status_running": "चल रहा है",
+      "step_status_done": "पूर्ण",
+      "step_status_skipped": "छोड़ा गया",
+      "step_status_failed": "विफल",
+      "step_status_awaiting_review": "समीक्षा चाहिए",
+      "board_label": "असाइनमेंट बोर्ड",
+      "board_col_queued": "कतार में",
+      "board_col_running": "चल रहा है",
+      "board_col_review": "समीक्षा चाहिए",
+      "board_col_done": "पूर्ण",
+      "board_col_stopped": "रुका हुआ",
+      "board_empty": "अभी कोई असाइनमेंट नहीं है। शुरू करने के लिए Orchestrate में लक्ष्य निर्धारित करें।"
     }
   },
   "auth": {
