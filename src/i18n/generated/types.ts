@@ -2050,6 +2050,7 @@ export type Translations = {
       _comment_section_usePolicyControls: string;
       _comment_policy_updated: string;
       policy_updated: string;
+      schedule_will_run: string;
     };
     tools: {
       no_persona: string;
@@ -7319,6 +7320,17 @@ export type Translations = {
       persona_layout_continue_no_capabilities: string;
       _comment_persona_layout_no_capabilities: string;
       persona_layout_no_capabilities: string;
+      story_no_questions: string;
+      error_policy: {
+        title: string;
+        intro: string;
+        incident_label: string;
+        incident_desc: string;
+        lab_label: string;
+        lab_desc: string;
+        escalate_after_label: string;
+        escalate_after_desc: string;
+      };
       _comment_persona_layout_dim_all_answered: string;
       persona_layout_dim_all_answered: string;
       _comment_persona_layout_dim_done: string;

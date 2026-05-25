@@ -148,7 +148,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
         className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-primary/20 text-foreground/60 hover:bg-secondary/30 hover:text-foreground transition-colors typo-body"
       >
         <Plus className="w-4 h-4" />
-        Add persona
+        {ts.add_persona}
       </button>
     ) : (
       <button

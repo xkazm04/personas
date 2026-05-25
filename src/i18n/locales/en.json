@@ -2043,7 +2043,8 @@
       "notifications_channel_removed": "{type} channel removed",
       "_comment_section_usePolicyControls": "── usePolicyControls.ts ──",
       "_comment_policy_updated": "Toast shown after a policy key is updated",
-      "policy_updated": "{key} policy updated"
+      "policy_updated": "{key} policy updated",
+      "schedule_will_run": "This will run {title} for {persona}"
     },
     "tools": {
       "no_persona": "No persona selected",
@@ -7313,6 +7314,17 @@
       "persona_layout_continue_no_capabilities": "Enable at least one capability",
       "_comment_persona_layout_no_capabilities": "Empty state when no capabilities are enabled in adoption",
       "persona_layout_no_capabilities": "All capabilities are skipped — enable at least one to continue.",
+      "story_no_questions": "No questions for this capability.",
+      "error_policy": {
+        "title": "Error handling",
+        "intro": "Retry and self-healing are automatic. Choose what happens when a failure can't recover on its own.",
+        "incident_label": "Raise an incident",
+        "incident_desc": "Surface unrecovered failures in the Incidents inbox for triage.",
+        "lab_label": "Send to the Lab",
+        "lab_desc": "Queue this capability for improvement in the Lab when failures recur.",
+        "escalate_after_label": "Escalate after",
+        "escalate_after_desc": "Consecutive failures before raising an incident or sending to the Lab."
+      },
       "_comment_persona_layout_dim_all_answered": "Footer state when every question in the active dim is answered",
       "persona_layout_dim_all_answered": "All questions for this dimension answered",
       "_comment_persona_layout_dim_done": "Action button to close the answer card after all dim questions are answered",
@@ -9104,7 +9116,7 @@
     "narration_replay": "Replay narration",
     "narration_mute": "Mute narration",
     "narration_unmute": "Unmute narration",
-    "resume_tour": "Resume your tour",
+    "resume_tour": "Resume Tour ({completed}/{total})",
     "back": "Back",
     "complete_tour": "Complete Tour",
     "tour_loading": "Loading...",
@@ -9113,7 +9125,6 @@
     "auto_complete_hint": "This step completes once you've performed the suggested action above.",
     "tour_explore_to_continue": "Take your time. Click below when you've explored this section.",
     "tour_acknowledge": "I've explored this",
-    "resume_tour": "Resume Tour ({completed}/{total})",
     "start_tour": "Start Tour",
     "tour_storage_unavailable_toast": "Your browser blocked our local storage, so the tour will restart each session. Try clearing site data or leaving private browsing.",
     "connector_count_stat": "200+ Built-in Connectors",
