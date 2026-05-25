@@ -91,6 +91,19 @@ export default function IpcPerformancePanel() {
     [stats, bandFilter],
   );
 
+  // Slowest-calls outcome filter. Reuses common.all/success/error — no new keys.
+  const [okFilter, setOkFilter] = useState<string>('all');
+  const okOptions = useMemo(() => [
+    { value: 'all', label: t.common.all },
+    { value: 'ok', label: t.common.success },
+    { value: 'error', label: t.common.error },
+  ], [t.common.all, t.common.success, t.common.error]);
+
+  const visibleSlowest = useMemo(
+    () => (okFilter === 'all' ? slowest : slowest.filter((r) => (okFilter === 'ok' ? r.ok : !r.ok))),
+    [slowest, okFilter],
+  );
+
   const commandColumns = useMemo<TableColumn<IpcCommandStats>[]>(() => [
     {
       key: 'command',
@@ -144,6 +157,9 @@ export default function IpcPerformancePanel() {
     {
       key: 'command', label: 'Command', width: 'minmax(140px, 1fr)', sortable: true,
       sortFn: (a, b) => a.command.localeCompare(b.command),
+      filterOptions: okOptions,
+      filterValue: okFilter,
+      onFilterChange: setOkFilter,
       render: (rec) => (
         <span className="flex items-center gap-1.5 min-w-0">
           <span className="font-mono text-foreground truncate" title={rec.command}>{rec.command}</span>
@@ -156,7 +172,7 @@ export default function IpcPerformancePanel() {
       sortFn: (a, b) => a.timestamp - b.timestamp,
       render: (rec) => <span className="text-foreground">{ageLabel(rec.timestamp)}</span>,
     },
-  ], [t]);
+  ], [t, okOptions, okFilter]);
 
   if (summary.totalCalls === 0) return null;
 
@@ -215,12 +231,14 @@ export default function IpcPerformancePanel() {
           {tab === 'slowest' && (
             <UnifiedTable<IpcCallRecord>
               columns={slowestColumns}
-              data={slowest}
+              data={visibleSlowest}
               getRowKey={(rec) => `${rec.command}-${rec.timestamp}`}
               density="compact"
               rowHeight={36}
               borderless
               className="max-h-[300px]"
+              rowAccent={(rec) => (!rec.ok ? 'border-l-red-400/70' : undefined)}
+              emptyTitle={t.overview.events.no_filter_match}
               ariaLabel={t.overview.ipc_panel.slowest_table_label}
             />
           )}
