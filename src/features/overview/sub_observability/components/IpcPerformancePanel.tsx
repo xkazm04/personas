@@ -220,6 +220,7 @@ export default function IpcPerformancePanel() {
               data={visibleStats}
               getRowKey={(stat) => stat.command}
               density="compact"
+              defaultSortKey="p95"
               rowHeight={44}
               borderless
               className="max-h-[300px]"
@@ -234,6 +235,7 @@ export default function IpcPerformancePanel() {
               data={visibleSlowest}
               getRowKey={(rec) => `${rec.command}-${rec.timestamp}`}
               density="compact"
+              defaultSortKey="duration"
               rowHeight={36}
               borderless
               className="max-h-[300px]"

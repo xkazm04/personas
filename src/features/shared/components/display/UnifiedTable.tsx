@@ -83,6 +83,10 @@ export interface UnifiedTableProps<T> {
   ariaLabel?: string;
   /** Drop the default border + rounded corners (for tables embedded inside a card). */
   borderless?: boolean;
+  /** Column key to sort by on first render, so the header reflects the initial order. */
+  defaultSortKey?: string;
+  /** Initial sort direction when defaultSortKey is set. Defaults to 'desc'. */
+  defaultSortDir?: 'asc' | 'desc';
 }
 
 // ---------------------------------------------------------------------------
@@ -233,11 +237,13 @@ export function UnifiedTable<T>({
   stickyHeader = true,
   ariaLabel,
   borderless = false,
+  defaultSortKey,
+  defaultSortDir = 'desc',
 }: UnifiedTableProps<T>) {
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [sortKey, setSortKey] = useState<string | null>(defaultSortKey ?? null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>(defaultSortDir);
   const resize = useColumnWidths(tableId ?? '');
   const resizable = !!tableId;
 

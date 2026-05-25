@@ -204,6 +204,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
             data={visibleRows}
             getRowKey={(row) => `${row.tool_name}-${row.tool_type}`}
             density="compact"
+            defaultSortKey="runs"
             emptyTitle={t.overview.events.no_filter_match}
             rowAccent={(row) => {
               const errPct = errorRatePercent(row);
