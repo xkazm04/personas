@@ -319,6 +319,33 @@ export function UnifiedTable<T>({
   const useVirtual = rowHeight > 0;
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
 
+  // Keyboard row navigation — only when rows are interactive (onRowClick set).
+  // Arrow keys move a focus ring; Enter/Space activates the focused row. The
+  // hand-rolled Activity/Memories lists already do this; this brings the shared
+  // primitive to parity.
+  const navigable = !!onRowClick;
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const handleKeyNav = useCallback((e: React.KeyboardEvent) => {
+    if (!navigable || sortedData.length === 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => {
+        const start = prev < 0 ? (e.key === 'ArrowDown' ? -1 : 0) : prev;
+        const next = e.key === 'ArrowDown'
+          ? Math.min(start + 1, sortedData.length - 1)
+          : Math.max(start - 1, 0);
+        if (useVirtual) virtualizer.scrollToIndex(next);
+        return next;
+      });
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      if (focusedIndex >= 0 && focusedIndex < sortedData.length) {
+        e.preventDefault();
+        onRowClick!(sortedData[focusedIndex]!);
+      }
+    }
+  }, [navigable, sortedData, useVirtual, virtualizer, focusedIndex, onRowClick]);
+  const focusClass = (i: number) => (i === focusedIndex ? 'ring-1 ring-inset ring-primary/40 z-[1]' : '');
+
   const { t } = useTranslation();
 
   if (isLoading) {
@@ -364,7 +391,12 @@ export function UnifiedTable<T>({
 
       {/* Rows */}
       {sortedData.length > 0 && (useVirtual ? (
-        <div ref={parentRef} className="flex-1 overflow-y-auto min-h-0">
+        <div
+          ref={parentRef}
+          className="flex-1 overflow-y-auto min-h-0 focus:outline-none"
+          tabIndex={navigable ? 0 : undefined}
+          onKeyDown={navigable ? handleKeyNav : undefined}
+        >
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const row = sortedData[vRow.index]!;
@@ -374,7 +406,7 @@ export function UnifiedTable<T>({
                   key={getRowKey(row)}
                   onClick={() => onRowClick?.(row)}
                   style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
-                  className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                  className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focusClass(vRow.index)} ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                 >
                   {columns.map((col) => (
                     <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -387,7 +419,11 @@ export function UnifiedTable<T>({
           </div>
         </div>
       ) : (
-        <div>
+        <div
+          className="focus:outline-none"
+          tabIndex={navigable ? 0 : undefined}
+          onKeyDown={navigable ? handleKeyNav : undefined}
+        >
           {sortedData.map((row, idx) => {
             const accent = rowAccent?.(row, idx);
             return (
@@ -395,7 +431,7 @@ export function UnifiedTable<T>({
               key={getRowKey(row)}
               onClick={() => onRowClick?.(row)}
               style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
-              className={`row-hover-lift grid items-center px-0 ${rowPadY} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+              className={`row-hover-lift grid items-center px-0 ${rowPadY} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focusClass(idx)} ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
             >
               {columns.map((col) => (
                 <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
