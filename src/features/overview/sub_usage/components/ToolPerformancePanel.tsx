@@ -205,6 +205,10 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
             getRowKey={(row) => `${row.tool_name}-${row.tool_type}`}
             density="compact"
             emptyTitle={t.overview.events.no_filter_match}
+            rowAccent={(row) => {
+              const errPct = errorRatePercent(row);
+              return errPct >= 10 ? 'border-l-rose-400/70' : errPct >= 1 ? 'border-l-amber-400/70' : undefined;
+            }}
             className="typo-caption"
           />
         )}
