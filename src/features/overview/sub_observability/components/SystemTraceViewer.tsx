@@ -53,8 +53,12 @@ function TraceCard({ trace }: { trace: SystemTrace }) {
     return { visibleNodes: visible, totalMs: total, childrenMap: children };
   }, [trace.spans, collapsedSpans, duration]);
 
+  // Status-accent left edge, matching the overview tables' gutter language:
+  // errored traces read red, in-flight traces read blue, completed stay neutral.
+  const accentLeft = hasErrors ? 'border-l-red-400/70' : isActive ? 'border-l-blue-400/70' : 'border-l-primary/15';
+
   return (
-    <div className={`rounded-card border ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} bg-secondary/30 overflow-hidden`}>
+    <div className={`rounded-card border border-l-2 ${hasErrors ? 'border-red-500/30' : 'border-primary/15'} ${accentLeft} bg-secondary/30 overflow-hidden`}>
       <button
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center gap-2 px-3 py-2 hover:bg-secondary/50 transition-colors text-left"
