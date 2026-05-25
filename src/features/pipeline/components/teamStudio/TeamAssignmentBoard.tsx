@@ -77,10 +77,10 @@ export function TeamAssignmentBoard({ teamId }: { teamId: string }) {
             getItemStatus={(a) => a.status}
             onItemMove={handleMove}
             dragMimeType={DRAG_MIME}
-            columnsClassName="grid grid-cols-5 gap-3"
+            orientation="rows"
             fallbackColumnId="queued"
             renderCard={(a) => (
-              <div className="rounded-modal border border-primary/10 bg-background/60 p-2.5" data-testid="team-assignment-card">
+              <div className="w-44 rounded-modal border border-primary/10 bg-background/60 p-2.5" data-testid="team-assignment-card">
                 <h4 className="typo-card-label line-clamp-2">{a.title}</h4>
                 <div className="mt-2 text-[9px] text-foreground/50">
                   <RelativeTime timestamp={toIsoUtc(a.createdAt)} />

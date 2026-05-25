@@ -40,7 +40,15 @@ export interface KanbanBoardProps<T> {
   onItemMove?: (itemId: string, targetStatus: string) => void | Promise<void>;
   /** Drag MIME — keep distinct per board type so cross-board drops are inert. */
   dragMimeType?: string;
-  /** Tailwind classes for the columns container (default: 3-col grid). */
+  /** Lane orientation. `columns` (default) lays lanes out horizontally with
+   *  the header on top and cards stacked beneath — the classic board. `rows`
+   *  transposes it: lanes stack vertically (1 column, N rows) with each lane's
+   *  header on the left and its cards flowing horizontally. Use `rows` in
+   *  narrow containers (e.g. a split-pane right rail) where 5 grid columns
+   *  would be unreadably cramped. */
+  orientation?: 'columns' | 'rows';
+  /** Tailwind classes for the lanes container. Defaults to a 3-col grid in
+   *  `columns` orientation, or a vertical stack in `rows` orientation. */
   columnsClassName?: string;
   /** Column id that catches items whose status matches no column. Defaults to
    *  the first column. */
@@ -59,12 +67,17 @@ export function KanbanBoard<T>({
   renderCard,
   onItemMove,
   dragMimeType = DEFAULT_MIME,
-  columnsClassName = 'grid grid-cols-3 gap-4',
+  orientation = 'columns',
+  columnsClassName,
   fallbackColumnId,
   renderEmptyColumn,
 }: KanbanBoardProps<T>) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dropTargetColumnId, setDropTargetColumnId] = useState<string | null>(null);
+
+  const rows = orientation === 'rows';
+  const containerClass =
+    columnsClassName ?? (rows ? 'flex flex-col gap-2' : 'grid grid-cols-3 gap-4');
 
   const fallback = fallbackColumnId ?? columns[0]?.id;
 
@@ -105,12 +118,42 @@ export function KanbanBoard<T>({
   };
 
   return (
-    <div className={columnsClassName}>
+    <div className={containerClass}>
       {columns.map((column) => {
         const Icon = column.icon;
         const colItems = byColumn.get(column.id) ?? [];
         const isDropTarget = dropTargetColumnId === column.id;
         const droppable = !!column.targetStatus && !!onItemMove;
+        const header = (
+          <div className={rows ? 'flex items-center gap-2 w-32 flex-shrink-0' : 'flex items-center gap-2 mb-3'}>
+            {Icon && <Icon className={`w-4 h-4 flex-shrink-0 ${column.iconColor ?? 'text-foreground'}`} />}
+            <span className="typo-section-title truncate">{column.label}</span>
+            <span className="ml-auto text-[10px] text-foreground bg-primary/10 rounded-full px-1.5 py-0.5 font-medium">
+              {colItems.length}
+            </span>
+          </div>
+        );
+        const cards =
+          colItems.length === 0
+            ? renderEmptyColumn?.(column.id, isDropTarget) ?? null
+            : colItems.map((item) => {
+                const id = getItemId(item);
+                return (
+                  <div
+                    key={id}
+                    draggable
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData(dragMimeType, id);
+                      e.dataTransfer.effectAllowed = 'move';
+                      setDraggingId(id);
+                    }}
+                    onDragEnd={() => setDraggingId(null)}
+                    className={draggingId === id ? 'opacity-40 cursor-grabbing' : 'cursor-grab'}
+                  >
+                    {renderCard(item, { isDragging: draggingId === id })}
+                  </div>
+                );
+              });
         return (
           <div
             key={column.id}
@@ -119,39 +162,15 @@ export function KanbanBoard<T>({
             onDrop={(e) => onDrop(e, column)}
             className={[
               'rounded-card border p-3 transition-all',
+              rows ? 'flex items-start gap-3' : '',
               column.borderColor ?? 'border-primary/15',
               column.bgColor ?? 'bg-secondary/10',
               isDropTarget ? `ring-2 ${column.ringColor ?? 'ring-primary/40'} scale-[1.005]` : '',
             ].join(' ')}
           >
-            <div className="flex items-center gap-2 mb-3">
-              {Icon && <Icon className={`w-4 h-4 ${column.iconColor ?? 'text-foreground'}`} />}
-              <span className="typo-section-title">{column.label}</span>
-              <span className="ml-auto text-[10px] text-foreground bg-primary/10 rounded-full px-1.5 py-0.5 font-medium">
-                {colItems.length}
-              </span>
-            </div>
-            <div className="space-y-2 min-h-[80px]">
-              {colItems.length === 0
-                ? renderEmptyColumn?.(column.id, isDropTarget) ?? null
-                : colItems.map((item) => {
-                    const id = getItemId(item);
-                    return (
-                      <div
-                        key={id}
-                        draggable
-                        onDragStart={(e) => {
-                          e.dataTransfer.setData(dragMimeType, id);
-                          e.dataTransfer.effectAllowed = 'move';
-                          setDraggingId(id);
-                        }}
-                        onDragEnd={() => setDraggingId(null)}
-                        className={draggingId === id ? 'opacity-40 cursor-grabbing' : 'cursor-grab'}
-                      >
-                        {renderCard(item, { isDragging: draggingId === id })}
-                      </div>
-                    );
-                  })}
+            {header}
+            <div className={rows ? 'flex-1 flex flex-wrap gap-2 content-start min-h-[2rem]' : 'space-y-2 min-h-[80px]'}>
+              {cards}
             </div>
           </div>
         );
