@@ -125,6 +125,12 @@ export function usePickerFilters(
     return opts;
   }, [purposeBase, t, tx, ps.filter_all_purposes, ps.filter_count]);
 
+  // Localized category labels (purpose/license already resolve through their
+  // own label helpers; categories used to fall through to capitalize(), so a
+  // category rendered as a capitalized English identifier in every locale).
+  // Known built-in categories resolve here; user-defined categories fall back
+  // to capitalize().
+  const categoryLabels = t.vault.connector_categories as Record<string, string>;
   const categoryOptions = useMemo<ThemedSelectOption[]>(() => {
     const counts: Record<string, number> = {};
     for (const c of categoryBase) {
@@ -138,11 +144,11 @@ export function usePickerFilters(
       .forEach(([cat, count]) => {
         opts.push({
           value: cat,
-          label: tx(ps.filter_count, { label: capitalize(cat), count }),
+          label: tx(ps.filter_count, { label: categoryLabels[cat] ?? capitalize(cat), count }),
         });
       });
     return opts;
-  }, [categoryBase, tx, ps.filter_all_categories, ps.filter_count]);
+  }, [categoryBase, tx, ps.filter_all_categories, ps.filter_count, categoryLabels]);
 
   const connectedOptions = useMemo<ThemedSelectOption[]>(() => {
     let connected = 0;
