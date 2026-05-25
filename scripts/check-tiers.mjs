@@ -6,9 +6,30 @@
 //   default tiers: starter team builder
 
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
+import { dirname, join, resolve } from "node:path";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const TIERS = process.argv.slice(2);
 if (TIERS.length === 0) TIERS.push("starter", "team", "builder");
+
+// Codegen (i18n split, command names, ts-rs bindings, sprites, …) is wired
+// into the predev/prebuild npm hooks, and vite's buildStart codegen was
+// deliberately removed (see vite.config.ts). Since the tier loop below spawns
+// `vite build` DIRECTLY — bypassing prebuild — run codegen once up front so
+// the tier builds don't compile against stale generated files.
+function runCodegen() {
+  return new Promise((res, rej) => {
+    const child = spawn(
+      process.execPath,
+      [join(repoRoot, "scripts", "run-codegen.mjs"), "prebuild"],
+      { stdio: "inherit", cwd: repoRoot },
+    );
+    child.on("exit", (code) => (code === 0 ? res() : rej(new Error(`codegen exited ${code}`))));
+    child.on("error", rej);
+  });
+}
 
 function viteBuild(tier) {
   return new Promise((res, rej) => {
@@ -20,6 +41,13 @@ function viteBuild(tier) {
     child.on("exit", (code) => (code === 0 ? res() : rej(new Error(`tier=${tier} exited ${code}`))));
     child.on("error", rej);
   });
+}
+
+try {
+  await runCodegen();
+} catch (e) {
+  process.stderr.write(`codegen failed before tier builds: ${e.message}\n`);
+  process.exit(1);
 }
 
 let failed = 0;
