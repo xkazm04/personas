@@ -268,9 +268,13 @@ export default function SetupPanel() {
               </div>
             ))}
           </div>
-          <p className="typo-caption text-foreground/60">
-            <DebtText k="auto_preview_4bf30626" /> <code className="text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
-          </p>
+          <div className="space-y-1.5 typo-caption text-foreground/60">
+            <p><DebtText k="auto_preview_4bf30626" /></p>
+            <code className="block text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
+            {syncConnectors && (
+              <code className="block text-violet-400/60">{`${connectorsFolder}/`}</code>
+            )}
+          </div>
         </div>
       </SectionCard>
 
