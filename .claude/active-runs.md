@@ -32,11 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-- **[2026-05-25 10:37 — started] /friend plugins config readability + typography (Brain/Companion/Twin, WORKTREE)**
-  - **Branch:** worktree-friend-plugins-103710 · **Worktree:** .claude/worktrees/friend-plugins-103710/
-  - **Paths:** `src/features/plugins/{obsidian-brain,companion,twin}/**` (config/setup surfaces: sub_setup, sub_voice, sub_tone, sub_identity, sub_graph, sub_browse), styling-only.
-  - **Status:** started — /friend endless development loop, readability/typography of settings/config UI.
-
 
 - **[2026-05-24 — started] template adoption Glyph polish + Dev Clone template**
   - **Source:** User 3-part list. (1a) Glyph adoption layout (PersonaLayoutAdoption): consolidate the two stacked headers into one — keep the CapabilityTabBar + question-order stepper, DROP the PersonaHero PERSONA metadata band (removes "covers X dimensions"), remove sparkle icon + answered/total count + percentage from the header, move the "Continue to build" action into the sigil center overlay. (1b) Abandoned-adoption draft: should appear ONLY under sidebar "Draft" (filter template-origin drafts out of Recent + Progress) and be marked as template so the draft glyph editor uses the template capability structure — frontend-first (Rust only if marker isn't reaching FE). (2) Dev Clone template (scripts/templates/development/dev-clone.json): collapse the 3 `configuration` adoption questions to just the Codebase pick (drop aq_source_control + aq_target_repository), derive GitHub owner/repo from the selected codebase project's github_url at build time, enable manual-review sigil in metadata. SKIP the persona-metadata→capabilities restructure (user said skip).
@@ -225,6 +220,10 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-25 — completed + MERGED to master `54f45aba2` (no-ff); worktree removed, branch deleted] /friend plugins config readability + typography (Brain/Companion/Twin)**
+  - **What:** 15 atomic commits `67307dc60`..`1aab2dc04` over the obsidian-brain/companion/twin config surfaces. Hierarchy: muted input placeholders (`placeholder:text-foreground`→`/40`), muted caption descriptions/subtitles→`/60` across all setup panels + voice/STT + Twin Identity/Tone ateliers + shared `SectionCard` subtitle (app-wide). Typography: unified Tone Matrix overline into an `OVERLINE` const + fixed a no-op `text-foreground:text-foreground` ternary. Two new shared primitives: `forms/SettingRow` (label/desc/toggle row, `divider`/`card` variants, optional `statusDot`, whole-row click-to-toggle) adopted by Brain sync options + companion sensory rows; `display/ActivityDot` (decorative on/off dot, documented as the lightweight counterpart to the a11y `StatusDot`) reused in SettingRow, Twin `Pulse`, detected-vault selection, STT model state. Features: sensory-source + detected-vault + STT at-a-glance state dots; Brain folder preview now reflects all three folder inputs; grouped voice tuning sliders; consistent per-plugin setup iconography (Brain violet glyphs + accented titles). Styling/structure only — no schema/IPC/behavior change. Only conflict on merge was `CATALOG.md` (regenerated).
+  - **Merge:** `54f45aba2`. tsc clean (multiple full runs), eslint 0-err (15/15 pre-commit passes), i18n: zero new keys all session (pure token/structure work). Vault: session note + lesson + coverage written under `Obsidian/personas/Friend/`.
 
 - **[2026-05-25 — completed + MERGED to master `e8359b304` (no-ff); worktree removed, branch deleted] Team functionality (4-phase): draft-filter, live checklist, shared Kanban + team board, Athena reconciliation**
   - **What:** 9 commits `8f4784bf7`..`ace75bda4`. P1 exclude draft/not-ready personas from team membership; P2 live background-persistent assignment checklist + global progress listener (`assignmentSlice` patches assignment-level status); P3 extracted shared `<KanbanBoard>` (catalog), refactored Dev Tools `GoalKanban` onto it, new team lifecycle board (drag-to-Stopped = abort); P4 Athena post-run reconciliation — new `companion_record_assignment_outcome` cmd + `OperativeMemory::complete_operation_with_summary` + cache-free `useAthenaAssignmentReconciliation` hook + design doc. Bug fix `6662fa4c4`: naive SQLite `created_at` rendered "2h ago" → normalized to UTC.
