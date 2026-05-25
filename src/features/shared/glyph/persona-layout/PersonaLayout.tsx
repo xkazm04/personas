@@ -106,6 +106,10 @@ interface PersonaLayoutProps {
   sigilDimmed?: boolean;
   sigilShowOrbit?: boolean;
 
+  /** Multiplier on the hero sigil size — forwarded to PersonaHero.sizeScale.
+   *  Adoption passes 0.8 (≈20% smaller). Default 1. */
+  sigilSizeScale?: number;
+
   /** Optional slot rendered between the hero and the capability rows.
    *  Adoption uses this for stepper controls, scratch may use it for
    *  intent composer artifacts. */
@@ -180,6 +184,7 @@ export function PersonaLayout({
   hideCapabilityRows,
   sigilDimmed,
   sigilShowOrbit,
+  sigilSizeScale,
   belowHeroSlot,
   renderRowPolicySlot,
   appendRow,
@@ -252,6 +257,7 @@ export function PersonaLayout({
                       hideMetadataBand={hideMetadataBand}
                       dimmed={sigilDimmed}
                       showOrbit={sigilShowOrbit}
+                      sizeScale={sigilSizeScale}
                     />
 
                     {belowHeroSlot}

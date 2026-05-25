@@ -269,6 +269,7 @@ export function QuestionCard({
   dynamicState,
   onRetryDynamic,
   useCaseTitleById,
+  inputOnly,
 }: {
   question: TransformQuestionResponse;
   answer: string;
@@ -285,6 +286,11 @@ export function QuestionCard({
   onRetryDynamic?: (questionId: string) => void;
   /** Map of use-case id → human title for "Applies to" line. */
   useCaseTitleById?: Record<string, string>;
+  /** Render ONLY the input control — skip the question label / status icon /
+   *  tooltip header and the "Applies to" footer. Used when a wrapper (e.g.
+   *  QuestionnaireHeroQuestion) already renders that chrome, so it isn't
+   *  duplicated. */
+  inputOnly?: boolean;
 }) {
   const { t } = useTranslation();
   const [pulseKey, setPulseKey] = useState(0);
@@ -338,7 +344,9 @@ export function QuestionCard({
         />
       )}
       {/* Question label + status indicator + collapsible tip toggle.
-          `mb-4` gives the question room to breathe before the answer row. */}
+          `mb-4` gives the question room to breathe before the answer row.
+          Suppressed in inputOnly mode — the wrapper renders this chrome. */}
+      {!inputOnly && (
       <div className="flex items-start gap-2 mb-4">
         {isBlocked ? (
           <AlertCircle className="w-5 h-5 text-status-error mt-1 flex-shrink-0" />
@@ -372,9 +380,10 @@ export function QuestionCard({
           </button>
         )}
       </div>
+      )}
 
       {/* Context — collapsed by default, expands on Info icon click */}
-      {hasTip && tipOpen && (
+      {!inputOnly && hasTip && tipOpen && (
         <div className="ml-5.5 mb-2 px-2.5 py-1.5 rounded-input bg-foreground/[0.02] border border-border">
           <span className="typo-body text-foreground leading-relaxed">
             {question.context}
@@ -471,7 +480,7 @@ export function QuestionCard({
         )}
       </div>
       )}
-      {!isBlocked && (() => {
+      {!inputOnly && !isBlocked && (() => {
         const ids = question.use_case_ids ?? (question.use_case_id ? [question.use_case_id] : []);
         if (ids.length === 0) return null;
         // Resolve ids → titles so the user sees "Personal Briefing, Weekly

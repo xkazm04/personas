@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, FolderGit2, Check, Loader2, Wrench } from 'lucide-react';
+import { ChevronDown, FolderGit2, Check, Loader2, Wrench, Plus } from 'lucide-react';
 import { listProjects } from '@/api/devTools/devTools';
 import type { DevProject } from '@/lib/bindings/DevProject';
+import { useSystemStore } from '@/stores/systemStore';
 import { Listbox } from './Listbox';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
@@ -143,9 +144,17 @@ export function DevToolsProjectDropdown({
               <p className="typo-caption text-foreground mb-3">
                 {t.shared.devtools_no_projects_hint}
               </p>
-              <p className="typo-caption text-foreground">
-                {t.shared.devtools_no_projects_nav}
-              </p>
+              {/* No codebases registered → send the user straight to Connectors
+                  to add a Codebase connector instead of leaving them with a
+                  dead-end hint. */}
+              <button
+                type="button"
+                onClick={() => useSystemStore.getState().setSidebarSection('credentials')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 typo-caption font-medium rounded-card bg-primary/15 border border-primary/30 text-foreground hover:bg-primary/25 transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                {t.shared.devtools_no_projects_action}
+              </button>
             </div>
           ) : (
             <div className="max-h-64 overflow-y-auto py-1">

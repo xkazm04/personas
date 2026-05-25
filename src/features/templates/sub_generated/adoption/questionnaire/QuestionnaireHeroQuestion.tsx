@@ -30,6 +30,10 @@ interface QuestionnaireHeroQuestionProps {
   dynamicState?: DynamicOptionState;
   onRetryDynamic?: (questionId: string) => void;
   useCaseTitleById?: Record<string, string>;
+  /** Glyph adoption variant — hide the category crumb header and the
+   *  keyboard navigation hints (the surrounding sigil card already conveys
+   *  position + the dim, and the hints are noise inside the overlay). */
+  compact?: boolean;
 }
 
 /**
@@ -57,6 +61,7 @@ export function QuestionnaireHeroQuestion({
   dynamicState,
   onRetryDynamic,
   useCaseTitleById,
+  compact = false,
 }: QuestionnaireHeroQuestionProps) {
   const { t, tx } = useTranslation();
   const [tipOpen, setTipOpen] = useState(false);
@@ -73,15 +78,17 @@ export function QuestionnaireHeroQuestion({
     question.use_case_ids ?? (question.use_case_id ? [question.use_case_id] : []);
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence mode="popLayout" initial={false}>
       <motion.div
         key={question.id}
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.14, ease: 'easeOut' }}
       >
-        {/* Category crumb */}
+        {/* Category crumb — hidden in the compact (glyph) variant where the
+            sigil card header already shows the dimension + position. */}
+        {!compact && (
         <div className="flex items-center gap-2 mb-6 typo-body uppercase tracking-[0.18em]">
           <Icon className={`w-4 h-4 ${meta.color}`} />
           <span className={`font-semibold ${meta.color}`}>{meta.label}</span>
@@ -93,6 +100,7 @@ export function QuestionnaireHeroQuestion({
             })}
           </span>
         </div>
+        )}
 
         {/* Title + badges */}
         <div className="flex items-start gap-3 mb-2">
@@ -154,7 +162,7 @@ export function QuestionnaireHeroQuestion({
               value={answer}
               onChange={(v) => onAnswerUpdated(question.id, v)}
             />
-            {options.length > 1 && (
+            {!compact && options.length > 1 && (
               <div className="hide-on-touch mt-4 typo-caption text-foreground flex items-center gap-2">
                 <span>Press</span>
                 <kbd className="px-1.5 py-0.5 rounded border border-border bg-foreground/[0.04] font-mono text-xs">
@@ -181,6 +189,7 @@ export function QuestionnaireHeroQuestion({
               dynamicState={dynamicState}
               onRetryDynamic={onRetryDynamic}
               useCaseTitleById={useCaseTitleById}
+              inputOnly
             />
           </div>
         )}
@@ -192,7 +201,7 @@ export function QuestionnaireHeroQuestion({
           </div>
         )}
 
-        <QuestionnaireKeyboardHint isAtEnd={isAtEnd} canSubmit={canSubmit} />
+        {!compact && <QuestionnaireKeyboardHint isAtEnd={isAtEnd} canSubmit={canSubmit} />}
       </motion.div>
     </AnimatePresence>
   );

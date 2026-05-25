@@ -194,22 +194,11 @@
         "use_case_id": "uc_backlog_scan",
         "category": "configuration",
         "question": "Which registered codebase should Dev Clone analyze and modify?",
-        "type": "select",
-        "options": [],
-        "default": "",
+        "type": "devtools_project",
         "maps_to": "persona.connectors[codebase].credential_fields[codebase_root].value",
         "variable_name": "target_codebase",
         "context": "Pick from your registered codebases. If only one is registered, it's auto-selected. This codebase is read + write: Dev Clone creates branches, applies diffs, commits. It should be the same repository as the GitHub repo above.",
-        "dimension": "connector",
-        "ui_component": "CodebaseSelector",
-        "connector_ref": "codebase",
-        "option_service_types": [
-          "codebase"
-        ],
-        "dynamic_source": {
-          "service_type": "development",
-          "operation": "list_codebases"
-        }
+        "dimension": "connector"
       },
       {
         "id": "aq_improvement_scope",

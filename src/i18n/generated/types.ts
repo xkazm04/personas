@@ -13332,6 +13332,7 @@ export type Translations = {
     devtools_no_projects: string;
     devtools_no_projects_hint: string;
     devtools_no_projects_nav: string;
+    devtools_no_projects_action: string;
     process_activity: string;
     process_action_required: string;
     process_active: string;

@@ -40,6 +40,7 @@ import { BUILTIN_CONNECTORS, connectorCategoryTags } from "@/lib/credentials/bui
 import type { TriggerSelection } from "./useCasePickerShared";
 import { resolveIconForTemplate } from "@/lib/icons/templateIconResolver";
 import { silentCatch } from '@/lib/silentCatch';
+import { useHydratedDesignResult } from './useHydratedDesignResult';
 
 
 interface ChronologyAdoptionViewProps {
@@ -460,15 +461,11 @@ export function ChronologyAdoptionView({ review, onClose, onPersonaCreated }: Ch
   const seedDone = useRef(false);
   const seedInFlight = useRef(false);
 
-  // Parse design result from the template
-  const designResult: Record<string, unknown> | null = (() => {
-    if (!review.design_result) return null;
-    try {
-      return JSON.parse(review.design_result) as Record<string, unknown>;
-    } catch {
-      return null;
-    }
-  })();
+  // Parse + hydrate the design result. Templates store capabilities as
+  // recipe_refs (Stage-B migration); the questionnaire renders before the
+  // backend expands them, so hydrate here — otherwise use_cases have no
+  // inline id/title and the Persona Layout shows "All capabilities skipped".
+  const designResult = useHydratedDesignResult(review.design_result);
 
   const templateName = review.test_case_name ?? "Template";
   const templateGoal = (() => {

@@ -61,6 +61,12 @@ interface PersonaHeroProps {
    *  this during isBuilding to indicate the LLM is processing. Pair with
    *  `dimmed` for the canonical "agent is thinking" treatment. */
   showOrbit?: boolean;
+
+  /** Multiplier applied to the computed sigil size. Adoption passes 0.8 to
+   *  render the glyph ~20% smaller than the view/scratch default (the
+   *  questionnaire chrome around it makes the full-size sigil overwhelming).
+   *  Default 1 (no scaling). */
+  sizeScale?: number;
 }
 
 const DEFAULT_SIGIL_SIZE = 880;
@@ -90,6 +96,7 @@ export function PersonaHero({
   hideMetadataBand,
   dimmed,
   showOrbit,
+  sizeScale = 1,
 }: PersonaHeroProps) {
   const { t, tx } = useTranslation();
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
@@ -274,9 +281,9 @@ export function PersonaHero({
               'radial-gradient(ellipse 50% 70% at 50% 50%, rgba(96,165,250,0.06) 0%, transparent 70%)',
           }}
         />
-        <div className="relative" style={{ width: measuredSize }}>
+        <div className="relative" style={{ width: Math.round(measuredSize * sizeScale) }}>
           <GlyphSigilCanvas
-            size={measuredSize}
+            size={Math.round(measuredSize * sizeScale)}
             petalStates={petalStates}
             hoveredDim={hoveredDim}
             activeDim={activeDim}

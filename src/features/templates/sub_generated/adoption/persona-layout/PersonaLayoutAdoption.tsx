@@ -580,6 +580,7 @@ export function PersonaLayoutAdoption({
           leftSlot={leftSlot}
           rightSlot={rightSlot}
           hideMetadataBand
+          sigilSizeScale={0.8}
           heroPetalStatesOverride={petalStates}
           onHeroPetalClick={handlePetalClick}
           heroActiveDim={activeDim}

@@ -147,12 +147,17 @@ export function AdoptionAnswerCard({
 
   return (
     <AnimatePresence>
+      {/* Keyed by `dim` only — the card mounts once per dimension and stays
+          put while the user steps through that dim's questions (the inner
+          QuestionnaireHeroQuestion handles the per-question transition). Keying
+          by question id too made the whole card scale-remount on every Next,
+          which read as laggy. */}
       <motion.div
-        key={`${dim}-${activeQuestion.id}`}
-        initial={{ opacity: 0, scale: 0.96 }}
+        key={dim}
+        initial={{ opacity: 0, scale: 0.98 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
         className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full grid"
         style={{
           borderColor: `${dimColor}66`,
@@ -221,6 +226,7 @@ export function AdoptionAnswerCard({
             dynamicState={dynamicOptions?.[activeQuestion.id]}
             onRetryDynamic={onRetryDynamic}
             useCaseTitleById={useCaseTitleById}
+            compact
           />
         </div>
 
