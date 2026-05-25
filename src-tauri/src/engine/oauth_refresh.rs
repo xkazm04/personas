@@ -216,7 +216,6 @@ async fn refresh_expiring_tokens(pool: &DbPool, app: Option<&AppHandle>) -> Resu
         tracing::info!(
             credential_id = %cred.id,
             credential_name = %cred.name,
-            expires_in_secs = remaining.num_seconds(),
             "Proactively refreshing OAuth token"
         );
 
