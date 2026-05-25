@@ -156,11 +156,15 @@ async function navOpen(name) {
   for (let i = 0; i < 100; i++) {
     await sleep(3000);
     if (!(await alive())) { console.log('APP DIED during build'); return; }
-    const ready = JSON.stringify(await evalJs(inModal(`return Array.from(r.querySelectorAll('button')).some(b=>/approve anyway/i.test(b.innerText||''))?'yes':'no'`)));
+    // The gate button is "Approve Anyway" when the test flagged warnings, or
+    // plain "Approve" when the test passed clean — accept either.
+    const ready = JSON.stringify(await evalJs(inModal(`return Array.from(r.querySelectorAll('button')).some(b=>/^approve( anyway)?$/i.test((b.innerText||'').replace(/\\s+/g,' ').trim()))?'yes':'no'`)));
     if (ready.includes('yes')) { console.log(`[t+${i*3}s] build gate ready`); break; }
     if (i % 4 === 0) console.log(`[t+${i*3}s] building...`);
   }
-  console.log('Approve→', JSON.stringify(await clickModal('Approve Anyway'))); await sleep(2500);
+  // Click whichever approve button exists (Approve Anyway OR Approve).
+  const approved = await evalJs(inModal(`const b=Array.from(r.querySelectorAll('button')).find(x=>/^approve( anyway)?$/i.test((x.innerText||'').replace(/\\s+/g,' ').trim()));if(!b)return'no-approve-btn';b.click();return(b.innerText||'').trim();`));
+  console.log('Approve→', JSON.stringify(approved)); await sleep(3000);
   const modalGone = (await query(MODAL)).length === 0;
   console.log('modal closed (promoted)?', modalGone, ' alive?', await alive());
 })().catch((e) => { console.error('AUTO-ADOPT ERROR:', e.message); process.exit(1); });
