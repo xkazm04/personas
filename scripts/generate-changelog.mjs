@@ -12,6 +12,9 @@ const ROOT = join(import.meta.dirname, "..");
 
 const FEAT_RE = /^feat(\(.+\))?!?:\s*/;
 const FIX_RE = /^fix(\(.+\))?!?:\s*/;
+// Internal commit types that shouldn't appear in user-facing release notes.
+// (perf/docs/refactor are kept — they can carry user-relevant changes.)
+const INTERNAL_RE = /^(chore|ci|test|style|build)(\(.+\))?!?:\s*/;
 
 function groupCommits(commits) {
   const features = [];
@@ -22,8 +25,9 @@ function groupCommits(commits) {
     // Strip the short hash prefix
     const msg = line.replace(/^[a-f0-9]+\s+/, "");
 
-    // Skip CI version-bump commits
-    if (/^chore: bump version to/.test(msg)) continue;
+    // Skip internal commit types (chore incl. version bumps, ci, test,
+    // style, build) — they're noise in a user-facing changelog.
+    if (INTERNAL_RE.test(msg)) continue;
 
     if (FEAT_RE.test(msg)) {
       features.push(msg.replace(FEAT_RE, "").replace(/^\w/, (c) => c.toUpperCase()));
