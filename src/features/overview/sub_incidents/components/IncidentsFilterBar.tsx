@@ -16,6 +16,7 @@ const SOURCE_OPTIONS = [
   'provider_audit_log',
   'policy_events',
   'persona_healing_issues',
+  'execution_error',
 ] as const;
 
 export function IncidentsFilterBar({ filters, onChange }: Props) {

@@ -5103,6 +5103,7 @@ export type Translations = {
       source_provider: string;
       source_policy: string;
       source_healing_issue: string;
+      source_execution_error: string;
     };
     observability: {
       title: string;

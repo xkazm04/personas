@@ -16,7 +16,8 @@ export type IncidentSourceTable =
   | 'healing_audit_log'
   | 'provider_audit_log'
   | 'policy_events'
-  | 'persona_healing_issues';
+  | 'persona_healing_issues'
+  | 'execution_error';
 
 export const INCIDENT_SOURCE_ICONS: Record<IncidentSourceTable, typeof Bell> = {
   fired_alerts: Bell,
@@ -26,6 +27,7 @@ export const INCIDENT_SOURCE_ICONS: Record<IncidentSourceTable, typeof Bell> = {
   provider_audit_log: Zap,
   policy_events: ShieldAlert,
   persona_healing_issues: AlertTriangle,
+  execution_error: AlertTriangle,
 };
 
 export function sourceTableIcon(source: string): typeof Bell {
@@ -41,6 +43,7 @@ export function sourceTableLabel(t: Translations, source: string): string {
     case 'provider_audit_log': return t.overview.incidents.source_provider;
     case 'policy_events': return t.overview.incidents.source_policy;
     case 'persona_healing_issues': return t.overview.incidents.source_healing_issue;
+    case 'execution_error': return t.overview.incidents.source_execution_error;
     default: return source;
   }
 }

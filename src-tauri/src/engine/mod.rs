@@ -2250,7 +2250,13 @@ fn evaluate_healing_and_retry(
         if !is_simulation {
             let (route_incident, route_lab, escalate_after) =
                 resolve_error_policy(pool, persona_id, use_case_id.as_deref());
-            if consecutive >= escalate_after {
+            // The `consecutive` count above is capped at 5 (it drives the
+            // circuit breaker); re-count sized to escalate_after so the full
+            // card range (up to 20) actually fires.
+            let escalation_failures = exec_repo::get_recent_failures(pool, persona_id, escalate_after as i64)
+                .map(|v| v.len() as u32)
+                .unwrap_or(consecutive);
+            if escalation_failures >= escalate_after {
                 if route_incident {
                     let detail = serde_json::json!({
                         "use_case_id": use_case_id,

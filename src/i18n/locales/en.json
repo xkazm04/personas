@@ -5096,7 +5096,8 @@
       "source_healing_log": "Healing log",
       "source_provider": "Provider",
       "source_policy": "Policy",
-      "source_healing_issue": "Healing issue"
+      "source_healing_issue": "Healing issue",
+      "source_execution_error": "Execution error"
     },
     "observability": {
       "title": "Observability",
@@ -7321,7 +7322,7 @@
         "incident_label": "Raise an incident",
         "incident_desc": "Surface unrecovered failures in the Incidents inbox for triage.",
         "lab_label": "Send to the Lab",
-        "lab_desc": "Queue this capability for improvement in the Lab when failures recur.",
+        "lab_desc": "Turn on Lab auto-improvement (prompt evolution) for this persona when failures recur.",
         "escalate_after_label": "Escalate after",
         "escalate_after_desc": "Consecutive failures before raising an incident or sending to the Lab."
       },
