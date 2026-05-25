@@ -48,19 +48,55 @@ async function answerCard() {
     return `radio[${idx}]→${(want || '').slice(0, 30)}`;
   }
   if (ri.n > 0 && ri.checked) return 'radio(already-set)';
+  // 3) dynamic SelectPills (async-loaded option buttons) — only for questions
+  // whose source is dynamic (codebase / repository / project / channel). Poll
+  // for the option to appear, then click the pill matching intent.
+  if (/codebase|repository|\brepo\b|registered|project|channel|which .* should/.test(q)) {
+    const ctrlRe = '^(next|previous|disable|disabled|cancel|done|retry|add credential|close)$';
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const pillsRaw = await readStr(inModal(`return Array.from(r.querySelectorAll('button')).filter(b=>b.offsetParent!==null&&(b.innerText||'').trim()&&!new RegExp(${JSON.stringify(ctrlRe)},'i').test((b.innerText||'').replace(/\\s+/g,' ').trim())&&!/\\d\\/\\d/.test(b.innerText||'')&&!/QUESTION|CONTINUE TO BUILD/i.test(b.innerText||'')).map(b=>(b.innerText||'').replace(/\\s+/g,' ').trim().slice(0,32)).join(' || ')`), 1500);
+      // Exclude the question-navigation buttons (their text IS the question,
+      // ends with '?' or repeats the h3) — only real option pills remain.
+      const pills = pillsRaw.split(' || ').filter((t) => t && !/\?$/.test(t) && !/which .* should/i.test(t));
+      if (pills.length) {
+        const isCodebase = /codebase|tests against|analyze|repository|\brepo\b|registered/.test(q);
+        // Match the codebase OPTION by the connector name 'bookkeeper' (the
+        // question text never contains it), never a blind first-pill fallback.
+        const want = isCodebase ? pills.find((t) => /bookkeeper/i.test(t)) : pills[0];
+        if (!want) { await sleep(800); continue; }
+        await evalJs(inModal(`const b=Array.from(r.querySelectorAll('button')).find(x=>((x.innerText||'').replace(/\\s+/g,' ').trim().slice(0,32)===${JSON.stringify(want)}));if(b)b.click();`));
+        return `pill→${want.slice(0, 28)}`;
+      }
+      await sleep(800); // wait for async dynamic options
+    }
+    return 'pill(none-loaded)';
+  }
   return 'skip(default/number/text)';
 }
 
 async function navOpen(name) {
-  await clickTestId('sidebar-design-reviews'); await sleep(900);
-  await clickByText('All'); await sleep(300);
-  await typeInto('[data-testid="template-search-input"]', ''); await sleep(300);
-  await typeInto('[data-testid="template-search-input"]', name); await sleep(700);
-  const rows = (await query('[data-testid^="template-row-"]')).filter((n) => n.visible);
-  const row = rows.find((r) => (r.text || '').includes(name)) || rows[0];
-  if (!row?.testId) throw new Error('row not found: ' + name);
-  await clickTestId(row.testId); await sleep(500);
-  await clickByText('Adopt'); await sleep(1100);
+  for (let tryN = 0; tryN < 2; tryN++) {
+    await clickTestId('sidebar-design-reviews'); await sleep(900);
+    await clickByText('All'); await sleep(300);
+    await typeInto('[data-testid="template-search-input"]', ''); await sleep(300);
+    await typeInto('[data-testid="template-search-input"]', name); await sleep(700);
+    const rows = (await query('[data-testid^="template-row-"]')).filter((n) => n.visible);
+    const row = rows.find((r) => (r.text || '').includes(name)) || rows[0];
+    if (!row?.testId) { console.log('row not found, retry'); continue; }
+    await clickTestId(row.testId); await sleep(700);
+    // poll for the Adopt CTA to render inside the expanded row, then click it
+    let clicked = false;
+    for (let i = 0; i < 8; i++) {
+      const r = await clickByText('Adopt');
+      if (JSON.stringify(r).includes('true')) { clicked = true; break; }
+      await sleep(400);
+    }
+    if (!clicked) { console.log('Adopt CTA not found, retry'); continue; }
+    // verify the modal opened
+    for (let i = 0; i < 8; i++) { await sleep(500); if ((await query(MODAL)).length > 0) return true; }
+    console.log('modal did not open after Adopt, retry');
+  }
+  throw new Error('could not open adoption modal for ' + name);
 }
 
 (async () => {
@@ -88,8 +124,17 @@ async function navOpen(name) {
       lastQ = qNow;
       await sleep(500);
     }
-    // close the card (scoped) to return to the sigil view
-    await evalJs(inModal(`const b=r.querySelector('[aria-label="Close"]');if(b)b.click();`)); await sleep(600);
+    // Return to the sigil view via the answer card's footer "Done" button.
+    // NOT [aria-label="Close"] — the modal's own top-right X shares that label
+    // and clicking it closes the WHOLE modal (the no-modal bug). "Done" closes
+    // only the card.
+    const doneClick = JSON.stringify(await clickModal('Done'));
+    if (doneClick.includes('no-btn')) {
+      // Fallback: the answer card's own close X is the LAST [aria-label="Close"]
+      // in the modal (the modal's outer X is first) — pick the last.
+      await evalJs(inModal(`const xs=r.querySelectorAll('[aria-label="Close"]');const b=xs[xs.length-1];if(b&&xs.length>1)b.click();`));
+    }
+    await sleep(600);
   }
   // build
   console.log('Continue→', JSON.stringify(await clickModal('CONTINUE TO BUILD')));
