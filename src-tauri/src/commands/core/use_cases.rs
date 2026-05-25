@@ -644,6 +644,12 @@ pub async fn verify_promoted_persona(
     })?;
     let use_case_id = use_case.get("id").and_then(|v| v.as_str())?.to_string();
     let input_data = build_simulation_input(use_case, None).ok()?;
+    // Verification runs the capability FOR REAL (not a simulation) so it
+    // actually exercises the persona's connectors / data sources end-to-end. A
+    // simulated run bypasses connector access and almost always reports
+    // `no_input_available`, which let non-working personas slip through promote
+    // as "ready". A real run surfaces the true `business_outcome` the promote
+    // gate uses to decide whether the persona genuinely delivers value.
     let execution = crate::commands::execution::executions::execute_persona_inner(
         state,
         app,
@@ -653,7 +659,7 @@ pub async fn verify_promoted_persona(
         Some(use_case_id),
         /* continuation */ None,
         /* idempotency_key */ None,
-        /* is_simulation */ true,
+        /* is_simulation */ false,
     )
     .await
     .ok()?;

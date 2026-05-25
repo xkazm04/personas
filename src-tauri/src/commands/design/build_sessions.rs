@@ -836,13 +836,30 @@ async fn gate_setup_status_on_verification(
     let execution =
         crate::commands::core::use_cases::verify_promoted_persona(state, app, persona_id).await;
     let outcome = execution.as_ref().map(|e| e.business_outcome.as_str());
-    // `precondition_failed` / `failed` → the persona ran but cannot deliver
-    // value (a missing data source, an unmet precondition). `no_input_
-    // available` is EXPECTED at build time — there is no real triggering
-    // data — and must NOT block; the persona is correctly built.
-    // `value_delivered` / `partial` / an unassessed run all leave `ready`.
-    let blocked = matches!(outcome, Some("precondition_failed") | Some("failed"));
-    if blocked {
+    // A persona is "verified" ONLY when the real verification run actually
+    // delivered value. Anything else means promote could not prove the persona
+    // works, so we never leave it silently `ready` without a flag:
+    //   • `value_delivered` / `partial`        → verified, stays `ready`.
+    //   • `precondition_failed` / `failed`     → hard block: downgrade
+    //       `setup_status` to `needs_credentials` AND raise a review.
+    //   • `no_input_available` / unassessed /  → soft flag: stays runnable but
+    //       no execution (event-only)             raises a review so the user
+    //       knows the persona has NOT demonstrated value (it was minted
+    //       unverified). Prevents adoption presenting unproven personas as
+    //       working — the previous behaviour silently passed these as `ready`.
+    let delivered_value = matches!(outcome, Some("value_delivered") | Some("partial"));
+    let hard_fail = matches!(outcome, Some("precondition_failed") | Some("failed"));
+    if delivered_value {
+        tracing::info!(
+            persona_id = %persona_id,
+            outcome = ?outcome,
+            "promote: build verification delivered value — persona verified"
+        );
+        return;
+    }
+    // Not verified. Hard failures additionally downgrade `setup_status` so the
+    // real run path blocks until the user fixes the connector.
+    if hard_fail {
         if let Ok(conn) = state.db.get() {
             let _ = conn.execute(
                 "UPDATE personas SET setup_status = ?1, updated_at = ?2 WHERE id = ?3",
@@ -853,60 +870,63 @@ async fn gate_setup_status_on_verification(
                 ],
             );
         }
-        // Phase 4 — don't just flip a silent badge: raise a manual-review
-        // item so the user sees WHAT the verification run hit and how to
-        // fix it. The verification execution's own output is the most
-        // concrete explanation available.
-        if let Some(exec) = execution.as_ref() {
-            let reason = exec
-                .output_data
-                .as_deref()
-                .map(|s| s.trim())
-                .filter(|s| !s.is_empty())
-                .unwrap_or("The build verification run did not deliver business value.");
-            let description = format!(
-                "This persona was built, but a verification run of its first \
-                 capability could not deliver value ({}).\n\nWhat the run reported:\n{}",
-                outcome.unwrap_or("failed"),
-                reason.chars().take(1200).collect::<String>(),
-            );
-            let input = crate::db::models::CreateManualReviewInput {
-                execution_id: exec.id.clone(),
-                persona_id: persona_id.to_string(),
-                title: "Setup needed — build verification could not deliver value".to_string(),
-                description: Some(description),
-                severity: Some("warning".to_string()),
-                context_data: Some(
-                    serde_json::json!({ "business_outcome": outcome.unwrap_or("failed") })
-                        .to_string(),
-                ),
-                suggested_actions: Some(
-                    serde_json::json!([
-                        "Open the persona's Connections panel to see which connector or data source needs setup.",
-                        "Provide the missing credential or register the missing source, then re-run the persona to confirm."
-                    ])
-                    .to_string(),
-                ),
-                use_case_id: exec.use_case_id.clone(),
-            };
-            if let Err(e) =
-                crate::db::repos::communication::manual_reviews::create(&state.db, input)
-            {
-                tracing::warn!(persona_id = %persona_id, error = %e, "promote: failed to raise build-verification review");
-            }
-        }
-        tracing::info!(
-            persona_id = %persona_id,
-            outcome = ?outcome,
-            "promote: build verification could not deliver value — withheld `ready`, raised review"
-        );
-    } else {
-        tracing::info!(
-            persona_id = %persona_id,
-            outcome = ?outcome,
-            "promote: build verification passed"
-        );
     }
+    // Raise a manual-review item so the unverified state is VISIBLE (never a
+    // silent pass). The verification execution's own output is the most
+    // concrete explanation available.
+    if let Some(exec) = execution.as_ref() {
+        let reason = exec
+            .output_data
+            .as_deref()
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .unwrap_or("The build verification run did not deliver business value.");
+        let (title, severity) = if hard_fail {
+            (
+                "Setup needed — build verification could not deliver value",
+                "warning",
+            )
+        } else {
+            (
+                "Unverified — build verification did not demonstrate value",
+                "info",
+            )
+        };
+        let description = format!(
+            "This persona was built, but a verification run of its first \
+             capability did not deliver value ({}).\n\nWhat the run reported:\n{}",
+            outcome.unwrap_or("unassessed"),
+            reason.chars().take(1200).collect::<String>(),
+        );
+        let input = crate::db::models::CreateManualReviewInput {
+            execution_id: exec.id.clone(),
+            persona_id: persona_id.to_string(),
+            title: title.to_string(),
+            description: Some(description),
+            severity: Some(severity.to_string()),
+            context_data: Some(
+                serde_json::json!({ "business_outcome": outcome.unwrap_or("unassessed") })
+                    .to_string(),
+            ),
+            suggested_actions: Some(
+                serde_json::json!([
+                    "Open the persona's Connections panel to see which connector or data source needs setup.",
+                    "Provide the missing credential or register the missing source, then re-run the persona to confirm it delivers value."
+                ])
+                .to_string(),
+            ),
+            use_case_id: exec.use_case_id.clone(),
+        };
+        if let Err(e) = crate::db::repos::communication::manual_reviews::create(&state.db, input) {
+            tracing::warn!(persona_id = %persona_id, error = %e, "promote: failed to raise build-verification review");
+        }
+    }
+    tracing::info!(
+        persona_id = %persona_id,
+        outcome = ?outcome,
+        hard_fail,
+        "promote: build verification did not deliver value — flagged as unverified"
+    );
 }
 
 /// D2 (adoption-honesty) — materialize a persona's first-run state files.
