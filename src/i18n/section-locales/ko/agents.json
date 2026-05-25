@@ -1468,7 +1468,8 @@
     "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-    "persona_layout_capabilities_heading": "Capabilities"
+    "persona_layout_capabilities_heading": "Capabilities",
+    "schedule_will_run": "{persona}에 대해 {title}을 실행합니다"
   },
   "tools": {
     "no_persona": "선택된 페르소나 없음",

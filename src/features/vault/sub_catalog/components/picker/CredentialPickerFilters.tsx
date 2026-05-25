@@ -3,7 +3,6 @@ import type { ThemedSelectOption } from '@/features/shared/components/forms/Them
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { Code2, HeadsetIcon, Briefcase } from 'lucide-react';
 import type { RolePreset } from './catalogRolePresets';
-import type { CatalogSortMode } from '@/stores/slices/vault/catalogPrefsSlice';
 import { useTranslation } from '@/i18n/useTranslation';
 
 type ConnectedFilter = 'all' | 'connected' | 'new';
@@ -23,9 +22,6 @@ interface CredentialPickerFiltersProps {
   licenseOptions: ThemedSelectOption[];
   activeRole: RolePreset | null;
   onRoleToggle: (role: RolePreset) => void;
-  sortMode: CatalogSortMode;
-  onSortModeChange: (v: CatalogSortMode) => void;
-  sortOptions: ThemedSelectOption[];
 }
 
 export function CredentialPickerFilters({
@@ -43,9 +39,6 @@ export function CredentialPickerFilters({
   licenseOptions,
   activeRole,
   onRoleToggle,
-  sortMode,
-  onSortModeChange,
-  sortOptions,
 }: CredentialPickerFiltersProps) {
   const { t } = useTranslation();
   return (
@@ -88,15 +81,6 @@ export function CredentialPickerFilters({
           placeholder={t.vault.picker_section.filter_license}
           wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[170px]'}
           className="!py-1.5 !text-sm"
-        />
-        <ThemedSelect
-          options={sortOptions}
-          value={sortMode}
-          onValueChange={(v) => onSortModeChange((v || 'alphabetical') as CatalogSortMode)}
-          placeholder={t.vault.picker_section.filter_sort}
-          wrapperClassName={IS_MOBILE ? 'flex-1 min-w-[100px]' : 'w-[180px]'}
-          className="!py-1.5 !text-sm"
-          data-testid="catalog-sort-select"
         />
       </div>
       <div className="flex items-center gap-1 ml-auto">

@@ -3,8 +3,8 @@
  *
  *   chevron · pulse · SOURCE(s) → EVENT → LISTENER(s) · time-ago · activity-count
  *
- * Round 3: SOURCE column width doubled (160px → 320px min) so full persona
- * names render via <SourceStack />.
+ * Column labels live in the sticky <RoutingTableHeader /> above the panels
+ * (Source / Event / Listeners), not on every row — so rows stay value-only.
  *
  * Clicking anywhere on the row toggles the <ExpandedDrawer /> below it.
  * framer-motion rotates the chevron and height-animates the drawer.
@@ -18,7 +18,7 @@ import { ListenerStack } from './ListenerStack';
 import { PulseDot } from './PulseDot';
 import { resolveIcon, type Connection, type EventRow as EventRowData } from '../routingHelpers';
 import { SourceStack } from './SourceStack';
-import type { ActivityEntry } from './types';
+import { ROUTING_GRID_COLUMNS, type ActivityEntry } from './types';
 
 interface Props {
   row: EventRowData;
@@ -29,11 +29,6 @@ interface Props {
   onRename: () => void;
   onDisconnect: (conn: Connection) => void;
 }
-
-// `auto` for icons/controls; `minmax(px, fr)` for data columns so they share
-// horizontal slack proportionally. Source column is ~2x every other column.
-const GRID_COLUMNS =
-  'auto auto minmax(320px, 2.2fr) auto minmax(200px, 1.3fr) auto minmax(160px, 1fr) auto auto';
 
 export function EventRow({
   row, activity, expanded, onToggleExpand, onAdd, onRename, onDisconnect,
@@ -52,7 +47,7 @@ export function EventRow({
             ? 'bg-secondary/40 border-l-primary/60'
             : 'border-l-transparent hover:bg-secondary/35 hover:border-l-primary/40'
         }`}
-        style={{ gridTemplateColumns: GRID_COLUMNS }}
+        style={{ gridTemplateColumns: ROUTING_GRID_COLUMNS }}
       >
         <motion.span animate={{ rotate: expanded ? 90 : 0 }} transition={{ duration: 0.15 }} className="inline-flex">
           <ChevronRight className="w-3.5 h-3.5 text-foreground group-hover:text-foreground transition-colors" />
@@ -60,43 +55,36 @@ export function EventRow({
 
         <PulseDot activity={activity} />
 
-        {/* SOURCE — doubled column with named chips. */}
+        {/* SOURCE — named chips. */}
         <div className="min-w-0">
-          <ColumnLabel>Source</ColumnLabel>
           <SourceStack row={row} />
         </div>
 
         <ArrowRight className="w-3.5 h-3.5 text-foreground" />
 
-        {/* EVENT — type + label + class badge. */}
-        <div className="min-w-0">
-          <div className="flex items-center gap-1 mb-0.5">
-            <ColumnLabel>Event</ColumnLabel>
-            <span className={`text-[9px] font-semibold uppercase tracking-wider ${accent.text}`}>· {accent.label}</span>
-          </div>
-          <div className="flex items-center gap-2 min-w-0">
-            <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${row.template?.color ?? accent.text}`} />
-            <code className="font-mono text-sm text-foreground truncate">{row.eventType}</code>
-            {row.template && (
-              <span className="typo-caption text-foreground truncate hidden xl:inline">· {row.template.label}</span>
-            )}
-          </div>
+        {/* EVENT — icon + type + class badge + label. */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Icon className={`w-3.5 h-3.5 flex-shrink-0 ${row.template?.color ?? accent.text}`} />
+          <code className="font-mono typo-body text-foreground truncate">{row.eventType}</code>
+          <span className={`typo-caption font-semibold uppercase tracking-wider flex-shrink-0 ${accent.text}`}>{accent.label}</span>
+          {row.template && (
+            <span className="typo-caption text-foreground truncate hidden xl:inline">· {row.template.label}</span>
+          )}
         </div>
 
         <ArrowRight className="w-3.5 h-3.5 text-foreground" />
 
-        {/* LISTENERS — compact avatar stack; full names live in drawer. */}
+        {/* LISTENERS — avatar stack; full names live in drawer. */}
         <div className="min-w-0">
-          <ColumnLabel>Listeners</ColumnLabel>
           <ListenerStack row={row} />
         </div>
 
-        <span className="text-[10px] text-foreground tabular-nums w-10 text-right flex-shrink-0">
+        <span className="typo-caption text-foreground tabular-nums w-12 text-right flex-shrink-0">
           {formatAgo(activity?.lastTs ?? null)}
         </span>
 
         <span
-          className="text-[10px] text-foreground tabular-nums flex-shrink-0"
+          className="typo-caption text-foreground tabular-nums flex-shrink-0"
           title={`${activity?.count ?? 0} event${(activity?.count ?? 0) !== 1 ? 's' : ''} in window`}
         >
           {activity?.count ? `×${activity.count}` : '·'}
@@ -117,14 +105,6 @@ export function EventRow({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
-  );
-}
-
-function ColumnLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-[9px] font-semibold uppercase tracking-widest text-foreground mb-0.5">
-      {children}
     </div>
   );
 }

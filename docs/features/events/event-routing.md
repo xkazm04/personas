@@ -354,12 +354,14 @@ Migration is opt-in and lazy:
    that has no `eventHandlers` section, `link_persona_to_event` creates the
    section on first use. The persona's existing `instructions` are not
    modified — the new section is purely additive.
-3. **Optional one-time backfill command** the user can run from the Builder
-   ("Initialize event handlers for all personas"). It reads each persona's
-   subscriptions, creates a corresponding `eventHandlers` entry per event_type
-   with the placeholder text. Templates' dead-listener subscriptions become
-   visible in the prompt, which makes the inverted-direction problem
-   self-evident to the user — they can refine or delete from there.
+3. **Optional one-time backfill command** (`initialize_event_handlers_for_persona`).
+   It reads each persona's subscriptions, creates a corresponding `eventHandlers`
+   entry per event_type with the placeholder text. Templates' dead-listener
+   subscriptions become visible in the prompt, which makes the inverted-direction
+   problem self-evident to the user — they can refine or delete from there. The
+   command still exists on the backend, but the Builder toolbar button that
+   triggered it was removed (the bulk action confused more than it helped);
+   handlers now fill in lazily via "Add persona" (step 2).
 
 ---
 
@@ -428,7 +430,7 @@ explicit handlers section.
 | **S2.** `eventHandlers` section in `structured_prompt` rendered by `prompt::assemble_prompt` | `engine/prompt.rs`, `db/models/agent_ir.rs` (extend AgentIr if we want build flow to write it too) | Low — additive | New build_sessions can write handlers; runtime renders them |
 | **S3.** `link_persona_to_event` / `unlink_persona_from_event` commands | `commands/tools/triggers.rs`, `db/repos/resources/triggers.rs`, frontend `linkPersonaToEvent` API | Medium — touches both layers | Builder click reliably wires a working handler |
 | **S4.** Builder uses new commands instead of `createTrigger` / `deleteTrigger` | `src/features/triggers/sub_builder/layouts/UnifiedRoutingView.tsx` | Low | Builder UX delivers on its promise |
-| **S5.** Lazy backfill / "Initialize event handlers" action | `commands/tools/triggers.rs` (one-shot command), Builder toolbar button | Medium — operates on user data | Existing personas opt into the new model |
+| **S5.** Lazy backfill / "Initialize event handlers" action | `commands/tools/triggers.rs` (one-shot command; the Builder toolbar button was removed — command remains callable but is no longer surfaced in the UI) | Medium — operates on user data | Existing personas opt into the new model |
 | **S6.** "Refine handler with LLM" action (optional) | New backend command, Builder chip menu | Medium — LLM call | Power-user polish |
 
 S1+S2 are foundational. S3+S4 deliver the user-visible improvement. S5+S6 are

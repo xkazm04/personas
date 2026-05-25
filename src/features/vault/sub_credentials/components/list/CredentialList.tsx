@@ -8,8 +8,6 @@ import { EmptyStateView } from './EmptyStateView';
 import { type CredRow, useCredentialColumns } from './CredentialListColumns';
 import { CredentialDetailModals } from './CredentialDetailModals';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useDensity } from '@/hooks/utility/data/useDensity';
-import { DensityToggle } from '@/features/shared/components/display/DensityToggle';
 
 const SORT_KEYS: ReadonlySet<string> = new Set(['name', 'type', 'created', 'last-used', 'health']);
 const HEALTH_FILTERS: ReadonlySet<string> = new Set(['', 'healthy', 'failing', 'untested']);
@@ -27,7 +25,6 @@ export function CredentialList({
   const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
   const pendingDeleteIds = useVaultStore((s) => s.pendingDeleteCredentialIds);
-  const { density, setDensity } = useDensity('credential-list');
   const {
     setSelectedId,
     selectedCredential,
@@ -124,9 +121,6 @@ export function CredentialList({
       data-testid="credential-list"
       className="animate-fade-slide-in flex flex-col min-h-0"
     >
-      <div className="flex justify-end px-3 py-2">
-        <DensityToggle density={density} onChange={setDensity} scopeId="credential-list" />
-      </div>
       <DataGrid<CredRow>
         columns={columns}
         data={displayRows}
@@ -139,7 +133,7 @@ export function CredentialList({
         emptyTitle={t.vault.credential_list.no_match}
         emptyDescription={t.vault.credential_list.no_match_hint}
         className="flex-1"
-        density={density}
+        density="compact"
       />
 
       <CredentialDetailModals

@@ -4,12 +4,9 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useUndoDelete } from '@/features/vault/shared/hooks/useUndoDelete';
 import { useCredentialViewFSM } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
-import { vaultStatus } from "@/api/vault/credentials";
-import type { VaultStatus } from "@/api/vault/credentials";
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useRotateAll } from './useRotateAll';
 import { useCatalogHandlers } from './useCatalogHandlers';
-import { silentCatch } from '@/lib/silentCatch';
 
 
 export function useCredentialManagerState() {
@@ -23,7 +20,6 @@ export function useCredentialManagerState() {
   const setGlobalError = useSystemStore((s) => s.setError);
 
   const [loading, setLoading] = useState(true);
-  const [vault, setVault] = useState<VaultStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const bannerError = error ?? globalError;
 
@@ -95,10 +91,6 @@ export function useCredentialManagerState() {
   useEffect(() => {
     const init = async () => {
       await Promise.all([fetchCredentials(), fetchConnectorDefinitions()]);
-      try {
-        const vs = await vaultStatus();
-        setVault(vs);
-      } catch (err) { silentCatch("features/vault/sub_credentials/manager/useCredentialManagerState:catch1")(err); }
       setLoading(false);
     };
     init();
@@ -132,8 +124,6 @@ export function useCredentialManagerState() {
     healthcheckCredentials,
     connectorDefinitions,
     loading,
-    vault,
-    setVault,
     bannerError,
     setError,
     setGlobalError,

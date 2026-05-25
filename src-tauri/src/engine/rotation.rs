@@ -1068,6 +1068,36 @@ pub fn get_rotation_status(pool: &DbPool, credential_id: &str) -> Result<Rotatio
     })
 }
 
+/// Batched rotation status for every credential, keyed by credential id.
+///
+/// Collapses what was previously N separate `get_rotation_status` IPC calls
+/// (one per credential — the 2026-05-25 profiling pass saw 27 round-trips +
+/// 27 privileged-auth checks at startup, the dominant IPC cost) into a single
+/// command round-trip. The per-credential DB work is unchanged; the win is
+/// eliminating the N-1 IPC/auth round-trips. A credential whose status fails
+/// to compute is logged and omitted rather than failing the whole batch.
+pub fn get_all_rotation_statuses(
+    pool: &DbPool,
+) -> Result<std::collections::HashMap<String, RotationStatus>, AppError> {
+    let credentials = cred_repo::get_all(pool)?;
+    let mut out = std::collections::HashMap::with_capacity(credentials.len());
+    for cred in &credentials {
+        match get_rotation_status(pool, &cred.id) {
+            Ok(status) => {
+                out.insert(cred.id.clone(), status);
+            }
+            Err(e) => {
+                tracing::warn!(
+                    "Batched rotation status: skipping credential {}: {}",
+                    cred.id,
+                    e
+                );
+            }
+        }
+    }
+    Ok(out)
+}
+
 #[derive(Debug, serde::Serialize, TS)]
 #[ts(export)]
 pub struct RotationStatus {

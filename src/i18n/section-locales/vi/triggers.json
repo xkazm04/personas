@@ -267,7 +267,6 @@
   "tab_live_stream": "Luồng trực tiếp",
   "tab_live_stream_subtitle": "Hub sự kiện thời gian thực -- tác nhân xuất bản và đăng ký sự kiện qua bus chia sẻ này",
   "tab_builder": "Trình tạo",
-  "tab_builder_subtitle": "Kết nối personas với nguồn sự kiện -- mọi sự kiện trên bus, cùng các personas đang lắng nghe",
   "tab_rate_limits": "Giới hạn tốc độ",
   "tab_rate_limits_subtitle": "Giới hạn throttling, độ sâu hàng đợi và đồng thời cho trình kích hoạt",
   "tab_test": "Kiểm thử",

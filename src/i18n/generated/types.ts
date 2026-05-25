@@ -3830,6 +3830,9 @@ export type Translations = {
     };
     manager: {
       title: string;
+      title_catalog: string;
+      title_dependencies: string;
+      title_databases: string;
       credentials_stored_one: string;
       credentials_stored_other: string;
       search_catalog: string;
@@ -7977,7 +7980,6 @@ export type Translations = {
     tab_live_stream: string;
     tab_live_stream_subtitle: string;
     tab_builder: string;
-    tab_builder_subtitle: string;
     tab_rate_limits: string;
     tab_rate_limits_subtitle: string;
     tab_test: string;
@@ -8308,9 +8310,14 @@ export type Translations = {
     clear_stream_title: string;
     col_type: string;
     col_source: string;
+    col_event: string;
+    col_listeners: string;
     col_target_agent: string;
     col_status: string;
     col_time: string;
+    source_personas_filter: string;
+    listeners_filter: string;
+    filter_events_placeholder: string;
     queued_bare: string;
     pause_tooltip: string;
     resume_tooltip: string;

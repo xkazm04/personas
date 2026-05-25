@@ -1245,8 +1245,17 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
 
     // Collect plaintext rows before starting the transaction.
     let (rows, parse_failures): (Vec<(String, String)>, usize) = {
+        // Exclude built-in personas-local connectors (bundled SQLite database,
+        // in-app messaging, managed drive, …): they carry no external secret,
+        // and their blob is intentionally empty, so re-encrypting them is pure
+        // churn. The user-facing encrypt UI was removed in favour of this silent
+        // startup assurance — built-ins are deliberately left untouched.
         let mut stmt = conn
-            .prepare("SELECT id, encrypted_data FROM persona_credentials WHERE iv = ''")
+            .prepare(
+                "SELECT id, encrypted_data FROM persona_credentials \
+                 WHERE iv = '' AND service_type NOT IN \
+                 (SELECT name FROM connector_definitions WHERE is_builtin = 1)",
+            )
             .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
 
         let mut result: Vec<(String, String)> = Vec::new();
@@ -1313,6 +1322,86 @@ pub fn migrate_plaintext_credentials(pool: &DbPool) -> Result<(usize, usize), Cr
     }
 
     Ok((0, parse_failures))
+}
+
+/// Assure every *sensitive* credential field is encrypted at rest.
+///
+/// New credentials encrypt sensitive fields at write time (`encrypt_field`),
+/// but a field whose sensitivity classification changed after it was first
+/// stored — or one imported through a legacy path — can linger as plaintext
+/// (`is_sensitive = 1 AND iv = ''`). This pass re-encrypts any such field,
+/// EXCLUDING credentials that belong to a built-in personas-local connector
+/// (the bundled SQLite database, in-app messaging, the managed drive, …) which
+/// carry no external secret and are intentionally left untouched.
+///
+/// Runs at startup alongside `migrate_plaintext_credentials` so the vault is
+/// silently kept fully encrypted with no user action required. The whole pass
+/// runs inside a single transaction. Returns `(reencrypted_count, failed_count)`.
+pub fn assure_sensitive_fields_encrypted(pool: &DbPool) -> Result<(usize, usize), CryptoError> {
+    let mut conn = pool
+        .get()
+        .map_err(|e| CryptoError::KeyManagement(format!("DB pool error: {e}")))?;
+
+    let rows: Vec<(String, String)> = {
+        let mut stmt = conn
+            .prepare(
+                "SELECT cf.id, cf.encrypted_value \
+                 FROM credential_fields cf \
+                 JOIN persona_credentials pc ON pc.id = cf.credential_id \
+                 WHERE cf.is_sensitive = 1 AND cf.iv = '' \
+                   AND pc.service_type NOT IN \
+                   (SELECT name FROM connector_definitions WHERE is_builtin = 1)",
+            )
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?;
+
+        let mut result: Vec<(String, String)> = Vec::new();
+        for r in stmt
+            .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))
+            .map_err(|e| CryptoError::KeyManagement(format!("Query error: {e}")))?
+        {
+            match r {
+                Ok(row) => result.push(row),
+                Err(e) => {
+                    tracing::error!("assure_sensitive_fields_encrypted: row read error: {}", e)
+                }
+            }
+        }
+        result
+    };
+
+    if rows.is_empty() {
+        return Ok((0, 0));
+    }
+
+    let tx = conn
+        .transaction()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction begin error: {e}")))?;
+
+    let mut migrated = 0usize;
+    let mut failed = 0usize;
+    for (id, plaintext) in &rows {
+        match encrypt_for_db(plaintext) {
+            Ok((ciphertext, nonce)) => {
+                tx.execute(
+                    "UPDATE credential_fields SET encrypted_value = ?1, iv = ?2 WHERE id = ?3",
+                    rusqlite::params![ciphertext, nonce, id],
+                )
+                .map_err(|e| {
+                    CryptoError::KeyManagement(format!("Update error for field {id}: {e}"))
+                })?;
+                migrated += 1;
+            }
+            Err(e) => {
+                failed += 1;
+                tracing::error!("Failed to encrypt credential field {}: {}", id, e);
+            }
+        }
+    }
+
+    tx.commit()
+        .map_err(|e| CryptoError::KeyManagement(format!("Transaction commit error: {e}")))?;
+
+    Ok((migrated, failed))
 }
 
 // ---------------------------------------------------------------------------

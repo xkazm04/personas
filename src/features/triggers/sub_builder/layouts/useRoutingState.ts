@@ -18,7 +18,6 @@ import {
   deleteTrigger,
   linkPersonaToEvent,
   unlinkPersonaFromEvent,
-  initializeEventHandlersForPersona,
   renameEventType,
 } from '@/api/pipeline/triggers';
 import {
@@ -60,7 +59,6 @@ export function useRoutingState({
   const [addPersonaForEvent, setAddPersonaForEvent] = useState<AddPersonaTarget | null>(null);
   const [disconnectTarget, setDisconnectTarget] = useState<DisconnectTarget | null>(null);
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
-  const [isBackfilling, setIsBackfilling] = useState(false);
 
   useEffect(() => { setAllTriggers(initialTriggers); }, [initialTriggers]);
   useEffect(() => { setRecentEvents(initialEvents); }, [initialEvents]);
@@ -96,27 +94,6 @@ export function useRoutingState({
     () => buildEventRows(allTriggers, recentEvents, subscriptions, personaMap),
     [allTriggers, recentEvents, subscriptions, personaMap],
   );
-
-  const handleInitializeHandlers = useCallback(async () => {
-    setIsBackfilling(true);
-    try {
-      const personaIds = new Set<string>();
-      for (const t of allTriggers) {
-        if (t.trigger_type === 'event_listener') personaIds.add(t.persona_id);
-      }
-      for (const sub of subscriptions) personaIds.add(sub.persona_id);
-      let total = 0;
-      for (const pid of personaIds) {
-        try {
-          total += await initializeEventHandlersForPersona(pid);
-        } catch (err) { silentCatch("features/triggers/sub_builder/layouts/useRoutingState:catch2")(err); }
-      }
-      console.info(`[builder] initialized ${total} event handler entries across ${personaIds.size} personas`);
-      await reload();
-    } finally {
-      setIsBackfilling(false);
-    }
-  }, [allTriggers, subscriptions, reload]);
 
   const handleAddPersona = useCallback(
     async (personaId: string, useCaseId: string | null) => {
@@ -170,7 +147,6 @@ export function useRoutingState({
     personas, teams, personaMap,
     rows, recentEvents,
     reload,
-    isBackfilling, handleInitializeHandlers,
     addPersonaForEvent, setAddPersonaForEvent,
     disconnectTarget, setDisconnectTarget,
     renameTarget, setRenameTarget,

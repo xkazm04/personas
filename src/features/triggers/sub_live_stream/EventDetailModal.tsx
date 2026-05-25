@@ -39,7 +39,9 @@ export function EventDetailModal({ event, onClose }: EventDetailModalProps) {
         onClose={onClose}
         titleId="event-detail-modal-title"
         size="full"
-        panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col h-[90vh]"
+        portal
+        staggerChildren={false}
+        panelClassName="bg-background border border-primary/20 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col max-h-[85vh]"
       >
         {/* ── Header ── */}
         <div className="flex items-start justify-between px-5 py-4 border-b border-primary/10 flex-shrink-0 bg-secondary/10">

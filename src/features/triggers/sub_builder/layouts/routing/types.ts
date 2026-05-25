@@ -23,6 +23,14 @@ export const SORT_MODES: ReadonlyArray<{ key: SortMode; label: string }> = [
   { key: 'label',     label: 'Alphabetical' },
 ];
 
+/**
+ * Shared grid template for the row spine AND the column-header bar, so the
+ * header cells (Source / Event / Listeners filters) align with every row.
+ * Columns: chevron · pulse · SOURCE · arrow · EVENT · arrow · LISTENERS · time · count.
+ */
+export const ROUTING_GRID_COLUMNS =
+  'auto auto minmax(320px, 2.2fr) auto minmax(200px, 1.3fr) auto minmax(160px, 1fr) auto auto';
+
 /** A category panel rendered by <GroupPanel />. */
 export interface GroupDef {
   id: string;

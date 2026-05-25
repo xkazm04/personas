@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "これは {persona} の {title} を実行します"
     },
     "tools": {
       "no_persona": "ペルソナが選択されていません",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "ライブストリーム",
     "tab_live_stream_subtitle": "リアルタイムイベントハブ — エージェントはこの共有バスを通じてイベントを発行・購読します",
     "tab_builder": "ビルダー",
-    "tab_builder_subtitle": "ペルソナをイベントソースに接続 — バスを流れるすべてのイベントと、それをリッスンするペルソナ",
     "tab_rate_limits": "速度制限",
     "tab_rate_limits_subtitle": "トリガーのスロットリング、キュー深度、並行性制限",
     "tab_test": "テスト",

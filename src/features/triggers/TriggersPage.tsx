@@ -33,7 +33,7 @@ interface TabHeaderConfig {
   icon: LucideIcon;
   iconColor: IconColor;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   /** Optional renderer for tab-specific custom actions in the header. */
   renderActions?: () => ReactNode;
 }
@@ -72,7 +72,7 @@ export function TriggersPage() {
         </button>
       ),
     },
-    builder: { icon: Network, iconColor: 'violet', title: t.triggers.tab_builder, subtitle: t.triggers.tab_builder_subtitle },
+    builder: { icon: Network, iconColor: 'violet', title: t.triggers.tab_builder },
     'rate-limits': { icon: Gauge, iconColor: 'amber', title: t.triggers.tab_rate_limits, subtitle: t.triggers.tab_rate_limits_subtitle },
     test: { icon: Zap, iconColor: 'emerald', title: t.triggers.tab_test, subtitle: t.triggers.tab_test_subtitle },
     'smee-relay': { icon: Unplug, iconColor: 'indigo', title: t.triggers.tab_smee_relay, subtitle: t.triggers.tab_smee_relay_subtitle },

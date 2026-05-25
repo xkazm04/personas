@@ -267,7 +267,6 @@
   "tab_live_stream": "实时流",
   "tab_live_stream_subtitle": "实时事件总线 — 代理通过此共享总线发布和订阅事件",
   "tab_builder": "构建器",
-  "tab_builder_subtitle": "将代理连接到事件来源 — 流经总线的每个事件，以及监听它的代理",
   "tab_rate_limits": "速度限制",
   "tab_rate_limits_subtitle": "触发器的节流、队列深度和并发限制",
   "tab_test": "测试",

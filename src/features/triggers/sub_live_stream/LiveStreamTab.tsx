@@ -3,7 +3,6 @@ import { Cloud, Radio, Unplug, Pause, Play, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { DataGrid, type DataGridColumn } from '@/features/shared/components/display/DataGrid';
-import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { useAgentStore } from '@/stores/agentStore';
 import { listEvents } from '@/api/overview/events';
@@ -36,7 +35,6 @@ export function LiveStreamTab() {
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [targetPersonaId, setTargetPersonaId] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<PersonaEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
@@ -187,20 +185,42 @@ export function LiveStreamTab() {
   );
 
   const availableTypes = useMemo(() => [...new Set(events.map((e) => e.event_type))].sort(), [events]);
-  const filteredEvents = useMemo(() => events.filter((e) => {
-    if (statusFilter !== 'all' && e.status !== statusFilter) return false;
-    if (typeFilter !== 'all' && e.event_type !== typeFilter) return false;
-    if (targetPersonaId && e.target_persona_id !== targetPersonaId) return false;
-    return true;
-  }), [events, statusFilter, typeFilter, targetPersonaId]);
+  // Live stream is a rolling 24h window — older history lives in the full event
+  // log, not here. New live events are always recent, so this only trims the
+  // initial backfill.
+  const filteredEvents = useMemo(() => {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return events.filter((e) => {
+      if (statusFilter !== 'all' && e.status !== statusFilter) return false;
+      if (typeFilter !== 'all' && e.event_type !== typeFilter) return false;
+      const ts = Date.parse(e.created_at);
+      if (!Number.isNaN(ts) && ts < cutoff) return false;
+      return true;
+    });
+  }, [events, statusFilter, typeFilter]);
 
   const typeOptions = useMemo(() => [
     { value: 'all', label: t.triggers.all_types },
     ...availableTypes.map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
   ], [availableTypes, t.triggers.all_types]);
 
-  const getPersona = (id: string | null) =>
-    id ? personas.find((p) => p.id === id) : null;
+  // Persona-emitted events carry the real persona id in `source_id` (see
+  // engine/bus.rs + dispatch.rs); `source_type` is "persona:<safe_name>" where
+  // the name has spaces→underscores and is stripped to a safe charset. Resolve
+  // by source_id first (always exact), then fall back to matching the safe_name
+  // against personas (re-applying the same sanitization), so the Source column
+  // renders the same icon+name chip the activity tables use.
+  const sanitizeName = (name: string) =>
+    name.replace(/ /g, '_').replace(/[^A-Za-z0-9_\-.:/]/g, '');
+  const resolveSourcePersona = (event: PersonaEvent) => {
+    if (!event.source_type.startsWith('persona:')) return null;
+    if (event.source_id) {
+      const byId = personas.find((p) => p.id === event.source_id);
+      if (byId) return byId;
+    }
+    const ref = event.source_type.slice('persona:'.length);
+    return personas.find((p) => p.id === ref || p.name === ref || sanitizeName(p.name) === ref) ?? null;
+  };
 
   const columns: DataGridColumn<PersonaEvent>[] = [
     {
@@ -220,29 +240,9 @@ export function LiveStreamTab() {
     {
       key: 'source',
       label: t.triggers.col_source,
-      width: '0.8fr',
-      render: (event) => (
-        <span className="typo-body text-foreground truncate flex items-center gap-1">
-          {event.source_type === 'cloud_webhook' && <Cloud className="w-3 h-3 text-blue-400 flex-shrink-0" />}
-          {event.source_type === 'smee_relay' && <Unplug className="w-3 h-3 text-purple-400 flex-shrink-0" />}
-          {event.source_type}
-        </span>
-      ),
-    },
-    {
-      key: 'target',
-      label: t.triggers.col_target_agent,
       width: '1fr',
-      filterComponent: (
-        <PersonaColumnFilter
-          value={targetPersonaId}
-          onChange={setTargetPersonaId}
-          personas={personas}
-          label={t.triggers.col_target_agent}
-        />
-      ),
       render: (event) => {
-        const persona = getPersona(event.target_persona_id);
+        const persona = resolveSourcePersona(event);
         if (persona) {
           return (
             <div className="flex items-center gap-2 min-w-0">
@@ -251,7 +251,13 @@ export function LiveStreamTab() {
             </div>
           );
         }
-        return <span className="typo-body text-foreground truncate">{t.triggers.broadcast_label}</span>;
+        return (
+          <span className="typo-body text-foreground truncate flex items-center gap-1">
+            {event.source_type === 'cloud_webhook' && <Cloud className="w-3 h-3 text-blue-400 flex-shrink-0" />}
+            {event.source_type === 'smee_relay' && <Unplug className="w-3 h-3 text-purple-400 flex-shrink-0" />}
+            {event.source_type}
+          </span>
+        );
       },
     },
     {

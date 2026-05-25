@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "سيشغّل هذا {title} لـ {persona}"
     },
     "tools": {
       "no_persona": "لم يتم اختيار وكيل",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "بث مباشر",
     "tab_live_stream_subtitle": "مركز الأحداث في الوقت الفعلي — ينشر الوكلاء ويشتركون في الأحداث عبر هذا الناقل المشترك",
     "tab_builder": "المنشئ",
-    "tab_builder_subtitle": "ربط الوكلاء بمصادر الأحداث — كل حدث يمر عبر الناقل مع الوكلاء المستمعة له",
     "tab_rate_limits": "حدود السرعة",
     "tab_rate_limits_subtitle": "التقنين وعمق قائمة الانتظار وحدود التزامن للمُشغّلات",
     "tab_test": "اختبار",

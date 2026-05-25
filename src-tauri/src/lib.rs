@@ -607,6 +607,26 @@ pub fn run() {
                 }
             }
 
+            // Assure sensitive credential FIELDS are encrypted at rest for every
+            // external connector (built-in personas-local connectors excluded).
+            // This is the silent replacement for the removed user-facing
+            // "encrypt now" vault badge — the vault stays fully encrypted with
+            // no user action.
+            match engine::crypto::assure_sensitive_fields_encrypted(&pool) {
+                Ok((reencrypted, failed)) => {
+                    if reencrypted > 0 || failed > 0 {
+                        tracing::info!(
+                            "Credential field encryption assurance: {} re-encrypted, {} failed",
+                            reencrypted,
+                            failed
+                        );
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Credential field encryption assurance skipped: {}", e);
+                }
+            }
+
             // Encrypt any legacy plaintext notification channel secrets
             match engine::crypto::migrate_plaintext_notification_secrets(&pool) {
                 Ok((migrated, skipped)) => {
@@ -1691,6 +1711,7 @@ pub fn run() {
             commands::credentials::rotation::delete_rotation_policy,
             commands::credentials::rotation::get_rotation_history,
             commands::credentials::rotation::get_rotation_status,
+            commands::credentials::rotation::get_all_rotation_statuses,
             commands::credentials::rotation::rotate_credential_now,
             commands::credentials::rotation::refresh_credential_oauth_now,
             commands::credentials::rotation::refresh_credential_cli_now,

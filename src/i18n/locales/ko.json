@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "{persona}에 대해 {title}을 실행합니다"
     },
     "tools": {
       "no_persona": "선택된 페르소나 없음",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "라이브 스트림",
     "tab_live_stream_subtitle": "실시간 이벤트 허브 -- 에이전트가 이 공유 버스를 통해 이벤트를 발행하고 구독합니다",
     "tab_builder": "빌더",
-    "tab_builder_subtitle": "페르소나를 이벤트 소스에 연결합니다 -- 버스를 통해 흐르는 모든 이벤트와 이를 수신하는 페르소나",
     "tab_rate_limits": "속도 제한",
     "tab_rate_limits_subtitle": "트리거에 대한 제한, 대기열 깊이 및 동시성 제한",
     "tab_test": "테스트",

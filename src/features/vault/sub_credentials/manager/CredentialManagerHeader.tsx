@@ -3,26 +3,42 @@ import { Search, Key, X } from 'lucide-react';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTier } from '@/hooks/utility/interaction/useTier';
 import { useTranslation } from '@/i18n/useTranslation';
-import { VaultStatusBadge } from '@/features/vault/sub_credentials/components/card/badges/VaultStatusBadge';
-import type { VaultStatus } from "@/api/vault/credentials";
 import type { CredentialMetadata } from '@/lib/types/types';
 import type { useBulkHealthcheck } from '@/features/vault/shared/hooks/health/useBulkHealthcheck';
+import type { ViewName } from '@/features/vault/shared/hooks/useCredentialViewFSM';
 import { RotateAllButton, TestAllButton } from './HeaderActionButtons';
 
 /* -- Title-only header (no actions) -------------------------------- */
 
 interface CredentialManagerHeaderProps {
   credentialCount: number;
+  view: ViewName;
 }
 
-export function CredentialManagerHeader({ credentialCount }: CredentialManagerHeaderProps) {
+export function CredentialManagerHeader({ credentialCount, view }: CredentialManagerHeaderProps) {
   const { t, tx } = useTranslation();
+  const m = t.vault.manager;
+  const isCatalog = view === 'catalog-browse' || view === 'catalog-form' || view === 'catalog-auto-setup';
+  const isDependencies = view === 'graph';
+  const isDatabases = view === 'databases';
+  const title = isCatalog
+    ? m.title_catalog
+    : isDependencies
+      ? m.title_dependencies
+      : isDatabases
+        ? m.title_databases
+        : m.title;
+  // The "N credentials stored" subtitle only makes sense on the credentials
+  // list — Catalog / Dependencies / Databases get a bare title.
+  const subtitle = isCatalog || isDependencies || isDatabases
+    ? undefined
+    : tx(credentialCount === 1 ? m.credentials_stored_one : m.credentials_stored_other, { count: credentialCount });
   return (
     <ContentHeader
       icon={<Key className="w-5 h-5 text-emerald-400" />}
       iconColor="emerald"
-      title={t.vault.manager.title}
-      subtitle={tx(credentialCount === 1 ? t.vault.manager.credentials_stored_one : t.vault.manager.credentials_stored_other, { count: credentialCount })}
+      title={title}
+      subtitle={subtitle}
     />
   );
 }
@@ -35,8 +51,9 @@ interface CredentialToolbarProps {
   rotateAllResult: { rotated: number; failed: number; skipped: number } | null;
   rotatableCount: number;
   onRotateAll: () => void;
-  vault: VaultStatus | null;
-  onVaultRefresh: (v: VaultStatus) => void;
+  /** Show the Rotate-all / Test-all action buttons. Only the credentials list
+   *  view wants them — Catalog / Databases / Dependencies hide them. */
+  showActions: boolean;
   credentialSearch: string;
   onSearchChange: (value: string) => void;
   searchInputRef: RefObject<HTMLInputElement | null>;
@@ -53,8 +70,7 @@ export function CredentialToolbar({
   rotateAllResult,
   rotatableCount,
   onRotateAll,
-  vault,
-  onVaultRefresh,
+  showActions,
   credentialSearch,
   onSearchChange,
   searchInputRef,
@@ -66,6 +82,11 @@ export function CredentialToolbar({
 }: CredentialToolbarProps) {
   const { t } = useTranslation();
   const { isStarter: isSimple } = useTier();
+
+  // Nothing to render (e.g. Databases / Dependencies / Add-flow views have
+  // neither a search bar nor the credential actions) — skip the toolbar row
+  // entirely so it doesn't leave an empty bordered strip.
+  if (!showSearchBar && !(showActions && !isSimple)) return null;
 
   return (
     <div className="flex items-center gap-2 px-4 md:px-6 xl:px-8 py-2 border-b border-primary/10 bg-secondary/20 flex-shrink-0">
@@ -101,8 +122,8 @@ export function CredentialToolbar({
       {/* Spacer */}
       {!showSearchBar && <div className="flex-1" />}
 
-      {/* Action buttons (hidden in simple mode except vault badge) */}
-      {!isSimple && (
+      {/* Action buttons — credentials list only, hidden in simple mode */}
+      {showActions && !isSimple && (
       <div className="flex items-center gap-1.5 shrink-0">
         {credentialCount > 0 && (
           <RotateAllButton
@@ -116,8 +137,6 @@ export function CredentialToolbar({
         {credentials.length > 0 && (
           <TestAllButton bulk={bulk} credentials={credentials} isDailyRun={isDailyRun} />
         )}
-
-        {vault && <VaultStatusBadge vault={vault} onVaultRefresh={onVaultRefresh} />}
       </div>
       )}
     </div>

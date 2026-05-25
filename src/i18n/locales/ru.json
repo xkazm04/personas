@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "Это запустит {title} для {persona}"
     },
     "tools": {
       "no_persona": "Агент не выбран",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "Прямой эфир",
     "tab_live_stream_subtitle": "Центр событий в реальном времени — агенты публикуют и подписываются на события через общую шину",
     "tab_builder": "Строитель",
-    "tab_builder_subtitle": "Подключайте агентов к источникам событий — каждое событие, проходящее через шину, со слушающими агентами",
     "tab_rate_limits": "Ограничения скорости",
     "tab_rate_limits_subtitle": "Ограничения, глубина очереди и лимиты параллелизма для триггеров",
     "tab_test": "Тест",

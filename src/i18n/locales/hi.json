@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "यह {persona} के लिए {title} चलाएगा"
     },
     "tools": {
       "no_persona": "कोई पर्सोना नहीं चुना गया",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "लाइव स्ट्रीम",
     "tab_live_stream_subtitle": "रीयल-टाइम इवेंट हब -- एजेंट इस साझा बस के माध्यम से इवेंट प्रकाशित और सब्सक्राइब करते हैं",
     "tab_builder": "बिल्डर",
-    "tab_builder_subtitle": "एजेंट को इवेंट स्रोतों से जोड़ें -- बस से बहने वाले हर इवेंट के साथ उसे सुनने वाले एजेंट",
     "tab_rate_limits": "गति सीमाएं",
     "tab_rate_limits_subtitle": "ट्रिगर के लिए थ्रॉटलिंग, कतार गहराई, और समवर्ती सीमाएं",
     "tab_test": "टेस्ट",

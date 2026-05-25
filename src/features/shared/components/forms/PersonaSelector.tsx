@@ -10,6 +10,8 @@ interface PersonaSelectorProps {
   personas: Persona[];
   placeholder?: string;
   showAll?: boolean;
+  /** Render each option's description beneath its name. Default true. */
+  showDescription?: boolean;
 }
 
 /**
@@ -22,6 +24,7 @@ export function PersonaSelector({
   personas,
   placeholder: placeholderProp,
   showAll = true,
+  showDescription = true,
 }: PersonaSelectorProps) {
   const { t } = useTranslation();
   const placeholder = placeholderProp ?? t.common.select_persona;
@@ -144,7 +147,7 @@ export function PersonaSelector({
                   <PersonaIcon icon={p.icon} color={p.color} />
                   <div className="flex-1 min-w-0">
                     <span className="typo-body font-medium truncate block">{p.name}</span>
-                    {p.description && (
+                    {showDescription && p.description && (
                       <span className="text-[11px] text-foreground truncate block">{p.description.slice(0, 60)}</span>
                     )}
                   </div>

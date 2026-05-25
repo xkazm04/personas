@@ -1,4 +1,4 @@
-import { silentCatch } from "@/lib/silentCatch";
+import { idlePrefetch } from "@/lib/idlePrefetch";
 import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -45,6 +45,20 @@ const SchedulesPage = lazy(() => import('@/features/schedules/components/Schedul
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
 
+// Dev-only startup-phase attribution for the freeze watchdog. Mirrors the
+// markPhase helper in App.tsx: the data waves below are the prime suspects for
+// the data-volume-dependent startup freeze ("lags more as it grows"), so we
+// stamp lastAction before each wave to localize a stall to fetch vs render.
+let _markAction: ((s: string) => void) | null = null;
+if (import.meta.env.DEV) {
+  void import('@/lib/debug/freezeWatchdog').then((m) => { _markAction = m.markAction; });
+}
+function markStartupPhase(phase: string): void {
+  if (!import.meta.env.DEV) return;
+  performance.mark(`appInit:${phase}`);
+  _markAction?.(phase);
+}
+
 export default function PersonasPage() {
   const { shouldAnimate, transition } = useMotion();
   // Always-on bridge: writes Fleet lifecycle events to Athena's
@@ -89,6 +103,7 @@ export default function PersonasPage() {
     const failed: string[] = [];
 
     // Wave 1: Personas — needed for initial render
+    markStartupPhase('data:personas');
     try {
       await fetchPersonas();
     } catch {
@@ -100,6 +115,7 @@ export default function PersonasPage() {
     await new Promise(r => setTimeout(r, 100));
 
     // Wave 2: Secondary data — single-mode app loads the full set.
+    markStartupPhase('data:secondary');
     const secondaryResults = await Promise.allSettled([
       fetchToolDefinitions(),
       import("@/stores/vaultStore").then(m => m.useVaultStore.getState().fetchCredentials()),
@@ -130,25 +146,19 @@ export default function PersonasPage() {
   }, [fetchDetail, selectedPersonaId]);
 
   // Prefetch likely next routes after initial load settles.
-  // Speculative -- fires during browser idle time, failures silently ignored.
+  // Speculative -- drained one chunk per idle slice (see idlePrefetch) so the
+  // route chunks don't evaluate in a burst alongside the overlay prefetch and
+  // first-load work. Ordered most-frequently-visited first; failures ignored.
   useEffect(() => {
     if (!personasFetched) return;
-    const id = requestIdleCallback(() => {
-      // Tier 1: most frequently visited sections
-      import('@/features/overview/components/dashboard/OverviewPage').catch(silentCatch("PersonasPage:prefetchOverview"));
-      import('@/features/vault/sub_credentials/manager/CredentialManager').catch(silentCatch("PersonasPage:prefetchCredentialManager"));
-      import('@/features/settings/components/SettingsPage').catch(silentCatch("PersonasPage:prefetchSettings"));
-    });
-    // Tier 2: prefetch after a short delay so tier 1 chunks land first
-    const id2 = requestIdleCallback(() => {
-      import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel').catch(silentCatch("PersonasPage:prefetchCloudDeploy"));
-      import('@/features/templates/components/DesignReviewsPage').catch(silentCatch("PersonasPage:prefetchDesignReviews"));
-      import('@/features/triggers/TriggersPage').catch(silentCatch("PersonasPage:prefetchEvents"));
-    });
-    return () => {
-      cancelIdleCallback(id);
-      cancelIdleCallback(id2);
-    };
+    return idlePrefetch([
+      () => import('@/features/overview/components/dashboard/OverviewPage'),
+      () => import('@/features/vault/sub_credentials/manager/CredentialManager'),
+      () => import('@/features/settings/components/SettingsPage'),
+      () => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'),
+      () => import('@/features/templates/components/DesignReviewsPage'),
+      () => import('@/features/triggers/TriggersPage'),
+    ], { initialDelayMs: 1500 });
   }, [personasFetched]);
 
   // Auto-resume active build when returning to personas from another section.

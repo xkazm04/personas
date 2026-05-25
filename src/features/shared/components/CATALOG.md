@@ -122,7 +122,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PasswordToggleField` | Password input with show/hide toggle. |
 | `PersonaColumnFilter` | matching standard header styling. |
 | `PersonaIconPickerModal` | Persona name — seeds the AI-generation prompt. |
-| `PersonaSelector` | Universal themed persona selector with search, icons, and app-theme tones. |
+| `PersonaSelector` | Render each option's description beneath its name. |
 | `PersonaSelectorModal` | When true, modal opens immediately without rendering a trigger button. |
 | `PillGroup` | _(add a `@catalog` tag)_ |
 | `PopupColorPicker` | _(add a `@catalog` tag)_ |

@@ -666,13 +666,22 @@ async fn introspect_supabase_columns(
 
 /// Fetch the PostgREST OpenAPI spec from `GET {project_url}/rest/v1/`.
 async fn fetch_supabase_openapi_spec(fields: &HashMap<String, String>) -> Result<Value, AppError> {
+    // Trim and reject empty/whitespace fields: an untrimmed URL fails
+    // `reqwest::Url::parse` and a key with a trailing newline (common from
+    // copy-paste, esp. local Supabase keys) produces an invalid header value —
+    // both surface as the opaque reqwest "builder error" rather than a useful
+    // message.
     let project_url = fields
         .get("project_url")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
 
     let api_key = fields
         .get("service_role_key")
         .or_else(|| fields.get("anon_key"))
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Validation("Missing service_role_key or anon_key field".into()))?;
 
     let spec_url = format!("{}/rest/v1/", project_url.trim_end_matches('/'));
@@ -711,13 +720,22 @@ pub(crate) async fn execute_supabase(
     fields: &HashMap<String, String>,
     query_text: &str,
 ) -> Result<QueryResult, AppError> {
+    // Trim and reject empty/whitespace fields: an untrimmed URL fails
+    // `reqwest::Url::parse` and a key with a trailing newline (common from
+    // copy-paste, esp. local Supabase keys) produces an invalid header value —
+    // both surface as the opaque reqwest "builder error" rather than a useful
+    // message.
     let project_url = fields
         .get("project_url")
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Validation("Missing project_url field".into()))?;
 
     let api_key = fields
         .get("service_role_key")
         .or_else(|| fields.get("anon_key"))
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
         .ok_or_else(|| AppError::Validation("Missing service_role_key or anon_key field".into()))?;
 
     let base = project_url.trim_end_matches('/');

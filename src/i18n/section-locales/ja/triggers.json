@@ -267,7 +267,6 @@
   "tab_live_stream": "ライブストリーム",
   "tab_live_stream_subtitle": "リアルタイムイベントハブ — エージェントはこの共有バスを通じてイベントを発行・購読します",
   "tab_builder": "ビルダー",
-  "tab_builder_subtitle": "ペルソナをイベントソースに接続 — バスを流れるすべてのイベントと、それをリッスンするペルソナ",
   "tab_rate_limits": "速度制限",
   "tab_rate_limits_subtitle": "トリガーのスロットリング、キュー深度、並行性制限",
   "tab_test": "テスト",

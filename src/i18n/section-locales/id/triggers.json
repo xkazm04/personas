@@ -267,7 +267,6 @@
   "tab_live_stream": "Aliran Langsung",
   "tab_live_stream_subtitle": "Hub peristiwa real-time -- agen menerbitkan dan berlangganan peristiwa melalui bus bersama ini",
   "tab_builder": "Builder",
-  "tab_builder_subtitle": "Hubungkan persona ke sumber peristiwa -- setiap peristiwa yang mengalir melalui bus, dengan persona yang mendengarkannya",
   "tab_rate_limits": "Batas Kecepatan",
   "tab_rate_limits_subtitle": "Throttling, kedalaman antrean, dan batas konkurensi untuk pemicu",
   "tab_test": "Uji",

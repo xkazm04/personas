@@ -29,6 +29,23 @@ initPseudoLocale();
 
 const appLogger = createLogger("App");
 
+// --- Startup freeze attribution (dev only) ----------------------------------
+// The freeze watchdog reports `lastAction` when the main thread stalls, but the
+// bootstrap only ever marked "appInit:start" — so every startup freeze looked
+// identical and told us nothing about which phase blocked. We cache markAction
+// once (the watchdog module is already loaded in dev by main.tsx) and call it
+// synchronously at each phase boundary, so the next freeze report names the
+// real culprit. Dynamic + dev-gated keeps the watchdog tree-shaken from prod.
+let _markAction: ((s: string) => void) | null = null;
+if (import.meta.env.DEV) {
+  void import("./lib/debug/freezeWatchdog").then((m) => { _markAction = m.markAction; });
+}
+function markPhase(phase: string): void {
+  if (!import.meta.env.DEV) return;
+  performance.mark(`appInit:${phase}`);
+  _markAction?.(`appInit:${phase}`);
+}
+
 /**
  * Silent error boundary for invisible components (renders null on error).
  * Logs the failure but doesn't show UI — used for BackgroundServices which
@@ -117,21 +134,25 @@ export default function App() {
   // Defer heavy background services until UI is interactive
   const [bgReady, setBgReady] = useState(false);
   useEffect(() => {
-    import('./lib/debug/freezeWatchdog').then(m => m.markAction('appInit:start'));
+    markPhase('start');
     // Dynamic imports: sequence bootstrap phases so cold-start IPC does not
     // contend with first-paint/sidebar data requests.
     void (async () => {
+      markPhase('wiring');
       await Promise.all([
         import("@/lib/storeBusWiring").then(m => m.initStoreBus()),
         import("@/lib/eventBridge").then(m => m.initAllListeners()),
       ]);
+      markPhase('middleware');
       await import("@/lib/execution/middleware").then(m => m.registerAllMiddleware());
+      markPhase('wiring-done');
 
       // Orphan-draft cleanup: cancels every non-terminal session left over
       // from the previous app run. Deferred behind requestIdleCallback so
       // it never gates first paint — power users with several stale drafts
       // were paying ~500-800ms of additive cancel round-trips on cold start.
       const runBootstrap = () => {
+        markPhase('bootstrap-sessions');
         import("@/lib/buildSessionBootstrap")
           .then(m => m.bootstrapActiveBuildSessions())
           .catch((err) => {
@@ -147,6 +168,7 @@ export default function App() {
     })().catch((err) => {
       appLogger.error("Critical startup module failed to initialize", { error: err instanceof Error ? err.message : String(err) });
     });
+    markPhase('auth-init');
     void useAuthStore.getState().initialize();
     // Test automation bridge — exposes window.__TEST__ for MCP-driven testing.
     // Loaded in dev builds always, or in production when PERSONAS_TEST_PORT is set
@@ -170,13 +192,18 @@ export default function App() {
     // These trigger heavy IPC cascades that compete with UI rendering.
     const bgTimer = setTimeout(() => setBgReady(true), 4000);
 
-    // Warm the V8 module cache for deferred overlay chunks during the bgReady
-    // window. By the time bgReady fires (or the user presses Cmd+K), the
-    // lazy() boundary resolves synchronously instead of paying ~80–200 ms of
-    // chunk fetch + parse + evaluate on first open.
-    idlePrefetch(LAZY_OVERLAY_IMPORTS);
+    // Warm the V8 module cache for deferred overlay chunks. Drained one chunk
+    // per idle slice (see idlePrefetch) and started after a short delay so the
+    // burst of chunk evaluations stays out of the contended first-load window
+    // where it surfaced as main-thread freezes. By the time the user presses
+    // Cmd+K, the lazy() boundary resolves synchronously instead of paying
+    // ~80–200 ms of chunk fetch + parse + evaluate on first open.
+    const cancelPrefetch = idlePrefetch(LAZY_OVERLAY_IMPORTS, { initialDelayMs: 2000 });
 
-    return () => clearTimeout(bgTimer);
+    return () => {
+      clearTimeout(bgTimer);
+      cancelPrefetch();
+    };
   }, []);
 
   const { t } = useTranslation();
@@ -211,6 +238,19 @@ export default function App() {
   const onRootRender = useCallback<ProfilerOnRenderCallback>((...args) => {
     const perf = (window as unknown as { __PERF__?: { recordRender?: ProfilerOnRenderCallback } }).__PERF__;
     perf?.recordRender?.(...args);
+    // Dev-only jank attribution. A commit this long synchronously blocks the
+    // main thread — exactly what the freeze watchdog catches but can't name.
+    // We log it AND stamp `lastAction` so the next heartbeat/freeze report
+    // points at the slow commit (mount vs update + duration) instead of the
+    // useless "appInit:start". 120ms ≈ ~7 dropped frames; below that it's noise.
+    if (import.meta.env.DEV) {
+      const [id, phase, actualDuration] = args;
+      if (actualDuration > 120) {
+        const detail = `render:${id}:${phase} ${Math.round(actualDuration)}ms`;
+        console.warn(`[slow-commit] ${detail}`);
+        _markAction?.(detail);
+      }
+    }
   }, []);
 
   return (

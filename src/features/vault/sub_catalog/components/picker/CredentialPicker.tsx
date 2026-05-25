@@ -49,9 +49,6 @@ export function CredentialPicker({ connectors, credentials, onPickType, searchTe
         licenseOptions={filters.licenseOptions}
         activeRole={filters.activeRole}
         onRoleToggle={filters.handleRoleToggle}
-        sortMode={filters.sortMode}
-        onSortModeChange={filters.setSortMode}
-        sortOptions={filters.sortOptions}
       />
 
       <PickerGrid

@@ -98,12 +98,12 @@ export function GraphCanvas({
               const tgtNode = nodes.find((n) => n.id === edge.target);
               if (!srcNode || !tgtNode) return null;
               return (
-                <div key={edge.id} className="flex items-center gap-1.5 typo-caption text-foreground">
-                  <span className="truncate max-w-[80px]" title={srcNode.label}>{srcNode.label}</span>
-                  <ArrowRight className="w-3 h-3 flex-shrink-0 text-foreground" />
+                <div key={edge.id} className="flex items-start gap-1.5 typo-caption text-foreground">
+                  <span className="min-w-0 break-words" title={srcNode.label}>{srcNode.label}</span>
+                  <ArrowRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-foreground" />
                   <span className="text-foreground flex-shrink-0">{edge.label}</span>
-                  <ArrowRight className="w-3 h-3 flex-shrink-0 text-foreground" />
-                  <span className="truncate max-w-[80px]" title={tgtNode.label}>{tgtNode.label}</span>
+                  <ArrowRight className="w-3 h-3 mt-0.5 flex-shrink-0 text-foreground" />
+                  <span className="min-w-0 break-words" title={tgtNode.label}>{tgtNode.label}</span>
                 </div>
               );
             })}

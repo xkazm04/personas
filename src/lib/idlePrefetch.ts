@@ -51,15 +51,63 @@ function scheduleIdle(cb: () => void): void {
   setTimeout(cb, 0);
 }
 
+interface IdlePrefetchOptions {
+  /**
+   * Delay (ms) before the first chunk is scheduled. Keeps speculative
+   * prefetch out of the most contended startup window — the seconds right
+   * after load, where chunk evaluation showed up as ~800ms main-thread
+   * freezes in the 2026-05-25 profiling pass. Default 0 (schedule immediately
+   * on the next idle slice).
+   */
+  initialDelayMs?: number;
+}
+
 /**
- * Schedule a batch of lazy-chunk imports during idle time. Each import is
- * placed in its own idle slice so a long burst can't monopolise a single
- * deadline.
+ * Schedule a batch of lazy-chunk imports during idle time, **sequentially** —
+ * the next import is scheduled only after the previous one has fully fetched
+ * and evaluated. `import()` resolution triggers a synchronous, non-interruptible
+ * V8 parse+evaluate that ignores the idle deadline; scheduling all N at once
+ * (the previous behavior) let them evaluate back-to-back in one burst the
+ * moment the browser went idle (or when the 5s idle-timeout fired under load),
+ * stacking into a multi-hundred-ms main-thread block. Draining one chunk per
+ * idle slice spreads that cost across many idle periods so no single slice
+ * blocks long enough to drop frames.
+ *
+ * Order matters: pass the most-likely-needed chunks first, since later entries
+ * warm noticeably later under this serialized schedule.
+ *
+ * Returns a cancel function that stops any not-yet-scheduled imports (a chunk
+ * already mid-fetch still completes). Failures are swallowed — a missed
+ * prefetch is not fatal; React.lazy() retries the import on actual mount.
  */
-export function idlePrefetch(imports: readonly ImportFn[]): void {
-  for (const fn of imports) {
+export function idlePrefetch(
+  imports: readonly ImportFn[],
+  opts: IdlePrefetchOptions = {},
+): () => void {
+  let cancelled = false;
+  let startTimer: ReturnType<typeof setTimeout> | null = null;
+  const queue = [...imports];
+
+  const pump = (): void => {
+    if (cancelled) return;
+    const fn = queue.shift();
+    if (!fn) return;
     scheduleIdle(() => {
-      fn().catch(silentCatch("idlePrefetch:chunk"));
+      if (cancelled) return;
+      // Schedule the next chunk only after this one settles, so at most one
+      // chunk evaluates per idle slice.
+      void fn().catch(silentCatch("idlePrefetch:chunk")).finally(pump);
     });
+  };
+
+  if (opts.initialDelayMs && opts.initialDelayMs > 0) {
+    startTimer = setTimeout(pump, opts.initialDelayMs);
+  } else {
+    pump();
   }
+
+  return () => {
+    cancelled = true;
+    if (startTimer) clearTimeout(startTimer);
+  };
 }

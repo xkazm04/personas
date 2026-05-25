@@ -105,9 +105,9 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
       <div
-        className="relative w-[520px] max-h-[70vh] flex flex-col rounded-2xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
+        className="relative w-[1040px] max-w-[95vw] max-h-[70vh] flex flex-col rounded-2xl bg-card border border-primary/15 shadow-elevation-4 overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -146,7 +146,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
           <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
             <button
               onClick={() => handleCapabilityPick(null)}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card/50 border border-primary/10 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-modal bg-card border border-primary/10 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left"
             >
               <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
                 <Users className="w-3.5 h-3.5 text-emerald-400" />
@@ -166,7 +166,7 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                     <button
                       key={uc.id}
                       onClick={() => handleCapabilityPick(uc.id)}
-                      className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card/50 border border-primary/8 hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left"
+                      className="w-full flex items-start gap-3 px-3 py-2 rounded-modal bg-card border border-primary/8 hover:border-cyan-400/40 hover:bg-cyan-500/5 transition-colors text-left"
                     >
                       <div className="icon-frame bg-cyan-500/10 flex-shrink-0 mt-0.5">
                         <Layers className="w-3.5 h-3.5 text-cyan-400" />
@@ -263,18 +263,15 @@ export function AddPersonaModal({ open, personas, teams, alreadyActiveIds, event
                   <button
                     key={p.id}
                     onClick={() => handlePersonaPick(p)}
-                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card/50 border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
+                    className="flex items-center gap-2 px-2.5 py-2 rounded-modal bg-card border border-primary/8 hover:border-emerald-400/40 hover:bg-emerald-500/5 transition-colors text-left group"
                   >
                     <div className="icon-frame bg-emerald-500/10 flex-shrink-0">
                       <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" framed frameSize={"lg"} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[11px] font-medium text-foreground truncate">{p.name}</div>
-                      {p.description && (
-                        <div className="text-[9px] text-foreground truncate">{p.description}</div>
-                      )}
+                      <div className="typo-body-lg font-medium text-foreground truncate">{p.name}</div>
                     </div>
-                    <Plus className="w-3 h-3 text-emerald-400/40 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
+                    <Plus className="w-3.5 h-3.5 text-emerald-400/40 group-hover:text-emerald-400 transition-colors flex-shrink-0" />
                   </button>
                 ))}
               </div>

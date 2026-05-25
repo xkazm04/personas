@@ -267,7 +267,6 @@
   "tab_live_stream": "Živý stream",
   "tab_live_stream_subtitle": "Hub událostí v reálném čase -- agenti publikují a odebírají události přes tento sdílený bus",
   "tab_builder": "Builder",
-  "tab_builder_subtitle": "Propoj persony se zdroji událostí -- každá událost protékající busem s personami, které jí naslouchají",
   "tab_rate_limits": "Rychlostní limity",
   "tab_rate_limits_subtitle": "Throttling, hloubka fronty a limity souběhu pro spouštěče",
   "tab_test": "Test",

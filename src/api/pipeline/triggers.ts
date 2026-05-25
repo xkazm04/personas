@@ -56,14 +56,6 @@ export const linkPersonaToEvent = (
 export const unlinkPersonaFromEvent = (triggerId: string) =>
   invoke<boolean>("unlink_persona_from_event", { triggerId });
 
-/**
- * Seed a persona's `structured_prompt.eventHandlers` from its existing
- * event_listener triggers. Idempotent — only fills in missing keys. Returns
- * the number of handler entries created.
- */
-export const initializeEventHandlersForPersona = (personaId: string) =>
-  invoke<number>("initialize_event_handlers_for_persona", { personaId });
-
 /** Update a single handler's text. Creates the eventHandlers map if needed. */
 export const updatePersonaEventHandler = (
   personaId: string,

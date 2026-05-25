@@ -22,25 +22,24 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
   const isFiltered = !!selected;
 
   return (
-    <>
+    <span className="inline-flex items-center gap-1.5">
       <button
         type="button"
         onClick={() => setOpen(true)}
         className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
       >
         <span>{selected ? selected.name : label}</span>
-        {selected ? (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onChange(''); }}
-            className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        ) : (
-          <Filter className="w-3 h-3 text-foreground" />
-        )}
+        {!selected && <Filter className="w-3 h-3 text-foreground" />}
       </button>
+      {selected && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onChange(''); }}
+          className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
 
       {open && (
         <PersonaSelectorModal
@@ -52,6 +51,6 @@ export function PersonaColumnFilter({ value, onChange, personas, label = 'Person
           onExternalClose={() => setOpen(false)}
         />
       )}
-    </>
+    </span>
   );
 }

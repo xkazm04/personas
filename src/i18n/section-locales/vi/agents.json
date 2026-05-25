@@ -1468,7 +1468,8 @@
     "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
     "layout_tab_prototype_badge": "Prototype",
     "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-    "persona_layout_capabilities_heading": "Capabilities"
+    "persona_layout_capabilities_heading": "Capabilities",
+    "schedule_will_run": "Thao tác này sẽ chạy {title} cho {persona}"
   },
   "tools": {
     "no_persona": "Chưa chọn tác nhân",

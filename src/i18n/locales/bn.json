@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "এটি {persona}-এর জন্য {title} চালাবে"
     },
     "tools": {
       "no_persona": "কোনো পার্সোনা নির্বাচিত নেই",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "লাইভ স্ট্রিম",
     "tab_live_stream_subtitle": "রিয়েল-টাইম ইভেন্ট হাব -- এজেন্ট এই শেয়ার্ড বাসের মাধ্যমে ইভেন্ট প্রকাশ ও সাবস্ক্রাইব করে",
     "tab_builder": "বিল্ডার",
-    "tab_builder_subtitle": "পার্সোনাকে ইভেন্ট উৎসের সাথে সংযুক্ত করুন -- বাসের মধ্য দিয়ে প্রবাহিত প্রতিটি ইভেন্ট, এটি শুনছে পার্সোনা সহ",
     "tab_rate_limits": "গতির সীমা",
     "tab_rate_limits_subtitle": "ট্রিগারের জন্য থ্রটলিং, কিউ গভীরতা এবং একযোগে সীমা",
     "tab_test": "পরীক্ষা",

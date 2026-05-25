@@ -53,4 +53,6 @@ Four catalog entries in `scripts/connectors/builtin/` expose URL-only webhook cr
 
 Credentials are stored and read through backend commands; decrypted secrets should not be passed to the webview except for deliberate non-secret metadata. API calls that need credentials should go through backend proxy/discovery commands so auth strategy, SSRF protection, rate limiting, and audit behavior remain centralized.
 
+**Encryption at rest is automatic and not a user-facing control.** Sensitive credential fields are AES-256-GCM encrypted at write time (`crypto::encrypt_field`). At startup the app silently assures the whole vault is encrypted: `crypto::migrate_plaintext_credentials` converts any legacy plaintext blob, and `crypto::assure_sensitive_fields_encrypted` re-encrypts any sensitive field still stored as plaintext. Both passes **exclude built-in personas-local connectors** (the bundled SQLite database, in-app messaging, the managed drive, …) which carry no external secret. There is no "encrypt now" button or unencrypted-count badge in the UI — the former `VaultStatusBadge` was removed in favour of this silent assurance.
+
 Resource scoping is a cross-cutting contract. See [../../architecture/resource-scoping.md](../../architecture/resource-scoping.md).

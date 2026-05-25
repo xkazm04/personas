@@ -24,6 +24,7 @@ import { useRoutingState } from '../useRoutingState';
 import { buildActivityMap } from './activity';
 import { ClassPillsBar } from './ClassPillsBar';
 import { GroupPanel } from './GroupPanel';
+import { RoutingTableHeader } from './RoutingTableHeader';
 import { Toolbar } from './Toolbar';
 import { useRoutingFilters } from './useRoutingFilters';
 import { DebtText } from '@/i18n/DebtText';
@@ -42,7 +43,7 @@ export function RoutingView(props: Props) {
   const state = useRoutingState(props);
   const {
     personas, teams, rows, recentEvents, personaMap,
-    reload, isBackfilling, handleInitializeHandlers,
+    reload,
     addPersonaForEvent, setAddPersonaForEvent,
     disconnectTarget, setDisconnectTarget,
     renameTarget, setRenameTarget,
@@ -85,19 +86,21 @@ export function RoutingView(props: Props) {
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
       <Toolbar
-        search={filters.search} onSearchChange={filters.setSearch}
-        sourceFilter={filters.sourceFilter} onSourceFilterChange={filters.setSourceFilter}
-        sourceOptions={filters.sourceOptions}
         activeOnly={filters.activeOnly} onActiveOnlyChange={filters.setActiveOnly}
         showUnconnected={filters.showUnconnected} onShowUnconnectedChange={filters.setShowUnconnected}
-        visibleClasses={filters.visibleClasses} onToggleClass={filters.toggleClass}
-        classCounts={filters.classCounts} unconnectedCount={filters.unconnectedCount}
+        unconnectedCount={filters.unconnectedCount}
         sortMode={filters.sortMode} onSortModeChange={filters.setSortMode}
         visibleCount={filters.visibleRows.length}
         totalConnections={filters.totalConnections}
-        isBackfilling={isBackfilling}
-        onBackfill={() => void handleInitializeHandlers()}
         onReload={() => void reload()}
+      />
+
+      <RoutingTableHeader
+        search={filters.search} onSearchChange={filters.setSearch}
+        sourceFilter={filters.sourceFilter} onSourceFilterChange={filters.setSourceFilter}
+        sourceOptions={filters.sourceOptions}
+        listenerFilter={filters.listenerFilter} onListenerFilterChange={filters.setListenerFilter}
+        listenerOptions={filters.listenerOptions}
       />
 
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3">

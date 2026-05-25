@@ -2030,7 +2030,8 @@
       "_comment_layout_tab_prototype_badge": "Badge marking a layout option as a prototype (small, uppercase)",
       "layout_tab_prototype_badge": "Prototype",
       "_comment_persona_layout_capabilities_heading": "Section heading above the capability rows in the Persona Layout",
-      "persona_layout_capabilities_heading": "Capabilities"
+      "persona_layout_capabilities_heading": "Capabilities",
+      "schedule_will_run": "Esto ejecutará {title} para {persona}"
     },
     "tools": {
       "no_persona": "Ninguna persona seleccionada",
@@ -7910,7 +7911,6 @@
     "tab_live_stream": "Transmisión en Vivo",
     "tab_live_stream_subtitle": "Centro de eventos en tiempo real — los agentes publican y se suscriben a eventos a través de este bus compartido",
     "tab_builder": "Constructor",
-    "tab_builder_subtitle": "Conecta personas a fuentes de eventos — cada evento que fluye por el bus, con las personas que lo escuchan",
     "tab_rate_limits": "Límites de Velocidad",
     "tab_rate_limits_subtitle": "Limitación, profundidad de cola y límites de concurrencia para disparadores",
     "tab_test": "Prueba",

@@ -34,6 +34,10 @@ export const getRotationHistory = (credentialId: string, limit?: number) =>
 export const getRotationStatus = (credentialId: string) =>
   invoke<RotationStatus>("get_rotation_status", { credentialId });
 
+/** Batched: rotation status for every credential in one IPC round-trip. */
+export const getAllRotationStatuses = () =>
+  invoke<Record<string, RotationStatus>>("get_all_rotation_statuses", {});
+
 export const rotateCredentialNow = (credentialId: string) =>
   invoke<string>("rotate_credential_now", { credentialId });
 

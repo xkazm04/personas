@@ -176,6 +176,7 @@ pub const PRIVILEGED_COMMANDS: &[&str] = &[
     "delete_rotation_policy",
     "get_rotation_history",
     "get_rotation_status",
+    "get_all_rotation_statuses",
     "rotate_credential_now",
     "refresh_credential_oauth_now",
     "get_oauth_token_metrics",

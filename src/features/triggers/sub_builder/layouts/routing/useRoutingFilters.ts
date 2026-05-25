@@ -27,6 +27,7 @@ interface Args {
 export interface RoutingFilters {
   search: string; setSearch: (v: string) => void;
   sourceFilter: string; setSourceFilter: (v: string) => void;
+  listenerFilter: string; setListenerFilter: (v: string) => void;
   activeOnly: boolean; setActiveOnly: (v: boolean) => void;
   showUnconnected: boolean; setShowUnconnected: (v: boolean) => void;
   visibleClasses: Set<ClassKey>; toggleClass: (c: ClassKey) => void;
@@ -34,6 +35,7 @@ export interface RoutingFilters {
 
   classCounts: Record<ClassKey, number>;
   sourceOptions: SourceOption[];
+  listenerOptions: SourceOption[];
   unconnectedCount: number;
   visibleRows: EventRow[];
   groupsList: GroupDef[];
@@ -44,6 +46,7 @@ export interface RoutingFilters {
 export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): RoutingFilters {
   const [search, setSearch] = useState('');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [listenerFilter, setListenerFilter] = useState('all');
   const [activeOnly, setActiveOnly] = useState(false);
   const [showUnconnected, setShowUnconnected] = useState(false);
   const [visibleClasses, setVisibleClasses] = useState<Set<ClassKey>>(
@@ -83,6 +86,20 @@ export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): Rou
     return [...opts, ...personaItems];
   }, [rows, personaMap]);
 
+  // Listener-persona options: every persona that appears as a connection on
+  // any row. Drives the Listeners column-header filter.
+  const listenerOptions = useMemo<SourceOption[]>(() => {
+    const ids = new Set<string>();
+    for (const row of rows) for (const c of row.connections) ids.add(c.personaId);
+    const items: SourceOption[] = [];
+    for (const pid of ids) {
+      const p = personaMap.get(pid);
+      if (p) items.push({ value: p.id, label: p.name });
+    }
+    items.sort((a, b) => a.label.localeCompare(b.label));
+    return [{ value: 'all', label: 'All Listeners' }, ...items];
+  }, [rows, personaMap]);
+
   const visibleRows = useMemo(() => {
     const q = search.toLowerCase().trim();
     return rows.filter(r => {
@@ -91,6 +108,9 @@ export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): Rou
       if (sourceFilter === 'common' && r.sourceClass !== 'common') return false;
       if (sourceFilter !== 'all' && sourceFilter !== 'common') {
         if (!r.sourcePersonas.some(s => s.personaId === sourceFilter)) return false;
+      }
+      if (listenerFilter !== 'all') {
+        if (!r.connections.some(c => c.personaId === listenerFilter)) return false;
       }
       if (activeOnly) {
         const a = activity.get(r.eventType);
@@ -102,7 +122,7 @@ export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): Rou
       }
       return true;
     });
-  }, [rows, search, activeOnly, showUnconnected, visibleClasses, sourceFilter, activity]);
+  }, [rows, search, activeOnly, showUnconnected, visibleClasses, sourceFilter, listenerFilter, activity]);
 
   const unconnectedCount = useMemo(
     () => rows.filter(r => visibleClasses.has(r.sourceClass) && r.connections.length === 0).length,
@@ -116,8 +136,8 @@ export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): Rou
   }, [visibleRows, sortMode, activity]);
 
   const filterKey = useMemo(
-    () => `${sortMode}|${search}|${sourceFilter}|${activeOnly ? 1 : 0}|${showUnconnected ? 1 : 0}|${[...visibleClasses].sort().join(',')}`,
-    [sortMode, search, sourceFilter, activeOnly, showUnconnected, visibleClasses],
+    () => `${sortMode}|${search}|${sourceFilter}|${listenerFilter}|${activeOnly ? 1 : 0}|${showUnconnected ? 1 : 0}|${[...visibleClasses].sort().join(',')}`,
+    [sortMode, search, sourceFilter, listenerFilter, activeOnly, showUnconnected, visibleClasses],
   );
 
   const totalConnections = useMemo(
@@ -128,11 +148,12 @@ export function useRoutingFilters({ rows, recentEvents, personaMap }: Args): Rou
   return {
     search, setSearch,
     sourceFilter, setSourceFilter,
+    listenerFilter, setListenerFilter,
     activeOnly, setActiveOnly,
     showUnconnected, setShowUnconnected,
     visibleClasses, toggleClass,
     sortMode, setSortMode,
-    classCounts, sourceOptions, unconnectedCount,
+    classCounts, sourceOptions, listenerOptions, unconnectedCount,
     visibleRows, groupsList, filterKey, totalConnections,
   };
 }

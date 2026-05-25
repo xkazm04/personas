@@ -267,7 +267,6 @@
   "tab_live_stream": "Flux en direct",
   "tab_live_stream_subtitle": "Hub d'événements en temps réel — les agents publient et s'abonnent aux événements via ce bus partagé",
   "tab_builder": "Constructeur",
-  "tab_builder_subtitle": "Connectez les personas aux sources d'événements — chaque événement traversant le bus, avec les personas qui l'écoutent",
   "tab_rate_limits": "Limites de vitesse",
   "tab_rate_limits_subtitle": "Limitation, profondeur de file d'attente et limites de simultanéité pour les déclencheurs",
   "tab_test": "Test",

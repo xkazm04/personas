@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  ReactFlow, ReactFlowProvider, Background, Controls, MiniMap,
+  ReactFlow, ReactFlowProvider, Background, Controls,
   useNodesState, useEdgesState, useReactFlow,
   type Node, type Edge, BackgroundVariant,
 } from '@xyflow/react';
@@ -315,18 +315,7 @@ function TriggerLineageInner() {
           elementsSelectable={true}
         >
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} className="opacity-30" />
-          <Controls showInteractive={false} position="bottom-right" className="!bg-card/80 !border-primary/10 !shadow-elevation-1" />
-          <MiniMap
-            nodeStrokeWidth={2}
-            nodeColor={(n) => {
-              if (n.type === 'lineagePersona') return '#10b981';
-              if (n.type === 'lineageTrigger') return '#f59e0b';
-              if (n.type === 'lineageEvent') return '#06b6d4';
-              return '#6b7280';
-            }}
-            className="!bg-card/60 !border-primary/10"
-            position="bottom-left"
-          />
+          <Controls showInteractive={false} position="bottom-right" className="themed-flow-controls" />
         </ReactFlow>
 
         {/* Empty state */}

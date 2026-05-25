@@ -10,6 +10,7 @@ import type {
 } from "@/api/vault/rotation";
 import {
   getRotationStatus,
+  getAllRotationStatuses,
   getRotationHistory,
   createRotationPolicy,
   updateRotationPolicy,
@@ -60,34 +61,28 @@ export const createRotationSlice: StateCreator<VaultStore, [], [], RotationSlice
     const credentials = get().credentials;
     if (credentials.length === 0) return;
 
-    // Skip credentials whose status is already cached this session. Without
-    // this guard, every mount of RotationOverviewPanel re-fires N IPCs for
-    // data that hasn't changed since last fetch (the perf-walk on
-    // 2026-05-17 observed 25 get_rotation_status calls on every Overview
-    // landing — pure fan-out for already-cached data). Callers that need
+    // Skip when every credential's status is already cached this session.
+    // Without this guard, every mount of RotationOverviewPanel re-fetched
+    // statuses that hadn't changed (the 2026-05-17 perf-walk observed 25
+    // get_rotation_status calls on every Overview landing). Callers that need
     // freshness should clear `rotationStatuses` or use `fetchRotationStatus`
     // for the specific credential.
     const cached = get().rotationStatuses;
-    const stale = credentials.filter((c) => !cached[c.id]);
-    if (stale.length === 0) return;
+    const allCached = credentials.every((c) => cached[c.id]);
+    if (allCached) return;
 
-    const statuses: Record<string, RotationStatus> = {};
-    const results = await Promise.allSettled(
-      stale.map(async (cred) => {
-        const status = await getRotationStatus(cred.id);
-        return { id: cred.id, status };
-      }),
-    );
-
-    for (const result of results) {
-      if (result.status === "fulfilled") {
-        statuses[result.value.id] = result.value.status;
-      }
+    // Single batched IPC instead of N per-credential round-trips. The
+    // 2026-05-25 profiling pass measured 27 get_rotation_status calls
+    // (~2-3s of cumulative IPC + privileged-auth overhead) on startup; the
+    // backend now computes every credential's status in one command.
+    try {
+      const statuses = await getAllRotationStatuses();
+      set((state) => ({
+        rotationStatuses: { ...state.rotationStatuses, ...statuses },
+      }));
+    } catch (err) {
+      reportError(err, "Failed to fetch rotation statuses", set);
     }
-
-    set((state) => ({
-      rotationStatuses: { ...state.rotationStatuses, ...statuses },
-    }));
   },
 
   createRotationPolicy: async (input) => {

@@ -86,6 +86,17 @@ pub fn get_rotation_status(
     rotation_engine::get_rotation_status(&state.db, &credential_id)
 }
 
+/// Batched: rotation status for every credential in one round-trip, keyed by
+/// credential id. Replaces N per-credential `get_rotation_status` calls fired
+/// on Rotation overview mount.
+#[tauri::command]
+#[requires(privileged)]
+pub fn get_all_rotation_statuses(
+    state: State<'_, Arc<AppState>>,
+) -> Result<std::collections::HashMap<String, rotation_engine::RotationStatus>, AppError> {
+    rotation_engine::get_all_rotation_statuses(&state.db)
+}
+
 #[tauri::command]
 #[requires(privileged)]
 pub async fn rotate_credential_now(

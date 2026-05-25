@@ -29,7 +29,14 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
   const connectorDefinitions = useVaultStore((s) => s.connectorDefinitions);
   const fetchConnectorDefinitions = useVaultStore((s) => s.fetchConnectorDefinitions);
 
-  // Reset when modal opens
+  // Reset when the modal opens. Depend ONLY on `open`: `orch` and `importFlow`
+  // are fresh object references on every render, so including them in the deps
+  // re-fired the effect each render — and because the body calls
+  // `fetchConnectorDefinitions()` (which `set()`s a NEW connectorDefinitions
+  // array → re-render → new orch/importFlow → effect re-fires) it spun into an
+  // infinite update loop ("Maximum update depth exceeded"). The `if (open)`
+  // guard already scopes the work to the open transition, and the captured
+  // closures are current at fire time.
   useEffect(() => {
     if (open) {
       orch.resetAll();
@@ -47,7 +54,8 @@ export function useCredentialDesignModal({ open, initialInstruction, onClose, on
         orch.start(initialInstruction.trim());
       }
     }
-  }, [fetchConnectorDefinitions, importFlow, initialInstruction, open, orch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Capture auto-setup result when design completes
   const orchResult = orch.contextValue?.result;

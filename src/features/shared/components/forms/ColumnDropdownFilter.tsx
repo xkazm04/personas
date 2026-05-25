@@ -50,25 +50,24 @@ export function ColumnDropdownFilter({
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative inline-flex items-center gap-1.5">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className={`flex items-center gap-1.5 typo-label transition-colors ${isFiltered ? 'text-primary' : 'text-foreground hover:text-foreground'}`}
       >
         <span>{isFiltered ? selected?.label ?? label : label}</span>
-        {isFiltered ? (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onChange(allValue); setOpen(false); }}
-            className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        ) : (
-          <Filter className="w-3 h-3 text-foreground" />
-        )}
+        {!isFiltered && <Filter className="w-3 h-3 text-foreground" />}
       </button>
+      {isFiltered && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onChange(allValue); setOpen(false); }}
+          className="p-0.5 rounded hover:bg-secondary/50 text-foreground hover:text-foreground"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
 
       {open && (
         <div className={`absolute top-full left-0 mt-1 z-[100] min-w-[160px] max-h-[320px] overflow-y-auto rounded-xl border border-primary/15 bg-background shadow-elevation-3 ${popupClassName}`}>

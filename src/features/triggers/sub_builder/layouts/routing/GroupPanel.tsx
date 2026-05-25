@@ -51,7 +51,7 @@ export function GroupPanel({
         {activeCount > 0 && (
           <span className="ml-auto flex items-center gap-1 px-1.5 py-0.5 rounded-card bg-emerald-500/10 border border-emerald-500/30">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-[10px] font-semibold text-emerald-400 tabular-nums">{activeCount} live</span>
+            <span className="typo-caption font-semibold text-emerald-400 tabular-nums">{activeCount} live</span>
           </span>
         )}
       </button>

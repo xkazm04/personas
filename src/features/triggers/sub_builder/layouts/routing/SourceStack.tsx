@@ -34,7 +34,7 @@ function NameChip({ persona, personaIdFallback }: NameChipProps) {
         display="framed"
         frameSize="sm"
       />
-      <span className="typo-caption text-foreground truncate">
+      <span className="typo-body text-foreground truncate">
         {persona?.name ?? personaIdFallback.slice(0, 8)}
       </span>
     </div>
@@ -51,21 +51,21 @@ export function SourceStack({ row }: { row: EventRow }) {
         {shown.map(lbl => (
           <span
             key={lbl}
-            className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-amber-500/10 border border-amber-500/30 text-[10px] font-semibold uppercase tracking-wider text-amber-400 max-w-[140px] truncate"
+            className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-amber-500/10 border border-amber-500/30 typo-caption font-semibold uppercase tracking-wider text-amber-400 max-w-[160px] truncate"
             title={lbl}
           >
             {lbl}
           </span>
         ))}
         {overflow > 0 && (
-          <span className="typo-caption text-foreground tabular-nums">+{overflow}</span>
+          <span className="typo-body text-foreground tabular-nums">+{overflow}</span>
         )}
       </div>
     );
   }
 
   if (row.sourcePersonas.length === 0) {
-    return <span className="typo-caption text-foreground italic"><DebtText k="auto_no_source_6809b771" /></span>;
+    return <span className="typo-body text-foreground italic"><DebtText k="auto_no_source_6809b771" /></span>;
   }
 
   const shown = row.sourcePersonas.slice(0, NAME_CHIP_MAX);
@@ -76,7 +76,7 @@ export function SourceStack({ row }: { row: EventRow }) {
         <NameChip key={s.personaId} persona={s.persona} personaIdFallback={s.personaId} />
       ))}
       {overflow > 0 && (
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-card border border-primary/20 text-[10px] font-semibold text-foreground tabular-nums">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded-card bg-card border border-primary/20 typo-caption font-semibold text-foreground tabular-nums">
           +{overflow}
         </span>
       )}

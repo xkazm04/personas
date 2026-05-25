@@ -16,8 +16,6 @@ export function CredentialManager() {
   const {
     credentials,
     loading,
-    vault,
-    setVault,
     bannerError,
     setError,
     setGlobalError,
@@ -46,7 +44,7 @@ export function CredentialManager() {
 
   return (
     <ContentBox data-testid="credential-manager">
-      <CredentialManagerHeader credentialCount={credentials.length} />
+      <CredentialManagerHeader credentialCount={credentials.length} view={viewState.view} />
 
       <CredentialToolbar
         credentialCount={credentials.length}
@@ -54,8 +52,7 @@ export function CredentialManager() {
         rotateAllResult={rotateAllResult}
         rotatableCount={rotatableCount}
         onRotateAll={handleRotateAll}
-        vault={vault}
-        onVaultRefresh={setVault}
+        showActions={viewState.view === 'list'}
         credentialSearch={credentialSearch}
         onSearchChange={setCredentialSearch}
         searchInputRef={searchInputRef}
@@ -66,7 +63,12 @@ export function CredentialManager() {
         isDailyRun={isDailyRun}
       />
 
-      <VaultBreadcrumb segments={breadcrumbs} dispatch={dispatch} />
+      {/* The catalog browse view's search row stands alone — drop the
+          breadcrumb there. Other multi-level views (catalog-form, add-*) keep
+          it for back-navigation; single-segment views auto-hide it. */}
+      {viewState.view !== 'catalog-browse' && (
+        <VaultBreadcrumb segments={breadcrumbs} dispatch={dispatch} />
+      )}
 
       <ContentBody>
         <ReauthBanner />

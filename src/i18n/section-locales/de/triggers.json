@@ -267,7 +267,6 @@
   "tab_live_stream": "Live-Stream",
   "tab_live_stream_subtitle": "Echtzeit-Ereignis-Hub -- Agenten veröffentlichen und abonnieren Ereignisse über diesen gemeinsamen Bus",
   "tab_builder": "Builder",
-  "tab_builder_subtitle": "Personas mit Ereignisquellen verbinden -- jedes durch den Bus fließende Ereignis mit den Personas, die darauf horchen",
   "tab_rate_limits": "Geschwindigkeitslimits",
   "tab_rate_limits_subtitle": "Drosselung, Warteschlangentiefe und Parallelitätslimits für Trigger",
   "tab_test": "Test",

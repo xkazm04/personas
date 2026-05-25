@@ -67,7 +67,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
     onActivate(useCaseId, 'schedule', config);
   }, [cronExpression, timezone, useCaseId, onActivate]);
 
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const ucT = t.agents.use_cases;
   const isValid = cronPreview?.valid ?? false;
   const MODE_TABS = [
@@ -127,7 +127,7 @@ export function ScheduleBuilder({ suggestedTrigger, useCaseId, onActivate, isAct
         <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10">
           <Info className="w-3 h-3 text-amber-400/60 flex-shrink-0" />
           <span className="text-sm text-muted-foreground/70">
-            This will run <span className="font-medium text-foreground/80">{useCaseTitle}</span> for <span className="font-medium text-foreground/80">{personaName}</span>
+            {tx(ucT.schedule_will_run, { title: useCaseTitle, persona: personaName })}
           </span>
         </div>
       )}
