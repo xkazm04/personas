@@ -9,6 +9,20 @@ import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 const DRAG_MIME = 'application/x-personas-assignment-id';
 
 /**
+ * `team_assignments.created_at` is stored via SQLite `datetime('now')`, which
+ * yields a NAIVE UTC string ("YYYY-MM-DD HH:MM:SS" — no `T`, no offset).
+ * `RelativeTime`/`Date` parse a space-separated, tz-less string as *local*
+ * time, so on a UTC+N machine a just-created row reads N hours stale. Mark it
+ * explicit UTC before rendering. (Root cause is the naive column default;
+ * normalizing here fixes existing rows too.)
+ */
+function toIsoUtc(s: string): string {
+  if (!s) return s;
+  if (/[Zz]$/.test(s) || /[+-]\d{2}:?\d{2}$/.test(s)) return s; // already has tz
+  return `${s.replace(' ', 'T')}Z`;
+}
+
+/**
  * Lifecycle board for a team's assignments. Columns mirror the assignment
  * status the orchestrator owns (queued → running → needs-review → done, plus
  * a stopped lane), so cards **auto-flow** between columns as the background
@@ -69,7 +83,7 @@ export function TeamAssignmentBoard({ teamId }: { teamId: string }) {
               <div className="rounded-modal border border-primary/10 bg-background/60 p-2.5" data-testid="team-assignment-card">
                 <h4 className="typo-card-label line-clamp-2">{a.title}</h4>
                 <div className="mt-2 text-[9px] text-foreground/50">
-                  <RelativeTime timestamp={a.createdAt} />
+                  <RelativeTime timestamp={toIsoUtc(a.createdAt)} />
                 </div>
               </div>
             )}
