@@ -49,6 +49,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
   const { t } = useTranslation();
   const [rows, setRows] = useState<ToolPerformanceSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +77,23 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
     [rows],
   );
 
+  // Distinct tool types drive the per-column filter. Type identifiers (mcp,
+  // builtin, connector, …) are technical and untranslated; only the "All"
+  // option is localized, reusing the shared common.all key (no new strings).
+  const typeOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of rows) set.add(r.tool_type);
+    return [
+      { value: 'all', label: t.common.all },
+      ...[...set].sort((a, b) => a.localeCompare(b)).map((tt) => ({ value: tt, label: tt })),
+    ];
+  }, [rows, t.common.all]);
+
+  const visibleRows = useMemo(
+    () => (typeFilter === 'all' ? sortedRows : sortedRows.filter((r) => r.tool_type === typeFilter)),
+    [sortedRows, typeFilter],
+  );
+
   const columns = useMemo<TableColumn<ToolPerformanceSummary>[]>(() => {
     const ms = t.overview.widgets.tool_performance_unit_ms;
     return [
@@ -85,6 +103,9 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         width: 'minmax(120px, 1.6fr)',
         sortable: true,
         sortFn: (a, b) => a.tool_name.localeCompare(b.tool_name),
+        filterOptions: typeOptions,
+        filterValue: typeFilter,
+        onFilterChange: setTypeFilter,
         render: (row) => (
           <span className="inline-flex items-baseline gap-2 min-w-0">
             <span className="text-foreground truncate">{row.tool_name}</span>
@@ -153,7 +174,7 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         },
       },
     ];
-  }, [t]);
+  }, [t, typeOptions, typeFilter]);
 
   return (
     <div
@@ -180,9 +201,10 @@ export const ToolPerformancePanel = memo(function ToolPerformancePanel({
         ) : (
           <UnifiedTable<ToolPerformanceSummary>
             columns={columns}
-            data={sortedRows}
+            data={visibleRows}
             getRowKey={(row) => `${row.tool_name}-${row.tool_type}`}
             density="compact"
+            emptyTitle={t.overview.events.no_filter_match}
             className="typo-caption"
           />
         )}

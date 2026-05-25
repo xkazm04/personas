@@ -65,6 +65,7 @@ export default function IpcPerformancePanel() {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>('commands');
+  const [bandFilter, setBandFilter] = useState<string>('all');
   const { stats, slowest, summary } = useIpcSnapshot();
 
   const toggleExpanded = useCallback(() => setExpanded(e => !e), []);
@@ -73,6 +74,22 @@ export default function IpcPerformancePanel() {
     if (stats.length === 0) return 1;
     return Math.max(...stats.map(s => s.p95));
   }, [stats]);
+
+  // p95 latency-band filter. Band names map to latencyToHealth thresholds;
+  // labels are pure ms/s units (technical, untranslated), so only "All" is
+  // localized — no new i18n keys.
+  const bandOptions = useMemo(() => [
+    { value: 'all', label: t.common.all },
+    { value: 'healthy', label: '< 50 ms' },
+    { value: 'info', label: '50–200 ms' },
+    { value: 'warning', label: '200 ms – 1 s' },
+    { value: 'critical', label: '≥ 1 s' },
+  ], [t.common.all]);
+
+  const visibleStats = useMemo(
+    () => (bandFilter === 'all' ? stats : stats.filter((s) => latencyToHealth(s.p95) === bandFilter)),
+    [stats, bandFilter],
+  );
 
   const commandColumns = useMemo<TableColumn<IpcCommandStats>[]>(() => [
     {
@@ -99,6 +116,9 @@ export default function IpcPerformancePanel() {
     {
       key: 'p95', label: 'p95', width: '64px', align: 'right', sortable: true,
       sortFn: (a, b) => a.p95 - b.p95,
+      filterOptions: bandOptions,
+      filterValue: bandFilter,
+      onFilterChange: setBandFilter,
       render: (stat) => <span className={`font-mono ${latencyColor(stat.p95)}`}>{formatMs(stat.p95)}</span>,
     },
     {
@@ -111,7 +131,7 @@ export default function IpcPerformancePanel() {
       sortFn: (a, b) => a.count - b.count,
       render: (stat) => <span className="font-mono text-foreground">{stat.count}</span>,
     },
-  ], [t, maxP95]);
+  ], [t, maxP95, bandOptions, bandFilter]);
 
   const slowestColumns = useMemo<TableColumn<IpcCallRecord>[]>(() => [
     {
@@ -181,12 +201,13 @@ export default function IpcPerformancePanel() {
           {tab === 'commands' && (
             <UnifiedTable<IpcCommandStats>
               columns={commandColumns}
-              data={stats}
+              data={visibleStats}
               getRowKey={(stat) => stat.command}
               density="compact"
               rowHeight={44}
               borderless
               className="max-h-[300px]"
+              emptyTitle={t.overview.events.no_filter_match}
               ariaLabel={t.overview.ipc_panel.commands_table_label}
             />
           )}
