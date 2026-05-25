@@ -25,7 +25,19 @@ jobs:
     if: >-
       github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success'
-    runs-on: windows-latest
+    strategy:
+      # fail-fast: false so an arm64-runner outage doesn't mask a passing x64
+      # run (and vice versa). The arm64 leg needs the GitHub-hosted
+      # windows-11-arm runner; if it's unavailable to this repo the leg fails
+      # in isolation without blocking x64.
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -35,15 +47,15 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           $tag = gh release view --json tagName --jq '.tagName'
-          Write-Host "Testing release: $tag"
+          Write-Host "Testing release (${{ matrix.arch }}): $tag"
           New-Item -ItemType Directory -Force -Path artifacts | Out-Null
-          gh release download $tag --pattern "*x64-setup.exe" --dir artifacts
-          $installer = Get-ChildItem artifacts\*x64-setup.exe | Select-Object -First 1
+          gh release download $tag --pattern "*${{ matrix.arch }}-setup.exe" --dir artifacts
+          $installer = Get-ChildItem artifacts\*${{ matrix.arch }}-setup.exe | Select-Object -First 1
           Write-Host "Downloaded: $($installer.FullName)"
           echo "INSTALLER=$($installer.FullName)" >> $env:GITHUB_ENV
 
       - name: Run installer acceptance test
-        run: powershell -ExecutionPolicy Bypass -File scripts\test-installer.ps1 -Installer $env:INSTALLER
+        run: powershell -ExecutionPolicy Bypass -File scripts\test-installer.ps1 -Installer $env:INSTALLER -Arch ${{ matrix.arch }}
 
   # ─── Option B: Build + test from HEAD ────────────────────────
   test-build:
