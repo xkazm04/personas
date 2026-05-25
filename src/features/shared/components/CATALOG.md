@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**174 reusable components** live under `src/features/shared/components/`.
+**175 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -142,6 +142,12 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 |---|---|
 | `ActivityPulseIcon` | Activity pulse icon for the process indicator in the header bar. |
 
+## kanban
+
+| Component | What it's for |
+|---|---|
+| `KanbanBoard` | Generic Kanban board — buckets items into status columns with HTML5 drag-to-move. |
+
 ## layout — Page/section structure, headers, tab bars, content shells
 
 | Component | What it's for |
@@ -253,4 +259,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_174 components, 93 without a `@catalog` description._
+_175 components, 93 without a `@catalog` description._
