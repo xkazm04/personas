@@ -179,10 +179,20 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
             const isRotating = rotatingId === item.credentialId;
             const rotateDisabled = !!rotatingId; // Lock all rotate buttons while one is in flight
 
+            // Status-accent left border (matches the Activity/Messages/IPC
+            // tables): credentials with anomalies or consecutive failures read
+            // red, rotations due now read amber, healthy rows stay neutral —
+            // so the credentials needing attention are scannable down the gutter.
+            const rowAccent = (item.status.anomaly_detected || item.status.consecutive_failures > 0)
+              ? 'border-l-red-400/70'
+              : isDue
+                ? 'border-l-amber-400/70'
+                : 'border-l-transparent';
+
             return (
               <div
                 key={item.credentialId}
-                className="flex items-center gap-2 px-3 py-1.5 hover:bg-white/[0.03] transition-colors group"
+                className={`flex items-center gap-2 border-l-2 ${rowAccent} px-3 py-1.5 hover:bg-white/[0.03] transition-colors group`}
               >
                 {/* Status — icon-only chip, label in title attr */}
                 {badge && (
