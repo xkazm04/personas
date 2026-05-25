@@ -9,30 +9,11 @@
 
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import { execSync } from "child_process";
+import { getCommitsSinceLastTag } from "./lib/git-tags.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
 
 // ── 1. Determine bump type from commits since last tag ──────────────
-
-function getCommitsSinceLastTag() {
-  try {
-    const lastTag = execSync("git describe --tags --abbrev=0", {
-      cwd: ROOT,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-    const log = execSync(`git log --oneline ${lastTag}..HEAD`, {
-      cwd: ROOT,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-    return log ? log.split("\n") : [];
-  } catch {
-    // No tags yet — fall back to patch bump
-    return [];
-  }
-}
 
 function determineBumpType(commits) {
   let hasFeature = false;
@@ -54,7 +35,7 @@ function determineBumpType(commits) {
   return hasFeature ? "minor" : "patch";
 }
 
-const commits = getCommitsSinceLastTag();
+const commits = getCommitsSinceLastTag(ROOT);
 const bumpType = determineBumpType(commits);
 
 // ── 2. Read current version from package.json (source of truth) ─────

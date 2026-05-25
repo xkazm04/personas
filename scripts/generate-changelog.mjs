@@ -3,31 +3,10 @@
 // Usage: node scripts/generate-changelog.mjs
 // Prints the changelog to stdout (captured by CI).
 
-import { execSync } from "child_process";
 import { join } from "path";
+import { getCommitsSinceLastTag } from "./lib/git-tags.mjs";
 
 const ROOT = join(import.meta.dirname, "..");
-
-// ── 1. Get commits since last tag ──────────────────────────────────
-
-function getCommitsSinceLastTag() {
-  try {
-    const lastTag = execSync("git describe --tags --abbrev=0", {
-      cwd: ROOT,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-    const log = execSync(`git log --oneline ${lastTag}..HEAD`, {
-      cwd: ROOT,
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-    return log ? log.split("\n") : [];
-  } catch {
-    // No tags exist — return empty
-    return [];
-  }
-}
 
 // ── 2. Parse and group commits ─────────────────────────────────────
 
@@ -95,7 +74,7 @@ function buildChangelog({ features, fixes, other }) {
 
 // ── 4. Run ─────────────────────────────────────────────────────────
 
-const commits = getCommitsSinceLastTag();
+const commits = getCommitsSinceLastTag(ROOT);
 const groups = groupCommits(commits);
 const changelog = buildChangelog(groups);
 
