@@ -22,8 +22,6 @@ export type ThemeId =
   | 'light'
   | 'light-ice'
   | 'light-news'
-  | 'light-sage'
-  | 'light-sand'
   | 'custom';
 
 export type TextScale = 'large' | 'larger' | 'xl';
@@ -79,9 +77,16 @@ export const THEMES: ThemeDefinition[] = [
   { id: 'light', label: 'Light', primaryColor: '#2563eb', accentColor: '#3b82f6', backgroundSample: '#f7f8fa', foregroundSample: '#0f172a', isLight: true },
   { id: 'light-ice', label: 'Ice', primaryColor: '#2563eb', accentColor: '#38bdf8', backgroundSample: '#e8eff6', foregroundSample: '#0f172a', isLight: true },
   { id: 'light-news', label: 'News', primaryColor: '#1a1a1a', accentColor: '#555555', backgroundSample: '#e0ded9', foregroundSample: '#111111', isLight: true },
-  { id: 'light-sage', label: 'Sage', primaryColor: '#047857', accentColor: '#10b981', backgroundSample: '#f1f4f1', foregroundSample: '#142119', isLight: true },
-  { id: 'light-sand', label: 'Sand', primaryColor: '#92400e', accentColor: '#d97706', backgroundSample: '#f5f2eb', foregroundSample: '#2a2418', isLight: true },
 ];
+
+/**
+ * Themes removed from the catalog that still need a graceful landing for users
+ * who had them persisted. Maps each retired id to its replacement.
+ */
+const RETIRED_THEME_FALLBACKS: Record<string, ThemeId> = {
+  'light-sage': 'light',
+  'light-sand': 'light',
+};
 
 export const TEXT_SCALES: { id: TextScale; label: string; description: string }[] = [
   { id: 'large', label: 'Small', description: 'Compact readability' },
@@ -358,6 +363,12 @@ export const useThemeStore = create<ThemeState>()(
           // Migrate removed 'default' scale to 'large' (new "Small")
           if ((state.textScale as string) === 'default') {
             state.textScale = 'large';
+          }
+          // Migrate retired themes (Sage/Sand) to their replacement so a
+          // persisted-but-removed id can't leave the user on a dead theme.
+          const retired = RETIRED_THEME_FALLBACKS[state.themeId as string];
+          if (retired) {
+            state.themeId = retired;
           }
           if (state.themeId === 'custom' && state.customTheme) {
             injectCustomThemeStyle(deriveCustomThemeVars(state.customTheme));

@@ -102,6 +102,7 @@ interface TransformQuestionResponse {
   default?: string;
   context?: string;               // shown in collapsible tip
   allow_custom?: boolean;         // lets user type a custom value
+  optional?: boolean;             // never gates the build (see below)
   vault_category?: string;        // credential category for banner
   option_service_types?: (string | null)[];  // parallel array for auto-detect
   dynamic_source?: {              // live-discovery for pills
@@ -110,9 +111,45 @@ interface TransformQuestionResponse {
     depends_on?: string;
     multi?: boolean;
     include_all_option?: boolean;
+    source?: 'vault' | 'scope';   // 'vault' = synthesize from installed creds
   };
 }
 ```
+
+### Optional questions (`optional: true`)
+
+A question marked `optional` **never gates the build** — it is excluded from
+both `PersonaLayoutAdoption`'s `gatedQuestions` (so it doesn't count toward
+`globalRemaining`) and from the vault matcher's `blockedQuestionIds` (so it
+never lights the "credentials required" banner). The user may still answer it;
+adoption just proceeds without it. The flag is additive and defaults to
+absent/false, so existing templates are unaffected.
+
+### Optional codebase / source connector picker
+
+This is the canonical use of `optional` + a vault-sourced picker, letting **any**
+template offer a Codebase connector (read or write) without forcing it. Shape:
+
+```jsonc
+{
+  "type": "select",
+  "optional": true,
+  "allow_custom": true,
+  "default": "codebase",          // pre-selects the Codebase connector tile
+  "dynamic_source": {
+    "service_type": "development", // a category tag; the Codebase connector
+    "operation": "list_credentials", // claims development/source_control/desktop
+    "source": "vault"             // → CredentialPickerCards from installed creds
+  }
+}
+```
+
+The matching connector slot in `payload.persona.connectors[]` should be
+`"required": false` with a `"fallback_note"` (the checksum lint enforces the
+note) describing the degraded path when no codebase is connected. Avoid the old
+`type:"select"` + empty `options:[]` + `operation:"list_codebases"` shape — there
+is no `list_codebases` backend, so it renders no control and (if not optional)
+hard-blocks adoption.
 
 ### Input selection
 

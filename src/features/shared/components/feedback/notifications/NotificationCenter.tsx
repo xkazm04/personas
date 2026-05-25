@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, CheckCheck, Trash2, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight } from 'lucide-react';
 import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
@@ -281,8 +281,6 @@ export function NotificationCenter() {
   const isOpen = useNotificationCenterStore((s) => s.isOpen);
   const setOpen = useNotificationCenterStore((s) => s.setOpen);
   const notifications = useNotificationCenterStore((s) => s.notifications);
-  const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
-  const markAllRead = useNotificationCenterStore((s) => s.markAllRead);
   const clearAll = useNotificationCenterStore((s) => s.clearAll);
 
   return (
@@ -299,39 +297,27 @@ export function NotificationCenter() {
           <div
             className="animate-fade-in fixed top-0 right-0 bottom-0 z-[91] w-[380px] max-w-[90vw] bg-background border-l border-primary/15 shadow-elevation-4 flex flex-col"
           >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
+            {/* Thin header — opening the bell already marks everything read, so
+                the header keeps just the title, a Clear-all action, and close. */}
+            <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-orange-400" />
-                <h2 className="typo-heading font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
-                {unreadCount > 0 && (
-                  <span className="min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[10px] font-bold rounded-full bg-orange-500 text-foreground">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
+                <h2 className="typo-body font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
               </div>
               <div className="flex items-center gap-1">
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllRead}
-                    className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
-                    title={t.gitlab.mark_all_read}
-                  >
-                    <CheckCheck className="w-4 h-4" />
-                  </button>
-                )}
                 {notifications.length > 0 && (
                   <button
                     onClick={clearAll}
-                    className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
+                    className="inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors typo-caption"
                     title={t.gitlab.clear_all}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
+                    {t.gitlab.clear_all}
                   </button>
                 )}
                 <button
                   onClick={() => setOpen(false)}
-                  className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
+                  className="p-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
                   aria-label={t.gitlab.close_notification_center}
                 >
                   <X className="w-4 h-4" />

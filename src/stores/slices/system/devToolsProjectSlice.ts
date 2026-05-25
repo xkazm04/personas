@@ -16,7 +16,7 @@ export interface DevToolsProjectSlice {
 
   fetchProjects: (status?: string) => Promise<void>;
   createProject: (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string) => Promise<DevProject>;
-  updateProject: (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; teamId?: string | null }) => Promise<void>;
+  updateProject: (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; teamId?: string | null; prCredentialId?: string | null }) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   setActiveProject: (id: string | null) => Promise<void>;
   scanDirectory: (path: string) => Promise<DirectoryScanResult>;

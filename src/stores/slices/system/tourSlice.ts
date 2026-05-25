@@ -867,6 +867,14 @@ function sharedStepIds(sourceId: TourId, targetId: TourId): Set<string> {
 
 export interface TourSlice {
   tourActive: boolean;
+  /**
+   * Set when a tour is resumed from a dismissed state (e.g. the footer Resume
+   * button). While true, `GuidedTour` shows a "continue where you left off"
+   * window and does NOT auto-navigate the route — the redirect happens only
+   * after the user clicks Continue (which clears this). Prevents the jarring
+   * instant route jump the footer resume used to cause.
+   */
+  tourResumePending: boolean;
   tourActiveTourId: TourId;
   tourCurrentStepIndex: number;
   tourCompleted: boolean;
@@ -944,6 +952,7 @@ export const createTourSlice: StateCreator<
 
   return {
     tourActive: false,
+    tourResumePending: false,
     tourActiveTourId: defaultTourId,
     tourCurrentStepIndex: ps?.currentStepIndex ?? 0,
     tourCompleted: ps?.completed ?? false,
@@ -1019,6 +1028,9 @@ export const createTourSlice: StateCreator<
 
       set({
         tourActive: true,
+        // Cleared by default; the footer Resume path re-sets it to true right
+        // after calling startTour so the interstitial shows for that path only.
+        tourResumePending: false,
         tourActiveTourId: id,
         tourCompleted: false,
         tourDismissed: false,
@@ -1079,7 +1091,7 @@ export const createTourSlice: StateCreator<
     setTourCreatedPersona: (personaId) => set({ tourCreatedPersonaId: personaId }),
 
     dismissTour: () => {
-      set({ tourActive: false, tourDismissed: true, tourHighlightTestId: null });
+      set({ tourActive: false, tourResumePending: false, tourDismissed: true, tourHighlightTestId: null });
       persistCurrentTour();
     },
 
@@ -1089,6 +1101,7 @@ export const createTourSlice: StateCreator<
       const allComplete = Object.fromEntries(steps.map((st) => [st.id, true]));
       set({
         tourActive: false,
+        tourResumePending: false,
         tourCompleted: true,
         tourStepCompleted: allComplete,
         tourHighlightTestId: null,
@@ -1111,6 +1124,7 @@ export const createTourSlice: StateCreator<
       if (id === get().tourActiveTourId) {
         set({
           tourActive: false,
+          tourResumePending: false,
           tourCompleted: false,
           tourDismissed: false,
           tourCurrentStepIndex: 0,

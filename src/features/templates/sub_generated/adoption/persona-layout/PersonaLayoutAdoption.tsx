@@ -383,6 +383,11 @@ export function PersonaLayoutAdoption({
   const gatedQuestions = useMemo(
     () =>
       questions.filter((q) => {
+        // Optional questions (e.g. a nice-to-have codebase/source connector)
+        // never gate the build — the user may answer them but adoption must
+        // proceed without them. This drops them from both globalRemaining and
+        // globalBlocked below.
+        if ((q as { optional?: boolean }).optional) return false;
         const ucId = (q as { use_case_id?: string }).use_case_id;
         const dim = (q as { dimension?: string }).dimension;
         if (ucId && dim) {

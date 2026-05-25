@@ -63,7 +63,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -74,6 +74,10 @@ export const updateProject = (id: string, updates: { name?: string; description?
     monitoringCredentialId: updates.monitoringCredentialId,
     monitoringProjectSlug: updates.monitoringProjectSlug,
     teamId: updates.teamId,
+    // Option<Option<String>>: wrap so `null` clears, `undefined` leaves
+    // untouched. The Tauri arg shape is `Some(None)` to clear / `Some(Some(v))`
+    // to set — represented here as the value or null.
+    prCredentialId: updates.prCredentialId,
   });
 
 export const deleteProject = (id: string) =>

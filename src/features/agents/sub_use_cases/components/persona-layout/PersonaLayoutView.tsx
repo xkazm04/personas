@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Rocket } from 'lucide-react';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
-import { silentCatch } from '@/lib/silentCatch';
+import { executePersona } from '@/api/agents/executions';
+import { DebtText } from '@/i18n/DebtText';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { getMemoryCount } from '@/api/overview/memories';
@@ -211,6 +214,37 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     ? items.find((u) => u.id === selectedUseCaseId) ?? null
     : null;
 
+  // Manual real-execution trigger for the ACTIVE capability (the tab-selected
+  // one). Mirrors useUseCaseDetail.handleManualRun: the production
+  // `execute_persona` IPC — real CLI spawn, real cost, and `emit_event`
+  // protocols fire downstream listeners (so chained UC1→UC2 / cross-persona
+  // flows run on demand without waiting for a schedule tick). Lives on the
+  // always-visible capability tab bar because the per-capability detail (which
+  // also carries a run-now) isn't reachable in view mode.
+  const [isManualRunning, setIsManualRunning] = useState(false);
+  const handleRunActiveCapability = useCallback(async () => {
+    if (!personaId || !activeCapability || isManualRunning || isExecuting) return;
+    const expectedPersonaId = personaId;
+    setIsManualRunning(true);
+    try {
+      const inputs = activeCapability.raw?.sample_input;
+      const inputData =
+        inputs && Object.keys(inputs).length > 0 ? JSON.stringify(inputs) : undefined;
+      await executePersona(
+        expectedPersonaId,
+        undefined,
+        inputData,
+        activeCapability.id,
+        undefined,
+        crypto.randomUUID(),
+      );
+    } catch (err) {
+      toastCatch('PersonaLayoutView:runActiveCapability')(err);
+    } finally {
+      setIsManualRunning(false);
+    }
+  }, [personaId, activeCapability, isManualRunning, isExecuting]);
+
   // Summary sidebar — derived from the ACTIVE capability only, not
   // aggregated across the persona. Each row shows the saved value for
   // a single dim of `activeCapability`. Empty when no active cap (yet)
@@ -325,7 +359,16 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
           onActiveChange={setActiveCapabilityId}
         />
       </div>
-      <div className="shrink-0 pb-1">
+      <div className="shrink-0 pb-1 flex items-center gap-2">
+        <button
+          type="button"
+          data-testid="capability-run-now"
+          onClick={handleRunActiveCapability}
+          disabled={!personaId || !activeCapability || isManualRunning || isExecuting}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <Rocket className="w-3.5 h-3.5" /> <DebtText k="auto_run_now_2af00e23" />
+        </button>
         <AddCapabilityRow onClick={openRecipeCatalog} />
       </div>
     </div>

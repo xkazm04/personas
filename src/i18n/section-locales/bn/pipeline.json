@@ -261,7 +261,7 @@
     "workspace_hint": "Shared instructions and defaults applied to every member of this দল.",
     "shared_instructions_label": "Shared instructions",
     "shared_instructions_placeholder": "Guidance appended to every দল member's prompt — e.g. cite codebase evidence, prefer empirical over speculative judgments.",
-    "default_model_label": "Default মডেল profile",
+    "default_model_label": "মডেল",
     "default_budget_label": "Default budget (USD)",
     "default_turns_label": "Default max turns",
     "workspace_save": "Save workspace",

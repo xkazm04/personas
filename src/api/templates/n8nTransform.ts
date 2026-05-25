@@ -83,6 +83,14 @@ export interface TransformQuestionResponse {
   default?: string;
   context?: string;
   allow_custom?: boolean;
+  /**
+   * When true, this question never gates the build — it's excluded from both
+   * the unanswered gate and the credential "blocked" gate (see
+   * PersonaLayoutAdoption `gatedQuestions` and vaultAdoptionMatcher). Use for
+   * nice-to-have pickers (e.g. an optional codebase/source connector) that the
+   * user may set but must be able to skip. Defaults to false/absent.
+   */
+  optional?: boolean;
   /** Phase C2 — scope for grouped questionnaire UI.
    *  Populated by the backend when the template declares it; otherwise
    *  inferred at render time from `use_case_ids` / connector hints. */

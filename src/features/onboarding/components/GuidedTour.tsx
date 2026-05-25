@@ -27,6 +27,7 @@ export default function GuidedTour() {
   // reappears at whatever step it was on.
   const onboardingActive = useSystemStore((s) => s.onboardingActive);
   const tourActive = useSystemStore((s) => s.tourActive);
+  const tourResumePending = useSystemStore((s) => s.tourResumePending);
   const tourId = useSystemStore((s) => s.tourActiveTourId);
   const currentIndex = useSystemStore((s) => s.tourCurrentStepIndex);
   const completedSteps = useSystemStore((s) => s.tourStepCompleted);
@@ -142,9 +143,12 @@ export default function GuidedTour() {
   );
 
   useEffect(() => {
-    if (!tourActive || isMinimized) return;
+    // While a resume is pending, hold the route still and show the
+    // "continue where you left off" window first — navigating only after the
+    // user confirms (which clears tourResumePending).
+    if (!tourActive || isMinimized || tourResumePending) return;
     navigateToStep(currentIndex);
-  }, [currentIndex, tourActive, navigateToStep, isMinimized]);
+  }, [currentIndex, tourActive, navigateToStep, isMinimized, tourResumePending]);
 
   const handleNext = () => {
     if (allCompleted) { useSystemStore.getState().finishTour(); return; }
@@ -161,6 +165,53 @@ export default function GuidedTour() {
   // Modal-owns-screen precedence (see README "Onboarding modal vs Guided Tour").
   if (onboardingActive) return null;
   const colors = getStepColors(tourDef.color);
+
+  // Resume interstitial — shown when the tour was resumed (e.g. footer button).
+  // The route is intentionally NOT changed yet; clicking Continue clears the
+  // pending flag, which lets the navigate effect run and redirect.
+  if (tourResumePending) {
+    return (
+      <div
+        data-testid="tour-resume-interstitial"
+        className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
+        style={{ width: panelWidth }}
+      >
+        <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
+                <Sparkles className={`w-4 h-4 ${colors.text}`} />
+              </div>
+              <div>
+                <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
+                <p className="typo-caption text-foreground">{tx(t.onboarding.tour_step_of, { current: currentIndex + 1, total: visibleSteps.length })}</p>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon-sm" onClick={dismissTour} title={t.onboarding.end_tour} data-testid="tour-resume-dismiss">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
+            <div className={`w-12 h-12 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
+              <MapPin className={`w-6 h-6 ${colors.text}`} />
+            </div>
+            <div>
+              <p className="typo-heading text-foreground/90">{t.onboarding.resume_continue_title}</p>
+              <p className="typo-body text-foreground mt-1">{currentStep.title}</p>
+            </div>
+            <Button
+              variant="primary"
+              onClick={() => useSystemStore.setState({ tourResumePending: false })}
+              data-testid="tour-resume-continue"
+            >
+              {t.onboarding.resume_continue_cta}
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isMinimized) {
     return (

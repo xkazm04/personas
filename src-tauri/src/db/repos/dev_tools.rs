@@ -269,6 +269,7 @@ pub fn update_project(
     monitoring_credential_id: Option<Option<&str>>,
     monitoring_project_slug: Option<Option<&str>>,
     team_id: Option<Option<&str>>,
+    pr_credential_id: Option<Option<&str>>,
 ) -> Result<DevProject, AppError> {
     timed_query!("dev_projects", "dev_projects::update_project", {
         get_project_by_id(pool, id)?;
@@ -296,6 +297,7 @@ pub fn update_project(
             param_idx
         );
         push_field!(team_id, "team_id", sets, param_idx);
+        push_field!(pr_credential_id, "pr_credential_id", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_projects SET {} WHERE id = ?{}",
@@ -326,6 +328,9 @@ pub fn update_project(
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         if let Some(v) = team_id {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = pr_credential_id {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         param_values.push(Box::new(id.to_string()));

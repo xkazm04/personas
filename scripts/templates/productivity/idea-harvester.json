@@ -72,7 +72,8 @@
           "auth_type": "local",
           "role": "code_analysis",
           "category": "development",
-          "required": true,
+          "required": false,
+          "fallback_note": "Without a Codebase connector, accepted ideas are queued without feasibility analysis until a codebase is connected.",
           "credential_fields": [
             {
               "key": "codebase_root",
@@ -272,20 +273,17 @@
         "category": "configuration",
         "question": "Which codebase should feasibility analysis run against?",
         "type": "select",
-        "options": [],
-        "default": "",
+        "optional": true,
+        "allow_custom": true,
+        "default": "codebase",
         "maps_to": "use_cases[uc_codebase_analysis].sample_input.target_codebase",
         "variable_name": "target_codebase",
-        "context": "Registered codebase from your Codebase connector. If you have multiple codebases registered, pick the one this persona will analyze against. Required — the codebase connector is mandatory for this capability.",
+        "context": "Optional. Pick from your registered Codebase connectors (or add one) so feasibility analysis can read the source. If left unset, accepted ideas are queued without feasibility analysis until a codebase is connected.",
         "dimension": "connector",
-        "ui_component": "CodebaseSelector",
-        "connector_ref": "codebase",
-        "option_service_types": [
-          "codebase"
-        ],
         "dynamic_source": {
           "service_type": "development",
-          "operation": "list_codebases"
+          "operation": "list_credentials",
+          "source": "vault"
         }
       },
       {
