@@ -1431,6 +1431,29 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
             ));
         }
 
+        // Team memberships — warn before removing an agent that belongs to one
+        // or more teams (the persona_team_members rows cascade on delete, but
+        // the user should know the team loses this member first).
+        let teams: Vec<String> = {
+            let mut stmt = conn.prepare(
+                "SELECT t.name FROM persona_team_members ptm
+                 INNER JOIN persona_teams t ON t.id = ptm.team_id
+                 WHERE ptm.persona_id = ?1
+                 ORDER BY t.name",
+            )?;
+            let rows = stmt.query_map(params![id], |row| row.get::<_, String>(0))?;
+            rows.filter_map(|r| r.ok()).collect()
+        };
+        if !teams.is_empty() {
+            impacts.push((
+                "team".into(),
+                format!(
+                    "Member of team(s): {} — will be removed from them",
+                    teams.join(", ")
+                ),
+            ));
+        }
+
         Ok(impacts)
     })
 }
@@ -1439,6 +1462,13 @@ pub fn blast_radius(pool: &DbPool, id: &str) -> Result<Vec<(String, String)>, Ap
 mod tests {
     use super::*;
     use crate::db::init_test_db;
+
+    // NOTE: `blast_radius` is not unit-tested here — `init_test_db`'s reduced
+    // schema lacks columns the function queries (e.g. `persona_triggers.name`),
+    // so the call errors before reaching any new logic. The team-membership
+    // branch is a straight INNER JOIN mirroring the existing `chain_dependents`
+    // query and is covered by `cargo check`; verify end-to-end via the delete
+    // confirm modal.
 
     #[test]
     fn test_crud_persona() {

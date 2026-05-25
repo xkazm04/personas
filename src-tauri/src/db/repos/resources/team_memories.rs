@@ -370,10 +370,15 @@ pub fn get_stats(
 
         let where_clause = qb.where_clause();
 
-        // Total + avg importance + auto-generated count
+        // Total + avg importance + auto-generated count.
+        // `SUM(...)` over zero rows yields NULL (the aggregate row still exists
+        // with COUNT=0), so a team with no memories would make `row.get::<i64>`
+        // fail with InvalidColumnType — surfacing a spurious "Failed to load
+        // team memories" toast on every empty-team open. COALESCE it to 0, the
+        // same guard already applied to AVG above.
         let sql_agg = format!(
             "SELECT COUNT(*), COALESCE(AVG(importance), 0),
-                    SUM(CASE WHEN run_id IS NOT NULL THEN 1 ELSE 0 END)
+                    COALESCE(SUM(CASE WHEN run_id IS NOT NULL THEN 1 ELSE 0 END), 0)
              FROM team_memories {where_clause}"
         );
         let (total, avg_importance, auto_generated): (i64, f64, i64) =
@@ -482,4 +487,26 @@ pub fn evict_excess(
 
         Ok(deleted as i64)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    /// Regression: opening a team that has no memories used to surface a
+    /// spurious "Failed to load team memories" toast, because the aggregate
+    /// `SUM(...)` returns NULL over zero rows and `row.get::<i64>` then failed
+    /// with InvalidColumnType. `get_stats` must return a zeroed Ok instead.
+    #[test]
+    fn get_stats_on_empty_team_returns_zeroed_not_error() {
+        let pool = init_test_db().unwrap();
+        let stats = get_stats(&pool, "team-with-no-memories", None, None)
+            .expect("get_stats must not error on a team with zero memories");
+        assert_eq!(stats.total, 0);
+        assert_eq!(stats.auto_generated, 0);
+        assert_eq!(stats.avg_importance, 0.0);
+        assert!(stats.category_counts.is_empty());
+        assert!(stats.run_counts.is_empty());
+    }
 }

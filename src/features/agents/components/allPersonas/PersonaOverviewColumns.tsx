@@ -160,19 +160,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
           );
         },
       },
-      {
-        key: 'created', label: 'Created', width: '120px', sortable: true, align: 'right',
-        render: (p) =>
-          p.created_at ? (
-            <FormattedDateTooltip ts={p.created_at}>
-              <span className="text-md text-foreground cursor-help">
-                {formatRelativeTime(p.created_at)}
-              </span>
-            </FormattedDateTooltip>
-          ) : (
-            <span className="text-md text-foreground">--</span>
-          ),
-      },
     ],
     [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.common.connectors, t.common.triggers, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap],
   );
