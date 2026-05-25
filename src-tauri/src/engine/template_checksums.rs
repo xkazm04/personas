@@ -36,7 +36,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/feature-flag-experiment-analyst.json", "00161084f0ebe683");
     m.insert("development/feature-flag-governance-use-case.json", "0003e753113b0ecc");
     m.insert("development/lean-codebase-sentinel.json", "000af68557f2d526");
-    m.insert("development/qa-guardian.json", "001cde4c8ea830db");
+    m.insert("development/qa-guardian.json", "001e33f175cd5b57");
     m.insert("development/real-time-database-watcher.json", "000a8316306b346b");
     m.insert("development/self-evolving-codebase-memory.json", "0010964654a6eac8");
     m.insert("development/skill-librarian.json", "001715cb96cae02f");
@@ -75,7 +75,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("productivity/digital-clone.json", "00048ec76b518ee2");
     m.insert("productivity/email-intelligence-operator.json", "001705017d6cd444");
     m.insert("productivity/email-morning-digest.json", "0019c09408fb1bd0");
-    m.insert("productivity/idea-harvester.json", "001a47bcc32bf8b9");
+    m.insert("productivity/idea-harvester.json", "00089e32b4793f62");
     m.insert("productivity/meeting-lifecycle-manager.json", "000b96af2bb2aced");
     m.insert("productivity/personal-capture-bot.json", "000e26309015ab93");
     m.insert("productivity/router.json", "0001ec02412ffdd3");

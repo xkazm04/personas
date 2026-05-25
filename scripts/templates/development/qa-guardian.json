@@ -68,7 +68,8 @@
           "auth_type": "local",
           "role": "code_analysis",
           "category": "development",
-          "required": true,
+          "required": false,
+          "fallback_note": "Without a Codebase connector, QA Guardian reviews from the source-control diff alone and notes the degraded (diff-only) analysis in each review.",
           "credential_fields": [
             {
               "key": "codebase_root",
@@ -174,20 +175,17 @@
         "category": "configuration",
         "question": "Which registered codebase should QA Guardian analyze and run tests against?",
         "type": "select",
-        "options": [],
-        "default": "",
+        "optional": true,
+        "allow_custom": true,
+        "default": "codebase",
         "maps_to": "use_cases[uc_pr_review].sample_input.target_codebase",
         "variable_name": "target_codebase",
-        "context": "Pick from your registered codebases. Should be the same repository as the source control repo above. QA Guardian needs read + test-run access.",
+        "context": "Optional. Pick from your registered Codebase connectors (or add one) so QA Guardian can read the source and run tests against the same repository as the source-control repo above. If left unset, QA Guardian reviews from the source-control diff alone.",
         "dimension": "connector",
-        "ui_component": "CodebaseSelector",
-        "connector_ref": "codebase",
-        "option_service_types": [
-          "codebase"
-        ],
         "dynamic_source": {
           "service_type": "development",
-          "operation": "list_codebases"
+          "operation": "list_credentials",
+          "source": "vault"
         }
       },
       {

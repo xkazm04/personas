@@ -181,6 +181,10 @@ export function matchVaultToQuestions(
     if (q.dynamic_source) {
       const svc = q.dynamic_source.service_type;
       if (svc === 'codebases') continue;
+      // Optional questions never block adoption — don't light the top
+      // "credentials required" banner or mark the petal blocked for a
+      // nice-to-have connector the user can skip.
+      if ((q as { optional?: boolean }).optional) continue;
       if (!hasMatchingCredential(svc, credentialServiceTypes)) {
         blockedQuestionIds.add(q.id);
       }
