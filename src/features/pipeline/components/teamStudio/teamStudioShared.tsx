@@ -150,6 +150,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
     appearance === 'dashed' ? (
       <button
         type="button"
+        data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
         className="w-full flex items-center gap-2 px-3 py-2 rounded-card border border-dashed border-primary/20 text-foreground/60 hover:bg-secondary/30 hover:text-foreground transition-colors typo-body"
       >
@@ -159,6 +160,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
     ) : (
       <button
         type="button"
+        data-testid="team-add-member"
         onClick={() => setOpen((p) => !p)}
         className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 transition-colors"
       >
@@ -188,6 +190,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 available.map((p) => (
                   <button
                     key={p.id}
+                    data-testid="team-add-item"
                     type="button"
                     disabled={adding}
                     onClick={() => void handleAdd(p.id)}
@@ -199,7 +202,7 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                 ))
               )}
               {excludedDrafts > 0 && (
-                <p className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground/50">
+                <p data-testid="team-add-draft-hint" className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground/50">
                   {ts.add_persona_draft_hint}
                 </p>
               )}
@@ -347,6 +350,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
       </div>
 
       <textarea
+        data-testid="team-goal-input"
         value={goal}
         onChange={(e) => setGoal(e.target.value)}
         rows={4}
@@ -357,6 +361,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
       <div className="flex items-center gap-2">
         <button
           type="button"
+          data-testid="team-preview-button"
           disabled={!goal.trim() || decomposing}
           onClick={() => void handleDecompose()}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-primary/20 bg-secondary/30 typo-body font-medium text-foreground hover:bg-secondary/50 disabled:opacity-50 transition-colors"
@@ -366,6 +371,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         </button>
         <button
           type="button"
+          data-testid="team-assign-button"
           disabled={!goal.trim() || running}
           onClick={() => void handleAssign()}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-interactive border border-violet-500/30 bg-gradient-to-r from-violet-500/20 to-indigo-500/20 typo-body font-medium text-violet-200 hover:from-violet-500/30 hover:to-indigo-500/30 disabled:opacity-50 transition-colors"
@@ -380,6 +386,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
           {launched && (
             <motion.div
               key="live"
+              data-testid="team-live-checklist"
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
               className="flex flex-col gap-2"

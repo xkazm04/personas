@@ -50,7 +50,7 @@ export function TeamAssignmentBoard({ teamId }: { teamId: string }) {
   const list = assignments ?? [];
 
   return (
-    <div className="h-full flex flex-col gap-3">
+    <div className="h-full flex flex-col gap-3" data-testid="team-assignment-board">
       <span className="typo-label uppercase tracking-wider text-foreground/70">{ts.board_label}</span>
       {list.length === 0 ? (
         <p className="typo-body text-foreground/50 px-1">{ts.board_empty}</p>
@@ -66,7 +66,7 @@ export function TeamAssignmentBoard({ teamId }: { teamId: string }) {
             columnsClassName="grid grid-cols-5 gap-3"
             fallbackColumnId="queued"
             renderCard={(a) => (
-              <div className="rounded-modal border border-primary/10 bg-background/60 p-2.5">
+              <div className="rounded-modal border border-primary/10 bg-background/60 p-2.5" data-testid="team-assignment-card">
                 <h4 className="typo-card-label line-clamp-2">{a.title}</h4>
                 <div className="mt-2 text-[9px] text-foreground/50">
                   <RelativeTime timestamp={a.createdAt} />

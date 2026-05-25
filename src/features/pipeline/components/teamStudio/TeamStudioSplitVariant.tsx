@@ -93,6 +93,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           {/* Orchestrate entry — pinned at top of the list as the primary action */}
           <button
             type="button"
+            data-testid="team-mode-orchestrate"
             onClick={() => setMode({ kind: 'orchestrate' })}
             aria-pressed={mode.kind === 'orchestrate'}
             className={`flex-shrink-0 mx-2 mt-2 mb-1 flex items-center gap-2 px-3 py-2.5 rounded-card border transition-colors ${
@@ -108,6 +109,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           {/* Assignment board — manage the team's multiple assignments */}
           <button
             type="button"
+            data-testid="team-mode-board"
             onClick={() => setMode({ kind: 'board' })}
             aria-pressed={mode.kind === 'board'}
             className={`flex-shrink-0 mx-2 mb-1 flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
@@ -123,6 +125,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           {/* Workspace settings entry */}
           <button
             type="button"
+            data-testid="team-mode-workspace"
             onClick={() => setMode({ kind: 'workspace' })}
             aria-pressed={mode.kind === 'workspace'}
             className={`flex-shrink-0 mx-2 mb-1 flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
