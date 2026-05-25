@@ -470,6 +470,13 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
     try { localStorage.removeItem('personas:active-execution'); } catch (err) { silentCatch("stores/slices/agents/executionSlice:catch5")(err); }
   },
 
+  // NOTE: keyed sibling of the createCachedFetch primitive
+  // (src/lib/async/createCachedFetch.ts). Intentionally NOT migrated: its
+  // freshness timestamp lives in slice state (executionsCacheAt) because
+  // personaSlice's prefetch reads it (personaSlice.ts:252) — a cross-slice
+  // contract the module-local primitive can't own. Generalizing the primitive
+  // to a keyed value+timestamp store personaSlice can also read is a separate
+  // refactor (see Architect ADR 2026-05-25-async-patterns-hardening).
   fetchExecutions: async (personaId) => {
     // Deduplicate: if already fetching for the same persona, reuse in-flight promise.
     if (inflightFetch && inflightFetch.personaId === personaId) {
