@@ -89,5 +89,10 @@ function stop(): void {
   clear() { ring = []; localStorage.removeItem(STORAGE_KEY); },
 };
 
-// Always active during freeze investigation — revert to localStorage check after fix
-start();
+// No-op unless explicitly enabled via localStorage `__personas_freeze_detector`
+// (set it, then reload, or call window.__FREEZE_DETECTOR__.start()). Keeping the
+// rAF heartbeat off by default avoids per-frame overhead and the synchronous
+// querySelectorAll('*') it runs on every stall — which itself worsened jank.
+try {
+  if (localStorage.getItem(FLAG)) start();
+} catch { /* localStorage unavailable — stay off */ }
