@@ -63,6 +63,22 @@ export interface UnifiedTableProps<T> {
    * localStorage under this id. Omit for a fixed-width table.
    */
   tableId?: string;
+  /**
+   * Vertical density. 'comfortable' (default) preserves the original spacing;
+   * 'compact' tightens header + row padding for data-dense panels.
+   */
+  density?: 'comfortable' | 'compact';
+  /**
+   * Per-row left-accent border class (e.g. 'border-l-emerald-400'). Return
+   * undefined for no accent. Mirrors the Activity table's status-accent rows.
+   */
+  rowAccent?: (row: T, index: number) => string | undefined;
+  /**
+   * Pin the header to the top of the nearest scrolling ancestor. Default true —
+   * harmless in virtual mode (header sits outside the scroll container) and
+   * keeps column labels visible while a fixed-height table scrolls.
+   */
+  stickyHeader?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -70,7 +86,7 @@ export interface UnifiedTableProps<T> {
 // ---------------------------------------------------------------------------
 
 function ColumnHeader<T>({
-  col, sortKey, sortDir, onSort, resizeHandle,
+  col, sortKey, sortDir, onSort, resizeHandle, density = 'comfortable',
 }: {
   col: TableColumn<T>;
   sortKey: string | null;
@@ -78,11 +94,13 @@ function ColumnHeader<T>({
   onSort: (key: string) => void;
   /** Drag-divider rendered on the cell's right edge (omitted for the last column). */
   resizeHandle?: ReactNode;
+  density?: 'comfortable' | 'compact';
 }) {
   const { t } = useTranslation();
   const [showFilter, setShowFilter] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
+  const headPad = density === 'compact' ? 'px-3 py-1.5' : 'px-4 py-2.5';
 
   // Close filter dropdown on outside click
   const handleBlur = useCallback((e: React.FocusEvent) => {
@@ -100,7 +118,7 @@ function ColumnHeader<T>({
   // Custom filter component takes full control
   if (col.filterComponent) {
     return (
-      <div className={`relative flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
+      <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
         {col.filterComponent}
         {resizeHandle}
       </div>
@@ -108,7 +126,7 @@ function ColumnHeader<T>({
   }
 
   return (
-    <div className={`relative flex items-center gap-1 px-4 py-2.5 ${col.align === 'right' ? 'justify-end' : ''}`}>
+    <div className={`relative flex items-center gap-1 ${headPad} ${col.align === 'right' ? 'justify-end' : ''}`}>
       <span className="typo-heading font-semibold text-foreground uppercase tracking-wider">{col.label}</span>
 
       {/* Sort icon */}
@@ -206,7 +224,12 @@ export function UnifiedTable<T>({
   isLoading,
   className,
   tableId,
+  density = 'comfortable',
+  rowAccent,
+  stickyHeader = true,
 }: UnifiedTableProps<T>) {
+  const compact = density === 'compact';
+  const rowPadY = compact ? 'py-1' : 'py-2';
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const resize = useColumnWidths(tableId ?? '');
@@ -258,7 +281,7 @@ export function UnifiedTable<T>({
     <div className={`border border-primary/10 rounded-xl overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}>
       {/* Header */}
       <div
-        className="grid bg-primary/5 border-b border-primary/10"
+        className={`grid border-b border-primary/10 ${stickyHeader ? 'sticky top-0 z-20 bg-background/95 backdrop-blur-sm' : 'bg-primary/5'}`}
         style={{ gridTemplateColumns: gridTemplate }}
       >
         {columns.map((col, i) => (
@@ -268,6 +291,7 @@ export function UnifiedTable<T>({
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={handleSort}
+            density={density}
             resizeHandle={resizable && i < columns.length - 1 ? (
               <ColumnResizeHandle
                 label={t.shared.resize_column}
@@ -292,12 +316,13 @@ export function UnifiedTable<T>({
           <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
             {virtualizer.getVirtualItems().map((vRow) => {
               const row = sortedData[vRow.index]!;
+              const accent = rowAccent?.(row, vRow.index);
               return (
                 <div
                   key={getRowKey(row)}
                   onClick={() => onRowClick?.(row)}
                   style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${vRow.size}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
-                  className={`row-hover-lift grid items-center border-l-2 border-transparent hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+                  className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${vRow.index > 0 ? 'border-t border-t-primary/10' : ''} ${vRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
                 >
                   {columns.map((col) => (
                     <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -311,12 +336,14 @@ export function UnifiedTable<T>({
         </div>
       ) : (
         <div>
-          {sortedData.map((row, idx) => (
+          {sortedData.map((row, idx) => {
+            const accent = rowAccent?.(row, idx);
+            return (
             <div
               key={getRowKey(row)}
               onClick={() => onRowClick?.(row)}
               style={{ gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
-              className={`row-hover-lift grid items-center px-0 py-2 border-l-2 border-transparent hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+              className={`row-hover-lift grid items-center px-0 ${rowPadY} border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${onRowClick ? 'cursor-pointer' : ''} ${idx > 0 ? 'border-t border-t-primary/10' : ''} ${idx % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
             >
               {columns.map((col) => (
                 <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
@@ -324,7 +351,8 @@ export function UnifiedTable<T>({
                 </div>
               ))}
             </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
