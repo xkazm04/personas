@@ -591,6 +591,9 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
           </p>
         </div>
 
+        {/* Fine-tuning sliders — grouped under a hairline divider so they
+            read as one band, separated from the model selector above. */}
+        <div className="space-y-3 border-t border-primary/8 pt-3">
         <SliderRow
           label={t.plugins.companion.voice_settings_stability_label}
           hint={t.plugins.companion.voice_settings_stability_hint}
@@ -631,6 +634,7 @@ function VoiceSettingsCard({ scopedModels }: { scopedModels: ResourceItem[] }) {
           step={0.05}
           defaultLabel={t.plugins.companion.voice_settings_default}
         />
+        </div>
 
         {isCustomized && (
           <button
