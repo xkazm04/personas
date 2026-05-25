@@ -14,10 +14,6 @@ import { readdirSync, statSync, readFileSync, writeFileSync, mkdirSync, existsSy
 import { join, basename } from "path";
 
 const ROOT = join(import.meta.dirname, "..");
-const BUNDLE_DIR = join(ROOT, "src-tauri", "target", "release", "bundle");
-const BINARY_PATH = join(ROOT, "src-tauri", "target", "release", "personas-desktop.exe");
-const BASELINE_DIR = join(ROOT, ".baseline");
-const BASELINE_PATH = join(BASELINE_DIR, "binary-sizes.json");
 
 // ── Parse CLI flags ────────────────────────────────────────────────
 
@@ -25,6 +21,22 @@ const args = process.argv.slice(2);
 const saveBaseline = args.includes("--save-baseline");
 const budgetIdx = args.indexOf("--budget");
 const budgetMB = budgetIdx !== -1 ? Number(args[budgetIdx + 1]) : null;
+const targetIdx = args.indexOf("--target");
+const target = targetIdx !== -1 ? args[targetIdx + 1] : null;
+
+// Cargo writes artifacts to target/<triple>/release when built with --target
+// (the release pipeline always does) and to target/release otherwise (local
+// builds). Without honoring --target this looked at the empty
+// target/release/bundle in CI and died with "No build artifacts found",
+// silently disabling the installer-size budget. Mirrors the --target handling
+// in verify-onnxruntime-bundling.mjs.
+const releaseRoot = target
+  ? join(ROOT, "src-tauri", "target", target, "release")
+  : join(ROOT, "src-tauri", "target", "release");
+const BUNDLE_DIR = join(releaseRoot, "bundle");
+const BINARY_PATH = join(releaseRoot, "personas-desktop.exe");
+const BASELINE_DIR = join(ROOT, ".baseline");
+const BASELINE_PATH = join(BASELINE_DIR, "binary-sizes.json");
 
 // ── Collect sizes ──────────────────────────────────────────────────
 

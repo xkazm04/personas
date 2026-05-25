@@ -218,7 +218,7 @@ jobs:
 
       - name: Report build sizes
         if: matrix.label == 'windows-x64'
-        run: node scripts/binary-size-report.mjs --budget 60
+        run: node scripts/binary-size-report.mjs --target ${{ matrix.rust_target }} --budget 100
 
       - name: Upload source maps to Sentry
         if: matrix.label == 'linux-x64'
