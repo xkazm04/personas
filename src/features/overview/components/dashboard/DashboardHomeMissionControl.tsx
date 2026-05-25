@@ -525,16 +525,31 @@ export const VitalsConsole = memo(function VitalsConsole({
 }) {
   const { language } = useTranslation();
 
-  // Build a tiny static sparkline of traffic vs errors for context
+  // Build a tiny static sparkline of traffic vs errors for context. The traffic
+  // series gets a gradient-filled area (so the pane's only chart reads as
+  // finished, not a bare polyline); errors stay a thin overlaid line. Both
+  // series mark their latest value with an end dot.
   const sparkline = useMemo(() => {
     if (!points.length) return null;
     const max = Math.max(...points.map((p) => p.total_executions), 1);
     const w = 200, h = 40;
+    const pad = 2; // keep end dots + stroke off the top/bottom edge
     const step = w / Math.max(points.length - 1, 1);
-    const toY = (v: number) => h - (v / max) * h;
-    const traffic = points.map((p, i) => `${i * step},${toY(p.total_executions).toFixed(1)}`).join(' ');
-    const errors = points.map((p, i) => `${i * step},${toY(p.failed).toFixed(1)}`).join(' ');
-    return { traffic, errors, w, h };
+    const toY = (v: number) => h - pad - (v / max) * (h - pad * 2);
+    const xy = (v: number, i: number) => ({ x: i * step, y: toY(v) });
+    const trafficPts = points.map((p, i) => xy(p.total_executions, i));
+    const errorPts = points.map((p, i) => xy(p.failed, i));
+    const toStr = (pts: { x: number; y: number }[]) => pts.map((p) => `${p.x},${p.y.toFixed(1)}`).join(' ');
+    const lastX = (points.length - 1) * step;
+    const area = `M0,${h} L${toStr(trafficPts).replace(/ /g, ' L')} L${lastX},${h} Z`;
+    return {
+      traffic: toStr(trafficPts),
+      errors: toStr(errorPts),
+      area,
+      trafficEnd: trafficPts[trafficPts.length - 1]!,
+      errorEnd: errorPts[errorPts.length - 1]!,
+      w, h,
+    };
   }, [points]);
 
   return (
@@ -562,8 +577,19 @@ export const VitalsConsole = memo(function VitalsConsole({
               <span>{points.length}d</span>
             </div>
             <svg viewBox={`0 0 ${sparkline.w} ${sparkline.h}`} className="w-full h-10" preserveAspectRatio="none" aria-hidden="true">
-              <polyline fill="none" stroke="#06b6d4" strokeWidth="1.5" points={sparkline.traffic} />
-              <polyline fill="none" stroke="#f43f5e" strokeWidth="1.5" points={sparkline.errors} />
+              <defs>
+                <linearGradient id="vitals-spark-traffic" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.35" />
+                  <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {/* baseline */}
+              <line x1="0" y1={sparkline.h - 2} x2={sparkline.w} y2={sparkline.h - 2} stroke="currentColor" className="text-primary/10" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <path d={sparkline.area} fill="url(#vitals-spark-traffic)" stroke="none" />
+              <polyline fill="none" stroke="#06b6d4" strokeWidth="1.5" points={sparkline.traffic} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+              <polyline fill="none" stroke="#f43f5e" strokeWidth="1.5" points={sparkline.errors} vectorEffect="non-scaling-stroke" strokeLinecap="round" strokeLinejoin="round" />
+              <circle cx={sparkline.trafficEnd.x} cy={sparkline.trafficEnd.y} r="2" fill="#06b6d4" />
+              <circle cx={sparkline.errorEnd.x} cy={sparkline.errorEnd.y} r="2" fill="#f43f5e" />
             </svg>
           </div>
         )}
