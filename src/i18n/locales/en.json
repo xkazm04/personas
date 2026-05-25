@@ -13019,6 +13019,7 @@
       "cancel": "Cancel",
       "add_persona": "Add persona",
       "add_persona_none": "Every persona is already on this team.",
+      "add_persona_draft_hint": "Draft personas must be promoted before they can join a team.",
       "back_to_teams": "Back to teams",
       "orchestrate": "Orchestrate",
       "orchestrate_assignment": "Orchestrate an assignment",

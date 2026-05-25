@@ -13024,6 +13024,7 @@ export type Translations = {
       cancel: string;
       add_persona: string;
       add_persona_none: string;
+      add_persona_draft_hint: string;
       back_to_teams: string;
       orchestrate: string;
       orchestrate_assignment: string;

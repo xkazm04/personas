@@ -120,9 +120,15 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
 
-  const available = useMemo(() => {
+  const { available, excludedDrafts } = useMemo(() => {
     const taken = new Set(teamMembers.map((m) => m.persona_id));
-    return personas.filter((p) => !taken.has(p.id));
+    const candidates = personas.filter((p) => !taken.has(p.id));
+    // Draft / not-yet-ready personas can't run inside an assignment — the
+    // orchestrator rejects any member whose setup_status != "ready" (or that
+    // is disabled). Exclude them here so they never get added in the first
+    // place, and surface why with a hint.
+    const ready = candidates.filter((p) => p.setup_status === 'ready' && p.enabled);
+    return { available: ready, excludedDrafts: candidates.length - ready.length };
   }, [personas, teamMembers]);
 
   const handleAdd = useCallback(
@@ -191,6 +197,11 @@ export function AddMemberMenu({ appearance = 'button' }: AddMemberMenuProps) {
                     <span className="typo-body text-foreground truncate">{p.name}</span>
                   </button>
                 ))
+              )}
+              {excludedDrafts > 0 && (
+                <p className="mt-1 border-t border-primary/10 px-3 pt-2 pb-1 typo-caption text-foreground/50">
+                  {ts.add_persona_draft_hint}
+                </p>
               )}
             </motion.div>
           </>
