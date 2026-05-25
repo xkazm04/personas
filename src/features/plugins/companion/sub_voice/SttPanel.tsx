@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -266,13 +267,14 @@ function WhisperConfig() {
               return (
                 <div
                   key={m.modelId}
-                  className={`rounded-card border p-3 ${
+                  className={`rounded-card border p-2.5 ${
                     selected ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-foreground/10'
                   }`}
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
+                        <ActivityDot tone={selected ? 'active' : m.isDownloaded ? 'idle' : 'off'} size="xs" />
                         <span className="typo-body font-medium truncate">{m.label}</span>
                         <span className="typo-caption text-foreground/60">{m.approxSizeMb} MB</span>
                         {selected && (
@@ -292,9 +294,7 @@ function WhisperConfig() {
                             disabled={selected}
                             className="px-2.5 py-1.5 rounded-interactive typo-caption font-medium bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 transition-colors focus-ring disabled:opacity-40"
                           >
-                            {selected
-                              ? t.plugins.companion.stt_model_selected
-                              : t.plugins.companion.stt_model_select}
+                            {t.plugins.companion.stt_model_select}
                           </button>
                           <button
                             onClick={() => void onDelete(m.modelId)}
