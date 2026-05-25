@@ -41,6 +41,10 @@ The local source README at `src/features/overview/README.md` defines folder boun
 
 The Events, Activity, Messages, and Memories tables support drag-to-resize columns. The shared primitive is `src/features/shared/components/display/ColumnResize.tsx` — `useColumnWidths(tableId)` holds per-table px overrides and `ColumnResizeHandle` is the divider rendered on each column header's right edge. Drag a divider to resize; double-click it to restore the default width. Overrides persist to `localStorage` under `table-col-widths:<tableId>` (`overview-events`, `overview-activity`, `overview-messages`, `overview-memories`). `UnifiedTable` enables this whenever a `tableId` prop is passed; the custom grid tables in Activity, Messages, and the Memories baseline view wire the hook directly. The Memories table header and each `MemoryRow` share one grid template so columns stay aligned. Knowledge's annotation view is an expandable card list (not a column grid) and is intentionally excluded.
 
+## Shared table standard (`UnifiedTable`)
+
+`UnifiedTable` (`src/features/shared/components/display/UnifiedTable.tsx`) is the golden-standard list/table primitive — it carries column sorting (click a header's arrow), dropdown filters, inline column search, optional virtual scrolling, resizable columns, zebra rows, and a sticky header. Overview tables are converging onto it so they share one look and one set of behaviors. Props worth knowing: `density` (`comfortable` default / `compact` for data-dense panels), `rowAccent(row)` for a per-row status-accent left border (the running/failed markers on the Activity list), `stickyHeader` (default on), `borderless` (drop the card border when embedding inside another card), and `ariaLabel` (sets `role="table"`). The **Tool Performance** panel (`sub_usage/ToolPerformancePanel.tsx`) and the **IPC Performance** panel's by-command and slowest-calls tabs (`sub_observability/IpcPerformancePanel.tsx`) use it, so every column there is now click-to-sort.
+
 ## Data source boundaries
 
 Overview has three event-related tiers:

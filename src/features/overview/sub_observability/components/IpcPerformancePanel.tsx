@@ -11,6 +11,7 @@ import {
 } from '@/lib/ipcMetrics';
 import { latencyToHealth, HEALTH_STATUS_TOKEN } from '@/lib/design/statusTokens';
 import { CARD_CONTAINER } from '@/features/overview/libs/dashboardGrid';
+import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { useTranslation } from '@/i18n/useTranslation';
 
 function useIpcSnapshot() {
@@ -49,35 +50,13 @@ function LatencyBar({ value, max }: { value: number; max: number }) {
   );
 }
 
-function CommandRow({ stat, maxP95 }: { stat: IpcCommandStats; maxP95: number }) {
-  const shortName = stat.command.replace(/^(get_|list_|fetch_|create_|update_|delete_)/, '');
-  return (
-    <div role="row" tabIndex={0} className="grid grid-cols-[1fr_60px_60px_60px_52px] items-center gap-2 px-3 py-1.5 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none typo-body">
-      <div role="cell" className="flex flex-col gap-0.5 min-w-0">
-        <span className="font-mono text-foreground truncate" title={stat.command}>{shortName}</span>
-        <LatencyBar value={stat.p95} max={maxP95} />
-      </div>
-      <span role="cell" className={`text-right font-mono ${latencyColor(stat.p50)}`}>{formatMs(stat.p50)}</span>
-      <span role="cell" className={`text-right font-mono ${latencyColor(stat.p95)}`}>{formatMs(stat.p95)}</span>
-      <span role="cell" className={`text-right font-mono ${latencyColor(stat.p99)}`}>{formatMs(stat.p99)}</span>
-      <span role="cell" className="text-right text-foreground font-mono">{stat.count}</span>
-    </div>
-  );
-}
-
-function SlowestCallRow({ record }: { record: IpcCallRecord }) {
-  const age = Date.now() - record.timestamp;
-  const ageLabel = age < 60_000 ? `${Math.floor(age / 1000)}s ago` : age < 3_600_000 ? `${Math.floor(age / 60_000)}m ago` : `${Math.floor(age / 3_600_000)}h ago`;
-  return (
-    <div role="row" tabIndex={0} className="flex items-center gap-3 px-3 py-1.5 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none typo-body">
-      <span role="cell" className={`font-mono font-bold min-w-[60px] text-right ${latencyColor(record.durationMs)}`}>
-        {formatMs(record.durationMs)}
-      </span>
-      <span role="cell" className="font-mono text-foreground flex-1 truncate" title={record.command}>{record.command}</span>
-      {!record.ok && <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />}
-      <span role="cell" className="text-foreground typo-body min-w-[50px] text-right">{ageLabel}</span>
-    </div>
-  );
+function ageLabel(timestamp: number): string {
+  const age = Date.now() - timestamp;
+  return age < 60_000
+    ? `${Math.floor(age / 1000)}s ago`
+    : age < 3_600_000
+      ? `${Math.floor(age / 60_000)}m ago`
+      : `${Math.floor(age / 3_600_000)}h ago`;
 }
 
 type Tab = 'commands' | 'slowest';
@@ -94,6 +73,70 @@ export default function IpcPerformancePanel() {
     if (stats.length === 0) return 1;
     return Math.max(...stats.map(s => s.p95));
   }, [stats]);
+
+  const commandColumns = useMemo<TableColumn<IpcCommandStats>[]>(() => [
+    {
+      key: 'command',
+      label: t.overview.ipc_panel.command,
+      width: 'minmax(140px, 1fr)',
+      sortable: true,
+      sortFn: (a, b) => a.command.localeCompare(b.command),
+      render: (stat) => {
+        const shortName = stat.command.replace(/^(get_|list_|fetch_|create_|update_|delete_)/, '');
+        return (
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <span className="font-mono text-foreground truncate" title={stat.command}>{shortName}</span>
+            <LatencyBar value={stat.p95} max={maxP95} />
+          </div>
+        );
+      },
+    },
+    {
+      key: 'p50', label: 'p50', width: '64px', align: 'right', sortable: true,
+      sortFn: (a, b) => a.p50 - b.p50,
+      render: (stat) => <span className={`font-mono ${latencyColor(stat.p50)}`}>{formatMs(stat.p50)}</span>,
+    },
+    {
+      key: 'p95', label: 'p95', width: '64px', align: 'right', sortable: true,
+      sortFn: (a, b) => a.p95 - b.p95,
+      render: (stat) => <span className={`font-mono ${latencyColor(stat.p95)}`}>{formatMs(stat.p95)}</span>,
+    },
+    {
+      key: 'p99', label: 'p99', width: '64px', align: 'right', sortable: true,
+      sortFn: (a, b) => a.p99 - b.p99,
+      render: (stat) => <span className={`font-mono ${latencyColor(stat.p99)}`}>{formatMs(stat.p99)}</span>,
+    },
+    {
+      key: 'count', label: t.overview.ipc_panel.calls_header, width: '64px', align: 'right', sortable: true,
+      sortFn: (a, b) => a.count - b.count,
+      render: (stat) => <span className="font-mono text-foreground">{stat.count}</span>,
+    },
+  ], [t, maxP95]);
+
+  const slowestColumns = useMemo<TableColumn<IpcCallRecord>[]>(() => [
+    {
+      key: 'duration', label: t.overview.ipc_panel.duration_header, width: '80px', align: 'right', sortable: true,
+      sortFn: (a, b) => a.durationMs - b.durationMs,
+      render: (rec) => (
+        <span className={`font-mono font-bold ${latencyColor(rec.durationMs)}`}>{formatMs(rec.durationMs)}</span>
+      ),
+    },
+    {
+      key: 'command', label: 'Command', width: 'minmax(140px, 1fr)', sortable: true,
+      sortFn: (a, b) => a.command.localeCompare(b.command),
+      render: (rec) => (
+        <span className="flex items-center gap-1.5 min-w-0">
+          <span className="font-mono text-foreground truncate" title={rec.command}>{rec.command}</span>
+          {!rec.ok && <AlertTriangle className="w-3 h-3 text-red-400 flex-shrink-0" />}
+        </span>
+      ),
+    },
+    {
+      key: 'when', label: t.overview.ipc_panel.when_header, width: '80px', align: 'right', sortable: true,
+      sortFn: (a, b) => a.timestamp - b.timestamp,
+      render: (rec) => <span className="text-foreground">{ageLabel(rec.timestamp)}</span>,
+    },
+  ], [t]);
 
   if (summary.totalCalls === 0) return null;
 
@@ -136,31 +179,29 @@ export default function IpcPerformancePanel() {
           </div>
 
           {tab === 'commands' && (
-            <div role="table" aria-label={t.overview.ipc_panel.commands_table_label}>
-              <div role="row" className="grid grid-cols-[1fr_60px_60px_60px_52px] gap-2 px-3 py-1.5 typo-body text-foreground border-b border-primary/5">
-                <span role="columnheader">{t.overview.ipc_panel.command}</span>
-                <span role="columnheader" className="text-right">p50</span>
-                <span role="columnheader" className="text-right">p95</span>
-                <span role="columnheader" className="text-right">p99</span>
-                <span role="columnheader" className="text-right">{t.overview.ipc_panel.calls_header}</span>
-              </div>
-              <div role="rowgroup" className="max-h-[300px] overflow-y-auto divide-y divide-primary/[0.03]">
-                {stats.map(stat => <CommandRow key={stat.command} stat={stat} maxP95={maxP95} />)}
-              </div>
-            </div>
+            <UnifiedTable<IpcCommandStats>
+              columns={commandColumns}
+              data={stats}
+              getRowKey={(stat) => stat.command}
+              density="compact"
+              rowHeight={44}
+              borderless
+              className="max-h-[300px]"
+              ariaLabel={t.overview.ipc_panel.commands_table_label}
+            />
           )}
 
           {tab === 'slowest' && (
-            <div role="table" aria-label={t.overview.ipc_panel.slowest_table_label}>
-              <div role="row" className="flex items-center gap-3 px-3 py-1.5 typo-body text-foreground border-b border-primary/5">
-                <span role="columnheader" className="min-w-[60px] text-right">{t.overview.ipc_panel.duration_header}</span>
-                <span role="columnheader" className="flex-1">Command</span>
-                <span role="columnheader" className="min-w-[50px] text-right">{t.overview.ipc_panel.when_header}</span>
-              </div>
-              <div role="rowgroup" className="max-h-[300px] overflow-y-auto divide-y divide-primary/[0.03]">
-                {slowest.map((record, i) => <SlowestCallRow key={`${record.command}-${record.timestamp}-${i}`} record={record} />)}
-              </div>
-            </div>
+            <UnifiedTable<IpcCallRecord>
+              columns={slowestColumns}
+              data={slowest}
+              getRowKey={(rec) => `${rec.command}-${rec.timestamp}`}
+              density="compact"
+              rowHeight={36}
+              borderless
+              className="max-h-[300px]"
+              ariaLabel={t.overview.ipc_panel.slowest_table_label}
+            />
           )}
 
           {(summary.errorRate > 0 || summary.timeoutRate > 0) && (

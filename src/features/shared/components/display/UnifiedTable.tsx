@@ -79,6 +79,10 @@ export interface UnifiedTableProps<T> {
    * keeps column labels visible while a fixed-height table scrolls.
    */
   stickyHeader?: boolean;
+  /** Accessible name for the table region. When set, the container gets role="table". */
+  ariaLabel?: string;
+  /** Drop the default border + rounded corners (for tables embedded inside a card). */
+  borderless?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -227,6 +231,8 @@ export function UnifiedTable<T>({
   density = 'comfortable',
   rowAccent,
   stickyHeader = true,
+  ariaLabel,
+  borderless = false,
 }: UnifiedTableProps<T>) {
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
@@ -278,7 +284,11 @@ export function UnifiedTable<T>({
   }
 
   return (
-    <div className={`border border-primary/10 rounded-xl overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}>
+    <div
+      role={ariaLabel ? 'table' : undefined}
+      aria-label={ariaLabel}
+      className={`${borderless ? '' : 'border border-primary/10 rounded-xl'} overflow-hidden flex flex-col min-h-0 ${resize.isResizing ? 'select-none cursor-col-resize' : ''} ${className ?? ''}`}
+    >
       {/* Header */}
       <div
         className={`grid border-b border-primary/10 ${stickyHeader ? 'sticky top-0 z-20 bg-background/95 backdrop-blur-sm' : 'bg-primary/5'}`}
