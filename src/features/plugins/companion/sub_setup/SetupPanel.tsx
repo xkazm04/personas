@@ -275,7 +275,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.setup_self_improve_label}
             </div>
-            <div className="typo-caption text-foreground mt-1.5">
+            <div className="typo-caption text-foreground/60 mt-1.5">
               {selfImprove === null
                 ? t.plugins.companion.loading
                 : selfImprove
@@ -312,7 +312,7 @@ export default function SetupPanel() {
             <div className="typo-body font-medium">
               {t.plugins.companion.tracking_master_label}
             </div>
-            <div className="typo-caption text-foreground mt-1.5">
+            <div className="typo-caption text-foreground/60 mt-1.5">
               {trackingEnabled === null
                 ? t.plugins.companion.loading
                 : trackingEnabled
@@ -355,11 +355,11 @@ function ToggleRow({
       <div className="mt-0.5 shrink-0">{icon}</div>
       <div className="flex-1 min-w-0">
         <div className="typo-body font-medium">{label}</div>
-        <div className="typo-caption text-foreground mt-1.5">
+        <div className="typo-caption text-foreground/60 mt-1.5">
           {description}
         </div>
         {countLabel ? (
-          <div className="typo-caption text-foreground mt-1">
+          <div className="typo-caption text-foreground/50 mt-1">
             {countLabel}
           </div>
         ) : null}

@@ -174,7 +174,7 @@ export default function SetupPanel() {
                   }`}
                 >
                   <p className="typo-heading typo-card-label">{v.name}</p>
-                  <p className="typo-caption text-foreground truncate">{v.path}</p>
+                  <p className="typo-caption text-foreground/60 truncate">{v.path}</p>
                 </button>
               ))}
             </div>
@@ -215,7 +215,7 @@ export default function SetupPanel() {
                 {connectionResult.valid ? (
                   <>
                     <p className="typo-heading text-emerald-400">{tx(t.plugins.obsidian_brain.connected_to_vault, { name: `“${connectionResult.vaultName}”` })}</p>
-                    <p className="typo-caption text-foreground">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
+                    <p className="typo-caption text-foreground/60">{tx(t.plugins.obsidian_brain.notes_found_count, { count: connectionResult.noteCount })}</p>
                   </>
                 ) : (
                   <p className="typo-heading text-red-400">{connectionResult.error}</p>
@@ -238,7 +238,7 @@ export default function SetupPanel() {
             <div key={opt.label} className="flex items-center justify-between gap-4 px-3 py-2.5 rounded-modal hover:bg-secondary/20 transition-colors">
               <div className="min-w-0">
                 <p className="typo-heading typo-card-label">{opt.label}</p>
-                <p className="typo-caption text-foreground">{opt.desc}</p>
+                <p className="typo-caption text-foreground/60">{opt.desc}</p>
               </div>
               <AccessibleToggle checked={opt.checked} onChange={opt.onChange} label={opt.label} size="sm" />
             </div>
@@ -266,7 +266,7 @@ export default function SetupPanel() {
               </div>
             ))}
           </div>
-          <p className="typo-caption text-foreground">
+          <p className="typo-caption text-foreground/60">
             <DebtText k="auto_preview_4bf30626" /> <code className="text-violet-400/60">{personasFolder}<DebtText k="auto_agentname_941ccfe3" />{memoriesFolder}<DebtText k="auto_fact_memory_title_md_d0042e52" /></code>
           </p>
         </div>
