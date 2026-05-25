@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
 import { invokeWithTimeout } from '@/lib/tauriInvoke';
-import { usePipelineStore } from '@/stores/pipelineStore';
 import { silentCatch } from '@/lib/silentCatch';
 
 const TERMINAL = new Set(['done', 'failed', 'awaiting_review']);
@@ -10,12 +9,19 @@ const TERMINAL = new Set(['done', 'failed', 'awaiting_review']);
 /**
  * Phase 4 — Athena post-run reconciliation.
  *
- * When an **Athena-dispatched** team assignment (`source === 'athena'`, with a
- * `companionOpId`) reaches a terminal status, record its outcome digest into
- * Athena's OperativeMemory exactly once — so her chat can reason about what the
- * team accomplished. Mounted once in BackgroundServices so it fires regardless
- * of the active module. Team-UI assignments are skipped (they have no operation
- * to reconcile into; they surface via the live checklist + board instead).
+ * When a team assignment reaches a terminal status, ask the backend to record
+ * its outcome digest into Athena's OperativeMemory — so her chat can reason
+ * about what the team accomplished. Mounted once in BackgroundServices so it
+ * fires regardless of the active module.
+ *
+ * The fire decision is **server-side, not cache-dependent**: the command
+ * (`companion_record_assignment_outcome`) resolves the assignment's
+ * `companion_op_id` from the DB and no-ops (returns false) for any assignment
+ * that has no operation to reconcile into — i.e. every team-UI assignment.
+ * So we can call it on every terminal transition without first needing the
+ * assignment cached frontend-side; the dedupe ref just avoids a redundant IPC
+ * on event replay. This is what makes the hook fire reliably for
+ * Athena-dispatched assignments created outside the pipeline store's cache.
  *
  * Mirrors `useFleetCompanionBridge` (event → companion record command). Sonnet
  * still does the up-front decompose; this is reflection, not orchestration.
@@ -35,15 +41,12 @@ export function useAthenaAssignmentReconciliation() {
         if (step_id !== null || !TERMINAL.has(status)) return;
         const key = `${assignment_id}:${status}`;
         if (firedRef.current.has(key)) return;
-
-        // Resolve from cache; only Athena-dispatched assignments reconcile.
-        const st = usePipelineStore.getState();
-        const cached =
-          st.assignmentDetails[assignment_id]?.assignment ??
-          Object.values(st.assignmentsByTeam).flat().find((a) => a.id === assignment_id);
-        if (!cached || cached.source !== 'athena' || !cached.companionOpId) return;
-
         firedRef.current.add(key);
+
+        // No cache lookup: the command resolves companion_op_id from the DB and
+        // returns false for any assignment with no operation to reconcile (every
+        // team-UI assignment), so calling it on every terminal transition is safe
+        // and lets the hook fire for Athena assignments not in the store cache.
         void invokeWithTimeout<boolean>('companion_record_assignment_outcome', {
           assignmentId: assignment_id,
         }).catch(silentCatch('teams/athenaReconciliation'));
