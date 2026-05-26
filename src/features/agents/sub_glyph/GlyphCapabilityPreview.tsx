@@ -82,7 +82,7 @@ function buildSplitPrompt(title: string, connectors: string[]): string {
 }
 
 export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPreviewProps = {}) {
-  const { capabilities, capabilityOrder, excludedIds, toggleCapabilityExcluded } = useAgentStore(
+  const { capabilities, capabilityOrder, excludedIds, toggleCapabilityExcluded, behaviorCore } = useAgentStore(
     useShallow((s) => {
       const sess = s.activeBuildSessionId
         ? s.buildSessions[s.activeBuildSessionId]
@@ -92,6 +92,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
         capabilityOrder: sess?.capabilityOrder ?? [],
         excludedIds: sess?.excludedCapabilityIds ?? [],
         toggleCapabilityExcluded: s.toggleCapabilityExcluded,
+        behaviorCore: sess?.behaviorCore ?? null,
       };
     }),
   );
@@ -114,6 +115,18 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
           )}
         </span>
       </div>
+      {/* Pre-promote confirmation: surface the behavior core (what the persona IS)
+          so the user can catch a misframed mission/role before committing. */}
+      {behaviorCore?.mission && (
+        <div className="rounded-modal border border-border/30 bg-foreground/5 px-3 py-2">
+          {behaviorCore.identity?.role && (
+            <div className="typo-caption uppercase tracking-[0.16em] text-foreground/70 mb-0.5 truncate">
+              {behaviorCore.identity.role}
+            </div>
+          )}
+          <div className="typo-body text-foreground/90 leading-snug">{behaviorCore.mission}</div>
+        </div>
+      )}
       <div className="flex flex-col gap-1 max-h-[400px] overflow-y-auto pr-1">
         {capabilityOrder.map((id) => {
           const cap = capabilities[id];
@@ -124,6 +137,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
           const review = shortReviewLabel(cap.review_policy?.mode);
           const memoryEnabled = !!cap.memory_policy?.enabled;
           const connectorList = cap.connectors ?? [];
+          const events = cap.event_subscriptions ?? [];
           return (
             <div
               key={id}
@@ -170,6 +184,17 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         <span className="inline-flex items-center gap-1 text-foreground">
                           <Brain className="w-3 h-3" />
                           Remembers
+                        </span>
+                      )}
+                      {events.length > 0 && (
+                        <span
+                          className="inline-flex items-center gap-1 text-foreground"
+                          title={events.map((e) => `${e.direction === "emit" ? "→ emits " : "← listens "}${e.event_type}`).join("\n")}
+                        >
+                          <Radio className="w-3 h-3" />
+                          {events.length === 1
+                            ? events[0].event_type.split(".").slice(-2).join(".")
+                            : `${events.length} events`}
                         </span>
                       )}
                     </div>
