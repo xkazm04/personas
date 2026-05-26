@@ -10932,6 +10932,8 @@
       "last_push_result": "Last Push Result",
       "app_version": "App Version",
       "vault_version": "Vault Version",
+      "conflicts_title": "충돌 ({count})",
+      "diff_truncated": "차이가 잘렸습니다 — 전체 내용을 보려면 노트를 여세요.",
       "keep_app": "Keep App",
       "keep_vault": "Keep Vault",
       "skip": "Skip",

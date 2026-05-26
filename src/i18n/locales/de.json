@@ -10932,6 +10932,8 @@
       "last_push_result": "Letztes Push-Ergebnis",
       "app_version": "App-Version",
       "vault_version": "Tresor-Version",
+      "conflicts_title": "Konflikte ({count})",
+      "diff_truncated": "Unterschiede gekürzt – öffne die Notiz, um den vollständigen Inhalt zu sehen.",
       "keep_app": "App behalten",
       "keep_vault": "Tresor behalten",
       "skip": "Überspringen",

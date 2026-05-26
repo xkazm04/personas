@@ -10932,6 +10932,8 @@
       "last_push_result": "Hasil Dorongan Terakhir",
       "app_version": "Versi Aplikasi",
       "vault_version": "Versi Brankas",
+      "conflicts_title": "Konflik ({count})",
+      "diff_truncated": "Perbedaan dipangkas — buka catatan untuk melihat konten lengkap.",
       "keep_app": "Pertahankan Aplikasi",
       "keep_vault": "Pertahankan Brankas",
       "skip": "Lewati",

@@ -10932,6 +10932,8 @@
       "last_push_result": "上次推送结果",
       "app_version": "应用版本",
       "vault_version": "保险库版本",
+      "conflicts_title": "冲突 ({count})",
+      "diff_truncated": "差异已截断 — 打开笔记查看完整内容。",
       "keep_app": "保留应用版本",
       "keep_vault": "保留保险库版本",
       "skip": "跳过",

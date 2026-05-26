@@ -10932,6 +10932,8 @@
       "last_push_result": "Kết quả đẩy cuối",
       "app_version": "Phiên bản ứng dụng",
       "vault_version": "Phiên bản kho",
+      "conflicts_title": "Xung đột ({count})",
+      "diff_truncated": "Khác biệt đã được cắt bớt — mở ghi chú để xem toàn bộ nội dung.",
       "keep_app": "Giữ ứng dụng",
       "keep_vault": "Giữ kho",
       "skip": "Bỏ qua",

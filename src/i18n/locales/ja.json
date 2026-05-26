@@ -10932,6 +10932,8 @@
       "last_push_result": "最後のプッシュ結果",
       "app_version": "アプリバージョン",
       "vault_version": "Vaultバージョン",
+      "conflicts_title": "競合 ({count})",
+      "diff_truncated": "差分は省略されています — 全文を表示するにはノートを開いてください。",
       "keep_app": "アプリを保持",
       "keep_vault": "Vaultを保持",
       "skip": "スキップ",

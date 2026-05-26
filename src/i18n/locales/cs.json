@@ -10932,6 +10932,8 @@
       "last_push_result": "Výsledek posledního push",
       "app_version": "Verze v aplikaci",
       "vault_version": "Verze ve vaultu",
+      "conflicts_title": "Konflikty ({count})",
+      "diff_truncated": "Rozdíly zkráceny — otevřete poznámku pro zobrazení celého obsahu.",
       "keep_app": "Zachovat verzi aplikace",
       "keep_vault": "Zachovat verzi vaultu",
       "skip": "Přeskočit",

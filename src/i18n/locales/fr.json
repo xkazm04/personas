@@ -10932,6 +10932,8 @@
       "last_push_result": "Dernier résultat d'envoi",
       "app_version": "Version de l'application",
       "vault_version": "Version du coffre-fort",
+      "conflicts_title": "Conflits ({count})",
+      "diff_truncated": "Différences tronquées — ouvrez la note pour voir le contenu complet.",
       "keep_app": "Conserver l'application",
       "keep_vault": "Conserver le coffre-fort",
       "skip": "Ignorer",

@@ -11096,6 +11096,8 @@
       "result_error_detail": "Error details",
       "app_version": "App Version",
       "vault_version": "Vault Version",
+      "conflicts_title": "Conflicts ({count})",
+      "diff_truncated": "Diff truncated — open the note to see the full content.",
       "keep_app": "Keep App",
       "keep_vault": "Keep Vault",
       "skip": "Skip",

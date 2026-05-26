@@ -19,6 +19,7 @@ import {
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
+import ConflictDiffView from './ConflictDiffView';
 
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
@@ -279,7 +280,7 @@ export default function SyncPanel() {
 
       {/* Conflicts */}
       {conflicts.length > 0 && (
-        <SectionCard collapsible title={`Conflicts (${conflicts.length})`} status="warning" storageKey="obsidian-sync-conflicts">
+        <SectionCard collapsible title={tx(t.plugins.obsidian_brain.conflicts_title, { count: conflicts.length })} status="warning" storageKey="obsidian-sync-conflicts">
           <div className="space-y-3">
             {conflicts.map((c) => (
               <div key={c.id} className="px-4 py-3 rounded-modal bg-amber-500/5 border border-amber-500/20 space-y-3">
@@ -287,20 +288,7 @@ export default function SyncPanel() {
                   <p className="typo-heading typo-card-label">{c.entityType}: {c.entityId.slice(0, 8)}...</p>
                   <p className="typo-caption text-foreground">{c.filePath}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <p className="typo-caption text-blue-400/70">{t.plugins.obsidian_brain.app_version}</p>
-                    <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
-                      {c.appContent.slice(0, 500)}{c.appContent.length > 500 ? '...' : ''}
-                    </pre>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="typo-caption text-violet-400/70">{t.plugins.obsidian_brain.vault_version}</p>
-                    <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
-                      {c.vaultContent.slice(0, 500)}{c.vaultContent.length > 500 ? '...' : ''}
-                    </pre>
-                  </div>
-                </div>
+                <ConflictDiffView appContent={c.appContent} vaultContent={c.vaultContent} />
                 <div className="flex gap-2">
                   <button onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
                     {t.plugins.obsidian_brain.keep_app}

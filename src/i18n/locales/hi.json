@@ -10932,6 +10932,8 @@
       "last_push_result": "अंतिम पुश परिणाम",
       "app_version": "ऐप संस्करण",
       "vault_version": "Vault संस्करण",
+      "conflicts_title": "विरोध ({count})",
+      "diff_truncated": "अंतर संक्षिप्त किया गया — पूरी सामग्री देखने के लिए नोट खोलें।",
       "keep_app": "ऐप रखें",
       "keep_vault": "Vault रखें",
       "skip": "छोड़ें",

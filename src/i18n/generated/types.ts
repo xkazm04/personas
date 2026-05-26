@@ -11102,6 +11102,8 @@ export type Translations = {
       result_error_detail: string;
       app_version: string;
       vault_version: string;
+      conflicts_title: string;
+      diff_truncated: string;
       keep_app: string;
       keep_vault: string;
       skip: string;

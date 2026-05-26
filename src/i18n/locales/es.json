@@ -10932,6 +10932,8 @@
       "last_push_result": "Resultado del Último Envío",
       "app_version": "Versión de la Aplicación",
       "vault_version": "Versión del Vault",
+      "conflicts_title": "Conflictos ({count})",
+      "diff_truncated": "Diferencias truncadas: abre la nota para ver el contenido completo.",
       "keep_app": "Conservar App",
       "keep_vault": "Conservar Vault",
       "skip": "Omitir",
