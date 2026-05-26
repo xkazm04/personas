@@ -144,6 +144,12 @@ event_names! {
     TASK_EXEC_OUTPUT           => "task-exec-output",
     TASK_EXEC_COMPLETE         => "task-exec-complete",
 
+    // Twin Training Studio (background batch question/answer generation)
+    TWIN_STUDIO_STATUS         => "twin-studio-status",
+    TWIN_STUDIO_OUTPUT         => "twin-studio-output",
+    TWIN_STUDIO_PROGRESS       => "twin-studio-progress",
+    TWIN_STUDIO_COMPLETE       => "twin-studio-complete",
+
     // Auto-run scheduler (drains backlog respecting goal-DAG)
     AUTO_RUN_STATUS            => "auto-run-status",
     AUTO_RUN_COMPLETE          => "auto-run-complete",
