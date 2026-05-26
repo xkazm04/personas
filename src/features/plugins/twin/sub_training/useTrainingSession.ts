@@ -158,7 +158,16 @@ export function useTrainingSession(): TrainingSession {
       if (clean) {
         setAnswerDraft(clean);
         setAiDrafted(true);
-        setTimeout(() => answerRef.current?.focus(), 50);
+        // Programmatic set doesn't fire the textarea's onInput autosize, so a
+        // multi-line draft would land collapsed. Focus + size it to fit so the
+        // user can actually read what they're reviewing.
+        setTimeout(() => {
+          const el = answerRef.current;
+          if (!el) return;
+          el.focus();
+          el.style.height = 'auto';
+          el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+        }, 50);
       }
     } catch (e) {
       toastCatch('features/plugins/twin/sub_training/useTrainingSession:draftAnswer')(e);
