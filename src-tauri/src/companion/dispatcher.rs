@@ -119,6 +119,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     "resolve_backlog_item",
     // Phase F — advanced UI control.
     "prefill_persona_create",
+    // `build_oneshot` is the autonomous sibling of `prefill_persona_create`
+    // (auto_launch=true, mode=one_shot). It MUST be here or the dispatcher
+    // silently drops the OP — Athena emits it (the constitution teaches it and
+    // approvals.rs::execute_build_oneshot handles it on approve), but without
+    // this entry no approval card is ever created and nothing builds.
+    "build_oneshot",
     "run_arena",
     // `compose_dashboard` is auto-fire — handled below alongside
     // `open_route` / `open_lab`. No approval card; the user already
@@ -278,10 +284,27 @@ pub fn dispatch(
             continue;
         }
 
+        // Extract an op payload. Accept `OP:` at line start, a bare `{"op"` line,
+        // OR an `OP: {…}` marker that appears mid-line — Athena sometimes prefixes
+        // a word on the same line ("Building it. OP: {…}"), which would otherwise be
+        // silently dropped. In the mid-line case the prose before the marker is kept
+        // for display so only the op JSON is stripped.
         let payload = if let Some(rest) = trimmed.strip_prefix("OP:") {
             rest.trim()
         } else if trimmed.starts_with("{\"op\"") {
             trimmed
+        } else if let Some(idx) = trimmed.find("OP:") {
+            let after = trimmed[idx + 3..].trim_start();
+            if after.starts_with('{') {
+                let before = trimmed[..idx].trim_end();
+                if !before.is_empty() {
+                    cleaned_lines.push(before);
+                }
+                after
+            } else {
+                cleaned_lines.push(line);
+                continue;
+            }
         } else {
             cleaned_lines.push(line);
             continue;
