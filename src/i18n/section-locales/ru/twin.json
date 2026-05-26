@@ -235,7 +235,10 @@
     "studioDraftOne": "Черновик",
     "studioWordCount": "{count} слов",
     "studioSavedToast": "{count} пар сохранено в память",
-    "studioRemoveRow": "Удалить"
+    "studioRemoveRow": "Удалить",
+    "studioSaveDirections": "Сохранить как указания по умолчанию",
+    "studioDirectionsSaved": "Сохранено по умолчанию",
+    "studioDirectionsSavedToast": "Указания сохранены"
   },
   "brain": {
     "title": "Brain",

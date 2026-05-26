@@ -13939,7 +13939,10 @@
       "studioDraftOne": "草拟",
       "studioWordCount": "{count} 词",
       "studioSavedToast": "已保存 {count} 组到记忆",
-      "studioRemoveRow": "移除"
+      "studioRemoveRow": "移除",
+      "studioSaveDirections": "保存为默认指示",
+      "studioDirectionsSaved": "已保存为默认",
+      "studioDirectionsSavedToast": "指示已保存"
     },
     "brain": {
       "title": "Brain",

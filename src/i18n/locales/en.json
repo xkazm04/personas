@@ -13990,7 +13990,10 @@
       "studioDraftOne": "Draft",
       "studioWordCount": "{count} words",
       "studioSavedToast": "{count} pairs saved to memory",
-      "studioRemoveRow": "Remove"
+      "studioRemoveRow": "Remove",
+      "studioSaveDirections": "Save as default directions",
+      "studioDirectionsSaved": "Saved as default",
+      "studioDirectionsSavedToast": "Directions saved"
     },
     "brain": {
       "title": "Brain",

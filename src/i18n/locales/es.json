@@ -13939,7 +13939,10 @@
       "studioDraftOne": "Borrador",
       "studioWordCount": "{count} palabras",
       "studioSavedToast": "{count} pares guardados en la memoria",
-      "studioRemoveRow": "Eliminar"
+      "studioRemoveRow": "Eliminar",
+      "studioSaveDirections": "Guardar como indicaciones predeterminadas",
+      "studioDirectionsSaved": "Guardado como predeterminado",
+      "studioDirectionsSavedToast": "Indicaciones guardadas"
     },
     "brain": {
       "title": "Brain",

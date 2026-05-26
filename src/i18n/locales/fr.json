@@ -13939,7 +13939,10 @@
       "studioDraftOne": "Brouillon",
       "studioWordCount": "{count} mots",
       "studioSavedToast": "{count} paires enregistrées en mémoire",
-      "studioRemoveRow": "Supprimer"
+      "studioRemoveRow": "Supprimer",
+      "studioSaveDirections": "Enregistrer comme consignes par défaut",
+      "studioDirectionsSaved": "Enregistré par défaut",
+      "studioDirectionsSavedToast": "Consignes enregistrées"
     },
     "brain": {
       "title": "Brain",

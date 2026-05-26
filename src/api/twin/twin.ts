@@ -80,6 +80,7 @@ export const updateProfile = (
     languages?: string | null;
     pronouns?: string | null;
     obsidianSubpath?: string;
+    trainingDirectives?: string | null;
   },
 ) =>
   invoke<TwinProfile>("twin_update_profile", {
@@ -90,6 +91,7 @@ export const updateProfile = (
     languages: updates.languages,
     pronouns: updates.pronouns,
     obsidianSubpath: updates.obsidianSubpath,
+    trainingDirectives: updates.trainingDirectives,
   });
 
 export const deleteProfile = (id: string) =>

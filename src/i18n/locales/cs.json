@@ -13939,7 +13939,10 @@
       "studioDraftOne": "Návrh",
       "studioWordCount": "{count} slov",
       "studioSavedToast": "{count} párů uloženo do paměti",
-      "studioRemoveRow": "Odebrat"
+      "studioRemoveRow": "Odebrat",
+      "studioSaveDirections": "Uložit jako výchozí pokyny",
+      "studioDirectionsSaved": "Uloženo jako výchozí",
+      "studioDirectionsSavedToast": "Pokyny uloženy"
     },
     "brain": {
       "title": "Brain",

@@ -102,6 +102,7 @@ export interface TwinSlice {
       languages?: string | null;
       pronouns?: string | null;
       obsidianSubpath?: string;
+      trainingDirectives?: string | null;
     },
   ) => Promise<void>;
   deleteTwinProfile: (id: string) => Promise<void>;

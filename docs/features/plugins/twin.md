@@ -107,7 +107,7 @@ Below the Contacts panel the tab is a two-column grid:
 
 The topic screen leads with **Open the Studio** — a board for authoring many Q&A pairs at once with AI help on *both* sides:
 
-- **Directions + topic** at the top steer the whole batch ("focus on failure stories", "keep questions short").
+- **Directions + topic** at the top steer the whole batch ("focus on failure stories", "keep questions short"). The **bookmark** button next to Directions saves them as the twin's **persistent training style guide** (`training_directives`): once saved, those directions are seeded into the box every time you open the Studio for this twin *and* automatically prepended to every question and answer generation (including the quick interview's "Draft as twin"), so the studio learns your taste instead of you restating it each session. A per-request note (e.g. a regenerate comment) still layers on top of the saved style.
 - **Generate questions** runs a background batch (`twin_studio_generate_questions`) that fills the board with editable question rows (the "user simulation" side). Curate them inline — edit, add your own, or remove.
 - **Draft all as twin** runs the long background pass (`twin_studio_generate_answers`) that drafts an answer *as the twin* for every question (the "twin simulation" side); a per-row **Draft** button drafts a single answer on demand. Each draft is editable and flagged **twin**; a word-count pill (thin / ok / rich) is a lightweight quality signal.
 - Both passes run in the **background** so you can gather a large batch and walk away: a progress bar tracks the answer pass, the sidebar shows a progress dot at every level (Plugins → Twin → Training), and an **OS notification fires when the batch is done**. Cancel any time.

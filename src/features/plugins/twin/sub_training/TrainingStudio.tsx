@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bot, Check, GraduationCap, Loader2, Plus, Save, Sparkles, Trash2, Wand2, X } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Bot, Check, GraduationCap, Loader2, Plus, Save, Sparkles, Trash2, Wand2, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { Button } from '@/features/shared/components/buttons';
@@ -41,7 +41,10 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
+  const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
+  const savedDirectives = activeTwin?.training_directives ?? '';
   const recordTwinInteraction = useSystemStore((s) => s.recordTwinInteraction);
+  const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -61,8 +64,34 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
   const [topic, setTopic] = useState('');
   const [rows, setRows] = useState<StudioRow[]>([]);
   const [savingPairs, setSavingPairs] = useState(false);
+  const [savingDirections, setSavingDirections] = useState(false);
   const [draftingRowId, setDraftingRowId] = useState<string | null>(null);
   const lastAbsorbed = useRef<number | null>(null);
+  const seededTwinRef = useRef<string | null>(null);
+
+  // Seed the Directions box from the twin's persisted training style guide
+  // (D5) the first time this twin is seen — so the studio opens already
+  // carrying the directions the user saved last time, not a blank box.
+  useEffect(() => {
+    if (!activeTwinId || seededTwinRef.current === activeTwinId) return;
+    seededTwinRef.current = activeTwinId;
+    setDirections(savedDirectives);
+  }, [activeTwinId, savedDirectives]);
+
+  const directionsDirty = directions.trim() !== savedDirectives.trim();
+
+  const handleSaveDirections = async () => {
+    if (!activeTwinId || !directionsDirty) return;
+    setSavingDirections(true);
+    try {
+      await updateTwinProfile(activeTwinId, { trainingDirectives: directions.trim() || null });
+      addToast(t.training.studioDirectionsSavedToast, 'success');
+    } catch (e) {
+      toastCatch('features/plugins/twin/sub_training/TrainingStudio:handleSaveDirections')(e);
+    } finally {
+      setSavingDirections(false);
+    }
+  };
 
   // Absorb a finished background batch into the board. Keyed on the
   // completion timestamp so re-mounting (route flip) doesn't re-absorb.
@@ -168,15 +197,31 @@ export default function TrainingStudio({ onExit }: { onExit: () => void }) {
             disabled={busy}
             className={`${INPUT_FIELD} lg:max-w-xs`}
           />
-          <input
-            type="text"
-            value={directions}
-            onChange={(e) => setDirections(e.target.value)}
-            placeholder={t.training.studioDirectionsPlaceholder}
-            disabled={busy}
-            className={`${INPUT_FIELD} flex-1`}
-            aria-label={t.training.studioDirectionsLabel}
-          />
+          <div className="flex-1 flex gap-1.5 min-w-0">
+            <input
+              type="text"
+              value={directions}
+              onChange={(e) => setDirections(e.target.value)}
+              placeholder={t.training.studioDirectionsPlaceholder}
+              disabled={busy}
+              className={`${INPUT_FIELD} flex-1`}
+              aria-label={t.training.studioDirectionsLabel}
+            />
+            <button
+              type="button"
+              onClick={() => void handleSaveDirections()}
+              disabled={busy || savingDirections || (!directionsDirty && !savedDirectives)}
+              title={directionsDirty ? t.training.studioSaveDirections : t.training.studioDirectionsSaved}
+              aria-label={t.training.studioSaveDirections}
+              className={`flex-shrink-0 inline-flex items-center justify-center w-9 rounded-card border transition-colors focus-ring disabled:opacity-40 ${
+                directionsDirty
+                  ? 'border-violet-500/40 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20'
+                  : 'border-emerald-500/30 bg-emerald-500/5 text-emerald-300'
+              }`}
+            >
+              {savingDirections ? <Loader2 className="w-4 h-4 animate-spin" /> : directionsDirty ? <Bookmark className="w-4 h-4" /> : <BookmarkCheck className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

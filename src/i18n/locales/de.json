@@ -13939,7 +13939,10 @@
       "studioDraftOne": "Entwurf",
       "studioWordCount": "{count} Wörter",
       "studioSavedToast": "{count} Paare im Gedächtnis gespeichert",
-      "studioRemoveRow": "Entfernen"
+      "studioRemoveRow": "Entfernen",
+      "studioSaveDirections": "Als Standard-Anweisungen speichern",
+      "studioDirectionsSaved": "Als Standard gespeichert",
+      "studioDirectionsSavedToast": "Anweisungen gespeichert"
     },
     "brain": {
       "title": "Brain",

@@ -13939,7 +13939,10 @@
       "studioDraftOne": "Soạn",
       "studioWordCount": "{count} từ",
       "studioSavedToast": "Đã lưu {count} cặp vào bộ nhớ",
-      "studioRemoveRow": "Xóa"
+      "studioRemoveRow": "Xóa",
+      "studioSaveDirections": "Lưu làm hướng dẫn mặc định",
+      "studioDirectionsSaved": "Đã lưu làm mặc định",
+      "studioDirectionsSavedToast": "Đã lưu hướng dẫn"
     },
     "brain": {
       "title": "Brain",

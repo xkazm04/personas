@@ -13939,7 +13939,10 @@
       "studioDraftOne": "下書き",
       "studioWordCount": "{count} 語",
       "studioSavedToast": "{count}組をメモリに保存しました",
-      "studioRemoveRow": "削除"
+      "studioRemoveRow": "削除",
+      "studioSaveDirections": "既定の指示として保存",
+      "studioDirectionsSaved": "既定として保存済み",
+      "studioDirectionsSavedToast": "指示を保存しました"
     },
     "brain": {
       "title": "Brain",

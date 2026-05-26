@@ -13997,6 +13997,9 @@ export type Translations = {
       studioWordCount: string;
       studioSavedToast: string;
       studioRemoveRow: string;
+      studioSaveDirections: string;
+      studioDirectionsSaved: string;
+      studioDirectionsSavedToast: string;
     };
     brain: {
       title: string;

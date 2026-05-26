@@ -237,6 +237,7 @@ pub fn twin_update_profile(
     languages: Option<Option<String>>,
     pronouns: Option<Option<String>>,
     obsidian_subpath: Option<String>,
+    training_directives: Option<Option<String>>,
 ) -> Result<TwinProfile, AppError> {
     require_auth_sync(&state)?;
     repo::update_profile(
@@ -248,6 +249,7 @@ pub fn twin_update_profile(
         languages.as_ref().map(|o| o.as_deref()),
         pronouns.as_ref().map(|o| o.as_deref()),
         obsidian_subpath.as_deref(),
+        training_directives.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -648,7 +650,8 @@ pub async fn twin_simulate_answer(
     let facts =
         repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
 
-    let prompt_text = build_answer_prompt(&profile, tone.as_ref(), &facts, question, directions.as_deref());
+    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let prompt_text = build_answer_prompt(&profile, tone.as_ref(), &facts, question, effective.as_deref());
     let raw = spawn_claude_with_prompt(prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
 }
@@ -716,6 +719,21 @@ fn build_answer_prompt(
         name = profile.name,
         question = question.trim(),
     )
+}
+
+/// Combine a twin's persistent training directives (D5) with the call-time
+/// directions (the Studio's Directions box or a regenerate comment). The
+/// persistent style guide applies to every generation; the call-time note
+/// layers on top for this specific request.
+fn merge_directions(persistent: Option<&str>, call: Option<&str>) -> Option<String> {
+    let p = persistent.map(str::trim).filter(|s| !s.is_empty());
+    let c = call.map(str::trim).filter(|s| !s.is_empty());
+    match (p, c) {
+        (Some(p), Some(c)) => Some(format!("{p}\nFor this request specifically: {c}")),
+        (Some(p), None) => Some(p.to_string()),
+        (None, Some(c)) => Some(c.to_string()),
+        (None, None) => None,
+    }
 }
 
 // ============================================================================
@@ -925,7 +943,8 @@ pub async fn twin_studio_generate_questions(
     TWIN_STUDIO_JOBS.set_status(&app, &batch_id, "running", None);
     emit_studio_progress(&app, &batch_id, "questions", 0, count);
 
-    let prompt_text = build_questions_prompt(&profile, &facts, &topic, directions.as_deref(), count);
+    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let prompt_text = build_questions_prompt(&profile, &facts, &topic, effective.as_deref(), count);
     let app_handle = app.clone();
     let batch_for_task = batch_id.clone();
     let twin_name = profile.name.clone();
@@ -1024,7 +1043,7 @@ pub async fn twin_studio_generate_answers(
     let app_handle = app.clone();
     let batch_for_task = batch_id.clone();
     let twin_name = profile.name.clone();
-    let directions_owned = directions;
+    let directions_owned = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
 
     tokio::spawn(async move {
         let mut completed: u32 = 0;

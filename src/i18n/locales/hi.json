@@ -13939,7 +13939,10 @@
       "studioDraftOne": "ड्राफ़्ट",
       "studioWordCount": "{count} शब्द",
       "studioSavedToast": "{count} जोड़े मेमोरी में सहेजे गए",
-      "studioRemoveRow": "हटाएं"
+      "studioRemoveRow": "हटाएं",
+      "studioSaveDirections": "डिफ़ॉल्ट निर्देश के रूप में सहेजें",
+      "studioDirectionsSaved": "डिफ़ॉल्ट के रूप में सहेजा गया",
+      "studioDirectionsSavedToast": "निर्देश सहेजे गए"
     },
     "brain": {
       "title": "Brain",

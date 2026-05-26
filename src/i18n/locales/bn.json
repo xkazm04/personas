@@ -13939,7 +13939,10 @@
       "studioDraftOne": "খসড়া",
       "studioWordCount": "{count} শব্দ",
       "studioSavedToast": "{count} জোড়া মেমোরিতে সংরক্ষিত",
-      "studioRemoveRow": "সরান"
+      "studioRemoveRow": "সরান",
+      "studioSaveDirections": "ডিফল্ট নির্দেশনা হিসেবে সংরক্ষণ",
+      "studioDirectionsSaved": "ডিফল্ট হিসেবে সংরক্ষিত",
+      "studioDirectionsSavedToast": "নির্দেশনা সংরক্ষিত"
     },
     "brain": {
       "title": "Brain",

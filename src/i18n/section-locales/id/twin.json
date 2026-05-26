@@ -235,7 +235,10 @@
     "studioDraftOne": "Draf",
     "studioWordCount": "{count} kata",
     "studioSavedToast": "{count} pasang disimpan ke memori",
-    "studioRemoveRow": "Hapus"
+    "studioRemoveRow": "Hapus",
+    "studioSaveDirections": "Simpan sebagai arahan default",
+    "studioDirectionsSaved": "Tersimpan sebagai default",
+    "studioDirectionsSavedToast": "Arahan disimpan"
   },
   "brain": {
     "title": "Brain",

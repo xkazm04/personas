@@ -13939,7 +13939,10 @@
       "studioDraftOne": "초안",
       "studioWordCount": "{count}단어",
       "studioSavedToast": "{count}쌍을 메모리에 저장함",
-      "studioRemoveRow": "제거"
+      "studioRemoveRow": "제거",
+      "studioSaveDirections": "기본 지시로 저장",
+      "studioDirectionsSaved": "기본값으로 저장됨",
+      "studioDirectionsSavedToast": "지시가 저장됨"
     },
     "brain": {
       "title": "Brain",

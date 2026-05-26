@@ -235,7 +235,10 @@
     "studioDraftOne": "صياغة",
     "studioWordCount": "{count} كلمة",
     "studioSavedToast": "تم حفظ {count} زوجًا في الذاكرة",
-    "studioRemoveRow": "إزالة"
+    "studioRemoveRow": "إزالة",
+    "studioSaveDirections": "حفظ كتوجيهات افتراضية",
+    "studioDirectionsSaved": "محفوظ كافتراضي",
+    "studioDirectionsSavedToast": "تم حفظ التوجيهات"
   },
   "brain": {
     "title": "Brain",
