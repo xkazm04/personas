@@ -209,7 +209,7 @@ pub async fn companion_approve_action(
         // friction was the wrong UX (user explicitly rejected it);
         // result lands as a system episode.
         // Phase G — project registry + background jobs.
-        "register_project" => execute_register_project(&state, &params),
+        "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
@@ -1246,6 +1246,7 @@ fn execute_use_connector(
 /// updates name/description without erroring.
 fn execute_register_project(
     state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     let name = params
@@ -1257,9 +1258,69 @@ fn execute_register_project(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("register_project: missing `path`".into()))?;
     let description = params.get("description").and_then(|v| v.as_str());
+    // 1. Companion project registry (Athena's awareness / scan-status tracking).
     let id = crate::companion::projects::register(&state.user_db, name, path, description)?;
+
+    // 2. Real Dev Tools project (`dev_projects` row). THIS is what satisfies the
+    //    `codebase` connector for adopted personas — the connector probes
+    //    `dev_projects`, not the companion registry. Without it, registering a
+    //    project left teams' codebase connector unsatisfied. Idempotent on
+    //    root_path (UNIQUE): reuse an existing row rather than erroring.
+    let existing_id: Option<String> = {
+        let conn = state.db.get()?;
+        conn.query_row(
+            "SELECT id FROM dev_projects WHERE root_path = ?1",
+            rusqlite::params![path],
+            |r| r.get(0),
+        )
+        .ok()
+    };
+
+    let (dev_project_id, scan_note) = match existing_id {
+        Some(eid) => (
+            eid,
+            "(already a Dev Tools project — re-using it; trigger a rescan if the code changed)"
+                .to_string(),
+        ),
+        None => {
+            let tech = params.get("tech_stack").and_then(|v| v.as_str());
+            let github = params.get("github_url").and_then(|v| v.as_str());
+            let project = crate::db::repos::dev_tools::create_project(
+                &state.db,
+                name,
+                path,
+                description,
+                Some("active"),
+                tech,
+                github,
+                None,
+            )?;
+            // 3. Auto-launch the real context scan (Claude-CLI → dev_contexts) so
+            //    the team's codebase tools return rich results. Best-effort: a
+            //    bad path / missing CLI logs and continues; the project + codebase
+            //    connector are already valid.
+            let scan_note = match crate::commands::infrastructure::context_generation::launch_context_scan(
+                app.clone(),
+                &state.db,
+                &project,
+                path,
+                false,
+            ) {
+                Ok(_) => "(context scan started — its structure will be mapped in the background)"
+                    .to_string(),
+                Err(e) => {
+                    tracing::warn!(project = %project.id, error = %e, "register_project: auto-scan launch failed (continuing)");
+                    format!("(couldn't auto-start the context scan: {e} — start it manually from Dev Tools)")
+                }
+            };
+            (project.id, scan_note)
+        }
+    };
+
     Ok(ExecuteResult::message(format!(
-        "Project `{name}` registered (id `{id}`, path `{path}`)."
+        "Project `{name}` is set up — registered in your project list and created as Dev Tools \
+         project `{dev_project_id}` so the codebase connector is now available for any team \
+         working this repo at `{path}`. {scan_note}"
     )))
 }
 

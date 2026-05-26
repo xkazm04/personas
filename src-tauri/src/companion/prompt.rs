@@ -551,7 +551,9 @@ fn format_plugins(
                     s.push_str(
                         "_No projects registered yet._ If he asks you about a project, \
                          offer to register it with `register_project` (you need a \
-                         filesystem path + a short name).\n\n",
+                         filesystem path + a short name). Registering also creates the \
+                         Dev Tools project + codebase connector and kicks off a context \
+                         scan, so a team can be adopted for that repo right after.\n\n",
                     );
                 } else {
                     for p in projects {
@@ -592,11 +594,17 @@ fn format_plugins(
                      seconds, runs them, and appends a system episode with the result so \
                      you see it on your next turn. Tell Michal that explicitly when you \
                      enqueue (\"I started the scan, will report back; what else?\").\n\n\
-                     1. **Register a project** — `register_project` with `name`, `path`, \
-                        optional `description`. Idempotent on path.\n\
-                     2. **Scan a project** — `enqueue_dev_job` with `kind: \"scan_codebase\"` \
-                        and `project_id` (or raw `params.path`). Returns instantly; result \
-                        lands as a system episode (file count by language, top TODOs).\n\
+                     1. **Set up a project** — `register_project` with `name`, `path`, \
+                        optional `description`. Idempotent on path. This creates the real \
+                        Dev Tools project (a `dev_projects` row), which is what makes the \
+                        **codebase connector** available to any team adopted for that repo, \
+                        AND auto-starts a full context scan (Claude maps its structure in \
+                        the background). One action = repo ready for a team. To set up \
+                        several repos, call it once per path.\n\
+                     2. **Re-scan a project** — `enqueue_dev_job` with `kind: \"scan_codebase\"` \
+                        and `project_id` (or raw `params.path`) for a quick file/TODO refresh \
+                        when code changed (the deep context map is built by register_project's \
+                        initial scan + Dev Tools rescans).\n\
                      3. **Capture decisions** — `write_goal`, `write_backlog_item`, \
                         `write_fact` ops let the lifecycle have memory.\n\n\
                      ### When to lean on this\n\n\
