@@ -17,8 +17,21 @@ import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { LucideIcon } from 'lucide-react';
-import type { MilestoneStatus } from '../useTwinReadiness';
+import type { TwinTab } from '@/lib/types/types';
+import type { MilestoneStatus, TwinReadiness } from '../useTwinReadiness';
 import { DebtText } from '@/i18n/DebtText';
+
+/** Which sub-tab each readiness milestone deep-links into. Memories live in
+ *  the Knowledge tab; the rest are 1:1. Mirrors ReadinessGapPopover's mapping. */
+type MilestoneKey = keyof Omit<TwinReadiness, 'score' | 'counts'>;
+const MILESTONE_TAB: Record<MilestoneKey, TwinTab> = {
+  identity: 'identity',
+  tone: 'tone',
+  brain: 'brain',
+  voice: 'voice',
+  channels: 'channels',
+  memories: 'knowledge',
+};
 
 
 /* ------------------------------------------------------------------ *
@@ -73,14 +86,37 @@ function MilestoneArc({ score, label, size = 72 }: MilestoneArcProps) {
   );
 }
 
-interface MilestoneRowProps { icon: LucideIcon; label: string; status: MilestoneStatus; meta?: string }
-function MilestoneRow({ icon: Icon, label, status, meta }: MilestoneRowProps) {
-  return (
-    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border ${MILESTONE_TINT[status]} typo-caption`}>
+interface MilestoneRowProps {
+  icon: LucideIcon;
+  label: string;
+  status: MilestoneStatus;
+  meta?: string;
+  /** When set, the chip becomes a button that deep-links into the sub-tab. */
+  onJump?: () => void;
+  /** Tooltip + accessible name for the jump affordance. */
+  title?: string;
+  ariaLabel?: string;
+}
+function MilestoneRow({ icon: Icon, label, status, meta, onJump, title, ariaLabel }: MilestoneRowProps) {
+  const inner = (
+    <>
       <Icon className="w-3.5 h-3.5 flex-shrink-0" />
       <span className="font-medium truncate">{label}</span>
       {meta && <span className="ml-auto text-[10px] tabular-nums opacity-70">{meta}</span>}
-    </div>
+    </>
+  );
+  const base = `flex items-center gap-2 px-2.5 py-1.5 rounded-interactive border ${MILESTONE_TINT[status]} typo-caption`;
+  if (!onJump) return <div className={base}>{inner}</div>;
+  return (
+    <button
+      type="button"
+      onClick={onJump}
+      title={title}
+      aria-label={ariaLabel}
+      className={`${base} w-full text-left cursor-pointer hover:brightness-125 focus-ring transition-[filter]`}
+    >
+      {inner}
+    </button>
   );
 }
 
@@ -94,6 +130,7 @@ export default function ProfilesAtelier() {
   const updateTwinProfile = useSystemStore((s) => s.updateTwinProfile);
   const deleteTwinProfile = useSystemStore((s) => s.deleteTwinProfile);
   const setActiveTwin = useSystemStore((s) => s.setActiveTwin);
+  const setTwinTab = useSystemStore((s) => s.setTwinTab);
 
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -202,6 +239,7 @@ export default function ProfilesAtelier() {
                 submitting={submitting}
                 onSetActive={() => setActiveTwin(heroTwin.id)}
                 onDelete={() => requestDelete(heroTwin.id, heroTwin.name)}
+                onJump={setTwinTab}
                 dash={dashboards[heroTwin.id]}
               />
             )}
@@ -228,6 +266,7 @@ export default function ProfilesAtelier() {
                       submitting={submitting}
                       onSetActive={() => setActiveTwin(p.id)}
                       onDelete={() => requestDelete(p.id, p.name)}
+                      onJump={(tab) => { void setActiveTwin(p.id); setTwinTab(tab); }}
                     />
                   ))}
                 </div>
@@ -328,12 +367,16 @@ interface HeroCardProps {
   submitting: boolean;
   onSetActive: () => void;
   onDelete: () => void;
+  onJump: (tab: TwinTab) => void;
   dash?: ReturnType<typeof useProfileDashboards>[string];
 }
 
 function HeroCard(props: HeroCardProps) {
-  const { profile, isActive, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;
-  const t = useTranslation().t.twin;
+  const { profile, isActive, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, onJump, dash } = props;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
+  const statusText = (s: MilestoneStatus) =>
+    s === 'complete' ? t.progress.statusComplete : s === 'partial' ? t.progress.statusPartial : t.progress.statusEmpty;
   const sigil = genderDefFromPronouns(profile.pronouns ?? null);
   const langs = languagesFrom(profile.languages ?? null);
   const r = dash?.readiness;
@@ -382,12 +425,18 @@ function HeroCard(props: HeroCardProps) {
 
           {r && (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-4">
-              <MilestoneRow icon={FileText} label={t.profiles.chipBio} status={r.identity} />
-              <MilestoneRow icon={Mic} label={t.profiles.chipTone} status={r.tone} meta={r.counts.toneRows ? `×${r.counts.toneRows}` : undefined} />
-              <MilestoneRow icon={Brain} label={t.profiles.chipBrain} status={r.brain} />
-              <MilestoneRow icon={Volume2} label={t.profiles.chipVoice} status={r.voice} />
-              <MilestoneRow icon={Radio} label={t.profiles.chipChannels} status={r.channels} meta={r.counts.channelsActive ? `×${r.counts.channelsActive}` : undefined} />
-              <MilestoneRow icon={BookOpen} label={t.profiles.chipMemories} status={r.memories} meta={r.counts.memoriesApproved ? `×${r.counts.memoriesApproved}` : undefined} />
+              <MilestoneRow icon={FileText} label={t.profiles.chipBio} status={r.identity}
+                onJump={() => onJump(MILESTONE_TAB.identity)} title={`${t.progress.identity} — ${statusText(r.identity)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.identity })} />
+              <MilestoneRow icon={Mic} label={t.profiles.chipTone} status={r.tone} meta={r.counts.toneRows ? `×${r.counts.toneRows}` : undefined}
+                onJump={() => onJump(MILESTONE_TAB.tone)} title={`${t.progress.tone} — ${statusText(r.tone)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.tone })} />
+              <MilestoneRow icon={Brain} label={t.profiles.chipBrain} status={r.brain}
+                onJump={() => onJump(MILESTONE_TAB.brain)} title={`${t.progress.brain} — ${statusText(r.brain)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.brain })} />
+              <MilestoneRow icon={Volume2} label={t.profiles.chipVoice} status={r.voice}
+                onJump={() => onJump(MILESTONE_TAB.voice)} title={`${t.progress.voice} — ${statusText(r.voice)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.voice })} />
+              <MilestoneRow icon={Radio} label={t.profiles.chipChannels} status={r.channels} meta={r.counts.channelsActive ? `×${r.counts.channelsActive}` : undefined}
+                onJump={() => onJump(MILESTONE_TAB.channels)} title={`${t.progress.channels} — ${statusText(r.channels)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.channels })} />
+              <MilestoneRow icon={BookOpen} label={t.profiles.chipMemories} status={r.memories} meta={r.counts.memoriesApproved ? `×${r.counts.memoriesApproved}` : undefined}
+                onJump={() => onJump(MILESTONE_TAB.memories)} title={`${t.progress.memories} — ${statusText(r.memories)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.memories })} />
             </div>
           )}
 
@@ -433,8 +482,11 @@ function HeroCard(props: HeroCardProps) {
 type SatelliteCardProps = Omit<HeroCardProps, 'isActive'>;
 
 function SatelliteCard(props: SatelliteCardProps) {
-  const { profile, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, dash } = props;
-  const t = useTranslation().t.twin;
+  const { profile, isEditing, editDraft, setEditDraft, onStartEdit, onCancelEdit, onSaveEdit, submitting, onSetActive, onDelete, onJump, dash } = props;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
+  const statusText = (s: MilestoneStatus) =>
+    s === 'complete' ? t.progress.statusComplete : s === 'partial' ? t.progress.statusPartial : t.progress.statusEmpty;
   const sigil = genderDefFromPronouns(profile.pronouns ?? null);
   const langs = languagesFrom(profile.languages ?? null);
   const r = dash?.readiness;
@@ -475,13 +527,20 @@ function SatelliteCard(props: SatelliteCardProps) {
             ['channels', Radio],
             ['memories', BookOpen],
           ] as const).map(([k, Icon]) => (
-            <span key={k} className={`inline-flex items-center w-5 h-5 rounded-full justify-center ${
-              r[k] === 'complete' ? 'bg-emerald-500/15 text-emerald-300' :
-              r[k] === 'partial' ? 'bg-amber-500/15 text-amber-300' :
-              'bg-secondary/40 text-foreground'
-            }`} title={k}>
+            <button
+              key={k}
+              type="button"
+              onClick={() => onJump(MILESTONE_TAB[k])}
+              title={`${t.progress[k]} — ${statusText(r[k])}`}
+              aria-label={tx(t.profiles.openSection, { section: t.progress[k] })}
+              className={`inline-flex items-center w-5 h-5 rounded-full justify-center focus-ring hover:brightness-125 transition-[filter] ${
+                r[k] === 'complete' ? 'bg-emerald-500/15 text-emerald-300' :
+                r[k] === 'partial' ? 'bg-amber-500/15 text-amber-300' :
+                'bg-secondary/40 text-foreground'
+              }`}
+            >
               <Icon className="w-3 h-3" />
-            </span>
+            </button>
           ))}
         </div>
       )}

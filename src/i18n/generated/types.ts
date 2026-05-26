@@ -14204,6 +14204,7 @@ export type Translations = {
       chipMemories: string;
       readyPercent: string;
       languages: string;
+      openSection: string;
     };
     hero: {
       eyebrow: string;

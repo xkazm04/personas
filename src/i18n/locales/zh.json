@@ -14046,7 +14046,8 @@
       "chipChannelsPaused": "All paused",
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
-      "languages": "Languages"
+      "languages": "Languages",
+      "openSection": "打开{section}"
     },
     "variantTabs": {
       "prototype": "Prototype",
