@@ -13976,6 +13976,27 @@ export type Translations = {
       twinDraftLabel: string;
       regenerate: string;
       regenerateCommentPlaceholder: string;
+      studioOpen: string;
+      studioTagline: string;
+      studioBack: string;
+      studioDirectionsLabel: string;
+      studioDirectionsPlaceholder: string;
+      studioTopicPlaceholder: string;
+      studioGenerateQuestions: string;
+      studioDraftAll: string;
+      studioCancel: string;
+      studioSaveApproved: string;
+      studioAddQuestion: string;
+      studioEmptyTitle: string;
+      studioEmptyHint: string;
+      studioRunningAnswers: string;
+      studioRunningQuestions: string;
+      studioBackgroundNote: string;
+      studioAnswerPlaceholder: string;
+      studioDraftOne: string;
+      studioWordCount: string;
+      studioSavedToast: string;
+      studioRemoveRow: string;
     };
     brain: {
       title: string;

@@ -8,6 +8,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 import { NextMovesPanel } from './NextMovesPanel';
+import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -40,8 +41,17 @@ export default function TrainingAtelier() {
   const session = useTrainingSession();
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenComment, setRegenComment] = useState('');
+  const [mode, setMode] = useState<'classic' | 'studio'>('classic');
 
   if (!activeTwinId || !activeTwin) return <TwinEmptyState icon={GraduationCap} title={t.training.title} />;
+
+  if (mode === 'studio') {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden min-w-[80vw]">
+        <TrainingStudio onExit={() => setMode('classic')} />
+      </div>
+    );
+  }
 
   const currentQ = session.questions[session.currentIdx];
   const isOnFollowup = !!currentQ?.isFollowup;
@@ -93,13 +103,28 @@ export default function TrainingAtelier() {
         {session.phase === 'topic' && (
           <div className="h-full overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 md:px-6 xl:px-8 py-10">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <h2 className="typo-heading-lg font-semibold text-foreground mb-2">{t.training.whatToTrain}</h2>
                 <p className="typo-body text-foreground">{t.training.topicHint}</p>
                 {session.groundingFacts.length > 0 && (
                   <p className="typo-caption text-violet-300 mt-2">{t.training.groundingHint.replace('{count}', String(session.groundingFacts.length))}</p>
                 )}
               </div>
+
+              {/* Studio entry — batch authoring of both sides in the background */}
+              <button
+                onClick={() => setMode('studio')}
+                className="group w-full mb-6 flex items-center gap-3 rounded-card border border-violet-500/25 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5 px-4 py-3 text-left hover:border-violet-500/40 hover:shadow-elevation-1 focus-ring transition-all"
+              >
+                <span className="flex-shrink-0 w-10 h-10 rounded-card bg-violet-500/15 border border-violet-500/30 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-violet-300" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block typo-card-label text-foreground">{t.training.studioOpen}</span>
+                  <span className="block typo-caption text-foreground mt-0.5">{t.training.studioTagline}</span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-foreground group-hover:text-violet-300 transition-colors flex-shrink-0" />
+              </button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
                 {TRAINING_TOPIC_PRESETS.map((topic) => {

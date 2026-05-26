@@ -103,6 +103,16 @@ Below the Contacts panel the tab is a two-column grid:
 5. Below the summary, a **Where to go next** panel surfaces the two topic presets with the thinnest grounding-fact coverage so far (rough keyword-match on the active twin's approved memories). Clicking a recommendation **auto-starts the matching preset** — `generateQuestions` fires immediately for the picked topic prompt, skipping the topic picker. Completion → next session is one click.
 6. Press **Review Memories** to jump straight to the Knowledge tab and triage the new pending entries.
 
+#### Studio mode (batch authoring, both sides)
+
+The topic screen leads with **Open the Studio** — a board for authoring many Q&A pairs at once with AI help on *both* sides:
+
+- **Directions + topic** at the top steer the whole batch ("focus on failure stories", "keep questions short").
+- **Generate questions** runs a background batch (`twin_studio_generate_questions`) that fills the board with editable question rows (the "user simulation" side). Curate them inline — edit, add your own, or remove.
+- **Draft all as twin** runs the long background pass (`twin_studio_generate_answers`) that drafts an answer *as the twin* for every question (the "twin simulation" side); a per-row **Draft** button drafts a single answer on demand. Each draft is editable and flagged **twin**; a word-count pill (thin / ok / rich) is a lightweight quality signal.
+- Both passes run in the **background** so you can gather a large batch and walk away: a progress bar tracks the answer pass, the sidebar shows a progress dot at every level (Plugins → Twin → Training), and an **OS notification fires when the batch is done**. Cancel any time.
+- A per-row **check** marks a pair for saving; **Save N selected** writes only the approved pairs as pending memories (same review gate as the quick interview). The human always reviews before anything is saved.
+
 ### Twin × Persona binding
 
 In the **Agents → Settings** tab each persona has a **Twin** card. It lets you pick:
