@@ -678,6 +678,31 @@ pub fn list_tools() -> Vec<Value> {
                 }
             }
         }),
+        json!({
+            "name": "gmail_list_messages",
+            "description": "List recent Gmail messages from the user's connected Gmail account (via the vault credential — no interactive auth needed). Returns the Gmail API JSON ({messages:[{id,threadId}], resultSizeEstimate}). Use gmail_get_message to read a specific message. Requires a Gmail connector in the vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "Optional Gmail search query (same syntax as the Gmail search box, e.g. 'newer_than:7d from:noreply')." },
+                    "max_results": { "type": "integer", "description": "Max messages to return (1-100, default 10)." },
+                    "credential_id": { "type": "string", "description": "Optional specific Gmail credential UUID. If omitted, the first Gmail credential in the vault is used." }
+                }
+            }
+        }),
+        json!({
+            "name": "gmail_get_message",
+            "description": "Fetch a single Gmail message by id (full payload incl. headers + body) from the user's connected Gmail account via the vault credential. Requires a Gmail connector in the vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "message_id": { "type": "string", "description": "The Gmail message id (from gmail_list_messages)." },
+                    "format": { "type": "string", "description": "Gmail format: 'full' (default), 'metadata', 'minimal', or 'raw'." },
+                    "credential_id": { "type": "string", "description": "Optional specific Gmail credential UUID." }
+                },
+                "required": ["message_id"]
+            }
+        }),
     ]
 }
 
@@ -705,6 +730,8 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "context_search_by_keyword" => handle_context_search_by_keyword(args, pool),
         "context_get_by_file_path" => handle_context_get_by_file_path(args, pool),
         "context_neighbors" => handle_context_neighbors(args, pool),
+        "gmail_list_messages" => handle_gmail_list_messages(args, pool),
+        "gmail_get_message" => handle_gmail_get_message(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
@@ -718,6 +745,110 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
             "isError": true
         }),
     }
+}
+
+// ── Vault connector bridge (Gmail) ──────────────────────────────────────────
+// The sidecar cannot decrypt vault credentials (the AES master key is tied to the
+// desktop app's keychain session). So Google connector tools resolve nothing
+// locally — they look up the credential id (a non-secret read) and POST to the
+// desktop app's credential proxy (`/api/proxy/{id}` on :9420), which resolves the
+// OAuth token + forwards to the Google API. The bridge URL + system API key are
+// injected via env by cli_mcp_config when the run is spawned.
+
+/// Resolve which Gmail credential to use: an explicit `credential_id` arg, else
+/// the first Gmail credential in the vault. Reading the id needs no decryption.
+fn gmail_credential_id(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    if let Some(id) = args.get("credential_id").and_then(|v| v.as_str()) {
+        return Ok(id.to_string());
+    }
+    let conn = pool.get()?;
+    conn.query_row(
+        "SELECT id FROM persona_credentials WHERE service_type = 'gmail' LIMIT 1",
+        [],
+        |r| r.get::<_, String>(0),
+    )
+    .map_err(|_| {
+        "No Gmail credential found in the vault. Connect Gmail in Settings → Connectors.".to_string()
+    })
+}
+
+/// Forward an HTTP request through the desktop app's credential proxy, which
+/// resolves the credential's auth (OAuth refresh included) and calls the API.
+fn bridge_proxy(credential_id: &str, method: &str, path: &str) -> Result<String, String> {
+    let bridge =
+        std::env::var("PERSONAS_BRIDGE_URL").unwrap_or_else(|_| "http://127.0.0.1:9420".to_string());
+    let api_key = std::env::var("PERSONAS_API_KEY").map_err(|_| {
+        "Connector bridge unavailable for this run (PERSONAS_API_KEY not set).".to_string()
+    })?;
+    let url = format!("{}/api/proxy/{}", bridge.trim_end_matches('/'), credential_id);
+    let payload = json!({ "method": method, "path": path, "headers": {}, "body": null });
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .map_err(|e| format!("runtime build failed: {e}"))?;
+    rt.block_on(async move {
+        let client = reqwest::Client::new();
+        let resp = client
+            .post(&url)
+            .bearer_auth(&api_key)
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| format!("bridge request failed: {e}"))?;
+        let status = resp.status();
+        let text = resp
+            .text()
+            .await
+            .map_err(|e| format!("bridge read failed: {e}"))?;
+        if !status.is_success() {
+            return Err(format!("bridge returned {status}: {text}"));
+        }
+        Ok(text)
+    })
+}
+
+fn handle_gmail_list_messages(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let cred = gmail_credential_id(args, pool)?;
+    let max = args
+        .get("max_results")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(10)
+        .clamp(1, 100);
+    let mut u = reqwest::Url::parse("https://gmail.googleapis.com/gmail/v1/users/me/messages")
+        .map_err(|e| format!("url build failed: {e}"))?;
+    u.query_pairs_mut()
+        .append_pair("maxResults", &max.to_string());
+    if let Some(q) = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+    {
+        u.query_pairs_mut().append_pair("q", q);
+    }
+    let path = match u.query() {
+        Some(q) => format!("{}?{}", u.path(), q),
+        None => u.path().to_string(),
+    };
+    bridge_proxy(&cred, "GET", &path)
+}
+
+fn handle_gmail_get_message(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let cred = gmail_credential_id(args, pool)?;
+    let msg_id = args
+        .get("message_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "message_id is required".to_string())?;
+    let format = args
+        .get("format")
+        .and_then(|v| v.as_str())
+        .unwrap_or("full");
+    let mut u = reqwest::Url::parse(&format!(
+        "https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}"
+    ))
+    .map_err(|e| format!("url build failed: {e}"))?;
+    u.query_pairs_mut().append_pair("format", format);
+    let path = format!("{}?{}", u.path(), u.query().unwrap_or(""));
+    bridge_proxy(&cred, "GET", &path)
 }
 
 fn handle_personas_list(args: &Value, pool: &McpDbPool) -> Result<String, String> {

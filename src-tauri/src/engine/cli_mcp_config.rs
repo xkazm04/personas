@@ -69,6 +69,7 @@ pub fn install_mcp_sidecar(
     exec_dir: &Path,
     drive_root: Option<&Path>,
     project_root: Option<&Path>,
+    api_key: Option<&str>,
 ) -> Result<bool, AppError> {
     let Some(mcp_binary) = find_mcp_binary() else {
         tracing::debug!("cli_mcp_config: personas-mcp binary not found — skipping sidecar");
@@ -110,6 +111,21 @@ pub fn install_mcp_sidecar(
         env_map.insert(
             "PERSONAS_DRIVE_ROOT".to_string(),
             serde_json::Value::String(root.display().to_string()),
+        );
+    }
+    // Connector bridge: lets the sidecar's vault-connector tools (e.g.
+    // gmail_list_messages) call the desktop app's credential proxy on :9420,
+    // which resolves the OAuth token. The sidecar holds no secrets — it only
+    // forwards with this short-lived system API key. Omitted if we couldn't
+    // mint a key (the tools then return a clear "bridge unavailable" message).
+    if let Some(key) = api_key {
+        env_map.insert(
+            "PERSONAS_BRIDGE_URL".to_string(),
+            serde_json::Value::String("http://127.0.0.1:9420".to_string()),
+        );
+        env_map.insert(
+            "PERSONAS_API_KEY".to_string(),
+            serde_json::Value::String(key.to_string()),
         );
     }
 

@@ -820,7 +820,18 @@ pub async fn run_execution(
     // `<project>/.claude/settings.json` (e.g. via `npx gitnexus setup`)
     // surface to the agent automatically. See `cli_mcp_config.rs` for merge
     // semantics.
-    match super::cli_mcp_config::install_mcp_sidecar(&exec_dir, drive_root_for_sync.as_deref(), None) {
+    // System API key for the connector bridge: lets the sidecar's vault-connector
+    // tools (gmail_*) reach the desktop credential proxy on :9420. Best-effort —
+    // if minting fails, the bridge env is simply omitted and those tools report
+    // "bridge unavailable" rather than failing the whole run.
+    let bridge_api_key =
+        crate::engine::management_api::get_or_create_system_api_key(&pool).ok();
+    match super::cli_mcp_config::install_mcp_sidecar(
+        &exec_dir,
+        drive_root_for_sync.as_deref(),
+        None,
+        bridge_api_key.as_deref(),
+    ) {
         Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
         Ok(false) => {}
         Err(e) => logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}")),
