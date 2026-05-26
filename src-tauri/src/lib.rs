@@ -991,18 +991,23 @@ pub fn run() {
                 }
                 let pool_for_worker = pool.clone();
                 let app_handle = app.handle().clone();
+                let leadership_for_worker = state_arc.leadership.clone();
                 tauri::async_runtime::spawn(async move {
                     use std::time::Duration;
                     // Brief startup delay so other init logs land first.
                     tokio::time::sleep(Duration::from_secs(3)).await;
                     loop {
-                        let res = engine::persona_jobs::worker_tick(
-                            &pool_for_worker,
-                            &app_handle,
-                        )
-                        .await;
-                        if let Err(e) = res {
-                            tracing::warn!(error = %e, "persona-jobs worker tick failed");
+                        // Leader-only (ADR 2026-05-26): claims + runs queued
+                        // persona jobs; a follower would double-run them.
+                        if leadership_for_worker.is_leader() {
+                            let res = engine::persona_jobs::worker_tick(
+                                &pool_for_worker,
+                                &app_handle,
+                            )
+                            .await;
+                            if let Err(e) = res {
+                                tracing::warn!(error = %e, "persona-jobs worker tick failed");
+                            }
                         }
                         tokio::time::sleep(Duration::from_secs(5)).await;
                     }
@@ -1023,22 +1028,27 @@ pub fn run() {
             // semantics (curation vs execution).
             {
                 let pool_for_curation = pool.clone();
+                let leadership_for_curation = state_arc.leadership.clone();
                 tauri::async_runtime::spawn(async move {
                     // Slightly longer startup delay than the persona-jobs
                     // worker so the first scheduler tick sees a settled
                     // job table (no orphan-recovery races).
                     tokio::time::sleep(std::time::Duration::from_secs(8)).await;
                     loop {
-                        match engine::curation_scheduler::tick(&pool_for_curation) {
-                            Ok(0) => {} // quiet path; nothing due
-                            Ok(n) => tracing::debug!(
-                                enqueued = n,
-                                "curation_scheduler: enqueued scheduled jobs"
-                            ),
-                            Err(e) => tracing::warn!(
-                                error = %e,
-                                "curation_scheduler tick failed"
-                            ),
+                        // Leader-only (ADR 2026-05-26): enqueues due curation
+                        // jobs; a follower would double-enqueue them.
+                        if leadership_for_curation.is_leader() {
+                            match engine::curation_scheduler::tick(&pool_for_curation) {
+                                Ok(0) => {} // quiet path; nothing due
+                                Ok(n) => tracing::debug!(
+                                    enqueued = n,
+                                    "curation_scheduler: enqueued scheduled jobs"
+                                ),
+                                Err(e) => tracing::warn!(
+                                    error = %e,
+                                    "curation_scheduler tick failed"
+                                ),
+                            }
                         }
                         tokio::time::sleep(engine::curation_scheduler::SCHEDULER_TICK_INTERVAL)
                             .await;

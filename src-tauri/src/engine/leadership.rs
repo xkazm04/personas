@@ -178,6 +178,21 @@ impl EngineLeadership {
     }
 }
 
+/// Leadership check for background loops that only carry an [`AppHandle`]
+/// (not a direct `Arc<AppState>`). Returns `true` when this instance is the
+/// engine leader — and, deliberately, ALSO `true` when `AppState` isn't
+/// manageable (very early startup) or absent (unit tests / non-Tauri callers).
+/// That "absent ⇒ leader" default is the single-instance backward-compat
+/// guarantee: a lone process must run every loop exactly as it did before this
+/// gate existed. Mirrors the same default in [`crate::engine::subscription`]'s
+/// per-subscription gate.
+pub fn is_engine_leader(app: &tauri::AppHandle) -> bool {
+    use tauri::Manager;
+    app.try_state::<std::sync::Arc<crate::AppState>>()
+        .map(|s| s.leadership.is_leader())
+        .unwrap_or(true)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

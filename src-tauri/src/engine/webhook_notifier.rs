@@ -544,10 +544,16 @@ pub async fn test_dispatch(
 pub async fn run_dispatcher(pool: DbPool, app: AppHandle) {
     tokio::time::sleep(Duration::from_secs(10)).await;
     loop {
-        match tick(&pool, Some(&app)).await {
-            Ok(0) => {}
-            Ok(n) => tracing::debug!(delivered = n, "webhook_notifier: dispatched events"),
-            Err(e) => tracing::warn!(error = %e, "webhook_notifier tick failed"),
+        // Leader-only (multi-driver orchestration, ADR 2026-05-26): the
+        // notifier advances a single DB watermark and POSTs outbound webhooks,
+        // so two instances ticking it would double-send. A follower idles here
+        // and resumes within one tick if it later wins leadership.
+        if crate::engine::leadership::is_engine_leader(&app) {
+            match tick(&pool, Some(&app)).await {
+                Ok(0) => {}
+                Ok(n) => tracing::debug!(delivered = n, "webhook_notifier: dispatched events"),
+                Err(e) => tracing::warn!(error = %e, "webhook_notifier tick failed"),
+            }
         }
         tokio::time::sleep(DISPATCH_TICK_INTERVAL).await;
     }
