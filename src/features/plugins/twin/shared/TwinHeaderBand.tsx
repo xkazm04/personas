@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { TwinReadinessRibbon } from './TwinReadinessRibbon';
+import type { TwinTab } from '@/lib/types/types';
+import type { TwinReadiness } from '../useTwinReadiness';
 
 /* ------------------------------------------------------------------ *
  *  TwinHeaderBand
@@ -88,10 +91,15 @@ interface TwinHeaderBandProps {
   actions?: ReactNode;
   /** Accent color */
   accent?: TwinAccent;
+  /** When provided (with onJumpReadiness), renders the compact readiness
+   *  ribbon — the active twin's score + six deep-linking milestone dots. */
+  readiness?: TwinReadiness;
+  onJumpReadiness?: (tab: TwinTab) => void;
 }
 
 export function TwinHeaderBand({
   icon, eyebrow, title, subtitle, decoration, kpis, actions, accent = 'violet',
+  readiness, onJumpReadiness,
 }: TwinHeaderBandProps) {
   const a = ACCENTS[accent];
   return (
@@ -114,6 +122,9 @@ export function TwinHeaderBand({
           <h1 className="typo-heading-lg text-foreground/95 truncate">{title}</h1>
           {subtitle && <p className="typo-caption text-foreground mt-0.5 truncate">{subtitle}</p>}
         </div>
+        {readiness && onJumpReadiness && (
+          <TwinReadinessRibbon readiness={readiness} onJump={onJumpReadiness} />
+        )}
         {kpis && (
           <div className="hidden md:flex items-center gap-3 px-3 py-2 rounded-full border border-primary/15 bg-card/40 backdrop-blur">
             {kpis}
