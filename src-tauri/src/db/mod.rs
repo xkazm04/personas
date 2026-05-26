@@ -387,6 +387,9 @@ pub fn init_user_db(app_data_dir: &Path) -> Result<UserDbPool, AppError> {
         // system-database runner in db::migrations::incremental.)
         for stmt in &[
             "ALTER TABLE companion_proactive_message ADD COLUMN scheduled_for TEXT;",
+            // Athena async-UX milestone — Task model fields on background jobs.
+            "ALTER TABLE companion_background_job ADD COLUMN short_title TEXT;",
+            "ALTER TABLE companion_background_job ADD COLUMN parent_turn_id TEXT;",
         ] {
             let _ = conn.execute_batch(stmt);
         }
@@ -795,16 +798,18 @@ CREATE TABLE IF NOT EXISTS companion_known_project (
 -- dispatches to per-kind handlers, and on completion appends a system
 -- episode to the chat so Athena sees the result on her next turn.
 CREATE TABLE IF NOT EXISTS companion_background_job (
-    id            TEXT PRIMARY KEY,
-    kind          TEXT NOT NULL,
-    status        TEXT NOT NULL DEFAULT 'queued',
-    params_json   TEXT NOT NULL DEFAULT '{}',
-    result_text   TEXT,
-    error_text    TEXT,
-    project_id    TEXT,                              -- nullable: links scan jobs to known_project
-    created_at    TEXT NOT NULL DEFAULT (datetime('now')),
-    started_at    TEXT,
-    completed_at  TEXT
+    id              TEXT PRIMARY KEY,
+    kind            TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'queued',
+    params_json     TEXT NOT NULL DEFAULT '{}',
+    result_text     TEXT,
+    error_text      TEXT,
+    project_id      TEXT,                            -- nullable: links scan jobs to known_project
+    short_title     TEXT,                            -- human one-liner for the task tag/tray (e.g. "Scanning ai-paralegal")
+    parent_turn_id  TEXT,                            -- the conversation turn/episode that spawned this task (for in-chat tag grouping)
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    started_at      TEXT,
+    completed_at    TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_companion_background_job_status
     ON companion_background_job(status, created_at);

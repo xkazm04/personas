@@ -1127,9 +1127,15 @@ pub fn dispatch(
                     "capability": capability,
                     "args": env.params.get("args").cloned().unwrap_or(serde_json::json!({})),
                 });
-                if let Err(e) =
-                    crate::companion::jobs::enqueue(pool, "connector_use", &job_params, None)
-                {
+                let task_title = format!("Calling {connector_name}");
+                if let Err(e) = crate::companion::jobs::enqueue_task(
+                    pool,
+                    "connector_use",
+                    &job_params,
+                    None,
+                    Some(&task_title),
+                    None, // parent_turn_id threaded in phase 2 (episode id not yet known here)
+                ) {
                     out.warnings
                         .push(format!("use_connector: enqueue failed: {e}"));
                     cleaned_lines.push(line);

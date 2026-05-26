@@ -46,7 +46,7 @@ const MAX_INSTRUCTIONS_CHARS: usize = 4096;
 pub async fn run(
     pool: &UserDbPool,
     params: &Value,
-    _progress: &JobProgress,
+    progress: &JobProgress,
 ) -> Result<String, AppError> {
     let scope = params
         .get("scope")
@@ -64,12 +64,14 @@ pub async fn run(
 
     match scope {
         "consolidate" => {
+            progress.report("Consolidating recent memory into proposed items…");
             let id = consolidation::run_consolidation(pool, instructions).await?;
             Ok(format!(
                 "Consolidation pass `{id}` ready for review (use the brain panel to walk the proposed items)."
             ))
         }
         "reflect" => {
+            progress.report("Reflecting on recent memory…");
             let id = reflection::run_reflection(pool, instructions).await?;
             Ok(format!(
                 "Reflection `{id}` written. Open the reflections list to read it."

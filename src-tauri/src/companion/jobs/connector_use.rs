@@ -68,7 +68,7 @@ pub async fn run(
     // flight — the inline ConnectorCallCard shows this instead of a bare
     // spinner. The card already renders backend-generated content
     // (result/error markdown), so this short note shares that channel.
-    progress.report(format!("Calling {connector_name}…"));
+    progress.report(format!("Calling {connector_name} · {capability}…"));
 
     dispatch_capability(connector_name, cap.slug, &args, &fields).await
 }

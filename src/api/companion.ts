@@ -1204,6 +1204,17 @@ export interface BackgroundJob {
   resultText: string | null;
   errorText: string | null;
   projectId: string | null;
+  /**
+   * Human one-liner for the in-chat task tag / activity tray
+   * (e.g. "Scanning ai-paralegal"). Persisted; set at enqueue (Athena async-UX).
+   */
+  shortTitle?: string | null;
+  /**
+   * The conversation turn/episode that spawned this task, so the UI can render
+   * its tag under the originating message. Persisted; `null` for untethered
+   * tasks (scheduled curation, etc.). Threaded in a later phase.
+   */
+  parentTurnId?: string | null;
   createdAt: string;
   startedAt: string | null;
   completedAt: string | null;
@@ -1214,6 +1225,12 @@ export interface BackgroundJob {
    * it.
    */
   progressText?: string | null;
+  /**
+   * Structured progress for a determinate task (event-only, like progressText)
+   * so the task tag can render a progress bar.
+   */
+  progressCurrent?: number | null;
+  progressTotal?: number | null;
 }
 
 /** Tauri event emitted on job status transitions (queued→running, completion). */
