@@ -343,7 +343,9 @@
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
     "languages": "Languages",
-    "openSection": "{section}を開く"
+    "openSection": "{section}を開く",
+    "nextStep": "次のステップ",
+    "scoreDelta": "+{pct}%"
   },
   "variantTabs": {
     "prototype": "Prototype",

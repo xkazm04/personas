@@ -14198,7 +14198,9 @@
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
       "languages": "Languages",
-      "openSection": "Open {section}"
+      "openSection": "Open {section}",
+      "nextStep": "Next step",
+      "scoreDelta": "+{pct}%"
     },
     "hero": {
       "eyebrow": "Twin",

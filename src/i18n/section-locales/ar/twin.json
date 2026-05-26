@@ -343,7 +343,9 @@
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
     "languages": "Languages",
-    "openSection": "فتح {section}"
+    "openSection": "فتح {section}",
+    "nextStep": "الخطوة التالية",
+    "scoreDelta": "+{pct}%"
   },
   "variantTabs": {
     "prototype": "Prototype",

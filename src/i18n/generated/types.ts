@@ -14205,6 +14205,8 @@ export type Translations = {
       readyPercent: string;
       languages: string;
       openSection: string;
+      nextStep: string;
+      scoreDelta: string;
     };
     hero: {
       eyebrow: string;

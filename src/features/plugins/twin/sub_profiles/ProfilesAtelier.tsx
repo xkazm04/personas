@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, Plus, Trash2, Check, Pencil, FolderTree, Mic, Brain, Volume2, Radio,
-  BookOpen, Globe, FileText, ArrowUpRight,
+  BookOpen, Globe, FileText, ArrowUpRight, ArrowRight,
 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
@@ -13,6 +13,7 @@ import { useProfileDashboards } from '../useProfileDashboards';
 import { genderDefFromPronouns } from '../shared/gender';
 import { TwinHeaderBand } from '../shared/TwinHeaderBand';
 import { ConstellationDecoration } from '../shared/decorations';
+import { buildGaps, gapScoreDelta } from '../shared/readinessGaps';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
@@ -353,6 +354,39 @@ function KpiRow({ label, value, hi }: { label: string; value: number | string; h
   );
 }
 
+/* ── Next-step nudge (active twin's single highest-impact gap) ───────── */
+
+function NextStepNudge({ readiness, onJump }: { readiness: TwinReadiness; onJump: (tab: TwinTab) => void }) {
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
+  const top = buildGaps(readiness)[0];
+  if (!top) return null;
+  const Icon = top.icon;
+  const title = t.gaps.titles[top.titleKey];
+  const hint = top.hintVars ? tx(t.gaps.hints[top.hintKey], top.hintVars) : t.gaps.hints[top.hintKey];
+  const delta = gapScoreDelta(top);
+  return (
+    <button
+      type="button"
+      onClick={() => onJump(top.tab)}
+      className="group mt-4 w-full flex items-center gap-3 rounded-card border border-violet-500/25 bg-violet-500/5 px-3.5 py-2.5 text-left hover:bg-violet-500/10 focus-ring transition-colors"
+    >
+      <span className="flex-shrink-0 w-8 h-8 rounded-interactive bg-violet-500/15 border border-violet-500/30 text-violet-300 flex items-center justify-center">
+        <Icon className="w-4 h-4" />
+      </span>
+      <span className="flex-1 min-w-0">
+        <span className="block text-[9px] uppercase tracking-[0.2em] text-violet-300/80 font-medium">{t.profiles.nextStep}</span>
+        <span className="block typo-caption text-foreground font-medium truncate">{title}</span>
+        <span className="block text-[11px] text-foreground leading-snug truncate">{hint}</span>
+      </span>
+      <span className="flex-shrink-0 px-1.5 py-0.5 rounded-full text-[10px] font-medium tabular-nums text-emerald-300 bg-emerald-500/10 border border-emerald-500/25">
+        {tx(t.profiles.scoreDelta, { pct: delta })}
+      </span>
+      <ArrowRight className="w-4 h-4 text-foreground group-hover:text-violet-300 transition-colors flex-shrink-0" />
+    </button>
+  );
+}
+
 /* ── Hero card (active twin) ────────────────────────────────────────── */
 
 interface HeroCardProps {
@@ -439,6 +473,8 @@ function HeroCard(props: HeroCardProps) {
                 onJump={() => onJump(MILESTONE_TAB.memories)} title={`${t.progress.memories} — ${statusText(r.memories)}`} ariaLabel={tx(t.profiles.openSection, { section: t.progress.memories })} />
             </div>
           )}
+
+          {r && <NextStepNudge readiness={r} onJump={onJump} />}
 
           {(dash?.channelTypes.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">

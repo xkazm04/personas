@@ -14047,7 +14047,9 @@
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
       "languages": "Languages",
-      "openSection": "Открыть {section}"
+      "openSection": "Открыть {section}",
+      "nextStep": "Следующий шаг",
+      "scoreDelta": "+{pct}%"
     },
     "variantTabs": {
       "prototype": "Prototype",

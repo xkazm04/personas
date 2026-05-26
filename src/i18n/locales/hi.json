@@ -14047,7 +14047,9 @@
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
       "languages": "Languages",
-      "openSection": "{section} खोलें"
+      "openSection": "{section} खोलें",
+      "nextStep": "अगला कदम",
+      "scoreDelta": "+{pct}%"
     },
     "variantTabs": {
       "prototype": "Prototype",
