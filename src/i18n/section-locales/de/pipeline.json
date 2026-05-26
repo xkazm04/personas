@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace Einstellungen saved",
     "workspace_save_failed": "Couldn't save workspace Einstellungen",
-    "workspace_inherit": "Übernehmen"
+    "workspace_inherit": "Übernehmen",
+    "add_persona_draft_hint": "Persona-Entwürfe müssen hochgestuft werden, bevor sie einem Team beitreten können.",
+    "checklist_heading": "Live-Fortschritt",
+    "checklist_background_note": "Läuft im Hintergrund",
+    "step_status_pending": "Ausstehend",
+    "step_status_matching": "Abgleich",
+    "step_status_running": "Läuft",
+    "step_status_done": "Fertig",
+    "step_status_skipped": "Übersprungen",
+    "step_status_failed": "Fehlgeschlagen",
+    "step_status_awaiting_review": "Überprüfung erforderlich",
+    "board_label": "Aufgabenboard",
+    "board_col_queued": "In Warteschlange",
+    "board_col_running": "Läuft",
+    "board_col_review": "Überprüfung erforderlich",
+    "board_col_done": "Fertig",
+    "board_col_stopped": "Angehalten",
+    "board_empty": "Noch keine Aufgaben. Definiere in Orchestrate ein Ziel, um eine zu starten."
   }
 }

@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse 그룹",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "이벤트 match the current filters",
-  "dead_letter_clear_filters_to_see": "지우기 filters to see all dead-lettered 이벤트"
+  "dead_letter_clear_filters_to_see": "지우기 filters to see all dead-lettered 이벤트",
+  "col_event": "이벤트",
+  "col_listeners": "리스너",
+  "source_personas_filter": "소스 페르소나",
+  "listeners_filter": "리스너",
+  "filter_events_placeholder": "이벤트 필터..."
 }

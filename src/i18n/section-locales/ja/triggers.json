@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse グループ",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "イベント match the current filters",
-  "dead_letter_clear_filters_to_see": "クリア filters to see all dead-lettered イベント"
+  "dead_letter_clear_filters_to_see": "クリア filters to see all dead-lettered イベント",
+  "col_event": "イベント",
+  "col_listeners": "リスナー",
+  "source_personas_filter": "ソースペルソナ",
+  "listeners_filter": "リスナー",
+  "filter_events_placeholder": "イベントをフィルター..."
 }

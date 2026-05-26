@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "रीसेट",
     "team_preview_canvas_reset_title": "ज़ूम और पैन को डिफ़ॉल्ट पर रीसेट करें",
     "create_codebase_connector_label": "बनाएँ Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "GitHub कनेक्टर"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

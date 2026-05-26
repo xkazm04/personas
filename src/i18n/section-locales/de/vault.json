@@ -707,7 +707,10 @@
     "test_all_credentials": "Alle Zugangsdaten testen",
     "test_all": "Alle testen",
     "daily_progress": "Täglich {done}/{total}",
-    "testing_progress": "Testen {done}/{total}"
+    "testing_progress": "Testen {done}/{total}",
+    "title_catalog": "Katalog",
+    "title_dependencies": "Abhängigkeiten",
+    "title_databases": "Datenbanken"
   },
   "bulk_healthcheck": {
     "title": "Gesundheitscheck-Ergebnisse",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "Keine konfiguriert.",
-    "required_badge": "PFLICHT"
+    "required_badge": "PFLICHT",
+    "kv_key_label": "Schlüssel",
+    "kv_value_label": "Wert",
+    "kv_key_placeholder": "SCHLÜSSEL",
+    "kv_value_placeholder": "wert",
+    "kv_show_value": "Wert anzeigen",
+    "kv_hide_value": "Wert ausblenden",
+    "kv_remove": "Variable entfernen",
+    "kv_add": "Hinzufügen"
   },
   "design_phases": {
     "saving": "Zugangsdaten werden gespeichert...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "Werbung",
+    "ai": "KI",
+    "analytics": "Analysen",
+    "automation": "Automatisierung",
+    "bi": "Business Intelligence",
+    "browser_automation": "Browser-Automatisierung",
+    "calendar": "Kalender",
+    "ci_cd": "CI/CD",
+    "cloud": "Cloud",
+    "containers": "Container",
+    "crm": "CRM",
+    "custom": "Benutzerdefiniert",
+    "database": "Datenbank",
+    "design": "Design",
+    "development": "Entwicklung",
+    "ecommerce": "E-Commerce",
+    "email": "E-Mail",
+    "finance": "Finanzen",
+    "forms": "Formulare",
+    "integration": "Integration",
+    "knowledge_base": "Wissensdatenbank",
+    "mcp": "MCP",
+    "messaging": "Messaging",
+    "monitoring": "Monitoring",
+    "notifications": "Benachrichtigungen",
+    "personalization": "Personalisierung",
+    "productivity": "Produktivität",
+    "project_management": "Projektmanagement",
+    "research": "Recherche",
+    "scheduling": "Terminplanung",
+    "social": "Social",
+    "source_control": "Quellcodeverwaltung",
+    "spreadsheet": "Tabellenkalkulation",
+    "storage": "Speicher",
+    "support": "Support",
+    "time_tracking": "Zeiterfassung",
+    "vector_search": "Vektorsuche",
+    "web_scraping": "Web Scraping"
   }
 }

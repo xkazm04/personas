@@ -89,7 +89,8 @@
     "source_healing_log": "Журнал восстановления",
     "source_provider": "Провайдер",
     "source_policy": "Политика",
-    "source_healing_issue": "Проблема восстановления"
+    "source_healing_issue": "Проблема восстановления",
+    "source_execution_error": "Ошибка выполнения"
   },
   "observability": {
     "title": "Мониторинг",

@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Deshacer",
-    "redo": "Rehacer"
+    "redo": "Rehacer",
+    "section_workspace": "Espacio de trabajo",
+    "toggle_sidebar": "Contraer / expandir barra lateral",
+    "toggle_monitor": "Abrir / cerrar Monitor de personas",
+    "toggle_athena": "Abrir / cerrar chat de Athena"
   }
 }

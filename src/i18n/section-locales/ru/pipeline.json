@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace настройки saved",
     "workspace_save_failed": "Couldn't save workspace настройки",
-    "workspace_inherit": "Наследовать"
+    "workspace_inherit": "Наследовать",
+    "add_persona_draft_hint": "Черновики персон нужно продвинуть, прежде чем они смогут присоединиться к команде.",
+    "checklist_heading": "Прогресс в реальном времени",
+    "checklist_background_note": "Выполняется в фоне",
+    "step_status_pending": "Ожидает",
+    "step_status_matching": "Сопоставление",
+    "step_status_running": "Выполняется",
+    "step_status_done": "Готово",
+    "step_status_skipped": "Пропущено",
+    "step_status_failed": "Сбой",
+    "step_status_awaiting_review": "Требует проверки",
+    "board_label": "Доска назначений",
+    "board_col_queued": "В очереди",
+    "board_col_running": "Выполняется",
+    "board_col_review": "Требует проверки",
+    "board_col_done": "Готово",
+    "board_col_stopped": "Остановлено",
+    "board_empty": "Назначений пока нет. Задайте цель в Orchestrate, чтобы начать."
   }
 }

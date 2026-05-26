@@ -89,7 +89,8 @@
     "source_healing_log": "복구 로그",
     "source_provider": "제공자",
     "source_policy": "정책",
-    "source_healing_issue": "복구 문제"
+    "source_healing_issue": "복구 문제",
+    "source_execution_error": "실행 오류"
   },
   "observability": {
     "title": "관측성",

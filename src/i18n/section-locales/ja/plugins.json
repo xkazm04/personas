@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "リセット",
     "team_preview_canvas_reset_title": "ズームとパンをデフォルトにリセット",
     "create_codebase_connector_label": "作成 Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "GitHub コネクター"
   },
   "dev_runner": {
     "self_healing": "自己修復",

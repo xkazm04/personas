@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "Keine Fragen für diese Fähigkeit.",
+    "error_policy": {
+      "title": "Fehlerbehandlung",
+      "intro": "Wiederholungen und Selbstheilung laufen automatisch. Wähle aus, was passiert, wenn sich ein Fehler nicht selbst beheben kann.",
+      "incident_label": "Incident erstellen",
+      "incident_desc": "Nicht behobene Fehler im Incident-Posteingang zur Triage anzeigen.",
+      "lab_label": "An das Lab senden",
+      "lab_desc": "Lab-Auto-Verbesserung (Prompt-Evolution) für diese Persona aktivieren, wenn Fehler wiederholt auftreten.",
+      "escalate_after_label": "Eskalieren nach",
+      "escalate_after_desc": "Aufeinanderfolgende Fehler, bevor ein Incident erstellt oder an das Lab gesendet wird."
+    }
   },
   "scan": {
     "scanning_draft": "Persona-Entwurf wird gescannt...",

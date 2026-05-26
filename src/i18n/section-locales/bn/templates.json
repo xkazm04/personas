@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "এই সক্ষমতার জন্য কোনো প্রশ্ন নেই।",
+    "error_policy": {
+      "title": "ত্রুটি পরিচালনা",
+      "intro": "পুনরায় চেষ্টা এবং স্ব-নিরাময় স্বয়ংক্রিয়। কোনো ব্যর্থতা নিজে থেকে সেরে উঠতে না পারলে কী হবে তা বেছে নিন।",
+      "incident_label": "ইনসিডেন্ট তৈরি করুন",
+      "incident_desc": "ত্রিয়াজের জন্য ইনসিডেন্ট ইনবক্সে পুনরুদ্ধার না হওয়া ব্যর্থতা দেখান।",
+      "lab_label": "ল্যাবে পাঠান",
+      "lab_desc": "ব্যর্থতা বারবার হলে এই পারসোনার জন্য Lab auto-improvement (prompt evolution) চালু করুন।",
+      "escalate_after_label": "এর পরে এসকেলেট করুন",
+      "escalate_after_desc": "ইনসিডেন্ট তৈরি বা ল্যাবে পাঠানোর আগে ধারাবাহিক ব্যর্থতার সংখ্যা।"
+    }
   },
   "scan": {
     "scanning_draft": "পার্সোনা ড্রাফট স্ক্যান হচ্ছে...",

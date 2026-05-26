@@ -89,7 +89,8 @@
     "source_healing_log": "Healing-Protokoll",
     "source_provider": "Anbieter",
     "source_policy": "Richtlinie",
-    "source_healing_issue": "Healing-Problem"
+    "source_healing_issue": "Healing-Problem",
+    "source_execution_error": "Ausführungsfehler"
   },
   "observability": {
     "title": "Observability",

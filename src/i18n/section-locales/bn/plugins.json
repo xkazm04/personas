@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "রিসেট",
     "team_preview_canvas_reset_title": "জুম এবং প্যান ডিফল্টে রিসেট করুন",
     "create_codebase_connector_label": "তৈরি করুন Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "GitHub কানেক্টর"
   },
   "dev_runner": {
     "self_healing": "স্ব-নিরাময়",

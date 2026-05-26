@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "Reset",
     "team_preview_canvas_reset_title": "Reset zoom dan pan ke default",
     "create_codebase_connector_label": "Buat Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "Konektor GitHub"
   },
   "dev_runner": {
     "self_healing": "Self-Healing",

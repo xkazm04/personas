@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Zpět",
-    "redo": "Znovu"
+    "redo": "Znovu",
+    "section_workspace": "Pracovní prostor",
+    "toggle_sidebar": "Sbalit / rozbalit postranní panel",
+    "toggle_monitor": "Otevřít / zavřít Monitor person",
+    "toggle_athena": "Otevřít / zavřít chat Athena"
   }
 }

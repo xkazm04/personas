@@ -707,7 +707,10 @@
     "test_all_credentials": "सभी क्रेडेंशियल परीक्षण करें",
     "test_all": "सभी परीक्षण करें",
     "daily_progress": "दैनिक {done}/{total}",
-    "testing_progress": "परीक्षण {done}/{total}"
+    "testing_progress": "परीक्षण {done}/{total}",
+    "title_catalog": "कैटलॉग",
+    "title_dependencies": "निर्भरताएं",
+    "title_databases": "डेटाबेस"
   },
   "bulk_healthcheck": {
     "title": "हेल्थचेक परिणाम",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "कोई कॉन्फ़िगर नहीं।",
-    "required_badge": "आवश्यक"
+    "required_badge": "आवश्यक",
+    "kv_key_label": "कुंजी",
+    "kv_value_label": "मान",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "मान दिखाएं",
+    "kv_hide_value": "मान छिपाएं",
+    "kv_remove": "वैरिएबल हटाएं",
+    "kv_add": "जोड़ें"
   },
   "design_phases": {
     "saving": "क्रेडेंशियल सहेजा जा रहा है...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "विज्ञापन",
+    "ai": "AI",
+    "analytics": "एनालिटिक्स",
+    "automation": "ऑटोमेशन",
+    "bi": "बिजनेस इंटेलिजेंस",
+    "browser_automation": "ब्राउज़र ऑटोमेशन",
+    "calendar": "कैलेंडर",
+    "ci_cd": "CI/CD",
+    "cloud": "क्लाउड",
+    "containers": "कंटेनर",
+    "crm": "CRM",
+    "custom": "कस्टम",
+    "database": "डेटाबेस",
+    "design": "डिज़ाइन",
+    "development": "डेवलपमेंट",
+    "ecommerce": "ई-कॉमर्स",
+    "email": "ईमेल",
+    "finance": "वित्त",
+    "forms": "फ़ॉर्म",
+    "integration": "इंटीग्रेशन",
+    "knowledge_base": "नॉलेज बेस",
+    "mcp": "MCP",
+    "messaging": "मैसेजिंग",
+    "monitoring": "मॉनिटरिंग",
+    "notifications": "नोटिफिकेशन",
+    "personalization": "पर्सनलाइजेशन",
+    "productivity": "प्रोडक्टिविटी",
+    "project_management": "प्रोजेक्ट मैनेजमेंट",
+    "research": "रिसर्च",
+    "scheduling": "शेड्यूलिंग",
+    "social": "सोशल",
+    "source_control": "सोर्स कंट्रोल",
+    "spreadsheet": "स्प्रेडशीट",
+    "storage": "स्टोरेज",
+    "support": "सपोर्ट",
+    "time_tracking": "समय ट्रैकिंग",
+    "vector_search": "वेक्टर खोज",
+    "web_scraping": "वेब स्क्रैपिंग"
   }
 }

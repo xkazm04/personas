@@ -707,7 +707,10 @@
     "test_all_credentials": "Проверить все учётные данные",
     "test_all": "Проверить все",
     "daily_progress": "Ежедневно {done}/{total}",
-    "testing_progress": "Проверка {done}/{total}"
+    "testing_progress": "Проверка {done}/{total}",
+    "title_catalog": "Каталог",
+    "title_dependencies": "Зависимости",
+    "title_databases": "Базы данных"
   },
   "bulk_healthcheck": {
     "title": "Результаты проверки здоровья",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "Не настроено.",
-    "required_badge": "ОБЯ"
+    "required_badge": "ОБЯ",
+    "kv_key_label": "Ключ",
+    "kv_value_label": "Значение",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "Показать значение",
+    "kv_hide_value": "Скрыть значение",
+    "kv_remove": "Удалить переменную",
+    "kv_add": "Добавить"
   },
   "design_phases": {
     "saving": "Сохранение учётных данных...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "Реклама",
+    "ai": "ИИ",
+    "analytics": "Аналитика",
+    "automation": "Автоматизация",
+    "bi": "Бизнес-аналитика",
+    "browser_automation": "Автоматизация браузера",
+    "calendar": "Календарь",
+    "ci_cd": "CI/CD",
+    "cloud": "Облако",
+    "containers": "Контейнеры",
+    "crm": "CRM",
+    "custom": "Пользовательское",
+    "database": "База данных",
+    "design": "Дизайн",
+    "development": "Разработка",
+    "ecommerce": "Электронная коммерция",
+    "email": "Электронная почта",
+    "finance": "Финансы",
+    "forms": "Формы",
+    "integration": "Интеграция",
+    "knowledge_base": "База знаний",
+    "mcp": "MCP",
+    "messaging": "Сообщения",
+    "monitoring": "Мониторинг",
+    "notifications": "Уведомления",
+    "personalization": "Персонализация",
+    "productivity": "Продуктивность",
+    "project_management": "Управление проектами",
+    "research": "Исследования",
+    "scheduling": "Планирование",
+    "social": "Социальные сети",
+    "source_control": "Контроль исходного кода",
+    "spreadsheet": "Электронная таблица",
+    "storage": "Хранилище",
+    "support": "Поддержка",
+    "time_tracking": "Учет времени",
+    "vector_search": "Векторный поиск",
+    "web_scraping": "Веб-скрейпинг"
   }
 }

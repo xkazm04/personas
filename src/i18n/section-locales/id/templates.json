@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "Tidak ada pertanyaan untuk kapabilitas ini.",
+    "error_policy": {
+      "title": "Penanganan kesalahan",
+      "intro": "Percobaan ulang dan pemulihan mandiri berjalan otomatis. Pilih apa yang terjadi saat kegagalan tidak bisa pulih sendiri.",
+      "incident_label": "Buat insiden",
+      "incident_desc": "Tampilkan kegagalan yang belum pulih di kotak masuk Insiden untuk triase.",
+      "lab_label": "Kirim ke Lab",
+      "lab_desc": "Aktifkan peningkatan otomatis Lab (evolusi prompt) untuk persona ini saat kegagalan berulang.",
+      "escalate_after_label": "Eskalasi setelah",
+      "escalate_after_desc": "Kegagalan berturut-turut sebelum membuat insiden atau mengirim ke Lab."
+    }
   },
   "scan": {
     "scanning_draft": "Memindai draf persona...",

@@ -707,7 +707,10 @@
     "test_all_credentials": "测试所有凭据",
     "test_all": "全部测试",
     "daily_progress": "每日 {done}/{total}",
-    "testing_progress": "测试 {done}/{total}"
+    "testing_progress": "测试 {done}/{total}",
+    "title_catalog": "目录",
+    "title_dependencies": "依赖项",
+    "title_databases": "数据库"
   },
   "bulk_healthcheck": {
     "title": "健康检查结果",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "未配置。",
-    "required_badge": "必填"
+    "required_badge": "必填",
+    "kv_key_label": "键",
+    "kv_value_label": "值",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "显示值",
+    "kv_hide_value": "隐藏值",
+    "kv_remove": "移除变量",
+    "kv_add": "添加"
   },
   "design_phases": {
     "saving": "正在保存凭据...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "广告",
+    "ai": "AI",
+    "analytics": "分析",
+    "automation": "自动化",
+    "bi": "商业智能",
+    "browser_automation": "浏览器自动化",
+    "calendar": "日历",
+    "ci_cd": "CI/CD",
+    "cloud": "云",
+    "containers": "容器",
+    "crm": "CRM",
+    "custom": "自定义",
+    "database": "数据库",
+    "design": "设计",
+    "development": "开发",
+    "ecommerce": "电子商务",
+    "email": "电子邮件",
+    "finance": "财务",
+    "forms": "表单",
+    "integration": "集成",
+    "knowledge_base": "知识库",
+    "mcp": "MCP",
+    "messaging": "消息",
+    "monitoring": "监控",
+    "notifications": "通知",
+    "personalization": "个性化",
+    "productivity": "生产力",
+    "project_management": "项目管理",
+    "research": "研究",
+    "scheduling": "排程",
+    "social": "社交",
+    "source_control": "源代码控制",
+    "spreadsheet": "电子表格",
+    "storage": "存储",
+    "support": "支持",
+    "time_tracking": "时间跟踪",
+    "vector_search": "向量搜索",
+    "web_scraping": "网页抓取"
   }
 }

@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace সেটিংস saved",
     "workspace_save_failed": "Couldn't save workspace সেটিংস",
-    "workspace_inherit": "উত্তরাধিকার"
+    "workspace_inherit": "উত্তরাধিকার",
+    "add_persona_draft_hint": "ড্রাফ্ট পারসোনাগুলো টিমে যোগ দেওয়ার আগে প্রোমোট করতে হবে।",
+    "checklist_heading": "লাইভ অগ্রগতি",
+    "checklist_background_note": "পটভূমিতে চলছে",
+    "step_status_pending": "অপেক্ষমাণ",
+    "step_status_matching": "ম্যাচিং",
+    "step_status_running": "চলছে",
+    "step_status_done": "সম্পন্ন",
+    "step_status_skipped": "এড়িয়ে গেছে",
+    "step_status_failed": "ব্যর্থ",
+    "step_status_awaiting_review": "রিভিউ দরকার",
+    "board_label": "অ্যাসাইনমেন্ট বোর্ড",
+    "board_col_queued": "কিউতে",
+    "board_col_running": "চলছে",
+    "board_col_review": "রিভিউ দরকার",
+    "board_col_done": "সম্পন্ন",
+    "board_col_stopped": "থামানো হয়েছে",
+    "board_empty": "এখনও কোনো অ্যাসাইনমেন্ট নেই। একটি শুরু করতে Orchestrate-এ লক্ষ্য নির্ধারণ করুন।"
   }
 }

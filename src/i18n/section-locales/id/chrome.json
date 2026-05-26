@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Urungkan",
-    "redo": "Ulangi"
+    "redo": "Ulangi",
+    "section_workspace": "Ruang kerja",
+    "toggle_sidebar": "Ciutkan / perluas bilah samping",
+    "toggle_monitor": "Buka / tutup Persona Monitor",
+    "toggle_athena": "Buka / tutup chat Athena"
   }
 }

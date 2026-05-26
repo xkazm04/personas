@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Annuler",
-    "redo": "Rétablir"
+    "redo": "Rétablir",
+    "section_workspace": "Espace de travail",
+    "toggle_sidebar": "Réduire / développer la barre latérale",
+    "toggle_monitor": "Ouvrir / fermer Persona Monitor",
+    "toggle_athena": "Ouvrir / fermer le chat Athena"
   }
 }

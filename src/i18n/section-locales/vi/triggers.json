@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse nhóm",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "Không có sự kiện match the current filters",
-  "dead_letter_clear_filters_to_see": "Xóa filters to see all dead-lettered sự kiện"
+  "dead_letter_clear_filters_to_see": "Xóa filters to see all dead-lettered sự kiện",
+  "col_event": "Sự kiện",
+  "col_listeners": "Listener",
+  "source_personas_filter": "Persona nguồn",
+  "listeners_filter": "Listener",
+  "filter_events_placeholder": "Lọc sự kiện..."
 }

@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "元に戻す",
-    "redo": "やり直し"
+    "redo": "やり直し",
+    "section_workspace": "ワークスペース",
+    "toggle_sidebar": "サイドバーを折りたたむ / 展開する",
+    "toggle_monitor": "Persona Monitor を開く / 閉じる",
+    "toggle_athena": "Athena チャットを開く / 閉じる"
   }
 }

@@ -707,7 +707,10 @@
     "test_all_credentials": "すべての認証情報をテスト",
     "test_all": "すべてテスト",
     "daily_progress": "1日 {done}/{total}",
-    "testing_progress": "{done}/{total}をテスト中"
+    "testing_progress": "{done}/{total}をテスト中",
+    "title_catalog": "カタログ",
+    "title_dependencies": "依存関係",
+    "title_databases": "データベース"
   },
   "bulk_healthcheck": {
     "title": "ヘルスチェック結果",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "設定なし。",
-    "required_badge": "必須"
+    "required_badge": "必須",
+    "kv_key_label": "キー",
+    "kv_value_label": "値",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "値を表示",
+    "kv_hide_value": "値を非表示",
+    "kv_remove": "変数を削除",
+    "kv_add": "追加"
   },
   "design_phases": {
     "saving": "認証情報を保存中...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "広告",
+    "ai": "AI",
+    "analytics": "分析",
+    "automation": "自動化",
+    "bi": "ビジネスインテリジェンス",
+    "browser_automation": "ブラウザー自動化",
+    "calendar": "カレンダー",
+    "ci_cd": "CI/CD",
+    "cloud": "クラウド",
+    "containers": "コンテナー",
+    "crm": "CRM",
+    "custom": "カスタム",
+    "database": "データベース",
+    "design": "デザイン",
+    "development": "開発",
+    "ecommerce": "Eコマース",
+    "email": "メール",
+    "finance": "財務",
+    "forms": "フォーム",
+    "integration": "統合",
+    "knowledge_base": "ナレッジベース",
+    "mcp": "MCP",
+    "messaging": "メッセージング",
+    "monitoring": "監視",
+    "notifications": "通知",
+    "personalization": "パーソナライズ",
+    "productivity": "生産性",
+    "project_management": "プロジェクト管理",
+    "research": "リサーチ",
+    "scheduling": "スケジューリング",
+    "social": "ソーシャル",
+    "source_control": "ソース管理",
+    "spreadsheet": "スプレッドシート",
+    "storage": "ストレージ",
+    "support": "サポート",
+    "time_tracking": "時間追跡",
+    "vector_search": "ベクトル検索",
+    "web_scraping": "Webスクレイピング"
   }
 }

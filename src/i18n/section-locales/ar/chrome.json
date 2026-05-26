@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "تراجع",
-    "redo": "إعادة"
+    "redo": "إعادة",
+    "section_workspace": "مساحة العمل",
+    "toggle_sidebar": "طي / توسيع الشريط الجانبي",
+    "toggle_monitor": "فتح / إغلاق مراقب الشخصيات",
+    "toggle_athena": "فتح / إغلاق دردشة Athena"
   }
 }

@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace 设置 saved",
     "workspace_save_failed": "Couldn't save workspace 设置",
-    "workspace_inherit": "继承"
+    "workspace_inherit": "继承",
+    "add_persona_draft_hint": "草稿 persona 必须先提升，才能加入团队。",
+    "checklist_heading": "实时进度",
+    "checklist_background_note": "在后台运行",
+    "step_status_pending": "待处理",
+    "step_status_matching": "匹配中",
+    "step_status_running": "运行中",
+    "step_status_done": "完成",
+    "step_status_skipped": "已跳过",
+    "step_status_failed": "失败",
+    "step_status_awaiting_review": "需要审查",
+    "board_label": "任务看板",
+    "board_col_queued": "已排队",
+    "board_col_running": "运行中",
+    "board_col_review": "需要审查",
+    "board_col_done": "完成",
+    "board_col_stopped": "已停止",
+    "board_empty": "还没有任务。在 Orchestrate 中定义目标以开始。"
   }
 }

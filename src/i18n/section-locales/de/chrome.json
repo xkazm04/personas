@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Rückgängig",
-    "redo": "Wiederholen"
+    "redo": "Wiederholen",
+    "section_workspace": "Arbeitsbereich",
+    "toggle_sidebar": "Seitenleiste ein-/ausklappen",
+    "toggle_monitor": "Persona Monitor öffnen / schließen",
+    "toggle_athena": "Athena-Chat öffnen / schließen"
   }
 }

@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "لا توجد أسئلة لهذه الإمكانية.",
+    "error_policy": {
+      "title": "معالجة الأخطاء",
+      "intro": "إعادة المحاولة والتعافي الذاتي تلقائيان. اختر ما يحدث عندما يتعذر على الفشل التعافي بمفرده.",
+      "incident_label": "رفع حادثة",
+      "incident_desc": "إظهار الإخفاقات غير المتعافية في صندوق الحوادث للفرز.",
+      "lab_label": "إرسال إلى المختبر",
+      "lab_desc": "تشغيل التحسين التلقائي في المختبر (تطوير المطالبات) لهذه الشخصية عند تكرر الإخفاقات.",
+      "escalate_after_label": "التصعيد بعد",
+      "escalate_after_desc": "عدد الإخفاقات المتتالية قبل رفع حادثة أو إرسالها إلى المختبر."
+    }
   },
   "scan": {
     "scanning_draft": "جارٍ مسح مسودة الوكيل...",

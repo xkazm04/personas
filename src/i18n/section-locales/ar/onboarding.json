@@ -147,5 +147,7 @@
   "narration_mute": "كتم السرد",
   "narration_unmute": "إلغاء كتم السرد",
   "local_tooling_label": "أدوات مدمجة",
-  "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+  "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+  "resume_continue_title": "تابع من حيث توقفت",
+  "resume_continue_cta": "متابعة الجولة"
 }
