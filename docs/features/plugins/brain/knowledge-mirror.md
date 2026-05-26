@@ -1,6 +1,6 @@
 # Design — Obsidian as an optional knowledge mirror
 
-> **Status:** **P0 + P1 implemented** (2026-05-26) on branch `worktree-friend-obsidian-brain-153023` — the off-by-default scaffolding and the Research Lab mirror have shipped; **P2** (Execution Knowledge) and **P3** (Athena tool) are pending review. Open questions resolved (§9).
+> **Status:** **P0–P3 implemented** (2026-05-26) on branch `worktree-friend-obsidian-brain-153023` — scaffolding, the Research Lab mirror, the Execution Knowledge mirror, and the Athena vault tools have all shipped; pending live verification + review. Open questions resolved (§9).
 > **Decision inputs:** data model = **Mirror** (SQLite/embeddings stay canonical; the vault is a dual-write, removable mirror). Gated on Obsidian presence; **off by default**. **Single** Brain vault for all stores; **one** `obsidian_mirror` settings object; surfaced in the Setup → Sync Options card. All mirrors are **one-way (app → vault)** in v1. Athena's vault relationship is **on-demand external-tool access**, not a bulk memory mirror (§5.1).
 
 This doc specifies how three internal knowledge/memory stores — **Athena Brain**, **Execution Knowledge**, and **Research Lab** — can optionally project themselves into an Obsidian vault as human-readable, portable markdown, *only* for users who have Obsidian. It is a design for review, not an implementation.
@@ -116,12 +116,14 @@ Per the approval pass, Athena does **not** wholesale-mirror its `companion_*` me
 |---|---|---|
 | **P0** ✅ | `obsidian_available()` resolver, `obsidian_mirror_config` settings, the Setup-tab toggle group (all default off — no behaviour change for existing users). Shipped `d65412f82`. | low |
 | **P1** ✅ | **Research Lab** mirror — `mirror_write_note`/`mirror_vault_root` primitive + `research_lab_sync_to_obsidian` routed through the Brain vault with incremental hashing. Shipped `45b19cfc7`. | low |
-| **P2** | **Execution Knowledge** mirror (one-way write + backfill) | medium |
-| **P3** | **Athena Brain** vault tool — gate the Obsidian Memory tool surface for Athena (read) + selective one-way note write | medium |
+| **P2** ✅ | **Execution Knowledge** mirror — one-way write of `execution_knowledge` into the knowledge folder, hooked into post-execution extraction + an `obsidian_mirror_backfill_execution_knowledge` command. Shipped `35207204f`. | medium |
+| **P3** ✅ | **Athena Brain** vault tools — `obsidian_vault_search` + `obsidian_vault_write_note` added to the `personas-mcp` sidecar, gated on the Athena toggle + a configured vault. Shipped `72a58d973`. | medium |
 
-Each phase is independently shippable behind its off-by-default flag. **P0 + P1 are merged on the branch; P2/P3 await review.**
+Each phase is independently shippable behind its off-by-default flag. **P0–P3 are all on the branch; pending live verification + review.**
 
-**Implementation notes (P0/P1):**
+**Implementation notes (P0–P3):**
+- P2 hooks `mirror_execution_knowledge_for_persona` into the end of `engine::knowledge::extract_and_persist`; best-effort + hash-gated, so it never blocks or breaks an execution. The backfill command iterates all personas and is invoked when the toggle is first enabled (count toast).
+- P3 could **not** reuse the lib's graph search: the `personas-mcp` sidecar is a standalone crate with no `commands`/Tauri/app-pool access. It reads the vault path + Athena flag from `app_settings` via raw SQL and reimplements walk + TF-IDF + snippet self-contained in `mcp_server/vault.rs` (mirrors `graph.rs`). The vault tools are MCP tools (not Tauri commands), gated at dispatch like the existing Drive tools.
 - The mirror-domain abstraction landed in P1 (alongside its first consumer) rather than P0, to avoid shipping an unused trait.
 - The toggle group is rendered inside the Setup → Sync Options card and saves immediately (independent of the form's *Save Configuration* button), via `obsidian_mirror_set_config`.
 - Research Lab keeps its legacy per-project `obsidian_vault_path` as a fallback when the mirror toggle is off; "migration" is a re-sync to the Brain vault on next sync (existing legacy-location files are left in place).
