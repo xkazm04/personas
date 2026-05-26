@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search } from 'lucide-react';
+import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -13,6 +13,9 @@ import {
   type VaultTreeNode,
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
+import { openNoteInObsidian } from '../openInObsidian';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import { parseNote } from './parseNote';
 
 function matchesFilter(node: VaultTreeNode, filter: string): boolean {
   const lower = filter.toLowerCase();
@@ -80,11 +83,12 @@ function TreeItem({ node, depth, onSelect, selectedPath, filter }: {
 }
 
 export default function BrowsePanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
   const vaultPath = useSystemStore((s) => s.obsidianVaultPath);
+  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const [tree, setTree] = useState<VaultTreeNode | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,17 +131,18 @@ export default function BrowsePanel() {
   }, []);
 
   const openInObsidian = useCallback(() => {
-    if (!selectedPath || !vaultName) return;
-    // Send the full vault-relative path (with normalized forward slashes,
-    // .md stripped) so Obsidian opens the exact note. Sending only the
-    // basename ambiguously matched any same-named file in the vault.
-    const filePath = selectedPath.replace(/\\/g, '/').replace(/\.md$/, '');
-    window.location.href = `obsidian://open?vault=${encodeURIComponent(vaultName)}&file=${encodeURIComponent(filePath)}`;
+    if (!selectedPath) return;
+    openNoteInObsidian(vaultName, selectedPath);
   }, [selectedPath, vaultName]);
 
   const selectedFileName = useMemo(
     () => selectedPath?.split(/[/\\]/).pop() ?? null,
     [selectedPath],
+  );
+
+  const parsed = useMemo(
+    () => (noteContent ? parseNote(noteContent) : null),
+    [noteContent],
   );
 
   if (!connected) {
@@ -149,6 +154,7 @@ export default function BrowsePanel() {
           subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
         />
       </div>
     );
@@ -202,11 +208,24 @@ export default function BrowsePanel() {
       <div className="flex-1 min-w-0 overflow-y-auto">
         {selectedPath ? (
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <p className="typo-heading typo-card-label truncate">{selectedFileName}</p>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="typo-heading typo-card-label truncate">{selectedFileName}</p>
+                <div className="flex items-center gap-2 mt-1 min-w-0">
+                  {parsed && (
+                    <span className="typo-caption text-foreground/90 tabular-nums flex-shrink-0">
+                      {tx(t.plugins.obsidian_brain.word_count, { count: parsed.wordCount })}
+                    </span>
+                  )}
+                  <span className="flex items-center gap-1 min-w-0">
+                    <span className="typo-caption text-foreground truncate" title={selectedPath}>{selectedPath}</span>
+                    <CopyButton text={selectedPath} iconSize="w-3 h-3" />
+                  </span>
+                </div>
+              </div>
               <button
                 onClick={openInObsidian}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/10 text-violet-400 border border-violet-500/20 hover:bg-violet-500/20 transition-colors focus-ring flex-shrink-0"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 {t.plugins.obsidian_brain.open_in_obsidian}
@@ -217,9 +236,24 @@ export default function BrowsePanel() {
                 <LoadingSpinner size="md" label="Loading note..." />
               </div>
             ) : noteContent ? (
-              <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{noteContent}</ReactMarkdown>
-              </div>
+              <>
+                {parsed && parsed.properties.length > 0 && (
+                  <div className="rounded-modal bg-secondary/20 border border-primary/8 p-3">
+                    <p className="typo-label text-foreground/90 mb-2">{t.plugins.obsidian_brain.note_properties}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {parsed.properties.map((prop) => (
+                        <span key={prop.key} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-card bg-secondary/40 border border-primary/10 typo-caption">
+                          <span className="text-violet-300/80">{prop.key}</span>
+                          {prop.value && <span className="text-foreground">{prop.value}</span>}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="prose prose-invert prose-sm max-w-none rounded-modal bg-secondary/20 border border-primary/5 p-5 [&_h1]:typo-heading-lg [&_h2]:typo-heading [&_h3]:typo-heading [&_p]:text-foreground [&_li]:text-foreground [&_a]:text-violet-400 [&_code]:text-violet-300 [&_code]:bg-violet-500/10 [&_code]:px-1 [&_code]:rounded [&_pre]:bg-secondary/40 [&_pre]:border [&_pre]:border-primary/10 [&_blockquote]:border-violet-500/30 [&_blockquote]:text-foreground">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{parsed ? parsed.body : noteContent}</ReactMarkdown>
+                </div>
+              </>
             ) : null}
           </div>
         ) : (

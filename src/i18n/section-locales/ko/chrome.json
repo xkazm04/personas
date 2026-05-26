@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "실행 취소",
-    "redo": "다시 실행"
+    "redo": "다시 실행",
+    "section_workspace": "작업 영역",
+    "toggle_sidebar": "사이드바 접기 / 펼치기",
+    "toggle_monitor": "Persona Monitor 열기 / 닫기",
+    "toggle_athena": "Athena 채팅 열기 / 닫기"
   }
 }

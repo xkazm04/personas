@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "この機能には質問がありません。",
+    "error_policy": {
+      "title": "エラー処理",
+      "intro": "再試行と自己修復は自動です。障害が自力で回復できない場合の動作を選択してください。",
+      "incident_label": "インシデントを作成",
+      "incident_desc": "回復できなかった障害をトリアージ用にインシデント受信箱へ表示します。",
+      "lab_label": "Lab に送信",
+      "lab_desc": "障害が繰り返される場合、このペルソナの Lab 自動改善 (プロンプト進化) を有効にします。",
+      "escalate_after_label": "エスカレーションまで",
+      "escalate_after_desc": "インシデント作成または Lab 送信までの連続失敗回数。"
+    }
   },
   "scan": {
     "scanning_draft": "ペルソナのドラフトをスキャン中...",

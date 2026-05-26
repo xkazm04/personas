@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse skupina",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "Žádné události match the current filters",
-  "dead_letter_clear_filters_to_see": "Vymazat filters to see all dead-lettered události"
+  "dead_letter_clear_filters_to_see": "Vymazat filters to see all dead-lettered události",
+  "col_event": "Událost",
+  "col_listeners": "Posluchači",
+  "source_personas_filter": "Zdrojové persony",
+  "listeners_filter": "Posluchači",
+  "filter_events_placeholder": "Filtrovat události..."
 }

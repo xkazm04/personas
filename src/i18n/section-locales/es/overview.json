@@ -89,7 +89,8 @@
     "source_healing_log": "Registro de reparación",
     "source_provider": "Proveedor",
     "source_policy": "Política",
-    "source_healing_issue": "Problema de reparación"
+    "source_healing_issue": "Problema de reparación",
+    "source_execution_error": "Error de ejecución"
   },
   "observability": {
     "title": "Observabilidad",

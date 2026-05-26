@@ -23,7 +23,7 @@ Wait for both answers before proceeding. Do NOT ask anything else upfront — fu
   - `codebase-catalogs.md` — current 92 templates + 87 connectors with coverage gaps. Loaded only when bucket B or C is in scope.
 - **Feature reference docs (`docs/features/`)** — implemented-product reference kept in sync with source via the Stop hook described in `.claude/CLAUDE.md` → "Documentation Sync". Use these on demand in Phase 6 when `codebase-context.md`'s keywords / file lists are too coarse to anchor a finding precisely. The README at `docs/features/README.md` indexes every area + plugin to its implementation roots:
   - Core areas: `home.md`, `onboarding.md`, `overview/`, `personas/`, `templates/`, `execution/`, `connections/`, `events/`, `recipes/`, `settings/`
-  - Plugins: `artist.md` + `artist/`, `companion/`, `dev-tools.md`, `drive/`, `obsidian-brain.md`, `research-lab.md`, `twin.md`
+  - Plugins: `artist.md` + `artist/`, `companion/`, `dev-tools.md`, `drive/`, `brain/`, `research-lab.md`, `twin.md`
   - Read the relevant feature doc before deep-greping when a finding lands inside one of those areas — the doc's "primary user flows / backend command surface / data model / known gaps" sections often surface the exact attachment point and pre-existing infrastructure faster than a wide grep.
 - **Obsidian vault:** `C:/Users/mkdol/Documents/Obsidian/personas`
   - `Research/` — one note per run

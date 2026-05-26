@@ -1,6 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw } from 'lucide-react';
+import { Search, FolderOpen, CheckCircle2, XCircle, Save, Brain, Users, Plug, RefreshCw, FlaskConical, Network, Sparkles } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { SettingRow } from '@/features/shared/components/forms/SettingRow';
@@ -13,12 +13,19 @@ import {
   obsidianBrainDetectVaults,
   obsidianBrainTestConnection,
   obsidianBrainSaveConfig,
+  obsidianMirrorGetConfig,
+  obsidianMirrorSetConfig,
+  obsidianAvailable,
+  obsidianMirrorBackfillExecutionKnowledge,
   type DetectedVault,
   type VaultConnectionResult,
   type ObsidianVaultConfig,
+  type ObsidianMirrorConfig,
+  type ObsidianAvailability,
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import { useSavedVaultConfigs } from '../useSavedVaultConfigs';
+import { silentCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -43,6 +50,11 @@ export default function SetupPanel() {
   const [testing, setTesting] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Knowledge mirror (opt-in, off by default; only surfaced when Obsidian is
+  // available). Persisted independently of the form via obsidian_mirror_config.
+  const [mirrorConfig, setMirrorConfig] = useState<ObsidianMirrorConfig | null>(null);
+  const [availability, setAvailability] = useState<ObsidianAvailability | null>(null);
+
   // Sync options (fresh defaults — do not hydrate from saved configs)
   const [syncMemories, setSyncMemories] = useState(true);
   const [syncPersonas, setSyncPersonas] = useState(true);
@@ -57,6 +69,42 @@ export default function SetupPanel() {
   const visibleDetectedVaults = useMemo(
     () => detectedVaults.filter((v) => !savedPaths.has(v.path)),
     [detectedVaults, savedPaths],
+  );
+
+  const refreshMirrorState = useCallback(async () => {
+    try {
+      const [avail, cfg] = await Promise.all([obsidianAvailable(), obsidianMirrorGetConfig()]);
+      setAvailability(avail);
+      setMirrorConfig(cfg);
+    } catch (e) {
+      // Non-fatal — the mirror group just stays hidden.
+      silentCatch('features/plugins/obsidian-brain/SetupPanel:refreshMirrorState')(e);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshMirrorState();
+  }, [refreshMirrorState]);
+
+  const toggleMirror = useCallback(
+    async (key: keyof ObsidianMirrorConfig) => {
+      if (!mirrorConfig) return;
+      const next = { ...mirrorConfig, [key]: !mirrorConfig[key] };
+      setMirrorConfig(next); // optimistic
+      try {
+        await obsidianMirrorSetConfig(next);
+        // Enabling the execution-knowledge mirror backfills existing rows once,
+        // so the vault isn't empty until each persona happens to run again.
+        if (key === 'executionKnowledge' && next.executionKnowledge) {
+          const count = await obsidianMirrorBackfillExecutionKnowledge();
+          addToast(tx(t.plugins.obsidian_brain.mirror_backfill_done, { count }), 'success');
+        }
+      } catch (e) {
+        setMirrorConfig(mirrorConfig); // revert on failure
+        addToast(tx(t.plugins.obsidian_brain.mirror_save_failed, { error: String(e) }), 'error');
+      }
+    },
+    [mirrorConfig, addToast, t, tx],
   );
 
   const detectVaults = useCallback(async () => {
@@ -128,13 +176,15 @@ export default function SetupPanel() {
       setObsidianConnected(true);
       // Re-fetch gated connectors so obsidian_memory becomes visible elsewhere
       void fetchConnectorDefinitions();
+      // A freshly-configured vault flips Obsidian availability → surface the mirror group.
+      void refreshMirrorState();
       addToast('Obsidian Brain configuration saved', 'success');
     } catch (e) {
       addToast(`Save failed: ${e}`, 'error');
     } finally {
       setSaving(false);
     }
-  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, setObsidianConnected, fetchConnectorDefinitions]);
+  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, setObsidianConnected, fetchConnectorDefinitions, refreshMirrorState]);
 
   return (
     <div className="flex gap-4 py-2">
@@ -252,6 +302,31 @@ export default function SetupPanel() {
               onChange={opt.onChange}
             />
           ))}
+
+          {/* Knowledge mirror — opt-in, only when Obsidian is available. Saves
+              immediately (independent of the Save Configuration button). */}
+          {availability?.available && mirrorConfig && (
+            <div className="pt-3 mt-1 border-t border-primary/10 space-y-3">
+              <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.knowledge_mirror}</p>
+              {[
+                { key: 'researchLab' as const, icon: <FlaskConical className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_research_lab, desc: t.plugins.obsidian_brain.mirror_research_lab_desc },
+                { key: 'executionKnowledge' as const, icon: <Network className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_execution_knowledge, desc: t.plugins.obsidian_brain.mirror_execution_knowledge_desc },
+                { key: 'athena' as const, icon: <Sparkles className="w-4 h-4 text-violet-400" />, label: t.plugins.obsidian_brain.mirror_athena, desc: t.plugins.obsidian_brain.mirror_athena_desc },
+              ].map((m) => (
+                <SettingRow
+                  key={m.key}
+                  variant="card"
+                  toggleSize="sm"
+                  icon={m.icon}
+                  label={m.label}
+                  description={m.desc}
+                  checked={!!mirrorConfig[m.key]}
+                  onChange={() => toggleMirror(m.key)}
+                  testId={`mirror-toggle-${m.key}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </SectionCard>
 

@@ -626,6 +626,7 @@ export function UnifiedBuildEntry() {
 
   return (
     <div
+      data-testid="persona-build-entry"
       className="flex-1 min-h-0 flex flex-col w-full overflow-x-auto overflow-y-hidden transition-opacity duration-400 ease-out"
       style={{ opacity: fadeOut ? 0 : 1 }}
     >

@@ -10,7 +10,7 @@ import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users, CheckSquare, Square, Code2,
+  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users, CheckSquare, Square, Code2, GitBranch,
 } from 'lucide-react';
 import {
   type ProjectType, type EditProjectData, PROJECT_TYPES,
@@ -41,6 +41,17 @@ interface ProjectModalProps {
   onUpdate: (id: string, data: Omit<ProjectFormData, 'path'>) => Promise<void>;
   onScanNow: (projectId: string, rootPath: string, projectName: string) => void;
   editProject?: EditProjectData | null;
+}
+
+/** Small labelled divider that groups the modal's fields into sections. */
+function SectionHeader({ icon: Icon, label }: { icon: typeof FolderOpen; label: string }) {
+  return (
+    <div className="flex items-center gap-2 pt-1">
+      <Icon className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
+      <h3 className="typo-label text-primary uppercase tracking-wider whitespace-nowrap">{label}</h3>
+      <div className="flex-1 h-px bg-primary/10" />
+    </div>
+  );
 }
 
 export function ProjectModal({
@@ -200,30 +211,38 @@ export function ProjectModal({
       isOpen={isOpen}
       onClose={handleClose}
       titleId="dev-tools-project-modal-title"
-      maxWidthClass="max-w-[33.6rem]"
-      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4"
+      maxWidthClass="max-w-2xl"
+      panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
     >
       <div>
           {step === 'form' ? (
             <>
-              <div className="flex items-center justify-between mb-5">
-                <h2 id="dev-tools-project-modal-title" className="typo-section-title">
-                  {isEdit ? t.plugins.dev_projects.edit_project : t.plugins.dev_projects.new_project}
-                </h2>
+              <div className="flex items-start justify-between mb-6">
+                <div className="min-w-0">
+                  <h2 id="dev-tools-project-modal-title" className="typo-heading-lg font-semibold text-foreground">
+                    {isEdit ? t.plugins.dev_projects.edit_project : t.plugins.dev_projects.new_project}
+                  </h2>
+                  <p className="typo-caption text-foreground mt-1">
+                    {isEdit ? t.plugins.dev_projects.edit_project_subtitle : t.plugins.dev_projects.new_project_subtitle}
+                  </p>
+                </div>
                 <Button variant="ghost" size="icon-sm" onClick={handleClose}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-5">
+                {/* ============ PROJECT ============ */}
+                <SectionHeader icon={FolderOpen} label={t.plugins.dev_projects.modal_section_project} />
+
                 {/* Folder picker (read-only in edit mode) */}
                 <div>
                   <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.plugins.dev_projects.project_folder}</label>
                   <div className="flex gap-2">
                     <div
                       onClick={isEdit ? undefined : handleSelectFolder}
-                      className={`flex-1 flex items-center gap-2 px-3 py-2 text-md bg-secondary/40 border border-primary/10 rounded-modal min-w-0 ${
-                        isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 transition-colors'
+                      className={`flex-1 flex items-center gap-2 px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input min-w-0 ${
+                        isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 hover:border-primary/20 transition-colors'
                       }`}
                     >
                       <FolderOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
@@ -234,8 +253,8 @@ export function ProjectModal({
                       )}
                     </div>
                     {!isEdit && (
-                      <Button variant="secondary" size="sm" onClick={handleSelectFolder}>
-                        Browse
+                      <Button variant="secondary" size="sm" icon={<FolderOpen className="w-3.5 h-3.5" />} onClick={handleSelectFolder}>
+                        {t.plugins.dev_projects.browse}
                       </Button>
                     )}
                   </div>
@@ -246,7 +265,7 @@ export function ProjectModal({
                   <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     {t.plugins.dev_projects.project_name}
                     {!isEdit && path && !nameEdited && (
-                      <span className="text-[10px] text-foreground font-normal">({t.plugins.dev_projects.auto_filled_from_folder})</span>
+                      <span className="typo-caption text-foreground font-normal">({t.plugins.dev_projects.auto_filled_from_folder})</span>
                     )}
                   </label>
                   <div className="relative">
@@ -254,7 +273,7 @@ export function ProjectModal({
                       value={name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       placeholder={t.plugins.dev_projects.project_name_placeholder}
-                      className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground focus-ring"
+                      className="w-full px-3 py-2.5 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
                     />
                     <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
                   </div>
@@ -264,7 +283,7 @@ export function ProjectModal({
                 <div>
                   <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
                     {t.plugins.dev_projects.project_type}
-                    <span className="text-[10px] text-foreground font-normal">({t.plugins.dev_projects.project_type_optional})</span>
+                    <span className="typo-caption text-foreground font-normal">({t.plugins.dev_projects.project_type_optional})</span>
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {PROJECT_TYPES.map((pt) => (
@@ -273,7 +292,7 @@ export function ProjectModal({
                         onClick={() => setProjectType(pt.id)}
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card border transition-all ${
                           projectType === pt.id
-                            ? `${pt.color} ring-1 ring-current/20 scale-105`
+                            ? `${pt.color} ring-1 ring-current/20`
                             : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
                         }`}
                       >
@@ -284,39 +303,54 @@ export function ProjectModal({
                   </div>
                 </div>
 
-                {/* GitHub connector — bind a vault GitHub PAT so the project's
-                    PR / source-control operations (auto-PR, review comments)
-                    can authenticate. Persisted as pr_credential_id. */}
-                <div data-testid="project-github-connector">
-                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    {t.plugins.dev_projects.github_connector_label}
-                    <span className="text-[10px] text-foreground font-normal">
-                      ({t.plugins.dev_projects.team_binding_optional})
-                    </span>
-                  </label>
-                  <ThemedSelect
-                    value={prCredentialId ?? ''}
-                    onValueChange={(v) => setPrCredentialId(v || null)}
-                  >
-                    <option value="">{t.plugins.dev_projects.team_binding_none}</option>
-                    {githubCreds.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </ThemedSelect>
-                </div>
+                {/* ============ SOURCE CONTROL ============ */}
+                <SectionHeader icon={GitBranch} label={t.plugins.dev_projects.modal_section_source} />
 
-                {/* GitHub URL -- repo selector (if PAT available) or manual input */}
-                <GitHubRepoSelector value={githubUrl} onChange={setGithubUrl} />
+                <div className="grid md:grid-cols-2 gap-3 items-start">
+                  {/* GitHub connector — bind a vault GitHub PAT so the project's
+                      PR / source-control operations (auto-PR, review comments)
+                      can authenticate. Persisted as pr_credential_id, and also
+                      drives which repositories the picker beside it lists. */}
+                  <div data-testid="project-github-connector">
+                    <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                      {t.plugins.dev_projects.github_connector_label}
+                      <span className="typo-caption text-foreground font-normal">
+                        ({t.plugins.dev_projects.team_binding_optional})
+                      </span>
+                    </label>
+                    <ThemedSelect
+                      value={prCredentialId ?? ''}
+                      onValueChange={(v) => setPrCredentialId(v || null)}
+                    >
+                      <option value="">{t.plugins.dev_projects.team_binding_none}</option>
+                      {githubCreds.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </ThemedSelect>
+                  </div>
+
+                  {/* GitHub repository — searchable picker fed by the connector
+                      selected on the left, or a manual URL input as fallback. */}
+                  <GitHubRepoSelector value={githubUrl} onChange={setGithubUrl} credentialId={prCredentialId} />
+                </div>
+                {prCredentialId && (
+                  <p className="typo-caption text-foreground -mt-2 flex items-center gap-1.5">
+                    <Code2 className="w-3 h-3 text-amber-400/70 flex-shrink-0" />
+                    {t.plugins.dev_projects.repos_from_connector}
+                  </p>
+                )}
+
+                {/* ============ WORKSPACE ============ */}
+                <SectionHeader icon={Users} label={t.plugins.dev_projects.modal_section_workspace} />
 
                 {/* Team binding — optional; ties this project to a PersonaTeam
                     pipeline so the project surface shows the pipeline inline. */}
                 <div>
                   <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5" />
                     {t.plugins.dev_projects.team_binding_label}
-                    <span className="text-[10px] text-foreground font-normal">
+                    <span className="typo-caption text-foreground font-normal">
                       ({t.plugins.dev_projects.team_binding_optional})
                     </span>
                   </label>
@@ -332,7 +366,7 @@ export function ProjectModal({
                     ))}
                   </ThemedSelect>
                   {teams.length === 0 && (
-                    <p className="typo-caption text-foreground/60 mt-1">
+                    <p className="typo-caption text-foreground mt-1">
                       {t.plugins.dev_projects.team_binding_empty}
                     </p>
                   )}
@@ -345,7 +379,11 @@ export function ProjectModal({
                     type="button"
                     onClick={() => setCreateConnector((v) => !v)}
                     aria-pressed={createConnector}
-                    className="w-full flex items-start gap-3 px-3 py-2.5 text-left bg-secondary/30 border border-primary/10 rounded-modal hover:bg-secondary/50 transition-colors"
+                    className={`w-full flex items-start gap-3 px-3 py-3 text-left border rounded-input transition-colors ${
+                      createConnector
+                        ? 'bg-amber-500/5 border-amber-500/25'
+                        : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                    }`}
                   >
                     {createConnector
                       ? <CheckSquare className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
@@ -355,7 +393,7 @@ export function ProjectModal({
                         <Code2 className="w-3.5 h-3.5 text-amber-400" />
                         {t.plugins.dev_projects.create_codebase_connector_label}
                       </span>
-                      <span className="block typo-caption text-foreground mt-0.5">
+                      <span className="block typo-caption text-foreground mt-0.5 leading-relaxed">
                         {t.plugins.dev_projects.create_codebase_connector_desc.replace('{name}', name.trim() || t.plugins.dev_projects.project_name)}
                       </span>
                     </span>
@@ -363,7 +401,7 @@ export function ProjectModal({
                 )}
               </div>
 
-              <div className="flex justify-end gap-2 mt-6">
+              <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-primary/10">
                 <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
                 <Button
                   variant="accent"

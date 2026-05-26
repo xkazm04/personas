@@ -30,6 +30,24 @@ pub struct FolderMapping {
     pub memories_folder: String,
     pub personas_folder: String,
     pub connectors_folder: String,
+    // Knowledge-mirror folders. Serde defaults keep older stored configs
+    // (written before these existed) deserializing cleanly.
+    #[serde(default = "default_research_folder")]
+    pub research_folder: String,
+    #[serde(default = "default_knowledge_folder")]
+    pub knowledge_folder: String,
+    #[serde(default = "default_athena_folder")]
+    pub athena_folder: String,
+}
+
+fn default_research_folder() -> String {
+    "Research".into()
+}
+fn default_knowledge_folder() -> String {
+    "Knowledge".into()
+}
+fn default_athena_folder() -> String {
+    "Athena".into()
 }
 
 impl Default for FolderMapping {
@@ -38,8 +56,50 @@ impl Default for FolderMapping {
             memories_folder: "memories".into(),
             personas_folder: "Personas".into(),
             connectors_folder: "Connectors".into(),
+            research_folder: default_research_folder(),
+            knowledge_folder: default_knowledge_folder(),
+            athena_folder: default_athena_folder(),
         }
     }
+}
+
+// ── Knowledge Mirror (opt-in, off by default) ────────────────────────
+//
+// Per-feature flags for mirroring internal knowledge/memory stores into the
+// vault. All default OFF: the app is fully functional with no Obsidian, and
+// these take effect only once the user opts in AND a vault is configured.
+// See docs/features/plugins/brain/knowledge-mirror.md.
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ObsidianMirrorConfig {
+    /// Athena may consult the vault as an on-demand tool (read) + selective writes.
+    #[serde(default)]
+    pub athena: bool,
+    /// Mirror the execution-knowledge graph into the vault.
+    #[serde(default)]
+    pub execution_knowledge: bool,
+    /// Route Research Lab experiment notes through the Brain vault.
+    #[serde(default)]
+    pub research_lab: bool,
+    /// User dismissed the one-time "we noticed Obsidian" offer.
+    #[serde(default)]
+    pub offer_dismissed: bool,
+}
+
+/// Result of the `obsidian_available` resolver — whether the integration can
+/// be offered/enabled, and which presence signals fired.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ObsidianAvailability {
+    /// Obsidian desktop app binary detected on the machine.
+    pub binary_installed: bool,
+    /// A vault is configured in the Brain plugin.
+    pub vault_configured: bool,
+    /// Either signal is enough to surface/enable the integration.
+    pub available: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

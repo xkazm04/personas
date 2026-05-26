@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse গ্রুপ",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "কোনো ইভেন্ট match the current filters",
-  "dead_letter_clear_filters_to_see": "সাফ করুন filters to see all dead-lettered ইভেন্ট"
+  "dead_letter_clear_filters_to_see": "সাফ করুন filters to see all dead-lettered ইভেন্ট",
+  "col_event": "ইভেন্ট",
+  "col_listeners": "লিসেনার",
+  "source_personas_filter": "সোর্স পারসোনা",
+  "listeners_filter": "লিসেনার",
+  "filter_events_placeholder": "ইভেন্ট ফিল্টার করুন..."
 }

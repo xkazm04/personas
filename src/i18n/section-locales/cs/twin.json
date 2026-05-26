@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Kam pokračovat",
     "nextMovesSubtitle": "Témata s nejtenčím pokrytím — natrénujte je jako další pro největší posílení mozku.",
-    "nextMovesCoverage": "{count} ukotvujících faktů zatím"
+    "nextMovesCoverage": "{count} ukotvujících faktů zatím",
+    "draftAsTwin": "Návrh jako dvojče",
+    "draftingAsTwin": "Vytváří se návrh jako {name}…",
+    "twinDraftLabel": "Návrh dvojčete — zkontrolovat a upravit",
+    "regenerate": "Vygenerovat znovu",
+    "regenerateCommentPlaceholder": "Co změnit? (např. kratší, přidat příběh z roku 2019)",
+    "studioOpen": "Otevřít studio",
+    "studioTagline": "Hromadně vygenerujte otázky a odpovědi navržené dvojčetem, zkontrolujte, upravte a uložte ty nejlepší.",
+    "studioBack": "Rychlý rozhovor",
+    "studioDirectionsLabel": "Pokyny",
+    "studioDirectionsPlaceholder": "Naveďte dávku — např. zaměřte se na příběhy o neúspěchu, krátké otázky",
+    "studioTopicPlaceholder": "Téma — např. názory na technologie",
+    "studioGenerateQuestions": "Vygenerovat otázky",
+    "studioDraftAll": "Navrhnout vše jako dvojče",
+    "studioCancel": "Zrušit",
+    "studioSaveApproved": "Uložit {count} vybraných",
+    "studioAddQuestion": "Přidat otázku",
+    "studioEmptyTitle": "Zatím žádné otázky",
+    "studioEmptyHint": "Nastavte téma a vygenerujte dávku, nebo přidejte vlastní otázky.",
+    "studioRunningAnswers": "Vytváření odpovědí… {completed}/{total}",
+    "studioRunningQuestions": "Generování otázek…",
+    "studioBackgroundNote": "Běží na pozadí — po dokončení dostanete oznámení.",
+    "studioAnswerPlaceholder": "Odpověď — navrhnout jako dvojče, nebo napsat vlastní",
+    "studioDraftOne": "Návrh",
+    "studioWordCount": "{count} slov",
+    "studioSavedToast": "{count} párů uloženo do paměti",
+    "studioRemoveRow": "Odebrat",
+    "studioSaveDirections": "Uložit jako výchozí pokyny",
+    "studioDirectionsSaved": "Uloženo jako výchozí",
+    "studioDirectionsSavedToast": "Pokyny uloženy"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "Otevřít {section}",
+    "nextStep": "Další krok",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Dokončete své dvojče"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "Uloženo do destilovaných faktů.",
     "saveAsFactTooltip": "Povýšit tuto komunikaci na trvalý destilovaný fakt",
     "saveAsFactError": "Nepodařilo se uložit jako fakt."
-  }
+  },
+  "studioInProgress": "Tréninkové studio běží"
 }

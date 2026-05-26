@@ -89,7 +89,8 @@
     "source_healing_log": "হিলিং লগ",
     "source_provider": "প্রদানকারী",
     "source_policy": "নীতি",
-    "source_healing_issue": "হিলিং সমস্যা"
+    "source_healing_issue": "হিলিং সমস্যা",
+    "source_execution_error": "এক্সিকিউশন ত্রুটি"
   },
   "observability": {
     "title": "অবজার্ভেবিলিটি",

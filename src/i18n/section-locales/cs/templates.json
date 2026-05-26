@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "Pro tuto schopnost nejsou žádné otázky.",
+    "error_policy": {
+      "title": "Zpracování chyb",
+      "intro": "Opakování a samooprava jsou automatické. Zvolte, co se stane, když se selhání nedokáže samo obnovit.",
+      "incident_label": "Vytvořit incident",
+      "incident_desc": "Zobrazit neobnovená selhání ve schránce incidentů pro triáž.",
+      "lab_label": "Poslat do Labu",
+      "lab_desc": "Zapnout automatické zlepšování v Labu (evoluci promptů) pro tuto personu, když se selhání opakují.",
+      "escalate_after_label": "Eskalovat po",
+      "escalate_after_desc": "Počet po sobě jdoucích selhání před vytvořením incidentu nebo odesláním do Labu."
+    }
   },
   "scan": {
     "scanning_draft": "Skenování návrhu persony...",

@@ -5,6 +5,9 @@ pub mod lint;
 pub mod markdown;
 pub mod semantic_lint;
 
+#[cfg(test)]
+mod mirror_tests;
+
 use std::path::Path;
 use std::sync::Arc;
 
@@ -13,10 +16,12 @@ use tauri::State;
 use uuid::Uuid;
 
 use crate::db::models::{
-    DetectedVault, ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport,
-    SyncConflict, SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
+    DetectedVault, ExecutionKnowledge, ObsidianAvailability, ObsidianMirrorConfig,
+    ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport, SyncConflict,
+    SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::core::settings;
 use crate::db::repos::core::settings as settings_repo;
@@ -35,6 +40,7 @@ use self::markdown::{
 };
 
 const SETTINGS_KEY: &str = "obsidian_brain_config";
+const MIRROR_SETTINGS_KEY: &str = "obsidian_mirror_config";
 
 /// Atomically write `content` to `path` via temp-file + rename.
 ///
@@ -204,6 +210,214 @@ pub fn obsidian_brain_get_config(
         }
         None => Ok(None),
     }
+}
+
+// ── Knowledge Mirror config + availability (opt-in, off by default) ──
+
+/// Read the knowledge-mirror config, falling back to all-off defaults so a
+/// fresh install (or a parse failure) never surprises the caller.
+pub(crate) fn mirror_config(pool: &crate::db::DbPool) -> ObsidianMirrorConfig {
+    match settings_repo::get(pool, MIRROR_SETTINGS_KEY) {
+        Ok(Some(json)) => serde_json::from_str(&json).unwrap_or_default(),
+        _ => ObsidianMirrorConfig::default(),
+    }
+}
+
+/// Resolve Obsidian presence: the desktop binary is detected OR a vault with a
+/// non-empty path is configured in the Brain plugin. Either is enough to
+/// surface/enable the integration; neither (the default) means nothing is
+/// offered and no mirror code path runs.
+pub(crate) fn resolve_availability(pool: &crate::db::DbPool) -> ObsidianAvailability {
+    let (binary_installed, _) =
+        crate::engine::desktop_discovery::is_desktop_app_installed("desktop_obsidian");
+    let vault_configured = match settings_repo::get(pool, SETTINGS_KEY) {
+        Ok(Some(json)) => serde_json::from_str::<ObsidianVaultConfig>(&json)
+            .map(|c| !c.vault_path.is_empty())
+            .unwrap_or(false),
+        _ => false,
+    };
+    ObsidianAvailability {
+        binary_installed,
+        vault_configured,
+        available: binary_installed || vault_configured,
+    }
+}
+
+#[tauri::command]
+pub fn obsidian_mirror_get_config(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ObsidianMirrorConfig, AppError> {
+    require_auth_sync(&state)?;
+    Ok(mirror_config(&state.db))
+}
+
+#[tauri::command]
+pub fn obsidian_mirror_set_config(
+    state: State<'_, Arc<AppState>>,
+    config: ObsidianMirrorConfig,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let json = serde_json::to_string(&config)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize mirror config: {e}")))?;
+    settings_repo::set(&state.db, MIRROR_SETTINGS_KEY, &json)
+}
+
+#[tauri::command]
+pub fn obsidian_available(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ObsidianAvailability, AppError> {
+    require_auth_sync(&state)?;
+    Ok(resolve_availability(&state.db))
+}
+
+// ── Mirror-domain write primitive ────────────────────────────────────
+//
+// Shared by the knowledge-mirror domains (Research Lab, and later Execution
+// Knowledge + Athena). Each domain supplies a vault-relative path + rendered
+// markdown; this layer handles vault resolution, incremental hashing, atomic
+// writes, and sync bookkeeping so the domains stay thin.
+
+/// The configured Brain vault config when a non-empty vault path is set, else
+/// None so a caller can fall back to legacy behaviour.
+pub(crate) fn mirror_vault_root(pool: &crate::db::DbPool) -> Option<ObsidianVaultConfig> {
+    match settings_repo::get(pool, SETTINGS_KEY) {
+        Ok(Some(json)) => serde_json::from_str::<ObsidianVaultConfig>(&json)
+            .ok()
+            .filter(|c| !c.vault_path.is_empty()),
+        _ => None,
+    }
+}
+
+/// Incremental, hash-gated note write. Writes `content` to
+/// `<vault_path>/<rel_path>` only when its content hash differs from the last
+/// recorded sync for `(entity_type, entity_id)`; records sync state + a
+/// sync-log row. Returns `Ok(true)` when written, `Ok(false)` when the content
+/// was unchanged (skipped).
+pub(crate) fn mirror_write_note(
+    pool: &crate::db::DbPool,
+    vault_path: &str,
+    rel_path: &str,
+    entity_type: &str,
+    entity_id: &str,
+    content: &str,
+) -> Result<bool, AppError> {
+    let hash = compute_content_hash(content);
+    let prev = sync_repo::get_sync_state(pool, entity_type, entity_id)?;
+    if prev.as_ref().map(|s| s.content_hash == hash).unwrap_or(false) {
+        return Ok(false);
+    }
+    let full = Path::new(vault_path).join(rel_path);
+    if let Some(parent) = full.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AppError::Internal(format!("Failed to create vault dir: {e}")))?;
+    }
+    atomic_write(&full, content.as_bytes())
+        .map_err(|e| AppError::Internal(format!("Failed to write {}: {e}", full.display())))?;
+    sync_repo::upsert_sync_state(
+        pool,
+        &SyncState {
+            id: Uuid::new_v4().to_string(),
+            entity_type: entity_type.into(),
+            entity_id: entity_id.into(),
+            vault_file_path: rel_path.into(),
+            content_hash: hash,
+            sync_direction: "push".into(),
+            synced_at: Utc::now().to_rfc3339(),
+        },
+    )?;
+    log_sync(
+        pool,
+        "mirror",
+        entity_type,
+        Some(entity_id),
+        Some(rel_path),
+        if prev.is_some() { "updated" } else { "created" },
+        None,
+    );
+    Ok(true)
+}
+
+// ── Execution Knowledge mirror (P2, one-way) ─────────────────────────
+
+/// Render an execution-knowledge row as a vault note (frontmatter + body).
+fn render_knowledge_note(k: &ExecutionKnowledge) -> String {
+    let pretty = serde_json::from_str::<serde_json::Value>(&k.pattern_data)
+        .ok()
+        .and_then(|v| serde_json::to_string_pretty(&v).ok())
+        .unwrap_or_else(|| k.pattern_data.clone());
+    format!(
+        "---\ntype: execution_knowledge\nknowledge_type: {kt}\npersona: {pid}\nconfidence: {conf:.2}\nupdated: {upd}\n---\n\n# {pk}\n\n- **Type:** {kt}\n- **Confidence:** {conf:.2}\n- **Success / Failure:** {sc} / {fc}\n- **Avg cost:** ${cost:.4}\n- **Avg duration:** {dur:.0} ms\n\n## Pattern\n\n```json\n{pretty}\n```\n",
+        kt = k.knowledge_type,
+        pid = k.persona_id,
+        conf = k.confidence,
+        upd = k.updated_at,
+        pk = k.pattern_key,
+        sc = k.success_count,
+        fc = k.failure_count,
+        cost = k.avg_cost_usd,
+        dur = k.avg_duration_ms,
+    )
+}
+
+/// Mirror one persona's execution-knowledge rows into the vault (one-way),
+/// when the execution-knowledge mirror is enabled and a vault is configured.
+/// Incremental (unchanged rows skipped). Best-effort: errors are logged, never
+/// returned — knowledge mirroring must never break the execution path. Returns
+/// the number of notes written.
+pub(crate) fn mirror_execution_knowledge_for_persona(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+) -> u32 {
+    if !mirror_config(pool).execution_knowledge {
+        return 0;
+    }
+    let Some(cfg) = mirror_vault_root(pool) else {
+        return 0;
+    };
+    let rows = match knowledge_repo::list_for_persona(pool, persona_id, None, None) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!("execution-knowledge mirror: list failed for {persona_id}: {e}");
+            return 0;
+        }
+    };
+    let mut written = 0u32;
+    for k in &rows {
+        let rel = format!(
+            "{}/{}/{}.md",
+            cfg.folder_mapping.knowledge_folder,
+            k.knowledge_type,
+            sanitize_filename(&k.pattern_key),
+        );
+        match mirror_write_note(
+            pool,
+            &cfg.vault_path,
+            &rel,
+            "execution_knowledge",
+            &k.id,
+            &render_knowledge_note(k),
+        ) {
+            Ok(true) => written += 1,
+            Ok(false) => {}
+            Err(e) => tracing::warn!("execution-knowledge mirror: write failed for {}: {e}", k.id),
+        }
+    }
+    written
+}
+
+/// Backfill every persona's execution knowledge into the vault. Invoked when
+/// the user first enables the execution-knowledge mirror (existing rows would
+/// otherwise only appear as each persona runs again). Returns notes written.
+#[tauri::command]
+pub fn obsidian_mirror_backfill_execution_knowledge(
+    state: State<'_, Arc<AppState>>,
+) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
+    let mut total = 0u32;
+    for p in persona_repo::get_all(&state.db)? {
+        total += mirror_execution_knowledge_for_persona(&state.db, &p.id);
+    }
+    Ok(total)
 }
 
 // ── Phase 2: Push Sync ───────────────────────────────────────────────

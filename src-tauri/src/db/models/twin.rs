@@ -38,6 +38,10 @@ pub struct TwinProfile {
     /// FK to knowledge_bases.id in personas_data.db — the twin's RAG brain.
     /// Set via twin_bind_knowledge_base. Null until user creates/binds one.
     pub knowledge_base_id: Option<String>,
+    /// Persistent "training style guide" (D5). Free-text directions the
+    /// Training Studio applies to every question/answer generation for this
+    /// twin (e.g. "questions: concrete scenarios; answers: dry, first-person").
+    pub training_directives: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }

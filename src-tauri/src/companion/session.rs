@@ -148,6 +148,11 @@ pub const APPROVALS_EVENT: &str = "companion://approvals";
 /// the chat panel — chat-driven nav is meant to feel transparent.
 pub const NAVIGATE_EVENT: &str = "companion://navigate";
 
+/// Tauri event for `start_guided_walkthrough` auto-fire. Payload is
+/// `{ topic }`. The frontend runner (`useGuidanceRunner`) starts the
+/// registry-defined walkthrough — orb glides + element glow + narration.
+pub const GUIDE_EVENT: &str = "companion://guide";
+
 /// Tauri event for "open this persona's lab tab and select mode X" —
 /// Athena's `open_lab` op. Payload: `{ personaId, mode }`. Bypasses
 /// approval like NAVIGATE_EVENT; the persona editor reads this and
@@ -498,6 +503,7 @@ pub async fn send_turn(
                     dashboards: Vec::new(),
                     cockpits: Vec::new(),
                     chat_cards: Vec::new(),
+                    guide_walkthroughs: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     requests_continuation: false,
@@ -554,6 +560,14 @@ pub async fn send_turn(
     for route in &dispatched.navigations {
         if let Err(e) = app.emit(NAVIGATE_EVENT, route) {
             tracing::warn!(error = %e, route = %route, "companion navigate event emit failed");
+        }
+    }
+
+    // Guided walkthroughs (`start_guided_walkthrough`). Auto-fire — one event
+    // per topic; the frontend runner walks the registry-defined steps.
+    for topic in &dispatched.guide_walkthroughs {
+        if let Err(e) = app.emit(GUIDE_EVENT, serde_json::json!({ "topic": topic })) {
+            tracing::warn!(error = %e, topic = %topic, "companion guide event emit failed");
         }
     }
 

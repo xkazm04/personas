@@ -11,9 +11,10 @@ If you're authoring a `/friend` skill or a similar long-running CLI loop, ground
 | Test tier | Parallel-safe across CLI sessions? | How to run from your worktree |
 | --- | --- | --- |
 | Vitest unit / hook / component | **Yes** | `npm test` or `npx vitest run <path>` |
-| Playwright vs full Tauri | **Serial today** — one app instance per machine | Coordinate with other CLIs; start the app once; run all specs; stop the app |
+| Playwright vs shared dev app | **Serial** — one app instance per machine | Coordinate with other CLIs; start the app once; run all specs; stop the app |
+| Playwright vs *isolated* dev app (empty DB) | **Yes, if ports are shifted** — own `PERSONAS_DATA_DIR` + port triplet | `npm run test:tours:fresh` (boots its own instance); see "Fresh-DB isolated instance" |
 
-Worktree isolation is enough for Vitest. For Playwright you take turns on the machine's single running app, or you go through the production-install path described below.
+Worktree isolation is enough for Vitest. For Playwright you either take turns on the machine's single shared app, or boot an **isolated instance** with its own data dir + shifted ports (now possible — see Layer 3).
 
 ---
 
@@ -138,13 +139,36 @@ npm run test:playwright:<feature>
 **What this solves**: test-automation port collision. Two production instances of the same install can run with non-conflicting test-automation servers, and each can be driven by a separate Playwright run.
 
 **What this does not yet solve**:
-- **App data directory.** Both instances still write to the same SQLite + autosave files. Two concurrent E2E suites would race on shared rows. For now this is "fine for read-only smoke" but "broken for any test that mutates state."
-- **Keyring service.** Same `"personas-desktop"` service entries; concurrent credential ops interleave.
-- **Single-instance plugin.** If the production build has Tauri's `single-instance` plugin enabled, the second instance bounces back to the first window. Check `tauri.conf.json`.
+- **Keyring service.** Same `"personas-desktop"` service entries; concurrent credential ops interleave. (The tour suites don't write real credentials, so this doesn't bite them.)
+- **WebView2 user-data folder (localStorage).** Guided-tour progress + the onboarding-completed flag live here, and it does NOT relocate with `PERSONAS_DATA_DIR`. Two instances of the same build share it. Specs close this seam at the app layer — see "Fresh-DB isolated instance" below.
 
-True multi-instance Tauri dev (multiple `tauri:dev:test` side-by-side, each writing to its own data dir + keyring namespace + Vite port + identifier) is an **architect-scoped infrastructure project**. It would unlock fully parallel E2E suites but is YAGNI today — Vitest covers ~80% of the regression surface and Playwright's "one at a time per machine" is workable for the 20% it doesn't cover.
+### Update (2026-05-26): the app-data-dir gap is closed
 
-If you're hitting bottleneck on Playwright serialization, that's the signal to invest. Until then, take turns.
+The "App data directory" item that used to sit in the not-solved list above **shipped** with the multi-driver orchestration work. The DB-isolation half of true multi-instance is real now:
+
+| Env var | Isolates | Source |
+| --- | --- | --- |
+| `PERSONAS_DATA_DIR` | SQLite + user DB + `engine-leader.lock` | `src-tauri/src/lib.rs:549` |
+| `PERSONAS_VITE_PORT` | Vite dev server (strictPort; HMR = +1) | `vite.config.ts:203` |
+| `PERSONAS_TEST_PORT` | test-automation bridge (+5 fallback) | `src-tauri/src/test_automation.rs` |
+| `PERSONAS_WEBHOOK_PORT` | webhook server (default 9420) | `src-tauri/src/engine/webhook.rs:45` |
+
+Crucially, **single-instance is enforced only in release builds** (`lib.rs:487`), so multiple *dev* (`tauri:dev:test`) instances run side-by-side. The 2026-05-26 work validated two-instance leader/follower live. So "one Playwright run per machine" is no longer a hard ceiling — it's just the default when nobody bothered to shift ports.
+
+### Fresh-DB isolated instance — `npm run test:tours:fresh`
+
+`scripts/test/launch-isolated.mjs` boots a throwaway dev instance with its own `PERSONAS_DATA_DIR` (a `mkdtemp`) and the shifted port triplet, waits for `/health` across the fallback range, and hands back `{ port, stop }`. `scripts/test/run-tours-fresh.mjs` wires it to the tour walk:
+
+```bash
+npm run test:tours:fresh                 # boot empty-DB instance → walk the 5 exploration tours → tear down
+npm run test:tours:fresh -- --keep-data  # leave the temp DB for inspection
+```
+
+Unlike `test:playwright:tours`, this does **not** need a pre-running `tauri:dev:test` and never touches your real app-data dir or the shared `:17320` shell — so it's safe to run while other CLI sessions hold the canonical ports. First run pays the cold compile (~3–5 min); the warm target cache makes later runs boot in seconds.
+
+The localStorage seam is closed in `tests/playwright/companion-bridge.ts` → `bootstrapFreshUser()`: it calls `finishOnboarding()` (the first-run modal hides the tour panel on an empty DB) and resets all seven tours. `tours-explore.spec.ts` calls it in `beforeAll`, so the same spec is correct against either a fresh isolated instance or a normal running app.
+
+What's still architect-scoped: a *keyring namespace* per instance, and N-way fully-parallel mutating E2E (each worktree booting its own instance simultaneously). Until that's needed, one isolated instance at a time on the test shell is plenty — Vitest still covers ~80% of the regression surface in parallel.
 
 ### Procedure for one CLI taking E2E + multiple CLIs running Vitest
 

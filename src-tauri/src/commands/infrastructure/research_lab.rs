@@ -251,23 +251,35 @@ pub fn research_lab_sync_to_obsidian(
     project_id: String,
 ) -> Result<u32, AppError> {
     let project = repo::get_project(&state.db, &project_id)?;
-    let vault_path = project
-        .obsidian_vault_path
-        .as_deref()
-        .filter(|p| !p.is_empty())
-        .ok_or_else(|| AppError::Validation("No Obsidian vault linked to this project".into()))?;
+
+    // Mirror model: when the Research Lab mirror is enabled, route notes through
+    // the Brain-configured vault + its research folder; otherwise fall back to
+    // the project's legacy per-project vault path (back-compat).
+    let (vault_root, research_folder) =
+        if crate::commands::obsidian_brain::mirror_config(&state.db).research_lab {
+            match crate::commands::obsidian_brain::mirror_vault_root(&state.db) {
+                Some(cfg) => (cfg.vault_path, cfg.folder_mapping.research_folder),
+                None => {
+                    return Err(AppError::Validation(
+                        "Research Lab mirror is enabled but no Obsidian vault is configured. Set one up in Obsidian Brain → Setup.".into(),
+                    ))
+                }
+            }
+        } else {
+            let vp = project
+                .obsidian_vault_path
+                .as_deref()
+                .filter(|p| !p.is_empty())
+                .ok_or_else(|| AppError::Validation("No Obsidian vault linked to this project".into()))?;
+            (vp.to_string(), "Research".to_string())
+        };
 
     let experiments = repo::list_experiments(&state.db, &project_id)?;
     let hypotheses = repo::list_hypotheses(&state.db, &project_id)?;
 
-    let research_dir = Path::new(vault_path).join("Research").join(&project.name);
-    std::fs::create_dir_all(&research_dir)
-        .map_err(|e| AppError::Internal(format!("Failed to create research dir: {e}")))?;
-
+    let project_slug = slug(&project.name);
     let mut written = 0u32;
     for exp in &experiments {
-        let filename = format!("{}.md", slug(&exp.name));
-        let filepath = research_dir.join(&filename);
 
         let hypothesis_stmt = exp
             .hypothesis_id
@@ -315,10 +327,17 @@ pub fn research_lab_sync_to_obsidian(
             }
         }
 
-        std::fs::write(&filepath, &md).map_err(|e| {
-            AppError::Internal(format!("Failed to write {}: {e}", filepath.display()))
-        })?;
-        written += 1;
+        let rel_path = format!("{research_folder}/{project_slug}/{}.md", slug(&exp.name));
+        if crate::commands::obsidian_brain::mirror_write_note(
+            &state.db,
+            &vault_root,
+            &rel_path,
+            "research_experiment",
+            &exp.id,
+            &md,
+        )? {
+            written += 1;
+        }
     }
 
     Ok(written)

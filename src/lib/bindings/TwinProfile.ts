@@ -38,4 +38,10 @@ is_active: boolean,
  * FK to knowledge_bases.id in personas_data.db — the twin's RAG brain.
  * Set via twin_bind_knowledge_base. Null until user creates/binds one.
  */
-knowledge_base_id: string | null, created_at: string, updated_at: string, };
+knowledge_base_id: string | null, 
+/**
+ * Persistent "training style guide" (D5). Free-text directions the
+ * Training Studio applies to every question/answer generation for this
+ * twin (e.g. "questions: concrete scenarios; answers: dry, first-person").
+ */
+training_directives: string | null, created_at: string, updated_at: string, };

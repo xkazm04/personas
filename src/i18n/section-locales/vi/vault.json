@@ -707,7 +707,10 @@
     "test_all_credentials": "Kiểm tra tất cả thông tin xác thực",
     "test_all": "Kiểm tra tất cả",
     "daily_progress": "Hàng ngày {done}/{total}",
-    "testing_progress": "Đang kiểm tra {done}/{total}"
+    "testing_progress": "Đang kiểm tra {done}/{total}",
+    "title_catalog": "Danh mục",
+    "title_dependencies": "Phụ thuộc",
+    "title_databases": "Cơ sở dữ liệu"
   },
   "bulk_healthcheck": {
     "title": "Kết quả kiểm tra sức khỏe",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "Chưa cấu hình.",
-    "required_badge": "BẮT BUỘC"
+    "required_badge": "BẮT BUỘC",
+    "kv_key_label": "Khóa",
+    "kv_value_label": "Giá trị",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "Hiển thị giá trị",
+    "kv_hide_value": "Ẩn giá trị",
+    "kv_remove": "Xóa biến",
+    "kv_add": "Thêm"
   },
   "design_phases": {
     "saving": "Đang lưu thông tin xác thực...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "Quảng cáo",
+    "ai": "AI",
+    "analytics": "Phân tích",
+    "automation": "Tự động hóa",
+    "bi": "Business Intelligence",
+    "browser_automation": "Tự động hóa trình duyệt",
+    "calendar": "Lịch",
+    "ci_cd": "CI/CD",
+    "cloud": "Đám mây",
+    "containers": "Container",
+    "crm": "CRM",
+    "custom": "Tùy chỉnh",
+    "database": "Cơ sở dữ liệu",
+    "design": "Thiết kế",
+    "development": "Phát triển",
+    "ecommerce": "Thương mại điện tử",
+    "email": "Email",
+    "finance": "Tài chính",
+    "forms": "Biểu mẫu",
+    "integration": "Tích hợp",
+    "knowledge_base": "Cơ sở tri thức",
+    "mcp": "MCP",
+    "messaging": "Nhắn tin",
+    "monitoring": "Giám sát",
+    "notifications": "Thông báo",
+    "personalization": "Cá nhân hóa",
+    "productivity": "Năng suất",
+    "project_management": "Quản lý dự án",
+    "research": "Nghiên cứu",
+    "scheduling": "Lập lịch",
+    "social": "Mạng xã hội",
+    "source_control": "Quản lý mã nguồn",
+    "spreadsheet": "Bảng tính",
+    "storage": "Lưu trữ",
+    "support": "Hỗ trợ",
+    "time_tracking": "Theo dõi thời gian",
+    "vector_search": "Tìm kiếm vector",
+    "web_scraping": "Web scraping"
   }
 }

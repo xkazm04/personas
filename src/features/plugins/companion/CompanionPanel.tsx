@@ -31,6 +31,8 @@ import {
   COMPANION_COMPOSE_COCKPIT_EVENT,
   COMPANION_COMPOSE_DASHBOARD_EVENT,
   COMPANION_NAVIGATE_EVENT,
+  COMPANION_GUIDE_EVENT,
+  type CompanionGuideEvent,
   type ChatCard,
   type CompanionChatCardsEvent,
   COMPANION_JOB_EVENT,
@@ -961,6 +963,20 @@ function Body(props: BodyProps) {
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
     }, []),
     'companion_navigate_listen',
+  );
+
+  // `start_guided_walkthrough` — Athena launches an in-app guided tour.
+  // The runner (AthenaGuideLayer) walks the registry-defined steps: orb
+  // glides to each area, the element glows, she narrates. Topic is already
+  // validated server-side against the allow-list; the runner stops itself
+  // gracefully if an unknown topic ever slips through.
+  useTauriEvent<CompanionGuideEvent>(
+    COMPANION_GUIDE_EVENT,
+    useCallback((event) => {
+      const topic = event.payload?.topic;
+      if (topic) useCompanionStore.getState().startGuidance(topic);
+    }, []),
+    'companion_guide_listen',
   );
 
   // Phase F: subscribe to `open_lab` events. Athena's op auto-fires

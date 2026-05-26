@@ -147,5 +147,7 @@
   "narration_mute": "Mute narration",
   "narration_unmute": "Unmute narration",
   "local_tooling_label": "Built-in tooling",
-  "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required."
+  "local_tooling_sentence": "Personas has local tooling connected from the start — Messaging, Database, Vector, and more — no credential required.",
+  "resume_continue_title": "যেখান থেকে থেমেছিলেন সেখান থেকে শুরু করুন",
+  "resume_continue_cta": "ট্যুর চালিয়ে যান"
 }

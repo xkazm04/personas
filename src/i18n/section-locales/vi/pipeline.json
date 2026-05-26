@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace cài đặt saved",
     "workspace_save_failed": "Couldn't save workspace cài đặt",
-    "workspace_inherit": "Kế thừa"
+    "workspace_inherit": "Kế thừa",
+    "add_persona_draft_hint": "Persona nháp phải được thăng cấp trước khi có thể tham gia nhóm.",
+    "checklist_heading": "Tiến trình trực tiếp",
+    "checklist_background_note": "Chạy trong nền",
+    "step_status_pending": "Đang chờ",
+    "step_status_matching": "Đang khớp",
+    "step_status_running": "Đang chạy",
+    "step_status_done": "Hoàn tất",
+    "step_status_skipped": "Đã bỏ qua",
+    "step_status_failed": "Thất bại",
+    "step_status_awaiting_review": "Cần xem xét",
+    "board_label": "Bảng phân công",
+    "board_col_queued": "Đang xếp hàng",
+    "board_col_running": "Đang chạy",
+    "board_col_review": "Cần xem xét",
+    "board_col_done": "Hoàn tất",
+    "board_col_stopped": "Đã dừng",
+    "board_empty": "Chưa có phân công nào. Xác định mục tiêu trong Orchestrate để bắt đầu."
   }
 }

@@ -134,6 +134,11 @@ pub fn extract_and_persist(
 
     // 4. Extract cost-quality tradeoff
     extract_cost_quality(&ctx);
+
+    // 5. One-way execution-knowledge mirror into the Obsidian vault. No-op
+    //    unless the user enabled it AND a vault is configured; best-effort, so
+    //    it can never break the execution path.
+    crate::commands::obsidian_brain::mirror_execution_knowledge_for_persona(pool, persona_id);
 }
 
 /// Extract the tool sequence used in an execution.

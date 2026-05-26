@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse 组",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "无事件 match the current filters",
-  "dead_letter_clear_filters_to_see": "清除 filters to see all dead-lettered 事件"
+  "dead_letter_clear_filters_to_see": "清除 filters to see all dead-lettered 事件",
+  "col_event": "事件",
+  "col_listeners": "监听器",
+  "source_personas_filter": "源 personas",
+  "listeners_filter": "监听器",
+  "filter_events_placeholder": "筛选事件..."
 }

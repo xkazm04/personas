@@ -24,6 +24,7 @@ import { DecisionLogWidget } from './widgets/DecisionLogWidget';
 import { DesignCapabilitiesWidget } from './widgets/DesignCapabilitiesWidget';
 import { ModelTierChoiceWidget } from './widgets/ModelTierChoiceWidget';
 import { ObservabilityPlanWidget } from './widgets/ObservabilityPlanWidget';
+import { PersonaCreationOfferWidget } from './widgets/PersonaCreationOfferWidget';
 import { PersonaReadyWidget } from './widgets/PersonaReadyWidget';
 import { PersonaWalkthroughWidget } from './widgets/PersonaWalkthroughWidget';
 import { RecentDecisionsWidget } from './widgets/RecentDecisionsWidget';
@@ -110,6 +111,11 @@ export const cockpitWidgetRegistry: Record<string, ComponentType<CockpitWidgetPr
   // fetch comes back empty. Emitted via
   // `show_recent_decisions { persona_context, limit? }`.
   recent_decisions: RecentDecisionsWidget,
+  // Two-button "Build it for me" / "Show me how to build it" offer. Emitted
+  // via `show_persona_creation_offer { intent }` when a user describes a
+  // persona but hasn't said how to proceed. "Build" runs the prefill handoff;
+  // "Show me how" starts the persona_creation guided walkthrough.
+  persona_creation_offer: PersonaCreationOfferWidget,
 };
 
 /** Tunes the grid `rowSpan` per widget kind. Multi-row gives long-form

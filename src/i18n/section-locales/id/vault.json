@@ -707,7 +707,10 @@
     "test_all_credentials": "Uji semua kredensial",
     "test_all": "Uji Semua",
     "daily_progress": "Harian {done}/{total}",
-    "testing_progress": "Menguji {done}/{total}"
+    "testing_progress": "Menguji {done}/{total}",
+    "title_catalog": "Katalog",
+    "title_dependencies": "Dependensi",
+    "title_databases": "Basis data"
   },
   "bulk_healthcheck": {
     "title": "Hasil Pemeriksaan Kesehatan",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "Tidak ada yang dikonfigurasi.",
-    "required_badge": "WAJIB"
+    "required_badge": "WAJIB",
+    "kv_key_label": "Kunci",
+    "kv_value_label": "Nilai",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "Tampilkan nilai",
+    "kv_hide_value": "Sembunyikan nilai",
+    "kv_remove": "Hapus variabel",
+    "kv_add": "Tambah"
   },
   "design_phases": {
     "saving": "Menyimpan kredensial...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "Periklanan",
+    "ai": "AI",
+    "analytics": "Analitik",
+    "automation": "Automasi",
+    "bi": "Business Intelligence",
+    "browser_automation": "Automasi browser",
+    "calendar": "Kalender",
+    "ci_cd": "CI/CD",
+    "cloud": "Cloud",
+    "containers": "Kontainer",
+    "crm": "CRM",
+    "custom": "Kustom",
+    "database": "Basis data",
+    "design": "Desain",
+    "development": "Pengembangan",
+    "ecommerce": "E-commerce",
+    "email": "Email",
+    "finance": "Keuangan",
+    "forms": "Formulir",
+    "integration": "Integrasi",
+    "knowledge_base": "Basis pengetahuan",
+    "mcp": "MCP",
+    "messaging": "Pesan",
+    "monitoring": "Pemantauan",
+    "notifications": "Notifikasi",
+    "personalization": "Personalisasi",
+    "productivity": "Produktivitas",
+    "project_management": "Manajemen proyek",
+    "research": "Riset",
+    "scheduling": "Penjadwalan",
+    "social": "Sosial",
+    "source_control": "Kontrol sumber",
+    "spreadsheet": "Spreadsheet",
+    "storage": "Penyimpanan",
+    "support": "Dukungan",
+    "time_tracking": "Pelacakan waktu",
+    "vector_search": "Pencarian vektor",
+    "web_scraping": "Web scraping"
   }
 }

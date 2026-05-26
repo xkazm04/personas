@@ -135,6 +135,10 @@ pub const GITLAB_PIPELINE_NOTIFICATION_PREFS: &str = "gitlab_pipeline_notificati
 /// Obsidian Brain vault configuration (JSON-encoded ObsidianVaultConfig).
 pub const OBSIDIAN_BRAIN_CONFIG: &str = "obsidian_brain_config";
 
+/// Knowledge-mirror opt-in flags (JSON-encoded ObsidianMirrorConfig): which
+/// internal stores mirror into the Obsidian vault. All default false.
+pub const OBSIDIAN_MIRROR_CONFIG: &str = "obsidian_mirror_config";
+
 /// Dev-tools cross-project metadata cache (JSON-encoded).
 /// Written by `infrastructure::dev_tools` to surface multi-project context to
 /// agents connecting via the management API.
@@ -196,6 +200,7 @@ const ALLOWED_KEYS: &[&str] = &[
     BYOM_POLICY,
     GITLAB_PIPELINE_NOTIFICATION_PREFS,
     OBSIDIAN_BRAIN_CONFIG,
+    OBSIDIAN_MIRROR_CONFIG,
     DEV_TOOLS_CROSS_PROJECT_METADATA,
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,

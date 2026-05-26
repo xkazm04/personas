@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge, Settings, Search } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -19,9 +19,10 @@ import {
 } from '@/api/obsidianBrain';
 import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
+import ConflictDiffView from './ConflictDiffView';
 
 export default function SyncPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
@@ -29,10 +30,12 @@ export default function SyncPanel() {
   const setSyncRunning = useSystemStore((s) => s.setObsidianSyncRunning);
   const setLastSyncAt = useSystemStore((s) => s.setObsidianLastSyncAt);
   const setPendingConflicts = useSystemStore((s) => s.setObsidianPendingConflicts);
+  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const personas = useAgentStore((s) => s.personas);
 
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
+  const [personaFilter, setPersonaFilter] = useState('');
   const [pushing, setPushing] = useState(false);
   const [pulling, setPulling] = useState(false);
   // Most recent result per direction, newest first. Persisted in state (not
@@ -40,6 +43,11 @@ export default function SyncPanel() {
   const [syncResults, setSyncResults] = useState<SyncResultSummary[]>([]);
   const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
+
+  const filteredPersonas = useMemo(() => {
+    const q = personaFilter.trim().toLowerCase();
+    return q ? personas.filter((p) => p.name.toLowerCase().includes(q)) : personas;
+  }, [personas, personaFilter]);
 
   const recordResult = useCallback((summary: SyncResultSummary) => {
     setSyncResults((prev) => [summary, ...prev.filter((r) => r.direction !== summary.direction)]);
@@ -61,8 +69,14 @@ export default function SyncPanel() {
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedPersonaIds(new Set(personas.map((p) => p.id)));
-  }, [personas]);
+    // Select every currently-visible (filtered) persona, preserving any
+    // selections the active filter happens to hide.
+    setSelectedPersonaIds((prev) => {
+      const next = new Set(prev);
+      for (const p of filteredPersonas) next.add(p.id);
+      return next;
+    });
+  }, [filteredPersonas]);
 
   const deselectAll = useCallback(() => {
     setSelectedPersonaIds(new Set());
@@ -157,6 +171,7 @@ export default function SyncPanel() {
           subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
         />
       </div>
     );
@@ -199,9 +214,12 @@ export default function SyncPanel() {
 
           {/* Persona Selection */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.select_personas_push}</p>
               <div className="flex items-center gap-2">
+                <span className="typo-caption text-foreground/90 tabular-nums">
+                  {tx(t.plugins.obsidian_brain.personas_selected_count, { selected: selectedPersonaIds.size, total: personas.length })}
+                </span>
                 <button onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
                   {t.plugins.obsidian_brain.select_all}
                 </button>
@@ -214,8 +232,20 @@ export default function SyncPanel() {
                 </button>
               </div>
             </div>
+            {personas.length > 6 && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+                <input
+                  type="text"
+                  value={personaFilter}
+                  onChange={(e) => setPersonaFilter(e.target.value)}
+                  placeholder={t.plugins.obsidian_brain.filter_personas}
+                  className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground/40 focus-ring transition-all"
+                />
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
-              {personas.map((p) => (
+              {filteredPersonas.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => togglePersona(p.id)}
@@ -230,6 +260,9 @@ export default function SyncPanel() {
               ))}
               {personas.length === 0 && (
                 <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_personas_found}</p>
+              )}
+              {personas.length > 0 && filteredPersonas.length === 0 && (
+                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_matches}</p>
               )}
             </div>
           </div>
@@ -247,7 +280,7 @@ export default function SyncPanel() {
 
       {/* Conflicts */}
       {conflicts.length > 0 && (
-        <SectionCard collapsible title={`Conflicts (${conflicts.length})`} status="warning" storageKey="obsidian-sync-conflicts">
+        <SectionCard collapsible title={tx(t.plugins.obsidian_brain.conflicts_title, { count: conflicts.length })} status="warning" storageKey="obsidian-sync-conflicts">
           <div className="space-y-3">
             {conflicts.map((c) => (
               <div key={c.id} className="px-4 py-3 rounded-modal bg-amber-500/5 border border-amber-500/20 space-y-3">
@@ -255,20 +288,7 @@ export default function SyncPanel() {
                   <p className="typo-heading typo-card-label">{c.entityType}: {c.entityId.slice(0, 8)}...</p>
                   <p className="typo-caption text-foreground">{c.filePath}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <p className="typo-caption text-blue-400/70">{t.plugins.obsidian_brain.app_version}</p>
-                    <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
-                      {c.appContent.slice(0, 500)}{c.appContent.length > 500 ? '...' : ''}
-                    </pre>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="typo-caption text-violet-400/70">{t.plugins.obsidian_brain.vault_version}</p>
-                    <pre className="typo-caption text-foreground bg-secondary/30 rounded-card p-2.5 max-h-32 overflow-y-auto whitespace-pre-wrap font-mono">
-                      {c.vaultContent.slice(0, 500)}{c.vaultContent.length > 500 ? '...' : ''}
-                    </pre>
-                  </div>
-                </div>
+                <ConflictDiffView appContent={c.appContent} vaultContent={c.vaultContent} />
                 <div className="flex gap-2">
                   <button onClick={() => resolveConflict(c, 'use_app')} className="px-3 py-1.5 rounded-card typo-caption bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition-colors focus-ring">
                     {t.plugins.obsidian_brain.keep_app}

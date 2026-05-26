@@ -89,7 +89,8 @@
     "source_healing_log": "修复日志",
     "source_provider": "提供商",
     "source_policy": "策略",
-    "source_healing_issue": "修复问题"
+    "source_healing_issue": "修复问题",
+    "source_execution_error": "执行错误"
   },
   "observability": {
     "title": "可观测性",

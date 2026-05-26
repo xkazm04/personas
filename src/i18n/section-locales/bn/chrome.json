@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "পূর্বাবস্থায় ফেরান",
-    "redo": "আবার করুন"
+    "redo": "আবার করুন",
+    "section_workspace": "ওয়ার্কস্পেস",
+    "toggle_sidebar": "সাইডবার সংকুচিত / প্রসারিত করুন",
+    "toggle_monitor": "Persona Monitor খুলুন / বন্ধ করুন",
+    "toggle_athena": "Athena চ্যাট খুলুন / বন্ধ করুন"
   }
 }

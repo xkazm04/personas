@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn, Globe } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, HardDrive, User, AlertTriangle, CheckCircle2, LogIn, Globe, Settings } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -33,6 +33,7 @@ export default function CloudSyncPanel() {
   const setLastDriveSyncAt = useSystemStore((s) => s.setObsidianLastDriveSyncAt);
   const setDriveStorage = useSystemStore((s) => s.setObsidianDriveStorage);
   const setDriveFileCount = useSystemStore((s) => s.setObsidianDriveFileCount);
+  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const driveConnected = useSystemStore((s) => s.obsidianDriveConnected);
   const driveEmail = useSystemStore((s) => s.obsidianDriveEmail);
@@ -139,6 +140,7 @@ export default function CloudSyncPanel() {
           subtitle={t.plugins.obsidian_brain.no_vault_cloud_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
         />
       </div>
     );

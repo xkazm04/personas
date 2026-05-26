@@ -3511,6 +3511,13 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // -- Twin plugin: knowledge_base_id on profiles (P2) ---------------------
     let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN knowledge_base_id TEXT;"); // ignore "duplicate column" on re-run
 
+    // -- Twin plugin: persistent training directives (D5 — self-sharpening) --
+    // Free-text "training style guide" per twin. The Training Studio seeds its
+    // Directions box from this and can save edits back; every question/answer
+    // generation prepends it so the studio learns the user's taste instead of
+    // restating it each session.
+    let _ = ddl_step(conn, "ALTER TABLE twin_profiles ADD COLUMN training_directives TEXT;"); // ignore "duplicate column" on re-run
+
     // -- Twin plugin: pending memories inbox (P2) ----------------------------
     // Human-approval gate for memories. record_interaction writes here; the
     // user approves/rejects in the Knowledge tab. Approved memories get

@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Отменить",
-    "redo": "Повторить"
+    "redo": "Повторить",
+    "section_workspace": "Рабочая область",
+    "toggle_sidebar": "Свернуть / развернуть боковую панель",
+    "toggle_monitor": "Открыть / закрыть Persona Monitor",
+    "toggle_athena": "Открыть / закрыть чат Athena"
   }
 }

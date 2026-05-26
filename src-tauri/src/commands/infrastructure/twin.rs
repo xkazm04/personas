@@ -2,16 +2,19 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 use tokio::io::AsyncWriteExt;
 use tokio::process::Command;
+use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
+use crate::background_job::BackgroundJobManager;
 use crate::db::models::{
     TwinChannel, TwinCommunication, TwinContact, TwinDistilledFact, TwinPendingMemory, TwinProfile,
     TwinReflection, TwinTone, TwinVoiceProfile,
 };
 use crate::db::repos::twin as repo;
+use crate::engine::event_registry::event_name;
 use crate::engine::prompt;
 use crate::error::AppError;
 use crate::ipc_auth::{require_auth, require_auth_sync};
@@ -234,6 +237,7 @@ pub fn twin_update_profile(
     languages: Option<Option<String>>,
     pronouns: Option<Option<String>>,
     obsidian_subpath: Option<String>,
+    training_directives: Option<Option<String>>,
 ) -> Result<TwinProfile, AppError> {
     require_auth_sync(&state)?;
     repo::update_profile(
@@ -245,6 +249,7 @@ pub fn twin_update_profile(
         languages.as_ref().map(|o| o.as_deref()),
         pronouns.as_ref().map(|o| o.as_deref()),
         obsidian_subpath.as_deref(),
+        training_directives.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -606,6 +611,523 @@ pub async fn twin_generate_bio(
     // Strip any JSON wrapper if the CLI outputs structured content
     let bio = raw.trim().trim_matches('"').to_string();
     Ok(bio)
+}
+
+// ----------------------------------------------------------------------------
+// twin_simulate_answer — Training Studio "twin simulation" side
+//
+// Drafts an interview answer *as the twin*, grounded in the same material a
+// persona adopting the twin sees at runtime (bio + generic tone + top
+// distilled self-facts). This is the answer half of the Training Studio: the
+// user reviews/edits the draft before it is saved as a memory. `directions`
+// carries the user's steering or critique on a regenerate ("too formal, add
+// the 2019 story"). Uses the shared spawn_claude_with_prompt envelope rather
+// than abusing twin_generate_bio's bio-framed prompt.
+// ----------------------------------------------------------------------------
+
+/// Number of top distilled facts to ground a simulated answer. Matches the
+/// grounding window the training session previously read client-side.
+const SIMULATE_ANSWER_FACTS_LIMIT: i32 = 12;
+
+#[tauri::command]
+pub async fn twin_simulate_answer(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    question: String,
+    directions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let question = question.trim();
+    if question.is_empty() {
+        return Err(AppError::Internal(
+            "twin_simulate_answer: question is empty".into(),
+        ));
+    }
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let tone = repo::get_tone_optional(&state.db, &twin_id, "generic")?;
+    let facts =
+        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+
+    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let prompt_text = build_answer_prompt(&profile, tone.as_ref(), &facts, question, effective.as_deref());
+    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    Ok(raw.trim().trim_matches('"').trim().to_string())
+}
+
+/// Build the "answer as the twin" prompt shared by `twin_simulate_answer` and
+/// the Training Studio batch job. Grounds the answer in the same material a
+/// persona adopting the twin sees: bio + generic tone + top distilled facts.
+fn build_answer_prompt(
+    profile: &TwinProfile,
+    tone: Option<&TwinTone>,
+    facts: &[TwinDistilledFact],
+    question: &str,
+    directions: Option<&str>,
+) -> String {
+    let role_part = profile
+        .role
+        .as_ref()
+        .map(|r| r.trim())
+        .filter(|s| !s.is_empty())
+        .map(|r| format!(", {r}"))
+        .unwrap_or_default();
+
+    let bio_block = profile
+        .bio
+        .as_ref()
+        .map(|b| b.trim())
+        .filter(|s| !s.is_empty())
+        .map(|b| format!("\n\nBio:\n{b}"))
+        .unwrap_or_default();
+
+    let tone_block = match tone {
+        Some(t) if !t.voice_directives.trim().is_empty() => {
+            let mut s = format!("\n\nVoice — write the way they speak:\n{}", t.voice_directives.trim());
+            if let Some(len) = t.length_hint.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+                s.push_str(&format!("\nPreferred reply length: {len}"));
+            }
+            s
+        }
+        _ => String::new(),
+    };
+
+    let facts_block = if facts.is_empty() {
+        String::new()
+    } else {
+        let lines = facts
+            .iter()
+            .map(|f| format!("- {}", f.content.trim()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\n\nWhat is known about them (stay consistent — never contradict these):\n{lines}")
+    };
+
+    let directions_block = directions
+        .map(|d| d.trim())
+        .filter(|s| !s.is_empty())
+        .map(|d| format!("\n\nApply this revision the user asked for: {d}"))
+        .unwrap_or_default();
+
+    format!(
+        "You are \"{name}\"{role_part}, answering an interview question to help build a faithful digital twin of yourself. \
+         Answer in the FIRST PERSON, in {name}'s own voice — concrete, personal, and specific rather than generic. \
+         Draw on the material below; where it doesn't cover something, answer plausibly and stay consistent, but never invent verifiable specifics (named dates, numbers, places, people) that aren't grounded here. \
+         Keep it to 2-5 sentences unless the voice guidance says otherwise. \
+         Output ONLY the answer prose — no preamble, no surrounding quotes, no \"As {name}, ...\" framing.{bio_block}{tone_block}{facts_block}{directions_block}\n\nInterview question:\n{question}",
+        name = profile.name,
+        question = question.trim(),
+    )
+}
+
+/// Combine a twin's persistent training directives (D5) with the call-time
+/// directions (the Studio's Directions box or a regenerate comment). The
+/// persistent style guide applies to every generation; the call-time note
+/// layers on top for this specific request.
+fn merge_directions(persistent: Option<&str>, call: Option<&str>) -> Option<String> {
+    let p = persistent.map(str::trim).filter(|s| !s.is_empty());
+    let c = call.map(str::trim).filter(|s| !s.is_empty());
+    match (p, c) {
+        (Some(p), Some(c)) => Some(format!("{p}\nFor this request specifically: {c}")),
+        (Some(p), None) => Some(p.to_string()),
+        (None, Some(c)) => Some(c.to_string()),
+        (None, None) => None,
+    }
+}
+
+// ============================================================================
+// Training Studio — background batch generation (questions + answers)
+//
+// The Studio lets the user gather a large batch of training material in one go
+// while the Claude CLI works in the background. Both passes run as a tracked
+// BackgroundJobManager job so the UI stays responsive, the sidebar shows a
+// progress dot, and an OS notification fires on completion — the same pattern
+// as the codebase context scan and the artist creative session. Results live
+// in the job's `extra` (in-memory, 30-min TTL); the frontend hydrates from
+// events and can re-fetch the full batch via twin_studio_get_batch.
+// ============================================================================
+
+/// One question (and optionally a drafted answer) in a Studio batch.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinStudioItem {
+    pub id: String,
+    pub question: String,
+    pub answer: Option<String>,
+}
+
+/// Seed question passed to the answer-drafting batch.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinStudioSeed {
+    pub id: String,
+    pub question: String,
+}
+
+/// Snapshot of a Studio batch job (status + accumulated items), returned by
+/// `twin_studio_get_batch` so the frontend can hydrate even if it missed
+/// in-flight events (e.g. it was on a different route while the job ran).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TwinStudioBatch {
+    pub batch_id: String,
+    pub status: String,
+    pub phase: String,
+    pub completed: u32,
+    pub total: u32,
+    pub items: Vec<TwinStudioItem>,
+    pub error: Option<String>,
+}
+
+#[derive(Clone, Default)]
+struct TwinStudioExtra {
+    phase: String,
+    completed: u32,
+    total: u32,
+    items: Vec<TwinStudioItem>,
+}
+
+static TWIN_STUDIO_JOBS: BackgroundJobManager<TwinStudioExtra> = BackgroundJobManager::new(
+    "twin-studio lock poisoned",
+    event_name::TWIN_STUDIO_STATUS,
+    event_name::TWIN_STUDIO_OUTPUT,
+);
+
+/// Progress event payload (drives the sidebar dot + studio progress bar).
+#[derive(Clone, Serialize)]
+struct TwinStudioProgress {
+    batch_id: String,
+    phase: String,
+    completed: u32,
+    total: u32,
+}
+
+/// Completion event payload. The frontend re-fetches the full batch via
+/// `twin_studio_get_batch` for robustness; this just signals done + outcome.
+#[derive(Clone, Serialize)]
+struct TwinStudioCompletePayload {
+    batch_id: String,
+    status: String,
+    phase: String,
+    item_count: u32,
+}
+
+fn emit_studio_progress(app: &AppHandle, batch_id: &str, phase: &str, completed: u32, total: u32) {
+    let _ = app.emit(
+        event_name::TWIN_STUDIO_PROGRESS,
+        TwinStudioProgress {
+            batch_id: batch_id.to_string(),
+            phase: phase.to_string(),
+            completed,
+            total,
+        },
+    );
+}
+
+fn emit_studio_complete(app: &AppHandle, batch_id: &str, status: &str, phase: &str, item_count: u32) {
+    let _ = app.emit(
+        event_name::TWIN_STUDIO_COMPLETE,
+        TwinStudioCompletePayload {
+            batch_id: batch_id.to_string(),
+            status: status.to_string(),
+            phase: phase.to_string(),
+            item_count,
+        },
+    );
+}
+
+/// Hard caps so a runaway request can't spawn an unbounded batch of CLI calls.
+const STUDIO_QUESTION_MAX: u32 = 12;
+const STUDIO_ANSWER_MAX: usize = 24;
+
+/// Build the questions-generation prompt for the Studio batch. Proper
+/// question-shaped instructions (no longer wrapped inside a bio prompt).
+fn build_questions_prompt(
+    profile: &TwinProfile,
+    facts: &[TwinDistilledFact],
+    topic: &str,
+    directions: Option<&str>,
+    count: u32,
+) -> String {
+    let role_part = profile
+        .role
+        .as_ref()
+        .map(|r| r.trim())
+        .filter(|s| !s.is_empty())
+        .map(|r| format!(", role: {r}"))
+        .unwrap_or_default();
+    let bio_part = profile
+        .bio
+        .as_ref()
+        .map(|b| b.trim())
+        .filter(|s| !s.is_empty())
+        .map(|b| format!(" Bio: {b}."))
+        .unwrap_or_default();
+    let grounding = if facts.is_empty() {
+        String::new()
+    } else {
+        let lines = facts
+            .iter()
+            .map(|f| format!("- {}", f.content.trim()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\n\nAlready known about them (do NOT re-ask these — build on or around them):\n{lines}")
+    };
+    let directions_block = directions
+        .map(|d| d.trim())
+        .filter(|s| !s.is_empty())
+        .map(|d| format!("\n\nThe user's directions for these questions (follow them): {d}"))
+        .unwrap_or_default();
+    format!(
+        "You are interviewing \"{name}\"{role_part} to build a faithful digital twin of them.{bio_part}\n\nTopic: {topic}{grounding}{directions_block}\n\nGenerate exactly {count} interview questions. Each question must:\n- Be specific and conversational, not generic\n- Draw out their unique perspective, voice, opinions, and concrete stories\n- Build on what's already known — never duplicate it\n\nOutput ONLY the questions, one per line, numbered 1-{count}. No preamble, no commentary.",
+        name = profile.name,
+    )
+}
+
+/// Parse the CLI's numbered question list into clean question strings.
+fn parse_questions(raw: &str, max: usize) -> Vec<String> {
+    raw.lines()
+        .map(|line| {
+            let t = line.trim();
+            let bytes = t.as_bytes();
+            let mut i = 0;
+            while i < bytes.len() && bytes[i].is_ascii_digit() {
+                i += 1;
+            }
+            if i > 0 && i < bytes.len() && (bytes[i] == b'.' || bytes[i] == b')') {
+                t[i + 1..].trim().to_string()
+            } else {
+                t.trim_start_matches(['-', '*', '•']).trim().to_string()
+            }
+        })
+        .filter(|l| l.len() > 10)
+        .take(max)
+        .collect()
+}
+
+/// Start a background job that generates a batch of interview questions.
+/// Returns the `batch_id` immediately; progress arrives via TWIN_STUDIO_PROGRESS
+/// and the final set via TWIN_STUDIO_COMPLETE (+ get_batch).
+#[tauri::command]
+pub async fn twin_studio_generate_questions(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    twin_id: String,
+    topic: String,
+    directions: Option<String>,
+    count: Option<u32>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let facts =
+        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+    let count = count.unwrap_or(8).clamp(1, STUDIO_QUESTION_MAX);
+
+    let batch_id = uuid::Uuid::new_v4().to_string();
+    let cancel_token = CancellationToken::new();
+    TWIN_STUDIO_JOBS.insert_running(
+        batch_id.clone(),
+        cancel_token.clone(),
+        TwinStudioExtra {
+            phase: "questions".into(),
+            completed: 0,
+            total: count,
+            items: Vec::new(),
+        },
+    )?;
+    TWIN_STUDIO_JOBS.set_status(&app, &batch_id, "running", None);
+    emit_studio_progress(&app, &batch_id, "questions", 0, count);
+
+    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let prompt_text = build_questions_prompt(&profile, &facts, &topic, effective.as_deref(), count);
+    let app_handle = app.clone();
+    let batch_for_task = batch_id.clone();
+    let twin_name = profile.name.clone();
+
+    tokio::spawn(async move {
+        let result = tokio::select! {
+            _ = cancel_token.cancelled() => Err(AppError::Internal("Cancelled by user".into())),
+            res = spawn_claude_with_prompt(prompt_text) => res,
+        };
+        match result {
+            Ok(raw) => {
+                let items: Vec<TwinStudioItem> = parse_questions(&raw, count as usize)
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, q)| TwinStudioItem {
+                        id: format!("{batch_for_task}-q{i}"),
+                        question: q,
+                        answer: None,
+                    })
+                    .collect();
+                let n = items.len() as u32;
+                TWIN_STUDIO_JOBS.update_extra(&batch_for_task, |e| {
+                    e.completed = n;
+                    e.total = n;
+                    e.items = items;
+                });
+                TWIN_STUDIO_JOBS.set_status(&app_handle, &batch_for_task, "completed", None);
+                emit_studio_progress(&app_handle, &batch_for_task, "questions", n, n);
+                emit_studio_complete(&app_handle, &batch_for_task, "completed", "questions", n);
+                crate::notifications::send(
+                    &app_handle,
+                    "Training questions ready",
+                    &format!("{twin_name}: {n} questions drafted — review them in the Training Studio."),
+                );
+            }
+            Err(e) => {
+                let msg = format!("{e}");
+                TWIN_STUDIO_JOBS.set_status(&app_handle, &batch_for_task, "failed", Some(msg.clone()));
+                emit_studio_complete(&app_handle, &batch_for_task, "failed", "questions", 0);
+                if !msg.contains("Cancelled") {
+                    crate::notifications::send(
+                        &app_handle,
+                        "Training questions failed",
+                        &format!("{twin_name}: {msg}"),
+                    );
+                }
+            }
+        }
+    });
+
+    Ok(batch_id)
+}
+
+/// Start a background job that drafts an answer (as the twin) for each seed
+/// question. This is the long-running pass — N sequential CLI calls — so it is
+/// the one that most benefits from running in the background with a completion
+/// notification.
+#[tauri::command]
+pub async fn twin_studio_generate_answers(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    twin_id: String,
+    items: Vec<TwinStudioSeed>,
+    directions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    if items.is_empty() {
+        return Err(AppError::Validation(
+            "twin_studio_generate_answers: no questions provided".into(),
+        ));
+    }
+    let items: Vec<TwinStudioSeed> = items.into_iter().take(STUDIO_ANSWER_MAX).collect();
+    let total = items.len() as u32;
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let tone = repo::get_tone_optional(&state.db, &twin_id, "generic")?;
+    let facts =
+        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+
+    let batch_id = uuid::Uuid::new_v4().to_string();
+    let cancel_token = CancellationToken::new();
+    TWIN_STUDIO_JOBS.insert_running(
+        batch_id.clone(),
+        cancel_token.clone(),
+        TwinStudioExtra {
+            phase: "answers".into(),
+            completed: 0,
+            total,
+            items: Vec::new(),
+        },
+    )?;
+    TWIN_STUDIO_JOBS.set_status(&app, &batch_id, "running", None);
+    emit_studio_progress(&app, &batch_id, "answers", 0, total);
+
+    let app_handle = app.clone();
+    let batch_for_task = batch_id.clone();
+    let twin_name = profile.name.clone();
+    let directions_owned = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+
+    tokio::spawn(async move {
+        let mut completed: u32 = 0;
+        let mut cancelled = false;
+        for seed in &items {
+            if cancel_token.is_cancelled() {
+                cancelled = true;
+                break;
+            }
+            let prompt = build_answer_prompt(
+                &profile,
+                tone.as_ref(),
+                &facts,
+                &seed.question,
+                directions_owned.as_deref(),
+            );
+            let answer = tokio::select! {
+                _ = cancel_token.cancelled() => { cancelled = true; break; }
+                res = spawn_claude_with_prompt(prompt) => res.ok(),
+            };
+            let item = TwinStudioItem {
+                id: seed.id.clone(),
+                question: seed.question.clone(),
+                answer: answer.map(|a| a.trim().trim_matches('"').trim().to_string()),
+            };
+            completed += 1;
+            TWIN_STUDIO_JOBS.update_extra(&batch_for_task, |e| {
+                e.completed = completed;
+                e.items.push(item);
+            });
+            emit_studio_progress(&app_handle, &batch_for_task, "answers", completed, total);
+        }
+
+        let status = if cancelled { "failed" } else { "completed" };
+        TWIN_STUDIO_JOBS.set_status(
+            &app_handle,
+            &batch_for_task,
+            status,
+            cancelled.then(|| "Cancelled by user".to_string()),
+        );
+        emit_studio_complete(&app_handle, &batch_for_task, status, "answers", completed);
+        if !cancelled {
+            crate::notifications::send(
+                &app_handle,
+                "Twin drafts ready",
+                &format!("{twin_name}: {completed} answers drafted — review & edit them in the Training Studio."),
+            );
+        }
+    });
+
+    Ok(batch_id)
+}
+
+/// Fetch the current state of a Studio batch (status + accumulated items).
+#[tauri::command]
+pub fn twin_studio_get_batch(
+    state: State<'_, Arc<AppState>>,
+    batch_id: String,
+) -> Result<Option<TwinStudioBatch>, AppError> {
+    require_auth_sync(&state)?;
+    Ok(TWIN_STUDIO_JOBS.get_snapshot_with(&batch_id, |id, job| TwinStudioBatch {
+        batch_id: id.to_string(),
+        status: if job.status.is_empty() {
+            "idle".into()
+        } else {
+            job.status.clone()
+        },
+        phase: job.extra.phase.clone(),
+        completed: job.extra.completed,
+        total: job.extra.total,
+        items: job.extra.items.clone(),
+        error: job.error.clone(),
+    }))
+}
+
+/// Cancel a running Studio batch.
+#[tauri::command]
+pub fn twin_studio_cancel(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+    batch_id: String,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    TWIN_STUDIO_JOBS.cancel(&app, &batch_id)
 }
 
 // ============================================================================

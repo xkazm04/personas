@@ -46,6 +46,8 @@ export default function BrainAtelier() {
         title={`${t.brain.title} — ${activeTwin?.name ?? ''}`}
         subtitle={t.brain.subtitle}
         decoration={<BrainDecoration />}
+        readiness={readiness}
+        onJumpReadiness={setTwinTab}
         kpis={
           <>
             <Stat label={t.brain.documents} value={kbInfo?.document_count ?? '—'} accent={kbBound ? 'violet' : 'amber'} />

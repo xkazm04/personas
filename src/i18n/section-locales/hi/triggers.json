@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse समूह",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "कोई इवेंट match the current filters",
-  "dead_letter_clear_filters_to_see": "साफ़ करें filters to see all dead-lettered इवेंट"
+  "dead_letter_clear_filters_to_see": "साफ़ करें filters to see all dead-lettered इवेंट",
+  "col_event": "इवेंट",
+  "col_listeners": "लिसनर",
+  "source_personas_filter": "स्रोत personas",
+  "listeners_filter": "लिसनर",
+  "filter_events_placeholder": "इवेंट फ़िल्टर करें..."
 }

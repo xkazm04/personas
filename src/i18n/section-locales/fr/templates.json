@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "Aucune question pour cette capacité.",
+    "error_policy": {
+      "title": "Gestion des erreurs",
+      "intro": "Les nouvelles tentatives et l'auto-réparation sont automatiques. Choisissez ce qui se passe lorsqu'un échec ne peut pas se rétablir seul.",
+      "incident_label": "Créer un incident",
+      "incident_desc": "Afficher les échecs non récupérés dans la boîte Incidents pour triage.",
+      "lab_label": "Envoyer au Lab",
+      "lab_desc": "Activer l'amélioration automatique du Lab (évolution des prompts) pour cette persona lorsque les échecs se répètent.",
+      "escalate_after_label": "Escalader après",
+      "escalate_after_desc": "Nombre d'échecs consécutifs avant de créer un incident ou d'envoyer au Lab."
+    }
   },
   "scan": {
     "scanning_draft": "Analyse du persona en cours...",

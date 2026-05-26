@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Wohin als Nächstes",
     "nextMovesSubtitle": "Themen mit der dünnsten Abdeckung — trainiere diese als Nächstes für den größten Brain-Boost.",
-    "nextMovesCoverage": "{count} Grundlagenfakten bisher"
+    "nextMovesCoverage": "{count} Grundlagenfakten bisher",
+    "draftAsTwin": "Als Twin entwerfen",
+    "draftingAsTwin": "Entwurf als {name}…",
+    "twinDraftLabel": "Twin-Entwurf — prüfen & bearbeiten",
+    "regenerate": "Neu generieren",
+    "regenerateCommentPlaceholder": "Was ändern? (z. B. kürzer, die 2019-Geschichte ergänzen)",
+    "studioOpen": "Studio öffnen",
+    "studioTagline": "Erzeuge im Stapel Fragen und vom Twin verfasste Antworten, prüfe und bearbeite sie und speichere die besten.",
+    "studioBack": "Schnelles Interview",
+    "studioDirectionsLabel": "Anweisungen",
+    "studioDirectionsPlaceholder": "Lenke den Stapel — z. B. Fokus auf Misserfolge, kurze Fragen",
+    "studioTopicPlaceholder": "Thema — z. B. Tech-Meinungen",
+    "studioGenerateQuestions": "Fragen generieren",
+    "studioDraftAll": "Alle als Twin entwerfen",
+    "studioCancel": "Abbrechen",
+    "studioSaveApproved": "{count} ausgewählte speichern",
+    "studioAddQuestion": "Frage hinzufügen",
+    "studioEmptyTitle": "Noch keine Fragen",
+    "studioEmptyHint": "Lege ein Thema fest und erzeuge einen Stapel, oder füge eigene Fragen hinzu.",
+    "studioRunningAnswers": "Antworten werden entworfen… {completed}/{total}",
+    "studioRunningQuestions": "Fragen werden generiert…",
+    "studioBackgroundNote": "Läuft im Hintergrund — du erhältst eine Benachrichtigung, wenn es fertig ist.",
+    "studioAnswerPlaceholder": "Antwort — als Twin entwerfen oder selbst schreiben",
+    "studioDraftOne": "Entwurf",
+    "studioWordCount": "{count} Wörter",
+    "studioSavedToast": "{count} Paare im Gedächtnis gespeichert",
+    "studioRemoveRow": "Entfernen",
+    "studioSaveDirections": "Als Standard-Anweisungen speichern",
+    "studioDirectionsSaved": "Als Standard gespeichert",
+    "studioDirectionsSavedToast": "Anweisungen gespeichert"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "{section} öffnen",
+    "nextStep": "Nächster Schritt",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Vervollständige deinen Twin"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "In destillierten Fakten gespeichert.",
     "saveAsFactTooltip": "Diese Kommunikation als dauerhaften destillierten Fakt übernehmen",
     "saveAsFactError": "Speichern als Fakt fehlgeschlagen."
-  }
+  },
+  "studioInProgress": "Trainingsstudio läuft"
 }

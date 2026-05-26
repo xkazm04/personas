@@ -89,7 +89,8 @@
     "source_healing_log": "Journal de correction",
     "source_provider": "Fournisseur",
     "source_policy": "Politique",
-    "source_healing_issue": "Problème de correction"
+    "source_healing_issue": "Problème de correction",
+    "source_execution_error": "Erreur d'exécution"
   },
   "observability": {
     "title": "Observabilité",

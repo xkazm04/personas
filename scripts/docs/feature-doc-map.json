@@ -307,7 +307,7 @@
       "marketingModule": "plugins"
     },
     {
-      "doc": "docs/features/obsidian-brain.md",
+      "doc": "docs/features/plugins/brain/README.md",
       "sourceGlobs": [
         "src/features/plugins/obsidian-brain/**",
         "src-tauri/src/commands/obsidian_brain/**"

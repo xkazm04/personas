@@ -646,6 +646,30 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Twin Training Studio batch progress / completion ---------------------
+  // Registered globally so the sidebar progress dots (L1 plugins, L2 Twin,
+  // L3 Training) stay accurate while the user navigates away during a
+  // long-running batch. The OS notification on completion is fired
+  // authoritatively by the Rust side, so this only settles in-app state.
+  {
+    event: EventName.TWIN_STUDIO_PROGRESS,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.TWIN_STUDIO_PROGRESS, (payload) => {
+        useSystemStore.getState().onStudioProgress(payload);
+      });
+      return [unlisten];
+    },
+  },
+  {
+    event: EventName.TWIN_STUDIO_COMPLETE,
+    setup: async () => {
+      const unlisten = await typedListen(EventName.TWIN_STUDIO_COMPLETE, (payload) => {
+        useSystemStore.getState().onStudioComplete(payload);
+      });
+      return [unlisten];
+    },
+  },
+
   // -- One-shot build terminal phase (Promoted | Failed) --------------------
   // Fires when an autonomous build ends — adds an entry to the bell with a
   // deep-link to the persona so the user can review what landed (or why it

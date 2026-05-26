@@ -65,6 +65,11 @@ test.describe('Guided tours — read-only walkthrough (exploration + acknowledge
     app = bridge();
     const h = await app.health();
     expect(h.status).toBe('ok');
+    // Represent a fresh user: clear the first-run onboarding modal (which
+    // hides the tour panel on an empty DB) and reset all tours. Idempotent,
+    // so this is safe whether we're pointed at a freshly-launched isolated
+    // instance (npm run test:tours:fresh) or a normal running app.
+    await app.bootstrapFreshUser();
   });
 
   for (const tourId of TOURS) {

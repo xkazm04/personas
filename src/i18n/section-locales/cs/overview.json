@@ -89,7 +89,8 @@
     "source_healing_log": "Protokol léčení",
     "source_provider": "Poskytovatel",
     "source_policy": "Zásada",
-    "source_healing_issue": "Problém léčení"
+    "source_healing_issue": "Problém léčení",
+    "source_execution_error": "Chyba spuštění"
   },
   "observability": {
     "title": "Pozorovatelnost",

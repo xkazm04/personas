@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse grup",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "Tidak ada peristiwa match the current filters",
-  "dead_letter_clear_filters_to_see": "Bersihkan filters to see all dead-lettered peristiwa"
+  "dead_letter_clear_filters_to_see": "Bersihkan filters to see all dead-lettered peristiwa",
+  "col_event": "Peristiwa",
+  "col_listeners": "Listener",
+  "source_personas_filter": "Persona sumber",
+  "listeners_filter": "Listener",
+  "filter_events_placeholder": "Filter peristiwa..."
 }

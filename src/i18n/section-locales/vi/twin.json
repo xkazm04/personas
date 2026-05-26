@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Đi tiếp ở đâu",
     "nextMovesSubtitle": "Các chủ đề có độ phủ mỏng nhất — huấn luyện những chủ đề này tiếp theo để bộ não phát triển mạnh nhất.",
-    "nextMovesCoverage": "{count} dữ kiện nền tảng đến nay"
+    "nextMovesCoverage": "{count} dữ kiện nền tảng đến nay",
+    "draftAsTwin": "Soạn thử như bản sao",
+    "draftingAsTwin": "Đang soạn như {name}…",
+    "twinDraftLabel": "Bản nháp của bản sao — xem lại & chỉnh sửa",
+    "regenerate": "Tạo lại",
+    "regenerateCommentPlaceholder": "Thay đổi gì? (vd: ngắn hơn, thêm câu chuyện năm 2019)",
+    "studioOpen": "Mở Studio",
+    "studioTagline": "Tạo hàng loạt câu hỏi và câu trả lời do bản sao soạn, xem lại và chỉnh sửa, rồi lưu những câu tốt nhất.",
+    "studioBack": "Phỏng vấn nhanh",
+    "studioDirectionsLabel": "Hướng dẫn",
+    "studioDirectionsPlaceholder": "Định hướng lô — vd: tập trung vào câu chuyện thất bại, câu hỏi ngắn",
+    "studioTopicPlaceholder": "Chủ đề — vd: quan điểm công nghệ",
+    "studioGenerateQuestions": "Tạo câu hỏi",
+    "studioDraftAll": "Soạn tất cả như bản sao",
+    "studioCancel": "Hủy",
+    "studioSaveApproved": "Lưu {count} đã chọn",
+    "studioAddQuestion": "Thêm câu hỏi",
+    "studioEmptyTitle": "Chưa có câu hỏi",
+    "studioEmptyHint": "Đặt chủ đề và tạo lô, hoặc thêm câu hỏi của riêng bạn.",
+    "studioRunningAnswers": "Đang soạn câu trả lời… {completed}/{total}",
+    "studioRunningQuestions": "Đang tạo câu hỏi…",
+    "studioBackgroundNote": "Chạy ở chế độ nền — bạn sẽ nhận thông báo khi xong.",
+    "studioAnswerPlaceholder": "Câu trả lời — soạn như bản sao, hoặc tự viết",
+    "studioDraftOne": "Soạn",
+    "studioWordCount": "{count} từ",
+    "studioSavedToast": "Đã lưu {count} cặp vào bộ nhớ",
+    "studioRemoveRow": "Xóa",
+    "studioSaveDirections": "Lưu làm hướng dẫn mặc định",
+    "studioDirectionsSaved": "Đã lưu làm mặc định",
+    "studioDirectionsSavedToast": "Đã lưu hướng dẫn"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "Mở {section}",
+    "nextStep": "Bước tiếp theo",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Hoàn thiện bản sao của bạn"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "Đã lưu vào dữ kiện chắt lọc.",
     "saveAsFactTooltip": "Chuyển liên lạc này thành dữ kiện chắt lọc lâu dài",
     "saveAsFactError": "Không thể lưu thành dữ kiện."
-  }
+  },
+  "studioInProgress": "Studio huấn luyện đang chạy"
 }

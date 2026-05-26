@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace pengaturan saved",
     "workspace_save_failed": "Couldn't save workspace pengaturan",
-    "workspace_inherit": "Warisi"
+    "workspace_inherit": "Warisi",
+    "add_persona_draft_hint": "Persona draf harus dipromosikan sebelum dapat bergabung dengan tim.",
+    "checklist_heading": "Progres langsung",
+    "checklist_background_note": "Berjalan di latar belakang",
+    "step_status_pending": "Tertunda",
+    "step_status_matching": "Mencocokkan",
+    "step_status_running": "Berjalan",
+    "step_status_done": "Selesai",
+    "step_status_skipped": "Dilewati",
+    "step_status_failed": "Gagal",
+    "step_status_awaiting_review": "Perlu ditinjau",
+    "board_label": "Papan tugas",
+    "board_col_queued": "Dalam antrean",
+    "board_col_running": "Berjalan",
+    "board_col_review": "Perlu ditinjau",
+    "board_col_done": "Selesai",
+    "board_col_stopped": "Dihentikan",
+    "board_empty": "Belum ada tugas. Tentukan tujuan di Orchestrate untuk memulai."
   }
 }

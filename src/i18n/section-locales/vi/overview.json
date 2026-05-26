@@ -89,7 +89,8 @@
     "source_healing_log": "Nhật ký tự sửa",
     "source_provider": "Nhà cung cấp",
     "source_policy": "Chính sách",
-    "source_healing_issue": "Vấn đề tự sửa"
+    "source_healing_issue": "Vấn đề tự sửa",
+    "source_execution_error": "Lỗi thực thi"
   },
   "observability": {
     "title": "Khả năng quan sát",

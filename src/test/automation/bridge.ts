@@ -2207,6 +2207,38 @@ const bridge: TestBridge = {
     };
   },
 
+  // -- Athena guided-walkthrough helpers (E2E) -----------------------------
+  // Distinct from the onboarding `tour*` helpers above. The runner
+  // (AthenaGuideLayer) owns step advancement; these let a spec start a
+  // walkthrough deterministically (no live Claude turn) and inspect the orb
+  // position + element glow + caption it produces, so assertions on "orb
+  // glided" / "element glowing" / "narration changed" don't depend on the
+  // model emitting `start_guided_walkthrough`.
+  startGuidedWalkthrough(topic: string) {
+    useCompanionStore.getState().startGuidance(topic);
+    return { success: true, topic };
+  },
+  guidanceState() {
+    const s = useCompanionStore.getState();
+    const rectOf = (sel: string) => {
+      const el = document.querySelector(sel);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: Math.round(r.x), y: Math.round(r.y), width: Math.round(r.width), height: Math.round(r.height) };
+    };
+    const captionEl = document.querySelector('[data-testid="athena-guide-caption-text"]');
+    return {
+      active: s.activeWalkthrough !== null,
+      topic: s.activeWalkthrough,
+      stepIndex: s.guidanceStepIndex,
+      playing: s.guidancePlaying,
+      highlightTestId: s.guidanceHighlightTestId,
+      orbRect: rectOf('[data-testid="companion-orb"]'),
+      glowRect: rectOf('[data-testid="athena-guide-glow"]'),
+      captionText: captionEl ? (captionEl.textContent || '').trim().slice(0, 200) : null,
+    };
+  },
+
   /**
    * Dispatcher called from Rust via eval().
    * Executes a bridge method and sends the result back via Tauri IPC.

@@ -714,6 +714,19 @@ export const COMPANION_COMPOSE_DASHBOARD_EVENT = 'companion://compose-dashboard'
  */
 export const COMPANION_NAVIGATE_EVENT = 'companion://navigate';
 
+/**
+ * Tauri event for Athena's `start_guided_walkthrough` op. Payload:
+ * `{ topic }`. The frontend runner (`useGuidanceRunner`) starts the
+ * registry-defined walkthrough — the orb glides to each key area, the
+ * relevant element glows, and Athena narrates each step.
+ */
+export const COMPANION_GUIDE_EVENT = 'companion://guide';
+
+/** Payload for COMPANION_GUIDE_EVENT. */
+export interface CompanionGuideEvent {
+  topic: string;
+}
+
 /** Payload for COMPANION_APPROVALS_EVENT — array of newly-created approvals. */
 export interface CreatedApproval {
   id: string;

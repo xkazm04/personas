@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "إلى أين تتجه بعد ذلك",
     "nextMovesSubtitle": "المواضيع ذات التغطية الأضعف — درّب على هذه تاليًا لأكبر تعزيز للدماغ.",
-    "nextMovesCoverage": "{count} حقائق أساسية حتى الآن"
+    "nextMovesCoverage": "{count} حقائق أساسية حتى الآن",
+    "draftAsTwin": "صياغة كالتوأم",
+    "draftingAsTwin": "جارٍ الصياغة كـ {name}…",
+    "twinDraftLabel": "مسودة التوأم — راجع وحرّر",
+    "regenerate": "إعادة التوليد",
+    "regenerateCommentPlaceholder": "ما الذي تريد تغييره؟ (مثال: أقصر، أضف قصة 2019)",
+    "studioOpen": "افتح الاستوديو",
+    "studioTagline": "أنشئ دفعة من الأسئلة وإجابات صاغها التوأم، راجعها وحرّرها ثم احفظ الأفضل.",
+    "studioBack": "مقابلة سريعة",
+    "studioDirectionsLabel": "توجيهات",
+    "studioDirectionsPlaceholder": "وجّه الدفعة — مثل التركيز على قصص الإخفاق، وإبقاء الأسئلة قصيرة",
+    "studioTopicPlaceholder": "الموضوع — مثل آراء تقنية",
+    "studioGenerateQuestions": "توليد الأسئلة",
+    "studioDraftAll": "صياغة الكل كالتوأم",
+    "studioCancel": "إلغاء",
+    "studioSaveApproved": "حفظ {count} المحددة",
+    "studioAddQuestion": "إضافة سؤال",
+    "studioEmptyTitle": "لا أسئلة بعد",
+    "studioEmptyHint": "حدّد موضوعًا وأنشئ دفعة، أو أضف أسئلتك الخاصة.",
+    "studioRunningAnswers": "جارٍ صياغة الإجابات… {completed}/{total}",
+    "studioRunningQuestions": "جارٍ توليد الأسئلة…",
+    "studioBackgroundNote": "يعمل في الخلفية — ستصلك إشعار عند الانتهاء.",
+    "studioAnswerPlaceholder": "الإجابة — صِغها كالتوأم أو اكتبها بنفسك",
+    "studioDraftOne": "صياغة",
+    "studioWordCount": "{count} كلمة",
+    "studioSavedToast": "تم حفظ {count} زوجًا في الذاكرة",
+    "studioRemoveRow": "إزالة",
+    "studioSaveDirections": "حفظ كتوجيهات افتراضية",
+    "studioDirectionsSaved": "محفوظ كافتراضي",
+    "studioDirectionsSavedToast": "تم حفظ التوجيهات"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "فتح {section}",
+    "nextStep": "الخطوة التالية",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "أكمل توأمك"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "تم الحفظ في الحقائق المقطرة.",
     "saveAsFactTooltip": "ترقية هذا الاتصال إلى حقيقة مقطرة دائمة",
     "saveAsFactError": "تعذر الحفظ كحقيقة."
-  }
+  },
+  "studioInProgress": "استوديو التدريب قيد التشغيل"
 }
