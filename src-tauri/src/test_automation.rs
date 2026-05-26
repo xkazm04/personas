@@ -706,6 +706,17 @@ async fn handle_promote_build(
 
     match result {
         Ok(val) => {
+            // Parity with the production promote command (promote_build_draft):
+            // run the real build-verification gate so a from-scratch persona that
+            // can't deliver value is flagged (setup_status), instead of silently
+            // shipping unverified. The UI promote path already does this; the
+            // direct _inner call here previously skipped it.
+            crate::commands::design::build_sessions::gate_setup_status_on_verification(
+                &app_state,
+                state.app_handle.clone(),
+                &persona_id,
+            )
+            .await;
             // Refresh the persona list in the WebView
             let _ = eval_bridge_method(
                 &state,

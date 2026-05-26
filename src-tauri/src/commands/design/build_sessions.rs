@@ -821,7 +821,7 @@ pub async fn promote_build_draft(
 /// flagged for missing connectors would precondition-fail anyway, so the
 /// run would be redundant cost. The verification is fail-open — a run that
 /// can't be assessed leaves `ready` untouched.
-async fn gate_setup_status_on_verification(
+pub(crate) async fn gate_setup_status_on_verification(
     state: &Arc<AppState>,
     app: tauri::AppHandle,
     persona_id: &str,

@@ -255,7 +255,7 @@ Alongside per-capability resolution, emit `persona_resolution` events for the sh
 **Connector registry rules** (persona.connectors):
 - NEVER include these (built-in, no credentials): web_search, web_fetch, web_browse, file_read, file_write, data_processing, text_analysis, ai_generation.
 - ALWAYS use `personas_database` (built-in SQLite via execute_sql) when the persona needs database storage. Never suggest Supabase, Firebase, PlanetScale, or any external DB.
-- For codebase analysis intents (review, impact, implementation), add the `codebase` connector (service_type: "codebase").
+- **Development / code intents REQUIRE a repository connector — never default them to `storage`.** When the intent or any capability involves code (review, architecture, ADR, impact analysis, implementation, PR/diff, refactor, release/versioning, dependency or security scanning of source), the persona's PRIMARY grounding is a repository. Emit a `connector_category` clarifying_question with `category: "development"` so the user binds a healthy **GitHub / GitLab / Codebase** connector from their vault (the UI populates these by the `development` category). Do NOT ask for a `storage`/`local_drive` connector for a code-grounded capability, and do NOT resolve such a capability's `connectors` until a `development` connector is chosen. (`codebase` service_type is one such development connector.)
 - For personal-knowledge intents (journaling, meeting capture, second-brain), add the `obsidian_memory` connector IF it's present in Available Connectors below.
 - Each connector entry: `{{name, service_type, purpose, has_credential}}`. Set `has_credential` based on Available Credentials.
 
@@ -575,6 +575,8 @@ The agent runs on a platform with built-in communication protocols. When composi
     - Capability granularity is ambiguous — resolve "single capability vs split into N" first, then batch fields per resolved capability.
 
     If you're tempted to serialize for any other reason ("the user might want to think about it", "asking too many at once is overwhelming", "I should be polite"), STOP. Batch them. The pulsing-leaves UI handles the visual cognitive load; the user is NOT overwhelmed.
+
+    **HARD ROUND CAP — RELIABILITY-CRITICAL.** After the optional single mission round, you get **EXACTLY ONE Phase-C clarifying round**. In that one round emit **AT MOST 4** clarifying_questions — the most decision-critical only: connector_category (incl. the development/repo connector for code intents), suggested_trigger, review_policy, and at most one genuine ambiguity/contradiction. **Resolve every other field with a sensible default rather than asking.** Do NOT open a second Phase-C round: once the user answers this batch, resolve ALL remaining fields with defaults and proceed to `persona_resolution`. Opening 3+ question rounds destabilizes IR generation and frequently HANGS the build — a stalled build is far worse for the user than a default they can refine later. If more than 4 fields feel unresolved, you are over-asking: pick the 3-4 that change the persona's behavior most and default the rest.
 
 26. **Simple-periodic-report fast-path — RESOLVE WITHOUT ASKING.** When the intent describes a capability matching ALL THREE of these signals, you MUST resolve `review_policy`, `memory_policy`, and `error_handling` directly with the safe defaults below — do NOT emit clarifying_questions for them. The user wrote a one-sentence intent for a routine periodic task; asking them to triage approval/memory policies on every such persona is friction with no upside.
 
