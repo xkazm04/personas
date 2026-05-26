@@ -1443,6 +1443,30 @@ body[data-drag-active="true"] * {
   }
 }
 
+/* Athena guided-walkthrough element highlight — a non-dimming accent ring
+   (AthenaGuideGlow). The border colour comes from the `border-primary` utility;
+   these animate the outer bloom. `-static` is the prefers-reduced-motion
+   fallback (a steady ring, no pulse). */
+@keyframes athena-guide-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 2px var(--color-primary), 0 0 12px 2px var(--color-primary);
+    opacity: 0.85;
+  }
+  50% {
+    box-shadow: 0 0 0 3px var(--color-primary), 0 0 22px 6px var(--color-primary);
+    opacity: 1;
+  }
+}
+
+.athena-guide-glow-pulse {
+  animation: athena-guide-glow 1.6s ease-in-out infinite;
+  will-change: box-shadow, opacity;
+}
+
+.athena-guide-glow-static {
+  box-shadow: 0 0 0 2px var(--color-primary), 0 0 12px 2px var(--color-primary);
+}
+
 /* GlyphHeroSigil petal pulse — driven by CSS so the 8 petals don't
    force a framer-motion reconciliation on every parent re-render
    during a build (formerly: each parent update at ~30Hz from

@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "इस क्षमता के लिए कोई प्रश्न नहीं हैं।",
+    "error_policy": {
+      "title": "त्रुटि प्रबंधन",
+      "intro": "रीट्राई और सेल्फ-हीलिंग स्वचालित हैं। चुनें कि जब कोई विफलता खुद ठीक न हो सके तो क्या हो।",
+      "incident_label": "इंसिडेंट बनाएं",
+      "incident_desc": "ट्रायाज के लिए Incidents इनबॉक्स में रिकवर न हुई विफलताएं दिखाएं।",
+      "lab_label": "Lab में भेजें",
+      "lab_desc": "विफलताएं दोहराने पर इस persona के लिए Lab auto-improvement (prompt evolution) चालू करें।",
+      "escalate_after_label": "इसके बाद एस्केलेट करें",
+      "escalate_after_desc": "इंसिडेंट बनाने या Lab में भेजने से पहले लगातार विफलताओं की संख्या।"
+    }
   },
   "scan": {
     "scanning_draft": "एजेंट ड्राफ्ट स्कैन हो रहा है...",

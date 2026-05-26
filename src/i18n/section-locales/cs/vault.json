@@ -707,7 +707,10 @@
     "test_all_credentials": "Testovat všechny údaje",
     "test_all": "Testovat vše",
     "daily_progress": "Denně {done}/{total}",
-    "testing_progress": "Testování {done}/{total}"
+    "testing_progress": "Testování {done}/{total}",
+    "title_catalog": "Katalog",
+    "title_dependencies": "Závislosti",
+    "title_databases": "Databáze"
   },
   "bulk_healthcheck": {
     "title": "Výsledky kontroly",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "Nic není nakonfigurováno.",
-    "required_badge": "POV"
+    "required_badge": "POV",
+    "kv_key_label": "Klíč",
+    "kv_value_label": "Hodnota",
+    "kv_key_placeholder": "KLÍČ",
+    "kv_value_placeholder": "hodnota",
+    "kv_show_value": "Zobrazit hodnotu",
+    "kv_hide_value": "Skrýt hodnotu",
+    "kv_remove": "Odebrat proměnnou",
+    "kv_add": "Přidat"
   },
   "design_phases": {
     "saving": "Ukládání přihlašovacího údaje...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "Reklama",
+    "ai": "AI",
+    "analytics": "Analytika",
+    "automation": "Automatizace",
+    "bi": "Business Intelligence",
+    "browser_automation": "Automatizace prohlížeče",
+    "calendar": "Kalendář",
+    "ci_cd": "CI/CD",
+    "cloud": "Cloud",
+    "containers": "Kontejnery",
+    "crm": "CRM",
+    "custom": "Vlastní",
+    "database": "Databáze",
+    "design": "Design",
+    "development": "Vývoj",
+    "ecommerce": "E-commerce",
+    "email": "E-mail",
+    "finance": "Finance",
+    "forms": "Formuláře",
+    "integration": "Integrace",
+    "knowledge_base": "Znalostní báze",
+    "mcp": "MCP",
+    "messaging": "Zprávy",
+    "monitoring": "Monitoring",
+    "notifications": "Oznámení",
+    "personalization": "Personalizace",
+    "productivity": "Produktivita",
+    "project_management": "Řízení projektů",
+    "research": "Výzkum",
+    "scheduling": "Plánování",
+    "social": "Sociální sítě",
+    "source_control": "Správa zdrojového kódu",
+    "spreadsheet": "Tabulky",
+    "storage": "Úložiště",
+    "support": "Podpora",
+    "time_tracking": "Sledování času",
+    "vector_search": "Vektorové vyhledávání",
+    "web_scraping": "Web scraping"
   }
 }

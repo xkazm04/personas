@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -23,6 +24,8 @@ export { formatErr } from './overviewHelpers';
 import { buildTodayActivity, type ActivityEvent, type ActivityKind } from './overviewHelpers';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { open as openExternal } from '@tauri-apps/plugin-shell';
+import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 
 
 
@@ -94,6 +97,15 @@ export default function ProjectOverviewPage() {
 
   const [showRepoChain, setShowRepoChain] = useState(false);
   const [showMonitorChain, setShowMonitorChain] = useState(false);
+
+  // Track when the vital signs last settled so the header can show a live
+  // "updated Nm ago" instead of a static placeholder. Bumps whenever fresh
+  // repo or monitor stats land (initial load, manual refresh, project switch).
+  const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (data.repoStats || data.monitorStats) setLastLoadedAt(Date.now());
+  }, [data.repoStats, data.monitorStats]);
+  const statsLoading = data.repoState === 'loading' || data.monitorState === 'loading';
 
   // Cross-tab "What changed today" feed — pulls from the same store slices
   // that power Scanner / Triage / Task Runner / Lifecycle, then dedupes,
@@ -195,6 +207,37 @@ export default function ProjectOverviewPage() {
     ? credentials.find((c) => c.id === activeProject.monitoring_credential_id) ?? null
     : null;
 
+  // Vital tiles double as jump-offs to their source: repo tiles deep-link to
+  // the connected GitHub/GitLab subpage (or route to setup when unlinked), and
+  // monitoring tiles reveal the Sentry connection chain inline.
+  const repoTileIds: TileId[] = ['open_issues', 'open_prs', 'commits'];
+  const isRepoTile = (id: TileId) => repoTileIds.includes(id);
+  const handleTileActivate = (id: TileId) => {
+    if (isRepoTile(id)) {
+      if (repoLinked && activeProject.github_url) {
+        const sub = id === 'open_issues'
+          ? (isGitLab ? '/-/issues' : '/issues')
+          : id === 'open_prs'
+            ? (isGitLab ? '/-/merge_requests' : '/pulls')
+            : (isGitLab ? '/-/commits' : '/commits');
+        const safe = sanitizeExternalUrl(activeProject.github_url.replace(/\/+$/, '') + sub);
+        if (safe) void openExternal(safe).catch(silentCatch('ProjectOverviewPage:openRepoTile'));
+      } else if (repoState === 'empty') {
+        setSidebarSection('credentials');
+      } else {
+        setDevToolsTab('projects');
+      }
+      return;
+    }
+    // Monitoring tiles — reveal the Sentry chain, or route to credentials setup.
+    if (monitorState === 'empty') setSidebarSection('credentials');
+    else setShowMonitorChain(true);
+  };
+  const tileActionLabel = (id: TileId): string => {
+    if (isRepoTile(id)) return repoLinked && activeProject.github_url ? po.vital_jump_repo : po.vital_jump_setup;
+    return monitorState === 'empty' ? po.vital_jump_setup : po.vital_jump_monitor;
+  };
+
   return (
     <ContentBox>
       <ContentHeader
@@ -213,9 +256,25 @@ export default function ProjectOverviewPage() {
       <ContentBody>
         {/* ==================== Vital signs strip ==================== */}
         <section className="mb-6">
-          <div className="flex items-baseline justify-between mb-3">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="typo-label text-foreground"><DebtText k="auto_vital_signs_5bf24670" /></h2>
-            <span className="typo-caption text-foreground"><DebtText k="auto_last_refresh_just_now_020e3c0a" /></span>
+            <div className="flex items-center gap-2">
+              {lastLoadedAt && (
+                <span className="typo-caption text-foreground">
+                  {po.vital_updated_label}{' '}
+                  <RelativeTime timestamp={lastLoadedAt} className="tabular-nums" />
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => refresh()}
+                title={t.common.refresh}
+                aria-label={t.common.refresh}
+                className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-foreground ${statsLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {(() => {
@@ -243,6 +302,8 @@ export default function ProjectOverviewPage() {
                     onDragEnd={() => setDraggingTileId(null)}
                     onDragOver={(e) => { e.preventDefault(); }}
                     onDrop={(e) => { e.preventDefault(); handleTileDrop(id); }}
+                    onActivate={() => handleTileActivate(id)}
+                    actionLabel={tileActionLabel(id)}
                   />
                 );
               });
@@ -438,6 +499,7 @@ const TONE_TEXT: Record<Tone, string> = {
 function VitalTile({
   icon: Icon, value, label, tone, loading,
   draggable, isDragging, onDragStart, onDragEnd, onDragOver, onDrop,
+  onActivate, actionLabel,
 }: {
   icon: typeof CircleDot;
   value: string | number;
@@ -450,6 +512,8 @@ function VitalTile({
   onDragEnd?: () => void;
   onDragOver?: (e: DragEvent<HTMLDivElement>) => void;
   onDrop?: (e: DragEvent<HTMLDivElement>) => void;
+  onActivate?: () => void;
+  actionLabel?: string;
 }) {
   return (
     <div
@@ -458,9 +522,17 @@ function VitalTile({
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
       onDrop={onDrop}
+      onClick={onActivate}
+      onKeyDown={onActivate ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onActivate(); }
+      } : undefined}
+      role={onActivate ? 'button' : undefined}
+      tabIndex={onActivate ? 0 : undefined}
+      title={actionLabel}
+      aria-label={onActivate && actionLabel ? `${label} — ${actionLabel}` : undefined}
       className={`rounded-card border ${TONE_BG[tone]} px-3 py-2.5 transition-all ${
         draggable ? 'cursor-grab active:cursor-grabbing' : ''
-      } ${isDragging ? 'opacity-40' : ''}`}
+      } ${onActivate ? 'hover:ring-1 hover:ring-primary/30 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40' : ''} ${isDragging ? 'opacity-40' : ''}`}
     >
       <div className="flex items-center justify-between mb-1.5">
         <Icon className={`w-3.5 h-3.5 ${TONE_TEXT[tone]}`} />

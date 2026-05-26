@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse مجموعة",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "لا أحداث match the current filters",
-  "dead_letter_clear_filters_to_see": "مسح filters to see all dead-lettered أحداث"
+  "dead_letter_clear_filters_to_see": "مسح filters to see all dead-lettered أحداث",
+  "col_event": "الحدث",
+  "col_listeners": "المستمعون",
+  "source_personas_filter": "الشخصيات المصدر",
+  "listeners_filter": "المستمعون",
+  "filter_events_placeholder": "تصفية الأحداث..."
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ChevronDown, Search, ExternalLink } from 'lucide-react';
+import { ChevronDown, Search, ExternalLink, AlertCircle, Lock } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 
 const Github = ({ className }: { className?: string }) => (
@@ -21,9 +21,37 @@ interface GitHubRepo {
   updated_at: string;
 }
 
+/**
+ * Parse a repo URL into owner/name. Accepts any http(s) host with at least a
+ * two-segment path (github.com/owner/repo, gitlab.com/group/repo, self-hosted
+ * GitLab subgroups collapse to the first two segments). Returns null for
+ * anything that isn't a plausible repository URL.
+ */
+function parseRepoUrl(url: string): { owner: string; name: string } | null {
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  try {
+    const u = new URL(trimmed);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (parts.length < 2) return null;
+    return { owner: parts[0]!, name: parts[parts.length - 1]!.replace(/\.git$/, '') };
+  } catch {
+    return null;
+  }
+}
+
 interface Props {
   value: string;
   onChange: (url: string) => void;
+  /**
+   * Preferred GitHub PAT credential to list repositories from. When set, the
+   * picker authenticates with this exact connector (so the repo list reflects
+   * the connector the user chose in the modal) instead of auto-discovering the
+   * first available one. Falls back to auto-discovery when null/unset or when
+   * the chosen credential isn't a usable GitHub PAT.
+   */
+  credentialId?: string | null;
 }
 
 /**
@@ -35,7 +63,7 @@ interface Props {
  *   and a simple manual URL input is shown instead.
  * - No errors are ever surfaced to the user.
  */
-export function GitHubRepoSelector({ value, onChange }: Props) {
+export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
   const { t } = useTranslation();
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [hasSelector, setHasSelector] = useState(false);
@@ -44,25 +72,33 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // On mount: discover GitHub credential, healthcheck it, fetch repos
+  // Discover the GitHub credential, healthcheck it, fetch repos. Re-runs when
+  // the preferred credential changes so the dropdown always lists repositories
+  // from the connector the user selected in the modal.
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setHasSelector(false);
+    setRepos([]);
 
     (async () => {
       try {
         const credentials = await listCredentials();
-        const ghCred = credentials.find(
-          (c) => c.serviceType === 'github' || c.serviceType === 'github_actions',
-        );
-        if (!ghCred) { setLoading(false); return; }
+        const isGh = (c: { serviceType: string }) => c.serviceType === 'github' || c.serviceType === 'github_actions';
+        // Prefer the explicitly-selected connector; fall back to the first
+        // usable GitHub PAT when it's unset or not a GitHub credential.
+        const ghCred = (credentialId
+          ? credentials.find((c) => c.id === credentialId && isGh(c))
+          : undefined) ?? credentials.find(isGh);
+        if (!ghCred) { if (!cancelled) setLoading(false); return; }
 
         const health = await healthcheckCredential(ghCred.id);
-        if (!health.success) { setLoading(false); return; }
+        if (!health.success) { if (!cancelled) setLoading(false); return; }
 
         const res = await executeApiRequest(
           ghCred.id,
           'GET',
-          '/user/repos?per_page=100&sort=updated&type=owner',
+          '/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
           { Accept: 'application/vnd.github+json' },
         );
 
@@ -79,7 +115,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
     })();
 
     return () => { cancelled = true; };
-  }, []);
+  }, [credentialId]);
 
   const handleSelect = useCallback((repo: GitHubRepo) => {
     onChange(repo.html_url);
@@ -98,6 +134,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
 
   // ---- Manual URL input (fallback when no credential) ----
   if (!hasSelector) {
+    const manualValid = !value.trim() || parseRepoUrl(value) !== null;
     return (
       <div>
         <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
@@ -110,9 +147,11 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={t.plugins.dev_projects.github_url_placeholder}
-            className="w-full px-3 py-2 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-modal text-foreground placeholder:text-foreground/40 focus-ring"
+            className={`w-full px-3 py-2 pr-8 text-md bg-secondary/40 border rounded-modal text-foreground placeholder:text-foreground/40 focus-ring ${
+              manualValid ? 'border-primary/10' : 'border-status-error/50'
+            }`}
           />
-          {value && (
+          {value && manualValid && (
             <a
               href={value}
               target="_blank"
@@ -124,6 +163,12 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
             </a>
           )}
         </div>
+        {!manualValid && (
+          <p className="typo-caption text-status-error mt-1 flex items-center gap-1">
+            <AlertCircle className="w-3 h-3 flex-shrink-0" />
+            {t.plugins.dev_projects.invalid_repo_url}
+          </p>
+        )}
       </div>
     );
   }
@@ -133,7 +178,13 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
     ? repos.filter((r) => r.full_name.toLowerCase().includes(search.toLowerCase()))
     : repos;
 
-  const selectedRepoName = repos.find((r) => r.html_url === value)?.full_name;
+  const selectedRepo = repos.find((r) => r.html_url === value) ?? null;
+  const selectedRepoName = selectedRepo?.full_name;
+  // When the bound URL isn't in the fetched list (e.g. editing a project whose
+  // repo lives under a different connector), still parse owner/name from the URL
+  // so the preview card stays useful.
+  const parsedSelected = !selectedRepo && value ? parseRepoUrl(value) : null;
+  const previewName = selectedRepo?.full_name ?? (parsedSelected ? `${parsedSelected.owner}/${parsedSelected.name}` : null);
 
   return (
     <div className="relative">
@@ -191,7 +242,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
                       <div className="flex items-center gap-1.5">
                         <span className="typo-caption font-medium text-foreground truncate">{repo.full_name}</span>
                         {repo.private && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">private</span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">{t.plugins.dev_projects.repo_private}</span>
                         )}
                       </div>
                       {repo.description && (
@@ -204,6 +255,36 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
             </div>
           </div>
         </>
+      )}
+
+      {/* Selected-repo preview — richer confirmation of the bound repository */}
+      {previewName && !open && (
+        <div className="mt-2 rounded-input border border-primary/10 bg-secondary/30 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Github className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+            <span className="typo-caption font-medium text-foreground truncate flex-1">{previewName}</span>
+            {selectedRepo?.private && (
+              <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                <Lock className="w-2.5 h-2.5" />
+                {t.plugins.dev_projects.repo_private}
+              </span>
+            )}
+            <a
+              href={value}
+              target="_blank"
+              rel="noopener noreferrer"
+              title={t.plugins.dev_projects.open_repo}
+              aria-label={t.plugins.dev_projects.open_repo}
+              className="flex-shrink-0 text-foreground hover:text-primary transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+          {selectedRepo?.description && (
+            <p className="typo-caption text-foreground mt-1 line-clamp-2">{selectedRepo.description}</p>
+          )}
+        </div>
       )}
     </div>
   );

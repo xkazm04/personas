@@ -95,6 +95,7 @@ const NotificationCenter = lazy(() => import("@/features/shared/components/feedb
 const ShareLinkHandler = lazy(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
 const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
 const AthenaOrbLayer = lazy(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
+const AthenaGuideLayer = lazy(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating
@@ -112,6 +113,7 @@ const LAZY_OVERLAY_IMPORTS = [
   () => import("@/features/settings/sub_network/components/ShareLinkHandler"),
   () => import("@/features/plugins/companion/CompanionPanel"),
   () => import("@/features/plugins/companion/orb/AthenaOrbLayer"),
+  () => import("@/features/plugins/companion/orb/AthenaGuideLayer"),
 ] as const;
 
 function DevMobilePreviewShortcut() {
@@ -306,6 +308,7 @@ export default function App() {
                 <ShareLinkHandler />
                 <CompanionPanel />
                 <AthenaOrbLayer />
+                <AthenaGuideLayer />
               </Suspense>
             </>
           )}

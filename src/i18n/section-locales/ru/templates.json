@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "Для этой возможности нет вопросов.",
+    "error_policy": {
+      "title": "Обработка ошибок",
+      "intro": "Повторы и самовосстановление выполняются автоматически. Выберите, что произойдет, если сбой не сможет восстановиться сам.",
+      "incident_label": "Создать инцидент",
+      "incident_desc": "Показывать невосстановленные сбои во входящих инцидентов для триажа.",
+      "lab_label": "Отправить в Lab",
+      "lab_desc": "Включить автоулучшение Lab (эволюцию промптов) для этой персоны, когда сбои повторяются.",
+      "escalate_after_label": "Эскалировать после",
+      "escalate_after_desc": "Количество последовательных сбоев перед созданием инцидента или отправкой в Lab."
+    }
   },
   "scan": {
     "scanning_draft": "Сканирование черновика агента...",

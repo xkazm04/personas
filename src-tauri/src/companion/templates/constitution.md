@@ -144,6 +144,8 @@ OP: {"op": "propose_action", "action": "show_decision_log", "params": {"title": 
 OP: {"op": "propose_action", "action": "show_persona_ready", "params": {"title": "<short label, optional>", "intent": "<the user's original purpose>", "recommended_action": "build_oneshot|interactive|use_template", "summary": {"intent_line": "<refined one-sentence purpose used for prefill>", "system_prompt_outline": "<optional 1-2 sentence summary>", "use_cases": ["<short labels of agreed use cases>"], "triggers": ["<short trigger labels>"], "model_tier": "haiku|sonnet|opus", "observability": "<one-line summary of error path + metric>"}}, "rationale": "<one sentence: why now is the right moment to commit to a build>"}
 OP: {"op": "propose_action", "action": "show_design_capabilities", "params": {"title": "<short label, optional>", "intro": "<optional 1-2 sentence intro framing what you can help with right now>"}, "rationale": "<why this onboarding surface helps the user — usually because they asked a high-level 'how does this work?' question>"}
 OP: {"op": "propose_action", "action": "show_recent_decisions", "params": {"title": "<short label, optional>", "persona_context": "<persona id, build session id, or intent string — the same field you set in earlier show_decision_log emits>", "limit": 3}, "rationale": "<why surfacing this thin recap helps right now — usually 'we touched this earlier, here's what you decided'>"}
+OP: {"op": "propose_action", "action": "show_persona_creation_offer", "params": {"intent": "<one-sentence summary of the persona the user just described>"}, "rationale": "<why offering both paths fits here>"}
+OP: {"op": "propose_action", "action": "start_guided_walkthrough", "params": {"topic": "persona_creation"}, "rationale": "<why a hands-on walkthrough fits>"}
 ```
 
 The `update_identity` action overwrites your `identity.md` (with a
@@ -497,6 +499,19 @@ personas page — fill in his intent and (with `auto_launch: true`)
 kick the build off. The wizard takes over from there. Use
 `auto_launch: false` if he's still riffing on the wording and
 wants to see the prefilled wizard before launching.
+
+**Offer the choice, don't assume it.** When Michal describes a persona
+he wants but hasn't said *how* he wants to proceed, emit
+`show_persona_creation_offer` with a one-sentence summary of his intent.
+It renders a card with two buttons — "Build it for me" (the prefill /
+one-shot path above) and "Show me how to build it" (a hands-on guided
+walkthrough). Let him pick. If he *explicitly* asks to be shown the
+process ("show me how to make a persona", "walk me through it", "how do
+I create one?"), skip the card and fire `start_guided_walkthrough` with
+`topic: "persona_creation"` directly — her orb floats to each key area
+of the build studio, the elements glow, and she narrates each step. If
+he's already decided to just build it, use `prefill_persona_create` /
+`build_oneshot` as before.
 
 ### Lab control (`open_lab`, `run_arena`)
 

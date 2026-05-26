@@ -71,6 +71,33 @@ export interface TourStateSnapshot {
   allCompleted: boolean;
 }
 
+/** Snapshot of an Athena guided-walkthrough (orb glide + element glow + caption). */
+export interface GuidanceStateSnapshot {
+  active: boolean;
+  topic: string | null;
+  stepIndex: number;
+  playing: boolean;
+  highlightTestId: string | null;
+  orbRect: { x: number; y: number; width: number; height: number } | null;
+  glowRect: { x: number; y: number; width: number; height: number } | null;
+  captionText: string | null;
+}
+
+/**
+ * Every tour id in `TOUR_REGISTRY` (src/stores/slices/system/tourSlice.ts).
+ * Kept in sync by hand — if a tour is added/removed there, update this list
+ * so `bootstrapFreshUser()` keeps resetting all of them.
+ */
+export const ALL_TOUR_IDS = [
+  'getting-started',
+  'getting-started-simple',
+  'execution-observability',
+  'orchestration-events',
+  'plugins-explorer',
+  'schedules-mastery',
+  'templates-recipes',
+] as const;
+
 export class CompanionBridge {
   constructor(private readonly baseUrl: string = BASE_URL) {}
 
@@ -420,6 +447,43 @@ export class CompanionBridge {
     return r.result as T;
   }
 
+  // ── Fresh-user bootstrap ───────────────────────────────────────────
+
+  /**
+   * Evaluate fire-and-forget JS in the WebView (no return value). For
+   * result-bearing calls use a named bridge method via `bridgeExec`.
+   */
+  async eval(js: string): Promise<void> {
+    await this.post('/eval', { js });
+  }
+
+  /**
+   * Put the app into the state a brand-new user would reach AFTER getting
+   * past first-run — i.e. ready to drive the guided tours.
+   *
+   * On an empty isolated DB (see scripts/test/launch-isolated.mjs) the
+   * first-run onboarding modal auto-opens, and `GuidedTour` renders nothing
+   * while `onboardingActive` (it returns null so the modal owns the screen).
+   * So before any tour can be walked we must dismiss that modal. We also
+   * reset all seven tours so progress carried in WebView localStorage from a
+   * prior session can't pre-complete steps.
+   *
+   * Idempotent and harmless against a normal running instance, so specs can
+   * call it unconditionally in `beforeAll`.
+   */
+  async bootstrapFreshUser(): Promise<void> {
+    // finishOnboarding(): onboardingActive=false, onboardingCompleted=true —
+    // see src/stores/slices/system/onboardingSlice.ts. There is no dedicated
+    // bridge method for it, so reach the store via the global exposed in
+    // src/test/automation/bridge.ts (`window.__SYSTEM_STORE__`).
+    await this.eval('window.__SYSTEM_STORE__ && window.__SYSTEM_STORE__.getState().finishOnboarding()');
+    // Give the eval a beat to apply before the tour resets read state.
+    await sleep(300);
+    for (const id of ALL_TOUR_IDS) {
+      await this.tourReset(id);
+    }
+  }
+
   // ── Guided-tour helpers ────────────────────────────────────────────
 
   /** Start (or resume) a guided tour. Omit `tourId` to use the active one. */
@@ -440,6 +504,45 @@ export class CompanionBridge {
   /** Snapshot the guided-tour state for assertions. */
   tourState(): Promise<TourStateSnapshot> {
     return this.bridgeExec<TourStateSnapshot>('tourState');
+  }
+
+  // ── Athena guided-walkthrough helpers ──────────────────────────────
+
+  /** Start a guided walkthrough by topic (e.g. 'persona_creation') deterministically. */
+  startGuidedWalkthrough(topic: string): Promise<{ success: boolean; topic: string }> {
+    return this.bridgeExec('startGuidedWalkthrough', { topic });
+  }
+
+  /** Snapshot the walkthrough state: orb rect, glow rect, caption, step index. */
+  guidanceState(): Promise<GuidanceStateSnapshot> {
+    return this.bridgeExec<GuidanceStateSnapshot>('guidanceState');
+  }
+
+  /** Click the caption's Skip control to advance a step. */
+  skipGuidanceStep(): Promise<unknown> {
+    return this.clickTestId('athena-guide-skip');
+  }
+
+  /** Click the caption's Stop control to end the walkthrough. */
+  stopGuidance(): Promise<unknown> {
+    return this.clickTestId('athena-guide-stop');
+  }
+
+  /** Poll `guidanceState` until `predicate` holds; returns the matching snapshot. */
+  async waitForGuidance(
+    predicate: (s: GuidanceStateSnapshot) => boolean,
+    timeoutMs = 8_000,
+  ): Promise<GuidanceStateSnapshot> {
+    const deadline = Date.now() + timeoutMs;
+    let last: GuidanceStateSnapshot | null = null;
+    while (Date.now() < deadline) {
+      last = await this.guidanceState();
+      if (predicate(last)) return last;
+      await sleep(120);
+    }
+    throw new Error(
+      `waitForGuidance: predicate not met within ${timeoutMs}ms (last: ${JSON.stringify(last)})`,
+    );
   }
 
   // ── Persona build helpers (real build → promote) ───────────────────

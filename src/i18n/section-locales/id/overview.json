@@ -89,7 +89,8 @@
     "source_healing_log": "Log pemulihan",
     "source_provider": "Penyedia",
     "source_policy": "Kebijakan",
-    "source_healing_issue": "Masalah pemulihan"
+    "source_healing_issue": "Masalah pemulihan",
+    "source_execution_error": "Kesalahan eksekusi"
   },
   "observability": {
     "title": "Observabilitas",

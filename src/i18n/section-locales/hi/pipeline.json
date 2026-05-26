@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace सेटिंग्स saved",
     "workspace_save_failed": "Couldn't save workspace सेटिंग्स",
-    "workspace_inherit": "विरासत में लें"
+    "workspace_inherit": "विरासत में लें",
+    "add_persona_draft_hint": "ड्राफ्ट personas को टीम में शामिल होने से पहले प्रमोट करना होगा।",
+    "checklist_heading": "लाइव प्रगति",
+    "checklist_background_note": "पृष्ठभूमि में चलता है",
+    "step_status_pending": "लंबित",
+    "step_status_matching": "मिलान",
+    "step_status_running": "चल रहा है",
+    "step_status_done": "पूर्ण",
+    "step_status_skipped": "छोड़ा गया",
+    "step_status_failed": "विफल",
+    "step_status_awaiting_review": "समीक्षा चाहिए",
+    "board_label": "असाइनमेंट बोर्ड",
+    "board_col_queued": "कतार में",
+    "board_col_running": "चल रहा है",
+    "board_col_review": "समीक्षा चाहिए",
+    "board_col_done": "पूर्ण",
+    "board_col_stopped": "रुका हुआ",
+    "board_empty": "अभी कोई असाइनमेंट नहीं है। शुरू करने के लिए Orchestrate में लक्ष्य निर्धारित करें।"
   }
 }

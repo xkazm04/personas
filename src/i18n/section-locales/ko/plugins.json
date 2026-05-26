@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "초기화",
     "team_preview_canvas_reset_title": "확대/축소 및 이동을 기본값으로 초기화",
     "create_codebase_connector_label": "생성 Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "GitHub 커넥터"
   },
   "dev_runner": {
     "self_healing": "자가 복구",

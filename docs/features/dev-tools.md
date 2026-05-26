@@ -15,9 +15,9 @@ project-selector banner sits above every tab except **Projects**.
 
 | Tab | Module | Purpose |
 | --- | --- | --- |
-| Overview | `sub_overview` | Per-project metrics rollup. |
+| Overview | `sub_overview` | Per-project metrics rollup. Six vital-sign tiles (issues, PRs, commits, unresolved, events 24h/7d) are drag-reorderable (order persists per project) and clickable: repo tiles deep-link to the connected GitHub/GitLab subpage, monitoring tiles reveal the Sentry connection chain. The header carries a live "updated Nm ago" timestamp and a manual Refresh control. |
 | Projects | `sub_projects` | Register, edit, archive projects (see below). |
-| Goals | `sub_goals` | Track project goals (kanban / constellation / pulse views). **This is the home for goal management** — the Projects tab no longer embeds a goal board. |
+| Goals | `sub_goals` | Track project goals. A variant tab strip switches between four views: **Constellation** (force-directed graph), **Project Pulse** (triage + spotlight), **Dependency Flow** (dependency-aware swimlanes), and **Kanban** (your-turn / agent's-turn / done board). **This is the home for goal management** — the Projects tab no longer embeds a goal board. |
 | Context Map | `sub_context` | Codebase scan results: groups, contexts, entry points, keywords. |
 | Idea Scanner | `sub_scanner` | Generate improvement ideas from the codebase. |
 | Idea Triage | `sub_triage` | Accept / reject scanned ideas into the backlog. |
@@ -36,13 +36,23 @@ the project-selector banner on the other tabs.
 
 ### Create / edit project (`ProjectModal.tsx`)
 
+The dialog is grouped into three labelled sections — **Project**, **Source
+control**, and **Workspace** — under a title + subtitle, in a roomy two-column
+layout.
+
 - **Folder first:** pick a project folder. The **project name is auto-extracted
   from the folder name** and pre-filled; the field stays editable (a pencil
   affordance + an "auto-filled from folder" hint), and editing it stops the
   auto-fill from overwriting your choice.
 - **Project type** — optional visual tag (React, NodeJS, Rust, …).
-- **GitHub** — a searchable repo picker when a healthy GitHub PAT credential
-  exists, otherwise a manual URL input (muted placeholder).
+- **GitHub connector** — bind a vault GitHub PAT (persisted as
+  `pr_credential_id`) that authorises PR / source-control ops **and drives the
+  repository picker beside it**: the searchable repo dropdown lists
+  repositories from the selected connector (re-fetching when you change it),
+  falling back to auto-discovery of the first usable PAT, or to a manual URL
+  input when no healthy credential exists. A picked repo shows an inline preview
+  (owner/name, private badge, description, open ↗); manual URLs are validated
+  with an inline error when malformed.
 - **Bound team** — optional; binds the project to a PersonaTeam pipeline.
 - **Create Codebase connector** (create mode only, on by default) — when
   checked, creating the project also creates a `Codebase — <project name>`

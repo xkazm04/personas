@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "此能力没有问题。",
+    "error_policy": {
+      "title": "错误处理",
+      "intro": "重试和自愈会自动进行。请选择当故障无法自行恢复时要发生的操作。",
+      "incident_label": "创建事件",
+      "incident_desc": "在事件收件箱中显示未恢复的故障以便分诊。",
+      "lab_label": "发送到 Lab",
+      "lab_desc": "当故障反复出现时，为此 persona 启用 Lab 自动改进（提示词演化）。",
+      "escalate_after_label": "升级处理时间",
+      "escalate_after_desc": "创建事件或发送到 Lab 前的连续失败次数。"
+    }
   },
   "scan": {
     "scanning_draft": "扫描代理草稿中...",

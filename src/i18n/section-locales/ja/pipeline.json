@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace 設定 saved",
     "workspace_save_failed": "Couldn't save workspace 設定",
-    "workspace_inherit": "継承"
+    "workspace_inherit": "継承",
+    "add_persona_draft_hint": "下書きペルソナは、チームに参加する前に昇格する必要があります。",
+    "checklist_heading": "ライブ進行状況",
+    "checklist_background_note": "バックグラウンドで実行中",
+    "step_status_pending": "保留中",
+    "step_status_matching": "照合中",
+    "step_status_running": "実行中",
+    "step_status_done": "完了",
+    "step_status_skipped": "スキップ済み",
+    "step_status_failed": "失敗",
+    "step_status_awaiting_review": "レビューが必要",
+    "board_label": "割り当てボード",
+    "board_col_queued": "キュー済み",
+    "board_col_running": "実行中",
+    "board_col_review": "レビューが必要",
+    "board_col_done": "完了",
+    "board_col_stopped": "停止済み",
+    "board_empty": "割り当てはまだありません。開始するには Orchestrate で目標を定義してください。"
   }
 }

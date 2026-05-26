@@ -89,7 +89,8 @@
     "source_healing_log": "سجل المعالجة",
     "source_provider": "المزوّد",
     "source_policy": "سياسة",
-    "source_healing_issue": "مشكلة معالجة"
+    "source_healing_issue": "مشكلة معالجة",
+    "source_execution_error": "خطأ في التنفيذ"
   },
   "observability": {
     "title": "المراقبة",

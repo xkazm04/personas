@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "撤销",
-    "redo": "重做"
+    "redo": "重做",
+    "section_workspace": "工作区",
+    "toggle_sidebar": "折叠 / 展开侧边栏",
+    "toggle_monitor": "打开 / 关闭 Persona Monitor",
+    "toggle_athena": "打开 / 关闭 Athena 聊天"
   }
 }

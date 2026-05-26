@@ -707,7 +707,10 @@
     "test_all_credentials": "모든 자격 증명 테스트",
     "test_all": "전체 테스트",
     "daily_progress": "일일 {done}/{total}",
-    "testing_progress": "테스트 중 {done}/{total}"
+    "testing_progress": "테스트 중 {done}/{total}",
+    "title_catalog": "카탈로그",
+    "title_dependencies": "종속성",
+    "title_databases": "데이터베이스"
   },
   "bulk_healthcheck": {
     "title": "상태 확인 결과",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "구성된 것 없음.",
-    "required_badge": "필수"
+    "required_badge": "필수",
+    "kv_key_label": "키",
+    "kv_value_label": "값",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "값 표시",
+    "kv_hide_value": "값 숨기기",
+    "kv_remove": "변수 제거",
+    "kv_add": "추가"
   },
   "design_phases": {
     "saving": "자격 증명 저장 중...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "광고",
+    "ai": "AI",
+    "analytics": "분석",
+    "automation": "자동화",
+    "bi": "비즈니스 인텔리전스",
+    "browser_automation": "브라우저 자동화",
+    "calendar": "캘린더",
+    "ci_cd": "CI/CD",
+    "cloud": "클라우드",
+    "containers": "컨테이너",
+    "crm": "CRM",
+    "custom": "사용자 지정",
+    "database": "데이터베이스",
+    "design": "디자인",
+    "development": "개발",
+    "ecommerce": "전자상거래",
+    "email": "이메일",
+    "finance": "금융",
+    "forms": "양식",
+    "integration": "통합",
+    "knowledge_base": "지식 베이스",
+    "mcp": "MCP",
+    "messaging": "메시징",
+    "monitoring": "모니터링",
+    "notifications": "알림",
+    "personalization": "개인화",
+    "productivity": "생산성",
+    "project_management": "프로젝트 관리",
+    "research": "리서치",
+    "scheduling": "일정 관리",
+    "social": "소셜",
+    "source_control": "소스 제어",
+    "spreadsheet": "스프레드시트",
+    "storage": "스토리지",
+    "support": "지원",
+    "time_tracking": "시간 추적",
+    "vector_search": "벡터 검색",
+    "web_scraping": "웹 스크래핑"
   }
 }

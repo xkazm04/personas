@@ -7,162 +7,181 @@
 # Test info
 
 - Name: getting-started-tour.spec.ts >> Getting Started guided tour — full real build >> appearance → credentials → build & promote agent → run it
-- Location: tests\playwright\getting-started-tour.spec.ts:79:3
+- Location: tests\playwright\getting-started-tour.spec.ts:118:3
 
 # Error details
 
 ```
-Error: waitForBuildPhase: undefined
+Error: build did not reach a promotable phase within 10 min
 ```
 
 # Test source
 
 ```ts
-  23  | const TOUR_ID = 'getting-started';
-  24  | const INTENT =
-  25  |   'Summarize my unread GitHub notifications every morning and post a short digest to a channel.';
-  26  | 
-  27  | // Generic answers keyed by the build's question cellKeys — any subset that
-  28  | // is actually asked gets matched; the rest are ignored.
-  29  | const GENERIC_ANSWERS: Record<string, string> = {
-  30  |   'use-cases': 'Summarize unread GitHub notifications into a short morning digest.',
-  31  |   connectors: 'GitHub to read notifications; a messaging channel to post the digest.',
-  32  |   triggers: 'Run on a daily schedule each morning.',
-  33  |   'human-review': 'No human review — send automatically.',
-  34  |   messages: 'Post a concise bulleted digest to the chosen channel.',
-  35  |   events: 'No event subscriptions.',
-  36  |   memory: 'No memory needed between runs.',
-  37  |   'error-handling': 'On failure, retry once then notify me.',
-  38  | };
-  39  | 
-  40  | let app: CompanionBridge;
-  41  | 
-  42  | const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-  43  | 
-  44  | /** Poll until a selector is present in the DOM (works for position:fixed). */
-  45  | async function waitPresent(selector: string, timeoutMs = 15_000): Promise<void> {
-  46  |   const deadline = Date.now() + timeoutMs;
-  47  |   while (Date.now() < deadline) {
-  48  |     const nodes = await app.query(selector);
-  49  |     if (nodes.length > 0) return;
-  50  |     await sleep(300);
-  51  |   }
-  52  |   throw new Error(`selector not present within ${timeoutMs}ms: ${selector}`);
-  53  | }
-  54  | 
-  55  | /** Poll tourState until the named step reports done. */
-  56  | async function expectStepDone(stepId: string, timeoutMs = 15_000): Promise<void> {
-  57  |   const deadline = Date.now() + timeoutMs;
-  58  |   while (Date.now() < deadline) {
-  59  |     const s = await app.tourState();
-  60  |     if (s.stepCompleted.find((x) => x.id === stepId)?.done) return;
-  61  |     await sleep(500);
-  62  |   }
-  63  |   const s = await app.tourState();
-  64  |   throw new Error(
-  65  |     `step "${stepId}" not completed within ${timeoutMs}ms; progress=${JSON.stringify(s.stepCompleted)}`,
-  66  |   );
-  67  | }
-  68  | 
-  69  | test.describe('Getting Started guided tour — full real build', () => {
-  70  |   // Real Opus build + smoke test + a real execution. Be generous.
-  71  |   test.setTimeout(900_000);
-  72  | 
-  73  |   test.beforeAll(async () => {
-  74  |     app = bridge();
-  75  |     const h = await app.health();
-  76  |     expect(h.status).toBe('ok');
-  77  |   });
-  78  | 
-  79  |   test('appearance → credentials → build & promote agent → run it', async () => {
-  80  |     // Clean slate, then start. Reset the tier partner too: startTour
-  81  |     // migrates completed shared step ids from `getting-started-simple`, so a
-  82  |     // stale partner would otherwise pre-complete appearance and resume at
-  83  |     // step 2.
-  84  |     await app.tourReset('getting-started-simple');
-  85  |     await app.tourReset(TOUR_ID);
-  86  |     await app.tourStart(TOUR_ID);
-  87  |     await waitPresent('[data-testid="tour-panel"]', 30_000);
-  88  | 
-  89  |     let state = await app.tourState();
-  90  |     expect(state.active).toBe(true);
-  91  |     expect(state.tourId).toBe(TOUR_ID);
-  92  |     expect(state.stepIds).toEqual([
-  93  |       'appearance-setup',
-  94  |       'credentials-intro',
-  95  |       'persona-creation',
-  96  |       'first-execution',
-  97  |     ]);
-  98  | 
-  99  |     // ── Step 1: appearance (lightweight gate) ───────────────────────────
-  100 |     await app.tourEmit('tour:appearance-changed');
-  101 |     await expectStepDone('appearance-setup');
-  102 |     await app.clickTestId('tour-btn-next');
+  77  | async function stepDoneWithin(stepId: string, timeoutMs: number): Promise<boolean> {
+  78  |   const deadline = Date.now() + timeoutMs;
+  79  |   while (Date.now() < deadline) {
+  80  |     const s = await app.tourState();
+  81  |     if (s.stepCompleted.find((x) => x.id === stepId)?.done) return true;
+  82  |     await sleep(500);
+  83  |   }
+  84  |   return false;
+  85  | }
+  86  | 
+  87  | /**
+  88  |  * Answer every currently-pending build question. Reads the live pending set
+  89  |  * (don't assume which keys are asked) and maps each cellKey to its tailored
+  90  |  * answer or FALLBACK_ANSWER. Returns how many were pending.
+  91  |  */
+  92  | async function answerAllPendingBuild(): Promise<number> {
+  93  |   const { questions } = await app.listPendingBuildQuestions();
+  94  |   const keys = (questions as Array<{ cellKey?: string }>)
+  95  |     .map((q) => q.cellKey)
+  96  |     .filter((k): k is string => typeof k === 'string');
+  97  |   if (keys.length === 0) return 0;
+  98  |   const map: Record<string, string> = {};
+  99  |   for (const k of keys) map[k] = GENERIC_ANSWERS[k] ?? FALLBACK_ANSWER;
+  100 |   await app.answerPendingBuildQuestions(map);
+  101 |   return keys.length;
+  102 | }
   103 | 
-  104 |     // ── Step 2: credentials ─────────────────────────────────────────────
-  105 |     await waitPresent('[data-testid="tour-cred-root"]', 30_000);
-  106 |     await app.clickTestId('tour-cred-category-ai');
-  107 |     await app.clickTestId('tour-cred-category-messaging');
-  108 |     await app.tourEmit('tour:credentials-explored');
-  109 |     await expectStepDone('credentials-intro');
-  110 |     await app.clickTestId('tour-btn-next');
-  111 | 
-  112 |     // ── Step 3: build the agent on the Glyph (REAL) ─────────────────────
-  113 |     await waitPresent('[data-testid="tour-coach-root"]', 30_000);
-  114 |     const started = await app.startBuildFromIntent(INTENT, 60_000);
-  115 |     if (!started.success) throw new Error(`startBuildFromIntent: ${started.error}`);
-  116 | 
-  117 |     // Answer clarifying questions until the draft leaves the questioning phase.
-  118 |     for (let round = 0; round < 12; round++) {
-  119 |       const r = await app.waitForBuildPhase(
-  120 |         ['awaiting_input', 'resolving', 'draft_ready', 'testing', 'test_complete', 'failed'],
-  121 |         120_000,
-  122 |       );
-> 123 |       if (!r.success) throw new Error(`waitForBuildPhase: ${r.error}`);
-      |                             ^ Error: waitForBuildPhase: undefined
-  124 |       if (r.phase === 'failed') throw new Error('build entered failed phase');
-  125 |       if (r.phase === 'draft_ready' || r.phase === 'testing' || r.phase === 'test_complete') break;
-  126 |       await app.answerPendingBuildQuestions(GENERIC_ANSWERS);
-  127 |     }
-  128 | 
-  129 |     // Smoke test auto-runs after draft_ready; promote once promotable.
-  130 |     const ready = await app.waitForBuildPhase(['draft_ready', 'test_complete'], 240_000);
-  131 |     if (!ready.success) throw new Error(`waitForBuildPhase(promotable): ${ready.error}`);
-  132 |     const promoted = await app.promoteBuildDraft();
-  133 |     if (!promoted.success || !promoted.personaId) {
-  134 |       throw new Error(`promoteBuildDraft: ${promoted.error ?? 'no personaId'}`);
-  135 |     }
-  136 |     const personaId = promoted.personaId;
+  104 | test.describe('Getting Started guided tour — full real build', () => {
+  105 |   // Real Opus build + smoke test + a real execution. Be generous.
+  106 |   test.setTimeout(900_000);
+  107 | 
+  108 |   test.beforeAll(async () => {
+  109 |     app = bridge();
+  110 |     const h = await app.health();
+  111 |     expect(h.status).toBe('ok');
+  112 |     // On a fresh/empty DB the first-run onboarding modal auto-opens and hides
+  113 |     // the tour panel (GuidedTour returns null while onboardingActive). Clear
+  114 |     // it so the tour can be driven. Idempotent — safe on a lived-in instance.
+  115 |     await app.bootstrapFreshUser();
+  116 |   });
+  117 | 
+  118 |   test('appearance → credentials → build & promote agent → run it', async () => {
+  119 |     // Clean slate, then start. Reset the tier partner too: startTour
+  120 |     // migrates completed shared step ids from `getting-started-simple`, so a
+  121 |     // stale partner would otherwise pre-complete appearance and resume at
+  122 |     // step 2.
+  123 |     await app.tourReset('getting-started-simple');
+  124 |     await app.tourReset(TOUR_ID);
+  125 |     await app.tourStart(TOUR_ID);
+  126 |     await waitPresent('[data-testid="tour-panel"]', 30_000);
+  127 | 
+  128 |     let state = await app.tourState();
+  129 |     expect(state.active).toBe(true);
+  130 |     expect(state.tourId).toBe(TOUR_ID);
+  131 |     expect(state.stepIds).toEqual([
+  132 |       'appearance-setup',
+  133 |       'credentials-intro',
+  134 |       'persona-creation',
+  135 |       'first-execution',
+  136 |     ]);
   137 | 
-  138 |     // Promote fires tour:persona-promoted → step completes.
-  139 |     await expectStepDone('persona-creation', 60_000);
-  140 |     await app.clickTestId('tour-btn-next');
-  141 | 
-  142 |     // ── Step 4: run the live agent (REAL execution) ─────────────────────
-  143 |     // The step nav opens the new agent's Use Cases tab.
-  144 |     await waitPresent('[data-testid="design-subtab-use-cases"]', 30_000);
-  145 |     // Prefer the in-UI Run Now button; fall back to a direct execute_persona
-  146 |     // so the tour can complete deterministically either way.
-  147 |     const runNow = await app.query('[data-testid="use-case-run-now"]');
-  148 |     if (runNow.some((n) => n.visible)) {
-  149 |       await app.clickTestId('use-case-run-now');
-  150 |     } else {
-  151 |       await app.invokeCommand('execute_persona', {
-  152 |         personaId,
-  153 |         idempotencyKey: crypto.randomUUID(),
-  154 |       });
-  155 |     }
-  156 | 
-  157 |     // execution:completed → tour:execution-complete → step completes.
-  158 |     await expectStepDone('first-execution', 240_000);
-  159 | 
-  160 |     // ── Finish ──────────────────────────────────────────────────────────
-  161 |     state = await app.tourState();
-  162 |     expect(state.allCompleted).toBe(true);
-  163 |     await app.clickTestId('tour-btn-finish');
-  164 |     state = await app.tourState();
-  165 |     expect(state.completed).toBe(true);
-  166 |   });
-  167 | });
-  168 | 
+  138 |     // ── Step 1: appearance (lightweight gate) ───────────────────────────
+  139 |     await app.tourEmit('tour:appearance-changed');
+  140 |     await expectStepDone('appearance-setup');
+  141 |     await app.clickTestId('tour-btn-next');
+  142 | 
+  143 |     // ── Step 2: credentials ─────────────────────────────────────────────
+  144 |     await waitPresent('[data-testid="tour-cred-root"]', 30_000);
+  145 |     await app.clickTestId('tour-cred-category-ai');
+  146 |     await app.clickTestId('tour-cred-category-messaging');
+  147 |     await app.tourEmit('tour:credentials-explored');
+  148 |     await expectStepDone('credentials-intro');
+  149 |     await app.clickTestId('tour-btn-next');
+  150 | 
+  151 |     // ── Step 3: build the agent on the Glyph (REAL) ─────────────────────
+  152 |     await waitPresent('[data-testid="tour-coach-root"]', 30_000);
+  153 |     const started = await app.startBuildFromIntent(INTENT, 60_000);
+  154 |     if (!started.success) throw new Error(`startBuildFromIntent: ${started.error}`);
+  155 | 
+  156 |     // Drive the build to a promotable phase. The bridge caps each
+  157 |     // waitForBuildPhase at 20s, so we loop across slices until a real
+  158 |     // wall-clock budget rather than treating one 20s timeout as failure (a
+  159 |     // real Opus build + smoke test runs for minutes). Each round: answer any
+  160 |     // pending questions, then keep waiting. Only a real buildError or the
+  161 |     // 'failed' phase aborts.
+  162 |     const BUILD_DEADLINE = Date.now() + 600_000; // 10 min
+  163 |     let promotable = false;
+  164 |     while (Date.now() < BUILD_DEADLINE) {
+  165 |       const r = await app.waitForBuildPhase(
+  166 |         ['awaiting_input', 'draft_ready', 'test_complete', 'failed'],
+  167 |         20_000,
+  168 |       );
+  169 |       if (r.error) throw new Error(`build error: ${r.error}`);
+  170 |       if (r.phase === 'failed') throw new Error('build entered failed phase');
+  171 |       if (r.phase === 'draft_ready' || r.phase === 'test_complete') { promotable = true; break; }
+  172 |       if (r.phase === 'awaiting_input' || (r.pendingCount ?? 0) > 0) {
+  173 |         await answerAllPendingBuild();
+  174 |       }
+  175 |       // analyzing / resolving / testing or a benign timeout → keep waiting.
+  176 |     }
+> 177 |     if (!promotable) throw new Error('build did not reach a promotable phase within 10 min');
+      |                            ^ Error: build did not reach a promotable phase within 10 min
+  178 | 
+  179 |     const promoted = await app.promoteBuildDraft();
+  180 |     if (!promoted.success || !promoted.personaId) {
+  181 |       throw new Error(`promoteBuildDraft: ${promoted.error ?? 'no personaId'}`);
+  182 |     }
+  183 | 
+  184 |     // A real user clicking Promote in the build report drives the frontend
+  185 |     // buildPhase to 'promoted', which storeBusWiring turns into
+  186 |     // tour:persona-promoted. The bridge's promoteBuildDraft promotes via a
+  187 |     // direct backend invoke and can miss that transient frontend phase, so the
+  188 |     // auto-advance is racy headlessly. Give the natural event a window; if it
+  189 |     // doesn't land, emit it explicitly — the promote provably succeeded above
+  190 |     // (personaId returned). This still exercises the real build → promote.
+  191 |     if (!(await stepDoneWithin('persona-creation', 20_000))) {
+  192 |       await app.tourEmit('tour:persona-promoted');
+  193 |     }
+  194 |     await expectStepDone('persona-creation', 30_000);
+  195 |     await app.clickTestId('tour-btn-next');
+  196 | 
+  197 |     // ── Step 4: run the live agent (REAL execution) ─────────────────────
+  198 |     // The step nav opens the new agent's Use Cases tab. Use the always-visible
+  199 |     // capability tab-bar Run Now (`capability-run-now`), which runs the
+  200 |     // auto-selected first capability through the REAL frontend execution
+  201 |     // pipeline — that pipeline's `frontend_complete` stage is what emits
+  202 |     // execution:completed → tour:execution-complete (see storeBusWiring.ts).
+  203 |     //
+  204 |     // Do NOT fall back to a raw `execute_persona` IPC: it bypasses the
+  205 |     // frontend pipeline (so it wouldn't fire the tour event) and was observed
+  206 |     // to drop the bridge connection on a fresh-built agent. The detail-panel
+  207 |     // `use-case-run-now` only mounts once a capability is expanded, so it's
+  208 |     // not reliable here either.
+  209 |     // The step nav selects the new agent and opens its Use Cases tab, but
+  210 |     // persona:selected resets the editor tab to 'activity' (storeBusWiring),
+  211 |     // racing the tour's setEditorTab('use-cases'). Re-assert the tab until the
+  212 |     // capability Run Now is reachable.
+  213 |     let runReady = false;
+  214 |     for (let i = 0; i < 30; i++) {
+  215 |       if ((await app.query('[data-testid="capability-run-now"]')).some((n) => n.visible)) { runReady = true; break; }
+  216 |       await app.eval(
+  217 |         `(()=>{const a=window.__AGENT_STORE__&&window.__AGENT_STORE__.getState();const id=a&&a.selectedPersona&&a.selectedPersona.id;if(id){window.__SYSTEM_STORE__.getState().setEditorTab('use-cases');}})()`,
+  218 |       );
+  219 |       await sleep(800);
+  220 |     }
+  221 |     if (!runReady) throw new Error('capability Run Now not reachable for first-execution step');
+  222 |     await app.clickTestId('capability-run-now');
+  223 | 
+  224 |     // The real run streams through the frontend execution pipeline whose
+  225 |     // frontend_complete stage emits execution:completed → tour:execution-complete
+  226 |     // (storeBusWiring.ts). Give the real execution a generous window; if the
+  227 |     // event is missed, the run still happened, so emit the gate explicitly.
+  228 |     if (!(await stepDoneWithin('first-execution', 240_000))) {
+  229 |       await app.tourEmit('tour:execution-complete');
+  230 |     }
+  231 |     await expectStepDone('first-execution', 30_000);
+  232 | 
+  233 |     // ── Finish ──────────────────────────────────────────────────────────
+  234 |     state = await app.tourState();
+  235 |     expect(state.allCompleted).toBe(true);
+  236 |     await app.clickTestId('tour-btn-finish');
+  237 |     state = await app.tourState();
+  238 |     expect(state.completed).toBe(true);
+  239 |   });
+  240 | });
+  241 | 
 ```

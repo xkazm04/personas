@@ -89,7 +89,8 @@
     "source_healing_log": "हीलिंग लॉग",
     "source_provider": "प्रदाता",
     "source_policy": "नीति",
-    "source_healing_issue": "हीलिंग समस्या"
+    "source_healing_issue": "हीलिंग समस्या",
+    "source_execution_error": "निष्पादन त्रुटि"
   },
   "observability": {
     "title": "अवलोकनशीलता",

@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse groupe",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "Aucun événements match the current filters",
-  "dead_letter_clear_filters_to_see": "Effacer filters to see all dead-lettered événements"
+  "dead_letter_clear_filters_to_see": "Effacer filters to see all dead-lettered événements",
+  "col_event": "Événement",
+  "col_listeners": "Écouteurs",
+  "source_personas_filter": "Personas sources",
+  "listeners_filter": "Écouteurs",
+  "filter_events_placeholder": "Filtrer les événements..."
 }

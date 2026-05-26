@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace configuración saved",
     "workspace_save_failed": "Couldn't save workspace configuración",
-    "workspace_inherit": "Heredar"
+    "workspace_inherit": "Heredar",
+    "add_persona_draft_hint": "Las personas en borrador deben promocionarse antes de poder unirse a un equipo.",
+    "checklist_heading": "Progreso en vivo",
+    "checklist_background_note": "Se ejecuta en segundo plano",
+    "step_status_pending": "Pendiente",
+    "step_status_matching": "Emparejando",
+    "step_status_running": "En ejecución",
+    "step_status_done": "Hecho",
+    "step_status_skipped": "Omitido",
+    "step_status_failed": "Fallido",
+    "step_status_awaiting_review": "Necesita revisión",
+    "board_label": "Tablero de asignaciones",
+    "board_col_queued": "En cola",
+    "board_col_running": "En ejecución",
+    "board_col_review": "Necesita revisión",
+    "board_col_done": "Hecho",
+    "board_col_stopped": "Detenido",
+    "board_empty": "Aún no hay asignaciones. Define un objetivo en Orchestrate para iniciar una."
   }
 }

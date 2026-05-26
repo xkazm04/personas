@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -24,7 +24,7 @@ import { AthenaAvatar, type AthenaState } from '../AthenaAvatar';
  * Position is stored as viewport fractions (`companionOrbPos`) and resolved
  * to pixels here, so it survives window resizes and app restarts.
  */
-const ORB_SIZE = 60;
+export const ORB_SIZE = 60;
 const MARGIN = 16;
 const HOLD_MS = 220;
 const DRAG_THRESHOLD = 6;
@@ -63,6 +63,10 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   const { talking, interimText, start: startTalk, stop: stopTalk, abort: abortTalk } = talk;
   const reduceMotion = useReducedMotion();
   const setOrbOpenOrigin = useCompanionStore((s) => s.setOrbOpenOrigin);
+  // Guided-walkthrough drive: while a walkthrough is active the orb is steered
+  // by the runner (`orbGuideTarget`), not the user.
+  const orbGuideTarget = useCompanionStore((s) => s.orbGuideTarget);
+  const guideActive = useCompanionStore((s) => s.activeWalkthrough != null);
 
   const [vp, setVp] = useState<Viewport>(() => readViewport());
   useEffect(() => {
@@ -78,8 +82,22 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   const resolved = fractionToPx(orbPos.x, orbPos.y, vp);
   const left = dragPx?.left ?? resolved.left;
   const top = dragPx?.top ?? resolved.top;
+
+  // While a guided walkthrough is driving the orb, a step's target position
+  // wins and the orb glides to it (spring); otherwise it follows the drag /
+  // docked position instantly. Under reduced motion the glide becomes a jump.
+  const renderLeft = orbGuideTarget
+    ? clamp(orbGuideTarget.left, MARGIN, Math.max(vp.w - ORB_SIZE, 0) - MARGIN)
+    : left;
+  const renderTop = orbGuideTarget
+    ? clamp(orbGuideTarget.top, MARGIN, Math.max(vp.h - ORB_SIZE, 0) - MARGIN)
+    : top;
+  const glideTransition =
+    orbGuideTarget && !reduceMotion
+      ? ({ type: 'spring', stiffness: 220, damping: 28 } as const)
+      : ({ duration: 0 } as const);
   // Docked on the left half? Caption + badges flip to the orb's right.
-  const dockedLeft = left + ORB_SIZE / 2 < vp.w / 2;
+  const dockedLeft = renderLeft + ORB_SIZE / 2 < vp.w / 2;
 
   const startRef = useRef<{ x: number; y: number; left: number; top: number } | null>(null);
   const holdTimerRef = useRef<number | null>(null);
@@ -97,6 +115,9 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     (e: React.PointerEvent) => {
       // Ignore non-primary buttons (right-click etc.).
       if (e.button !== 0) return;
+      // The orb is driven by Athena during a guided walkthrough — ignore user
+      // grab/hold/tap so the glide isn't fought (Stop/Skip live on the caption).
+      if (guideActive) return;
       (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
       startRef.current = { x: e.clientX, y: e.clientY, left, top };
       draggingRef.current = false;
@@ -109,7 +130,7 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
         startTalk();
       }, HOLD_MS);
     },
-    [left, top, clearHoldTimer, startTalk],
+    [left, top, clearHoldTimer, startTalk, guideActive],
   );
 
   const onPointerMove = useCallback(
@@ -231,9 +252,12 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   }, [streaming]);
 
   return (
-    <div
+    <motion.div
       className="group pointer-events-auto absolute select-none touch-none"
-      style={{ left, top, width: ORB_SIZE, height: ORB_SIZE }}
+      style={{ width: ORB_SIZE, height: ORB_SIZE }}
+      initial={false}
+      animate={{ left: renderLeft, top: renderTop }}
+      transition={glideTransition}
     >
       {/* Interim-dictation caption, flips to whichever side has room. */}
       {caption && (
@@ -319,6 +343,6 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
       >
         <X className="w-3 h-3" />
       </button>
-    </div>
+    </motion.div>
   );
 }

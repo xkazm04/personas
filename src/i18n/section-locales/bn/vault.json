@@ -707,7 +707,10 @@
     "test_all_credentials": "সব ক্রেডেনশিয়াল পরীক্ষা করুন",
     "test_all": "সব পরীক্ষা করুন",
     "daily_progress": "প্রতিদিন {done}/{total}",
-    "testing_progress": "পরীক্ষা করা হচ্ছে {done}/{total}"
+    "testing_progress": "পরীক্ষা করা হচ্ছে {done}/{total}",
+    "title_catalog": "ক্যাটালগ",
+    "title_dependencies": "নির্ভরতা",
+    "title_databases": "ডেটাবেস"
   },
   "bulk_healthcheck": {
     "title": "হেলথচেক ফলাফল",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "কিছু কনফিগার নেই।",
-    "required_badge": "প্রয়োজনীয়"
+    "required_badge": "প্রয়োজনীয়",
+    "kv_key_label": "কী",
+    "kv_value_label": "মান",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "মান দেখান",
+    "kv_hide_value": "মান লুকান",
+    "kv_remove": "ভেরিয়েবল সরান",
+    "kv_add": "যোগ করুন"
   },
   "design_phases": {
     "saving": "ক্রেডেনশিয়াল সংরক্ষণ হচ্ছে...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "বিজ্ঞাপন",
+    "ai": "AI",
+    "analytics": "অ্যানালিটিক্স",
+    "automation": "অটোমেশন",
+    "bi": "বিজনেস ইন্টেলিজেন্স",
+    "browser_automation": "ব্রাউজার অটোমেশন",
+    "calendar": "ক্যালেন্ডার",
+    "ci_cd": "CI/CD",
+    "cloud": "ক্লাউড",
+    "containers": "কনটেইনার",
+    "crm": "CRM",
+    "custom": "কাস্টম",
+    "database": "ডেটাবেস",
+    "design": "ডিজাইন",
+    "development": "ডেভেলপমেন্ট",
+    "ecommerce": "ই-কমার্স",
+    "email": "ইমেইল",
+    "finance": "ফাইন্যান্স",
+    "forms": "ফর্ম",
+    "integration": "ইন্টিগ্রেশন",
+    "knowledge_base": "নলেজ বেস",
+    "mcp": "MCP",
+    "messaging": "মেসেজিং",
+    "monitoring": "মনিটরিং",
+    "notifications": "নোটিফিকেশন",
+    "personalization": "পার্সোনালাইজেশন",
+    "productivity": "প্রোডাক্টিভিটি",
+    "project_management": "প্রজেক্ট ম্যানেজমেন্ট",
+    "research": "রিসার্চ",
+    "scheduling": "শিডিউলিং",
+    "social": "সোশ্যাল",
+    "source_control": "সোর্স কন্ট্রোল",
+    "spreadsheet": "স্প্রেডশিট",
+    "storage": "স্টোরেজ",
+    "support": "সাপোর্ট",
+    "time_tracking": "সময় ট্র্যাকিং",
+    "vector_search": "ভেক্টর সার্চ",
+    "web_scraping": "ওয়েব স্ক্র্যাপিং"
   }
 }

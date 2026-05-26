@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "Không có câu hỏi cho năng lực này.",
+    "error_policy": {
+      "title": "Xử lý lỗi",
+      "intro": "Thử lại và tự khôi phục là tự động. Chọn điều sẽ xảy ra khi lỗi không thể tự phục hồi.",
+      "incident_label": "Tạo sự cố",
+      "incident_desc": "Hiển thị các lỗi chưa phục hồi trong hộp thư Sự cố để phân loại.",
+      "lab_label": "Gửi đến Lab",
+      "lab_desc": "Bật tự cải thiện Lab (tiến hóa prompt) cho persona này khi lỗi lặp lại.",
+      "escalate_after_label": "Nâng cấp sau",
+      "escalate_after_desc": "Số lỗi liên tiếp trước khi tạo sự cố hoặc gửi đến Lab."
+    }
   },
   "scan": {
     "scanning_draft": "Đang quét bản nháp persona...",

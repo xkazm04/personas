@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace إعدادات saved",
     "workspace_save_failed": "Couldn't save workspace إعدادات",
-    "workspace_inherit": "وراثة"
+    "workspace_inherit": "وراثة",
+    "add_persona_draft_hint": "يجب ترقية الشخصيات المسودة قبل أن تتمكن من الانضمام إلى فريق.",
+    "checklist_heading": "التقدم المباشر",
+    "checklist_background_note": "يعمل في الخلفية",
+    "step_status_pending": "معلق",
+    "step_status_matching": "مطابقة",
+    "step_status_running": "قيد التشغيل",
+    "step_status_done": "تم",
+    "step_status_skipped": "تم التخطي",
+    "step_status_failed": "فشل",
+    "step_status_awaiting_review": "يحتاج إلى مراجعة",
+    "board_label": "لوحة المهام",
+    "board_col_queued": "في قائمة الانتظار",
+    "board_col_running": "قيد التشغيل",
+    "board_col_review": "يحتاج إلى مراجعة",
+    "board_col_done": "تم",
+    "board_col_stopped": "متوقف",
+    "board_empty": "لا توجد مهام بعد. حدد هدفا في التنسيق لبدء مهمة."
   }
 }

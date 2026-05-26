@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "重置",
     "team_preview_canvas_reset_title": "重置缩放和平移为默认值",
     "create_codebase_connector_label": "创建 Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "GitHub 连接器"
   },
   "dev_runner": {
     "self_healing": "自愈",

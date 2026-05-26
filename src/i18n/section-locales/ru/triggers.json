@@ -705,5 +705,10 @@
   "dead_letter_group_collapse": "Collapse группа",
   "dead_letter_group_other": "Other errors",
   "dead_letter_no_matches": "Нет события match the current filters",
-  "dead_letter_clear_filters_to_see": "Очистить filters to see all dead-lettered события"
+  "dead_letter_clear_filters_to_see": "Очистить filters to see all dead-lettered события",
+  "col_event": "Событие",
+  "col_listeners": "Слушатели",
+  "source_personas_filter": "Исходные персоны",
+  "listeners_filter": "Слушатели",
+  "filter_events_placeholder": "Фильтровать события..."
 }

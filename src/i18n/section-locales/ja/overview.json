@@ -89,7 +89,8 @@
     "source_healing_log": "修復ログ",
     "source_provider": "プロバイダー",
     "source_policy": "ポリシー",
-    "source_healing_issue": "修復問題"
+    "source_healing_issue": "修復問題",
+    "source_execution_error": "実行エラー"
   },
   "observability": {
     "title": "オブザーバビリティ",

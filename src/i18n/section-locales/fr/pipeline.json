@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace paramètres saved",
     "workspace_save_failed": "Couldn't save workspace paramètres",
-    "workspace_inherit": "Hériter"
+    "workspace_inherit": "Hériter",
+    "add_persona_draft_hint": "Les personas brouillons doivent être promues avant de pouvoir rejoindre une équipe.",
+    "checklist_heading": "Progression en direct",
+    "checklist_background_note": "Exécuté en arrière-plan",
+    "step_status_pending": "En attente",
+    "step_status_matching": "Correspondance",
+    "step_status_running": "En cours",
+    "step_status_done": "Terminé",
+    "step_status_skipped": "Ignoré",
+    "step_status_failed": "Échec",
+    "step_status_awaiting_review": "Nécessite une révision",
+    "board_label": "Tableau d'affectations",
+    "board_col_queued": "En file d'attente",
+    "board_col_running": "En cours",
+    "board_col_review": "Nécessite une révision",
+    "board_col_done": "Terminé",
+    "board_col_stopped": "Arrêté",
+    "board_empty": "Aucune affectation pour l'instant. Définissez un objectif dans Orchestrate pour en démarrer une."
   }
 }

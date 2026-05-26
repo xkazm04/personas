@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace 설정 saved",
     "workspace_save_failed": "Couldn't save workspace 설정",
-    "workspace_inherit": "상속"
+    "workspace_inherit": "상속",
+    "add_persona_draft_hint": "초안 페르소나는 팀에 참여하기 전에 승격되어야 합니다.",
+    "checklist_heading": "실시간 진행 상황",
+    "checklist_background_note": "백그라운드에서 실행",
+    "step_status_pending": "대기 중",
+    "step_status_matching": "매칭 중",
+    "step_status_running": "실행 중",
+    "step_status_done": "완료",
+    "step_status_skipped": "건너뜀",
+    "step_status_failed": "실패",
+    "step_status_awaiting_review": "검토 필요",
+    "board_label": "할당 보드",
+    "board_col_queued": "대기열",
+    "board_col_running": "실행 중",
+    "board_col_review": "검토 필요",
+    "board_col_done": "완료",
+    "board_col_stopped": "중지됨",
+    "board_empty": "아직 할당이 없습니다. 시작하려면 Orchestrate에서 목표를 정의하세요."
   }
 }

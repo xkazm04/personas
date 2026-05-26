@@ -359,10 +359,10 @@ After building, run the size report to check for regressions:
 ```bash
 node scripts/binary-size-report.mjs                    # Show current sizes
 node scripts/binary-size-report.mjs --save-baseline     # Save as comparison baseline
-node scripts/binary-size-report.mjs --budget 55         # Fail if any installer > 55 MB
+node scripts/binary-size-report.mjs --budget 100        # Fail if any installer > 100 MB (matches CI)
 ```
 
-The CI release pipeline runs this automatically with a 60 MB budget on Windows x64 builds.
+The CI release pipeline runs this automatically with a 100 MB budget on Windows x64 builds (see `--budget 100` in `.github/workflows/release.yml`).
 
 ### Common build errors
 

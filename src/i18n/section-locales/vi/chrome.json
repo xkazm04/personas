@@ -40,6 +40,10 @@
     "triage_reject": "Reject idea",
     "triage_accept": "Accept idea",
     "undo": "Hoàn tác",
-    "redo": "Làm lại"
+    "redo": "Làm lại",
+    "section_workspace": "Không gian làm việc",
+    "toggle_sidebar": "Thu gọn / mở rộng thanh bên",
+    "toggle_monitor": "Mở / đóng Persona Monitor",
+    "toggle_athena": "Mở / đóng trò chuyện Athena"
   }
 }

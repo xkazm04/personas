@@ -1893,7 +1893,8 @@
     "team_preview_canvas_reset": "إعادة تعيين",
     "team_preview_canvas_reset_title": "إعادة تعيين التكبير والتحريك إلى الافتراضي",
     "create_codebase_connector_label": "إنشاء Codebase connector",
-    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog."
+    "create_codebase_connector_desc": "Adds a \"Codebase — {name}\" connector so your agents can read this project without opening the credential catalog.",
+    "github_connector_label": "موصل GitHub"
   },
   "dev_runner": {
     "self_healing": "المعالجة الذاتية",

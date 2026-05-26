@@ -707,7 +707,10 @@
     "test_all_credentials": "اختبار جميع بيانات الاعتماد",
     "test_all": "اختبار الكل",
     "daily_progress": "يومي {done}/{total}",
-    "testing_progress": "جارٍ الاختبار {done}/{total}"
+    "testing_progress": "جارٍ الاختبار {done}/{total}",
+    "title_catalog": "الكتالوج",
+    "title_dependencies": "التبعيات",
+    "title_databases": "قواعد البيانات"
   },
   "bulk_healthcheck": {
     "title": "نتائج فحص الصحة",
@@ -1160,7 +1163,15 @@
   },
   "schemas": {
     "none_configured": "لا شيء مضبوط.",
-    "required_badge": "مطلوب"
+    "required_badge": "مطلوب",
+    "kv_key_label": "المفتاح",
+    "kv_value_label": "القيمة",
+    "kv_key_placeholder": "KEY",
+    "kv_value_placeholder": "value",
+    "kv_show_value": "إظهار القيمة",
+    "kv_hide_value": "إخفاء القيمة",
+    "kv_remove": "إزالة المتغير",
+    "kv_add": "إضافة"
   },
   "design_phases": {
     "saving": "جارٍ حفظ بيانات الاعتماد...",
@@ -1513,5 +1524,45 @@
     "tip_restart_app": "After installing, restart the app and try again.",
     "tip_rephrase": "Try rephrasing your request with the service name and credential type.",
     "tip_simpler_first": "If the issue persists, try a simpler description first, then add details."
+  },
+  "connector_categories": {
+    "advertising": "الإعلانات",
+    "ai": "الذكاء الاصطناعي",
+    "analytics": "التحليلات",
+    "automation": "الأتمتة",
+    "bi": "ذكاء الأعمال",
+    "browser_automation": "أتمتة المتصفح",
+    "calendar": "التقويم",
+    "ci_cd": "CI/CD",
+    "cloud": "السحابة",
+    "containers": "الحاويات",
+    "crm": "CRM",
+    "custom": "مخصص",
+    "database": "قاعدة البيانات",
+    "design": "التصميم",
+    "development": "التطوير",
+    "ecommerce": "التجارة الإلكترونية",
+    "email": "البريد الإلكتروني",
+    "finance": "المالية",
+    "forms": "النماذج",
+    "integration": "التكامل",
+    "knowledge_base": "قاعدة المعرفة",
+    "mcp": "MCP",
+    "messaging": "المراسلة",
+    "monitoring": "المراقبة",
+    "notifications": "الإشعارات",
+    "personalization": "التخصيص",
+    "productivity": "الإنتاجية",
+    "project_management": "إدارة المشاريع",
+    "research": "البحث",
+    "scheduling": "الجدولة",
+    "social": "التواصل الاجتماعي",
+    "source_control": "إدارة المصدر",
+    "spreadsheet": "جدول البيانات",
+    "storage": "التخزين",
+    "support": "الدعم",
+    "time_tracking": "تتبع الوقت",
+    "vector_search": "البحث المتجهي",
+    "web_scraping": "كشط الويب"
   }
 }

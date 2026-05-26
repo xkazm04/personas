@@ -267,6 +267,23 @@
     "workspace_save": "Save workspace",
     "workspace_saved": "Workspace nastavení saved",
     "workspace_save_failed": "Couldn't save workspace nastavení",
-    "workspace_inherit": "Zdědit"
+    "workspace_inherit": "Zdědit",
+    "add_persona_draft_hint": "Koncepty person musí být před přidáním do týmu povýšeny.",
+    "checklist_heading": "Živý průběh",
+    "checklist_background_note": "Běží na pozadí",
+    "step_status_pending": "Čeká",
+    "step_status_matching": "Párování",
+    "step_status_running": "Běží",
+    "step_status_done": "Hotovo",
+    "step_status_skipped": "Přeskočeno",
+    "step_status_failed": "Selhalo",
+    "step_status_awaiting_review": "Vyžaduje kontrolu",
+    "board_label": "Tabule úkolů",
+    "board_col_queued": "Ve frontě",
+    "board_col_running": "Běží",
+    "board_col_review": "Vyžaduje kontrolu",
+    "board_col_done": "Hotovo",
+    "board_col_stopped": "Zastaveno",
+    "board_empty": "Zatím žádné úkoly. Začněte definováním cíle v Orchestrate."
   }
 }

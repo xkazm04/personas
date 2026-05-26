@@ -218,6 +218,10 @@ Editing `src/features/plugins/companion/**` triggers the doc-sync Stop hook → 
 - [x] Slice fields `companionSttEngine` / `companionSttModelId` (persisted).
 - Note: batch engine keeps `listening` true through transcription to preserve the hold-to-talk contract (no live interim). Live transcription needs the `whisper-cli` binary + a downloaded model (same install UX as Piper TTS); verified via `cargo check`/`cargo test` (12 STT unit tests) — not exercised against a real binary in-session.
 
+**Step 3 — programmatic orb movement (shipped, 2026-05-26)**
+- [x] Orb can now be steered to an arbitrary screen target (not just user-drag): an ephemeral `orbGuideTarget` in `companionStore` makes `AthenaOrb` glide there with a framer-motion spring (instant jump under `prefers-reduced-motion`); user gestures are suppressed while a walkthrough drives it.
+- [x] This powers **Athena Guided Walkthroughs** — the orb glides around key areas while a non-dimming element glow (`AthenaGuideGlow`) rings the targeted element and Athena narrates. Reusable for any app surface. Full design: [`athena-guided-walkthroughs.md`](./athena-guided-walkthroughs.md).
+
 ---
 
 ## 8. Open questions / risks

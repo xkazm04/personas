@@ -785,7 +785,18 @@
     "_comment_persona_layout_build_refine_placeholder": "Textarea placeholder for the inline refine composer",
     "persona_layout_build_refine_placeholder": "Describe what to change (e.g. switch to weekly cadence, add Slack notifications)…",
     "_comment_persona_layout_build_refine_send": "Send button label for the inline refine composer",
-    "persona_layout_build_refine_send": "Send & rebuild"
+    "persona_layout_build_refine_send": "Send & rebuild",
+    "story_no_questions": "No hay preguntas para esta capacidad.",
+    "error_policy": {
+      "title": "Manejo de errores",
+      "intro": "Los reintentos y la autorrecuperación son automáticos. Elige qué ocurre cuando un fallo no puede recuperarse por sí solo.",
+      "incident_label": "Crear incidente",
+      "incident_desc": "Muestra los fallos no recuperados en la bandeja de Incidentes para su triaje.",
+      "lab_label": "Enviar al Lab",
+      "lab_desc": "Activa la mejora automática del Lab (evolución de prompts) para esta persona cuando los fallos se repiten.",
+      "escalate_after_label": "Escalar después de",
+      "escalate_after_desc": "Fallos consecutivos antes de crear un incidente o enviar al Lab."
+    }
   },
   "scan": {
     "scanning_draft": "Escaneando borrador de persona...",

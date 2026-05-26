@@ -40,6 +40,12 @@ Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes 
 
 **Avatar resource discipline (`AthenaAvatar`).** The footer + orb videos are a nice-to-have in a tiny space, so: only one clip plays at a time (others paused at frame 0); **playback pauses whenever the document is hidden** (`visibilitychange`) and resumes on return — zero decode while backgrounded; and under `prefers-reduced-motion` **no `<video>` mounts at all** — just the static poster (`athena_baseline.jpg`), so reduced-motion users pay no decode and get no animation. Clips are 320×320 / 12fps / CRF 30 / no-audio ping-pong (~110–160 KB), hardware-decoded.
 
+## Guided walkthroughs (orb choreography + element glow)
+
+Athena can *show* the user how to do something instead of only telling them: her orb glides to each key area of the screen, the relevant element glows (a non-dimming accent ring — the rest of the UI stays visible and clickable), and she narrates each step in a caption beside the orb. This is driven by a reusable engine — a topic-keyed registry of declarative steps (`guidance/walkthroughs.ts`), a runner (`guidance/useGuidanceRunner.ts`) that walks them, the `AthenaGuideGlow` ring + `GuideCaption` (hosted by `AthenaGuideLayer`), and the orb's programmatic glide (an ephemeral `orbGuideTarget` in `companionStore`). The element-tracking core (`useTrackedElementRect`) is shared with the onboarding `TourSpotlight`.
+
+When a user describes a persona they want, Athena offers both paths via `show_persona_creation_offer` — a card with **Build it for me** (the prefill / one-shot handoff) and **Show me how to build it** (`start_guided_walkthrough { topic: "persona_creation" }`). The first walkthrough rings the build studio, its sigil compose trigger, and the autonomous toggle. New ops are taught in constitution **v19**; topics are allow-listed in `dispatcher.rs` (`GUIDED_TOPICS`). Full design + the "how to add a walkthrough for any surface" recipe live in [`athena-guided-walkthroughs.md`](./athena-guided-walkthroughs.md).
+
 ## Athena desktop-aware lineage
 
 Companion's awareness of the user's desktop activity ships in phases. The decision-gate audit lives at [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md); the two shipped feature deliverables sit alongside this README:
