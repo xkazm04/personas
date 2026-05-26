@@ -846,8 +846,11 @@ pub async fn execute_api_request(
     // drop our oauth_refresh_lock first because refresh_single_credential acquires
     // the same per-credential lock (re-entrant acquire would deadlock).
     if resp.status() == reqwest::StatusCode::UNAUTHORIZED && strategy.is_oauth(&fields) {
-        drop(lock_holder.take()); // release before refresh_single_credential re-acquires
-        match super::oauth_refresh::refresh_single_credential(pool, &credential).await {
+        drop(lock_holder.take()); // release before force_refresh re-acquires the same lock
+        // force=true: bypass the freshness short-circuit. The provider just
+        // rejected the token, so we must exchange even if oauth_token_expires_at
+        // still looks valid locally (that staleness is the whole reason we 401'd).
+        match super::oauth_refresh::force_refresh_single_credential(pool, &credential).await {
             Ok(msg) => {
                 tracing::info!(
                     credential_id,

@@ -377,7 +377,7 @@ async fn refresh_single_credential_inner(
         .await;
     }
 
-    let fields = cred_repo::get_decrypted_fields(pool, cred)?;
+    let mut fields = cred_repo::get_decrypted_fields(pool, cred)?;
     if let Err(e) = audit_log::log_decrypt(pool, &cred.id, &cred.name, "oauth_refresh", None, None)
     {
         tracing::warn!(credential_id = %cred.id, error = %e, "Failed to write audit log for credential decrypt");
@@ -386,6 +386,17 @@ async fn refresh_single_credential_inner(
     // Must have a refresh_token to refresh
     if !fields.contains_key("refresh_token") {
         return Err(AppError::Validation("No refresh_token found".into()));
+    }
+
+    // Forced refresh: strip the current access_token + its local expiry so the
+    // strategy's resolve path cannot short-circuit and return the existing
+    // (provider-rejected) token. With these gone, resolve_oauth_token falls
+    // through to a real refresh_token exchange. Without this, force=true only
+    // bypasses the OUTER freshness guard while resolve_auth_token still returns
+    // the stale-but-locally-valid token — the exact reason a 401 retry was futile.
+    if force {
+        fields.remove("access_token");
+        fields.remove("oauth_token_expires_at");
     }
 
     // Extract the previous token's issued-at time from typed ledger (for actual lifetime calc)
