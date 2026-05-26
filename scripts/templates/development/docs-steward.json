@@ -111,9 +111,9 @@
         "optional": false,
         "allow_custom": true,
         "default": "codebase",
-        "maps_to": "use_cases[uc_docs_sync].sample_input.target_codebase",
+        "maps_to": "persona.design_context[dev_project_id]",
         "variable_name": "target_codebase",
-        "context": "Required. Docs Steward reads this codebase's commits + docs to keep the README and changelog in sync.",
+        "context": "Required. Docs Steward reads this codebase's commits + docs to keep the README and changelog in sync. Pins this persona to the selected Dev Tools project so its codebase tools read that repo.",
         "dimension": "connector",
         "dynamic_source": {
           "service_type": "development",

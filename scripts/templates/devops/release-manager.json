@@ -151,9 +151,9 @@
         "optional": false,
         "allow_custom": true,
         "default": "codebase",
-        "maps_to": "use_cases[uc_release_automation].sample_input.target_codebase",
+        "maps_to": "persona.design_context[dev_project_id]",
         "variable_name": "target_codebase",
-        "context": "Required. Release Manager reads commits and writes version/changelog files in this codebase.",
+        "context": "Required. Release Manager reads commits and writes version/changelog files in this codebase. Pins this persona to the selected Dev Tools project so its codebase tools read that repo.",
         "dimension": "connector",
         "dynamic_source": {
           "service_type": "development",

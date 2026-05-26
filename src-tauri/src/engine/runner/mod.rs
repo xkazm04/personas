@@ -826,11 +826,21 @@ pub async fn run_execution(
     // "bridge unavailable" rather than failing the whole run.
     let bridge_api_key =
         crate::engine::management_api::get_or_create_system_api_key(&pool).ok();
+    // Codebase pin: surface this persona's `design_context.dev_project_id` to the
+    // sidecar so its codebase/context MCP tools resolve THIS repo (not the global
+    // first-project default). Set once by the team adoption questionnaire and
+    // carried on each member persona. Mirrors the twin connector's pin.
+    let pinned_dev_project: Option<String> = persona
+        .design_context
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<crate::db::models::DesignContextData>(s).ok())
+        .and_then(|dc| dc.dev_project_id);
     match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
         None,
         bridge_api_key.as_deref(),
+        pinned_dev_project.as_deref(),
     ) {
         Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
         Ok(false) => {}

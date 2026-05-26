@@ -70,6 +70,7 @@ pub fn install_mcp_sidecar(
     drive_root: Option<&Path>,
     project_root: Option<&Path>,
     api_key: Option<&str>,
+    dev_project_id: Option<&str>,
 ) -> Result<bool, AppError> {
     let Some(mcp_binary) = find_mcp_binary() else {
         tracing::debug!("cli_mcp_config: personas-mcp binary not found — skipping sidecar");
@@ -127,6 +128,19 @@ pub fn install_mcp_sidecar(
             "PERSONAS_API_KEY".to_string(),
             serde_json::Value::String(key.to_string()),
         );
+    }
+    // Codebase pin: the executing persona's `design_context.dev_project_id`.
+    // The sidecar's `resolve_context_project` reads this env first so a persona
+    // adopted for repo X always queries repo X's dev_project, regardless of the
+    // global first-project default. Omitted for unpinned personas (they fall
+    // back to the global probe). Mirrors the twin connector's per-persona pin.
+    if let Some(pid) = dev_project_id {
+        if !pid.is_empty() {
+            env_map.insert(
+                "PERSONAS_DEV_PROJECT_ID".to_string(),
+                serde_json::Value::String(pid.to_string()),
+            );
+        }
     }
 
     // `alwaysLoad: true` skips the CLI's tool-search deferral so personas-mcp

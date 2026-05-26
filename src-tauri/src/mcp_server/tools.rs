@@ -191,10 +191,34 @@ fn handle_drive_list(args: &Value) -> Result<String, String> {
 // equivalent of graph.json is the dev_contexts table.
 // ─────────────────────────────────────────────────────────────────────────────
 
-/// Resolve a project_id from optional project_id / project_root args.
-/// Falls back to the first project in the table if neither is supplied — the
-/// common case is a single-project install.
+/// Resolve a project_id, in priority order:
+///   1. `PERSONAS_DEV_PROJECT_ID` env — the executing persona's pinned
+///      `design_context.dev_project_id`, injected per-run by the runner into
+///      the personas-mcp sidecar's env (see `cli_mcp_config::install_mcp_sidecar`).
+///      AUTHORITATIVE: a persona bound to repo X must read repo X, so the pin
+///      wins over any project_id/root the model happens to pass. If the pinned
+///      project no longer exists we ignore it and fall through (stale-pin safety,
+///      mirroring the twin connector).
+///   2. explicit `project_id` arg.
+///   3. explicit `project_root` arg → resolve to its id.
+///   4. fallback: first project in the table (single-project installs).
 fn resolve_context_project(conn: &rusqlite::Connection, args: &Value) -> Result<String, String> {
+    if let Ok(pinned) = std::env::var("PERSONAS_DEV_PROJECT_ID") {
+        let pinned = pinned.trim();
+        if !pinned.is_empty() {
+            let exists: bool = conn
+                .query_row(
+                    "SELECT 1 FROM dev_projects WHERE id = ?1",
+                    rusqlite::params![pinned],
+                    |_| Ok(true),
+                )
+                .unwrap_or(false);
+            if exists {
+                return Ok(pinned.to_string());
+            }
+            // stale pin (deleted project) → fall through to the normal resolution
+        }
+    }
     if let Some(pid) = args.get("project_id").and_then(|v| v.as_str()) {
         return Ok(pid.to_string());
     }

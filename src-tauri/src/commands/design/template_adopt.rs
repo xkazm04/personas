@@ -618,6 +618,15 @@ pub fn instant_adopt_template_inner(
                 "instant_adopt_template: failed to populate persona.parameters (continuing)"
             );
         }
+        // Codebase pin: route the codebase adoption question's answer onto
+        // design_context.dev_project_id so this persona reads its team's repo.
+        if let Err(e) = apply_codebase_pin_from_design(&state.db, pid, &design, answers.as_ref()) {
+            tracing::warn!(
+                persona_id = %pid,
+                error = %e,
+                "instant_adopt_template: failed to apply codebase pin (continuing)"
+            );
+        }
     }
 
     // Wire cross-persona event subscriptions from the hydrated use_cases.
@@ -920,6 +929,88 @@ fn wire_event_subscriptions_from_use_cases(
         }
     }
     Ok(created)
+}
+
+/// The `maps_to` token that pins a persona to a specific Dev Tools project
+/// (codebase). An adoption question declaring this maps_to writes its answered
+/// dev_project id onto `design_context.dev_project_id` (JSON `devProjectId`).
+pub(super) const CODEBASE_PIN_MAPS_TO: &str = "persona.design_context[dev_project_id]";
+
+/// Codebase pin: if the template declares an adoption question with
+/// `maps_to: persona.design_context[dev_project_id]`, write its answered (or
+/// default) dev_project id onto the persona's `design_context.dev_project_id`.
+/// A team adopted for repo X sets every member's pin to X's dev_project, so each
+/// persona's codebase/context tools resolve repo X at runtime
+/// (`resolve_context_project` reads it via the runner-injected
+/// `PERSONAS_DEV_PROJECT_ID`). The pin lives on the persona, so it survives team
+/// disband. Best-effort: merges into the existing design_context without
+/// clobbering useCases/summary. A blank answer (or the placeholder default
+/// `"codebase"`) leaves the persona unpinned → global-probe fallback.
+pub(super) fn apply_codebase_pin_from_design(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    design: &serde_json::Value,
+    answers: Option<&std::collections::HashMap<String, String>>,
+) -> Result<(), AppError> {
+    let questions = match design.get("adoption_questions").and_then(|v| v.as_array()) {
+        Some(q) => q,
+        None => return Ok(()),
+    };
+    let mut pinned: Option<String> = None;
+    for q in questions {
+        if q.get("maps_to").and_then(|v| v.as_str()) != Some(CODEBASE_PIN_MAPS_TO) {
+            continue;
+        }
+        let q_id = q.get("id").and_then(|v| v.as_str()).unwrap_or("");
+        let val = answers
+            .and_then(|a| a.get(q_id).cloned())
+            .or_else(|| q.get("default").and_then(|v| v.as_str()).map(|s| s.to_string()));
+        if let Some(v) = val {
+            let v = v.trim().to_string();
+            // Skip blanks and the placeholder connector-name default — those mean
+            // "no specific project chosen" → leave unpinned.
+            if !v.is_empty() && v != "codebase" {
+                pinned = Some(v);
+                break;
+            }
+        }
+    }
+    let project_id = match pinned {
+        Some(p) => p,
+        None => return Ok(()),
+    };
+
+    let conn = pool.get()?;
+    let existing: Option<String> = conn
+        .query_row(
+            "SELECT design_context FROM personas WHERE id = ?1",
+            rusqlite::params![persona_id],
+            |r| r.get(0),
+        )
+        .ok()
+        .flatten();
+    let mut dc: serde_json::Value = existing
+        .as_deref()
+        .and_then(|s| serde_json::from_str(s).ok())
+        .unwrap_or_else(|| serde_json::json!({}));
+    if !dc.is_object() {
+        dc = serde_json::json!({});
+    }
+    if let Some(obj) = dc.as_object_mut() {
+        // DesignContextData is `rename_all = "camelCase"` → JSON key `devProjectId`.
+        obj.insert(
+            "devProjectId".to_string(),
+            serde_json::Value::String(project_id.clone()),
+        );
+    }
+    let now = chrono::Utc::now().to_rfc3339();
+    conn.execute(
+        "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
+        rusqlite::params![dc.to_string(), now, persona_id],
+    )
+    .map_err(AppError::Database)?;
+    tracing::info!(persona_id = %persona_id, dev_project_id = %project_id, "codebase pin set on adopted persona");
+    Ok(())
 }
 
 pub(super) fn populate_persona_parameters_from_design(
