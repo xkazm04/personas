@@ -13950,7 +13950,36 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "下一步去哪里",
       "nextMovesSubtitle": "覆盖最薄弱的话题 — 优先训练这些，可让大脑获益最大。",
-      "nextMovesCoverage": "目前有 {count} 条基础事实"
+      "nextMovesCoverage": "目前有 {count} 条基础事实",
+      "draftAsTwin": "以分身起草",
+      "draftingAsTwin": "正在以{name}起草…",
+      "twinDraftLabel": "分身草稿 — 审阅并编辑",
+      "regenerate": "重新生成",
+      "regenerateCommentPlaceholder": "想改什么？（例如：更简短、加入2019年的故事）",
+      "studioOpen": "打开工作室",
+      "studioTagline": "批量生成问题与分身草拟的回答，审阅编辑后保存最佳内容。",
+      "studioBack": "快速访谈",
+      "studioDirectionsLabel": "指示",
+      "studioDirectionsPlaceholder": "引导这批内容——例如聚焦失败经历、问题简短",
+      "studioTopicPlaceholder": "主题——例如技术观点",
+      "studioGenerateQuestions": "生成问题",
+      "studioDraftAll": "以分身草拟全部",
+      "studioCancel": "取消",
+      "studioSaveApproved": "保存所选 {count} 项",
+      "studioAddQuestion": "添加问题",
+      "studioEmptyTitle": "暂无问题",
+      "studioEmptyHint": "设置主题并生成一批，或添加你自己的问题。",
+      "studioRunningAnswers": "正在草拟回答…… {completed}/{total}",
+      "studioRunningQuestions": "正在生成问题……",
+      "studioBackgroundNote": "在后台运行——完成后会收到通知。",
+      "studioAnswerPlaceholder": "回答——以分身草拟，或自己撰写",
+      "studioDraftOne": "草拟",
+      "studioWordCount": "{count} 词",
+      "studioSavedToast": "已保存 {count} 组到记忆",
+      "studioRemoveRow": "移除",
+      "studioSaveDirections": "保存为默认指示",
+      "studioDirectionsSaved": "已保存为默认",
+      "studioDirectionsSavedToast": "指示已保存"
     },
     "brain": {
       "title": "Brain",
@@ -14083,7 +14112,11 @@
       "chipChannelsPaused": "All paused",
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
-      "languages": "Languages"
+      "languages": "Languages",
+      "openSection": "打开{section}",
+      "nextStep": "下一步",
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "完善你的分身"
     },
     "variantTabs": {
       "prototype": "Prototype",
@@ -14355,7 +14388,8 @@
       "saveAsFactToast": "已保存到提炼事实。",
       "saveAsFactTooltip": "将此通信提升为持久的提炼事实",
       "saveAsFactError": "无法保存为事实。"
-    }
+    },
+    "studioInProgress": "训练工作室进行中"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

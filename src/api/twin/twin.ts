@@ -8,6 +8,8 @@ import type { TwinChannel } from "@/lib/bindings/TwinChannel";
 import type { TwinWikiCompileResult } from "@/lib/bindings/TwinWikiCompileResult";
 import type { TwinWikiStatus } from "@/lib/bindings/TwinWikiStatus";
 import type { TwinDistilledFact } from "@/lib/bindings/TwinDistilledFact";
+import type { TwinStudioBatch } from "@/lib/bindings/TwinStudioBatch";
+import type { TwinStudioSeed } from "@/lib/bindings/TwinStudioSeed";
 import type { TwinContact } from "@/lib/bindings/TwinContact";
 import type { TwinReflection } from "@/lib/bindings/TwinReflection";
 import type { TwinRecallBundle } from "@/lib/bindings/TwinRecallBundle";
@@ -78,6 +80,7 @@ export const updateProfile = (
     languages?: string | null;
     pronouns?: string | null;
     obsidianSubpath?: string;
+    trainingDirectives?: string | null;
   },
 ) =>
   invoke<TwinProfile>("twin_update_profile", {
@@ -88,6 +91,7 @@ export const updateProfile = (
     languages: updates.languages,
     pronouns: updates.pronouns,
     obsidianSubpath: updates.obsidianSubpath,
+    trainingDirectives: updates.trainingDirectives,
   });
 
 export const deleteProfile = (id: string) =>
@@ -290,6 +294,55 @@ export const generateBio = (
   existingBio?: string,
 ) =>
   invoke<string>("twin_generate_bio", { name, role, keywords, existingBio });
+
+/**
+ * Training Studio — draft an interview answer *as the twin*, grounded in the
+ * twin's bio + generic tone + top distilled self-facts (the same material a
+ * persona adopting the twin sees). `directions` carries the user's steering or
+ * critique on a regenerate ("too formal, add the 2019 story"). Returns the
+ * draft prose for the user to review/edit before it is saved as a memory.
+ */
+export const simulateAnswer = (
+  twinId: string,
+  question: string,
+  directions?: string,
+) =>
+  invoke<string>("twin_simulate_answer", { twinId, question, directions });
+
+// ============================================================================
+// Training Studio — background batch generation (questions + answers)
+//
+// Each `studio*Generate*` call returns a `batchId` immediately and runs the
+// Claude CLI in the background (BackgroundJobManager). Progress arrives via the
+// TWIN_STUDIO_PROGRESS event and completion via TWIN_STUDIO_COMPLETE + an OS
+// notification. `studioGetBatch` re-fetches the full batch so the UI can
+// hydrate even if it missed events while on another route.
+// ============================================================================
+
+/** Kick off a background batch that generates interview questions for a topic. */
+export const studioGenerateQuestions = (
+  twinId: string,
+  topic: string,
+  directions?: string,
+  count?: number,
+) =>
+  invoke<string>("twin_studio_generate_questions", { twinId, topic, directions, count });
+
+/** Kick off a background batch that drafts an answer (as the twin) per question. */
+export const studioGenerateAnswers = (
+  twinId: string,
+  items: TwinStudioSeed[],
+  directions?: string,
+) =>
+  invoke<string>("twin_studio_generate_answers", { twinId, items, directions });
+
+/** Re-fetch the current state (status + accumulated items) of a Studio batch. */
+export const studioGetBatch = (batchId: string) =>
+  invoke<TwinStudioBatch | null>("twin_studio_get_batch", { batchId });
+
+/** Cancel a running Studio batch. */
+export const studioCancel = (batchId: string) =>
+  invoke<void>("twin_studio_cancel", { batchId });
 
 // ============================================================================
 // Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)

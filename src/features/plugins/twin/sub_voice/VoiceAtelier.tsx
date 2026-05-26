@@ -10,6 +10,7 @@ import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDial
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { TwinHeaderBand } from '../shared/TwinHeaderBand';
+import { useTwinReadiness } from '../useTwinReadiness';
 import { WaveformDecoration } from '../shared/decorations';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
@@ -42,6 +43,7 @@ export default function VoiceAtelier() {
   const deleteVoiceProfile = useSystemStore((s) => s.deleteTwinVoiceProfile);
   const twinChannels = useSystemStore((s) => s.twinChannels);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
+  const readiness = useTwinReadiness();
   const hasVoiceChannel = twinChannels.some(
     (c) => c.twin_id === activeTwinId && c.channel_type === 'voice' && c.is_active,
   );
@@ -177,6 +179,8 @@ export default function VoiceAtelier() {
         title={t.voice.title}
         subtitle={t.voice.subtitle}
         decoration={<div className="text-violet-300"><WaveformDecoration /></div>}
+        readiness={readiness}
+        onJumpReadiness={setTwinTab}
         kpis={
           <>
             <KpiCell

@@ -13950,7 +13950,36 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "다음으로 갈 곳",
       "nextMovesSubtitle": "커버리지가 가장 얕은 주제 — 다음 학습 대상으로 잡으면 두뇌 강화 효과가 가장 큽니다.",
-      "nextMovesCoverage": "지금까지 {count}개의 grounding 사실"
+      "nextMovesCoverage": "지금까지 {count}개의 grounding 사실",
+      "draftAsTwin": "트윈으로 초안 작성",
+      "draftingAsTwin": "{name}(으)로 초안 작성 중…",
+      "twinDraftLabel": "트윈 초안 — 검토 및 편집",
+      "regenerate": "다시 생성",
+      "regenerateCommentPlaceholder": "무엇을 바꿀까요? (예: 더 짧게, 2019년 이야기 추가)",
+      "studioOpen": "스튜디오 열기",
+      "studioTagline": "질문과 트윈이 작성한 답변을 일괄 생성하고 검토·편집한 뒤 가장 좋은 것을 저장하세요.",
+      "studioBack": "빠른 인터뷰",
+      "studioDirectionsLabel": "지시",
+      "studioDirectionsPlaceholder": "배치를 유도 — 예: 실패담에 집중, 질문은 짧게",
+      "studioTopicPlaceholder": "주제 — 예: 기술 견해",
+      "studioGenerateQuestions": "질문 생성",
+      "studioDraftAll": "모두 트윈으로 초안 작성",
+      "studioCancel": "취소",
+      "studioSaveApproved": "선택한 {count}개 저장",
+      "studioAddQuestion": "질문 추가",
+      "studioEmptyTitle": "아직 질문이 없습니다",
+      "studioEmptyHint": "주제를 설정해 배치를 생성하거나 직접 질문을 추가하세요.",
+      "studioRunningAnswers": "답변 초안 작성 중… {completed}/{total}",
+      "studioRunningQuestions": "질문 생성 중…",
+      "studioBackgroundNote": "백그라운드에서 실행 — 완료되면 알림을 받습니다.",
+      "studioAnswerPlaceholder": "답변 — 트윈으로 초안 작성하거나 직접 작성",
+      "studioDraftOne": "초안",
+      "studioWordCount": "{count}단어",
+      "studioSavedToast": "{count}쌍을 메모리에 저장함",
+      "studioRemoveRow": "제거",
+      "studioSaveDirections": "기본 지시로 저장",
+      "studioDirectionsSaved": "기본값으로 저장됨",
+      "studioDirectionsSavedToast": "지시가 저장됨"
     },
     "brain": {
       "title": "Brain",
@@ -14083,7 +14112,11 @@
       "chipChannelsPaused": "All paused",
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
-      "languages": "Languages"
+      "languages": "Languages",
+      "openSection": "{section} 열기",
+      "nextStep": "다음 단계",
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "트윈 완성하기"
     },
     "variantTabs": {
       "prototype": "Prototype",
@@ -14355,7 +14388,8 @@
       "saveAsFactToast": "정제된 사실에 저장되었습니다.",
       "saveAsFactTooltip": "이 communication을 영구적인 정제된 사실로 승격",
       "saveAsFactError": "사실로 저장할 수 없습니다."
-    }
+    },
+    "studioInProgress": "트레이닝 스튜디오 진행 중"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

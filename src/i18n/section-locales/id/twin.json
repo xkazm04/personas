@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Ke mana selanjutnya",
     "nextMovesSubtitle": "Topik dengan cakupan paling tipis — latih ini berikutnya untuk peningkatan otak terbesar.",
-    "nextMovesCoverage": "{count} fakta dasar sejauh ini"
+    "nextMovesCoverage": "{count} fakta dasar sejauh ini",
+    "draftAsTwin": "Draf sebagai twin",
+    "draftingAsTwin": "Membuat draf sebagai {name}…",
+    "twinDraftLabel": "Draf twin — tinjau & edit",
+    "regenerate": "Buat ulang",
+    "regenerateCommentPlaceholder": "Apa yang diubah? (mis. lebih singkat, tambahkan cerita 2019)",
+    "studioOpen": "Buka Studio",
+    "studioTagline": "Hasilkan kumpulan pertanyaan dan jawaban draf twin, tinjau dan edit, lalu simpan yang terbaik.",
+    "studioBack": "Wawancara cepat",
+    "studioDirectionsLabel": "Arahan",
+    "studioDirectionsPlaceholder": "Arahkan batch — mis. fokus pada kisah kegagalan, pertanyaan singkat",
+    "studioTopicPlaceholder": "Topik — mis. opini teknologi",
+    "studioGenerateQuestions": "Hasilkan pertanyaan",
+    "studioDraftAll": "Draf semua sebagai twin",
+    "studioCancel": "Batal",
+    "studioSaveApproved": "Simpan {count} terpilih",
+    "studioAddQuestion": "Tambah pertanyaan",
+    "studioEmptyTitle": "Belum ada pertanyaan",
+    "studioEmptyHint": "Tetapkan topik dan hasilkan batch, atau tambahkan pertanyaan Anda.",
+    "studioRunningAnswers": "Membuat draf jawaban… {completed}/{total}",
+    "studioRunningQuestions": "Menghasilkan pertanyaan…",
+    "studioBackgroundNote": "Berjalan di latar belakang — Anda akan diberi tahu saat selesai.",
+    "studioAnswerPlaceholder": "Jawaban — draf sebagai twin, atau tulis sendiri",
+    "studioDraftOne": "Draf",
+    "studioWordCount": "{count} kata",
+    "studioSavedToast": "{count} pasang disimpan ke memori",
+    "studioRemoveRow": "Hapus",
+    "studioSaveDirections": "Simpan sebagai arahan default",
+    "studioDirectionsSaved": "Tersimpan sebagai default",
+    "studioDirectionsSavedToast": "Arahan disimpan"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "Buka {section}",
+    "nextStep": "Langkah berikutnya",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Lengkapi twin Anda"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "Disimpan ke fakta tersaring.",
     "saveAsFactTooltip": "Promosikan komunikasi ini menjadi fakta tersaring yang permanen",
     "saveAsFactError": "Gagal menyimpan sebagai fakta."
-  }
+  },
+  "studioInProgress": "Studio pelatihan sedang berjalan"
 }

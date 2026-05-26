@@ -8,7 +8,10 @@ import type { TwinPendingMemory } from "@/lib/bindings/TwinPendingMemory";
 import type { TwinCommunication } from "@/lib/bindings/TwinCommunication";
 import type { TwinVoiceProfile } from "@/lib/bindings/TwinVoiceProfile";
 import type { TwinChannel } from "@/lib/bindings/TwinChannel";
+import type { TwinStudioBatch } from "@/lib/bindings/TwinStudioBatch";
+import type { TwinStudioSeed } from "@/lib/bindings/TwinStudioSeed";
 import * as twinApi from "@/api/twin/twin";
+import { silentCatch } from "@/lib/silentCatch";
 import type {
   TwinChannelKind,
   TwinInteractionDirection,
@@ -56,9 +59,32 @@ export interface TwinSlice {
   //    "ask AI, jump in" intent.
   pendingTrainingQuestions: string[] | null;
 
+  // -- Training Studio (background batch generation) -------------------
+  //    `studioJobActive` drives the sidebar progress dots (L1 plugins,
+  //    L2 Twin, L3 Training) — it stays accurate across routes because the
+  //    PROGRESS/COMPLETE listeners are registered globally in eventBridge.
+  studioJobActive: boolean;
+  studioBatchId: string | null;
+  studioPhase: "questions" | "answers" | null;
+  studioCompleted: number;
+  studioTotal: number;
+  /** Last fetched batch results (questions and/or drafted answers). */
+  studioBatch: TwinStudioBatch | null;
+  /** One-shot signal the Studio UI consumes to absorb a finished batch. */
+  studioJustCompleted: { phase: string; count: number; status: string; ts: number } | null;
+
   // -- Actions ---------------------------------------------------------
   setTwinTab: (tab: TwinTab) => void;
   setPendingTrainingQuestions: (questions: string[] | null) => void;
+
+  // -- Training Studio actions -----------------------------------------
+  startStudioQuestions: (twinId: string, topic: string, directions?: string, count?: number) => Promise<void>;
+  startStudioAnswers: (twinId: string, items: TwinStudioSeed[], directions?: string) => Promise<void>;
+  cancelStudio: () => Promise<void>;
+  clearStudioCompletion: () => void;
+  /** Internal — driven by the global TWIN_STUDIO_* event listeners. */
+  onStudioProgress: (p: { batch_id: string; phase: string; completed: number; total: number }) => void;
+  onStudioComplete: (p: { batch_id: string; status: string; phase: string; item_count: number }) => void;
   fetchTwinProfiles: () => Promise<void>;
   createTwinProfile: (
     name: string,
@@ -76,6 +102,7 @@ export interface TwinSlice {
       languages?: string | null;
       pronouns?: string | null;
       obsidianSubpath?: string;
+      trainingDirectives?: string | null;
     },
   ) => Promise<void>;
   deleteTwinProfile: (id: string) => Promise<void>;
@@ -159,9 +186,91 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinChannels: [],
   twinChannelsLoading: false,
   pendingTrainingQuestions: null,
+  studioJobActive: false,
+  studioBatchId: null,
+  studioPhase: null,
+  studioCompleted: 0,
+  studioTotal: 0,
+  studioBatch: null,
+  studioJustCompleted: null,
 
   setTwinTab: (tab) => set({ twinTab: tab }),
   setPendingTrainingQuestions: (questions) => set({ pendingTrainingQuestions: questions }),
+
+  // -- Training Studio actions -----------------------------------------
+
+  startStudioQuestions: async (twinId, topic, directions, count) => {
+    try {
+      const batchId = await twinApi.studioGenerateQuestions(twinId, topic, directions, count);
+      set({
+        studioJobActive: true,
+        studioBatchId: batchId,
+        studioPhase: "questions",
+        studioCompleted: 0,
+        studioTotal: count ?? 8,
+        studioJustCompleted: null,
+      });
+    } catch (err) {
+      reportError(err, "Failed to start question generation", set);
+      throw err;
+    }
+  },
+
+  startStudioAnswers: async (twinId, items, directions) => {
+    try {
+      const batchId = await twinApi.studioGenerateAnswers(twinId, items, directions);
+      set({
+        studioJobActive: true,
+        studioBatchId: batchId,
+        studioPhase: "answers",
+        studioCompleted: 0,
+        studioTotal: items.length,
+        studioJustCompleted: null,
+      });
+    } catch (err) {
+      reportError(err, "Failed to start answer drafting", set);
+      throw err;
+    }
+  },
+
+  cancelStudio: async () => {
+    const batchId = get().studioBatchId;
+    set({ studioJobActive: false });
+    if (!batchId) return;
+    try {
+      await twinApi.studioCancel(batchId);
+    } catch (err) {
+      silentCatch("stores/slices/system/twinSlice:cancelStudio")(err);
+    }
+  },
+
+  clearStudioCompletion: () => set({ studioJustCompleted: null }),
+
+  onStudioProgress: (p) => {
+    // Ignore progress from a stale batch the user already moved past.
+    if (get().studioBatchId && p.batch_id !== get().studioBatchId) return;
+    set({ studioCompleted: p.completed, studioTotal: p.total, studioPhase: p.phase as "questions" | "answers" });
+  },
+
+  onStudioComplete: (p) => {
+    if (get().studioBatchId && p.batch_id !== get().studioBatchId) return;
+    // The backend already fired the authoritative OS notification; here we
+    // only settle in-app state and pull the full batch so the Studio UI can
+    // hydrate even if it was unmounted while the job ran.
+    set({ studioJobActive: false });
+    twinApi
+      .studioGetBatch(p.batch_id)
+      .then((batch) => {
+        set({
+          studioBatch: batch,
+          studioJustCompleted: { phase: p.phase, count: p.item_count, status: p.status, ts: Date.now() },
+        });
+      })
+      .catch((err) => {
+        silentCatch("stores/slices/system/twinSlice:onStudioComplete")(err);
+        set({ studioJustCompleted: { phase: p.phase, count: p.item_count, status: p.status, ts: Date.now() } });
+      });
+  },
 
   fetchTwinProfiles: async () => {
     set({ twinProfilesLoading: true });

@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "次にどこへ進むか",
     "nextMovesSubtitle": "最もカバレッジの薄いトピック — ブレインを大きく強化するために次にこれらをトレーニングしましょう。",
-    "nextMovesCoverage": "これまでに {count} 件のグラウンディング事実"
+    "nextMovesCoverage": "これまでに {count} 件のグラウンディング事実",
+    "draftAsTwin": "ツインとして下書き",
+    "draftingAsTwin": "{name}として下書き中…",
+    "twinDraftLabel": "ツインの下書き — 確認して編集",
+    "regenerate": "再生成",
+    "regenerateCommentPlaceholder": "どう変える？（例：もっと短く、2019年の話を追加）",
+    "studioOpen": "スタジオを開く",
+    "studioTagline": "質問とツインが下書きした回答を一括生成し、確認・編集して、最良のものを保存します。",
+    "studioBack": "クイックインタビュー",
+    "studioDirectionsLabel": "指示",
+    "studioDirectionsPlaceholder": "バッチを誘導 — 例：失敗談に焦点、質問は短く",
+    "studioTopicPlaceholder": "トピック — 例：技術的な意見",
+    "studioGenerateQuestions": "質問を生成",
+    "studioDraftAll": "すべてツインとして下書き",
+    "studioCancel": "キャンセル",
+    "studioSaveApproved": "選択した{count}件を保存",
+    "studioAddQuestion": "質問を追加",
+    "studioEmptyTitle": "まだ質問がありません",
+    "studioEmptyHint": "トピックを設定してバッチを生成するか、自分の質問を追加してください。",
+    "studioRunningAnswers": "回答を下書き中… {completed}/{total}",
+    "studioRunningQuestions": "質問を生成中…",
+    "studioBackgroundNote": "バックグラウンドで実行 — 完了すると通知が届きます。",
+    "studioAnswerPlaceholder": "回答 — ツインとして下書き、または自分で記入",
+    "studioDraftOne": "下書き",
+    "studioWordCount": "{count} 語",
+    "studioSavedToast": "{count}組をメモリに保存しました",
+    "studioRemoveRow": "削除",
+    "studioSaveDirections": "既定の指示として保存",
+    "studioDirectionsSaved": "既定として保存済み",
+    "studioDirectionsSavedToast": "指示を保存しました"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "{section}を開く",
+    "nextStep": "次のステップ",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "ツインを完成させる"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "抽出済みファクトに保存しました。",
     "saveAsFactTooltip": "このコミュニケーションを永続的な抽出ファクトに昇格します",
     "saveAsFactError": "ファクトとして保存できませんでした。"
-  }
+  },
+  "studioInProgress": "トレーニングスタジオ実行中"
 }

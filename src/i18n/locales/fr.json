@@ -13950,7 +13950,36 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "Où aller ensuite",
       "nextMovesSubtitle": "Sujets dont la couverture est la plus mince — entraînez-les en priorité pour donner le plus gros coup de boost au cerveau.",
-      "nextMovesCoverage": "{count} faits d'ancrage à ce jour"
+      "nextMovesCoverage": "{count} faits d'ancrage à ce jour",
+      "draftAsTwin": "Brouillon comme le jumeau",
+      "draftingAsTwin": "Rédaction en tant que {name}…",
+      "twinDraftLabel": "Brouillon du jumeau — relire et modifier",
+      "regenerate": "Régénérer",
+      "regenerateCommentPlaceholder": "Que changer ? (p. ex. plus court, ajouter l'histoire de 2019)",
+      "studioOpen": "Ouvrir le studio",
+      "studioTagline": "Générez par lots des questions et des réponses rédigées par le jumeau, relisez, modifiez et enregistrez le meilleur.",
+      "studioBack": "Entretien rapide",
+      "studioDirectionsLabel": "Consignes",
+      "studioDirectionsPlaceholder": "Orientez le lot — p. ex. : axez sur les échecs, questions courtes",
+      "studioTopicPlaceholder": "Sujet — p. ex. : avis tech",
+      "studioGenerateQuestions": "Générer des questions",
+      "studioDraftAll": "Tout rédiger comme le jumeau",
+      "studioCancel": "Annuler",
+      "studioSaveApproved": "Enregistrer {count} sélectionnées",
+      "studioAddQuestion": "Ajouter une question",
+      "studioEmptyTitle": "Pas encore de questions",
+      "studioEmptyHint": "Définissez un sujet et générez un lot, ou ajoutez vos propres questions.",
+      "studioRunningAnswers": "Rédaction des réponses… {completed}/{total}",
+      "studioRunningQuestions": "Génération des questions…",
+      "studioBackgroundNote": "S'exécute en arrière-plan — vous serez notifié une fois terminé.",
+      "studioAnswerPlaceholder": "Réponse — rédigez comme le jumeau ou écrivez la vôtre",
+      "studioDraftOne": "Brouillon",
+      "studioWordCount": "{count} mots",
+      "studioSavedToast": "{count} paires enregistrées en mémoire",
+      "studioRemoveRow": "Supprimer",
+      "studioSaveDirections": "Enregistrer comme consignes par défaut",
+      "studioDirectionsSaved": "Enregistré par défaut",
+      "studioDirectionsSavedToast": "Consignes enregistrées"
     },
     "brain": {
       "title": "Brain",
@@ -14083,7 +14112,11 @@
       "chipChannelsPaused": "All paused",
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
-      "languages": "Languages"
+      "languages": "Languages",
+      "openSection": "Ouvrir {section}",
+      "nextStep": "Étape suivante",
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Complétez votre jumeau"
     },
     "variantTabs": {
       "prototype": "Prototype",
@@ -14355,7 +14388,8 @@
       "saveAsFactToast": "Enregistré dans les faits distillés.",
       "saveAsFactTooltip": "Promouvoir cette communication en fait distillé durable",
       "saveAsFactError": "Impossible d'enregistrer comme fait."
-    }
+    },
+    "studioInProgress": "Studio d'entraînement en cours"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

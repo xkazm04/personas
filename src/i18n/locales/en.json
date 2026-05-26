@@ -14017,7 +14017,36 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "draftAsTwin": "Draft as twin",
+      "draftingAsTwin": "Drafting as {name}…",
+      "twinDraftLabel": "Twin draft — review & edit",
+      "regenerate": "Regenerate",
+      "regenerateCommentPlaceholder": "What to change? (e.g. shorter, add the 2019 story)",
+      "studioOpen": "Open the Studio",
+      "studioTagline": "Batch-generate questions and twin-drafted answers, review and edit, then save the best.",
+      "studioBack": "Quick interview",
+      "studioDirectionsLabel": "Directions",
+      "studioDirectionsPlaceholder": "Steer the batch — e.g. focus on failure stories, keep questions short",
+      "studioTopicPlaceholder": "Topic — e.g. Tech opinions",
+      "studioGenerateQuestions": "Generate questions",
+      "studioDraftAll": "Draft all as twin",
+      "studioCancel": "Cancel",
+      "studioSaveApproved": "Save {count} selected",
+      "studioAddQuestion": "Add a question",
+      "studioEmptyTitle": "No questions yet",
+      "studioEmptyHint": "Set a topic and generate a batch, or add your own questions.",
+      "studioRunningAnswers": "Drafting answers… {completed}/{total}",
+      "studioRunningQuestions": "Generating questions…",
+      "studioBackgroundNote": "Runs in the background — you'll get a notification when it's done.",
+      "studioAnswerPlaceholder": "Answer — draft as twin, or write your own",
+      "studioDraftOne": "Draft",
+      "studioWordCount": "{count} words",
+      "studioSavedToast": "{count} pairs saved to memory",
+      "studioRemoveRow": "Remove",
+      "studioSaveDirections": "Save as default directions",
+      "studioDirectionsSaved": "Saved as default",
+      "studioDirectionsSavedToast": "Directions saved"
     },
     "brain": {
       "title": "Brain",
@@ -14250,7 +14279,11 @@
       "chipChannelsPaused": "All paused",
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
-      "languages": "Languages"
+      "languages": "Languages",
+      "openSection": "Open {section}",
+      "nextStep": "Next step",
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Complete your twin"
     },
     "hero": {
       "eyebrow": "Twin",
@@ -14381,7 +14414,8 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
-    }
+    },
+    "studioInProgress": "Training studio in progress"
   },
   "radio": {
     "footer_label": "Radio player",

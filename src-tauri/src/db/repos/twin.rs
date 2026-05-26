@@ -23,6 +23,7 @@ fn row_to_twin_profile(row: &Row) -> rusqlite::Result<TwinProfile> {
         obsidian_subpath: row.get("obsidian_subpath")?,
         is_active: row.get::<_, i32>("is_active")? != 0,
         knowledge_base_id: row.get("knowledge_base_id").unwrap_or(None),
+        training_directives: row.get("training_directives").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
     })
@@ -162,6 +163,7 @@ pub fn update_profile(
     languages: Option<Option<&str>>,
     pronouns: Option<Option<&str>>,
     obsidian_subpath: Option<&str>,
+    training_directives: Option<Option<&str>>,
 ) -> Result<TwinProfile, AppError> {
     // Existence check up-front so we return a clean NotFound rather than a
     // silent no-op when the caller hands us a dead id.
@@ -202,6 +204,11 @@ pub fn update_profile(
     if let Some(v) = obsidian_subpath {
         sets.push(format!("obsidian_subpath = ?{idx}"));
         param_values.push(Box::new(v.to_string()));
+        idx += 1;
+    }
+    if let Some(v) = training_directives {
+        sets.push(format!("training_directives = ?{idx}"));
+        param_values.push(Box::new(v.map(|s| s.to_string())));
         idx += 1;
     }
 

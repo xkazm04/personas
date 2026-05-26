@@ -14024,6 +14024,35 @@ export type Translations = {
       summarizingSession: string;
       sessionSummaryHeading: string;
       summarySaved: string;
+      draftAsTwin: string;
+      draftingAsTwin: string;
+      twinDraftLabel: string;
+      regenerate: string;
+      regenerateCommentPlaceholder: string;
+      studioOpen: string;
+      studioTagline: string;
+      studioBack: string;
+      studioDirectionsLabel: string;
+      studioDirectionsPlaceholder: string;
+      studioTopicPlaceholder: string;
+      studioGenerateQuestions: string;
+      studioDraftAll: string;
+      studioCancel: string;
+      studioSaveApproved: string;
+      studioAddQuestion: string;
+      studioEmptyTitle: string;
+      studioEmptyHint: string;
+      studioRunningAnswers: string;
+      studioRunningQuestions: string;
+      studioBackgroundNote: string;
+      studioAnswerPlaceholder: string;
+      studioDraftOne: string;
+      studioWordCount: string;
+      studioSavedToast: string;
+      studioRemoveRow: string;
+      studioSaveDirections: string;
+      studioDirectionsSaved: string;
+      studioDirectionsSavedToast: string;
     };
     brain: {
       title: string;
@@ -14257,6 +14286,10 @@ export type Translations = {
       chipMemories: string;
       readyPercent: string;
       languages: string;
+      openSection: string;
+      nextStep: string;
+      scoreDelta: string;
+      checklistHeading: string;
     };
     hero: {
       eyebrow: string;
@@ -14388,6 +14421,7 @@ export type Translations = {
       trainingTitle: string;
       trainingBody: string;
     };
+    studioInProgress: string;
   };
   radio: {
     footer_label: string;

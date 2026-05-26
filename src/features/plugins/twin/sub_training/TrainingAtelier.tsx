@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen, ArrowRight, Briefcase, Lightbulb, MessageSquare, Compass, Rocket, Heart, Quote } from 'lucide-react';
+import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen, ArrowRight, Briefcase, Lightbulb, MessageSquare, Compass, Rocket, Heart, Quote, Bot, Wand2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
@@ -7,6 +8,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 import { NextMovesPanel } from './NextMovesPanel';
+import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -31,13 +33,25 @@ const TOPIC_TINTS: Record<string, string> = {
 };
 
 export default function TrainingAtelier() {
-  const t = useTranslation().t.twin;
+  const { t: tFull, tx } = useTranslation();
+  const t = tFull.twin;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const setTwinTab = useSystemStore((s) => s.setTwinTab);
   const session = useTrainingSession();
+  const [regenOpen, setRegenOpen] = useState(false);
+  const [regenComment, setRegenComment] = useState('');
+  const [mode, setMode] = useState<'classic' | 'studio'>('classic');
 
   if (!activeTwinId || !activeTwin) return <TwinEmptyState icon={GraduationCap} title={t.training.title} />;
+
+  if (mode === 'studio') {
+    return (
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden min-w-[80vw]">
+        <TrainingStudio onExit={() => setMode('classic')} />
+      </div>
+    );
+  }
 
   const currentQ = session.questions[session.currentIdx];
   const isOnFollowup = !!currentQ?.isFollowup;
@@ -89,13 +103,28 @@ export default function TrainingAtelier() {
         {session.phase === 'topic' && (
           <div className="h-full overflow-y-auto">
             <div className="max-w-3xl mx-auto px-4 md:px-6 xl:px-8 py-10">
-              <div className="text-center mb-8">
+              <div className="text-center mb-6">
                 <h2 className="typo-heading-lg font-semibold text-foreground mb-2">{t.training.whatToTrain}</h2>
                 <p className="typo-body text-foreground">{t.training.topicHint}</p>
                 {session.groundingFacts.length > 0 && (
                   <p className="typo-caption text-violet-300 mt-2">{t.training.groundingHint.replace('{count}', String(session.groundingFacts.length))}</p>
                 )}
               </div>
+
+              {/* Studio entry — batch authoring of both sides in the background */}
+              <button
+                onClick={() => setMode('studio')}
+                className="group w-full mb-6 flex items-center gap-3 rounded-card border border-violet-500/25 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5 px-4 py-3 text-left hover:border-violet-500/40 hover:shadow-elevation-1 focus-ring transition-all"
+              >
+                <span className="flex-shrink-0 w-10 h-10 rounded-card bg-violet-500/15 border border-violet-500/30 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-violet-300" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block typo-card-label text-foreground">{t.training.studioOpen}</span>
+                  <span className="block typo-caption text-foreground mt-0.5">{t.training.studioTagline}</span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-foreground group-hover:text-violet-300 transition-colors flex-shrink-0" />
+              </button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
                 {TRAINING_TOPIC_PRESETS.map((topic) => {
@@ -237,33 +266,77 @@ export default function TrainingAtelier() {
 
             {/* Answer dock */}
             <div className="flex-shrink-0 border-t border-primary/10 bg-gradient-to-t from-violet-500/5 to-transparent px-4 md:px-6 py-3">
-              <div className="max-w-3xl mx-auto flex gap-2 items-end">
-                <textarea
-                  ref={session.answerRef}
-                  value={session.answerDraft}
-                  onChange={(e) => session.setAnswerDraft(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void session.handleSubmitAnswer(); } }}
-                  placeholder={t.training.answerPlaceholder}
-                  disabled={session.saving || session.followupLoading || session.summarizing}
-                  rows={1}
-                  autoFocus
-                  className="flex-1 resize-none rounded-card border border-violet-500/20 bg-background px-4 py-3 typo-body text-foreground placeholder:text-foreground/45 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/15 disabled:opacity-50 min-h-[48px] max-h-[200px] transition-colors"
-                  onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }}
-                />
-                {isOnFollowup && (
-                  <button onClick={() => void session.handleSkipFollowup()} disabled={session.saving || session.followupLoading}
-                    className="flex-shrink-0 h-12 px-3 rounded-card border border-primary/15 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30">
-                    {t.training.skipFollowup}
-                  </button>
+              <div className="max-w-3xl mx-auto">
+                {/* Twin-draft status + regenerate affordance */}
+                {(session.aiDrafted || session.drafting) && (
+                  <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] uppercase tracking-wider font-medium text-violet-300 bg-violet-500/10 border border-violet-500/25">
+                      <Bot className="w-3 h-3" />
+                      {session.drafting ? tx(t.training.draftingAsTwin, { name: activeTwin.name }) : t.training.twinDraftLabel}
+                    </span>
+                    {session.aiDrafted && !session.drafting && (
+                      <button type="button" onClick={() => setRegenOpen((v) => !v)}
+                        className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive text-[11px] text-foreground hover:text-violet-300 hover:bg-violet-500/10 focus-ring transition-colors">
+                        <Wand2 className="w-3 h-3" /> {t.training.regenerate}
+                      </button>
+                    )}
+                  </div>
                 )}
-                <button onClick={() => void session.handleSubmitAnswer()} disabled={!session.answerDraft.trim() || session.saving || session.followupLoading || session.summarizing}
-                  className="flex-shrink-0 w-12 h-12 rounded-card bg-gradient-to-br from-violet-500 to-fuchsia-500 text-primary-foreground flex items-center justify-center hover:shadow-elevation-2 transition-shadow disabled:opacity-30 disabled:cursor-not-allowed">
-                  {session.saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
-                </button>
+                {regenOpen && session.aiDrafted && !session.drafting && (
+                  <div className="mb-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={regenComment}
+                      onChange={(e) => setRegenComment(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') { void session.draftAnswer(regenComment.trim() || undefined); setRegenComment(''); setRegenOpen(false); } }}
+                      placeholder={t.training.regenerateCommentPlaceholder}
+                      autoFocus
+                      className="flex-1 rounded-card border border-violet-500/20 bg-background px-3 py-2 typo-caption text-foreground placeholder:text-foreground/45 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
+                    />
+                    <button type="button" onClick={() => { void session.draftAnswer(regenComment.trim() || undefined); setRegenComment(''); setRegenOpen(false); }}
+                      aria-label={t.training.regenerate}
+                      className="flex-shrink-0 px-3 rounded-card border border-violet-500/30 bg-violet-500/10 text-violet-300 hover:bg-violet-500/20 focus-ring transition-colors">
+                      <Wand2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                <div className="flex gap-2 items-end">
+                  <textarea
+                    ref={session.answerRef}
+                    value={session.answerDraft}
+                    onChange={(e) => session.setAnswerDraft(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void session.handleSubmitAnswer(); } }}
+                    placeholder={t.training.answerPlaceholder}
+                    disabled={session.saving || session.followupLoading || session.summarizing || session.drafting}
+                    rows={1}
+                    autoFocus
+                    className="flex-1 resize-none rounded-card border border-violet-500/20 bg-background px-4 py-3 typo-body text-foreground placeholder:text-foreground/45 focus:border-violet-500/50 focus:outline-none focus:ring-2 focus:ring-violet-500/15 disabled:opacity-50 min-h-[48px] max-h-[200px] transition-colors"
+                    onInput={(e) => { const el = e.currentTarget; el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }}
+                  />
+                  {isOnFollowup && (
+                    <button onClick={() => void session.handleSkipFollowup()} disabled={session.saving || session.followupLoading || session.drafting}
+                      className="flex-shrink-0 h-12 px-3 rounded-card border border-primary/15 typo-caption text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors disabled:opacity-30">
+                      {t.training.skipFollowup}
+                    </button>
+                  )}
+                  {/* Draft this answer as the twin (twin simulation) */}
+                  <button onClick={() => void session.draftAnswer()} disabled={session.saving || session.followupLoading || session.summarizing || session.drafting}
+                    title={t.training.draftAsTwin}
+                    className="flex-shrink-0 h-12 px-3 rounded-card border border-violet-500/30 bg-violet-500/5 text-violet-300 hover:bg-violet-500/15 focus-ring transition-colors disabled:opacity-30 inline-flex items-center gap-1.5 typo-caption font-medium">
+                    {session.drafting
+                      ? <div className="w-4 h-4 border-2 border-violet-300/30 border-t-violet-300 rounded-full animate-spin" />
+                      : <Bot className="w-4 h-4" />}
+                    <span className="hidden sm:inline">{t.training.draftAsTwin}</span>
+                  </button>
+                  <button onClick={() => void session.handleSubmitAnswer()} disabled={!session.answerDraft.trim() || session.saving || session.followupLoading || session.summarizing || session.drafting}
+                    className="flex-shrink-0 w-12 h-12 rounded-card bg-gradient-to-br from-violet-500 to-fuchsia-500 text-primary-foreground flex items-center justify-center hover:shadow-elevation-2 transition-shadow disabled:opacity-30 disabled:cursor-not-allowed">
+                    {session.saving ? <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[10px] text-foreground mt-1.5 text-center select-none uppercase tracking-wider">
+                  {t.training.enterToSubmit}
+                </p>
               </div>
-              <p className="text-[10px] text-foreground mt-1.5 text-center select-none uppercase tracking-wider max-w-3xl mx-auto">
-                {t.training.enterToSubmit}
-              </p>
             </div>
           </div>
         )}

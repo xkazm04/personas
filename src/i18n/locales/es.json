@@ -13950,7 +13950,36 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "Hacia dónde ir después",
       "nextMovesSubtitle": "Los temas con menos cobertura — entrénalos a continuación para el mayor impulso al cerebro.",
-      "nextMovesCoverage": "{count} hechos de base hasta ahora"
+      "nextMovesCoverage": "{count} hechos de base hasta ahora",
+      "draftAsTwin": "Borrador como gemelo",
+      "draftingAsTwin": "Redactando como {name}…",
+      "twinDraftLabel": "Borrador del gemelo: revisa y edita",
+      "regenerate": "Regenerar",
+      "regenerateCommentPlaceholder": "¿Qué cambiar? (p. ej.: más corto, añade la historia de 2019)",
+      "studioOpen": "Abrir el estudio",
+      "studioTagline": "Genera por lotes preguntas y respuestas redactadas por el gemelo, revisa y edita, y guarda lo mejor.",
+      "studioBack": "Entrevista rápida",
+      "studioDirectionsLabel": "Indicaciones",
+      "studioDirectionsPlaceholder": "Orienta el lote — p. ej.: céntrate en historias de fracaso, preguntas breves",
+      "studioTopicPlaceholder": "Tema — p. ej.: opiniones tecnológicas",
+      "studioGenerateQuestions": "Generar preguntas",
+      "studioDraftAll": "Redactar todo como gemelo",
+      "studioCancel": "Cancelar",
+      "studioSaveApproved": "Guardar {count} seleccionadas",
+      "studioAddQuestion": "Añadir pregunta",
+      "studioEmptyTitle": "Aún no hay preguntas",
+      "studioEmptyHint": "Define un tema y genera un lote, o añade tus propias preguntas.",
+      "studioRunningAnswers": "Redactando respuestas… {completed}/{total}",
+      "studioRunningQuestions": "Generando preguntas…",
+      "studioBackgroundNote": "Se ejecuta en segundo plano: recibirás una notificación al terminar.",
+      "studioAnswerPlaceholder": "Respuesta — redacta como gemelo o escribe la tuya",
+      "studioDraftOne": "Borrador",
+      "studioWordCount": "{count} palabras",
+      "studioSavedToast": "{count} pares guardados en la memoria",
+      "studioRemoveRow": "Eliminar",
+      "studioSaveDirections": "Guardar como indicaciones predeterminadas",
+      "studioDirectionsSaved": "Guardado como predeterminado",
+      "studioDirectionsSavedToast": "Indicaciones guardadas"
     },
     "brain": {
       "title": "Brain",
@@ -14083,7 +14112,11 @@
       "chipChannelsPaused": "All paused",
       "chipMemories": "Memories",
       "readyPercent": "{pct}% ready",
-      "languages": "Languages"
+      "languages": "Languages",
+      "openSection": "Abrir {section}",
+      "nextStep": "Siguiente paso",
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Completa tu gemelo"
     },
     "variantTabs": {
       "prototype": "Prototype",
@@ -14355,7 +14388,8 @@
       "saveAsFactToast": "Guardado en hechos destilados.",
       "saveAsFactTooltip": "Promover esta comunicación a un hecho destilado duradero",
       "saveAsFactError": "No se pudo guardar como hecho."
-    }
+    },
+    "studioInProgress": "Estudio de entrenamiento en curso"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

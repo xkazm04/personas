@@ -132,6 +132,12 @@ export const EventName = {
   TASK_EXEC_OUTPUT: 'task-exec-output',
   TASK_EXEC_COMPLETE: 'task-exec-complete',
 
+  // Twin Training Studio (background batch question/answer generation)
+  TWIN_STUDIO_STATUS: 'twin-studio-status',
+  TWIN_STUDIO_OUTPUT: 'twin-studio-output',
+  TWIN_STUDIO_PROGRESS: 'twin-studio-progress',
+  TWIN_STUDIO_COMPLETE: 'twin-studio-complete',
+
   // Auto-run scheduler
   AUTO_RUN_STATUS: 'auto-run-status',
   AUTO_RUN_COMPLETE: 'auto-run-complete',
@@ -733,6 +739,12 @@ export interface EventPayloadMap {
   [EventName.TASK_EXEC_STATUS]: { job_id: string; status: string; error?: string };
   [EventName.TASK_EXEC_OUTPUT]: { job_id: string; line: string };
   [EventName.TASK_EXEC_COMPLETE]: { task_id: string; output_lines: number; context_warnings?: string[] };
+
+  // Twin Training Studio (BackgroundJob pattern)
+  [EventName.TWIN_STUDIO_STATUS]: { job_id: string; status: string; error?: string };
+  [EventName.TWIN_STUDIO_OUTPUT]: { job_id: string; line: string };
+  [EventName.TWIN_STUDIO_PROGRESS]: { batch_id: string; phase: string; completed: number; total: number };
+  [EventName.TWIN_STUDIO_COMPLETE]: { batch_id: string; status: string; phase: string; item_count: number };
 
   // Auto-run scheduler
   [EventName.AUTO_RUN_STATUS]: { job_id: string; status: string; error?: string };

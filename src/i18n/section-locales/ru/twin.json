@@ -209,7 +209,36 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Куда двигаться дальше",
     "nextMovesSubtitle": "Темы со слабейшим покрытием — натренируйте их следующими для максимального прироста мозга.",
-    "nextMovesCoverage": "{count} опорных фактов на данный момент"
+    "nextMovesCoverage": "{count} опорных фактов на данный момент",
+    "draftAsTwin": "Черновик от двойника",
+    "draftingAsTwin": "Черновик от имени {name}…",
+    "twinDraftLabel": "Черновик двойника — проверьте и отредактируйте",
+    "regenerate": "Сгенерировать заново",
+    "regenerateCommentPlaceholder": "Что изменить? (напр.: короче, добавить историю 2019 года)",
+    "studioOpen": "Открыть студию",
+    "studioTagline": "Сгенерируйте пакет вопросов и черновиков ответов двойника, проверьте, отредактируйте и сохраните лучшее.",
+    "studioBack": "Быстрое интервью",
+    "studioDirectionsLabel": "Указания",
+    "studioDirectionsPlaceholder": "Направьте пакет — напр.: про истории неудач, короткие вопросы",
+    "studioTopicPlaceholder": "Тема — напр.: мнения о технологиях",
+    "studioGenerateQuestions": "Сгенерировать вопросы",
+    "studioDraftAll": "Черновики всех от двойника",
+    "studioCancel": "Отмена",
+    "studioSaveApproved": "Сохранить выбранные ({count})",
+    "studioAddQuestion": "Добавить вопрос",
+    "studioEmptyTitle": "Пока нет вопросов",
+    "studioEmptyHint": "Задайте тему и сгенерируйте пакет или добавьте свои вопросы.",
+    "studioRunningAnswers": "Черновики ответов… {completed}/{total}",
+    "studioRunningQuestions": "Генерация вопросов…",
+    "studioBackgroundNote": "Работает в фоне — вы получите уведомление по завершении.",
+    "studioAnswerPlaceholder": "Ответ — черновик от двойника или напишите сами",
+    "studioDraftOne": "Черновик",
+    "studioWordCount": "{count} слов",
+    "studioSavedToast": "{count} пар сохранено в память",
+    "studioRemoveRow": "Удалить",
+    "studioSaveDirections": "Сохранить как указания по умолчанию",
+    "studioDirectionsSaved": "Сохранено по умолчанию",
+    "studioDirectionsSavedToast": "Указания сохранены"
   },
   "brain": {
     "title": "Brain",
@@ -342,7 +371,11 @@
     "chipChannelsPaused": "All paused",
     "chipMemories": "Memories",
     "readyPercent": "{pct}% ready",
-    "languages": "Languages"
+    "languages": "Languages",
+    "openSection": "Открыть {section}",
+    "nextStep": "Следующий шаг",
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Завершите настройку двойника"
   },
   "variantTabs": {
     "prototype": "Prototype",
@@ -614,5 +647,6 @@
     "saveAsFactToast": "Сохранено в выжимку фактов.",
     "saveAsFactTooltip": "Сохранить это сообщение как устойчивый выжатый факт",
     "saveAsFactError": "Не удалось сохранить как факт."
-  }
+  },
+  "studioInProgress": "Студия обучения работает"
 }
