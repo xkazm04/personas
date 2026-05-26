@@ -55,25 +55,25 @@
     {
       "from": "architect",
       "to": "reviewer",
-      "connection_type": "data",
+      "connection_type": "sequential",
       "label": "scoped implementation plan (architecture.analysis.completed)"
     },
     {
       "from": "reviewer",
       "to": "security",
-      "connection_type": "data",
+      "connection_type": "sequential",
       "label": "reviewed changes to audit (code_review.completed)"
     },
     {
       "from": "security",
       "to": "release",
-      "connection_type": "data",
+      "connection_type": "sequential",
       "label": "security-cleared changes (security.scan.completed)"
     },
     {
       "from": "release",
       "to": "docs",
-      "connection_type": "data",
+      "connection_type": "sequential",
       "label": "published release (release.published)"
     },
     {

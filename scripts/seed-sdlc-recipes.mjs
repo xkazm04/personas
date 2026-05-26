@@ -377,6 +377,18 @@ const RECIPES = [
 // ───────────────────────── seed (insert-only) ─────────────────────────
 const SEEDS_PATH = 'scripts/templates/_recipe_seeds.json';
 const seeds = JSON.parse(readFileSync(SEEDS_PATH, 'utf8'));
+
+// Heal: the Rust RecipeSeed struct types `tags` as Option<String> (the value is
+// a JSON-encoded array string, e.g. "[\"x\",\"derived\"]"), NOT a JSON array.
+// A raw array breaks the whole bundle's serde parse at startup. Normalize any
+// array-typed tags (e.g. rows an earlier version of this script wrote) to the
+// stringified form so the include_str! bundle deserializes.
+let healed = 0;
+for (const r of seeds.recipes) {
+  if (Array.isArray(r.tags)) { r.tags = JSON.stringify(r.tags); healed++; }
+}
+if (healed) console.log(`healed ${healed} row(s) with array-typed tags -> string`);
+
 const existing = new Set(seeds.recipes.map((r) => `${r.source_template_id}::${r.source_use_case_id}`));
 
 let added = 0;
@@ -396,7 +408,7 @@ for (const { template, pt } of RECIPES) {
     category: pt.category,
     prompt_template: JSON.stringify(pt),
     tool_requirements: null,
-    tags: [template, 'derived'],
+    tags: JSON.stringify([template, 'derived']),
   });
   existing.add(key);
   added++;
