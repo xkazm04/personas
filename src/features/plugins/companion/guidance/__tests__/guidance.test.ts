@@ -15,13 +15,13 @@ describe('walkthroughs registry', () => {
     }
   });
 
-  it('points the build steps at the persona-build anchors (Phase 4 testids)', () => {
+  it('points the build steps at stable studio anchors', () => {
     const ids = WALKTHROUGHS.persona_creation!.steps
       .map((s) => s.highlightTestId)
       .filter(Boolean);
     expect(ids).toContain('persona-build-entry');
-    expect(ids).toContain('persona-intent-input');
-    expect(ids).toContain('persona-build-launch');
+    expect(ids).toContain('glyph-compose-summon');
+    expect(ids).toContain('build-oneshot-toggle');
   });
 
   it('lists persona_creation in GUIDANCE_TOPICS (backend allow-list mirror)', () => {

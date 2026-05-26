@@ -36,21 +36,17 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
         orbAnchor: 'auto',
       },
       {
-        id: 'intent',
-        narration: (t) => t.plugins.companion.guide_pc_intent,
-        highlightTestId: 'persona-intent-input',
+        id: 'compose',
+        narration: (t) => t.plugins.companion.guide_pc_compose,
+        // The sigil's click-to-summon center — where the user describes the persona.
+        highlightTestId: 'glyph-compose-summon',
         orbAnchor: 'auto',
       },
       {
-        id: 'name',
-        narration: (t) => t.plugins.companion.guide_pc_name,
-        highlightTestId: 'persona-name-input',
-        orbAnchor: 'auto',
-      },
-      {
-        id: 'build',
-        narration: (t) => t.plugins.companion.guide_pc_build,
-        highlightTestId: 'persona-build-launch',
+        id: 'autonomous',
+        narration: (t) => t.plugins.companion.guide_pc_autonomous,
+        // The "let AI decide everything" one-shot toggle.
+        highlightTestId: 'build-oneshot-toggle',
         orbAnchor: 'auto',
       },
       {

@@ -11178,9 +11178,8 @@ export type Translations = {
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;
-      guide_pc_intent: string;
-      guide_pc_name: string;
-      guide_pc_build: string;
+      guide_pc_compose: string;
+      guide_pc_autonomous: string;
       guide_pc_outro: string;
       offer_intro: string;
       offer_build: string;

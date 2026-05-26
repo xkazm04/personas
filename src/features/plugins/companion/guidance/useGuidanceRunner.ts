@@ -75,12 +75,15 @@ function defaultDwell(text: string): number {
 
 function runPreAction(action: GuidancePreAction) {
   switch (action) {
-    case 'open_build_entry':
-      // Ensure the persona build studio is the visible surface so the step's
-      // anchors mount. Phase 4 hardens this (guarantees the builder, not the
-      // persona list, and adds the anchor testids the steps point at).
-      useSystemStore.getState().setSidebarSection('personas');
+    case 'open_build_entry': {
+      // Make the persona build studio the visible surface so the step's
+      // anchors mount. `isCreatingPersona` is what PersonasPage checks to
+      // render UnifiedBuildEntry (vs the persona list / editor).
+      const sys = useSystemStore.getState();
+      sys.setSidebarSection('personas');
+      sys.setIsCreatingPersona(true);
       break;
+    }
   }
 }
 
