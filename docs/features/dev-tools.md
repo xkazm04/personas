@@ -36,13 +36,21 @@ the project-selector banner on the other tabs.
 
 ### Create / edit project (`ProjectModal.tsx`)
 
+The dialog is grouped into three labelled sections — **Project**, **Source
+control**, and **Workspace** — under a title + subtitle, in a roomy two-column
+layout.
+
 - **Folder first:** pick a project folder. The **project name is auto-extracted
   from the folder name** and pre-filled; the field stays editable (a pencil
   affordance + an "auto-filled from folder" hint), and editing it stops the
   auto-fill from overwriting your choice.
 - **Project type** — optional visual tag (React, NodeJS, Rust, …).
-- **GitHub** — a searchable repo picker when a healthy GitHub PAT credential
-  exists, otherwise a manual URL input (muted placeholder).
+- **GitHub connector** — bind a vault GitHub PAT (persisted as
+  `pr_credential_id`) that authorises PR / source-control ops **and drives the
+  repository picker beside it**: the searchable repo dropdown lists
+  repositories from the selected connector (re-fetching when you change it),
+  falling back to auto-discovery of the first usable PAT, or to a manual URL
+  input when no healthy credential exists.
 - **Bound team** — optional; binds the project to a PersonaTeam pipeline.
 - **Create Codebase connector** (create mode only, on by default) — when
   checked, creating the project also creates a `Codebase — <project name>`

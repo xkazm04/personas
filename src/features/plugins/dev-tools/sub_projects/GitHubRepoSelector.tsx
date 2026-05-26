@@ -24,6 +24,14 @@ interface GitHubRepo {
 interface Props {
   value: string;
   onChange: (url: string) => void;
+  /**
+   * Preferred GitHub PAT credential to list repositories from. When set, the
+   * picker authenticates with this exact connector (so the repo list reflects
+   * the connector the user chose in the modal) instead of auto-discovering the
+   * first available one. Falls back to auto-discovery when null/unset or when
+   * the chosen credential isn't a usable GitHub PAT.
+   */
+  credentialId?: string | null;
 }
 
 /**
@@ -35,7 +43,7 @@ interface Props {
  *   and a simple manual URL input is shown instead.
  * - No errors are ever surfaced to the user.
  */
-export function GitHubRepoSelector({ value, onChange }: Props) {
+export function GitHubRepoSelector({ value, onChange, credentialId }: Props) {
   const { t } = useTranslation();
   const [repos, setRepos] = useState<GitHubRepo[]>([]);
   const [hasSelector, setHasSelector] = useState(false);
@@ -44,25 +52,33 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
   const [search, setSearch] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
 
-  // On mount: discover GitHub credential, healthcheck it, fetch repos
+  // Discover the GitHub credential, healthcheck it, fetch repos. Re-runs when
+  // the preferred credential changes so the dropdown always lists repositories
+  // from the connector the user selected in the modal.
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setHasSelector(false);
+    setRepos([]);
 
     (async () => {
       try {
         const credentials = await listCredentials();
-        const ghCred = credentials.find(
-          (c) => c.serviceType === 'github' || c.serviceType === 'github_actions',
-        );
-        if (!ghCred) { setLoading(false); return; }
+        const isGh = (c: { serviceType: string }) => c.serviceType === 'github' || c.serviceType === 'github_actions';
+        // Prefer the explicitly-selected connector; fall back to the first
+        // usable GitHub PAT when it's unset or not a GitHub credential.
+        const ghCred = (credentialId
+          ? credentials.find((c) => c.id === credentialId && isGh(c))
+          : undefined) ?? credentials.find(isGh);
+        if (!ghCred) { if (!cancelled) setLoading(false); return; }
 
         const health = await healthcheckCredential(ghCred.id);
-        if (!health.success) { setLoading(false); return; }
+        if (!health.success) { if (!cancelled) setLoading(false); return; }
 
         const res = await executeApiRequest(
           ghCred.id,
           'GET',
-          '/user/repos?per_page=100&sort=updated&type=owner',
+          '/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member',
           { Accept: 'application/vnd.github+json' },
         );
 
@@ -79,7 +95,7 @@ export function GitHubRepoSelector({ value, onChange }: Props) {
     })();
 
     return () => { cancelled = true; };
-  }, []);
+  }, [credentialId]);
 
   const handleSelect = useCallback((repo: GitHubRepo) => {
     onChange(repo.html_url);

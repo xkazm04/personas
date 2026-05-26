@@ -12053,6 +12053,13 @@ export type Translations = {
       github_repository: string;
       select_repository: string;
       no_repositories_found: string;
+      browse: string;
+      repos_from_connector: string;
+      modal_section_project: string;
+      modal_section_source: string;
+      modal_section_workspace: string;
+      new_project_subtitle: string;
+      edit_project_subtitle: string;
       implementation_log: string;
       loading_metadata: string;
       no_metadata_yet: string;
