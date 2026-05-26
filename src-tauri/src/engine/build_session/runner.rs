@@ -1070,8 +1070,48 @@ pub(super) async fn run_session(
         }
         last_answered_cells.clear();
 
-        // If question asked: wait for user answer, then continue to next turn
-        if got_question {
+        // If question asked: wait for user answer, then continue to next turn.
+        // Autonomous one-shot is the exception — it must never block on a human.
+        if got_question && one_shot {
+            // The LLM emitted a clarifying_question despite the never-ask
+            // instruction — most commonly when connector credentials are
+            // ambiguous (the vault has multiple credentials for a service_type,
+            // so the connectors gate is force-closed). In autonomous mode there
+            // is no user to answer, so blocking on `input_rx.recv()` would stall
+            // the build forever (observed 2026-05-26: companion-driven
+            // build_oneshot stuck at AwaitingInput turn=1). Instead clear the
+            // pending question, inject a decide-it-yourself directive, and
+            // continue to the next turn. The loop is MAX_TURNS-bounded, so this
+            // cannot spin indefinitely; the DraftReady gate already lets a
+            // one-shot through with any still-closed gates.
+            tracing::warn!(
+                session_id = %session_id,
+                turn = turn + 1,
+                "OneShot: LLM asked a clarifying_question; auto-continuing with a decide-yourself directive (no human present)"
+            );
+            persist_or_fail!(
+                build_session_repo::update(
+                    &pool,
+                    &session_id,
+                    &UpdateBuildSession {
+                        pending_question: Some(None),
+                        ..Default::default()
+                    },
+                ),
+                "clearing one_shot pending question"
+            );
+            pending_gate = None;
+            conversation.push((
+                "user",
+                "You are in autonomous one-shot mode — do NOT ask the user anything. \
+                 For the question you just asked, pick the most sensible default yourself \
+                 (e.g. choose the single most relevant credential when several match, or \
+                 proceed without an optional connector), emit the resolution(s), then emit \
+                 agent_ir. Never emit another clarifying_question."
+                    .into(),
+            ));
+            last_answered_cells.clear();
+        } else if got_question {
             cancel_if_emit_dropped!(emit_session_status(
                 &pool,
                 &channel,
