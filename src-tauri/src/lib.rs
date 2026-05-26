@@ -1128,8 +1128,15 @@ pub fn run() {
                 let pending = app.state::<test_automation::PendingResponses>().inner().clone();
                 let handle = app.handle().clone();
 
+                // Dev mode (`--features test-automation`): always on, default
+                // :17320 — but still let PERSONAS_TEST_PORT override it so a
+                // second instance on one device (parallel-CLI / multi-driver,
+                // ADR 2026-05-26) gets a DETERMINISTIC distinct bridge port
+                // instead of relying on the EADDRINUSE fallback scan.
                 #[cfg(feature = "test-automation")]
-                let requested_port = Some(test_automation::DEFAULT_PORT);
+                let requested_port = Some(test_automation::env_test_port().inspect(|port| {
+                    tracing::info!("test-automation bridge port overridden via PERSONAS_TEST_PORT={}", port);
+                }).unwrap_or(test_automation::DEFAULT_PORT));
 
                 #[cfg(not(feature = "test-automation"))]
                 let requested_port = test_automation::env_test_port().inspect(|port| {

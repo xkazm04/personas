@@ -75,16 +75,35 @@ pub struct EngineLeadership {
     app_data_dir: PathBuf,
     /// `Some(lock)` iff this instance currently holds leadership.
     lock: Mutex<Option<DaemonLock>>,
+    /// Forced-follower mode (`PERSONAS_FOLLOWER=1`): this instance NEVER acquires
+    /// leadership, so every leadership-gated singleton loop (OAuth refresh,
+    /// scheduler, webhook notifier, discord poller, …) stays idle. The local UI,
+    /// bridges, companion, and in-process persona builds/runs still work. This is
+    /// the Phase 5 lever (ADR 2026-05-26) that makes an isolated test instance
+    /// safe to run alongside a real leader without double-refreshing OAuth tokens
+    /// or double-sending outbound notifications.
+    forced_follower: bool,
 }
 
 impl EngineLeadership {
     /// Construct for a given app-data dir (where `daemon.lock` lives). Does
-    /// NOT acquire — call [`Self::try_acquire`] at startup.
+    /// NOT acquire — call [`Self::try_acquire`] at startup. Honors
+    /// `PERSONAS_FOLLOWER=1` to pin this instance as a permanent follower.
     pub fn new(app_data_dir: PathBuf) -> Self {
+        let forced_follower = std::env::var("PERSONAS_FOLLOWER")
+            .map(|v| {
+                let v = v.trim();
+                v == "1" || v.eq_ignore_ascii_case("true")
+            })
+            .unwrap_or(false);
+        if forced_follower {
+            tracing::info!("PERSONAS_FOLLOWER=1 — engine pinned as follower; all leader-only loops will idle");
+        }
         Self {
             instance_id: uuid::Uuid::new_v4().to_string(),
             app_data_dir,
             lock: Mutex::new(None),
+            forced_follower,
         }
     }
 
@@ -102,6 +121,9 @@ impl EngineLeadership {
     /// returns `true` without touching the file. Returns whether this instance
     /// holds leadership after the call.
     pub fn try_acquire(&self) -> bool {
+        if self.forced_follower {
+            return false;
+        }
         let mut guard = self.lock.lock().unwrap_or_else(|e| e.into_inner());
         if guard.is_some() {
             return true;
@@ -230,6 +252,24 @@ mod tests {
         let a = EngineLeadership::new(tmp.path().to_path_buf());
         let b = EngineLeadership::new(tmp.path().to_path_buf());
         assert_ne!(a.instance_id(), b.instance_id());
+    }
+
+    #[test]
+    fn forced_follower_never_acquires() {
+        let tmp = TempDir::new().unwrap();
+        let l = EngineLeadership {
+            instance_id: uuid::Uuid::new_v4().to_string(),
+            app_data_dir: tmp.path().to_path_buf(),
+            lock: Mutex::new(None),
+            forced_follower: true,
+        };
+        assert!(!l.try_acquire(), "forced follower must never acquire");
+        assert!(!l.is_leader());
+        l.tick(); // must not acquire on tick either
+        assert!(!l.is_leader());
+        // And the lock file must NOT exist — a forced follower never writes it,
+        // so a real leader elsewhere is never displaced.
+        assert!(!tmp.path().join(LEADER_LOCK_FILENAME).exists());
     }
 
     #[test]
