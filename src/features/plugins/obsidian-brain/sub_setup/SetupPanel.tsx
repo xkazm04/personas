@@ -322,6 +322,7 @@ export default function SetupPanel() {
                   description={m.desc}
                   checked={!!mirrorConfig[m.key]}
                   onChange={() => toggleMirror(m.key)}
+                  testId={`mirror-toggle-${m.key}`}
                 />
               ))}
             </div>

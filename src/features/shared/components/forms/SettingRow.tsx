@@ -26,6 +26,8 @@ interface SettingRowProps {
    * (enabled but quiet), `null`/omitted renders nothing.
    */
   statusDot?: 'active' | 'idle' | null;
+  /** Optional test id on the row (the whole row is the toggle hit-target). */
+  testId?: string;
 }
 
 /**
@@ -47,6 +49,7 @@ export function SettingRow({
   variant = 'divider',
   toggleSize = 'md',
   statusDot,
+  testId,
 }: SettingRowProps) {
   const interactive = !disabled;
   const wrap =
@@ -61,6 +64,7 @@ export function SettingRow({
     <div
       className={`${wrap}${interactive ? ' cursor-pointer select-none' : ''}`}
       onClick={interactive ? onChange : undefined}
+      data-testid={testId}
     >
       {icon ? <div className="mt-0.5 shrink-0">{icon}</div> : null}
       <div className="min-w-0 flex-1">
