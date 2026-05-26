@@ -1344,46 +1344,62 @@ fn execute_enqueue_dev_job(
             "enqueue_dev_job: unknown kind `{kind}` (supported: scan_codebase)"
         )));
     }
-    // Resolve the target Dev Tools project. Accept a project_id, root path, or
-    // project name (so "scan ai-paralegal", "scan <path>", or an explicit id all
-    // work); fall back to the most-recently-registered project.
+    // Resolve the target Dev Tools project. Accept ANY of project_id / path /
+    // project name (Athena may send several); try each. Path comparison is
+    // slash-normalized because a stored root_path uses OS separators (Windows
+    // backslashes) while the chat passes forward slashes. Fall back to the
+    // most-recently-registered project when nothing is specified.
     let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
-    let needle = params
-        .get("project_id")
-        .and_then(|v| v.as_str())
-        .or_else(|| p.get("project_id").and_then(|v| v.as_str()))
-        .or_else(|| p.get("path").and_then(|v| v.as_str()))
-        .or_else(|| params.get("path").and_then(|v| v.as_str()))
-        .or_else(|| p.get("project_name").and_then(|v| v.as_str()))
-        .or_else(|| p.get("name").and_then(|v| v.as_str()));
+    let mut candidates: Vec<String> = Vec::new();
+    for v in [
+        params.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_name").and_then(|v| v.as_str()),
+        p.get("name").and_then(|v| v.as_str()),
+        p.get("path").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let v = v.trim();
+        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
+            candidates.push(v.to_string());
+        }
+    }
 
     let project_id: String = {
         let conn = state.db.get()?;
-        let resolved = match needle {
-            Some(n) => conn
-                .query_row(
-                    "SELECT id FROM dev_projects WHERE id = ?1 OR root_path = ?1 OR name = ?1 \
-                     ORDER BY (id = ?1) DESC LIMIT 1",
-                    rusqlite::params![n],
-                    |r| r.get::<_, String>(0),
-                )
-                .ok(),
-            None => conn
+        let mut found: Option<String> = None;
+        for n in &candidates {
+            if let Ok(id) = conn.query_row(
+                "SELECT id FROM dev_projects \
+                 WHERE id = ?1 OR name = ?1 \
+                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+                 ORDER BY (id = ?1) DESC LIMIT 1",
+                rusqlite::params![n],
+                |r| r.get::<_, String>(0),
+            ) {
+                found = Some(id);
+                break;
+            }
+        }
+        if found.is_none() && candidates.is_empty() {
+            found = conn
                 .query_row(
                     "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
                     [],
                     |r| r.get::<_, String>(0),
                 )
-                .ok(),
-        };
-        match resolved {
+                .ok();
+        }
+        match found {
             Some(id) => id,
             None => {
-                return Err(AppError::Validation(
-                    "No matching Dev Tools project to scan. Register it first with \
-                     register_project (it needs a name + filesystem path)."
-                        .into(),
-                ))
+                return Err(AppError::Validation(format!(
+                    "No Dev Tools project matched {candidates:?}. Register it first with \
+                     register_project (name + filesystem path)."
+                )))
             }
         }
     };
