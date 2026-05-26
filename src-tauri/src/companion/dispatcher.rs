@@ -52,6 +52,11 @@ pub struct Dispatched {
     /// surface contextual info inside the chat transcript when she judges it
     /// useful for the current turn. Each entry is `(kind, config_json)`.
     pub chat_cards: Vec<ChatCard>,
+    /// `start_guided_walkthrough` topics Athena triggered this turn. Auto-fire
+    /// (no approval) — session.rs emits a `companion://guide` event per topic
+    /// and the frontend runner walks the registry-defined steps (orb glide +
+    /// element glow + narration). Each entry is a validated topic id.
+    pub guide_walkthroughs: Vec<String>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -204,6 +209,12 @@ const ALLOWED_ROUTES: &[&str] = &[
     "settings",
     "monitor",
 ];
+
+/// Topics Athena may trigger via `start_guided_walkthrough`. Mirrors the
+/// frontend registry keys in `guidance/walkthroughs.ts` (`GUIDANCE_TOPICS`).
+/// A topic not listed here is rejected with a warning so a hallucinated
+/// walkthrough name can't drive the orb to nowhere.
+const GUIDED_TOPICS: &[&str] = &["persona_creation"];
 
 /// Scan assistant text for op JSON blocks, persist them as approval rows,
 /// and return cleaned text + the list of created approvals.
@@ -1174,6 +1185,60 @@ pub fn dispatch(
                 }
                 out.navigations.push(route.to_string());
             }
+            Ok(env)
+                if env.op == "propose_action"
+                    && env.action == "show_persona_creation_offer" =>
+            {
+                // Offer card: "Build it for me" vs "Show me how to build it".
+                // Athena emits this when a user describes a persona they want.
+                // Auto-fire — the user picks from the two buttons; the widget
+                // owns the build-prefill / walkthrough-trigger wiring on click.
+                let intent = env
+                    .params
+                    .get("intent")
+                    .and_then(|v| v.as_str())
+                    .map(str::trim)
+                    .unwrap_or("");
+                if intent.is_empty() {
+                    out.warnings
+                        .push("show_persona_creation_offer: missing `intent`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.chat_cards.push(ChatCard {
+                    kind: "persona_creation_offer".to_string(),
+                    title: None,
+                    config: serde_json::json!({ "intent": intent }),
+                });
+            }
+            Ok(env)
+                if env.op == "propose_action"
+                    && env.action == "start_guided_walkthrough" =>
+            {
+                // Auto-fire: launch a registry-defined guided walkthrough (orb
+                // glides + element glow + narration). The step content lives in
+                // the frontend registry (`guidance/walkthroughs.ts`); Athena
+                // only names a topic, which we validate against the allow-list.
+                let topic = env
+                    .params
+                    .get("topic")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if topic.is_empty() {
+                    out.warnings
+                        .push("start_guided_walkthrough: missing `topic`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if !GUIDED_TOPICS.contains(&topic) {
+                    out.warnings.push(format!(
+                        "rejected guided walkthrough topic `{topic}` (expected one of {GUIDED_TOPICS:?})"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.guide_walkthroughs.push(topic.to_string());
+            }
             Ok(env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
                     out.warnings
@@ -1653,6 +1718,54 @@ mod tests {
             .and_then(|v| v.as_u64())
             .expect("limit field");
         assert!((1..=5).contains(&limit));
+    }
+
+    // ── show_persona_creation_offer / start_guided_walkthrough ──────────
+
+    #[test]
+    fn persona_creation_offer_emits_chat_card() {
+        let op = r###"{"op":"propose_action","action":"show_persona_creation_offer","params":{"intent":"a Slack triager"},"rationale":"user described a persona"}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.chat_cards.len(), 1);
+        assert_eq!(out.chat_cards[0].kind, "persona_creation_offer");
+        assert_eq!(
+            out.chat_cards[0].config.get("intent").and_then(|v| v.as_str()),
+            Some("a Slack triager"),
+        );
+        // OP line stripped from the displayed reply.
+        assert!(!out.cleaned_text.contains("show_persona_creation_offer"));
+    }
+
+    #[test]
+    fn persona_creation_offer_rejects_missing_intent() {
+        let op = r###"{"op":"propose_action","action":"show_persona_creation_offer","params":{}}"###;
+        let out = dispatch_op(op);
+        assert!(out.chat_cards.is_empty());
+        assert!(!out.warnings.is_empty());
+    }
+
+    #[test]
+    fn start_guided_walkthrough_collects_valid_topic() {
+        let op = r###"{"op":"propose_action","action":"start_guided_walkthrough","params":{"topic":"persona_creation"},"rationale":"show me how"}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.guide_walkthroughs, vec!["persona_creation".to_string()]);
+        assert!(!out.cleaned_text.contains("start_guided_walkthrough"));
+    }
+
+    #[test]
+    fn start_guided_walkthrough_rejects_unknown_topic() {
+        let op = r###"{"op":"propose_action","action":"start_guided_walkthrough","params":{"topic":"nuke_everything"}}"###;
+        let out = dispatch_op(op);
+        assert!(out.guide_walkthroughs.is_empty());
+        assert!(!out.warnings.is_empty());
+    }
+
+    #[test]
+    fn start_guided_walkthrough_rejects_missing_topic() {
+        let op = r###"{"op":"propose_action","action":"start_guided_walkthrough","params":{}}"###;
+        let out = dispatch_op(op);
+        assert!(out.guide_walkthroughs.is_empty());
+        assert!(!out.warnings.is_empty());
     }
 }
 
