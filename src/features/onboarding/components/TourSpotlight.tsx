@@ -115,10 +115,24 @@ export default function TourSpotlight() {
       try { dismissTour?.(); } catch (err) { silentCatch("features/onboarding/components/TourSpotlight:catch1")(err); }
     };
 
-    const scheduleMissingRetry = () => {
+    // Give up on anchoring WITHOUT ending the tour. A step whose highlight
+    // target simply isn't present in the current view — e.g. the Plugins
+    // Explorer "companion" step on a fresh install, where the companion panel
+    // isn't open — should still show its coach-mark panel, just without a
+    // halo. There's no stale cut-out to trap the UI here (rect is null), so
+    // dismissing the whole tour would be pure downside.
+    const abandonSpotlightQuietly = () => {
+      clearMissingRetry();
+      setRect(null);
+    };
+
+    // `onExhaust` decides what happens once the retry budget is spent:
+    //   - initial anchor never found            → abandon the spotlight, keep the tour.
+    //   - a previously-anchored target vanished  → dismiss (avoid a stale cut-out).
+    const scheduleMissingRetry = (onExhaust: () => void = dismissForMissingTarget) => {
       if (missingRetryTimer !== null) return; // already scheduled
       if (missingRetryCount >= MAX_MISSING_TARGET_RETRIES) {
-        dismissForMissingTarget();
+        onExhaust();
         return;
       }
       missingRetryCount++;
@@ -131,7 +145,7 @@ export default function TourSpotlight() {
           missingRetryCount = 0;
           reattachObserver();
         } else {
-          scheduleMissingRetry();
+          scheduleMissingRetry(onExhaust);
         }
       }, MISSING_TARGET_RETRY_MS);
     };
@@ -175,7 +189,11 @@ export default function TourSpotlight() {
     const timer = setTimeout(() => {
       currentTarget = measure();
       if (!currentTarget) {
-        dismissForMissingTarget();
+        // Target not present yet. Retry a few times for a late mount; if it
+        // never appears, abandon the spotlight WITHOUT ending the tour — the
+        // coach-mark panel still guides the user. Only an anchored-then-gone
+        // target dismisses (the stale-cut-out case below).
+        scheduleMissingRetry(abandonSpotlightQuietly);
         return;
       }
       reattachObserver();
