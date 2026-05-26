@@ -210,7 +210,7 @@ pub async fn companion_approve_action(
         // result lands as a system episode.
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
-        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &params),
+        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&params),
@@ -1324,36 +1324,84 @@ fn execute_register_project(
     )))
 }
 
-/// Phase G: enqueue a long-running dev job. Returns immediately so the
-/// chat doesn't block; the worker picks the job up within seconds and
-/// appends a system episode with the result on completion. This is
-/// the conversation-stays-responsive pattern: Athena sends "I started
-/// the scan, will report back when done" while the user keeps typing.
+/// `enqueue_dev_job` — run a real Dev Tools **context scan** on a registered
+/// project. This is the precise "scan / map the codebase" operation: it launches
+/// the same Claude-CLI context generation as `dev_tools_scan_codebase`
+/// (populating dev_context_groups + dev_contexts), NOT a shallow file-walk and
+/// NOT an agent build. Returns immediately; the scan runs in the background and
+/// reports on completion. It does not create or modify any persona.
 fn execute_enqueue_dev_job(
     state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     let kind = params
         .get("kind")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("enqueue_dev_job: missing `kind`".into()))?;
-    // Only `scan_codebase` for v1; the worker rejects unknown kinds at
-    // dispatch time, but failing fast here gives Athena a clearer error.
     if kind != "scan_codebase" {
         return Err(AppError::Internal(format!(
-            "enqueue_dev_job: unknown kind `{kind}` (v1 supports: scan_codebase)"
+            "enqueue_dev_job: unknown kind `{kind}` (supported: scan_codebase)"
         )));
     }
-    let job_params = params
-        .get("params")
-        .cloned()
-        .unwrap_or(serde_json::json!({}));
-    let project_id = params.get("project_id").and_then(|v| v.as_str());
-    let job_id = crate::companion::jobs::enqueue(&state.user_db, kind, &job_params, project_id)?;
+    // Resolve the target Dev Tools project. Accept a project_id, root path, or
+    // project name (so "scan ai-paralegal", "scan <path>", or an explicit id all
+    // work); fall back to the most-recently-registered project.
+    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let needle = params
+        .get("project_id")
+        .and_then(|v| v.as_str())
+        .or_else(|| p.get("project_id").and_then(|v| v.as_str()))
+        .or_else(|| p.get("path").and_then(|v| v.as_str()))
+        .or_else(|| params.get("path").and_then(|v| v.as_str()))
+        .or_else(|| p.get("project_name").and_then(|v| v.as_str()))
+        .or_else(|| p.get("name").and_then(|v| v.as_str()));
+
+    let project_id: String = {
+        let conn = state.db.get()?;
+        let resolved = match needle {
+            Some(n) => conn
+                .query_row(
+                    "SELECT id FROM dev_projects WHERE id = ?1 OR root_path = ?1 OR name = ?1 \
+                     ORDER BY (id = ?1) DESC LIMIT 1",
+                    rusqlite::params![n],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok(),
+            None => conn
+                .query_row(
+                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok(),
+        };
+        match resolved {
+            Some(id) => id,
+            None => {
+                return Err(AppError::Validation(
+                    "No matching Dev Tools project to scan. Register it first with \
+                     register_project (it needs a name + filesystem path)."
+                        .into(),
+                ))
+            }
+        }
+    };
+    let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+    let delta = p.get("delta_mode").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    crate::commands::infrastructure::context_generation::launch_context_scan(
+        app.clone(),
+        &state.db,
+        &project,
+        &project.root_path,
+        delta,
+    )?;
     Ok(ExecuteResult::message(format!(
-        "Job `{job_id}` (`{kind}`) queued. The worker will pick it up within a few \
-         seconds; results land as a system episode you'll see on your next turn. \
-         You can keep chatting while it runs."
+        "Context scan started for `{}` (`{}`). Claude is mapping its structure — business-domain \
+         groups + per-feature contexts — in the background; I'll report when it lands. This is a \
+         code-structure scan only: it does NOT build or change any agent.",
+        project.name, project.root_path
     )))
 }
 

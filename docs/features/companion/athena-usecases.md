@@ -178,10 +178,11 @@ emits a `companion://job` Tauri event the panel listens to (for
 avatar flash + arrival-TTS) and appends a system episode so Athena
 reads the result on the next turn. Registered kinds:
 
-- **`scan_codebase`** — full-tree semantic analysis of a project on
-  disk. Walks files with caps (`MAX_FILES_WALKED=25_000`,
-  `WALK_TIMEOUT_SECS=60`), skips `node_modules`/`.git`/build outputs,
-  emits a markdown summary.
+- **`scan_codebase`** — the real Dev Tools **context scan** of a project
+  (`launch_context_scan`): Claude maps the repo into business-domain
+  groups + per-feature contexts (`dev_context_groups` / `dev_contexts`),
+  persisting per-file hashes for delta re-scans. Resolves the project by
+  id / path / name. (Replaces the earlier shallow file-walk summary.)
 - **`connector_use`** — see the **Connectors** section below.
 - **`memory_curation_run`** — wraps the consolidation / reflection
   curators as a background-job kind so they don't block the IPC
@@ -414,11 +415,21 @@ last_scan_at, last_scan_summary }`.
 
 Surface for Athena:
 
-- **`register_project`** (approval-gated) — add a new project by
-  name + path.
-- **`enqueue_dev_job`** (approval-gated) — currently supports
-  `scan_codebase`; passes `project_id` to the worker so the scan
-  outcome rolls up under that project's `last_scan_summary`.
+- **`register_project`** (approval-gated) — add a project by name + path.
+  Creates the real Dev Tools project (`dev_projects` row), which makes the
+  **codebase connector** available to any team adopted for that repo, and
+  auto-launches a context scan for the new project. One action = repo ready
+  for a team.
+- **`enqueue_dev_job`** (approval-gated) — `kind:"scan_codebase"` runs the
+  **real context scan** (`launch_context_scan` → Claude maps the repo into
+  context groups + contexts), resolving the project by id / path / name. This
+  is the precise "scan / map / index / analyze the codebase" operation.
+
+**Scan ≠ build.** A scan request (even "scan repo X for bugs and tests") is a
+context scan via `enqueue_dev_job`, NOT a `build_oneshot`. Athena's prompt
+explicitly forbids answering a scan with an agent build; bug-and-test review is
+the SDLC team's Code Reviewer / QA job, so she points at that team rather than
+spinning up a new persona.
 
 ## Per-turn UI side-channel events
 
@@ -673,7 +684,7 @@ or the dispatcher rejects at parse time):
 
 | Kind | Params | Output |
 |---|---|---|
-| `scan_codebase` | `{ project_id? }` | markdown summary (file walk) |
+| `scan_codebase` | `{ project_id? \| path? \| project_name? }` | real context map (groups + contexts) via `launch_context_scan` |
 | `connector_use` | `{ connector_name, capability, args }` | per-handler markdown |
 | `memory_curation_run` | `{ scope: "consolidate" \| "reflect", instructions? }` | run id + UI pointer |
 

@@ -601,12 +601,25 @@ fn format_plugins(
                         AND auto-starts a full context scan (Claude maps its structure in \
                         the background). One action = repo ready for a team. To set up \
                         several repos, call it once per path.\n\
-                     2. **Re-scan a project** — `enqueue_dev_job` with `kind: \"scan_codebase\"` \
-                        and `project_id` (or raw `params.path`) for a quick file/TODO refresh \
-                        when code changed (the deep context map is built by register_project's \
-                        initial scan + Dev Tools rescans).\n\
+                     2. **Scan / re-scan a project (context map)** — `enqueue_dev_job` with \
+                        `kind: \"scan_codebase\"` and `project_id` (or `params.path` / \
+                        `params.project_name`). This runs the REAL context scan: Claude maps \
+                        the repo into business-domain groups + per-feature contexts \
+                        (dev_context_groups / dev_contexts). Use it whenever Michal says \
+                        \"scan\", \"context scan\", \"map\", \"index\", or \"analyze the \
+                        codebase\" — for a fresh repo OR to refresh one whose code changed.\n\
                      3. **Capture decisions** — `write_goal`, `write_backlog_item`, \
                         `write_fact` ops let the lifecycle have memory.\n\n\
+                     ### CRITICAL — scan ≠ build an agent\n\n\
+                     \"Scan / context-scan / map / index / analyze the codebase\" is a \
+                     **context scan** (action #2 above) — it reads code structure and changes \
+                     NOTHING. Do NOT respond to a scan request with `build_oneshot`, \
+                     `prefill_persona_create`, or by proposing a new reviewer/triage agent. \
+                     `build_oneshot` is ONLY for an explicit \"build / create / spin up an \
+                     agent (or team) that …\" request. If Michal asks to scan a repo \"for \
+                     bugs and tests\", that is STILL a context scan (action #2) — the existing \
+                     SDLC team's Code Reviewer / QA handles bug-and-test review, so mention \
+                     that team rather than building a new agent.\n\n\
                      ### When to lean on this\n\n\
                      He's asking \"what should I work on next?\", \"what's stale?\", \
                      \"give me ideas\", \"how are things?\", or \"scan codebase\" / \
