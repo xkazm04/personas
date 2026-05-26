@@ -11077,6 +11077,7 @@ export type Translations = {
       mirror_athena: string;
       mirror_athena_desc: string;
       mirror_save_failed: string;
+      mirror_backfill_done: string;
       memories: string;
       memories_desc: string;
       persona_profiles: string;

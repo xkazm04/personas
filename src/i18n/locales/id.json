@@ -10916,6 +10916,7 @@
       "mirror_athena": "Otak Athena",
       "mirror_athena_desc": "Izinkan Athena membaca vault Anda untuk kasus dan analisis tertentu.",
       "mirror_save_failed": "Tidak dapat memperbarui cermin pengetahuan: {error}",
+      "mirror_backfill_done": "{count} catatan dicerminkan ke vault Anda.",
       "memories": "Memori",
       "memories_desc": "Memori persona dengan kategori, kepentingan, dan tag",
       "persona_profiles": "Profil Persona",

@@ -130,6 +130,10 @@ export const obsidianMirrorSetConfig = (config: ObsidianMirrorConfig) =>
 export const obsidianAvailable = () =>
   invoke<ObsidianAvailability>("obsidian_available");
 
+/** Backfill all existing execution knowledge into the vault. Returns notes written. */
+export const obsidianMirrorBackfillExecutionKnowledge = () =>
+  invoke<number>("obsidian_mirror_backfill_execution_knowledge");
+
 // ── Phase 2: Push Sync ───────────────────────────────────────────────
 
 /**

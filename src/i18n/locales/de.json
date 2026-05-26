@@ -10916,6 +10916,7 @@
       "mirror_athena": "Athena-Gehirn",
       "mirror_athena_desc": "Lass Athena deinen Vault für bestimmte Fälle und Analysen lesen.",
       "mirror_save_failed": "Wissensspiegel konnte nicht aktualisiert werden: {error}",
+      "mirror_backfill_done": "{count} Notizen in deinen Vault gespiegelt.",
       "memories": "Erinnerungen",
       "memories_desc": "Persona-Erinnerungen mit Kategorie, Wichtigkeit und Tags",
       "persona_profiles": "Persona-Profile",

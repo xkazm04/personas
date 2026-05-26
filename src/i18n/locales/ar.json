@@ -10916,6 +10916,7 @@
       "mirror_athena": "عقل Athena",
       "mirror_athena_desc": "اسمح لـ Athena بقراءة خزنتك للحصول على حالات وتحليلات محددة.",
       "mirror_save_failed": "تعذّر تحديث مرآة المعرفة: {error}",
+      "mirror_backfill_done": "تم نسخ {count} ملاحظة إلى خزنتك.",
       "memories": "الذاكرة",
       "memories_desc": "ذكريات الوكلاء مع الفئة والأهمية والوسوم",
       "persona_profiles": "ملفات الوكلاء",

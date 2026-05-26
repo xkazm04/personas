@@ -10916,6 +10916,7 @@
       "mirror_athena": "Athena ব্রেইন",
       "mirror_athena_desc": "নির্দিষ্ট কেস ও বিশ্লেষণের জন্য Athena-কে আপনার ভল্ট পড়তে দিন।",
       "mirror_save_failed": "জ্ঞান মিরর আপডেট করা যায়নি: {error}",
+      "mirror_backfill_done": "{count}টি নোট আপনার ভল্টে মিরর করা হয়েছে।",
       "memories": "Memories",
       "memories_desc": "Persona memories with category, importance, and tags",
       "persona_profiles": "Persona Profiles",

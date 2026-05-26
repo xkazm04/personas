@@ -10916,6 +10916,7 @@
       "mirror_athena": "Athena 브레인",
       "mirror_athena_desc": "Athena가 특정 사례와 분석을 위해 보관함을 읽도록 허용합니다.",
       "mirror_save_failed": "지식 미러를 업데이트할 수 없습니다: {error}",
+      "mirror_backfill_done": "{count}개의 노트를 보관함에 미러링했습니다.",
       "memories": "Memories",
       "memories_desc": "Persona memories with category, importance, and tags",
       "persona_profiles": "Persona Profiles",

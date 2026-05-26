@@ -10916,6 +10916,7 @@
       "mirror_athena": "Cerebro de Athena",
       "mirror_athena_desc": "Permite que Athena lea tu bóveda para casos y análisis específicos.",
       "mirror_save_failed": "No se pudo actualizar el espejo de conocimiento: {error}",
+      "mirror_backfill_done": "Se reflejaron {count} notas en tu bóveda.",
       "memories": "Memorias",
       "memories_desc": "Memorias de persona con categoría, importancia y etiquetas",
       "persona_profiles": "Perfiles de Persona",

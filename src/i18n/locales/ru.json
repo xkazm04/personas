@@ -10916,6 +10916,7 @@
       "mirror_athena": "Мозг Athena",
       "mirror_athena_desc": "Разрешите Athena читать хранилище для конкретных случаев и анализа.",
       "mirror_save_failed": "Не удалось обновить зеркало знаний: {error}",
+      "mirror_backfill_done": "В хранилище отражено заметок: {count}.",
       "memories": "Память",
       "memories_desc": "Память агентов с категорией, важностью и тегами",
       "persona_profiles": "Профили агентов",

@@ -2237,6 +2237,7 @@ pub fn run() {
             commands::obsidian_brain::obsidian_mirror_get_config,
             commands::obsidian_brain::obsidian_mirror_set_config,
             commands::obsidian_brain::obsidian_available,
+            commands::obsidian_brain::obsidian_mirror_backfill_execution_knowledge,
             commands::obsidian_brain::obsidian_brain_push_sync,
             commands::obsidian_brain::obsidian_brain_get_sync_log,
             commands::obsidian_brain::obsidian_brain_pull_sync,

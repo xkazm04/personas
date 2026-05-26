@@ -10916,6 +10916,7 @@
       "mirror_athena": "Athena ブレイン",
       "mirror_athena_desc": "特定のケースや分析のために Athena にボルトを読ませます。",
       "mirror_save_failed": "ナレッジミラーを更新できませんでした: {error}",
+      "mirror_backfill_done": "{count} 件のノートをボルトにミラーしました。",
       "memories": "メモリ",
       "memories_desc": "カテゴリ、重要度、タグを含むペルソナのメモリ",
       "persona_profiles": "ペルソナプロファイル",

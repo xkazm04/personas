@@ -10916,6 +10916,7 @@
       "mirror_athena": "Cerveau d'Athena",
       "mirror_athena_desc": "Laissez Athena lire votre coffre pour des cas et analyses spécifiques.",
       "mirror_save_failed": "Impossible de mettre à jour le miroir de connaissances : {error}",
+      "mirror_backfill_done": "{count} notes reflétées dans votre coffre.",
       "memories": "Mémoires",
       "memories_desc": "Mémoires de persona avec catégorie, importance et tags",
       "persona_profiles": "Profils de persona",

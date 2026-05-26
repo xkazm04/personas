@@ -10916,6 +10916,7 @@
       "mirror_athena": "Mozek Athena",
       "mirror_athena_desc": "Umožněte Athéně číst váš trezor pro konkrétní případy a analýzy.",
       "mirror_save_failed": "Zrcadlo znalostí se nepodařilo aktualizovat: {error}",
+      "mirror_backfill_done": "Zrcadleno {count} poznámek do trezoru.",
       "memories": "Vzpomínky",
       "memories_desc": "Vzpomínky person s kategorií, důležitostí a štítky",
       "persona_profiles": "Profily person",

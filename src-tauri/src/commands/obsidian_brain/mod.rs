@@ -13,11 +13,12 @@ use tauri::State;
 use uuid::Uuid;
 
 use crate::db::models::{
-    DetectedVault, ObsidianAvailability, ObsidianMirrorConfig, ObsidianVaultConfig, PullSyncResult,
-    PushSyncResult, SemanticLintReport, SyncConflict, SyncLogEntry, SyncState,
-    VaultConnectionResult, VaultLintReport, VaultTreeNode,
+    DetectedVault, ExecutionKnowledge, ObsidianAvailability, ObsidianMirrorConfig,
+    ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport, SyncConflict,
+    SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::execution::knowledge as knowledge_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::core::settings;
 use crate::db::repos::core::settings as settings_repo;
@@ -331,6 +332,89 @@ pub(crate) fn mirror_write_note(
         None,
     );
     Ok(true)
+}
+
+// ── Execution Knowledge mirror (P2, one-way) ─────────────────────────
+
+/// Render an execution-knowledge row as a vault note (frontmatter + body).
+fn render_knowledge_note(k: &ExecutionKnowledge) -> String {
+    let pretty = serde_json::from_str::<serde_json::Value>(&k.pattern_data)
+        .ok()
+        .and_then(|v| serde_json::to_string_pretty(&v).ok())
+        .unwrap_or_else(|| k.pattern_data.clone());
+    format!(
+        "---\ntype: execution_knowledge\nknowledge_type: {kt}\npersona: {pid}\nconfidence: {conf:.2}\nupdated: {upd}\n---\n\n# {pk}\n\n- **Type:** {kt}\n- **Confidence:** {conf:.2}\n- **Success / Failure:** {sc} / {fc}\n- **Avg cost:** ${cost:.4}\n- **Avg duration:** {dur:.0} ms\n\n## Pattern\n\n```json\n{pretty}\n```\n",
+        kt = k.knowledge_type,
+        pid = k.persona_id,
+        conf = k.confidence,
+        upd = k.updated_at,
+        pk = k.pattern_key,
+        sc = k.success_count,
+        fc = k.failure_count,
+        cost = k.avg_cost_usd,
+        dur = k.avg_duration_ms,
+    )
+}
+
+/// Mirror one persona's execution-knowledge rows into the vault (one-way),
+/// when the execution-knowledge mirror is enabled and a vault is configured.
+/// Incremental (unchanged rows skipped). Best-effort: errors are logged, never
+/// returned — knowledge mirroring must never break the execution path. Returns
+/// the number of notes written.
+pub(crate) fn mirror_execution_knowledge_for_persona(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+) -> u32 {
+    if !mirror_config(pool).execution_knowledge {
+        return 0;
+    }
+    let Some(cfg) = mirror_vault_root(pool) else {
+        return 0;
+    };
+    let rows = match knowledge_repo::list_for_persona(pool, persona_id, None, None) {
+        Ok(r) => r,
+        Err(e) => {
+            tracing::warn!("execution-knowledge mirror: list failed for {persona_id}: {e}");
+            return 0;
+        }
+    };
+    let mut written = 0u32;
+    for k in &rows {
+        let rel = format!(
+            "{}/{}/{}.md",
+            cfg.folder_mapping.knowledge_folder,
+            k.knowledge_type,
+            sanitize_filename(&k.pattern_key),
+        );
+        match mirror_write_note(
+            pool,
+            &cfg.vault_path,
+            &rel,
+            "execution_knowledge",
+            &k.id,
+            &render_knowledge_note(k),
+        ) {
+            Ok(true) => written += 1,
+            Ok(false) => {}
+            Err(e) => tracing::warn!("execution-knowledge mirror: write failed for {}: {e}", k.id),
+        }
+    }
+    written
+}
+
+/// Backfill every persona's execution knowledge into the vault. Invoked when
+/// the user first enables the execution-knowledge mirror (existing rows would
+/// otherwise only appear as each persona runs again). Returns notes written.
+#[tauri::command]
+pub fn obsidian_mirror_backfill_execution_knowledge(
+    state: State<'_, Arc<AppState>>,
+) -> Result<u32, AppError> {
+    require_auth_sync(&state)?;
+    let mut total = 0u32;
+    for p in persona_repo::get_all(&state.db)? {
+        total += mirror_execution_knowledge_for_persona(&state.db, &p.id);
+    }
+    Ok(total)
 }
 
 // ── Phase 2: Push Sync ───────────────────────────────────────────────

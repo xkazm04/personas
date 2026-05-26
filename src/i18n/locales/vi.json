@@ -10916,6 +10916,7 @@
       "mirror_athena": "Bộ não Athena",
       "mirror_athena_desc": "Cho phép Athena đọc kho của bạn để tìm trường hợp và phân tích cụ thể.",
       "mirror_save_failed": "Không thể cập nhật bản sao kiến thức: {error}",
+      "mirror_backfill_done": "Đã phản chiếu {count} ghi chú vào kho của bạn.",
       "memories": "Ký ức",
       "memories_desc": "Ký ức tác nhân với danh mục, mức độ quan trọng và thẻ",
       "persona_profiles": "Hồ sơ tác nhân",

@@ -10916,6 +10916,7 @@
       "mirror_athena": "Athena ब्रेन",
       "mirror_athena_desc": "Athena को विशिष्ट मामलों और विश्लेषण के लिए आपका वॉल्ट पढ़ने दें।",
       "mirror_save_failed": "ज्ञान मिरर अपडेट नहीं हो सका: {error}",
+      "mirror_backfill_done": "{count} नोट्स आपके वॉल्ट में मिरर किए गए।",
       "memories": "यादें",
       "memories_desc": "श्रेणी, महत्व और टैग के साथ पर्सोना यादें",
       "persona_profiles": "पर्सोना प्रोफ़ाइल",

@@ -10916,6 +10916,7 @@
       "mirror_athena": "Athena 大脑",
       "mirror_athena_desc": "让 Athena 读取你的库以获取特定案例和分析。",
       "mirror_save_failed": "无法更新知识镜像：{error}",
+      "mirror_backfill_done": "已将 {count} 条笔记镜像到你的库。",
       "memories": "记忆",
       "memories_desc": "带有分类、重要性和标签的代理记忆",
       "persona_profiles": "代理配置文件",

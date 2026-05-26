@@ -11071,6 +11071,7 @@
       "mirror_athena": "Athena Brain",
       "mirror_athena_desc": "Let Athena read your vault for specific cases and analysis.",
       "mirror_save_failed": "Couldn't update knowledge mirror: {error}",
+      "mirror_backfill_done": "Mirrored {count} notes to your vault.",
       "memories": "Memories",
       "memories_desc": "Persona memories with category, importance, and tags",
       "persona_profiles": "Persona Profiles",
