@@ -748,7 +748,7 @@ pub async fn execute_api_request(
 
     // For OAuth credentials, acquire a per-credential lock to prevent concurrent
     // token exchanges with the background refresh tick (see oauth_refresh_lock).
-    let (_lock, fields) = if strategy.is_oauth(&fields) {
+    let (mut lock_holder, fields) = if strategy.is_oauth(&fields) {
         let lock = super::oauth_refresh_lock::acquire(credential_id).await;
         // Re-read fields inside the lock — a concurrent refresh may have persisted
         // a fresh access_token while we were waiting.
@@ -767,50 +767,15 @@ pub async fn execute_api_request(
     } else {
         (None, fields)
     };
-    let token = strategy
+    let mut token = strategy
         .resolve_auth_token(connector_metadata, &fields)
         .await?
         .map(|r| r.token);
 
-    // Use the SSRF-safe HTTP client which validates resolved IPs at
-    // connection time, preventing DNS rebinding attacks.
-    let client = crate::SSRF_SAFE_HTTP.clone();
-
-    let start = Instant::now();
-
-    let upper_method = method.to_uppercase();
-    let mut request = match upper_method.as_str() {
-        "GET" => client.get(&full_url),
-        "POST" => client.post(&full_url),
-        "PUT" => client.put(&full_url),
-        "PATCH" => client.patch(&full_url),
-        "DELETE" => client.delete(&full_url),
-        "HEAD" => client.head(&full_url),
-        "OPTIONS" => client.request(reqwest::Method::OPTIONS, &full_url),
-        other => {
-            return Err(AppError::Validation(format!(
-                "Unsupported HTTP method '{}'. Supported methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS",
-                other,
-            )));
-        }
-    };
-
-    // Apply custom headers, validating names and blocking sensitive ones
-    for (k, v) in &custom_headers {
+    // Validate header names + body size once, up front (independent of retries).
+    for k in custom_headers.keys() {
         validate_header_name(k)?;
-        if BLOCKED_HEADERS.contains(&k.to_lowercase().as_str()) {
-            tracing::warn!(header = %k, "Blocked sensitive header from custom_headers");
-            continue;
-        }
-        request = request.header(k.as_str(), v.as_str());
     }
-
-    // Apply auth from connector strategy
-    if let Some(ref tok) = token {
-        request = strategy.apply_auth(request, tok);
-    }
-
-    // Apply body with size limit
     if let Some(ref body_str) = body {
         if body_str.len() > MAX_REQUEST_BODY_BYTES {
             return Err(AppError::Validation(format!(
@@ -819,19 +784,99 @@ pub async fn execute_api_request(
                 MAX_REQUEST_BODY_BYTES,
             )));
         }
-        if !custom_headers
-            .keys()
-            .any(|k| k.to_lowercase() == "content-type")
-        {
-            request = request.header("Content-Type", "application/json");
-        }
-        request = request.body(body_str.clone());
     }
 
-    let mut resp = request
+    // Use the SSRF-safe HTTP client which validates resolved IPs at
+    // connection time, preventing DNS rebinding attacks.
+    let client = crate::SSRF_SAFE_HTTP.clone();
+    let upper_method = method.to_uppercase();
+
+    // Build a fresh request for the given token. Re-buildable so we can retry
+    // once with a refreshed token after a 401 (RequestBuilder is not cloneable).
+    let build_request = |tok: &Option<String>| -> Result<reqwest::RequestBuilder, AppError> {
+        let mut request = match upper_method.as_str() {
+            "GET" => client.get(&full_url),
+            "POST" => client.post(&full_url),
+            "PUT" => client.put(&full_url),
+            "PATCH" => client.patch(&full_url),
+            "DELETE" => client.delete(&full_url),
+            "HEAD" => client.head(&full_url),
+            "OPTIONS" => client.request(reqwest::Method::OPTIONS, &full_url),
+            other => {
+                return Err(AppError::Validation(format!(
+                    "Unsupported HTTP method '{}'. Supported methods: GET, POST, PUT, PATCH, DELETE, HEAD, OPTIONS",
+                    other,
+                )));
+            }
+        };
+        for (k, v) in &custom_headers {
+            if BLOCKED_HEADERS.contains(&k.to_lowercase().as_str()) {
+                tracing::warn!(header = %k, "Blocked sensitive header from custom_headers");
+                continue;
+            }
+            request = request.header(k.as_str(), v.as_str());
+        }
+        if let Some(t) = tok {
+            request = strategy.apply_auth(request, t);
+        }
+        if let Some(ref body_str) = body {
+            if !custom_headers
+                .keys()
+                .any(|k| k.to_lowercase() == "content-type")
+            {
+                request = request.header("Content-Type", "application/json");
+            }
+            request = request.body(body_str.clone());
+        }
+        Ok(request)
+    };
+
+    let start = Instant::now();
+    let mut resp = build_request(&token)?
         .send()
         .await
         .map_err(|e| AppError::Internal(format!("API request failed: {e}")))?;
+
+    // Refresh-on-401 hardening: an OAuth access_token that the local
+    // oauth_token_expires_at still marks valid can nonetheless be rejected by the
+    // provider (server-side revocation/rotation, clock skew). When that happens
+    // the normal resolve path won't refresh (it trusts the local expiry), so the
+    // run errors on a token that a single refresh would have fixed. On a 401 from
+    // an OAuth connector, force a real token exchange + retry exactly once. We
+    // drop our oauth_refresh_lock first because refresh_single_credential acquires
+    // the same per-credential lock (re-entrant acquire would deadlock).
+    if resp.status() == reqwest::StatusCode::UNAUTHORIZED && strategy.is_oauth(&fields) {
+        drop(lock_holder.take()); // release before refresh_single_credential re-acquires
+        match super::oauth_refresh::refresh_single_credential(pool, &credential).await {
+            Ok(msg) => {
+                tracing::info!(
+                    credential_id,
+                    service_type = %credential.service_type,
+                    "api_proxy: 401 → forced OAuth refresh + retry ({msg})"
+                );
+                let fresh = cred_repo::get_decrypted_fields(pool, &credential)?;
+                token = strategy
+                    .resolve_auth_token(connector_metadata, &fresh)
+                    .await?
+                    .map(|r| r.token);
+                resp = build_request(&token)?
+                    .send()
+                    .await
+                    .map_err(|e| AppError::Internal(format!("API request retry failed: {e}")))?;
+            }
+            Err(e) => {
+                // Refresh genuinely failed (e.g. invalid_grant / revoked grant) —
+                // the credential needs re-auth. Keep the original 401 response so
+                // the caller sees the real provider error.
+                tracing::warn!(
+                    credential_id,
+                    service_type = %credential.service_type,
+                    error = %e,
+                    "api_proxy: 401 retry — forced refresh failed; credential likely needs re-auth"
+                );
+            }
+        }
+    }
 
     let duration_ms = start.elapsed().as_millis() as u64;
     let status = resp.status().as_u16();
