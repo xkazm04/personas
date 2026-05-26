@@ -110,9 +110,9 @@ const RECIPES = [
       execution_mode: 'e2e',
       model_override: null,
       suggested_trigger: {
-        trigger_type: 'event',
-        config: { listen_event_type: 'team.idea.accepted' },
-        description: 'Fires when an idea is accepted upstream (e.g. by a triage agent), or can be run manually with an idea description.',
+        trigger_type: 'manual',
+        config: {},
+        description: 'Run on demand with an idea to evaluate. Also auto-fires when an upstream agent emits team.idea.accepted — wired via this use case\'s event subscription, not the primary trigger.',
       },
       connectors: ['codebase'],
       notification_channels: [{ type: 'messaging', description: 'Implementation plan summary: feasibility verdict, key risks, task count + effort.' }],
@@ -218,9 +218,9 @@ const RECIPES = [
       execution_mode: 'e2e',
       model_override: 'claude-sonnet-4-6',
       suggested_trigger: {
-        trigger_type: 'event',
-        config: { listen_event_type: 'github.pull_request.merged' },
-        description: 'Fires when a pull request merges to the main branch (GitHub connector), or can be run manually after a local merge.',
+        trigger_type: 'manual',
+        config: {},
+        description: 'Run on demand after a merge. Also auto-fires on github.pull_request.merged — wired via this use case\'s event subscription, not the primary trigger.',
       },
       connectors: ['codebase', 'github'],
       notification_channels: [{ type: 'messaging', description: 'Release summary: new version, bump rationale, headline changes.' }],
@@ -388,6 +388,16 @@ for (const r of seeds.recipes) {
   if (Array.isArray(r.tags)) { r.tags = JSON.stringify(r.tags); healed++; }
 }
 if (healed) console.log(`healed ${healed} row(s) with array-typed tags -> string`);
+
+// Refresh-our-own-templates: this script OWNS the recipes for these 5 templates,
+// so drop any existing rows for them before re-inserting. This makes the script
+// idempotent-as-refresh (edits to the RECIPES specs above take effect on re-run)
+// rather than insert-only, without touching any other template's recipes.
+const OWNED = new Set(RECIPES.map((r) => r.template));
+const before = seeds.recipes.length;
+seeds.recipes = seeds.recipes.filter((r) => !OWNED.has(r.source_template_id));
+const dropped = before - seeds.recipes.length;
+if (dropped) console.log(`refreshed: dropped ${dropped} existing row(s) for owned templates`);
 
 const existing = new Set(seeds.recipes.map((r) => `${r.source_template_id}::${r.source_use_case_id}`));
 

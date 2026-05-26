@@ -620,6 +620,29 @@ pub fn instant_adopt_template_inner(
         }
     }
 
+    // Wire cross-persona event subscriptions from the hydrated use_cases.
+    // `create_persona_atomically` only inserts triggers + tools, so without this
+    // an adopted persona EMITS events (via its prompt) but never auto-LISTENS —
+    // a team-preset's event handoffs (architecture.analysis.completed → reviewer,
+    // release.published → docs, …) would never fire and the "team" wouldn't run
+    // as a pipeline. Mirrors the glyph build path's `create_event_subscriptions_in_tx`.
+    // Best-effort: a failure logs and continues; the persona row is already valid.
+    if let Some(pid) = created_persona_id.as_deref() {
+        match wire_event_subscriptions_from_use_cases(&state.db, pid, &raw_use_cases) {
+            Ok(n) if n > 0 => tracing::info!(
+                persona_id = %pid,
+                subscriptions = n,
+                "instant_adopt_template: wired cross-persona event subscriptions"
+            ),
+            Ok(_) => {}
+            Err(e) => tracing::warn!(
+                persona_id = %pid,
+                error = %e,
+                "instant_adopt_template: event subscription wiring failed (continuing)"
+            ),
+        }
+    }
+
     // Adoption pre-flight (C1): if the persona declares connectors that have
     // no matching vault credential, mark setup_status='needs_credentials' so
     // the dashboard surfaces a "Setup required" badge and the user knows the
@@ -812,6 +835,93 @@ fn set_persona_setup_status(
 ///   boolean → JSON Bool (true/yes/1/on or false/no/0/off; else default)
 ///   select  → JSON String (raw answer string)
 ///   string  → JSON String
+/// Wire `persona_event_subscriptions` for a freshly-adopted persona from its
+/// hydrated template use_cases. This is the template-adopt-path equivalent of
+/// the glyph build path's `create_event_subscriptions_in_tx`
+/// (`build_sessions.rs`): every `use_cases[].event_subscriptions[]` entry whose
+/// `direction` is "listen" becomes one subscription row. `source_filter`
+/// defaults to `"*"` — the cross-persona-chain default, so the bus delivers the
+/// event regardless of which persona emitted it — unless this persona itself
+/// emits that event type, in which case it stays self-scoped (`NULL`). Rows are
+/// de-duped on `(event_type, source_filter)`. Returns the number created.
+///
+/// Without this, `create_persona_atomically` (which only inserts triggers +
+/// tools) leaves an adopted persona able to EMIT events but never LISTEN, so a
+/// team preset's event handoffs never fire.
+fn wire_event_subscriptions_from_use_cases(
+    pool: &crate::db::DbPool,
+    persona_id: &str,
+    use_cases: &[serde_json::Value],
+) -> Result<u32, AppError> {
+    fn is_listen(d: Option<&str>) -> bool {
+        matches!(d, Some("listen") | Some("subscribe") | Some("consume"))
+    }
+
+    // Event types this persona EMITS — drives the self-scope vs cross-persona
+    // `source_filter` default (mirrors `collect_persona_emit_event_types`).
+    let mut emits: HashSet<String> = HashSet::new();
+    for uc in use_cases {
+        if let Some(subs) = uc.get("event_subscriptions").and_then(|v| v.as_array()) {
+            for s in subs {
+                if s.get("direction").and_then(|v| v.as_str()) == Some("emit") {
+                    if let Some(et) = s.get("event_type").and_then(|v| v.as_str()) {
+                        if !et.is_empty() {
+                            emits.insert(et.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let conn = pool.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut seen: HashSet<(String, Option<String>)> = HashSet::new();
+    let mut created = 0u32;
+
+    for uc in use_cases {
+        let uc_id = uc.get("id").and_then(|v| v.as_str());
+        let subs = match uc.get("event_subscriptions").and_then(|v| v.as_array()) {
+            Some(s) => s,
+            None => continue,
+        };
+        for s in subs {
+            if !is_listen(s.get("direction").and_then(|v| v.as_str())) {
+                continue;
+            }
+            let event_type = match s.get("event_type").and_then(|v| v.as_str()) {
+                Some(et) if !et.is_empty() => et.to_string(),
+                _ => continue,
+            };
+            let source_filter: Option<String> = s
+                .get("source_filter")
+                .and_then(|v| v.as_str())
+                .map(|x| x.to_string())
+                .or_else(|| {
+                    if emits.contains(&event_type) {
+                        None
+                    } else {
+                        Some("*".to_string())
+                    }
+                });
+            if !seen.insert((event_type.clone(), source_filter.clone())) {
+                continue;
+            }
+            let sub_id = uuid::Uuid::new_v4().to_string();
+            let rows = conn
+                .execute(
+                    "INSERT OR IGNORE INTO persona_event_subscriptions
+                     (id, persona_id, event_type, source_filter, enabled, use_case_id, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, 1, ?5, ?6, ?6)",
+                    rusqlite::params![sub_id, persona_id, event_type, source_filter, uc_id, now],
+                )
+                .map_err(AppError::Database)?;
+            created += rows as u32;
+        }
+    }
+    Ok(created)
+}
+
 pub(super) fn populate_persona_parameters_from_design(
     pool: &crate::db::DbPool,
     persona_id: &str,
