@@ -50,7 +50,9 @@ layout.
   repository picker beside it**: the searchable repo dropdown lists
   repositories from the selected connector (re-fetching when you change it),
   falling back to auto-discovery of the first usable PAT, or to a manual URL
-  input when no healthy credential exists.
+  input when no healthy credential exists. A picked repo shows an inline preview
+  (owner/name, private badge, description, open ↗); manual URLs are validated
+  with an inline error when malformed.
 - **Bound team** — optional; binds the project to a PersonaTeam pipeline.
 - **Create Codebase connector** (create mode only, on by default) — when
   checked, creating the project also creates a `Codebase — <project name>`

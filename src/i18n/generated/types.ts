@@ -12053,6 +12053,9 @@ export type Translations = {
       github_repository: string;
       select_repository: string;
       no_repositories_found: string;
+      repo_private: string;
+      open_repo: string;
+      invalid_repo_url: string;
       browse: string;
       repos_from_connector: string;
       modal_section_project: string;
