@@ -38,7 +38,19 @@ pub struct WebhookState {
     pub tier_config: Arc<std::sync::Mutex<TierConfig>>,
 }
 
-/// Start the webhook HTTP server on port 9420.
+/// Port for the webhook + management HTTP server. Defaults to 9420; override
+/// with `PERSONAS_WEBHOOK_PORT` so a second app instance on the same device
+/// (parallel-CLI testing / multi-driver, ADR 2026-05-26) can bind a distinct
+/// port instead of colliding on 9420.
+pub fn webhook_port() -> u16 {
+    std::env::var("PERSONAS_WEBHOOK_PORT")
+        .ok()
+        .and_then(|s| s.trim().parse::<u16>().ok())
+        .filter(|p| *p != 0)
+        .unwrap_or(9420)
+}
+
+/// Start the webhook HTTP server on [`webhook_port`] (default 9420).
 ///
 /// Returns a shutdown sender -- drop it (or send) to stop the server.
 pub async fn start_webhook_server(
@@ -65,7 +77,7 @@ pub async fn start_webhook_server(
     #[cfg(feature = "p2p")]
     let app = app.merge(super::share_link::share_link_router());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
+    let addr = SocketAddr::from(([127, 0, 0, 1], webhook_port()));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!("Webhook server listening on http://{}", addr);
 
@@ -115,7 +127,7 @@ pub async fn start_webhook_server_with_management(
     #[cfg(feature = "p2p")]
     let app = app.merge(super::share_link::share_link_router());
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 9420));
+    let addr = SocketAddr::from(([127, 0, 0, 1], webhook_port()));
     let listener = tokio::net::TcpListener::bind(addr).await?;
     tracing::info!("Webhook server listening on http://{}", addr);
 

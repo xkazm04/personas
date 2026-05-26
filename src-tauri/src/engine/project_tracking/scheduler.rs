@@ -61,6 +61,13 @@ pub fn spawn(
             if !enabled.load(Ordering::Relaxed) {
                 continue;
             }
+            // Leader-only (multi-driver orchestration, ADR 2026-05-26): the
+            // pulse loop writes consolidator events to the shared DB; a
+            // follower would duplicate them. Checked after the enable gate so
+            // a disabled tracker stays cheap.
+            if !crate::engine::leadership::is_engine_leader(&app_handle) {
+                continue;
+            }
             if let Err(e) = run_tick(&pool, &app_handle).await {
                 warn!(error = %e, "project_tracking: tick failed");
             }

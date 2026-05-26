@@ -3204,6 +3204,52 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Multi-driver orchestration (ADR 2026-05-26): per-row claim/lease columns
+    // so MCP/REST-submitted executions and build-session promotions are run by
+    // exactly ONE instance. The leader (or any instance) CAS-claims a queued
+    // row by stamping `claimed_by_instance` + a `claim_expires_at` TTL; the TTL
+    // lets a crashed claimant's row be re-claimed (mirrors the `trigger_version`
+    // CAS already used by the scheduler). Additive + idempotent. The local-UI
+    // path does NOT claim — in-process execution stays snappy; only queued work
+    // a driver hands off to the leader is claim-gated. Both ALTERs run inside
+    // one `ddl_step` transaction, so the single-column `already_applied` guard
+    // is safe (both columns land or neither does).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions.claimed_by_instance",
+            description: "Add per-instance claim/lease columns to persona_executions",
+            already_applied: |conn| {
+                has_column(conn, "persona_executions", "claimed_by_instance")
+            },
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN claimed_by_instance TEXT;\n\
+                     ALTER TABLE persona_executions ADD COLUMN claim_expires_at TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "build_sessions.claimed_by_instance",
+            description: "Add per-instance claim/lease columns to build_sessions",
+            already_applied: |conn| has_column(conn, "build_sessions", "claimed_by_instance"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE build_sessions ADD COLUMN claimed_by_instance TEXT;\n\
+                     ALTER TABLE build_sessions ADD COLUMN claim_expires_at TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

@@ -120,6 +120,11 @@ CREATE TABLE IF NOT EXISTS persona_executions (
     started_at        TEXT,
     completed_at      TEXT,
     last_heartbeat_at TEXT,
+    -- Multi-driver orchestration (ADR 2026-05-26): per-row claim/lease so a
+    -- queued execution handed off by an MCP/REST driver is run by exactly one
+    -- instance. Local-UI in-process runs leave these NULL.
+    claimed_by_instance TEXT,
+    claim_expires_at  TEXT,
     created_at        TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_pe_persona ON persona_executions(persona_id);
@@ -1463,6 +1468,10 @@ CREATE TABLE IF NOT EXISTS build_sessions (
     parser_result_json TEXT,
     mode            TEXT,
     companion_session_id TEXT,
+    -- Multi-driver orchestration (ADR 2026-05-26): per-row claim/lease so a
+    -- build-session promotion is run by exactly one instance.
+    claimed_by_instance TEXT,
+    claim_expires_at TEXT,
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );

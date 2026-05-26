@@ -279,8 +279,21 @@ pub(super) async fn run_session(
     //     against a vault with 4 GitHub PATs would silently pick the
     //     newest one with no user input.
     let registry_keywords: Vec<String> = crate::engine::api_proxy::connector_keyword_snapshot();
-    let ambiguous_services =
-        crate::db::repos::resources::credentials::get_ambiguous_service_types(&pool);
+    // Ambiguity (2+ credentials for one service_type) force-closes the
+    // connectors gate so the credential picker fires — but ONLY in interactive
+    // mode, where a user can answer it. In autonomous one-shot mode there is no
+    // user to disambiguate, so applying the same force-close makes the build
+    // re-synthesize an unanswerable credential-picker question every turn and
+    // burn all MAX_TURNS without ever resolving (observed 2026-05-26: ai-paralegal
+    // build looped on ambiguous {codebase, github}). Treat the vault as
+    // unambiguous in one-shot — the build picks a sensible default / proceeds
+    // with connectors unbound (the user can rebind later), matching the
+    // "decide everything for me" contract.
+    let ambiguous_services = if one_shot {
+        std::collections::HashSet::new()
+    } else {
+        crate::db::repos::resources::credentials::get_ambiguous_service_types(&pool)
+    };
     if !ambiguous_services.is_empty() {
         tracing::info!(
             session_id = %session_id,
@@ -1070,8 +1083,48 @@ pub(super) async fn run_session(
         }
         last_answered_cells.clear();
 
-        // If question asked: wait for user answer, then continue to next turn
-        if got_question {
+        // If question asked: wait for user answer, then continue to next turn.
+        // Autonomous one-shot is the exception — it must never block on a human.
+        if got_question && one_shot {
+            // The LLM emitted a clarifying_question despite the never-ask
+            // instruction — most commonly when connector credentials are
+            // ambiguous (the vault has multiple credentials for a service_type,
+            // so the connectors gate is force-closed). In autonomous mode there
+            // is no user to answer, so blocking on `input_rx.recv()` would stall
+            // the build forever (observed 2026-05-26: companion-driven
+            // build_oneshot stuck at AwaitingInput turn=1). Instead clear the
+            // pending question, inject a decide-it-yourself directive, and
+            // continue to the next turn. The loop is MAX_TURNS-bounded, so this
+            // cannot spin indefinitely; the DraftReady gate already lets a
+            // one-shot through with any still-closed gates.
+            tracing::warn!(
+                session_id = %session_id,
+                turn = turn + 1,
+                "OneShot: LLM asked a clarifying_question; auto-continuing with a decide-yourself directive (no human present)"
+            );
+            persist_or_fail!(
+                build_session_repo::update(
+                    &pool,
+                    &session_id,
+                    &UpdateBuildSession {
+                        pending_question: Some(None),
+                        ..Default::default()
+                    },
+                ),
+                "clearing one_shot pending question"
+            );
+            pending_gate = None;
+            conversation.push((
+                "user",
+                "You are in autonomous one-shot mode — do NOT ask the user anything. \
+                 For the question you just asked, pick the most sensible default yourself \
+                 (e.g. choose the single most relevant credential when several match, or \
+                 proceed without an optional connector), emit the resolution(s), then emit \
+                 agent_ir. Never emit another clarifying_question."
+                    .into(),
+            ));
+            last_answered_cells.clear();
+        } else if got_question {
             cancel_if_emit_dropped!(emit_session_status(
                 &pool,
                 &channel,

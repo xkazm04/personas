@@ -194,14 +194,20 @@ export default defineConfig(async () => ({
   clearScreen: false,
 
   server: {
-    port: 1420,
+    // PERSONAS_VITE_PORT lets a second app instance on the same device
+    // (parallel-CLI testing / multi-driver, ADR 2026-05-26) run its own Vite
+    // dev server instead of colliding on 1420 (strictPort would otherwise
+    // fail the second start). Pair it with a `--config build.devUrl` override
+    // so Tauri loads the matching port, plus PERSONAS_TEST_PORT /
+    // PERSONAS_WEBHOOK_PORT for the other servers.
+    port: Number(process.env.PERSONAS_VITE_PORT) || 1420,
     strictPort: true,
     host: host || false,
     hmr: host
       ? {
           protocol: "ws",
           host,
-          port: 1421,
+          port: (Number(process.env.PERSONAS_VITE_PORT) || 1420) + 1,
         }
       : undefined,
     watch: {

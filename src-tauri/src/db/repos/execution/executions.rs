@@ -652,6 +652,54 @@ pub fn update_status_if_running(
     )
 }
 
+/// CAS-claim a queued execution for one instance (multi-driver orchestration,
+/// ADR 2026-05-26). Atomically flips `queued` → `running` and stamps
+/// `claimed_by_instance` + a `claim_expires_at` TTL, but ONLY if the row is
+/// still `queued` AND is either unclaimed or its prior claim's TTL has already
+/// expired (crash recovery). Returns `true` iff THIS call won the claim.
+///
+/// The TTL-in-`WHERE` doubles as the stale-claim sweep: an expired claim is
+/// simply re-claimable, so no separate reaper task is needed. Mirrors the
+/// `trigger_version` CAS the scheduler already uses for double-fire safety.
+///
+/// This is the leader-run handoff path for executions a non-leader driver
+/// (MCP/REST) enqueues as `queued`. The local-UI path creates executions
+/// already `running` in-process and never passes through here, so snappy local
+/// runs are unaffected. `claim_expires_at` is written in RFC3339 (chrono), the
+/// same format compared in the predicate — keep all writers on RFC3339 so the
+/// lexicographic `<` stays chronologically correct.
+pub fn claim_for_instance(
+    pool: &DbPool,
+    id: &str,
+    instance_id: &str,
+    ttl_secs: i64,
+) -> Result<bool, AppError> {
+    timed_query!(
+        "persona_executions",
+        "persona_executions::claim_for_instance",
+        {
+            let now = chrono::Utc::now();
+            let now_str = now.to_rfc3339();
+            let expires_at = (now + chrono::Duration::seconds(ttl_secs)).to_rfc3339();
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "UPDATE persona_executions SET
+                    status = 'running',
+                    claimed_by_instance = ?2,
+                    claim_expires_at = ?3,
+                    started_at = COALESCE(started_at, ?4)
+                 WHERE id = ?1
+                   AND status = 'queued'
+                   AND (claimed_by_instance IS NULL
+                        OR claim_expires_at IS NULL
+                        OR claim_expires_at < ?4)",
+            )?;
+            let rows = stmt.execute(params![id, instance_id, expires_at, now_str])?;
+            Ok(rows > 0)
+        }
+    )
+}
+
 /// Compare-and-swap status update: only writes if the current DB status is
 /// still active (`running` or `cancelled`-by-safety-net).
 ///
@@ -1366,6 +1414,78 @@ mod tests {
     use crate::db::init_test_db;
     use crate::db::models::{CreatePersonaInput, Json};
     use crate::db::repos::core::personas;
+
+    fn make_persona(pool: &DbPool, name: &str) -> String {
+        personas::create(
+            pool,
+            CreatePersonaInput {
+                name: name.into(),
+                system_prompt: "You are a test agent.".into(),
+                project_id: None,
+                description: None,
+                structured_prompt: None,
+                icon: None,
+                color: None,
+                enabled: Some(true),
+                max_concurrent: None,
+                timeout_ms: None,
+                model_profile: None,
+                max_budget_usd: None,
+                max_turns: None,
+                design_context: None,
+                notification_channels: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    #[test]
+    fn test_claim_for_instance_cas() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Claim Test Agent");
+        let exec = create(&pool, &persona_id, None, None, None, None).unwrap();
+        assert_eq!(exec.status, "queued");
+
+        // Two instances race for the same queued row; exactly one wins.
+        let a = claim_for_instance(&pool, &exec.id, "instance-A", 300).unwrap();
+        let b = claim_for_instance(&pool, &exec.id, "instance-B", 300).unwrap();
+        assert!(a, "first claimant must win");
+        assert!(!b, "second claimant must lose — row no longer queued + unexpired");
+
+        // The row is now running and stamped with the winner.
+        let claimed = get_by_id(&pool, &exec.id).unwrap();
+        assert_eq!(claimed.status, "running");
+
+        // A second queued execution can still be claimed independently.
+        let exec2 = create(&pool, &persona_id, None, None, None, None).unwrap();
+        assert!(claim_for_instance(&pool, &exec2.id, "instance-B", 300).unwrap());
+    }
+
+    #[test]
+    fn test_claim_expired_is_reclaimable() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Expired Claim Agent");
+        let exec = create(&pool, &persona_id, None, None, None, None).unwrap();
+
+        // Claim with a NEGATIVE ttl → claim_expires_at is already in the past,
+        // and status flips to running. Re-queue it, then a fresh claim must
+        // win because the prior claim's TTL has expired (crash-recovery path).
+        assert!(claim_for_instance(&pool, &exec.id, "dead-instance", -10).unwrap());
+        update_status(
+            &pool,
+            &exec.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Queued,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(
+            claim_for_instance(&pool, &exec.id, "live-instance", 300).unwrap(),
+            "an expired claim on a re-queued row must be re-claimable"
+        );
+    }
 
     #[test]
     fn test_execution_crud() {

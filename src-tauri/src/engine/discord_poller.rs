@@ -72,16 +72,22 @@ pub async fn run_poller(pool: DbPool, app: AppHandle, state: Arc<AppState>) {
     // before we start churning the DB.
     tokio::time::sleep(Duration::from_secs(10)).await;
     loop {
-        match tick(&pool, &app, &state).await {
-            Ok(report) if report.picked + report.replied > 0 => {
-                tracing::debug!(
-                    picked = report.picked,
-                    replied = report.replied,
-                    "discord_poller: tick complete"
-                );
+        // Leader-only (multi-driver orchestration, ADR 2026-05-26): the poller
+        // fetches inbound Discord messages and dispatches persona runs that
+        // reply back to the channel — two instances would double-reply. A
+        // follower idles and resumes within one tick on promotion.
+        if state.leadership.is_leader() {
+            match tick(&pool, &app, &state).await {
+                Ok(report) if report.picked + report.replied > 0 => {
+                    tracing::debug!(
+                        picked = report.picked,
+                        replied = report.replied,
+                        "discord_poller: tick complete"
+                    );
+                }
+                Ok(_) => {}
+                Err(e) => tracing::warn!(error = %e, "discord_poller tick failed"),
             }
-            Ok(_) => {}
-            Err(e) => tracing::warn!(error = %e, "discord_poller tick failed"),
         }
         tokio::time::sleep(POLL_TICK_INTERVAL).await;
     }

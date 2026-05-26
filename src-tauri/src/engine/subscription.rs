@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use futures_util::FutureExt;
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 use super::event_registry::event_name;
 use crate::db::DbPool;
@@ -59,6 +59,16 @@ pub trait ReactiveSubscription: Send + Sync + 'static {
     ///
     /// Errors are logged internally; the loop continues regardless.
     async fn tick(&self);
+
+    /// Whether this subscription is an engine *singleton* that must run only
+    /// on the instance holding engine leadership (multi-driver orchestration,
+    /// ADR 2026-05-26 — `engine/leadership.rs`). Default `true`: every loop in
+    /// this registry is a singleton (scheduler, polling, OAuth refresh, relays,
+    /// event bus) and double-running it across instances on one shared DB is a
+    /// bug. A genuinely per-instance subscription overrides to `false`.
+    fn requires_leadership(&self) -> bool {
+        true
+    }
 }
 
 /// Run a blocking, DB-heavy tick body on the blocking thread pool.
@@ -1091,6 +1101,23 @@ async fn run_single(
         interval.tick().await;
         if !scheduler.is_running() {
             break;
+        }
+
+        // Engine-leadership gate (multi-driver orchestration, ADR 2026-05-26):
+        // a leader-only subscription ticks only on the instance that currently
+        // holds engine leadership, so multiple instances on one shared DB never
+        // double-run a singleton loop (double scheduler fires, double OAuth
+        // rotation, double relay consumption). If AppState isn't available
+        // (e.g. unit tests), behave as leader — no regression from today's
+        // single-instance behavior. A follower just idles + re-checks each
+        // interval, taking over within the lease's stale window if the leader dies.
+        if sub.requires_leadership()
+            && !app
+                .try_state::<std::sync::Arc<crate::AppState>>()
+                .map(|s| s.leadership.is_leader())
+                .unwrap_or(true)
+        {
+            continue;
         }
 
         // Switch interval when activity level changes

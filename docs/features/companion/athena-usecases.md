@@ -585,7 +585,17 @@ renders inline:
 
 - `run_persona { persona_id, input? }`
 - `prefill_persona_create { intent, name?, auto_launch, mode }`
-- `build_oneshot { intent, name? }` [2026-05-06]
+- `build_oneshot { intent, name? }` [2026-05-06; server-side since 2026-05-26]
+  — autonomous "decide everything for me" build. On approve, `execute_build_oneshot`
+  now creates the draft persona and starts a **headless one-shot build session
+  server-side** (`build_session_manager.start_session`, `mode="one_shot"`), then
+  returns a `Navigate` client action so the user can watch. It no longer relies
+  on the create screen being mounted to consume a prefill+`auto_launch` (which
+  silently never built when the user was looking at the chat). The one-shot
+  build runner also (a) auto-continues past any clarifying question instead of
+  blocking on a human answer, and (b) ignores connector-credential ambiguity
+  (no picker to answer), so the build reaches `promoted` unattended. Interactive
+  `prefill_persona_create` is unchanged (still opens the screen for review).
 - `run_arena { persona_id, models[], use_case_filter? }`
 
 **A5. Approval-gated — reviews**:

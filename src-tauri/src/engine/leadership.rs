@@ -1,0 +1,283 @@
+//! Engine leadership — which running instance owns the singleton background
+//! loops (scheduler, OAuth refresh, polling, webhook notifier, project
+//! tracking, …) against the ONE shared local DB.
+//!
+//! # Why
+//!
+//! Multiple processes can run against one local device/DB at once: the
+//! windowed Tauri app, the `personas-daemon` binary, and (future) instances
+//! spawned for parallel testing. Each currently runs its OWN copy of every
+//! background loop, so two instances double-fire schedulers, double-rotate
+//! OAuth tokens, etc. (WAL keeps the file intact; the behavior is wrong.)
+//!
+//! This module generalizes the proven `daemon.lock` heartbeat-lease
+//! ([`crate::daemon::lock`]) so that *any* instance can hold engine
+//! leadership — not just the daemon binary. Exactly one holder at a time is
+//! the **leader**; everyone else is a **follower**. Followers run the local
+//! UI + bridges + can submit intents, but defer the singleton loops to the
+//! leader (the gating is wired in a later phase; this module only establishes
+//! *who* the leader is).
+//!
+//! # Model
+//!
+//! Leadership *is* the lock file. `try_acquire()` atomically creates it; if a
+//! fresh lock already exists, this instance is a follower. A stale lock
+//! (heartbeat older than [`STALE_THRESHOLD`]) is taken over. The leader
+//! refreshes the heartbeat every [`HEARTBEAT_INTERVAL`] via [`Self::tick`];
+//! a follower's `tick` re-attempts acquisition so it takes over within the
+//! stale window if the leader dies.
+//!
+//! Single-instance degrades to "the one instance acquires → leader → runs
+//! everything" — today's behavior, one file check of overhead at startup.
+//!
+//! # Precedence (intentional follow-up)
+//!
+//! The first instance to boot wins. In the common deployments this is
+//! correct: an always-on daemon acquires before any UI; with no daemon, the
+//! first UI leads. The refinement where a *starting daemon preempts a UI
+//! leader* (so headless trigger firing is never weaker than today) is tracked
+//! in the multi-driver-orchestration ADR — it needs a `role` field in the
+//! lock + a preemption path, deliberately out of scope for this foundational
+//! commit (which changes no existing behavior).
+
+use std::path::PathBuf;
+use std::sync::Mutex;
+
+use crate::daemon::lock::{default_data_dir, DaemonLock, LockError, TriggerKind};
+
+/// Lock filename for engine leadership — deliberately distinct from the
+/// daemon's `daemon.lock` so a windowed instance acquiring engine leadership
+/// never blocks the always-on `personas-daemon` from starting (the two leases
+/// are independent: `daemon.lock` = daemon trigger-ownership, this =
+/// per-process singleton-loop leadership among non-daemon instances).
+const LEADER_LOCK_FILENAME: &str = "engine-leader.lock";
+
+/// All trigger kinds — a generalized engine leader owns every singleton loop,
+/// not just the narrow set the daemon historically claimed.
+fn all_owned_kinds() -> Vec<TriggerKind> {
+    vec![
+        TriggerKind::Cron,
+        TriggerKind::Polling,
+        TriggerKind::Webhook,
+        TriggerKind::SmeeRelay,
+        TriggerKind::SharedEventRelay,
+        TriggerKind::CloudWebhookRelay,
+    ]
+}
+
+/// Per-process engine-leadership state. Held in `AppState` (one per process).
+///
+/// `instance_id` is a fresh UUID per launch — it distinguishes concurrent
+/// instances of the *same install* (the device `peer_id` is per-install and
+/// can't tell two running processes apart).
+pub struct EngineLeadership {
+    instance_id: String,
+    app_data_dir: PathBuf,
+    /// `Some(lock)` iff this instance currently holds leadership.
+    lock: Mutex<Option<DaemonLock>>,
+    /// Forced-follower mode (`PERSONAS_FOLLOWER=1`): this instance NEVER acquires
+    /// leadership, so every leadership-gated singleton loop (OAuth refresh,
+    /// scheduler, webhook notifier, discord poller, …) stays idle. The local UI,
+    /// bridges, companion, and in-process persona builds/runs still work. This is
+    /// the Phase 5 lever (ADR 2026-05-26) that makes an isolated test instance
+    /// safe to run alongside a real leader without double-refreshing OAuth tokens
+    /// or double-sending outbound notifications.
+    forced_follower: bool,
+}
+
+impl EngineLeadership {
+    /// Construct for a given app-data dir (where `daemon.lock` lives). Does
+    /// NOT acquire — call [`Self::try_acquire`] at startup. Honors
+    /// `PERSONAS_FOLLOWER=1` to pin this instance as a permanent follower.
+    pub fn new(app_data_dir: PathBuf) -> Self {
+        let forced_follower = std::env::var("PERSONAS_FOLLOWER")
+            .map(|v| {
+                let v = v.trim();
+                v == "1" || v.eq_ignore_ascii_case("true")
+            })
+            .unwrap_or(false);
+        if forced_follower {
+            tracing::info!("PERSONAS_FOLLOWER=1 — engine pinned as follower; all leader-only loops will idle");
+        }
+        Self {
+            instance_id: uuid::Uuid::new_v4().to_string(),
+            app_data_dir,
+            lock: Mutex::new(None),
+            forced_follower,
+        }
+    }
+
+    /// Construct against the default app-data dir.
+    pub fn with_default_dir() -> Self {
+        Self::new(default_data_dir())
+    }
+
+    /// Stable per-PROCESS id (new each launch).
+    pub fn instance_id(&self) -> &str {
+        &self.instance_id
+    }
+
+    /// Attempt to become the engine leader. Idempotent — if already leader,
+    /// returns `true` without touching the file. Returns whether this instance
+    /// holds leadership after the call.
+    pub fn try_acquire(&self) -> bool {
+        if self.forced_follower {
+            return false;
+        }
+        let mut guard = self.lock.lock().unwrap_or_else(|e| e.into_inner());
+        if guard.is_some() {
+            return true;
+        }
+        match DaemonLock::acquire_named(&self.app_data_dir, LEADER_LOCK_FILENAME, all_owned_kinds()) {
+            Ok(lock) => {
+                tracing::info!(
+                    instance_id = %self.instance_id,
+                    "engine leadership acquired"
+                );
+                *guard = Some(lock);
+                true
+            }
+            Err(LockError::AlreadyHeld { pid, heartbeat_at }) => {
+                tracing::debug!(
+                    instance_id = %self.instance_id,
+                    leader_pid = pid,
+                    leader_heartbeat = %heartbeat_at,
+                    "engine leadership held by another instance — following"
+                );
+                false
+            }
+            Err(e) => {
+                tracing::warn!(error = %e, "engine leadership acquire failed — assuming follower");
+                false
+            }
+        }
+    }
+
+    /// Whether this instance currently holds leadership.
+    pub fn is_leader(&self) -> bool {
+        self.lock
+            .lock()
+            .map(|g| g.is_some())
+            .unwrap_or(false)
+    }
+
+    /// Heartbeat tick. If leader, refresh the lease (relinquishing on write
+    /// failure). If follower, re-attempt acquisition so a dead leader's lease
+    /// is taken over within the stale window. Call every
+    /// [`crate::daemon::lock::HEARTBEAT_INTERVAL`].
+    pub fn tick(&self) {
+        let need_acquire = {
+            let mut guard = self.lock.lock().unwrap_or_else(|e| e.into_inner());
+            match guard.as_mut() {
+                Some(lock) => {
+                    if let Err(e) = lock.heartbeat() {
+                        tracing::warn!(
+                            error = %e,
+                            "engine leadership heartbeat failed — relinquishing leadership"
+                        );
+                        *guard = None;
+                        false
+                    } else {
+                        false
+                    }
+                }
+                None => true,
+            }
+        };
+        if need_acquire {
+            // Follower (or just-relinquished): try to take over a stale lease.
+            self.try_acquire();
+        }
+    }
+
+    /// Relinquish leadership (clean shutdown). No-op for a follower.
+    pub fn release(&self) {
+        let mut guard = self.lock.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(lock) = guard.take() {
+            let _ = lock.release();
+            tracing::info!(instance_id = %self.instance_id, "engine leadership released");
+        }
+    }
+}
+
+/// Leadership check for background loops that only carry an [`AppHandle`]
+/// (not a direct `Arc<AppState>`). Returns `true` when this instance is the
+/// engine leader — and, deliberately, ALSO `true` when `AppState` isn't
+/// manageable (very early startup) or absent (unit tests / non-Tauri callers).
+/// That "absent ⇒ leader" default is the single-instance backward-compat
+/// guarantee: a lone process must run every loop exactly as it did before this
+/// gate existed. Mirrors the same default in [`crate::engine::subscription`]'s
+/// per-subscription gate.
+pub fn is_engine_leader(app: &tauri::AppHandle) -> bool {
+    use tauri::Manager;
+    app.try_state::<std::sync::Arc<crate::AppState>>()
+        .map(|s| s.leadership.is_leader())
+        .unwrap_or(true)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    #[test]
+    fn lone_instance_becomes_leader() {
+        let tmp = TempDir::new().unwrap();
+        let l = EngineLeadership::new(tmp.path().to_path_buf());
+        assert!(!l.is_leader());
+        assert!(l.try_acquire());
+        assert!(l.is_leader());
+        // Idempotent.
+        assert!(l.try_acquire());
+        assert!(l.is_leader());
+    }
+
+    #[test]
+    fn second_instance_is_follower_then_takes_over() {
+        let tmp = TempDir::new().unwrap();
+        let leader = EngineLeadership::new(tmp.path().to_path_buf());
+        let follower = EngineLeadership::new(tmp.path().to_path_buf());
+        assert!(leader.try_acquire());
+        assert!(!follower.try_acquire(), "second instance must follow");
+        assert!(!follower.is_leader());
+        // Leader relinquishes; follower's tick takes over.
+        leader.release();
+        follower.tick();
+        assert!(follower.is_leader(), "follower must take over a released lease");
+    }
+
+    #[test]
+    fn instance_ids_are_distinct_per_process_object() {
+        let tmp = TempDir::new().unwrap();
+        let a = EngineLeadership::new(tmp.path().to_path_buf());
+        let b = EngineLeadership::new(tmp.path().to_path_buf());
+        assert_ne!(a.instance_id(), b.instance_id());
+    }
+
+    #[test]
+    fn forced_follower_never_acquires() {
+        let tmp = TempDir::new().unwrap();
+        let l = EngineLeadership {
+            instance_id: uuid::Uuid::new_v4().to_string(),
+            app_data_dir: tmp.path().to_path_buf(),
+            lock: Mutex::new(None),
+            forced_follower: true,
+        };
+        assert!(!l.try_acquire(), "forced follower must never acquire");
+        assert!(!l.is_leader());
+        l.tick(); // must not acquire on tick either
+        assert!(!l.is_leader());
+        // And the lock file must NOT exist — a forced follower never writes it,
+        // so a real leader elsewhere is never displaced.
+        assert!(!tmp.path().join(LEADER_LOCK_FILENAME).exists());
+    }
+
+    #[test]
+    fn heartbeat_keeps_leadership() {
+        let tmp = TempDir::new().unwrap();
+        let l = EngineLeadership::new(tmp.path().to_path_buf());
+        assert!(l.try_acquire());
+        l.tick(); // heartbeat
+        assert!(l.is_leader());
+    }
+}

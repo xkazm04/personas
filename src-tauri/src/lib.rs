@@ -408,6 +408,12 @@ pub struct AppState {
     /// pulses consumed by Companion's brain. Always present; the master
     /// enable gate inside controls whether ticks do work.
     pub project_tracking: Arc<engine::project_tracking::ProjectTracker>,
+    /// Engine leadership for this process — which instance owns the singleton
+    /// background loops against the shared local DB (multi-driver
+    /// orchestration, ADR 2026-05-26). Acquired at startup; a heartbeat task
+    /// keeps the lease fresh. Loop gating on `is_leader()` lands in a later
+    /// phase — present here so all surfaces can read leadership now.
+    pub leadership: Arc<engine::leadership::EngineLeadership>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -531,10 +537,32 @@ pub fn run() {
 
             let mut st = startup_timing::StartupTimer::new();
 
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .map_err(|e| format!("Failed to resolve app data directory: {e}"))?;
+            // Data-dir override for parallel-CLI / multi-instance testing
+            // (multi-driver orchestration, ADR 2026-05-26). When
+            // PERSONAS_DATA_DIR is set, use it instead of the OS app-data dir so
+            // a cluster of test instances can share an ISOLATED DB + engine-leader
+            // lock (`engine-leader.lock` lives in this dir) without ever touching
+            // the user's real production data dir — the DB-isolation counterpart
+            // to PERSONAS_WEBHOOK_PORT / PERSONAS_VITE_PORT / PERSONAS_TEST_PORT.
+            // Unset (default) keeps unchanged production behavior. Created if
+            // missing.
+            let app_data_dir = match std::env::var("PERSONAS_DATA_DIR") {
+                Ok(dir) if !dir.trim().is_empty() => {
+                    let p = std::path::PathBuf::from(dir.trim());
+                    std::fs::create_dir_all(&p).map_err(|e| {
+                        format!("Failed to create PERSONAS_DATA_DIR {}: {e}", p.display())
+                    })?;
+                    tracing::info!(
+                        data_dir = %p.display(),
+                        "using PERSONAS_DATA_DIR override (multi-instance test isolation)"
+                    );
+                    p
+                }
+                _ => app
+                    .path()
+                    .app_data_dir()
+                    .map_err(|e| format!("Failed to resolve app data directory: {e}"))?,
+            };
 
             // Create CDC channel for reactive SQLite change notifications
             let (cdc_sender, cdc_receiver) = db::cdc::create_cdc_channel(512);
@@ -879,6 +907,9 @@ pub fn run() {
                 #[cfg(feature = "desktop")]
                 clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 project_tracking: Arc::new(engine::project_tracking::ProjectTracker::new()),
+                leadership: Arc::new(engine::leadership::EngineLeadership::new(
+                    app_data_dir.clone(),
+                )),
             });
             // Phase 1: spawn the project_tracking scheduler. The master
             // enable flag inside the tracker starts at false; the
@@ -896,6 +927,33 @@ pub fn run() {
                 app.handle().clone(),
             );
             app.manage(state_arc.clone());
+
+            // Engine leadership (multi-driver orchestration, ADR 2026-05-26):
+            // try to become the singleton-loop leader for this device/DB, then
+            // keep the lease fresh via a heartbeat task. Uses its own
+            // `engine-leader.lock` (independent of `daemon.lock`, so this never
+            // blocks the always-on daemon). Loop gating on `is_leader()` lands
+            // in a later phase — for now this only establishes + advertises
+            // leadership so every surface (UI/MCP/REST) can read it.
+            {
+                let became_leader = state_arc.leadership.try_acquire();
+                tracing::info!(
+                    instance_id = %state_arc.leadership.instance_id(),
+                    leader = became_leader,
+                    "engine leadership: startup acquire"
+                );
+                let leadership = state_arc.leadership.clone();
+                tauri::async_runtime::spawn(async move {
+                    let mut ticker =
+                        tokio::time::interval(daemon::lock::HEARTBEAT_INTERVAL);
+                    // Skip the immediate first tick — we just acquired above.
+                    ticker.tick().await;
+                    loop {
+                        ticker.tick().await;
+                        leadership.tick();
+                    }
+                });
+            }
 
             // Phase 5 v1: seed the cross-process cli_session gate from app_settings
             // on startup, so a user who toggled it ON in a previous session still
@@ -955,18 +1013,23 @@ pub fn run() {
                 }
                 let pool_for_worker = pool.clone();
                 let app_handle = app.handle().clone();
+                let leadership_for_worker = state_arc.leadership.clone();
                 tauri::async_runtime::spawn(async move {
                     use std::time::Duration;
                     // Brief startup delay so other init logs land first.
                     tokio::time::sleep(Duration::from_secs(3)).await;
                     loop {
-                        let res = engine::persona_jobs::worker_tick(
-                            &pool_for_worker,
-                            &app_handle,
-                        )
-                        .await;
-                        if let Err(e) = res {
-                            tracing::warn!(error = %e, "persona-jobs worker tick failed");
+                        // Leader-only (ADR 2026-05-26): claims + runs queued
+                        // persona jobs; a follower would double-run them.
+                        if leadership_for_worker.is_leader() {
+                            let res = engine::persona_jobs::worker_tick(
+                                &pool_for_worker,
+                                &app_handle,
+                            )
+                            .await;
+                            if let Err(e) = res {
+                                tracing::warn!(error = %e, "persona-jobs worker tick failed");
+                            }
                         }
                         tokio::time::sleep(Duration::from_secs(5)).await;
                     }
@@ -987,22 +1050,27 @@ pub fn run() {
             // semantics (curation vs execution).
             {
                 let pool_for_curation = pool.clone();
+                let leadership_for_curation = state_arc.leadership.clone();
                 tauri::async_runtime::spawn(async move {
                     // Slightly longer startup delay than the persona-jobs
                     // worker so the first scheduler tick sees a settled
                     // job table (no orphan-recovery races).
                     tokio::time::sleep(std::time::Duration::from_secs(8)).await;
                     loop {
-                        match engine::curation_scheduler::tick(&pool_for_curation) {
-                            Ok(0) => {} // quiet path; nothing due
-                            Ok(n) => tracing::debug!(
-                                enqueued = n,
-                                "curation_scheduler: enqueued scheduled jobs"
-                            ),
-                            Err(e) => tracing::warn!(
-                                error = %e,
-                                "curation_scheduler tick failed"
-                            ),
+                        // Leader-only (ADR 2026-05-26): enqueues due curation
+                        // jobs; a follower would double-enqueue them.
+                        if leadership_for_curation.is_leader() {
+                            match engine::curation_scheduler::tick(&pool_for_curation) {
+                                Ok(0) => {} // quiet path; nothing due
+                                Ok(n) => tracing::debug!(
+                                    enqueued = n,
+                                    "curation_scheduler: enqueued scheduled jobs"
+                                ),
+                                Err(e) => tracing::warn!(
+                                    error = %e,
+                                    "curation_scheduler tick failed"
+                                ),
+                            }
                         }
                         tokio::time::sleep(engine::curation_scheduler::SCHEDULER_TICK_INTERVAL)
                             .await;
@@ -1060,8 +1128,15 @@ pub fn run() {
                 let pending = app.state::<test_automation::PendingResponses>().inner().clone();
                 let handle = app.handle().clone();
 
+                // Dev mode (`--features test-automation`): always on, default
+                // :17320 — but still let PERSONAS_TEST_PORT override it so a
+                // second instance on one device (parallel-CLI / multi-driver,
+                // ADR 2026-05-26) gets a DETERMINISTIC distinct bridge port
+                // instead of relying on the EADDRINUSE fallback scan.
                 #[cfg(feature = "test-automation")]
-                let requested_port = Some(test_automation::DEFAULT_PORT);
+                let requested_port = Some(test_automation::env_test_port().inspect(|port| {
+                    tracing::info!("test-automation bridge port overridden via PERSONAS_TEST_PORT={}", port);
+                }).unwrap_or(test_automation::DEFAULT_PORT));
 
                 #[cfg(not(feature = "test-automation"))]
                 let requested_port = test_automation::env_test_port().inspect(|port| {
