@@ -13913,7 +13913,12 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "Đi tiếp ở đâu",
       "nextMovesSubtitle": "Các chủ đề có độ phủ mỏng nhất — huấn luyện những chủ đề này tiếp theo để bộ não phát triển mạnh nhất.",
-      "nextMovesCoverage": "{count} dữ kiện nền tảng đến nay"
+      "nextMovesCoverage": "{count} dữ kiện nền tảng đến nay",
+      "draftAsTwin": "Soạn thử như bản sao",
+      "draftingAsTwin": "Đang soạn như {name}…",
+      "twinDraftLabel": "Bản nháp của bản sao — xem lại & chỉnh sửa",
+      "regenerate": "Tạo lại",
+      "regenerateCommentPlaceholder": "Thay đổi gì? (vd: ngắn hơn, thêm câu chuyện năm 2019)"
     },
     "brain": {
       "title": "Brain",

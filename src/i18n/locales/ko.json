@@ -13913,7 +13913,12 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "다음으로 갈 곳",
       "nextMovesSubtitle": "커버리지가 가장 얕은 주제 — 다음 학습 대상으로 잡으면 두뇌 강화 효과가 가장 큽니다.",
-      "nextMovesCoverage": "지금까지 {count}개의 grounding 사실"
+      "nextMovesCoverage": "지금까지 {count}개의 grounding 사실",
+      "draftAsTwin": "트윈으로 초안 작성",
+      "draftingAsTwin": "{name}(으)로 초안 작성 중…",
+      "twinDraftLabel": "트윈 초안 — 검토 및 편집",
+      "regenerate": "다시 생성",
+      "regenerateCommentPlaceholder": "무엇을 바꿀까요? (예: 더 짧게, 2019년 이야기 추가)"
     },
     "brain": {
       "title": "Brain",

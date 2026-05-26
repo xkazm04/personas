@@ -13964,7 +13964,12 @@
       "generatingFollowup": "Generating follow-up...",
       "summarizingSession": "Summarizing what we learned...",
       "sessionSummaryHeading": "What we learned this session",
-      "summarySaved": "Summary saved as a high-priority memory."
+      "summarySaved": "Summary saved as a high-priority memory.",
+      "draftAsTwin": "Draft as twin",
+      "draftingAsTwin": "Drafting as {name}…",
+      "twinDraftLabel": "Twin draft — review & edit",
+      "regenerate": "Regenerate",
+      "regenerateCommentPlaceholder": "What to change? (e.g. shorter, add the 2019 story)"
     },
     "brain": {
       "title": "Brain",

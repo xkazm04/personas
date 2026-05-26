@@ -13913,7 +13913,12 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "এরপর কোথায় যাবেন",
       "nextMovesSubtitle": "সবচেয়ে কম কভারেজ সহ বিষয়সমূহ — মস্তিষ্কের সর্বোচ্চ বুস্টের জন্য এগুলোর উপর পরবর্তী প্রশিক্ষণ দিন।",
-      "nextMovesCoverage": "এখন পর্যন্ত {count}টি গ্রাউন্ডিং তথ্য"
+      "nextMovesCoverage": "এখন পর্যন্ত {count}টি গ্রাউন্ডিং তথ্য",
+      "draftAsTwin": "টুইন হিসেবে খসড়া",
+      "draftingAsTwin": "{name} হিসেবে খসড়া তৈরি হচ্ছে…",
+      "twinDraftLabel": "টুইন খসড়া — পর্যালোচনা ও সম্পাদনা করুন",
+      "regenerate": "পুনরায় তৈরি করুন",
+      "regenerateCommentPlaceholder": "কী পরিবর্তন করবেন? (যেমন ছোট করুন, 2019-এর গল্প যোগ করুন)"
     },
     "brain": {
       "title": "Brain",

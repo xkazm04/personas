@@ -13913,7 +13913,12 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "Hacia dónde ir después",
       "nextMovesSubtitle": "Los temas con menos cobertura — entrénalos a continuación para el mayor impulso al cerebro.",
-      "nextMovesCoverage": "{count} hechos de base hasta ahora"
+      "nextMovesCoverage": "{count} hechos de base hasta ahora",
+      "draftAsTwin": "Borrador como gemelo",
+      "draftingAsTwin": "Redactando como {name}…",
+      "twinDraftLabel": "Borrador del gemelo: revisa y edita",
+      "regenerate": "Regenerar",
+      "regenerateCommentPlaceholder": "¿Qué cambiar? (p. ej.: más corto, añade la historia de 2019)"
     },
     "brain": {
       "title": "Brain",

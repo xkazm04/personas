@@ -209,7 +209,12 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Kam pokračovat",
     "nextMovesSubtitle": "Témata s nejtenčím pokrytím — natrénujte je jako další pro největší posílení mozku.",
-    "nextMovesCoverage": "{count} ukotvujících faktů zatím"
+    "nextMovesCoverage": "{count} ukotvujících faktů zatím",
+    "draftAsTwin": "Návrh jako dvojče",
+    "draftingAsTwin": "Vytváří se návrh jako {name}…",
+    "twinDraftLabel": "Návrh dvojčete — zkontrolovat a upravit",
+    "regenerate": "Vygenerovat znovu",
+    "regenerateCommentPlaceholder": "Co změnit? (např. kratší, přidat příběh z roku 2019)"
   },
   "brain": {
     "title": "Brain",

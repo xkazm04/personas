@@ -209,7 +209,12 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Où aller ensuite",
     "nextMovesSubtitle": "Sujets dont la couverture est la plus mince — entraînez-les en priorité pour donner le plus gros coup de boost au cerveau.",
-    "nextMovesCoverage": "{count} faits d'ancrage à ce jour"
+    "nextMovesCoverage": "{count} faits d'ancrage à ce jour",
+    "draftAsTwin": "Brouillon comme le jumeau",
+    "draftingAsTwin": "Rédaction en tant que {name}…",
+    "twinDraftLabel": "Brouillon du jumeau — relire et modifier",
+    "regenerate": "Régénérer",
+    "regenerateCommentPlaceholder": "Que changer ? (p. ex. plus court, ajouter l'histoire de 2019)"
   },
   "brain": {
     "title": "Brain",

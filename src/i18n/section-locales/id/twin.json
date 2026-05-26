@@ -209,7 +209,12 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "Ke mana selanjutnya",
     "nextMovesSubtitle": "Topik dengan cakupan paling tipis — latih ini berikutnya untuk peningkatan otak terbesar.",
-    "nextMovesCoverage": "{count} fakta dasar sejauh ini"
+    "nextMovesCoverage": "{count} fakta dasar sejauh ini",
+    "draftAsTwin": "Draf sebagai twin",
+    "draftingAsTwin": "Membuat draf sebagai {name}…",
+    "twinDraftLabel": "Draf twin — tinjau & edit",
+    "regenerate": "Buat ulang",
+    "regenerateCommentPlaceholder": "Apa yang diubah? (mis. lebih singkat, tambahkan cerita 2019)"
   },
   "brain": {
     "title": "Brain",

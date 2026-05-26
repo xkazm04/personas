@@ -209,7 +209,12 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "下一步去哪里",
     "nextMovesSubtitle": "覆盖最薄弱的话题 — 优先训练这些，可让大脑获益最大。",
-    "nextMovesCoverage": "目前有 {count} 条基础事实"
+    "nextMovesCoverage": "目前有 {count} 条基础事实",
+    "draftAsTwin": "以分身起草",
+    "draftingAsTwin": "正在以{name}起草…",
+    "twinDraftLabel": "分身草稿 — 审阅并编辑",
+    "regenerate": "重新生成",
+    "regenerateCommentPlaceholder": "想改什么？（例如：更简短、加入2019年的故事）"
   },
   "brain": {
     "title": "Brain",

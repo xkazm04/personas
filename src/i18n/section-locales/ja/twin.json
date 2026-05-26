@@ -209,7 +209,12 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "次にどこへ進むか",
     "nextMovesSubtitle": "最もカバレッジの薄いトピック — ブレインを大きく強化するために次にこれらをトレーニングしましょう。",
-    "nextMovesCoverage": "これまでに {count} 件のグラウンディング事実"
+    "nextMovesCoverage": "これまでに {count} 件のグラウンディング事実",
+    "draftAsTwin": "ツインとして下書き",
+    "draftingAsTwin": "{name}として下書き中…",
+    "twinDraftLabel": "ツインの下書き — 確認して編集",
+    "regenerate": "再生成",
+    "regenerateCommentPlaceholder": "どう変える？（例：もっと短く、2019年の話を追加）"
   },
   "brain": {
     "title": "Brain",

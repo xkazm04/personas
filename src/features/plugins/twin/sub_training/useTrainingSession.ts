@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { toastCatch } from '@/lib/silentCatch';
 import * as twinApi from '@/api/twin/twin';
 
 export interface QAPair {
@@ -42,10 +43,16 @@ export interface TrainingSession {
   followupLoading: boolean;
   summarizing: boolean;
   saving: boolean;
+  /** A twin-simulated answer draft is being generated for the current question. */
+  drafting: boolean;
+  /** The current answerDraft was produced by "Draft as twin" (and not yet submitted). */
+  aiDrafted: boolean;
   groundingFacts: string[];
   sessionSummary: string | null;
   savedCount: number;
   generateQuestions: (topicPrompt: string) => Promise<void>;
+  /** Draft the current question's answer AS the twin; `directions` steers a regenerate. */
+  draftAnswer: (directions?: string) => Promise<void>;
   handleSubmitAnswer: () => Promise<void>;
   handleSkipFollowup: () => Promise<void>;
   handleReset: () => void;
@@ -67,6 +74,8 @@ export function useTrainingSession(): TrainingSession {
   const [generating, setGenerating] = useState(false);
   const [followupLoading, setFollowupLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [drafting, setDrafting] = useState(false);
+  const [aiDrafted, setAiDrafted] = useState(false);
   const followupSpawnedFor = useRef<Set<string>>(new Set());
   const [groundingFacts, setGroundingFacts] = useState<string[]>([]);
   const [sessionSummary, setSessionSummary] = useState<string | null>(null);
@@ -133,6 +142,31 @@ export function useTrainingSession(): TrainingSession {
     } finally { setGenerating(false); }
   }, [activeTwin, callAi, groundingFacts]);
 
+  // Twin-simulation: draft the current question's answer AS the twin, grounded
+  // in the twin's bio + tone + distilled facts (server-side). `directions`
+  // carries the user's critique on a regenerate ("shorter", "add the 2019
+  // story"). The draft lands in answerDraft so the user reviews/edits it before
+  // submitting — the human always has the last word on what becomes a memory.
+  const draftAnswer = useCallback(async (directions?: string) => {
+    if (!activeTwinId) return;
+    const q = questions[currentIdx];
+    if (!q) return;
+    setDrafting(true);
+    try {
+      const draft = await twinApi.simulateAnswer(activeTwinId, q.question, directions?.trim() || undefined);
+      const clean = draft.trim();
+      if (clean) {
+        setAnswerDraft(clean);
+        setAiDrafted(true);
+        setTimeout(() => answerRef.current?.focus(), 50);
+      }
+    } catch (e) {
+      toastCatch('features/plugins/twin/sub_training/useTrainingSession:draftAnswer')(e);
+    } finally {
+      setDrafting(false);
+    }
+  }, [activeTwinId, questions, currentIdx]);
+
   const generateFollowup = async (parent: QAPair, parentAnswer: string): Promise<string | null> => {
     if (!activeTwin) return null;
     try {
@@ -170,6 +204,7 @@ export function useTrainingSession(): TrainingSession {
     if (!answerDraft.trim() || !activeTwinId) return;
     const q = questions[currentIdx]; if (!q) return;
     const trimmedAnswer = answerDraft.trim();
+    setAiDrafted(false);
     const updated = [...questions]; updated[currentIdx] = { ...q, answer: trimmedAnswer }; setQuestions(updated);
     setSaving(true);
     try {
@@ -198,7 +233,7 @@ export function useTrainingSession(): TrainingSession {
 
   const handleSkipFollowup = async () => {
     const next = [...questions.slice(0, currentIdx), ...questions.slice(currentIdx + 1)];
-    setQuestions(next); setAnswerDraft('');
+    setQuestions(next); setAnswerDraft(''); setAiDrafted(false);
     if (next.length === 0) { await advanceOrComplete(questions.filter((_, i) => i !== currentIdx), questions.length - 1); return; }
     if (currentIdx >= next.length) await advanceOrComplete(next, next.length);
     else { setCurrentIdx(currentIdx); setTimeout(() => answerRef.current?.focus(), 100); }
@@ -206,7 +241,7 @@ export function useTrainingSession(): TrainingSession {
 
   const handleReset = () => {
     setPhase('topic'); setQuestions([]); setCurrentIdx(0); setAnswerDraft('');
-    setCustomTopic(''); setSessionSummary(null); followupSpawnedFor.current = new Set();
+    setCustomTopic(''); setSessionSummary(null); setAiDrafted(false); followupSpawnedFor.current = new Set();
   };
 
   const jumpTo = (idx: number) => { if (idx >= 0 && idx < questions.length) setCurrentIdx(idx); };
@@ -214,9 +249,9 @@ export function useTrainingSession(): TrainingSession {
   return {
     phase, questions, currentIdx, answerDraft, setAnswerDraft,
     customTopic, setCustomTopic,
-    generating, followupLoading, summarizing, saving,
+    generating, followupLoading, summarizing, saving, drafting, aiDrafted,
     groundingFacts, sessionSummary, savedCount,
-    generateQuestions, handleSubmitAnswer, handleSkipFollowup, handleReset, jumpTo,
+    generateQuestions, draftAnswer, handleSubmitAnswer, handleSkipFollowup, handleReset, jumpTo,
     answerRef,
   };
 }

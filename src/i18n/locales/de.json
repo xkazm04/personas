@@ -13913,7 +13913,12 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "Wohin als Nächstes",
       "nextMovesSubtitle": "Themen mit der dünnsten Abdeckung — trainiere diese als Nächstes für den größten Brain-Boost.",
-      "nextMovesCoverage": "{count} Grundlagenfakten bisher"
+      "nextMovesCoverage": "{count} Grundlagenfakten bisher",
+      "draftAsTwin": "Als Twin entwerfen",
+      "draftingAsTwin": "Entwurf als {name}…",
+      "twinDraftLabel": "Twin-Entwurf — prüfen & bearbeiten",
+      "regenerate": "Neu generieren",
+      "regenerateCommentPlaceholder": "Was ändern? (z. B. kürzer, die 2019-Geschichte ergänzen)"
     },
     "brain": {
       "title": "Brain",

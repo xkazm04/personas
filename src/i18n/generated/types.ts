@@ -13971,6 +13971,11 @@ export type Translations = {
       summarizingSession: string;
       sessionSummaryHeading: string;
       summarySaved: string;
+      draftAsTwin: string;
+      draftingAsTwin: string;
+      twinDraftLabel: string;
+      regenerate: string;
+      regenerateCommentPlaceholder: string;
     };
     brain: {
       title: string;

@@ -209,7 +209,12 @@
     "summarySaved": "Summary saved as a high-priority memory.",
     "nextMovesHeading": "आगे कहाँ जाएँ",
     "nextMovesSubtitle": "सबसे कम कवरेज वाले विषय — मस्तिष्क को सबसे बड़ा बढ़ावा देने के लिए इन्हें अगला प्रशिक्षित करें।",
-    "nextMovesCoverage": "अब तक {count} ग्राउंडिंग तथ्य"
+    "nextMovesCoverage": "अब तक {count} ग्राउंडिंग तथ्य",
+    "draftAsTwin": "ट्विन के रूप में ड्राफ़्ट करें",
+    "draftingAsTwin": "{name} के रूप में ड्राफ़्ट हो रहा है…",
+    "twinDraftLabel": "ट्विन ड्राफ़्ट — समीक्षा करें और संपादित करें",
+    "regenerate": "फिर से बनाएँ",
+    "regenerateCommentPlaceholder": "क्या बदलना है? (जैसे छोटा करें, 2019 की कहानी जोड़ें)"
   },
   "brain": {
     "title": "Brain",

@@ -13913,7 +13913,12 @@
       "summarySaved": "Summary saved as a high-priority memory.",
       "nextMovesHeading": "Куда двигаться дальше",
       "nextMovesSubtitle": "Темы со слабейшим покрытием — натренируйте их следующими для максимального прироста мозга.",
-      "nextMovesCoverage": "{count} опорных фактов на данный момент"
+      "nextMovesCoverage": "{count} опорных фактов на данный момент",
+      "draftAsTwin": "Черновик от двойника",
+      "draftingAsTwin": "Черновик от имени {name}…",
+      "twinDraftLabel": "Черновик двойника — проверьте и отредактируйте",
+      "regenerate": "Сгенерировать заново",
+      "regenerateCommentPlaceholder": "Что изменить? (напр.: короче, добавить историю 2019 года)"
     },
     "brain": {
       "title": "Brain",
