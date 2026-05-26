@@ -55,7 +55,7 @@ const answerExpr = `(()=>{
   }
   // connector-picker card: pick the codebase/local connector (or first)
   const conn=[...document.querySelectorAll('button,[role=option],[role=button]')].filter(e=>e.offsetParent!==null&&/codebase|local|messaging|gmail|notion/i.test(e.innerText||''));
-  if(conn.length){const c=conn.find(e=>/codebase|local/i.test(e.innerText||''))||conn[0];c.click();return 'conn:'+(c.innerText||'').replace(/\\s+/g,' ').trim().slice(0,24);}
+  if(conn.length){const c=conn.find(e=>/bookkeeper/i.test(e.innerText||''))||conn.find(e=>/codebase|local/i.test(e.innerText||''))||conn[0];c.click();return 'conn:'+(c.innerText||'').replace(/\\s+/g,' ').trim().slice(0,24);}
   return 'no-card';
 })()`;
 
@@ -80,7 +80,7 @@ const answerExpr = `(()=>{
     if (!(await alive())) { console.log(`[t+${i * 4}s] APP DIED`); return; }
     const st = phaseOf(session.id); const ph = st.phase || '?';
     if (ph !== last) { console.log(`[t+${i * 4}s] phase=${ph} ir=${st.ir}`); last = ph; }
-    if (ph === 'draft_ready' && st.ir) { console.log('DRAFT READY with IR'); break; }
+    if ((ph === 'draft_ready' || ph === 'test_complete') && st.ir) { console.log(`READY (${ph}) with IR`); break; }
     if (ph === 'awaiting_input' || ph === 'refine') {
       const dump = await readBack(dumpCardExpr, 400);
       if (!dump.includes('NO-CARD')) {
@@ -91,5 +91,14 @@ const answerExpr = `(()=>{
     }
     if (ph === 'failed') { console.log('FAILED'); break; }
   }
-  console.log('final phase', phaseOf(session.id), 'answered', answered, 'persona', session.persona_id);
+  const fin = phaseOf(session.id);
+  console.log('final phase', JSON.stringify(fin), 'answered', answered);
+  // auto-promote if the draft is ready with an IR
+  if (fin.ir && (fin.phase === 'test_complete' || fin.phase === 'draft_ready')) {
+    const pr = await post('/promote-build', { session_id: session.id, persona_id: session.persona_id });
+    console.log('promote:', JSON.stringify(pr).slice(0, 220));
+  } else {
+    console.log('NOT promoting (phase=' + fin.phase + ' ir=' + fin.ir + ')');
+  }
+  console.log('persona', session.persona_id);
 })().catch((e) => { console.error('PROBE ERROR:', e.message); process.exit(1); });
