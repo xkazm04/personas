@@ -586,6 +586,24 @@ pub fn assemble_prompt(
          already in your context, a cron-time computation) → use Bash / \
          Read / Write / Edit on the ephemeral workspace.\n\n",
     );
+
+    // Web research guidance — universal. Every persona runs on an Anthropic
+    // model with native web access, so web search/fetch must go through the
+    // built-in tools, never an external search library or paid API the agent
+    // would otherwise try to `npm install` / `pip install` / curl with a key.
+    prompt.push_str(
+        "## Web Research\n\n\
+         You run on an Anthropic model with built-in web access. For ANY web \
+         search or page fetch, use the native **WebSearch** and **WebFetch** \
+         tools directly — they need no credentials and are always available. \
+         Do NOT install, import, or shell out to external web-search libraries \
+         or APIs (e.g. SerpAPI, Serper, Tavily, `google-search`/`googlethis` \
+         npm packages, Python search SDKs, headless-browser scraping), and do \
+         NOT ask for or assume a search API key. Only use an external search \
+         provider if a capability's tool_guidance explicitly names one. When a \
+         capability's `tool_hints` lists `web_search`, that means the native \
+         WebSearch tool.\n\n",
+    );
     if let Some(drive_root) = crate::commands::drive::cached_managed_root() {
         prompt.push_str(&format!(
             "**Sandbox snapshot.** The user's local-drive sandbox is at \
@@ -1168,6 +1186,10 @@ mod tests {
         assert!(prompt.contains(r#"{"path": "string"}"#));
         // Should include "Use available tools" when tools present
         assert!(prompt.contains("Use available tools as needed."));
+        // Universal web-research directive: native WebSearch/WebFetch, no external libs.
+        assert!(prompt.contains("## Web Research"));
+        assert!(prompt.contains("WebSearch"));
+        assert!(prompt.contains("Do NOT install, import, or shell out to external web-search"));
     }
 
     #[test]
