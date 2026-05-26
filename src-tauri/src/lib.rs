@@ -408,6 +408,12 @@ pub struct AppState {
     /// pulses consumed by Companion's brain. Always present; the master
     /// enable gate inside controls whether ticks do work.
     pub project_tracking: Arc<engine::project_tracking::ProjectTracker>,
+    /// Engine leadership for this process — which instance owns the singleton
+    /// background loops against the shared local DB (multi-driver
+    /// orchestration, ADR 2026-05-26). Acquired at startup; a heartbeat task
+    /// keeps the lease fresh. Loop gating on `is_leader()` lands in a later
+    /// phase — present here so all surfaces can read leadership now.
+    pub leadership: Arc<engine::leadership::EngineLeadership>,
 }
 
 /// Hello world IPC command -- verifies the Rust <-> React bridge works.
@@ -879,6 +885,9 @@ pub fn run() {
                 #[cfg(feature = "desktop")]
                 clipboard_watcher_enabled: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 project_tracking: Arc::new(engine::project_tracking::ProjectTracker::new()),
+                leadership: Arc::new(engine::leadership::EngineLeadership::new(
+                    app_data_dir.clone(),
+                )),
             });
             // Phase 1: spawn the project_tracking scheduler. The master
             // enable flag inside the tracker starts at false; the
@@ -896,6 +905,33 @@ pub fn run() {
                 app.handle().clone(),
             );
             app.manage(state_arc.clone());
+
+            // Engine leadership (multi-driver orchestration, ADR 2026-05-26):
+            // try to become the singleton-loop leader for this device/DB, then
+            // keep the lease fresh via a heartbeat task. Uses its own
+            // `engine-leader.lock` (independent of `daemon.lock`, so this never
+            // blocks the always-on daemon). Loop gating on `is_leader()` lands
+            // in a later phase — for now this only establishes + advertises
+            // leadership so every surface (UI/MCP/REST) can read it.
+            {
+                let became_leader = state_arc.leadership.try_acquire();
+                tracing::info!(
+                    instance_id = %state_arc.leadership.instance_id(),
+                    leader = became_leader,
+                    "engine leadership: startup acquire"
+                );
+                let leadership = state_arc.leadership.clone();
+                tauri::async_runtime::spawn(async move {
+                    let mut ticker =
+                        tokio::time::interval(daemon::lock::HEARTBEAT_INTERVAL);
+                    // Skip the immediate first tick — we just acquired above.
+                    ticker.tick().await;
+                    loop {
+                        ticker.tick().await;
+                        leadership.tick();
+                    }
+                });
+            }
 
             // Phase 5 v1: seed the cross-process cli_session gate from app_settings
             // on startup, so a user who toggled it ON in a previous session still

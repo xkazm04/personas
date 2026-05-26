@@ -164,8 +164,21 @@ impl DaemonLock {
     /// older than [`STALE_THRESHOLD`]), it is deleted and the acquire
     /// is retried once.
     pub fn acquire(app_data_dir: &Path, owns: Vec<TriggerKind>) -> Result<Self, LockError> {
+        Self::acquire_named(app_data_dir, LOCK_FILENAME, owns)
+    }
+
+    /// Like [`Self::acquire`] but with a caller-chosen lock filename. Lets a
+    /// distinct lease (e.g. `engine-leader.lock` for windowed-instance engine
+    /// leadership) coexist with `daemon.lock` without colliding — the daemon's
+    /// always-on trigger-ownership lease and the per-process engine-leadership
+    /// lease are independent concerns.
+    pub fn acquire_named(
+        app_data_dir: &Path,
+        filename: &str,
+        owns: Vec<TriggerKind>,
+    ) -> Result<Self, LockError> {
         fs::create_dir_all(app_data_dir)?;
-        let path = app_data_dir.join(LOCK_FILENAME);
+        let path = app_data_dir.join(filename);
 
         // If an existing lock file is stale, remove it and try again.
         if let Ok(existing) = read_lock_file(&path) {
@@ -269,7 +282,15 @@ impl DaemonLock {
     /// daemon." This is the fallback path that guarantees users without
     /// the daemon are unaffected.
     pub fn check_active(app_data_dir: &Path) -> Result<Option<LockFileContents>, LockError> {
-        let path = app_data_dir.join(LOCK_FILENAME);
+        Self::check_active_named(app_data_dir, LOCK_FILENAME)
+    }
+
+    /// Like [`Self::check_active`] but with a caller-chosen lock filename.
+    pub fn check_active_named(
+        app_data_dir: &Path,
+        filename: &str,
+    ) -> Result<Option<LockFileContents>, LockError> {
+        let path = app_data_dir.join(filename);
         match read_lock_file(&path) {
             Ok(lock) => {
                 if lock.is_stale() {

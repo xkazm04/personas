@@ -45,6 +45,13 @@ use std::sync::Mutex;
 
 use crate::daemon::lock::{default_data_dir, DaemonLock, LockError, TriggerKind};
 
+/// Lock filename for engine leadership — deliberately distinct from the
+/// daemon's `daemon.lock` so a windowed instance acquiring engine leadership
+/// never blocks the always-on `personas-daemon` from starting (the two leases
+/// are independent: `daemon.lock` = daemon trigger-ownership, this =
+/// per-process singleton-loop leadership among non-daemon instances).
+const LEADER_LOCK_FILENAME: &str = "engine-leader.lock";
+
 /// All trigger kinds — a generalized engine leader owns every singleton loop,
 /// not just the narrow set the daemon historically claimed.
 fn all_owned_kinds() -> Vec<TriggerKind> {
@@ -99,7 +106,7 @@ impl EngineLeadership {
         if guard.is_some() {
             return true;
         }
-        match DaemonLock::acquire(&self.app_data_dir, all_owned_kinds()) {
+        match DaemonLock::acquire_named(&self.app_data_dir, LEADER_LOCK_FILENAME, all_owned_kinds()) {
             Ok(lock) => {
                 tracing::info!(
                     instance_id = %self.instance_id,
