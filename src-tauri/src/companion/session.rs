@@ -503,6 +503,7 @@ pub async fn send_turn(
                     dashboards: Vec::new(),
                     cockpits: Vec::new(),
                     chat_cards: Vec::new(),
+                    guide_walkthroughs: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     requests_continuation: false,
