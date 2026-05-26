@@ -5,6 +5,7 @@ use std::path::{Component, Path, PathBuf};
 use serde_json::{json, Value};
 
 use super::db::McpDbPool;
+use super::vault::{snippet_for, tfidf_scores, tokenize, walk_vault};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Drive tool helpers
@@ -742,6 +743,30 @@ pub fn list_tools() -> Vec<Value> {
                 }
             }
         }),
+        json!({
+            "name": "obsidian_vault_search",
+            "description": "Search the user's Obsidian vault for notes relevant to a query (TF-IDF over titles + bodies). Use to pull specific cases, prior analysis, or background from the user's own notes. Requires the Athena Brain vault-access toggle (Obsidian Brain → Setup) with a configured vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "Search query" },
+                    "limit": { "type": "number", "description": "Max results (default 10, max 50)" }
+                },
+                "required": ["query"]
+            }
+        }),
+        json!({
+            "name": "obsidian_vault_write_note",
+            "description": "Write a durable analysis or finding as a markdown note into the user's Obsidian vault (Athena folder). Use sparingly, for results worth keeping. Requires the Athena Brain vault-access toggle with a configured vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "title": { "type": "string", "description": "Note title (becomes the filename)" },
+                    "content": { "type": "string", "description": "Markdown body" }
+                },
+                "required": ["title", "content"]
+            }
+        }),
     ]
 }
 
@@ -774,6 +799,8 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "gdrive_list_files" => handle_gdrive_list_files(args, pool),
         "gdrive_get_file" => handle_gdrive_get_file(args, pool),
         "gcalendar_list_events" => handle_gcalendar_list_events(args, pool),
+        "obsidian_vault_search" => handle_obsidian_vault_search(args, pool),
+        "obsidian_vault_write_note" => handle_obsidian_vault_write_note(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
@@ -787,6 +814,137 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
             "isError": true
         }),
     }
+}
+
+// ── Obsidian vault tools (Athena vault access) ──────────────────────────────
+// Surface the user's Obsidian vault as a read/write tool for the AI, gated on
+// the Athena Brain vault-access toggle + a configured vault. The sidecar can't
+// use the app's pool, so it reads config from app_settings via raw SQL and
+// reuses the pure path-based graph helpers + the filesystem directly.
+
+const VAULT_DISABLED: &str =
+    "Obsidian vault access is not enabled. Turn on Athena Brain in Obsidian Brain → Setup (with a configured vault).";
+
+/// Resolve (vault_path, athena_folder) when Athena vault access is enabled,
+/// else None so the tool reports it's disabled.
+fn obsidian_athena_target(conn: &rusqlite::Connection) -> Option<(String, String)> {
+    let read_json = |key: &str| -> Option<Value> {
+        conn.query_row(
+            "SELECT value FROM app_settings WHERE key = ?1",
+            [key],
+            |r| r.get::<_, String>(0),
+        )
+        .ok()
+        .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+    };
+    let mirror = read_json("obsidian_mirror_config")?;
+    if !mirror.get("athena").and_then(|v| v.as_bool()).unwrap_or(false) {
+        return None;
+    }
+    let cfg = read_json("obsidian_brain_config")?;
+    let vault_path = cfg.get("vaultPath").and_then(|v| v.as_str()).unwrap_or("");
+    if vault_path.is_empty() {
+        return None;
+    }
+    let folder = cfg
+        .get("folderMapping")
+        .and_then(|m| m.get("athenaFolder"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("Athena");
+    Some((vault_path.to_string(), folder.to_string()))
+}
+
+fn handle_obsidian_vault_search(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let target = {
+        let conn = pool.get()?;
+        obsidian_athena_target(&conn)
+    };
+    let (vault_path, _) = target.ok_or_else(|| VAULT_DISABLED.to_string())?;
+    let query = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim()
+        .to_string();
+    if query.is_empty() {
+        return Err("query is required".into());
+    }
+    let limit = args.get("limit").and_then(|v| v.as_u64()).unwrap_or(10).min(50) as usize;
+    let query_lc = query.to_lowercase();
+    let terms = tokenize(&query_lc);
+    if terms.is_empty() {
+        return Ok("[]".into());
+    }
+    let notes = walk_vault(Path::new(&vault_path));
+    let scores = tfidf_scores(&notes, &terms);
+    let mut scored: Vec<(f32, Value)> = notes
+        .iter()
+        .enumerate()
+        .filter_map(|(i, n)| {
+            let s = scores[i];
+            if s <= 0.0 {
+                return None;
+            }
+            Some((
+                s,
+                json!({
+                    "path": n.path.to_string_lossy(),
+                    "title": n.title,
+                    "snippet": snippet_for(&n.body, &query_lc),
+                    "score": (s * 100.0).round() / 100.0,
+                }),
+            ))
+        })
+        .collect();
+    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));
+    scored.truncate(limit);
+    let hits: Vec<Value> = scored.into_iter().map(|(_, v)| v).collect();
+    serde_json::to_string(&hits).map_err(|e| e.to_string())
+}
+
+fn handle_obsidian_vault_write_note(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let target = {
+        let conn = pool.get()?;
+        obsidian_athena_target(&conn)
+    };
+    let (vault_path, athena_folder) = target.ok_or_else(|| VAULT_DISABLED.to_string())?;
+    let title = args.get("title").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
+    if title.is_empty() || content.is_empty() {
+        return Err("title and content are required".into());
+    }
+    let slug = slugify(title);
+    if slug.is_empty() {
+        return Err("title produced an empty filename".into());
+    }
+    let rel = format!("{athena_folder}/{slug}.md");
+    let full = Path::new(&vault_path).join(&rel);
+    if let Some(parent) = full.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create dir: {e}"))?;
+    }
+    let body = format!(
+        "---\ntype: athena_note\ntitle: \"{}\"\n---\n\n{}\n",
+        title.replace('"', "'"),
+        content,
+    );
+    std::fs::write(&full, body).map_err(|e| format!("write {}: {e}", full.display()))?;
+    Ok(format!("Wrote note to {rel}"))
+}
+
+/// Lowercase, hyphenate non-alphanumerics, collapse repeats. Filesystem-safe.
+fn slugify(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut prev_dash = false;
+    for c in s.chars() {
+        if c.is_alphanumeric() {
+            out.extend(c.to_lowercase());
+            prev_dash = false;
+        } else if !prev_dash {
+            out.push('-');
+            prev_dash = true;
+        }
+    }
+    out.trim_matches('-').to_string()
 }
 
 // ── Vault connector bridge (Gmail) ──────────────────────────────────────────

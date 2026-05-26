@@ -8,6 +8,7 @@
 pub mod db;
 pub mod install;
 mod tools;
+mod vault;
 
 use serde_json::{json, Value};
 
