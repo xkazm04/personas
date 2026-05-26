@@ -1582,7 +1582,15 @@
     "brain_desc_doctrine": "Reference guides that shape how she reasons.",
     "brain_desc_constitution": "Her core operating contract — the rules she won't break.",
     "setup_orb_label": "Floating avatar",
-    "setup_orb_desc": "Show Athena as a draggable orb that floats above the app. Tap to open chat, hold to talk, drag to dock anywhere. When off, only the footer button remains."
+    "setup_orb_desc": "Show Athena as a draggable orb that floats above the app. Tap to open chat, hold to talk, drag to dock anywhere. When off, only the footer button remains.",
+    "task_status_queued": "đang chờ",
+    "task_status_running": "đang chạy",
+    "task_status_done": "xong",
+    "task_status_failed": "thất bại",
+    "tasks_running_one": "{count} tác vụ đang chạy",
+    "tasks_running_other": "{count} tác vụ đang chạy",
+    "queued_badge": "Đang chờ",
+    "queued_remove": "Xóa tin nhắn đang chờ"
   },
   "ocr": {
     "title": "OCR",

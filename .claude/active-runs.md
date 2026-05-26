@@ -291,6 +291,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-26 — completed on master] Athena async-UX — translations pass (closes the milestone)**
+  - **What:** Translated the 8 async-UX `plugins.companion` keys (`task_status_{queued,running,done,failed}`, `tasks_running_{one,other}`, `queued_{badge,remove}`) into all 13 non-English locales. Added to source `locales/<lang>.json` then regenerated via `split-locales.mjs` — only `section-locales/<lang>/plugins.json` changed (source/section were in sync, zero unrelated drift swept in). `check-coverage` green (no extras; the remaining "missing" warnings are other sessions' `guide_*`/`offer_*` keys, not mine). en.json + generated/types/enSectionStrings untouched (English unchanged).
+  - **Commits (master):** this turn. Milestone: `47db6276b` (P1) · `045bb1eab` (P2) · `f96ddb312` (P3+P4) · `55ff7c28c` (P4b) · this (i18n). **Milestone fully complete.**
+  - **Paths:** `src/i18n/locales/{ar,bn,cs,de,es,fr,hi,id,ja,ko,ru,vi,zh}.json` + `src/i18n/section-locales/<same>/plugins.json` (26 files). Tmp generator script written + deleted.
+  - **Branch:** master — single atomic commit (not pushed).
+
 - **[2026-05-26 — completed on master] Athena async-UX — Phase 4b (long in-turn tool calls surfaced as tasks)**
   - **What:** Athena's own CLI turn calls Claude Code tools (WebFetch/Bash/Task subagent/any global MCP server) inside the opaque subprocess — can't be offloaded, but a slow one is now surfaced. `extractToolEvents` (`extractStreamPhase.ts`) parses `tool_use`/`tool_result` from the CLI stream; `CompanionPanel` times each tool_use and promotes one pending > `IN_TURN_TOOL_THRESHOLD_MS` (6s) to a synthetic `BackgroundJob` (`kind:'in_turn_tool'`) in a dedicated `companionStore.inTurnToolJobs` map (kept out of `jobsById` → never pins in-chat; the phase chip covers the bubble). Tray + orb dots merge it; completes on `tool_result`; clears at turn end. TodoWrite excluded. Frontend-only, no Rust.
   - **Commits (master):** this turn. Milestone prior: `47db6276b` (P1) · `045bb1eab` (P2) · `f96ddb312` (P3+P4).
