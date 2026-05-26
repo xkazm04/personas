@@ -193,7 +193,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         >
                           <Radio className="w-3 h-3" />
                           {events.length === 1
-                            ? events[0].event_type.split(".").slice(-2).join(".")
+                            ? (events[0]?.event_type ?? "").split(".").slice(-2).join(".")
                             : `${events.length} events`}
                         </span>
                       )}
