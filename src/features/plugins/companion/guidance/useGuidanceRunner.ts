@@ -1,0 +1,185 @@
+import { useEffect, useRef } from 'react';
+import { useSystemStore } from '@/stores/systemStore';
+import { getActiveTranslations } from '@/i18n/useTranslation';
+import { useCompanionStore } from '../companionStore';
+import { ORB_SIZE } from '../orb/AthenaOrb';
+import { getWalkthrough } from './walkthroughs';
+import type { GuidancePreAction, OrbAnchor } from './types';
+
+const ORB_GAP = 18;
+const ANCHOR_WAIT_MS = 4000;
+const ANCHOR_POLL_MS = 80;
+const SCROLL_SETTLE_MS = 320;
+
+const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Poll for `[data-testid="${testId}"]` until present, cancelled, or timed out. */
+function waitForTestId(
+  testId: string,
+  isCancelled: () => boolean,
+  timeoutMs = ANCHOR_WAIT_MS,
+): Promise<Element | null> {
+  return new Promise((resolve) => {
+    const deadline = Date.now() + timeoutMs;
+    const tick = () => {
+      if (isCancelled()) return resolve(null);
+      const el = document.querySelector(`[data-testid="${testId}"]`);
+      if (el) return resolve(el);
+      if (Date.now() > deadline) return resolve(null);
+      setTimeout(tick, ANCHOR_POLL_MS);
+    };
+    tick();
+  });
+}
+
+/** Pick the side with the most room around a target rect. */
+function pickSide(r: DOMRect, vw: number, vh: number): Exclude<OrbAnchor, 'auto' | 'center'> {
+  const needX = ORB_SIZE + ORB_GAP + 80;
+  if (vw - r.right >= needX) return 'right';
+  if (r.left >= needX) return 'left';
+  if (vh - r.bottom >= ORB_SIZE + ORB_GAP) return 'below';
+  return 'above';
+}
+
+/** Top-left px the orb should glide to so it parks beside the element. */
+function computeOrbTarget(
+  el: Element | null,
+  anchor: OrbAnchor,
+): { left: number; top: number } {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (!el || anchor === 'center') {
+    return { left: vw / 2 - ORB_SIZE / 2, top: vh * 0.42 - ORB_SIZE / 2 };
+  }
+  const r = el.getBoundingClientRect();
+  const cx = r.left + r.width / 2;
+  const cy = r.top + r.height / 2;
+  const side = anchor === 'auto' ? pickSide(r, vw, vh) : anchor;
+  switch (side) {
+    case 'left':
+      return { left: r.left - ORB_GAP - ORB_SIZE, top: cy - ORB_SIZE / 2 };
+    case 'above':
+      return { left: cx - ORB_SIZE / 2, top: r.top - ORB_GAP - ORB_SIZE };
+    case 'below':
+      return { left: cx - ORB_SIZE / 2, top: r.bottom + ORB_GAP };
+    case 'right':
+    default:
+      return { left: r.right + ORB_GAP, top: cy - ORB_SIZE / 2 };
+  }
+}
+
+/** Reading-time estimate for a narration line, clamped to a sane range. */
+function defaultDwell(text: string): number {
+  return Math.max(3800, Math.min(9000, text.length * 60));
+}
+
+function runPreAction(action: GuidancePreAction) {
+  switch (action) {
+    case 'open_build_entry':
+      // Ensure the persona build studio is the visible surface so the step's
+      // anchors mount. Phase 4 hardens this (guarantees the builder, not the
+      // persona list, and adds the anchor testids the steps point at).
+      useSystemStore.getState().setSidebarSection('personas');
+      break;
+  }
+}
+
+/**
+ * Drives an active guided walkthrough: for each step it navigates, runs any
+ * pre-action, waits for the anchor to mount, rings it with the glow, glides the
+ * orb beside it, and auto-advances after a dwell (when playing). The store holds
+ * dumb state; this hook owns the registry + per-step orchestration.
+ *
+ * Mounted once in `AthenaGuideLayer`. Reads only `activeWalkthrough`,
+ * `guidanceStepIndex`, and `guidancePlaying` so it re-runs precisely when the
+ * step or play/pause changes — never on unrelated companion-store churn.
+ */
+export function useGuidanceRunner() {
+  const activeWalkthrough = useCompanionStore((s) => s.activeWalkthrough);
+  const stepIndex = useCompanionStore((s) => s.guidanceStepIndex);
+  const playing = useCompanionStore((s) => s.guidancePlaying);
+  const appliedKeyRef = useRef<string | null>(null);
+
+  // Surface the orb when a walkthrough starts (close the panel back to the orb
+  // so the demo is visible). No-op if the orb is already showing.
+  useEffect(() => {
+    if (!activeWalkthrough) return;
+    const st = useCompanionStore.getState();
+    if (st.state !== 'minimized') st.setState('minimized');
+  }, [activeWalkthrough]);
+
+  useEffect(() => {
+    const store = useCompanionStore.getState();
+
+    if (!activeWalkthrough) {
+      appliedKeyRef.current = null;
+      return;
+    }
+
+    const wt = getWalkthrough(activeWalkthrough);
+    if (!wt) {
+      store.stopGuidance();
+      return;
+    }
+    if (stepIndex >= wt.steps.length) {
+      // Walked off the end — finish (clears highlight + orb target; orb docks).
+      store.stopGuidance();
+      return;
+    }
+
+    const step = wt.steps[stepIndex]!;
+    const key = `${activeWalkthrough}:${stepIndex}`;
+    const isFreshStep = appliedKeyRef.current !== key;
+
+    let cancelled = false;
+    let advanceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    if (isFreshStep) {
+      appliedKeyRef.current = key;
+      // Clear the prior step's ring immediately for a clean off→navigate→on feel.
+      store.setGuidanceHighlightTestId(null);
+
+      void (async () => {
+        if (step.navigateRoute) {
+          useSystemStore.getState().setSidebarSection(step.navigateRoute);
+        }
+        if (step.preAction) runPreAction(step.preAction);
+
+        const el = step.highlightTestId
+          ? await waitForTestId(step.highlightTestId, () => cancelled)
+          : null;
+        if (cancelled) return;
+
+        el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        await delay(SCROLL_SETTLE_MS);
+        if (cancelled) return;
+
+        // Re-query post-scroll: the node may have re-rendered into a new element.
+        const live = step.highlightTestId
+          ? document.querySelector(`[data-testid="${step.highlightTestId}"]`)
+          : null;
+        const target = live ?? el;
+
+        useCompanionStore.getState().setGuidanceHighlightTestId(step.highlightTestId ?? null);
+        useCompanionStore.getState().setOrbGuideTarget(
+          computeOrbTarget(target, step.orbAnchor ?? 'auto'),
+        );
+      })();
+    }
+
+    // Auto-advance timer — armed whenever playing; re-armed on resume.
+    if (playing) {
+      const t = getActiveTranslations();
+      const dwell = step.dwellMs ?? defaultDwell(step.narration(t));
+      advanceTimer = setTimeout(() => {
+        if (cancelled) return;
+        useCompanionStore.getState().advanceGuidance();
+      }, dwell);
+    }
+
+    return () => {
+      cancelled = true;
+      if (advanceTimer) clearTimeout(advanceTimer);
+    };
+  }, [activeWalkthrough, stepIndex, playing]);
+}

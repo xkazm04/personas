@@ -24,7 +24,7 @@ import { AthenaAvatar, type AthenaState } from '../AthenaAvatar';
  * Position is stored as viewport fractions (`companionOrbPos`) and resolved
  * to pixels here, so it survives window resizes and app restarts.
  */
-const ORB_SIZE = 60;
+export const ORB_SIZE = 60;
 const MARGIN = 16;
 const HOLD_MS = 220;
 const DRAG_THRESHOLD = 6;
