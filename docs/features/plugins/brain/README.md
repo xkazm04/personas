@@ -8,6 +8,7 @@ The plugin lives at `src/features/plugins/obsidian-brain/` and is exposed throug
 - **README.md** (you are here) — what it does, the user flow, the end-to-end lifecycle, and where it could go next.
 - **[connector.md](connector.md)** — the agent-side **Obsidian Memory** connector: the tools an agent can call, the dual (Tauri + MCP) execution model, TF-IDF ranking, and the live file watcher. Read this to understand how a *persona* leverages the vault at runtime.
 - **[reference.md](reference.md)** — backend command and frontend module lookup tables.
+- **[knowledge-mirror.md](knowledge-mirror.md)** — *(design, proposed)* how Athena Brain, Execution Knowledge, and Research Lab can optionally mirror into the vault **only when Obsidian is present** (off by default).
 
 ---
 
