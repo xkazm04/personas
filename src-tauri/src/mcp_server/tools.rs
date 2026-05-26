@@ -703,6 +703,45 @@ pub fn list_tools() -> Vec<Value> {
                 "required": ["message_id"]
             }
         }),
+        json!({
+            "name": "gdrive_list_files",
+            "description": "List files in the user's connected Google Drive (via the vault credential — no interactive auth). Returns Drive API JSON ({files:[{id,name,mimeType,modifiedTime,size,webViewLink}], nextPageToken}). Requires a Google Drive connector in the vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "query": { "type": "string", "description": "Optional Drive query (Drive 'q' syntax, e.g. \"name contains 'invoice' and mimeType='application/pdf'\")." },
+                    "page_size": { "type": "integer", "description": "Max files to return (1-1000, default 20)." },
+                    "credential_id": { "type": "string", "description": "Optional specific Google Drive credential UUID." }
+                }
+            }
+        }),
+        json!({
+            "name": "gdrive_get_file",
+            "description": "Get a Google Drive file's metadata, or its raw content with download:true (via the vault credential). Requires a Google Drive connector in the vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "file_id": { "type": "string", "description": "The Drive file id (from gdrive_list_files)." },
+                    "download": { "type": "boolean", "description": "If true, return raw file content (alt=media) instead of metadata." },
+                    "credential_id": { "type": "string", "description": "Optional specific Google Drive credential UUID." }
+                },
+                "required": ["file_id"]
+            }
+        }),
+        json!({
+            "name": "gcalendar_list_events",
+            "description": "List upcoming events from the user's connected Google Calendar (via the vault credential — no interactive auth). Defaults to events from now, ordered by start time. Returns Calendar API JSON ({items:[{id,summary,start,end,...}]}). Requires a Google Calendar connector in the vault.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "calendar_id": { "type": "string", "description": "Calendar id (default 'primary')." },
+                    "max_results": { "type": "integer", "description": "Max events (1-250, default 10)." },
+                    "time_min": { "type": "string", "description": "RFC3339 lower bound (default: now)." },
+                    "time_max": { "type": "string", "description": "Optional RFC3339 upper bound." },
+                    "credential_id": { "type": "string", "description": "Optional specific Google Calendar credential UUID." }
+                }
+            }
+        }),
     ]
 }
 
@@ -732,6 +771,9 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
         "context_neighbors" => handle_context_neighbors(args, pool),
         "gmail_list_messages" => handle_gmail_list_messages(args, pool),
         "gmail_get_message" => handle_gmail_get_message(args, pool),
+        "gdrive_list_files" => handle_gdrive_list_files(args, pool),
+        "gdrive_get_file" => handle_gdrive_get_file(args, pool),
+        "gcalendar_list_events" => handle_gcalendar_list_events(args, pool),
         _ => Err(format!("Unknown tool: {name}")),
     };
 
@@ -755,20 +797,26 @@ pub fn call_tool(name: &str, args: &Value, pool: &McpDbPool) -> Value {
 // OAuth token + forwards to the Google API. The bridge URL + system API key are
 // injected via env by cli_mcp_config when the run is spawned.
 
-/// Resolve which Gmail credential to use: an explicit `credential_id` arg, else
-/// the first Gmail credential in the vault. Reading the id needs no decryption.
-fn gmail_credential_id(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+/// Resolve which vault credential to use for a Google service: an explicit
+/// `credential_id` arg, else the first credential of that service_type. Reading
+/// the id needs no decryption (the desktop proxy does the decrypt + token work).
+fn vault_credential_id(
+    args: &Value,
+    pool: &McpDbPool,
+    service_type: &str,
+    label: &str,
+) -> Result<String, String> {
     if let Some(id) = args.get("credential_id").and_then(|v| v.as_str()) {
         return Ok(id.to_string());
     }
     let conn = pool.get()?;
     conn.query_row(
-        "SELECT id FROM persona_credentials WHERE service_type = 'gmail' LIMIT 1",
-        [],
+        "SELECT id FROM persona_credentials WHERE service_type = ?1 LIMIT 1",
+        [service_type],
         |r| r.get::<_, String>(0),
     )
     .map_err(|_| {
-        "No Gmail credential found in the vault. Connect Gmail in Settings → Connectors.".to_string()
+        format!("No {label} credential found in the vault. Connect {label} in Settings → Connectors.")
     })
 }
 
@@ -808,7 +856,7 @@ fn bridge_proxy(credential_id: &str, method: &str, path: &str) -> Result<String,
 }
 
 fn handle_gmail_list_messages(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let cred = gmail_credential_id(args, pool)?;
+    let cred = vault_credential_id(args, pool, "gmail", "Gmail")?;
     let max = args
         .get("max_results")
         .and_then(|v| v.as_u64())
@@ -833,7 +881,7 @@ fn handle_gmail_list_messages(args: &Value, pool: &McpDbPool) -> Result<String, 
 }
 
 fn handle_gmail_get_message(args: &Value, pool: &McpDbPool) -> Result<String, String> {
-    let cred = gmail_credential_id(args, pool)?;
+    let cred = vault_credential_id(args, pool, "gmail", "Gmail")?;
     let msg_id = args
         .get("message_id")
         .and_then(|v| v.as_str())
@@ -848,6 +896,82 @@ fn handle_gmail_get_message(args: &Value, pool: &McpDbPool) -> Result<String, St
     .map_err(|e| format!("url build failed: {e}"))?;
     u.query_pairs_mut().append_pair("format", format);
     let path = format!("{}?{}", u.path(), u.query().unwrap_or(""));
+    bridge_proxy(&cred, "GET", &path)
+}
+
+// ── Google Drive (base https://www.googleapis.com/drive/v3) ──
+fn handle_gdrive_list_files(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let cred = vault_credential_id(args, pool, "google_drive", "Google Drive")?;
+    let max = args
+        .get("page_size")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(20)
+        .clamp(1, 1000);
+    // base already includes /drive/v3, so the path is relative to that.
+    let mut path = format!("files?pageSize={max}&fields=files(id,name,mimeType,modifiedTime,size,webViewLink),nextPageToken");
+    if let Some(q) = args
+        .get("query")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+    {
+        // q is a Drive query string (e.g. "name contains 'invoice'"); percent-encode it.
+        let enc: String = reqwest::Url::parse("https://x/")
+            .map(|mut u| {
+                u.query_pairs_mut().append_pair("q", q);
+                u.query().unwrap_or("").to_string()
+            })
+            .unwrap_or_default();
+        path = format!("{path}&{enc}");
+    }
+    bridge_proxy(&cred, "GET", &path)
+}
+
+fn handle_gdrive_get_file(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let cred = vault_credential_id(args, pool, "google_drive", "Google Drive")?;
+    let file_id = args
+        .get("file_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| "file_id is required".to_string())?;
+    // alt=media downloads content; default returns file metadata.
+    let path = if args.get("download").and_then(|v| v.as_bool()).unwrap_or(false) {
+        format!("files/{file_id}?alt=media")
+    } else {
+        format!("files/{file_id}?fields=id,name,mimeType,modifiedTime,size,webViewLink")
+    };
+    bridge_proxy(&cred, "GET", &path)
+}
+
+// ── Google Calendar (base https://www.googleapis.com/calendar/v3) ──
+fn handle_gcalendar_list_events(args: &Value, pool: &McpDbPool) -> Result<String, String> {
+    let cred = vault_credential_id(args, pool, "google_calendar", "Google Calendar")?;
+    let cal = args
+        .get("calendar_id")
+        .and_then(|v| v.as_str())
+        .unwrap_or("primary");
+    let max = args
+        .get("max_results")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(10)
+        .clamp(1, 250);
+    // base already includes /calendar/v3 — build only the query here, then
+    // prepend the relative path (avoid double-prefixing the version segment).
+    let time_min = args
+        .get("time_min")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+    let mut u = reqwest::Url::parse("https://x/").map_err(|e| format!("url build failed: {e}"))?;
+    {
+        let mut qp = u.query_pairs_mut();
+        qp.append_pair("maxResults", &max.to_string());
+        qp.append_pair("singleEvents", "true");
+        qp.append_pair("orderBy", "startTime");
+        qp.append_pair("timeMin", &time_min);
+        if let Some(tmax) = args.get("time_max").and_then(|v| v.as_str()) {
+            qp.append_pair("timeMax", tmax);
+        }
+    }
+    let path = format!("calendars/{cal}/events?{}", u.query().unwrap_or(""));
     bridge_proxy(&cred, "GET", &path)
 }
 

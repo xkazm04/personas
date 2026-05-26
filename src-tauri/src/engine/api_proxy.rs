@@ -525,6 +525,8 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "google_workspace_oauth_template" => Some("https://www.googleapis.com"),
         "google_sheets" => Some("https://sheets.googleapis.com"),
         "gmail" => Some("https://gmail.googleapis.com"),
+        "google_drive" => Some("https://www.googleapis.com/drive/v3"),
+        "google_calendar" => Some("https://www.googleapis.com/calendar/v3"),
         _ => None,
     }
 }
