@@ -37,7 +37,7 @@ The plugin is organised as five tabs: **Setup**, **Sync**, **Browse Vault**, **G
 2. Click **Auto-Detect Vaults** to scan the OS-known Obsidian config directories. Vaults that are already in your Saved Vaults sidebar are filtered out so the list only shows new candidates.
 3. (Or) click **Browse** to pick any folder manually.
 4. Press **Test** — the backend verifies that the folder contains a `.obsidian/` directory, counts notes, and returns the vault name.
-5. In **Sync Options**, pick which domains to sync (Memories / Persona Profiles / Connectors) and whether **Auto-Sync** should fire on every memory write.
+5. In **Sync Options**, pick which domains to sync (Memories / Persona Profiles / Connectors) and whether **Auto-Sync** should fire on every memory write. Once a vault is connected, this card also shows a **Knowledge mirror** group — opt-in, off-by-default toggles that mirror internal stores (Research Lab, Execution Knowledge, Athena Brain) into the vault as markdown. These save immediately and are gated on Obsidian being present; see **[knowledge-mirror.md](knowledge-mirror.md)**.
 6. Optionally tweak **Folder Structure** to change the on-disk layout. A live preview shows the resulting path: `Personas/AgentName/memories/fact/memory-title.md`.
 7. Click **Save Configuration**. The config is persisted in the app settings table and added to the Saved Vaults sidebar.
 

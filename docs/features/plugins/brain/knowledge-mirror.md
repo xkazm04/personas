@@ -1,6 +1,6 @@
 # Design — Obsidian as an optional knowledge mirror
 
-> **Status:** Approved in substance (2026-05-26) — the open questions are resolved (§9). Ready to implement P0→P3 on go-ahead.
+> **Status:** **P0 + P1 implemented** (2026-05-26) on branch `worktree-friend-obsidian-brain-153023` — the off-by-default scaffolding and the Research Lab mirror have shipped; **P2** (Execution Knowledge) and **P3** (Athena tool) are pending review. Open questions resolved (§9).
 > **Decision inputs:** data model = **Mirror** (SQLite/embeddings stay canonical; the vault is a dual-write, removable mirror). Gated on Obsidian presence; **off by default**. **Single** Brain vault for all stores; **one** `obsidian_mirror` settings object; surfaced in the Setup → Sync Options card. All mirrors are **one-way (app → vault)** in v1. Athena's vault relationship is **on-demand external-tool access**, not a bulk memory mirror (§5.1).
 
 This doc specifies how three internal knowledge/memory stores — **Athena Brain**, **Execution Knowledge**, and **Research Lab** — can optionally project themselves into an Obsidian vault as human-readable, portable markdown, *only* for users who have Obsidian. It is a design for review, not an implementation.
@@ -114,12 +114,18 @@ Per the approval pass, Athena does **not** wholesale-mirror its `companion_*` me
 
 | Phase | Scope | Risk |
 |---|---|---|
-| **P0** | `obsidian_available()` resolver, settings flags, the mirror-domain abstraction, and the Setup-tab offer UI (all default off — no behaviour change for existing users) | low |
-| **P1** | **Research Lab** mirror (converge vault path, incremental hashing, migrate) — proves the abstraction | low |
+| **P0** ✅ | `obsidian_available()` resolver, `obsidian_mirror_config` settings, the Setup-tab toggle group (all default off — no behaviour change for existing users). Shipped `d65412f82`. | low |
+| **P1** ✅ | **Research Lab** mirror — `mirror_write_note`/`mirror_vault_root` primitive + `research_lab_sync_to_obsidian` routed through the Brain vault with incremental hashing. Shipped `45b19cfc7`. | low |
 | **P2** | **Execution Knowledge** mirror (one-way write + backfill) | medium |
 | **P3** | **Athena Brain** vault tool — gate the Obsidian Memory tool surface for Athena (read) + selective one-way note write | medium |
 
-Each phase is independently shippable behind its off-by-default flag.
+Each phase is independently shippable behind its off-by-default flag. **P0 + P1 are merged on the branch; P2/P3 await review.**
+
+**Implementation notes (P0/P1):**
+- The mirror-domain abstraction landed in P1 (alongside its first consumer) rather than P0, to avoid shipping an unused trait.
+- The toggle group is rendered inside the Setup → Sync Options card and saves immediately (independent of the form's *Save Configuration* button), via `obsidian_mirror_set_config`.
+- Research Lab keeps its legacy per-project `obsidian_vault_path` as a fallback when the mirror toggle is off; "migration" is a re-sync to the Brain vault on next sync (existing legacy-location files are left in place).
+- `cargo test export_bindings` must run with `--features desktop` locally — the default (`[]`) feature set can't satisfy `capabilities/default.json`'s `updater:default` reference (the updater plugin is desktop-gated). Non-`cfg`-gated structs (the mirror types) are feature-invariant, so only those binding files are committed.
 
 ---
 
