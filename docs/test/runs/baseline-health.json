@@ -1,0 +1,1815 @@
+[
+  {
+    "team": "SDLC — Apprenticeship Placement",
+    "teamId": "3134bb7a-857e-43da-9517-c59111004fba",
+    "memberCount": 5,
+    "execCount": 0,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "adbc95b1-988c-4fa6-bff1-07eade4421fb"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "be208b92-ca61-4148-a899-87e178e06517"
+      }
+    ],
+    "resolvedRepos": [
+      "Apprenticeship Placement"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "3198f070-ee2f-4fbb-a449-9fb16f04b1b4",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "0d66648d-4e25-485a-96bc-bb4f32cf96af",
+          "state": "ok",
+          "repo": "Apprenticeship Placement",
+          "root": "C:/Users/mkdol/xprice/apprenticeship-placement"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "0d66648d-4e25-485a-96bc-bb4f32cf96af",
+          "state": "ok",
+          "repo": "Apprenticeship Placement",
+          "root": "C:/Users/mkdol/xprice/apprenticeship-placement"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "0d66648d-4e25-485a-96bc-bb4f32cf96af",
+          "state": "ok",
+          "repo": "Apprenticeship Placement",
+          "root": "C:/Users/mkdol/xprice/apprenticeship-placement"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "0d66648d-4e25-485a-96bc-bb4f32cf96af",
+          "state": "ok",
+          "repo": "Apprenticeship Placement",
+          "root": "C:/Users/mkdol/xprice/apprenticeship-placement"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "e9429b68-efb2-4a0a-9945-dd33c058158e",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "0d66648d-4e25-485a-96bc-bb4f32cf96af",
+          "state": "ok",
+          "repo": "Apprenticeship Placement",
+          "root": "C:/Users/mkdol/xprice/apprenticeship-placement"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  },
+  {
+    "team": "SDLC — Grant Writing Nonprofits",
+    "teamId": "02a68c44-2561-4199-b051-64644957192d",
+    "memberCount": 5,
+    "execCount": 1,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "bd2668f6-f7e0-4cf0-a5c0-de4392c1626e"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "4961defe-ba12-4c81-8e0a-1f4029c51d9f"
+      }
+    ],
+    "resolvedRepos": [
+      "Grant Writing Nonprofits"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "c9521c29-d625-4a5c-98e2-7c5b0e133cc3",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "7a26ad2e-5866-405f-abdb-48af86ad8a0e",
+          "state": "ok",
+          "repo": "Grant Writing Nonprofits",
+          "root": "C:/Users/mkdol/xprice/grant-writing-nonprofits"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "3f3e9a66-6912-4b87-a7cc-f76ab038cd5d",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "7a26ad2e-5866-405f-abdb-48af86ad8a0e",
+          "state": "ok",
+          "repo": "Grant Writing Nonprofits",
+          "root": "C:/Users/mkdol/xprice/grant-writing-nonprofits"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "59cd09d3-bf35-4c54-97f2-bff2bac5c14c",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "7a26ad2e-5866-405f-abdb-48af86ad8a0e",
+          "state": "ok",
+          "repo": "Grant Writing Nonprofits",
+          "root": "C:/Users/mkdol/xprice/grant-writing-nonprofits"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "5222c7b7-aaa3-44f4-aea5-ead1b61fb24e",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "7a26ad2e-5866-405f-abdb-48af86ad8a0e",
+          "state": "ok",
+          "repo": "Grant Writing Nonprofits",
+          "root": "C:/Users/mkdol/xprice/grant-writing-nonprofits"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "ae32f6c4-b8bf-49f5-bd19-019d5610fff6",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "7a26ad2e-5866-405f-abdb-48af86ad8a0e",
+          "state": "ok",
+          "repo": "Grant Writing Nonprofits",
+          "root": "C:/Users/mkdol/xprice/grant-writing-nonprofits"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  },
+  {
+    "team": "SDLC — Immigration Paperwork",
+    "teamId": "c06bb281-2ca6-47d8-98d1-928f9114b84a",
+    "memberCount": 5,
+    "execCount": 0,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "8a194ce4-c7f2-43e7-b505-d0526d08803d"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "8557c607-49fd-402f-aade-5482f69bbed1"
+      }
+    ],
+    "resolvedRepos": [
+      "Immigration Paperwork"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "3139a2ea-1838-452d-ae77-a775d057cfe0",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "c337dab9-696e-4789-8e91-56fb40c2cad9",
+          "state": "ok",
+          "repo": "Immigration Paperwork",
+          "root": "C:/Users/mkdol/xprice/immigration-paperwork"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "4bd82468-0847-4a1a-96c5-a59d7b1ae9c2",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "c337dab9-696e-4789-8e91-56fb40c2cad9",
+          "state": "ok",
+          "repo": "Immigration Paperwork",
+          "root": "C:/Users/mkdol/xprice/immigration-paperwork"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "e747fa40-78b4-4e17-b4f0-1f67edd706b8",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "c337dab9-696e-4789-8e91-56fb40c2cad9",
+          "state": "ok",
+          "repo": "Immigration Paperwork",
+          "root": "C:/Users/mkdol/xprice/immigration-paperwork"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "811eda4d-d1a8-42cd-ac7b-8a48e90ac9c2",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "c337dab9-696e-4789-8e91-56fb40c2cad9",
+          "state": "ok",
+          "repo": "Immigration Paperwork",
+          "root": "C:/Users/mkdol/xprice/immigration-paperwork"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "209d8265-283d-4966-9f4b-f0749e251dfe",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "c337dab9-696e-4789-8e91-56fb40c2cad9",
+          "state": "ok",
+          "repo": "Immigration Paperwork",
+          "root": "C:/Users/mkdol/xprice/immigration-paperwork"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  },
+  {
+    "team": "SDLC — Local SEO Agency",
+    "teamId": "f1a5be07-9e53-4d61-82a6-9437a86798e9",
+    "memberCount": 5,
+    "execCount": 2,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "a692126f-7008-45d2-9be9-61626c1e100a"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "72cd26da-f1df-419e-9325-04ba862e3935"
+      }
+    ],
+    "resolvedRepos": [
+      "Local SEO Agency"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "8380308a-aead-49bb-a09a-8c2d2c243a89",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "dbaa0abb-9950-4dc9-a6fc-4aba22f62352",
+          "state": "ok",
+          "repo": "Local SEO Agency",
+          "root": "C:/Users/mkdol/xprice/local-seo-agency"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "07d58839-4dcf-4061-91f1-5c9191583409",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "dbaa0abb-9950-4dc9-a6fc-4aba22f62352",
+          "state": "ok",
+          "repo": "Local SEO Agency",
+          "root": "C:/Users/mkdol/xprice/local-seo-agency"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "43ac369b-af2a-46e6-a682-b25b03415c0e",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "dbaa0abb-9950-4dc9-a6fc-4aba22f62352",
+          "state": "ok",
+          "repo": "Local SEO Agency",
+          "root": "C:/Users/mkdol/xprice/local-seo-agency"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "831c1bdb-3f66-4b89-a447-961b0bbeadbc",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "dbaa0abb-9950-4dc9-a6fc-4aba22f62352",
+          "state": "ok",
+          "repo": "Local SEO Agency",
+          "root": "C:/Users/mkdol/xprice/local-seo-agency"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "58b0e140-5ba9-4ed4-a365-cae8da61cf19",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "dbaa0abb-9950-4dc9-a6fc-4aba22f62352",
+          "state": "ok",
+          "repo": "Local SEO Agency",
+          "root": "C:/Users/mkdol/xprice/local-seo-agency"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  },
+  {
+    "team": "SDLC — Medical Bill Negotiator",
+    "teamId": "ee73dd94-4267-4735-9f5d-87c04e385aea",
+    "memberCount": 5,
+    "execCount": 3,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "c4cedd12-b627-44c1-9bd3-b8cd5f339b66"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "a2f7654f-d3d6-41ee-9820-6769627dec93"
+      }
+    ],
+    "resolvedRepos": [
+      "Medical Bill Negotiator"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "300e2d99-1f31-4fd7-855b-5eaacb0b7bf6",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "7cf556ae-d197-470b-90b2-59e62f093e8e",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "11f95374-5789-431d-a41a-80399c9e7ca4",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "b3c0322b-2c43-44ff-8ddf-51c4e73a043b",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  },
+  {
+    "team": "SDLC — ai-bookkeeper",
+    "teamId": "f8a981a8-79aa-46ee-bc19-b68c087dc96d",
+    "memberCount": 5,
+    "execCount": 0,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "3fc00e82-78db-4796-8766-2db17c710c3d"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "dd3d2285-50fd-436c-a9db-f13932cca2ec"
+      }
+    ],
+    "resolvedRepos": [
+      "ai-bookkeeper"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "eab96372-5af3-4163-b379-a6a8e633b6da",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "3ca0b3b9-5413-4cb3-9ab8-c0232ca1c8ff",
+          "state": "ok",
+          "repo": "ai-bookkeeper",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-bookkeeper"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "3ca0b3b9-5413-4cb3-9ab8-c0232ca1c8ff",
+          "state": "ok",
+          "repo": "ai-bookkeeper",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-bookkeeper"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "3ca0b3b9-5413-4cb3-9ab8-c0232ca1c8ff",
+          "state": "ok",
+          "repo": "ai-bookkeeper",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-bookkeeper"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "c86cdb42-dc78-4475-b499-725ece72dee2",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "3ca0b3b9-5413-4cb3-9ab8-c0232ca1c8ff",
+          "state": "ok",
+          "repo": "ai-bookkeeper",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-bookkeeper"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "331043e7-0d5a-4c6e-958a-36272951e95e",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "3ca0b3b9-5413-4cb3-9ab8-c0232ca1c8ff",
+          "state": "ok",
+          "repo": "ai-bookkeeper",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-bookkeeper"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  },
+  {
+    "team": "SDLC — ai-paralegal",
+    "teamId": "aec6508d-ebad-4a81-9071-ea2192ba701f",
+    "memberCount": 5,
+    "execCount": 0,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Code Reviewer",
+        "toMid": "e810b8b4-7c7c-4ca7-a462-df0df90f201e"
+      },
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "toMid": "289e2d56-c9c0-4d0b-b656-884f561c21c6"
+      }
+    ],
+    "resolvedRepos": [
+      "ai-paralegal"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "9f6a4574-3fc9-48d5-99c6-4a55b6c0012c",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "c5cd79d2-e8ce-4f56-aa8b-1d61ccbecf79",
+          "state": "ok",
+          "repo": "ai-paralegal",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-paralegal"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "8c48eb91-4edb-4c7f-a875-675d291558fd",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "c5cd79d2-e8ce-4f56-aa8b-1d61ccbecf79",
+          "state": "ok",
+          "repo": "ai-paralegal",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-paralegal"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "0bd68987-3923-4f76-915b-9cbd7fa0665d",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": false,
+        "canSelfStart": false,
+        "pin": {
+          "id": "c5cd79d2-e8ce-4f56-aa8b-1d61ccbecf79",
+          "state": "ok",
+          "repo": "ai-paralegal",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-paralegal"
+        },
+        "setup_status": "ready",
+        "blockers": [
+          "CANNOT receive autonomous handoff — no enabled event_listener/chain trigger and no event subscription (manual-only). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "7771bbb6-1f36-4456-b2d7-80ff14dc90ab",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "c5cd79d2-e8ce-4f56-aa8b-1d61ccbecf79",
+          "state": "ok",
+          "repo": "ai-paralegal",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-paralegal"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "43e072f5-8312-4fa5-93bb-03cfaabc334a",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "pin": {
+          "id": "c5cd79d2-e8ce-4f56-aa8b-1d61ccbecf79",
+          "state": "ok",
+          "repo": "ai-paralegal",
+          "root": "C:\\Users\\mkdol\\xprice\\ai-paralegal"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      }
+    ],
+    "totalBlockers": 2,
+    "verdict": "CANNOT-CASCADE"
+  }
+]
