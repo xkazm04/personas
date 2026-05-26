@@ -4,7 +4,7 @@
  * can SEE what's rendered, then answers it (prefer a real option/connector, else
  * short text), and continues to draft_ready → test → promote. Gentle eval load. */
 import Database from 'better-sqlite3';
-const BASE = 'http://localhost:17320';
+const BASE = process.env.PERSONAS_BASE || 'http://localhost:17320';
 const DB = 'C:/Users/mkdol/AppData/Roaming/com.personas.desktop/personas.db';
 const [, , NAME, INTENT] = process.argv;
 if (!INTENT) { console.error('usage: <name> <intent>'); process.exit(1); }
