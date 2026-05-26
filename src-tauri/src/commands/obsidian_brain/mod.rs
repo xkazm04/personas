@@ -266,6 +266,73 @@ pub fn obsidian_available(
     Ok(resolve_availability(&state.db))
 }
 
+// ── Mirror-domain write primitive ────────────────────────────────────
+//
+// Shared by the knowledge-mirror domains (Research Lab, and later Execution
+// Knowledge + Athena). Each domain supplies a vault-relative path + rendered
+// markdown; this layer handles vault resolution, incremental hashing, atomic
+// writes, and sync bookkeeping so the domains stay thin.
+
+/// The configured Brain vault config when a non-empty vault path is set, else
+/// None so a caller can fall back to legacy behaviour.
+pub(crate) fn mirror_vault_root(pool: &crate::db::DbPool) -> Option<ObsidianVaultConfig> {
+    match settings_repo::get(pool, SETTINGS_KEY) {
+        Ok(Some(json)) => serde_json::from_str::<ObsidianVaultConfig>(&json)
+            .ok()
+            .filter(|c| !c.vault_path.is_empty()),
+        _ => None,
+    }
+}
+
+/// Incremental, hash-gated note write. Writes `content` to
+/// `<vault_path>/<rel_path>` only when its content hash differs from the last
+/// recorded sync for `(entity_type, entity_id)`; records sync state + a
+/// sync-log row. Returns `Ok(true)` when written, `Ok(false)` when the content
+/// was unchanged (skipped).
+pub(crate) fn mirror_write_note(
+    pool: &crate::db::DbPool,
+    vault_path: &str,
+    rel_path: &str,
+    entity_type: &str,
+    entity_id: &str,
+    content: &str,
+) -> Result<bool, AppError> {
+    let hash = compute_content_hash(content);
+    let prev = sync_repo::get_sync_state(pool, entity_type, entity_id)?;
+    if prev.as_ref().map(|s| s.content_hash == hash).unwrap_or(false) {
+        return Ok(false);
+    }
+    let full = Path::new(vault_path).join(rel_path);
+    if let Some(parent) = full.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| AppError::Internal(format!("Failed to create vault dir: {e}")))?;
+    }
+    atomic_write(&full, content.as_bytes())
+        .map_err(|e| AppError::Internal(format!("Failed to write {}: {e}", full.display())))?;
+    sync_repo::upsert_sync_state(
+        pool,
+        &SyncState {
+            id: Uuid::new_v4().to_string(),
+            entity_type: entity_type.into(),
+            entity_id: entity_id.into(),
+            vault_file_path: rel_path.into(),
+            content_hash: hash,
+            sync_direction: "push".into(),
+            synced_at: Utc::now().to_rfc3339(),
+        },
+    )?;
+    log_sync(
+        pool,
+        "mirror",
+        entity_type,
+        Some(entity_id),
+        Some(rel_path),
+        if prev.is_some() { "updated" } else { "created" },
+        None,
+    );
+    Ok(true)
+}
+
 // ── Phase 2: Push Sync ───────────────────────────────────────────────
 
 pub(crate) fn get_config_or_err(pool: &crate::db::DbPool) -> Result<ObsidianVaultConfig, AppError> {
