@@ -56,9 +56,14 @@ test.describe('Athena guided walkthrough — persona creation', () => {
     // Start deterministically (no live Claude turn needed for the mechanics).
     await app.startGuidedWalkthrough('persona_creation');
 
-    // The walkthrough activates at step 0 (intro, orb floats to center).
+    // The walkthrough activates at step 0 (intro, orb floats to center). The
+    // orb mounts a beat before the caption renders, so wait for both.
     const intro = await app.waitForGuidance(
-      (s) => s.active && s.topic === 'persona_creation' && s.orbRect !== null,
+      (s) =>
+        s.active &&
+        s.topic === 'persona_creation' &&
+        s.orbRect !== null &&
+        s.captionText !== null,
     );
     expect(intro.stepIndex).toBe(0);
     expect(intro.captionText, 'intro narration should be showing').toBeTruthy();
@@ -98,23 +103,28 @@ test.describe('Athena guided walkthrough — persona creation', () => {
     expect(stopped.highlightTestId).toBeNull();
   });
 
-  test('walks the full step sequence to completion', async () => {
-    test.setTimeout(60_000);
+  test('auto-plays through the full step sequence to completion', async () => {
+    test.setTimeout(90_000);
     await app.startGuidedWalkthrough('persona_creation');
     await app.waitForGuidance((s) => s.active);
 
-    // Skip through every step; the walkthrough ends itself after the last one.
+    // Let the auto-play runner advance through every step on its own (the user
+    // chose "auto-play narrated demo"). Poll, collecting the distinct narration
+    // beats, until the walkthrough ends itself after the last step.
     const seenCaptions = new Set<string>();
-    for (let i = 0; i < 8; i++) {
+    const deadline = Date.now() + 75_000;
+    let active = true;
+    while (Date.now() < deadline) {
       const snap = await app.guidanceState();
-      if (!snap.active) break;
       if (snap.captionText) seenCaptions.add(snap.captionText);
-      await app.skipGuidanceStep();
-      await new Promise((r) => setTimeout(r, 300));
+      if (!snap.active) {
+        active = false;
+        break;
+      }
+      await new Promise((r) => setTimeout(r, 500));
     }
-    const end = await app.waitForGuidance((s) => !s.active, 12_000);
-    expect(end.active).toBe(false);
-    // Saw several distinct narration beats along the way.
+    expect(active, 'walkthrough should auto-advance and clear itself').toBe(false);
+    // Narrated several distinct steps along the way.
     expect(seenCaptions.size).toBeGreaterThanOrEqual(3);
   });
 
