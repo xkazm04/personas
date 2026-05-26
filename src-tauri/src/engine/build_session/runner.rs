@@ -279,8 +279,21 @@ pub(super) async fn run_session(
     //     against a vault with 4 GitHub PATs would silently pick the
     //     newest one with no user input.
     let registry_keywords: Vec<String> = crate::engine::api_proxy::connector_keyword_snapshot();
-    let ambiguous_services =
-        crate::db::repos::resources::credentials::get_ambiguous_service_types(&pool);
+    // Ambiguity (2+ credentials for one service_type) force-closes the
+    // connectors gate so the credential picker fires — but ONLY in interactive
+    // mode, where a user can answer it. In autonomous one-shot mode there is no
+    // user to disambiguate, so applying the same force-close makes the build
+    // re-synthesize an unanswerable credential-picker question every turn and
+    // burn all MAX_TURNS without ever resolving (observed 2026-05-26: ai-paralegal
+    // build looped on ambiguous {codebase, github}). Treat the vault as
+    // unambiguous in one-shot — the build picks a sensible default / proceeds
+    // with connectors unbound (the user can rebind later), matching the
+    // "decide everything for me" contract.
+    let ambiguous_services = if one_shot {
+        std::collections::HashSet::new()
+    } else {
+        crate::db::repos::resources::credentials::get_ambiguous_service_types(&pool)
+    };
     if !ambiguous_services.is_empty() {
         tracing::info!(
             session_id = %session_id,
