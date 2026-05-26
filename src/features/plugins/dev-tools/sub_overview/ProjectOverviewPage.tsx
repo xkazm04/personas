@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -96,6 +97,15 @@ export default function ProjectOverviewPage() {
 
   const [showRepoChain, setShowRepoChain] = useState(false);
   const [showMonitorChain, setShowMonitorChain] = useState(false);
+
+  // Track when the vital signs last settled so the header can show a live
+  // "updated Nm ago" instead of a static placeholder. Bumps whenever fresh
+  // repo or monitor stats land (initial load, manual refresh, project switch).
+  const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
+  useEffect(() => {
+    if (data.repoStats || data.monitorStats) setLastLoadedAt(Date.now());
+  }, [data.repoStats, data.monitorStats]);
+  const statsLoading = data.repoState === 'loading' || data.monitorState === 'loading';
 
   // Cross-tab "What changed today" feed — pulls from the same store slices
   // that power Scanner / Triage / Task Runner / Lifecycle, then dedupes,
@@ -246,9 +256,25 @@ export default function ProjectOverviewPage() {
       <ContentBody>
         {/* ==================== Vital signs strip ==================== */}
         <section className="mb-6">
-          <div className="flex items-baseline justify-between mb-3">
+          <div className="flex items-center justify-between mb-3">
             <h2 className="typo-label text-foreground"><DebtText k="auto_vital_signs_5bf24670" /></h2>
-            <span className="typo-caption text-foreground"><DebtText k="auto_last_refresh_just_now_020e3c0a" /></span>
+            <div className="flex items-center gap-2">
+              {lastLoadedAt && (
+                <span className="typo-caption text-foreground">
+                  {po.vital_updated_label}{' '}
+                  <RelativeTime timestamp={lastLoadedAt} className="tabular-nums" />
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => refresh()}
+                title={t.common.refresh}
+                aria-label={t.common.refresh}
+                className="p-1 rounded-interactive hover:bg-primary/10 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-foreground ${statsLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {(() => {

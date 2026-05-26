@@ -10013,6 +10013,7 @@
     "vital_jump_repo": "Open on the connected repository",
     "vital_jump_monitor": "Show monitoring details",
     "vital_jump_setup": "Set up this connection",
+    "vital_updated_label": "updated",
     "loading_stats": "Loading stats...",
     "failed_to_load": "Failed to load stats",
     "retry": "Retry",

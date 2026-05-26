@@ -10019,6 +10019,7 @@ export type Translations = {
     vital_jump_repo: string;
     vital_jump_monitor: string;
     vital_jump_setup: string;
+    vital_updated_label: string;
     loading_stats: string;
     failed_to_load: string;
     retry: string;

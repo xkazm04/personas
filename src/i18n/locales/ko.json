@@ -10002,6 +10002,7 @@
     "vital_jump_repo": "연결된 저장소에서 열기",
     "vital_jump_monitor": "모니터링 세부정보 표시",
     "vital_jump_setup": "이 연결 설정",
+    "vital_updated_label": "업데이트됨",
     "loading_stats": "Loading stats...",
     "failed_to_load": "Failed to load stats",
     "retry": "Retry",

@@ -10002,6 +10002,7 @@
     "vital_jump_repo": "在已连接的仓库中打开",
     "vital_jump_monitor": "显示监控详情",
     "vital_jump_setup": "设置此连接",
+    "vital_updated_label": "已更新",
     "loading_stats": "加载统计中...",
     "failed_to_load": "加载统计失败",
     "retry": "重试",
