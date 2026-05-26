@@ -272,6 +272,21 @@ interface CompanionStore {
   clearAllConnectorJobs: () => void;
 
   /**
+   * Async-UX phase 4b — long in-turn tool calls surfaced as tasks. When a
+   * tool_use block in Athena's CLI stream (WebFetch, Bash, a Task subagent,
+   * any MCP tool) stays pending past a threshold, CompanionPanel synthesizes
+   * a `BackgroundJob` here keyed by the tool_use id, so the slow call shows
+   * in the activity tray + as an orb dot rather than as a frozen, silent
+   * turn. These are NOT real `companion_background_job` rows (they live only
+   * here, never in `jobsById`) and never pin in-chat — the streaming-phase
+   * chip already covers the in-bubble view. Cleared at turn end.
+   */
+  inTurnToolJobs: Record<string, BackgroundJob>;
+  upsertInTurnToolJob: (job: BackgroundJob) => void;
+  completeInTurnToolJob: (id: string) => void;
+  clearInTurnToolJobs: () => void;
+
+  /**
    * Async-UX phase 4 — non-blocking conversation. Messages the user sent
    * while a turn was still streaming. Each is queued (FIFO) and drained
    * one-per-turn-completion by CompanionPanel. `mode` records how the
@@ -567,6 +582,22 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       pendingConnectorJobIds: [],
       connectorJobIdsByEpisodeId: {},
     }),
+
+  inTurnToolJobs: {},
+  upsertInTurnToolJob: (job) =>
+    set((s) => ({ inTurnToolJobs: { ...s.inTurnToolJobs, [job.id]: job } })),
+  completeInTurnToolJob: (id) =>
+    set((s) => {
+      const existing = s.inTurnToolJobs[id];
+      if (!existing) return {};
+      return {
+        inTurnToolJobs: {
+          ...s.inTurnToolJobs,
+          [id]: { ...existing, status: 'completed', completedAt: new Date().toISOString() },
+        },
+      };
+    }),
+  clearInTurnToolJobs: () => set({ inTurnToolJobs: {} }),
 
   queuedMessages: [],
   enqueueMessage: (text, mode) =>

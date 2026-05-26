@@ -68,6 +68,8 @@ function kindLabel(kind: string): string {
       return 'Scanning codebase';
     case 'memory_curation_run':
       return 'Curating memory';
+    case 'in_turn_tool':
+      return 'Running a tool';
     default:
       return kind.replace(/_/g, ' ');
   }

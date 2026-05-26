@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { extractStreamPhase, phaseLabel } from '../extractStreamPhase';
+import { extractStreamPhase, extractToolEvents, phaseLabel } from '../extractStreamPhase';
 
 // Mock `t` shape — only the keys phaseLabel reads. The proxy returns
 // the key path as the value so assertions can match strings without
@@ -139,5 +139,59 @@ describe('phaseLabel', () => {
     expect(
       phaseLabel(t, tx, { kind: 'tool_use', toolName: 'Read', detail: 'runner.rs' }),
     ).toBe('Reading files… · runner.rs');
+  });
+});
+
+describe('extractToolEvents', () => {
+  it('extracts tool_use starts with id, name, and detail from an assistant line', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'tool_use', id: 'toolu_01', name: 'WebFetch', input: { url: 'https://sentry.io/docs' } },
+        ],
+      },
+    });
+    const ev = extractToolEvents(line);
+    expect(ev.started).toEqual([{ id: 'toolu_01', name: 'WebFetch', detail: 'sentry.io' }]);
+    expect(ev.finished).toEqual([]);
+  });
+
+  it('extracts tool_result completions (tool_use_id) from a user line', () => {
+    const line = JSON.stringify({
+      type: 'user',
+      message: { content: [{ type: 'tool_result', tool_use_id: 'toolu_01', content: 'ok' }] },
+    });
+    const ev = extractToolEvents(line);
+    expect(ev.started).toEqual([]);
+    expect(ev.finished).toEqual(['toolu_01']);
+  });
+
+  it('handles multiple tool_use blocks in one line', () => {
+    const line = JSON.stringify({
+      type: 'assistant',
+      message: {
+        content: [
+          { type: 'text', text: 'working' },
+          { type: 'tool_use', id: 'a', name: 'Bash', input: { command: 'ls -la' } },
+          { type: 'tool_use', id: 'b', name: 'Read', input: { file_path: '/x/y.rs' } },
+        ],
+      },
+    });
+    const ev = extractToolEvents(line);
+    expect(ev.started.map((s) => s.id)).toEqual(['a', 'b']);
+    expect(ev.started[0].name).toBe('Bash');
+  });
+
+  it('returns empty arrays for non-JSON, stream_event, and system lines', () => {
+    expect(extractToolEvents('not json')).toEqual({ started: [], finished: [] });
+    expect(extractToolEvents(JSON.stringify({ type: 'stream_event' }))).toEqual({
+      started: [],
+      finished: [],
+    });
+    expect(extractToolEvents(JSON.stringify({ type: 'system' }))).toEqual({
+      started: [],
+      finished: [],
+    });
   });
 });

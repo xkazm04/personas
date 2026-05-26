@@ -1963,6 +1963,33 @@ const bridge: TestBridge = {
     return { success: true, id: job.id as string };
   },
 
+  /** Push a synthetic in-turn tool task (async-UX phase 4b) into the REAL
+   *  store — the same shape CompanionPanel synthesizes when a tool_use block
+   *  in Athena's CLI stream runs past the threshold. Lets a test exercise the
+   *  tray/orb merge of inTurnToolJobs without a live streaming turn. */
+  pushInTurnToolJob(over?: Record<string, unknown>): { success: boolean; id: string } {
+    const job = {
+      id: 'test_tool_' + Math.random().toString(36).slice(2, 10),
+      kind: 'in_turn_tool',
+      status: 'running',
+      paramsJson: '{}',
+      resultText: null,
+      errorText: null,
+      projectId: null,
+      shortTitle: 'Fetching a page… · sentry.io',
+      parentTurnId: null,
+      progressText: null,
+      progressCurrent: null,
+      progressTotal: null,
+      createdAt: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      ...(over ?? {}),
+    };
+    useCompanionStore.getState().upsertInTurnToolJob(job as never);
+    return { success: true, id: job.id as string };
+  },
+
   /** Launch a real Dev Tools context scan for a project (the same command the
    *  Skills/Context-Map UI calls). Lets a test trigger + verify a scan without
    *  driving Athena's chat. Fire-and-forget; verify via the dev_contexts table. */

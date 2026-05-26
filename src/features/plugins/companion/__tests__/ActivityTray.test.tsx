@@ -29,6 +29,7 @@ function job(over: Partial<BackgroundJob> = {}): BackgroundJob {
 
 beforeEach(() => {
   useCompanionStore.getState().clearAllConnectorJobs();
+  useCompanionStore.getState().clearInTurnToolJobs();
 });
 
 describe('ActivityTray', () => {
@@ -57,6 +58,30 @@ describe('ActivityTray', () => {
     // Header is the only button.
     fireEvent.click(screen.getByRole('button'));
     expect(screen.queryByTestId('companion-task-tag')).toBeNull();
+  });
+
+  it('merges in-turn tool tasks (phase 4b) alongside background jobs', () => {
+    const store = useCompanionStore.getState();
+    store.upsertJob(job({ id: 'bg', status: 'running', shortTitle: 'Scanning' }));
+    store.upsertInTurnToolJob(
+      job({ id: 'tool1', kind: 'in_turn_tool', status: 'running', shortTitle: 'Fetching · sentry.io' }),
+    );
+    render(<ActivityTray />);
+    expect(screen.getByTestId('companion-activity-tray').getAttribute('data-task-count')).toBe('2');
+    const tags = screen.getAllByTestId('companion-task-tag');
+    expect(tags).toHaveLength(2);
+    const kinds = tags.map((el) => el.getAttribute('data-job-kind')).sort();
+    expect(kinds).toEqual(['in_turn_tool', 'scan_codebase']);
+  });
+
+  it('drops an in-turn tool task once it completes', () => {
+    const store = useCompanionStore.getState();
+    store.upsertInTurnToolJob(job({ id: 'tool1', kind: 'in_turn_tool', status: 'running' }));
+    const { rerender } = render(<ActivityTray />);
+    expect(screen.getByTestId('companion-task-tag')).toBeInTheDocument();
+    store.completeInTurnToolJob('tool1');
+    rerender(<ActivityTray />);
+    expect(screen.queryByTestId('companion-activity-tray')).toBeNull();
   });
 });
 

@@ -22,7 +22,7 @@ import {
   extractAssistantText,
   extractAssistantTextDelta,
 } from './extractAssistantText';
-import { extractStreamPhase, phaseLabel } from './extractStreamPhase';
+import { extractStreamPhase, extractToolEvents, phaseLabel } from './extractStreamPhase';
 import { extractTodoWrite } from './operationalSteps';
 import { OperationalThread } from './OperationalThread';
 import {
@@ -86,6 +86,12 @@ import { extractMessage, silentCatch } from '@/lib/silentCatch';
 import { play as playAudio, synthesize as synthesizeTts } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
 import { useAgentStore } from '@/stores/agentStore';
+
+// Async-UX phase 4b — how long an in-turn tool call must run before it's
+// surfaced as a task in the activity tray / orb. Below this it's just the
+// transient streaming-phase chip; above it the work is slow enough to be
+// worth a persistent, glanceable task.
+const IN_TURN_TOOL_THRESHOLD_MS = 6000;
 
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
 // only used when the turn returns no QR chips, so this preset is never
@@ -669,6 +675,19 @@ function Body(props: BodyProps) {
   const deltaBufferRef = useRef('');
   const deltaRafRef = useRef<number | null>(null);
 
+  // Async-UX phase 4b — timers for in-turn tool calls. A `tool_use` block in
+  // the CLI stream starts a timer; if the tool hasn't returned a
+  // `tool_result` within IN_TURN_TOOL_THRESHOLD_MS it's promoted to a
+  // visible task (tray + orb dot). Keyed by the CLI's tool_use id; cleared
+  // on tool_result, turn end, and unmount. Fast tools never reach the
+  // threshold, so they never flicker into the tray.
+  const toolTimersRef = useRef<Map<string, number>>(new Map());
+  const clearToolTimers = useCallback(() => {
+    for (const h of toolTimersRef.current.values()) window.clearTimeout(h);
+    toolTimersRef.current.clear();
+  }, []);
+  useEffect(() => () => clearToolTimers(), [clearToolTimers]);
+
   // TurnSummaryChip jump targets: refs to the in-panel approval and
   // chat-card containers so the chip can scroll the user there with
   // smooth `scrollIntoView`. Dashboard / cockpit jumps route through
@@ -790,7 +809,54 @@ function Body(props: BodyProps) {
           useCompanionStore.getState().setStreamingBeat(null);
           beatFiredRef.current = false;
           progressFiredRef.current = 0;
+          // Drop any in-turn tool tasks/timers from a prior turn.
+          clearToolTimers();
+          useCompanionStore.getState().clearInTurnToolJobs();
         } else if (ev.kind === 'cli') {
+          // In-turn tool tasks: time every tool_use; promote a slow one
+          // (> threshold, still pending) to a visible task; complete it on
+          // its tool_result. This runs first and never returns — the line
+          // still flows through the phase/text handling below.
+          const toolEvents = extractToolEvents(ev.payload);
+          for (const ts of toolEvents.started) {
+            // TodoWrite is instant + has its own checklist UI — never a task.
+            if (ts.name === 'TodoWrite' || toolTimersRef.current.has(ts.id)) continue;
+            const startedAt = new Date().toISOString();
+            const handle = window.setTimeout(() => {
+              toolTimersRef.current.delete(ts.id);
+              if (!useCompanionStore.getState().streaming) return;
+              useCompanionStore.getState().upsertInTurnToolJob({
+                id: ts.id,
+                kind: 'in_turn_tool',
+                status: 'running',
+                paramsJson: '{}',
+                resultText: null,
+                errorText: null,
+                projectId: null,
+                shortTitle: phaseLabel(t, tx, {
+                  kind: 'tool_use',
+                  toolName: ts.name,
+                  detail: ts.detail,
+                }),
+                parentTurnId: currentTurnIdRef.current,
+                progressText: null,
+                progressCurrent: null,
+                progressTotal: null,
+                createdAt: startedAt,
+                startedAt,
+                completedAt: null,
+              });
+            }, IN_TURN_TOOL_THRESHOLD_MS);
+            toolTimersRef.current.set(ts.id, handle);
+          }
+          for (const doneId of toolEvents.finished) {
+            const h = toolTimersRef.current.get(doneId);
+            if (h != null) {
+              window.clearTimeout(h);
+              toolTimersRef.current.delete(doneId);
+            }
+            useCompanionStore.getState().completeInTurnToolJob(doneId);
+          }
           // Operational thread: a TodoWrite tool call republishes Athena's
           // full plan. Capture it (latest wins) so the inline checklist
           // tracks progress; the checklist itself is the activity signal,
@@ -857,18 +923,23 @@ function Body(props: BodyProps) {
           useCompanionStore.getState().setStreamingPhase(null);
           // Clear any in-flight checklist not promoted to an episode.
           useCompanionStore.getState().setStreamingSteps([]);
+          // Turn done — drop any lingering in-turn tool tasks/timers.
+          clearToolTimers();
+          useCompanionStore.getState().clearInTurnToolJobs();
           currentTurnIdRef.current = null;
         } else if (ev.kind === 'error') {
           flushDeltaBuffer();
           sawDeltasRef.current = false;
           setSendError(ev.payload);
+          clearToolTimers();
+          useCompanionStore.getState().clearInTurnToolJobs();
           useCompanionStore.getState().setStreamingRecall(null);
           useCompanionStore.getState().setStreamingPhase(null);
           useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
         }
       },
-      [appendStreamingText, setSendError, flushDeltaBuffer],
+      [appendStreamingText, setSendError, flushDeltaBuffer, clearToolTimers, t, tx],
     ),
     'companion_stream_listen',
   );
