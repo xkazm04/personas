@@ -10016,6 +10016,9 @@ export type Translations = {
     unresolved_issues: string;
     events_24h: string;
     events_7d: string;
+    vital_jump_repo: string;
+    vital_jump_monitor: string;
+    vital_jump_setup: string;
     loading_stats: string;
     failed_to_load: string;
     retry: string;
