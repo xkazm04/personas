@@ -1924,6 +1924,18 @@ const bridge: TestBridge = {
   },
 
   /**
+   * Open Athena's chat panel programmatically (sets the companion lifecycle
+   * state to `open`). The panel is normally opened via the orb / Ctrl+Shift+A,
+   * which are awkward to drive from a test; this gives the composer + approval
+   * cards a deterministic way to render. Pairs with the `companion-composer` /
+   * `companion-send` testids.
+   */
+  openCompanion(): { success: boolean } {
+    useCompanionStore.getState().setState('open');
+    return { success: true };
+  },
+
+  /**
    * A5: force the companion panel into a streaming state so tests can
    * verify Stop-button presence and click behavior without burning a
    * real Claude turn.
