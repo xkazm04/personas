@@ -46,6 +46,7 @@
     "test": "vitest run",
     "test:playwright": "playwright test --config=playwright.config.ts",
     "test:playwright:companion": "playwright test --config=playwright.config.ts athena-conversation",
+    "test:playwright:guidance": "playwright test --config=playwright.config.ts athena-guided-walkthrough",
     "test:playwright:tour": "playwright test --config=playwright.config.ts getting-started-tour",
     "test:playwright:tours": "playwright test --config=playwright.config.ts tours-explore",
     "test:tours:fresh": "node scripts/test/run-tours-fresh.mjs",

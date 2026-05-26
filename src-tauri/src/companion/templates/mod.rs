@@ -102,4 +102,7 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// Lighter than `show_decision_log`; intended for inline "by the way,
 /// you decided X" reminders. Widget fetches via
 /// companion_list_design_decisions on mount.
-pub const CONSTITUTION_VERSION: u32 = 18;
+/// v19: persona-creation guidance — `show_persona_creation_offer` (two-button
+/// "Build it for me" vs "Show me how" card) and `start_guided_walkthrough`
+/// (launches an in-app guided tour: orb glides + element glow + narration).
+pub const CONSTITUTION_VERSION: u32 = 19;

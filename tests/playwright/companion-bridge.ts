@@ -71,6 +71,18 @@ export interface TourStateSnapshot {
   allCompleted: boolean;
 }
 
+/** Snapshot of an Athena guided-walkthrough (orb glide + element glow + caption). */
+export interface GuidanceStateSnapshot {
+  active: boolean;
+  topic: string | null;
+  stepIndex: number;
+  playing: boolean;
+  highlightTestId: string | null;
+  orbRect: { x: number; y: number; width: number; height: number } | null;
+  glowRect: { x: number; y: number; width: number; height: number } | null;
+  captionText: string | null;
+}
+
 /**
  * Every tour id in `TOUR_REGISTRY` (src/stores/slices/system/tourSlice.ts).
  * Kept in sync by hand — if a tour is added/removed there, update this list
@@ -492,6 +504,45 @@ export class CompanionBridge {
   /** Snapshot the guided-tour state for assertions. */
   tourState(): Promise<TourStateSnapshot> {
     return this.bridgeExec<TourStateSnapshot>('tourState');
+  }
+
+  // ── Athena guided-walkthrough helpers ──────────────────────────────
+
+  /** Start a guided walkthrough by topic (e.g. 'persona_creation') deterministically. */
+  startGuidedWalkthrough(topic: string): Promise<{ success: boolean; topic: string }> {
+    return this.bridgeExec('startGuidedWalkthrough', { topic });
+  }
+
+  /** Snapshot the walkthrough state: orb rect, glow rect, caption, step index. */
+  guidanceState(): Promise<GuidanceStateSnapshot> {
+    return this.bridgeExec<GuidanceStateSnapshot>('guidanceState');
+  }
+
+  /** Click the caption's Skip control to advance a step. */
+  skipGuidanceStep(): Promise<unknown> {
+    return this.clickTestId('athena-guide-skip');
+  }
+
+  /** Click the caption's Stop control to end the walkthrough. */
+  stopGuidance(): Promise<unknown> {
+    return this.clickTestId('athena-guide-stop');
+  }
+
+  /** Poll `guidanceState` until `predicate` holds; returns the matching snapshot. */
+  async waitForGuidance(
+    predicate: (s: GuidanceStateSnapshot) => boolean,
+    timeoutMs = 8_000,
+  ): Promise<GuidanceStateSnapshot> {
+    const deadline = Date.now() + timeoutMs;
+    let last: GuidanceStateSnapshot | null = null;
+    while (Date.now() < deadline) {
+      last = await this.guidanceState();
+      if (predicate(last)) return last;
+      await sleep(120);
+    }
+    throw new Error(
+      `waitForGuidance: predicate not met within ${timeoutMs}ms (last: ${JSON.stringify(last)})`,
+    );
   }
 
   // ── Persona build helpers (real build → promote) ───────────────────
