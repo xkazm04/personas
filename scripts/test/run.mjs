@@ -114,7 +114,9 @@ async function main() {
   // we proceed to poll regardless so a long entry turn doesn't lose the run.
   let kickResult = null;
   try {
-    kickResult = await bridge.invoke('execute_persona', { persona_id: entryId, input_data: JSON.stringify({ request: seed.goal, _seed: seed.id }) }, { timeoutMs: 9 * 60 * 1000, pollMs: 3000 });
+    // Tauri maps camelCase JS keys → snake_case Rust params (execute_persona
+    // takes persona_id/input_data; the bridge calls it as personaId/inputData).
+    kickResult = await bridge.invoke('execute_persona', { personaId: entryId, inputData: JSON.stringify({ request: seed.goal, _seed: seed.id }) }, { timeoutMs: 9 * 60 * 1000, pollMs: 3000 });
     log(`Entry execution returned: status=${kickResult?.status ?? '?'} id=${(kickResult?.id || '').slice(0, 8)}`);
   } catch (e) {
     log(`Entry kick did not return cleanly (${e.message}) — proceeding to poll for the cascade anyway.`);

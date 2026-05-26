@@ -1,7 +1,7 @@
 // GATHER layer (docs/test/run-protocol.md §4) — collect everything a run
 // produced into an immutable bundle, read from SQLite truth (never trusting a
 // command's success flag). Keyed on the run window + the team's persona ids.
-import { writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
+import { writeFileSync, mkdirSync, copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { openRead, MAIN_DB, USER_DB } from './db.mjs';
@@ -101,6 +101,29 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
       // also capture uncommitted working-tree changes the run may have made
       const wt = execFileSync('git', ['-C', repo.root, 'diff'], { encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
       diff = (diff || '') + (wt ? `\n--- UNCOMMITTED WORKING TREE ---\n${wt}` : '');
+      // CRITICAL: `git diff` does NOT show untracked files, and most doc-track
+      // artifacts (ADRs, new tests, new docs) are brand-new untracked files.
+      // Capture them explicitly as synthetic "diff --git" blocks so the
+      // grounding evaluator + a reviewer can see the team's actual output.
+      const untracked = execFileSync('git', ['-C', repo.root, 'ls-files', '--others', '--exclude-standard'], { encoding: 'utf8' })
+        .split('\n')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const TEXT_EXT = /\.(md|txt|ts|tsx|js|jsx|mjs|rs|py|go|java|json|css|sql|toml|yaml|yml|adr)$/i;
+      let untrackedBlock = '';
+      for (const rel of untracked) {
+        if (!TEXT_EXT.test(rel)) continue;
+        try {
+          const abs = join(repo.root, rel);
+          const content = readFileSync(abs, 'utf8');
+          if (content.length > 512 * 1024) continue; // skip huge files
+          // Synthetic new-file diff block so addedDocsFromPatch + tooling parse it.
+          untrackedBlock += `\ndiff --git a/${rel} b/${rel}\nnew file mode 100644\n--- /dev/null\n+++ b/${rel}\n` + content.split('\n').map((l) => '+' + l).join('\n') + '\n';
+        } catch {
+          /* binary/unreadable — skip */
+        }
+      }
+      if (untrackedBlock) diff += `\n--- NEW UNTRACKED FILES ---\n${untrackedBlock}`;
       writeFileSync(join(dir, 'repo.patch'), diff, 'utf8');
     } catch (e) {
       diff = `ERR computing diff: ${e.message}`;

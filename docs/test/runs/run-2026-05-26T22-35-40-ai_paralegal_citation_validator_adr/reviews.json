@@ -1,0 +1,54 @@
+[
+  {
+    "id": "b50f9eef-0d7e-4f4c-8b4b-abd2282fb568",
+    "execution_id": "d07e03f4-d005-451d-a4b0-4aee9fb61110",
+    "persona_id": "9f6a4574-3fc9-48d5-99c6-4a55b6c0012c",
+    "title": "ADR-0004 Citation-Format Validator — approve & decide blocking policy",
+    "description": "ADR-0004 proposes a citation-format validator as a pre-lookup stage in the existing citations gate (src/lib/citations/). Scoped at 26 story points across 8 tasks. One business decision is open: should a format_invalid result HARD-BLOCK the draft (like verification_failed) or WARN-and-flag in the audit drawer for attorney judgment? Architect recommendation: hard-block malformed/missing-components (credibility-killers), warn-only on stylistic format-drift vs CourtListener's normalized form.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-26T22:38:27.432033200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "aa05e49d-610c-446a-8228-9bdd71be40df",
+    "execution_id": "25ae1ffe-ef44-4726-8268-b266479b8283",
+    "persona_id": "8c48eb91-4edb-4c7f-a875-675d291558fd",
+    "title": "Code Review verdict: REQUEST_CHANGES — 2 blocking findings on citation gate",
+    "description": "Baseline+design review of the ai-paralegal citation gate against ADR-0004. Verdict REQUEST_CHANGES. The proposed validateCitationFormat() feature is not yet implemented (only the ADR doc is committed). Two blocking findings need decisions, plus the architect's open hard-block-vs-warn policy question.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-26T22:41:00.822101800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3f20afeb-09b7-491e-a6f8-e77f897ebf20",
+    "execution_id": "e107c674-8eae-48bf-b7f6-542a37a348d8",
+    "persona_id": "0bd68987-3923-4f76-915b-9cbd7fa0665d",
+    "title": "Security Scan — 7 findings to triage (2 High, 3 Medium, 2 Low)",
+    "description": "First security scan of ai-paralegal. All three scan phases completed. Triage each finding for prioritization/remediation. The auth finding (H-1) is the most urgent deploy-time risk.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-26T22:44:54.922089600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "737418b0-4cfa-48eb-8679-eaab0743cb5d",
+    "execution_id": "e5dffa97-56f1-4a04-8b0f-736ee9a5a8cf",
+    "persona_id": "7771bbb6-1f36-4456-b2d7-80ff14dc90ab",
+    "title": "Approve publish of release v0.2.0 (push tag + GitHub release)",
+    "description": "v0.2.0 has been bumped, changelogged, committed (77d069e), and tagged locally. The outward-facing publish steps were NOT performed automatically. Decide whether to push the commit + tag to origin and publish the GitHub release. Note: open security findings (no-auth dev tenant, CourtListener full-doc egress, postcss XSS) are unresolved on this tree — confirm whether v0.2.0 should ship before they are addressed.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-26T22:48:08.368254+00:00",
+    "use_case_id": null
+  }
+]
