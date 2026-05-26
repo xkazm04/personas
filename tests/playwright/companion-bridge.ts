@@ -71,6 +71,21 @@ export interface TourStateSnapshot {
   allCompleted: boolean;
 }
 
+/**
+ * Every tour id in `TOUR_REGISTRY` (src/stores/slices/system/tourSlice.ts).
+ * Kept in sync by hand — if a tour is added/removed there, update this list
+ * so `bootstrapFreshUser()` keeps resetting all of them.
+ */
+export const ALL_TOUR_IDS = [
+  'getting-started',
+  'getting-started-simple',
+  'execution-observability',
+  'orchestration-events',
+  'plugins-explorer',
+  'schedules-mastery',
+  'templates-recipes',
+] as const;
+
 export class CompanionBridge {
   constructor(private readonly baseUrl: string = BASE_URL) {}
 
@@ -418,6 +433,43 @@ export class CompanionBridge {
       throw new Error(`invokeCommand(${command}) failed: ${r.error ?? 'unknown'}`);
     }
     return r.result as T;
+  }
+
+  // ── Fresh-user bootstrap ───────────────────────────────────────────
+
+  /**
+   * Evaluate fire-and-forget JS in the WebView (no return value). For
+   * result-bearing calls use a named bridge method via `bridgeExec`.
+   */
+  async eval(js: string): Promise<void> {
+    await this.post('/eval', { js });
+  }
+
+  /**
+   * Put the app into the state a brand-new user would reach AFTER getting
+   * past first-run — i.e. ready to drive the guided tours.
+   *
+   * On an empty isolated DB (see scripts/test/launch-isolated.mjs) the
+   * first-run onboarding modal auto-opens, and `GuidedTour` renders nothing
+   * while `onboardingActive` (it returns null so the modal owns the screen).
+   * So before any tour can be walked we must dismiss that modal. We also
+   * reset all seven tours so progress carried in WebView localStorage from a
+   * prior session can't pre-complete steps.
+   *
+   * Idempotent and harmless against a normal running instance, so specs can
+   * call it unconditionally in `beforeAll`.
+   */
+  async bootstrapFreshUser(): Promise<void> {
+    // finishOnboarding(): onboardingActive=false, onboardingCompleted=true —
+    // see src/stores/slices/system/onboardingSlice.ts. There is no dedicated
+    // bridge method for it, so reach the store via the global exposed in
+    // src/test/automation/bridge.ts (`window.__SYSTEM_STORE__`).
+    await this.eval('window.__SYSTEM_STORE__ && window.__SYSTEM_STORE__.getState().finishOnboarding()');
+    // Give the eval a beat to apply before the tour resets read state.
+    await sleep(300);
+    for (const id of ALL_TOUR_IDS) {
+      await this.tourReset(id);
+    }
   }
 
   // ── Guided-tour helpers ────────────────────────────────────────────
