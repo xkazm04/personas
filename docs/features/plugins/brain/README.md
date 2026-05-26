@@ -4,6 +4,11 @@
 
 The plugin lives at `src/features/plugins/obsidian-brain/` and is exposed through the **Plugins → Obsidian Brain** entry in the sidebar. The Rust surface lives at `src-tauri/src/commands/obsidian_brain/`.
 
+**In this folder:**
+- **README.md** (you are here) — what it does, the user flow, the end-to-end lifecycle, and where it could go next.
+- **[connector.md](connector.md)** — the agent-side **Obsidian Memory** connector: the tools an agent can call, the dual (Tauri + MCP) execution model, TF-IDF ranking, and the live file watcher. Read this to understand how a *persona* leverages the vault at runtime.
+- **[reference.md](reference.md)** — backend command and frontend module lookup tables.
+
 ---
 
 ## What it does
@@ -35,7 +40,7 @@ The plugin is organised as five tabs: **Setup**, **Sync**, **Browse Vault**, **G
 6. Optionally tweak **Folder Structure** to change the on-disk layout. A live preview shows the resulting path: `Personas/AgentName/memories/fact/memory-title.md`.
 7. Click **Save Configuration**. The config is persisted in the app settings table and added to the Saved Vaults sidebar.
 
-> *Why a separate "saved vaults" list?* You can connect more than one vault — e.g. **Work** vs **Research** — and switch between them from the sidebar in Setup, Sync, or Browse. Selecting a saved vault re-activates it as the live config without touching the form.
+> *Why a separate "saved vaults" list?* You can connect more than one vault — e.g. **Work** vs **Research** — and switch between them from the sidebar in Setup, Sync, Browse, or Graph. Selecting a saved vault re-activates it as the live config without touching the form.
 
 ### 2. Sync — push / pull deltas
 
@@ -53,14 +58,16 @@ The plugin is organised as five tabs: **Setup**, **Sync**, **Browse Vault**, **G
 3. Click any `.md` file. The header shows the note's word count and its copyable vault-relative path; any flat YAML frontmatter is lifted out and rendered as a **Properties** chip row. The right pane renders the remaining markdown body using `react-markdown` + `remark-gfm` — code, tables, blockquotes, links.
 4. The **Open in Obsidian** button launches the actual Obsidian app at the selected note via `obsidian://open?vault=…&file=…`.
 
-### 3b. Graph — vault metrics & quick capture
+### 4. Graph — vault metrics & quick capture
 
 1. Open the **Graph** tab. It loads aggregate vault stats (notes, links, orphans, MOCs, daily notes), a TF-IDF search box, and collapsible **Orphan notes** / **Maps of Content** lists.
 2. Every result row — a search hit, an orphan, or a MOC — is clickable and opens that note directly in Obsidian (`obsidian://open?…`), so the Graph metrics are a navigable index, not a read-only report.
 3. The lower half offers **quick capture**: append a section to today's daily note, or write a structured meeting note (with comma-separated attendees) straight into the vault.
-4. While the tab is open a file watcher keeps the stats live as you edit notes in Obsidian (see *Live file watcher* below).
+4. While the tab is open a file watcher keeps the stats live as you edit notes in Obsidian (see [connector.md → Live file watcher](connector.md#live-file-watcher)).
 
-### 4. Cloud — back up the vault to Google Drive
+The Graph tab is the human-facing twin of the **Obsidian Memory** connector — the same metrics and capture tools an agent can call are surfaced here as a UI. See **[connector.md](connector.md)**.
+
+### 5. Cloud — back up the vault to Google Drive
 
 1. Open the **Cloud** tab.
 2. If you are not signed in, the empty state shows a **Sign in with Google** CTA that calls the same auth flow used in the desktop footer (`useAuthStore.loginWithGoogle`).
@@ -105,18 +112,17 @@ The combination is hard to replicate from outside: you need the desktop app to w
 
 ---
 
-## Five development directions
+## Roadmap — where Brain could go next
 
 ### 1. Vault as RAG context — make the vault *readable* by agents, not just writable
 
-Today the plugin is one-way for runtime: agents *write* memories that end up in the vault, but they do not *read* the vault back at conversation time. Add a retrieval step so any persona can answer "search my vault for…" out of the box.
+Today the plugin is one-way for runtime: agents *write* memories that end up in the vault, but they do not *read* the vault back at conversation time — except through the **Obsidian Memory** connector's `vault_search` (see [connector.md](connector.md)), which is keyword-only. Deepen this into first-class retrieval:
 
 - Build an embedding index over the vault (chunked by note, with frontmatter metadata).
 - Reuse the existing semantic-lint infra (`semantic_lint.rs`) which already knows how to walk vault files.
-- Expose a `vault.search(query)` connector tool so agents can pull arbitrary notes into context, not just persona memories.
 - Re-index on every pull so the index always reflects user edits.
 
-This single change converts the vault from a *destination* into a *first-class knowledge source* and unlocks every "chat with my notes" use case without leaving the app.
+This converts the vault from a *destination* into a *first-class knowledge source* and unlocks every "chat with my notes" use case without leaving the app.
 
 ### 2. Backlink- and graph-aware memory writes
 
@@ -125,32 +131,24 @@ Obsidian's superpower is `[[wikilinks]]` and the resulting graph. Right now the 
 - When a memory mentions an existing note title, replace it with a wikilink.
 - When a persona has a "MOC" (Map of Content) note, automatically backlink new memories to it.
 - Push a per-persona dashboard note (Dataview-compatible) that lists recent memories grouped by category.
-- Detect orphan notes during pull and surface them in the Sync tab.
 
 The result: notes the agent writes look like notes you would have written yourself, and Obsidian's graph view becomes a live picture of what each persona "knows."
 
-### 3. Live file-watcher and conflict-free pull
+### 3. Conflict-free pull via the live watcher
 
-The pull flow today is a manual button. Add a `notify`-based file watcher in Rust that detects vault edits and either:
-
-- **Auto-pulls** the changed file (single-file granularity instead of full-vault scan), or
-- Surfaces a "vault changed — pull?" toast in the app.
-
-Combined with the existing 3-way merge (`baseHash`/`appHash`/`vaultHash`), this gets you near-real-time bidirectional sync without conflict storms. It also enables the next direction…
+The watcher (see [connector.md](connector.md#live-file-watcher)) already detects vault edits while the Graph tab is open. Extend it to **auto-pull** the changed file (single-file granularity instead of full-vault scan) or surface a "vault changed — pull?" toast. Combined with the existing 3-way merge (`baseHash`/`appHash`/`vaultHash`) and the conflict diff view, this gets near-real-time bidirectional sync without conflict storms.
 
 ### 4. Daily journal & meeting-note automation
 
-Position personas as *journal authors*, not just memory writers:
+The `vault_append_daily_note` / `vault_write_meeting_note` tools already exist (Graph tab + connector). Position personas as *journal authors* on top of them:
 
-- A "Daily Note" persona that writes today's `Daily/2026-04-14.md` into the vault on a schedule, populated from the day's executions, errors, and decisions.
-- A "Meeting Scribe" persona that listens to a transcript and writes a structured meeting note straight into the vault under `Meetings/`.
+- A "Daily Note" persona that writes today's `Daily/2026-04-14.md` on a schedule, populated from the day's executions, errors, and decisions.
+- A "Meeting Scribe" persona that listens to a transcript and writes a structured meeting note under `Meetings/`.
 - Templates per persona (Templater-compatible) so users can swap layouts without code.
-
-This turns the plugin from a back-end sync tool into a visible, daily-touched feature that users open Obsidian and *see* working for them.
 
 ### 5. Multi-vault role separation + workspace presets
 
-The new Saved Vaults sidebar is the foundation. Build on it:
+The Saved Vaults sidebar is the foundation. Build on it:
 
 - **Per-persona vault binding**: persona X always syncs to "Work" vault, persona Y to "Research" vault. No more accidentally pushing client memories into a personal journal.
 - **Workspace presets**: a saved config bundles vault path *plus* sync options *plus* folder mapping *plus* which personas are bound to it. Switching is one click.
@@ -158,90 +156,3 @@ The new Saved Vaults sidebar is the foundation. Build on it:
 - **Vault tagging in the sidebar** so users can group "Personal", "Client", "Research" visually.
 
 This is the difference between a hobby tool ("I have one vault") and a professional tool ("I keep my work and personal lives strictly separated and I expect Personas to respect that").
-
----
-
-## Obsidian Memory connector — agent-side execution layer
-
-The plugin also exposes itself as a builtin connector named **Obsidian Memory** (`obsidian_memory`) under the `knowledge` category. The connector is hidden from the catalog and persona pickers until a vault is configured (`metadata.requires_plugin: "obsidian-brain"` is the gating signal). When the user finishes Setup the connector becomes visible automatically.
-
-### Tools the agent can call
-
-| Tool | Purpose |
-|---|---|
-| `vault_search` | TF-IDF keyword search over note bodies + titles |
-| `vault_outgoing_links` | Wikilinks a note links out to |
-| `vault_backlinks` | Notes that wikilink *to* a target note |
-| `vault_list_orphans` | Notes with no incoming links |
-| `vault_list_mocs` | Maps of Content (notes with many outgoing links) |
-| `vault_stats` | Aggregate counts (notes, links, orphans, MOCs, daily notes) |
-| `vault_append_daily_note` | Append a section to today's daily note (creates if missing) |
-| `vault_write_meeting_note` | Write a structured meeting note under `Meetings/` with attendees as wikilinks |
-
-### How tool execution actually works
-
-There are two execution paths and they are intentionally separate:
-
-1. **In-app (Tauri IPC)** — the same operations are exposed as Tauri commands (`obsidian_graph_*` in `src-tauri/src/commands/obsidian_brain/graph.rs`) and called directly from the Graph tab in the plugin UI. This is how a human runs them.
-
-2. **Agent-side (MCP)** — the existing Personas MCP server (`scripts/mcp-server/index.mjs`, registered with Claude Desktop via `register_claude_desktop_mcp`) carries a parallel JS implementation of the same 8 tools. It reads the vault path from the `obsidian_brain_config` row in `app_settings`, walks the vault filesystem itself, and replies to the LLM. This is how an agent connected via Claude Desktop calls them.
-
-Two implementations of the walk/parse logic is the deliberate trade-off: the MCP server runs as a separate stdio process and cannot call back into the desktop app's Tauri runtime. Sharing files (the vault) and config (the SQLite settings row) is enough — and means the agent can use Obsidian Memory the moment the user runs `register_claude_desktop_mcp`, no rebuilds required.
-
-### TF-IDF ranking
-
-Vault search uses a smoothed Robertson TF-IDF: per-document term frequencies + `ln((N+1)/(df+1)) + 1` IDF, plus a flat +5 boost for title hits. Tokenization is Unicode word-class splitting (`\p{L}\p{N}_`). This handles multi-word queries and rare terms much better than substring matching, with zero new dependencies. An embedding-based retriever (ONNX or hosted) is the natural Phase 3 upgrade and would slot into the same `tfidf_scores()` seam without touching call sites.
-
-### Live file watcher
-
-When a user is in the Graph tab the plugin starts a `notify` watcher (Rust, gated behind the `desktop` feature) on the active vault. File create/modify/remove events on `.md` files are debounced 1s and emitted as a Tauri event `obsidian:vault-changed` carrying the changed paths. The Graph tab listens and re-runs `vault_stats` so orphan/MOC counts stay live as you edit notes in Obsidian. Switching vaults stops the previous watcher and starts a new one bound to the new path; unmounting the panel stops the watcher entirely.
-
----
-
-## Reference: backend commands
-
-| Command | Purpose |
-|---|---|
-| `obsidian_brain_detect_vaults` | Scan OS-known Obsidian config paths for vaults |
-| `obsidian_brain_test_connection` | Validate a folder is a real vault, count notes |
-| `obsidian_brain_save_config` / `_get_config` | Persist active vault config in settings table |
-| `obsidian_brain_push_sync` / `_pull_sync` | Bidirectional markdown sync, scoped optionally to persona IDs |
-| `obsidian_brain_get_sync_log` | Read the rolling sync history |
-| `obsidian_brain_resolve_conflict` | Apply Keep-App / Keep-Vault / Skip to a 3-way conflict |
-| `obsidian_brain_list_vault_files` / `_read_vault_note` | Tree + note reader for the Browse panel |
-| `obsidian_brain_push_goals` | Push project goal trees as markdown under a persona |
-| `obsidian_brain_lint_vault` / `_semantic_lint_vault` | Heuristic + LLM-driven vault audit |
-| `obsidian_drive_status` / `_push_sync` / `_pull_sync` | Google Drive backup of the vault folder |
-| `login_with_google_drive` / `get_google_drive_status` | OAuth bootstrap for Drive scope |
-| `obsidian_graph_search` | TF-IDF vault search (Obsidian Memory connector) |
-| `obsidian_graph_outgoing_links` / `_backlinks` | Wikilink walking |
-| `obsidian_graph_list_orphans` / `_list_mocs` / `_stats` | Graph metrics |
-| `obsidian_graph_append_daily_note` / `_write_meeting_note` | Daily journal + meeting capture |
-| `obsidian_graph_start_watcher` / `_stop_watcher` | File watcher control |
-
-## Reference: frontend modules
-
-```
-src/features/plugins/obsidian-brain/
-├── ObsidianBrainPage.tsx              # tab host
-├── SavedConfigsSidebar.tsx            # multi-vault switcher (right rail)
-├── useSavedVaultConfigs.ts            # localStorage-backed saved configs
-├── useVisibleConnectorDefinitions.ts  # plugin-gated connector filter hook
-├── sub_setup/SetupPanel.tsx           # detect/test/save flow
-├── sub_sync/SyncPanel.tsx             # push/pull/conflict resolution
-├── sub_sync/SyncResultCard.tsx        # persistent direction-tagged result summary
-
-├── sub_browse/BrowsePanel.tsx         # vault tree + markdown preview
-├── sub_graph/GraphPanel.tsx           # search, stats, orphans/MOCs, journal, meeting capture
-└── sub_cloud/CloudSyncPanel.tsx       # Google Drive backup + sign-in CTA
-```
-
-```
-scripts/connectors/builtin/
-└── obsidian-memory.json               # Obsidian Memory connector seed (gated on obsidian-brain plugin)
-
-scripts/mcp-server/
-└── index.mjs                          # MCP server with vault_* tools agents call via Claude Desktop
-```
-
-All copy lives under `t.plugins.obsidian_brain.*` in `src/i18n/locales/en.json`. Connector gating filter applied centrally in `src/stores/slices/vault/credentialSlice.ts:fetchConnectorDefinitions`. Prompt-builder hint for the connector lives in `src-tauri/src/engine/build_session.rs` next to the `codebase` connector hint.
