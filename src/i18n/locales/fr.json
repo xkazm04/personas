@@ -14049,7 +14049,8 @@
       "languages": "Languages",
       "openSection": "Ouvrir {section}",
       "nextStep": "Étape suivante",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Complétez votre jumeau"
     },
     "variantTabs": {
       "prototype": "Prototype",

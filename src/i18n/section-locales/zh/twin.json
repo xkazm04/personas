@@ -345,7 +345,8 @@
     "languages": "Languages",
     "openSection": "打开{section}",
     "nextStep": "下一步",
-    "scoreDelta": "+{pct}%"
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "完善你的分身"
   },
   "variantTabs": {
     "prototype": "Prototype",

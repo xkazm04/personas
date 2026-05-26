@@ -14049,7 +14049,8 @@
       "languages": "Languages",
       "openSection": "Mở {section}",
       "nextStep": "Bước tiếp theo",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Hoàn thiện bản sao của bạn"
     },
     "variantTabs": {
       "prototype": "Prototype",

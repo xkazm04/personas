@@ -14049,7 +14049,8 @@
       "languages": "Languages",
       "openSection": "{section} খুলুন",
       "nextStep": "পরবর্তী ধাপ",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "আপনার টুইন সম্পূর্ণ করুন"
     },
     "variantTabs": {
       "prototype": "Prototype",

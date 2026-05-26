@@ -14207,6 +14207,7 @@ export type Translations = {
       openSection: string;
       nextStep: string;
       scoreDelta: string;
+      checklistHeading: string;
     };
     hero: {
       eyebrow: string;

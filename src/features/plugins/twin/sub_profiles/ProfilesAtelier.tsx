@@ -14,6 +14,7 @@ import { genderDefFromPronouns } from '../shared/gender';
 import { TwinHeaderBand } from '../shared/TwinHeaderBand';
 import { ConstellationDecoration } from '../shared/decorations';
 import { buildGaps, gapScoreDelta } from '../shared/readinessGaps';
+import { CompleteTwinChecklist } from './CompleteTwinChecklist';
 import { CreateTwinWizard } from './CreateTwinWizard';
 import { TwinHero } from './TwinHero';
 import type { TwinProfile } from '@/lib/bindings/TwinProfile';
@@ -147,6 +148,7 @@ export default function ProfilesAtelier() {
   // Active twin lifted to the hero pane; the rest become satellites.
   const heroTwin = sorted.find((p) => p.id === activeTwinId) ?? sorted[0];
   const satellites = sorted.filter((p) => p.id !== heroTwin?.id);
+  const heroReadiness = heroTwin ? dashboards[heroTwin.id]?.readiness : undefined;
 
   // Aggregate KPIs across the whole roster.
   const agg = useMemo(() => {
@@ -278,6 +280,7 @@ export default function ProfilesAtelier() {
           {/* Aggregate rail */}
           <aside className="hidden xl:block">
             <div className="sticky top-4 space-y-4">
+              {heroReadiness && <CompleteTwinChecklist readiness={heroReadiness} onJump={setTwinTab} />}
               <div className="rounded-card border border-primary/10 bg-card/40 p-4">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-3"><DebtText k="auto_roster_spread_14623828" /></p>
                 <dl className="space-y-3">

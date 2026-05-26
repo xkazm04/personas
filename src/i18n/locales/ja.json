@@ -14049,7 +14049,8 @@
       "languages": "Languages",
       "openSection": "{section}を開く",
       "nextStep": "次のステップ",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "ツインを完成させる"
     },
     "variantTabs": {
       "prototype": "Prototype",

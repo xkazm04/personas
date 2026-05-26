@@ -14049,7 +14049,8 @@
       "languages": "Languages",
       "openSection": "Otevřít {section}",
       "nextStep": "Další krok",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Dokončete své dvojče"
     },
     "variantTabs": {
       "prototype": "Prototype",

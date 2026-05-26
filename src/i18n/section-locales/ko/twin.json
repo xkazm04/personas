@@ -345,7 +345,8 @@
     "languages": "Languages",
     "openSection": "{section} 열기",
     "nextStep": "다음 단계",
-    "scoreDelta": "+{pct}%"
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "트윈 완성하기"
   },
   "variantTabs": {
     "prototype": "Prototype",

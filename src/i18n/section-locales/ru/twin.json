@@ -345,7 +345,8 @@
     "languages": "Languages",
     "openSection": "Открыть {section}",
     "nextStep": "Следующий шаг",
-    "scoreDelta": "+{pct}%"
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Завершите настройку двойника"
   },
   "variantTabs": {
     "prototype": "Prototype",

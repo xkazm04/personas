@@ -14049,7 +14049,8 @@
       "languages": "Languages",
       "openSection": "فتح {section}",
       "nextStep": "الخطوة التالية",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "أكمل توأمك"
     },
     "variantTabs": {
       "prototype": "Prototype",

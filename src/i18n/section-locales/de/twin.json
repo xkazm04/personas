@@ -345,7 +345,8 @@
     "languages": "Languages",
     "openSection": "{section} öffnen",
     "nextStep": "Nächster Schritt",
-    "scoreDelta": "+{pct}%"
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Vervollständige deinen Twin"
   },
   "variantTabs": {
     "prototype": "Prototype",

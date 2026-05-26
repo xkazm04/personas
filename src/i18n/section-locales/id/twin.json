@@ -345,7 +345,8 @@
     "languages": "Languages",
     "openSection": "Buka {section}",
     "nextStep": "Langkah berikutnya",
-    "scoreDelta": "+{pct}%"
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Lengkapi twin Anda"
   },
   "variantTabs": {
     "prototype": "Prototype",

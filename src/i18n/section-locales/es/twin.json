@@ -345,7 +345,8 @@
     "languages": "Languages",
     "openSection": "Abrir {section}",
     "nextStep": "Siguiente paso",
-    "scoreDelta": "+{pct}%"
+    "scoreDelta": "+{pct}%",
+    "checklistHeading": "Completa tu gemelo"
   },
   "variantTabs": {
     "prototype": "Prototype",

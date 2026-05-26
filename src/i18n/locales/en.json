@@ -14200,7 +14200,8 @@
       "languages": "Languages",
       "openSection": "Open {section}",
       "nextStep": "Next step",
-      "scoreDelta": "+{pct}%"
+      "scoreDelta": "+{pct}%",
+      "checklistHeading": "Complete your twin"
     },
     "hero": {
       "eyebrow": "Twin",
