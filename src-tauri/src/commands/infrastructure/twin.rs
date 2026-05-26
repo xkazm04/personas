@@ -608,6 +608,103 @@ pub async fn twin_generate_bio(
     Ok(bio)
 }
 
+// ----------------------------------------------------------------------------
+// twin_simulate_answer — Training Studio "twin simulation" side
+//
+// Drafts an interview answer *as the twin*, grounded in the same material a
+// persona adopting the twin sees at runtime (bio + generic tone + top
+// distilled self-facts). This is the answer half of the Training Studio: the
+// user reviews/edits the draft before it is saved as a memory. `directions`
+// carries the user's steering or critique on a regenerate ("too formal, add
+// the 2019 story"). Uses the shared spawn_claude_with_prompt envelope rather
+// than abusing twin_generate_bio's bio-framed prompt.
+// ----------------------------------------------------------------------------
+
+/// Number of top distilled facts to ground a simulated answer. Matches the
+/// grounding window the training session previously read client-side.
+const SIMULATE_ANSWER_FACTS_LIMIT: i32 = 12;
+
+#[tauri::command]
+pub async fn twin_simulate_answer(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    question: String,
+    directions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let question = question.trim();
+    if question.is_empty() {
+        return Err(AppError::Internal(
+            "twin_simulate_answer: question is empty".into(),
+        ));
+    }
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+    let tone = repo::get_tone_optional(&state.db, &twin_id, "generic")?;
+    let facts =
+        repo::top_distilled_facts_for_recall(&state.db, &twin_id, None, SIMULATE_ANSWER_FACTS_LIMIT)?;
+
+    let role_part = profile
+        .role
+        .as_ref()
+        .map(|r| r.trim())
+        .filter(|s| !s.is_empty())
+        .map(|r| format!(", {r}"))
+        .unwrap_or_default();
+
+    let bio_block = profile
+        .bio
+        .as_ref()
+        .map(|b| b.trim())
+        .filter(|s| !s.is_empty())
+        .map(|b| format!("\n\nBio:\n{b}"))
+        .unwrap_or_default();
+
+    let tone_block = match tone.as_ref() {
+        Some(t) if !t.voice_directives.trim().is_empty() => {
+            let mut s = format!("\n\nVoice — write the way they speak:\n{}", t.voice_directives.trim());
+            if let Some(len) = t.length_hint.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+                s.push_str(&format!("\nPreferred reply length: {len}"));
+            }
+            s
+        }
+        _ => String::new(),
+    };
+
+    let facts_block = if facts.is_empty() {
+        String::new()
+    } else {
+        let lines = facts
+            .iter()
+            .map(|f| format!("- {}", f.content.trim()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!(
+            "\n\nWhat is known about them (stay consistent — never contradict these):\n{lines}"
+        )
+    };
+
+    let directions_block = directions
+        .as_ref()
+        .map(|d| d.trim())
+        .filter(|s| !s.is_empty())
+        .map(|d| format!("\n\nApply this revision the user asked for: {d}"))
+        .unwrap_or_default();
+
+    let prompt_text = format!(
+        "You are \"{name}\"{role_part}, answering an interview question to help build a faithful digital twin of yourself. \
+         Answer in the FIRST PERSON, in {name}'s own voice — concrete, personal, and specific rather than generic. \
+         Draw on the material below; where it doesn't cover something, answer plausibly and stay consistent, but never invent verifiable specifics (named dates, numbers, places, people) that aren't grounded here. \
+         Keep it to 2-5 sentences unless the voice guidance says otherwise. \
+         Output ONLY the answer prose — no preamble, no surrounding quotes, no \"As {name}, ...\" framing.{bio_block}{tone_block}{facts_block}{directions_block}\n\nInterview question:\n{question}",
+        name = profile.name,
+    );
+
+    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    Ok(raw.trim().trim_matches('"').trim().to_string())
+}
+
 // ============================================================================
 // Second-Brain build-out (P6)
 //

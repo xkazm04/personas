@@ -2661,6 +2661,8 @@ pub fn run() {
             commands::infrastructure::twin::twin_delete_channel,
             // Twin plugin -- AI bio generation
             commands::infrastructure::twin::twin_generate_bio,
+            // Twin plugin -- Training Studio: twin-simulated answer drafting
+            commands::infrastructure::twin::twin_simulate_answer,
             // Twin plugin -- Second-brain build-out (P6)
             commands::infrastructure::twin::twin_ingest_url,
             commands::infrastructure::twin::twin_compile_wiki,

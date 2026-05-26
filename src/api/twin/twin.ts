@@ -291,6 +291,20 @@ export const generateBio = (
 ) =>
   invoke<string>("twin_generate_bio", { name, role, keywords, existingBio });
 
+/**
+ * Training Studio — draft an interview answer *as the twin*, grounded in the
+ * twin's bio + generic tone + top distilled self-facts (the same material a
+ * persona adopting the twin sees). `directions` carries the user's steering or
+ * critique on a regenerate ("too formal, add the 2019 story"). Returns the
+ * draft prose for the user to review/edit before it is saved as a memory.
+ */
+export const simulateAnswer = (
+  twinId: string,
+  question: string,
+  directions?: string,
+) =>
+  invoke<string>("twin_simulate_answer", { twinId, question, directions });
+
 // ============================================================================
 // Wiki commands (Direction 4 — currently surfaced via the Knowledge tab)
 // ============================================================================
