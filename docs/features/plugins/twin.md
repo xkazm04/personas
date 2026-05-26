@@ -32,7 +32,7 @@ The plugin is organised as eight tabs — **Profiles**, **Identity**, **Tone**, 
 
 1. Open **Plugins → Twin → Profiles**.
 2. Click **New Twin** — give it a name (e.g. *Founder Twin*) and an optional role. The first twin created is auto-activated.
-3. Each profile card shows its Obsidian subpath and three actions: **Set active** (checkmark), **Edit** (pencil), **Delete** (trash). Deleting a profile removes only the row — Obsidian files are untouched.
+3. The active twin's hero card shows its Obsidian subpath and three actions: **Set active** (checkmark), **Edit** (pencil), **Delete** (trash). On the smaller **satellite** cards, clicking anywhere on the card body activates that twin (a "Set active ↗" hint fades in on hover); Edit and Delete remain as explicit hover buttons. Deleting a profile removes only the row — Obsidian files are untouched.
 4. The hero card's six **milestone chips** (Bio, Tone, Brain, Voice, Channels, Memories) and each satellite card's milestone dots are clickable — tapping one deep-links straight into that twin's matching sub-tab (memories open the Knowledge tab), so you can jump from "what's missing" to fixing it in one click. Hovering a chip shows its current status (Complete / Partial / Not set).
 5. Below the chips, a **next-step nudge** spotlights the active twin's single highest-impact gap (empty milestones first, then partial, foundations prioritised) with a one-line hint and the readiness points (+8% / +17%) closing it would add. Clicking the nudge deep-links to that tab. It disappears once every milestone is complete. The gap ranking is shared with the readiness-score popover so both surfaces agree on "what to do next".
 

@@ -541,7 +541,14 @@ function SatelliteCard(props: SatelliteCardProps) {
   }
 
   return (
-    <div className="group relative rounded-card border border-primary/10 bg-card/40 p-3.5 hover:border-violet-500/30 hover:bg-violet-500/5 transition-colors">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onSetActive}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSetActive(); } }}
+      aria-label={`${t.profiles.setActive}: ${profile.name}`}
+      className="group relative rounded-card border border-primary/10 bg-card/40 p-3.5 cursor-pointer hover:border-violet-500/30 hover:bg-violet-500/5 focus-ring transition-colors"
+    >
       <div className="flex items-start gap-3">
         <div className={`w-10 h-10 rounded-card bg-gradient-to-br ${sigil.tint} border border-primary/15 flex items-center justify-center flex-shrink-0`}>
           <span className="typo-body-lg text-foreground/85 leading-none" aria-hidden>{sigil.glyph}</span>
@@ -566,7 +573,7 @@ function SatelliteCard(props: SatelliteCardProps) {
             <button
               key={k}
               type="button"
-              onClick={() => onJump(MILESTONE_TAB[k])}
+              onClick={(e) => { e.stopPropagation(); onJump(MILESTONE_TAB[k]); }}
               title={`${t.progress[k]} — ${statusText(r[k])}`}
               aria-label={tx(t.profiles.openSection, { section: t.progress[k] })}
               className={`inline-flex items-center w-5 h-5 rounded-full justify-center focus-ring hover:brightness-125 transition-[filter] ${
@@ -596,16 +603,19 @@ function SatelliteCard(props: SatelliteCardProps) {
         </div>
       )}
 
-      <div className="flex items-center gap-0.5 mt-2.5 pt-2.5 border-t border-primary/5 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={onSetActive} title={t.profiles.setActive} className="p-1 rounded-interactive text-foreground hover:text-violet-300 hover:bg-violet-500/10 transition-colors">
-          <ArrowUpRight className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={onStartEdit} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
-          <Pencil className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={onDelete} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+      <div className="flex items-center justify-between gap-1 mt-2.5 pt-2.5 border-t border-primary/5 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Hint that the card body itself activates the twin (non-interactive). */}
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-violet-300 pointer-events-none">
+          <ArrowUpRight className="w-3.5 h-3.5" /> {t.profiles.setActive}
+        </span>
+        <div className="flex items-center gap-0.5">
+          <button onClick={(e) => { e.stopPropagation(); onStartEdit(); }} title={t.profiles.edit} className="p-1 rounded-interactive text-foreground hover:text-foreground hover:bg-secondary/40 transition-colors">
+            <Pencil className="w-3.5 h-3.5" />
+          </button>
+          <button onClick={(e) => { e.stopPropagation(); onDelete(); }} title={t.profiles.delete} className="p-1 rounded-interactive text-foreground hover:text-red-400 hover:bg-red-500/10 transition-colors">
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
     </div>
   );
