@@ -10,6 +10,9 @@ pub mod install;
 mod tools;
 mod vault;
 
+#[cfg(test)]
+mod obsidian_vault_tests;
+
 use serde_json::{json, Value};
 
 /// Process a single JSON-RPC request and return a response (or None for notifications).

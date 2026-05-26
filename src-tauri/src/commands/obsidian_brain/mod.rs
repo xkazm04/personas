@@ -5,6 +5,9 @@ pub mod lint;
 pub mod markdown;
 pub mod semantic_lint;
 
+#[cfg(test)]
+mod mirror_tests;
+
 use std::path::Path;
 use std::sync::Arc;
 
