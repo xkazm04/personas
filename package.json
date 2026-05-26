@@ -77,7 +77,7 @@
     "tauri:dev": "tauri dev",
     "tauri:dev:lite": "tauri dev --config src-tauri/tauri.lite.conf.json",
     "tauri:dev:stable": "tauri dev --config src-tauri/tauri.stable.conf.json",
-    "tauri:dev:test": "tauri dev --config src-tauri/tauri.lite.conf.json -- --features test-automation",
+    "tauri:dev:test": "node scripts/dev/tauri-dev-test.mjs",
     "tauri:dev:test:full": "tauri dev -- --features test-automation",
     "prepare": "lefthook install || true"
   },
