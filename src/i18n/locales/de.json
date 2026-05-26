@@ -14327,7 +14327,8 @@
       "saveAsFactToast": "In destillierten Fakten gespeichert.",
       "saveAsFactTooltip": "Diese Kommunikation als dauerhaften destillierten Fakt übernehmen",
       "saveAsFactError": "Speichern als Fakt fehlgeschlagen."
-    }
+    },
+    "studioInProgress": "Trainingsstudio läuft"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

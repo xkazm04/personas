@@ -14344,6 +14344,7 @@ export type Translations = {
       trainingTitle: string;
       trainingBody: string;
     };
+    studioInProgress: string;
   };
   radio: {
     footer_label: string;

@@ -623,5 +623,6 @@
     "saveAsFactToast": "تم الحفظ في الحقائق المقطرة.",
     "saveAsFactTooltip": "ترقية هذا الاتصال إلى حقيقة مقطرة دائمة",
     "saveAsFactError": "تعذر الحفظ كحقيقة."
-  }
+  },
+  "studioInProgress": "استوديو التدريب قيد التشغيل"
 }

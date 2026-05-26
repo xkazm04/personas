@@ -623,5 +623,6 @@
     "saveAsFactToast": "Đã lưu vào dữ kiện chắt lọc.",
     "saveAsFactTooltip": "Chuyển liên lạc này thành dữ kiện chắt lọc lâu dài",
     "saveAsFactError": "Không thể lưu thành dữ kiện."
-  }
+  },
+  "studioInProgress": "Studio huấn luyện đang chạy"
 }

@@ -623,5 +623,6 @@
     "saveAsFactToast": "Uloženo do destilovaných faktů.",
     "saveAsFactTooltip": "Povýšit tuto komunikaci na trvalý destilovaný fakt",
     "saveAsFactError": "Nepodařilo se uložit jako fakt."
-  }
+  },
+  "studioInProgress": "Tréninkové studio běží"
 }

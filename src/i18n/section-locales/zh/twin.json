@@ -623,5 +623,6 @@
     "saveAsFactToast": "已保存到提炼事实。",
     "saveAsFactTooltip": "将此通信提升为持久的提炼事实",
     "saveAsFactError": "无法保存为事实。"
-  }
+  },
+  "studioInProgress": "训练工作室进行中"
 }

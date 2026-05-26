@@ -14327,7 +14327,8 @@
       "saveAsFactToast": "تم الحفظ في الحقائق المقطرة.",
       "saveAsFactTooltip": "ترقية هذا الاتصال إلى حقيقة مقطرة دائمة",
       "saveAsFactError": "تعذر الحفظ كحقيقة."
-    }
+    },
+    "studioInProgress": "استوديو التدريب قيد التشغيل"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

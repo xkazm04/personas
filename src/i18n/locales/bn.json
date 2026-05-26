@@ -14327,7 +14327,8 @@
       "saveAsFactToast": "পরিশোধিত ফ্যাক্টে সংরক্ষিত হয়েছে।",
       "saveAsFactTooltip": "এই যোগাযোগটিকে একটি স্থায়ী পরিশোধিত ফ্যাক্টে উন্নীত করুন",
       "saveAsFactError": "ফ্যাক্ট হিসেবে সংরক্ষণ করা যায়নি।"
-    }
+    },
+    "studioInProgress": "ট্রেনিং স্টুডিও চলছে"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

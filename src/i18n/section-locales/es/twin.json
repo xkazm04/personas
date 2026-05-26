@@ -623,5 +623,6 @@
     "saveAsFactToast": "Guardado en hechos destilados.",
     "saveAsFactTooltip": "Promover esta comunicación a un hecho destilado duradero",
     "saveAsFactError": "No se pudo guardar como hecho."
-  }
+  },
+  "studioInProgress": "Estudio de entrenamiento en curso"
 }

@@ -14327,7 +14327,8 @@
       "saveAsFactToast": "Uloženo do destilovaných faktů.",
       "saveAsFactTooltip": "Povýšit tuto komunikaci na trvalý destilovaný fakt",
       "saveAsFactError": "Nepodařilo se uložit jako fakt."
-    }
+    },
+    "studioInProgress": "Tréninkové studio běží"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

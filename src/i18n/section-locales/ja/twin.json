@@ -623,5 +623,6 @@
     "saveAsFactToast": "抽出済みファクトに保存しました。",
     "saveAsFactTooltip": "このコミュニケーションを永続的な抽出ファクトに昇格します",
     "saveAsFactError": "ファクトとして保存できませんでした。"
-  }
+  },
+  "studioInProgress": "トレーニングスタジオ実行中"
 }

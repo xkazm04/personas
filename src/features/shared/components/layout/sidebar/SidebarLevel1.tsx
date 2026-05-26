@@ -34,12 +34,14 @@ export default function SidebarLevel1({
     contextScanActive,
     contextScanComplete,
     creativeSessionRunning,
+    studioJobActive,
   } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
       contextScanActive: s.contextScanActive,
       contextScanComplete: s.contextScanComplete,
       creativeSessionRunning: s.creativeSessionRunning,
+      studioJobActive: s.studioJobActive,
     }))
   );
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
@@ -100,6 +102,15 @@ export default function SidebarLevel1({
           pingColor: 'bg-orange-500/40',
         },
         {
+          id: 'twin-studio-active',
+          priority: 2,
+          active: studioJobActive,
+          label: 'Twin training studio in progress',
+          variant: 'pulse',
+          color: 'bg-violet-500 border-violet-600/50',
+          pingColor: 'bg-violet-500/40',
+        },
+        {
           id: 'context-scan-active',
           priority: 5,
           active: contextScanActive,
@@ -123,7 +134,7 @@ export default function SidebarLevel1({
   }, [
     pendingReviewCount, unreadMessageCount,
     contextScanActive, contextScanComplete,
-    setContextScanComplete, creativeSessionRunning,
+    setContextScanComplete, creativeSessionRunning, studioJobActive,
   ]);
 
   // Per-persona activity dots for Agents — one per task (draft / exec / lab).

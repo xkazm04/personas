@@ -14337,7 +14337,8 @@
       "channelsBody": "Each channel binds a credential. Pausing a channel keeps the config but stops traffic.",
       "trainingTitle": "Interview yourself",
       "trainingBody": "Pick a topic — AI asks 5 questions — answer in your voice. The session summary becomes a high-signal memory."
-    }
+    },
+    "studioInProgress": "Training studio in progress"
   },
   "radio": {
     "footer_label": "Radio player",

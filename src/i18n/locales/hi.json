@@ -14327,7 +14327,8 @@
       "saveAsFactToast": "आसुत तथ्यों में सहेजा गया।",
       "saveAsFactTooltip": "इस संचार को टिकाऊ आसुत तथ्य में बदलें",
       "saveAsFactError": "तथ्य के रूप में सहेजा नहीं जा सका।"
-    }
+    },
+    "studioInProgress": "ट्रेनिंग स्टूडियो प्रगति पर है"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

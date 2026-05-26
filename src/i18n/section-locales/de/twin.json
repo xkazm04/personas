@@ -623,5 +623,6 @@
     "saveAsFactToast": "In destillierten Fakten gespeichert.",
     "saveAsFactTooltip": "Diese Kommunikation als dauerhaften destillierten Fakt übernehmen",
     "saveAsFactError": "Speichern als Fakt fehlgeschlagen."
-  }
+  },
+  "studioInProgress": "Trainingsstudio läuft"
 }

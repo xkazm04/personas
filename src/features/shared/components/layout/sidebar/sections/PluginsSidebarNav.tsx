@@ -74,6 +74,7 @@ export function PluginsSidebarNav() {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const projects = useSystemStore((s) => s.projects);
   const creativeSessionRunning = useSystemStore((s) => s.creativeSessionRunning);
+  const studioJobActive = useSystemStore((s) => s.studioJobActive);
   const enabledPlugins = useSystemStore((s) => s.enabledPlugins);
 
   const activeProject = activeProjectId ? projects.find((p) => p.id === activeProjectId) : null;
@@ -136,6 +137,7 @@ export function PluginsSidebarNav() {
           activeTwinName={activeTwin?.name ?? null}
           fleetWaitingCount={fleetWaitingCount}
           pendingConflicts={pendingConflicts}
+          studioJobActive={studioJobActive}
         />
       ) : (
         <div key="plugin-l2" className="flex flex-col h-full">
@@ -173,7 +175,8 @@ export function PluginsSidebarNav() {
                 const Icon = plugin.icon;
                 const isActive = pluginTab === plugin.id;
                 const showArtistRunning = plugin.id === 'artist' && creativeSessionRunning;
-                const showTwinMissing = plugin.id === 'twin' && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
+                const showTwinStudioRunning = plugin.id === 'twin' && studioJobActive;
+                const showTwinMissing = plugin.id === 'twin' && !studioJobActive && !activeTwin && twinProfiles.length === 0 && pluginTab === 'twin';
                 const devBorder = plugin.devOnly ? 'border border-amber-400/60 ring-1 ring-amber-400/20' : 'border border-transparent';
                 return (
                   <button
@@ -228,6 +231,12 @@ export function PluginsSidebarNav() {
                         <span className="relative w-2.5 h-2.5 rounded-full bg-orange-500 border border-orange-600/50" />
                       </span>
                     )}
+                    {showTwinStudioRunning && (
+                      <span className="relative flex h-2.5 w-2.5" title={t.twin.studioInProgress}>
+                        <span className="absolute inset-0 rounded-full animate-ping bg-violet-500/40" />
+                        <span className="relative w-2.5 h-2.5 rounded-full bg-violet-500 border border-violet-600/50" />
+                      </span>
+                    )}
                     {showTwinMissing && (
                       <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden />
                     )}
@@ -264,10 +273,12 @@ interface PluginL3Props {
   activeTwinName: string | null;
   fleetWaitingCount: number;
   pendingConflicts: number;
+  studioJobActive: boolean;
 }
 
 function PluginL3(props: PluginL3Props) {
   const { plugin, onBack, backLabel } = props;
+  const { t } = useTranslation();
 
   const items: SidebarLevel3Item[] = useMemo(() => {
     switch (plugin) {
@@ -308,6 +319,12 @@ function PluginL3(props: PluginL3Props) {
           id: item.id,
           label: item.label,
           icon: item.icon,
+          rightSlot: item.id === 'training' && props.studioJobActive ? (
+            <span className="relative flex h-2.5 w-2.5" title={t.twin.studioInProgress}>
+              <span className="absolute inset-0 rounded-full animate-ping bg-violet-500/40" />
+              <span className="relative w-2.5 h-2.5 rounded-full bg-violet-500 border border-violet-600/50" />
+            </span>
+          ) : null,
         }));
       case 'companion':
         return companionItems.map((item) => ({
@@ -324,7 +341,7 @@ function PluginL3(props: PluginL3Props) {
       default:
         return [];
     }
-  }, [plugin, props.fleetWaitingCount, props.pendingConflicts]);
+  }, [plugin, props.fleetWaitingCount, props.pendingConflicts, props.studioJobActive, t.twin.studioInProgress]);
 
   const activeId = pickActiveId(plugin, props);
   const onSelect = pickSelectHandler(plugin, props);

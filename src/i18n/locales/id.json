@@ -14327,7 +14327,8 @@
       "saveAsFactToast": "Disimpan ke fakta tersaring.",
       "saveAsFactTooltip": "Promosikan komunikasi ini menjadi fakta tersaring yang permanen",
       "saveAsFactError": "Gagal menyimpan sebagai fakta."
-    }
+    },
+    "studioInProgress": "Studio pelatihan sedang berjalan"
   },
   "recipe_shared": {
     "schema_parse_error": "Could not read this recipe's input fields — the stored schema is malformed.",

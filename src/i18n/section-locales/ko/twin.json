@@ -623,5 +623,6 @@
     "saveAsFactToast": "정제된 사실에 저장되었습니다.",
     "saveAsFactTooltip": "이 communication을 영구적인 정제된 사실로 승격",
     "saveAsFactError": "사실로 저장할 수 없습니다."
-  }
+  },
+  "studioInProgress": "트레이닝 스튜디오 진행 중"
 }
