@@ -830,11 +830,19 @@ pub async fn run_execution(
     // sidecar so its codebase/context MCP tools resolve THIS repo (not the global
     // first-project default). Set once by the team adoption questionnaire and
     // carried on each member persona. Mirrors the twin connector's pin.
+    // Extract the pin from the raw JSON, NOT via `from_str::<DesignContextData>`:
+    // a persona's design_context carries extra/loosely-typed fields (mapped
+    // useCases, builderMeta, …) that fail the strict struct parse, which would
+    // silently drop the pin. Reading the `devProjectId` key directly is robust.
     let pinned_dev_project: Option<String> = persona
         .design_context
         .as_deref()
-        .and_then(|s| serde_json::from_str::<crate::db::models::DesignContextData>(s).ok())
-        .and_then(|dc| dc.dev_project_id);
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .and_then(|v| {
+            v.get("devProjectId")
+                .and_then(|x| x.as_str())
+                .map(|s| s.to_string())
+        });
     // Build CODEBASE_* env overrides from the pinned dev_project. The codebase
     // connector otherwise resolves a dev_project GLOBALLY and injects
     // CODEBASE_ROOT_PATH/PROJECT_NAME/TECH_STACK/PROJECT_ID — which a pinned
@@ -1066,6 +1074,14 @@ pub async fn run_execution(
             // persona reads ITS repo. No-op when unpinned.
             for (key, val) in &pinned_codebase_env {
                 cli_args.env_overrides.push((key.clone(), val.clone()));
+            }
+            if !pinned_codebase_env.is_empty() {
+                tracing::info!(
+                    persona_id = %persona.id,
+                    dev_project = ?pinned_dev_project,
+                    codebase_root = pinned_codebase_env.iter().find(|(k,_)| k=="CODEBASE_ROOT_PATH").map(|(_,v)| v.as_str()).unwrap_or("<none>"),
+                    "codebase pin: persona reads its pinned repo (CODEBASE_* overridden)"
+                );
             }
 
             // Inject the W3C traceparent generated above into the child CLI's
