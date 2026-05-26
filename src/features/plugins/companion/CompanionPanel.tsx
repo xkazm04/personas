@@ -161,6 +161,23 @@ export default function CompanionPanel() {
   const setPlaybackAudioUrl = useCompanionStore((s) => s.setPlaybackAudioUrl);
   const markPlaybackPlayed = useCompanionStore((s) => s.markPlaybackPlayed);
 
+  // Always-mounted approval reconcile: when a turn finishes (streaming
+  // true→false), refetch the pending-approval list. This guarantees approvals
+  // Athena creates during a turn surface reliably — even if the live
+  // `companion://approvals` event is missed, or the panel was closed during an
+  // autonomous one-shot build. Because this lives in the always-mounted
+  // CompanionPanel (not the open-only Body), the store is updated regardless of
+  // panel state, so the cards are already present the moment the panel opens.
+  const prevStreamingRef = useRef(false);
+  useEffect(() => {
+    if (prevStreamingRef.current && !streaming) {
+      companionListPendingApprovals()
+        .then((list) => setApprovals(list))
+        .catch(silentCatch('companion_list_pending_approvals'));
+    }
+    prevStreamingRef.current = streaming;
+  }, [streaming, setApprovals]);
+
   const voiceEnabled = useSystemStore((s) => s.companionVoiceEnabled);
   const voiceEngine = useSystemStore((s) => s.companionVoiceEngine);
   const voiceCredentialId = useSystemStore((s) => s.companionVoiceCredentialId);

@@ -121,7 +121,12 @@ export function ApprovalCard({
   }
 
   return (
-    <div className="rounded-card border border-primary/30 bg-primary/5 p-3.5 space-y-3 typo-body">
+    <div
+      className="rounded-card border border-primary/30 bg-primary/5 p-3.5 space-y-3 typo-body"
+      data-companion-approval
+      data-companion-approval-id={approval.id}
+      data-companion-approval-action={approval.action}
+    >
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
           {t.plugins.companion.proposed_action}
