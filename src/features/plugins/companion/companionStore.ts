@@ -480,11 +480,16 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       const next: Partial<CompanionStore> = {
         jobsById: { ...s.jobsById, [job.id]: job },
       };
-      // Only `connector_use` jobs are surfaced as inline cards. Other
-      // kinds (scan_codebase, curation_run) flow through their own
-      // dedicated UIs and shouldn't squat on the chat transcript.
+      // Pin tasks spawned by a turn under the spawning bubble (in-chat
+      // tags). `connector_use` is always pinned (it only auto-fires
+      // mid-turn) and renders as the rich ConnectorCallCard; any other
+      // kind enqueued while a turn is streaming (scan_codebase,
+      // memory_curation_run, …) is pinned too and renders as the compact
+      // TaskTag. Approval-click tasks fire while idle (streaming=false) →
+      // they stay out of the transcript and surface only in the tray.
+      const shouldPin = job.kind === 'connector_use' || s.streaming;
       if (
-        job.kind === 'connector_use' &&
+        shouldPin &&
         !s.pendingConnectorJobIds.includes(job.id) &&
         // Don't re-pend a job that's already pinned to an episode (e.g.
         // the late `completed` event arriving after `finished` already

@@ -71,6 +71,8 @@ import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
+import { ActivityTray } from './ActivityTray';
+import { TaskTag } from './TaskTag';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
 import { TurnSummaryChip } from './TurnSummaryChip';
@@ -1495,9 +1497,12 @@ function Body(props: BodyProps) {
                   )}
                   {connectorJobIds.map((jobId) => {
                     const job = jobsById[jobId];
-                    return job ? (
+                    if (!job) return null;
+                    return job.kind === 'connector_use' ? (
                       <ConnectorCallCard key={jobId} job={job} />
-                    ) : null;
+                    ) : (
+                      <TaskTag key={jobId} job={job} />
+                    );
                   })}
                   {summary && (
                     <TurnSummaryChip
@@ -1609,9 +1614,12 @@ function Body(props: BodyProps) {
                 </AnimatePresence>
                 {pendingConnectorJobIds.map((jobId) => {
                   const job = jobsById[jobId];
-                  return job ? (
+                  if (!job) return null;
+                  return job.kind === 'connector_use' ? (
                     <ConnectorCallCard key={jobId} job={job} />
-                  ) : null;
+                  ) : (
+                    <TaskTag key={jobId} job={job} />
+                  );
                 })}
               </motion.div>
             )}
@@ -1668,6 +1676,7 @@ function Body(props: BodyProps) {
             </div>
           )}
         </div>
+        <ActivityTray />
         <QuickReplies
           options={quickReplies}
           disabled={!initialized || streaming}

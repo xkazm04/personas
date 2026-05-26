@@ -1935,6 +1935,34 @@ const bridge: TestBridge = {
     return { success: true };
   },
 
+  /** Push a synthetic background-job row into the REAL companion store —
+   *  the same shape the `companion://job` event listener upserts. Lets a
+   *  test exercise the ActivityTray / TaskTag render path deterministically
+   *  without driving Athena's (LLM-latency-flaky) chat. Defaults make a
+   *  running scan_codebase task with determinate progress. */
+  pushCompanionJob(over?: Record<string, unknown>): { success: boolean; id: string } {
+    const job = {
+      id: 'test_job_' + Math.random().toString(36).slice(2, 10),
+      kind: 'scan_codebase',
+      status: 'running',
+      paramsJson: '{}',
+      resultText: null,
+      errorText: null,
+      projectId: null,
+      shortTitle: 'Test task',
+      parentTurnId: null,
+      progressText: null,
+      progressCurrent: 8,
+      progressTotal: 17,
+      createdAt: new Date().toISOString(),
+      startedAt: null,
+      completedAt: null,
+      ...(over ?? {}),
+    };
+    useCompanionStore.getState().upsertJob(job as never);
+    return { success: true, id: job.id as string };
+  },
+
   /** Launch a real Dev Tools context scan for a project (the same command the
    *  Skills/Context-Map UI calls). Lets a test trigger + verify a scan without
    *  driving Athena's chat. Fire-and-forget; verify via the dev_contexts table. */

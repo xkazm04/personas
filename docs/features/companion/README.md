@@ -111,6 +111,14 @@ The running handler reports intermediate progress through a `JobProgress` report
 
 Cards correlate to turns via the same pending → episode-id promotion the recall strip uses (jobs queued during streaming live in `pendingConnectorJobIds`; at the `finished` stream event they move into `connectorJobIdsByEpisodeId[assistantEpisodeId]`). No new IPC — the existing `companion://job` event channel carries everything the card needs.
 
+## Activity tray & generic task tags (async-UX phase 2)
+
+The connector-call card is the rich, per-call detail surface. Alongside it, a persistent **activity tray** (`ActivityTray.tsx`) docks just above the composer and lists **every** in-flight task across the whole session — not turn-bound — so parallel work from different turns is glanceable in one place. It reads the same `jobsById` map, filters to `queued`/`running`, sorts running-first, is collapsible, and renders nothing when idle.
+
+Each tray row (and any in-chat tag for a non-`connector_use` kind) is a compact `TaskTag.tsx`: status icon (queued hourglass / running spinner / done check / failed alert), the task's `short_title`, a determinate progress bar when the handler reported `progress_current`/`progress_total` (e.g. a codebase scan's "8/17"), otherwise the live `progress_text` note, and a status label. `connector_use` keeps its richer `ConnectorCallCard`; every other kind (`scan_codebase`, `memory_curation_run`, …) uses the lightweight tag.
+
+In-chat pinning generalizes the connector mechanism: `connector_use` always pins under its spawning bubble (it only auto-fires mid-turn); any other kind enqueued **while a turn is streaming** also pins there. Tasks spawned from an approval click while Athena is idle don't squat on the transcript — they appear only in the tray. Strings: `plugins.companion.task_status_{queued,running,done,failed}` + `tasks_running_{one,other}`.
+
 ## Token-level streaming & the operational thread
 
 Two surfaces keep a long or autonomous turn from going silent between the user's message and the final reply.

@@ -11251,6 +11251,12 @@ export type Translations = {
       connector_call_running: string;
       connector_call_completed: string;
       connector_call_failed: string;
+      task_status_queued: string;
+      task_status_running: string;
+      task_status_done: string;
+      task_status_failed: string;
+      tasks_running_one: string;
+      tasks_running_other: string;
       connector_call_in_flight_hint: string;
       connector_call_retry: string;
       connector_call_retrying: string;
