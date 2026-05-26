@@ -23,7 +23,7 @@ Notes are written with YAML frontmatter that preserves IDs, hashes, and timestam
 
 ## User flow
 
-The plugin is organised as four tabs: **Setup**, **Sync**, **Browse Vault**, and **Cloud**. A **Saved Vaults** sidebar appears on the right of the first three tabs and lets you switch between multiple vault configurations without re-running setup.
+The plugin is organised as five tabs: **Setup**, **Sync**, **Browse Vault**, **Graph**, and **Cloud**. A **Saved Vaults** sidebar appears on the right of every tab except Cloud and lets you switch between multiple vault configurations without re-running setup. When no vault is connected, the Sync, Browse, Graph, and Cloud tabs show a *No vault connected* empty state with an **Open Setup** button that jumps straight to the Setup tab.
 
 ### 1. Setup — connect a vault
 
@@ -40,8 +40,8 @@ The plugin is organised as four tabs: **Setup**, **Sync**, **Browse Vault**, and
 ### 2. Sync — push / pull deltas
 
 1. Open the **Sync** tab. The active vault name is shown above the actions.
-2. **Push to Vault** writes app-side changes (memories, personas, connectors) into the vault as markdown. Optionally pick specific personas first; otherwise everything that has changed since the last sync is pushed.
-3. **Pull from Vault** reads the markdown files back, parses frontmatter, and updates the app. If a note has been edited on *both* sides since the last sync, a **Conflict** card appears with the App version and Vault version side by side and three buttons: **Keep App**, **Keep Vault**, **Skip**.
+2. **Push to Vault** writes app-side changes (memories, personas, connectors) into the vault as markdown. Pick the personas to push from the chip selector, which carries a live *N of M selected* count; once you have more than six personas a name filter appears so large rosters stay manageable, and **Select all** unions the currently-visible matches into your selection.
+3. **Pull from Vault** reads the markdown files back, parses frontmatter, and updates the app. If a note has been edited on *both* sides since the last sync, a **Conflict** card appears showing a line-level diff of the two versions — blue `−` lines exist only in the App version, violet `+` lines only in the Vault — above three buttons: **Keep App**, **Keep Vault**, **Skip**.
 4. After each push or pull a **result summary card** stays on the page (it does not auto-dismiss like the toast). The headline reads e.g. *"Pushed 5"* with semantic-colored count pills (created / updated / skipped / converged / conflicts / errors), and expands to a per-category breakdown plus the individual error messages. Push and pull each get their own card with a distinct direction glyph and accent (↑ violet for push, ↓ emerald for pull) so the two directions never blur together; the most recent of each stays visible.
 5. Every action is recorded in the **Sync Log** (created / updated / conflict / skipped), with timestamps and the entity it touched.
 6. Switching the active vault from the sidebar reloads the log automatically.
@@ -50,8 +50,15 @@ The plugin is organised as four tabs: **Setup**, **Sync**, **Browse Vault**, and
 
 1. Open the **Browse Vault** tab. The selected vault name is shown at the top of the file tree, and the path is exposed as a tooltip.
 2. The left pane lists the vault as a collapsible folder tree with note counts. The filter box in the header narrows the tree by file name.
-3. Click any `.md` file. The right pane renders the markdown using `react-markdown` + `remark-gfm` — code, tables, blockquotes, links.
+3. Click any `.md` file. The header shows the note's word count and its copyable vault-relative path; any flat YAML frontmatter is lifted out and rendered as a **Properties** chip row. The right pane renders the remaining markdown body using `react-markdown` + `remark-gfm` — code, tables, blockquotes, links.
 4. The **Open in Obsidian** button launches the actual Obsidian app at the selected note via `obsidian://open?vault=…&file=…`.
+
+### 3b. Graph — vault metrics & quick capture
+
+1. Open the **Graph** tab. It loads aggregate vault stats (notes, links, orphans, MOCs, daily notes), a TF-IDF search box, and collapsible **Orphan notes** / **Maps of Content** lists.
+2. Every result row — a search hit, an orphan, or a MOC — is clickable and opens that note directly in Obsidian (`obsidian://open?…`), so the Graph metrics are a navigable index, not a read-only report.
+3. The lower half offers **quick capture**: append a section to today's daily note, or write a structured meeting note (with comma-separated attendees) straight into the vault.
+4. While the tab is open a file watcher keeps the stats live as you edit notes in Obsidian (see *Live file watcher* below).
 
 ### 4. Cloud — back up the vault to Google Drive
 
