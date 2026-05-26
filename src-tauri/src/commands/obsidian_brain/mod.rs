@@ -13,8 +13,9 @@ use tauri::State;
 use uuid::Uuid;
 
 use crate::db::models::{
-    DetectedVault, ObsidianVaultConfig, PullSyncResult, PushSyncResult, SemanticLintReport,
-    SyncConflict, SyncLogEntry, SyncState, VaultConnectionResult, VaultLintReport, VaultTreeNode,
+    DetectedVault, ObsidianAvailability, ObsidianMirrorConfig, ObsidianVaultConfig, PullSyncResult,
+    PushSyncResult, SemanticLintReport, SyncConflict, SyncLogEntry, SyncState,
+    VaultConnectionResult, VaultLintReport, VaultTreeNode,
 };
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::core::personas as persona_repo;
@@ -35,6 +36,7 @@ use self::markdown::{
 };
 
 const SETTINGS_KEY: &str = "obsidian_brain_config";
+const MIRROR_SETTINGS_KEY: &str = "obsidian_mirror_config";
 
 /// Atomically write `content` to `path` via temp-file + rename.
 ///
@@ -204,6 +206,64 @@ pub fn obsidian_brain_get_config(
         }
         None => Ok(None),
     }
+}
+
+// ── Knowledge Mirror config + availability (opt-in, off by default) ──
+
+/// Read the knowledge-mirror config, falling back to all-off defaults so a
+/// fresh install (or a parse failure) never surprises the caller.
+pub(crate) fn mirror_config(pool: &crate::db::DbPool) -> ObsidianMirrorConfig {
+    match settings_repo::get(pool, MIRROR_SETTINGS_KEY) {
+        Ok(Some(json)) => serde_json::from_str(&json).unwrap_or_default(),
+        _ => ObsidianMirrorConfig::default(),
+    }
+}
+
+/// Resolve Obsidian presence: the desktop binary is detected OR a vault with a
+/// non-empty path is configured in the Brain plugin. Either is enough to
+/// surface/enable the integration; neither (the default) means nothing is
+/// offered and no mirror code path runs.
+pub(crate) fn resolve_availability(pool: &crate::db::DbPool) -> ObsidianAvailability {
+    let (binary_installed, _) =
+        crate::engine::desktop_discovery::is_desktop_app_installed("desktop_obsidian");
+    let vault_configured = match settings_repo::get(pool, SETTINGS_KEY) {
+        Ok(Some(json)) => serde_json::from_str::<ObsidianVaultConfig>(&json)
+            .map(|c| !c.vault_path.is_empty())
+            .unwrap_or(false),
+        _ => false,
+    };
+    ObsidianAvailability {
+        binary_installed,
+        vault_configured,
+        available: binary_installed || vault_configured,
+    }
+}
+
+#[tauri::command]
+pub fn obsidian_mirror_get_config(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ObsidianMirrorConfig, AppError> {
+    require_auth_sync(&state)?;
+    Ok(mirror_config(&state.db))
+}
+
+#[tauri::command]
+pub fn obsidian_mirror_set_config(
+    state: State<'_, Arc<AppState>>,
+    config: ObsidianMirrorConfig,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    let json = serde_json::to_string(&config)
+        .map_err(|e| AppError::Internal(format!("Failed to serialize mirror config: {e}")))?;
+    settings_repo::set(&state.db, MIRROR_SETTINGS_KEY, &json)
+}
+
+#[tauri::command]
+pub fn obsidian_available(
+    state: State<'_, Arc<AppState>>,
+) -> Result<ObsidianAvailability, AppError> {
+    require_auth_sync(&state)?;
+    Ok(resolve_availability(&state.db))
 }
 
 // ── Phase 2: Push Sync ───────────────────────────────────────────────

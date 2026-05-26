@@ -22,6 +22,9 @@ export interface FolderMapping {
   memoriesFolder: string;
   personasFolder: string;
   connectorsFolder: string;
+  researchFolder?: string;
+  knowledgeFolder?: string;
+  athenaFolder?: string;
 }
 
 export interface ObsidianVaultConfig {
@@ -32,6 +35,21 @@ export interface ObsidianVaultConfig {
   syncConnectors: boolean;
   autoSync: boolean;
   folderMapping: FolderMapping;
+}
+
+/** Per-feature knowledge-mirror flags. All default false (off). */
+export interface ObsidianMirrorConfig {
+  athena: boolean;
+  executionKnowledge: boolean;
+  researchLab: boolean;
+  offerDismissed: boolean;
+}
+
+/** Whether the Obsidian integration can be offered/enabled, and why. */
+export interface ObsidianAvailability {
+  binaryInstalled: boolean;
+  vaultConfigured: boolean;
+  available: boolean;
 }
 
 export interface SyncLogEntry {
@@ -100,6 +118,17 @@ export const obsidianBrainSaveConfig = (config: ObsidianVaultConfig) =>
 
 export const obsidianBrainGetConfig = () =>
   invoke<ObsidianVaultConfig | null>("obsidian_brain_get_config");
+
+// ── Knowledge Mirror (opt-in, off by default) ────────────────────────
+
+export const obsidianMirrorGetConfig = () =>
+  invoke<ObsidianMirrorConfig>("obsidian_mirror_get_config");
+
+export const obsidianMirrorSetConfig = (config: ObsidianMirrorConfig) =>
+  invoke<void>("obsidian_mirror_set_config", { config });
+
+export const obsidianAvailable = () =>
+  invoke<ObsidianAvailability>("obsidian_available");
 
 // ── Phase 2: Push Sync ───────────────────────────────────────────────
 

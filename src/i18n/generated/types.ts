@@ -11069,6 +11069,14 @@ export type Translations = {
       test: string;
       sync_options: string;
       sync_options_subtitle: string;
+      knowledge_mirror: string;
+      mirror_research_lab: string;
+      mirror_research_lab_desc: string;
+      mirror_execution_knowledge: string;
+      mirror_execution_knowledge_desc: string;
+      mirror_athena: string;
+      mirror_athena_desc: string;
+      mirror_save_failed: string;
       memories: string;
       memories_desc: string;
       persona_profiles: string;
