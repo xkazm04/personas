@@ -835,6 +835,38 @@ pub async fn run_execution(
         .as_deref()
         .and_then(|s| serde_json::from_str::<crate::db::models::DesignContextData>(s).ok())
         .and_then(|dc| dc.dev_project_id);
+    // Build CODEBASE_* env overrides from the pinned dev_project. The codebase
+    // connector otherwise resolves a dev_project GLOBALLY and injects
+    // CODEBASE_ROOT_PATH/PROJECT_NAME/TECH_STACK/PROJECT_ID — which a pinned
+    // persona must NOT inherit (it would read the wrong repo). These are pushed
+    // to env_overrides AFTER the resolved credential env so they win, ensuring a
+    // team adopted for repo X reads repo X. Empty when unpinned (global default
+    // stands). Mirrors the per-persona pin the sidecar gets above.
+    let pinned_codebase_env: Vec<(String, String)> = pinned_dev_project
+        .as_deref()
+        .and_then(|id| {
+            let conn = pool.get().ok()?;
+            conn.query_row(
+                "SELECT id, name, root_path, COALESCE(tech_stack,'') FROM dev_projects WHERE id = ?1",
+                rusqlite::params![id],
+                |r| Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                )),
+            )
+            .ok()
+        })
+        .map(|(id, name, root, stack)| {
+            vec![
+                ("CODEBASE_ROOT_PATH".to_string(), root),
+                ("CODEBASE_PROJECT_NAME".to_string(), name),
+                ("CODEBASE_TECH_STACK".to_string(), stack),
+                ("CODEBASE_PROJECT_ID".to_string(), id),
+            ]
+        })
+        .unwrap_or_default();
     match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
@@ -1026,6 +1058,14 @@ pub async fn run_execution(
                         };
                 }
                 PromptDelivery::Stdin => {}
+            }
+
+            // Codebase pin override: re-assert CODEBASE_* from the pinned
+            // dev_project AFTER the credential env (which may have injected the
+            // globally-resolved codebase). Pushed last → wins, so a pinned
+            // persona reads ITS repo. No-op when unpinned.
+            for (key, val) in &pinned_codebase_env {
+                cli_args.env_overrides.push((key.clone(), val.clone()));
             }
 
             // Inject the W3C traceparent generated above into the child CLI's

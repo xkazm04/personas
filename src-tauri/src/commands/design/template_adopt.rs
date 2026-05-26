@@ -975,12 +975,34 @@ pub(super) fn apply_codebase_pin_from_design(
             }
         }
     }
-    let project_id = match pinned {
+    let answer = match pinned {
         Some(p) => p,
         None => return Ok(()),
     };
 
     let conn = pool.get()?;
+    // Resolve the answer to a real dev_project id. The codebase question's
+    // option VALUE can be the project name (LocalCodebases discovery returns
+    // `value: name`), an id (driver/override), or a root_path — accept any,
+    // preferring an exact id match. If none resolves, leave unpinned rather
+    // than writing a dangling id (resolve_context_project would ignore it).
+    let project_id: String = match conn
+        .query_row(
+            "SELECT id FROM dev_projects \
+             WHERE id = ?1 OR name = ?1 OR root_path = ?1 \
+             ORDER BY (id = ?1) DESC, (status = 'active') DESC LIMIT 1",
+            rusqlite::params![answer],
+            |r| r.get(0),
+        )
+        .ok()
+    {
+        Some(id) => id,
+        None => {
+            tracing::warn!(persona_id = %persona_id, answer = %answer, "codebase pin: no dev_project matched answer — leaving unpinned");
+            return Ok(());
+        }
+    };
+
     let existing: Option<String> = conn
         .query_row(
             "SELECT design_context FROM personas WHERE id = ?1",

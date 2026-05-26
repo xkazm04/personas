@@ -1936,6 +1936,27 @@ const bridge: TestBridge = {
   },
 
   /**
+   * Adopt a team preset with optional per-role parameter overrides. Lets a test
+   * drive `adopt_team_preset` (which the preview modal calls behind the UI)
+   * directly — e.g. to pin every member's codebase to a specific dev_project via
+   * `{ <role>: { aq_target_codebase: <project> } }`. Returns a compact summary so
+   * the readback isn't truncated.
+   */
+  async adoptTeamPreset(
+    presetId: string,
+    overrides: Record<string, Record<string, string>> | null,
+    roles: string[] | null,
+  ): Promise<{ success: boolean; teamId?: string; ok?: number; failed?: number; error?: string }> {
+    try {
+      const mod = await import('@/api/templates/teamPresets');
+      const res = await mod.adoptTeamPreset(presetId, (overrides ?? null) as never, roles ?? null);
+      return { success: true, teamId: res.team_id, ok: res.members.length, failed: res.failed_members.length };
+    } catch (e) {
+      return { success: false, error: String((e as Error)?.message ?? e) };
+    }
+  },
+
+  /**
    * A5: force the companion panel into a streaming state so tests can
    * verify Stop-button presence and click behavior without burning a
    * real Claude turn.
