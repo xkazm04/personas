@@ -120,7 +120,7 @@ function lintMember(db, m, isEntry) {
   };
 }
 
-function lintTeam(db, team) {
+export function lintTeam(db, team) {
   const members = db
     .prepare(
       `SELECT m.id mid, m.role mrole, m.persona_id, p.name, p.structured_prompt, p.design_context, p.system_prompt, p.setup_status
@@ -275,4 +275,8 @@ function main() {
   if (HAS('--json')) console.log(JSON.stringify(results, null, 2));
 }
 
-main();
+// Run as a CLI only when invoked directly (importable as a module otherwise).
+import { fileURLToPath } from 'node:url';
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+  main();
+}

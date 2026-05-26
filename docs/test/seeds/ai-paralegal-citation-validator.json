@@ -1,0 +1,12 @@
+{
+  "id": "ai-paralegal/citation-validator-adr",
+  "team": "SDLC — ai-paralegal",
+  "repo": "ai-paralegal",
+  "tracks": ["doc"],
+  "exercises_roles": ["architect", "reviewer", "security", "docs"],
+  "held_out": false,
+  "goal": "We want to add a citation-format validator that checks legal references (case citations, statutes) in generated documents against a known-good format before they are shown to a user. As the Solution Architect, produce a concrete architecture decision (ADR) for this feature, grounded in how this repository currently handles document generation and references. Identify the module(s) that would change, the validation approach, and edge cases. Do NOT write code yet — produce the decision document so the Code Reviewer, Security Auditor, and Docs Steward can act on it.",
+  "repo_cmds": { "build": null, "lint": null, "test": null },
+  "acceptance_hint": "An ADR that cites real files/modules in the ai-paralegal repo, a clear validation approach, named edge cases, and downstream review/security/docs follow-through via the handoff chain.",
+  "notes": "First validation seed — doc-track only (no repo mutation) to safely confirm the repaired architect→reviewer→security→docs cascade fires end-to-end before attempting code-track seeds."
+}
