@@ -1,6 +1,6 @@
 # Add Persona Template to Catalog
 
-You are creating a new persona template for the Personas Desktop template catalog. The user will describe their idea and you will guide them through a structured conversation to produce a complete, production-quality template JSON — matching the depth and quality of the 71 existing templates in `scripts/templates/`.
+You are creating a new persona template for the Personas Desktop template catalog. The user will describe their idea and you will guide them through a structured conversation to produce a complete, production-quality template JSON — matching the depth and quality of the 100+ existing templates in `scripts/templates/`.
 
 Templates define AI agent personas that orchestrate external services. Each template must cover: identity, instructions, tool guidance, triggers, connectors, notification channels, event subscriptions, error handling, use case flows, and design highlights.
 
@@ -14,7 +14,7 @@ Wait for the user's response. Once you have the idea, proceed with the phases be
 
 ## Architecture Awareness (read before Phase 1)
 
-Before running the phases, anchor your generation in the platform's current design. The authoritative references live in `docs/concepts/persona-capabilities/` — scan `00-vision.md`, `02-use-case-as-capability.md`, `03-runtime.md`, `04-data-model.md`, and `C3-template-schema-v3.md` at minimum. The highlights below are load-bearing for template shape; verify against those docs if anything below conflicts with what you read.
+Before running the phases, anchor your generation in the platform's current design. The authoritative, current references live in **`docs/features/templates/`** — scan `01-template-format.md`, `02-catalog-loading.md`, `03-adoption-flow.md`, and `04-adoption-questionnaire.md` at minimum (and `08-team-presets.md` if bundling). The older `docs/concepts/persona-capabilities/*` design notes were archived to `docs/_archive/concepts/persona-capabilities/` — background only. The highlights below are load-bearing for template shape; the **"Schema v3 file shape + recipe seeds"** section further down is canonical for the actual file you write.
 
 ### Schema v3 template shape (current)
 
@@ -110,20 +110,142 @@ The platform also handles Phase 2 automatically: each review decision becomes a 
 
 ---
 
+## Schema v3 file shape + recipe seeds — CANONICAL (follow this, not the v2 skeleton in Phase 3d/4)
+
+> **Read first:** the authoritative, current reference is **`docs/features/templates/`**
+> (`01-template-format.md`, `02-catalog-loading.md`, `03-adoption-flow.md`,
+> `04-adoption-questionnaire.md`, `08-team-presets.md`). The older
+> `docs/concepts/persona-capabilities/*` set has been archived to
+> `docs/_archive/concepts/persona-capabilities/` — use it for background only.
+>
+> **Phase 3d's JSON skeleton and Phase 4a's validation checklist below describe
+> the LEGACY v2 shape** (`payload.structured_prompt` + `design_highlights` +
+> `use_case_flows` inline). **For `schema_version: 3` (the default for all new
+> work) follow THIS section instead** — a correct v3 template has none of
+> `structured_prompt` / `design_highlights` / inline `use_case_flows` at the
+> payload top level, so the Phase 4a checks would wrongly fail it.
+
+**Gold-standard v3 references to open before generating** (all current, all pass
+checksums): `scripts/templates/development/qa-guardian.json`,
+`scripts/templates/development/solution-architect.json`,
+`scripts/templates/security/security-sentinel.json`.
+
+### v3 top-level shape
+
+```jsonc
+{
+  "id": "kebab-id",
+  "schema_version": 3,
+  "name": "...", "description": "...", "icon": "LucideIcon", "color": "#hex",
+  "category": ["development"],          // 1-2 of: content, development, devops,
+                                        // email, finance, hr, legal, marketing,
+                                        // productivity, project-management,
+                                        // research, sales, security, support
+  "is_published": true,                 // REQUIRED — false ⇒ checksum gen + catalog
+                                        // loader SKIP it (template never appears)
+  "service_flow": ["Codebase", "Messages"],
+  "payload": {
+    "service_flow": [...],
+    "persona": {
+      "goal": "...", "identity": { "role": "...", "description": "..." },
+      "voice": { "style": "...", "output_format": "..." },
+      "principles": [...], "constraints": [...], "decision_principles": [...],
+      "verbosity_default": "normal",     // deprecated (lint warns) — leave "normal" or ""
+      "trigger_composition": "per_use_case", "message_composition": "per_use_case",
+      "operating_instructions": "...", "tool_guidance": "...", "error_handling": "...",
+      "examples": [],                    // deprecated — keep []
+      "tools": ["http_request", "file_read", "file_write"],
+      "connectors": [ /* see §connectors; every OPTIONAL connector NEEDS fallback_note */ ],
+      "notification_channels_default": [ { "type": "messaging", "description": "..." } ],
+      "core_memories": []
+    },
+    "use_cases": [                        // v3: recipe_refs ONLY, no inline use cases
+      { "recipe_ref": { "id": "<recipe-uuid>", "version": "1.0.0", "bindings": {} } }
+    ],
+    "adoption_questions": [ /* see §adoption_questions */ ],
+    "persona_meta": { "name": "T: <Name>", "icon": "LucideIcon", "color": "#hex" }
+  }
+}
+```
+
+### Recipe seeds — how `use_cases[].recipe_ref` actually resolves (DO NOT SKIP)
+
+In v3, the use-case detail (sample_input, input_schema, review_policy,
+memory_policy, event_subscriptions, use_case_flow, tool_hints, error_handling)
+does **not** live inline — it lives in a **recipe row** in
+`scripts/templates/_recipe_seeds.json`, and the template only references it by
+`recipe_ref.id`. A `recipe_ref` whose id has no matching recipe row will not
+hydrate at adoption. You MUST create the recipe rows:
+
+1. Each recipe row: `{ id (uuid, == recipe_ref.id), source_template_id,
+   source_use_case_id ("uc_<slug>"), source_use_case_name, source_version "1.0.0",
+   name, description, category (null|string), prompt_template (a JSON **string**
+   of the full hydrated use-case object), tool_requirements (null), tags
+   ["<template-id>", "derived"] }`.
+2. The `prompt_template` use-case object shape is the gold standard in any existing
+   recipe — fields: `id, title, description, capability_summary, category,
+   enabled_by_default, execution_mode, model_override, suggested_trigger,
+   connectors, notification_channels, review_policy, memory_policy,
+   event_subscriptions (each `{event_type, direction: emit|listen, description}`),
+   error_handling, input_schema, sample_input, tool_hints, test_fixtures,
+   use_case_flow ({nodes[], edges[]})`. `sample_input` values may use
+   `{{param.<aq_variable>}}` tokens that adoption fills.
+3. **Seeding is INSERT-ONLY**, keyed on `(source_template_id, source_use_case_id)`
+   (matches the Rust seeder `src-tauri/src/engine/recipe_seed.rs`); re-running never
+   overwrites. Write a small idempotent `scripts/seed-<id>-recipes.mjs` that appends
+   your rows and bumps `recipe_count` — `scripts/seed-sdlc-recipes.mjs` is a
+   worked example. (At adoption time `derive_recipes_from_template_inner` can also
+   mint recipes, but shipping them in `_recipe_seeds.json` is the catalog default.)
+4. `_recipe_seeds.json` is `include_str!`-embedded into the native binary →
+   **a rebuild is required** before newly seeded recipes load at runtime.
+
+### Registration: checksums + publish
+
+After writing the template JSON (`is_published: true`) and seeding its recipes:
+
+```bash
+node scripts/generate-template-checksums.mjs
+```
+
+This regenerates BOTH manifests (correct paths):
+- `src/lib/personas/templates/templateChecksums.ts` (frontend)
+- `src-tauri/src/engine/template_checksums.rs` (backend)
+
+The catalog is **directory-scanned** (no manifest index): a published template at
+`scripts/templates/<category>/<id>.json` with a valid checksum loads automatically.
+The loader is **fail-loud** — an ID collision, checksum mismatch, or schema-shape
+failure blocks the whole catalog, so validate before rebuilding. Confirm with the
+template vitest suite (`npx vitest run templates`).
+
+### Team presets + persona→template
+
+- A template can be **bundled into a team preset** at
+  `scripts/templates/_team_presets/<id>.json`; preset members reference templates
+  by `template_id` (see `docs/features/templates/08-team-presets.md`). If you author
+  a set of templates meant to ship together, add a preset too.
+- There is **no automated persona→template export** path. To turn an existing
+  built persona into a template, author the JSON from the persona's
+  `structured_prompt` + `design_context.useCases` (see `scripts/seed-sdlc-recipes.mjs`
+  for the mapping). Generalize away deployment specifics into `adoption_questions`
+  / `{{param.*}}` so the template is reusable.
+
+---
+
 ## Coordination — Active-Runs Ledger
 
 Before writing the new template JSON or regenerating checksum manifests, register this session in `.claude/active-runs.md` per the convention in [`CLAUDE.md` → Concurrent CLI sessions](../../CLAUDE.md). Read the file's `## Active` section first; if any `started`-status entry overlaps your planned scope and is <2h old, surface the conflict to the user before proceeding. Overlap on `.claude/active-runs.md` itself is expected and is not a conflict.
 
 **Declared paths for `/add-template`:**
 - `scripts/templates/<category>/<id>.json` (the new template)
-- `scripts/template-checksums.json` (regenerated)
-- `src-tauri/src/db/template_checksums.rs` (regenerated by `node scripts/generate-template-checksums.mjs`)
+- `scripts/templates/_recipe_seeds.json` (recipe rows for the template's use_cases) + `scripts/seed-<id>-recipes.mjs` (the seeder)
+- `src/lib/personas/templates/templateChecksums.ts` (regenerated)
+- `src-tauri/src/engine/template_checksums.rs` (regenerated by `node scripts/generate-template-checksums.mjs`)
 - Phase 5 only: Supabase `template_catalog` row (out-of-tree, but counts for awareness)
 - Always: `.claude/active-runs.md`
 
 **At session end** (Phase 6 summary, after Phase 5 publish or skip): move your entry to the top of `## Recently completed`. Update `Status` to `completed (commit: <sha>)` or `aborted (<reason>)`. Trim entries older than 14 days while you're there.
 
-Full design rationale: [`docs/concepts/cli-coordination-active-runs.md`](../../../docs/concepts/cli-coordination-active-runs.md).
+Full design rationale: [`docs/architecture/cli-coordination.md`](../../../docs/architecture/cli-coordination.md).
 
 ### Parallel-safety primitives (mandatory)
 
@@ -151,7 +273,7 @@ Use WebSearch and WebFetch to research:
    - Key endpoints the agent will use (5-8 per service)
    - Webhook/event capabilities
 3. **Existing connectors** — Check which services already have connectors in `scripts/connectors/builtin/`. If a needed service is missing, note it for the user (they can use `/add-credential` later).
-4. **Category fit** — Determine which category this template belongs to. Valid categories: `content`, `development`, `devops`, `email`, `finance`, `hr`, `legal`, `marketing`, `pipeline`, `productivity`, `project-management`, `research`, `sales`, `security`, `support`
+4. **Category fit** — Determine which category this template belongs to. Valid categories (each is a real dir under `scripts/templates/`): `content`, `development`, `devops`, `email`, `finance`, `hr`, `legal`, `marketing`, `productivity`, `project-management`, `research`, `sales`, `security`, `support`
 5. **Similar templates** — Check `scripts/templates/` for existing templates that overlap. Read 1-2 of the closest matches to understand the quality bar and avoid duplication.
 
 **Present your research findings to the user:**
@@ -537,7 +659,15 @@ The JSON must be valid and properly formatted with 2-space indentation. The top-
 
 ## Phase 4: Validation
 
-### 4a. Structural validation
+> **For `schema_version: 3` templates, 4a–4c below are the LEGACY v2 checks** —
+> a correct v3 template has no `structured_prompt` / `design_highlights` / inline
+> `use_case_flows`, so skip those specific assertions. For v3, validate instead per
+> the "Schema v3 file shape + recipe seeds" section: valid JSON, `is_published: true`,
+> every `use_cases[].recipe_ref.id` has a matching row in `_recipe_seeds.json`, every
+> optional connector has a `fallback_note`, `node scripts/generate-template-checksums.mjs`
+> succeeds, and `npx vitest run templates` passes.
+
+### 4a. Structural validation (legacy v2)
 
 Verify the generated JSON:
 1. Valid JSON (parse it)
@@ -558,7 +688,7 @@ Verify the generated JSON:
 
 ### 4c. Quality check
 
-Read the generated template and compare against an existing template of similar complexity (e.g., `scripts/templates/devops/incident-commander.json`). Verify:
+Read the generated template and compare against an existing template of similar complexity (e.g., `scripts/templates/devops/devops-guardian.json`). Verify:
 1. `instructions` section has at least 5 numbered steps
 2. `toolGuidance` has real API endpoints (not placeholder URLs)
 3. `examples` has at least 2 concrete scenarios
@@ -662,10 +792,13 @@ Missing connectors (run /add-credential for each):
 
 ## Quality Reference
 
-When generating templates, match the depth and style of these reference templates:
-- **DevOps**: `scripts/templates/devops/incident-commander.json` — 726 lines, 3 services, 3 triggers, 3 flows
-- **Sales**: `scripts/templates/sales/sales-pipeline-autopilot.json` — complex CRM orchestration
-- **Content**: `scripts/templates/content/cms-sync-use-case.json` — multi-service content sync
-- **Productivity**: `scripts/templates/productivity/appointment-orchestrator.json` — scheduling automation
+When generating templates, match the depth and style of current shipped templates.
+**For schema_version 3 (default), read a v3 neighbor:**
+- **Development**: `scripts/templates/development/qa-guardian.json` — memory-backed, multi-capability, codebase-grounded (the canonical v3 example)
+- **Development**: `scripts/templates/development/solution-architect.json` — two memory-backed use cases + event handoff
+- **Security**: `scripts/templates/security/security-sentinel.json` / `ai-environment-posture-audit.json`
+- **DevOps**: `scripts/templates/devops/devops-guardian.json` / `release-manager.json`
 
-Read one of these before generating to calibrate quality expectations.
+Read one v3 neighbor in your chosen category before generating to calibrate quality
+expectations. (The older v2 references some earlier versions of this doc cited —
+e.g. `incident-commander.json` — no longer exist in the catalog.)
