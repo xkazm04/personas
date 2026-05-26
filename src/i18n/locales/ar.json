@@ -10872,6 +10872,8 @@
       "vault_empty": "الخزنة فارغة",
       "failed_to_load": "فشل التحميل",
       "open_in_obsidian": "فتح في Obsidian",
+      "word_count": "{count} كلمة",
+      "note_properties": "الخصائص",
       "no_vault_connected": "لا خزنة متصلة",
       "no_vault_hint": "اضبط خزنة Obsidian في تبويب الإعداد أولاً.",
       "no_vault_cloud_hint": "اضبط خزنة Obsidian محلية في تبويب الإعداد أولاً، ثم اتصل بـ Google Drive للنسخ الاحتياطي السحابي.",

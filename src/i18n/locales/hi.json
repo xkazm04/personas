@@ -10872,6 +10872,8 @@
       "vault_empty": "Vault खाली है",
       "failed_to_load": "लोड करने में विफल",
       "open_in_obsidian": "Obsidian में खोलें",
+      "word_count": "{count} शब्द",
+      "note_properties": "गुण",
       "no_vault_connected": "कोई Vault कनेक्टेड नहीं",
       "no_vault_hint": "पहले Setup टैब में Obsidian vault सेट करें।",
       "no_vault_cloud_hint": "पहले Setup टैब में स्थानीय Obsidian vault सेट करें, फिर क्लाउड बैकअप के लिए Google Drive कनेक्ट करें।",

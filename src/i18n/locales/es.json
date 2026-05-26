@@ -10872,6 +10872,8 @@
       "vault_empty": "El vault está vacío",
       "failed_to_load": "No se pudo cargar",
       "open_in_obsidian": "Abrir en Obsidian",
+      "word_count": "{count} palabras",
+      "note_properties": "Propiedades",
       "no_vault_connected": "Sin Vault Conectado",
       "no_vault_hint": "Configura un vault de Obsidian en la pestaña Configuración primero.",
       "no_vault_cloud_hint": "Configura un vault de Obsidian local en la pestaña Configuración primero, luego conecta Google Drive para respaldo en la nube.",

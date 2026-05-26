@@ -10872,6 +10872,8 @@
       "vault_empty": "Vaultが空です",
       "failed_to_load": "読み込みに失敗しました",
       "open_in_obsidian": "Obsidianで開く",
+      "word_count": "{count} 語",
+      "note_properties": "プロパティ",
       "no_vault_connected": "Vaultが接続されていません",
       "no_vault_hint": "まずセットアップタブでObsidian vaultを設定してください。",
       "no_vault_cloud_hint": "まずセットアップタブでローカルのObsidian vaultを設定し、クラウドバックアップのためにGoogle Driveを接続してください。",

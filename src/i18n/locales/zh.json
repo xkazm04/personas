@@ -10872,6 +10872,8 @@
       "vault_empty": "保险库为空",
       "failed_to_load": "加载失败",
       "open_in_obsidian": "在 Obsidian 中打开",
+      "word_count": "{count} 字",
+      "note_properties": "属性",
       "no_vault_connected": "未连接保险库",
       "no_vault_hint": "请先在设置标签页中设置 Obsidian 保险库。",
       "no_vault_cloud_hint": "请先在设置标签页中设置本地 Obsidian 保险库，然后连接 Google Drive 进行云备份。",

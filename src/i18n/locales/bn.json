@@ -10872,6 +10872,8 @@
       "vault_empty": "Vault is empty",
       "failed_to_load": "Failed to load",
       "open_in_obsidian": "Open in Obsidian",
+      "word_count": "{count}টি শব্দ",
+      "note_properties": "বৈশিষ্ট্য",
       "no_vault_connected": "No Vault Connected",
       "no_vault_hint": "Set up an Obsidian vault in the Setup tab first.",
       "no_vault_cloud_hint": "Set up a local Obsidian vault in the Setup tab first, then connect Google Drive for cloud backup.",

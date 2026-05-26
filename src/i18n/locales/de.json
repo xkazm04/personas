@@ -10872,6 +10872,8 @@
       "vault_empty": "Tresor ist leer",
       "failed_to_load": "Laden fehlgeschlagen",
       "open_in_obsidian": "In Obsidian öffnen",
+      "word_count": "{count} Wörter",
+      "note_properties": "Eigenschaften",
       "no_vault_connected": "Kein Tresor verbunden",
       "no_vault_hint": "Zuerst einen Obsidian-Tresor im Setup-Tab einrichten.",
       "no_vault_cloud_hint": "Zuerst einen lokalen Obsidian-Tresor im Setup-Tab einrichten, dann Google Drive für Cloud-Backup verbinden.",

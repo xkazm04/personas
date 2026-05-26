@@ -10872,6 +10872,8 @@
       "vault_empty": "Kho trống",
       "failed_to_load": "Tải thất bại",
       "open_in_obsidian": "Mở trong Obsidian",
+      "word_count": "{count} từ",
+      "note_properties": "Thuộc tính",
       "no_vault_connected": "Chưa kết nối kho",
       "no_vault_hint": "Hãy thiết lập kho Obsidian trong tab Cài đặt trước.",
       "no_vault_cloud_hint": "Hãy thiết lập kho Obsidian cục bộ trong tab Cài đặt trước, sau đó kết nối Google Drive để sao lưu đám mây.",

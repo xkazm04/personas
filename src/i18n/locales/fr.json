@@ -10872,6 +10872,8 @@
       "vault_empty": "Le coffre-fort est vide",
       "failed_to_load": "Échec du chargement",
       "open_in_obsidian": "Ouvrir dans Obsidian",
+      "word_count": "{count} mots",
+      "note_properties": "Propriétés",
       "no_vault_connected": "Aucun coffre-fort connecté",
       "no_vault_hint": "Configurez d'abord un coffre-fort Obsidian dans l'onglet Configuration.",
       "no_vault_cloud_hint": "Configurez d'abord un coffre-fort Obsidian local dans l'onglet Configuration, puis connectez Google Drive pour la sauvegarde cloud.",

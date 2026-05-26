@@ -10872,6 +10872,8 @@
       "vault_empty": "Brankas kosong",
       "failed_to_load": "Gagal dimuat",
       "open_in_obsidian": "Buka di Obsidian",
+      "word_count": "{count} kata",
+      "note_properties": "Properti",
       "no_vault_connected": "Tidak Ada Brankas yang Terhubung",
       "no_vault_hint": "Siapkan brankas Obsidian di tab Pengaturan terlebih dahulu.",
       "no_vault_cloud_hint": "Siapkan brankas Obsidian lokal di tab Pengaturan terlebih dahulu, lalu hubungkan Google Drive untuk pencadangan awan.",

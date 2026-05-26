@@ -11033,6 +11033,8 @@ export type Translations = {
       vault_empty: string;
       failed_to_load: string;
       open_in_obsidian: string;
+      word_count: string;
+      note_properties: string;
       no_vault_connected: string;
       no_vault_hint: string;
       no_vault_cloud_hint: string;

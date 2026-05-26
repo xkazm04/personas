@@ -10872,6 +10872,8 @@
       "vault_empty": "Хранилище пустое",
       "failed_to_load": "Не удалось загрузить",
       "open_in_obsidian": "Открыть в Obsidian",
+      "word_count": "Слов: {count}",
+      "note_properties": "Свойства",
       "no_vault_connected": "Хранилище не подключено",
       "no_vault_hint": "Сначала настройте хранилище Obsidian во вкладке «Настройка».",
       "no_vault_cloud_hint": "Сначала настройте локальное хранилище Obsidian во вкладке «Настройка», затем подключите Google Drive для облачного резервного копирования.",
