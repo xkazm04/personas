@@ -40,6 +40,8 @@ Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes 
 
 **Avatar resource discipline (`AthenaAvatar`).** The footer + orb videos are a nice-to-have in a tiny space, so: only one clip plays at a time (others paused at frame 0); **playback pauses whenever the document is hidden** (`visibilitychange`) and resumes on return — zero decode while backgrounded; and under `prefers-reduced-motion` **no `<video>` mounts at all** — just the static poster (`athena_baseline.jpg`), so reduced-motion users pay no decode and get no animation. Clips are 320×320 / 12fps / CRF 30 / no-audio ping-pong (~110–160 KB), hardware-decoded.
 
+**Orb progress dots (async-UX phase 3).** While background tasks run, the minimized orb grows up to 5 pulsing dots arced across its top perimeter — one per in-flight task (queued + running, from `jobsById`). The orb also borrows the `thinking` avatar posture so a working Athena reads as active even with the panel minimized, and its `aria-label` announces the count ("2 tasks running"). The dots vanish as tasks complete. This is the minimized-state twin of the activity tray: tray when open, dots when minimized.
+
 ## Athena desktop-aware lineage
 
 Companion's awareness of the user's desktop activity ships in phases. The decision-gate audit lives at [`../../architecture/athena-phase1-audit.md`](../../architecture/athena-phase1-audit.md); the two shipped feature deliverables sit alongside this README:
@@ -118,6 +120,17 @@ The connector-call card is the rich, per-call detail surface. Alongside it, a pe
 Each tray row (and any in-chat tag for a non-`connector_use` kind) is a compact `TaskTag.tsx`: status icon (queued hourglass / running spinner / done check / failed alert), the task's `short_title`, a determinate progress bar when the handler reported `progress_current`/`progress_total` (e.g. a codebase scan's "8/17"), otherwise the live `progress_text` note, and a status label. `connector_use` keeps its richer `ConnectorCallCard`; every other kind (`scan_codebase`, `memory_curation_run`, …) uses the lightweight tag.
 
 In-chat pinning generalizes the connector mechanism: `connector_use` always pins under its spawning bubble (it only auto-fires mid-turn); any other kind enqueued **while a turn is streaming** also pins there. Tasks spawned from an approval click while Athena is idle don't squat on the transcript — they appear only in the tray. Strings: `plugins.companion.task_status_{queued,running,done,failed}` + `tasks_running_{one,other}`.
+
+## Non-blocking conversation (async-UX phase 4)
+
+The composer is **never disabled while a turn is streaming** — the user can always type. A mid-turn send is classified by `classifyMidTurnIntent` (`midTurnIntent.ts`):
+
+- **Redirect** ("stop", "wait", "actually…", "instead…", "cancel", "no, …") → **interrupts** the in-flight turn (the existing `companion_interrupt_turn` path kills the CLI child and finalizes the partial reply as `[interrupted]`) and queues the new message.
+- **Additive / ambiguous** ("and also…", "when you're done…", or anything that isn't a clear redirect) → **queues** behind the current turn. The default is queue: an ambiguous message never destroys running work (the user can hit Stop explicitly).
+
+Queued messages live in `companionStore` (`queuedMessages` + `enqueue/shift/remove/clear`) and render as cancellable chips above the composer (`QueuedMessages.tsx`). A streaming-edge effect drains them **one per turn completion** (FIFO), so order is preserved and the drain never collides with the autonomous-continuation chain.
+
+On the model side, an always-on **"delegate, don't inline"** prompt addendum (`prompt.rs` `delegation_addendum`) tells Athena to kick long work off as a background task and reply immediately ("I'm pulling that — back in a moment") rather than holding a silent turn open for minutes. The activity tray + orb dots are what make that delegation observable, so the three phases compose: Athena delegates → the task shows in the tray/orb → the user keeps talking while it runs.
 
 ## Token-level streaming & the operational thread
 

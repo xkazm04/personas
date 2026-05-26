@@ -272,6 +272,20 @@ interface CompanionStore {
   clearAllConnectorJobs: () => void;
 
   /**
+   * Async-UX phase 4 — non-blocking conversation. Messages the user sent
+   * while a turn was still streaming. Each is queued (FIFO) and drained
+   * one-per-turn-completion by CompanionPanel. `mode` records how the
+   * message was classified at send time: an `interrupt` also stopped the
+   * in-flight turn; a `queue` simply waits its turn. The composer is never
+   * disabled — this is where mid-turn input lands instead of being blocked.
+   */
+  queuedMessages: { id: string; text: string; mode: 'queue' | 'interrupt' }[];
+  enqueueMessage: (text: string, mode: 'queue' | 'interrupt') => void;
+  shiftQueuedMessage: () => { id: string; text: string; mode: 'queue' | 'interrupt' } | null;
+  removeQueuedMessage: (id: string) => void;
+  clearQueuedMessages: () => void;
+
+  /**
    * The "operational thread": Athena's live TodoWrite plan, parsed from
    * TodoWrite tool calls in the stream. `streamingSteps` is the in-flight
    * checklist (latest TodoWrite call wins — each call re-sends the full
@@ -522,6 +536,24 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       pendingConnectorJobIds: [],
       connectorJobIdsByEpisodeId: {},
     }),
+
+  queuedMessages: [],
+  enqueueMessage: (text, mode) =>
+    set((s) => ({
+      queuedMessages: [
+        ...s.queuedMessages,
+        { id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, text, mode },
+      ],
+    })),
+  shiftQueuedMessage: () => {
+    const [first, ...rest] = get().queuedMessages;
+    if (!first) return null;
+    set({ queuedMessages: rest });
+    return first;
+  },
+  removeQueuedMessage: (id) =>
+    set((s) => ({ queuedMessages: s.queuedMessages.filter((m) => m.id !== id) })),
+  clearQueuedMessages: () => set({ queuedMessages: [] }),
 
   streamingSteps: [],
   stepsByEpisodeId: {},

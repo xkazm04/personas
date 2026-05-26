@@ -11251,6 +11251,8 @@
       "task_status_failed": "failed",
       "tasks_running_one": "{count} task running",
       "tasks_running_other": "{count} tasks running",
+      "queued_badge": "Queued",
+      "queued_remove": "Remove queued message",
       "connector_call_in_flight_hint": "Athena will summarize the result when this finishes.",
       "connector_call_retry": "Retry",
       "connector_call_retrying": "Retrying…",

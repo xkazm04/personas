@@ -73,6 +73,8 @@ import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
 import { ActivityTray } from './ActivityTray';
 import { TaskTag } from './TaskTag';
+import { QueuedMessages } from './QueuedMessages';
+import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
 import { TurnSummaryChip } from './TurnSummaryChip';
@@ -1270,6 +1272,42 @@ function Body(props: BodyProps) {
     [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
 
+  // Async-UX phase 4 — non-blocking send. The composer is never disabled;
+  // a message typed while a turn is still streaming is classified and
+  // either interrupts the in-flight turn (redirect / "stop") or queues
+  // behind it (additive / ambiguous). When idle it sends directly.
+  const sendOrQueue = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      if (!streaming) {
+        void send(trimmed);
+        return;
+      }
+      const mode = classifyMidTurnIntent(trimmed);
+      useCompanionStore.getState().enqueueMessage(trimmed, mode);
+      // A redirect stops the current turn now; the drain effect fires the
+      // queued message the instant `streaming` flips false.
+      if (mode === 'interrupt') handleInterrupt();
+    },
+    [streaming, send, handleInterrupt],
+  );
+
+  // Drain the queue one message per turn completion. Watches the streaming
+  // true→false edge; if anything is waiting (and we're not mid self-
+  // improve) it shifts the oldest and sends it. `send` sets streaming back
+  // to true, so this fires at most once per completed turn — preserving
+  // FIFO order without colliding with the autonomous-continuation chain.
+  const prevStreamingForQueueRef = useRef(streaming);
+  useEffect(() => {
+    const was = prevStreamingForQueueRef.current;
+    prevStreamingForQueueRef.current = streaming;
+    if (was && !streaming && !improving) {
+      const next = useCompanionStore.getState().shiftQueuedMessage();
+      if (next) void send(next.text);
+    }
+  }, [streaming, improving, send]);
+
   // Spoken ack: ~2.5s into a still-running turn, say a short "one moment"
   // so a slow turn isn't dead silent. Fast turns (< the delay) never
   // trigger it; the cleanup clears the timer when the turn ends.
@@ -1677,6 +1715,7 @@ function Body(props: BodyProps) {
           )}
         </div>
         <ActivityTray />
+        <QueuedMessages />
         <QuickReplies
           options={quickReplies}
           disabled={!initialized || streaming}
@@ -1688,8 +1727,11 @@ function Body(props: BodyProps) {
           }}
         />
         <Composer
-          disabled={!initialized || streaming || brainView.open || improving}
-          onSend={send}
+          // Async-UX phase 4: the composer is intentionally NOT disabled
+          // while streaming — mid-turn input is routed through sendOrQueue
+          // (interrupt vs queue) instead of being blocked.
+          disabled={!initialized || brainView.open || improving}
+          onSend={sendOrQueue}
           onImprove={requestImprove}
           improveEnabled={betaSelfImprove}
           improving={improving}

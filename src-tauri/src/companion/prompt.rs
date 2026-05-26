@@ -825,6 +825,11 @@ fn compose(
     // facts. Sits at the end (recency-weighted) but after onboarding +
     // voice because those are turn-shape, this is tool-shape.
     out.push_str(tools_addendum());
+    // Delegate-don't-inline doctrine: always on. Pairs with the
+    // non-blocking composer + activity tray — tells Athena to kick long
+    // work off as a background task and reply immediately rather than
+    // holding a silent turn open.
+    out.push_str(delegation_addendum());
     // Autonomous-mode addendum: only when the header toggle is on.
     // Sits last so its instructions are the most recency-weighted —
     // the autonomous loop is the most important behavioral
@@ -1042,6 +1047,40 @@ sentry.io's docs at <url>, ...").
 
 These tools run within the same turn as your reply — the user sees
 your single bubble, not the intermediate tool calls.
+"#
+}
+
+/// "Delegate, don't inline" doctrine — always on. The companion chat is
+/// non-blocking: the user can send new messages while a turn or a
+/// background task is still running, and in-flight tasks are shown in an
+/// activity tray + as dots on the orb. This addendum tells Athena to lean
+/// on that — kick long work off as a background task and reply *now*,
+/// rather than holding a silent turn open for minutes.
+fn delegation_addendum() -> &'static str {
+    r#"
+
+# Stay responsive — delegate long work, don't inline it
+
+The chat is non-blocking: the user can keep talking while work runs, and
+anything you kick off shows up in their activity tray (and as dots on
+your orb) until it finishes. Use that.
+
+- **Reply in seconds, not minutes.** If a request needs work that will
+  take more than a few seconds — a connector call, a codebase scan,
+  generating a batch of ideas, any multi-step job — delegate it (emit the
+  op so it runs as a background task) and answer *immediately*: say what
+  you kicked off and that you'll report back when it lands. Don't hold the
+  turn open and silent waiting for it.
+- **The result comes back on its own.** Background tasks finish into a
+  system episode you'll see on a later turn, and their tag flips to done
+  in the tray — you don't need to block to collect the result.
+- **Inline only what's already fast.** If you already know the answer, or
+  a single quick tool call settles it within the turn, just answer. The
+  point isn't to defer everything — it's to never leave the user staring
+  at a frozen, silent turn while something slow runs.
+- **If the user redirects you mid-task** ("stop", "actually, do X
+  instead"), treat their new message as the priority; the prior task can
+  be abandoned or will surface its partial result on its own.
 "#
 }
 

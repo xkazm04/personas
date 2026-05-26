@@ -11257,6 +11257,8 @@ export type Translations = {
       task_status_failed: string;
       tasks_running_one: string;
       tasks_running_other: string;
+      queued_badge: string;
+      queued_remove: string;
       connector_call_in_flight_hint: string;
       connector_call_retry: string;
       connector_call_retrying: string;

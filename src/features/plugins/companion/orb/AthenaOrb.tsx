@@ -53,10 +53,19 @@ function fractionToPx(x: number, y: number, vp: Viewport): { left: number; top: 
 }
 
 export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const setState = useCompanionStore((s) => s.setState);
   const streaming = useCompanionStore((s) => s.streaming);
   const pendingPlayback = useCompanionStore((s) => s.pendingPlayback);
+  // Async-UX phase 3: how many background tasks are in flight. Returns a
+  // primitive so the orb only re-renders when the count actually changes.
+  const runningTaskCount = useCompanionStore((s) => {
+    let n = 0;
+    for (const j of Object.values(s.jobsById)) {
+      if (j.status === 'running' || j.status === 'queued') n += 1;
+    }
+    return n;
+  });
   const orbPos = useSystemStore((s) => s.companionOrbPos);
   const setOrbPos = useSystemStore((s) => s.setCompanionOrbPos);
 
@@ -194,9 +203,30 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   useEffect(() => () => clearHoldTimer(), [clearHoldTimer]);
 
   const hasUnreadPlayback = pendingPlayback != null && !pendingPlayback.played;
+  // Background tasks running (even when no turn is streaming) put the orb
+  // in the "working" posture — it borrows the `thinking` avatar and grows
+  // perimeter dots, one per in-flight task, so the user sees parallel work
+  // happening while the panel is minimized.
+  const working = runningTaskCount > 0;
   const avatarState: AthenaState =
-    talking || streaming ? 'thinking' : hasUnreadPlayback ? 'speaking' : 'idle';
+    talking || streaming || working ? 'thinking' : hasUnreadPlayback ? 'speaking' : 'idle';
   const speaking = avatarState === 'speaking';
+
+  // Perimeter task dots: up to 5 pulsing dots arced across the orb's top,
+  // one per running/queued task. Positioned on a circle just outside the
+  // orb so they read as a halo of activity. Decorative (aria-hidden) —
+  // the count is also announced via the orb's aria-label.
+  const shownDots = Math.min(runningTaskCount, 5);
+  const taskDots = Array.from({ length: shownDots }, (_, i) => {
+    const angleDeg = shownDots === 1 ? -90 : -132 + (84 * i) / (shownDots - 1);
+    const a = (angleDeg * Math.PI) / 180;
+    const R = ORB_SIZE / 2 + 9;
+    return {
+      left: ORB_SIZE / 2 + R * Math.cos(a),
+      top: ORB_SIZE / 2 + R * Math.sin(a),
+      delay: i * 0.16,
+    };
+  });
 
   const caption = talking && interimText ? interimText : null;
 
@@ -262,7 +292,18 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
               : 'hover:scale-105'
         }`}
         title={t.plugins.companion.orb_talk_hint}
-        aria-label={talking ? t.plugins.companion.footer_listening : t.plugins.companion.orb_talk_hint}
+        aria-label={
+          talking
+            ? t.plugins.companion.footer_listening
+            : working
+              ? tx(
+                  runningTaskCount === 1
+                    ? t.plugins.companion.tasks_running_one
+                    : t.plugins.companion.tasks_running_other,
+                  { count: runningTaskCount },
+                )
+              : t.plugins.companion.orb_talk_hint
+        }
       >
         {/* Speaking glow — a bloom while a spoken reply plays. When motion
             is allowed it's audio-reactive: the ref'd node's opacity + scale
@@ -300,6 +341,30 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
         {talking && (
           <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center ring-2 ring-background">
             <span className="w-1.5 h-1.5 rounded-full bg-background animate-pulse" />
+          </span>
+        )}
+        {/* Async-UX phase 3: perimeter task dots — one per in-flight task. */}
+        {shownDots > 0 && (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            data-testid="companion-orb-task-dots"
+            data-task-count={runningTaskCount}
+          >
+            {taskDots.map((d, i) => (
+              <span
+                key={i}
+                className={`absolute w-2 h-2 rounded-full bg-blue-400 ring-2 ring-background shadow-elevation-1 ${
+                  reduceMotion ? '' : 'animate-pulse'
+                }`}
+                style={{
+                  left: d.left,
+                  top: d.top,
+                  transform: 'translate(-50%, -50%)',
+                  animationDelay: `${d.delay}s`,
+                }}
+              />
+            ))}
           </span>
         )}
       </button>
