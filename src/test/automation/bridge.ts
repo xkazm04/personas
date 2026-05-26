@@ -1935,6 +1935,19 @@ const bridge: TestBridge = {
     return { success: true };
   },
 
+  /** Launch a real Dev Tools context scan for a project (the same command the
+   *  Skills/Context-Map UI calls). Lets a test trigger + verify a scan without
+   *  driving Athena's chat. Fire-and-forget; verify via the dev_contexts table. */
+  async scanProject(projectId: string, rootPath: string): Promise<{ success: boolean; scanId?: string; error?: string }> {
+    try {
+      const m = await import('@/api/devTools/devTools');
+      const r = await m.scanCodebase(projectId, rootPath);
+      return { success: true, scanId: r.scan_id };
+    } catch (e) {
+      return { success: false, error: String((e as Error)?.message ?? e) };
+    }
+  },
+
   /**
    * Adopt a team preset with optional per-role parameter overrides. Lets a test
    * drive `adopt_team_preset` (which the preview modal calls behind the UI)
