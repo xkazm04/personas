@@ -10925,6 +10925,8 @@
       "push_to_vault": "Enviar al Vault",
       "pull_from_vault": "Obtener del Vault",
       "select_personas_push": "Seleccionar personas para enviar",
+      "filter_personas": "Filtrar personas…",
+      "personas_selected_count": "{selected} de {total} seleccionados",
       "select_all": "Seleccionar todo",
       "no_personas_found": "No se encontraron personas",
       "last_push_result": "Resultado del Último Envío",

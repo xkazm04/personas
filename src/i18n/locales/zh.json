@@ -10925,6 +10925,8 @@
       "push_to_vault": "推送到保险库",
       "pull_from_vault": "从保险库拉取",
       "select_personas_push": "选择要推送的代理",
+      "filter_personas": "筛选角色…",
+      "personas_selected_count": "已选 {selected}/{total}",
       "select_all": "全选",
       "no_personas_found": "未找到代理",
       "last_push_result": "上次推送结果",

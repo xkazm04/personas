@@ -10925,6 +10925,8 @@
       "push_to_vault": "Push to Vault",
       "pull_from_vault": "Pull from Vault",
       "select_personas_push": "Select personas to push",
+      "filter_personas": "페르소나 필터…",
+      "personas_selected_count": "{total}개 중 {selected}개 선택",
       "select_all": "Select all",
       "no_personas_found": "No personas found",
       "last_push_result": "Last Push Result",

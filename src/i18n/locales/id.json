@@ -10925,6 +10925,8 @@
       "push_to_vault": "Dorong ke Brankas",
       "pull_from_vault": "Tarik dari Brankas",
       "select_personas_push": "Pilih persona untuk didorong",
+      "filter_personas": "Filter persona…",
+      "personas_selected_count": "{selected} dari {total} dipilih",
       "select_all": "Pilih semua",
       "no_personas_found": "Tidak ada persona ditemukan",
       "last_push_result": "Hasil Dorongan Terakhir",

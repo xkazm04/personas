@@ -11086,6 +11086,8 @@ export type Translations = {
       push_to_vault: string;
       pull_from_vault: string;
       select_personas_push: string;
+      filter_personas: string;
+      personas_selected_count: string;
       select_all: string;
       no_personas_found: string;
       last_push_result: string;

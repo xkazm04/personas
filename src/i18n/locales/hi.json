@@ -10925,6 +10925,8 @@
       "push_to_vault": "Vault पर पुश करें",
       "pull_from_vault": "Vault से पुल करें",
       "select_personas_push": "पुश करने के लिए पर्सोना चुनें",
+      "filter_personas": "व्यक्तित्व फ़िल्टर करें…",
+      "personas_selected_count": "{total} में से {selected} चयनित",
       "select_all": "सभी चुनें",
       "no_personas_found": "कोई पर्सोना नहीं मिला",
       "last_push_result": "अंतिम पुश परिणाम",

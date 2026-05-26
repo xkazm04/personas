@@ -10925,6 +10925,8 @@
       "push_to_vault": "Envoyer vers le coffre-fort",
       "pull_from_vault": "Récupérer depuis le coffre-fort",
       "select_personas_push": "Sélectionnez les personas à envoyer",
+      "filter_personas": "Filtrer les personas…",
+      "personas_selected_count": "{selected} sur {total} sélectionnés",
       "select_all": "Tout sélectionner",
       "no_personas_found": "Aucun persona trouvé",
       "last_push_result": "Dernier résultat d'envoi",

@@ -10925,6 +10925,8 @@
       "push_to_vault": "Zu Tresor pushen",
       "pull_from_vault": "Von Tresor pullen",
       "select_personas_push": "Personas zum Pushen auswählen",
+      "filter_personas": "Personas filtern…",
+      "personas_selected_count": "{selected} von {total} ausgewählt",
       "select_all": "Alle auswählen",
       "no_personas_found": "Keine Personas gefunden",
       "last_push_result": "Letztes Push-Ergebnis",

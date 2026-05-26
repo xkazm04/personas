@@ -10925,6 +10925,8 @@
       "push_to_vault": "Đẩy lên kho",
       "pull_from_vault": "Kéo từ kho",
       "select_personas_push": "Chọn tác nhân để đẩy",
+      "filter_personas": "Lọc nhân vật…",
+      "personas_selected_count": "Đã chọn {selected}/{total}",
       "select_all": "Chọn tất cả",
       "no_personas_found": "Không tìm thấy tác nhân",
       "last_push_result": "Kết quả đẩy cuối",

@@ -10925,6 +10925,8 @@
       "push_to_vault": "Загрузить в хранилище",
       "pull_from_vault": "Скачать из хранилища",
       "select_personas_push": "Выберите агентов для загрузки",
+      "filter_personas": "Фильтр персон…",
+      "personas_selected_count": "Выбрано {selected} из {total}",
       "select_all": "Выбрать все",
       "no_personas_found": "Агентов не найдено",
       "last_push_result": "Результат последней загрузки",

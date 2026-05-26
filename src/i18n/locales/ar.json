@@ -10925,6 +10925,8 @@
       "push_to_vault": "رفع إلى الخزنة",
       "pull_from_vault": "سحب من الخزنة",
       "select_personas_push": "اختر الوكلاء للرفع",
+      "filter_personas": "تصفية الشخصيات…",
+      "personas_selected_count": "{selected} من {total} محدد",
       "select_all": "تحديد الكل",
       "no_personas_found": "لم يتم العثور على وكلاء",
       "last_push_result": "نتيجة آخر رفع",

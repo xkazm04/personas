@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge, Settings } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge, Settings, Search } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -21,7 +21,7 @@ import SavedConfigsSidebar from '../SavedConfigsSidebar';
 import SyncResultCard, { type SyncResultSummary } from './SyncResultCard';
 
 export default function SyncPanel() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
@@ -34,6 +34,7 @@ export default function SyncPanel() {
   const personas = useAgentStore((s) => s.personas);
 
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
+  const [personaFilter, setPersonaFilter] = useState('');
   const [pushing, setPushing] = useState(false);
   const [pulling, setPulling] = useState(false);
   // Most recent result per direction, newest first. Persisted in state (not
@@ -41,6 +42,11 @@ export default function SyncPanel() {
   const [syncResults, setSyncResults] = useState<SyncResultSummary[]>([]);
   const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([]);
   const [conflicts, setConflicts] = useState<SyncConflict[]>([]);
+
+  const filteredPersonas = useMemo(() => {
+    const q = personaFilter.trim().toLowerCase();
+    return q ? personas.filter((p) => p.name.toLowerCase().includes(q)) : personas;
+  }, [personas, personaFilter]);
 
   const recordResult = useCallback((summary: SyncResultSummary) => {
     setSyncResults((prev) => [summary, ...prev.filter((r) => r.direction !== summary.direction)]);
@@ -62,8 +68,14 @@ export default function SyncPanel() {
   }, []);
 
   const selectAll = useCallback(() => {
-    setSelectedPersonaIds(new Set(personas.map((p) => p.id)));
-  }, [personas]);
+    // Select every currently-visible (filtered) persona, preserving any
+    // selections the active filter happens to hide.
+    setSelectedPersonaIds((prev) => {
+      const next = new Set(prev);
+      for (const p of filteredPersonas) next.add(p.id);
+      return next;
+    });
+  }, [filteredPersonas]);
 
   const deselectAll = useCallback(() => {
     setSelectedPersonaIds(new Set());
@@ -201,9 +213,12 @@ export default function SyncPanel() {
 
           {/* Persona Selection */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <p className="typo-label text-foreground/90">{t.plugins.obsidian_brain.select_personas_push}</p>
               <div className="flex items-center gap-2">
+                <span className="typo-caption text-foreground/90 tabular-nums">
+                  {tx(t.plugins.obsidian_brain.personas_selected_count, { selected: selectedPersonaIds.size, total: personas.length })}
+                </span>
                 <button onClick={selectAll} className="typo-caption text-violet-400/60 hover:text-violet-400 transition-colors focus-ring rounded px-1.5 py-0.5">
                   {t.plugins.obsidian_brain.select_all}
                 </button>
@@ -216,8 +231,20 @@ export default function SyncPanel() {
                 </button>
               </div>
             </div>
+            {personas.length > 6 && (
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
+                <input
+                  type="text"
+                  value={personaFilter}
+                  onChange={(e) => setPersonaFilter(e.target.value)}
+                  placeholder={t.plugins.obsidian_brain.filter_personas}
+                  className="w-full pl-8 pr-3 py-1.5 rounded-card bg-background/50 border border-primary/12 text-foreground typo-caption placeholder:text-foreground/40 focus-ring transition-all"
+                />
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
-              {personas.map((p) => (
+              {filteredPersonas.map((p) => (
                 <button
                   key={p.id}
                   onClick={() => togglePersona(p.id)}
@@ -232,6 +259,9 @@ export default function SyncPanel() {
               ))}
               {personas.length === 0 && (
                 <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_personas_found}</p>
+              )}
+              {personas.length > 0 && filteredPersonas.length === 0 && (
+                <p className="typo-caption text-foreground">{t.plugins.obsidian_brain.no_matches}</p>
               )}
             </div>
           </div>

@@ -10925,6 +10925,8 @@
       "push_to_vault": "Push do vaultu",
       "pull_from_vault": "Pull z vaultu",
       "select_personas_push": "Vyber persony k push",
+      "filter_personas": "Filtrovat persony…",
+      "personas_selected_count": "Vybráno {selected} z {total}",
       "select_all": "Vybrat vše",
       "no_personas_found": "Nenalezeny žádné persony",
       "last_push_result": "Výsledek posledního push",
