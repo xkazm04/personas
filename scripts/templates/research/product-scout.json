@@ -2,26 +2,26 @@
   "id": "product-scout",
   "schema_version": 3,
   "name": "Product Scout",
-  "description": "Scans configured email sources for implementation opportunities (new connectors, API version updates, tooling), enriches findings with web research, holds each for human triage, and learns which topic areas actually ship from accept/reject feedback.",
+  "description": "Autonomous scout that finds real implementation opportunities (new integrations, API/version updates, tooling) for your codebase's stack via web research — GitHub releases, changelogs, the web — and optionally your newsletter inbox. Produces a deduplicated triage queue, not noise. Works fully autonomously without an email connector.",
   "icon": "Radar",
   "color": "#0EA5E9",
   "category": [
     "research"
   ],
   "service_flow": [
-    "Email",
-    "Web Research",
+    "Codebase",
+    "Web",
     "Messages"
   ],
   "is_published": true,
   "payload": {
     "service_flow": [
-      "Email",
-      "Web Research",
+      "Codebase",
+      "Web",
       "Messages"
     ],
     "persona": {
-      "goal": "Turn the inbox of vendor newsletters and release emails into a clean triage queue of real implementation opportunities — nothing vague, nothing duplicated, nothing the human didn't ask to see.",
+      "goal": "Surface real implementation opportunities — new connectors, API/SDK updates, and notable tooling relevant to your codebase's stack — by scanning the web (GitHub releases, changelogs) and, if connected, your inbox. Nothing vague, nothing duplicated, nothing you didn't ask to see.",
       "identity": {
         "role": "Proactive intelligence agent that mines an email stream for integration opportunities and runs each through human triage before anything lands in a backlog.",
         "description": "Scans configured email senders for release notes, product announcements, and tool launches. Extracts URLs, enriches each with web research, classifies into three opportunity types (new connector, API version, tooling), presents triage cards for human accept/reject. Decisions train a topic-preference memory so each week surfaces fewer false positives."
@@ -69,7 +69,7 @@
           "auth_type": "oauth2",
           "role": "email_inbox",
           "category": "email",
-          "required": true,
+          "required": false,
           "credential_fields": [
             {
               "key": "provider",
@@ -101,7 +101,27 @@
               "required": true
             }
           ],
-          "setup_instructions": "1. Pick your email provider above.\n2. email: create an OAuth client at Google Cloud Console with gmail.readonly + gmail.modify scopes and complete consent. email: register an Entra app with Mail.Read + Mail.ReadWrite. IMAP: generate an app password at your provider.\n3. Paste the token and list the senders you want scanned.\n4. The persona only reads mail from the listed senders — no broader inbox access."
+          "setup_instructions": "1. Pick your email provider above.\n2. email: create an OAuth client at Google Cloud Console with gmail.readonly + gmail.modify scopes and complete consent. email: register an Entra app with Mail.Read + Mail.ReadWrite. IMAP: generate an app password at your provider.\n3. Paste the token and list the senders you want scanned.\n4. The persona only reads mail from the listed senders — no broader inbox access.",
+          "fallback_note": "Without an email connector, Product Scout finds implementation opportunities from web research (GitHub releases, changelogs, the web) grounded in your codebase — the inbox is an optional extra source."
+        },
+        {
+          "name": "codebase",
+          "label": "Codebase",
+          "auth_type": "local",
+          "role": "code_analysis",
+          "category": "development",
+          "required": false,
+          "fallback_note": "Without a codebase, Product Scout scopes its search from the focus_topics you provide instead of your real stack.",
+          "credential_fields": [
+            {
+              "key": "codebase_root",
+              "label": "Codebase root path",
+              "type": "text",
+              "placeholder": "/path/to/your/codebase",
+              "helpText": "Optional. Lets Product Scout scope opportunities to your actual tech stack.",
+              "required": false
+            }
+          ]
         }
       ],
       "notification_channels_default": [
@@ -151,6 +171,32 @@
     ],
     "adoption_questions": [
       {
+        "id": "aq_target_codebase",
+        "scope": "connector",
+        "connector_names": [
+          "codebase"
+        ],
+        "use_case_id": "uc_scan_and_enrich",
+        "use_case_ids": [
+          "uc_scan_and_enrich"
+        ],
+        "category": "configuration",
+        "question": "Which codebase should scope the opportunity search (so results match your stack)?",
+        "type": "select",
+        "optional": true,
+        "allow_custom": true,
+        "default": "codebase",
+        "maps_to": "use_cases[uc_scan_and_enrich].sample_input.target_codebase",
+        "variable_name": "target_codebase",
+        "context": "Optional. Pick a registered Codebase so Product Scout scopes its web search to your real tech stack. If unset, it uses the focus topics below.",
+        "dimension": "connector",
+        "dynamic_source": {
+          "service_type": "development",
+          "operation": "list_credentials",
+          "source": "vault"
+        }
+      },
+      {
         "id": "aq_senders",
         "scope": "capability",
         "use_case_ids": [
@@ -165,7 +211,8 @@
         "maps_to": "use_cases[uc_scan_and_enrich].sample_input.senders",
         "variable_name": "senders",
         "context": "One sender per line. Full email addresses (vendor@example.com) or domain wildcards (@domain.com). The scout only reads mail from listed senders — no broader inbox access.",
-        "dimension": "task"
+        "dimension": "task",
+        "optional": true
       },
       {
         "id": "aq_enrichment_depth",
@@ -227,7 +274,25 @@
         "maps_to": "persona.connectors[email].credential_fields[provider].value",
         "variable_name": "email_provider",
         "context": "Auto-detected from your Vault's email-category credentials (email, email, IMAP). Add one in Vault → Catalog if the list is empty.",
-        "dimension": "connector"
+        "dimension": "connector",
+        "optional": true
+      },
+      {
+        "id": "aq_focus_topics",
+        "scope": "capability",
+        "use_case_id": "uc_scan_and_enrich",
+        "use_case_ids": [
+          "uc_scan_and_enrich"
+        ],
+        "category": "domain",
+        "question": "What stack / topics should the search focus on (used when no codebase is bound)?",
+        "type": "text",
+        "optional": true,
+        "default": "",
+        "maps_to": "use_cases[uc_scan_and_enrich].sample_input.focus_topics",
+        "variable_name": "focus_topics",
+        "context": "Optional. e.g. \"Next.js, Stripe, SQLite, OAuth\". Seeds the opportunity search when no codebase connector is selected.",
+        "dimension": "task"
       }
     ],
     "persona_meta": {
