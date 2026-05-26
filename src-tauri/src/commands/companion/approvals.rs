@@ -197,7 +197,7 @@ pub async fn companion_approve_action(
         // "let me edit it first" path from the "decide everything for me"
         // path. Behavior is otherwise identical — the frontend's
         // UnifiedMatrixEntry consumes both via the same prefill slot.
-        "build_oneshot" => execute_build_oneshot(&params),
+        "build_oneshot" => execute_build_oneshot(&state, &app, &params).await,
         "run_arena" => execute_run_arena(&state, &app, &params).await,
         // `compose_dashboard` is now auto-fire (no approval card) —
         // handled by the dispatcher + session.rs. The executor below
@@ -963,16 +963,49 @@ fn execute_prefill_persona_create(params: &serde_json::Value) -> Result<ExecuteR
     })
 }
 
-/// Autonomous-build shortcut: resolve to the same prefill action with
-/// `auto_launch=true` and `mode="one_shot"`. Surfaces a chat message
-/// telling the user the build will run unattended so they know to expect
-/// the terminal notification rather than a questionnaire.
-fn execute_build_oneshot(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
+/// Cheap server-side draft name from an intent. The one-shot build's design
+/// pass renames the persona from its agent_ir once it resolves, so this is only
+/// the placeholder label the row carries while the build is in flight.
+fn derive_build_name(intent: &str) -> String {
+    let mut n: String = intent.split_whitespace().take(5).collect::<Vec<_>>().join(" ");
+    if n.chars().count() > 40 {
+        n = n.chars().take(40).collect();
+    }
+    if n.trim().is_empty() {
+        "New Persona".to_string()
+    } else {
+        n
+    }
+}
+
+/// Autonomous-build shortcut ("decide everything for me, ping me when done").
+///
+/// Unlike `prefill_persona_create` (interactive — the frontend opens the create
+/// screen for the user to review, then they launch), `build_oneshot` must run
+/// unattended. The original implementation returned a `PrefillPersonaCreate`
+/// client action with `auto_launch=true` and relied on `UnifiedBuildEntry`
+/// being MOUNTED to consume the prefill and fire the launch — so when the user
+/// was looking at the chat panel (the common case) the build silently never
+/// started. (Verified 2026-05-26: three `build_oneshot` approvals produced zero
+/// build_sessions, while interactive prefills built fine.)
+///
+/// The fix: start the build SERVER-SIDE here — create the draft persona and
+/// kick off a headless one-shot build session via the same engine path
+/// `start_build_session_headless` uses (no per-call Channel; progress flows on
+/// the global `build-session-event` emit + `get_build_status`). The returned
+/// client action is now a plain `Navigate` to Personas so the user can watch —
+/// NOT a prefill+auto_launch, which would double-build if the screen mounts.
+async fn execute_build_oneshot(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
     let intent = params
         .get("intent")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("build_oneshot: missing `intent`".into()))?
-        .trim();
+        .trim()
+        .to_string();
     if intent.is_empty() {
         return Err(AppError::Internal(
             "build_oneshot: `intent` must not be empty".into(),
@@ -981,21 +1014,64 @@ fn execute_build_oneshot(params: &serde_json::Value) -> Result<ExecuteResult, Ap
     let name = params
         .get("name")
         .and_then(|v| v.as_str())
-        .map(|s| s.trim().to_string());
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| derive_build_name(&intent));
     let companion_session_id = params
         .get("companion_session_id")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+
+    // 1. Create the draft persona (mirrors UnifiedBuildEntry.handleLaunch's
+    //    create step) so the build does not depend on the create screen.
+    let description: String = intent.chars().take(200).collect();
+    let persona = crate::db::repos::core::personas::create(
+        &state.db,
+        crate::db::models::CreatePersonaInput {
+            name,
+            system_prompt: "You are a helpful AI assistant.".to_string(),
+            project_id: None,
+            description: Some(description),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: Some(true),
+            max_concurrent: None,
+            timeout_ms: None,
+            model_profile: None,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            notification_channels: None,
+        },
+    )?;
+
+    // 2. Start the one-shot build headlessly. No-op Channel: events fire on the
+    //    global emit stream, exactly like start_build_session_headless.
+    let session_id = uuid::Uuid::new_v4().to_string();
+    let dummy_channel: tauri::ipc::Channel<serde_json::Value> =
+        tauri::ipc::Channel::new(|_response| Ok(()));
+    state.build_session_manager.start_session(
+        session_id,
+        persona.id.clone(),
+        intent,
+        dummy_channel,
+        state.db.clone(),
+        state.process_registry.clone(),
+        None,
+        None,
+        app.clone(),
+        None,
+        Some("one_shot".to_string()),
+        companion_session_id,
+    )?;
+
     Ok(ExecuteResult {
         message:
-            "Building autonomously — I'll let you know when it's ready (or surface what blocked it)."
+            "Building autonomously now — I'll let you know when it's ready (or surface what blocked it). Opening Personas so you can watch."
                 .to_string(),
-        client_action: Some(ClientAction::PrefillPersonaCreate {
-            intent: intent.to_string(),
-            name,
-            auto_launch: true,
-            mode: Some("one_shot".to_string()),
-            companion_session_id,
+        client_action: Some(ClientAction::Navigate {
+            route: "personas".to_string(),
         }),
     })
 }
