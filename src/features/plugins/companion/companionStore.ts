@@ -292,6 +292,37 @@ interface CompanionStore {
   athenaAssignments: AthenaAssignmentRef[];
   upsertAthenaAssignment: (ref: AthenaAssignmentRef) => void;
   dismissAthenaAssignment: (assignmentId: string) => void;
+
+  /**
+   * Athena guided-walkthrough state (ephemeral, session-scoped). A walkthrough
+   * is a registry-defined sequence of steps (see `guidance/walkthroughs.ts`);
+   * Athena triggers one by topic (`startGuidance`) and the runner
+   * (`guidance/useGuidanceRunner`) walks the steps, writing the per-step
+   * highlight + orb target that the glow overlay (`orb/AthenaGuideGlow`) and the
+   * orb (`orb/AthenaOrb`) read.
+   *
+   *  - `activeWalkthrough` — topic id of the running walkthrough, or null.
+   *  - `guidanceStepIndex` — current 0-based step.
+   *  - `guidancePlaying` — false = paused (auto-advance suspended).
+   *  - `guidanceHighlightTestId` — element the glow overlay rings this step.
+   *  - `orbGuideTarget` — viewport-px top-left the orb glides to this step.
+   *
+   * The store is intentionally dumb: it holds raw state, the runner owns the
+   * registry + per-step derivation. Cleared by `stopGuidance`.
+   */
+  activeWalkthrough: string | null;
+  guidanceStepIndex: number;
+  guidancePlaying: boolean;
+  guidanceHighlightTestId: string | null;
+  orbGuideTarget: { left: number; top: number } | null;
+  startGuidance: (topic: string) => void;
+  setGuidanceStep: (index: number) => void;
+  advanceGuidance: () => void;
+  pauseGuidance: () => void;
+  resumeGuidance: () => void;
+  stopGuidance: () => void;
+  setGuidanceHighlightTestId: (testId: string | null) => void;
+  setOrbGuideTarget: (target: { left: number; top: number } | null) => void;
 }
 
 /** Compact projection of an assignment + its current status, surfaced as
@@ -535,4 +566,34 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       };
     }),
   clearAllSteps: () => set({ streamingSteps: [], stepsByEpisodeId: {} }),
+
+  activeWalkthrough: null,
+  guidanceStepIndex: 0,
+  guidancePlaying: false,
+  guidanceHighlightTestId: null,
+  orbGuideTarget: null,
+  startGuidance: (topic) =>
+    set({
+      activeWalkthrough: topic,
+      guidanceStepIndex: 0,
+      guidancePlaying: true,
+      guidanceHighlightTestId: null,
+      orbGuideTarget: null,
+    }),
+  setGuidanceStep: (guidanceStepIndex) => set({ guidanceStepIndex }),
+  advanceGuidance: () =>
+    set((s) => ({ guidanceStepIndex: s.guidanceStepIndex + 1 })),
+  pauseGuidance: () => set({ guidancePlaying: false }),
+  resumeGuidance: () => set({ guidancePlaying: true }),
+  stopGuidance: () =>
+    set({
+      activeWalkthrough: null,
+      guidanceStepIndex: 0,
+      guidancePlaying: false,
+      guidanceHighlightTestId: null,
+      orbGuideTarget: null,
+    }),
+  setGuidanceHighlightTestId: (guidanceHighlightTestId) =>
+    set({ guidanceHighlightTestId }),
+  setOrbGuideTarget: (orbGuideTarget) => set({ orbGuideTarget }),
 }));
