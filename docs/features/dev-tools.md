@@ -17,7 +17,7 @@ project-selector banner sits above every tab except **Projects**.
 | --- | --- | --- |
 | Overview | `sub_overview` | Per-project metrics rollup. |
 | Projects | `sub_projects` | Register, edit, archive projects (see below). |
-| Goals | `sub_goals` | Track project goals (kanban / constellation / pulse views). **This is the home for goal management** — the Projects tab no longer embeds a goal board. |
+| Goals | `sub_goals` | Track project goals. A variant tab strip switches between four views: **Constellation** (force-directed graph), **Project Pulse** (triage + spotlight), **Dependency Flow** (dependency-aware swimlanes), and **Kanban** (your-turn / agent's-turn / done board). **This is the home for goal management** — the Projects tab no longer embeds a goal board. |
 | Context Map | `sub_context` | Codebase scan results: groups, contexts, entry points, keywords. |
 | Idea Scanner | `sub_scanner` | Generate improvement ideas from the codebase. |
 | Idea Triage | `sub_triage` | Accept / reject scanned ideas into the backlog. |

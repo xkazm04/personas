@@ -8,6 +8,7 @@ import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import * as devApi from '@/api/devTools/devTools';
 import { GoalProjectPulse } from './GoalProjectPulse';
 import { GoalDependencyFlow } from './GoalDependencyFlow';
+import GoalKanban from './GoalKanban';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -125,16 +126,20 @@ function nodeRadius(goal: DevGoal): number {
 // Variant switcher (prototype scaffolding — removed when a winner is picked)
 // ---------------------------------------------------------------------------
 
-type VariantId = 'baseline' | 'pulse' | 'flow';
-
-const VARIANTS: { id: VariantId; label: string; subtitle: string }[] = [
-  { id: 'baseline', label: 'Baseline', subtitle: 'Force-directed graph' },
-  { id: 'pulse',    label: 'Project Pulse', subtitle: 'Triage + spotlight' },
-  { id: 'flow',     label: 'Dependency Flow', subtitle: 'Kanban with deps' },
-];
+type VariantId = 'baseline' | 'pulse' | 'flow' | 'kanban';
 
 export default function GoalConstellation() {
   const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
+  // Variant strip — resolved from i18n so each view tab is translatable. The
+  // Kanban variant surfaces the standalone <GoalKanban> "your turn / agent's
+  // turn / done" board that was previously unreachable from this page.
+  const VARIANTS: { id: VariantId; label: string; subtitle: string }[] = [
+    { id: 'baseline', label: dl.goal_view_baseline_label, subtitle: dl.goal_view_baseline_sub },
+    { id: 'pulse',    label: dl.goal_view_pulse_label,    subtitle: dl.goal_view_pulse_sub },
+    { id: 'flow',     label: dl.goal_view_flow_label,     subtitle: dl.goal_view_flow_sub },
+    { id: 'kanban',   label: dl.goal_view_kanban_label,   subtitle: dl.goal_view_kanban_sub },
+  ];
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
@@ -233,6 +238,7 @@ export default function GoalConstellation() {
         />
       )}
       {variant === 'flow' && <GoalDependencyFlow goals={goals} dependencies={dependencies} />}
+      {variant === 'kanban' && <GoalKanban />}
     </div>
   );
 }

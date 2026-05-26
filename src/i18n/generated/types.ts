@@ -11905,6 +11905,14 @@ export type Translations = {
       kanban_nudge_decrease: string;
       kanban_nudge_increase: string;
       kanban_drop_here: string;
+      goal_view_baseline_label: string;
+      goal_view_baseline_sub: string;
+      goal_view_pulse_label: string;
+      goal_view_pulse_sub: string;
+      goal_view_flow_label: string;
+      goal_view_flow_sub: string;
+      goal_view_kanban_label: string;
+      goal_view_kanban_sub: string;
       sync_to_obsidian: string;
       tab_setup: string;
       tab_goals: string;
