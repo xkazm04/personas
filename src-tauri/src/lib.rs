@@ -537,10 +537,32 @@ pub fn run() {
 
             let mut st = startup_timing::StartupTimer::new();
 
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .map_err(|e| format!("Failed to resolve app data directory: {e}"))?;
+            // Data-dir override for parallel-CLI / multi-instance testing
+            // (multi-driver orchestration, ADR 2026-05-26). When
+            // PERSONAS_DATA_DIR is set, use it instead of the OS app-data dir so
+            // a cluster of test instances can share an ISOLATED DB + engine-leader
+            // lock (`engine-leader.lock` lives in this dir) without ever touching
+            // the user's real production data dir — the DB-isolation counterpart
+            // to PERSONAS_WEBHOOK_PORT / PERSONAS_VITE_PORT / PERSONAS_TEST_PORT.
+            // Unset (default) keeps unchanged production behavior. Created if
+            // missing.
+            let app_data_dir = match std::env::var("PERSONAS_DATA_DIR") {
+                Ok(dir) if !dir.trim().is_empty() => {
+                    let p = std::path::PathBuf::from(dir.trim());
+                    std::fs::create_dir_all(&p).map_err(|e| {
+                        format!("Failed to create PERSONAS_DATA_DIR {}: {e}", p.display())
+                    })?;
+                    tracing::info!(
+                        data_dir = %p.display(),
+                        "using PERSONAS_DATA_DIR override (multi-instance test isolation)"
+                    );
+                    p
+                }
+                _ => app
+                    .path()
+                    .app_data_dir()
+                    .map_err(|e| format!("Failed to resolve app data directory: {e}"))?,
+            };
 
             // Create CDC channel for reactive SQLite change notifications
             let (cdc_sender, cdc_receiver) = db::cdc::create_cdc_channel(512);
