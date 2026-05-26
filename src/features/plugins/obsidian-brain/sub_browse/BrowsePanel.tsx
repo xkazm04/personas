@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search } from 'lucide-react';
+import { Folder, FileText, ChevronRight, ChevronDown, ExternalLink, AlertTriangle, Search, Settings } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -86,6 +86,7 @@ export default function BrowsePanel() {
   const connected = useSystemStore((s) => s.obsidianConnected);
   const vaultName = useSystemStore((s) => s.obsidianVaultName);
   const vaultPath = useSystemStore((s) => s.obsidianVaultPath);
+  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const [tree, setTree] = useState<VaultTreeNode | null>(null);
   const [loading, setLoading] = useState(false);
@@ -146,6 +147,7 @@ export default function BrowsePanel() {
           subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
         />
       </div>
     );

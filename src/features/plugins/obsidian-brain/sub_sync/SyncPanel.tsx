@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge } from 'lucide-react';
+import { ArrowUpFromLine, ArrowDownToLine, AlertTriangle, CheckCircle2, XCircle, Clock, RefreshCw, GitMerge, Settings } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -29,6 +29,7 @@ export default function SyncPanel() {
   const setSyncRunning = useSystemStore((s) => s.setObsidianSyncRunning);
   const setLastSyncAt = useSystemStore((s) => s.setObsidianLastSyncAt);
   const setPendingConflicts = useSystemStore((s) => s.setObsidianPendingConflicts);
+  const setObsidianBrainTab = useSystemStore((s) => s.setObsidianBrainTab);
 
   const personas = useAgentStore((s) => s.personas);
 
@@ -157,6 +158,7 @@ export default function SyncPanel() {
           subtitle={t.plugins.obsidian_brain.no_vault_hint}
           iconColor="text-amber-400/80"
           iconContainerClassName="bg-amber-500/10 border-amber-500/20"
+          action={{ label: t.plugins.obsidian_brain.tab_setup, onClick: () => setObsidianBrainTab('setup'), icon: Settings }}
         />
       </div>
     );
