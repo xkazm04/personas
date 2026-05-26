@@ -1,7 +1,7 @@
 # Design — Obsidian as an optional knowledge mirror
 
-> **Status:** Proposed (2026-05-26). Awaiting approval — no code yet.
-> **Decision inputs:** data model = **Mirror** (SQLite/embeddings stay canonical; the vault is a dual-write, removable mirror). Gated on Obsidian presence; **off by default**.
+> **Status:** Approved in substance (2026-05-26) — the open questions are resolved (§9). Ready to implement P0→P3 on go-ahead.
+> **Decision inputs:** data model = **Mirror** (SQLite/embeddings stay canonical; the vault is a dual-write, removable mirror). Gated on Obsidian presence; **off by default**. **Single** Brain vault for all stores; **one** `obsidian_mirror` settings object; surfaced in the Setup → Sync Options card. All mirrors are **one-way (app → vault)** in v1. Athena's vault relationship is **on-demand external-tool access**, not a bulk memory mirror (§5.1).
 
 This doc specifies how three internal knowledge/memory stores — **Athena Brain**, **Execution Knowledge**, and **Research Lab** — can optionally project themselves into an Obsidian vault as human-readable, portable markdown, *only* for users who have Obsidian. It is a design for review, not an implementation.
 
@@ -62,20 +62,21 @@ All three features reuse the Brain plugin's existing sync machinery rather than 
 - **Sync log + 3-way merge** — reuse the existing `baseHash`/`appHash`/`vaultHash` merge and the sync-log table; add a per-domain `entity_type` discriminator (`athena_memory`, `execution_knowledge`, `research_experiment`).
 - **Dual-write hook** — on a canonical write, if the feature is enabled and a vault is configured, enqueue a background mirror write. Writes are queued (not inline on the hot path) so the canonical store never blocks on disk I/O.
 
-The concrete refactor is to generalize today's "sync memories / personas / connectors" into a small **mirror-domain** trait/abstraction so each of the three new stores plugs in as another domain with `(list_since, render_note, parse_note, apply_pullback)`.
+The concrete refactor is to generalize today's "sync memories / personas / connectors" into a small **mirror-domain** trait/abstraction so each store plugs in as another domain with `(list_since, render_note)` for the one-way v1. A `parse_note` / pull-back hook is reserved on the trait for a later two-way phase but is unused in v1.
 
 ---
 
 ## 5. Per-feature specs
 
-### 5.1 Athena Brain → `Athena/…`
+### 5.1 Athena Brain ↔ vault — on-demand external tool (not a bulk mirror)
 
-- **Source:** `companion/brain/` — the 5-tier cognitive memory model (working, episodic, semantic, procedural, identity) + typed-relations graph + provenance, backed by `companion_*` tables (e.g. `companion_procedural`) and embeddings.
-- **Mirror scope:** the **durable** tiers only — semantic facts, procedural know-how, identity, and episodic *summaries*. Volatile **working memory is excluded** (too churny to be useful as notes).
-- **Layout:** `Athena/memory/{semantic,procedural,episodic,identity}/<slug>.md`; typed relations rendered as `[[wikilinks]]` so Athena's mind becomes navigable in Obsidian's graph view.
-- **Migrate:** backfill existing durable `companion_*` rows on enable.
-- **Pull-back (optional, see Open Questions):** user edits to semantic/identity notes flow back as **provenance-tagged** updates and trigger re-embedding. Must respect the brain's provenance enforcement — a human edit is a first-class provenance source.
-- **Why it's last:** largest surface, the only two-way candidate, and embeddings stay canonical (the vault is the human-readable face, not the index).
+Per the approval pass, Athena does **not** wholesale-mirror its `companion_*` memory tables into the vault. The vault is instead an **external reference library Athena consults on demand** — when a task needs specific cases or analysis — plus a place it can deposit a *specific* durable finding worth keeping.
+
+- **Read (primary):** Athena can search and read the vault *during reasoning*, reusing the existing **Obsidian Memory** tool surface (`vault_search`, `vault_backlinks`, `vault_list_mocs`, read-note, …) via the companion's MCP bridge (`companion/mcp_bridge.rs`). The tool is gated on `obsidian_available()` + the Athena toggle, so with no Obsidian it is simply never offered to Athena.
+- **Write (selective, one-way):** when Athena produces a durable analysis or case worth retaining, it can write a *single* structured note into `Athena/…` (frontmatter + hash, same machinery). This is deliberate and per-finding — never a continuous dump of every `companion_*` row.
+- **Canonical store unchanged:** Athena's 5-tier memory (working, episodic, semantic, procedural, identity) + embeddings stay in SQLite as the source of truth (mirror principle). The vault is a consultable, human-readable adjunct.
+- **Working memory:** moot — with no bulk mirror, volatile working memory never reaches the vault.
+- **Why it's still last:** it touches the companion's tool/reasoning loop (`mcp_bridge.rs` + tool gating), but it is materially lighter than the originally-scoped bulk migration — no whole-brain backfill, no pull-back, no provenance-rewrite path.
 
 ### 5.2 Execution Knowledge → `Knowledge/…`
 
@@ -95,7 +96,7 @@ The concrete refactor is to generalize today's "sync memories / personas / conne
 
 ## 6. Schema & migrations
 
-- **Settings (additive, default off):** a single `obsidian_mirror` config object (or three keys `mirror_athena` / `mirror_execution_knowledge` / `mirror_research_lab`) in `app_settings`, plus a `mirror_offer_dismissed` flag.
+- **Settings (additive, default off):** a single `obsidian_mirror` config object in `app_settings` holding the three per-feature booleans (`athena`, `execution_knowledge`, `research_lab`) plus a `offer_dismissed` flag. One object → atomic read/write and a single gating fetch.
 - **Folder mapping:** additive fields on `ObsidianVaultConfig` (`athenaFolder`, `knowledgeFolder`, `researchFolder`) with safe defaults — old configs deserialize fine.
 - **Sync tracking:** extend the existing obsidian sync-log/hash store with the new `entity_type` discriminator. No new top-level table required.
 - **All migrations additive.** No destructive changes; disabling a feature is a runtime flag flip, not a migration.
@@ -116,16 +117,16 @@ The concrete refactor is to generalize today's "sync memories / personas / conne
 | **P0** | `obsidian_available()` resolver, settings flags, the mirror-domain abstraction, and the Setup-tab offer UI (all default off — no behaviour change for existing users) | low |
 | **P1** | **Research Lab** mirror (converge vault path, incremental hashing, migrate) — proves the abstraction | low |
 | **P2** | **Execution Knowledge** mirror (one-way write + backfill) | medium |
-| **P3** | **Athena Brain** mirror (durable tiers, backfill, optional pull-back) | high |
+| **P3** | **Athena Brain** vault tool — gate the Obsidian Memory tool surface for Athena (read) + selective one-way note write | medium |
 
 Each phase is independently shippable behind its off-by-default flag.
 
 ---
 
-## 9. Open questions (for the approval pass)
+## 9. Resolved decisions (approval pass, 2026-05-26)
 
-1. **Athena pull-back** — do we allow vault edits to rewrite Athena's semantic/identity memory in v1 (powerful, provenance-sensitive), or ship one-way first and add pull-back later?
-2. **Surface** — extend the existing **Sync Options** card with a "Knowledge mirror" group (recommended), or a distinct surface? This doc assumes the former.
-3. **Single vault vs per-feature vaults** — recommend a single Brain-configured vault for all three; confirm no need for per-feature vault selection.
-4. **Settings shape** — one `obsidian_mirror` object vs three discrete keys (leaning object for atomic read/write).
-5. **Working-memory exclusion** — confirm volatile working memory stays out of the Athena mirror.
+1. **Direction** — all mirrors are **one-way (app → vault)** in v1. No pull-back; vault edits do not flow back into any canonical store yet.
+2. **Surface** — extend the existing **Sync Options** card with a "Knowledge mirror" group (no new top-level surface).
+3. **Vault** — a **single** Brain-configured vault serves all three features; no per-feature vault selection.
+4. **Settings** — **one** `obsidian_mirror` object (§6), not discrete keys.
+5. **Athena** — the vault is an **on-demand external tool** Athena reads for specific cases/analysis, plus selective one-way note writes — **not** a bulk mirror of its memory tables (§5.1). Working-memory exclusion is therefore moot.
