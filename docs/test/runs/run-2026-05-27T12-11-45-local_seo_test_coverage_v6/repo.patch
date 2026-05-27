@@ -1,0 +1,42 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6e08918..896aa9c 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,25 @@ All notable changes to this project are documented here.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## [0.2.1] - 2026-05-27
++
++Documentation-only release. No runtime, dependency, or API changes — under `0.x`,
++non-breaking changes increment the patch version.
++
++### Added
++
++- **ADR-0001** documenting the test-harness and pure-logic coverage strategy
++  (`docs/adr/ADR-0001-test-harness-and-pure-logic-coverage.md`).
++- **Backlog brainstorm** captured in both Markdown and JSON
++  (`docs/backlog-brainstorm.md`, `docs/backlog-brainstorm.json`).
++- **Moonshots planning set** under `docs/harness/moonshots-2026-05-21/`
++  (`INDEX.md`, `moonshots.md`).
++
++### Changed
++
++- **README** tech-stack section refreshed to reflect the 0.2.0 platform
++  (Next.js 16 · React 19 · TypeScript 6 · Tailwind CSS 4 · ESLint 10).
++
+ ## [0.2.0] - 2026-05-27
+ 
+ Pre-1.0 breaking-platform migration. Under `0.x`, breaking changes increment the
+diff --git a/package.json b/package.json
+index 898c4fc..7c7d021 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "local-seo-agency",
+-  "version": "0.2.0",
++  "version": "0.2.1",
+   "private": true,
+   "type": "module",
+   "scripts": {

@@ -4,6 +4,24 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Runs 11–12 — RESOLVING THE IMPLEMENTER GAP: add Dev Clone to the SDLC team (2026-05-27) — ❌ "add the role" failed → ✅ TEAM MODE fix works
+
+**Why:** run-10 exposed that the 5-role SDLC preset (architect→reviewer→security→release→docs) has **no implementer** — the architect's own template hands off to "a delivery agent" that had been removed, so delegated build work was planned but never built. User direction: the original teams had Dev Clone (development capability) + product/backlog roles; extend the team and re-run. Personas are multi-capability (each use_case independently enable-able), so the fix is to add Dev Clone, not author a single-purpose agent.
+
+**Preset extended (commit b021fa06c):** `sdlc-lifecycle` is now 6 members — **Dev Clone added as the `engineer`** between architect and reviewer (architect→engineer→reviewer→security→release→docs→feedback). Adopted a fresh 6-role team pinned to the local-seo repo (had to pin Dev Clone manually — its codebase question maps to a connector credential, not `devProjectId`).
+
+**Run-11 (add-the-role only) — STILL didn't build.** 6/6 completed, but the repo was untouched (0 changes, no tests). Root cause, precisely: **Dev Clone's build capability (`uc_implementation`) is gated behind its own human-triage + GitHub-PR workflow** (`backlog_scan → triage → human-accept → implement-as-PR`). On a team handoff it fired **`uc_triage`** (which needs a human) instead of implementing. Compounding it, the **architect re-used its ADR from run-10's memory** and re-affirmed the plan rather than driving a build. Lesson: dropping a solo, human-in-the-loop agent into a team cascade does **not** make it a team implementer — its capabilities are wired to its own event chain, not the handoff.
+
+**Fix — TEAM MODE prompt.** Prepended a HIGHEST-PRIORITY instruction to Dev Clone (live persona `structured_prompt`+`system_prompt`, and baked into the `dev-clone.json` template): *a team handoff carrying an architect task breakdown is an approved work order → run `uc_implementation` DIRECTLY: implement each task on the codebase with file_write, run the test command to green, commit; no backlog scan, no human triage, no GitHub required; a plan/ADR is NOT an acceptable deliverable — leave real code/tests on disk.*
+
+**Run-12 (TEAM MODE) — ✅ RESOLVED, judged PRODUCTION (team 96), $3.73, 6/6.** Dev Clone (engineer, $0.60/174s) actually **built**: stood up the `node --test` harness, wired the `test` npm script, wrote `src/lib/format.test.ts` + `src/features/rankings/rank.test.ts` (**27 tests, all green** — real edge cases: U+2212 minus, half-expand rounding, NaN, negative-zero, large values), AND fixed the hidden-rank-drop defect the architect flagged ("Release v0.2.2: fix hidden rank drops + test harness"). The full cascade now delivers working software: plan → **implement (tests + bug fix)** → review → security → release → docs. The implementer gap is closed. (Nuance: Dev Clone committed on a `dev-clone/` branch per its native PR instinct — the work is real + on disk; a future tweak could keep team work on the working tree for cleaner §1.A grounding/diff capture.)
+
+**Also fixed this session (commit 994268a2): premature quiescence** — the handoff-aware quiescence held cleanly across all three 6-role runs ("no owed handoffs" gate).
+
+**Open follow-ups:** the architect re-using a stale memory ADR to re-plan (rather than letting the build proceed) is benign now that Dev Clone builds, but worth watching; the deleted **Artist (UI/brand)** and a true **product/UI backlog** role remain un-restored (Dev Clone's `uc_backlog_scan` covers code/tech-debt backlog only) — separate from the build loop, tracked for a later pass.
+
+---
+
 ## Runs 9–10 — parallel corpus: `immigration` ✅ PRODUCTION + `local-seo` 🔴 NOT-READY (2026-05-27) — caught the implementer-gap + a harness quiescence bug
 
 **Higher-traffic test (directive A):** ran immigration + local-seo **concurrently** (2 teams, up to 10 personas) on the validated default+medium composition.

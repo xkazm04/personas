@@ -1,0 +1,67 @@
+[
+  {
+    "id": "e43f32a7-a809-465c-8014-f8c5cdde02c8",
+    "execution_id": "e6bdb40d-1434-4255-95df-aef346206545",
+    "persona_id": "eec38c0d-465d-4f50-81ba-fb41a9ae6ed3",
+    "title": "Approve implementation of ADR-0001 test harness (Task 4 changes UI)",
+    "description": "ADR-0001 is scoped (5 tasks · 11 pts) and verified unimplemented. Ready to dispatch to the delivery/engineer agent. Task 4 fixes a real correctness defect — rank drops currently render as '—' (no change) and will start rendering as '↓ N', altering dashboard output for any down-move row. No such row exists in current mock data, so visible impact today is nil, but the rendered-output change should be approved before shipping.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T12:14:59.981186800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "bfc9319a-143a-44ee-9bfb-1cd090df76b8",
+    "execution_id": "b2e288db-1426-4d23-9dfc-3b5090e33e9f",
+    "persona_id": "c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "title": "Triage ADR-0001 Test-Harness Backlog — 5 candidates · 11 pts (xprize-local-seo-agency)",
+    "description": "Architecture handoff (ADR-0001) delivered 5 implementation candidates, all verified against the live tree as unimplemented. Per my constraints I will NOT start implementation without an explicit per-item triage accept. Accept fans out to implementation (focused PRs, one concern each, on autonomy=review_each_pr so every PR still waits for your merge approval). Note: Task adr1-t4 changes rendered dashboard output (rank drops will start showing '↓ N' instead of '—'); no down-move row exists in current mock data so visible impact today is nil, but it alters UI behavior. Codebase access OK, GitHub OK (0 open PRs), max_concurrent_prs defaulted to 1 (queue beyond that). Confirm autonomy_level + max_concurrent_prs if the conservative defaults are wrong.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T12:18:32.940139+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "e11fc8fb-b706-4fbf-abbc-146aa88cca76",
+    "execution_id": "33ab8aa4-f587-48b4-88d0-450c82eda873",
+    "persona_id": "c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "title": "Triage ADR-0001 Test-Harness Backlog — 5 candidates · 11 pts (xprize-local-seo-agency)",
+    "description": "ADR-0001 emitted 5 backlog candidates, all previously verified against the live tree as unimplemented (no test script, no tsx devDep, no rank.ts, zero *.test.* files; rank-drop defect confirmed at KeywordTable.tsx:43; U+2212 minus + unguarded NaN in format.ts). Per my constraints I will NOT begin implementation without an explicit per-item triage accept. Accepted items fan out to focused PRs (one concern each). Autonomy defaulted to review_each_pr (every PR still waits for your merge) and max_concurrent_prs=1 (overflow queues). HEADS-UP on t4: it is a genuine correctness fix but changes rendered dashboard output (down-moves render '↓ N' instead of '—'); no down-move row exists in current mock data so visible impact today is nil — approve the UI change knowingly. Confirm autonomy_level + max_concurrent_prs if the conservative defaults are wrong.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T12:19:12.927446600+00:00",
+    "use_case_id": "uc_triage"
+  },
+  {
+    "id": "690c7f8c-fa78-4621-bff0-5f1ec2102aea",
+    "execution_id": "07c79756-2fd9-427d-8996-048298a8ec6b",
+    "persona_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "title": "Code Review verdict: REQUEST_CHANGES — 4 findings (rankings + format, local-seo-agency)",
+    "description": "Reviewed the ADR-0001 target files against the live tree. Verdict is REQUEST_CHANGES, gated by a confirmed rank-drop correctness defect at KeywordTable.tsx:42. Three format.ts findings are latent (functions have no call sites yet). Accept/reject each finding so resolved items stay closed and aren't re-flagged next review.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T12:20:32.718517800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "2d46ecbb-84eb-4875-848b-d3391f674f19",
+    "execution_id": "21fa8e37-c514-4eb1-95f6-d71b2495f8db",
+    "persona_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "title": "Security Scan — 2 Medium findings to triage (local-seo-agency)",
+    "description": "All three scan phases ran cleanly. Two Medium findings need a fix decision; secrets and code-pattern phases were clean. Accept/reject each so resolved items aren't re-flagged on the next scan.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T12:23:21.105680300+00:00",
+    "use_case_id": null
+  }
+]

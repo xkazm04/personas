@@ -1,0 +1,24 @@
+{
+  "runId": "run-2026-05-27T12-35-01-local_seo_test_coverage_v6",
+  "team": "SDLC Delivery Team",
+  "teamId": "75714587-b1e0-4c7f-be9d-b0e75fd59d4c",
+  "sinceIso": "2026-05-27T12:34:01.162Z",
+  "counts": {
+    "executions": 6,
+    "executionsByStatus": {
+      "completed": 6
+    },
+    "personasExecuted": 6,
+    "reviews": 5,
+    "memories": 12,
+    "events": 17,
+    "eventsByStatus": {
+      "delivered": 17
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "logsCopied": 6
+  },
+  "cost_usd": 3.72983275,
+  "repoDiffBytes": 33583
+}
