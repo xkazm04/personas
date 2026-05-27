@@ -660,15 +660,33 @@ pub async fn run_execution(
                         }
                     }
 
-                    // Active knowledge — recent learnings, contextual facts
+                    // Active knowledge — recent learnings, contextual facts.
+                    // Phase 2 L1 hygiene: TOKEN-BUDGET the active section (not just a
+                    // count cap) so the injected prompt size is hard-bounded as
+                    // memory compounds — the direct fix for the measured run-over-run
+                    // cost bloat. `tiered.active` is already ordered best-first
+                    // (importance, access, recency), so we add until the budget is hit.
+                    const ACTIVE_MEM_BUDGET_CHARS: usize = 6000;
                     if !tiered.active.is_empty() {
                         mem_section.push_str("\n\n## Agent Memory — Recent Learnings\n\n");
                         mem_section.push_str("Context from recent work. Use to inform your analysis and avoid repeating past mistakes.\n\n");
+                        let mut used = 0usize;
+                        let mut included = 0usize;
                         for m in &tiered.active {
-                            mem_section.push_str(&format!(
+                            let line = format!(
                                 "- **{}** [{}] (importance: {}): {}\n",
                                 m.title, m.category, m.importance, m.content
-                            ));
+                            );
+                            if used + line.len() > ACTIVE_MEM_BUDGET_CHARS && included > 0 {
+                                mem_section.push_str(&format!(
+                                    "- …(+{} more lower-priority memories omitted to bound prompt size)\n",
+                                    tiered.active.len() - included
+                                ));
+                                break;
+                            }
+                            used += line.len();
+                            included += 1;
+                            mem_section.push_str(&line);
                         }
                     }
 

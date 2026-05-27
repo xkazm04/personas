@@ -1028,11 +1028,30 @@ pub fn run_lifecycle(pool: &DbPool, persona_id: &str) -> Result<(i64, i64), AppE
 
         // Archive: working memories older than 30 days with no accesses -> archive
         let cutoff = (now - chrono::Duration::days(30)).to_rfc3339();
-        let archived = tx.execute(
+        let mut archived = tx.execute(
             "UPDATE persona_memories
              SET tier = 'archive', updated_at = ?1
              WHERE persona_id = ?2 AND tier = 'working' AND access_count = 0 AND created_at < ?3",
             params![updated_at, persona_id, cutoff],
+        )? as i64;
+
+        // Phase 2 L1 hygiene: CAP the active tier. Active memories were never
+        // demoted, so the injected pool grew unbounded run-over-run (the measured
+        // cost bloat). Keep only the top ACTIVE_CAP active memories by value
+        // (importance, then reuse, then recency); archive the rest. Durable
+        // team knowledge now lives in the bounded L2 ledger + L3 graph, so a tight
+        // per-persona working-set is correct. `core` (user-pinned) is untouched.
+        const ACTIVE_CAP: i64 = 60;
+        archived += tx.execute(
+            "UPDATE persona_memories
+             SET tier = 'archive', updated_at = ?1
+             WHERE persona_id = ?2 AND tier = 'active' AND id NOT IN (
+                 SELECT id FROM persona_memories
+                 WHERE persona_id = ?2 AND tier = 'active'
+                 ORDER BY importance DESC, access_count DESC, created_at DESC
+                 LIMIT ?3
+             )",
+            params![updated_at, persona_id, ACTIVE_CAP],
         )? as i64;
 
         tx.commit()?;
