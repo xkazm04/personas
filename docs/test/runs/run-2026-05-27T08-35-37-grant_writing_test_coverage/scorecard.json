@@ -1,0 +1,103 @@
+{
+  "runId": "run-2026-05-27T08-35-37-grant_writing_test_coverage",
+  "team": "SDLC — Grant Writing Nonprofits",
+  "seed": "grant-writing/test-coverage",
+  "code_track": null,
+  "rubric_version": "1-judged",
+  "note": "Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.",
+  "deterministic_dims": {
+    "cascade_completion": 20,
+    "work_density": 0,
+    "handoff_health": 0,
+    "learning_loop": 0,
+    "grounding_pct": 75
+  },
+  "judge": {
+    "dims": {
+      "perPersonaGrades": [
+        0
+      ],
+      "minPersonaOutput": 0,
+      "meanJudge": 0,
+      "portfolioBalance": 0
+    },
+    "portfolio_balance": {
+      "labels_histogram": {
+        "test": 1,
+        "stabilization": 1,
+        "design": 1
+      },
+      "score": 0,
+      "note": "Unmeasurable at the run level (BROKEN — timeout). But the architect's killed-in-progress work was the strongest balance signal yet: on a test-coverage seed it wrote real tests AND fixed two real data bugs AND verified the whole suite. The blocker is the 5-min execution timeout (now bumped to 15 min), not the team."
+    },
+    "personas": [
+      {
+        "persona_id": "c9521c29-d625-4a5c-98e2-7c5b0e133cc3",
+        "role": "Solution Architect",
+        "work_labels": [
+          "test",
+          "stabilization",
+          "design"
+        ],
+        "dims": {
+          "correctness": 0,
+          "actionability": 0,
+          "specificity": 0,
+          "role_fidelity": 0
+        },
+        "evidence": [
+          "Execution TIMED OUT at 300s mid-task and was killed (status=failed) — scored 0 at the RUN level because a killed execution didn't close its goal and the cascade never proceeded. NOT a quality failure.",
+          "The work it DID produce before the kill was outstanding: found the highest-damage untested path (grantsGov.ts normalization), wrote 21 passing tests, found+fixed 2 real pre-existing defects (non-deterministic Math.random id fallback causing duplicate rows; toNum junk->$0 distorting scores), ran the full suite green (194 tests), wrote a grounded ADR. Had it not been killed, this would have scored very high on test+stabilization (exactly the balance the user wants)."
+        ]
+      }
+    ],
+    "judge_notes": "BROKEN — execution timeout (300s) killed a highly productive coding turn mid-task. Root cause + fix (timeout 300s->900s on all 35 team personas) in FINDINGS run-4. Re-run grant-writing/test-coverage to get a real verdict; expect the architect to finish and the cascade to proceed."
+  },
+  "team_score": 14,
+  "verdict": "BROKEN",
+  "facts": {
+    "executions": 1,
+    "completed": 0,
+    "failed": 1,
+    "cascade_stalled": true,
+    "value_delivered": 0,
+    "personasExecuted": 1,
+    "memberCount": 5,
+    "eventsDelivered": 0,
+    "reviews": 0,
+    "pendingReviews": 0,
+    "learnedMemories": 0,
+    "cost_usd": 0,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "README.md",
+      "total": 3,
+      "valid": 3,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "CHANGELOG.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/ADR-0001-test-the-grants-gov-normalization-boundary.md",
+      "total": 2,
+      "valid": 1,
+      "pct": 50,
+      "invalid": [
+        "grant-ingest/storage.ts"
+      ]
+    }
+  ],
+  "autonomy": {
+    "interventions": 0,
+    "pendingReviews": 0,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}

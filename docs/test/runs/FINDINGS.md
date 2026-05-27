@@ -4,6 +4,22 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Run 4 — `grant-writing/test-coverage` (2026-05-27, test-coverage seed) — 🔴 BROKEN, caught a 3rd blocker: the 5-min EXECUTION TIMEOUT is too short for code work
+
+**Headline:** another distinct, real blocker — **not the team's fault.** The grant-writing architect did *outstanding* work: it found the highest-damage untested path (`grantsGov.ts` normalization — the data front door), **wrote 21 unit tests**, **found and fixed 2 real pre-existing data-integrity defects** (a non-deterministic `Math.random()` id fallback that inserted duplicate rows instead of upserting; `toNum` returning `$0` for junk strings, distorting fit scores), ran the **full suite green (194 tests, +21)**, and wrote a thorough grounded ADR. Then the **execution was killed at exactly 300s** (`[TIMEOUT] Execution timed out, killing process` @ 300053ms) **mid-task** → status `failed` → success-gated cascade never started → BROKEN.
+
+`cost:0`/`model:null` on the row are **kill artifacts** (cost is recorded from the final assistant message, which never arrived); the work itself landed on disk (`repoChanged:true` — the new working-tree detection caught it) and the suite was green.
+
+**Root cause:** the persona `timeout_ms` default is **300000 (5 min)** — fine for a chat turn, far too short for autonomous *coding* (writing files + running a test suite). 34/35 SDLC team personas had it. A direct "works for weeks" blocker: productive coding turns get guillotined.
+
+**Fix applied:** bumped all 35 SDLC team personas to **900000 (15 min)** via `update_persona` (verified partial-update — only `timeout_ms` touched; matches the companion's 15-min `TURN_TIMEOUT` precedent). Re-run grant-writing to confirm the cascade completes.
+
+**Also:** fixed `bridge.invoke` "unparseable result" on large command returns (it bounded the stored payload — the command had succeeded; only the readback broke). §1.A confirmed working here too (the grant-writing repo builds/lints/tests green even mid-run).
+
+> The framework has now caught **three** distinct, real, "works-for-weeks" blockers — broken handoff wiring, a multi-byte truncation panic, and a too-short execution timeout — none of which a demo or a single happy-path run would have surfaced. This is exactly its job.
+
+---
+
 ## Run 3 — `ai-bookkeeper/amount-validation` RE-RUN after the engine fix (2026-05-27, code-track) — ✅ fix verified + the balance question answered
 
 **Headline:** the engine fix works (cascade **5/5 completed**, was 3/5+panic) AND the team **self-balances on code-track work** — the decisive answer to "is the team only pushing?": **no.** Given a bare feature seed with zero mention of tests/quality, the team:

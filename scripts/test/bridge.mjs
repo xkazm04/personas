@@ -44,7 +44,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  */
 export async function invoke(command, params = {}, { timeoutMs = 120000, pollMs = 1500 } = {}) {
   const id = 'inv_' + Math.random().toString(36).slice(2, 10);
-  const js = `(async()=>{let res;try{const r=await window.__TEST__.invokeCommand(${JSON.stringify(command)}, ${JSON.stringify(params)});res={ok:true,r};}catch(e){res={ok:false,e:String((e&&e.message)||e)};}let d=document.getElementById(${JSON.stringify(id)})||document.createElement('div');d.id=${JSON.stringify(id)};d.setAttribute('data-testid',${JSON.stringify(id)});d.textContent=JSON.stringify(res);document.body.appendChild(d);})()`;
+  // Bound the stored result: /query truncates long element text, which broke
+  // JSON.parse on large command returns (Persona/PersonaExecution objects) and
+  // surfaced as "unparseable result" even though the command SUCCEEDED. Store
+  // the full result only when it's small; otherwise just confirm ok + size.
+  const js = `(async()=>{let res;try{const r=await window.__TEST__.invokeCommand(${JSON.stringify(command)}, ${JSON.stringify(params)});let s;try{s=JSON.stringify(r);}catch{s=null;}res=(s&&s.length<2000)?{ok:true,r:r}:{ok:true,big:(s?s.length:0)};}catch(e){res={ok:false,e:String((e&&e.message)||e)};}let d=document.getElementById(${JSON.stringify(id)})||document.createElement('div');d.id=${JSON.stringify(id)};d.setAttribute('data-testid',${JSON.stringify(id)});d.textContent=JSON.stringify(res);document.body.appendChild(d);})()`;
   await evalJs(js);
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
