@@ -35,14 +35,18 @@ export const COMPOSITIONS = {
     release: {},
     docs: {},
   },
-  // Hypothesis (run-5 cost gradient: architect $1.85 ≫ docs $0.31):
-  //   - architect: default model, HIGH effort — reasoning + grounding critical
-  //     (run-3 found its ADR only 33% grounded; more reasoning should help).
-  //   - reviewer/security: default model, medium — must catch real bugs/vulns.
-  //   - release/docs: Haiku + LOW effort — mechanical (version bump, changelog,
-  //     tag, README sync); the cheapest/fastest roles, safe to downshift.
+  // Cost-optimized hypothesis. The apprenticeship BASELINE was already
+  // PRODUCTION (team 97) with every role at default+medium, and the
+  // grounding-fix (commit d0daad4) showed the architect's "weak grounding"
+  // was a measurement artifact, not a quality gap — so there is NO reason to
+  // spend MORE on the reasoning roles. The optimization is the other
+  // direction: hold the three reasoning/judgement roles at the default model +
+  // medium (they must catch real bugs/vulns and own the design), and downshift
+  // only the two mechanical roles (version bump / changelog / tag / README
+  // sync) to Haiku + low effort. The test: does aggregate quality hold while
+  // release+docs cost/time drop sharply?
   tuned: {
-    architect: { effort: 'high' },
+    architect: { effort: 'medium' },
     reviewer: { effort: 'medium' },
     security: { effort: 'medium' },
     release: { model: HAIKU, effort: 'low' },
