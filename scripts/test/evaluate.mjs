@@ -8,7 +8,7 @@
 // Usage: node scripts/test/evaluate.mjs --run <runId>
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 
@@ -64,19 +64,48 @@ const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 // path reads as ungrounded.
 const CITE_RE = /`?(\.{0,2}\/?[A-Za-z0-9_./-]+\.(?:tsx|ts|jsx|mjs|json|js|rs|py|go|java|css|sql|toml|yaml|yml|md|adr))(?::\d+(?:-\d+)?)?`?/g;
 
-function groundingForText(text, repoRoot, fileDir) {
+// Index of every real file in the repo (tracked + untracked-not-ignored), as
+// forward-slash repo-relative paths. New team artifacts are untracked, so we
+// include `--others --exclude-standard`. Used for suffix-match grounding.
+function repoFileIndex(repoRoot) {
+  if (!repoRoot) return [];
+  try {
+    const out = execFileSync('git', ['-C', repoRoot, 'ls-files', '--cached', '--others', '--exclude-standard'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+    return out.split('\n').map((s) => s.trim().replace(/\\/g, '/')).filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+function groundingForText(text, repoRoot, fileDir, repoFiles = []) {
   const cites = new Map(); // path -> exists
   let m;
   while ((m = CITE_RE.exec(text)) !== null) {
     const p = m[1];
     if (p.startsWith('http')) continue;
-    // Relative links (./x, ../x) resolve against the citing file's dir;
-    // repo-relative paths against repo root. Bare filenames (no dir) skipped.
-    let abs;
-    if (p.startsWith('./') || p.startsWith('../')) abs = join(fileDir || repoRoot, p);
-    else if (p.includes('/')) abs = join(repoRoot, p);
-    else continue;
-    if (!cites.has(p)) cites.set(p, existsSync(abs));
+    const isPathy = p.includes('/') || p.startsWith('./') || p.startsWith('../');
+    // Primary resolution: relative links (./x, ../x) against the citing file's
+    // dir; repo-relative paths against repo root.
+    let ok = false;
+    if (p.startsWith('./') || p.startsWith('../')) ok = existsSync(join(fileDir || repoRoot, p));
+    else if (p.includes('/')) ok = existsSync(join(repoRoot, p));
+    else ok = existsSync(join(repoRoot, p)); // bare filename at repo root (CHANGELOG.md, package.json)
+    // Suffix-match fallback: ADRs legitimately cite shorthand relative to their
+    // stated Area (`components/FunnelCard.tsx` for src/features/placements/...)
+    // or a sibling (`./conversion.ts`). These don't resolve against repo-root or
+    // the doc's own dir, but DO correspond to a real repo file. Match the cited
+    // tail as a path-suffix of an actual file; a hallucinated path matches none.
+    if (!ok) {
+      const tail = p.replace(/^(\.\.?\/)+/, '').replace(/^\/+/, '');
+      if (tail) ok = repoFiles.some((rf) => rf === tail || rf.endsWith('/' + tail));
+    }
+    // A bare token (no '/', no ./) that resolves to nothing is treated as prose,
+    // NOT a citation — this drops brand nouns that the extension regex catches
+    // (Next.js, Node.js, Vue.js) from the denominator instead of scoring them
+    // as ungrounded. Slashed/relative tokens are unambiguously path citations,
+    // so a non-resolving one IS a real hallucination and counts invalid.
+    if (!ok && !isPathy) continue;
+    if (!cites.has(p) || ok) cites.set(p, ok);
   }
   const total = cites.size;
   const valid = [...cites.values()].filter(Boolean).length;
@@ -143,11 +172,12 @@ function main() {
 
   // --- grounding gate (doc-track artifacts) ---
   const docFiles = repoRoot ? addedDocsFromPatch(join(dir, 'repo.patch')) : [];
+  const repoFiles = repoFileIndex(repoRoot);
   const grounding = [];
   for (const f of docFiles) {
     const abs = join(repoRoot, f);
     if (!existsSync(abs)) continue;
-    const g = groundingForText(readFileSync(abs, 'utf8'), repoRoot, join(repoRoot, f, '..'));
+    const g = groundingForText(readFileSync(abs, 'utf8'), repoRoot, join(repoRoot, f, '..'), repoFiles);
     grounding.push({ file: f, ...g });
   }
   const groundedDocs = grounding.filter((g) => g.total > 0);
