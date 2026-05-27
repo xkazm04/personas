@@ -1,0 +1,12 @@
+{
+  "id": "ai-bookkeeper/amount-validation",
+  "team": "SDLC — ai-bookkeeper",
+  "repo": "ai-bookkeeper",
+  "tracks": ["code", "doc"],
+  "exercises_roles": ["architect", "reviewer", "security", "docs"],
+  "held_out": false,
+  "goal": "Monetary amounts entered or imported into this app can currently be malformed (negative where it makes no sense, non-numeric, wrong decimal precision, or out-of-range), and that can corrupt downstream bookkeeping. As the Solution Architect, decide on and have the team implement input-boundary validation for monetary amounts, grounded in how this repository actually represents and ingests amounts today. Implement the change end-to-end so it is production-ready.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm test" },
+  "acceptance_hint": "A real, grounded validation change at the correct module(s), production-ready. NOTE (judge): the seed deliberately does NOT mention tests or edge-cases — whether the team adds test coverage, handles edge cases, and keeps the code clean ON ITS OWN is the portfolio-balance signal (§2.1).",
+  "notes": "First CODE-TRACK seed — the real balance test. Phrased neutrally on purpose: a feature ask with no instruction to test/cleanup, to measure whether the team self-balances (writes tests, handles edges, stays clean) rather than blindly pushing. Will mutate the ai-bookkeeper repo (accumulation accepted)."
+}
