@@ -59,5 +59,11 @@
   "status_draft_ready": "Draft ready",
   "status_completed": "Завершено",
   "status_failed": "Сбой",
-  "status_cancelled": "Отменено"
+  "status_cancelled": "Отменено",
+  "caption_pending": "Pending review",
+  "caption_input_many": "{count} need input",
+  "caption_draft_many": "{count} drafts ready",
+  "caption_queued_many": "{count} queued",
+  "open_reviews_with_count": "Open {count} review(s)",
+  "open_messages_with_count": "Open {count} message(s)"
 }
