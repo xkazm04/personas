@@ -16,7 +16,7 @@ That's feature + test + test-infra + design + docs + release in one autonomous c
 
 **Verdict: PRODUCTION (team 87, balance 86)** — but I flag it **borderline**, for two honest reasons:
 1. **The architect's ADR is only 33% grounded** (`docs/adr/0001-…md`: 4/12 cited paths resolve — shorthand paths missing the `src/features/` prefix). Notably weaker than ai-paralegal's architect (80–100%). This is the clearest **React-phase tuning target** so far (instruct full repo-relative paths).
-2. **Code-track §1.A checks are NOT yet wired** — the verdict rests on cascade + balance + *doc* grounding, but I have not yet run the repo's own `build`/`lint`/`test` on the actual diff (the rubric's strongest, ungameable code-track signal). Until that's wired, a code-track PRODUCTION is provisional on "does the code actually build & pass." **Next evaluator upgrade.**
+2. ~~Code-track §1.A checks NOT yet wired~~ **RESOLVED.** §1.A now runs the repo's own `build`/`lint`/`test` and **run-3 passed all three** (build=pass, lint=pass, test=pass — including the team's own `amount.test.ts`). A failing build/test now caps the verdict at NOT-READY. So run-3's PRODUCTION is now backed by a real green build, not just process+balance+doc-grounding — the verdict is no longer borderline on this axis.
 
 **Refinements identified:** exclude `.claude/` tooling files from grounding (they're not team deliverables and dragged the average down); wire §1.A code-track build/lint/test; fix `run.json` repoChanged to be working-tree-aware.
 

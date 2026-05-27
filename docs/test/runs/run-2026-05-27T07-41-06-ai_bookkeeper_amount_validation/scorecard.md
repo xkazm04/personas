@@ -12,6 +12,7 @@
 | Handoff health | 100 | 13/13 events delivered |
 | Learning loop | 100 | 4 reviews + 5 learned memories |
 | **Grounding gate** | 78 | cited file paths that actually exist, across 3 doc artifacts |
+| **Code-track §1.A** | ok | build=pass · lint=pass · test=pass (repo's own commands on post-run state) |
 
 ## Judge dimensions (agent-judge §1.B + §2.1)
 - **Per-persona output grades:** [78,78,78,78,71] (min 71)

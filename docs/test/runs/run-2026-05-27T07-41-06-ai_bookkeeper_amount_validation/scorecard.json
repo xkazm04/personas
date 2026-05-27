@@ -2,6 +2,17 @@
   "runId": "run-2026-05-27T07-41-06-ai_bookkeeper_amount_validation",
   "team": "SDLC — ai-bookkeeper",
   "seed": "ai-bookkeeper/amount-validation",
+  "code_track": {
+    "build": {
+      "status": "pass"
+    },
+    "lint": {
+      "status": "pass"
+    },
+    "test": {
+      "status": "pass"
+    }
+  },
   "rubric_version": "1-judged",
   "note": "Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.",
   "deterministic_dims": {

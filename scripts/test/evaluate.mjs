@@ -8,8 +8,35 @@
 // Usage: node scripts/test/evaluate.mjs --run <runId>
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { execSync } from 'node:child_process';
 import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
+
+/**
+ * §1.A code-track deterministic check — run the repo's OWN build/lint/test and
+ * record pass/fail. The strongest ungameable signal: eloquence can't fake a
+ * green build. Runs on the repo's current (post-run, accumulated) state — a
+ * team that leaves the repo unbuildable or tests failing is not production.
+ * Each command is timeout-bounded; null command → 'na'.
+ */
+function runRepoChecks(repoRoot, cmds, timeoutMs = 240000) {
+  const out = {};
+  for (const key of ['build', 'lint', 'test']) {
+    const cmd = cmds?.[key];
+    if (!cmd) {
+      out[key] = { status: 'na' };
+      continue;
+    }
+    try {
+      execSync(cmd, { cwd: repoRoot, timeout: timeoutMs, stdio: 'pipe', encoding: 'utf8' });
+      out[key] = { status: 'pass' };
+    } catch (e) {
+      const tail = String(e.stdout || '').slice(-400) + String(e.stderr || '').slice(-400);
+      out[key] = { status: e.signal === 'SIGTERM' || /ETIMEDOUT/.test(String(e)) ? 'timeout' : 'fail', tail: tail.trim().slice(-500) };
+    }
+  }
+  return out;
+}
 
 const arg = (n, f = null) => {
   const i = process.argv.indexOf(n);
@@ -115,6 +142,15 @@ function main() {
   const groundedDocs = grounding.filter((g) => g.total > 0);
   const groundingPct = groundedDocs.length ? Math.round(groundedDocs.reduce((s, g) => s + g.pct, 0) / groundedDocs.length) : null;
 
+  // --- §1.A code-track checks (run the repo's own build/lint/test) ---
+  const isCodeTrack = Array.isArray(run.seed?.tracks) && run.seed.tracks.includes('code');
+  const skipChecks = process.argv.includes('--no-build');
+  let codeTrack = null;
+  if (isCodeTrack && repoRoot && run.seed?.repo_cmds && !skipChecks) {
+    codeTrack = runRepoChecks(repoRoot, run.seed.repo_cmds);
+  }
+  const codeTrackFailed = codeTrack && Object.values(codeTrack).some((c) => c.status === 'fail');
+
   // --- autonomy cost (this topology: reviews left pending = leaning on a human) ---
   const pendingReviews = reviews.filter((r) => r.status === 'pending').length;
   const autonomy_interventions = run.summary.counts.approvals + pendingReviews; // approvals auto-handled + reviews awaiting human
@@ -160,11 +196,18 @@ function main() {
     ? band(teamScore, minPersonaOutput ?? 0, autonomyOk, healthOk)
     : band(detTeam, groundingPct ?? 60, autonomyOk, healthOk);
   if (cascadeStalled) verdict = cap(verdict, 'NOT-READY');
+  // §1.A cap: a code-track run that leaves the repo's build OR tests FAILING is
+  // not production, no matter how eloquent the design — the strongest
+  // ungameable gate. (lint fail is a WARN, not a cap.)
+  if (codeTrack && (codeTrack.build?.status === 'fail' || codeTrack.test?.status === 'fail')) {
+    verdict = cap(verdict, 'NOT-READY');
+  }
 
   const scorecard = {
     runId,
     team: run.summary.team,
     seed: run.seed.id,
+    code_track: codeTrack,
     rubric_version: judge ? '1-judged' : '1-deterministic',
     note: judge
       ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'
@@ -215,6 +258,9 @@ function main() {
   L.push(`| Handoff health | ${handoff_health} | ${eventsDelivered}/${events.length} events delivered |`);
   L.push(`| Learning loop | ${learning_loop} | ${reviews.length} reviews + ${scorecard.facts.learnedMemories} learned memories |`);
   L.push(`| **Grounding gate** | ${groundingPct ?? 'n/a'} | cited file paths that actually exist, across ${groundedDocs.length} doc artifacts |`);
+  if (codeTrack) {
+    L.push(`| **Code-track §1.A** | ${codeTrackFailed ? 'FAIL' : 'ok'} | build=${codeTrack.build.status} · lint=${codeTrack.lint.status} · test=${codeTrack.test.status} (repo's own commands on post-run state) |`);
+  }
   if (judge) {
     L.push('');
     L.push('## Judge dimensions (agent-judge §1.B + §2.1)');
@@ -248,7 +294,7 @@ function main() {
   }
   writeFileSync(join(dir, 'scorecard.md'), L.join('\n') + '\n', 'utf8');
 
-  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}`);
+  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}`);
   console.log(`wrote ${join(dir, 'scorecard.md')}`);
 }
 
