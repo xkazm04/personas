@@ -840,7 +840,7 @@ fn build_advisory_context(pool: &crate::db::DbPool, persona_id: &str) -> serde_j
                 if let Some(ref err) = e.error_message {
                     // Truncate error to keep context compact
                     let truncated = if err.len() > 200 {
-                        &err[..200]
+                        crate::utils::text::truncate_on_char_boundary(&err, 200)
                     } else {
                         err.as_str()
                     };

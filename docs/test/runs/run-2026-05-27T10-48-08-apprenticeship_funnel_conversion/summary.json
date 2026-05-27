@@ -1,0 +1,24 @@
+{
+  "runId": "run-2026-05-27T10-48-08-apprenticeship_funnel_conversion",
+  "team": "SDLC — Apprenticeship Placement",
+  "teamId": "3134bb7a-857e-43da-9517-c59111004fba",
+  "sinceIso": "2026-05-27T10:47:08.362Z",
+  "counts": {
+    "executions": 5,
+    "executionsByStatus": {
+      "completed": 5
+    },
+    "personasExecuted": 5,
+    "reviews": 0,
+    "memories": 10,
+    "events": 15,
+    "eventsByStatus": {
+      "delivered": 15
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "logsCopied": 5
+  },
+  "cost_usd": 2.19574065,
+  "repoDiffBytes": 270
+}

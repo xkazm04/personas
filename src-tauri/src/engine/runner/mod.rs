@@ -30,6 +30,8 @@ use super::event_registry::event_name;
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::communication::manual_reviews as manual_review_repo;
+use crate::db::repos::resources::team_memories as team_memory_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
@@ -658,15 +660,33 @@ pub async fn run_execution(
                         }
                     }
 
-                    // Active knowledge — recent learnings, contextual facts
+                    // Active knowledge — recent learnings, contextual facts.
+                    // Phase 2 L1 hygiene: TOKEN-BUDGET the active section (not just a
+                    // count cap) so the injected prompt size is hard-bounded as
+                    // memory compounds — the direct fix for the measured run-over-run
+                    // cost bloat. `tiered.active` is already ordered best-first
+                    // (importance, access, recency), so we add until the budget is hit.
+                    const ACTIVE_MEM_BUDGET_CHARS: usize = 6000;
                     if !tiered.active.is_empty() {
                         mem_section.push_str("\n\n## Agent Memory — Recent Learnings\n\n");
                         mem_section.push_str("Context from recent work. Use to inform your analysis and avoid repeating past mistakes.\n\n");
+                        let mut used = 0usize;
+                        let mut included = 0usize;
                         for m in &tiered.active {
-                            mem_section.push_str(&format!(
+                            let line = format!(
                                 "- **{}** [{}] (importance: {}): {}\n",
                                 m.title, m.category, m.importance, m.content
-                            ));
+                            );
+                            if used + line.len() > ACTIVE_MEM_BUDGET_CHARS && included > 0 {
+                                mem_section.push_str(&format!(
+                                    "- …(+{} more lower-priority memories omitted to bound prompt size)\n",
+                                    tiered.active.len() - included
+                                ));
+                                break;
+                            }
+                            used += line.len();
+                            included += 1;
+                            mem_section.push_str(&line);
                         }
                     }
 
@@ -706,6 +726,76 @@ pub async fn run_execution(
         }
     } else {
         prompt_text // skip for session resumes -- context already loaded
+    };
+
+    // Inject recent human-review decisions so the agent learns from past
+    // feedback (the human-feedback channel of the learning loop). Previously
+    // `get_recent_resolved` had no call site — reviews were resolved but never
+    // fed back into subsequent runs. Skip on session resume (context loaded).
+    let prompt_text = if !is_session_resume {
+        match manual_review_repo::get_recent_resolved(&pool, &persona.id, 14, 5) {
+            Ok(reviews) if !reviews.is_empty() => {
+                let mut fb = String::from(
+                    "\n\n## Prior Human Feedback — Apply These Decisions\n\nA human reviewed your recent work. Repeat what was approved; do NOT repeat what was rejected. These decisions override your defaults.\n\n",
+                );
+                for r in &reviews {
+                    fb.push_str(&format!(
+                        "- [{}] **{}**: {}",
+                        r.status.as_str(),
+                        r.title,
+                        r.description.as_deref().unwrap_or("")
+                    ));
+                    if let Some(notes) = r.reviewer_notes.as_deref() {
+                        if !notes.trim().is_empty() {
+                            fb.push_str(&format!(" — reviewer said: {notes}"));
+                        }
+                    }
+                    fb.push('\n');
+                }
+                logger.log(&format!(
+                    "[LEARNING] Injected {} prior human-review decision(s)",
+                    reviews.len()
+                ));
+                format!("{prompt_text}{fb}")
+            }
+            Ok(_) => prompt_text,
+            Err(e) => {
+                logger.log(&format!("[LEARNING] Failed to load prior reviews: {e}"));
+                prompt_text
+            }
+        }
+    } else {
+        prompt_text
+    };
+
+    // Structured shared-team knowledge (L2 — docs/test/structured-shared-memory-design.md):
+    // inject a COMPACT digest of the team's shared, bounded ledger (decisions /
+    // constraints / glossary in `team_memories`) so every member shares one source
+    // of truth instead of N per-persona dupes. Bounded by team-memory eviction +
+    // the top-N cap here, so it does NOT bloat the prompt as knowledge compounds.
+    // (Previously team_memories were injected only on the pipeline path, never the
+    // event-cascade path the SDLC team runs on.) Skip on session resume.
+    let prompt_text = if !is_session_resume {
+        match persona.home_team_id.as_deref() {
+            Some(team_id) if !team_id.is_empty() => match team_memory_repo::get_for_injection(&pool, team_id, 15) {
+                Ok(tm) if !tm.is_empty() => {
+                    let mut sec = String::from("\n\n## Team Shared Knowledge — Decisions & Constraints\n\nThe team's shared ledger from prior work. Treat decisions as settled (don't re-litigate) and constraints as hard rules. Build on these.\n\n");
+                    for m in &tm {
+                        sec.push_str(&format!("- [{}] **{}**: {}\n", m.category, m.title, m.content));
+                    }
+                    logger.log(&format!("[TEAM-MEM] Injected {} shared team decisions/constraints", tm.len()));
+                    format!("{prompt_text}{sec}")
+                }
+                Ok(_) => prompt_text,
+                Err(e) => {
+                    logger.log(&format!("[TEAM-MEM] Failed to load team memory: {e}"));
+                    prompt_text
+                }
+            },
+            _ => prompt_text,
+        }
+    } else {
+        prompt_text
     };
 
     trace.end_span(&prompt_span, None, None, None, None);
@@ -875,17 +965,23 @@ pub async fn run_execution(
             ]
         })
         .unwrap_or_default();
-    match super::cli_mcp_config::install_mcp_sidecar(
+    let mcp_installed = match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
         None,
         bridge_api_key.as_deref(),
         pinned_dev_project.as_deref(),
     ) {
-        Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
-        Ok(false) => {}
-        Err(e) => logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}")),
-    }
+        Ok(true) => {
+            logger.log("[mcp] wrote personas-mcp --mcp-config (drive_*, personas_*, obsidian_vault_* tools)");
+            true
+        }
+        Ok(false) => false,
+        Err(e) => {
+            logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}"));
+            false
+        }
+    };
 
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
@@ -1096,6 +1192,18 @@ pub async fn run_execution(
                 cli_args
                     .env_overrides
                     .push(("TRACESTATE".to_string(), state));
+            }
+
+            // Pass personas-mcp to the headless run. Claude Code loads MCP servers
+            // ONLY from `--mcp-config` (or an approved `.mcp.json`), NOT from
+            // `.claude/settings.json` — so without this flag the persona has no MCP
+            // tools (drive_*, personas_*, obsidian_vault_*). `--strict-mcp-config`
+            // makes this the sole MCP source for deterministic, sandboxed tooling.
+            if mcp_installed {
+                let cfg = super::cli_mcp_config::mcp_config_path(&exec_dir);
+                cli_args.args.push("--mcp-config".to_string());
+                cli_args.args.push(cfg.display().to_string());
+                cli_args.args.push("--strict-mcp-config".to_string());
             }
 
             if candidate_idx > 0 {
@@ -1810,8 +1918,14 @@ pub async fn run_execution(
                                 if let Some(last) = tool_steps.last_mut() {
                                     if last.ended_at_ms.is_none() {
                                         let now = start_time.elapsed().as_millis() as u64;
+                                        // Char-safe truncation: `&s[..500]` panics
+                                        // when byte 500 lands inside a multi-byte UTF-8
+                                        // char (≤, $, em-dash, currency symbols — common
+                                        // in real tool output). That panic failed a
+                                        // persona execution and stalled an autonomous
+                                        // team cascade (eval framework run-2 finding).
                                         last.output_preview = if content_preview.len() > 500 {
-                                            format!("{}...", &content_preview[..500])
+                                            format!("{}...", content_preview.chars().take(500).collect::<String>())
                                         } else {
                                             content_preview.clone()
                                         };
@@ -2317,7 +2431,7 @@ pub async fn run_execution(
             }
         };
         let content = if assistant_text.len() > 50_000 {
-            format!("{}...\n[truncated at 50KB]", &assistant_text[..50_000])
+            format!("{}...\n[truncated at 50KB]", crate::utils::text::truncate_on_char_boundary(&assistant_text, 50000))
         } else {
             assistant_text.clone()
         };

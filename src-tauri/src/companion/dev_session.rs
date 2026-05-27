@@ -545,7 +545,7 @@ fn finalize_from_disk(
 
     if !success {
         let trimmed = if stderr_text.len() > 500 {
-            format!("{}…", &stderr_text[..500])
+            format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr_text, 500))
         } else {
             stderr_text.clone()
         };

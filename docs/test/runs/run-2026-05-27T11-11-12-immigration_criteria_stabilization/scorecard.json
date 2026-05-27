@@ -1,0 +1,177 @@
+{
+  "runId": "run-2026-05-27T11-11-12-immigration_criteria_stabilization",
+  "team": "SDLC — Immigration Paperwork",
+  "seed": "immigration/criteria-stabilization",
+  "code_track": null,
+  "rubric_version": "1-judged",
+  "note": "Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 100,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 100
+  },
+  "judge": {
+    "dims": {
+      "perPersonaGrades": [
+        96,
+        92,
+        87,
+        88,
+        85
+      ],
+      "minPersonaOutput": 85,
+      "meanJudge": 90,
+      "portfolioBalance": 90
+    },
+    "portfolio_balance": {
+      "score": 90,
+      "note": "Textbook stabilization cascade: a real correctness fix + regression test (architect) → independent re-verification (reviewer) → security audit → versioned release → docs sync, all value_delivered. The team prioritized stability over features exactly as the seed asked, added the repo's first test, and preserved existing behavior. No over-scoping.",
+      "labels_histogram": {
+        "stabilization": 1,
+        "test": 1,
+        "review": 1,
+        "security": 1,
+        "release-ops": 1,
+        "docs": 1
+      }
+    },
+    "personas": [
+      {
+        "role": "architect",
+        "work_labels": [
+          "stabilization",
+          "test"
+        ],
+        "dims": {
+          "correctness": 96,
+          "actionability": 95,
+          "specificity": 96,
+          "role_fidelity": 96
+        },
+        "evidence": [
+          "Found a sharp, real correctness defect: CriteriaTable.tsx hardcoded '1 partial' while computing 'met' from data — the eligibility badge silently lies the moment criteria data changes (a 2nd Partial or a status typo). Highest-priority status-aggregation bug, exactly as the seed asked.",
+          "Fixed it properly: extracted a pure summarizeCriteria aggregator (excludes malformed rows rather than miscounting), wired the table, added a 4-case regression test (tsx --test, all pass), and verified tsc clean + render byte-identical for current data (7 qualifying/1 partial/8 total). Behavior-preserving stabilization."
+        ]
+      },
+      {
+        "role": "reviewer",
+        "work_labels": [
+          "review"
+        ],
+        "dims": {
+          "correctness": 92,
+          "actionability": 88,
+          "specificity": 92,
+          "role_fidelity": 95
+        },
+        "evidence": [
+          "Independently re-ran the regression test (4/4), tsc --noEmit (clean), and verified the Badge tone contract (every tone passed is valid) + data sanity — did not trust the handoff.",
+          "Confirmed the fix removes the hardcoded count and derives all counts/tone from the aggregator; APPROVE with the no-regression render verified."
+        ]
+      },
+      {
+        "role": "security",
+        "work_labels": [
+          "security"
+        ],
+        "dims": {
+          "correctness": 86,
+          "actionability": 85,
+          "specificity": 88,
+          "role_fidelity": 90
+        },
+        "evidence": [
+          "Full 3-phase scan (dependency audit, secret detection, risky-pattern), honestly noted no dedup baseline (first scan).",
+          "Found the transitive postcss XSS CVE (GHSA-qx2v-qp2m-jg93) via next, ranked Medium with a reachability caveat; 0 Critical/High on a static frontend — proportionate, not alarmist."
+        ]
+      },
+      {
+        "role": "release",
+        "work_labels": [
+          "release-ops"
+        ],
+        "dims": {
+          "correctness": 88,
+          "actionability": 85,
+          "specificity": 88,
+          "role_fidelity": 90
+        },
+        "evidence": [
+          "Correctly identified two distinct unreleased change sets (the half-done 0.2.0 platform migration + the new stabilization fix) and reasoned the bump from git history/tags/version/changelog state.",
+          "On the default (Sonnet) model — contrast with the apprenticeship Haiku release that committed+stashed destructively; the default-model release handled versioning without losing the architect's work."
+        ]
+      },
+      {
+        "role": "docs",
+        "work_labels": [
+          "docs"
+        ],
+        "dims": {
+          "correctness": 85,
+          "actionability": 84,
+          "specificity": 84,
+          "role_fidelity": 88
+        },
+        "evidence": [
+          "Delivered real documentation work (value_delivered, not a no-op) — synced README/CHANGELOG for the stabilization change.",
+          "Confirms the re-enabled Docs Steward functions post circuit-breaker recovery; reported value_delivered (the template-fix intent), keeping it off the breaker."
+        ]
+      }
+    ],
+    "judge_notes": "PRODUCTION. All roles default model + medium effort. Grounding 100% (ADR/CHANGELOG/README all real), build/lint/typecheck green, 4/4 regression test. The sharpest defect-find of the corpus so far (silent eligibility-badge miscount). Total $3.25/942s. Confirms the default composition is production-grade on a stabilization seed AND that the re-enabled docs steward now delivers. Contrast with local-seo (same session): a test-coverage seed phrased as team-delegation ('have the team stand up...') produced only an architect PLAN with no implementer to build it → NOT-READY — a team-composition/seed-phrasing finding, not a model issue."
+  },
+  "team_score": 97,
+  "verdict": "PRODUCTION",
+  "facts": {
+    "executions": 5,
+    "completed": 5,
+    "failed": 0,
+    "cascade_stalled": false,
+    "value_delivered": 5,
+    "personasExecuted": 5,
+    "memberCount": 5,
+    "eventsDelivered": 15,
+    "reviews": 3,
+    "pendingReviews": 3,
+    "learnedMemories": 5,
+    "cost_usd": 3.249073,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "CHANGELOG.md",
+      "total": 3,
+      "valid": 3,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "README.md",
+      "total": 5,
+      "valid": 5,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/0001-criteria-status-aggregation.md",
+      "total": 6,
+      "valid": 6,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/backlog-brainstorm.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 3,
+    "pendingReviews": 3,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}

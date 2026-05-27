@@ -1143,7 +1143,7 @@ async fn run_cli(
 
     if !status.success() {
         let trimmed = if stderr_text.len() > 600 {
-            format!("{}…", &stderr_text[..600])
+            format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr_text, 600))
         } else {
             stderr_text.clone()
         };

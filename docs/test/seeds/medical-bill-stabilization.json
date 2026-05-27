@@ -1,0 +1,12 @@
+{
+  "id": "medical-bill/stabilization-triage",
+  "team": "SDLC — Medical Bill Negotiator",
+  "repo": "medical-bill-negotiator",
+  "tracks": ["code", "doc"],
+  "exercises_roles": ["architect", "reviewer", "security"],
+  "held_out": false,
+  "goal": "This codebase has accumulated correctness and robustness risks. As the Solution Architect, have the team identify the single highest-priority correctness or robustness defect in this repository (grounded in the actual code — error handling, edge cases, unsafe assumptions), and fix it production-ready. Prioritize stability over new features.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm test" },
+  "acceptance_hint": "A real, grounded stabilization fix (bug/edge-case/error-handling) at the correct module, production-ready, ideally with a regression test. Judge: does the team verify the fix doesn't break existing behavior?",
+  "notes": "Stabilization seed — exercises the stabilization/bugfix work type (§2.1 balance)."
+}

@@ -138,6 +138,8 @@ Queued messages live in `companionStore` (`queuedMessages` + `enqueue/shift/remo
 
 On the model side, an always-on **"delegate, don't inline"** prompt addendum (`prompt.rs` `delegation_addendum`) tells Athena to kick long work off as a background task and reply immediately ("I'm pulling that — back in a moment") rather than holding a silent turn open for minutes. The activity tray + orb dots are what make that delegation observable, so the three phases compose: Athena delegates → the task shows in the tray/orb → the user keeps talking while it runs.
 
+**Long in-turn tool calls as tasks.** Some work happens *inside* Athena's CLI turn — a `WebFetch`, a `Bash` command, a `Task` subagent, any globally-configured MCP tool — which the backend can't offload (it runs in the opaque subprocess). To keep those from looking like a frozen turn, `extractToolEvents` parses `tool_use` / `tool_result` events from the CLI stream and `CompanionPanel` times each call; one that stays pending past a threshold (`IN_TURN_TOOL_THRESHOLD_MS`, 6s) is promoted to a synthetic task in `companionStore.inTurnToolJobs` (kept separate from `jobsById` so it never pins in-chat — the streaming-phase chip already shows the in-bubble view). It surfaces in the activity tray + as an orb dot, completes on its `tool_result`, and the map clears at turn end. Fast tools never reach the threshold, so they never flicker; `TodoWrite` is excluded (it has its own checklist UI).
+
 ## Token-level streaming & the operational thread
 
 Two surfaces keep a long or autonomous turn from going silent between the user's message and the final reply.

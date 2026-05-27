@@ -141,6 +141,52 @@ export function phaseLabel(t: T, tx: Tx, phase: StreamPhase): string {
   return phase.detail ? `${base} · ${phase.detail}` : base;
 }
 
+/** A tool call starting / finishing within Athena's turn, pulled from the
+ *  CLI stream so a long-running one can be surfaced as a Task. `id` is the
+ *  CLI's `tool_use` block id, matched against the `tool_use_id` on the
+ *  later `tool_result`. */
+export interface ToolEvents {
+  started: { id: string; name: string; detail?: string }[];
+  finished: string[];
+}
+
+/**
+ * Parse a CLI line for tool-call lifecycle events: `tool_use` blocks on an
+ * `assistant` line start a tool; `tool_result` blocks on a `user` line
+ * finish one (keyed by `tool_use_id`). Used by CompanionPanel to time
+ * in-turn tool calls and surface the slow ones as tasks. Returns empty
+ * arrays for lines that carry neither (the common case).
+ */
+export function extractToolEvents(line: string): ToolEvents {
+  const out: ToolEvents = { started: [], finished: [] };
+  try {
+    const json = JSON.parse(line);
+    const t = json?.type;
+    if (t === 'assistant') {
+      const blocks = json?.message?.content;
+      if (Array.isArray(blocks)) {
+        for (const b of blocks) {
+          if (b?.type === 'tool_use' && typeof b.id === 'string' && typeof b.name === 'string') {
+            out.started.push({ id: b.id, name: b.name, detail: toolDetail(b.name, b.input) });
+          }
+        }
+      }
+    } else if (t === 'user') {
+      const blocks = json?.message?.content;
+      if (Array.isArray(blocks)) {
+        for (const b of blocks) {
+          if (b?.type === 'tool_result' && typeof b.tool_use_id === 'string') {
+            out.finished.push(b.tool_use_id);
+          }
+        }
+      }
+    }
+  } catch {
+    // Non-JSON line — no tool events.
+  }
+  return out;
+}
+
 export function extractStreamPhase(line: string): StreamPhase | null {
   try {
     const json = JSON.parse(line);

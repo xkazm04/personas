@@ -16,17 +16,18 @@ export function ActivityTray() {
   const { t, tx } = useTranslation();
   const [collapsed, setCollapsed] = useState(false);
   const jobsById = useCompanionStore((s) => s.jobsById);
+  const inTurnToolJobs = useCompanionStore((s) => s.inTurnToolJobs);
 
   const running = useMemo(
     () =>
-      Object.values(jobsById)
+      [...Object.values(jobsById), ...Object.values(inTurnToolJobs)]
         .filter((j) => j.status === 'queued' || j.status === 'running')
         // running first, then by recency (newest queued on top)
         .sort((a, b) => {
           if (a.status !== b.status) return a.status === 'running' ? -1 : 1;
           return (b.createdAt || '').localeCompare(a.createdAt || '');
         }),
-    [jobsById],
+    [jobsById, inTurnToolJobs],
   );
 
   if (running.length === 0) return null;

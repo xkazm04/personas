@@ -1,0 +1,20 @@
+{
+  "rubric_version": "1",
+  "judged_by": "Claude Code agent (framework judge, §7)",
+  "judged_at": "2026-05-27",
+  "personas": [
+    { "persona_id": "c9521c29-d625-4a5c-98e2-7c5b0e133cc3", "role": "Solution Architect", "work_labels": ["test","stabilization","design"],
+      "dims": { "correctness": 84, "actionability": 84, "specificity": 82, "role_fidelity": 86 },
+      "evidence": ["Completed this time (15-min timeout). On a test-coverage seed it added real tests (grantsGov.test.ts, getMatches.test.ts) for the highest-damage untested path + an ADR; the work targets exactly the right gap (the data-ingest normalization boundary)."] },
+    { "persona_id": "3f3e9a66", "role": "Code Reviewer", "work_labels": ["review"], "dims": { "correctness": 80, "actionability": 80, "specificity": 80, "role_fidelity": 82 }, "evidence": ["completed value_delivered"] },
+    { "persona_id": "59cd09d3", "role": "Security Sentinel", "work_labels": ["security"], "dims": { "correctness": 80, "actionability": 80, "specificity": 80, "role_fidelity": 82 }, "evidence": ["completed value_delivered"] },
+    { "persona_id": "5222c7b7", "role": "Release Manager", "work_labels": ["release/ops","docs"], "dims": { "correctness": 80, "actionability": 80, "specificity": 80, "role_fidelity": 84 }, "evidence": ["completed value_delivered; CHANGELOG + 0.2.0 release"] },
+    { "persona_id": "ae32f6c4", "role": "Docs Steward", "work_labels": ["docs"], "dims": { "correctness": 70, "actionability": 70, "specificity": 70, "role_fidelity": 75 }, "evidence": ["no_input_available — honest no-op (docs already current)"] }
+  ],
+  "portfolio_balance": {
+    "labels_histogram": { "test": 1, "stabilization": 1, "design": 1, "review": 1, "security": 1, "release/ops": 1, "docs": 1 },
+    "score": 82,
+    "note": "Strong balance on a test-coverage seed: the team added real tests for the riskiest path + reviewed + audited + released. CAVEAT: §1.A caught an INTERMITTENT test failure (storage.test.ts — a zero-fit grant leaking into the needs-enrichment list, likely an order-dependent in-memory-DB pollution and/or a side-effect of the toNum→null fix). It passed on retry this run, but the flakiness is a real quality concern — the team's test work may have introduced or exposed order-dependence. Investigate before certification."
+  },
+  "judge_notes": "Timeout fix VERIFIED: cascade 5/5 (was 1/5 killed at 5 min). Build+lint+test green this run. Verdict PRODUCTION-quality but watch the intermittent storage.test.ts failure (§1.A flaky-retry now flags this class). Not certified (1 run, non-held-out, + the flakiness)."
+}

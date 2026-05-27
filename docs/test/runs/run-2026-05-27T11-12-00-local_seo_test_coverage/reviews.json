@@ -1,0 +1,54 @@
+[
+  {
+    "id": "1ece59bd-c3c1-4dd7-ae47-2c4deeda3ede",
+    "execution_id": "0761dc94-bb2a-4946-bebe-b5218e840415",
+    "persona_id": "8380308a-aead-49bb-a09a-8c2d2c243a89",
+    "title": "Approve test-coverage plan + the rank-drop defect fix (ADR-0001)",
+    "description": "ADR-0001 proposes a node --test + tsx runner, format.ts edge-case tests, and extracting rankDelta() while fixing a latent defect: rank DROPS currently render as '—' (identical to no-change), hiding regressions. Task 4 would change rendered output for down-move rows. Task 5 asks for a decision on whether NaN formatting ('$NaN'/'NaN%') should be guarded. Both are product-facing behavior changes worth a human OK before a delivery agent ships them.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:15:42.789963+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3ad519fb-beeb-4df4-930b-71a6658feab5",
+    "execution_id": "2811f1f9-688c-4066-9053-7d3d3f0a5087",
+    "persona_id": "07d58839-4dcf-4061-91f1-5c9191583409",
+    "title": "Approve rank-drop fix + NaN guard before delivery (Code Review: REQUEST_CHANGES)",
+    "description": "Review verified two product-facing behavior changes the delivery agent would ship: (1) HIGH — KeywordTable.tsx renders rank drops as '—', identical to no-change, hiding regressions; fix renders down-moves as '↓ N' in danger color, changing rendered output for any future down-move row. (2) MEDIUM — format.ts NaN leaks ('$NaN'/'NaN%') because there is no finite guard; fix returns '—'. Both alter UI output and warrant a human OK.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:18:47.533919500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "c1433b6b-997d-40de-8023-14ca5de4edfa",
+    "execution_id": "eb502ea8-0e77-4996-9533-8927095a2190",
+    "persona_id": "43ac369b-af2a-46e6-a682-b25b03415c0e",
+    "title": "Security findings — 3 Medium remediations for local-seo-agency",
+    "description": "First security scan completed (0 Critical, 0 High, 3 Medium, 1 Low informational). Each Medium has a concrete fix. Approve which remediations to action.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:22:30.263929200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "6b418c6c-f387-40d1-ae0c-d5d679114d8c",
+    "execution_id": "d94de9eb-97fa-4579-bd09-e5dcde0126e3",
+    "persona_id": "831c1bdb-3f66-4b89-a447-961b0bbeadbc",
+    "title": "Publish release v0.2.0 — local-seo-agency",
+    "description": "Release v0.2.0 prepared: package.json bumped 0.1.0->0.2.0, CHANGELOG [0.2.0] confirmed, annotated tag v0.2.0 created locally on merge commit 2cd0814. The bump (MINOR) reflects a pre-1.0 breaking-platform migration. The version bump + changelog are uncommitted and the tag is local-only — approve before publishing.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:26:06.221679600+00:00",
+    "use_case_id": null
+  }
+]

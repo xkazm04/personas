@@ -58,7 +58,7 @@ On t7 (Gmail mark-as-read), Athena correctly said *"Gmail's wired for reading th
 
 ### G1. `use_connector` narration without OP (turn 6, gmail)
 
-User asked Athena to summarize the last unread email. Gmail IS wired. Athena replied: *"Gmail's actually wired — pulling your recent threads now, will summarize the latest unread one when the result lands."* 
+User asked Athena to summarize the last unread email. Gmail IS wired. Athena replied: *"Gmail's actually wired — pulling your recent threads now, will summarize the latest unread one when the result lands."*
 
 But the turn summary shows: `approvals=0, chatCards=0, backgroundJobs=0`. **No `use_connector` op was emitted.** The job never queued. The summary won't land because the call never ran.
 

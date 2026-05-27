@@ -239,7 +239,7 @@ pub(super) async fn run_session(
     let initial_prompt: Arc<str> =
         if let (Some(ref wf_json), Some(ref parser_json)) = (&workflow_json, &parser_result_json) {
             let wf_preview = if wf_json.len() > 8000 {
-                &wf_json[..8000]
+                crate::utils::text::truncate_on_char_boundary(&wf_json, 8000)
             } else {
                 wf_json.as_str()
             };

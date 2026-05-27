@@ -1,0 +1,490 @@
+{
+  "runId": "run-2026-05-27T10-05-22-apprenticeship_funnel_conversion",
+  "seed": {
+    "id": "apprenticeship/funnel-conversion",
+    "team": "SDLC — Apprenticeship Placement",
+    "repo": "apprenticeship-placement",
+    "tracks": [
+      "code"
+    ],
+    "exercises_roles": [
+      "architect",
+      "reviewer",
+      "security",
+      "release",
+      "docs"
+    ],
+    "held_out": false,
+    "goal": "The placement funnel in src/features/placements (data.ts `funnel`, rendered by FunnelCard) shows raw stage counts but no conversion math. As the Solution Architect, design and implement a real, typed conversion-rate capability: a pure function in src/lib (or src/features/placements/lib) that computes stage-to-stage and overall sourced→hired conversion percentages from the funnel data, with correct handling of edge cases (empty funnel, a later stage exceeding an earlier one, division by zero). Wire it into FunnelCard so each stage shows its conversion %. Keep it production-ready: typed inputs/outputs, no NaN/Infinity leaking to the UI, and a unit test covering the edge cases.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm run typecheck"
+    },
+    "acceptance_hint": "A pure, typed conversion function grounded in the real funnel shape, defensively handling empty/degenerate input (no NaN/Infinity in UI), wired into FunnelCard, with a real unit test. Judge: is the math correct and the edge-case handling genuine, not happy-path?",
+    "notes": "Feature seed — exercises the feature work type (§2.1 balance) on a no-test-infra Next.js repo; the team must stand up a test runner to satisfy the regression-test ask."
+  },
+  "startedAt": "2026-05-27T10:05:22.763Z",
+  "endedAt": "2026-05-27T10:22:42.057Z",
+  "windowMin": 25,
+  "sinceIso": "2026-05-27T10:04:22.762Z",
+  "entry": {
+    "personaId": "3198f070-ee2f-4fbb-a449-9fb16f04b1b4",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "32312fb62d1936b5",
+  "configHashPost": "32312fb62d1936b5",
+  "configUnchanged": true,
+  "repoHeadPre": "331e9d7ff8f67716e642d651c2980a1c876956d4",
+  "repoHeadPost": "331e9d7ff8f67716e642d651c2980a1c876956d4",
+  "repoDirtyPre": false,
+  "repoChangedDuringRun": true,
+  "repoCommittedDuringRun": false,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-05-27T10:05:25.789Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:05:40.804Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:05:55.818Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:06:10.835Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:06:25.852Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:06:40.870Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:06:55.887Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:07:10.904Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:07:25.918Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:07:40.935Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:07:55.953Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:08:10.970Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:08:25.987Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:08:41.002Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:08:56.019Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:09:11.036Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:09:26.052Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:09:41.055Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:09:56.069Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T10:10:11.087Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:10:26.102Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:10:41.121Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:10:56.136Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:11:11.154Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:11:26.171Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:11:41.186Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:11:56.204Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:12:11.220Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:12:26.238Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:12:41.254Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:12:56.271Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:13:11.287Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T10:13:26.305Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:13:41.321Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:13:56.335Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:14:11.353Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:14:26.371Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:14:41.389Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:14:56.405Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:15:11.419Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:15:26.438Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:15:41.455Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:15:56.469Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:16:11.473Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:16:26.488Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T10:16:41.503Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:16:56.522Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:17:11.538Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:17:26.553Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:17:41.570Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:17:56.587Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:18:11.604Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:18:26.620Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:18:41.639Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:18:56.656Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:19:11.671Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:19:26.690Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:19:41.706Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T10:19:56.723Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:20:11.739Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:20:26.754Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:20:41.771Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:20:56.789Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:21:11.807Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:21:26.823Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:21:41.840Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:21:56.856Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:22:11.873Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:22:26.889Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T10:22:41.906Z",
+      "execs": 5,
+      "running": 0,
+      "distinctPersonas": 5
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-05-27T10-05-22-apprenticeship_funnel_conversion",
+    "team": "SDLC — Apprenticeship Placement",
+    "teamId": "3134bb7a-857e-43da-9517-c59111004fba",
+    "sinceIso": "2026-05-27T10:04:22.762Z",
+    "counts": {
+      "executions": 5,
+      "executionsByStatus": {
+        "completed": 5
+      },
+      "personasExecuted": 5,
+      "reviews": 3,
+      "memories": 10,
+      "events": 14,
+      "eventsByStatus": {
+        "delivered": 14
+      },
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "logsCopied": 5
+    },
+    "cost_usd": 3.18061975,
+    "repoDiffBytes": 14137
+  }
+}

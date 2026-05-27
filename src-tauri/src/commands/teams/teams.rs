@@ -41,6 +41,20 @@ pub fn create_team(
     repo::create(&state.db, input)
 }
 
+/// Wire (or repair) a team's intra-team handoff from its connection graph:
+/// for each non-feedback edge S→T, create a `chain` trigger (emitter) + an
+/// `event_listener` (receiver) on T so S's completion fires T. Idempotent —
+/// only missing triggers are created. See `engine::team_handoff`. Used to fix
+/// teams adopted before handoff-from-connections wiring existed.
+#[tauri::command]
+pub fn repair_team_handoff(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+) -> Result<crate::engine::team_handoff::HandoffWireResult, AppError> {
+    require_auth_sync(&state)?;
+    crate::engine::team_handoff::wire_team_handoff(&state.db, &team_id)
+}
+
 #[tauri::command]
 pub fn update_team(
     state: State<'_, Arc<AppState>>,

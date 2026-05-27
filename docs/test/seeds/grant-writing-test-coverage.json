@@ -1,0 +1,12 @@
+{
+  "id": "grant-writing/test-coverage",
+  "team": "SDLC — Grant Writing Nonprofits",
+  "repo": "grant-writing-nonprofits",
+  "tracks": ["code", "doc"],
+  "exercises_roles": ["architect", "reviewer"],
+  "held_out": false,
+  "goal": "Test coverage in this repository is uneven. As the Solution Architect, have the team identify the most critical under-tested code path (the one whose failure would do the most damage), and add meaningful, real test coverage for it — tests that would actually catch regressions, not trivial assertions.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm test" },
+  "acceptance_hint": "Real tests for a genuinely critical path, that pass and would catch regressions. Judge: are the tests meaningful (cover edge cases / failure modes) or box-ticking?",
+  "notes": "Test-coverage seed — exercises the test work type (§2.1 balance) directly."
+}

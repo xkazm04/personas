@@ -1,0 +1,24 @@
+{
+  "runId": "run-2026-05-27T11-12-00-local_seo_test_coverage",
+  "team": "SDLC — Local SEO Agency",
+  "teamId": "f1a5be07-9e53-4d61-82a6-9437a86798e9",
+  "sinceIso": "2026-05-27T11:11:00.496Z",
+  "counts": {
+    "executions": 5,
+    "executionsByStatus": {
+      "completed": 5
+    },
+    "personasExecuted": 5,
+    "reviews": 4,
+    "memories": 10,
+    "events": 13,
+    "eventsByStatus": {
+      "delivered": 13
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "logsCopied": 5
+  },
+  "cost_usd": 2.6034740000000003,
+  "repoDiffBytes": 75971
+}

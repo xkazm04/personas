@@ -114,7 +114,7 @@ pub async fn synthesize(
         let status = resp.status();
         let body_text = resp.text().await.unwrap_or_default();
         let snippet = if body_text.len() > 400 {
-            format!("{}…", &body_text[..400])
+            format!("{}…", crate::utils::text::truncate_on_char_boundary(&body_text, 400))
         } else {
             body_text
         };

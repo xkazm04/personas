@@ -1,0 +1,212 @@
+{
+  "runId": "run-2026-05-26T22-35-40-ai_paralegal_citation_validator_adr",
+  "team": "SDLC — ai-paralegal",
+  "seed": "ai-paralegal/citation-validator-adr",
+  "rubric_version": "1-judged",
+  "note": "Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 100,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 97
+  },
+  "judge": {
+    "dims": {
+      "perPersonaGrades": [
+        90,
+        88,
+        91,
+        88,
+        88
+      ],
+      "minPersonaOutput": 88,
+      "meanJudge": 89,
+      "portfolioBalance": 78
+    },
+    "portfolio_balance": {
+      "labels_histogram": {
+        "design": 1,
+        "docs": 3,
+        "review": 1,
+        "security": 1,
+        "release/ops": 1,
+        "stabilization": 0,
+        "test": 0,
+        "cleanup": 0,
+        "feature": 0
+      },
+      "score": 78,
+      "note": "Given a feature-DESIGN seed, the team self-balanced toward QUALITY: it spontaneously ran a real security audit, found+flagged bugs, gated a risky release, and synced docs — the OPPOSITE of blind feature-pushing (0 features shipped). Healthy diversity of work types. Docked because it identified bugs/debt but resolved none (deferred to backlog/reviews/memories — appropriate for a doc-track 'don't write code' seed) and wrote no tests. The real balance test (push vs test/cleanup) needs a CODE-TRACK feature seed; this run is reassuring evidence the team won't blindly push."
+    },
+    "personas": [
+      {
+        "persona_id": "9f6a4574-3fc9-48d5-99c6-4a55b6c0012c",
+        "role": "Solution Architect",
+        "work_labels": [
+          "design",
+          "docs"
+        ],
+        "dims": {
+          "correctness": 90,
+          "actionability": 88,
+          "specificity": 90,
+          "role_fidelity": 92
+        },
+        "evidence": [
+          "Found the real gap: 'verifyCitations() does existence verification (CourtListener lookup), and any citation that doesn't match CITATION_REGEX is neither found nor failed — it silently passes through the gate.' Grounded in src/lib/citations/verify.ts, CITATION_REGEX, branded VerifiedLegalText (CULTURE.md §3).",
+          "ADR-0004 gives module(s) to change, validation approach, edge cases, 26 story points / 8 tasks, and a named open business decision (hard-block vs warn). Declined to write code per the seed — correct scope."
+        ],
+        "note": "ADR-0004 grounding 80% (two shorthand paths missing src/features/ prefix); ADR-0001/2/3 at 100%. Genuinely production-grade design reasoning; one ADR refutes a flawed premise with grep evidence."
+      },
+      {
+        "persona_id": "8c48eb91-4edb-4c7f-a875-675d291558fd",
+        "role": "Code Reviewer",
+        "work_labels": [
+          "review",
+          "stabilization"
+        ],
+        "dims": {
+          "correctness": 88,
+          "actionability": 85,
+          "specificity": 88,
+          "role_fidelity": 90
+        },
+        "evidence": [
+          "Intellectually honest: 'the proposed validateCitationFormat() feature is NOT YET IMPLEMENTED — git status shows only the untracked ADR doc' → did a baseline+design review rather than pretending to review a diff.",
+          "Returned REQUEST_CHANGES with file:line findings + fixes; corroborated the High security issue in runCourtListenerLookup. Did not rubber-stamp."
+        ]
+      },
+      {
+        "persona_id": "0bd68987-3923-4f76-915b-9cbd7fa0665d",
+        "role": "Security Sentinel",
+        "work_labels": [
+          "security",
+          "stabilization"
+        ],
+        "dims": {
+          "correctness": 92,
+          "actionability": 88,
+          "specificity": 90,
+          "role_fidelity": 93
+        },
+        "evidence": [
+          "Real, serious findings: NO real auth — getDevTenantContext() (src/lib/tenant.ts:55-63) grants attorney sign-off on every request, wired into all server actions; full privileged document POSTed to third-party CourtListener; live Gemini key in .env.local; 2 moderate postcss XSS via npm audit.",
+          "Severity-ranked with file:line + remediation; checked git history for the leaked key to set severity. Exactly a security auditor's job, not style nits."
+        ]
+      },
+      {
+        "persona_id": "7771bbb6-1f36-4456-b2d7-80ff14dc90ab",
+        "role": "Release Manager",
+        "work_labels": [
+          "release/ops",
+          "docs"
+        ],
+        "dims": {
+          "correctness": 87,
+          "actionability": 85,
+          "specificity": 88,
+          "role_fidelity": 92
+        },
+        "evidence": [
+          "Sound semver: 'Under pre-1.0 (0.x) semantics, a breaking change increments the minor … Next 14→16, React 18→19 … → MINOR: 0.1.0 → 0.2.0.' Wrote a Keep-a-Changelog CHANGELOG, committed + tagged LOCALLY.",
+          "Responsibly GATED the outward step: 'The push to remote and GitHub release publish is the outward-facing step, so I'll surface that for approval rather than ship it unilaterally' — and flagged that open security findings are unresolved on the release tree."
+        ]
+      },
+      {
+        "persona_id": "43e072f5-8312-4fa5-93bb-03cfaabc334a",
+        "role": "Docs Steward",
+        "work_labels": [
+          "docs"
+        ],
+        "dims": {
+          "correctness": 88,
+          "actionability": 85,
+          "specificity": 88,
+          "role_fidelity": 90
+        },
+        "evidence": [
+          "Caught real doc drift: 'the README still advertises the old stack (Next.js 14, ESLint 9)' while package.json shows next ^16.2.6 / react ^19.2.6; synced README to the shipped stack.",
+          "Recorded last-processed commit to memory for incremental future runs."
+        ]
+      }
+    ],
+    "judge_notes": "Production-grade, self-critical, grounded work across all 5 roles. Architect output-grade is grounding-capped at 80 by ADR-0004's two shorthand paths. One judged run on a non-held-out seed = PRODUCTION-quality evidence, NOT certification (needs 3 consecutive on held-out + decay). Watch backlog balance on code-track seeds next."
+  },
+  "team_score": 95,
+  "verdict": "PRODUCTION",
+  "facts": {
+    "executions": 5,
+    "completed": 5,
+    "failed": 0,
+    "cascade_stalled": false,
+    "value_delivered": 5,
+    "personasExecuted": 5,
+    "memberCount": 5,
+    "eventsDelivered": 13,
+    "reviews": 4,
+    "pendingReviews": 4,
+    "learnedMemories": 7,
+    "cost_usd": 3.199157,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "CHANGELOG.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "README.md",
+      "total": 3,
+      "valid": 3,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/ADR-0001-credential-access-audit-log.md",
+      "total": 6,
+      "valid": 6,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/ADR-0002-architecture-overview.md",
+      "total": 5,
+      "valid": 5,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/ADR-0003-injection-credential-exfiltration-defense.md",
+      "total": 6,
+      "valid": 6,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/ADR-0004-citation-format-validator.md",
+      "total": 10,
+      "valid": 8,
+      "pct": 80,
+      "invalid": [
+        "discovery/actions.ts",
+        "demand-letter/actions.ts"
+      ]
+    },
+    {
+      "file": "docs/backlog-brainstorm.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 4,
+    "pendingReviews": 4,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}

@@ -64,6 +64,9 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     for (const j of Object.values(s.jobsById)) {
       if (j.status === 'running' || j.status === 'queued') n += 1;
     }
+    for (const j of Object.values(s.inTurnToolJobs)) {
+      if (j.status === 'running' || j.status === 'queued') n += 1;
+    }
     return n;
   });
   const orbPos = useSystemStore((s) => s.companionOrbPos);

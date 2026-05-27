@@ -1,9 +1,12 @@
 use rusqlite::params;
 
 use crate::db::models::{
-    CreateManualReviewInput, CreateReviewMessageInput, ManualReviewCounts, ManualReviewStatus,
-    PersonaManualReview, ReviewMessage,
+    CreateManualReviewInput, CreatePersonaMemoryInput, CreateReviewMessageInput,
+    CreateTeamMemoryInput, Json, ManualReviewCounts, ManualReviewStatus, PersonaManualReview,
+    ReviewMessage,
 };
+use crate::db::repos::core::memories;
+use crate::db::repos::resources::team_memories;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -257,6 +260,93 @@ pub fn update_status(
 
         if rows == 0 {
             return Err(AppError::NotFound(format!("Manual review {id}")));
+        }
+
+        // Learning loop: a resolved (approved/rejected) review IS human feedback.
+        // Phase-1 structured shared memory (docs/test/structured-shared-memory-design.md):
+        // when the persona belongs to a team, route the feedback to the SHARED,
+        // bounded, evictable team ledger (L2) as a typed decision/constraint —
+        // approved → `decision`, rejected → `constraint` — so it's one shared record
+        // the whole team reads, not N per-persona dupes (the measured bloat). Dedup
+        // by (team_id, title) to avoid repeats. When the persona has no team, fall
+        // back to the per-persona `learned` memory (L1). Best-effort throughout.
+        if matches!(
+            status,
+            ManualReviewStatus::Approved | ManualReviewStatus::Rejected
+        ) {
+            let verdict = status.as_str();
+            let notes = reviewer_notes
+                .as_deref()
+                .map(str::trim)
+                .filter(|n| !n.is_empty());
+            let content = format!(
+                "Human {verdict} the review \"{}\"{}.{} Apply this decision to future work.",
+                current.title,
+                current
+                    .description
+                    .as_deref()
+                    .map(|d| format!(": {d}"))
+                    .unwrap_or_default(),
+                notes
+                    .map(|n| format!(" Reviewer notes: {n}."))
+                    .unwrap_or_default(),
+            );
+            // Resolve the persona's team (home_team_id) for shared routing.
+            let home_team_id: Option<String> = conn
+                .query_row(
+                    "SELECT home_team_id FROM personas WHERE id = ?1",
+                    params![current.persona_id],
+                    |r| r.get::<_, Option<String>>(0),
+                )
+                .unwrap_or(None);
+
+            if let Some(team_id) = home_team_id.filter(|s| !s.is_empty()) {
+                let title = format!("Human {verdict}: {}", current.title);
+                // Dedup by (team_id, title) — don't pile up repeats in the ledger.
+                let exists: bool = conn
+                    .query_row(
+                        "SELECT 1 FROM team_memories WHERE team_id = ?1 AND title = ?2 LIMIT 1",
+                        params![team_id, title],
+                        |_| Ok(true),
+                    )
+                    .unwrap_or(false);
+                if !exists {
+                    // approved → settled decision; rejected → guardrail constraint
+                    let (category, importance) = match status {
+                        ManualReviewStatus::Rejected => ("constraint", 8),
+                        _ => ("decision", 7),
+                    };
+                    let tm = CreateTeamMemoryInput {
+                        team_id,
+                        run_id: None,
+                        member_id: None,
+                        persona_id: Some(current.persona_id.clone()),
+                        title,
+                        content,
+                        category: Some(category.to_string()),
+                        importance: Some(importance),
+                        tags: Some(format!("human-review,{verdict}")),
+                    };
+                    if let Err(e) = team_memories::create(pool, tm) {
+                        tracing::warn!(review_id = %id, error = %e, "learning loop: failed to write shared team decision/constraint");
+                    }
+                }
+            } else {
+                // Solo persona (no team) — keep the per-persona learned memory.
+                let mem = CreatePersonaMemoryInput {
+                    persona_id: current.persona_id.clone(),
+                    title: format!("Human {verdict}: {}", current.title),
+                    content,
+                    category: Some("learned".to_string()),
+                    source_execution_id: Some(current.execution_id.clone()),
+                    importance: Some(5),
+                    tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
+                    use_case_id: current.use_case_id.clone(),
+                };
+                if let Err(e) = memories::create(pool, mem) {
+                    tracing::warn!(review_id = %id, error = %e, "learning loop: failed to synthesize learned memory from resolved review");
+                }
+            }
         }
 
         Ok(())

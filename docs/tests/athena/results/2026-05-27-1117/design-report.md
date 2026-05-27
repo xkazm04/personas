@@ -54,7 +54,7 @@ When she eventually does fire `gmail::send_message` or `discord::post_message`, 
 
 ### 3. Cross-session backlog continuity works
 
-Run 1 turn 11 filed a `write_backlog_item` (`blog_e7b697d8`) listing every connector gap. Run 2 turn 10 (DB list tables) opens with: *"this one's already on the wiring queue from earlier in the thread — the backlog entry calls out `personas_database` needing `list_tables`, `describe_schema`, and an approval-gated `execute_sql`"*. 
+Run 1 turn 11 filed a `write_backlog_item` (`blog_e7b697d8`) listing every connector gap. Run 2 turn 10 (DB list tables) opens with: *"this one's already on the wiring queue from earlier in the thread — the backlog entry calls out `personas_database` needing `list_tables`, `describe_schema`, and an approval-gated `execute_sql`"*.
 
 She's reading her own prior-session backlog item and quoting from it — proves the durable-memory loop works for connector-design conversations specifically. Future Athena can pick up the wiring conversation where this Athena left off.
 
@@ -85,9 +85,9 @@ This is what good chat-UX looks like for the half-finished-system case: it's bet
 
 ```
 User: "Summarize my last unread email."
-You: 
+You:
   Pulling your recent threads now — I'll grab the latest unread when the list comes back.
-  
+
   OP: {"op":"propose_action","action":"use_connector","params":{"connector_name":"gmail","capability":"list_recent_threads","args":{"limit":10}}}
 ```
 
@@ -113,7 +113,7 @@ This is the path. Wiring tier-2 (Notion read, local_drive companion exposure, El
 
 ## Where we stand
 
-- **5/6 audit-pinned connectors now have read & write paths.** Gmail (read+2 writes), Discord (read+1 write), plus the original four (Sentry/GitHub/Slack/Gmail-read). 
+- **5/6 audit-pinned connectors now have read & write paths.** Gmail (read+2 writes), Discord (read+1 write), plus the original four (Sentry/GitHub/Slack/Gmail-read).
 - **2 of 11 audit turns now flip from "honestly says not wired" to "actually has a fire path"** (gmail-mark-read, discord write). Plus discord-read and gmail-summarize are wired-but-need-args.
 - **Cross-session backlog is read and cited** — the wiring conversation persists across reset.
 - **One stubborn regression on use_connector reads** — v25 candidate fixes documented above.

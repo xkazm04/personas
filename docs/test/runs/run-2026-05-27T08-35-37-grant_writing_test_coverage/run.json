@@ -1,0 +1,192 @@
+{
+  "runId": "run-2026-05-27T08-35-37-grant_writing_test_coverage",
+  "seed": {
+    "id": "grant-writing/test-coverage",
+    "team": "SDLC — Grant Writing Nonprofits",
+    "repo": "grant-writing-nonprofits",
+    "tracks": [
+      "code",
+      "doc"
+    ],
+    "exercises_roles": [
+      "architect",
+      "reviewer"
+    ],
+    "held_out": false,
+    "goal": "Test coverage in this repository is uneven. As the Solution Architect, have the team identify the most critical under-tested code path (the one whose failure would do the most damage), and add meaningful, real test coverage for it — tests that would actually catch regressions, not trivial assertions.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm test"
+    },
+    "acceptance_hint": "Real tests for a genuinely critical path, that pass and would catch regressions. Judge: are the tests meaningful (cover edge cases / failure modes) or box-ticking?",
+    "notes": "Test-coverage seed — exercises the test work type (§2.1 balance) directly."
+  },
+  "startedAt": "2026-05-27T08:35:37.952Z",
+  "endedAt": "2026-05-27T08:40:41.431Z",
+  "windowMin": 26,
+  "sinceIso": "2026-05-27T08:34:37.952Z",
+  "entry": {
+    "personaId": "c9521c29-d625-4a5c-98e2-7c5b0e133cc3",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "33f18589314cd9f9",
+  "configHashPost": "33f18589314cd9f9",
+  "configUnchanged": true,
+  "repoHeadPre": "0c2f2a44326d89a98c4979d3b99375f7473ecef3",
+  "repoHeadPost": "0c2f2a44326d89a98c4979d3b99375f7473ecef3",
+  "repoDirtyPre": true,
+  "repoChangedDuringRun": true,
+  "repoCommittedDuringRun": false,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-05-27T08:35:40.972Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:35:55.983Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:36:10.999Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:36:26.014Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:36:41.033Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:36:56.049Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:37:11.065Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:37:26.083Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:37:41.100Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:37:56.116Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:38:11.132Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:38:26.151Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:38:41.167Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:38:56.183Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:39:11.197Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:39:26.212Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:39:41.217Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:39:56.234Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:40:11.248Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:40:26.267Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:40:41.284Z",
+      "execs": 1,
+      "running": 0,
+      "distinctPersonas": 1
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-05-27T08-35-37-grant_writing_test_coverage",
+    "team": "SDLC — Grant Writing Nonprofits",
+    "teamId": "02a68c44-2561-4199-b051-64644957192d",
+    "sinceIso": "2026-05-27T08:34:37.952Z",
+    "counts": {
+      "executions": 1,
+      "executionsByStatus": {
+        "failed": 1
+      },
+      "personasExecuted": 1,
+      "reviews": 0,
+      "memories": 0,
+      "events": 0,
+      "eventsByStatus": {},
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "logsCopied": 1
+    },
+    "cost_usd": 0,
+    "repoDiffBytes": 17770
+  }
+}

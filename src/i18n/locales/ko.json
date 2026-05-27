@@ -11610,7 +11610,15 @@
       "brain_desc_doctrine": "Reference guides that shape how she reasons.",
       "brain_desc_constitution": "Her core operating contract — the rules she won't break.",
       "setup_orb_label": "Floating avatar",
-      "setup_orb_desc": "Show Athena as a draggable orb that floats above the app. Tap to open chat, hold to talk, drag to dock anywhere. When off, only the footer button remains."
+      "setup_orb_desc": "Show Athena as a draggable orb that floats above the app. Tap to open chat, hold to talk, drag to dock anywhere. When off, only the footer button remains.",
+      "task_status_queued": "대기 중",
+      "task_status_running": "실행 중",
+      "task_status_done": "완료",
+      "task_status_failed": "실패",
+      "tasks_running_one": "{count}개 작업 실행 중",
+      "tasks_running_other": "{count}개 작업 실행 중",
+      "queued_badge": "대기 중",
+      "queued_remove": "대기 중인 메시지 제거"
     },
     "ocr": {
       "title": "OCR",

@@ -1,0 +1,39 @@
+{
+  "runId": "run-2026-05-27T16-34-41-local_seo_parallel_utils",
+  "team": "SDLC Delivery Team",
+  "seed": "local-seo/parallel-utils",
+  "code_track": null,
+  "rubric_version": "1-deterministic",
+  "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",
+  "deterministic_dims": {
+    "cascade_completion": 120,
+    "work_density": 100,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": null
+  },
+  "judge": null,
+  "team_score": 96,
+  "provisional_verdict": "PRODUCTION",
+  "facts": {
+    "executions": 6,
+    "completed": 6,
+    "failed": 0,
+    "cascade_stalled": false,
+    "value_delivered": 6,
+    "personasExecuted": 6,
+    "memberCount": 5,
+    "eventsDelivered": 17,
+    "reviews": 3,
+    "pendingReviews": 3,
+    "learnedMemories": 6,
+    "cost_usd": 5.435352,
+    "repoChanged": true
+  },
+  "grounding": [],
+  "autonomy": {
+    "interventions": 3,
+    "pendingReviews": 3,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}

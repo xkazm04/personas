@@ -1,0 +1,448 @@
+{
+  "runId": "run-2026-05-27T16-49-03-local_seo_parallel_utils",
+  "seed": {
+    "id": "local-seo/parallel-utils",
+    "team": "75714587-b1e0-4c7f-be9d-b0e75fd59d4c",
+    "repo": "local-seo-agency",
+    "tracks": [
+      "code"
+    ],
+    "exercises_roles": [
+      "architect",
+      "engineer",
+      "reviewer",
+      "release",
+      "docs"
+    ],
+    "held_out": false,
+    "goal": "Add THREE INDEPENDENT, non-overlapping pure-utility modules to src/lib, each in its own NEW file with its own unit tests (node --test via tsx), sharing NO files with each other so they can be implemented fully in parallel: (1) src/lib/slug.ts — slugify(text): lowercases, trims, replaces non-alphanumerics with single hyphens, strips leading/trailing hyphens; (2) src/lib/num.ts — clamp(value, min, max) and roundTo(value, decimals), handling NaN/Infinity safely; (3) src/lib/str.ts — truncate(text, max, ellipsis='…') and titleCase(text). As the Solution Architect, scope these as three independent tasks; the engineer must IMPLEMENT all three with real edge-case tests and keep the suite green. These are deliberately parallel-isolatable (separate files) — implement them in parallel worktrees and merge cleanly.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm test"
+    },
+    "acceptance_hint": "Three new independent lib modules + their tests, suite green. PARALLEL-PATH validation: the engineer (Dev Clone) should isolate each independent task in its own git worktree/branch, merge them cleanly, and leave NO orphan worktrees/branches (.parallel cleaned). Judge: did the worktree-isolate-merge-clean path actually fire (independent tasks), and is the environment clean afterward?",
+    "notes": "Validation seed for Dev Clone PARALLEL TASKS (Phase A): three deliberately-independent tasks to exercise worktree isolation + clean merge. Targets the 6-role team by id."
+  },
+  "startedAt": "2026-05-27T16:49:03.825Z",
+  "endedAt": "2026-05-27T17:02:22.863Z",
+  "windowMin": 35,
+  "sinceIso": "2026-05-27T16:48:03.824Z",
+  "entry": {
+    "personaId": "eec38c0d-465d-4f50-81ba-fb41a9ae6ed3",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "9a40f7bad781f479",
+  "configHashPost": "9a40f7bad781f479",
+  "configUnchanged": true,
+  "repoHeadPre": "8f2a0192b05be5bdcc497664288b91194c03a506",
+  "repoHeadPost": "52e51b9a6733a0e3dc743eb93c86abd13ee05210",
+  "repoDirtyPre": false,
+  "repoChangedDuringRun": true,
+  "repoCommittedDuringRun": true,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-05-27T16:49:06.858Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:49:21.868Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:49:36.886Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:49:51.903Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:50:06.920Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:50:21.936Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:50:36.953Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:50:51.969Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:51:06.987Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:51:22.002Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:51:37.019Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:51:52.034Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:52:07.038Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:52:22.052Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:52:37.071Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:52:52.086Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:53:07.104Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:53:22.121Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:53:37.138Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:53:52.153Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:54:07.170Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:54:22.188Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:54:37.205Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:54:52.219Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:55:07.237Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:55:22.255Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:55:37.270Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:55:52.287Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:56:07.303Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:56:22.322Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:56:37.338Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:56:52.355Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:57:07.372Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:57:22.388Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:57:37.401Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:57:52.421Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:58:07.438Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:58:22.455Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:58:37.472Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:58:52.488Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:59:07.505Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:59:22.521Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:59:37.538Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T16:59:52.556Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:00:07.572Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:00:22.589Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:00:37.606Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:00:52.622Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:01:07.637Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:01:22.655Z",
+      "execs": 6,
+      "running": 1,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:01:37.667Z",
+      "execs": 6,
+      "running": 0,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:01:52.674Z",
+      "execs": 6,
+      "running": 0,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:02:07.690Z",
+      "execs": 6,
+      "running": 0,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-05-27T17:02:22.704Z",
+      "execs": 6,
+      "running": 0,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-05-27T16-49-03-local_seo_parallel_utils",
+    "team": "SDLC Delivery Team",
+    "teamId": "75714587-b1e0-4c7f-be9d-b0e75fd59d4c",
+    "sinceIso": "2026-05-27T16:48:03.824Z",
+    "counts": {
+      "executions": 6,
+      "executionsByStatus": {
+        "completed": 6
+      },
+      "personasExecuted": 6,
+      "reviews": 3,
+      "memories": 14,
+      "events": 22,
+      "eventsByStatus": {
+        "delivered": 22
+      },
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "logsCopied": 6
+    },
+    "cost_usd": 5.506764749999999,
+    "repoDiffBytes": 30680
+  }
+}

@@ -1,0 +1,46 @@
+[
+  {
+    "id": "05449915-f6c6-4fe3-b3c0-4fb6f32db999",
+    "event_type": "architecture.analysis.completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "eab96372-5af3-4163-b379-a6a8e633b6da",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T07:20:43.799438+00:00",
+    "created_at": "2026-05-27T07:20:43.140607500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3f94ec37-eb02-4365-bd16-d0d3e99c994d",
+    "event_type": "team_handoff.5a01c859-d35b-417c-801c-d94fff2d22e2",
+    "source_type": "chain",
+    "source_id": "628bbc6c-d099-4f9c-9a66-27fe67dc2dde",
+    "target_persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+    "status": "delivered",
+    "processed_at": "2026-05-27T07:20:43.801391500+00:00",
+    "created_at": "2026-05-27T07:20:43.354050500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "7efadee4-79b2-472b-9462-fc3027de0868",
+    "event_type": "code_review.completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T07:22:51.796140900+00:00",
+    "created_at": "2026-05-27T07:22:49.809980100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "4413247e-a6e0-489a-995e-add0390df48d",
+    "event_type": "team_handoff.4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+    "source_type": "chain",
+    "source_id": "171247bc-1da6-498e-a4d9-e3864525cce7",
+    "target_persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+    "status": "delivered",
+    "processed_at": "2026-05-27T07:22:51.811930400+00:00",
+    "created_at": "2026-05-27T07:22:50.041641500+00:00",
+    "use_case_id": null
+  }
+]

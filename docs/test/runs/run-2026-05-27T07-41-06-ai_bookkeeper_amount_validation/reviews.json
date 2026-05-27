@@ -1,0 +1,54 @@
+[
+  {
+    "id": "fe74bdfd-b9b5-4fe7-ac03-127eb3dfa630",
+    "execution_id": "d671b46c-a694-49c8-b3fc-a4cd0030b6b0",
+    "persona_id": "eab96372-5af3-4163-b379-a6a8e633b6da",
+    "title": "Confirm: unit-test runner wired (tsx) completes ADR 0001 task 4",
+    "description": "Extended settled ADR 0001 by wiring Node's built-in test runner via tsx and adding npm test/test:watch scripts; amount validator suite is 12/12 green. This adds a devDependency (tsx@^4) to the shared repo. Tasks 5-6 (SMS/OCR + Plaid adapters) remain blocked on adapters not yet present. Confirm the test-tooling choice (tsx over vitest) and that the delivery agent should pick up 5-6 only once those adapters land.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T07:45:27.010475200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "87bd4fc5-bd1e-4c4f-80cd-427cdcd4a39e",
+    "execution_id": "9046b6ec-7008-47b8-9a59-d9628a2d6a35",
+    "persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+    "title": "Code Review verdict: REQUEST_CHANGES — ADR 0001 task 4 test-runner wiring",
+    "description": "npm test runs green (12/12, verified) but covers only the ledger validator — 4 existing @playwright/test unit suites under e2e/ are excluded by the src/**/*.test.ts glob, and the ADR's 'zero new framework surface' rationale is inverted (node:test IS a second framework). Also: prior Number()-coercion finding (amount.ts:77, '1e5'->100000) is still open on second review with no test. Decide how to resolve before this is treated as the CI unit-test gate.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T07:49:08.064673500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "717897b1-8b4a-4dcf-b783-8c4500c05409",
+    "execution_id": "9d019fa3-192a-4019-b22c-7553bf8b6a8a",
+    "persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+    "title": "Security Scan — 4 findings for triage (0 critical, 3 medium, 1 low)",
+    "description": "First full security scan of ai-bookkeeper completed (all 3 phases). No critical/high. Decide remediation timing for each finding below — the two Medium items (dependency CVE dedupe and the recurring input-boundary coercion gap) are the actionable ones.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T07:52:45.093725100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "8b660c42-8276-41c2-8b6d-8849517fd753",
+    "execution_id": "bfac38d6-8885-4a54-85e4-7912d8272518",
+    "persona_id": "c86cdb42-dc78-4475-b499-725ece72dee2",
+    "title": "Approve release v0.2.0 — push tag & commit version bump",
+    "description": "Release v0.2.0 is staged: package.json bumped to 0.2.0, annotated tag v0.2.0 created on HEAD (18fab0f), release notes written to docs/releases/v0.2.0.md, and the existing CHANGELOG [0.2.0] entry preserved. The version bump and release notes are uncommitted in the working tree alongside unrelated WIP. Approve to push the tag and commit the release artifacts.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T07:55:39.610576300+00:00",
+    "use_case_id": null
+  }
+]

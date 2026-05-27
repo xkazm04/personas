@@ -464,6 +464,15 @@ pub fn adopt_preset(
         }
     }
 
+    // 5. Wire intra-team handoff from the connection graph (chain + listener
+    //    triggers per non-feedback edge) so members actually fire each other.
+    //    Best-effort: a wiring failure must not fail an otherwise-successful
+    //    adoption, but it IS the difference between a team that can cascade
+    //    and one that stalls after the entry member.
+    if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, &team.id) {
+        tracing::warn!(team_id = %team.id, error = %e, "adopt_team_preset: handoff wiring failed (continuing)");
+    }
+
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,
         team_id: team.id,
@@ -737,6 +746,11 @@ pub fn retry_failed_members(
     // mapped to AdoptedTeamPresetMember above.
     let mut all_members = existing_members_view;
     all_members.extend(new_members);
+
+    // Re-wire handoff now that newly-retried members + their connections exist.
+    if let Err(e) = crate::engine::team_handoff::wire_team_handoff(&state.db, team_id) {
+        tracing::warn!(team_id, error = %e, "retry_failed_members: handoff wiring failed (continuing)");
+    }
 
     Ok(AdoptedTeamPresetResult {
         preset_id: preset.id,

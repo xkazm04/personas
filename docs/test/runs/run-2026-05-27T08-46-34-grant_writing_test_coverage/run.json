@@ -1,0 +1,548 @@
+{
+  "runId": "run-2026-05-27T08-46-34-grant_writing_test_coverage",
+  "seed": {
+    "id": "grant-writing/test-coverage",
+    "team": "SDLC — Grant Writing Nonprofits",
+    "repo": "grant-writing-nonprofits",
+    "tracks": [
+      "code",
+      "doc"
+    ],
+    "exercises_roles": [
+      "architect",
+      "reviewer"
+    ],
+    "held_out": false,
+    "goal": "Test coverage in this repository is uneven. As the Solution Architect, have the team identify the most critical under-tested code path (the one whose failure would do the most damage), and add meaningful, real test coverage for it — tests that would actually catch regressions, not trivial assertions.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm test"
+    },
+    "acceptance_hint": "Real tests for a genuinely critical path, that pass and would catch regressions. Judge: are the tests meaningful (cover edge cases / failure modes) or box-ticking?",
+    "notes": "Test-coverage seed — exercises the test work type (§2.1 balance) directly."
+  },
+  "startedAt": "2026-05-27T08:46:34.653Z",
+  "endedAt": "2026-05-27T09:06:23.965Z",
+  "windowMin": 40,
+  "sinceIso": "2026-05-27T08:45:34.653Z",
+  "entry": {
+    "personaId": "c9521c29-d625-4a5c-98e2-7c5b0e133cc3",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "33f18589314cd9f9",
+  "configHashPost": "33f18589314cd9f9",
+  "configUnchanged": true,
+  "repoHeadPre": "0c2f2a44326d89a98c4979d3b99375f7473ecef3",
+  "repoHeadPost": "0c2f2a44326d89a98c4979d3b99375f7473ecef3",
+  "repoDirtyPre": true,
+  "repoChangedDuringRun": true,
+  "repoCommittedDuringRun": false,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-05-27T08:46:37.675Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:46:52.687Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:47:07.699Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:47:22.718Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:47:37.736Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:47:52.753Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:48:07.768Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:48:22.782Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:48:37.787Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:48:52.800Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:49:07.815Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:49:22.819Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:49:37.836Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:49:52.851Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:50:07.869Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:50:22.886Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:50:37.901Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:50:52.904Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:51:07.918Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:51:22.937Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:51:37.951Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:51:52.964Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:52:07.983Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:52:22.988Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-27T08:52:37.995Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:52:53.003Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:53:08.019Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:53:23.037Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:53:38.052Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:53:53.068Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:54:08.087Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:54:23.100Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:54:38.120Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:54:53.138Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:55:08.154Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:55:23.170Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:55:38.188Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:55:53.201Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:56:08.219Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:56:23.236Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:56:38.248Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:56:53.253Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-27T08:57:08.271Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:57:23.287Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:57:38.304Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:57:53.321Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:58:08.337Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:58:23.354Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:58:38.371Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:58:53.388Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:59:08.405Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:59:23.422Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:59:38.438Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T08:59:53.453Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:00:08.472Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:00:23.486Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:00:38.503Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:00:53.521Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:01:08.533Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:01:23.538Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-27T09:01:38.555Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:01:53.572Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:02:08.583Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:02:23.598Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:02:38.604Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:02:53.617Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:03:08.621Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:03:23.635Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:03:38.639Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:03:53.652Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-27T09:04:08.657Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:04:23.673Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:04:38.686Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:04:53.691Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:05:08.706Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:05:23.722Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:05:38.738Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:05:53.753Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:06:08.772Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-27T09:06:23.789Z",
+      "execs": 5,
+      "running": 0,
+      "distinctPersonas": 5
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-05-27T08-46-34-grant_writing_test_coverage",
+    "team": "SDLC — Grant Writing Nonprofits",
+    "teamId": "02a68c44-2561-4199-b051-64644957192d",
+    "sinceIso": "2026-05-27T08:45:34.653Z",
+    "counts": {
+      "executions": 5,
+      "executionsByStatus": {
+        "completed": 5
+      },
+      "personasExecuted": 5,
+      "reviews": 4,
+      "memories": 10,
+      "events": 15,
+      "eventsByStatus": {
+        "delivered": 15
+      },
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "logsCopied": 5
+    },
+    "cost_usd": 4.195344,
+    "repoDiffBytes": 35190
+  }
+}

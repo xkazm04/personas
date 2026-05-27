@@ -1073,7 +1073,7 @@ pub fn notify_execution_completed_rich(
     if let Some(err) = error {
         if !err.is_empty() {
             // Truncate error for notification readability
-            let short_err = if err.len() > 200 { &err[..200] } else { err };
+            let short_err = if err.len() > 200 { crate::utils::text::truncate_on_char_boundary(&err, 200) } else { err };
             body.push_str(&format!("\nError: {}", short_err));
         }
     }

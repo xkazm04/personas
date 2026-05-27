@@ -149,7 +149,7 @@ pub async fn dev_tools_run_static_scan(
     let raw_output_excerpt = if stdout.is_empty() {
         None
     } else if stdout.len() > 4096 {
-        Some(format!("{}…", &stdout[..4096]))
+        Some(format!("{}…", crate::utils::text::truncate_on_char_boundary(&stdout, 4096)))
     } else {
         Some(stdout)
     };

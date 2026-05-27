@@ -1,0 +1,22 @@
+{
+  "id": "sdlc2/immigration-stabilization",
+  "team": "27328eda-3e88-4fed-b612-f5985ea63f4f",
+  "repo": "immigration-paperwork",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security"
+  ],
+  "held_out": false,
+  "goal": "This case-file codebase has accumulated correctness/robustness risks (src/features/case-file status aggregation, src/lib/format.ts edge cases). As the Solution Architect, identify the single highest-priority correctness defect grounded in the actual code; then the team must IMPLEMENT the fix production-ready with a regression test (engineer writes it). Prioritize stability; verify existing rendering is preserved.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm run typecheck"
+  },
+  "acceptance_hint": "A real grounded stabilization fix + regression test, implemented by the engineer, suite/typecheck green."
+}

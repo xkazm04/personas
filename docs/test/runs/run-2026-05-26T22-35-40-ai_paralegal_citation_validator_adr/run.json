@@ -1,0 +1,410 @@
+{
+  "runId": "run-2026-05-26T22-35-40-ai_paralegal_citation_validator_adr",
+  "seed": {
+    "id": "ai-paralegal/citation-validator-adr",
+    "team": "SDLC — ai-paralegal",
+    "repo": "ai-paralegal",
+    "tracks": [
+      "doc"
+    ],
+    "exercises_roles": [
+      "architect",
+      "reviewer",
+      "security",
+      "docs"
+    ],
+    "held_out": false,
+    "goal": "We want to add a citation-format validator that checks legal references (case citations, statutes) in generated documents against a known-good format before they are shown to a user. As the Solution Architect, produce a concrete architecture decision (ADR) for this feature, grounded in how this repository currently handles document generation and references. Identify the module(s) that would change, the validation approach, and edge cases. Do NOT write code yet — produce the decision document so the Code Reviewer, Security Auditor, and Docs Steward can act on it.",
+    "repo_cmds": {
+      "build": null,
+      "lint": null,
+      "test": null
+    },
+    "acceptance_hint": "An ADR that cites real files/modules in the ai-paralegal repo, a clear validation approach, named edge cases, and downstream review/security/docs follow-through via the handoff chain.",
+    "notes": "First validation seed — doc-track only (no repo mutation) to safely confirm the repaired architect→reviewer→security→docs cascade fires end-to-end before attempting code-track seeds."
+  },
+  "startedAt": "2026-05-26T22:35:41.062Z",
+  "endedAt": "2026-05-26T22:49:45.014Z",
+  "windowMin": 22,
+  "sinceIso": "2026-05-26T22:34:41.062Z",
+  "entry": {
+    "personaId": "9f6a4574-3fc9-48d5-99c6-4a55b6c0012c",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "ab56f3217b194c10",
+  "configHashPost": "ab56f3217b194c10",
+  "configUnchanged": true,
+  "repoHeadPre": "73b45731ecfa4e935568cbcdf44a686547a71ac2",
+  "repoHeadPost": "77d069e5a487cfc9a751eaf3d38e7f08bbec4fd1",
+  "repoDirtyPre": true,
+  "repoChangedDuringRun": true,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-05-26T22:35:44.082Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:35:59.092Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:36:14.108Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:36:29.125Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:36:44.143Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:36:59.158Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:37:14.162Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:37:29.177Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:37:44.194Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:37:59.211Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:38:14.225Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1
+    },
+    {
+      "t": "2026-05-26T22:38:29.243Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:38:44.261Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:38:59.277Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:39:14.293Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:39:29.310Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:39:44.327Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:39:59.344Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:40:14.358Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:40:29.362Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:40:44.376Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:40:59.391Z",
+      "execs": 2,
+      "running": 1,
+      "distinctPersonas": 2
+    },
+    {
+      "t": "2026-05-26T22:41:14.395Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:41:29.409Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:41:44.426Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:41:59.443Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:42:14.458Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:42:29.478Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:42:44.493Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:42:59.511Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:43:14.528Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:43:29.544Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:43:44.557Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:43:59.574Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:44:14.592Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:44:29.609Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:44:44.624Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3
+    },
+    {
+      "t": "2026-05-26T22:44:59.629Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:45:14.644Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:45:29.665Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:45:44.676Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:45:59.680Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:46:14.695Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:46:29.711Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:46:44.730Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:46:59.746Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:47:14.762Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:47:29.778Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:47:44.795Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:47:59.813Z",
+      "execs": 4,
+      "running": 1,
+      "distinctPersonas": 4
+    },
+    {
+      "t": "2026-05-26T22:48:14.827Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-26T22:48:29.831Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-26T22:48:44.846Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-26T22:48:59.862Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-26T22:49:14.878Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-26T22:49:29.897Z",
+      "execs": 5,
+      "running": 1,
+      "distinctPersonas": 5
+    },
+    {
+      "t": "2026-05-26T22:49:44.912Z",
+      "execs": 5,
+      "running": 0,
+      "distinctPersonas": 5
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-05-26T22-35-40-ai_paralegal_citation_validator_adr",
+    "team": "SDLC — ai-paralegal",
+    "teamId": "aec6508d-ebad-4a81-9071-ea2192ba701f",
+    "sinceIso": "2026-05-26T22:34:41.062Z",
+    "counts": {
+      "executions": 5,
+      "executionsByStatus": {
+        "completed": 5
+      },
+      "personasExecuted": 5,
+      "reviews": 4,
+      "memories": 13,
+      "events": 13,
+      "eventsByStatus": {
+        "delivered": 13
+      },
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "logsCopied": 5
+    },
+    "cost_usd": 3.199157,
+    "repoDiffBytes": 3487
+  }
+}

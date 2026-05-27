@@ -2015,6 +2015,7 @@ pub fn run() {
             commands::teams::teams::get_team_counts,
             commands::teams::teams::get_team,
             commands::teams::teams::create_team,
+            commands::teams::teams::repair_team_handoff,
             commands::teams::teams::update_team,
             commands::teams::teams::delete_team,
             commands::teams::teams::clone_team,

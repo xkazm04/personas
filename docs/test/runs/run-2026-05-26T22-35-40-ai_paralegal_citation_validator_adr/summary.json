@@ -1,0 +1,24 @@
+{
+  "runId": "run-2026-05-26T22-35-40-ai_paralegal_citation_validator_adr",
+  "team": "SDLC — ai-paralegal",
+  "teamId": "aec6508d-ebad-4a81-9071-ea2192ba701f",
+  "sinceIso": "2026-05-26T22:34:41.062Z",
+  "counts": {
+    "executions": 5,
+    "executionsByStatus": {
+      "completed": 5
+    },
+    "personasExecuted": 5,
+    "reviews": 4,
+    "memories": 13,
+    "events": 13,
+    "eventsByStatus": {
+      "delivered": 13
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "logsCopied": 5
+  },
+  "cost_usd": 3.199157,
+  "repoDiffBytes": 95510
+}

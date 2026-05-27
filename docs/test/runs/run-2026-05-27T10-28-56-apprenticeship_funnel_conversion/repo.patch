@@ -1,0 +1,320 @@
+diff --git a/package.json b/package.json
+index f48af29..7ad27c1 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "apprenticeship-placement",
+-  "version": "0.1.0",
++  "version": "0.2.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+
+--- UNCOMMITTED WORKING TREE ---
+diff --git a/src/features/placements/components/FunnelCard.tsx b/src/features/placements/components/FunnelCard.tsx
+index cdd9ebd..ab92e5f 100644
+--- a/src/features/placements/components/FunnelCard.tsx
++++ b/src/features/placements/components/FunnelCard.tsx
+@@ -1,8 +1,10 @@
+ import { Card, CardHeader } from "@/components/ui";
++import { formatPercent } from "@/lib/format";
+ import { funnel } from "../data";
++import { computeFunnelConversion } from "../lib/conversion";
+ 
+ export function FunnelCard() {
+-  const top = funnel[0]?.count ?? 1;
++  const { stages, overallPct } = computeFunnelConversion(funnel);
+ 
+   return (
+     <Card>
+@@ -10,26 +12,30 @@ export function FunnelCard() {
+         <div className="text-sm font-semibold text-foreground">
+           Candidate funnel · this month
+         </div>
+-        <span className="text-xs text-muted">Voice agent + SMS sourcing</span>
++        <span className="text-xs text-muted">
++          Sourced → hired {formatPercent(overallPct, 1)}
++        </span>
+       </CardHeader>
+       <ul className="space-y-2 p-5">
+-        {funnel.map((stage, index) => {
+-          const pct = Math.max(8, (stage.count / top) * 100);
+-          return (
+-            <li key={stage.stage}>
+-              <div className="flex items-center justify-between text-xs">
+-                <span className="font-medium text-foreground">{stage.stage}</span>
+-                <span className="font-mono text-muted">{stage.count}</span>
+-              </div>
+-              <div className="mt-1 h-3 w-full overflow-hidden rounded-control bg-surface-muted">
+-                <div
+-                  className="h-3 rounded-control bg-accent"
+-                  style={{ width: `${pct}%`, opacity: 1 - index * 0.12 }}
+-                />
+-              </div>
+-            </li>
+-          );
+-        })}
++        {stages.map((stage, index) => (
++          <li key={stage.stage}>
++            <div className="flex items-center justify-between text-xs">
++              <span className="font-medium text-foreground">{stage.stage}</span>
++              <span className="flex items-center gap-2 font-mono text-muted">
++                {stage.stepPct !== null && (
++                  <span className="text-accent">{formatPercent(stage.stepPct)}</span>
++                )}
++                <span>{stage.count}</span>
++              </span>
++            </div>
++            <div className="mt-1 h-3 w-full overflow-hidden rounded-control bg-surface-muted">
++              <div
++                className="h-3 rounded-control bg-accent"
++                style={{ width: `${Math.max(8, stage.overallPct)}%`, opacity: 1 - index * 0.12 }}
++              />
++            </div>
++          </li>
++        ))}
+       </ul>
+     </Card>
+   );
+diff --git a/tsconfig.json b/tsconfig.json
+index e1b2470..f52b634 100644
+--- a/tsconfig.json
++++ b/tsconfig.json
+@@ -11,6 +11,7 @@
+     "esModuleInterop": true,
+     "module": "esnext",
+     "moduleResolution": "bundler",
++    "allowImportingTsExtensions": true,
+     "resolveJsonModule": true,
+     "isolatedModules": true,
+     "moduleDetection": "force",
+
+--- NEW UNTRACKED FILES ---
+
+diff --git a/docs/adr/0001-funnel-conversion-rate.md b/docs/adr/0001-funnel-conversion-rate.md
+new file mode 100644
+--- /dev/null
++++ b/docs/adr/0001-funnel-conversion-rate.md
++# ADR 0001 — Typed funnel conversion-rate capability
++
++- **Status:** Accepted
++- **Date:** 2026-05-27
++- **Area:** `src/features/placements`
++
++## Context
++
++`src/features/placements/data.ts` exposes `funnel: FunnelStage[]` (Sourced →
++Replied → Phone screened → Background OK → Interview booked → Hired), rendered by
++`FunnelCard.tsx`. The card previously showed only raw counts and a relative bar
++width (`count / funnel[0].count`), guarded by `funnel[0]?.count ?? 1` — which
++silently mis-scales a zero-count funnel. There was **no conversion math** at all.
++
++Funnel data is static and presentational (no DB/API) on Next 16 / React 19 /
++strict TS 6. Naive division leaks `NaN` (0/0), `Infinity` (n/0), or values
++`> 100%` (dirty data where a later stage exceeds an earlier one) into the UI. The
++repo had no test runner.
++
++## Decision
++
++- New **pure, typed** module `src/features/placements/lib/conversion.ts` exposing
++  `computeFunnelConversion(funnel)`. It lives feature-local because the funnel
++  shape is placement-specific; `src/lib` stays reserved for cross-cutting code.
++- Output types `StageConversion` / `FunnelConversion`: per-stage `stepPct`
++  (vs. previous stage, `null` for the first stage), per-stage `overallPct`
++  (vs. top of funnel), plus a funnel-level sourced→hired `overallPct`.
++- A single `safePct(numerator, denominator)` helper is the **only** division
++  site: denominator `<= 0` → `0`, non-finite → `0`, result clamped to **[0, 100]**.
++  No NaN/Infinity/overflow can reach the UI by construction.
++- `FunnelCard` renders each stage's step-conversion via the existing
++  `formatPercent` (`@/lib/format`) and the overall sourced→hired rate in the
++  header; the bar width now uses the clamped `overallPct`.
++- **Testing:** Node built-in `node:test` + `node:assert/strict` (Node 24 native
++  TS) — **zero new dependencies**. Added an `npm test` script. Required
++  `allowImportingTsExtensions: true` in tsconfig; type-only imports use
++  `import type` so they fully erase at runtime (an empty `import {}` would
++  otherwise trigger Node's ESM resolver and fail).
++
++## Consequences
++
++- (+) Correct, centralized conversion; UI protected from NaN/Infinity/overflow;
++  first test runner in the repo with no new dependencies.
++- (−) Clamping to 100% hides genuinely dirty data (later stage > earlier).
++  Acceptable for a dashboard; flagged as a follow-up.
++- New convention: type-only relative imports use `import type`; test files use
++  explicit `.ts` extensions on value imports; app code keeps `@/` / extensionless
++  imports.
++
++## Verification (this run)
++
++- `node --test` → **6/6 pass**: empty funnel · first-stage null/100% · zero
++  top-of-funnel (no NaN/Inf) · mid-funnel zero (no Infinity) · later>earlier
++  clamped to 100% · single-stage.
++- `tsc --noEmit` → **exit 0** (whole project).
++
++## Follow-up (unscoped, future ADR)
++
++Replace the silent `> 100%` clamp with a surfaced data-quality warning so dirty
++funnel data is visible rather than masked. Estimated ~2 points when prioritized.
++
+
+diff --git a/src/features/placements/lib/conversion.test.ts b/src/features/placements/lib/conversion.test.ts
+new file mode 100644
+--- /dev/null
++++ b/src/features/placements/lib/conversion.test.ts
++import assert from "node:assert/strict";
++import { test } from "node:test";
++
++import { computeFunnelConversion } from "./conversion.ts";
++import type { FunnelStage } from "../types.ts";
++
++test("empty funnel → no stages, 0% overall", () => {
++  const result = computeFunnelConversion([]);
++  assert.deepEqual(result.stages, []);
++  assert.equal(result.overallPct, 0);
++});
++
++test("first stage has null stepPct and 100% overall", () => {
++  const funnel: FunnelStage[] = [
++    { stage: "Sourced", count: 1000 },
++    { stage: "Hired", count: 100 },
++  ];
++  const { stages, overallPct } = computeFunnelConversion(funnel);
++  assert.equal(stages[0].stepPct, null);
++  assert.equal(stages[0].overallPct, 100);
++  assert.equal(stages[1].stepPct, 10);
++  assert.equal(stages[1].overallPct, 10);
++  assert.equal(overallPct, 10);
++});
++
++test("zero top-of-funnel → no NaN/Infinity, all 0%", () => {
++  const funnel: FunnelStage[] = [
++    { stage: "Sourced", count: 0 },
++    { stage: "Hired", count: 0 },
++  ];
++  const { stages, overallPct } = computeFunnelConversion(funnel);
++  for (const s of stages) {
++    if (s.stepPct !== null) assert.ok(Number.isFinite(s.stepPct));
++    assert.ok(Number.isFinite(s.overallPct));
++  }
++  assert.equal(stages[1].stepPct, 0); // 0 / 0 → 0, not NaN
++  assert.equal(overallPct, 0);
++});
++
++test("mid-funnel zero denominator → downstream step is 0, not Infinity", () => {
++  const funnel: FunnelStage[] = [
++    { stage: "Sourced", count: 100 },
++    { stage: "Replied", count: 0 },
++    { stage: "Hired", count: 5 },
++  ];
++  const { stages } = computeFunnelConversion(funnel);
++  assert.equal(stages[2].stepPct, 0); // 5 / 0 → 0, not Infinity
++  assert.ok(Number.isFinite(stages[2].overallPct));
++});
++
++test("later stage exceeding earlier one is clamped to 100%", () => {
++  const funnel: FunnelStage[] = [
++    { stage: "Sourced", count: 100 },
++    { stage: "Replied", count: 250 }, // dirty data: more than sourced
++  ];
++  const { stages, overallPct } = computeFunnelConversion(funnel);
++  assert.equal(stages[1].stepPct, 100);
++  assert.equal(stages[1].overallPct, 100);
++  assert.equal(overallPct, 100);
++});
++
++test("single-stage funnel → 100% overall, null step", () => {
++  const funnel: FunnelStage[] = [{ stage: "Sourced", count: 42 }];
++  const { stages, overallPct } = computeFunnelConversion(funnel);
++  assert.equal(stages.length, 1);
++  assert.equal(stages[0].stepPct, null);
++  assert.equal(stages[0].overallPct, 100);
++  assert.equal(overallPct, 100);
++});
++
+
+diff --git a/src/features/placements/lib/conversion.ts b/src/features/placements/lib/conversion.ts
+new file mode 100644
+--- /dev/null
++++ b/src/features/placements/lib/conversion.ts
++import type { FunnelStage } from "../types";
++
++/**
++ * Conversion metrics for a single funnel stage.
++ *
++ * Percentages are always finite numbers clamped to [0, 100] — never NaN,
++ * Infinity, or negative — so they are safe to render directly in the UI.
++ */
++export interface StageConversion {
++  /** The originating stage label, e.g. "Sourced". */
++  stage: string;
++  /** Raw count at this stage. */
++  count: number;
++  /**
++   * Conversion from the immediately previous stage, in percent [0, 100].
++   * `null` for the first stage (no previous stage to convert from).
++   */
++  stepPct: number | null;
++  /** Conversion from the top of the funnel, in percent [0, 100]. */
++  overallPct: number;
++}
++
++/**
++ * Conversion analysis for an entire funnel.
++ */
++export interface FunnelConversion {
++  /** Per-stage conversion rows, in funnel order. */
++  stages: StageConversion[];
++  /**
++   * Overall top-of-funnel → bottom-of-funnel conversion (e.g. sourced → hired),
++   * in percent [0, 100]. `0` for an empty funnel.
++   */
++  overallPct: number;
++}
++
++/**
++ * Single division site for the whole module. Guarantees a finite result in
++ * [0, 100]:
++ *  - denominator <= 0  → 0   (covers division by zero and the empty funnel)
++ *  - non-finite result → 0   (defends against NaN/Infinity from bad inputs)
++ *  - result clamped to [0, 100] (defends against dirty data where a later
++ *    stage exceeds an earlier one, which would otherwise yield > 100%)
++ */
++function safePct(numerator: number, denominator: number): number {
++  if (denominator <= 0) return 0;
++  const pct = (numerator / denominator) * 100;
++  if (!Number.isFinite(pct)) return 0;
++  return Math.min(100, Math.max(0, pct));
++}
++
++/**
++ * Compute stage-to-stage and overall conversion percentages for a funnel.
++ *
++ * Pure and total: returns a valid result for any input, including an empty
++ * funnel, zero counts, and data where a later stage exceeds an earlier one.
++ */
++export function computeFunnelConversion(funnel: readonly FunnelStage[]): FunnelConversion {
++  if (funnel.length === 0) {
++    return { stages: [], overallPct: 0 };
++  }
++
++  const top = funnel[0].count;
++
++  const stages: StageConversion[] = funnel.map((stage, index) => {
++    const previous = index === 0 ? null : funnel[index - 1].count;
++    return {
++      stage: stage.stage,
++      count: stage.count,
++      stepPct: previous === null ? null : safePct(stage.count, previous),
++      overallPct: safePct(stage.count, top),
++    };
++  });
++
++  const bottom = funnel[funnel.length - 1].count;
++
++  return {
++    stages,
++    overallPct: safePct(bottom, top),
++  };
++}
++

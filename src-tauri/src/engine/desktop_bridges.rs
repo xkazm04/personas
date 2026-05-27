@@ -544,7 +544,7 @@ pub mod terminal {
                         if content.len() > 1_048_576 {
                             Ok(format!(
                                 "{}...\n[truncated at 1MB, total {} bytes]",
-                                &content[..1_048_576],
+                                crate::utils::text::truncate_on_char_boundary(&content, 1048576),
                                 content.len()
                             ))
                         } else {

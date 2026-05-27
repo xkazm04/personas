@@ -1,0 +1,41 @@
+[
+  {
+    "id": "e4f30378-afde-492c-8f6b-8ec55e819c48",
+    "execution_id": "75c2ece9-49b1-4758-b58d-d65e678a5142",
+    "persona_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "title": "Code Review APPROVE — 3 optional low-severity fixes for dev acceptance",
+    "description": "Verdict is APPROVE (no gating issues). These three Low findings are optional quality improvements the developer can accept or defer.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T10:13:18.517360900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "77365611-67b3-4674-afa5-4c806f189d4e",
+    "execution_id": "f4c75b3e-0bf8-4027-80f3-01a11313631b",
+    "persona_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "title": "Security Scan — triage 3 findings (0 Critical / 0 High / 2 Medium / 1 Low)",
+    "description": "Severity-ranked findings from the 2026-05-27 scan of Apprenticeship Placement. Each has a concrete fix; accept into a remediation PR or defer.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T10:16:30.168095+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "6e5b4307-c8b5-4d46-a421-911bd4dd855c",
+    "execution_id": "f5675249-3d2a-451c-90e3-6edbb7bb6ebc",
+    "persona_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "title": "Approve commit & push of release v0.2.0",
+    "description": "Release v0.2.0 artifacts are prepared locally: package.json bumped 0.1.0→0.2.0, docs/releases/v0.2.0.md created, and annotated tag v0.2.0 created on HEAD (331e9d7). These are uncommitted and the tag is not pushed. The working tree also contains unrelated in-progress changes (FunnelCard.tsx, tsconfig.json, docs/adr/, src/.../lib/) that should NOT be swept into the release commit. Approve to commit ONLY the version bump + release notes and push the tag.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T10:19:56.100164500+00:00",
+    "use_case_id": null
+  }
+]
