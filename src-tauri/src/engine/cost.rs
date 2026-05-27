@@ -122,7 +122,7 @@ pub fn build_preview(
         prompt_preview: if prompt_text.len() > 5000 {
             format!(
                 "{}...\n\n[{} characters total]",
-                &prompt_text[..5000],
+                crate::utils::text::truncate_on_char_boundary(&prompt_text, 5000),
                 prompt_text.len()
             )
         } else {

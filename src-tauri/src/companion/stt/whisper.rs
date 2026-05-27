@@ -183,7 +183,7 @@ pub async fn transcribe(
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         let snippet = if stderr.len() > 400 {
-            format!("{}…", &stderr[..400])
+            format!("{}…", crate::utils::text::truncate_on_char_boundary(&stderr, 400))
         } else {
             stderr.into_owned()
         };

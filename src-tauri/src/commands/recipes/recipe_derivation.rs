@@ -77,7 +77,7 @@ fn extract_uc_description(uc: &Value) -> Option<String> {
         .and_then(|v| v.as_str())
         .map(|s| {
             if s.len() > 500 {
-                format!("{}…", &s[..499])
+                format!("{}…", crate::utils::text::truncate_on_char_boundary(&s, 499))
             } else {
                 s.to_string()
             }

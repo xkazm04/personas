@@ -725,7 +725,7 @@ pub async fn execute_test_curl(
             let (body, http_code) = extract_http_code_from_output(&stdout);
 
             let preview = if body.len() > 300 {
-                format!("{}...", &body[..300])
+                format!("{}...", crate::utils::text::truncate_on_char_boundary(&body, 300))
             } else {
                 body.to_string()
             };

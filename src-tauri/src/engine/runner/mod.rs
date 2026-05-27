@@ -2323,7 +2323,7 @@ pub async fn run_execution(
             }
         };
         let content = if assistant_text.len() > 50_000 {
-            format!("{}...\n[truncated at 50KB]", &assistant_text[..50_000])
+            format!("{}...\n[truncated at 50KB]", crate::utils::text::truncate_on_char_boundary(&assistant_text, 50000))
         } else {
             assistant_text.clone()
         };

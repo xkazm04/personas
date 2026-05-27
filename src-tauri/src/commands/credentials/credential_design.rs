@@ -58,7 +58,7 @@ pub async fn start_credential_design(
     registry.set_id("credential_design", design_id.clone());
 
     let truncated = if instruction.len() > 120 {
-        format!("{}...", &instruction[..120])
+        format!("{}...", crate::utils::text::truncate_on_char_boundary(&instruction, 120))
     } else {
         instruction.clone()
     };

@@ -128,7 +128,7 @@ fn parse_llm_text_content(text: &str, session_id: &str) -> Vec<BuildEvent> {
     // If no structured events found, emit the text as progress
     if events.is_empty() && !text.trim().is_empty() {
         // Truncate long progress messages
-        let msg = if text.len() > 200 { &text[..200] } else { text };
+        let msg = if text.len() > 200 { crate::utils::text::truncate_on_char_boundary(&text, 200) } else { text };
         events.push(BuildEvent::Progress {
             session_id: session_id.to_string(),
             dimension: None,

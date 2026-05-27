@@ -152,7 +152,7 @@ pub fn sanitize_filename(title: &str) -> String {
         .collect();
     let trimmed = sanitized.trim().trim_matches('-');
     let truncated = if trimmed.len() > 100 {
-        &trimmed[..100]
+        crate::utils::text::truncate_on_char_boundary(&trimmed, 100)
     } else {
         trimmed
     };
