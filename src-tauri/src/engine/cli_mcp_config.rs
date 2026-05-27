@@ -18,6 +18,13 @@ use crate::error::AppError;
 /// LLM as `mcp__personas__<tool_name>`.
 const MCP_SERVER_NAME: &str = "personas";
 
+/// Path to the standalone `--mcp-config` file the runner passes to `claude -p`.
+/// (Claude Code ignores `mcpServers` in `.claude/settings.json`; the headless run
+/// must be given the MCP config explicitly via `--mcp-config <file>`.)
+pub fn mcp_config_path(exec_dir: &Path) -> PathBuf {
+    exec_dir.join(".claude").join("personas-mcp-config.json")
+}
+
 /// Locate the `personas-mcp` binary. Looks next to the current executable
 /// first (production layout), then in the cargo target directory under the
 /// repo root (dev layout). Returns `None` when neither path resolves to a
@@ -148,11 +155,31 @@ pub fn install_mcp_sidecar(
     // every spawn. Field added in CLI 2.1.121; older CLIs ignore unknown
     // server-config fields per the MCP schema, so this is safe across versions.
     let server_entry = serde_json::json!({
+        "type": "stdio",
         "command": mcp_binary.display().to_string(),
         "args": ["--db-path", db_path.display().to_string()],
         "env": serde_json::Value::Object(env_map),
         "alwaysLoad": true,
     });
+
+    // CRITICAL: Claude Code does NOT load `mcpServers` from `.claude/settings.json`
+    // (that key is ignored there). For a headless `claude -p` run, MCP servers must
+    // come from `.mcp.json` (needs approval) or, deterministically, from a config
+    // file passed via `--mcp-config <file>`. We write that file here; the runner
+    // appends `--mcp-config <mcp_config_path(exec_dir)>` to the spawn so personas-mcp
+    // tools (drive_*, personas_*, obsidian_vault_*) actually load. (The settings.json
+    // mcpServers write below is kept harmless for forward-compat but is not relied on.)
+    let mut servers_obj = serde_json::Map::new();
+    servers_obj.insert(MCP_SERVER_NAME.to_string(), server_entry.clone());
+    let mcp_config = serde_json::json!({ "mcpServers": serde_json::Value::Object(servers_obj) });
+    let mcp_config_file = mcp_config_path(exec_dir);
+    if let Err(e) = std::fs::write(
+        &mcp_config_file,
+        serde_json::to_string_pretty(&mcp_config).unwrap_or_default(),
+    ) {
+        tracing::warn!(error = %e, path = %mcp_config_file.display(), "cli_mcp_config: failed to write --mcp-config file — skipping sidecar");
+        return Ok(false);
+    }
 
     // Merge (or create) `mcpServers.personas`.
     let root_obj = existing

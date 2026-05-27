@@ -947,17 +947,23 @@ pub async fn run_execution(
             ]
         })
         .unwrap_or_default();
-    match super::cli_mcp_config::install_mcp_sidecar(
+    let mcp_installed = match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
         None,
         bridge_api_key.as_deref(),
         pinned_dev_project.as_deref(),
     ) {
-        Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
-        Ok(false) => {}
-        Err(e) => logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}")),
-    }
+        Ok(true) => {
+            logger.log("[mcp] wrote personas-mcp --mcp-config (drive_*, personas_*, obsidian_vault_* tools)");
+            true
+        }
+        Ok(false) => false,
+        Err(e) => {
+            logger.log(&format!("[mcp] sidecar install failed (non-fatal): {e}"));
+            false
+        }
+    };
 
     // =========================================================================
     // Provider failover: build candidate chain and try each until one succeeds
@@ -1168,6 +1174,18 @@ pub async fn run_execution(
                 cli_args
                     .env_overrides
                     .push(("TRACESTATE".to_string(), state));
+            }
+
+            // Pass personas-mcp to the headless run. Claude Code loads MCP servers
+            // ONLY from `--mcp-config` (or an approved `.mcp.json`), NOT from
+            // `.claude/settings.json` — so without this flag the persona has no MCP
+            // tools (drive_*, personas_*, obsidian_vault_*). `--strict-mcp-config`
+            // makes this the sole MCP source for deterministic, sandboxed tooling.
+            if mcp_installed {
+                let cfg = super::cli_mcp_config::mcp_config_path(&exec_dir);
+                cli_args.args.push("--mcp-config".to_string());
+                cli_args.args.push(cfg.display().to_string());
+                cli_args.args.push("--strict-mcp-config".to_string());
             }
 
             if candidate_idx > 0 {
