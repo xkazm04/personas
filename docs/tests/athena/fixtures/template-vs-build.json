@@ -1,0 +1,94 @@
+{
+  "id": "template-vs-build",
+  "purpose": "When a user intent has a near-match in the gallery, Athena should emit show_template_suggestions first — NOT prefill_persona_create or build_oneshot.",
+  "tags": ["decision-making", "templates", "design-family"],
+  "doc": "docs/tests/athena/scenarios/template-vs-build.md",
+
+  "setup": {
+    "reset_conversation": true,
+    "open_companion_panel": true,
+    "enabled_plugins": ["dev_tools"],
+    "pinned_connectors": []
+  },
+
+  "turns": [
+    {
+      "id": "t1_clear_gallery_match",
+      "user_message": "I need an agent that watches my Sentry project and pings me in Slack when new critical issues land.",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards": [
+        { "kind": "template_suggestions", "config_match": { "limit_max": 5 } }
+      ],
+      "forbid_approvals": [
+        { "action_kind": "build_oneshot" },
+        { "action_kind": "prefill_persona_create" }
+      ],
+      "expect_reply_has_quick_replies_min": 1,
+      "judge": {
+        "axes": ["useful", "grounded", "right_data_source", "no_hallucinated_capabilities"],
+        "surface_map": {
+          "intent matches gallery template": "show_template_suggestions — adoption preserves customization flow",
+          "named templates": "companion_match_templates result — NOT training-data guesses"
+        },
+        "anti_patterns": [
+          "Emitted prefill_persona_create despite a clear gallery match",
+          "Surfaced both template_suggestions AND prefill on the same turn",
+          "Described a template with features not in its match-result snippet"
+        ]
+      }
+    },
+    {
+      "id": "t2_no_match",
+      "user_message": "Build me an agent that translates English idioms into Czech slang based on a user-provided context.",
+      "wait_for_finish_timeout_ms": 90000,
+      "judge": {
+        "axes": ["useful", "right_data_source", "no_hallucinated_capabilities"],
+        "surface_map": {
+          "intent has no gallery match": "acknowledge no match, pivot to show_persona_walkthrough or prefill_persona_create"
+        },
+        "anti_patterns": [
+          "Emitted template_suggestions with garbage matches",
+          "Hallucinated a 'translation template' that doesn't exist in the registry"
+        ]
+      }
+    },
+    {
+      "id": "t3_user_explores_template",
+      "user_message": "Show me more about the first one.",
+      "wait_for_finish_timeout_ms": 90000,
+      "forbid_approvals": [
+        { "action_kind": "prefill_persona_create" }
+      ],
+      "expect_reply_has_quick_replies_min": 1,
+      "judge": {
+        "axes": ["useful", "grounded"],
+        "surface_map": {
+          "deepen on a named template": "paraphrase the match-result snippet + offer 'open gallery' chip"
+        },
+        "anti_patterns": [
+          "Described features not in the match result",
+          "Direct-emitted prefill_persona_create instead of routing through the gallery"
+        ]
+      }
+    },
+    {
+      "id": "t4_explicit_skip_gallery",
+      "user_message": "Forget the gallery, just build a Sentry-to-Slack agent for me from scratch.",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_approvals_any": [
+        { "action_kind": "prefill_persona_create", "params_match": { "mode": "interactive" } },
+        { "action_kind": "build_oneshot" }
+      ],
+      "judge": {
+        "axes": ["useful", "op_correctness"],
+        "surface_map": {
+          "explicit 'skip gallery, build directly'": "prefill_persona_create or build_oneshot — do NOT re-litigate"
+        },
+        "anti_patterns": [
+          "Pushed template adoption again despite explicit override",
+          "Asked 'are you sure?' after the user committed"
+        ]
+      }
+    }
+  ]
+}

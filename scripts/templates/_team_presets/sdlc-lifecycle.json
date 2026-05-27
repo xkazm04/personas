@@ -1,0 +1,86 @@
+{
+  "id": "sdlc-lifecycle",
+  "schema_version": 1,
+  "name": "SDLC Delivery Team",
+  "description": "Five pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, and a docs steward keeps the README and changelog in sync. They hand work forward through events and share the same codebase and memory.",
+  "icon": "Workflow",
+  "color": "#6366f1",
+  "category": [
+    "development",
+    "devops"
+  ],
+  "team": {
+    "name": "SDLC Delivery Team",
+    "description": "Architect → review → security → release → docs — end-to-end software lifecycle on one codebase.",
+    "color": "#6366f1"
+  },
+  "group": {
+    "name": "Software Delivery",
+    "color": "#6366f1",
+    "shared_instructions": "Every member operates on the same registered codebase. Ground every assertion in codebase evidence — cite file:line rather than speculating. Hand work forward through events, not direct calls. Track decisions, findings, and version history in memory so the team's knowledge compounds across runs instead of resetting each time. Prefer empirical findings over assumptions; when a precondition (codebase access) is missing, say so explicitly rather than fabricating results."
+  },
+  "members": [
+    {
+      "template_id": "solution-architect",
+      "role": "architect",
+      "x": 0,
+      "y": 120
+    },
+    {
+      "template_id": "code-reviewer",
+      "role": "reviewer",
+      "x": 240,
+      "y": 120
+    },
+    {
+      "template_id": "security-sentinel",
+      "role": "security",
+      "x": 480,
+      "y": 120
+    },
+    {
+      "template_id": "release-manager",
+      "role": "release",
+      "x": 720,
+      "y": 120
+    },
+    {
+      "template_id": "docs-steward",
+      "role": "docs",
+      "x": 960,
+      "y": 120
+    }
+  ],
+  "connections": [
+    {
+      "from": "architect",
+      "to": "reviewer",
+      "connection_type": "sequential",
+      "label": "scoped implementation plan (architecture.analysis.completed)"
+    },
+    {
+      "from": "reviewer",
+      "to": "security",
+      "connection_type": "sequential",
+      "label": "reviewed changes to audit (code_review.completed)"
+    },
+    {
+      "from": "security",
+      "to": "release",
+      "connection_type": "sequential",
+      "label": "security-cleared changes (security.scan.completed)"
+    },
+    {
+      "from": "release",
+      "to": "docs",
+      "connection_type": "sequential",
+      "label": "published release (release.published)"
+    },
+    {
+      "from": "docs",
+      "to": "architect",
+      "connection_type": "feedback",
+      "label": "shipped + documented state for the next review cycle (docs.sync.completed)"
+    }
+  ]
+}

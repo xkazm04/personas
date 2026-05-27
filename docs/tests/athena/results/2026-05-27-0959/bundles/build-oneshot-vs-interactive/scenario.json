@@ -1,0 +1,138 @@
+{
+  "id": "build-oneshot-vs-interactive",
+  "purpose": "Athena picks build_oneshot vs prefill_persona_create{interactive} based on user confidence + intent specificity. Both ends matter: over-eager one_shot for vague intents AND over-cautious interactive for explicit autonomous asks.",
+  "tags": [
+    "decision-making",
+    "build",
+    "autonomy"
+  ],
+  "setup_error": null,
+  "hard_status": "pass",
+  "turns": [
+    {
+      "turn_id": "t1_confident_autonomy",
+      "user_message": "Just build me an agent that watches Sentry and posts new critical issues to my #alerts Slack channel. Decide everything yourself, I'll review when it's done.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 17409,
+      "assertions": [
+        {
+          "name": "expect_approval[build_oneshot]",
+          "passed": true,
+          "detail": "actions seen: ['build_oneshot']"
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "quick_replies_min[1]",
+          "passed": true,
+          "detail": "got 3 chips: ['Make it interactive instead so I can tune it', \"Also include 'error' severity, not just 'critical'\", 'Use a different Slack channel']"
+        },
+        {
+          "name": "approvals_executed_clean",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "approval_outcomes": [
+        {
+          "approval_id": "appr_1cf6434ded",
+          "action": "build_oneshot",
+          "success": true,
+          "result": {
+            "id": "appr_1cf6434ded",
+            "status": "approved",
+            "message": "Building autonomously now — I'll let you know when it's ready (or surface what blocked it). Opening Personas so you can watch.",
+            "clientAction": {
+              "type": "navigate",
+              "route": "personas"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "turn_id": "t2_explicit_walkthrough",
+      "user_message": "I want an agent that watches Sentry. Walk me through what you'd build.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 31091,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "expect_card_any",
+          "passed": true,
+          "detail": "wanted any of: ['persona_walkthrough']; got: ['persona_walkthrough']"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t3_underspecified_but_confident",
+      "user_message": "Just build me something that helps with my email.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 19000,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "quick_replies_min[2]",
+          "passed": true,
+          "detail": "got 4 chips: ['Triage incoming and draft replies for me', 'Daily digest of what I missed overnight', 'Auto-archive newsletters and noise', 'Extract action items into a list']"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t4_clarified",
+      "user_message": "Triage incoming. Just build it.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 18298,
+      "assertions": [
+        {
+          "name": "expect_approval[build_oneshot]",
+          "passed": true,
+          "detail": "actions seen: ['build_oneshot']"
+        },
+        {
+          "name": "approvals_executed_clean",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "approval_outcomes": [
+        {
+          "approval_id": "appr_661f39a666",
+          "action": "build_oneshot",
+          "success": true,
+          "result": {
+            "id": "appr_661f39a666",
+            "status": "approved",
+            "message": "Building autonomously now — I'll let you know when it's ready (or surface what blocked it). Opening Personas so you can watch.",
+            "clientAction": {
+              "type": "navigate",
+              "route": "personas"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

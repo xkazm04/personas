@@ -105,4 +105,138 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// v19: persona-creation guidance — `show_persona_creation_offer` (two-button
 /// "Build it for me" vs "Show me how" card) and `start_guided_walkthrough`
 /// (launches an in-app guided tour: orb glides + element glow + narration).
-pub const CONSTITUTION_VERSION: u32 = 19;
+///
+/// v20: Athena Quality Suite first-run fixes. Two grammar gaps closed
+/// (`register_project` + `enqueue_dev_job` previously had no op-grammar
+/// lines, so Athena was wrapping enqueue_dev_job inside `use_connector`
+/// and the dispatcher silently rejected). Five behavioral rule sections
+/// added: (a) "Scanning a codebase, registering projects (Dev Tools)" —
+/// distinct routing from build, with anti-pattern callout for the
+/// use_connector wrapping mistake; (b) "Off-ramp chip on build_oneshot"
+/// — always include a "Make it interactive instead" QR chip;
+/// (c) "Adopt before designing from scratch" — `show_template_suggestions`
+/// fires first on intents naming third-party shapes, before
+/// prefill/build; (d) "Pivot to interactive when prior turns left
+/// decisions unsettled" — `show_persona_ready.recommended_action`
+/// defaults to interactive when chips went unpicked; (e) "Capability
+/// listing" — fire `show_design_capabilities` on "what can you do?"
+/// questions, not prose enumeration; (f) "Connector-availability check
+/// before persona design" — when intent names a non-wired connector,
+/// lead with availability check, not "yes that's a clean persona shape".
+///
+/// v21: Second-run fixes. Three changes:
+/// (1) Universalize the "OP block IS the action, narrating is not"
+/// rule beyond build_oneshot — applies to every op including
+/// show_template_suggestions, enqueue_dev_job, show_decision_log etc.
+/// Athena was narrating "letting me check the gallery first" without
+/// emitting `OP: show_template_suggestions`, so no card rendered.
+/// (2) Tighten gallery-first: explicit-autonomy phrasings ("just build
+/// it" / "decide everything yourself" / "one-shot it") now override
+/// suggestion-first, so a confident "just build me a Sentry watcher"
+/// goes straight to build_oneshot without pivoting to suggestions.
+/// (3) Walkthrough-vs-suggest disambiguation: "walk me through" /
+/// "help me design" route to show_persona_walkthrough, not
+/// show_template_suggestions — design-first asks want the readiness-
+/// item plan, not a near-match list.
+///
+/// v22: Third-run fixes. Three changes targeting the persistent
+/// "narration without OP" pattern that v21 only partially solved.
+/// (a) New "Rule Zero — the `OP:` line IS the action" section
+/// PROMOTED TO THE TOP of the prompt, before "What you can do".
+/// Athena reads it first instead of finding it ~220 lines into a
+/// 832-line constitution. Lists the narration-phrases that demand
+/// matching OPs ("let me check / kicking off / here's the audit
+/// trail / building / switching to").
+/// (b) New "Pre-reply emission checklist" section at the constitution
+/// TAIL (before Identity layer). 4-step pre-send sanity pass: read
+/// your reply, find action-promises, verify matching OPs, fix or
+/// delete. Same rule, repeated at end-of-prompt so it's the last
+/// thing Athena sees before composing.
+/// (c) "Mandatory chips on refused-build turns": when Athena correctly
+/// refuses to one-shot an under-specified intent but the user used a
+/// confident phrasing, she MUST include 2–4 QR chips offering the
+/// concrete shapes she'd commit to once disambiguated. Refusing
+/// without offering chips leaves the user stuck typing.
+///
+/// v23: Fourth-run fixes for the persistent design-family card-emission
+/// pattern + a backend hardening for stale project_id references.
+/// (a) New "Design-family cards fire UNCONDITIONALLY on their trigger
+/// phrasings" section with a literal user-says → you-emit table.
+/// The card kinds are commit ops, not soft suggestions; when the user
+/// asks "what use cases?" / "recap" / "what triggers?", the matching
+/// OP fires. Prose-only on a trigger phrasing is a hallucination of
+/// the card.
+/// (b) enqueue_dev_job grammar line updated to PREFER `project_name`
+/// + `path` over `project_id` (which can rot across sessions when
+/// Athena re-emits an ID she saw in a prior session's observability
+/// digest). Pairs with the dispatcher fallback below.
+/// (c) Recap rule made explicit: "recap" / "summarize what we decided"
+/// fires the `show_decision_log` + `show_persona_ready` PAIR, not
+/// prose. The card IS the audit-trail rendering channel.
+///
+/// Backend pairing (not a constitution change but ships with v23):
+/// `execute_enqueue_dev_job` now falls back to the most-recently-
+/// registered dev_project when the project_id Athena emitted doesn't
+/// match any row. The success message notes the fallback. Together,
+/// (b) above + the dispatcher fallback close the "stale project_id =
+/// silent prod no-op" hole the auto-approve loop surfaced in run 4.
+///
+/// v24: Connector audit follow-ups (post-2026-05-27 audit). Three changes:
+/// (a) `use_connector` added to Rule Zero's unconditional-fire trigger
+/// phrasings — "pulling / fetching / checking / looking up your
+/// <gmail / sentry / discord / etc>" now demands a matching `OP:
+/// use_connector` line. Closes the gmail-summarize narration-without-OP
+/// regression from the audit run.
+/// (b) Tier-1 connector wiring shipped: Discord (`list_recent_messages`,
+/// `post_message`) + Gmail writes (`mark_thread_read`, `send_message`).
+/// Constitution's wired-connector list updated to include Discord and
+/// Gmail-write per-capability.
+/// (c) New architectural primitive: `ConnectorCapability::requires_approval`.
+/// Read capabilities auto-fire as today; write capabilities route
+/// through an approval card so the user consciously approves external
+/// writes. Athena spontaneously proposed this during the audit run on
+/// Notion delete + DB drop turns ("the kind of action I'd want gated
+/// behind an approval card, not auto-fired through a generic connector
+/// call"). Documented in the connector-availability section + Rule
+/// Zero's read/write nuance.
+///
+/// v25: Tier-2 connector wiring + narration-fix follow-up to the
+/// connector audit.
+/// (a) Notion (`list_pages`, `get_page`, `delete_page`+approval),
+/// local_drive (`list_files`, `count_files`, `write_text_file`+approval),
+/// ElevenLabs (`list_voices`, `generate_tts`+approval),
+/// personas_database (`list_tables`, `describe_table`, `execute_select`,
+/// `execute_mutation`+approval). Brings the wired-connector count to 9.
+/// (b) `use_connector` flow now tolerates zero-credential builtins
+/// (`local_drive`, `personas_database`) -- the resolver passes an empty
+/// fields HashMap and handlers reach into in-process resources
+/// (pool / managed drive root cache) directly.
+/// (c) Rule Zero now ships a literal worked-example pair (right vs
+/// wrong reply on "Summarize my last unread email") to fix the
+/// narration-without-OP regression on `use_connector` reads. v24's
+/// table-only nudge wasn't anchored enough; the few-shot pair closes
+/// the last audit-revealed gap.
+///
+/// v26: Local-builtin OP-emission fix. The 2026-05-27 stress sweep
+/// (4 runs) surfaced a SYSTEMATIC gap (not variance): Athena emitted
+/// `use_connector` OPs reliably for third-party-credentialed connectors
+/// (sentry 4/4, notion 4/4) but rarely or never for always-active
+/// local builtins (local_drive 1/4, personas_database 0/4). v25's
+/// Gmail worked example didn't generalize — the model had internalized
+/// "use_connector is for external API calls with credentials", and
+/// treated local builtins as implicit context she could just read
+/// without an OP. Three changes:
+/// (a) New explicit bullet under Rule Zero's verb table calling out
+/// that `local_drive` and `personas_database` follow the SAME OP
+/// contract as third-party APIs — "no credentials" does not mean
+/// "no OP".
+/// (b) Two new worked examples after the Gmail one: a right/wrong
+/// pair for `local_drive.list_files` ("Show me what's in my drive")
+/// and a right/wrong pair for `personas_database.list_tables`
+/// ("Pull the table list from my local database"). The 3-example
+/// few-shot lets the model see the contract across the spectrum.
+/// (c) Pre-reply checklist's verb list expanded with the local-vs-
+/// external-source clarification, listing the read verbs explicitly
+/// (pulling/fetching/checking/looking up/listing/summarizing/scanning/
+/// reading) and noting that none of them exempt local builtins.
+pub const CONSTITUTION_VERSION: u32 = 26;

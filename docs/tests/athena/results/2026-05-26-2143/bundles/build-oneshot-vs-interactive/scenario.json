@@ -1,0 +1,94 @@
+{
+  "id": "build-oneshot-vs-interactive",
+  "purpose": "Athena picks build_oneshot vs prefill_persona_create{interactive} based on user confidence + intent specificity. Both ends matter: over-eager one_shot for vague intents AND over-cautious interactive for explicit autonomous asks.",
+  "tags": [
+    "decision-making",
+    "build",
+    "autonomy"
+  ],
+  "setup_error": null,
+  "hard_status": "fail",
+  "turns": [
+    {
+      "turn_id": "t1_confident_autonomy",
+      "user_message": "Just build me an agent that watches Sentry and posts new critical issues to my #alerts Slack channel. Decide everything yourself, I'll review when it's done.",
+      "drive_error": null,
+      "hard_passed": false,
+      "duration_ms": 14478,
+      "assertions": [
+        {
+          "name": "expect_approval[build_oneshot]",
+          "passed": true,
+          "detail": "actions seen: ['build_oneshot']"
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "quick_replies_min[1]",
+          "passed": false,
+          "detail": "got 0 chips: []"
+        }
+      ]
+    },
+    {
+      "turn_id": "t2_explicit_walkthrough",
+      "user_message": "I want an agent that watches Sentry. Walk me through what you'd build.",
+      "drive_error": null,
+      "hard_passed": false,
+      "duration_ms": 40022,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": false,
+          "detail": "unexpected: [{'id': 'appr_80c71680b5', 'action': 'build_oneshot', 'rationale': 'Narrow, routine monitor with existing connectors and a clear one-shape output — fits build_oneshot; Michal asked me to decide and report back.', 'paramsJson': '{\"intent\":\"Watch Sentry for new critical-severity issues and post each one to the #alerts Slack channel. Trigger: poll Sentry on a short cadence (every few minutes) for newly-created issues at level=fatal/error with is_unresolved=true. For each new critical issue, send a Slack message to #alerts containing the issue title, project, environment, error count, first/last seen, and a link back to the Sentry issue. Dedupe so a given Sentry issue is only posted once. Use the existing Sentry and Slack connectors.\",\"name\":\"Sentry Critical Alerts To Slack\"}', 'humanReviewId': None, 'createdAt': '2026-05-26 21:44:01'}]"
+        },
+        {
+          "name": "expect_card_any",
+          "passed": true,
+          "detail": "wanted any of: ['persona_walkthrough']; got: ['persona_walkthrough']"
+        }
+      ]
+    },
+    {
+      "turn_id": "t3_underspecified_but_confident",
+      "user_message": "Just build me something that helps with my email.",
+      "drive_error": null,
+      "hard_passed": false,
+      "duration_ms": 19867,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": false,
+          "detail": "unexpected: [{'id': 'appr_80c71680b5', 'action': 'build_oneshot', 'rationale': 'Narrow, routine monitor with existing connectors and a clear one-shape output — fits build_oneshot; Michal asked me to decide and report back.', 'paramsJson': '{\"intent\":\"Watch Sentry for new critical-severity issues and post each one to the #alerts Slack channel. Trigger: poll Sentry on a short cadence (every few minutes) for newly-created issues at level=fatal/error with is_unresolved=true. For each new critical issue, send a Slack message to #alerts containing the issue title, project, environment, error count, first/last seen, and a link back to the Sentry issue. Dedupe so a given Sentry issue is only posted once. Use the existing Sentry and Slack connectors.\",\"name\":\"Sentry Critical Alerts To Slack\"}', 'humanReviewId': None, 'createdAt': '2026-05-26 21:44:01'}]"
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "quick_replies_min[2]",
+          "passed": true,
+          "detail": "got 4 chips: ['Draft replies to threads that need a response', 'Daily digest of unread + action items', 'Auto-archive newsletters and low-signal mail', 'Extract calendar invites and follow-ups']"
+        }
+      ]
+    },
+    {
+      "turn_id": "t4_clarified",
+      "user_message": "Triage incoming. Just build it.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 23994,
+      "assertions": [
+        {
+          "name": "expect_approval[build_oneshot]",
+          "passed": true,
+          "detail": "actions seen: ['build_oneshot', 'build_oneshot']"
+        }
+      ]
+    }
+  ]
+}

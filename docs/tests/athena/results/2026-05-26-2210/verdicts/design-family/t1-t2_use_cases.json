@@ -1,0 +1,18 @@
+{
+  "useful": "ok",
+  "useful_note": "Card emitted with 5 use cases, and the prose around it earns its keep: flags 'out-of-scope is load-bearing' (the doctrine's own framing about scope-creep) and explicitly defers thread-continuation pending the email-source decision from t1. The 4 QR chips offer concrete forward moves (next tier, add VIP, drop one, pick source).",
+
+  "grounded": "weak",
+  "grounded_note": "Recall preview still empty — no doctrine consulted — but the substance of the reply (golden/variant/out_of_scope roles, 'out-of-scope is load-bearing', scope-creep warning) IS the persona-design-best-practices doctrine framing. Either Athena internalized that doctrine without needing live recall this turn, or she's regenerating it from the prompt's standing instructions. Without recall confirmation it's hard to say which, hence weak.",
+
+  "right_data_source": "n/a",
+  "right_data_source_note": "",
+
+  "no_hallucinated_capabilities": "n/a",
+  "no_hallucinated_note": "",
+
+  "op_correctness": "ok",
+  "op_correctness_note": "Exactly one use_case_set card with intent + use_cases keys.",
+
+  "overall_note": "Right card, right doctrine substance — but recall preview emptiness on this turn (and the prior turn) makes the grounding axis hard to score 'ok'. If the prompt builder is loading doctrine but the recall event isn't emitting titles, that's a backend bug to investigate."
+}

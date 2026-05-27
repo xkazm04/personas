@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "Fired use_connector{local_drive, list_files} — verified in the job table (completed at 16:22:12). Reply prose is clean heads-up; the OP was stripped on successful auto-fire. v26's local-builtin worked example landed.",
+  "grounded": "n/a", "grounded_note": "",
+  "right_data_source": "ok", "right_data_source_note": "local_drive/list_files, correct builtin path.",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "",
+  "op_correctness": "ok", "op_correctness_note": "OP fired (job table confirms). Bundle background_jobs_queued=0 is a capture-timing artifact — job created async after turn-text-finish.",
+  "overall_note": "v26 FIX VERIFIED. local_drive went from 1/4 (pre-v26) to 3/3 firing across the sweep."
+}

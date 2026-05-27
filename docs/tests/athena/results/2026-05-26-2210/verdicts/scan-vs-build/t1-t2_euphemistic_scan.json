@@ -1,0 +1,18 @@
+{
+  "useful": "ok",
+  "useful_note": "Excellent: refuses the literal 'look through every file' reading ('I can't read code directly from here'), gives an immediately useful answer from operational state — names a CHECK-constraint regression hitting two unrelated agents (suggesting a shared persistence-path bug — Athena correctly diagnoses this as the priority), names the 2 healing issues, the security review, the TODO count. Then closes by offering to hand the scan + the bug trace to SDLC Code Reviewer. The 4 QR chips are concrete.",
+
+  "grounded": "ok",
+  "grounded_note": "Every claim cites bridge-verifiable specifics: the persona names (Sales Deal Intelligence, Knowledge Base Health Auditor, Document Auto-Translator, Demo Recorder (6)), the audit finding id (F-2026-05-20-001), the TODO count. The 'two unrelated agents → bug in persistence path' inference is well-reasoned operational logic from observable signals.",
+
+  "right_data_source": "ok",
+  "right_data_source_note": "Surface map prescribes 'enqueue_dev_job + SDLC team Code Reviewer'. Athena reads from healing events / pending reviews / scan output (right surface for 'what's broken from operations') and routes the source-level review to SDLC Code Reviewer correctly.",
+
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Doesn't claim to fix bugs, run tests, or read source. Says explicitly 'I can't read code directly from here'.",
+
+  "op_correctness": "weak",
+  "op_correctness_note": "No approval fired this turn — Athena offered to enqueue the scan but waited for user direction ('Want me to hand the context scan (once it lands) plus the CHECK-constraint trace to them as their next job?'). The fixture expected an enqueue_dev_job approval to fire here. Arguable both ways: Athena offering before firing is the safer pattern, but the user already said 'tell me what's broken' which is sufficient justification to enqueue the scan unilaterally per the surface map. Mark weak — Athena's path is defensible but doesn't satisfy the strict scenario expectation.",
+
+  "overall_note": "Substantively the best 'what's broken in my codebase' answer the suite could hope for — operational diagnosis + SDLC routing + handoff offer. The expect_approval fail is a real signal but the scenario expectation may be too strict; consider making enqueue_dev_job opt-in via QR chip rather than auto-fire for euphemistic phrasings."
+}

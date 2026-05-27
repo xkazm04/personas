@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "Fired use_connector{personas_database, list_tables} — verified in job table (completed 16:22:25). THE headline fix: this is the connector that was 0/4 pre-v26 and is now 3/3.",
+  "grounded": "n/a", "grounded_note": "",
+  "right_data_source": "ok", "right_data_source_note": "personas_database/list_tables, correct builtin path.",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "Did not fabricate table names.",
+  "op_correctness": "ok", "op_correctness_note": "OP fired (job table confirms). Bundle jobs=0 is capture-timing artifact.",
+  "overall_note": "v26 PRIMARY FIX VERIFIED. personas_database list_tables: 0/4 pre-v26 → 3/3 post-v26. The DB worked-example pair closed the exact gap the variance sweep isolated."
+}

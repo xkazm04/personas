@@ -826,11 +826,61 @@ pub async fn run_execution(
     // "bridge unavailable" rather than failing the whole run.
     let bridge_api_key =
         crate::engine::management_api::get_or_create_system_api_key(&pool).ok();
+    // Codebase pin: surface this persona's `design_context.dev_project_id` to the
+    // sidecar so its codebase/context MCP tools resolve THIS repo (not the global
+    // first-project default). Set once by the team adoption questionnaire and
+    // carried on each member persona. Mirrors the twin connector's pin.
+    // Extract the pin from the raw JSON, NOT via `from_str::<DesignContextData>`:
+    // a persona's design_context carries extra/loosely-typed fields (mapped
+    // useCases, builderMeta, …) that fail the strict struct parse, which would
+    // silently drop the pin. Reading the `devProjectId` key directly is robust.
+    let pinned_dev_project: Option<String> = persona
+        .design_context
+        .as_deref()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+        .and_then(|v| {
+            v.get("devProjectId")
+                .and_then(|x| x.as_str())
+                .map(|s| s.to_string())
+        });
+    // Build CODEBASE_* env overrides from the pinned dev_project. The codebase
+    // connector otherwise resolves a dev_project GLOBALLY and injects
+    // CODEBASE_ROOT_PATH/PROJECT_NAME/TECH_STACK/PROJECT_ID — which a pinned
+    // persona must NOT inherit (it would read the wrong repo). These are pushed
+    // to env_overrides AFTER the resolved credential env so they win, ensuring a
+    // team adopted for repo X reads repo X. Empty when unpinned (global default
+    // stands). Mirrors the per-persona pin the sidecar gets above.
+    let pinned_codebase_env: Vec<(String, String)> = pinned_dev_project
+        .as_deref()
+        .and_then(|id| {
+            let conn = pool.get().ok()?;
+            conn.query_row(
+                "SELECT id, name, root_path, COALESCE(tech_stack,'') FROM dev_projects WHERE id = ?1",
+                rusqlite::params![id],
+                |r| Ok((
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(1)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, String>(3)?,
+                )),
+            )
+            .ok()
+        })
+        .map(|(id, name, root, stack)| {
+            vec![
+                ("CODEBASE_ROOT_PATH".to_string(), root),
+                ("CODEBASE_PROJECT_NAME".to_string(), name),
+                ("CODEBASE_TECH_STACK".to_string(), stack),
+                ("CODEBASE_PROJECT_ID".to_string(), id),
+            ]
+        })
+        .unwrap_or_default();
     match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
         None,
         bridge_api_key.as_deref(),
+        pinned_dev_project.as_deref(),
     ) {
         Ok(true) => logger.log("[mcp] registered personas-mcp in exec_dir/.claude/settings.json"),
         Ok(false) => {}
@@ -1016,6 +1066,22 @@ pub async fn run_execution(
                         };
                 }
                 PromptDelivery::Stdin => {}
+            }
+
+            // Codebase pin override: re-assert CODEBASE_* from the pinned
+            // dev_project AFTER the credential env (which may have injected the
+            // globally-resolved codebase). Pushed last → wins, so a pinned
+            // persona reads ITS repo. No-op when unpinned.
+            for (key, val) in &pinned_codebase_env {
+                cli_args.env_overrides.push((key.clone(), val.clone()));
+            }
+            if !pinned_codebase_env.is_empty() {
+                tracing::info!(
+                    persona_id = %persona.id,
+                    dev_project = ?pinned_dev_project,
+                    codebase_root = pinned_codebase_env.iter().find(|(k,_)| k=="CODEBASE_ROOT_PATH").map(|(_,v)| v.as_str()).unwrap_or("<none>"),
+                    "codebase pin: persona reads its pinned repo (CODEBASE_* overridden)"
+                );
             }
 
             // Inject the W3C traceparent generated above into the child CLI's

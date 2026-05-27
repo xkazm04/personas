@@ -272,6 +272,20 @@ interface CompanionStore {
   clearAllConnectorJobs: () => void;
 
   /**
+   * Async-UX phase 4 — non-blocking conversation. Messages the user sent
+   * while a turn was still streaming. Each is queued (FIFO) and drained
+   * one-per-turn-completion by CompanionPanel. `mode` records how the
+   * message was classified at send time: an `interrupt` also stopped the
+   * in-flight turn; a `queue` simply waits its turn. The composer is never
+   * disabled — this is where mid-turn input lands instead of being blocked.
+   */
+  queuedMessages: { id: string; text: string; mode: 'queue' | 'interrupt' }[];
+  enqueueMessage: (text: string, mode: 'queue' | 'interrupt') => void;
+  shiftQueuedMessage: () => { id: string; text: string; mode: 'queue' | 'interrupt' } | null;
+  removeQueuedMessage: (id: string) => void;
+  clearQueuedMessages: () => void;
+
+  /**
    * The "operational thread": Athena's live TodoWrite plan, parsed from
    * TodoWrite tool calls in the stream. `streamingSteps` is the in-flight
    * checklist (latest TodoWrite call wins — each call re-sends the full
@@ -511,20 +525,38 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       const next: Partial<CompanionStore> = {
         jobsById: { ...s.jobsById, [job.id]: job },
       };
-      // Only `connector_use` jobs are surfaced as inline cards. Other
-      // kinds (scan_codebase, curation_run) flow through their own
-      // dedicated UIs and shouldn't squat on the chat transcript.
-      if (
-        job.kind === 'connector_use' &&
-        !s.pendingConnectorJobIds.includes(job.id) &&
-        // Don't re-pend a job that's already pinned to an episode (e.g.
-        // the late `completed` event arriving after `finished` already
-        // promoted the pending list).
-        !Object.values(s.connectorJobIdsByEpisodeId).some((ids) =>
-          ids.includes(job.id),
-        )
-      ) {
-        next.pendingConnectorJobIds = [...s.pendingConnectorJobIds, job.id];
+      // Pin tasks spawned by a turn under the spawning bubble (in-chat
+      // tags). `connector_use` is always pinned (it only auto-fires
+      // mid-turn) and renders as the rich ConnectorCallCard; any other
+      // kind enqueued while a turn is streaming (scan_codebase,
+      // memory_curation_run, …) is pinned too and renders as the compact
+      // TaskTag. Approval-click tasks fire while idle (streaming=false) →
+      // they stay out of the transcript and surface only in the tray.
+      const shouldPin = job.kind === 'connector_use' || s.streaming;
+      const alreadyAttached = Object.values(s.connectorJobIdsByEpisodeId).some(
+        (ids) => ids.includes(job.id),
+      );
+      if (shouldPin && !s.pendingConnectorJobIds.includes(job.id) && !alreadyAttached) {
+        // Late-arrival attach: a `connector_use` job event can land AFTER
+        // the turn's `finished` event already ran `attachPendingJobsToEpisode`
+        // and cleared the pending list. In that case the job would sit
+        // orphaned in `pendingConnectorJobIds` forever (and its
+        // ConnectorCallCard would never render under the bubble that
+        // spawned it, or worse, attach to the NEXT turn). When we're not
+        // streaming and there's a most-recent assistant episode, pin the
+        // job straight onto it instead of staging it as pending.
+        const lastAssistant = [...s.messages]
+          .reverse()
+          .find((m) => m.role === 'assistant');
+        if (!s.streaming && job.kind === 'connector_use' && lastAssistant) {
+          const existing = s.connectorJobIdsByEpisodeId[lastAssistant.id] ?? [];
+          next.connectorJobIdsByEpisodeId = {
+            ...s.connectorJobIdsByEpisodeId,
+            [lastAssistant.id]: [...existing, job.id],
+          };
+        } else {
+          next.pendingConnectorJobIds = [...s.pendingConnectorJobIds, job.id];
+        }
       }
       return next;
     }),
@@ -548,6 +580,24 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       pendingConnectorJobIds: [],
       connectorJobIdsByEpisodeId: {},
     }),
+
+  queuedMessages: [],
+  enqueueMessage: (text, mode) =>
+    set((s) => ({
+      queuedMessages: [
+        ...s.queuedMessages,
+        { id: `q_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`, text, mode },
+      ],
+    })),
+  shiftQueuedMessage: () => {
+    const [first, ...rest] = get().queuedMessages;
+    if (!first) return null;
+    set({ queuedMessages: rest });
+    return first;
+  },
+  removeQueuedMessage: (id) =>
+    set((s) => ({ queuedMessages: s.queuedMessages.filter((m) => m.id !== id) })),
+  clearQueuedMessages: () => set({ queuedMessages: [] }),
 
   streamingSteps: [],
   stepsByEpisodeId: {},

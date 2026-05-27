@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "'I don't have a memory of that.' Names the two honest possibilities (unconsolidated session vs never happened). Offers to record now.",
+  "grounded": "ok", "grounded_note": "No fabricated past discussion; no live-DB references that the preview can't substantiate.",
+  "right_data_source": "ok", "right_data_source_note": "Refusal on the recall surface.",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "",
+  "op_correctness": "n/a", "op_correctness_note": "",
+  "overall_note": "Clean category-D refusal."
+}

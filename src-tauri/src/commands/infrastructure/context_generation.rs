@@ -417,9 +417,23 @@ pub async fn dev_tools_scan_codebase(
     delta_mode: Option<bool>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
-
     let project = repo::get_project_by_id(&state.db, &project_id)?;
+    launch_context_scan(app, &state.db, &project, &root_path, delta_mode.unwrap_or(false))
+}
 
+/// Launch a context-map scan for `project` as a background task. Shared by the
+/// `dev_tools_scan_codebase` command and Athena's `register_project` auto-scan
+/// (`commands/companion/approvals.rs`). Returns immediately with the scan_id; the
+/// scan runs in a spawned task and emits CONTEXT_GEN_* events + an OS notification
+/// on completion. `root_path` "" / "." falls back to the project's stored root_path.
+pub(crate) fn launch_context_scan(
+    app: tauri::AppHandle,
+    pool: &crate::db::DbPool,
+    project: &crate::db::models::DevProject,
+    root_path: &str,
+    delta_mode: bool,
+) -> Result<serde_json::Value, AppError> {
+    let project_id = project.id.clone();
     let scan_id = uuid::Uuid::new_v4().to_string();
     let cancel_token = CancellationToken::new();
     CONTEXT_GEN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), ContextGenExtra)?;
@@ -429,7 +443,7 @@ pub async fn dev_tools_scan_codebase(
     let resolved_root = if root_path == "." || root_path.is_empty() {
         project.root_path.clone()
     } else {
-        root_path
+        root_path.to_string()
     };
 
     // Validate directory
@@ -447,12 +461,11 @@ pub async fn dev_tools_scan_codebase(
     }
 
     // Check for existing contexts (rescan mode)
-    let existing_summary = build_existing_context_summary(&state.db, &project_id);
+    let existing_summary = build_existing_context_summary(pool, &project_id);
     let is_rescan = existing_summary.is_some();
-    let delta_mode = delta_mode.unwrap_or(false);
 
     let app_handle = app.clone();
-    let pool = state.db.clone();
+    let pool = pool.clone();
     let scan_id_for_task = scan_id.clone();
     let token_for_task = cancel_token;
     let project_name = project.name.clone();

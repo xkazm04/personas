@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "Refused build, named both gaps (Linear unwired, Slack list_channels-only no post), offered two concrete paths.",
+  "grounded": "ok", "grounded_note": "Connector inventory accurate.",
+  "right_data_source": "ok", "right_data_source_note": "Connector registry.",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "No invented Linear/Slack-post.",
+  "op_correctness": "ok", "op_correctness_note": "No OP — correct refusal.",
+  "overall_note": "Reference-quality category-B, consistent with prior runs."
+}

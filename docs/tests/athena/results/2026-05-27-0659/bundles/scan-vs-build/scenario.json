@@ -1,0 +1,13 @@
+{
+  "id": "scan-vs-build",
+  "purpose": "Athena should treat 'scan/map/analyze the codebase' as enqueue_dev_job{scan_codebase}, NOT build_oneshot. Constitution forbids the confusion explicitly.",
+  "tags": [
+    "decision-making",
+    "scan",
+    "build_oneshot",
+    "dev_tools"
+  ],
+  "setup_error": "setup failed: ReadTimeout('timed out')",
+  "hard_status": "fail",
+  "turns": []
+}

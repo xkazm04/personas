@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Named both gaps explicitly (Linear unwired; Notion read+delete only — no create/update), refused to silently pivot, offered three concrete paths with chips.",
+  "grounded": "ok",
+  "grounded_note": "Notion capability inventory matches the wired registry: list_pages, get_page, delete_page only.",
+  "right_data_source": "ok",
+  "right_data_source_note": "Pulled from the connector registry, not training-data assumptions about what Notion 'usually' supports.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Did not pretend Linear is wired; did not invent Notion create/update; explicitly forbid_approval[build_oneshot] honored.",
+  "op_correctness": "n/a",
+  "op_correctness_note": "",
+  "overall_note": "Reference-quality category-G handling. The 'GitHub → Discord' pivot suggestion was explicit (not a silent substitution), and the user keeps full decision authority via the chips."
+}

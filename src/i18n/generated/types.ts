@@ -138,6 +138,12 @@ export type Translations = {
     group_by_toggle: string;
     group_by_toggle_title: string;
     group_ungrouped: string;
+    caption_pending: string;
+    caption_input_many: string;
+    caption_draft_many: string;
+    caption_queued_many: string;
+    open_reviews_with_count: string;
+    open_messages_with_count: string;
   };
   common: {
     unknown_error: string;
@@ -11286,6 +11292,14 @@ export type Translations = {
       connector_call_running: string;
       connector_call_completed: string;
       connector_call_failed: string;
+      task_status_queued: string;
+      task_status_running: string;
+      task_status_done: string;
+      task_status_failed: string;
+      tasks_running_one: string;
+      tasks_running_other: string;
+      queued_badge: string;
+      queued_remove: string;
       connector_call_in_flight_hint: string;
       connector_call_retry: string;
       connector_call_retrying: string;

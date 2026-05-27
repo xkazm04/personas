@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Refusal + 'I'm a language model; drafting a tagline is something I just do' clarification. Then asks for the actual target — won't draft generic copy. The 'calculator to add 2+2' analogy is concrete and on-point.",
+  "grounded": "ok",
+  "grounded_note": "Self-identification accurate.",
+  "right_data_source": "ok",
+  "right_data_source_note": "",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "",
+  "op_correctness": "n/a",
+  "op_correctness_note": "",
+  "overall_note": "Same reference quality as run 1, slightly sharper analogy."
+}

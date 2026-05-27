@@ -100,6 +100,58 @@ pub async fn companion_cancel_autonomy(
     Ok(())
 }
 
+/// Persist the autonomous-mode toggle server-side. The chat header keeps
+/// its own Zustand state for instant UI feedback and passes the flag per
+/// `companion_send_message`, but the backend proactive scheduler runs
+/// with no frontend call in the loop — it reads this row to decide
+/// whether to spawn self-initiated reasoning turns (execution review,
+/// etc.). The frontend calls this whenever the toggle flips. Toggling
+/// OFF here pairs with `companion_cancel_autonomy` (the panel calls both).
+#[tauri::command]
+pub fn companion_set_autonomous_mode(
+    state: State<'_, Arc<AppState>>,
+    enabled: bool,
+) -> Result<(), AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::db::repos::core::settings::set(
+        &state.db,
+        crate::db::settings_keys::COMPANION_AUTONOMOUS_MODE,
+        if enabled { "true" } else { "false" },
+    )
+}
+
+/// Read the persisted autonomous-mode flag. Used by the backend
+/// proactive scheduler; defaults to `false` (mode off) when the row was
+/// never written. Not exposed as an IPC command — the frontend owns the
+/// authoritative toggle UI state; this is the scheduler's read path.
+pub fn autonomous_mode_enabled(db: &crate::db::DbPool) -> bool {
+    matches!(
+        crate::db::repos::core::settings::get(db, crate::db::settings_keys::COMPANION_AUTONOMOUS_MODE),
+        Ok(Some(v)) if v == "true"
+    )
+}
+
+/// Run the execution-review pass on demand (Goal 2), bypassing the 5-min
+/// scheduler cadence. Spawns `TurnOrigin::Proactive` analysis turns for
+/// qualifying recent executions and returns how many it kicked off. Used
+/// by the test harness to drive a deterministic review, and usable as a
+/// "review my recent runs now" affordance. Each spawned turn runs with
+/// autonomous_mode=true so it can chain if it needs more than one pass.
+#[tauri::command]
+pub fn companion_review_recent_executions_now(
+    state: State<'_, Arc<AppState>>,
+    app: AppHandle,
+) -> Result<usize, AppError> {
+    crate::ipc_auth::require_auth_sync(&state)?;
+    crate::companion::proactive::execution_review::review_recent_executions(
+        &state.user_db,
+        &state.db,
+        &app,
+        #[cfg(feature = "ml")]
+        state.embedding_manager.as_ref(),
+    )
+}
+
 /// Read the most recent N messages oldest-first for the panel transcript.
 #[tauri::command]
 pub fn companion_list_recent_messages(

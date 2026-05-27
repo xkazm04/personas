@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Refused the impossible build, named both gaps (Linear not wired; Slack only has read), offered 4 concrete next-step chips. User has clear options without needing to type.",
+  "grounded": "weak",
+  "grounded_note": "Cited 'Sentry Critical Monitor' as an existing persona — likely real in the live app DB but not present in this turn's recall preview, so the claim isn't strictly traceable from the bundle alone. Borderline per judge-playbook line 159.",
+  "right_data_source": "ok",
+  "right_data_source_note": "Connector inventory accurate: Linear absent, Slack list_channels only, no Slack post.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Did not claim Linear is wired; did not invent Slack post capability; correctly forbid_approval[build_oneshot] passed.",
+  "op_correctness": "ok",
+  "op_correctness_note": "No OP fired — correct, build_oneshot would be wrong here.",
+  "overall_note": "Strong category-B handling. Only borderline note: persona-by-name reference (Sentry Critical Monitor) isn't substantiated by the bundle's recall preview — fine if the persona is real in DB, weak if it's a confident guess."
+}

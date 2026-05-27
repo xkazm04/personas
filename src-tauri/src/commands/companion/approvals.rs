@@ -204,13 +204,17 @@ pub async fn companion_approve_action(
         // is kept as a fallback in case an old approval row from
         // before the change still resolves through here.
         "compose_dashboard" => execute_compose_dashboard(&state, &params),
-        // `use_connector` no longer reaches here — it auto-fires
-        // through the dispatcher → background-job worker. Approval
-        // friction was the wrong UX (user explicitly rejected it);
-        // result lands as a system episode.
+        // `use_connector` for read-only capabilities auto-fires through
+        // the dispatcher → background-job worker. For write capabilities
+        // (`requires_approval: true` on `ConnectorCapability`) the
+        // dispatcher routes here instead, so destructive / external-
+        // visible actions land behind an approval card. Athena
+        // spontaneously requested this gate during the 2026-05-27
+        // connector audit.
+        "use_connector" => execute_use_connector(&state, &params).await,
         // Phase G — project registry + background jobs.
-        "register_project" => execute_register_project(&state, &params),
-        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &params),
+        "register_project" => execute_register_project(&state, &app, &params),
+        "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&params),
@@ -1185,7 +1189,7 @@ fn execute_compose_dashboard(
 /// Sentry issues — wiring in flight, here's what I would have shown
 /// you") rather than the prior "this connector cannot be used" dead
 /// end.
-fn execute_use_connector(
+async fn execute_use_connector(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
@@ -1221,7 +1225,7 @@ fn execute_use_connector(
             "use_connector: `{connector_name}` has no registered capabilities yet — wiring in flight"
         ))
     })?;
-    let cap = caps.iter().find(|c| c.slug == capability).ok_or_else(|| {
+    let _cap = caps.iter().find(|c| c.slug == capability).ok_or_else(|| {
         let known: Vec<&str> = caps.iter().map(|c| c.slug).collect();
         AppError::Internal(format!(
             "use_connector: capability `{capability}` is not in `{connector_name}`'s registry. \
@@ -1229,16 +1233,42 @@ fn execute_use_connector(
         ))
     })?;
 
-    // 3. Per-connector handlers. v1 returns a clear stub so Athena's
-    // next turn sees a coherent system episode and can speak to it.
-    // Real API calls land per-connector in subsequent phases.
-    let _ = (cap, args);
-    Ok(ExecuteResult::message(format!(
-        "[stub] `{connector_name}::{capability}` would run with the supplied args. \
-         Real API wiring lands in the next phase. Until then, treat this as confirmation \
-         that the surface works end-to-end — capability validated, connector enabled, \
-         credentials resolvable."
-    )))
+    // 3. Dispatch through the same per-service handler the auto-fire
+    // job worker uses. This way read/write capabilities both share one
+    // implementation path; only the *routing* (auto-fire vs approval-
+    // card) differs based on `requires_approval`. Pre-2026-05-27 this
+    // was a stub — Athena's audit run flagged the silent gap.
+    //
+    // Zero-config builtins (local_drive, personas_database) have no
+    // credential — pass an empty HashMap so the handler can read from
+    // pool / managed root directly. The handler must be defensive about
+    // empty fields anyway (required_field reports a clean error).
+    // Credentials live in `state.db` (persona_credentials table), NOT
+    // `state.user_db` (companion brain). Using the wrong pool surfaces
+    // as "no such table: persona_credentials" — caught during the
+    // 2026-05-27 tier-2 audit run.
+    let fields = match crate::db::repos::resources::credentials::get_by_service_type(
+        &state.db,
+        connector_name,
+    )?
+    .into_iter()
+    .next()
+    {
+        Some(cred) => crate::db::repos::resources::credentials::get_decrypted_fields(
+            &state.db,
+            &cred,
+        )?,
+        None => std::collections::HashMap::new(),
+    };
+    let result = crate::companion::jobs::connector_use::dispatch_capability_public(
+        &state.user_db,
+        connector_name,
+        capability,
+        &args,
+        &fields,
+    )
+    .await?;
+    Ok(ExecuteResult::message(result))
 }
 
 /// Phase G: register a new project in the companion's known-project
@@ -1246,6 +1276,7 @@ fn execute_use_connector(
 /// updates name/description without erroring.
 fn execute_register_project(
     state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     let name = params
@@ -1257,42 +1288,185 @@ fn execute_register_project(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("register_project: missing `path`".into()))?;
     let description = params.get("description").and_then(|v| v.as_str());
+    // 1. Companion project registry (Athena's awareness / scan-status tracking).
     let id = crate::companion::projects::register(&state.user_db, name, path, description)?;
+
+    // 2. Real Dev Tools project (`dev_projects` row). THIS is what satisfies the
+    //    `codebase` connector for adopted personas — the connector probes
+    //    `dev_projects`, not the companion registry. Without it, registering a
+    //    project left teams' codebase connector unsatisfied. Idempotent on
+    //    root_path (UNIQUE): reuse an existing row rather than erroring.
+    let existing_id: Option<String> = {
+        let conn = state.db.get()?;
+        conn.query_row(
+            "SELECT id FROM dev_projects WHERE root_path = ?1",
+            rusqlite::params![path],
+            |r| r.get(0),
+        )
+        .ok()
+    };
+
+    let (dev_project_id, scan_note) = match existing_id {
+        Some(eid) => (
+            eid,
+            "(already a Dev Tools project — re-using it; trigger a rescan if the code changed)"
+                .to_string(),
+        ),
+        None => {
+            let tech = params.get("tech_stack").and_then(|v| v.as_str());
+            let github = params.get("github_url").and_then(|v| v.as_str());
+            let project = crate::db::repos::dev_tools::create_project(
+                &state.db,
+                name,
+                path,
+                description,
+                Some("active"),
+                tech,
+                github,
+                None,
+            )?;
+            // 3. Auto-launch the real context scan (Claude-CLI → dev_contexts) so
+            //    the team's codebase tools return rich results. Best-effort: a
+            //    bad path / missing CLI logs and continues; the project + codebase
+            //    connector are already valid.
+            let scan_note = match crate::commands::infrastructure::context_generation::launch_context_scan(
+                app.clone(),
+                &state.db,
+                &project,
+                path,
+                false,
+            ) {
+                Ok(_) => "(context scan started — its structure will be mapped in the background)"
+                    .to_string(),
+                Err(e) => {
+                    tracing::warn!(project = %project.id, error = %e, "register_project: auto-scan launch failed (continuing)");
+                    format!("(couldn't auto-start the context scan: {e} — start it manually from Dev Tools)")
+                }
+            };
+            (project.id, scan_note)
+        }
+    };
+
     Ok(ExecuteResult::message(format!(
-        "Project `{name}` registered (id `{id}`, path `{path}`)."
+        "Project `{name}` is set up — registered in your project list and created as Dev Tools \
+         project `{dev_project_id}` so the codebase connector is now available for any team \
+         working this repo at `{path}`. {scan_note}"
     )))
 }
 
-/// Phase G: enqueue a long-running dev job. Returns immediately so the
-/// chat doesn't block; the worker picks the job up within seconds and
-/// appends a system episode with the result on completion. This is
-/// the conversation-stays-responsive pattern: Athena sends "I started
-/// the scan, will report back when done" while the user keeps typing.
+/// `enqueue_dev_job` — run a real Dev Tools **context scan** on a registered
+/// project. This is the precise "scan / map the codebase" operation: it launches
+/// the same Claude-CLI context generation as `dev_tools_scan_codebase`
+/// (populating dev_context_groups + dev_contexts), NOT a shallow file-walk and
+/// NOT an agent build. Returns immediately; the scan runs in the background and
+/// reports on completion. It does not create or modify any persona.
 fn execute_enqueue_dev_job(
     state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
     let kind = params
         .get("kind")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("enqueue_dev_job: missing `kind`".into()))?;
-    // Only `scan_codebase` for v1; the worker rejects unknown kinds at
-    // dispatch time, but failing fast here gives Athena a clearer error.
     if kind != "scan_codebase" {
         return Err(AppError::Internal(format!(
-            "enqueue_dev_job: unknown kind `{kind}` (v1 supports: scan_codebase)"
+            "enqueue_dev_job: unknown kind `{kind}` (supported: scan_codebase)"
         )));
     }
-    let job_params = params
-        .get("params")
-        .cloned()
-        .unwrap_or(serde_json::json!({}));
-    let project_id = params.get("project_id").and_then(|v| v.as_str());
-    let job_id = crate::companion::jobs::enqueue(&state.user_db, kind, &job_params, project_id)?;
+    // Resolve the target Dev Tools project. Accept ANY of project_id / path /
+    // project name (Athena may send several); try each. Path comparison is
+    // slash-normalized because a stored root_path uses OS separators (Windows
+    // backslashes) while the chat passes forward slashes. Fall back to the
+    // most-recently-registered project when nothing is specified.
+    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let mut candidates: Vec<String> = Vec::new();
+    for v in [
+        params.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_name").and_then(|v| v.as_str()),
+        p.get("name").and_then(|v| v.as_str()),
+        p.get("path").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let v = v.trim();
+        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
+            candidates.push(v.to_string());
+        }
+    }
+
+    let project_id: String = {
+        let conn = state.db.get()?;
+        let mut found: Option<String> = None;
+        for n in &candidates {
+            if let Ok(id) = conn.query_row(
+                "SELECT id FROM dev_projects \
+                 WHERE id = ?1 OR name = ?1 \
+                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+                 ORDER BY (id = ?1) DESC LIMIT 1",
+                rusqlite::params![n],
+                |r| r.get::<_, String>(0),
+            ) {
+                found = Some(id);
+                break;
+            }
+        }
+        // Two fallback layers:
+        //   1. Athena passed no candidates → use most-recent project.
+        //   2. Athena passed candidates but none matched (typically a stale
+        //      project_id she carried over from a prior session's
+        //      observability digest) → fall back to most-recent project AND
+        //      record the mismatch so the success message names what we
+        //      actually scanned. This keeps the user's "kick off a scan"
+        //      ask from silently no-op'ing when the ID rotted.
+        if found.is_none() {
+            found = conn
+                .query_row(
+                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok();
+        }
+        match found {
+            Some(id) => id,
+            None => {
+                return Err(AppError::Validation(
+                    "No Dev Tools projects registered yet. Register one first with \
+                     register_project (name + filesystem path)."
+                        .into(),
+                ))
+            }
+        }
+    };
+    let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+    let stale_id_note = if !candidates.is_empty()
+        && !candidates.iter().any(|c| c == &project.id || c == &project.name)
+    {
+        format!(
+            " (note: requested {:?} didn't match any project — using the most-recently-registered one)",
+            candidates
+        )
+    } else {
+        String::new()
+    };
+    let delta = p.get("delta_mode").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    crate::commands::infrastructure::context_generation::launch_context_scan(
+        app.clone(),
+        &state.db,
+        &project,
+        &project.root_path,
+        delta,
+    )?;
     Ok(ExecuteResult::message(format!(
-        "Job `{job_id}` (`{kind}`) queued. The worker will pick it up within a few \
-         seconds; results land as a system episode you'll see on your next turn. \
-         You can keep chatting while it runs."
+        "Context scan started for `{}` (`{}`){}. Claude is mapping its structure — business-domain \
+         groups + per-feature contexts — in the background; I'll report when it lands. This is a \
+         code-structure scan only: it does NOT build or change any agent.",
+        project.name, project.root_path, stale_id_note
     )))
 }
 

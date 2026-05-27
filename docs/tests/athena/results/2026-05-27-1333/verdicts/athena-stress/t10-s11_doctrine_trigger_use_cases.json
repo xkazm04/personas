@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "use_case_set card fired. Prose intro names the role-tag rationale ('pinning the use-case set before tools or prompt keeps the design honest').",
+  "grounded": "ok",
+  "grounded_note": "Doctrine alignment (golden + variant + out_of_scope).",
+  "right_data_source": "ok",
+  "right_data_source_note": "Card fired on the trigger phrasing.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "",
+  "op_correctness": "ok",
+  "op_correctness_note": "Hard assertion passed.",
+  "overall_note": "Same reference quality as run 1."
+}

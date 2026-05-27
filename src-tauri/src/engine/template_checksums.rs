@@ -12,7 +12,7 @@ use std::sync::LazyLock;
 /// Embedded checksum manifest: maps relative template path → expected hash.
 /// Populated at compile time from the same source of truth as the frontend.
 static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLock::new(|| {
-    let mut m = HashMap::with_capacity(109);
+    let mut m = HashMap::with_capacity(114);
     m.insert("content/ai-document-intelligence-hub.json", "00197facd1d01c02");
     m.insert("content/analytics-content-distribution-use-case.json", "001cf516b81f9d45");
     m.insert("content/audio-briefing-host.json", "00133541bcc75c67");
@@ -28,10 +28,12 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("content/youtube-content-pipeline.json", "001dcee3756edd83");
     m.insert("development/autonomous-issue-resolver.json", "0010c5f3cd07faa2");
     m.insert("development/build-intelligence-use-case.json", "0001349ce74f80d7");
+    m.insert("development/code-reviewer.json", "0001a6d6a135dd70");
     m.insert("development/codebase-health-scanner.json", "000de3375e15adb0");
     m.insert("development/design-handoff-coordinator.json", "00130ece96fe617f");
     m.insert("development/dev-clone.json", "00088d35c8df294f");
     m.insert("development/dev-lifecycle-manager.json", "0013661c26053f17");
+    m.insert("development/docs-steward.json", "00198fb9e743c484");
     m.insert("development/documentation-freshness-guardian.json", "001f1b26220f53de");
     m.insert("development/feature-flag-experiment-analyst.json", "00161084f0ebe683");
     m.insert("development/feature-flag-governance-use-case.json", "0003e753113b0ecc");
@@ -40,9 +42,11 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/real-time-database-watcher.json", "000a8316306b346b");
     m.insert("development/self-evolving-codebase-memory.json", "0010964654a6eac8");
     m.insert("development/skill-librarian.json", "001715cb96cae02f");
+    m.insert("development/solution-architect.json", "0002fa7b5b741531");
     m.insert("development/user-lifecycle-manager.json", "001eddcc7a2638dd");
     m.insert("devops/devops-guardian.json", "0007f1fec44d92b6");
     m.insert("devops/incident-logger.json", "001dda9e9fa6e6cd");
+    m.insert("devops/release-manager.json", "001eead6edd47e7d");
     m.insert("devops/sentry-production-monitor.json", "000fbd253b82f8fa");
     m.insert("devops/telegram-ops-command-center.json", "001544818958bc1a");
     m.insert("devops/workflow-error-intelligence.json", "00163aea7e79db06");
@@ -116,6 +120,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("security/access-request-manager.json", "000af5bd7bd7dd41");
     m.insert("security/ai-environment-posture-audit.json", "001083958169046b");
     m.insert("security/brand-protection-sentinel.json", "000f32cdae70eb33");
+    m.insert("security/security-sentinel.json", "001075ecbb45b332");
     m.insert("security/security-vulnerability-pipeline.json", "0011dd811434cdb9");
     m.insert("support/customer-feedback-router.json", "001eb7a4156477f9");
     m.insert("support/email-support-operator.json", "00078c7a5e85747d");

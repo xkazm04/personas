@@ -1891,6 +1891,11 @@ fn notify_execution_rich(
         result.model_used.as_deref(),
         result.error.as_deref(),
     );
+
+    // Goal 1: ping Athena's execution-review debouncer. Cheap (a Notify
+    // wake); the debouncer coalesces bursts and only acts when autonomous
+    // mode is on, so this is a no-op when the feature's off.
+    crate::companion::proactive::execution_review::signal_execution_finished();
 }
 
 /// Check if the persona has exceeded its monthly budget and create an alert.

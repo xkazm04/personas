@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "'Pump the brakes' — names the newsletter/recruiter sweep risk, the unspecified body, the per-recipient approval gate. Proposes list-first → per-thread draft → approve-each. Asks for the in-scope definition.",
+  "grounded": "ok", "grounded_note": "send_message per-recipient approval-gate accurate.",
+  "right_data_source": "ok", "right_data_source_note": "",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "No bulk-send capability claimed.",
+  "op_correctness": "ok", "op_correctness_note": "Refuse-with-clarification is a valid shape; OP-first (fire list_recent_threads now) also valid — she chose clarify-first here, defensible given the body is unspecified.",
+  "overall_note": "Reference-quality category-C external write."
+}

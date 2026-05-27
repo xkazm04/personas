@@ -551,7 +551,9 @@ fn format_plugins(
                     s.push_str(
                         "_No projects registered yet._ If he asks you about a project, \
                          offer to register it with `register_project` (you need a \
-                         filesystem path + a short name).\n\n",
+                         filesystem path + a short name). Registering also creates the \
+                         Dev Tools project + codebase connector and kicks off a context \
+                         scan, so a team can be adopted for that repo right after.\n\n",
                     );
                 } else {
                     for p in projects {
@@ -592,13 +594,32 @@ fn format_plugins(
                      seconds, runs them, and appends a system episode with the result so \
                      you see it on your next turn. Tell Michal that explicitly when you \
                      enqueue (\"I started the scan, will report back; what else?\").\n\n\
-                     1. **Register a project** — `register_project` with `name`, `path`, \
-                        optional `description`. Idempotent on path.\n\
-                     2. **Scan a project** — `enqueue_dev_job` with `kind: \"scan_codebase\"` \
-                        and `project_id` (or raw `params.path`). Returns instantly; result \
-                        lands as a system episode (file count by language, top TODOs).\n\
+                     1. **Set up a project** — `register_project` with `name`, `path`, \
+                        optional `description`. Idempotent on path. This creates the real \
+                        Dev Tools project (a `dev_projects` row), which is what makes the \
+                        **codebase connector** available to any team adopted for that repo, \
+                        AND auto-starts a full context scan (Claude maps its structure in \
+                        the background). One action = repo ready for a team. To set up \
+                        several repos, call it once per path.\n\
+                     2. **Scan / re-scan a project (context map)** — `enqueue_dev_job` with \
+                        `kind: \"scan_codebase\"` and `project_id` (or `params.path` / \
+                        `params.project_name`). This runs the REAL context scan: Claude maps \
+                        the repo into business-domain groups + per-feature contexts \
+                        (dev_context_groups / dev_contexts). Use it whenever Michal says \
+                        \"scan\", \"context scan\", \"map\", \"index\", or \"analyze the \
+                        codebase\" — for a fresh repo OR to refresh one whose code changed.\n\
                      3. **Capture decisions** — `write_goal`, `write_backlog_item`, \
                         `write_fact` ops let the lifecycle have memory.\n\n\
+                     ### CRITICAL — scan ≠ build an agent\n\n\
+                     \"Scan / context-scan / map / index / analyze the codebase\" is a \
+                     **context scan** (action #2 above) — it reads code structure and changes \
+                     NOTHING. Do NOT respond to a scan request with `build_oneshot`, \
+                     `prefill_persona_create`, or by proposing a new reviewer/triage agent. \
+                     `build_oneshot` is ONLY for an explicit \"build / create / spin up an \
+                     agent (or team) that …\" request. If Michal asks to scan a repo \"for \
+                     bugs and tests\", that is STILL a context scan (action #2) — the existing \
+                     SDLC team's Code Reviewer / QA handles bug-and-test review, so mention \
+                     that team rather than building a new agent.\n\n\
                      ### When to lean on this\n\n\
                      He's asking \"what should I work on next?\", \"what's stale?\", \
                      \"give me ideas\", \"how are things?\", or \"scan codebase\" / \
@@ -804,6 +825,11 @@ fn compose(
     // facts. Sits at the end (recency-weighted) but after onboarding +
     // voice because those are turn-shape, this is tool-shape.
     out.push_str(tools_addendum());
+    // Delegate-don't-inline doctrine: always on. Pairs with the
+    // non-blocking composer + activity tray — tells Athena to kick long
+    // work off as a background task and reply immediately rather than
+    // holding a silent turn open.
+    out.push_str(delegation_addendum());
     // Autonomous-mode addendum: only when the header toggle is on.
     // Sits last so its instructions are the most recency-weighted —
     // the autonomous loop is the most important behavioral
@@ -1021,6 +1047,40 @@ sentry.io's docs at <url>, ...").
 
 These tools run within the same turn as your reply — the user sees
 your single bubble, not the intermediate tool calls.
+"#
+}
+
+/// "Delegate, don't inline" doctrine — always on. The companion chat is
+/// non-blocking: the user can send new messages while a turn or a
+/// background task is still running, and in-flight tasks are shown in an
+/// activity tray + as dots on the orb. This addendum tells Athena to lean
+/// on that — kick long work off as a background task and reply *now*,
+/// rather than holding a silent turn open for minutes.
+fn delegation_addendum() -> &'static str {
+    r#"
+
+# Stay responsive — delegate long work, don't inline it
+
+The chat is non-blocking: the user can keep talking while work runs, and
+anything you kick off shows up in their activity tray (and as dots on
+your orb) until it finishes. Use that.
+
+- **Reply in seconds, not minutes.** If a request needs work that will
+  take more than a few seconds — a connector call, a codebase scan,
+  generating a batch of ideas, any multi-step job — delegate it (emit the
+  op so it runs as a background task) and answer *immediately*: say what
+  you kicked off and that you'll report back when it lands. Don't hold the
+  turn open and silent waiting for it.
+- **The result comes back on its own.** Background tasks finish into a
+  system episode you'll see on a later turn, and their tag flips to done
+  in the tray — you don't need to block to collect the result.
+- **Inline only what's already fast.** If you already know the answer, or
+  a single quick tool call settles it within the turn, just answer. The
+  point isn't to defer everything — it's to never leave the user staring
+  at a frozen, silent turn while something slow runs.
+- **If the user redirects you mid-task** ("stop", "actually, do X
+  instead"), treat their new message as the priority; the prior task can
+  be abandoned or will surface its partial result on its own.
 "#
 }
 

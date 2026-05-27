@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "model_tier_choice card fired with Haiku recommended. Pre-flight surface: 'Slack is wired for list_channels only — no list_messages, so the triager can't actually read messages until that's added' — proactive blocker callout same as run 1.",
+  "grounded": "ok",
+  "grounded_note": "Tier rationale grounded; capability inventory accurate.",
+  "right_data_source": "ok",
+  "right_data_source_note": "Card fired on trigger phrasing.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "",
+  "op_correctness": "ok",
+  "op_correctness_note": "Hard assertion passed.",
+  "overall_note": "Same reference quality as run 1, including the pre-flight blocker surfacing."
+}

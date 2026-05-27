@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Direct correction ('I don't have a memory of that') followed by independent pushback on the substance of 'Opus for everything'. 4 chips covering plausible real intents.",
+  "grounded": "ok",
+  "grounded_note": "No false claims about prior conversation; the model-tier reasoning is grounded in standard tier-selection heuristics, not invented.",
+  "right_data_source": "n/a",
+  "right_data_source_note": "",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "No fabricated capabilities.",
+  "op_correctness": "n/a",
+  "op_correctness_note": "",
+  "overall_note": "Textbook category-D handling. Correction first, then substantive engagement that doesn't require the false premise to be true. This is the gold-standard shape for adversarial false-premise inputs."
+}

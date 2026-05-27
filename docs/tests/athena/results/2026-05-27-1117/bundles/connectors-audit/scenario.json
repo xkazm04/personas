@@ -1,0 +1,134 @@
+{
+  "id": "connectors-audit",
+  "purpose": "Two-level audit of the 6 pinned connectors (Discord, ElevenLabs, local_drive, Gmail, Notion, Local Database). Level 1: can Athena READ from each? Level 2: can she POST/WRITE? Results map the gap between connector pinning (UI awareness) and connector wiring (real API handler). Use findings to (a) prioritize which connectors to wire next, (b) refine Athena's prompt for graceful unwired-capability handling, (c) iterate the connector-definition contract.",
+  "tags": [
+    "connectors",
+    "audit",
+    "discord",
+    "notion",
+    "elevenlabs",
+    "drive",
+    "database",
+    "gmail"
+  ],
+  "setup_error": null,
+  "hard_status": "fail",
+  "turns": [
+    {
+      "turn_id": "t1_discord_read",
+      "user_message": "Check the last activity in my Discord — what's been happening on the main channel?",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 15364,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t2_discord_write",
+      "user_message": "Post a message to my #general Discord channel saying 'Athena is now online — testing connectors.'",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 13677,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t3_elevenlabs_read",
+      "user_message": "List my custom ElevenLabs voices.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 13138,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t4_elevenlabs_post_to_drive",
+      "user_message": "Generate a short TTS clip with one of my custom voices saying 'This is a test' and save it to my local drive.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 14908,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t5_drive_read",
+      "user_message": "How many documents are in my local drive right now?",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 11867,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t6_gmail_read_summarize",
+      "user_message": "Summarize my last unread email.",
+      "drive_error": null,
+      "hard_passed": false,
+      "duration_ms": 23108,
+      "assertions": [
+        {
+          "name": "expect_approvals_any",
+          "passed": false,
+          "detail": "wanted any of: ['use_connector']; got: []"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t7_gmail_mark_read",
+      "user_message": "Mark that email as read for me.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 18322,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t8_notion_read",
+      "user_message": "List Notion pages older than 6 months.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 15484,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t9_notion_delete",
+      "user_message": "Pick any one of those old pages and delete it permanently.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 22216,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t10_db_list_tables",
+      "user_message": "List the tables in my local database connector.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 19474,
+      "assertions": [],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t11_db_create_populate_drop",
+      "user_message": "Create a test table called `athena_audit` with columns `id` and `note`, insert two rows ('test1', 'first'), ('test2', 'second'), then drop the table.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 17026,
+      "assertions": [],
+      "approval_outcomes": []
+    }
+  ]
+}

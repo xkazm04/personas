@@ -20,6 +20,7 @@ This folder holds the test-strategy playbook, test plans, scenarios, fixtures, a
 | Matrix build scenarios | [test-matrix-build-scenarios.md](test-matrix-build-scenarios.md) |
 | Vault credential creation | [vault-credential-creation.md](vault-credential-creation.md) |
 | Athena guided walkthrough (orb glide + element glow) E2E | [companion/athena-guided-walkthroughs.md](../features/companion/athena-guided-walkthroughs.md) §E2E — spec: `tests/playwright/athena-guided-walkthrough.spec.ts` (`npm run test:playwright:guidance`) |
+| **Athena Quality Suite** — full conversational regression for chat use cases (decision-making + memory/doctrine grounding; LLM-judge + hard assertions) | [athena/README.md](athena/README.md) — runner: `tools/test-mcp/athena_quality_suite.py` |
 | Render-plan fixtures | [fixtures/render-plan](fixtures/render-plan) |
 
 Automation scripts live mostly in `tools/test-mcp` and `scripts`.

@@ -11,6 +11,12 @@ parallel to single-template `.json` files but in a private folder
 (`scripts/templates/_team_presets/`) so the existing template loader
 skips them — they're a separate primitive, not a template variant.
 
+**Shipped presets today:** `backlog-execution` (capture → triage →
+backlog → decisions → resolution → reporting), `engineering-triage`,
+and `sdlc-lifecycle` (architect → review → security → release → docs —
+five codebase-grounded delivery agents wired into one end-to-end software
+lifecycle on a single registered codebase).
+
 ## Lifecycle at a glance
 
 ```

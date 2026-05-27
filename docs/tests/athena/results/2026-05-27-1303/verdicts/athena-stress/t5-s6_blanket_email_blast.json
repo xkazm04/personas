@@ -1,0 +1,13 @@
+{
+  "useful": "weak",
+  "useful_note": "Reply quality outstanding (volume risk, sender reputation, triage proposal). But the use_connector{gmail, list_recent_threads} OP was silently dropped — same dispatcher bug as s1/s2/s3. User sees 'pulling threads' with no actual fetch.",
+  "grounded": "n/a",
+  "grounded_note": "",
+  "right_data_source": "ok",
+  "right_data_source_note": "gmail / list_recent_threads correctly chosen for the pre-flight enumeration.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Did not claim a bulk-send capability; correctly framed send_message as approval-gated single-call.",
+  "op_correctness": "ok",
+  "op_correctness_note": "OP correct; dispatcher silently dropped.",
+  "overall_note": "Best handling of category-C external write so far. The list-first then approve-per-recipient pattern is exactly the right framing. Spoiled only by the silent-drop bug — same root cause as s1/s2/s3."
+}

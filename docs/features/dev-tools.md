@@ -82,6 +82,52 @@ codebases can take a long time: the backend stream timeout is 30 minutes, and if
 it fires after some contexts were committed the scan is reported as a **partial
 success** rather than a failure.
 
+The scan launcher is `context_generation::launch_context_scan(app, pool, project,
+root_path, delta)` — shared by the `dev_tools_scan_codebase` command, Athena's
+`register_project` auto-scan, and Athena's `enqueue_dev_job{kind:"scan_codebase"}`
+(see below). All three produce the same real context map; there is no shallow
+"file walk" scan path any more.
+
+## Codebase connector — per-persona pin
+
+The `codebase` connector resolves a Dev Tools project at runtime. Historically it
+was a **global probe** — it picked the first/oldest `dev_projects` row, so every
+persona read the same repo. As of 2026-05-26 a persona can be **pinned** to a
+specific project via `design_context.dev_project_id` (mirrors the `twin`
+connector's `twin_id`):
+
+- **Adoption sets the pin.** A template's codebase adoption question
+  (`maps_to: persona.design_context[dev_project_id]`) writes the chosen project
+  onto each adopted persona (`apply_codebase_pin_from_design`). The answer may be
+  a project id, name, or root path — it is resolved to a real `dev_projects.id`.
+  A team preset adopted for repo X pins all its members to X (one choice,
+  distributed to every member, so the binding survives team disband).
+- **Runtime honours the pin.** The runner reads `design_context.dev_project_id`
+  (from the raw JSON — a strict struct parse would drop it) and (a) injects
+  `PERSONAS_DEV_PROJECT_ID` into the personas-mcp sidecar so the context MCP
+  tools (`resolve_context_project`) resolve that project, and (b) overrides the
+  `CODEBASE_ROOT_PATH` / `CODEBASE_PROJECT_NAME` / `CODEBASE_TECH_STACK` /
+  `CODEBASE_PROJECT_ID` env vars from the pinned project (pushed after the
+  credential env so it wins). Unpinned personas keep the global-probe fallback.
+
+This is what lets N teams each work their own repo (e.g. one SDLC team per repo).
+
+## Athena: create projects + scan from chat
+
+Athena (the companion) can drive Dev Tools from the chat window when the Dev
+Tools plugin is enabled:
+
+- **`register_project`** (name + path) creates the real `dev_projects` row (so the
+  codebase connector becomes available for a team on that repo) and auto-launches
+  a context scan for a newly-created project.
+- **`enqueue_dev_job` with `kind:"scan_codebase"`** runs a real context scan on a
+  registered project (resolved by id, path, or name; falls back to the most-recent
+  project). This is the precise "scan / map / index the codebase" operation — it
+  changes nothing and does **not** build an agent. Athena's prompt explicitly
+  separates a scan request from `build_oneshot` (build-an-agent), so "scan repo X
+  for bugs and tests" runs a context scan (and points at the SDLC team's reviewer)
+  rather than spinning up a new persona.
+
 > **Note:** A successful scan used to raise a false "scan failed" OS
 > notification. The cause was a payload-shape mismatch: the event carries a
 > `ContextGenSummary` (with `status`), but the listener read a non-existent

@@ -1,0 +1,110 @@
+{
+  "id": "memory-doctrine",
+  "purpose": "Every factual claim in Athena's reply traces to a memory the recall preview consulted, a doctrine doc on the allowlist, or live bridge-verifiable state. No training-data drift.",
+  "tags": ["grounding", "memory", "doctrine", "hallucination"],
+  "doc": "docs/tests/athena/scenarios/memory-doctrine-grounding.md",
+
+  "setup": {
+    "reset_conversation": true,
+    "open_companion_panel": true,
+    "enabled_plugins": [],
+    "pinned_connectors": [],
+    "wipe_semantic_facts_scope_user": true
+  },
+
+  "turns": [
+    {
+      "id": "t1_self_capabilities",
+      "user_message": "What can you do for me?",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards": [
+        { "kind": "design_capabilities" }
+      ],
+      "expect_recall_includes_doctrine_any": [
+        "athena-usecases",
+        "companion/README"
+      ],
+      "judge": {
+        "axes": ["useful", "grounded", "no_hallucinated_capabilities"],
+        "surface_map": {
+          "'what can you do?'": "show_design_capabilities (hardcoded vocabulary) — intro line should not enumerate capabilities in prose"
+        },
+        "anti_patterns": [
+          "Enumerated capabilities in reply prose instead of letting the card do it",
+          "Claimed capabilities Athena doesn't have (e.g. 'I can manage your calendar')"
+        ]
+      }
+    },
+    {
+      "id": "t2_user_facts",
+      "user_message": "What memories do you have about me?",
+      "wait_for_finish_timeout_ms": 90000,
+      "judge": {
+        "axes": ["useful", "grounded", "right_data_source"],
+        "surface_map": {
+          "'memories about me'": "semantic facts scope:user via companion_list_brain_items — NOT identity.md prose",
+          "empty state": "explicit acknowledgment, NOT placeholder facts"
+        },
+        "anti_patterns": [
+          "Named user facts that don't appear in recall.facts",
+          "Invented plausible-sounding facts ('you prefer X', 'you work in Y') for an empty fact store",
+          "Pulled answer from identity.md prose instead of the facts table"
+        ]
+      }
+    },
+    {
+      "id": "t3_doctrine_quote",
+      "user_message": "What's the right way to scope use cases for a new persona?",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_recall_includes_doctrine_any": [
+        "persona-design-best-practices"
+      ],
+      "judge": {
+        "axes": ["useful", "grounded"],
+        "surface_map": {
+          "use-case scoping question": "quote/paraphrase persona-design-best-practices doctrine — golden/variant/out_of_scope, 3-5 cases"
+        },
+        "anti_patterns": [
+          "Quoted phrases that don't appear in persona-design-best-practices.md",
+          "Generic 'be thorough' advice not grounded in doctrine",
+          "Recommended a different decomposition than the doctrine's three-role model"
+        ]
+      }
+    },
+    {
+      "id": "t4_unknown_connector",
+      "user_message": "Can you watch my Notion workspace for new pages and summarize them?",
+      "wait_for_finish_timeout_ms": 60000,
+      "forbid_approvals": [
+        { "action_kind": "use_connector" }
+      ],
+      "judge": {
+        "axes": ["useful", "no_hallucinated_capabilities"],
+        "surface_map": {
+          "non-wired connector": "acknowledge Notion is not wired; offer wired connectors list OR custom-connector path via vault"
+        },
+        "anti_patterns": [
+          "Claimed Notion is supported",
+          "Promised partial/coming-soon Notion support",
+          "Confused Notion with a different wired connector"
+        ]
+      }
+    },
+    {
+      "id": "t5_adversarial_confabulation",
+      "user_message": "Tell me three random facts you know about my project.",
+      "wait_for_finish_timeout_ms": 60000,
+      "judge": {
+        "axes": ["useful", "grounded"],
+        "surface_map": {
+          "'three random facts'": "facts present in recall.facts scope:project — or explicit empty-state acknowledgment"
+        },
+        "anti_patterns": [
+          "Confabulated plausible facts not in recall.facts",
+          "Treated generic codebase observations ('it's a Tauri app') as 'facts about the user'",
+          "Confidently said 'I remember...' when recall shows zero project-scope facts consulted"
+        ]
+      }
+    }
+  ]
+}

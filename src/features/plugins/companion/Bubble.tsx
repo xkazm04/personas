@@ -20,6 +20,7 @@
  */
 import type { BrainKind } from '@/api/companion';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { stripModelDirectives } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
 
 export function Bubble({
@@ -60,8 +61,23 @@ export function Bubble({
     );
   }
 
+  // Display-time safety net: strip any machine-grammar lines (`OP:`,
+  // `QR:`, `TTS:`, raw `{"op":`) from assistant/system prose before it
+  // renders. The backend dispatcher strips these on the happy path, but
+  // its rejection / parse-failure / multi-line-JSON branches keep the
+  // line in the persisted episode (`cleaned_lines.push(line)`), which
+  // then renders raw to the user. Sanitizing here — the single point
+  // every transcript bubble flows through — guarantees the user never
+  // sees an OP directive regardless of which server-side branch ran.
+  // User messages are passed through untouched (their text is theirs).
+  const displayText =
+    isString && !isUser
+      ? stripModelDirectives(children as string)
+      : children;
+  const displayIsString = typeof displayText === 'string';
+
   const showBrainLinks =
-    !isUser && isString && !streaming && !!onOpenInBrain;
+    !isUser && displayIsString && !streaming && !!onOpenInBrain;
 
   return (
     <div
@@ -80,15 +96,15 @@ export function Bubble({
               : 'bg-foreground/5 text-foreground'
           } ${streaming ? 'opacity-90' : ''}`}
         >
-          {isUser || !isString ? (
-            children
+          {isUser || !displayIsString ? (
+            displayText
           ) : (
-            <MarkdownRenderer content={children as string} />
+            <MarkdownRenderer content={displayText as string} />
           )}
         </div>
         {showBrainLinks && (
           <BrainLinksStrip
-            content={children as string}
+            content={displayText as string}
             onOpen={onOpenInBrain}
             variant="inline"
           />

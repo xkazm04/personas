@@ -1,0 +1,18 @@
+{
+  "useful": "ok",
+  "useful_note": "Substantively excellent — three-role decomposition (golden/variant/out_of_scope), the 3-5 cap, the 'shape of input not topic' framing, the 'collapse identical or split conjunctive use cases' grain checks. The 3 QR chips offer concrete next moves into use case work.",
+
+  "grounded": "weak",
+  "grounded_note": "The substance IS the persona-design-best-practices doctrine — the golden/variant/out_of_scope vocabulary, the 3-5 cap, the 'use cases become golden traces in Lab' framing. But recall.doctrineTitles is empty so we can't verify Athena read it this turn vs reciting from a prompt addendum. The reply could be regenerated from the prompt's persistent guidance rather than fresh doctrine retrieval. Mark weak because the substance is right but the provenance is unverifiable per the rubric.",
+
+  "right_data_source": "n/a",
+  "right_data_source_note": "",
+
+  "no_hallucinated_capabilities": "n/a",
+  "no_hallucinated_note": "",
+
+  "op_correctness": "n/a",
+  "op_correctness_note": "",
+
+  "overall_note": "High-quality doctrine reply but the recall-preview emptiness across the whole run is a real backend concern: either the doctrine retrieval isn't firing, or the recall event isn't reporting the consulted titles. Either way it makes the universal anti-pattern check on 'quote not in any consulted doctrine doc' impossible to enforce."
+}

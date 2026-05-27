@@ -79,6 +79,17 @@ pub struct BackgroundJob {
     pub result_text: Option<String>,
     pub error_text: Option<String>,
     pub project_id: Option<String>,
+    /// Human one-liner for the in-chat task tag / activity tray
+    /// (e.g. "Scanning ai-paralegal"). Persisted; set at enqueue. Falls back
+    /// to a kind-derived label when absent.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub short_title: Option<String>,
+    /// The conversation turn/episode that spawned this task, so the frontend
+    /// can render the task tag under the message that started it (Athena
+    /// async-UX milestone). Persisted; set at enqueue. `None` for tasks not
+    /// tied to a turn (scheduled curation, etc.).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parent_turn_id: Option<String>,
     pub created_at: String,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
@@ -89,6 +100,13 @@ pub struct BackgroundJob {
     /// am" between `running` and the terminal status instead of going silent.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub progress_text: Option<String>,
+    /// Structured progress for a determinate task (e.g. files scanned). Like
+    /// `progress_text`, these are event-only (never persisted) — they ride the
+    /// `companion://job` event so the task tag can render a progress bar.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress_current: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub progress_total: Option<u32>,
 }
 
 /// Live progress reporter handed to a job handler so it can publish
@@ -103,10 +121,22 @@ pub struct JobProgress {
 }
 
 impl JobProgress {
+    /// Report a free-text progress note ("Calling Sentry…").
     pub fn report(&self, message: impl Into<String>) {
         let mut snapshot = self.job.clone();
         snapshot.status = "running".into();
         snapshot.progress_text = Some(message.into());
+        self.sink.emit(&snapshot);
+    }
+
+    /// Report determinate progress (current/total) plus a note, so the task
+    /// tag can render a progress bar (e.g. files scanned). Event-only.
+    pub fn report_progress(&self, current: u32, total: u32, message: impl Into<String>) {
+        let mut snapshot = self.job.clone();
+        snapshot.status = "running".into();
+        snapshot.progress_text = Some(message.into());
+        snapshot.progress_current = Some(current);
+        snapshot.progress_total = Some(total);
         self.sink.emit(&snapshot);
     }
 }
@@ -160,30 +190,58 @@ pub fn prune_terminal_jobs(pool: &UserDbPool) -> Result<usize, AppError> {
     Ok(n)
 }
 
+/// Back-compat enqueue (no task metadata). Prefer [`enqueue_task`] for new
+/// callers so the task carries a `short_title` + `parent_turn_id`.
 pub fn enqueue(
     pool: &UserDbPool,
     kind: &str,
     params: &serde_json::Value,
     project_id: Option<&str>,
 ) -> Result<String, AppError> {
+    enqueue_task(pool, kind, params, project_id, None, None)
+}
+
+/// Enqueue a background task with optional `short_title` (the human one-liner
+/// shown in the in-chat task tag / activity tray) and `parent_turn_id` (the
+/// conversation turn that spawned it, for tag grouping). Athena async-UX.
+pub fn enqueue_task(
+    pool: &UserDbPool,
+    kind: &str,
+    params: &serde_json::Value,
+    project_id: Option<&str>,
+    short_title: Option<&str>,
+    parent_turn_id: Option<&str>,
+) -> Result<String, AppError> {
     let id = format!("job_{}", short_uuid());
     let now = Utc::now().to_rfc3339();
     let params_str = params.to_string();
+    let title = short_title.map(|s| s.to_string()).unwrap_or_else(|| default_title(kind));
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO companion_background_job (id, kind, status, params_json, project_id, created_at)
-         VALUES (?1, ?2, 'queued', ?3, ?4, ?5)",
-        params![id, kind, params_str, project_id, now],
+        "INSERT INTO companion_background_job
+            (id, kind, status, params_json, project_id, short_title, parent_turn_id, created_at)
+         VALUES (?1, ?2, 'queued', ?3, ?4, ?5, ?6, ?7)",
+        params![id, kind, params_str, project_id, title, parent_turn_id, now],
     )?;
-    tracing::info!(job_id = %id, kind, "background job enqueued");
+    tracing::info!(job_id = %id, kind, parent_turn = ?parent_turn_id, "background task enqueued");
     Ok(id)
+}
+
+/// Kind → default human title for the task tag when an explicit one isn't given.
+fn default_title(kind: &str) -> String {
+    match kind {
+        "connector_use" => "Calling a connector".to_string(),
+        "scan_codebase" => "Scanning codebase".to_string(),
+        curation_run::KIND => "Curating memory".to_string(),
+        other => other.replace('_', " "),
+    }
 }
 
 pub fn get(pool: &UserDbPool, id: &str) -> Result<Option<BackgroundJob>, AppError> {
     let conn = pool.get()?;
     let row = conn
         .query_row(
-            "SELECT id, kind, status, params_json, result_text, error_text, project_id,
+            "SELECT id, kind, status, params_json, result_text, error_text, project_id, short_title, parent_turn_id,
                     created_at, started_at, completed_at
              FROM companion_background_job WHERE id = ?1",
             params![id],
@@ -205,7 +263,7 @@ pub fn list(
         ""
     };
     let sql = format!(
-        "SELECT id, kind, status, params_json, result_text, error_text, project_id,
+        "SELECT id, kind, status, params_json, result_text, error_text, project_id, short_title, parent_turn_id,
                 created_at, started_at, completed_at
          FROM companion_background_job
          {where_clause}
@@ -224,7 +282,7 @@ fn pop_next_queued(pool: &UserDbPool) -> Result<Option<BackgroundJob>, AppError>
     let now = Utc::now().to_rfc3339();
     let row = conn
         .query_row(
-            "SELECT id, kind, status, params_json, result_text, error_text, project_id,
+            "SELECT id, kind, status, params_json, result_text, error_text, project_id, short_title, parent_turn_id,
                     created_at, started_at, completed_at
              FROM companion_background_job
              WHERE status = 'queued'
@@ -289,6 +347,7 @@ fn mark_failed(pool: &UserDbPool, id: &str, error: &str) -> Result<(), AppError>
 /// unreachable, etc.).
 pub async fn worker_tick(
     pool: &UserDbPool,
+    cred_pool: &crate::db::DbPool,
     #[cfg(feature = "ml")] embedder: Option<&Arc<EmbeddingManager>>,
     sink: &JobEventSink,
 ) -> Result<(), AppError> {
@@ -307,7 +366,7 @@ pub async fn worker_tick(
         sink: sink.clone(),
         job: job.clone(),
     };
-    let result = dispatch_handler(pool, &job, &progress).await;
+    let result = dispatch_handler(pool, cred_pool, &job, &progress).await;
 
     match result {
         Ok(report) => {
@@ -376,6 +435,7 @@ pub async fn worker_tick(
 
 async fn dispatch_handler(
     pool: &UserDbPool,
+    cred_pool: &crate::db::DbPool,
     job: &BackgroundJob,
     progress: &JobProgress,
 ) -> Result<String, AppError> {
@@ -385,7 +445,7 @@ async fn dispatch_handler(
         "scan_codebase" => {
             scan_codebase::run(pool, job.project_id.as_deref(), &params, progress).await
         }
-        "connector_use" => connector_use::run(pool, &params, progress).await,
+        "connector_use" => connector_use::run(pool, cred_pool, &params, progress).await,
         curation_run::KIND => curation_run::run(pool, &params, progress).await,
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"
@@ -434,10 +494,14 @@ fn map_row(row: &rusqlite::Row<'_>) -> rusqlite::Result<BackgroundJob> {
         result_text: row.get(4)?,
         error_text: row.get(5)?,
         project_id: row.get(6)?,
-        created_at: row.get(7)?,
-        started_at: row.get(8)?,
-        completed_at: row.get(9)?,
+        short_title: row.get(7)?,
+        parent_turn_id: row.get(8)?,
+        created_at: row.get(9)?,
+        started_at: row.get(10)?,
+        completed_at: row.get(11)?,
         progress_text: None,
+        progress_current: None,
+        progress_total: None,
     })
 }
 

@@ -1,0 +1,13 @@
+{
+  "useful": "fail",
+  "useful_note": "Reply says 'pulling the table list now' but NO OP emitted, NO background job queued. Same regression as s1.",
+  "grounded": "n/a",
+  "grounded_note": "",
+  "right_data_source": "fail",
+  "right_data_source_note": "No use_connector OP fired.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Didn't fabricate table names.",
+  "op_correctness": "fail",
+  "op_correctness_note": "OP-line MISSING. Phase 1 dispatcher fix would have let the OP through (personas_database is always_active builtin) — but Athena didn't emit one.",
+  "overall_note": "SAME MODEL-VARIANCE REGRESSION as s1. The dispatcher path is now correct (Phase 1 unblocks builtins); the prompt-side discipline is what's failing. Constitution v26 needs a stronger anchor on drive/db worked examples."
+}

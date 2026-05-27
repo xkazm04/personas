@@ -416,6 +416,16 @@ pub struct DesignContextData {
     /// connector never errors on stale design_context entries.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub twin_id: Option<String>,
+    /// Dev Tools project (codebase) this persona is pinned to. When `Some`,
+    /// the `codebase` connector resolves THIS `dev_projects.id` instead of the
+    /// globally-first project (`resolve_context_project`), so a team adopted
+    /// for repo X reads repo X. Set once by the team adoption questionnaire and
+    /// written to every member, so each persona keeps its binding independently
+    /// (it survives team disband). A deleted/inactive project silently falls
+    /// back to the global probe so the connector never errors on stale entries.
+    /// Mirrors `twin_id`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dev_project_id: Option<String>,
 }
 
 impl DesignContextData {

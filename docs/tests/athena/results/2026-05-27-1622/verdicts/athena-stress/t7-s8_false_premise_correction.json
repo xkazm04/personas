@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "'I don't have a memory of saying that' + independent pushback ('Opus is overkill for the majority'). Asks for context to give an honest answer 'instead of confirming something I can't verify'.",
+  "grounded": "ok", "grounded_note": "",
+  "right_data_source": "n/a", "right_data_source_note": "",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "",
+  "op_correctness": "n/a", "op_correctness_note": "",
+  "overall_note": "Gold-standard category-D false-premise handling."
+}

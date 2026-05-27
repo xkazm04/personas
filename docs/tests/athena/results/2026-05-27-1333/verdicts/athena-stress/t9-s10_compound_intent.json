@@ -1,0 +1,13 @@
+{
+  "useful": "weak",
+  "useful_note": "OP for notion/list_pages fired correctly. But notion isn't pinned, so dispatcher rejected — `background_jobs_queued: 0`. Phase 2 system episode IS now in the brain ('[dispatcher] Your last use_connector{notion, list_pages} was rejected... `notion` is not pinned'), so Athena's next turn could surface this — but the fixture moved to s11 (PR reviewer use cases), so the self-correction path isn't visible in this scenario.",
+  "grounded": "ok",
+  "grounded_note": "older_than_days filter is real on the notion capability args.",
+  "right_data_source": "ok",
+  "right_data_source_note": "Notion/list_pages is the correct read; local_drive/write_text_file as approval-gated follow-up is the right write surface.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "",
+  "op_correctness": "weak",
+  "op_correctness_note": "OP grammar perfect; dispatcher pin-gate rejection (notion needs vault pinning, not always_active). Phase 2 wrote the system episode — verified in DB.",
+  "overall_note": "PHASE 2 VERIFIED. The system episode landed in companion_node — Athena's next-turn prompt would include this rejection if the fixture continued the notion thread. Need a follow-up scenario to confirm the self-correction loop closes."
+}

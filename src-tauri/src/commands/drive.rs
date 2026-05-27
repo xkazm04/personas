@@ -315,6 +315,16 @@ pub struct DriveStorageInfo {
 // Root resolution + path sandboxing
 // ---------------------------------------------------------------------------
 
+/// Read-only access to the cached managed-drive root. Returns
+/// `Some(path)` once any Tauri-side drive call has populated
+/// `MANAGED_ROOT`. Used by background workers (e.g. companion connector
+/// handlers) that don't have an `AppHandle` in scope -- they reach for
+/// the cache first and fall back to a clean "open the drive panel once"
+/// error if it's still cold.
+pub fn managed_root_cache() -> Option<PathBuf> {
+    MANAGED_ROOT.get().cloned()
+}
+
 /// Resolve and cache the managed drive root. Creates it on first call.
 pub(crate) fn managed_root(app: &AppHandle) -> Result<PathBuf, AppError> {
     if let Some(root) = MANAGED_ROOT.get() {

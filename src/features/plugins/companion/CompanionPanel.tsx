@@ -46,6 +46,7 @@ import {
   companionListRecentMessages,
   companionBetaFlags,
   companionCancelAutonomy,
+  companionSetAutonomousMode,
   companionInterruptTurn,
   companionReingestDoctrine,
   companionRequestImprovement,
@@ -73,6 +74,10 @@ import { BrainViewer } from './BrainViewer';
 import { CompanionToolbar } from './CompanionToolbar';
 import { ConnectorCallCard } from './ConnectorCallCard';
 import { RecallStrip } from './RecallStrip';
+import { ActivityTray } from './ActivityTray';
+import { TaskTag } from './TaskTag';
+import { QueuedMessages } from './QueuedMessages';
+import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
 import { TurnSummaryChip } from './TurnSummaryChip';
@@ -343,6 +348,12 @@ export default function CompanionPanel() {
             onToggleAutonomousMode={() => {
               const next = !autonomousMode;
               setAutonomousMode(next);
+              // Persist server-side so the backend proactive scheduler
+              // knows whether to spawn self-initiated reasoning turns —
+              // it can't see this Zustand flag.
+              companionSetAutonomousMode(next).catch(
+                silentCatch('companion_set_autonomous_mode'),
+              );
               if (!next) {
                 // Switching OFF: drop any scheduled continuation so a
                 // tick that was about to fire doesn't sneak through
@@ -654,6 +665,15 @@ function Body(props: BodyProps) {
   // the listener closure stays stable.
   const currentTurnIdRef = useRef<string | null>(null);
 
+  // True while a turn THIS client didn't initiate is streaming — a
+  // backend-initiated turn (proactive execution review, autonomous
+  // continuation). The user-send path owns its own streaming + refetch;
+  // for backend turns nothing else does, so the stream listener takes
+  // over: it flips `streaming` on at `started` and refetches the
+  // transcript at `finished` so the new assistant bubble actually
+  // appears in the panel instead of only landing in the brain.
+  const backendTurnActiveRef = useRef(false);
+
   // Token-level streaming bookkeeping (--include-partial-messages).
   // `sawDeltasRef` flips true the moment a `text_delta` arrives this turn;
   // once set, we ignore the trailing whole `assistant` message text (it
@@ -763,6 +783,16 @@ function Body(props: BodyProps) {
         lastStreamEventAtRef.current = Date.now();
         if (ev.kind === 'started') {
           currentTurnIdRef.current = ev.turnId;
+          // Backend-initiated turn? The user-send path sets `streaming`
+          // true synchronously BEFORE the backend emits `started`, so if
+          // we see `started` while not streaming, no client send is in
+          // flight — this turn came from the proactive scheduler or an
+          // autonomous continuation. Flip streaming on so the thinking
+          // bubble shows; the `finished` handler refetches the transcript.
+          if (!useCompanionStore.getState().streaming) {
+            backendTurnActiveRef.current = true;
+            setStreaming(true);
+          }
           // New turn — reset token-streaming bookkeeping and drop any
           // unflushed deltas from a prior turn.
           sawDeltasRef.current = false;
@@ -854,6 +884,16 @@ function Body(props: BodyProps) {
           // Clear any in-flight checklist not promoted to an episode.
           useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
+          // Backend-initiated turn: nothing else will refetch the
+          // transcript (the user-send path isn't involved), so do it
+          // here and drop the streaming flag we raised at `started`.
+          if (backendTurnActiveRef.current) {
+            backendTurnActiveRef.current = false;
+            setStreaming(false);
+            companionListRecentMessages(50)
+              .then((msgs) => setMessages(msgs))
+              .catch(silentCatch('companion_list_recent_messages'));
+          }
         } else if (ev.kind === 'error') {
           flushDeltaBuffer();
           sawDeltasRef.current = false;
@@ -862,9 +902,16 @@ function Body(props: BodyProps) {
           useCompanionStore.getState().setStreamingPhase(null);
           useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
+          // Backend-initiated turn that errored: clear the streaming flag
+          // we raised at `started` so the panel doesn't hang on a thinking
+          // bubble (no user-send `finally` runs for these).
+          if (backendTurnActiveRef.current) {
+            backendTurnActiveRef.current = false;
+            setStreaming(false);
+          }
         }
       },
-      [appendStreamingText, setSendError, flushDeltaBuffer],
+      [appendStreamingText, setSendError, flushDeltaBuffer, setMessages, setStreaming],
     ),
     'companion_stream_listen',
   );
@@ -1284,6 +1331,42 @@ function Body(props: BodyProps) {
     [appendMessage, markPlaybackPlayed, resetStreamingText, setMessages, setPendingPlayback, setPlaybackAudioUrl, setQuickReplies, setChatCards, setSendError, setStreaming, stopProgressAudio, voiceActive, voiceEngine, synthesisCredentialId, synthesisVoiceId, voiceSettings, recallSynthesisEnabled, autonomousMode],
   );
 
+  // Async-UX phase 4 — non-blocking send. The composer is never disabled;
+  // a message typed while a turn is still streaming is classified and
+  // either interrupts the in-flight turn (redirect / "stop") or queues
+  // behind it (additive / ambiguous). When idle it sends directly.
+  const sendOrQueue = useCallback(
+    (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      if (!streaming) {
+        void send(trimmed);
+        return;
+      }
+      const mode = classifyMidTurnIntent(trimmed);
+      useCompanionStore.getState().enqueueMessage(trimmed, mode);
+      // A redirect stops the current turn now; the drain effect fires the
+      // queued message the instant `streaming` flips false.
+      if (mode === 'interrupt') handleInterrupt();
+    },
+    [streaming, send, handleInterrupt],
+  );
+
+  // Drain the queue one message per turn completion. Watches the streaming
+  // true→false edge; if anything is waiting (and we're not mid self-
+  // improve) it shifts the oldest and sends it. `send` sets streaming back
+  // to true, so this fires at most once per completed turn — preserving
+  // FIFO order without colliding with the autonomous-continuation chain.
+  const prevStreamingForQueueRef = useRef(streaming);
+  useEffect(() => {
+    const was = prevStreamingForQueueRef.current;
+    prevStreamingForQueueRef.current = streaming;
+    if (was && !streaming && !improving) {
+      const next = useCompanionStore.getState().shiftQueuedMessage();
+      if (next) void send(next.text);
+    }
+  }, [streaming, improving, send]);
+
   // Spoken ack: ~2.5s into a still-running turn, say a short "one moment"
   // so a slow turn isn't dead silent. Fast turns (< the delay) never
   // trigger it; the cleanup clears the timer when the turn ends.
@@ -1511,9 +1594,12 @@ function Body(props: BodyProps) {
                   )}
                   {connectorJobIds.map((jobId) => {
                     const job = jobsById[jobId];
-                    return job ? (
+                    if (!job) return null;
+                    return job.kind === 'connector_use' ? (
                       <ConnectorCallCard key={jobId} job={job} />
-                    ) : null;
+                    ) : (
+                      <TaskTag key={jobId} job={job} />
+                    );
                   })}
                   {summary && (
                     <TurnSummaryChip
@@ -1625,9 +1711,12 @@ function Body(props: BodyProps) {
                 </AnimatePresence>
                 {pendingConnectorJobIds.map((jobId) => {
                   const job = jobsById[jobId];
-                  return job ? (
+                  if (!job) return null;
+                  return job.kind === 'connector_use' ? (
                     <ConnectorCallCard key={jobId} job={job} />
-                  ) : null;
+                  ) : (
+                    <TaskTag key={jobId} job={job} />
+                  );
                 })}
               </motion.div>
             )}
@@ -1684,6 +1773,8 @@ function Body(props: BodyProps) {
             </div>
           )}
         </div>
+        <ActivityTray />
+        <QueuedMessages />
         <QuickReplies
           options={quickReplies}
           disabled={!initialized || streaming}
@@ -1695,8 +1786,11 @@ function Body(props: BodyProps) {
           }}
         />
         <Composer
-          disabled={!initialized || streaming || brainView.open || improving}
-          onSend={send}
+          // Async-UX phase 4: the composer is intentionally NOT disabled
+          // while streaming — mid-turn input is routed through sendOrQueue
+          // (interrupt vs queue) instead of being blocked.
+          disabled={!initialized || brainView.open || improving}
+          onSend={sendOrQueue}
           onImprove={requestImprove}
           improveEnabled={betaSelfImprove}
           improving={improving}

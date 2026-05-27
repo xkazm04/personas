@@ -1,0 +1,163 @@
+{
+  "id": "design-family",
+  "purpose": "When walking a user through persona design, Athena emits the right design-family card for each readiness question, in coherent order, with content sourced from doctrine.",
+  "tags": ["decision-making", "design-family", "doctrine"],
+  "doc": "docs/tests/athena/scenarios/design-family-cards.md",
+
+  "setup": {
+    "reset_conversation": true,
+    "open_companion_panel": true,
+    "enabled_plugins": [],
+    "pinned_connectors": []
+  },
+
+  "turns": [
+    {
+      "id": "t1_open_design_ask",
+      "user_message": "Help me design a persona that triages incoming customer support emails.",
+      "wait_for_finish_timeout_ms": 120000,
+      "expect_chat_cards_any": [
+        { "kind": "persona_walkthrough" },
+        { "kind": "design_capabilities" },
+        { "kind": "template_suggestions" }
+      ],
+      "expect_recall_includes_doctrine_any": [
+        "persona-design-best-practices",
+        "athena-usecases"
+      ],
+      "judge": {
+        "axes": ["useful", "grounded", "right_data_source", "no_hallucinated_capabilities"],
+        "surface_map": {
+          "open-ended design request": "show_persona_walkthrough (covers the full readiness plan) OR show_template_suggestions (when the gallery probably has a near-match — Gmail/email-triage shapes are common) OR show_design_capabilities (when intent is too generic to pick a route yet). All three are defensible; prose-only is not."
+        },
+        "anti_patterns": [
+          "Free prose instead of any card — narrating intent without emitting any OP",
+          "Walkthrough missing 3+ of the 7 readiness items",
+          "Quoted phrases not present in persona-design-best-practices.md"
+        ]
+      }
+    },
+    {
+      "id": "t2_use_cases",
+      "user_message": "Good. What use cases should it handle?",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards": [
+        {
+          "kind": "use_case_set",
+          "config_match": {
+            "use_cases_min": 3,
+            "use_cases_max": 5,
+            "roles_must_include_any_of": [["golden", "variant", "out_of_scope"]]
+          }
+        }
+      ],
+      "judge": {
+        "axes": ["useful", "grounded", "op_correctness"],
+        "surface_map": {
+          "what use cases?": "show_use_case_set with 3-5 cases tagged golden/variant/out_of_scope"
+        },
+        "anti_patterns": [
+          "Returned generic 'respond to user' use cases not tied to the email intent",
+          "Skipped variant or out_of_scope role entirely (best-practice violation)",
+          "Returned use cases in prose instead of the card"
+        ]
+      }
+    },
+    {
+      "id": "t3_triggers",
+      "user_message": "What triggers it?",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards": [
+        {
+          "kind": "trigger_set",
+          "config_match": { "triggers_min": 1, "triggers_max": 4 }
+        }
+      ],
+      "judge": {
+        "axes": ["useful", "right_data_source"],
+        "surface_map": {
+          "what triggers?": "show_trigger_set with 1-4 triggers grounded in the events/triggers registry"
+        },
+        "anti_patterns": [
+          "Invented a trigger source not in the project's trigger registry",
+          "Returned triggers in prose instead of the card"
+        ]
+      }
+    },
+    {
+      "id": "t4_model_tier",
+      "user_message": "Which model should it use?",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards": [
+        {
+          "kind": "model_tier_choice",
+          "config_match": {
+            "tiers_must_be_exactly": ["haiku", "sonnet", "opus"],
+            "recommended_in": ["haiku", "sonnet", "opus"]
+          }
+        }
+      ],
+      "judge": {
+        "axes": ["useful", "grounded"],
+        "surface_map": {
+          "which model?": "show_model_tier_choice with the three tiers and a doctrine-grounded recommendation"
+        },
+        "anti_patterns": [
+          "Recommended a tier without a rationale",
+          "Rationale doesn't match the doctrine heuristic for this intent shape"
+        ]
+      }
+    },
+    {
+      "id": "t5_observability",
+      "user_message": "How will I know if it's working?",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards": [
+        {
+          "kind": "observability_plan",
+          "config_match": {
+            "success_metric.kind_in": ["count_by_status", "cost_per_run", "latency", "custom"],
+            "error_handling.triggers_min": 1
+          }
+        }
+      ],
+      "judge": {
+        "axes": ["useful", "grounded"],
+        "surface_map": {
+          "how to know it's working?": "show_observability_plan with both error_handling + success_metric populated"
+        },
+        "anti_patterns": [
+          "success_metric.target left vague ('high', 'low') instead of a concrete number",
+          "error_handling section empty",
+          "Returned observability in prose instead of the card"
+        ]
+      }
+    },
+    {
+      "id": "t6_recap",
+      "user_message": "Okay, I'm ready. Recap what we decided.",
+      "wait_for_finish_timeout_ms": 120000,
+      "expect_chat_cards_any": [
+        { "kind": "decision_log", "config_match": { "decisions_min": 3 } },
+        { "kind": "recent_decisions", "config_match": { "decisions_min": 3 } }
+      ],
+      "expect_chat_cards_also": [
+        { "kind": "persona_ready", "config_match": {
+            "recommended_action_in": ["interactive", "build_oneshot", "use_template"]
+          }
+        }
+      ],
+      "judge": {
+        "axes": ["useful", "grounded", "op_correctness"],
+        "surface_map": {
+          "recap": "show_decision_log (or recent_decisions) + show_persona_ready — both cards, in that order"
+        },
+        "anti_patterns": [
+          "decision_log invents entries that were never discussed",
+          "Recommended build_oneshot for an unvalidated intent of this complexity",
+          "Skipped the persona_ready closer card"
+        ]
+      }
+    }
+  ]
+}
