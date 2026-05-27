@@ -59,5 +59,11 @@
   "status_draft_ready": "Draft ready",
   "status_completed": "완료됨",
   "status_failed": "실패",
-  "status_cancelled": "취소됨"
+  "status_cancelled": "취소됨",
+  "caption_pending": "Pending review",
+  "caption_input_many": "{count} need input",
+  "caption_draft_many": "{count} drafts ready",
+  "caption_queued_many": "{count} queued",
+  "open_reviews_with_count": "Open {count} review(s)",
+  "open_messages_with_count": "Open {count} message(s)"
 }
