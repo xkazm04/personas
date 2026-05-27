@@ -145,21 +145,38 @@ async function main() {
     const rows = db2
       .prepare(`SELECT status, persona_id FROM persona_executions WHERE persona_id IN (${ph}) AND created_at >= ? `)
       .all(...info.personaIds, sinceIso);
+    // "Owed handoffs": a delivered/pending team_handoff event targeting a team
+    // member that has NOT yet executed in this run window. This means a role's
+    // work is in-flight (handoff fired, target not yet spawned) — we must NOT
+    // quiesce, even through a brief running===0 gap. Runs 6-8 + the immigration
+    // parallel run quiesced at 2/5 because the handoff→spawn latency (worse
+    // under concurrent load) exceeded the no-change window while running===0.
+    const executedSet = new Set(rows.map((r) => r.persona_id));
+    const owedHandoffs = db2
+      .prepare(
+        `SELECT DISTINCT target_persona_id FROM persona_events
+         WHERE target_persona_id IN (${ph}) AND event_type LIKE 'team_handoff.%'
+           AND status IN ('delivered','pending') AND created_at >= ?`
+      )
+      .all(...info.personaIds, sinceIso)
+      .filter((e) => e.target_persona_id && !executedSet.has(e.target_persona_id)).length;
     db2.close();
     const running = rows.filter((r) => r.status === 'running' || r.status === 'queued').length;
     const count = rows.length;
     const distinct = new Set(rows.map((r) => r.persona_id)).size;
-    heartbeat.push({ t: nowIso(), execs: count, running, distinctPersonas: distinct });
+    heartbeat.push({ t: nowIso(), execs: count, running, distinctPersonas: distinct, owedHandoffs });
     if (count !== lastCount) {
       lastCount = count;
       lastChangeAt = Date.now();
-      log(`  …executions=${count} (running=${running}, personas=${distinct}/${info.members.length})`);
+      log(`  …executions=${count} (running=${running}, personas=${distinct}/${info.members.length}${owedHandoffs ? `, owed handoffs=${owedHandoffs}` : ''})`);
     }
-    // Quiescent: at least one execution happened, none running, and nothing new for the quiescence window.
-    if (count > 0 && running === 0 && Date.now() - lastChangeAt >= quiescenceMs) {
-      log(`Quiescent (${Math.round(quiescenceMs / 1000)}s no change, none running) — ending run.`);
+    // Quiescent: ≥1 execution happened, none running, no handoff owed to an
+    // un-executed member, and nothing new for the quiescence window.
+    if (count > 0 && running === 0 && owedHandoffs === 0 && Date.now() - lastChangeAt >= quiescenceMs) {
+      log(`Quiescent (${Math.round(quiescenceMs / 1000)}s no change, none running, no owed handoffs) — ending run.`);
       break;
     }
+    if (owedHandoffs > 0) lastChangeAt = Date.now(); // a handoff is in-flight → keep the window open
     await sleep(15000);
   }
   if (Date.now() >= deadline) log(`Window timeout (${windowMin}m) reached.`);
