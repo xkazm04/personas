@@ -4,6 +4,27 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Longitudinal run (3× same seed, memory persists) — 🔶 CAUGHT a real "works-for-weeks" degradation: MEMORY BLOAT → cost compounds with flat quality (2026-05-27)
+
+First cross-run measurement (`scripts/test/longitudinal.mjs`): ran `local-seo/parallel-utils` 3× on the 6-role team, repo reset to a clean base each iteration (same task fresh) while MEMORY persists, resolving the run's reviews each time (feeding the now-wired review→learned loop). This is the long-running-team axis the rubric never measured (its trajectory/decay was within a single run).
+
+**Result — the loop fires, but the trajectory is BAD:**
+| iter | verdict | cost | execs | mem total | learned | reviews→learned |
+|--|--|--|--|--|--|--|
+| 1 | PRODUCTION 96 | $3.82 | 6 | 64→99 | 31→60 | 23 |
+| 2 | PRODUCTION 96 | $5.35 | 6 | 99→115 | 60→70 | 4 |
+| 3 | PRODUCTION 96 | **$8.23** | 11 | 115→142 | 70→86 | 5 |
+
+- **Quality flat** (96/96/96 — task is identical + team at ceiling).
+- **Cost RISING 2.2× over 3 runs** ($3.82→$8.23), driven by **memory bloat**: the `active` tier grows unbounded (64→142 in 3 runs, nothing archived), so EVERY role's injected-memory prompt grows every run → per-role cost ~tripled (Reviewer $0.53→$1.46, Security $0.53→$1.28, Release $0.73→$1.62, Docs $0.60→$1.38); iter-3 also spawned extra executions (6→11).
+- **Learning loop confirmed working** (32 reviews→learned over the run; `access` +365 = memories are being injected/reused), but accumulating memory + prior-feedback is a **pure cost regression** here — it does NOT lift quality (already at ceiling) and steadily inflates cost.
+
+**The finding (and why it matters):** a team that gets ~2× more expensive every few runs while not improving is NOT "works for weeks" — it's economically unsustainable, and a single-run eval (every run is PRODUCTION 96!) would never reveal it. The longitudinal eval exists precisely to catch this, and did on run one. **Root cause = missing memory hygiene:** the working→active→archive lifecycle doesn't prune/demote, near-duplicate `learned` memories pile up (the review-loop synthesizes one per resolution — many near-identical "Human approved …"), and injection is count-capped (40 active) but not TOKEN-budgeted, so growing content still inflates cost.
+
+**Next product fix (tracked):** memory hygiene for long-running teams — aggressive archive/demote of stale + low-access memories, dedup of near-identical `learned` items, and a TOKEN-budgeted injection (not just a count cap). Re-run the longitudinal after to confirm cost flattens (or falls) while quality holds — THAT is the "works for weeks" bar. Also: drive longitudinal with a VARYING workload (not the identical task) so quality has room to show improvement, not just ceiling-flat.
+
+---
+
 ## Runs 13–14 — Dev Clone PARALLEL TASKS (Phase A) validation (2026-05-27) — ✅ clean environment, sound judgment; true fan-out = engine work
 
 Validated the parallel-engineer mechanism (commit aa3d55a6e): `max_concurrent` 1→4

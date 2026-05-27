@@ -1,0 +1,211 @@
+[
+  {
+    "id": "6c6c1d61-8788-4528-9815-be7748f1c083",
+    "event_type": "docs.sync.completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "fd4da69b-4b6c-4b9d-8f71-b25c6416cd3c",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:46:27.745628900+00:00",
+    "created_at": "2026-05-27T14:46:27.144011100+00:00",
+    "use_case_id": "uc_docs_sync"
+  },
+  {
+    "id": "c22ae2c8-694a-4fa7-88f0-e52fb0439335",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "fd4da69b-4b6c-4b9d-8f71-b25c6416cd3c",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:46:27.745742+00:00",
+    "created_at": "2026-05-27T14:46:27.144865900+00:00",
+    "use_case_id": "uc_docs_sync"
+  },
+  {
+    "id": "6c4160e6-cc41-44e1-8812-a11123b896f2",
+    "event_type": "architecture.analysis.completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "eec38c0d-465d-4f50-81ba-fb41a9ae6ed3",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:49:57.747288800+00:00",
+    "created_at": "2026-05-27T14:49:57.440492300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "caeb9c71-ac16-40c2-b122-4b2f29984c76",
+    "event_type": "team_handoff.c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "source_type": "chain",
+    "source_id": "25fedc08-0f23-42c3-8647-1226ce5a4468",
+    "target_persona_id": "c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:49:57.749358300+00:00",
+    "created_at": "2026-05-27T14:49:57.669251+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d980f6b2-3af4-40b0-a092-32c0b96b9e75",
+    "event_type": "implementation.completed",
+    "source_type": "persona:T:_Dev_Clone",
+    "source_id": "c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:51:37.745148300+00:00",
+    "created_at": "2026-05-27T14:51:36.032833+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "14bce302-aed9-48ea-a93b-4ae2f9c4cd1c",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Dev_Clone",
+    "source_id": "c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:51:37.745258400+00:00",
+    "created_at": "2026-05-27T14:51:36.034240300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3ab5666d-ed89-4d59-8090-bafcb09f9b6a",
+    "event_type": "team_handoff.557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "source_type": "chain",
+    "source_id": "ac64fd65-e802-4af1-a9b4-4b2d5b136f2d",
+    "target_persona_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:51:37.748242+00:00",
+    "created_at": "2026-05-27T14:51:36.276946300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "712eb9de-bbc5-4c25-8ca1-693158530ffa",
+    "event_type": "code_review.completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:53:27.747715900+00:00",
+    "created_at": "2026-05-27T14:53:27.337343900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d6c110b0-1ad5-4476-8952-6e9c3af582f4",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:53:27.747905400+00:00",
+    "created_at": "2026-05-27T14:53:27.338643300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "c95e6eab-b76b-4245-b65d-e91849e6fe74",
+    "event_type": "team_handoff.6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "source_type": "chain",
+    "source_id": "d3814db8-ac2c-49c6-948e-15c4afbd267a",
+    "target_persona_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:53:27.749891700+00:00",
+    "created_at": "2026-05-27T14:53:27.693250600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "218ef181-85b6-48ba-a457-0bc0b95d1926",
+    "event_type": "security.scan.completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:55:11.748338300+00:00",
+    "created_at": "2026-05-27T14:55:09.801421700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "41fbb0b4-0ab0-49d0-94a8-55189d49cf53",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:55:11.748808800+00:00",
+    "created_at": "2026-05-27T14:55:09.802818+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "ba5057e3-7f99-4701-97f4-477b9a2689c0",
+    "event_type": "team_handoff.4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "source_type": "chain",
+    "source_id": "96f07a9f-5da0-4ea9-a551-00b94ec12c81",
+    "target_persona_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:55:11.752529200+00:00",
+    "created_at": "2026-05-27T14:55:10.035319400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "080ee19f-5300-41bd-8bf3-ee19f43a05d9",
+    "event_type": "release.version.bumped",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:57:43.753364300+00:00",
+    "created_at": "2026-05-27T14:57:42.055417200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "45d314d9-02c2-4ad9-8661-d4c423286c55",
+    "event_type": "release.published",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:57:43.753785+00:00",
+    "created_at": "2026-05-27T14:57:42.055990700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "a6ce44e6-27b2-4ba8-afed-fd2ec8bd8e7b",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:57:43.753992600+00:00",
+    "created_at": "2026-05-27T14:57:42.057434100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "b60521bd-7607-4e03-9c44-754fdc270181",
+    "event_type": "team_handoff.fd4da69b-4b6c-4b9d-8f71-b25c6416cd3c",
+    "source_type": "chain",
+    "source_id": "98e38a17-8379-4eae-ac82-5572198a675d",
+    "target_persona_id": "fd4da69b-4b6c-4b9d-8f71-b25c6416cd3c",
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:57:43.754105900+00:00",
+    "created_at": "2026-05-27T14:57:42.289472300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "2aaf4029-3377-43d4-a07d-479b822cf850",
+    "event_type": "docs.sync.completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "fd4da69b-4b6c-4b9d-8f71-b25c6416cd3c",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:59:19.748384100+00:00",
+    "created_at": "2026-05-27T14:59:19.049765200+00:00",
+    "use_case_id": "uc_docs_sync"
+  },
+  {
+    "id": "900da257-2ad4-4f29-9cd6-b935780953ca",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "fd4da69b-4b6c-4b9d-8f71-b25c6416cd3c",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T14:59:19.748532300+00:00",
+    "created_at": "2026-05-27T14:59:19.050526+00:00",
+    "use_case_id": "uc_docs_sync"
+  }
+]
