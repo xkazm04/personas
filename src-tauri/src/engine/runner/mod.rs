@@ -30,6 +30,7 @@ use super::event_registry::event_name;
 
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::memories as mem_repo;
+use crate::db::repos::communication::manual_reviews as manual_review_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
@@ -706,6 +707,46 @@ pub async fn run_execution(
         }
     } else {
         prompt_text // skip for session resumes -- context already loaded
+    };
+
+    // Inject recent human-review decisions so the agent learns from past
+    // feedback (the human-feedback channel of the learning loop). Previously
+    // `get_recent_resolved` had no call site — reviews were resolved but never
+    // fed back into subsequent runs. Skip on session resume (context loaded).
+    let prompt_text = if !is_session_resume {
+        match manual_review_repo::get_recent_resolved(&pool, &persona.id, 14, 5) {
+            Ok(reviews) if !reviews.is_empty() => {
+                let mut fb = String::from(
+                    "\n\n## Prior Human Feedback — Apply These Decisions\n\nA human reviewed your recent work. Repeat what was approved; do NOT repeat what was rejected. These decisions override your defaults.\n\n",
+                );
+                for r in &reviews {
+                    fb.push_str(&format!(
+                        "- [{}] **{}**: {}",
+                        r.status.as_str(),
+                        r.title,
+                        r.description.as_deref().unwrap_or("")
+                    ));
+                    if let Some(notes) = r.reviewer_notes.as_deref() {
+                        if !notes.trim().is_empty() {
+                            fb.push_str(&format!(" — reviewer said: {notes}"));
+                        }
+                    }
+                    fb.push('\n');
+                }
+                logger.log(&format!(
+                    "[LEARNING] Injected {} prior human-review decision(s)",
+                    reviews.len()
+                ));
+                format!("{prompt_text}{fb}")
+            }
+            Ok(_) => prompt_text,
+            Err(e) => {
+                logger.log(&format!("[LEARNING] Failed to load prior reviews: {e}"));
+                prompt_text
+            }
+        }
+    } else {
+        prompt_text
     };
 
     trace.end_span(&prompt_span, None, None, None, None);

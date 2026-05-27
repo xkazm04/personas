@@ -1013,34 +1013,10 @@ pub fn update_manual_review_status(
             },
         );
 
-        // Create a memory from the review decision so the persona can learn over time.
-        // The memory records the review title, decision, and any reviewer notes.
-        let decision = review.status.as_str();
-        let notes = review
-            .reviewer_notes
-            .as_deref()
-            .unwrap_or("No notes provided");
-        let memory_content = format!(
-            "Review decision: {decision}\nReview: {}\n{}\nReviewer notes: {notes}",
-            review.title,
-            review.description.as_deref().unwrap_or(""),
-        );
-        let _ = crate::db::repos::core::memories::create(
-            &state.db,
-            crate::db::models::CreatePersonaMemoryInput {
-                persona_id: review.persona_id.clone(),
-                source_execution_id: Some(review.execution_id.clone()),
-                title: format!("Review {decision}: {}", review.title),
-                content: memory_content,
-                category: Some("learned".to_string()),
-                importance: Some(5),
-                tags: Some(crate::db::models::Json(vec![
-                    "review".to_string(),
-                    decision.to_string(),
-                ])),
-                use_case_id: None,
-            },
-        );
+        // (Review→learned-memory synthesis now lives in the single chokepoint
+        // `manual_reviews::update_status`, so EVERY resolution path — this command
+        // AND the companion-approval path — produces exactly one importance-5
+        // `learned` memory, use_case-scoped. Don't duplicate it here.)
 
         // Publish to the event bus so downstream personas can subscribe
         let event_type = format!("review_decision.{}", review.status.as_str());

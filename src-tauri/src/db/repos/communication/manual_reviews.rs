@@ -1,9 +1,10 @@
 use rusqlite::params;
 
 use crate::db::models::{
-    CreateManualReviewInput, CreateReviewMessageInput, ManualReviewCounts, ManualReviewStatus,
-    PersonaManualReview, ReviewMessage,
+    CreateManualReviewInput, CreatePersonaMemoryInput, CreateReviewMessageInput, Json,
+    ManualReviewCounts, ManualReviewStatus, PersonaManualReview, ReviewMessage,
 };
+use crate::db::repos::core::memories;
 use crate::db::repos::utils::collect_rows;
 use crate::db::DbPool;
 use crate::error::AppError;
@@ -257,6 +258,51 @@ pub fn update_status(
 
         if rows == 0 {
             return Err(AppError::NotFound(format!("Manual review {id}")));
+        }
+
+        // Learning loop: a resolved (approved/rejected) review IS human feedback.
+        // Synthesize an importance-5 `learned` memory so future runs of this
+        // persona carry the decision (paired with the runner injecting
+        // `get_recent_resolved`). Best-effort — a memory-write failure must not
+        // fail the resolution.
+        if matches!(
+            status,
+            ManualReviewStatus::Approved | ManualReviewStatus::Rejected
+        ) {
+            let verdict = status.as_str();
+            let notes = reviewer_notes
+                .as_deref()
+                .map(str::trim)
+                .filter(|n| !n.is_empty());
+            let content = format!(
+                "Human {verdict} the review \"{}\"{}.{} Apply this decision to future work.",
+                current.title,
+                current
+                    .description
+                    .as_deref()
+                    .map(|d| format!(": {d}"))
+                    .unwrap_or_default(),
+                notes
+                    .map(|n| format!(" Reviewer notes: {n}."))
+                    .unwrap_or_default(),
+            );
+            let mem = CreatePersonaMemoryInput {
+                persona_id: current.persona_id.clone(),
+                title: format!("Human {verdict}: {}", current.title),
+                content,
+                category: Some("learned".to_string()),
+                source_execution_id: Some(current.execution_id.clone()),
+                importance: Some(5),
+                tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
+                use_case_id: current.use_case_id.clone(),
+            };
+            if let Err(e) = memories::create(pool, mem) {
+                tracing::warn!(
+                    review_id = %id,
+                    error = %e,
+                    "learning loop: failed to synthesize learned memory from resolved review"
+                );
+            }
         }
 
         Ok(())
