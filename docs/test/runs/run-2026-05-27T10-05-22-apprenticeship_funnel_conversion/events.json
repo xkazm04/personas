@@ -1,0 +1,156 @@
+[
+  {
+    "id": "523b01ad-a00e-4d99-9a69-e856bdff9e9e",
+    "event_type": "architecture.analysis.completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "3198f070-ee2f-4fbb-a449-9fb16f04b1b4",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:10:06.569112500+00:00",
+    "created_at": "2026-05-27T10:10:05.564889+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "fdd13ae7-5848-46c6-a858-cf885343b508",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "3198f070-ee2f-4fbb-a449-9fb16f04b1b4",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:10:06.569271400+00:00",
+    "created_at": "2026-05-27T10:10:05.565591100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "a803c383-aa06-4bae-b94e-1f67d833f2f4",
+    "event_type": "team_handoff.3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "source_type": "chain",
+    "source_id": "56e3176a-905f-4f4c-b277-231ccdbd17ed",
+    "target_persona_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:10:06.571476300+00:00",
+    "created_at": "2026-05-27T10:10:05.800593100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "62eda339-e0ad-4b22-b5be-bf920fd25384",
+    "event_type": "code_review.completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:13:18.568158600+00:00",
+    "created_at": "2026-05-27T10:13:18.518111900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "a568df78-ccc3-48c9-8fa0-47667e5d7d83",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:13:18.568602800+00:00",
+    "created_at": "2026-05-27T10:13:18.519247600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "43aabe9e-8ae1-4994-ad43-43ca6c7f3eb7",
+    "event_type": "team_handoff.0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "source_type": "chain",
+    "source_id": "36a809b6-0a86-49bb-ae05-f3acbfc0861d",
+    "target_persona_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:13:20.571042800+00:00",
+    "created_at": "2026-05-27T10:13:18.729021700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "cd2dae84-3ae2-4c89-8bb9-54774b00a308",
+    "event_type": "security.scan.completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:16:30.571088600+00:00",
+    "created_at": "2026-05-27T10:16:30.168994300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "60cc2cc9-5fa5-4871-8d15-bdc13454d92d",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:16:30.571285900+00:00",
+    "created_at": "2026-05-27T10:16:30.170090400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "49cc4560-f990-41fe-9bee-837764986632",
+    "event_type": "team_handoff.91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "source_type": "chain",
+    "source_id": "c5d60f29-8017-448c-b24c-888649bd5349",
+    "target_persona_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:16:30.574318900+00:00",
+    "created_at": "2026-05-27T10:16:30.400048+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "6a57937c-b5ce-4d92-899d-9c183640c348",
+    "event_type": "release.version.bumped",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:19:56.579879500+00:00",
+    "created_at": "2026-05-27T10:19:56.100360400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3db18f7a-2003-40cc-a090-6be7b143d114",
+    "event_type": "release.published",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:19:56.580898700+00:00",
+    "created_at": "2026-05-27T10:19:56.100707100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "45c6a464-69ea-45ae-a57c-86d1bb93ccb9",
+    "event_type": "team_handoff.e9429b68-efb2-4a0a-9945-dd33c058158e",
+    "source_type": "chain",
+    "source_id": "bb88f1d0-4c60-49f3-b865-0e79a06b69f5",
+    "target_persona_id": "e9429b68-efb2-4a0a-9945-dd33c058158e",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:19:56.581042600+00:00",
+    "created_at": "2026-05-27T10:19:56.312168100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "7d5a4d81-88a7-4203-99c9-9dd720546e77",
+    "event_type": "docs.sync.completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "e9429b68-efb2-4a0a-9945-dd33c058158e",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:22:32.569796800+00:00",
+    "created_at": "2026-05-27T10:22:31.786844700+00:00",
+    "use_case_id": "uc_docs_sync"
+  },
+  {
+    "id": "26d9b1eb-2414-4d88-bc8a-958ee20151dc",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "e9429b68-efb2-4a0a-9945-dd33c058158e",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:22:32.569990400+00:00",
+    "created_at": "2026-05-27T10:22:31.788386500+00:00",
+    "use_case_id": "uc_docs_sync"
+  }
+]

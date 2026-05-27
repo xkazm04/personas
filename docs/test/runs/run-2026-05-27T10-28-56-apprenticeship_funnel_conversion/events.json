@@ -1,0 +1,123 @@
+[
+  {
+    "id": "2f77cbd9-f54f-4cb3-a8c3-3054ae451db2",
+    "event_type": "architecture.analysis.completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "3198f070-ee2f-4fbb-a449-9fb16f04b1b4",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:32:12.591591100+00:00",
+    "created_at": "2026-05-27T10:32:10.996456500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d2ddd872-2027-4588-bffd-ce412efc5f24",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "3198f070-ee2f-4fbb-a449-9fb16f04b1b4",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:32:12.591708200+00:00",
+    "created_at": "2026-05-27T10:32:10.997024500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "f639d540-90ed-4054-9ac5-77b6ad52bafe",
+    "event_type": "team_handoff.3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "source_type": "chain",
+    "source_id": "56e3176a-905f-4f4c-b277-231ccdbd17ed",
+    "target_persona_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:32:12.594629400+00:00",
+    "created_at": "2026-05-27T10:32:11.294382500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "4e53f6f3-8d4d-4acd-af0b-b26e32163fae",
+    "event_type": "code_review.completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:34:14.589269600+00:00",
+    "created_at": "2026-05-27T10:34:13.851372100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d5d2406f-9096-4313-818e-064503affdd1",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "3c1a29d9-ca4f-449a-813b-d37c368dddb5",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:34:14.589500300+00:00",
+    "created_at": "2026-05-27T10:34:13.851952900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "0c825e55-b73f-406b-b0b7-e3b82287437c",
+    "event_type": "team_handoff.0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "source_type": "chain",
+    "source_id": "36a809b6-0a86-49bb-ae05-f3acbfc0861d",
+    "target_persona_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:34:14.591606+00:00",
+    "created_at": "2026-05-27T10:34:14.214060600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "4566d292-83e3-46b0-89c6-6793df8d3c79",
+    "event_type": "security.scan.completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:36:26.590527400+00:00",
+    "created_at": "2026-05-27T10:36:25.966915900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "be2e797a-1b10-4451-a34a-32460692a8c6",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "0980232a-7a3d-4a4e-b47c-6bf09e820c38",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:36:26.590655900+00:00",
+    "created_at": "2026-05-27T10:36:25.967445300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "96b05a91-2eaf-4f1b-898c-b55cddfea650",
+    "event_type": "team_handoff.91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "source_type": "chain",
+    "source_id": "c5d60f29-8017-448c-b24c-888649bd5349",
+    "target_persona_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "status": "delivered",
+    "processed_at": "2026-05-27T10:36:26.608499300+00:00",
+    "created_at": "2026-05-27T10:36:26.271372300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "55092e6c-86a8-48ab-b9ba-3c7bb0ed7f05",
+    "event_type": "release.version.bumped",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "91fcb9ae-ddd7-4b6e-976c-ebea9b8358df",
+    "target_persona_id": null,
+    "status": "pending",
+    "processed_at": null,
+    "created_at": "2026-05-27T10:40:59.297594300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d2248d70-51ac-4804-a38d-fa4ad079954a",
+    "event_type": "team_handoff.e9429b68-efb2-4a0a-9945-dd33c058158e",
+    "source_type": "chain",
+    "source_id": "bb88f1d0-4c60-49f3-b865-0e79a06b69f5",
+    "target_persona_id": "e9429b68-efb2-4a0a-9945-dd33c058158e",
+    "status": "pending",
+    "processed_at": null,
+    "created_at": "2026-05-27T10:40:59.496048300+00:00",
+    "use_case_id": null
+  }
+]

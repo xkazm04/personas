@@ -1,0 +1,56 @@
+{
+  "_meta": "Agent-judge (§1.B + §2.1) for apprenticeship/funnel-conversion BASELINE (all roles default model + medium effort). Scores are strict: 'production-grade' = ~85+, 'solid' = 70-84.",
+  "personas": [
+    {
+      "role": "architect",
+      "work_labels": ["feature", "test"],
+      "dims": { "correctness": 95, "actionability": 95, "specificity": 94, "role_fidelity": 96 },
+      "evidence": [
+        "Built pure typed computeFunnelConversion() with a single safePct() choke-point: zero/negative denominator→0, non-finite→0, >100 clamped — so NaN/Infinity/overflow cannot reach the UI by construction (exactly the seed's edge-case ask).",
+        "Stood up the repo's FIRST test runner (node:test, zero new deps), 6 edge-case tests, wired into FunnelCard, tsc --noEmit + tests green. ADR is grounded (100%) and self-critical (flags the clamp-hides-dirty-data trade-off rather than hiding it)."
+      ]
+    },
+    {
+      "role": "reviewer",
+      "work_labels": ["review"],
+      "dims": { "correctness": 90, "actionability": 90, "specificity": 92, "role_fidelity": 95 },
+      "evidence": [
+        "Did NOT trust the handoff — independently re-ran tsc (exit 0), npm test (6/6), eslint (exit 0) and confirmed every claimed file exists on disk.",
+        "Found a real latent bug the architect missed: FunnelCard opacity '1 - index*0.12' goes ≤0 for ≥9 stages (safe at today's 6, latent). Concrete fix given. Correctly non-gating (APPROVE w/ notes)."
+      ]
+    },
+    {
+      "role": "security",
+      "work_labels": ["security"],
+      "dims": { "correctness": 88, "actionability": 88, "specificity": 90, "role_fidelity": 92 },
+      "evidence": [
+        "Ran npm audit (2 moderate), found transitive postcss XSS CVE with concrete override fix; ranked Medium with honest reachability caveat (build-time tool).",
+        "Sharp domain finding: flagged candidate background-check PII (DUI 2017, MVR) in data.ts:28-55 as sensitive even as mock data — a genuinely contextual catch, grounded to line numbers."
+      ]
+    },
+    {
+      "role": "release",
+      "work_labels": ["release-ops"],
+      "dims": { "correctness": 92, "actionability": 90, "specificity": 90, "role_fidelity": 95 },
+      "evidence": [
+        "Detected a half-completed release (CHANGELOG had [0.2.0] but package.json still 0.1.0, no tag) and finished it correctly; reasoned semver 0.x MINOR per the repo's own convention.",
+        "Discipline: explicitly refused to sweep the unrelated in-flight working-tree changes (FunnelCard/tsconfig/ADR) into the release commit, and GATED the push/tag behind an approval rather than auto-executing."
+      ]
+    },
+    {
+      "role": "docs",
+      "work_labels": ["docs"],
+      "dims": { "correctness": 86, "actionability": 78, "specificity": 84, "role_fidelity": 88 },
+      "evidence": [
+        "Correctly diffed 2fee916..331e9d7, classified it documentation-only, confirmed README+CHANGELOG already carry v0.2.0, and advanced its last-processed marker — a valid, reasoned 'no change needed' outcome.",
+        "Lower actionability: the cascade reached docs as 'no_input_available' (it analyzed the repo directly rather than consuming a release-event payload), so it shipped no doc delta this run; the conclusion was right but the handoff payload to docs is thin."
+      ]
+    }
+  ],
+  "portfolio_balance": {
+    "score": 88,
+    "note": "Excellent single-cascade balance: feature + unprompted test-infra (architect) + independent review + security audit (CVE + PII) + responsible gated release + docs-currency check. The team self-balanced toward quality and stability without being told — wrote the repo's first tests, caught a latent UI bug, surfaced a real PII concern, and refused to over-scope the release commit.",
+    "labels_histogram": { "feature": 1, "test": 1, "review": 1, "security": 1, "release-ops": 1, "docs": 1 }
+  },
+  "judge_notes": "BASELINE (default model + medium effort everywhere). Genuinely production-grade across all 5 roles — no rubber-stamping, real independent verification, real defect-finding, self-critical ADR, disciplined release scoping. Only soft spot: docs received a thin handoff payload (no_input_available) and shipped no delta, though its no-op was correct. Per-role cost: architect $1.02/283s, reviewer $0.54/192s, security $0.51/190s, release $0.60/206s, docs $0.51/94s; total $3.18/964s. This is the quality bar the 'tuned' composition must MATCH at lower cost to be worth adopting."
+}
