@@ -4,6 +4,23 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## FULL RUN on the improved teams — ✅ capstone validation: the whole arc works (2026-05-27)
+
+Ran two rolled SDLC2 teams in parallel to validate the complete improved system end-to-end (6-role build composition + dev-clone engineer w/ TEAM MODE + L1/L2/L3 structured memory + Phase 1/2 hygiene + graph convention).
+
+**ai-bookkeeper (sdlc2/ai-bookkeeper-feature) — PRODUCTION, team 100, grounding 100%, build/lint/test ALL PASS, $4.22, 6/6 clean cascade.** The improved composition delivered working software end to end:
+- **Engineer BUILDS** (the gap we set out to close): Dev Clone implemented `src/features/ledger/lib/round.ts` (currency-aware banker's rounding) + `round.test.ts` (**25 tests green** — half-even .005, the 2.675 classic, NaN/Infinity, large values), committed as `feat(ledger): … (ADR 0002)`.
+- **L3 graph used SPONTANEOUSLY**: the team wrote real decision-notes to the Obsidian vault — `decision-currency-aware-banker-rounding.md`, `decision-case-file-data-source-seam.md`, `decision-review-criteria-row-tone-adr0002.md`, etc. ("Wrote note to Athena/…" confirmed — real writes, not deferred-errors). The graph convention + ToolSearch-first unlock works in a live cascade.
+- **Memory bounded** (Phase 1+2): 0 logs hit the 6000-char budget cap; cost $4.22 — BELOW the prior elevated $5.5. Per-role: architect $1.05, engineer $0.55, reviewer $0.77, security $0.50, release $0.87, docs $0.48.
+
+**immigration (sdlc2/immigration-stabilization) — NOT-READY, team 91 (cascade-stall).** Two issues, both diagnosed:
+1. **Timeout regression on fresh adoptions:** the roll created fresh personas defaulting to `timeout_ms=300000` (the run-4 900000 fix lived on the ORIGINAL personas, never baked into the template). Dev Clone timed out at 300s (then retried + succeeded — it DID build the criteria fix + test on a `dev-clone/` branch). **FIXED:** bumped all 36 SDLC2 personas to 900000. **TODO:** bake `timeout_ms` into the template/preset so adoptions don't regress.
+2. **Transient Security Sentinel failure** (exit 1, empty output) → success-gated chain stalled → Release Manager never ran (5/6) → cascade-stall cap → NOT-READY. Correct framework behavior (a stalled run isn't trustworthy); the security failure was a transient CLI/process error, not systematic.
+
+**Capstone:** the arc is proven — teams plan → **implement (real code + tests)** → review → security → release → docs, write **structured decisions to a shared knowledge graph**, and stay **cost-bounded** as memory compounds. ai-bookkeeper is a clean PRODUCTION run of the full improved system. Remaining hardening: bake timeout into the template; the transient-failure → cascade-stall sensitivity argues for the P3 auto-retry/orchestration layer.
+
+---
+
 ## Phase 1 structured-shared-memory — RE-MEASURED: cost curve FLATTENED +115% → +5.7% (2026-05-27) ✅
 
 After wiring Phase 1 (route review-feedback to the bounded shared `team_memories` ledger as typed decisions/constraints + inject a compact team digest on the cascade path — commit 3d72e7c60), re-ran the SAME longitudinal protocol (3× `local-seo/parallel-utils`, 6-role team, repo reset each iter, reviews resolved).

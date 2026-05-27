@@ -1,0 +1,41 @@
+[
+  {
+    "id": "bbf93886-30bf-475d-b7d1-01b9a0ebaaca",
+    "execution_id": "516868fd-438b-484f-bca8-d28ee218ebde",
+    "persona_id": "e62cfeed-74bf-4bf3-a7a0-542240a6c01a",
+    "title": "Backlog Triage — 5 candidates from Immigration Concierge scan",
+    "description": "Dev Clone scanned the registered codebase (v0.2.1) and surfaced 5 code-grounded backlog candidates. Accept the ones to implement as focused PRs, reject (with reason — rejected categories are suppressed after 3 rejections), or defer to next scan. No implementation runs until you accept, and dev_config.json must be added for the PR lifecycle.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T18:53:02.895413500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "2ba31b2b-5689-47e7-a8ae-e7382978ea00",
+    "execution_id": "f6f7b911-84e9-4421-9c52-c921d9fa8ef6",
+    "persona_id": "e62cfeed-74bf-4bf3-a7a0-542240a6c01a",
+    "title": "Triage BL-001 — Decouple case-file UI from hardcoded data.ts fixture",
+    "description": "HIGH-priority architecture candidate, verified against the codebase: 3 components + 1 test import the single-case fixture from data.ts at module scope, blocking all multi-case work (Week 5 attorney review UI, evidence-vault epics). Proposed: introduce a getCaseFile(caseId) data-source boundary, keep data.ts as the seed behind it, preserve ADR 0002 status-safety invariant. No implementation will start without your accept.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T18:54:32.621033900+00:00",
+    "use_case_id": "uc_triage"
+  },
+  {
+    "id": "643e1a53-b73f-42e9-b3b1-d1ef0867c78b",
+    "execution_id": "f43efbdf-0543-49c8-adc5-b986a9188eb4",
+    "persona_id": "cd5e840d-e3a2-4fbd-8dfb-f6afff2492d6",
+    "title": "Release event repo does not match wired codebase (ai-bookkeeper → Immigration Paperwork)",
+    "description": "A release.published event for repo 'ai-bookkeeper' v0.3.0 (ledger/currency features) was delivered to a Docs Steward whose codebase connector points at 'Immigration Paperwork' (Meridian, an O-1 visa app). The features in the release do not exist in the wired repo (verified via git log, grep, tags, and missing docs/releases/v0.3.0.md). No docs were edited to avoid fabricating changes. A routing/wiring correction is needed.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T18:59:27.135114900+00:00",
+    "use_case_id": "uc_docs_sync"
+  }
+]
