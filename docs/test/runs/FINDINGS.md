@@ -4,6 +4,24 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Run 3 — `ai-bookkeeper/amount-validation` RE-RUN after the engine fix (2026-05-27, code-track) — ✅ fix verified + the balance question answered
+
+**Headline:** the engine fix works (cascade **5/5 completed**, was 3/5+panic) AND the team **self-balances on code-track work** — the decisive answer to "is the team only pushing?": **no.** Given a bare feature seed with zero mention of tests/quality, the team:
+- implemented the feature (`src/features/ledger/lib/amount.ts` + `ingest.ts`),
+- **wrote a real unit test for it (`amount.test.ts`) unprompted**,
+- **wired the test runner** into `package.json` (`"test": "tsx --test …"`),
+- wrote an ADR, synced the README, and cut a responsible `0.2.0` release.
+
+That's feature + test + test-infra + design + docs + release in one autonomous cascade. The Security persona that *panicked* in run-2 now **completed** — direct confirmation of the fix.
+
+**Verdict: PRODUCTION (team 87, balance 86)** — but I flag it **borderline**, for two honest reasons:
+1. **The architect's ADR is only 33% grounded** (`docs/adr/0001-…md`: 4/12 cited paths resolve — shorthand paths missing the `src/features/` prefix). Notably weaker than ai-paralegal's architect (80–100%). This is the clearest **React-phase tuning target** so far (instruct full repo-relative paths).
+2. **Code-track §1.A checks are NOT yet wired** — the verdict rests on cascade + balance + *doc* grounding, but I have not yet run the repo's own `build`/`lint`/`test` on the actual diff (the rubric's strongest, ungameable code-track signal). Until that's wired, a code-track PRODUCTION is provisional on "does the code actually build & pass." **Next evaluator upgrade.**
+
+**Refinements identified:** exclude `.claude/` tooling files from grounding (they're not team deliverables and dragged the average down); wire §1.A code-track build/lint/test; fix `run.json` repoChanged to be working-tree-aware.
+
+---
+
 ## Run 2 — `ai-bookkeeper/amount-validation` (2026-05-27, code-track) — 🔴 NOT-READY, but caught a real ENGINE BUG (the most valuable finding yet)
 
 **Headline:** the framework caught a **product robustness bug** that randomly kills autonomous cascades. The Security Sentinel execution **failed with a Rust panic** — `byte index 500 is not a char boundary; it is inside '≤'` — an unsafe byte-slice `&content_preview[..500]` in `engine/runner/mod.rs:1813` (tool-result preview truncation). The architect's amount-validation module legitimately contains `≤`/`$`; truncating its preview at byte 500 split a multi-byte char → panic. Because the chain is success-gated, the failure **stalled the cascade at 3/5** (Release + Docs never ran). **Fixed** char-safe (`.chars().take(500)`); `pipeline_executor.rs` was already char-safe. This class of bug (`&s[..N]` on LLM/tool content) would intermittently break long unattended runs on extremely common content (≤, ≥, em-dashes, currency, accents) — exactly a "works for weeks" blocker.

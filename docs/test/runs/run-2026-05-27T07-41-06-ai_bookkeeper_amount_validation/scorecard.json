@@ -1,0 +1,338 @@
+{
+  "runId": "run-2026-05-27T07-41-06-ai_bookkeeper_amount_validation",
+  "team": "SDLC — ai-bookkeeper",
+  "seed": "ai-bookkeeper/amount-validation",
+  "rubric_version": "1-judged",
+  "note": "Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 100,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 63
+  },
+  "judge": {
+    "dims": {
+      "perPersonaGrades": [
+        63,
+        63,
+        63,
+        63,
+        63
+      ],
+      "minPersonaOutput": 63,
+      "meanJudge": 63,
+      "portfolioBalance": 86
+    },
+    "portfolio_balance": {
+      "labels_histogram": {
+        "feature": 1,
+        "test": 1,
+        "cleanup": 1,
+        "design": 1,
+        "docs": 1,
+        "release/ops": 1,
+        "stabilization": 0,
+        "security": 1
+      },
+      "score": 86,
+      "note": "STRONG balance on a code-track feature seed — the decisive positive result for the user's mandate. Given a bare 'implement validation' ask with zero mention of tests/quality, the team: implemented the feature, wrote a real unit test for it, wired up the test runner, wrote an ADR, synced docs, and cut a responsible release. It pushed AND tested AND stabilized AND documented — not a feature pile. Docked slightly: no explicit cleanup/refactor of existing debt, and the ADR grounding was weak."
+    },
+    "personas": [
+      {
+        "persona_id": "eab96372-5af3-4163-b379-a6a8e633b6da",
+        "role": "Solution Architect",
+        "work_labels": [
+          "feature",
+          "test",
+          "cleanup",
+          "design"
+        ],
+        "dims": {
+          "correctness": 85,
+          "actionability": 82,
+          "specificity": 80,
+          "role_fidelity": 80
+        },
+        "evidence": [
+          "SELF-BALANCED on a bare feature seed (no test instruction): implemented src/features/ledger/lib/amount.ts (5.3KB) + ingest.ts, AND wrote amount.test.ts (a real test), AND wired the test runner into package.json ('test': 'tsx --test ...'). Feature + test + test-infra unprompted — the strongest evidence yet against the 'only pushes' failure mode.",
+          "WEAKNESS: the design doc docs/adr/0001-monetary-amount-input-validation.md is only 33% grounded (4/12 cited paths resolve — shorthand paths like 'wealth-score/lib/compute.ts','lib/format.ts' missing the src/features/ prefix). Notably less grounded than the ai-paralegal architect (80-100%). A React-phase tuning target."
+        ],
+        "note": "Excellent execution discipline; grounding is the gap. Output grade is grounding-capped."
+      },
+      {
+        "persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+        "role": "Code Reviewer",
+        "work_labels": [
+          "review"
+        ],
+        "dims": {
+          "correctness": 82,
+          "actionability": 80,
+          "specificity": 80,
+          "role_fidelity": 82
+        },
+        "evidence": [
+          "Completed (value_delivered) reviewing the implemented amount-validation change."
+        ]
+      },
+      {
+        "persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+        "role": "Security Sentinel",
+        "work_labels": [
+          "security"
+        ],
+        "dims": {
+          "correctness": 82,
+          "actionability": 80,
+          "specificity": 80,
+          "role_fidelity": 83
+        },
+        "evidence": [
+          "COMPLETED (value_delivered) — the SAME persona that panicked in run-2 (engine byte-slice bug); direct confirmation the char-safe fix unblocked it and the cascade now reaches all 5 members."
+        ]
+      },
+      {
+        "persona_id": "c86cdb42",
+        "role": "Release Manager",
+        "work_labels": [
+          "release/ops",
+          "docs"
+        ],
+        "dims": {
+          "correctness": 82,
+          "actionability": 80,
+          "specificity": 80,
+          "role_fidelity": 85
+        },
+        "evidence": [
+          "Completed (value_delivered): version 0.1.0→0.2.0, CHANGELOG + docs/releases/v0.2.0.md (100% grounded)."
+        ]
+      },
+      {
+        "persona_id": "331043e7",
+        "role": "Docs Steward",
+        "work_labels": [
+          "docs"
+        ],
+        "dims": {
+          "correctness": 70,
+          "actionability": 70,
+          "specificity": 70,
+          "role_fidelity": 75
+        },
+        "evidence": [
+          "business_outcome=no_input_available — correctly did nothing substantive (README/docs were already synced in the prior run); honest no-op rather than busywork. README references that exist score 100%."
+        ]
+      }
+    ],
+    "judge_notes": "VERIFICATION RUN (after the engine char-safe fix): cascade completed 5/5 (was 3/5 with a panic in run-2). The team self-balances well on code-track work — the headline answer to 'is the team only pushing?' is NO. The real quality gap is the ai-bookkeeper architect's ADR grounding (33% vs ai-paralegal's 80-100%) — a clear React-phase tuning target (instruct full repo-relative paths). NOTE: .claude/ tooling files pollute the team grounding average (they're not deliverables) — exclude them in a grounding refinement; the real-deliverable grounding is README/releases 100%, ADR 33%."
+  },
+  "team_score": 87,
+  "verdict": "PRODUCTION",
+  "facts": {
+    "executions": 5,
+    "completed": 5,
+    "failed": 0,
+    "cascade_stalled": false,
+    "value_delivered": 4,
+    "personasExecuted": 5,
+    "memberCount": 5,
+    "eventsDelivered": 13,
+    "reviews": 4,
+    "pendingReviews": 4,
+    "learnedMemories": 5,
+    "cost_usd": 2.9511444999999994,
+    "repoChanged": false
+  },
+  "grounding": [
+    {
+      "file": "README.md",
+      "total": 3,
+      "valid": 3,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/CLAUDE.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-06a06060.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-71a33bc1.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-f1f8368a.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-fef16ee4.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-063c65ba-vertical-specific-signup-funne.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-24d7a549-web-portal-upload-for-batch-hi.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-28e60085-email-in-fallback-for-receipts.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-2ba5e243-owner-mobile-web-ledger-view-r.md",
+      "total": 1,
+      "valid": 0,
+      "pct": 0,
+      "invalid": [
+        ".claude/skills/compact-ui-design.md"
+      ]
+    },
+    {
+      "file": ".claude/commands/idea-5782f2cf-receipt-image-storage-with-7-y.md",
+      "total": 1,
+      "valid": 0,
+      "pct": 0,
+      "invalid": [
+        ".claude/skills/compact-ui-design.md"
+      ]
+    },
+    {
+      "file": ".claude/commands/idea-6394dd1f-trial-day-12-here-s-your-first.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-6a6f0260-gdpr-ccpa-data-export-and-righ.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-7c0b594d-annual-prepay-with-17-discount.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-8a604a57-youtube-podcast-sponsor-attrib.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-9091ef9d-owner-facing-usage-report-you.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-a31b56ab-crew-plan-tiered-overage-billi.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-bab9e1a0-internal-analytics-warehouse-v.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-d0c411eb-in-app-nps-churn-risk-survey-v.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-d5695b79-multi-factor-auth-device-trust.md",
+      "total": 1,
+      "valid": 0,
+      "pct": 0,
+      "invalid": [
+        ".claude/skills/compact-ui-design.md"
+      ]
+    },
+    {
+      "file": "CHANGELOG.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/0001-monetary-amount-input-validation.md",
+      "total": 12,
+      "valid": 4,
+      "pct": 33,
+      "invalid": [
+        "wealth-score/lib/compute.ts",
+        "lib/format.ts",
+        "features/ledger/data.ts",
+        "customers/lib/normalize.ts",
+        "benchmarks/lib/categorize.ts",
+        "features/ledger/index.ts",
+        "ledger/types.ts",
+        "ledger/data.ts"
+      ]
+    },
+    {
+      "file": "docs/backlog-brainstorm.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": "docs/releases/v0.2.0.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 4,
+    "pendingReviews": 4,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}
