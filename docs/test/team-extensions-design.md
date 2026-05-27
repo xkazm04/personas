@@ -29,7 +29,32 @@ build cascade. Revisit once a true product-backlog role exists.
 
 ---
 
-## 2. Parallel Dev Clone + environment merge/clean — **[design]**
+## 2. Parallel Dev Clone + environment merge/clean — **[Phase A shipped + validated · true fan-out = engine ADR]**
+
+> **Update 2026-05-27 (commit aa3d55a6e + validation runs):** Phase A shipped —
+> `max_concurrent` 1→4 + a **PARALLEL TASKS** discipline (per-task git worktree +
+> branch, merge back, full-suite-green, then clean: remove worktrees/branches, no
+> orphans; real conflict → manual_review). Applied live + baked into the template.
+> **Two validation runs (local-seo, 6-role team):** both left the **environment
+> clean** (no `.parallel/` dir, no orphan `devclone/*` task branches/worktrees),
+> work integrated, suites green (28 then 31 tests). Dev Clone **reasons correctly**
+> about the discipline: run-A (interdependent tasks) → *"one cohesive work order on
+> shared files, not parallel-isolatable"*; run-B (3 file-disjoint modules) →
+> *"confirmed file-disjoint... isolation moot once integrated + conflict-free, so
+> skipped the worktree/merge flow."* **Finding:** the worktree path only earns its
+> keep under genuine CONCURRENT contention (multiple executions writing the same
+> repo at once). For sequential file-disjoint work in one execution there is no
+> contention, so the correct behavior is to skip it — which Dev Clone does. Two
+> structural facts make true *one-breakdown→N-concurrent-executions* fan-out an
+> ENGINE concern, not promptable: (1) execution cwd is the per-persona workspace,
+> not the repo root, so prompt-level `git worktree` is awkward; (2) the chain layer
+> has cycle-detection + depth-8 + no join primitive. **Durable Phase B (ADR):** an
+> engine fan-out that splits an architect breakdown into N executions, each given
+> an AUTOMATIC per-execution worktree, joined by a barrier trigger that fires the
+> integrate+clean step when all N complete. Phase A delivers the clean-environment
+> guarantee + concurrency capacity + correct judgment now; Phase B is the
+> engine-level enabler for true contended parallelism.
+
 
 **Goal:** the architect emits a breakdown of N tasks; Dev Clone implements them in
 parallel (multiple concurrent executions of ONE persona), then the team merges the

@@ -1,0 +1,41 @@
+[
+  {
+    "id": "dd562775-4135-4853-8d79-af73bb0660f8",
+    "execution_id": "d5bb80c0-7596-4fca-9ff7-3d35a5feb0fd",
+    "persona_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "title": "Code Review verdict: APPROVE — ADR-0002 @ 39b1d1d (3 pure utils, 2 non-gating low notes)",
+    "description": "Reviewed slug.ts/num.ts/str.ts against the live tree at commit 39b1d1d. 31/31 tests green, tsc clean, zero cross-imports, zero call sites — verified independently. No security or correctness defects. Verdict APPROVE. Two low-severity quality notes are forward-looking (Unicode handling) for when these utils get wired to live data, not merge blockers. Accept/reject each so they stay tracked and aren't re-flagged.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T14:18:47.723709800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "e0e5764e-254b-4cbe-a306-4ada57c07767",
+    "execution_id": "d5b1b739-45fe-41f9-9800-d6ea0f257e95",
+    "persona_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "title": "Security re-scan — 2 Medium findings STILL OPEN (local-seo-agency @ 39b1d1d)",
+    "description": "Re-scan at commit 39b1d1d confirms both prior Medium findings remain unremediated (no overrides block in package.json, page.tsx:66-67 markup unchanged). 0 new security issues. The three new ADR-0002 lib modules (slug/num/str) are pure utilities — scanned clean. @google/generative-ai still unused. Decide whether to fix now or accept the latent risk.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T14:20:48.763686400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "00a13f4c-6e36-44e4-bbc8-3b917b78794f",
+    "execution_id": "37a55296-98f3-47c9-b201-9c86638e2e67",
+    "persona_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "title": "Release v0.2.4 created locally — approve to publish + reconcile orphaned tags",
+    "description": "A PATCH release (0.2.0→0.2.4) was committed and tagged locally (commit c958328, annotated tag v0.2.4). It adds three pure-utility lib modules (slug/num/str), a node --test harness, and ADR/planning docs. Versioning skipped 0.2.1–0.2.3 because those tags persist on commits orphaned by repeated workspace resets. Decide whether to publish and whether to clean up the orphaned tags.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T14:24:04.902875200+00:00",
+    "use_case_id": null
+  }
+]

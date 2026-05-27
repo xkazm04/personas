@@ -4,6 +4,41 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Runs 13–14 — Dev Clone PARALLEL TASKS (Phase A) validation (2026-05-27) — ✅ clean environment, sound judgment; true fan-out = engine work
+
+Validated the parallel-engineer mechanism (commit aa3d55a6e): `max_concurrent` 1→4
++ a PARALLEL TASKS discipline (per-task git worktree+branch → merge → full-suite
+green → clean, no orphans). Both runs on the 6-role local-seo team:
+
+- **Run-13 (test-coverage, interdependent tasks):** 6/6, $3.81, 28 tests green,
+  **environment clean**. Dev Clone: *"one cohesive work order on shared files
+  (interdependent tasks, not parallel-isolatable)"* → implemented directly. Correct.
+- **Run-14 (3 file-disjoint utility modules, deliberately independent):** 6/6,
+  $4.03, **31 tests green**, all 3 modules (slug/num/str + tests) landed,
+  **environment clean** (no `.parallel/`, no orphan worktrees/branches). Dev Clone:
+  *"confirmed file-disjoint... isolation moot once integrated + conflict-free, so
+  skipped the worktree/merge flow."* Also correct.
+
+**Conclusion:** the worktree-isolation path earns its keep ONLY under genuine
+CONCURRENT contention (multiple executions writing the same repo simultaneously);
+for sequential file-disjoint work in a single execution there's no contention, so
+skipping it is right — and Dev Clone reasons to that correctly. The
+clean-environment guarantee (the user's "merge/clean the environment" ask) holds
+across both runs. **True `one-breakdown → N-concurrent-executions` fan-out is an
+ENGINE concern, not promptable:** (1) execution cwd is the per-persona workspace,
+not the repo root (prompt-level `git worktree` is awkward); (2) chain layer has
+cycle-detection + depth-8 + no join primitive. Phase B (ADR): an engine fan-out
+with automatic per-execution worktrees + a join-barrier trigger that fires the
+integrate+clean once all N tasks finish. Phase A (shipped) = discipline + clean-env
++ concurrency capacity + correct judgment.
+
+> Side note: in run-14 the *architect* implemented the three modules directly
+> (concrete "implement X,Y,Z" seed), and Dev Clone found them and committed —
+> the same "architect implements when the seed is concrete" pattern seen in
+> immigration. Role-boundary nuance worth watching, benign here.
+
+---
+
 ## Runs 11–12 — RESOLVING THE IMPLEMENTER GAP: add Dev Clone to the SDLC team (2026-05-27) — ❌ "add the role" failed → ✅ TEAM MODE fix works
 
 **Why:** run-10 exposed that the 5-role SDLC preset (architect→reviewer→security→release→docs) has **no implementer** — the architect's own template hands off to "a delivery agent" that had been removed, so delegated build work was planned but never built. User direction: the original teams had Dev Clone (development capability) + product/backlog roles; extend the team and re-run. Personas are multi-capability (each use_case independently enable-able), so the fix is to add Dev Clone, not author a single-purpose agent.

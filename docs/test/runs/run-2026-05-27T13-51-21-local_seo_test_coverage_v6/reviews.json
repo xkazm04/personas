@@ -1,0 +1,67 @@
+[
+  {
+    "id": "520191b8-b238-497d-9e90-8ba86a6ccac9",
+    "execution_id": "f8ed08bd-da7c-4184-a02c-9b45864eae90",
+    "persona_id": "eec38c0d-465d-4f50-81ba-fb41a9ae6ed3",
+    "title": "Approve rank-drop UI change shipped under ADR-0001 (Task 4)",
+    "description": "The test harness and all unit tests are implemented and green (28/28). One change alters rendered UI: KeywordTable.tsx now renders rank drops (now>prev) as '↓ N' in text-danger instead of '—' (which previously collapsed drops into no-change). This is a correctness fix. No drop row exists in current mock data, so no visible change today, but the rendered-output behavior is new. Separately, format.ts NaN behavior ($NaN / NaN% leaking to UI) was deliberately pinned, not guarded — flagging in case product wants a display guard.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T13:55:52.937744800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3ea6e243-007d-4ef8-9e3e-4fecf24fc84f",
+    "execution_id": "e72bd086-ff3f-4ded-8c86-fa4ff785e085",
+    "persona_id": "c7cd8b5a-124c-462e-b26c-dd0d4bafa117",
+    "title": "Approve rank-drop UI change landed under ADR-0001 (branch dev-clone/adr-0001-test-harness)",
+    "description": "ADR-0001 implementation is committed and green (28/28, tsc clean) on branch dev-clone/adr-0001-test-harness, commit 199409b. One change alters rendered UI: KeywordTable now renders rank drops (now>prev) as '↓ N' in text-danger instead of '—' (which previously collapsed drops into no-change). This is a correctness fix; no down-move row exists in current mock data, so no visible change today, but rendered-output behavior is new. Separately, format.ts NaN behavior ($NaN/NaN% leaking to UI) was deliberately pinned in tests, not guarded — flagging in case product wants a display guard.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T13:58:27.507992200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "19d0c297-e904-426a-9526-e41b48fc7fae",
+    "execution_id": "57f81ffb-812b-4875-b020-5164e913fd46",
+    "persona_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "title": "Code Review verdict: APPROVE — ADR-0001 @ 199409b (cr-f1 resolved; 3 latent follow-ups)",
+    "description": "Re-review after workspace reset and re-commit to 199409b. Verified against the live tree: 28/28 tests green, tsc clean, gating rank-drop defect (cr-f1) fixed and intact. Verdict APPROVE. The t4 UI change renders rank drops as '↓ N' in red — correct behavior, no down-move row in current mock data so no visible change today. Three format.ts items are pre-existing, latent (zero call sites), and pinned in tests — follow-up backlog before live-data wiring.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T14:00:11.491180800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d654a6ff-14bf-45d1-b80d-6dfe3ea9bba5",
+    "execution_id": "4d7fefd4-5f77-4fb8-8341-312bfd3e9470",
+    "persona_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "title": "Security re-scan — 2 Medium findings STILL OPEN (local-seo-agency @ 199409b)",
+    "description": "Re-scan at re-commit 199409b confirms both prior Medium findings remain unremediated (no overrides block in package.json, page.tsx:66-67 markup unchanged). 0 new security issues. New landing-claude page is clean. @google/generative-ai still unused. Decide whether to fix now or accept the latent risk.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T14:02:28.878292700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "e73f4892-d875-4391-af96-ac57baf634ef",
+    "execution_id": "03aab192-00a8-4ec6-abaa-a7e58e226e01",
+    "persona_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "title": "Release v0.2.3 created locally — approve to publish + reconcile orphaned tags",
+    "description": "A PATCH release (0.2.0→0.2.3) was committed and tagged locally (commit 218a0ca, annotated tag v0.2.3). It surfaces hidden rank drops, adds a node --test harness + pure rank.ts, and ships ADR-0001 docs. Versioning skipped 0.2.1/0.2.2 because those tags still exist on commits orphaned by a workspace reset. Decide whether to publish and whether to clean up the orphaned tags.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T14:05:40.068781300+00:00",
+    "use_case_id": null
+  }
+]
