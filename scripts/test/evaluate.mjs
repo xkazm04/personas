@@ -55,6 +55,10 @@ function addedDocsFromPatch(patchPath) {
   let m;
   while ((m = re.exec(patch)) !== null) {
     const f = m[2];
+    // Exclude .claude/ tooling artifacts (goal-analysis/idea cards, CLAUDE.md) —
+    // these are agent scaffolding, not team deliverables, and shouldn't count
+    // toward the team's grounding score.
+    if (f.startsWith('.claude/')) continue;
     if (/\.(md|adr)$/i.test(f) || f.includes('/adr/')) files.push(f);
   }
   return [...new Set(files)];

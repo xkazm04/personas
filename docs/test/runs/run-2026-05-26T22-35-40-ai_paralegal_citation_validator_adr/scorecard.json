@@ -9,19 +9,19 @@
     "work_density": 100,
     "handoff_health": 100,
     "learning_loop": 100,
-    "grounding_pct": 83
+    "grounding_pct": 97
   },
   "judge": {
     "dims": {
       "perPersonaGrades": [
-        83,
-        83,
-        83,
-        83,
-        83
+        90,
+        88,
+        91,
+        88,
+        88
       ],
-      "minPersonaOutput": 83,
-      "meanJudge": 83,
+      "minPersonaOutput": 88,
+      "meanJudge": 89,
       "portfolioBalance": 78
     },
     "portfolio_balance": {
@@ -133,7 +133,7 @@
     ],
     "judge_notes": "Production-grade, self-critical, grounded work across all 5 roles. Architect output-grade is grounding-capped at 80 by ADR-0004's two shorthand paths. One judged run on a non-held-out seed = PRODUCTION-quality evidence, NOT certification (needs 3 consecutive on held-out + decay). Watch backlog balance on code-track seeds next."
   },
-  "team_score": 92,
+  "team_score": 95,
   "verdict": "PRODUCTION",
   "facts": {
     "executions": 5,
@@ -164,22 +164,6 @@
       "valid": 3,
       "pct": 100,
       "invalid": []
-    },
-    {
-      "file": ".claude/CLAUDE.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/goal-analysis-94e55d67.md",
-      "total": 1,
-      "valid": 0,
-      "pct": 0,
-      "invalid": [
-        "docs/RULES.md"
-      ]
     },
     {
       "file": "docs/adr/ADR-0001-credential-access-audit-log.md",

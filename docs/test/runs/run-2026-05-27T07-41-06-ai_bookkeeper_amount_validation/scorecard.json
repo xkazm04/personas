@@ -9,19 +9,19 @@
     "work_density": 100,
     "handoff_health": 100,
     "learning_loop": 100,
-    "grounding_pct": 63
+    "grounding_pct": 78
   },
   "judge": {
     "dims": {
       "perPersonaGrades": [
-        63,
-        63,
-        63,
-        63,
-        63
+        78,
+        78,
+        78,
+        78,
+        71
       ],
-      "minPersonaOutput": 63,
-      "meanJudge": 63,
+      "minPersonaOutput": 71,
+      "meanJudge": 77,
       "portfolioBalance": 86
     },
     "portfolio_balance": {
@@ -128,7 +128,7 @@
     ],
     "judge_notes": "VERIFICATION RUN (after the engine char-safe fix): cascade completed 5/5 (was 3/5 with a panic in run-2). The team self-balances well on code-track work — the headline answer to 'is the team only pushing?' is NO. The real quality gap is the ai-bookkeeper architect's ADR grounding (33% vs ai-paralegal's 80-100%) — a clear React-phase tuning target (instruct full repo-relative paths). NOTE: .claude/ tooling files pollute the team grounding average (they're not deliverables) — exclude them in a grounding refinement; the real-deliverable grounding is README/releases 100%, ADR 33%."
   },
-  "team_score": 87,
+  "team_score": 92,
   "verdict": "PRODUCTION",
   "facts": {
     "executions": 5,
@@ -152,145 +152,6 @@
       "valid": 3,
       "pct": 100,
       "invalid": []
-    },
-    {
-      "file": ".claude/CLAUDE.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/goal-analysis-06a06060.md",
-      "total": 1,
-      "valid": 1,
-      "pct": 100,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/goal-analysis-71a33bc1.md",
-      "total": 1,
-      "valid": 1,
-      "pct": 100,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/goal-analysis-f1f8368a.md",
-      "total": 1,
-      "valid": 1,
-      "pct": 100,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/goal-analysis-fef16ee4.md",
-      "total": 1,
-      "valid": 1,
-      "pct": 100,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-063c65ba-vertical-specific-signup-funne.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-24d7a549-web-portal-upload-for-batch-hi.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-28e60085-email-in-fallback-for-receipts.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-2ba5e243-owner-mobile-web-ledger-view-r.md",
-      "total": 1,
-      "valid": 0,
-      "pct": 0,
-      "invalid": [
-        ".claude/skills/compact-ui-design.md"
-      ]
-    },
-    {
-      "file": ".claude/commands/idea-5782f2cf-receipt-image-storage-with-7-y.md",
-      "total": 1,
-      "valid": 0,
-      "pct": 0,
-      "invalid": [
-        ".claude/skills/compact-ui-design.md"
-      ]
-    },
-    {
-      "file": ".claude/commands/idea-6394dd1f-trial-day-12-here-s-your-first.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-6a6f0260-gdpr-ccpa-data-export-and-righ.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-7c0b594d-annual-prepay-with-17-discount.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-8a604a57-youtube-podcast-sponsor-attrib.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-9091ef9d-owner-facing-usage-report-you.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-a31b56ab-crew-plan-tiered-overage-billi.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-bab9e1a0-internal-analytics-warehouse-v.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-d0c411eb-in-app-nps-churn-risk-survey-v.md",
-      "total": 0,
-      "valid": 0,
-      "pct": null,
-      "invalid": []
-    },
-    {
-      "file": ".claude/commands/idea-d5695b79-multi-factor-auth-device-trust.md",
-      "total": 1,
-      "valid": 0,
-      "pct": 0,
-      "invalid": [
-        ".claude/skills/compact-ui-design.md"
-      ]
     },
     {
       "file": "CHANGELOG.md",
