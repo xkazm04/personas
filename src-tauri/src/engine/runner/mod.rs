@@ -31,6 +31,7 @@ use super::event_registry::event_name;
 use crate::db::models::{Persona, PersonaToolDefinition, UpdateExecutionStatus};
 use crate::db::repos::core::memories as mem_repo;
 use crate::db::repos::communication::manual_reviews as manual_review_repo;
+use crate::db::repos::resources::team_memories as team_memory_repo;
 use crate::db::repos::resources::teams as team_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::execution::tool_usage as usage_repo;
@@ -744,6 +745,36 @@ pub async fn run_execution(
                 logger.log(&format!("[LEARNING] Failed to load prior reviews: {e}"));
                 prompt_text
             }
+        }
+    } else {
+        prompt_text
+    };
+
+    // Structured shared-team knowledge (L2 — docs/test/structured-shared-memory-design.md):
+    // inject a COMPACT digest of the team's shared, bounded ledger (decisions /
+    // constraints / glossary in `team_memories`) so every member shares one source
+    // of truth instead of N per-persona dupes. Bounded by team-memory eviction +
+    // the top-N cap here, so it does NOT bloat the prompt as knowledge compounds.
+    // (Previously team_memories were injected only on the pipeline path, never the
+    // event-cascade path the SDLC team runs on.) Skip on session resume.
+    let prompt_text = if !is_session_resume {
+        match persona.home_team_id.as_deref() {
+            Some(team_id) if !team_id.is_empty() => match team_memory_repo::get_for_injection(&pool, team_id, 15) {
+                Ok(tm) if !tm.is_empty() => {
+                    let mut sec = String::from("\n\n## Team Shared Knowledge — Decisions & Constraints\n\nThe team's shared ledger from prior work. Treat decisions as settled (don't re-litigate) and constraints as hard rules. Build on these.\n\n");
+                    for m in &tm {
+                        sec.push_str(&format!("- [{}] **{}**: {}\n", m.category, m.title, m.content));
+                    }
+                    logger.log(&format!("[TEAM-MEM] Injected {} shared team decisions/constraints", tm.len()));
+                    format!("{prompt_text}{sec}")
+                }
+                Ok(_) => prompt_text,
+                Err(e) => {
+                    logger.log(&format!("[TEAM-MEM] Failed to load team memory: {e}"));
+                    prompt_text
+                }
+            },
+            _ => prompt_text,
         }
     } else {
         prompt_text
