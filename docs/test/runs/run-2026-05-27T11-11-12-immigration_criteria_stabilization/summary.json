@@ -1,0 +1,24 @@
+{
+  "runId": "run-2026-05-27T11-11-12-immigration_criteria_stabilization",
+  "team": "SDLC — Immigration Paperwork",
+  "teamId": "c06bb281-2ca6-47d8-98d1-928f9114b84a",
+  "sinceIso": "2026-05-27T11:10:12.746Z",
+  "counts": {
+    "executions": 5,
+    "executionsByStatus": {
+      "completed": 5
+    },
+    "personasExecuted": 5,
+    "reviews": 3,
+    "memories": 10,
+    "events": 15,
+    "eventsByStatus": {
+      "delivered": 15
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "logsCopied": 5
+  },
+  "cost_usd": 3.249073,
+  "repoDiffBytes": 57477
+}

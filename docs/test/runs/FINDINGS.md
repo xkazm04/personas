@@ -4,6 +4,23 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Runs 9–10 — parallel corpus: `immigration` ✅ PRODUCTION + `local-seo` 🔴 NOT-READY (2026-05-27) — caught the implementer-gap + a harness quiescence bug
+
+**Higher-traffic test (directive A):** ran immigration + local-seo **concurrently** (2 teams, up to 10 personas) on the validated default+medium composition.
+
+**Run-9 immigration/criteria-stabilization — judged PRODUCTION (team 97, grounding 100%, balance 90, minPersona 85), $3.25/942s, 5/5.** The sharpest defect-find of the corpus: the architect found that `CriteriaTable.tsx` hardcoded `1 partial` while computing `met` from data — the eligibility badge **silently lies** the moment criteria data changes. It extracted a pure `summarizeCriteria` aggregator (excludes malformed rows), wired the table, wrote a 4-case regression test (the repo's first), and verified tsc-clean + byte-identical render. Reviewer independently re-ran tests/tsc/Badge-contract; security found the postcss CVE; release versioned; docs synced (value_delivered — confirming the re-enabled Docs Steward works post circuit-breaker recovery). Default model handled the release cleanly (contrast the Haiku release work-loss in runs 6–8).
+
+**Run-10 local-seo/test-coverage — NOT-READY (team 97, grounding 85%, build+lint pass, TEST=FAIL), $2.60/5-of-5.** §1.A correctly capped it: `npm test` errors **"Missing script: test"** — **no test runner was wired and no test files were written**, even though all 5 personas self-reported `value_delivered`. Root cause is a real **team-composition / seed-phrasing finding**, NOT a model issue:
+- The SDLC roster (architect/reviewer/security/release/docs) has **no implementer**. The architect is an *analysis* role; it produced ADR-0001 + a 5-task plan ("recommend node --test via tsx") and handed off via `architecture.analysis.completed`, expecting downstream to build — but downstream only reviews/audits/ships/documents. Nobody wrote the tests.
+- **Seed phrasing decides whether work gets built.** immigration ("identify… and **fix it** with a regression test") and apprenticeship ("design and **implement**… a unit test") addressed the architect directly → it implemented (and wrote tests). local-seo ("**have the team** stand up a test runner…") read as delegation → the architect planned and delegated into a void.
+- Implication for the autonomy thesis: the team is reliable for stabilization/feature/fix goals (architect self-implements) but **unreliable for goals phrased as "delegate to engineers" when there is no engineer**. Fixes: (a) write seeds/goals that address the entry persona directly (and re-run local-seo to confirm it then delivers); and/or (b) the SDLC preset likely needs a dedicated implementer role, or the architect's contract must explicitly own implementation, not just analysis. This is a candidate REACT/preset change, tracked but not yet made.
+
+**Harness bug fixed (commit 994268a2): premature quiescence under parallel load.** immigration first gathered at **2/5** while its cascade was *still alive* — security started at the exact second the harness quiesced. Cause: between a role finishing and the next *starting*, there is a brief `running===0` gap; under concurrent load the handoff→spawn latency exceeds the no-change window, so the harness stopped while work was in flight. Fix: quiescence is now **handoff-aware** — it will not stop while a delivered/pending `team_handoff.*` is owed to a member that hasn't executed, and keeps the window open while one is outstanding. Added `scripts/test/regather.mjs` to rebuild a bundle after the team truly finishes (used to recover immigration's real 5/5). local-seo completed within-window even in parallel, so its bundle was already complete.
+
+**SCOREBOARD (judged):** ai-paralegal PROD(95) · ai-bookkeeper PROD(92) · grant-writing PROD(91) · apprenticeship PROD(97) · immigration PROD(100→97) · local-seo NOT-READY(test-coverage undelivered). 5 PRODUCTION across 5 distinct teams + 1 honest NOT-READY that exposed a real team-composition gap.
+
+---
+
 ## Runs 6–8 — `apprenticeship/funnel-conversion` MODEL/REASONING A/B (2026-05-27) — ✅ baseline PRODUCTION, ❌ downshift unsafe; caught 2 more product blockers
 
 **Setup.** First per-capability model/reasoning experiment (user directive B: "find ideal composition optimizing quality/speed"). Two knobs, both in `personas.model_profile` JSON: `--effort` (low/medium/high) and `--model`. Helper `scripts/test/composition.mjs` tunes them by ROLE. Same seed, same pristine repo state each run (git snapshot `331e9d7` as restore point). Baseline = all roles default model (Sonnet) + medium effort. Tuned = reasoning roles unchanged, **release + docs → Haiku + low**.

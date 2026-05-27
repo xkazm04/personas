@@ -1,0 +1,626 @@
+
+--- UNCOMMITTED WORKING TREE ---
+diff --git a/README.md b/README.md
+index 198121d..e2f40b4 100644
+--- a/README.md
++++ b/README.md
+@@ -17,7 +17,7 @@ Local service businesses live and die on Google's map pack — the top three res
+ 
+ ## What's in this repo
+ 
+-A Next.js 14 application scaffold with a finalized design direction:
++A Next.js 16 application scaffold with a finalized design direction:
+ 
+ - **Design system** — semantic CSS-variable tokens, a shared UI primitive kit, feature-module architecture
+ - **Three routes** — a marketing landing, a brand landing, and the working product dashboard
+@@ -35,11 +35,11 @@ The dashboard, data and integrations are mocked — this is the design-and-archi
+ 
+ ## Tech stack
+ 
+-- **Framework:** Next.js 14 (App Router) · TypeScript (strict) · Tailwind CSS
++- **Framework:** Next.js 16 (App Router) · React 19 · TypeScript 6 (strict) · Tailwind CSS 4
+ - **AI:** Google Gemini 1.5 Pro (content) · Imagen 3 (post images)
+ - **Integrations:** Google Business Profile API · DataForSEO / SerpAPI (rank data) · Stripe (billing)
+ - **Cloud:** Google Cloud Run · Cloud Scheduler (daily content jobs) · BigQuery
+-- **Tooling:** ESLint 9 flat config · `tsc` strict typecheck
++- **Tooling:** ESLint 10 flat config · `tsc` strict typecheck
+ 
+ ## Getting started
+ 
+diff --git a/package.json b/package.json
+index 205b635..898c4fc 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "local-seo-agency",
+-  "version": "0.1.0",
++  "version": "0.2.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+
+--- NEW UNTRACKED FILES ---
+
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+new file mode 100644
+--- /dev/null
++++ b/CHANGELOG.md
++# Changelog
++
++All notable changes to this project are documented here.
++
++The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
++and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
++
++## [0.2.0] - 2026-05-27
++
++Pre-1.0 breaking-platform migration. Under `0.x`, breaking changes increment the
++minor version.
++
++### Changed (Breaking)
++
++- **Upgraded to Next.js 16** (from 14, App Router). Requires re-running
++  `npm install`; review the Next 14→16 migration notes if you have custom config.
++- **Upgraded to React 19** (from 18). Components and any local patches should be
++  validated against the React 19 runtime.
++- **Migrated to Tailwind CSS 4** (from 3) via `@tailwindcss/postcss`. Global styles
++  now use `@import "tailwindcss"` instead of the `@tailwind base/components/utilities`
++  directives; the PostCSS pipeline replaces `tailwindcss` + `autoprefixer` with the
++  single `@tailwindcss/postcss` plugin.
++- **Upgraded to TypeScript 6** (from 5) and **ESLint 10** (from 9).
++
++### Dependencies
++
++- Bumped `@google/generative-ai` to `^0.24.1`.
++- Refreshed dev tooling: `@types/node`, `@types/react`, `@types/react-dom`,
++  `eslint-plugin-react-hooks`, `globals`, `postcss`, `autoprefixer`,
++  `typescript-eslint` updated to align with the new platform.
++
++## [0.1.0]
++
++- Initial 90-day MVP scaffold: design system, three routes
++  (`/`, `/landing-claude`, `/dashboard`), and the `/docs` build backlog.
++
+
+diff --git a/docs/adr/ADR-0001-test-harness-and-pure-logic-coverage.md b/docs/adr/ADR-0001-test-harness-and-pure-logic-coverage.md
+new file mode 100644
+--- /dev/null
++++ b/docs/adr/ADR-0001-test-harness-and-pure-logic-coverage.md
++# ADR-0001 — Lightweight test harness + unit coverage for high-value pure logic
++
++- **Status:** Accepted
++- **Date:** 2026-05-27
++- **Driver:** Idea — "stand up a lightweight test runner and write meaningful unit tests for the highest-value untested pure logic"
++- **Author:** Solution Architect (T)
++
++## Context
++
++`local-seo-agency` (Next.js 16 App-Router + React 19 + TypeScript-strict, ESM
++`"type": "module"`) ships **zero automated tests** — `package.json` has `dev`,
++`build`, `start`, `lint`, `typecheck` but no `test` script, and `find src
++-name '*.test.*'` returns nothing.
++
++Two areas were named as the highest-value untested logic. Inspection results:
++
++1. **`src/lib/format.ts`** — four genuinely pure, side-effect-free functions
++   (`formatCurrency`, `formatSignedCurrency`, `formatNumber`, `formatPercent`)
++   built on `Intl.NumberFormat`. Verified runtime behavior worth pinning down:
++   - `formatSignedCurrency` emits a **typographic minus U+2212 (`−`)**, *not*
++     ASCII hyphen (`-`): `formatSignedCurrency(-1234.5) === "−$1,234.50"`. A test
++     that asserts `"-$..."` will spuriously fail — this glyph must be locked in.
++   - Zero and negative-zero both yield `"$0.00"` with **no sign** (correct).
++   - `Intl` rounding is half-expand: `2.005 → "$2.01"`, `1.005 → "$1.01"`.
++   - **NaN is unguarded**: `formatCurrency(NaN) → "$NaN"`, `formatPercent(NaN) →
++     "NaN%"`. These leak to the UI.
++
++2. **`src/features/rankings`** — `data.ts` is **static mock data only**; there is
++   **no pure computation module** to test. The single ranking-delta calculation
++   lives inline in JSX in `components/KeywordTable.tsx`:
++   ```ts
++   const change = k.prev - k.now;
++   // render: change > 0 ? `↑ ${change}` : "—"
++   ```
++   Map-pack (`MapPackCard.tsx`) and share-of-voice are pure presentation over
++   static data — **no computation to unit-test**.
++
++   **Latent defect (verified by reading the branch logic):** rank **drops**
++   (`now > prev`, `change < 0`) render identically to *no change* (`—`). A
++   keyword that lost rank looks unchanged. The current mock data has no drop row,
++   so this is invisible today but is a real correctness bug.
++
++## Decision
++
++1. **Runner: `node --test` (built-in) driven through `tsx`** — no Jest/Vitest.
++   Rationale: zero new framework surface, native ESM + TS-strict support, fast,
++   matches the existing toolchain. Add one devDependency (`tsx`) and:
++   ```json
++   "test": "node --import tsx --test \"src/**/*.test.ts\""
++   ```
++   Tests are colocated as `*.test.ts` next to source.
++
++2. **Cover `format.ts` against real edge cases** — negative, zero, `-0`, NaN,
++   very large values, and the rounding/minus-glyph behaviors above. Assert the
++   **U+2212** minus explicitly.
++
++3. **Extract the ranking-delta into a pure helper** `src/features/rankings/rank.ts`
++   (`rankDelta(prev, now)` → a typed result describing up / down / flat +
++   magnitude), unit-test it, and refactor `KeywordTable.tsx` to consume it.
++
++4. **Fix the rank-drop defect** as part of (3): render down moves distinctly
++   (e.g. `↓ N`) instead of `—`. Driven by a failing test first.
++
++5. **NaN handling for formatters** — add tests pinning current behavior; treat a
++   guard (return `"—"`/`"$—"` on non-finite input) as a scoped follow-up
++   decision, not silently changed.
++
++## Consequences
++
++- **Positive:** A green, fast suite (<1s) guards the money/percentage formatting
++  users see and the rank math. Extracting `rankDelta` removes logic from JSX,
++  making it testable and reusable across `KeywordTable` and any future widgets.
++- **Cost:** One devDependency (`tsx`) + a small refactor of `KeywordTable.tsx`.
++- **Defect surfaced:** rank drops are currently invisible; fixing it changes
++  rendered output for any down-move row (none in current mock data).
++- **Scope boundary:** map-pack/share-of-voice have no computation — no tests are
++  written there by design; revisit if logic is added.
++- **UNVERIFIED:** suite not yet executed in CI; assumes Node test-runner glob
++  support on the target Node (≥ 22). Delivery agent to confirm on first run.
++
++## Task breakdown (5 tasks · 11 story points)
++
++| # | Task | Scope | Pts |
++|---|------|-------|-----|
++| 1 | Wire test runner | Add `tsx` devDep + `test` script (`node --import tsx --test`); one smoke test green | 2 |
++| 2 | `format.ts` unit tests | Cover all 4 fns; edges: negative, 0, −0, NaN, large; assert U+2212 minus + half-expand rounding | 3 |
++| 3 | Extract `rankDelta()` | New `rankings/rank.ts` pure helper (up/down/flat + magnitude); refactor `KeywordTable.tsx` to use it | 2 |
++| 4 | `rankDelta` tests + fix drop defect | Test-first; render down-moves distinctly (`↓ N`) instead of `—`; cover equal/improve/drop/large | 3 |
++| 5 | NaN-guard decision | Tests pinning current `$NaN`/`NaN%`; decide+implement finite-guard or accept | 1 |
++
++**Verdict:** Change fits the architecture cleanly. 11 pts total. Hand off to a
++delivery agent via `architecture.analysis.completed`.
++
+
+diff --git a/docs/backlog-brainstorm.json b/docs/backlog-brainstorm.json
+new file mode 100644
+--- /dev/null
++++ b/docs/backlog-brainstorm.json
++[
++  {"title":"Google Business Profile multi-location bulk editor","description":"Edit hours, services, attributes, and photos across hundreds of locations in one grid with diff preview and rollback.","category":"functionality","effort":7,"impact":9,"risk":4},
++  {"title":"Local pack rank tracker with grid heatmaps","description":"Track keyword rank at a 9x9 geo-grid per location and visualize coverage as a heatmap with weekly drift alerts.","category":"functionality","effort":7,"impact":9,"risk":3},
++  {"title":"AI review reply generator with brand voice memory","description":"Drafts replies tuned to each client's tone, sentiment, and platform policies; learns from past edits.","category":"automation","effort":5,"impact":9,"risk":4},
++  {"title":"Citation builder with NAP consistency scoring","description":"Push name-address-phone updates to 70+ directories and score consistency with auto-repair queues.","category":"functionality","effort":7,"impact":8,"risk":4},
++  {"title":"Daily GBP post scheduler with Gemini drafts","description":"Auto-draft GBP posts daily from a content calendar with image generation via Imagen and 1-tap approval.","category":"automation","effort":5,"impact":8,"risk":3},
++  {"title":"Schema markup auto-deploy via tag manager","description":"Inject LocalBusiness, Service, FAQ, and Review schema through GTM with validation and Rich Results preview.","category":"functionality","effort":6,"impact":8,"risk":4},
++  {"title":"Local landing page generator by service + city","description":"Spin up SEO-optimized pages per service-city combo with unique copy, internal links, and CWV-passing templates.","category":"functionality","effort":7,"impact":9,"risk":5},
++  {"title":"Review request SMS/email campaigns","description":"Trigger personalized review-ask sequences from POS, CRM, or appointment systems with reply-stop compliance.","category":"functionality","effort":5,"impact":9,"risk":4},
++  {"title":"Negative review intercept and triage workflow","description":"Detect 1-3 star drafts, route to human owners with reply suggestions, and offer private-resolution flows.","category":"retention","effort":5,"impact":8,"risk":4},
++  {"title":"Vertical pack: Dental","description":"Dental-tuned keyword lists, content briefs, review prompts, schema, and competitor sets shipped as a preset.","category":"growth","effort":4,"impact":9,"risk":2},
++  {"title":"Vertical pack: HVAC","description":"HVAC seasonality calendar, emergency-service schema, and city-modifier keywords pre-loaded for one-click setup.","category":"growth","effort":4,"impact":9,"risk":2},
++  {"title":"Vertical pack: Plumbers","description":"Plumber-specific service taxonomy, after-hours messaging, and 24/7 GBP attributes auto-applied.","category":"growth","effort":4,"impact":8,"risk":2},
++  {"title":"Vertical pack: Law firms","description":"Practice-area landing templates, attorney-bio schema, and bar-rules-aware review compliance guards.","category":"growth","effort":5,"impact":8,"risk":5},
++  {"title":"Vertical pack: Med spas and cosmetic","description":"Treatment-category templates, before/after gallery schema, and FTC-compliant testimonial workflow.","category":"growth","effort":5,"impact":8,"risk":5},
++  {"title":"Vertical pack: Chiropractors","description":"Condition-targeted briefs, patient-intake CTAs, and HIPAA-aware messaging defaults.","category":"growth","effort":4,"impact":7,"risk":3},
++  {"title":"Vertical pack: Auto repair and tire","description":"Service-bay capacity, OEM-keyword targeting, and competitor map-pack tracking for repair shops.","category":"growth","effort":4,"impact":7,"risk":2},
++  {"title":"Vertical pack: Real estate teams","description":"Neighborhood-page generator, agent-bio schema, and IDX-friendly internal linking.","category":"growth","effort":5,"impact":7,"risk":3},
++  {"title":"Franchise mode with geo-fenced sub-accounts","description":"Master-brand templates flow to franchisees with locked elements and per-territory keyword scopes.","category":"growth","effort":8,"impact":9,"risk":5},
++  {"title":"Multi-location enterprise tier","description":"Unified billing, RBAC, audit logs, and SSO for 50+ location clients with custom SLAs.","category":"monetization","effort":7,"impact":9,"risk":4},
++  {"title":"White-label reseller portal","description":"Agencies rebrand the dashboard, set their own pricing, and resell Mappack under their own URL and emails.","category":"monetization","effort":7,"impact":9,"risk":4},
++  {"title":"Performance-based pricing tier","description":"Charge a base fee plus a per-rank-position lift for tracked keywords with a verifiable measurement protocol.","category":"monetization","effort":7,"impact":8,"risk":7},
++  {"title":"Per-location subscription billing via Stripe","description":"Auto-meter active locations, prorate adds/removes, and gate features per plan in real time.","category":"monetization","effort":6,"impact":9,"risk":3},
++  {"title":"Web-designer partner channel","description":"Co-sell program for web shops with revshare, training, and embedded onboarding inside their site builds.","category":"growth","effort":5,"impact":8,"risk":3},
++  {"title":"Monthly client PDF report builder","description":"Auto-compose branded PDFs with ranks, reviews, posts, and citations with custom commentary slots.","category":"retention","effort":5,"impact":8,"risk":2},
++  {"title":"Client-facing portal with read-only dashboard","description":"Customers log in to see ranks, reviews, and posts with comment threads back to the agent team.","category":"retention","effort":6,"impact":8,"risk":3},
++  {"title":"Automated weekly digest emails","description":"Tuesday-morning summary email per client with wins, risks, and one next-best action recommended by AI.","category":"retention","effort":4,"impact":7,"risk":2},
++  {"title":"Competitor monitoring with diff alerts","description":"Watch competitor GBP changes, new reviews, post cadence, and pricing pages with daily delta alerts.","category":"automation","effort":6,"impact":8,"risk":3},
++  {"title":"Local content brief generator","description":"Outputs SERP-aware briefs with entities, FAQs, headings, and local-modifier suggestions per query.","category":"automation","effort":5,"impact":8,"risk":3},
++  {"title":"AI photo enhancer for GBP uploads","description":"Auto-crop, enhance, and tag photos for GBP categories with EXIF geotagging and duplicate detection.","category":"automation","effort":5,"impact":7,"risk":3},
++  {"title":"GBP API direct integration","description":"Replace scraping with official GBP API for posts, Q&A, attributes, and messaging — including bulk endpoints.","category":"integration","effort":7,"impact":10,"risk":5},
++  {"title":"Apple Business Connect integration","description":"Sync hours, photos, and showcases to Apple Maps with a single source of truth.","category":"integration","effort":6,"impact":7,"risk":3},
++  {"title":"Yelp Fusion API integration","description":"Pull reviews and listing data, push hours/categories, and unify review-reply workflow.","category":"integration","effort":5,"impact":6,"risk":4},
++  {"title":"BrightLocal data import for migration","description":"One-click import of citations, locations, and rank histories from BrightLocal for new agency clients.","category":"integration","effort":5,"impact":7,"risk":3},
++  {"title":"Whitespark citation cleanup integration","description":"Submit duplicates and incorrect listings to Whitespark cleanup queues from the citation health view.","category":"integration","effort":4,"impact":6,"risk":3},
++  {"title":"Ahrefs and SEMrush keyword sync","description":"Pull keyword lists, search volume, and SERP overviews directly into Mappack rank tracking.","category":"integration","effort":5,"impact":7,"risk":3},
++  {"title":"DataForSEO local SERP enrichment","description":"Augment local pack data with full SERP context (organic, ads, features) per tracked keyword.","category":"integration","effort":5,"impact":7,"risk":3},
++  {"title":"Stripe customer billing portal","description":"Self-serve plan changes, payment methods, invoices, and tax handling for end clients.","category":"monetization","effort":4,"impact":7,"risk":2},
++  {"title":"QuickBooks invoice sync for agencies","description":"Push monthly invoices and revenue events to QuickBooks Online for white-label resellers.","category":"integration","effort":4,"impact":5,"risk":2},
++  {"title":"HubSpot CRM bidirectional sync","description":"Sync clients, locations, and contract metadata between Mappack and HubSpot for agency operators.","category":"integration","effort":5,"impact":6,"risk":3},
++  {"title":"Salesforce connector for enterprise","description":"Sync accounts and tickets with Salesforce for multi-location enterprise customers.","category":"integration","effort":6,"impact":7,"risk":4},
++  {"title":"Slack and Teams alerting channels","description":"Per-client channel routing for rank drops, new reviews, GBP suspensions, and approval requests.","category":"integration","effort":3,"impact":6,"risk":2},
++  {"title":"Zapier and Make.com triggers","description":"Public webhooks and triggers so customers can wire Mappack events into their own automations.","category":"integration","effort":4,"impact":6,"risk":2},
++  {"title":"GBP suspension early-warning system","description":"Detect risky edits and policy red flags before they trigger suspension; queue safer alternatives.","category":"compliance","effort":7,"impact":9,"risk":5},
++  {"title":"GBP suspension recovery playbook engine","description":"Guided reinstatement workflow with document templates, appeals tracking, and case-history learning.","category":"compliance","effort":6,"impact":8,"risk":5},
++  {"title":"FTC-compliant review solicitation guardrails","description":"Block incentive language, require disclosures, and audit review-request copy against FTC endorsement rules.","category":"compliance","effort":4,"impact":8,"risk":3},
++  {"title":"ADA / WCAG audit for generated landing pages","description":"Continuously scan generated pages for contrast, alt text, focus rings, and aria compliance.","category":"compliance","effort":5,"impact":7,"risk":3},
++  {"title":"Privacy / GDPR / CCPA data console","description":"Per-client data export, deletion, and consent management with a documented sub-processor list.","category":"compliance","effort":5,"impact":6,"risk":3},
++  {"title":"HIPAA-aware messaging mode for healthcare","description":"Strip PHI from review text in dashboards and storage, with a signed BAA workflow for healthcare clients.","category":"compliance","effort":7,"impact":7,"risk":6},
++  {"title":"Bar-rules compliance pack for legal vertical","description":"State-bar-aware review and advertising guards; flag prohibited terms and required disclosures.","category":"compliance","effort":6,"impact":6,"risk":5},
++  {"title":"Onboarding wizard with auto-discovery","description":"Enter a business URL and Mappack discovers locations, services, competitors, and seed keywords.","category":"ux","effort":6,"impact":9,"risk":3},
++  {"title":"White-label proposal builder","description":"Generate branded proposals with rank baselines, projected lift, and pricing tables for new agency pitches.","category":"functionality","effort":5,"impact":8,"risk":2},
++  {"title":"Agency time-tracking and profitability view","description":"Track AI vs human time per client and show gross margin to flag unprofitable accounts.","category":"functionality","effort":5,"impact":7,"risk":2},
++  {"title":"Automated competitor map-pack screenshots","description":"Headless-browser captures of competitor map packs over time with annotation and diff overlays.","category":"automation","effort":5,"impact":7,"risk":3},
++  {"title":"Voice search and Google Assistant optimization","description":"Audit FAQ schema and conversational query targeting; surface voice-friendly content gaps.","category":"functionality","effort":5,"impact":6,"risk":3},
++  {"title":"Local entity knowledge graph builder","description":"Stitch GBP, schema, citations, and Wikipedia/Wikidata into a per-client entity graph used by all AI calls.","category":"functionality","effort":8,"impact":8,"risk":4},
++  {"title":"Q&A monitoring and auto-answers for GBP","description":"Watch new GBP questions, draft answers, and ladder unanswered legacy questions into a backlog.","category":"automation","effort":4,"impact":7,"risk":3},
++  {"title":"Booking and call-tracking attribution","description":"Show booked appointments and tracked calls per keyword and location with revenue-weighted reporting.","category":"functionality","effort":7,"impact":9,"risk":4},
++  {"title":"Call-tracking number provisioning via Twilio","description":"Provision dynamic local numbers, record calls, and transcribe for keyword-level attribution.","category":"integration","effort":6,"impact":7,"risk":4},
++  {"title":"Geo-targeted ads complementing organic","description":"Optional managed Google Local Service Ads layer with budget pacing tied to map-pack gaps.","category":"monetization","effort":7,"impact":8,"risk":5},
++  {"title":"Pay-per-result review acquisition add-on","description":"Charge per verified new review delivered above baseline, with audit trail and refund protections.","category":"monetization","effort":6,"impact":7,"risk":6},
++  {"title":"AI competitor weakness report","description":"Weekly narrative on each competitor's slow review responses, stale posts, and missing schema.","category":"automation","effort":4,"impact":7,"risk":2},
++  {"title":"Localized blog post pipeline","description":"Generate a monthly local blog post per city with on-the-ground references and internal links.","category":"automation","effort":5,"impact":7,"risk":3},
++  {"title":"FAQ schema mining from real reviews and calls","description":"Mine reviews, call transcripts, and chat logs to propose net-new FAQ entries and schema.","category":"automation","effort":5,"impact":7,"risk":3},
++  {"title":"Multi-language and bilingual market support","description":"ES / FR / PT-BR content, schema language tags, and bilingual review reply tone presets.","category":"growth","effort":6,"impact":7,"risk":3},
++  {"title":"Service-area business mode","description":"Specialized rank tracking, schema, and policy guardrails for home-services without a storefront.","category":"functionality","effort":5,"impact":8,"risk":3},
++  {"title":"Brand-protection negative-keyword monitor","description":"Watch for impostor listings, hijacked categories, and fake reviews; auto-prep takedown requests.","category":"compliance","effort":6,"impact":7,"risk":4},
++  {"title":"Google policy change radar","description":"Detect Google GBP and local algorithm policy updates and recommend per-client mitigations.","category":"compliance","effort":4,"impact":6,"risk":3},
++  {"title":"Map-pack share-of-voice trend dashboard","description":"Time-series SoV across competitors with shareable public report links for client reviews.","category":"retention","effort":4,"impact":7,"risk":2},
++  {"title":"Goal-based plans with quarterly OKRs per client","description":"Set rank, review, and revenue goals; AI proposes weekly actions tied to each OKR.","category":"retention","effort":5,"impact":7,"risk":3},
++  {"title":"Churn-risk score for client success","description":"Predict churn from rank deltas, login frequency, NPS, and support tickets; trigger save-plays.","category":"retention","effort":5,"impact":7,"risk":3},
++  {"title":"Agent activity audit log and replay","description":"Per-client audit log of every AI action with diff, approval state, and 'replay last week' debug.","category":"functionality","effort":5,"impact":6,"risk":3},
++  {"title":"Human-in-the-loop approval queue","description":"Queue AI drafts for human review with SLA timers, batch-approve, and explanation-required rejects.","category":"functionality","effort":5,"impact":7,"risk":3},
++  {"title":"Per-location budget caps and rate limits","description":"Cap AI spend, post frequency, and review-ask volume per location to control compliance risk.","category":"functionality","effort":4,"impact":6,"risk":3},
++  {"title":"Trust-and-safety review queue for AI outputs","description":"Block PII, profanity, medical claims, and competitor mentions before any AI output is published.","category":"compliance","effort":5,"impact":7,"risk":4},
++  {"title":"SSO via Google Workspace and Okta","description":"Enterprise SSO and SCIM provisioning for agency teams and multi-location clients.","category":"functionality","effort":5,"impact":6,"risk":3},
++  {"title":"RBAC with owner / editor / viewer scopes","description":"Granular permissions per location, feature, and approval workflow; per-role audit retention.","category":"functionality","effort":5,"impact":6,"risk":3},
++  {"title":"Mobile app for review responses on the go","description":"iOS/Android app for owners to approve replies, posts, and photos with push notifications.","category":"ux","effort":7,"impact":7,"risk":3},
++  {"title":"Browser extension for in-context GBP ops","description":"Chrome extension overlays Mappack actions on top of Google Maps and Search results.","category":"ux","effort":5,"impact":6,"risk":3},
++  {"title":"Drag-and-drop content calendar","description":"Visual calendar across GBP posts, blog, social, and review-ask sends with conflict detection.","category":"ux","effort":5,"impact":7,"risk":2},
++  {"title":"Public benchmarking by vertical and metro","description":"Anonymized peer benchmarks for review velocity, response time, and post cadence per vertical.","category":"growth","effort":5,"impact":7,"risk":3},
++  {"title":"Referral program with two-sided credits","description":"Existing clients earn account credits for referring new locations; agencies get bonus revshare.","category":"growth","effort":3,"impact":6,"risk":2},
++  {"title":"Public local-SEO grader as lead magnet","description":"Free site that scores any GBP listing, captures the lead, and drops directly into the sales pipeline.","category":"growth","effort":5,"impact":8,"risk":2},
++  {"title":"Embed-anywhere review widget","description":"Pluggable widget showing live Google reviews on client sites with schema and CWV-safe rendering.","category":"functionality","effort":4,"impact":6,"risk":2},
++  {"title":"Reputation score badge for client sites","description":"Real-time score badge with deep link to a public reputation page hosted by Mappack.","category":"growth","effort":3,"impact":5,"risk":2},
++  {"title":"Bulk CSV import for keywords and locations","description":"Hardened CSV importer with schema validation, dedupe, and dry-run preview for agency migrations.","category":"functionality","effort":3,"impact":6,"risk":2},
++  {"title":"Webhook outbox for external systems","description":"Reliable, replayable outbox of every Mappack event for partner integrations.","category":"integration","effort":4,"impact":5,"risk":2},
++  {"title":"Public REST and GraphQL APIs","description":"Versioned APIs for locations, keywords, ranks, posts, and reviews with per-tenant rate limits.","category":"integration","effort":7,"impact":8,"risk":3},
++  {"title":"SOC 2 readiness console","description":"Built-in control checklist, evidence collection, and access reviews to accelerate SOC 2 Type II.","category":"compliance","effort":7,"impact":7,"risk":3},
++  {"title":"Data residency: US / EU regions","description":"Region-pinned data storage and processing for EU clients with explicit residency labels.","category":"compliance","effort":7,"impact":6,"risk":4},
++  {"title":"AI cost observability and budget guardrails","description":"Per-client and per-feature LLM and image-gen cost tracking with hard caps and alerts.","category":"functionality","effort":5,"impact":7,"risk":3},
++  {"title":"Onboarding success score and time-to-value","description":"Score new accounts on setup completeness and surface a 'time-to-first-win' countdown.","category":"retention","effort":4,"impact":6,"risk":2},
++  {"title":"Quarterly business review generator","description":"Auto-build a QBR deck with wins, gaps, roadmap, and renewal-ready pricing options.","category":"retention","effort":4,"impact":7,"risk":2},
++  {"title":"In-product NPS and CSAT loops","description":"Lightweight NPS sampling tied to recent wins and a save-play workflow on detractor responses.","category":"retention","effort":3,"impact":5,"risk":2},
++  {"title":"Predictive rank forecaster","description":"Forecast 30/60/90-day rank trajectories per keyword from historical actions and competitor signals.","category":"automation","effort":7,"impact":7,"risk":4},
++  {"title":"AI before/after disclosure auditor","description":"Scan med-spa and dental imagery for required disclosures, consent metadata, and policy compliance.","category":"compliance","effort":6,"impact":6,"risk":5},
++  {"title":"Universal directory sync with conflict resolver","description":"Single source of truth pushed to 70+ directories with conflict resolution and ownership claims.","category":"functionality","effort":7,"impact":8,"risk":4},
++  {"title":"Internal linking engine for service-city pages","description":"Auto-recommend and apply internal links across generated landing pages, blogs, and FAQ pages.","category":"automation","effort":5,"impact":7,"risk":3},
++  {"title":"Core Web Vitals monitor for client sites","description":"Track CWV per page, alert on regressions, and propose fixes for generated and hosted pages.","category":"functionality","effort":5,"impact":6,"risk":2},
++  {"title":"Branded short-link service for posts and reviews","description":"Branded short links with click attribution per channel, location, and campaign.","category":"functionality","effort":3,"impact":5,"risk":2},
++  {"title":"Annual prepay discount and contract templates","description":"Stripe-backed annual prepay with auto-generated MSAs and order forms for agency self-serve.","category":"monetization","effort":4,"impact":6,"risk":2}
++]
++
+
+diff --git a/docs/backlog-brainstorm.md b/docs/backlog-brainstorm.md
+new file mode 100644
+--- /dev/null
++++ b/docs/backlog-brainstorm.md
++# Backlog brainstorm — 100 PM-triage ideas
++
++Generated for the Vibeman Tinder triage module. Tailored to Mappack (AI-run local SEO agency).
++
++| # | Title | Description | Category | Effort | Impact | Risk |
++|---|-------|-------------|----------|--------|--------|------|
++| 1 | Google Business Profile multi-location bulk editor | Edit hours, services, attributes, and photos across hundreds of locations in one grid with diff preview and rollback. | functionality | 7 | 9 | 4 |
++| 2 | Local pack rank tracker with grid heatmaps | Track keyword rank at a 9x9 geo-grid per location and visualize coverage as a heatmap with weekly drift alerts. | functionality | 7 | 9 | 3 |
++| 3 | AI review reply generator with brand voice memory | Drafts replies tuned to each client's tone, sentiment, and platform policies; learns from past edits. | automation | 5 | 9 | 4 |
++| 4 | Citation builder with NAP consistency scoring | Push name-address-phone updates to 70+ directories and score consistency with auto-repair queues. | functionality | 7 | 8 | 4 |
++| 5 | Daily GBP post scheduler with Gemini drafts | Auto-draft GBP posts daily from a content calendar with image generation via Imagen and 1-tap approval. | automation | 5 | 8 | 3 |
++| 6 | Schema markup auto-deploy via tag manager | Inject LocalBusiness, Service, FAQ, and Review schema through GTM with validation and Rich Results preview. | functionality | 6 | 8 | 4 |
++| 7 | Local landing page generator by service + city | Spin up SEO-optimized pages per service-city combo with unique copy, internal links, and CWV-passing templates. | functionality | 7 | 9 | 5 |
++| 8 | Review request SMS/email campaigns | Trigger personalized review-ask sequences from POS, CRM, or appointment systems with reply-stop compliance. | functionality | 5 | 9 | 4 |
++| 9 | Negative review intercept and triage workflow | Detect 1-3 star drafts, route to human owners with reply suggestions, and offer private-resolution flows. | retention | 5 | 8 | 4 |
++| 10 | Vertical pack: Dental | Dental-tuned keyword lists, content briefs, review prompts, schema, and competitor sets shipped as a preset. | growth | 4 | 9 | 2 |
++| 11 | Vertical pack: HVAC | HVAC seasonality calendar, emergency-service schema, and city-modifier keywords pre-loaded for one-click setup. | growth | 4 | 9 | 2 |
++| 12 | Vertical pack: Plumbers | Plumber-specific service taxonomy, after-hours messaging, and 24/7 GBP attributes auto-applied. | growth | 4 | 8 | 2 |
++| 13 | Vertical pack: Law firms | Practice-area landing templates, attorney-bio schema, and bar-rules-aware review compliance guards. | growth | 5 | 8 | 5 |
++| 14 | Vertical pack: Med spas and cosmetic | Treatment-category templates, before/after gallery schema, and FTC-compliant testimonial workflow. | growth | 5 | 8 | 5 |
++| 15 | Vertical pack: Chiropractors | Condition-targeted briefs, patient-intake CTAs, and HIPAA-aware messaging defaults. | growth | 4 | 7 | 3 |
++| 16 | Vertical pack: Auto repair and tire | Service-bay capacity, OEM-keyword targeting, and competitor map-pack tracking for repair shops. | growth | 4 | 7 | 2 |
++| 17 | Vertical pack: Real estate teams | Neighborhood-page generator, agent-bio schema, and IDX-friendly internal linking. | growth | 5 | 7 | 3 |
++| 18 | Franchise mode with geo-fenced sub-accounts | Master-brand templates flow to franchisees with locked elements and per-territory keyword scopes. | growth | 8 | 9 | 5 |
++| 19 | Multi-location enterprise tier | Unified billing, RBAC, audit logs, and SSO for 50+ location clients with custom SLAs. | monetization | 7 | 9 | 4 |
++| 20 | White-label reseller portal | Agencies rebrand the dashboard, set their own pricing, and resell Mappack under their own URL and emails. | monetization | 7 | 9 | 4 |
++| 21 | Performance-based pricing tier | Charge a base fee plus a per-rank-position lift for tracked keywords with a verifiable measurement protocol. | monetization | 7 | 8 | 7 |
++| 22 | Per-location subscription billing via Stripe | Auto-meter active locations, prorate adds/removes, and gate features per plan in real time. | monetization | 6 | 9 | 3 |
++| 23 | Web-designer partner channel | Co-sell program for web shops with revshare, training, and embedded onboarding inside their site builds. | growth | 5 | 8 | 3 |
++| 24 | Monthly client PDF report builder | Auto-compose branded PDFs with ranks, reviews, posts, and citations with custom commentary slots. | retention | 5 | 8 | 2 |
++| 25 | Client-facing portal with read-only dashboard | Customers log in to see ranks, reviews, and posts with comment threads back to the agent team. | retention | 6 | 8 | 3 |
++| 26 | Automated weekly digest emails | Tuesday-morning summary email per client with wins, risks, and one next-best action recommended by AI. | retention | 4 | 7 | 2 |
++| 27 | Competitor monitoring with diff alerts | Watch competitor GBP changes, new reviews, post cadence, and pricing pages with daily delta alerts. | automation | 6 | 8 | 3 |
++| 28 | Local content brief generator | Outputs SERP-aware briefs with entities, FAQs, headings, and local-modifier suggestions per query. | automation | 5 | 8 | 3 |
++| 29 | AI photo enhancer for GBP uploads | Auto-crop, enhance, and tag photos for GBP categories with EXIF geotagging and duplicate detection. | automation | 5 | 7 | 3 |
++| 30 | GBP API direct integration | Replace scraping with official GBP API for posts, Q&A, attributes, and messaging — including bulk endpoints. | integration | 7 | 10 | 5 |
++| 31 | Apple Business Connect integration | Sync hours, photos, and showcases to Apple Maps with a single source of truth. | integration | 6 | 7 | 3 |
++| 32 | Yelp Fusion API integration | Pull reviews and listing data, push hours/categories, and unify review-reply workflow. | integration | 5 | 6 | 4 |
++| 33 | BrightLocal data import for migration | One-click import of citations, locations, and rank histories from BrightLocal for new agency clients. | integration | 5 | 7 | 3 |
++| 34 | Whitespark citation cleanup integration | Submit duplicates and incorrect listings to Whitespark cleanup queues from the citation health view. | integration | 4 | 6 | 3 |
++| 35 | Ahrefs and SEMrush keyword sync | Pull keyword lists, search volume, and SERP overviews directly into Mappack rank tracking. | integration | 5 | 7 | 3 |
++| 36 | DataForSEO local SERP enrichment | Augment local pack data with full SERP context (organic, ads, features) per tracked keyword. | integration | 5 | 7 | 3 |
++| 37 | Stripe customer billing portal | Self-serve plan changes, payment methods, invoices, and tax handling for end clients. | monetization | 4 | 7 | 2 |
++| 38 | QuickBooks invoice sync for agencies | Push monthly invoices and revenue events to QuickBooks Online for white-label resellers. | integration | 4 | 5 | 2 |
++| 39 | HubSpot CRM bidirectional sync | Sync clients, locations, and contract metadata between Mappack and HubSpot for agency operators. | integration | 5 | 6 | 3 |
++| 40 | Salesforce connector for enterprise | Sync accounts and tickets with Salesforce for multi-location enterprise customers. | integration | 6 | 7 | 4 |
++| 41 | Slack and Teams alerting channels | Per-client channel routing for rank drops, new reviews, GBP suspensions, and approval requests. | integration | 3 | 6 | 2 |
++| 42 | Zapier and Make.com triggers | Public webhooks and triggers so customers can wire Mappack events into their own automations. | integration | 4 | 6 | 2 |
++| 43 | GBP suspension early-warning system | Detect risky edits and policy red flags before they trigger suspension; queue safer alternatives. | compliance | 7 | 9 | 5 |
++| 44 | GBP suspension recovery playbook engine | Guided reinstatement workflow with document templates, appeals tracking, and case-history learning. | compliance | 6 | 8 | 5 |
++| 45 | FTC-compliant review solicitation guardrails | Block incentive language, require disclosures, and audit review-request copy against FTC endorsement rules. | compliance | 4 | 8 | 3 |
++| 46 | ADA / WCAG audit for generated landing pages | Continuously scan generated pages for contrast, alt text, focus rings, and aria compliance. | compliance | 5 | 7 | 3 |
++| 47 | Privacy / GDPR / CCPA data console | Per-client data export, deletion, and consent management with a documented sub-processor list. | compliance | 5 | 6 | 3 |
++| 48 | HIPAA-aware messaging mode for healthcare | Strip PHI from review text in dashboards and storage, with a signed BAA workflow for healthcare clients. | compliance | 7 | 7 | 6 |
++| 49 | Bar-rules compliance pack for legal vertical | State-bar-aware review and advertising guards; flag prohibited terms and required disclosures. | compliance | 6 | 6 | 5 |
++| 50 | Onboarding wizard with auto-discovery | Enter a business URL and Mappack discovers locations, services, competitors, and seed keywords. | ux | 6 | 9 | 3 |
++| 51 | White-label proposal builder | Generate branded proposals with rank baselines, projected lift, and pricing tables for new agency pitches. | functionality | 5 | 8 | 2 |
++| 52 | Agency time-tracking and profitability view | Track AI vs human time per client and show gross margin to flag unprofitable accounts. | functionality | 5 | 7 | 2 |
++| 53 | Automated competitor map-pack screenshots | Headless-browser captures of competitor map packs over time with annotation and diff overlays. | automation | 5 | 7 | 3 |
++| 54 | Voice search and Google Assistant optimization | Audit FAQ schema and conversational query targeting; surface voice-friendly content gaps. | functionality | 5 | 6 | 3 |
++| 55 | Local entity knowledge graph builder | Stitch GBP, schema, citations, and Wikipedia/Wikidata into a per-client entity graph used by all AI calls. | functionality | 8 | 8 | 4 |
++| 56 | Q&A monitoring and auto-answers for GBP | Watch new GBP questions, draft answers, and ladder unanswered legacy questions into a backlog. | automation | 4 | 7 | 3 |
++| 57 | Booking and call-tracking attribution | Show booked appointments and tracked calls per keyword and location with revenue-weighted reporting. | functionality | 7 | 9 | 4 |
++| 58 | Call-tracking number provisioning via Twilio | Provision dynamic local numbers, record calls, and transcribe for keyword-level attribution. | integration | 6 | 7 | 4 |
++| 59 | Geo-targeted ads complementing organic | Optional managed Google Local Service Ads layer with budget pacing tied to map-pack gaps. | monetization | 7 | 8 | 5 |
++| 60 | Pay-per-result review acquisition add-on | Charge per verified new review delivered above baseline, with audit trail and refund protections. | monetization | 6 | 7 | 6 |
++| 61 | AI competitor weakness report | Weekly narrative on each competitor's slow review responses, stale posts, and missing schema. | automation | 4 | 7 | 2 |
++| 62 | Localized blog post pipeline | Generate a monthly local blog post per city with on-the-ground references and internal links. | automation | 5 | 7 | 3 |
++| 63 | FAQ schema mining from real reviews and calls | Mine reviews, call transcripts, and chat logs to propose net-new FAQ entries and schema. | automation | 5 | 7 | 3 |
++| 64 | Multi-language and bilingual market support | ES / FR / PT-BR content, schema language tags, and bilingual review reply tone presets. | growth | 6 | 7 | 3 |
++| 65 | Service-area business mode | Specialized rank tracking, schema, and policy guardrails for home-services without a storefront. | functionality | 5 | 8 | 3 |
++| 66 | Brand-protection negative-keyword monitor | Watch for impostor listings, hijacked categories, and fake reviews; auto-prep takedown requests. | compliance | 6 | 7 | 4 |
++| 67 | Google policy change radar | Detect Google GBP and local algorithm policy updates and recommend per-client mitigations. | compliance | 4 | 6 | 3 |
++| 68 | Map-pack share-of-voice trend dashboard | Time-series SoV across competitors with shareable public report links for client reviews. | retention | 4 | 7 | 2 |
++| 69 | Goal-based plans with quarterly OKRs per client | Set rank, review, and revenue goals; AI proposes weekly actions tied to each OKR. | retention | 5 | 7 | 3 |
++| 70 | Churn-risk score for client success | Predict churn from rank deltas, login frequency, NPS, and support tickets; trigger save-plays. | retention | 5 | 7 | 3 |
++| 71 | Agent activity audit log and replay | Per-client audit log of every AI action with diff, approval state, and 'replay last week' debug. | functionality | 5 | 6 | 3 |
++| 72 | Human-in-the-loop approval queue | Queue AI drafts for human review with SLA timers, batch-approve, and explanation-required rejects. | functionality | 5 | 7 | 3 |
++| 73 | Per-location budget caps and rate limits | Cap AI spend, post frequency, and review-ask volume per location to control compliance risk. | functionality | 4 | 6 | 3 |
++| 74 | Trust-and-safety review queue for AI outputs | Block PII, profanity, medical claims, and competitor mentions before any AI output is published. | compliance | 5 | 7 | 4 |
++| 75 | SSO via Google Workspace and Okta | Enterprise SSO and SCIM provisioning for agency teams and multi-location clients. | functionality | 5 | 6 | 3 |
++| 76 | RBAC with owner / editor / viewer scopes | Granular permissions per location, feature, and approval workflow; per-role audit retention. | functionality | 5 | 6 | 3 |
++| 77 | Mobile app for review responses on the go | iOS/Android app for owners to approve replies, posts, and photos with push notifications. | ux | 7 | 7 | 3 |
++| 78 | Browser extension for in-context GBP ops | Chrome extension overlays Mappack actions on top of Google Maps and Search results. | ux | 5 | 6 | 3 |
++| 79 | Drag-and-drop content calendar | Visual calendar across GBP posts, blog, social, and review-ask sends with conflict detection. | ux | 5 | 7 | 2 |
++| 80 | Public benchmarking by vertical and metro | Anonymized peer benchmarks for review velocity, response time, and post cadence per vertical. | growth | 5 | 7 | 3 |
++| 81 | Referral program with two-sided credits | Existing clients earn account credits for referring new locations; agencies get bonus revshare. | growth | 3 | 6 | 2 |
++| 82 | Public local-SEO grader as lead magnet | Free site that scores any GBP listing, captures the lead, and drops directly into the sales pipeline. | growth | 5 | 8 | 2 |
++| 83 | Embed-anywhere review widget | Pluggable widget showing live Google reviews on client sites with schema and CWV-safe rendering. | functionality | 4 | 6 | 2 |
++| 84 | Reputation score badge for client sites | Real-time score badge with deep link to a public reputation page hosted by Mappack. | growth | 3 | 5 | 2 |
++| 85 | Bulk CSV import for keywords and locations | Hardened CSV importer with schema validation, dedupe, and dry-run preview for agency migrations. | functionality | 3 | 6 | 2 |
++| 86 | Webhook outbox for external systems | Reliable, replayable outbox of every Mappack event for partner integrations. | integration | 4 | 5 | 2 |
++| 87 | Public REST and GraphQL APIs | Versioned APIs for locations, keywords, ranks, posts, and reviews with per-tenant rate limits. | integration | 7 | 8 | 3 |
++| 88 | SOC 2 readiness console | Built-in control checklist, evidence collection, and access reviews to accelerate SOC 2 Type II. | compliance | 7 | 7 | 3 |
++| 89 | Data residency: US / EU regions | Region-pinned data storage and processing for EU clients with explicit residency labels. | compliance | 7 | 6 | 4 |
++| 90 | AI cost observability and budget guardrails | Per-client and per-feature LLM and image-gen cost tracking with hard caps and alerts. | functionality | 5 | 7 | 3 |
++| 91 | Onboarding success score and time-to-value | Score new accounts on setup completeness and surface a 'time-to-first-win' countdown. | retention | 4 | 6 | 2 |
++| 92 | Quarterly business review generator | Auto-build a QBR deck with wins, gaps, roadmap, and renewal-ready pricing options. | retention | 4 | 7 | 2 |
++| 93 | In-product NPS and CSAT loops | Lightweight NPS sampling tied to recent wins and a save-play workflow on detractor responses. | retention | 3 | 5 | 2 |
++| 94 | Predictive rank forecaster | Forecast 30/60/90-day rank trajectories per keyword from historical actions and competitor signals. | automation | 7 | 7 | 4 |
++| 95 | AI before/after disclosure auditor | Scan med-spa and dental imagery for required disclosures, consent metadata, and policy compliance. | compliance | 6 | 6 | 5 |
++| 96 | Universal directory sync with conflict resolver | Single source of truth pushed to 70+ directories with conflict resolution and ownership claims. | functionality | 7 | 8 | 4 |
++| 97 | Internal linking engine for service-city pages | Auto-recommend and apply internal links across generated landing pages, blogs, and FAQ pages. | automation | 5 | 7 | 3 |
++| 98 | Core Web Vitals monitor for client sites | Track CWV per page, alert on regressions, and propose fixes for generated and hosted pages. | functionality | 5 | 6 | 2 |
++| 99 | Branded short-link service for posts and reviews | Branded short links with click attribution per channel, location, and campaign. | functionality | 3 | 5 | 2 |
++| 100 | Annual prepay discount and contract templates | Stripe-backed annual prepay with auto-generated MSAs and order forms for agency self-serve. | monetization | 4 | 6 | 2 |
++
+
+diff --git a/docs/harness/moonshots-2026-05-21/INDEX.md b/docs/harness/moonshots-2026-05-21/INDEX.md
+new file mode 100644
+--- /dev/null
++++ b/docs/harness/moonshots-2026-05-21/INDEX.md
++# Moonshot Architect Scan — local-seo-agency (Mappack)
++
++> Date: 2026-05-21
++> Single-agent scan (moonshot-architect), whole src/ + docs/, ~12 files read.
++> Pipeline B — opportunity discovery, not bug discovery.
++
++---
++
++## Totals
++
++| | Audacious | Bold | Stretch | **Total** |
++|---|---:|---:|---:|---:|
++| Counts | 5 | 4 | 2 | **11** |
++| Share | 45% | 36% | 18% | 100% |
++
++By category: 6 functionality / 3 feature / 2 user_benefit.
++
++Counts verified two ways:
++- `> Total:` header in `moonshots.md` → 11
++- `^- **Ambition**:` bullets in `moonshots.md` → 11
++
++---
++
++## All 11 moonshots — one-line summary
++
++Each links to its full entry in `moonshots.md`.
++
++| # | Title | Ambition | Theme | 10x claim (terse) |
++|---|---|---|---|---|
++| 1 | The Proximity Graph | audacious | A. Data moat | Predict rank in a 9x9 city grid 30 days out with the GBP edit that will swing it |
++| 2 | Counter-Move Engine | audacious | A. Data moat (predictive) | Fire competitor counter-playbooks 7 days *before* the SERP shifts |
++| 3 | 5-Minute Reputation Strike Team | audacious | C. Closed loop | 1-star review → AI calls the reviewer within 5 minutes |
++| 4 | Local SEO Operating System | audacious | B. Platform / API | Become the Twilio-of-local-presence — Jane App / ServiceTitan / Clio write to Mappack |
++| 5 | Patient-Acquisition Attribution | bold | F. Business model | Dollars per keyword, not ranks per keyword |
++| 6 | Vertical Brain | bold | E. Vertical defensibility | Dental-only knowledge layer that won't transfer to a horizontal tool |
++| 7 | The Audit Flywheel | bold | A. Data moat | Every free audit ingests another business into BigQuery — 50K audits/year |
++| 8 | Suspension Insurance | bold | F. Risk underwriting | Underwrite a "GBP never gets suspended" SLA backed by a policy-risk model |
++| 9 | Photo A/B Studio | stretch | C. Continuous automation | Imagen 3 + multi-armed bandit → photo set self-optimizes |
++| 10 | White-Label Agency-in-a-Box | stretch | B. Distribution | 500 web-designer partners × 10 clients each → 5,000 practices |
++| 11 | Marketing Manager-as-a-Service | bold | F. Business model | Quarterly strategy review delivered by an on-brand AI avatar |
++
++---
++
++## Triage themes
++
++| Theme | Moonshots | Why this is a wave, not just an idea |
++|---|---|---|
++| **A. Compounding data moat** | #1, #2, #7 | All three persist daily SERP / competitor / audit observations into BigQuery for compounding intelligence. Shares the `KeywordRow` → `GridCell` + `CompetitorAction` event-stream extension. |
++| **B. Platform / distribution** | #4, #10 | Both make Mappack infrastructure for other businesses (PMS systems for #4, web-designer agencies for #10). Shares `tenantId` + theming primitives. |
++| **C. Closed-loop automation** | #3, #9 | Both compress feedback loops to near-zero latency — reputation in minutes, photo testing continuously. Shares Twilio / Imagen 3 + bandit infra. |
++| **E. Vertical depth** | #6 | Dental-first defensibility through ADA / PPO / insurance knowledge. Foundation for vertical-specific Brains. |
++| **F. Business-model upgrade** | #5, #8, #11 | All three turn the product into more than a tools subscription — #5 makes price value-based, #8 adds an insurance line, #11 adds a strategy-meeting line. |
++
++---
++
++## Suggested build-wave split
++
++Five candidate first-waves. Each is 4–6 tasks, ≤3 directories, shares one mental model.
++
++### Wave-S1 — Patient-Acquisition Attribution (the value-capture pivot)
++**Replace rank-only metrics with revenue attribution.** Extend `KeywordRow` with `attribution: { calls, bookings, revenue }`. Add a `CallTracking` data model (mock numbers per keyword). Refactor `KeywordTable` to show revenue as primary, rank as sparkline. Add a `RevenueRoadmap` card that projects ROI from current keyword set. Lifts the dashboard's pitch from "your rank changed" to "we delivered $14K of bookings."
++*Files:* `src/features/rankings/types.ts`, `src/features/rankings/data.ts`, `src/features/rankings/components/KeywordTable.tsx`, new `src/features/rankings/components/RevenueRoadmap.tsx`. **5 tasks.**
++
++### Wave-S2 — Counter-Move Engine
++**Upgrade `AgentLog` from observation to prediction-and-action.** Add a `CompetitorAction` event type. Build a `Counter` playbook generator (rule-based first; Gemini later). Render counter-moves in a queued panel between `AgentLog` and `MapPackCard`. Each counter has "approve" / "skip" buttons + the mock execution path. Turns the dumbest line in the current mock ("Smile Austin moved 4→2") into the smartest panel.
++*Files:* `src/features/rankings/types.ts`, `src/features/rankings/data.ts`, new `src/features/rankings/components/CounterMoves.tsx`, `src/features/rankings/components/RankingsDashboard.tsx`. **5 tasks.**
++
++### Wave-S3 — 5-Minute Reputation Strike Team
++**Add the auto-resolution loop to `ReputationCard`.** Extend `ReplyState` with `auto-resolved | call-in-progress | call-completed`. Build a `ResolutionCall` panel showing transcript + status. Mock a Twilio call flow with mocked Gemini conversation. Add an FTC-compliance guardrail layer.
++*Files:* `src/features/rankings/types.ts`, `src/features/rankings/data.ts`, `src/features/rankings/components/ReputationCard.tsx`, new `src/features/rankings/components/ResolutionCall.tsx`. **5 tasks.**
++
++### Wave-S4 — Proximity Graph (data spine)
++**Extend `KeywordRow` toward a `GridCell` model.** Add `{lat, lng, query, rank, serp_features[]}`. Build a mock 9x9 grid for one keyword (mock data — no DataForSEO call needed in the scaffold). Replace or augment `MapPackCard` with a heatmap tile. Adds the visual hero that makes the data-moat story tangible.
++*Files:* `src/features/rankings/types.ts`, `src/features/rankings/data.ts`, new `src/features/rankings/components/ProximityHeatmap.tsx`, `src/features/rankings/components/RankingsDashboard.tsx`. **5 tasks.**
++
++### Wave-S5 — Marketing Manager-as-a-Service (the polish wave)
++**Build the quarterly strategy surface around the dormant "Generate monthly report" button.** Add a `StrategyReview` data model. Build a `/review/[quarter]` route that shows wins / what's working / Q+1 plan. Mock a HeyGen avatar embed (video file or styled placeholder). Wire the button. The most demo-ready moonshot in the set — owners *see* what they're paying for.
++*Files:* `src/features/rankings/types.ts`, new `src/app/review/[quarter]/page.tsx`, new `src/features/rankings/components/StrategyReview.tsx`, `src/features/rankings/components/RankingsDashboard.tsx`. **4 tasks.**
++
++---
++
++## How this scan was run
++
++- **Scanner prompt:** `agent_moonshot_architect` (v1.0.0), `src/lib/prompts/registry/agents/moonshot-architect.ts`
++- **Date:** 2026-05-21
++- **Scope:** entire `src/` tree (22 .ts/.tsx files) + `docs/` (BACKLOG.md, CHECKLIST.md, backlog-brainstorm.md) + README.md
++- **Method:** Single `general-purpose` subagent invoked with moonshot-architect role
++- **Findings target:** 8–12 (delivered 11)
++- **Files read by subagent:** ~12 (README + 4 docs + 11 src)
++- **Verification:** `> Total:` headers (1 occurrence, "11 moonshots") and `- **Ambition**:` bullets (11) match
++
+
+diff --git a/docs/harness/moonshots-2026-05-21/moonshots.md b/docs/harness/moonshots-2026-05-21/moonshots.md
+new file mode 100644
+--- /dev/null
++++ b/docs/harness/moonshots-2026-05-21/moonshots.md
++# Moonshot Architect Scan — local-seo-agency (Mappack)
++
++> Date: 2026-05-21
++> Agent: moonshot-architect
++> Scope: full src/ tree + docs/
++> Findings target: 8–12
++
++> Total: 11 moonshots
++> By ambition: 5 audacious / 4 bold / 2 stretch
++> By category: 6 functionality / 3 feature / 2 user_benefit
++
++---
++
++## 1. The Proximity Graph — first map-pack ranking model that thinks in meters, not metros
++- **Ambition**: audacious
++- **Category**: functionality
++- **Force multiplier**: DataForSEO geo-grid + BigQuery + Gemini reasoning + network effects
++- **10x claim**: Move from "Now/30d rank for a keyword" to predicting rank at every block in a 9x9 grid, 30 days out, with the specific GBP edit that will swing it.
++- **Vision**: Every Mappack client's daily SERP poll feeds a city-scale proximity graph: a living map of how Google ranks every dental practice at every street corner, by time of day, by query intent. After three months of dental coverage across Austin/Nashville/Charlotte/Phoenix, Mappack owns the only dataset that can answer "if Pine Ridge adds 12 reviews this week, will they crack the pack in the 78704 zip on mobile at 7pm?" The dashboard's flat `KeywordRow` becomes a 3D heat map where each cell is a ranking forecast with a causal story.
++- **Path to achievement**: (1) Extend `KeywordRow` to a `GridCell` model — `{lat, lng, query, rank, serp_features[]}` polled daily. (2) Stand up a BigQuery materialized view that joins grid cells across clients in the same metro. (3) Feed it to Gemini as structured context for a "rank explanation" endpoint behind the existing Now/30d column. (4) Add a heatmap tile that replaces or augments `MapPackCard`.
++- **Defensibility**: After 12 months and 50 clients per metro, no competitor can replicate the proximity graph — Yext has citations but no SERP density, BrightLocal has SERP but no client-action data. The dataset becomes a moat that compounds daily.
++- **Anchor in current code**: `src/features/rankings/types.ts:10-17` (KeywordRow), `src/features/rankings/components/MapPackCard.tsx` (flat 3-row pack); the planned `DataForSEO daily map-pack poll` (CHECKLIST.md:25).
++
++## 2. Counter-Move Engine — predictive playbooks that fire before the SERP shifts
++- **Ambition**: audacious
++- **Category**: functionality
++- **Force multiplier**: Gemini reasoning + cross-client SERP history + agent autonomy
++- **10x claim**: Stop reacting to "Smile Austin moved 4→2" — predict the move 7 days out and ship the counter (3 review-asks + 2 GBP posts + a service-page tweak) automatically.
++- **Vision**: The `AgentLog` line "Competitor 'Smile Austin' moved 4→2 for implants kw" is the dumbest version of intelligence. The moonshot: Mappack watches competitors' GBP edits, review velocity, post cadence, and citation deltas; Gemini compiles a counter-move playbook ("They added 3 implant photos and got 2 reviews this week — we ship a $99 implant consult post + ask 4 implant patients for reviews"); the agent executes the playbook with one-tap owner approval. Every competitor move that previously sank a client now becomes a queued offensive.
++- **Path to achievement**: (1) Add a `CompetitorAction` typed event stream alongside `AgentLogEntry`. (2) Daily diff of every competitor's GBP via the GBP API. (3) Gemini-generated counter-playbook stored as a `Counter` row tied to the SERP event. (4) New "Counter-moves queued" panel in the dashboard between AgentLog and MapPack.
++- **Defensibility**: Each counter-playbook win/loss feeds a reinforcement loop — over 12 months Mappack has the only labeled dataset of "competitor action → effective counter → measured rank delta" in local SEO. Becomes a vertical-specific intelligence asset no agency can match.
++- **Anchor in current code**: `src/features/rankings/data.ts:33` ("Competitor 'Smile Austin' moved 4→2"), `BACKLOG.md` E9 "Competitor intel" (currently scoped only as "share-of-voice alerts").
++
++## 3. 5-Minute Reputation Strike Team — autonomous response to a 1-star review
++- **Ambition**: audacious
++- **Category**: feature
++- **Force multiplier**: Gemini tone-match + Twilio voice + GBP API + SLA pressure
++- **10x claim**: Compress "1-star review → owner-called-the-patient-back" from 24-48 hours (agency) or "< 2 hours" (current goal) to 5 minutes — including a live AI phone call to the reviewer.
++- **Vision**: A 1- or 2-star review hits. Within 5 minutes: (1) Mappack drafts a public reply tuned to the practice's brand voice and the specific complaint, queued for owner approval; (2) An AI voice agent calls the reviewer ("Hi Dwayne, this is the Pine Ridge front office — I saw your billing concern and want to make it right"), records consent, and offers a resolution; (3) If resolved, the agent invites the reviewer to update the review; (4) The whole flow lands on the owner's phone with a one-tap "approve everything" button. The ReputationCard's "needs you" state becomes "resolved before you saw it."
++- **Path to achievement**: (1) Extend `ReplyState` to include `auto-resolved`, `call-in-progress`, `call-completed`. (2) Add Twilio voice integration with Gemini-driven conversation. (3) Build a strict guardrail layer (no medical claims, no PHI capture, FTC review-update disclosure). (4) Add a `ResolutionCall` panel to ReputationCard with audio + transcript.
++- **Defensibility**: Owning the only reputation flow that closes the loop in minutes creates a category-of-one positioning. Each call recording, with consent, fine-tunes the dental-specific resolution model — competitors built on BirdEye templates cannot match the closed-loop data.
++- **Anchor in current code**: `src/features/rankings/types.ts:44` (ReplyState includes "flagged" but no resolution flow), `src/features/rankings/data.ts:70` (Dwayne's 2★ billing review currently just sits in `flagged`).
++
++## 4. Local SEO Operating System — open APIs + 70-directory mesh = the OS layer for local
++- **Ambition**: audacious
++- **Category**: functionality
++- **Force multiplier**: GBP API + Yext-class directory sync + public API + Zapier/Make
++- **10x claim**: Stop being a tool. Become the OS layer every local business CRM, POS, and booking system writes to — citations, posts, reviews flow through Mappack the way payments flow through Stripe.
++- **Vision**: Today the dashboard ships posts to GBP. The moonshot: any system that has data about a local business (Jane App for dentists, ServiceTitan for HVAC, Clio for law firms) writes to Mappack via a public REST/GraphQL API, and Mappack fans the data out to 70+ directories, GBP, schema, landing pages. Practice management systems stop building their own marketing modules and integrate Mappack. Mappack becomes invisible infrastructure with massive volume — the "Twilio of local presence."
++- **Path to achievement**: (1) Define the canonical `LocalBusinessEvent` taxonomy (new patient, completed service, review-eligible moment). (2) Ship a public versioned API (BACKLOG-brainstorm idea #87). (3) Build a Jane App integration as proof-of-concept for the dental wedge. (4) Open a webhook outbox (idea #86) so every Mappack event is replayable to partner systems.
++- **Defensibility**: Network effects compound: more practice-management integrations → more passive data → better Gemini outputs → more practices choose tools that integrate Mappack → repeat. The directory sync mesh (50-70 endpoints with conflict resolution) is a 6-12 month build moat no competitor will replicate cheaply.
++- **Anchor in current code**: `src/features/rankings/index.ts` (single-tenant feature module — needs to become a tenant-aware API surface); BACKLOG.md E3 Citations sync (currently scoped as one-directional).
++
++## 5. Patient-Acquisition Attribution — dollars per keyword, not ranks per keyword
++- **Ambition**: bold
++- **Category**: user_benefit
++- **Force multiplier**: Twilio call-tracking + booking-system integrations + BigQuery
++- **10x claim**: Replace the "↑ 2 in 30d" rank delta with "$8,400 in booked implant consults attributable to 'dental implants austin tx' this month" — what owners actually buy.
++- **Vision**: Dental practice owners don't buy rankings; they buy patients. Today `KeywordTable` shows `now: 3, prev: 5` for "family dentist austin" — owners squint and translate to "is this worth $399/mo?" The moonshot: every tracked keyword gets a dynamic Twilio call-tracking number, every generated landing page has booking pixels, and the dashboard shows revenue per keyword. The KPI strip becomes `"family dentist austin" — 12 booked, $14,400 revenue, $3.2K margin`. Renewal conversations become "we delivered 3.6x ROI — keep going?"
++- **Path to achievement**: (1) Add `attribution: { calls: number; bookings: number; revenue: number }` to `KeywordRow`. (2) Twilio dynamic-number provisioning per tracked keyword (idea #58). (3) Booking-system integrations for the dental wedge (Dentrix, Open Dental). (4) Replace the rank-only `KeywordTable` cells with revenue-weighted equivalents — keep rank as a sparkline secondary metric.
++- **Defensibility**: Once revenue attribution lands, switching cost is brutal — competitors would have to rebuild the entire phone+booking pipeline. Renewal rates rise from ~95%/mo target to 98%+; pricing tiers can move from $399/$699/$999 to value-based ($999/$1999/$3999 keyed to revenue delivered).
++- **Anchor in current code**: `src/features/rankings/types.ts:10-17` (KeywordRow with no revenue model), `src/features/rankings/components/KeywordTable.tsx:18-21` (header lists Geo/Now/30d/Volume — no $).
++
++## 6. Vertical Brain — the dental-specific intelligence layer that won't transfer
++- **Ambition**: bold
++- **Category**: functionality
++- **Force multiplier**: Gemini fine-tuning + cross-client labeled data
++- **10x claim**: Every generated post, reply, and audit on the platform is dental-aware in ways no generic SEO tool can match — insurance-name detection, dental-procedure SERP-feature taxonomy, hygiene-recall calendars, patient-anxiety language patterns.
++- **Vision**: The vertical-pack ideas (brainstorm #10-17) are positioned as "presets." That's small thinking. The moonshot: each vertical gets a dedicated knowledge graph + fine-tuned Gemini layer + bespoke SERP-feature taxonomy. Dental-only: PPO/HMO knowledge, ADA-compliance review guardrails, "emergency dentist" intent ladder (1am vs 9am queries behave differently), insurance-claim-mention detection in negative reviews. Each vertical becomes a moat too deep for horizontal tools to clone. Dental dominance → HVAC dominance (seasonality + emergency intent) → law-firm dominance (bar-rule compliance) — each vertical needs months of labeled data Mappack already owns.
++- **Path to achievement**: (1) Replace the global `agentLog` and content templates with a vertical-scoped knowledge layer in `src/features/{vertical}/`. (2) Ingest a dental-specific corpus (ADA guidelines, top dental practices' GBP histories, insurance-jargon dictionaries) as Gemini context. (3) Ship dental-tuned prompts behind the existing Imagen 3 + Gemini calls. (4) Measure post quality with a dental-specific rubric (medical-claim safety, insurance accuracy, patient-comfort tone).
++- **Defensibility**: A horizontal "AI for local SEO" tool cannot ship 7 verticals deep without 7 years of work. By being narrow-then-wide, Mappack owns each vertical's defensibility before incumbents notice.
++- **Anchor in current code**: `src/features/rankings/` (a single horizontal feature module — needs to be siblinged by `src/features/dental-brain/`, etc.); BACKLOG.md section 4 ($399 → $999 doesn't reflect vertical-specific value yet).
++
++## 7. The Audit Flywheel — every free audit feeds the model that wins the customer
++- **Ambition**: bold
++- **Category**: feature
++- **Force multiplier**: Gemini + DataForSEO + cold-outreach loop + network effects
++- **10x claim**: The "Free audit generator" (Week 7) becomes the largest passive intelligence pipeline in local SEO — 50,000 audits/year, each one another data point sharpening rank models, competitor maps, and conversion playbooks.
++- **Vision**: Today the audit is positioned as a lead magnet — "10 pages, drop email, sales call." Reframe: every audit Mappack generates ingests a new business's GBP + reviews + competitors + landing pages into BigQuery. Even if the prospect never converts, the data refines vertical models, identifies emergent SERP features, and exposes new competitor patterns. The audit page itself becomes interactive — "see your real-time map-pack" with a watermark. After 6 months, the audit-only dataset rivals BrightLocal's full customer dataset.
++- **Path to achievement**: (1) Define a `BusinessSnapshot` type: full GBP, SERP, citations, schema, CWV captured at audit time. (2) Persist every snapshot to BigQuery regardless of conversion. (3) Reuse the audit's SERP polling as paid-customer day-1 baseline (free onboarding). (4) Build a public "X audits run this month" counter on the marketing landing to compound social proof.
++- **Defensibility**: 50K audits/year × 10 dimensions = 500K data points/year flowing into vertical models. Competitors who launch audits as one-off PDFs leave that data on the floor.
++- **Anchor in current code**: BACKLOG.md Week 7 ("Free audit generator") currently scoped only as lead capture; `src/app/landing-claude/page.tsx` exists but no audit surface yet.
++
++## 8. Suspension Insurance — the only platform that guarantees your GBP stays alive
++- **Ambition**: bold
++- **Category**: feature
++- **Force multiplier**: GBP policy ML + Gemini compliance reasoning + insurance pricing
++- **10x claim**: Turn "GBP suspension" from a panic event (brainstorm #43, #44) into a guaranteed never-happens SLA. Charge a premium for the guarantee; underwrite the risk with the model.
++- **Vision**: Suspension risk is the silent killer for local businesses — one wrong category edit or photo and overnight rank goes to zero. The moonshot: Mappack monitors every GBP edit, scores it for policy risk, blocks risky changes before they ship, and underwrites a "we'll restore you in 72 hours or refund 6 months" guarantee. After 12 months of policy-risk labels across thousands of clients, Mappack owns a model agencies and competitors can't price against. Insurance economics enter the picture: Mappack collects a premium per location, pays out rarely, and uses the policy-edit dataset to lobby for direct GBP-policy partnership with Google.
++- **Path to achievement**: (1) Capture every GBP edit (manual + agent-initiated) into an `EditRiskLog`. (2) Train a classifier on historical suspension patterns. (3) Add a "Suspension shield: ON" indicator to the dashboard top bar with status. (4) Bundle the guarantee into the Dominate tier as a $399 add-on.
++- **Defensibility**: Suspension data + policy-change radar (idea #67) compound into something Google itself may want to buy. Each near-miss tightens the model — incumbents have no equivalent dataset.
++- **Anchor in current code**: `src/components/DashboardTopBar.tsx` (top bar exists, no health/risk indicator); CHECKLIST.md "Failure mode: queued + retry, never duplicate post" (currently focused on rate-limit, not policy risk).
++
++## 9. Photo A/B Studio — Imagen 3 + GBP API = continuous evolutionary photo testing
++- **Ambition**: stretch
++- **Category**: functionality
++- **Force multiplier**: Imagen 3 + GBP photo views API + multi-armed bandit
++- **10x claim**: Stop posting one Imagen 3 image per day. Run 4 candidate images per post in a bandit; over weeks, photos rotate by time-of-day, weather, and search intent — Pine Ridge's GBP photo set evolves on its own.
++- **Vision**: PostingCalendar today shows "GBP · post" once per day. The moonshot: each post generates 4 image variants (cosmetic-focused, family-focused, emergency-focused, hygiene-focused), all go live in rotation, view metrics from GBP API feed a multi-armed bandit, and the winners propagate to the practice's primary photo set. After 90 days, each client's GBP photo gallery is provably optimal — not curated by a human's gut. The calendar UI becomes a heatmap of "which variant won when."
++- **Path to achievement**: (1) Extend `PostingCalendar` to render variant counts per day. (2) Add an `ImagenVariant` table + bandit policy in BigQuery. (3) Use the GBP API to rotate primary photos based on time-of-day click rate. (4) Expose a "winning photos" section in the dashboard for owner pride.
++- **Defensibility**: Every winning image labeled with intent + win-rate becomes a fine-tuning dataset for Imagen 3 prompts. After 6 months, Mappack's dental-vertical Imagen 3 prompts outperform generic equivalents by a measurable margin.
++- **Anchor in current code**: `src/features/rankings/components/PostingCalendar.tsx:14-39` (currently mock cells with no variant or measurement); CHECKLIST.md "Imagen 3 · style packs per vertical".
++
++## 10. White-Label Agency-in-a-Box — turn every web designer into a Mappack reseller
++- **Ambition**: stretch
++- **Category**: feature
++- **Force multiplier**: Multi-tenant architecture + Stripe Connect + partner-led GTM
++- **10x claim**: Instead of selling 50 dental practices direct, sell to 500 web designers who each have 10 local-business clients. Distribution math goes from 50 → 5,000 practices in the same labor.
++- **Vision**: Brainstorm #20 ("white-label reseller portal") is undersized. The moonshot: a full agency-in-a-box where any web designer signs up, gets a branded subdomain (rankworks.com), sets their own pricing, ships their own monthly reports, and uses Mappack as invisible infrastructure. Stripe Connect handles their billing, Mappack takes a 30% take rate. Every web designer brings 10 clients average, drives passive revenue, and creates a fierce GTM channel without a direct sales hire. The 12-week roadmap's $35K MRR target becomes $350K MRR via partners by Day 180.
++- **Path to achievement**: (1) Make `src/components/DashboardTopBar.tsx` brand-themeable via tenant config. (2) Add `Tenant` and `Agency` entities above the current client model. (3) Stripe Connect onboarding for designer-partners. (4) White-label monthly report (PDF + Loom video, brainstorm #24) as the killer demo for the partner pitch.
++- **Defensibility**: Each partner agency creates lock-in for their own client roster — they would not switch because it would require migrating their entire client book and rebrand. After 100 partners, the brand layer becomes the durable moat.
++- **Anchor in current code**: `src/app/dashboard/page.tsx` (single-tenant route — needs tenant resolution); BACKLOG.md section 5 (multi-tenant is mentioned but no partner economic layer designed).
++
++## 11. Marketing Manager-as-a-Service — quarterly strategy review where the AI presents
++- **Ambition**: bold
++- **Category**: user_benefit
++- **Force multiplier**: Gemini long-context narrative + HeyGen-style avatar + monthly BigQuery summarization
++- **10x claim**: Replace the $80K/year marketing director a dental practice can't afford with a quarterly AI strategy review delivered by an on-brand avatar — measured rank lift, attributed revenue, next-quarter plan, all in a 10-minute Loom.
++- **Vision**: BACKLOG Week 11 ships a "Loom-style video narrated by HeyGen-style avatar" as a monthly report. The moonshot upgrades this from a recap to a strategy meeting: the AI synthesizes 90 days of agent activity, attribution data, competitor moves, and proposes a Q+1 plan with goals, budget reallocation, and trade-offs. The avatar literally appears on the owner's screen quarterly and says "Here's what we accomplished, here's what's working, here's where I think we should bet next quarter — approve, reject, or talk to me." Owners feel like they have a $80K marketing director.
++- **Path to achievement**: (1) Extend the monthly report to a quarterly view with attribution + strategy slots. (2) Use Gemini long-context to summarize the full agent log + BigQuery state. (3) HeyGen-API integration for avatar delivery (Dominate tier exclusive). (4) Build a "respond to your AI" workflow — owners can record video questions, AI answers within 24h.
++- **Defensibility**: Brand attachment. Each owner builds a relationship with "their" avatar persona; the persona learns voice, preferences, and history. Switching feels like firing a person. Renewal becomes emotional, not rational.
++- **Anchor in current code**: BACKLOG.md Week 11 ("Loom-style video" — currently recap-only, not strategy); `src/features/rankings/components/RankingsDashboard.tsx:29` ("Generate monthly report" button — placeholder for the surface).
++

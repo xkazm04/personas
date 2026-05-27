@@ -1,0 +1,41 @@
+[
+  {
+    "id": "9d672aec-7f34-47a6-bf36-282e8a7ac52e",
+    "execution_id": "ca2e26c9-7873-4518-b205-9d2cc7e2fc89",
+    "persona_id": "4bd82468-0847-4a1a-96c5-a59d7b1ae9c2",
+    "title": "Code Review verdict: APPROVE — Case-File Criteria Fix",
+    "description": "The criteria-aggregation fix (ADR 0001) is correct, tested (4/4 pass, independently re-run), and typecheck-clean — APPROVE with notes. One adjacent same-class defect was found outside scope: the hardcoded '92% approval likelihood' badge in CaseFileDashboard.tsx:56. Decide whether to merge as-is and track the follow-up.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:17:14.180672+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "f23043a8-c18e-476f-8f1f-987c1a442d65",
+    "execution_id": "2d31a265-6c9a-4651-9aff-ddb55ab69370",
+    "persona_id": "e747fa40-78b4-4e17-b4f0-1f67edd706b8",
+    "title": "Security findings triage — immigration-paperwork (1 medium, 1 low)",
+    "description": "First full security scan completed (all 3 phases, no critical/high). Triage the actionable dependency finding and the env hygiene note.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:19:59.735868600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "1fcdb0d6-0de9-41d6-aa47-336d01f59030",
+    "execution_id": "b88edf2a-43c6-4022-a578-4c0b6251d484",
+    "persona_id": "811eda4d-d1a8-42cd-ac7b-8a48e90ac9c2",
+    "title": "Approve release v0.2.1 (immigration-paperwork)",
+    "description": "PATCH release cut from the working-tree criteria feature: package.json 0.1.0→0.2.1, CHANGELOG [0.2.1] prepended, commit 68b2983 + annotated tag v0.2.1 created (local, not pushed). Also backfilled v0.2.0 on commit 35486fd. Note: the release commit packaged previously-uncommitted feature work (criteria.ts/test, CriteriaTable.tsx) — confirm that was intended to ship. Tests not executed (node --test resolution quirk); tsc clean.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T11:24:47.142021+00:00",
+    "use_case_id": null
+  }
+]

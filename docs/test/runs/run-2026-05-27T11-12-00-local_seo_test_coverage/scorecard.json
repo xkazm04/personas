@@ -1,0 +1,104 @@
+{
+  "runId": "run-2026-05-27T11-12-00-local_seo_test_coverage",
+  "team": "SDLC — Local SEO Agency",
+  "seed": "local-seo/test-coverage",
+  "code_track": {
+    "build": {
+      "status": "pass"
+    },
+    "lint": {
+      "status": "pass"
+    },
+    "test": {
+      "status": "fail",
+      "tail": "npm error Missing script: \"test\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: C:\\Users\\mkdol\\AppData\\Local\\npm-cache\\_logs\\2026-05-27T11_28_31_150Z-debug-0.log"
+    }
+  },
+  "rubric_version": "1-deterministic",
+  "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 100,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 85
+  },
+  "judge": null,
+  "team_score": 97,
+  "provisional_verdict": "NOT-READY",
+  "facts": {
+    "executions": 5,
+    "completed": 5,
+    "failed": 0,
+    "cascade_stalled": false,
+    "value_delivered": 4,
+    "personasExecuted": 5,
+    "memberCount": 5,
+    "eventsDelivered": 13,
+    "reviews": 4,
+    "pendingReviews": 4,
+    "learnedMemories": 5,
+    "cost_usd": 2.6034740000000003,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "README.md",
+      "total": 7,
+      "valid": 7,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "CHANGELOG.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/ADR-0001-test-harness-and-pure-logic-coverage.md",
+      "total": 9,
+      "valid": 7,
+      "pct": 78,
+      "invalid": [
+        "src/features/rankings/rank.ts",
+        "rankings/rank.ts"
+      ]
+    },
+    {
+      "file": "docs/backlog-brainstorm.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": "docs/harness/moonshots-2026-05-21/INDEX.md",
+      "total": 18,
+      "valid": 11,
+      "pct": 61,
+      "invalid": [
+        "src/features/rankings/components/RevenueRoadmap.tsx",
+        "src/features/rankings/components/CounterMoves.tsx",
+        "src/features/rankings/components/ResolutionCall.tsx",
+        "src/features/rankings/components/ProximityHeatmap.tsx",
+        "src/features/rankings/components/StrategyReview.tsx",
+        "src/lib/prompts/registry/agents/moonshot-architect.ts",
+        ".ts/.tsx"
+      ]
+    },
+    {
+      "file": "docs/harness/moonshots-2026-05-21/moonshots.md",
+      "total": 12,
+      "valid": 12,
+      "pct": 100,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 4,
+    "pendingReviews": 4,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}
