@@ -58,6 +58,17 @@ function gitDirty(root) {
     return null;
   }
 }
+// Fingerprint the working tree (tracked + untracked) so we detect changes a
+// run made even when it didn't COMMIT (HEAD unchanged). Run-2/3 finding:
+// HEAD-only detection reported "repo changed: false" while the team had
+// modified src files + added tests in the working tree.
+function gitStatusFingerprint(root) {
+  try {
+    return execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' }).trim();
+  } catch {
+    return null;
+  }
+}
 
 async function main() {
   const seedId = arg('--seed');
@@ -101,6 +112,7 @@ async function main() {
   const cfgHash = configHash(db, info.personaIds);
   const repoHeadPre = info.repo?.root ? gitHead(info.repo.root) : null;
   const repoDirtyPre = info.repo?.root ? gitDirty(info.repo.root) : null;
+  const repoStatusPre = info.repo?.root ? gitStatusFingerprint(info.repo.root) : null;
   const sinceIso = new Date(Date.now() - 60000).toISOString(); // 60s back: safely before the kick
   db.close();
 
@@ -166,6 +178,7 @@ async function main() {
   // verify config_hash unchanged (no mid-run human edits)
   const cfgHashPost = configHash(db3, info.personaIds);
   const repoHeadPost = info.repo?.root ? gitHead(info.repo.root) : null;
+  const repoStatusPost = info.repo?.root ? gitStatusFingerprint(info.repo.root) : null;
   db3.close();
 
   const runMeta = {
@@ -182,7 +195,8 @@ async function main() {
     repoHeadPre,
     repoHeadPost,
     repoDirtyPre,
-    repoChangedDuringRun: repoHeadPre !== repoHeadPost,
+    repoChangedDuringRun: repoHeadPre !== repoHeadPost || repoStatusPre !== repoStatusPost,
+    repoCommittedDuringRun: repoHeadPre !== repoHeadPost,
     kickReturned: !!kickResult,
     heartbeat,
     summary,
