@@ -2,7 +2,7 @@
   "id": "sdlc-lifecycle",
   "schema_version": 1,
   "name": "SDLC Delivery Team",
-  "description": "Five pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, and a docs steward keeps the README and changelog in sync. They hand work forward through events and share the same codebase and memory.",
+  "description": "Six pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work into a story-pointed plan, a dev clone implements that plan (writes the code + tests, runs them) and scans for backlog, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, and a docs steward keeps the README and changelog in sync. They hand work forward through events and share the same codebase and memory.",
   "icon": "Workflow",
   "color": "#6366f1",
   "category": [
@@ -11,7 +11,7 @@
   ],
   "team": {
     "name": "SDLC Delivery Team",
-    "description": "Architect → review → security → release → docs — end-to-end software lifecycle on one codebase.",
+    "description": "Architect → implement → review → security → release → docs — end-to-end software lifecycle on one codebase.",
     "color": "#6366f1"
   },
   "group": {
@@ -27,36 +27,48 @@
       "y": 120
     },
     {
+      "template_id": "dev-clone",
+      "role": "engineer",
+      "x": 240,
+      "y": 120
+    },
+    {
       "template_id": "code-reviewer",
       "role": "reviewer",
-      "x": 240,
+      "x": 480,
       "y": 120
     },
     {
       "template_id": "security-sentinel",
       "role": "security",
-      "x": 480,
+      "x": 720,
       "y": 120
     },
     {
       "template_id": "release-manager",
       "role": "release",
-      "x": 720,
+      "x": 960,
       "y": 120
     },
     {
       "template_id": "docs-steward",
       "role": "docs",
-      "x": 960,
+      "x": 1200,
       "y": 120
     }
   ],
   "connections": [
     {
       "from": "architect",
+      "to": "engineer",
+      "connection_type": "sequential",
+      "label": "scoped, story-pointed task breakdown to implement (architecture.analysis.completed)"
+    },
+    {
+      "from": "engineer",
       "to": "reviewer",
       "connection_type": "sequential",
-      "label": "scoped implementation plan (architecture.analysis.completed)"
+      "label": "implemented changes + tests to review (implementation.completed)"
     },
     {
       "from": "reviewer",
