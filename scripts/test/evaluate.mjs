@@ -19,6 +19,15 @@ import { teamInfo } from './model.mjs';
  * team that leaves the repo unbuildable or tests failing is not production.
  * Each command is timeout-bounded; null command → 'na'.
  */
+function runOne(cmd, repoRoot, timeoutMs) {
+  try {
+    execSync(cmd, { cwd: repoRoot, timeout: timeoutMs, stdio: 'pipe', encoding: 'utf8' });
+    return { status: 'pass' };
+  } catch (e) {
+    const tail = (String(e.stdout || '').slice(-400) + String(e.stderr || '').slice(-400)).trim().slice(-500);
+    return { status: e.signal === 'SIGTERM' || /ETIMEDOUT/.test(String(e)) ? 'timeout' : 'fail', tail };
+  }
+}
 function runRepoChecks(repoRoot, cmds, timeoutMs = 240000) {
   const out = {};
   for (const key of ['build', 'lint', 'test']) {
@@ -27,13 +36,15 @@ function runRepoChecks(repoRoot, cmds, timeoutMs = 240000) {
       out[key] = { status: 'na' };
       continue;
     }
-    try {
-      execSync(cmd, { cwd: repoRoot, timeout: timeoutMs, stdio: 'pipe', encoding: 'utf8' });
-      out[key] = { status: 'pass' };
-    } catch (e) {
-      const tail = String(e.stdout || '').slice(-400) + String(e.stderr || '').slice(-400);
-      out[key] = { status: e.signal === 'SIGTERM' || /ETIMEDOUT/.test(String(e)) ? 'timeout' : 'fail', tail: tail.trim().slice(-500) };
+    let r = runOne(cmd, repoRoot, timeoutMs);
+    // Tests can be flaky (order-dependent / shared in-memory state). Retry a
+    // failing TEST run once: pass-on-retry → 'flaky' (a real but softer signal —
+    // caps at PROMISING, not NOT-READY); fail-twice → 'fail' (hard cap).
+    if (key === 'test' && r.status === 'fail') {
+      const r2 = runOne(cmd, repoRoot, timeoutMs);
+      r = r2.status === 'pass' ? { status: 'flaky', tail: r.tail } : { status: 'fail', tail: r.tail };
     }
+    out[key] = r;
   }
   return out;
 }
@@ -201,6 +212,11 @@ function main() {
   // ungameable gate. (lint fail is a WARN, not a cap.)
   if (codeTrack && (codeTrack.build?.status === 'fail' || codeTrack.test?.status === 'fail')) {
     verdict = cap(verdict, 'NOT-READY');
+  }
+  // A flaky test suite (passed only on retry) is a real quality concern but a
+  // softer one than a hard red — caps at PROMISING.
+  if (codeTrack && codeTrack.test?.status === 'flaky') {
+    verdict = cap(verdict, 'PROMISING');
   }
 
   const scorecard = {

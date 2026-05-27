@@ -1,0 +1,24 @@
+{
+  "runId": "run-2026-05-27T08-46-34-grant_writing_test_coverage",
+  "team": "SDLC — Grant Writing Nonprofits",
+  "teamId": "02a68c44-2561-4199-b051-64644957192d",
+  "sinceIso": "2026-05-27T08:45:34.653Z",
+  "counts": {
+    "executions": 5,
+    "executionsByStatus": {
+      "completed": 5
+    },
+    "personasExecuted": 5,
+    "reviews": 4,
+    "memories": 10,
+    "events": 15,
+    "eventsByStatus": {
+      "delivered": 15
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "logsCopied": 5
+  },
+  "cost_usd": 4.195344,
+  "repoDiffBytes": 35190
+}
