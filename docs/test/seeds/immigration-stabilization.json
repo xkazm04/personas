@@ -1,0 +1,12 @@
+{
+  "id": "immigration/criteria-stabilization",
+  "team": "SDLC — Immigration Paperwork",
+  "repo": "immigration-paperwork",
+  "tracks": ["code"],
+  "exercises_roles": ["architect", "reviewer", "security"],
+  "held_out": false,
+  "goal": "This case-file codebase (src/features/case-file: criteria with statuses like 'Met'/'Partial'/'Strong', and any readiness/eligibility computation derived from them, plus shared helpers in src/lib/format.ts) has accumulated correctness and robustness risks. As the Solution Architect, have the team identify the single highest-priority correctness or robustness defect grounded in the actual code (status aggregation logic, formatting edge cases, unsafe assumptions about data shape, untrusted-string handling), and fix it production-ready with a regression test. Prioritize stability over new features; verify the fix does not break existing rendering.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm run typecheck" },
+  "acceptance_hint": "A real, grounded stabilization fix at the correct module (not cosmetic), production-ready, with a regression test, and confirmation existing behavior is preserved. Judge: is the chosen defect genuinely the highest-impact correctness risk, cited to real code?",
+  "notes": "Stabilization seed — exercises the stabilization/bugfix work type (§2.1 balance) on a no-test-infra Next.js repo."
+}

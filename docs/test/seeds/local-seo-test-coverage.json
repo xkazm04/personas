@@ -1,0 +1,12 @@
+{
+  "id": "local-seo/test-coverage",
+  "team": "SDLC — Local SEO Agency",
+  "repo": "local-seo-agency",
+  "tracks": ["code"],
+  "exercises_roles": ["architect", "reviewer", "release", "docs"],
+  "held_out": false,
+  "goal": "This repository has no automated tests. As the Solution Architect, have the team stand up a lightweight test runner (e.g. node --test via tsx, wired as the `test` npm script) and write meaningful unit tests for the highest-value untested pure logic — start with src/lib/format.ts (currency/percent/number formatting, including the signed-currency minus-sign and rounding behavior) and any ranking-delta or map-pack computation in src/features/rankings. Cover real edge cases (negative, zero, NaN, very large values), not happy-path smoke tests. If a test reveals a real defect, fix it. Keep the suite green and fast.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm test" },
+  "acceptance_hint": "A real `test` script wired into package.json plus substantive unit tests on the highest-value pure logic, covering genuine edge cases, suite green. Judge: do the tests assert meaningful behavior (and catch the minus-sign / rounding / NaN edges), or are they vacuous?",
+  "notes": "Test-coverage seed — exercises the test/coverage work type (§2.1 balance). Team must wire the `test` script; until then `npm test` fails by design (pre-run §1.A test=absent is expected)."
+}

@@ -1,0 +1,12 @@
+{
+  "id": "apprenticeship/funnel-conversion",
+  "team": "SDLC — Apprenticeship Placement",
+  "repo": "apprenticeship-placement",
+  "tracks": ["code"],
+  "exercises_roles": ["architect", "reviewer", "security", "release", "docs"],
+  "held_out": false,
+  "goal": "The placement funnel in src/features/placements (data.ts `funnel`, rendered by FunnelCard) shows raw stage counts but no conversion math. As the Solution Architect, design and implement a real, typed conversion-rate capability: a pure function in src/lib (or src/features/placements/lib) that computes stage-to-stage and overall sourced→hired conversion percentages from the funnel data, with correct handling of edge cases (empty funnel, a later stage exceeding an earlier one, division by zero). Wire it into FunnelCard so each stage shows its conversion %. Keep it production-ready: typed inputs/outputs, no NaN/Infinity leaking to the UI, and a unit test covering the edge cases.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm run typecheck" },
+  "acceptance_hint": "A pure, typed conversion function grounded in the real funnel shape, defensively handling empty/degenerate input (no NaN/Infinity in UI), wired into FunnelCard, with a real unit test. Judge: is the math correct and the edge-case handling genuine, not happy-path?",
+  "notes": "Feature seed — exercises the feature work type (§2.1 balance) on a no-test-infra Next.js repo; the team must stand up a test runner to satisfy the regression-test ask."
+}
