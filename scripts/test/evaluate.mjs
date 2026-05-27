@@ -131,6 +131,31 @@ function addedDocsFromPatch(patchPath) {
   return [...new Set(files)];
 }
 
+// §1.A.1 Delivered Increment: did `master`/`main` ADVANCE during the run window
+// with a real source increment (feature/fix/test) — not just a version bump or
+// docs, and not left on a `dev-clone/*` branch? Merged-to-master is the bar:
+// a branch nobody merged is indistinguishable from abandoned work over weeks.
+function deliveredIncrement(repoRoot, baseHead) {
+  if (!repoRoot || !baseHead) return { delivered: false, reason: 'no repo/base ref' };
+  const git = (args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).trim();
+  try {
+    const master = ['master', 'main'].map((b) => { try { return git(['rev-parse', '--verify', b]); } catch { return null; } }).find(Boolean);
+    if (!master) return { delivered: false, reason: 'no master/main branch' };
+    if (master === baseHead) return { delivered: false, reason: 'master did not advance (work likely on an un-merged dev-clone branch)' };
+    const files = git(['diff', '--name-only', `${baseHead}..${master}`]).split('\n').map((s) => s.trim()).filter(Boolean);
+    // a real increment = source/test files, excluding pure docs + version/changelog churn
+    const sourceish = files.filter((f) =>
+      /\.(ts|tsx|js|jsx|mjs|cjs|rs|py|go|java|rb|css|scss|sql|sh)$/i.test(f) &&
+      !f.startsWith('docs/') &&
+      !/(^|\/)(CHANGELOG|package-lock\.json|yarn\.lock|pnpm-lock)/i.test(f)
+    );
+    if (sourceish.length === 0) return { delivered: false, reason: 'master moved but no source increment (version/docs-only)', files: files.slice(0, 6) };
+    return { delivered: true, masterHead: master, sourceFiles: sourceish.slice(0, 8) };
+  } catch (e) {
+    return { delivered: false, reason: 'git error: ' + e.message };
+  }
+}
+
 function band(team, minPersona, autonomyOk, healthOk) {
   if (!healthOk) return 'BROKEN';
   if (team >= 80 && minPersona >= 60 && autonomyOk) return 'PRODUCTION';
@@ -248,12 +273,21 @@ function main() {
   if (codeTrack && codeTrack.test?.status === 'flaky') {
     verdict = cap(verdict, 'PROMISING');
   }
+  // §1.A.1 Delivered Increment gate: a code-track run that ships NOTHING to
+  // master (all work on un-merged branches, or master moved by version/docs only)
+  // cannot be PRODUCTION — the deliverable is the point. Caps at NOT-READY.
+  // Doc-track seeds are exempt (their deliverable is the grounded document).
+  const increment = isCodeTrack ? deliveredIncrement(repoRoot, run.repoHeadPre) : { delivered: true, reason: 'doc-track exempt' };
+  if (isCodeTrack && !increment.delivered) {
+    verdict = cap(verdict, 'NOT-READY');
+  }
 
   const scorecard = {
     runId,
     team: run.summary.team,
     seed: run.seed.id,
     code_track: codeTrack,
+    delivered_increment: increment,
     rubric_version: judge ? '1-judged' : '1-deterministic',
     note: judge
       ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'
@@ -340,7 +374,7 @@ function main() {
   }
   writeFileSync(join(dir, 'scorecard.md'), L.join('\n') + '\n', 'utf8');
 
-  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}`);
+  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}`);
   console.log(`wrote ${join(dir, 'scorecard.md')}`);
 }
 

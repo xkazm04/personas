@@ -2,16 +2,15 @@
   "runId": "run-2026-05-27T18-41-02-sdlc2_ai_bookkeeper_feature",
   "team": "SDLC2 — ai-bookkeeper",
   "seed": "sdlc2/ai-bookkeeper-feature",
-  "code_track": {
-    "build": {
-      "status": "pass"
-    },
-    "lint": {
-      "status": "pass"
-    },
-    "test": {
-      "status": "pass"
-    }
+  "code_track": null,
+  "delivered_increment": {
+    "delivered": true,
+    "masterHead": "b29eeaad4b53039321ed12b8dcd56cbc9a299c0f",
+    "sourceFiles": [
+      "src/features/ledger/index.ts",
+      "src/features/ledger/lib/round.test.ts",
+      "src/features/ledger/lib/round.ts"
+    ]
   },
   "rubric_version": "1-deterministic",
   "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",

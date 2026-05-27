@@ -3,6 +3,10 @@
   "team": "SDLC2 — Immigration",
   "seed": "sdlc2/immigration-stabilization",
   "code_track": null,
+  "delivered_increment": {
+    "delivered": false,
+    "reason": "master did not advance (work likely on an un-merged dev-clone branch)"
+  },
   "rubric_version": "1-deterministic",
   "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",
   "deterministic_dims": {

@@ -12,12 +12,21 @@ A Run Scorecard rolls per-persona + team + autonomy + decay into one of four ver
 
 | Verdict | Meaning | Gate |
 |---|---|---|
-| `PRODUCTION` | A user could trust this team unattended on this class of work | Team ≥ 80, **no** dimension < 60, autonomy-cost ≤ budget, **no decay** (trajectory flat/up), health lint clean |
+| `PRODUCTION` | A user could trust this team unattended on this class of work | Team ≥ 80, **no** dimension < 60, autonomy-cost ≤ budget, **no decay** (trajectory flat/up), health lint clean, **AND (code-track) a Delivered Increment — §1.A.1** |
 | `PROMISING` | Real value, but needs a named fix before trust | Team ≥ 60, ≤ 1 dimension < 60, decay mild |
-| `NOT-READY` | Does not yet produce trustworthy output | Team 30–59, or any core dimension < 40, or notable decay |
+| `NOT-READY` | Does not yet produce trustworthy output | Team 30–59, or any core dimension < 40, or notable decay, or **(code-track) no Delivered Increment** |
 | `BROKEN` | Could not honestly be measured | Health lint failed, run stalled unrescued, or output was no-op/echo |
 
-**Certification** (README §6) = **3 consecutive independent `PRODUCTION` runs** on held-out seeds. One green run is noise.
+**Certification** (README §6) = **3 consecutive independent `PRODUCTION` runs** on held-out seeds. One green run is noise. **A certification run MUST ship a Delivered Increment (§1.A.1)** — the point of "works for weeks" is a team that produces *merged, shippable* value, not just green analysis. Across the cert window the team may also leave work in the dev/idea pipeline (scoped-but-unmerged branches, backlog candidates, ADRs awaiting build) — that is healthy and does NOT fail certification — but **zero merged quality increments DOES**.
+
+### §1.A.1 Delivered Increment — the shippable-deliverable gate (code-track)
+The acceptance question that separates "a team that talks" from "a team that ships": **did the run land at least one valuable increment that BUILDS, PASSES TESTS, and is MERGED TO `master`** (the pinned repo's default branch — not left on a `dev-clone/*` feature branch)?
+
+- **Satisfied** when the repo's `master`/`main` advanced during the run window with a commit whose tree builds + tests-green (§1.A), and the change is a real feature/fix/test increment (not a version-bump-only or docs-only commit). Evidence pointer: the merge/commit SHA on master + the green build/test record.
+- **Not satisfied** when all the run's code lives on un-merged `dev-clone/*` branches, or master only moved by a release/version bump with no underlying feature merge, or build/tests fail on master.
+- **Partial pipeline is fine:** N tasks may be scoped; only *some* need to merge. One green merged increment satisfies the gate; the rest can remain in-dev (branches) or idea-stage (backlog/ADRs) without penalty.
+- **Effect:** for a code-track seed, no Delivered Increment caps the verdict at `NOT-READY` regardless of how good the analysis was — and a certification run that ships nothing to master cannot count toward the 3-consecutive streak. (Doc-track-only seeds — pure ADR/analysis — are exempt; their deliverable is the grounded document.)
+- **Why merged-to-master, not just committed:** a branch nobody merged is indistinguishable from abandoned work over weeks. Trust requires the team to carry quality work *through* review/security/release *into* the trunk (behind the human-approval gate when one is configured).
 
 Scores are 0–100 per dimension. **Round ties down.** Every score carries a one-line *evidence pointer* (execution id / file path / diff hunk / review id) — a score with no pointer is invalid and scored 0.
 

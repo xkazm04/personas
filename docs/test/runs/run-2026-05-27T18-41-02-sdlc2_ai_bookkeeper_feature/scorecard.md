@@ -12,7 +12,6 @@
 | Handoff health | 100 | 18/18 events delivered |
 | Learning loop | 100 | 4 reviews + 6 learned memories |
 | **Grounding gate** | 100 | cited file paths that actually exist, across 6 doc artifacts |
-| **Code-track §1.A** | ok | build=pass · lint=pass · test=pass (repo's own commands on post-run state) |
 
 ## Grounding detail (the anti-eloquence gate)
 - `docs/adr/0002-currency-aware-banker-rounding.md` — 10/10 cited paths exist (100%)
