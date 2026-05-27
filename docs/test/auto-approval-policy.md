@@ -61,6 +61,7 @@ From README §2.5: goal spread is unconstrained today. The orchestrator enforces
 
 These must surface to a human even in a "max autonomy" config, because an unattended team doing them is exactly the catastrophe users fear:
 - `git push --force` / history rewrite on the pinned repo
+- **Destructive working-tree git ops that can silently lose a teammate's in-flight work: `git stash` / `git stash -u`, `git reset --hard`, `git clean -fd`, `git checkout -- <path>`.** Surfaced by runs 6–8 (FINDINGS): a downshifted Release Manager ran `git stash -u` to "isolate" a version bump, sweeping the architect's entire deliverable (tracked + untracked) into a stash it never restored — the release "succeeded" (`value_delivered`) while the team's actual output was orphaned. A persona has the agency to do this *even on the strong model*; the safe idiom is `git show <commit>:<file>` (read a clean blob without touching the tree) — destructive tree ops should escalate.
 - Deleting files **outside** the working tree / `rm -rf` beyond scope
 - External sends that leave the machine (email/Slack/webhook to real recipients), real payment/paid-API calls
 - Credential reads/writes beyond the persona's pinned set (credentials never leave the machine — memory `feedback_credentials_stay_local`)
