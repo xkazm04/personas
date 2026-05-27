@@ -572,6 +572,38 @@ pub async fn send_turn(
         }
     };
 
+    // Goal 3 — conservative autoapprove. When autonomous mode is on,
+    // walk this turn's new approvals and resolve the ones on the
+    // conservative allowlist (memory writes, scan jobs, future
+    // self-nudges) immediately, the same way a user click would. Anything
+    // else (external writes, DB mutations, agent creation, team work)
+    // stays pending for a deliberate human click. Runs BEFORE the
+    // APPROVALS_EVENT emit so the frontend's refetch sees the
+    // already-resolved state and doesn't render a card that's about to
+    // disappear.
+    if autonomous_mode && !dispatched.approvals.is_empty() {
+        for approval in &dispatched.approvals {
+            match crate::commands::companion::approvals::auto_resolve_if_allowed(
+                app, approval,
+            )
+            .await
+            {
+                Ok(true) => tracing::info!(
+                    approval_id = %approval.id,
+                    action = %approval.action,
+                    "autonomous-mode autoapprove: resolved"
+                ),
+                Ok(false) => {} // not on allowlist — stays pending, normal user click
+                Err(e) => tracing::warn!(
+                    approval_id = %approval.id,
+                    action = %approval.action,
+                    error = %e,
+                    "autonomous-mode autoapprove: failed (left in pending/running)"
+                ),
+            }
+        }
+    }
+
     if !dispatched.approvals.is_empty() {
         if let Err(e) = app.emit(APPROVALS_EVENT, &dispatched.approvals) {
             tracing::warn!(error = %e, "companion approvals event emit failed");
