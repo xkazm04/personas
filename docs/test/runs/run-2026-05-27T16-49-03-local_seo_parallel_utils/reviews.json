@@ -1,0 +1,41 @@
+[
+  {
+    "id": "006087b1-4eba-4ea4-9584-52e8b4af82f7",
+    "execution_id": "804d453c-41a3-405a-b749-8c8835826e54",
+    "persona_id": "557ed3e0-cfb2-4e7f-b64b-ddd792f118cd",
+    "title": "Code Review verdict: APPROVE — ADR-0002 @ b72bc5e (committed, 3 pure utils, 2 non-gating low notes)",
+    "description": "Reviewed slug.ts/num.ts/str.ts against the live tree at commit b72bc5e (hash matched handoff, clean tree — the uncommitted-on-main work is now committed on the dev-clone branch). 24/24 green, tsc clean, zero cross-imports, zero call sites, diff ADR-0002-scoped — all verified independently. No security or correctness defects. Verdict APPROVE, consistent with prior human-approved reviews. Two low-severity notes are forward-looking (Unicode handling) for when these utils get wired to live data, not merge blockers.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T16:56:03.372258+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "b5d380a7-4a1e-4d6d-8d8f-b121d5cadf54",
+    "execution_id": "47fe7e35-dc11-4091-8f70-0b747af227e5",
+    "persona_id": "6796962e-d7da-41e3-9802-3ecf3bad00fb",
+    "title": "Security re-scan — 2 Medium findings STILL OPEN (local-seo-agency @ b72bc5e) — 11th scan",
+    "description": "Re-scan at b72bc5e confirms both prior Medium findings remain unremediated (package.json overrides=NONE; page.tsx:66-67 dangerouslySetInnerHTML markup unchanged). 0 new security issues. ADR-0002 changeset (slug/num/str + tests) is pure utils, scanned clean. @google/generative-ai still unused. This is the 11th consecutive identical scan — strongly recommend consolidating into a single standing ticket.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T16:57:29.574068400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "2797c451-17d2-4247-97ff-942bf3825864",
+    "execution_id": "1fd3f23e-b3b0-486b-98a6-5272866c1697",
+    "persona_id": "4448b95a-fb44-48a4-b60f-64f3fb5203e5",
+    "title": "Release v0.2.10 created locally — approve to publish + resolve recurring orphaned-tag drift",
+    "description": "A PATCH release (0.2.0→0.2.10) was committed and tagged locally (commit 52e51b9, annotated tag v0.2.10). It adds three pure-utility lib modules (slug/num/str), a node --test harness (24 tests passing), and ADR/planning docs. Versioning skipped 0.2.1–0.2.9 because those tags persist on commits orphaned by eleven workspace resets. Decide whether to publish and how to resolve the recurring orphaned-tag drift.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-27T16:59:45.891211700+00:00",
+    "use_case_id": null
+  }
+]

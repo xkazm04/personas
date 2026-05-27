@@ -4,6 +4,26 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Phase 1 structured-shared-memory — RE-MEASURED: cost curve FLATTENED +115% → +5.7% (2026-05-27) ✅
+
+After wiring Phase 1 (route review-feedback to the bounded shared `team_memories` ledger as typed decisions/constraints + inject a compact team digest on the cascade path — commit 3d72e7c60), re-ran the SAME longitudinal protocol (3× `local-seo/parallel-utils`, 6-role team, repo reset each iter, reviews resolved).
+
+| | iter 1 | iter 2 | iter 3 | rise across 3 |
+|--|--|--|--|--|
+| **Before Phase 1** | $3.82 | $5.35 | $8.23 | **+115% (2.2×, compounding)** |
+| **After Phase 1** | $5.44 | $5.51 | $5.75 | **+5.7% (≈flat)** |
+
+**The compounding is gone** — per-run cost stabilized (~$5.5) instead of doubling. Quality held flat at PRODUCTION 96 (task at ceiling). Verified the mechanism actually fired: the 6-role team accumulated **9 shared `decision` records** in `team_memories` (deduped by title, eviction-bounded) and the digest injected into every member once populated (`[TEAM-MEM] Injected …` in 6 logs/run from iter-2 on; iter-1 had 0 because the ledger started empty). This is the LONGEVITY property the design targeted: durable knowledge now lives in the bounded shared ledger, so **knowledge compounds without cost compounding**.
+
+**Honest caveats (→ what's left):**
+- **Absolute cost is elevated** (~$5.5 vs the original $3.82 first-run) because the pre-existing **per-persona memory pile** (learned=86, access=499 at start, from all prior runs) is large and still grows slowly via the personas' own `agent_memory` writes (+6 learned/iter). Phase 1 stopped the *slope* from compounding; it did NOT shrink the existing L1 pile. **Phase 2 (L1 hygiene — token-budgeted injection + dedup-by-meaning + aggressive archive)** is what brings the absolute level down.
+- **L3 (Obsidian graph) not yet reachable by the team:** vault is connected, but the SDLC personas run with `mcp_servers:[]` (personas-mcp unwired) + the vault-tools gate is off → graph read/write needs MCP wiring (Phase 1b).
+- Harness metric `review_loop_converted` updated to count `team_memories` (the conversion now lands in L2, not per-persona).
+
+**Verdict:** Phase 1 delivered its core promise — the works-for-weeks cost-compounding curve is flattened. Phase 2 (hygiene) reduces the absolute cost; Phase 1b (L3 wiring) adds relational graph recall.
+
+---
+
 ## Longitudinal run (3× same seed, memory persists) — 🔶 CAUGHT a real "works-for-weeks" degradation: MEMORY BLOAT → cost compounds with flat quality (2026-05-27)
 
 First cross-run measurement (`scripts/test/longitudinal.mjs`): ran `local-seo/parallel-utils` 3× on the 6-role team, repo reset to a clean base each iteration (same task fresh) while MEMORY persists, resolving the run's reviews each time (feeding the now-wired review→learned loop). This is the long-running-team axis the rubric never measured (its trajectory/decay was within a single run).

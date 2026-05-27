@@ -1,0 +1,954 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 6e08918..9c74da4 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
+ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+ 
++## [0.2.11] - 2026-05-27
++
++PATCH per the repo's pre-1.0 convention (breaking → MINOR, everything else → PATCH):
++non-breaking additions only — new internal library utilities, dev test tooling, and docs.
++
++> Reset-reconciliation note: HEAD reverted to `package.json` `0.2.0` (12th workspace
++> reset) with tags `v0.2.1`–`v0.2.10` orphaned on unreachable commits. Per the
++> no-overwrite + tag-conflict rules, this release increments past all ten burned
++> numbers to `0.2.11` rather than colliding.
++
++### Added
++
++- `slugify()` URL-safe slug helper — `src/lib/slug.ts` (+ tests).
++- `clamp()`, `roundTo()` numeric helpers — `src/lib/num.ts` (+ tests).
++- `truncate()`, `titleCase()` string helpers — `src/lib/str.ts` (+ tests).
++- `npm test` harness (`node --import tsx --test`) + `tsx` devDependency.
++- ADR-0001, ADR-0002, backlog brainstorm (md + json), moonshots-2026-05-21 planning set.
++
++### Changed
++
++- README tech-stack refreshed to the 0.2.0 platform.
++
+ ## [0.2.0] - 2026-05-27
+ 
+ Pre-1.0 breaking-platform migration. Under `0.x`, breaking changes increment the
+diff --git a/docs/adr/ADR-0002-parallel-pure-utility-modules.md b/docs/adr/ADR-0002-parallel-pure-utility-modules.md
+new file mode 100644
+index 0000000..57ff831
+--- /dev/null
++++ b/docs/adr/ADR-0002-parallel-pure-utility-modules.md
+@@ -0,0 +1,51 @@
++# ADR-0002 — Three parallel-isolatable pure-utility modules in `src/lib`
++
++- **Status:** Accepted
++- **Date:** 2026-05-27
++- **Relates to:** [ADR-0001](./ADR-0001-test-harness-and-pure-logic-coverage.md) (test harness)
++
++## Context
++
++`src/lib` holds small, dependency-free pure helpers (`cn.ts`, `format.ts`).
++The project is Next.js 16 / React 19 / TS-strict, ESM (`"type": "module"`),
++`moduleResolution: bundler`. The request is for three new utility modules,
++deliberately designed to be **file-disjoint** so they can be implemented in
++parallel worktrees and merged with zero conflicts. The only shared surface is
++`package.json` test wiring — a one-time edit owned by ADR-0001, not a per-module
++dependency.
++
++## Decision
++
++Add three modules to `src/lib`, each its own file with its own colocated
++`*.test.ts`, with **no module importing another**:
++
++1. `slug.ts` — `slugify(text)`: lowercase, trim, collapse `[^a-z0-9]+` to a
++   single hyphen, strip leading/trailing hyphens. **ASCII-only by design** —
++   diacritics are treated as separators (`Café` → `caf`), not transliterated.
++2. `num.ts` — `clamp(value, min, max)` (inclusive; `±Infinity` snaps to a bound;
++   `NaN` value → `NaN`; inverted/non-finite bounds throw `RangeError`) and
++   `roundTo(value, decimals)` (exponential re-parse to beat binary FP so
++   `1.005` → `1.01`; non-finite value unchanged; negative/non-finite decimals → 0).
++3. `str.ts` — `truncate(text, max, ellipsis='…')` (ellipsis counted against
++   `max`, result length ≤ `max`) and `titleCase(text)` (first char up, rest
++   down, **whitespace runs preserved**).
++
++Reuses the ADR-0001 harness: `node --test` via `tsx`, extensionless relative
++imports to satisfy strict `tsc`.
++
++## Consequences
++
++- +25 unit tests, no new framework surface beyond the single `tsx` devDep.
++- The disjoint design is proven: parallel implement/merge is conflict-free
++  outside the lone `package.json` edit.
++- ASCII-only `slugify` degrades non-Latin input to separators. Diacritic
++  folding (`café` → `cafe`) is a deferred, separately-scoped task if SEO needs it.
++- Pure internal utilities with no current call sites — no rendered-UI or
++  external-contract change.
++
++## Verification (this run)
++
++- `npm test` → 25 pass / 0 fail (~258 ms, Node v24.12.0).
++- `tsc --noEmit` → clean.
++- Workspace had fully reset (only `cn.ts`/`format.ts` + ADR-0001 doc survived);
++  re-implemented from this settled decision.
+diff --git a/package-lock.json b/package-lock.json
+index e78d2ad..3aa2e65 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,12 +1,12 @@
+ {
+   "name": "local-seo-agency",
+-  "version": "0.1.0",
++  "version": "0.2.0",
+   "lockfileVersion": 3,
+   "requires": true,
+   "packages": {
+     "": {
+       "name": "local-seo-agency",
+-      "version": "0.1.0",
++      "version": "0.2.0",
+       "dependencies": {
+         "@google/generative-ai": "^0.24.1",
+         "next": "^16.2.6",
+@@ -26,6 +26,7 @@
+         "globals": "^17.6.0",
+         "postcss": "^8.5.15",
+         "tailwindcss": "^4.3.0",
++        "tsx": "^4.22.3",
+         "typescript": "^6.0.3",
+         "typescript-eslint": "^8.59.4"
+       }
+@@ -74,6 +75,7 @@
+       "integrity": "sha512-CGOfOJqWjg2qW/Mb6zNsDm+u5vFQ8DxXfbM09z69p5Z6+mE1ikP2jUXw+j42Pf1XTYED2Rni5f95npYeuwMDQA==",
+       "dev": true,
+       "license": "MIT",
++      "peer": true,
+       "dependencies": {
+         "@babel/code-frame": "^7.29.0",
+         "@babel/generator": "^7.29.0",
+@@ -313,6 +315,448 @@
+         "tslib": "^2.4.0"
+       }
+     },
++    "node_modules/@esbuild/aix-ppc64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/aix-ppc64/-/aix-ppc64-0.28.0.tgz",
++      "integrity": "sha512-lhRUCeuOyJQURhTxl4WkpFTjIsbDayJHih5kZC1giwE+MhIzAb7mEsQMqMf18rHLsrb5qI1tafG20mLxEWcWlA==",
++      "cpu": [
++        "ppc64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "aix"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/android-arm": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/android-arm/-/android-arm-0.28.0.tgz",
++      "integrity": "sha512-wqh0ByljabXLKHeWXYLqoJ5jKC4XBaw6Hk08OfMrCRd2nP2ZQ5eleDZC41XHyCNgktBGYMbqnrJKq/K/lzPMSQ==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/android-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/android-arm64/-/android-arm64-0.28.0.tgz",
++      "integrity": "sha512-+WzIXQOSaGs33tLEgYPYe/yQHf0WTU0X42Jca3y8NWMbUVhp7rUnw+vAsRC/QiDrdD31IszMrZy+qwPOPjd+rw==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/android-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/android-x64/-/android-x64-0.28.0.tgz",
++      "integrity": "sha512-+VJggoaKhk2VNNqVL7f6S189UzShHC/mR9EE8rDdSkdpN0KflSwWY/gWjDrNxxisg8Fp1ZCD9jLMo4m0OUfeUA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "android"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/darwin-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.28.0.tgz",
++      "integrity": "sha512-0T+A9WZm+bZ84nZBtk1ckYsOvyA3x7e2Acj1KdVfV4/2tdG4fzUp91YHx+GArWLtwqp77pBXVCPn2We7Letr0Q==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/darwin-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/darwin-x64/-/darwin-x64-0.28.0.tgz",
++      "integrity": "sha512-fyzLm/DLDl/84OCfp2f/XQ4flmORsjU7VKt8HLjvIXChJoFFOIL6pLJPH4Yhd1n1gGFF9mPwtlN5Wf82DZs+LQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/freebsd-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-arm64/-/freebsd-arm64-0.28.0.tgz",
++      "integrity": "sha512-l9GeW5UZBT9k9brBYI+0WDffcRxgHQD8ShN2Ur4xWq/NFzUKm3k5lsH4PdaRgb2w7mI9u61nr2gI2mLI27Nh3Q==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/freebsd-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/freebsd-x64/-/freebsd-x64-0.28.0.tgz",
++      "integrity": "sha512-BXoQai/A0wPO6Es3yFJ7APCiKGc1tdAEOgeTNy3SsB491S3aHn4S4r3e976eUnPdU+NbdtmBuLncYir2tMU9Nw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "freebsd"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-arm": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm/-/linux-arm-0.28.0.tgz",
++      "integrity": "sha512-CjaaREJagqJp7iTaNQjjidaNbCKYcd4IDkzbwwxtSvjI7NZm79qiHc8HqciMddQ6CKvJT6aBd8lO9kN/ZudLlw==",
++      "cpu": [
++        "arm"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-arm64/-/linux-arm64-0.28.0.tgz",
++      "integrity": "sha512-RVyzfb3FWsGA55n6WY0MEIEPURL1FcbhFE6BffZEMEekfCzCIMtB5yyDcFnVbTnwk+CLAgTujmV/Lgvih56W+A==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-ia32": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-ia32/-/linux-ia32-0.28.0.tgz",
++      "integrity": "sha512-KBnSTt1kxl9x70q+ydterVdl+Cn0H18ngRMRCEQfrbqdUuntQQ0LoMZv47uB97NljZFzY6HcfqEZ2SAyIUTQBQ==",
++      "cpu": [
++        "ia32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-loong64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-loong64/-/linux-loong64-0.28.0.tgz",
++      "integrity": "sha512-zpSlUce1mnxzgBADvxKXX5sl8aYQHo2ezvMNI8I0lbblJtp8V4odlm3Yzlj7gPyt3T8ReksE6bK+pT3WD+aJRg==",
++      "cpu": [
++        "loong64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-mips64el": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-mips64el/-/linux-mips64el-0.28.0.tgz",
++      "integrity": "sha512-2jIfP6mmjkdmeTlsX/9vmdmhBmKADrWqN7zcdtHIeNSCH1SqIoNI63cYsjQR8J+wGa4Y5izRcSHSm8K3QWmk3w==",
++      "cpu": [
++        "mips64el"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-ppc64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-ppc64/-/linux-ppc64-0.28.0.tgz",
++      "integrity": "sha512-bc0FE9wWeC0WBm49IQMPSPILRocGTQt3j5KPCA8os6VprfuJ7KD+5PzESSrJ6GmPIPJK965ZJHTUlSA6GNYEhg==",
++      "cpu": [
++        "ppc64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-riscv64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-riscv64/-/linux-riscv64-0.28.0.tgz",
++      "integrity": "sha512-SQPZOwoTTT/HXFXQJG/vBX8sOFagGqvZyXcgLA3NhIqcBv1BJU1d46c0rGcrij2B56Z2rNiSLaZOYW5cUk7yLQ==",
++      "cpu": [
++        "riscv64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-s390x": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-s390x/-/linux-s390x-0.28.0.tgz",
++      "integrity": "sha512-SCfR0HN8CEEjnYnySJTd2cw0k9OHB/YFzt5zgJEwa+wL/T/raGWYMBqwDNAC6dqFKmJYZoQBRfHjgwLHGSrn3Q==",
++      "cpu": [
++        "s390x"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/linux-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.28.0.tgz",
++      "integrity": "sha512-us0dSb9iFxIi8srnpl931Nvs65it/Jd2a2K3qs7fz2WfGPHqzfzZTfec7oxZJRNPXPnNYZtanmRc4AL/JwVzHQ==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "linux"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/netbsd-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-arm64/-/netbsd-arm64-0.28.0.tgz",
++      "integrity": "sha512-CR/RYotgtCKwtftMwJlUU7xCVNg3lMYZ0RzTmAHSfLCXw3NtZtNpswLEj/Kkf6kEL3Gw+BpOekRX0BYCtklhUw==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "netbsd"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/netbsd-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/netbsd-x64/-/netbsd-x64-0.28.0.tgz",
++      "integrity": "sha512-nU1yhmYutL+fQ71Kxnhg8uEOdC0pwEW9entHykTgEbna2pw2dkbFSMeqjjyHZoCmt8SBkOSvV+yNmm94aUrrqw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "netbsd"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/openbsd-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-arm64/-/openbsd-arm64-0.28.0.tgz",
++      "integrity": "sha512-cXb5vApOsRsxsEl4mcZ1XY3D4DzcoMxR/nnc4IyqYs0rTI8ZKmW6kyyg+11Z8yvgMfAEldKzP7AdP64HnSC/6g==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "openbsd"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/openbsd-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/openbsd-x64/-/openbsd-x64-0.28.0.tgz",
++      "integrity": "sha512-8wZM2qqtv9UP3mzy7HiGYNH/zjTA355mpeuA+859TyR+e+Tc08IHYpLJuMsfpDJwoLo1ikIJI8jC3GFjnRClzA==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "openbsd"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/openharmony-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/openharmony-arm64/-/openharmony-arm64-0.28.0.tgz",
++      "integrity": "sha512-FLGfyizszcef5C3YtoyQDACyg95+dndv79i2EekILBofh5wpCa1KuBqOWKrEHZg3zrL3t5ouE5jgr94vA+Wb2w==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "openharmony"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/sunos-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/sunos-x64/-/sunos-x64-0.28.0.tgz",
++      "integrity": "sha512-1ZgjUoEdHZZl/YlV76TSCz9Hqj9h9YmMGAgAPYd+q4SicWNX3G5GCyx9uhQWSLcbvPW8Ni7lj4gDa1T40akdlw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "sunos"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/win32-arm64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/win32-arm64/-/win32-arm64-0.28.0.tgz",
++      "integrity": "sha512-Q9StnDmQ/enxnpxCCLSg0oo4+34B9TdXpuyPeTedN/6+iXBJ4J+zwfQI28u/Jl40nOYAxGoNi7mFP40RUtkmUA==",
++      "cpu": [
++        "arm64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/win32-ia32": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/win32-ia32/-/win32-ia32-0.28.0.tgz",
++      "integrity": "sha512-zF3ag/gfiCe6U2iczcRzSYJKH1DCI+ByzSENHlM2FcDbEeo5Zd2C86Aq0tKUYAJJ1obRP84ymxIAksZUcdztHA==",
++      "cpu": [
++        "ia32"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
++    "node_modules/@esbuild/win32-x64": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/@esbuild/win32-x64/-/win32-x64-0.28.0.tgz",
++      "integrity": "sha512-pEl1bO9mfAmIC+tW5btTmrKaujg3zGtUmWNdCw/xs70FBjwAL3o9OEKNHvNmnyylD6ubxUERiEhdsL0xBQ9efw==",
++      "cpu": [
++        "x64"
++      ],
++      "dev": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "win32"
++      ],
++      "engines": {
++        "node": ">=18"
++      }
++    },
+     "node_modules/@eslint-community/eslint-utils": {
+       "version": "4.9.1",
+       "resolved": "https://registry.npmjs.org/@eslint-community/eslint-utils/-/eslint-utils-4.9.1.tgz",
+@@ -2049,6 +2493,48 @@
+         "node": ">=10.13.0"
+       }
+     },
++    "node_modules/esbuild": {
++      "version": "0.28.0",
++      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.28.0.tgz",
++      "integrity": "sha512-sNR9MHpXSUV/XB4zmsFKN+QgVG82Cc7+/aaxJ8Adi8hyOac+EXptIp45QBPaVyX3N70664wRbTcLTOemCAnyqw==",
++      "dev": true,
++      "hasInstallScript": true,
++      "license": "MIT",
++      "bin": {
++        "esbuild": "bin/esbuild"
++      },
++      "engines": {
++        "node": ">=18"
++      },
++      "optionalDependencies": {
++        "@esbuild/aix-ppc64": "0.28.0",
++        "@esbuild/android-arm": "0.28.0",
++        "@esbuild/android-arm64": "0.28.0",
++        "@esbuild/android-x64": "0.28.0",
++        "@esbuild/darwin-arm64": "0.28.0",
++        "@esbuild/darwin-x64": "0.28.0",
++        "@esbuild/freebsd-arm64": "0.28.0",
++        "@esbuild/freebsd-x64": "0.28.0",
++        "@esbuild/linux-arm": "0.28.0",
++        "@esbuild/linux-arm64": "0.28.0",
++        "@esbuild/linux-ia32": "0.28.0",
++        "@esbuild/linux-loong64": "0.28.0",
++        "@esbuild/linux-mips64el": "0.28.0",
++        "@esbuild/linux-ppc64": "0.28.0",
++        "@esbuild/linux-riscv64": "0.28.0",
++        "@esbuild/linux-s390x": "0.28.0",
++        "@esbuild/linux-x64": "0.28.0",
++        "@esbuild/netbsd-arm64": "0.28.0",
++        "@esbuild/netbsd-x64": "0.28.0",
++        "@esbuild/openbsd-arm64": "0.28.0",
++        "@esbuild/openbsd-x64": "0.28.0",
++        "@esbuild/openharmony-arm64": "0.28.0",
++        "@esbuild/sunos-x64": "0.28.0",
++        "@esbuild/win32-arm64": "0.28.0",
++        "@esbuild/win32-ia32": "0.28.0",
++        "@esbuild/win32-x64": "0.28.0"
++      }
++    },
+     "node_modules/escalade": {
+       "version": "3.2.0",
+       "resolved": "https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz",
+@@ -2384,6 +2870,21 @@
+         "url": "https://github.com/sponsors/rawify"
+       }
+     },
++    "node_modules/fsevents": {
++      "version": "2.3.3",
++      "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
++      "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
++      "dev": true,
++      "hasInstallScript": true,
++      "license": "MIT",
++      "optional": true,
++      "os": [
++        "darwin"
++      ],
++      "engines": {
++        "node": "^8.16.0 || ^10.6.0 || >=11.0.0"
++      }
++    },
+     "node_modules/gensync": {
+       "version": "1.0.0-beta.2",
+       "resolved": "https://registry.npmjs.org/gensync/-/gensync-1.0.0-beta.2.tgz",
+@@ -2510,7 +3011,6 @@
+       "integrity": "sha512-AC/7JofJvZGrrneWNaEnJeOLUx+JlGt7tNa0wZiRPT4MY1wmfKjt2+6O2p2uz2+skll8OZZmJMNqeke7kKbNgQ==",
+       "dev": true,
+       "license": "MIT",
+-      "peer": true,
+       "bin": {
+         "jiti": "lib/jiti-cli.mjs"
+       }
+@@ -3496,6 +3996,25 @@
+       "integrity": "sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==",
+       "license": "0BSD"
+     },
++    "node_modules/tsx": {
++      "version": "4.22.3",
++      "resolved": "https://registry.npmjs.org/tsx/-/tsx-4.22.3.tgz",
++      "integrity": "sha512-mdoNxBC/cSQObGGVQ5Bpn5i+yv7j68gk3Nfm3wFjcJg3Z0Mix9jzAFfP12prmm5eVGmDKtp0yyArrs0Q+8gZHg==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "esbuild": "~0.28.0"
++      },
++      "bin": {
++        "tsx": "dist/cli.mjs"
++      },
++      "engines": {
++        "node": ">=18.0.0"
++      },
++      "optionalDependencies": {
++        "fsevents": "~2.3.3"
++      }
++    },
+     "node_modules/type-check": {
+       "version": "0.4.0",
+       "resolved": "https://registry.npmjs.org/type-check/-/type-check-0.4.0.tgz",
+diff --git a/package.json b/package.json
+index 898c4fc..e8b2011 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "local-seo-agency",
+-  "version": "0.2.0",
++  "version": "0.2.11",
+   "private": true,
+   "type": "module",
+   "scripts": {
+@@ -8,7 +8,8 @@
+     "build": "next build",
+     "start": "next start",
+     "lint": "eslint .",
+-    "typecheck": "tsc --noEmit"
++    "typecheck": "tsc --noEmit",
++    "test": "node --import tsx --test \"src/**/*.test.ts\""
+   },
+   "dependencies": {
+     "@google/generative-ai": "^0.24.1",
+@@ -29,6 +30,7 @@
+     "globals": "^17.6.0",
+     "postcss": "^8.5.15",
+     "tailwindcss": "^4.3.0",
++    "tsx": "^4.22.3",
+     "typescript": "^6.0.3",
+     "typescript-eslint": "^8.59.4"
+   }
+diff --git a/src/lib/num.test.ts b/src/lib/num.test.ts
+new file mode 100644
+index 0000000..b785deb
+--- /dev/null
++++ b/src/lib/num.test.ts
+@@ -0,0 +1,60 @@
++import { describe, it } from "node:test";
++import assert from "node:assert/strict";
++import { clamp, roundTo } from "./num";
++
++describe("clamp", () => {
++  it("returns the value when within range", () => {
++    assert.equal(clamp(5, 0, 10), 5);
++  });
++
++  it("clamps to the inclusive bounds", () => {
++    assert.equal(clamp(-3, 0, 10), 0);
++    assert.equal(clamp(99, 0, 10), 10);
++    assert.equal(clamp(0, 0, 10), 0);
++    assert.equal(clamp(10, 0, 10), 10);
++  });
++
++  it("snaps ±Infinity to the nearest bound", () => {
++    assert.equal(clamp(Infinity, 0, 10), 10);
++    assert.equal(clamp(-Infinity, 0, 10), 0);
++  });
++
++  it("propagates a NaN value as NaN", () => {
++    assert.ok(Number.isNaN(clamp(NaN, 0, 10)));
++  });
++
++  it("throws RangeError on inverted bounds", () => {
++    assert.throws(() => clamp(5, 10, 0), RangeError);
++  });
++
++  it("throws RangeError on non-finite bounds", () => {
++    assert.throws(() => clamp(5, NaN, 10), RangeError);
++    assert.throws(() => clamp(5, 0, Infinity), RangeError);
++  });
++});
++
++describe("roundTo", () => {
++  it("defaults to 0 decimals", () => {
++    assert.equal(roundTo(2.6), 3);
++  });
++
++  it("beats binary floating-point error (half-up)", () => {
++    assert.equal(roundTo(1.005, 2), 1.01);
++    assert.equal(roundTo(2.345, 2), 2.35);
++  });
++
++  it("rounds to the requested precision", () => {
++    assert.equal(roundTo(3.14159, 3), 3.142);
++  });
++
++  it("returns non-finite values unchanged", () => {
++    assert.ok(Number.isNaN(roundTo(NaN, 2)));
++    assert.equal(roundTo(Infinity, 2), Infinity);
++    assert.equal(roundTo(-Infinity, 2), -Infinity);
++  });
++
++  it("treats negative or non-finite decimals as 0", () => {
++    assert.equal(roundTo(1.9, -2), 2);
++    assert.equal(roundTo(1.9, NaN), 2);
++  });
++});
+diff --git a/src/lib/num.ts b/src/lib/num.ts
+new file mode 100644
+index 0000000..4fb3224
+--- /dev/null
++++ b/src/lib/num.ts
+@@ -0,0 +1,30 @@
++/**
++ * Clamp `value` to the inclusive range [`min`, `max`].
++ *
++ * - `±Infinity` values snap to the nearest bound.
++ * - A `NaN` value propagates as `NaN` (caller's data was already invalid).
++ * - Throws `RangeError` if the bounds are non-finite or inverted (`min > max`).
++ */
++export function clamp(value: number, min: number, max: number): number {
++  if (!Number.isFinite(min) || !Number.isFinite(max) || min > max) {
++    throw new RangeError(`clamp: invalid bounds [${min}, ${max}]`);
++  }
++  if (Number.isNaN(value)) return NaN;
++  return Math.min(Math.max(value, min), max);
++}
++
++/**
++ * Round `value` to `decimals` places, avoiding binary floating-point error.
++ *
++ * Uses exponential-notation re-parsing so `roundTo(1.005, 2) === 1.01`, which
++ * the naive `Math.round(value * 10 ** d) / 10 ** d` gets wrong.
++ *
++ * - Non-finite `value` (NaN/±Infinity) is returned unchanged.
++ * - Non-finite or negative `decimals` is treated as 0.
++ */
++export function roundTo(value: number, decimals = 0): number {
++  if (!Number.isFinite(value)) return value;
++  const d = Number.isFinite(decimals) && decimals > 0 ? Math.floor(decimals) : 0;
++  const rounded = Math.round(Number(`${value}e${d}`));
++  return Number(`${rounded}e-${d}`);
++}
+diff --git a/src/lib/slug.test.ts b/src/lib/slug.test.ts
+new file mode 100644
+index 0000000..d842a5b
+--- /dev/null
++++ b/src/lib/slug.test.ts
+@@ -0,0 +1,35 @@
++import { describe, it } from "node:test";
++import assert from "node:assert/strict";
++import { slugify } from "./slug";
++
++describe("slugify", () => {
++  it("lowercases and hyphenates a simple phrase", () => {
++    assert.equal(slugify("Hello World"), "hello-world");
++  });
++
++  it("collapses runs of non-alphanumerics into a single hyphen", () => {
++    assert.equal(slugify("a   b___c!!!d"), "a-b-c-d");
++  });
++
++  it("strips leading and trailing separators", () => {
++    assert.equal(slugify("  --Hello, World!--  "), "hello-world");
++  });
++
++  it("preserves digits", () => {
++    assert.equal(slugify("Top 10 SEO Tips 2026"), "top-10-seo-tips-2026");
++  });
++
++  it("returns empty string for input with no alphanumerics", () => {
++    assert.equal(slugify("---!!!   "), "");
++    assert.equal(slugify(""), "");
++  });
++
++  it("is idempotent on an already-slugified value", () => {
++    const once = slugify("Local SEO Agency: Rankings & More");
++    assert.equal(slugify(once), once);
++  });
++
++  it("is ASCII-only — diacritics are treated as separators", () => {
++    assert.equal(slugify("Café déjà vu"), "caf-d-j-vu");
++  });
++});
+diff --git a/src/lib/slug.ts b/src/lib/slug.ts
+new file mode 100644
+index 0000000..19a289d
+--- /dev/null
++++ b/src/lib/slug.ts
+@@ -0,0 +1,17 @@
++/**
++ * Convert arbitrary text into a URL-safe slug.
++ *
++ * Lowercases, trims, replaces every run of non-alphanumeric characters with a
++ * single hyphen, and strips leading/trailing hyphens.
++ *
++ * ASCII-only by design: non-Latin characters (e.g. diacritics) are treated as
++ * separators rather than transliterated, so `Café` becomes `caf`. If SEO ever
++ * needs diacritic folding (`café` -> `cafe`), that is a separate, scoped task.
++ */
++export function slugify(text: string): string {
++  return text
++    .toLowerCase()
++    .trim()
++    .replace(/[^a-z0-9]+/g, "-")
++    .replace(/^-+|-+$/g, "");
++}
+diff --git a/src/lib/str.test.ts b/src/lib/str.test.ts
+new file mode 100644
+index 0000000..90d043c
+--- /dev/null
++++ b/src/lib/str.test.ts
+@@ -0,0 +1,43 @@
++import { describe, it } from "node:test";
++import assert from "node:assert/strict";
++import { truncate, titleCase } from "./str";
++
++describe("truncate", () => {
++  it("leaves text within budget unchanged", () => {
++    assert.equal(truncate("Hello", 10), "Hello");
++    assert.equal(truncate("Hello", 5), "Hello");
++  });
++
++  it("counts the ellipsis against the max length", () => {
++    const out = truncate("Hello world", 8);
++    assert.equal(out, "Hello w…");
++    assert.equal(out.length, 8);
++  });
++
++  it("honors a custom multi-char ellipsis", () => {
++    const out = truncate("Hello world", 8, "...");
++    assert.equal(out, "Hello...");
++    assert.equal(out.length, 8);
++  });
++
++  it("returns a prefix of the ellipsis when max <= ellipsis length", () => {
++    assert.equal(truncate("Hello", 0), "");
++    assert.equal(truncate("Hello world", 2, "..."), "..");
++  });
++});
++
++describe("titleCase", () => {
++  it("capitalizes each word and lowercases the rest", () => {
++    assert.equal(titleCase("hello world"), "Hello World");
++    assert.equal(titleCase("HELLO WORLD"), "Hello World");
++  });
++
++  it("preserves original whitespace runs", () => {
++    assert.equal(titleCase("hello   world"), "Hello   World");
++  });
++
++  it("handles empty and single-word input", () => {
++    assert.equal(titleCase(""), "");
++    assert.equal(titleCase("seo"), "Seo");
++  });
++});
+diff --git a/src/lib/str.ts b/src/lib/str.ts
+new file mode 100644
+index 0000000..c7905d7
+--- /dev/null
++++ b/src/lib/str.ts
+@@ -0,0 +1,24 @@
++/**
++ * Truncate `text` to at most `max` characters, appending `ellipsis` when the
++ * text is cut. The ellipsis is counted against the budget, so the returned
++ * string is always at most `max` characters long.
++ *
++ * - Text already within budget is returned unchanged.
++ * - If `max <= ellipsis.length`, returns the leading slice of the ellipsis.
++ */
++export function truncate(text: string, max: number, ellipsis = "…"): string {
++  if (text.length <= max) return text;
++  if (max <= ellipsis.length) return ellipsis.slice(0, Math.max(0, max));
++  return text.slice(0, max - ellipsis.length) + ellipsis;
++}
++
++/**
++ * Capitalize the first letter of each whitespace-delimited word and lowercase
++ * the rest. Original whitespace runs are preserved (`"a   b"` -> `"A   B"`).
++ */
++export function titleCase(text: string): string {
++  return text.replace(
++    /\S+/g,
++    (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
++  );
++}

@@ -1,0 +1,125 @@
+{
+  "team": "SDLC Delivery Team",
+  "seed": "local-seo/parallel-utils",
+  "iterations": 3,
+  "resolveMode": "approve",
+  "resetRepo": true,
+  "quality_trend": "flat",
+  "cost_trend": "rising",
+  "memory_compounding": 447,
+  "learned_growth": 18,
+  "review_loop_converted": 0,
+  "iterations_detail": [
+    {
+      "i": 1,
+      "runId": "run-2026-05-27T16-34-41-local_seo_parallel_utils",
+      "cost": 5.435352,
+      "execs": 6,
+      "team_score": 96,
+      "verdict": "PRODUCTION",
+      "reviewsResolved": 3,
+      "mem_pre": {
+        "total": 142,
+        "learned": 86,
+        "fromReviews": 33,
+        "access": 499,
+        "active": 142,
+        "maxVersion": 2,
+        "promptVersions": 2,
+        "resolvedReviews": 33,
+        "pendingReviews": 0
+      },
+      "mem_post": {
+        "total": 154,
+        "learned": 92,
+        "fromReviews": 33,
+        "access": 636,
+        "active": 154,
+        "maxVersion": 2,
+        "promptVersions": 2,
+        "resolvedReviews": 36,
+        "pendingReviews": 0
+      },
+      "delta": {
+        "learned": 6,
+        "access": 137,
+        "fromReviews": 0,
+        "promptVersion": 0
+      }
+    },
+    {
+      "i": 2,
+      "runId": "run-2026-05-27T16-49-03-local_seo_parallel_utils",
+      "cost": 5.506764749999999,
+      "execs": 6,
+      "team_score": 96,
+      "verdict": "PRODUCTION",
+      "reviewsResolved": 3,
+      "mem_pre": {
+        "total": 154,
+        "learned": 92,
+        "fromReviews": 33,
+        "access": 636,
+        "active": 154,
+        "maxVersion": 2,
+        "promptVersions": 2,
+        "resolvedReviews": 36,
+        "pendingReviews": 0
+      },
+      "mem_post": {
+        "total": 166,
+        "learned": 98,
+        "fromReviews": 33,
+        "access": 785,
+        "active": 166,
+        "maxVersion": 2,
+        "promptVersions": 2,
+        "resolvedReviews": 39,
+        "pendingReviews": 0
+      },
+      "delta": {
+        "learned": 6,
+        "access": 149,
+        "fromReviews": 0,
+        "promptVersion": 0
+      }
+    },
+    {
+      "i": 3,
+      "runId": "run-2026-05-27T17-02-27-local_seo_parallel_utils",
+      "cost": 5.754785,
+      "execs": 6,
+      "team_score": 96,
+      "verdict": "PRODUCTION",
+      "reviewsResolved": 3,
+      "mem_pre": {
+        "total": 166,
+        "learned": 98,
+        "fromReviews": 33,
+        "access": 785,
+        "active": 166,
+        "maxVersion": 2,
+        "promptVersions": 2,
+        "resolvedReviews": 39,
+        "pendingReviews": 0
+      },
+      "mem_post": {
+        "total": 178,
+        "learned": 104,
+        "fromReviews": 33,
+        "access": 946,
+        "active": 178,
+        "maxVersion": 2,
+        "promptVersions": 2,
+        "resolvedReviews": 42,
+        "pendingReviews": 0
+      },
+      "delta": {
+        "learned": 6,
+        "access": 161,
+        "fromReviews": 0,
+        "promptVersion": 0
+      }
+    }
+  ]
+}

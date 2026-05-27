@@ -30,9 +30,16 @@ function loadSeed(id) {
 }
 
 // Read-only memory/version/review state for a team's personas.
-function memState(personaIds) {
+function memState(personaIds, teamId) {
   const db = openRead(MAIN_DB);
   const ph = personaIds.map(() => '?').join(',');
+  // L2 shared ledger (Phase 1): decisions/constraints now land in team_memories,
+  // not per-persona — count them so the trajectory reflects shared-knowledge growth.
+  let teamLedger = 0, teamDecisions = 0;
+  if (teamId) {
+    const t = db.prepare(`SELECT COUNT(*) total, SUM(CASE WHEN category IN ('decision','constraint') THEN 1 ELSE 0 END) dc FROM team_memories WHERE team_id=?`).get(teamId);
+    teamLedger = t.total || 0; teamDecisions = t.dc || 0;
+  }
   const m = db.prepare(`SELECT
       COUNT(*) total,
       SUM(CASE WHEN category='learned' THEN 1 ELSE 0 END) learned,
@@ -46,7 +53,7 @@ function memState(personaIds) {
       SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END) pending
     FROM persona_manual_reviews WHERE persona_id IN (${ph})`).get(...personaIds);
   db.close();
-  return { total: m.total || 0, learned: m.learned || 0, fromReviews: m.from_reviews || 0, access: m.access || 0, active: m.active || 0, maxVersion: v.maxv || 0, promptVersions: v.versions || 0, resolvedReviews: r.resolved || 0, pendingReviews: r.pending || 0 };
+  return { total: m.total || 0, learned: m.learned || 0, fromReviews: m.from_reviews || 0, access: m.access || 0, active: m.active || 0, maxVersion: v.maxv || 0, promptVersions: v.versions || 0, resolvedReviews: r.resolved || 0, pendingReviews: r.pending || 0, teamLedger, teamDecisions };
 }
 
 function gitBase(root) { try { return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { return null; } }
@@ -116,7 +123,7 @@ async function main() {
 
   const iters = [];
   for (let i = 1; i <= iterations; i++) {
-    const pre = memState(personaIds);
+    const pre = memState(personaIds, info.id);
     if (resetRepoFlag && root && base) { resetRepo(root, base); }
     log(`--- iteration ${i}/${iterations} --- (mem: learned=${pre.learned}, access=${pre.access}, fromReviews=${pre.fromReviews}, promptV=${pre.maxVersion})`);
     let runId = null;
@@ -124,7 +131,7 @@ async function main() {
     // evaluate (deterministic; agent can judge later)
     if (runId) { try { execFileSync('node', ['scripts/test/evaluate.mjs', '--run', runId, '--no-build'], { encoding: 'utf8', timeout: 5 * 60 * 1000, env: { ...process.env } }); } catch {} }
     const resolved = await resolveReviews(personaIds, resolveMode);
-    const post = memState(personaIds);
+    const post = memState(personaIds, info.id);
     const sc = runId ? scoreOf(runId) : null;
     const c = runId ? costOf(runId) : {};
     const it = {
@@ -141,7 +148,7 @@ async function main() {
       },
     };
     iters.push(it);
-    log(`  iter ${i}: ${it.verdict || '?'} team=${it.team_score ?? '?'} cost=$${(it.cost ?? 0).toFixed?.(2) ?? it.cost} · Δlearned=${it.delta.learned} Δaccess=${it.delta.access} ΔfromReviews=${it.delta.fromReviews} · resolved=${resolved}`);
+    log(`  iter ${i}: ${it.verdict || '?'} team=${it.team_score ?? '?'} cost=$${(it.cost ?? 0).toFixed?.(2) ?? it.cost} · Δlearned=${it.delta.learned} Δaccess=${it.delta.access} ΔfromReviews=${it.delta.fromReviews} ΔteamLedger=${(it.mem_post.teamLedger||0)-(it.mem_pre.teamLedger||0)} · resolved=${resolved}`);
   }
 
   // Trajectory analysis
@@ -154,6 +161,7 @@ async function main() {
     memory_compounding: iters.length ? iters[iters.length - 1].mem_post.access - iters[0].mem_pre.access : 0,
     learned_growth: iters.length ? iters[iters.length - 1].mem_post.learned - iters[0].mem_pre.learned : 0,
     review_loop_converted: iters.reduce((a, x) => a + (x.delta.fromReviews || 0), 0),
+    team_ledger_growth: iters.length ? (iters[iters.length-1].mem_post.teamLedger||0) - (iters[0].mem_pre.teamLedger||0) : 0,
     iterations_detail: iters,
   };
   const outPath = join(RUNS, `longitudinal-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}-${seed.id.replace(/[^a-z0-9]+/gi, '_')}.json`);
