@@ -1,0 +1,41 @@
+{
+  "rubric_version": "1",
+  "judged_by": "Claude Code agent (framework judge, §7)",
+  "judged_at": "2026-05-27",
+  "personas": [
+    {
+      "persona_id": "eab96372-5af3-4163-b379-a6a8e633b6da",
+      "role": "Solution Architect",
+      "work_labels": ["feature", "design"],
+      "dims": { "correctness": 85, "actionability": 85, "specificity": 85, "role_fidelity": 88 },
+      "evidence": [
+        "Went beyond design to IMPLEMENT on a code-track seed: added src/features/ledger/lib/amount.ts + ingest.ts (MAX_AMOUNT, typed AmountError union, parseAmount, isValidSignedAmount, ingestTransaction) and wired them through src/features/ledger/index.ts.",
+        "Self-balanced: produced a typed, edge-case-aware validation module (out-of-range, malformed, precision) rather than a minimal happy-path patch — on a seed that deliberately did NOT ask for tests/edges."
+      ],
+      "note": "Code-track feature work; grounding-capped by the team grounding %. The validation module itself uses ≤/$ — which is what tripped the downstream engine panic."
+    },
+    {
+      "persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+      "role": "Code Reviewer",
+      "work_labels": ["review"],
+      "dims": { "correctness": 82, "actionability": 82, "specificity": 82, "role_fidelity": 85 },
+      "evidence": ["Completed a review of the architect's implementation (value_delivered) before the chain stalled at the next hop."]
+    },
+    {
+      "persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+      "role": "Security Sentinel",
+      "work_labels": [],
+      "dims": { "correctness": 0, "actionability": 0, "specificity": 0, "role_fidelity": 0 },
+      "evidence": [
+        "FAILED — but NOT a quality failure: the Personas engine PANICKED ('byte index 500 is not a char boundary; it is inside ≤') on an unsafe byte-slice in runner/mod.rs:1813 while truncating a tool-result preview that contained the ≤ from the architect's amount module. Product bug, not persona behavior."
+      ],
+      "note": "Excluded from quality judgement — the failure is an engine defect (now fixed). Its 0s correctly drag the run-level verdict (a stalled run is not trustworthy), but the security persona itself was never given a fair chance to run."
+    }
+  ],
+  "portfolio_balance": {
+    "labels_histogram": { "feature": 1, "design": 1, "review": 1, "test": 0, "cleanup": 0, "stabilization": 0, "security": 0, "docs": 0, "release/ops": 0 },
+    "score": 60,
+    "note": "Encouraging balance SIGNAL on a code-track feature seed: the architect implemented a typed, edge-case-aware module (not a happy-path hack) unprompted — early evidence the team doesn't blindly push minimal features. But the run STALLED before security/release/docs could run, so the full portfolio (security audit, release discipline, doc sync) is unmeasured. Re-run after the engine fix for a real balance read. (Some untracked *.unit.spec.ts test files exist in the repo but may predate this run — not attributed.)"
+  },
+  "judge_notes": "RUN IS BROKEN at the team level: the success-gated cascade stalled at 3/5 because the Security Sentinel execution failed on a PRODUCT panic (runner/mod.rs:1813 unsafe &s[..500] on multi-byte UTF-8), so Release + Docs never fired and the goal was not closed. The work that DID complete (architect implementation + review) was solid and self-balancing. This is the single most valuable finding so far: an engine robustness bug that randomly kills autonomous cascades on common content (≤, $, em-dashes). Fixed char-safe; re-run ai-bookkeeper/amount-validation to confirm the cascade completes 5/5."
+}

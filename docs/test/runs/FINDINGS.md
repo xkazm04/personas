@@ -4,6 +4,18 @@ Chronological reflection on real runs + the upgrades each one drove. Newest firs
 
 ---
 
+## Run 2 — `ai-bookkeeper/amount-validation` (2026-05-27, code-track) — 🔴 NOT-READY, but caught a real ENGINE BUG (the most valuable finding yet)
+
+**Headline:** the framework caught a **product robustness bug** that randomly kills autonomous cascades. The Security Sentinel execution **failed with a Rust panic** — `byte index 500 is not a char boundary; it is inside '≤'` — an unsafe byte-slice `&content_preview[..500]` in `engine/runner/mod.rs:1813` (tool-result preview truncation). The architect's amount-validation module legitimately contains `≤`/`$`; truncating its preview at byte 500 split a multi-byte char → panic. Because the chain is success-gated, the failure **stalled the cascade at 3/5** (Release + Docs never ran). **Fixed** char-safe (`.chars().take(500)`); `pipeline_executor.rs` was already char-safe. This class of bug (`&s[..N]` on LLM/tool content) would intermittently break long unattended runs on extremely common content (≤, ≥, em-dashes, currency, accents) — exactly a "works for weeks" blocker.
+
+**Verdict: NOT-READY** (team 69; min-persona 0 from the failed exec). Correct — a stalled run that doesn't close its goal is not trustworthy, regardless of the quality of the work that *did* run. (Drove an evaluator upgrade: a **cascade-stall cap** — any run with a failed exec or <all-members-executed can't exceed NOT-READY.)
+
+**Encouraging balance signal (the reason for the seed):** on a code-track feature seed phrased with **no** mention of tests, the architect *implemented* a typed, edge-case-aware validation module (`lib/amount.ts` + `ingest.ts`: MAX_AMOUNT, typed `AmountError`, `parseAmount`, `ingestTransaction`) — not a happy-path hack. Early evidence the team self-balances toward quality on feature work too. Full balance (security/release/docs follow-through) is unmeasured because the run stalled — **re-run after the fix** for a clean read.
+
+**Upgrades driven:** the char-safe panic fix (`runner/mod.rs`); evaluator cascade-stall cap + `cascade_stalled`/`failed` facts; noted `run.json`'s `repoChangedDuringRun` is HEAD-based and misses working-tree changes (the team DID modify `src/features/ledger/index.ts` though no commit happened — a metric refinement for later).
+
+---
+
 ## Run 1 — `ai-paralegal/citation-validator-adr` (2026-05-26, doc-track) — ✅ cascade proven, output is production-grade
 
 **Headline:** the repaired team **works**. A single goal injected into the entry persona (Solution Architect) cascaded autonomously through all 5 members — architect → reviewer → security → release → docs — each firing the next on completion via the handoff wiring. 5/5 executions `completed`, all `value_delivered`, 13 events delivered, **$3.20**, ~14 min wall-clock.

@@ -1810,8 +1810,14 @@ pub async fn run_execution(
                                 if let Some(last) = tool_steps.last_mut() {
                                     if last.ended_at_ms.is_none() {
                                         let now = start_time.elapsed().as_millis() as u64;
+                                        // Char-safe truncation: `&s[..500]` panics
+                                        // when byte 500 lands inside a multi-byte UTF-8
+                                        // char (≤, $, em-dash, currency symbols — common
+                                        // in real tool output). That panic failed a
+                                        // persona execution and stalled an autonomous
+                                        // team cascade (eval framework run-2 finding).
                                         last.output_preview = if content_preview.len() > 500 {
-                                            format!("{}...", &content_preview[..500])
+                                            format!("{}...", content_preview.chars().take(500).collect::<String>())
                                         } else {
                                             content_preview.clone()
                                         };

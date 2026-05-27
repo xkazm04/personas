@@ -1,0 +1,294 @@
+{
+  "runId": "run-2026-05-27T07-16-03-ai_bookkeeper_amount_validation",
+  "team": "SDLC — ai-bookkeeper",
+  "seed": "ai-bookkeeper/amount-validation",
+  "rubric_version": "1-judged",
+  "note": "Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.",
+  "deterministic_dims": {
+    "cascade_completion": 60,
+    "work_density": 67,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 59
+  },
+  "judge": {
+    "dims": {
+      "perPersonaGrades": [
+        59,
+        59,
+        0
+      ],
+      "minPersonaOutput": 0,
+      "meanJudge": 39,
+      "portfolioBalance": 60
+    },
+    "portfolio_balance": {
+      "labels_histogram": {
+        "feature": 1,
+        "design": 1,
+        "review": 1,
+        "test": 0,
+        "cleanup": 0,
+        "stabilization": 0,
+        "security": 0,
+        "docs": 0,
+        "release/ops": 0
+      },
+      "score": 60,
+      "note": "Encouraging balance SIGNAL on a code-track feature seed: the architect implemented a typed, edge-case-aware module (not a happy-path hack) unprompted — early evidence the team doesn't blindly push minimal features. But the run STALLED before security/release/docs could run, so the full portfolio (security audit, release discipline, doc sync) is unmeasured. Re-run after the engine fix for a real balance read. (Some untracked *.unit.spec.ts test files exist in the repo but may predate this run — not attributed.)"
+    },
+    "personas": [
+      {
+        "persona_id": "eab96372-5af3-4163-b379-a6a8e633b6da",
+        "role": "Solution Architect",
+        "work_labels": [
+          "feature",
+          "design"
+        ],
+        "dims": {
+          "correctness": 85,
+          "actionability": 85,
+          "specificity": 85,
+          "role_fidelity": 88
+        },
+        "evidence": [
+          "Went beyond design to IMPLEMENT on a code-track seed: added src/features/ledger/lib/amount.ts + ingest.ts (MAX_AMOUNT, typed AmountError union, parseAmount, isValidSignedAmount, ingestTransaction) and wired them through src/features/ledger/index.ts.",
+          "Self-balanced: produced a typed, edge-case-aware validation module (out-of-range, malformed, precision) rather than a minimal happy-path patch — on a seed that deliberately did NOT ask for tests/edges."
+        ],
+        "note": "Code-track feature work; grounding-capped by the team grounding %. The validation module itself uses ≤/$ — which is what tripped the downstream engine panic."
+      },
+      {
+        "persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+        "role": "Code Reviewer",
+        "work_labels": [
+          "review"
+        ],
+        "dims": {
+          "correctness": 82,
+          "actionability": 82,
+          "specificity": 82,
+          "role_fidelity": 85
+        },
+        "evidence": [
+          "Completed a review of the architect's implementation (value_delivered) before the chain stalled at the next hop."
+        ]
+      },
+      {
+        "persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+        "role": "Security Sentinel",
+        "work_labels": [],
+        "dims": {
+          "correctness": 0,
+          "actionability": 0,
+          "specificity": 0,
+          "role_fidelity": 0
+        },
+        "evidence": [
+          "FAILED — but NOT a quality failure: the Personas engine PANICKED ('byte index 500 is not a char boundary; it is inside ≤') on an unsafe byte-slice in runner/mod.rs:1813 while truncating a tool-result preview that contained the ≤ from the architect's amount module. Product bug, not persona behavior."
+        ],
+        "note": "Excluded from quality judgement — the failure is an engine defect (now fixed). Its 0s correctly drag the run-level verdict (a stalled run is not trustworthy), but the security persona itself was never given a fair chance to run."
+      }
+    ],
+    "judge_notes": "RUN IS BROKEN at the team level: the success-gated cascade stalled at 3/5 because the Security Sentinel execution failed on a PRODUCT panic (runner/mod.rs:1813 unsafe &s[..500] on multi-byte UTF-8), so Release + Docs never fired and the goal was not closed. The work that DID complete (architect implementation + review) was solid and self-balancing. This is the single most valuable finding so far: an engine robustness bug that randomly kills autonomous cascades on common content (≤, $, em-dashes). Fixed char-safe; re-run ai-bookkeeper/amount-validation to confirm the cascade completes 5/5."
+  },
+  "team_score": 69,
+  "verdict": "NOT-READY",
+  "facts": {
+    "executions": 3,
+    "completed": 2,
+    "failed": 1,
+    "cascade_stalled": true,
+    "value_delivered": 2,
+    "personasExecuted": 3,
+    "memberCount": 5,
+    "eventsDelivered": 4,
+    "reviews": 2,
+    "pendingReviews": 2,
+    "learnedMemories": 2,
+    "cost_usd": 1.5637867500000002,
+    "repoChanged": false
+  },
+  "grounding": [
+    {
+      "file": "README.md",
+      "total": 3,
+      "valid": 3,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/CLAUDE.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-06a06060.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-71a33bc1.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-f1f8368a.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/goal-analysis-fef16ee4.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-063c65ba-vertical-specific-signup-funne.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-24d7a549-web-portal-upload-for-batch-hi.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-28e60085-email-in-fallback-for-receipts.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-2ba5e243-owner-mobile-web-ledger-view-r.md",
+      "total": 1,
+      "valid": 0,
+      "pct": 0,
+      "invalid": [
+        ".claude/skills/compact-ui-design.md"
+      ]
+    },
+    {
+      "file": ".claude/commands/idea-5782f2cf-receipt-image-storage-with-7-y.md",
+      "total": 1,
+      "valid": 0,
+      "pct": 0,
+      "invalid": [
+        ".claude/skills/compact-ui-design.md"
+      ]
+    },
+    {
+      "file": ".claude/commands/idea-6394dd1f-trial-day-12-here-s-your-first.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-6a6f0260-gdpr-ccpa-data-export-and-righ.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-7c0b594d-annual-prepay-with-17-discount.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-8a604a57-youtube-podcast-sponsor-attrib.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-9091ef9d-owner-facing-usage-report-you.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-a31b56ab-crew-plan-tiered-overage-billi.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-bab9e1a0-internal-analytics-warehouse-v.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-d0c411eb-in-app-nps-churn-risk-survey-v.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": ".claude/commands/idea-d5695b79-multi-factor-auth-device-trust.md",
+      "total": 1,
+      "valid": 0,
+      "pct": 0,
+      "invalid": [
+        ".claude/skills/compact-ui-design.md"
+      ]
+    },
+    {
+      "file": "CHANGELOG.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/0001-monetary-amount-input-validation.md",
+      "total": 12,
+      "valid": 4,
+      "pct": 33,
+      "invalid": [
+        "wealth-score/lib/compute.ts",
+        "lib/format.ts",
+        "features/ledger/data.ts",
+        "customers/lib/normalize.ts",
+        "benchmarks/lib/categorize.ts",
+        "features/ledger/index.ts",
+        "ledger/types.ts",
+        "ledger/data.ts"
+      ]
+    },
+    {
+      "file": "docs/backlog-brainstorm.md",
+      "total": 0,
+      "valid": 0,
+      "pct": null,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 2,
+    "pendingReviews": 2,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}

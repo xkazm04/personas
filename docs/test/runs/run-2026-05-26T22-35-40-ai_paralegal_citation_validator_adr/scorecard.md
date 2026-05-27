@@ -40,6 +40,8 @@
 {
   "executions": 5,
   "completed": 5,
+  "failed": 0,
+  "cascade_stalled": false,
   "value_delivered": 5,
   "personasExecuted": 5,
   "memberCount": 5,

@@ -144,9 +144,18 @@ function main() {
     ? Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60) + (portfolioBalance ?? 60) + (judgeDims.meanJudge ?? 60)) / 7)
     : detTeam;
   const healthOk = run.summary.counts.executions > 0 && completed > 0;
-  const verdict = judge
+  // Cascade-stall cap: a run where not every member executed, or any execution
+  // FAILED, did not close its goal — it cannot exceed NOT-READY no matter how
+  // good the work that DID run (rubric §0/§2 goal-closure). Run-2 finding: a
+  // single failed execution (engine panic) stalled the success-gated chain.
+  const failedExecs = total - completed;
+  const cascadeStalled = personasExecuted < memberCount || failedExecs > 0;
+  const rank = { BROKEN: 0, 'NOT-READY': 1, PROMISING: 2, PRODUCTION: 3 };
+  const cap = (v, max) => (rank[v] > rank[max] ? max : v);
+  let verdict = judge
     ? band(teamScore, minPersonaOutput ?? 0, autonomyOk, healthOk)
     : band(detTeam, groundingPct ?? 60, autonomyOk, healthOk);
+  if (cascadeStalled) verdict = cap(verdict, 'NOT-READY');
 
   const scorecard = {
     runId,
@@ -169,6 +178,8 @@ function main() {
     facts: {
       executions: total,
       completed,
+      failed: failedExecs,
+      cascade_stalled: cascadeStalled,
       value_delivered: valueDelivered,
       personasExecuted,
       memberCount,
