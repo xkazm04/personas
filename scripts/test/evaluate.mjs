@@ -116,17 +116,46 @@ function main() {
   const autonomy_interventions = run.summary.counts.approvals + pendingReviews; // approvals auto-handled + reviews awaiting human
   const autonomyOk = true; // no orchestrator interventions were needed to keep the cascade moving in this run
 
-  // --- roll-up (deterministic dims only; correctness/actionability need the LLM judge) ---
-  const teamScore = Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60)) / 5);
+  // --- judge merge (§7) — read judge.json if the agent-judge has scored it ---
+  const judgePath = join(dir, 'judge.json');
+  const judge = existsSync(judgePath) ? readJson(judgePath) : null;
+  let judgeDims = null;
+  let portfolioBalance = null;
+  let minPersonaOutput = null;
+  if (judge) {
+    const personas = judge.personas || [];
+    // per-persona output grade = min(grounding floor, mean of judge dims)
+    const grades = personas.map((p) => {
+      const d = p.dims || {};
+      const vals = ['correctness', 'actionability', 'specificity', 'role_fidelity'].map((k) => d[k]).filter((v) => typeof v === 'number');
+      const mean = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+      return Math.min(mean, groundingPct ?? 100);
+    });
+    minPersonaOutput = grades.length ? Math.min(...grades) : null;
+    const meanJudge = grades.length ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length) : null;
+    portfolioBalance = judge.portfolio_balance?.score ?? null;
+    judgeDims = { perPersonaGrades: grades, minPersonaOutput, meanJudge, portfolioBalance };
+  }
+
+  // --- roll-up ---
+  const detTeam = Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60)) / 5);
+  // When judged, fold portfolio-balance + judged-output into the team score and drop "provisional".
+  const teamScore = judge
+    ? Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60) + (portfolioBalance ?? 60) + (judgeDims.meanJudge ?? 60)) / 7)
+    : detTeam;
   const healthOk = run.summary.counts.executions > 0 && completed > 0;
-  const verdict = band(teamScore, groundingPct ?? 60, autonomyOk, healthOk);
+  const verdict = judge
+    ? band(teamScore, minPersonaOutput ?? 0, autonomyOk, healthOk)
+    : band(detTeam, groundingPct ?? 60, autonomyOk, healthOk);
 
   const scorecard = {
     runId,
     team: run.summary.team,
     seed: run.seed.id,
-    rubric_version: '1-deterministic',
-    note: 'FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (LLM-judge §1.B) NOT yet scored — verdict is provisional.',
+    rubric_version: judge ? '1-judged' : '1-deterministic',
+    note: judge
+      ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'
+      : 'FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.',
     deterministic_dims: {
       cascade_completion,
       work_density,
@@ -134,8 +163,9 @@ function main() {
       learning_loop,
       grounding_pct: groundingPct,
     },
-    team_score_deterministic: teamScore,
-    provisional_verdict: verdict,
+    judge: judge ? { dims: judgeDims, portfolio_balance: judge.portfolio_balance, personas: judge.personas, judge_notes: judge.judge_notes } : null,
+    team_score: teamScore,
+    [judge ? 'verdict' : 'provisional_verdict']: verdict,
     facts: {
       executions: total,
       completed,
@@ -155,9 +185,10 @@ function main() {
   writeFileSync(join(dir, 'scorecard.json'), JSON.stringify(scorecard, null, 2), 'utf8');
 
   const L = [];
-  L.push(`# Scorecard (deterministic, provisional) — ${runId}`);
+  const vlabel = judge ? 'verdict' : 'provisional verdict';
+  L.push(`# Scorecard (${judge ? 'judged' : 'deterministic, provisional'}) — ${runId}`);
   L.push('');
-  L.push(`**Team:** ${scorecard.team} · **Seed:** ${scorecard.seed} · **Provisional verdict:** \`${verdict}\``);
+  L.push(`**Team:** ${scorecard.team} · **Seed:** ${scorecard.seed} · **${judge ? 'Verdict' : 'Provisional verdict'}:** \`${verdict}\` · **team score:** ${teamScore}`);
   L.push('');
   L.push(`> ${scorecard.note}`);
   L.push('');
@@ -169,6 +200,17 @@ function main() {
   L.push(`| Handoff health | ${handoff_health} | ${eventsDelivered}/${events.length} events delivered |`);
   L.push(`| Learning loop | ${learning_loop} | ${reviews.length} reviews + ${scorecard.facts.learnedMemories} learned memories |`);
   L.push(`| **Grounding gate** | ${groundingPct ?? 'n/a'} | cited file paths that actually exist, across ${groundedDocs.length} doc artifacts |`);
+  if (judge) {
+    L.push('');
+    L.push('## Judge dimensions (agent-judge §1.B + §2.1)');
+    L.push(`- **Per-persona output grades:** ${JSON.stringify(judgeDims.perPersonaGrades)} (min ${judgeDims.minPersonaOutput})`);
+    L.push(`- **Portfolio balance:** ${portfolioBalance} — ${judge.portfolio_balance?.note || ''}`);
+    L.push(`- **Work taxonomy:** ${JSON.stringify(judge.portfolio_balance?.labels_histogram || {})}`);
+    for (const p of judge.personas || []) {
+      L.push(`  - **${p.role}** (${(p.work_labels || []).join(',')}): ${JSON.stringify(p.dims)}${p.evidence?.[0] ? ` — _"${String(p.evidence[0]).slice(0, 120)}"_` : ''}`);
+    }
+    if (judge.judge_notes) L.push(`- **Judge notes:** ${judge.judge_notes}`);
+  }
   L.push('');
   L.push('## Grounding detail (the anti-eloquence gate)');
   for (const g of grounding) {
@@ -179,13 +221,19 @@ function main() {
   L.push('```json');
   L.push(JSON.stringify(scorecard.facts, null, 2));
   L.push('```');
-  L.push('');
-  L.push('## Not yet scored (needs LLM-judge, §1.B)');
-  L.push('- Correctness, actionability, specificity, role-fidelity of each artifact.');
-  L.push('- These require a judge pass (cost). The deterministic verdict is a floor, not the final grade.');
+  if (!judge) {
+    L.push('');
+    L.push('## Not yet scored (needs agent-judge, §1.B + §2.1)');
+    L.push('- Correctness, actionability, specificity, role-fidelity per artifact; portfolio balance.');
+    L.push('- Run `node scripts/test/judge-packet.mjs --run <id>`, judge in-conversation, write `judge.json`, re-run evaluate. The deterministic verdict is a floor, not the final grade.');
+  } else {
+    L.push('');
+    L.push('## To CERTIFY (not yet)');
+    L.push('- Needs **3 consecutive PRODUCTION** runs on **held-out** seeds + decay analysis (§3). One judged run is necessary, not sufficient.');
+  }
   writeFileSync(join(dir, 'scorecard.md'), L.join('\n') + '\n', 'utf8');
 
-  console.log(`verdict(provisional)=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%`);
+  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}`);
   console.log(`wrote ${join(dir, 'scorecard.md')}`);
 }
 

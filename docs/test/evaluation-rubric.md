@@ -75,8 +75,19 @@ The team is more than its members. These catch the failure modes from README §2
 | **Work density** | Substantive work / total executions | mostly retries, echoes, no-ops | high ratio of value-producing executions |
 | **Memory hygiene** | Did the team *learn* correctly? | no memories, or wrong/contradictory `learned` items | review verdicts produced correct, reusable `learned` memories injected downstream |
 | **No-collision** | Members didn't clobber each other | conflicting edits / contradictory decisions | coherent combined output |
+| **Portfolio balance** | Is the team's work balanced, or only feature-pushing? | 100% net-new features; zero tests/cleanup/stabilization; tech-debt accumulating | a healthy mix of build + **test coverage + cleanup/refactor + stabilization/bugfix + docs**; the backlog it works from is itself balanced, not a feature pile |
 
-Team score = weighted mean (Goal closure + Convergence weighted highest — a team that doesn't *finish* isn't production).
+Team score = weighted mean (Goal closure + Convergence + **Portfolio balance** weighted highest — a team that only ships features, never stabilizes or tests, will rot a codebase over weeks and is **not** production no matter how good each feature is).
+
+### §2.1 Portfolio balance — detail (user mandate)
+
+Sustained autonomy is not "ship features forever." A team that only pushes will, over weeks, accumulate untested code, unaddressed tech debt, and instability — the opposite of trustworthy. So we classify every run's artifacts into a **work taxonomy** and score the mix:
+
+`feature` · `test` (new/extended coverage) · `cleanup` (refactor, dead-code, lint/format, dependency hygiene) · `stabilization` (bugfix, error-handling, resilience, perf) · `docs` · `security` · `release/ops`
+
+- **Per-run**: classify each persona's output; flag a run that is ≥80% `feature` with no `test`/`cleanup`/`stabilization` as **unbalanced** (caps Portfolio balance < 50).
+- **Across runs (trend)**: a team is balanced only if, over its run history, it *also* picks up cleanup/test/stabilization work — not just whatever new feature the seed implied. This is partly a property of the **backlog** the team works from: a backlog that is all features produces all-feature work. Balancing the backlog (the architect/orchestrator should surface debt + coverage gaps as backlog items, not only features) is a first-class steering target for the **React phase** (template/prompt tuning to make the team self-balance).
+- The judge (§7) assigns the work-taxonomy labels and the balance score; the deterministic layer can pre-classify obvious cases (a `*.test.*` diff = `test`, a dependency bump = `cleanup`, a CHANGELOG/tag = `release/ops`).
 
 ---
 
@@ -143,14 +154,16 @@ The verdict takes the **worst** binding constraint — a team with great ADRs (�
 
 ---
 
-## §7 LLM-judge protocol (doc-track + some team dims)
+## §7 Judge protocol (doc-track §1.B dims + portfolio balance §2.1)
+
+**The judge is the Claude Code agent running the framework** (user mandate: "you will be LLM as judge", unlimited runtime). The judge reads a run's artifacts **in-conversation** — the ADR/review/diff text from the bundle, against the real repo — scores the §1.B dims + the work-taxonomy/balance labels, and records them in `docs/test/runs/<run>/judge.json`. `evaluate.mjs` merges `judge.json` (when present) with the deterministic dims to produce the **final, non-provisional** verdict; without it the verdict is `*-provisional`.
 
 To keep the judge honest:
-- **Fixed rubric prompt**, versioned in `docs/test/judge/`. Changing it bumps a version and invalidates cross-version score comparisons.
-- **Evidence-required:** the judge must quote the specific artifact text justifying each score; a score without a quote is rejected and re-scored.
-- **Grounding pre-check is mechanical** (§1.B), not delegated to the judge — the judge never gets to *assume* a reference is real.
-- **Human spot-check:** a fixed fraction (e.g. 1 in 5) of judged artifacts are human-reviewed; if human and judge disagree by > 1 band, the judge prompt is recalibrated and affected runs re-scored. This catches judge drift before it certifies a lie.
-- **Different model for judging than for producing** where feasible, to reduce self-preference bias.
+- **Evidence-required:** every judge score carries a quoted snippet (artifact text / diff hunk) justifying it. A score with no quote is invalid.
+- **Grounding pre-check is mechanical** (§1.B), computed by `evaluate.mjs` — the judge never *assumes* a cited path is real; it inherits the mechanical grounding %.
+- **Strict, round down:** ambiguity scores low (rubric §0). The judge must actively look for the failure modes in §8 and §3 — eloquence-without-grounding, intentions-without-artifacts, feature-only portfolios.
+- **Self-preference caveat:** the judge (agent) did not *produce* these artifacts — the personas (separate Claude CLI executions with their own prompts) did — but it IS the same model family. Mitigations: evidence-required quoting, the mechanical grounding gate the judge can't override, and the deterministic floor. A future human spot-check (1-in-5) remains the drift backstop before any *certification* (3 consecutive PRODUCTION) is trusted.
+- **`judge.json` shape:** `{ rubric_version, personas: [{persona_id, role, work_labels:[...], dims:{correctness,actionability,specificity,role_fidelity}, evidence:[...] }], portfolio_balance: {labels_histogram, score, note}, judge_notes }`.
 
 ---
 
