@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-feature",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": false,
+  "goal": "The ledger needs a typed, well-tested money-rounding utility. As the Solution Architect, scope it; then the team must IMPLEMENT it: add src/features/ledger/lib/round.ts with roundMoney(value, currency) (banker's rounding to currency minor units, NaN/Infinity-safe) plus unit tests covering edge cases (negative, zero, 0.005 half-even, very large). The engineer writes the code + tests and keeps the suite green; do not stop at a plan.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "A real typed round.ts + edge-case tests, suite green, implemented by the engineer (Dev Clone). Validates the 6-role improved composition end-to-end."
+}
