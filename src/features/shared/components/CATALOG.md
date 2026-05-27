@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**177 reusable components** live under `src/features/shared/components/`.
+**178 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -165,6 +165,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DeferUntilIdle` | _(add a `@catalog` tag)_ |
 | `DesktopFooter` | _(add a `@catalog` tag)_ |
 | `EqualizerBars` | the YT progress bar occupies). |
+| `FleetActivityStrip` | Number of slots composing the strip's full width. |
 | `MonitorCapabilities` | _(add a `@catalog` tag)_ |
 | `MonitorDrawer` | _(add a `@catalog` tag)_ |
 | `NowPlayingCard` | Expanded "now playing" card anchored above the footer title segment. |
@@ -261,4 +262,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_177 components, 93 without a `@catalog` description._
+_178 components, 93 without a `@catalog` description._

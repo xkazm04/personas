@@ -1,6 +1,6 @@
 #[macro_use]
 pub mod macros;
-mod builtin_connectors;
+pub(crate) mod builtin_connectors;
 pub mod cdc;
 #[allow(dead_code)] // Functions used by Tauri commands in Phase 3
 pub mod migrations;

@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Direct refusal + meta-correct framing: 'blast radius of a chat assistant with shell access to prod is not a tradeoff I'd take lightly'. Offered upstream-fix path (logrotate) instead of one-off remote-exec.",
+  "grounded": "ok",
+  "grounded_note": "No persona-by-name references this time, so no live-DB borderline.",
+  "right_data_source": "ok",
+  "right_data_source_note": "",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Explicit no-SSH-connector refusal.",
+  "op_correctness": "ok",
+  "op_correctness_note": "No OP — correct refusal shape.",
+  "overall_note": "IMPROVED over run 1 — added the architectural framing (always-on agent on the box vs ad-hoc remote-exec) which is a better answer to the underlying need."
+}

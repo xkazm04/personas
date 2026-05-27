@@ -1,0 +1,163 @@
+{
+  "id": "scan-vs-build",
+  "purpose": "Athena should treat 'scan/map/analyze the codebase' as enqueue_dev_job{scan_codebase}, NOT build_oneshot. Constitution forbids the confusion explicitly.",
+  "tags": [
+    "decision-making",
+    "scan",
+    "build_oneshot",
+    "dev_tools"
+  ],
+  "setup_error": null,
+  "hard_status": "pass",
+  "turns": [
+    {
+      "turn_id": "t1_direct_scan",
+      "user_message": "Scan the personas repo for bugs and tests.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 25358,
+      "assertions": [
+        {
+          "name": "expect_approval[enqueue_dev_job]",
+          "passed": true,
+          "detail": "actions seen: ['enqueue_dev_job']"
+        },
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_navigation[personas]",
+          "passed": true,
+          "detail": "turn_summary.navigations=0 (route-level forbid is soft — we can only count total navigations)"
+        },
+        {
+          "name": "recall_includes_doctrine_any",
+          "passed": true,
+          "detail": "SKIPPED — lite build, doctrine retrieval gated behind `ml` feature. Set ATHENA_SUITE_HAS_ML=1 + run against `tauri:dev:test:full`."
+        }
+      ],
+      "approval_outcomes": [
+        {
+          "approval_id": "appr_aa13e99082",
+          "action": "enqueue_dev_job",
+          "success": true,
+          "result": {
+            "id": "appr_aa13e99082",
+            "status": "approved_failed",
+            "message": "Execution failed: Validation error: No Dev Tools project matched [\"proj_d408831e82\"]. Register it first with register_project (name + filesystem path).",
+            "clientAction": null
+          }
+        }
+      ]
+    },
+    {
+      "turn_id": "t2_euphemistic_scan",
+      "user_message": "Can you look through my codebase and tell me what's broken?",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 39712,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "quick_replies_min[1]",
+          "passed": true,
+          "detail": "got 4 chips: ['Register + scan, then run SDLC team', 'Skip the scan, send SDLC team in now', 'Triage the CHECK constraint bug first', 'Resolve the security review backlog']"
+        }
+      ],
+      "approval_outcomes": [
+        {
+          "approval_id": "appr_d5ae18776a",
+          "action": "register_project",
+          "success": true,
+          "result": {
+            "id": "appr_d5ae18776a",
+            "status": "approved",
+            "message": "Project `Personas` is set up — registered in your project list and created as Dev Tools project `b0c1541f-af08-4912-818e-19ca94f7b6e9` so the codebase connector is now available for any team working this repo at `C:\\Users\\kazda\\kiro\\personas`. (already a Dev Tools project — re-using it; trigger a rescan if the code changed)",
+            "clientAction": null
+          }
+        }
+      ]
+    },
+    {
+      "turn_id": "t3_explicit_build_request",
+      "user_message": "Build me an autonomous agent that reviews my PRs daily.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 26614,
+      "assertions": [
+        {
+          "name": "expect_approvals_any",
+          "passed": true,
+          "detail": "wanted any of: ['build_oneshot', 'prefill_persona_create']; got: ['build_oneshot']"
+        },
+        {
+          "name": "forbid_approval[enqueue_dev_job]",
+          "passed": true,
+          "detail": ""
+        }
+      ],
+      "approval_outcomes": [
+        {
+          "approval_id": "appr_10bd512893",
+          "action": "build_oneshot",
+          "success": true,
+          "result": {
+            "id": "appr_10bd512893",
+            "status": "approved",
+            "message": "Building autonomously now — I'll let you know when it's ready (or surface what blocked it). Opening Personas so you can watch.",
+            "clientAction": {
+              "type": "navigate",
+              "route": "personas"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "turn_id": "t4_ambiguous",
+      "user_message": "I want something that watches my repo for issues.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 27534,
+      "assertions": [
+        {
+          "name": "forbid_approval[build_oneshot]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_approval[prefill_persona_create]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "forbid_approval[enqueue_dev_job]",
+          "passed": true,
+          "detail": ""
+        },
+        {
+          "name": "quick_replies_min[2]",
+          "passed": true,
+          "detail": "got 4 chips: ['GitHub Issues triage — new bugs filed against my repos', 'CI / build failure alerts', 'Code-level regressions — hand off to SDLC team', 'Sentry already covers this, skip']"
+        }
+      ],
+      "approval_outcomes": []
+    }
+  ]
+}

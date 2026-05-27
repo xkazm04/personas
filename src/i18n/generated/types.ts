@@ -138,6 +138,12 @@ export type Translations = {
     group_by_toggle: string;
     group_by_toggle_title: string;
     group_ungrouped: string;
+    caption_pending: string;
+    caption_input_many: string;
+    caption_draft_many: string;
+    caption_queued_many: string;
+    open_reviews_with_count: string;
+    open_messages_with_count: string;
   };
   common: {
     unknown_error: string;

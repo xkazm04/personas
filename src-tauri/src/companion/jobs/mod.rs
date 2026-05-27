@@ -347,6 +347,7 @@ fn mark_failed(pool: &UserDbPool, id: &str, error: &str) -> Result<(), AppError>
 /// unreachable, etc.).
 pub async fn worker_tick(
     pool: &UserDbPool,
+    cred_pool: &crate::db::DbPool,
     #[cfg(feature = "ml")] embedder: Option<&Arc<EmbeddingManager>>,
     sink: &JobEventSink,
 ) -> Result<(), AppError> {
@@ -365,7 +366,7 @@ pub async fn worker_tick(
         sink: sink.clone(),
         job: job.clone(),
     };
-    let result = dispatch_handler(pool, &job, &progress).await;
+    let result = dispatch_handler(pool, cred_pool, &job, &progress).await;
 
     match result {
         Ok(report) => {
@@ -434,6 +435,7 @@ pub async fn worker_tick(
 
 async fn dispatch_handler(
     pool: &UserDbPool,
+    cred_pool: &crate::db::DbPool,
     job: &BackgroundJob,
     progress: &JobProgress,
 ) -> Result<String, AppError> {
@@ -443,7 +445,7 @@ async fn dispatch_handler(
         "scan_codebase" => {
             scan_codebase::run(pool, job.project_id.as_deref(), &params, progress).await
         }
-        "connector_use" => connector_use::run(pool, &params, progress).await,
+        "connector_use" => connector_use::run(pool, cred_pool, &params, progress).await,
         curation_run::KIND => curation_run::run(pool, &params, progress).await,
         other => Err(AppError::Internal(format!(
             "unknown background job kind `{other}`"

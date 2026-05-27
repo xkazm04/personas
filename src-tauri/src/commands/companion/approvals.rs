@@ -204,10 +204,14 @@ pub async fn companion_approve_action(
         // is kept as a fallback in case an old approval row from
         // before the change still resolves through here.
         "compose_dashboard" => execute_compose_dashboard(&state, &params),
-        // `use_connector` no longer reaches here — it auto-fires
-        // through the dispatcher → background-job worker. Approval
-        // friction was the wrong UX (user explicitly rejected it);
-        // result lands as a system episode.
+        // `use_connector` for read-only capabilities auto-fires through
+        // the dispatcher → background-job worker. For write capabilities
+        // (`requires_approval: true` on `ConnectorCapability`) the
+        // dispatcher routes here instead, so destructive / external-
+        // visible actions land behind an approval card. Athena
+        // spontaneously requested this gate during the 2026-05-27
+        // connector audit.
+        "use_connector" => execute_use_connector(&state, &params).await,
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
@@ -1185,7 +1189,7 @@ fn execute_compose_dashboard(
 /// Sentry issues — wiring in flight, here's what I would have shown
 /// you") rather than the prior "this connector cannot be used" dead
 /// end.
-fn execute_use_connector(
+async fn execute_use_connector(
     state: &State<'_, Arc<AppState>>,
     params: &serde_json::Value,
 ) -> Result<ExecuteResult, AppError> {
@@ -1221,7 +1225,7 @@ fn execute_use_connector(
             "use_connector: `{connector_name}` has no registered capabilities yet — wiring in flight"
         ))
     })?;
-    let cap = caps.iter().find(|c| c.slug == capability).ok_or_else(|| {
+    let _cap = caps.iter().find(|c| c.slug == capability).ok_or_else(|| {
         let known: Vec<&str> = caps.iter().map(|c| c.slug).collect();
         AppError::Internal(format!(
             "use_connector: capability `{capability}` is not in `{connector_name}`'s registry. \
@@ -1229,16 +1233,42 @@ fn execute_use_connector(
         ))
     })?;
 
-    // 3. Per-connector handlers. v1 returns a clear stub so Athena's
-    // next turn sees a coherent system episode and can speak to it.
-    // Real API calls land per-connector in subsequent phases.
-    let _ = (cap, args);
-    Ok(ExecuteResult::message(format!(
-        "[stub] `{connector_name}::{capability}` would run with the supplied args. \
-         Real API wiring lands in the next phase. Until then, treat this as confirmation \
-         that the surface works end-to-end — capability validated, connector enabled, \
-         credentials resolvable."
-    )))
+    // 3. Dispatch through the same per-service handler the auto-fire
+    // job worker uses. This way read/write capabilities both share one
+    // implementation path; only the *routing* (auto-fire vs approval-
+    // card) differs based on `requires_approval`. Pre-2026-05-27 this
+    // was a stub — Athena's audit run flagged the silent gap.
+    //
+    // Zero-config builtins (local_drive, personas_database) have no
+    // credential — pass an empty HashMap so the handler can read from
+    // pool / managed root directly. The handler must be defensive about
+    // empty fields anyway (required_field reports a clean error).
+    // Credentials live in `state.db` (persona_credentials table), NOT
+    // `state.user_db` (companion brain). Using the wrong pool surfaces
+    // as "no such table: persona_credentials" — caught during the
+    // 2026-05-27 tier-2 audit run.
+    let fields = match crate::db::repos::resources::credentials::get_by_service_type(
+        &state.db,
+        connector_name,
+    )?
+    .into_iter()
+    .next()
+    {
+        Some(cred) => crate::db::repos::resources::credentials::get_decrypted_fields(
+            &state.db,
+            &cred,
+        )?,
+        None => std::collections::HashMap::new(),
+    };
+    let result = crate::companion::jobs::connector_use::dispatch_capability_public(
+        &state.user_db,
+        connector_name,
+        capability,
+        &args,
+        &fields,
+    )
+    .await?;
+    Ok(ExecuteResult::message(result))
 }
 
 /// Phase G: register a new project in the companion's known-project
@@ -1384,7 +1414,15 @@ fn execute_enqueue_dev_job(
                 break;
             }
         }
-        if found.is_none() && candidates.is_empty() {
+        // Two fallback layers:
+        //   1. Athena passed no candidates → use most-recent project.
+        //   2. Athena passed candidates but none matched (typically a stale
+        //      project_id she carried over from a prior session's
+        //      observability digest) → fall back to most-recent project AND
+        //      record the mismatch so the success message names what we
+        //      actually scanned. This keeps the user's "kick off a scan"
+        //      ask from silently no-op'ing when the ID rotted.
+        if found.is_none() {
             found = conn
                 .query_row(
                     "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
@@ -1396,14 +1434,25 @@ fn execute_enqueue_dev_job(
         match found {
             Some(id) => id,
             None => {
-                return Err(AppError::Validation(format!(
-                    "No Dev Tools project matched {candidates:?}. Register it first with \
+                return Err(AppError::Validation(
+                    "No Dev Tools projects registered yet. Register one first with \
                      register_project (name + filesystem path)."
-                )))
+                        .into(),
+                ))
             }
         }
     };
     let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+    let stale_id_note = if !candidates.is_empty()
+        && !candidates.iter().any(|c| c == &project.id || c == &project.name)
+    {
+        format!(
+            " (note: requested {:?} didn't match any project — using the most-recently-registered one)",
+            candidates
+        )
+    } else {
+        String::new()
+    };
     let delta = p.get("delta_mode").and_then(|v| v.as_bool()).unwrap_or(false);
 
     crate::commands::infrastructure::context_generation::launch_context_scan(
@@ -1414,10 +1463,10 @@ fn execute_enqueue_dev_job(
         delta,
     )?;
     Ok(ExecuteResult::message(format!(
-        "Context scan started for `{}` (`{}`). Claude is mapping its structure — business-domain \
+        "Context scan started for `{}` (`{}`){}. Claude is mapping its structure — business-domain \
          groups + per-feature contexts — in the background; I'll report when it lands. This is a \
          code-structure scan only: it does NOT build or change any agent.",
-        project.name, project.root_path
+        project.name, project.root_path, stale_id_note
     )))
 }
 

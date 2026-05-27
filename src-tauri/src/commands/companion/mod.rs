@@ -53,6 +53,10 @@ static PROACTIVE_SCHEDULER: OnceLock<()> = OnceLock::new();
 /// Same one-shot guard for the Phase G background-job worker.
 static JOB_WORKER: OnceLock<()> = OnceLock::new();
 
+/// One-shot guard for the Goal-1 execution-review debouncer (the task
+/// that turns engine execution-finished signals into review turns).
+static EXEC_REVIEW_DEBOUNCER: OnceLock<()> = OnceLock::new();
+
 /// How often the background scheduler wakes to evaluate triggers. Five
 /// minutes is a sweet spot — short enough that a goal hitting its 24h
 /// window fires within minutes of the threshold, long enough that the
@@ -81,6 +85,12 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     // skip — without it we'd queue up a tick every refresh.
     PROACTIVE_SCHEDULER.get_or_init(|| {
         let pool = state.user_db.clone();
+        // Goal 2: the execution-review leg reads the executions table
+        // (main db, not user_db) + the persisted autonomous-mode flag,
+        // and spawns reasoning turns. Clone both pools + the embedder.
+        let sys_db = state.db.clone();
+        #[cfg(feature = "ml")]
+        let review_embedder = state.embedding_manager.clone();
         let app_handle = app.clone();
         // Phase 3 b — clone the ambient + rule-engine handles so the
         // scheduler can run `ambient_match` candidates alongside the
@@ -103,13 +113,34 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                 // interval sleep prevents tight-looping on a persistent panic.
                 let tick_result = AssertUnwindSafe(async {
                     #[cfg(feature = "desktop")]
-                    {
-                        run_proactive_tick(&pool, &app_handle, Some(&ambient_ctx), Some(&rule_engine)).await
-                    }
+                    let nudge_res =
+                        run_proactive_tick(&pool, &app_handle, Some(&ambient_ctx), Some(&rule_engine)).await;
                     #[cfg(not(feature = "desktop"))]
-                    {
-                        run_proactive_tick(&pool, &app_handle).await
+                    let nudge_res = run_proactive_tick(&pool, &app_handle).await;
+
+                    // Goal 2: self-initiated execution review. Independent
+                    // of the nudge pipeline (which early-returns when no
+                    // candidates landed) — only runs when autonomous mode
+                    // is toggled on, so it's opt-in and off by default.
+                    if crate::commands::companion::chat::autonomous_mode_enabled(&sys_db) {
+                        let review = crate::companion::proactive::execution_review::review_recent_executions(
+                            &pool,
+                            &sys_db,
+                            &app_handle,
+                            #[cfg(feature = "ml")]
+                            review_embedder.as_ref(),
+                        );
+                        match review {
+                            Ok(n) if n > 0 => {
+                                tracing::info!(reviews = n, "proactive: spawned execution-review turn(s)");
+                            }
+                            Ok(_) => {}
+                            Err(e) => {
+                                tracing::warn!(error = %e, "proactive: execution review failed");
+                            }
+                        }
                     }
+                    nudge_res
                 })
                 .catch_unwind()
                 .await;
@@ -135,6 +166,7 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
     // exactly-once even if it did, but spawning multiple is wasteful).
     JOB_WORKER.get_or_init(|| {
         let pool = state.user_db.clone();
+        let cred_pool = state.db.clone();
         let app_handle = app.clone();
         let sink = crate::companion::jobs::JobEventSink::App(app_handle);
         #[cfg(feature = "ml")]
@@ -149,11 +181,11 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                 let tick_result = AssertUnwindSafe(async {
                     #[cfg(feature = "ml")]
                     {
-                        crate::companion::jobs::worker_tick(&pool, embedder.as_ref(), &sink).await
+                        crate::companion::jobs::worker_tick(&pool, &cred_pool, embedder.as_ref(), &sink).await
                     }
                     #[cfg(not(feature = "ml"))]
                     {
-                        crate::companion::jobs::worker_tick(&pool, &sink).await
+                        crate::companion::jobs::worker_tick(&pool, &cred_pool, &sink).await
                     }
                 })
                 .catch_unwind()
@@ -171,6 +203,28 @@ pub fn companion_init(state: State<'_, Arc<AppState>>, app: AppHandle) -> Result
                 }
                 tokio::time::sleep(JOB_WORKER_INTERVAL).await;
             }
+        });
+    });
+
+    // Goal 1: execution-review debouncer. Turns engine execution-finished
+    // signals into review turns (autonomous-mode-gated, debounced + capped
+    // by the same reviewer the 5-min tick uses). OnceLock-guarded so HMR
+    // re-init doesn't stack debouncers racing the same signal.
+    EXEC_REVIEW_DEBOUNCER.get_or_init(|| {
+        let user_db = state.user_db.clone();
+        let sys_db = state.db.clone();
+        let app_handle = app.clone();
+        #[cfg(feature = "ml")]
+        let debounce_embedder = state.embedding_manager.clone();
+        tauri::async_runtime::spawn(async move {
+            crate::companion::proactive::execution_review::run_execution_review_debouncer(
+                user_db,
+                sys_db,
+                app_handle,
+                #[cfg(feature = "ml")]
+                debounce_embedder,
+            )
+            .await;
         });
     });
 

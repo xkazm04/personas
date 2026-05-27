@@ -67,3 +67,45 @@ describe('Bubble brain-link strip', () => {
     expect(screen.queryByTestId('companion-brain-links')).toBeNull();
   });
 });
+
+describe('Bubble machine-grammar strip (OP-line leak guard)', () => {
+  it('strips a raw OP: directive line from an assistant bubble', () => {
+    render(
+      <Bubble role="assistant" index={0}>
+        {'Pulling the list now.\n\nOP: {"op":"propose_action","action":"use_connector","params":{"connector_name":"notion","capability":"list_pages"}}'}
+      </Bubble>,
+    );
+    expect(screen.getByText(/Pulling the list now\./)).toBeInTheDocument();
+    expect(screen.queryByText(/propose_action/)).toBeNull();
+    expect(screen.queryByText(/use_connector/)).toBeNull();
+  });
+
+  it('strips a bare {"op": ...} line that slipped past the server strip', () => {
+    render(
+      <Bubble role="assistant" index={0}>
+        {'Done.\n{"op":"propose_action","action":"open_route","params":{"route":"overview"}}'}
+      </Bubble>,
+    );
+    expect(screen.getByText(/Done\./)).toBeInTheDocument();
+    expect(screen.queryByText(/open_route/)).toBeNull();
+  });
+
+  it('does NOT strip OP-shaped text from user bubbles (their text is theirs)', () => {
+    render(
+      <Bubble role="user" index={0}>
+        {'OP: explain what this means'}
+      </Bubble>,
+    );
+    expect(screen.getByText(/OP: explain what this means/)).toBeInTheDocument();
+  });
+
+  it('does not render a brain-link strip for an OP id that only appears inside a stripped directive', () => {
+    render(
+      <Bubble role="assistant" index={0} onOpenInBrain={() => {}}>
+        {'All set.\nOP: {"op":"propose_action","action":"update_goal_status","params":{"id":"goal_should_not_link"}}'}
+      </Bubble>,
+    );
+    // The goal id lived only inside the stripped OP line, so no chip.
+    expect(screen.queryByTestId('companion-brain-links')).toBeNull();
+  });
+});

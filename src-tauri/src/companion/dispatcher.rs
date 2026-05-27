@@ -1066,9 +1066,17 @@ pub fn dispatch(
             // Phase F/G: `use_connector` auto-fires through the
             // background-job worker. No approval card — friction the
             // user explicitly rejected. Validation happens here so a
-            // hallucinated connector/capability surfaces as a warning
-            // (Athena reads it next turn) instead of a wasted job
-            // queue slot.
+            // hallucinated connector/capability surfaces as a system
+            // episode (Athena reads it next turn) instead of a wasted
+            // job queue slot.
+            //
+            // Rejection visibility: every rejection path below also
+            // writes a System episode via `note_dispatcher_rejection`
+            // so Athena's *next* turn knows her last `use_connector`
+            // got dropped — closes the silent-prod-no-op pattern the
+            // 2026-05-27 stress run surfaced (5 turns claimed action
+            // but produced no job because the dispatcher silently
+            // stripped the OP).
             Ok(env) if env.op == "propose_action" && env.action == "use_connector" => {
                 let connector_name = env
                     .params
@@ -1081,6 +1089,13 @@ pub fn dispatch(
                     .and_then(|v| v.as_str())
                     .unwrap_or("");
                 if connector_name.is_empty() || capability.is_empty() {
+                    note_dispatcher_rejection(
+                        pool,
+                        session_id,
+                        connector_name,
+                        capability,
+                        "missing `connector_name` or `capability` field",
+                    );
                     out.warnings
                         .push("use_connector: missing `connector_name` or `capability`".into());
                     cleaned_lines.push(line);
@@ -1088,51 +1103,123 @@ pub fn dispatch(
                 }
                 // Verify the connector is pinned + enabled in the
                 // sidebar before queuing — saves the worker from
-                // running with no credentials accessible.
-                match crate::companion::connectors::list(pool) {
-                    Ok(active) => {
-                        let row = active.iter().find(|c| c.connector_name == connector_name);
-                        match row {
-                            Some(r) if !r.enabled => {
-                                out.warnings.push(format!(
-                                    "use_connector: `{connector_name}` is pinned but disabled — toggle it on first"
-                                ));
-                                cleaned_lines.push(line);
-                                continue;
+                // running with no credentials accessible. Always-active
+                // builtins (local_drive, personas_database, codebase,
+                // …) bypass this check: they have no credentials to
+                // pin and the user doesn't need to opt in.
+                let bypass_pin_gate =
+                    crate::companion::connectors::is_always_active_builtin(connector_name);
+                if !bypass_pin_gate {
+                    match crate::companion::connectors::list(pool) {
+                        Ok(active) => {
+                            let row =
+                                active.iter().find(|c| c.connector_name == connector_name);
+                            match row {
+                                Some(r) if !r.enabled => {
+                                    let reason = format!(
+                                        "`{connector_name}` is pinned but disabled — ask the user to toggle it on, or pivot to a wired+enabled connector"
+                                    );
+                                    note_dispatcher_rejection(
+                                        pool,
+                                        session_id,
+                                        connector_name,
+                                        capability,
+                                        &reason,
+                                    );
+                                    out.warnings
+                                        .push(format!("use_connector: {reason}"));
+                                    cleaned_lines.push(line);
+                                    continue;
+                                }
+                                None => {
+                                    let reason = format!(
+                                        "`{connector_name}` is not pinned in the sidebar — ask the user to pin it via the vault, or pivot to a wired connector"
+                                    );
+                                    note_dispatcher_rejection(
+                                        pool,
+                                        session_id,
+                                        connector_name,
+                                        capability,
+                                        &reason,
+                                    );
+                                    out.warnings
+                                        .push(format!("use_connector: {reason}"));
+                                    cleaned_lines.push(line);
+                                    continue;
+                                }
+                                _ => {} // pinned + enabled — proceed.
                             }
-                            None => {
-                                out.warnings.push(format!(
-                                    "use_connector: `{connector_name}` is not pinned in the sidebar"
-                                ));
-                                cleaned_lines.push(line);
-                                continue;
-                            }
-                            _ => {} // pinned + enabled — proceed.
                         }
-                    }
-                    Err(e) => {
-                        out.warnings
-                            .push(format!("use_connector: connector list failed: {e}"));
-                        cleaned_lines.push(line);
-                        continue;
+                        Err(e) => {
+                            let reason =
+                                format!("connector list query failed ({e}) — internal DB issue");
+                            note_dispatcher_rejection(
+                                pool,
+                                session_id,
+                                connector_name,
+                                capability,
+                                &reason,
+                            );
+                            out.warnings
+                                .push(format!("use_connector: connector list failed: {e}"));
+                            cleaned_lines.push(line);
+                            continue;
+                        }
                     }
                 }
                 // Validate capability against the registry.
                 let caps = crate::companion::connectors::capabilities_for(connector_name);
-                let known = caps.is_some_and(|cs| cs.iter().any(|c| c.slug == capability));
-                if !known {
+                let cap_match = caps.and_then(|cs| cs.iter().find(|c| c.slug == capability));
+                let Some(cap) = cap_match else {
                     let known_list: Vec<&str> = caps
                         .map(|cs| cs.iter().map(|c| c.slug).collect())
                         .unwrap_or_default();
-                    out.warnings.push(format!(
-                        "use_connector: capability `{capability}` not in `{connector_name}` registry. Known: {known_list:?}"
-                    ));
+                    let reason = format!(
+                        "capability `{capability}` not in `{connector_name}` registry; known capabilities: {known_list:?}"
+                    );
+                    note_dispatcher_rejection(
+                        pool,
+                        session_id,
+                        connector_name,
+                        capability,
+                        &reason,
+                    );
+                    out.warnings.push(format!("use_connector: {reason}"));
                     cleaned_lines.push(line);
                     continue;
+                };
+
+                // Approval-gated capabilities (writes to user-visible
+                // external surfaces — post a message, send an email,
+                // run a mutation) route through the approval card path
+                // instead of auto-firing. Read-only capabilities
+                // (list_*, get_*) auto-fire as before. The flag is
+                // declared on `ConnectorCapability::requires_approval`.
+                if cap.requires_approval {
+                    match insert_approval(pool, session_id, &env) {
+                        Ok(created) => out.approvals.push(created),
+                        Err(e) => {
+                            let reason = format!(
+                                "approval-card insert for `{connector_name}.{capability}` failed: {e}"
+                            );
+                            note_dispatcher_rejection(
+                                pool,
+                                session_id,
+                                connector_name,
+                                capability,
+                                &reason,
+                            );
+                            out.warnings.push(format!("use_connector: {reason}"));
+                        }
+                    }
+                    // Strip the OP line from display; the approval
+                    // card now carries the action.
+                    continue;
                 }
-                // Enqueue. Job worker picks it up within seconds and
-                // appends a system episode with the result; chat is
-                // never blocked.
+
+                // Auto-fire path: enqueue. Job worker picks it up within
+                // seconds and appends a system episode with the result;
+                // chat is never blocked.
                 let job_params = serde_json::json!({
                     "connector_name": connector_name,
                     "capability": capability,
@@ -1147,8 +1234,16 @@ pub fn dispatch(
                     Some(&task_title),
                     None, // parent_turn_id threaded in phase 2 (episode id not yet known here)
                 ) {
-                    out.warnings
-                        .push(format!("use_connector: enqueue failed: {e}"));
+                    let reason =
+                        format!("background-job enqueue failed for `{connector_name}.{capability}`: {e}");
+                    note_dispatcher_rejection(
+                        pool,
+                        session_id,
+                        connector_name,
+                        capability,
+                        &reason,
+                    );
+                    out.warnings.push(format!("use_connector: {reason}"));
                     cleaned_lines.push(line);
                     continue;
                 }
@@ -1283,18 +1378,50 @@ pub fn dispatch(
                 }
             }
             Ok(env) => {
+                // The line was op-shaped (matched the OP:/`{"op"` grammar)
+                // but names an op we don't handle. It's machine grammar,
+                // not prose — drop it from display so the user never sees
+                // a raw directive. The warning records it for Athena's
+                // next-turn context and for dev logs. (Any prose that
+                // preceded a mid-line `OP:` was already pushed separately.)
                 out.warnings
                     .push(format!("ignored op `{}` (not in v1)", env.op));
-                cleaned_lines.push(line);
             }
             Err(e) => {
+                // Malformed op JSON (e.g. Athena pretty-printed it across
+                // lines, or a typo). Still op-shaped — drop it from display
+                // rather than leaking raw/broken JSON into the bubble and
+                // the persisted episode. The warning carries the parse
+                // error for diagnosis.
                 out.warnings.push(format!("op parse error: {e}"));
-                cleaned_lines.push(line);
             }
         }
     }
 
     out.cleaned_text = cleaned_lines.join("\n");
+
+    // Residual machine-grammar safety net. Per-op rejection paths above
+    // (connector not pinned, capability not in registry, approval-insert
+    // failure, …) push the original `line` back onto `cleaned_lines` so
+    // the surrounding prose survives — but that also re-admits the raw
+    // `OP:` / `{"op"` directive into the persisted episode, which then
+    // renders to the user and pollutes future-turn recall. Strip any
+    // line that is still an op directive here, regardless of which
+    // branch kept it. Prose virtually never starts with `OP:` or `{"op"`,
+    // so this is safe; the frontend `stripModelDirectives` mirrors it as
+    // a display-layer backstop.
+    if out.cleaned_text.contains("OP:") || out.cleaned_text.contains("{\"op\"") {
+        let kept: Vec<&str> = out
+            .cleaned_text
+            .lines()
+            .filter(|l| {
+                let t = l.trim_start();
+                !(t.starts_with("OP:") || t.starts_with("{\"op\""))
+            })
+            .collect();
+        out.cleaned_text = kept.join("\n");
+    }
+
     // Trim the trailing whitespace introduced by stripped lines.
     while out.cleaned_text.ends_with(['\n', ' ']) {
         out.cleaned_text.pop();
@@ -1311,6 +1438,44 @@ struct OpEnvelope {
     params: serde_json::Value,
     #[serde(default)]
     rationale: String,
+}
+
+/// Write a System episode recording that this turn's `use_connector`
+/// op was rejected at dispatch time. The episode lands in the brain
+/// before Athena's next turn assembles its prompt, so she sees it in
+/// recall and can self-correct ("my last use_connector got dropped
+/// because X — let me acknowledge that to the user or propose an
+/// alternative") instead of doubling down on the silent failure.
+///
+/// Best-effort: if the insert itself fails, we swallow the error so
+/// the dispatcher path isn't blocked. A failed insert turns this back
+/// into the pre-fix silent-drop, which is no worse than what we had.
+fn note_dispatcher_rejection(
+    pool: &UserDbPool,
+    session_id: &str,
+    connector_name: &str,
+    capability: &str,
+    reason: &str,
+) {
+    let body = format!(
+        "[dispatcher] Your last `OP: use_connector{{{connector_name}, {capability}}}` was rejected and produced no background job. Reason: {reason}. On your next turn, surface this to the user honestly — either propose pinning/enabling the connector, pivot to a wired alternative, or acknowledge the gap. Do NOT silently re-emit the same op.",
+        connector_name = connector_name,
+        capability = capability,
+        reason = reason,
+    );
+    if let Err(e) = crate::companion::brain::episodic::append_episode(
+        pool,
+        session_id,
+        crate::companion::brain::episodic::EpisodeRole::System,
+        &body,
+    ) {
+        tracing::warn!(
+            connector = connector_name,
+            capability = capability,
+            error = %e,
+            "note_dispatcher_rejection: failed to append system episode (silent-drop pattern returns for this turn only)"
+        );
+    }
 }
 
 fn insert_approval(

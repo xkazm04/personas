@@ -1,0 +1,13 @@
+{
+  "id": "memory-doctrine",
+  "purpose": "Every factual claim in Athena's reply traces to a memory the recall preview consulted, a doctrine doc on the allowlist, or live bridge-verifiable state. No training-data drift.",
+  "tags": [
+    "grounding",
+    "memory",
+    "doctrine",
+    "hallucination"
+  ],
+  "setup_error": "setup failed: ReadTimeout('timed out')",
+  "hard_status": "fail",
+  "turns": []
+}

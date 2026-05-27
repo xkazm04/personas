@@ -2202,6 +2202,217 @@ const bridge: TestBridge = {
     };
   },
 
+  /**
+   * Athena-quality-suite turn capture. Returns everything the
+   * `docs/tests/athena/` harness asserts against for the last completed
+   * assistant turn: episode id, full reply text, recall preview,
+   * dispatcher turn summary, chat-cards, pending approvals, quick-reply
+   * chips, and background jobs queued during the turn. Pulls from the
+   * Zustand store (not the DOM), so values match what Athena ACTUALLY
+   * emitted, not what happens to be visible.
+   *
+   * Returns `{ success: false, error }` if no assistant message exists
+   * yet (caller should retry after `wait_for_finish`).
+   */
+  companionCaptureLastTurn(): {
+    success: boolean;
+    error?: string;
+    episodeId?: string;
+    reply?: string;
+    streaming?: boolean;
+    quickReplies?: string[];
+    chatCards?: Array<{ kind: string; title?: string; config?: Record<string, unknown> }>;
+    approvals?: Array<{
+      id: string;
+      action: string;
+      rationale: string;
+      paramsJson: string;
+      humanReviewId: string | null;
+      createdAt: string;
+    }>;
+    recall?: {
+      episodeCount: number;
+      doctrineTitles: string[];
+      factTitles: string[];
+      proceduralTitles: string[];
+      goalTitles: string[];
+      backlogTitles: string[];
+      synthesized: boolean;
+    } | null;
+    turnSummary?: {
+      approvals: number;
+      navigations: number;
+      labOpens: number;
+      dashboards: number;
+      cockpits: number;
+      chatCards: number;
+      continuation: boolean;
+    } | null;
+    backgroundJobs?: Array<{
+      id: string;
+      kind: string;
+      status: string;
+      shortTitle?: string | null;
+      resultText?: string | null;
+      errorText?: string | null;
+      progressText?: string | null;
+    }>;
+  } {
+    const s = useCompanionStore.getState();
+    const lastAssistant = [...s.messages].reverse().find((m) => m.role === 'assistant');
+    if (!lastAssistant) {
+      return { success: false, error: 'no assistant message yet' };
+    }
+    const episodeId = lastAssistant.id;
+    const recallRaw = s.recallByEpisodeId?.[episodeId] ?? null;
+    const recall = recallRaw
+      ? {
+          episodeCount: recallRaw.episodeCount,
+          doctrineTitles: (recallRaw.doctrine ?? []).map((e) => e.title),
+          factTitles: (recallRaw.facts ?? []).map((e) => e.title),
+          proceduralTitles: (recallRaw.procedurals ?? []).map((e) => e.title),
+          goalTitles: (recallRaw.goals ?? []).map((e) => e.title),
+          backlogTitles: (recallRaw.backlog ?? []).map((e) => e.title),
+          synthesized: !!recallRaw.synthesized,
+        }
+      : null;
+    const summaryRaw = s.turnSummaryByEpisodeId?.[episodeId] ?? null;
+    const summaryAny = summaryRaw as unknown as Record<string, unknown> | null;
+    const numField = (k: string): number => {
+      const v = summaryAny?.[k];
+      return typeof v === 'number' ? v : 0;
+    };
+    const turnSummary = summaryAny
+      ? {
+          approvals: numField('approvals'),
+          navigations: numField('navigations'),
+          labOpens: numField('labOpens'),
+          dashboards: numField('dashboards'),
+          cockpits: numField('cockpits'),
+          chatCards: numField('chatCards'),
+          continuation: !!summaryAny.continuation,
+        }
+      : null;
+    // Union the episode-attached connector jobs with any still-pending
+    // ones. A `connector_use` job event can arrive after the turn's
+    // `finished` event (the worker enqueues during the turn, but the
+    // `companion://job` event lands async ~100ms-2s later). Such a job
+    // sits in `pendingConnectorJobIds` and would be invisible to a
+    // capture that only read the episode's attached list (which was
+    // locked to `[]` at finished time). Merging both makes the captured
+    // backgroundJobs reflect every job this turn actually queued.
+    const attachedIds = s.connectorJobIdsByEpisodeId?.[episodeId] ?? [];
+    const pendingIds = s.pendingConnectorJobIds ?? [];
+    const jobIds = Array.from(new Set([...attachedIds, ...pendingIds]));
+    const backgroundJobs = jobIds
+      .map((id) => s.jobsById?.[id])
+      .filter((j): j is NonNullable<typeof j> => !!j)
+      .map((j) => {
+        const jAny = j as unknown as Record<string, unknown>;
+        return {
+          id: j.id,
+          kind: j.kind,
+          status: j.status,
+          shortTitle: (jAny.shortTitle as string | null | undefined),
+          resultText: (jAny.resultText as string | null | undefined),
+          errorText: (jAny.errorText as string | null | undefined),
+          progressText: (jAny.progressText as string | null | undefined),
+        };
+      });
+    return {
+      success: true,
+      episodeId,
+      reply: lastAssistant.content,
+      streaming: s.streaming,
+      quickReplies: [...(s.quickReplies ?? [])],
+      chatCards: (s.chatCards ?? []).map((c) => ({
+        kind: c.kind,
+        title: c.title,
+        config: c.config as Record<string, unknown> | undefined,
+      })),
+      approvals: (s.approvals ?? []).map((a) => ({
+        id: a.id,
+        action: a.action,
+        rationale: a.rationale,
+        paramsJson: a.paramsJson,
+        humanReviewId: a.humanReviewId,
+        createdAt: a.createdAt,
+      })),
+      recall,
+      turnSummary,
+      backgroundJobs,
+    };
+  },
+
+  /**
+   * Wait until the CURRENT turn finishes streaming. Polls every 200ms up
+   * to `timeoutMs` (default 60s). Returns the turn's episode id on success
+   * so the caller can immediately call `companionCaptureLastTurn`.
+   *
+   * Stale-capture guard (H2): a naive `lastAssistant && !streaming` check
+   * returns the instant it runs — but right after a send-click, the store's
+   * `streaming` flag hasn't flipped to `true` yet (React state update +
+   * IPC roundtrip lag). During that window the panel still shows the PRIOR
+   * turn's settled state, so the wait returns in a few hundred ms with the
+   * previous turn's episode id, and the caller captures stale content.
+   * Observed in the 2026-05-27 sweep (sub-second "PASS" turns whose reply
+   * text belonged to the prior turn).
+   *
+   * Two defenses, either of which satisfies "this is a NEW finished turn":
+   *   1. `sinceEpisodeId` — the last assistant episode id the caller saw
+   *      BEFORE sending. We only accept completion once the current last
+   *      assistant id differs from it. Pass null/undefined on the first
+   *      turn of a session (no prior assistant).
+   *   2. observed-streaming — we require having seen `streaming === true`
+   *      at least once before accepting a `!streaming` settle, so a turn
+   *      that hasn't started streaming yet can't be mistaken for finished.
+   *      Covers the case where the new episode id isn't known up front.
+   */
+  async companionWaitForTurnFinish(
+    timeoutMs?: number,
+    sinceEpisodeId?: string | null,
+  ): Promise<{
+    success: boolean;
+    episodeId?: string;
+    elapsedMs?: number;
+    sawStreaming?: boolean;
+    error?: string;
+  }> {
+    const deadline = Date.now() + (Number(timeoutMs) > 0 ? Number(timeoutMs) : 60000);
+    const started = Date.now();
+    const since = sinceEpisodeId ?? null;
+    let lastSeenAssistantId: string | null = null;
+    let sawStreaming = false;
+    while (Date.now() < deadline) {
+      const s = useCompanionStore.getState();
+      if (s.streaming) sawStreaming = true;
+      const lastAssistant = [...s.messages].reverse().find((m) => m.role === 'assistant');
+      if (lastAssistant && !s.streaming) {
+        const isNewEpisode = since === null || lastAssistant.id !== since;
+        // Accept only when this is demonstrably a fresh turn: either the
+        // episode id advanced past what the caller saw pre-send, or we
+        // watched the stream flip on and back off during this wait.
+        if (isNewEpisode || sawStreaming) {
+          return {
+            success: true,
+            episodeId: lastAssistant.id,
+            elapsedMs: Date.now() - started,
+            sawStreaming,
+          };
+        }
+      }
+      if (lastAssistant) lastSeenAssistantId = lastAssistant.id;
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    return {
+      success: false,
+      error: 'timeout',
+      episodeId: lastSeenAssistantId ?? undefined,
+      elapsedMs: Date.now() - started,
+      sawStreaming,
+    };
+  },
+
   // -- Guided-tour helpers (E2E) -------------------------------------------
   // The tour engine still owns advancement; these just start/reset/inspect
   // it deterministically so a spec can drive the real getting-started flow

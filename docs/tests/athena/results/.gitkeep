@@ -1,0 +1,4 @@
+# Suite run artifacts land here.
+# Per-run files (`YYYY-MM-DD-HHMM.json` / `.md`) are gitignored — see
+# `docs/tests/athena/.gitignore`. This keeps the directory itself
+# tracked so the runner doesn't need to mkdir on every fresh checkout.

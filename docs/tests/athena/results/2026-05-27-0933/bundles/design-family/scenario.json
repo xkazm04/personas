@@ -1,0 +1,113 @@
+{
+  "id": "design-family",
+  "purpose": "When walking a user through persona design, Athena emits the right design-family card for each readiness question, in coherent order, with content sourced from doctrine.",
+  "tags": [
+    "decision-making",
+    "design-family",
+    "doctrine"
+  ],
+  "setup_error": null,
+  "hard_status": "fail",
+  "turns": [
+    {
+      "turn_id": "t1_open_design_ask",
+      "user_message": "Help me design a persona that triages incoming customer support emails.",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 15966,
+      "assertions": [
+        {
+          "name": "expect_card_any",
+          "passed": true,
+          "detail": "wanted any of: ['persona_walkthrough', 'design_capabilities', 'template_suggestions']; got: ['template_suggestions']"
+        },
+        {
+          "name": "recall_includes_doctrine_any",
+          "passed": true,
+          "detail": "SKIPPED — lite build, doctrine retrieval gated behind `ml` feature. Set ATHENA_SUITE_HAS_ML=1 + run against `tauri:dev:test:full`."
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t2_use_cases",
+      "user_message": "Good. What use cases should it handle?",
+      "drive_error": null,
+      "hard_passed": false,
+      "duration_ms": 35585,
+      "assertions": [
+        {
+          "name": "expect_card[use_case_set]",
+          "passed": false,
+          "detail": "card kinds seen: ['use_case_set']"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t3_triggers",
+      "user_message": "What triggers it?",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 31371,
+      "assertions": [
+        {
+          "name": "expect_card[trigger_set]",
+          "passed": true,
+          "detail": "card kinds seen: ['trigger_set']"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t4_model_tier",
+      "user_message": "Which model should it use?",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 28011,
+      "assertions": [
+        {
+          "name": "expect_card[model_tier_choice]",
+          "passed": true,
+          "detail": "card kinds seen: ['model_tier_choice']"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t5_observability",
+      "user_message": "How will I know if it's working?",
+      "drive_error": null,
+      "hard_passed": true,
+      "duration_ms": 31435,
+      "assertions": [
+        {
+          "name": "expect_card[observability_plan]",
+          "passed": true,
+          "detail": "card kinds seen: ['observability_plan']"
+        }
+      ],
+      "approval_outcomes": []
+    },
+    {
+      "turn_id": "t6_recap",
+      "user_message": "Okay, I'm ready. Recap what we decided.",
+      "drive_error": null,
+      "hard_passed": false,
+      "duration_ms": 34853,
+      "assertions": [
+        {
+          "name": "expect_card_any",
+          "passed": false,
+          "detail": "wanted any of: ['decision_log', 'recent_decisions']; got: ['persona_ready']"
+        },
+        {
+          "name": "expect_card_also[persona_ready]",
+          "passed": true,
+          "detail": "kinds seen: ['persona_ready']"
+        }
+      ],
+      "approval_outcomes": []
+    }
+  ]
+}

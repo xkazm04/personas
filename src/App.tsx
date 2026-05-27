@@ -12,6 +12,7 @@ import { ResourcePickerHost } from "@/features/vault/sub_credentials/components/
 import { toggleMobilePreview } from "@/lib/utils/platform/platform";
 import { useMobilePreview } from "@/hooks/utility/interaction/useMobilePreview";
 import TitleBar from "@/features/shared/components/layout/TitleBar";
+import FleetActivityStrip from "@/features/shared/components/layout/FleetActivityStrip";
 import { useTranslation } from '@/i18n/useTranslation';
 import { initPseudoLocale } from '@/i18n/pseudoLocale';
 import { useI18nStore } from '@/stores/i18nStore';
@@ -276,6 +277,7 @@ export default function App() {
             {t.chrome.skip_to_content}
           </a>
           <TitleBar />
+          <FleetActivityStrip />
           {!consented && <FirstUseConsentModal onAccept={() => setConsented(true)} isVersionBump={isVersionBump} />}
           <UpdateBanner />
           <AnimatePresence mode="wait" initial={false}>

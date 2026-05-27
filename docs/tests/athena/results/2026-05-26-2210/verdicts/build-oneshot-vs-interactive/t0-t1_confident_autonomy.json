@@ -1,0 +1,18 @@
+{
+  "useful": "weak",
+  "useful_note": "build_oneshot fired correctly with a faithful intent spec, and the reply confirms the build is in flight — but the reply is too terse: no chip to make it interactive (anti-pattern hit), and no mention of what the user will see post-build (notification, draft persona in roster). The user asked for autonomy but still deserves to know how the result lands.",
+
+  "grounded": "n/a",
+  "grounded_note": "",
+
+  "right_data_source": "n/a",
+  "right_data_source_note": "",
+
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Sentry and Slack are both wired connectors; build_oneshot is in the dispatcher allowlist. The build intent stays inside what the user asked for (no scope creep to non-critical issues or other channels).",
+
+  "op_correctness": "ok",
+  "op_correctness_note": "Exactly the expected op fired (build_oneshot); forbid_approval[prefill_persona_create] also held. The hard-assertion fail on quick_replies_min[1] doesn't reduce op_correctness — it's a separate surfacing-quality gap.",
+
+  "overall_note": "Right op, faithful intent, but the reply is over-compressed — missing the off-ramp chip the scenario flags as an anti-pattern, and missing the 'here's what you'll see when it's done' acknowledgment."
+}

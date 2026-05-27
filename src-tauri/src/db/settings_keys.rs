@@ -168,6 +168,21 @@ pub const ONBOARDING_QUEST_STATE: &str = "onboarding_quest_state";
 /// process). Stored as `"true"` / `"false"` strings.
 pub const CLI_SESSION_AWARENESS_ENABLED: &str = "cli_session_awareness_enabled";
 
+/// Whether Athena's autonomous mode is currently toggled on. The chat
+/// header toggle is frontend Zustand state, but the backend-side
+/// proactive scheduler (which runs without any frontend call) needs an
+/// independent source of truth to decide whether to spawn self-initiated
+/// reasoning turns (execution review, etc.). The toggle writes this row;
+/// the scheduler reads it. Stored as `"true"` / `"false"` strings.
+pub const COMPANION_AUTONOMOUS_MODE: &str = "companion_autonomous_mode";
+
+/// Cursor for the autonomous execution-review leg (Goal 2): the ISO8601
+/// timestamp of the newest `persona_executions` row the reviewer has
+/// already considered. Each proactive tick reviews only rows created
+/// after this and advances it, so reviews never repeat and history isn't
+/// backfilled. Free-form timestamp value (no typed validation).
+pub const COMPANION_EXEC_REVIEW_CURSOR: &str = "companion_exec_review_cursor";
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -205,6 +220,8 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_CONSTITUTION_VERSION,
     ONBOARDING_QUEST_STATE,
     CLI_SESSION_AWARENESS_ENABLED,
+    COMPANION_AUTONOMOUS_MODE,
+    COMPANION_EXEC_REVIEW_CURSOR,
     MONTHLY_COST_CEILING_USD,
 ];
 
@@ -289,7 +306,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         COMPANION_CONSTITUTION_VERSION => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (version), got {value:?}")
         }),
-        CLI_SESSION_AWARENESS_ENABLED => match value {
+        CLI_SESSION_AWARENESS_ENABLED | COMPANION_AUTONOMOUS_MODE => match value {
             "true" | "false" => Ok(()),
             _ => Err(format!(
                 "value for '{key}' must be the literal string 'true' or 'false', got {value:?}"

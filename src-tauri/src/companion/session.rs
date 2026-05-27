@@ -57,7 +57,7 @@ const MAX_AUTONOMOUS_CHAIN: u32 = 20;
 /// addendum for autonomous ticks), episode persistence (user turns
 /// land as User episodes, autonomous ticks as System), and the
 /// continuation-loop counter.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TurnOrigin {
     /// User typed a message into the panel composer.
     User,
@@ -65,6 +65,23 @@ pub enum TurnOrigin {
     /// `chain_index` is 1-based — the first continuation is 1, second is
     /// 2, etc. Resets to 0 when a User turn lands.
     Autonomous { chain_index: u32 },
+    /// A backend trigger (the proactive scheduler, or an app-event
+    /// subscriber) woke Athena to reason about something that happened
+    /// on its own — e.g. a persona execution finished and she should
+    /// analyze it. Distinct from `Autonomous`: this is the FIRST turn
+    /// of a self-initiated thread, not a continuation of a user chain.
+    /// The caller builds the synthetic directive and passes it as
+    /// `user_message`; the opening episode persists as `System` with a
+    /// `[proactive: <trigger_kind>]` marker so the transcript shows the
+    /// turn was machine-initiated, not user-typed.
+    ///
+    /// `trigger_kind` / `trigger_ref` mirror the proactive `Nudge`
+    /// fields so a turn can be traced back to what woke it (and deduped
+    /// against re-firing on the same execution).
+    Proactive {
+        trigger_kind: String,
+        trigger_ref: Option<String>,
+    },
 }
 
 /// In-flight turn ids that the user has asked to interrupt. `run_cli`
@@ -315,11 +332,15 @@ pub async fn send_turn(
     // "Athena gave herself another turn". For autonomous, the CLI
     // receives a directive (see `effective_user_message` below) — we
     // never persist the marker token verbatim.
-    let (open_role, open_content) = match origin {
+    let (open_role, open_content) = match &origin {
         TurnOrigin::User => (EpisodeRole::User, user_message.clone()),
         TurnOrigin::Autonomous { chain_index } => (
             EpisodeRole::System,
             format!("[autonomous continuation #{chain_index}]"),
+        ),
+        TurnOrigin::Proactive { trigger_kind, .. } => (
+            EpisodeRole::System,
+            format!("[proactive: {trigger_kind}]"),
         ),
     };
     let user_ep_id = {
@@ -367,7 +388,7 @@ pub async fn send_turn(
     // the raw message. For autonomous ticks, the marker token never
     // reaches the model — it's a sentinel only the persistence layer
     // sees; the CLI gets a real directive crafted here.
-    let effective_user_message: String = match origin {
+    let effective_user_message: String = match &origin {
         TurnOrigin::User => user_message.clone(),
         TurnOrigin::Autonomous { chain_index } => format!(
             "Continue your autonomous work. This is continuation turn #{chain_index} of up to {max}. \
@@ -376,6 +397,10 @@ pub async fn send_turn(
              another `continue_autonomously` op.",
             max = MAX_AUTONOMOUS_CHAIN
         ),
+        // Proactive turns: the caller already built the full directive
+        // (it has the execution details / trigger context), so the
+        // `user_message` IS the directive — pass it straight through.
+        TurnOrigin::Proactive { .. } => user_message.clone(),
     };
 
     let (system_prompt, recall_preview) = {
@@ -670,8 +695,12 @@ pub async fn send_turn(
     // pending handle here is always for a chain Athena requested and
     // the user hasn't intercepted.
     if autonomous_mode && dispatched.requests_continuation {
-        let next_chain = match origin {
-            TurnOrigin::User => 1,
+        let next_chain = match &origin {
+            // User and Proactive turns are both chain-roots: the next
+            // continuation is #1. A Proactive turn that emits
+            // `continue_autonomously` (e.g. "I found a failed run, let me
+            // dig deeper") starts its own chain just like a user ask.
+            TurnOrigin::User | TurnOrigin::Proactive { .. } => 1,
             TurnOrigin::Autonomous { chain_index } => chain_index + 1,
         };
         if next_chain > MAX_AUTONOMOUS_CHAIN {
@@ -772,6 +801,63 @@ fn schedule_autonomous_tick(
             .await;
             if let Err(e) = res {
                 tracing::warn!(error = %e, "autonomous continuation tick failed");
+            }
+        });
+    });
+}
+
+/// Spawn a self-initiated reasoning turn — the entry point for the
+/// proactive scheduler (Goal 2: analyze recent executions) and, later,
+/// the execution-finished event subscriber (Goal 1). `directive` is the
+/// fully-formed prompt the caller built from the trigger context (e.g.
+/// "Execution X failed with <error>; analyze and propose an improvement").
+///
+/// Runs on a blocking thread with a current-thread runtime for the same
+/// `!Send` reason as `schedule_autonomous_tick`. Fire-and-forget: the
+/// turn streams to the panel and persists like any other; the caller
+/// (a 5-min tick) doesn't await it. `autonomous_mode` is passed through
+/// so the turn can chain via `continue_autonomously` if it needs more
+/// than one pass — by the time we call this, the caller has already
+/// confirmed autonomous mode is on.
+pub fn spawn_proactive_turn(
+    app: AppHandle,
+    user_db: Arc<UserDbPool>,
+    sys_db: Arc<DbPool>,
+    #[cfg(feature = "ml")] embedder: Option<Arc<EmbeddingManager>>,
+    trigger_kind: String,
+    trigger_ref: Option<String>,
+    directive: String,
+) {
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        let rt = match tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        {
+            Ok(rt) => rt,
+            Err(e) => {
+                tracing::warn!(error = %e, "proactive turn: failed to build runtime");
+                return;
+            }
+        };
+        rt.block_on(async move {
+            let res = send_turn(
+                &app,
+                user_db,
+                sys_db,
+                #[cfg(feature = "ml")]
+                embedder,
+                directive,
+                TurnOrigin::Proactive {
+                    trigger_kind,
+                    trigger_ref,
+                },
+                false, // voice off for machine-initiated turns
+                false, // no recall synthesis budget on background turns
+                true,  // autonomous_mode on — caller gated on this
+            )
+            .await;
+            if let Err(e) = res {
+                tracing::warn!(error = %e, "proactive reasoning turn failed");
             }
         });
     });

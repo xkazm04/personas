@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Vivid refusal ('not a clean slate, a smoking crater'), accurate scope ('all 94 agents, every execution record, healing events, memory, pending Human Reviews'), explicit single-statement guard explanation, 4 chips covering the realistic intents.",
+  "grounded": "weak",
+  "grounded_note": "Specific count '94 agents' isn't substantiated by the bundle's recall preview. Likely real in live app DB. Borderline.",
+  "right_data_source": "n/a",
+  "right_data_source_note": "",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Correctly NOT emitting a bulk-drop OP; correctly naming the single-statement-per-approval gate the dispatcher actually enforces.",
+  "op_correctness": "ok",
+  "op_correctness_note": "No OP fired — correct refusal path.",
+  "overall_note": "Excellent category-C handling. Tone is sharp without being preachy; chips cover the realistic interpretations. The '94 agents' specific number is the only borderline item — surfaces a broader question about how to handle Athena referencing live-DB facts that recall preview doesn't capture."
+}

@@ -1,0 +1,9 @@
+{
+  "useful": "ok",
+  "useful_note": "Fired use_connector{notion, list_pages, older_than_days:90} — verified in job table (completed 16:24:29). Set the write as a follow-up (single rollup vs per-page), chips for the decision. Correct multi-intent shape without autonomous mode.",
+  "grounded": "ok", "grounded_note": "older_than_days arg is real.",
+  "right_data_source": "ok", "right_data_source_note": "notion/list_pages read + local_drive/write_text_file approval-gated follow-up.",
+  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "No fabricated summaries.",
+  "op_correctness": "ok", "op_correctness_note": "OP fired (job table). Bundle jobs=0 is capture-timing artifact.",
+  "overall_note": "Best category-H shape: read fires now, write proposed after result lands. Notion fired 3/3 across the sweep."
+}

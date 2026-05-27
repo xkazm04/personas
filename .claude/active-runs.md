@@ -45,13 +45,13 @@ timestamp — the next session can recognize it as abandoned.
   - **Paths:** `src-tauri/src/db/models/persona.rs`, `src-tauri/src/mcp_server/tools.rs`, `src-tauri/src/engine/{cli_mcp_config,runner/mod}.rs`, `src-tauri/src/commands/design/template_adopt.rs`, `src-tauri/src/commands/companion/approvals.rs`, `src-tauri/src/commands/infrastructure/context_generation.rs`, `src-tauri/src/companion/prompt.rs`, `src/test/automation/bridge.ts`, `scripts/templates/**` (5 SDLC + checksums), `tests/playwright/{athena-devproject,sdlc-team-perrepo}.mjs`, `src/lib/bindings/`. App rebuilt + healthy on :17321.
   - **Branch:** master — per-file atomic commits (not pushed).
 
-### friend — obsidian-brain (UI/UX)
+### friend — obsidian-brain (UI/UX) — COMPLETED, MERGED
 - Started: 2026-05-26 15:31
-- Status: started
-- Branch: worktree-friend-obsidian-brain-153023
-- Worktree: .claude/worktrees/friend-obsidian-brain-153023/
-- Paths: src/features/plugins/obsidian-brain/, src/i18n/locales/*.json (additive plugins.obsidian_brain.* only — disjoint keys from concurrent /friend-twin plugins.twin.* and /friend-dev-tools), docs/features/obsidian-brain.md
-- Note: /friend endless development loop (UI/UX focus). Path-disjoint from all active sessions; worktree-isolated.
+- Status: completed — MERGED to master (fast-forward to 88849d0ff) 2026-05-26.
+- Scope: 5 Brain UI features (Graph open-notes, Open-Setup empty states, push filter+count, conflict line-diff, Browse metadata/frontmatter) + docs split into docs/features/plugins/brain/ + knowledge-mirror P0–P3 (detection/settings/toggle UI; Research Lab + Execution Knowledge → vault mirrors; Athena vault search/write tools in personas-mcp) + 6 live-verify integration tests (caught+fixed an unregistered obsidian_mirror_config settings key) + devUrl-from-PERSONAS_VITE_PORT dev-ergonomics fix.
+- Branch: worktree-friend-obsidian-brain-153023 (merged; worktree pending removal)
+- Paths: src/features/plugins/obsidian-brain/, src-tauri/src/{commands/obsidian_brain,mcp_server,engine/knowledge.rs,db/settings_keys.rs,lib.rs}, src/i18n/locales/*.json (additive), docs/features/plugins/brain/, scripts/dev/tauri-dev-test.mjs, package.json
+- Note: GUI drive proved the backend live (obsidian_available → vaultConfigured/available true with a configured vault); visual toggle render was blocked only by the dev-harness hardcoded devUrl, now fixed. Left in Active (not moved to Recently completed) because active-runs.md is concurrently dirty with other sessions' edits.
 
 ### friend — twin (UI/UX)
 - Started: 2026-05-26 15:30
@@ -69,7 +69,8 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: src/features/plugins/companion/** (orb, new guidance/, new widgets), src/features/onboarding/components/TourSpotlight.tsx (+ extract shared useTrackedElementRect), src/features/agents/components/matrix/UnifiedBuildEntry.tsx (+glyph layout testids), src/stores/slices/system/ (companion store + guidance state), src-tauri/src/companion/{dispatcher,session,templates}.rs, src/api/companion.ts, src/test/automation/bridge.ts, tests/playwright/athena-guided-walkthrough.spec.ts, src/styles/globals.css (guide-glow keyframe), src/i18n/locales/en.json (additive plugins.companion.guide.* + plugins.companion.offer.* ONLY), docs/features/companion/**
 - Note: New reusable "Athena guided walkthrough" engine (registry-driven steps; orb glides + non-dimming element glow) + persona-creation walkthrough + offer chat-card + e2e. Path-disjoint from active /friend loops (twin/dev-tools/obsidian-brain own other plugin dirs). en.json: additive disjoint keys only, per-file staging, never -A. active-runs.md edited in MAIN checkout only (not committed from worktree per feedback_active_runs_md_unsafe_in_concurrent_worktrees).
 - VERIFIED: frontend tsc 0, eslint 0 on all touched files, 13 new unit tests pass (5 useTrackedElementRect + 8 guidance). Full vitest = only 15 PRE-EXISTING failures in untouched areas (fleet/twin/eslint-rules; useBuild fails on a session.startSession signature change from the merged build_oneshot work; ConnectorCallCard on a pre-existing "multiple buttons" query) — none from this branch.
-- DEFERRED (build shell occupied by a concurrent off-master tauri:dev): (1) `cargo test companion::dispatcher` for the 5 Rust dispatcher tests + compile (Rust is review-verified, mirrors existing dispatch arms exactly); (2) live `npm run test:playwright:guidance` (needs a fresh tauri:dev:test off THIS branch — bridge.ts isn't hot-reloadable). Run both when the :1420/:17320 shell frees.
+- MERGED to master (merge `0aeecc9b2` + post-merge fixes `1efe206ff` i18n regen, `0cf845707` Dispatched fallback field, `3bb744edf`/`1b826863a` e2e). Worktree removed.
+- LIVE-VERIFIED on a fresh tauri:dev:test off master: `cargo test --features desktop companion::dispatcher` → 33 passed (incl. 5 new offer/walkthrough tests); deterministic Playwright e2e → 2 passed (orb glides + glow tracks the studio anchor live; auto-play advances through all 5 steps and self-completes in 23.6s). Caught + fixed a real compile error the deferred-cargo would've missed: session.rs's explicit Dispatched fallback literal was missing the new guide_walkthroughs field. The model-dependent NL test is `test.skip` (needs an orb-aware panel-open path + live CLI; verify by chatting with Athena in-app).
 
 
 - **[2026-05-26 — completed] /architect — Multi-driver orchestration + Athena autonomous-build fixes**

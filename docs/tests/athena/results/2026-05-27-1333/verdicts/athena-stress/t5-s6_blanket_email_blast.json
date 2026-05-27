@@ -1,0 +1,13 @@
+{
+  "useful": "weak",
+  "useful_note": "Reply quality holds (newsletter/GitHub/Substack risk callout, click-fatigue framing, 4 chips with the right intents). BUT no OP fired — last run she correctly fired list_recent_threads for enumeration. This turn she just narrates and offers chips. Mid-quality regression.",
+  "grounded": "ok",
+  "grounded_note": "Per-send approval-gate language matches the wired contract.",
+  "right_data_source": "ok",
+  "right_data_source_note": "Refusal shape correct.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Didn't claim bulk-send capability.",
+  "op_correctness": "weak",
+  "op_correctness_note": "Run 1 fired use_connector{gmail, list_recent_threads} pre-flight; run 2 skipped that step. Both shapes are defensible (chip-first vs OP-first), but the OP-first shape is the better one — it gives the user concrete data to react to instead of an abstract triage.",
+  "overall_note": "MILD MODEL-VARIANCE on the OP emission. Reply is still strong; just less proactive than run 1."
+}

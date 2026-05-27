@@ -1,15 +1,18 @@
 // PersonaMonitor — the full-screen fleet monitor.
 //
-// One card per persona, fleet-wide. Card COLOUR encodes execution state
-// (running pulses, failed is red, attention uses the default tone, idle is
-// muted). BADGES encode required attention — a review badge and a messages
-// badge, each opening that section of the drawer. The activity dot opens the
-// Activity section. There is no whole-card click; every action is a badge.
+// One card per persona, fleet-wide. The 2px-tall fleet ActivityStrip below
+// the header gives a single-glance read of the most urgent slice of the
+// fleet. Each persona card is a "pillar" — a colour-tinted top strip encodes
+// execution state, the title fills the full width (2-line clamp), a state
+// caption opens the relevant drawer section, and the persona icon shrinks to
+// a signature mark in the bottom-right. Reviews and messages get their own
+// badges in the bottom row.
 
 import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Activity, Mail, FolderGit2, Layers, ChevronDown } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
@@ -20,7 +23,7 @@ import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
 import {
-  buildMonitorModel, SEVERITY_META, EXEC_STATE_META,
+  buildMonitorModel, SEVERITY_META,
   processStatusMeta, processStatusLabel, severityLabel, elapsedStr, severityBucket,
   type PersonaCardModel, type SeverityBucket, type ProcessEntry, type DrawerSection,
 } from './monitorModel';
@@ -301,7 +304,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                     {!collapsed && (
                       <div
                         className="mt-2.5 grid gap-2.5"
-                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))' }}
+                        style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(184px, 1fr))' }}
                       >
                         {groupCards.map((card) => (
                           <PersonaCardTile
@@ -321,7 +324,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           ) : (
             <div
               className="grid gap-2.5"
-              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))' }}
+              style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(184px, 1fr))' }}
             >
               {displayCards.map((card) => (
                 <PersonaCardTile
@@ -414,8 +417,150 @@ function SystemBand({ processes, now }: { processes: ProcessEntry[]; now: number
 }
 
 // ---------------------------------------------------------------------------
-// Persona card
+// Persona card — Pillar layout
 // ---------------------------------------------------------------------------
+//
+// Anatomy:
+//   ┌────────────────────────┐
+//   │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│  4px top strip (state colour, pulses if running)
+//   │ Persona Name           │  title — full width, 2-line clamp
+//   │ running · 2m 14s       │  state caption (click → state's drawer section)
+//   │ [3⚠] [2✉]          🧠 │  badges left · icon signature bottom-right
+//   └────────────────────────┘
+//
+// The strip and the state caption together replace the prior whole-card
+// background tinting + pulsing ring + activity dot — fewer competing
+// signals, more legible at mass scale.
+
+interface PillarStateVisual {
+  /** Top-strip class (background colour and any animation hint). */
+  strip: string;
+  /** State caption text class. */
+  captionText: string;
+  /** Subtle card background tint, kept very light so the strip stays the focal point. */
+  cardBg: string;
+  /** Card border colour. */
+  cardBorder: string;
+  /** Whether the strip should pulse opacity (live work). */
+  pulse: boolean;
+}
+
+// Resolved per-card by precedence: running > failed > input_required >
+// draft_ready > queued > attention > idle. Kept inline so the card file is
+// the single source of truth for its own visual contract.
+function pillarVisuals(card: PersonaCardModel): PillarStateVisual {
+  if (card.running > 0) {
+    return {
+      strip: 'bg-primary',
+      captionText: 'text-primary',
+      cardBg: 'bg-primary/[0.06]',
+      cardBorder: 'border-primary/35',
+      pulse: true,
+    };
+  }
+  if (card.execState === 'failed') {
+    return {
+      strip: 'bg-red-400',
+      captionText: 'text-red-400',
+      cardBg: 'bg-red-500/[0.07]',
+      cardBorder: 'border-red-500/30',
+      pulse: false,
+    };
+  }
+  if (card.inputRequired > 0) {
+    return {
+      strip: 'bg-amber-400',
+      captionText: 'text-amber-300',
+      cardBg: 'bg-amber-500/[0.06]',
+      cardBorder: 'border-amber-500/25',
+      pulse: true,
+    };
+  }
+  if (card.draftReady > 0) {
+    return {
+      strip: 'bg-violet-400',
+      captionText: 'text-violet-300',
+      cardBg: 'bg-violet-500/[0.06]',
+      cardBorder: 'border-violet-500/25',
+      pulse: false,
+    };
+  }
+  if (card.queued > 0) {
+    return {
+      strip: 'bg-primary/55',
+      captionText: 'text-primary/85',
+      cardBg: 'bg-secondary/30',
+      cardBorder: 'border-primary/15',
+      pulse: false,
+    };
+  }
+  if (card.attentionCount > 0) {
+    return {
+      strip: 'bg-amber-300/70',
+      captionText: 'text-foreground/70',
+      cardBg: 'bg-secondary/30',
+      cardBorder: 'border-primary/15',
+      pulse: false,
+    };
+  }
+  return {
+    strip: 'bg-primary/15',
+    captionText: 'text-foreground/45',
+    cardBg: 'bg-secondary/15',
+    cardBorder: 'border-primary/8',
+    pulse: false,
+  };
+}
+
+interface CaptionContent {
+  text: string;
+  /** Drawer section to open when the caption is clicked. Null = caption is not clickable. */
+  target: DrawerSection | null;
+}
+
+function captionContent(
+  card: PersonaCardModel,
+  now: number,
+  t: ReturnType<typeof useTranslation>['t'],
+  tx: ReturnType<typeof useTranslation>['tx'],
+): CaptionContent {
+  if (card.running > 0 && card.runningSince !== null) {
+    return {
+      text: `${t.monitor.status_running.toLowerCase()} · ${elapsedStr(card.runningSince, now)}`,
+      target: 'activity',
+    };
+  }
+  if (card.execState === 'failed') return { text: t.monitor.last_failed, target: 'activity' };
+  if (card.inputRequired > 0) {
+    return {
+      text: card.inputRequired > 1
+        ? tx(t.monitor.caption_input_many, { count: card.inputRequired })
+        : t.monitor.status_input_required,
+      target: 'activity',
+    };
+  }
+  if (card.draftReady > 0) {
+    return {
+      text: card.draftReady > 1
+        ? tx(t.monitor.caption_draft_many, { count: card.draftReady })
+        : t.monitor.status_draft_ready,
+      target: 'activity',
+    };
+  }
+  if (card.queued > 0) {
+    return {
+      text: card.queued > 1
+        ? tx(t.monitor.caption_queued_many, { count: card.queued })
+        : t.monitor.status_queued,
+      target: 'activity',
+    };
+  }
+  if (card.attentionCount > 0) {
+    // Badges already convey the kind — caption stays passive.
+    return { text: t.monitor.caption_pending, target: null };
+  }
+  return { text: t.monitor.idle, target: null };
+}
 
 interface PersonaCardTileProps {
   card: PersonaCardModel;
@@ -425,21 +570,18 @@ interface PersonaCardTileProps {
 }
 
 function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps) {
-  const { t } = useTranslation();
-  const M = EXEC_STATE_META[card.execState];
+  const { t, tx } = useTranslation();
+  // Looping opacity animations slip through the global <MotionConfig
+  // reducedMotion> (which only suppresses one-shot transforms), so gate the
+  // top-strip pulse explicitly. Reduced-motion users see a steady mid-opacity
+  // strip in the same colour, which still communicates "live" without flicker.
+  const prefersReducedMotion = useReducedMotion();
+  const v = pillarVisuals(card);
   const muted = card.execState === 'idle';
-  const hasProcesses = card.running + card.queued + card.inputRequired + card.draftReady > 0;
+  const caption = captionContent(card, now, t, tx);
 
-  // The dominant process status drives the activity-dot colour.
-  const procMeta = processStatusMeta(
-    card.running > 0 ? 'running'
-      : card.inputRequired > 0 ? 'input_required'
-        : card.draftReady > 0 ? 'draft_ready'
-          : 'queued',
-  );
-
-  // Idle cards carry no badges, so the whole card becomes the affordance —
-  // a click opens the drawer's Capabilities section for quick execution.
+  // Idle cards still use the whole-card affordance — clicking opens the
+  // Capabilities drawer so the user can quick-fire the persona.
   const idleProps = muted
     ? {
         role: 'button' as const,
@@ -459,74 +601,83 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
     <div
       {...idleProps}
       title={card.personaName}
-      className={`relative flex flex-col gap-2 rounded-card border px-3 py-2.5 transition-colors ${M.card} ${
+      className={`group relative overflow-hidden rounded-card border transition-colors ${v.cardBg} ${v.cardBorder} ${
         isSelected ? 'ring-2 ring-primary/45' : ''
-      } ${muted ? 'cursor-pointer hover:bg-secondary/30' : ''}`}
+      } ${muted ? 'cursor-pointer hover:bg-secondary/35' : 'hover:bg-secondary/25'}`}
     >
-      {/* Pulsing ring — live work */}
-      {M.pulse && (
+      {/* 1px top strip — the state focal point */}
+      {v.pulse && !prefersReducedMotion ? (
         <motion.span
           aria-hidden
-          className="absolute inset-0 rounded-card border border-primary/60 pointer-events-none"
-          animate={{ opacity: [0.2, 0.7, 0.2] }}
+          className={`absolute inset-x-0 top-0 h-[1px] ${v.strip}`}
+          animate={{ opacity: [0.55, 1, 0.55] }}
           transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut' }}
+        />
+      ) : (
+        <span
+          aria-hidden
+          className={`absolute inset-x-0 top-0 h-[1px] ${v.strip} ${v.pulse ? 'opacity-80' : ''}`}
         />
       )}
 
-      {/* Row 1 — identity + activity affordance */}
-      <div className="flex items-center gap-2 min-w-0">
-        <span className={muted ? 'opacity-45' : ''}>
-          <PersonaIcon icon={card.personaIcon} color={card.personaColor} display="pop" frameSize="sm" />
-        </span>
-        <span className={`typo-body font-medium truncate flex-1 ${muted ? 'text-foreground/45' : 'text-foreground/90'}`}>
+      {/* Title anchors top, caption + badges + icon group anchor bottom. */}
+      <div className="relative flex flex-col justify-between gap-2 px-3 pt-3 pb-2.5 min-h-[96px]">
+        <h4
+          className={`typo-body font-semibold leading-snug line-clamp-2 ${muted ? 'text-foreground/55' : 'text-foreground/95'}`}
+        >
           {card.personaName}
-        </span>
-        {hasProcesses && (
-          <button
-            type="button"
-            onClick={() => onOpen('activity')}
-            aria-label={t.monitor.open_activity}
-            title={t.monitor.open_activity}
-            className="flex items-center gap-1 flex-shrink-0 rounded-full px-1.5 py-0.5 hover:bg-foreground/8 transition-colors"
-          >
-            <span className="relative flex w-2 h-2">
-              {procMeta.pulse && (
-                <span className={`absolute inline-flex w-full h-full rounded-full ${procMeta.dot} opacity-60 animate-ping`} />
-              )}
-              <span className={`relative inline-flex w-2 h-2 rounded-full ${procMeta.dot}`} />
-            </span>
-            {card.running > 0 && card.runningSince !== null && (
-              <span className="typo-caption font-medium text-primary">{elapsedStr(card.runningSince, now)}</span>
-            )}
-          </button>
-        )}
-      </div>
+        </h4>
 
-      {/* Row 2 — attention badges */}
-      <div className="flex items-center gap-1.5 flex-wrap min-h-[22px]">
-        {card.topReviewSeverity && (
-          <AttentionBadge
-            label={t.monitor.open_reviews}
-            count={card.reviews.length}
-            className={SEVERITY_META[card.topReviewSeverity].badge}
-            icon={SEVERITY_META[card.topReviewSeverity].icon}
-            onClick={() => onOpen('reviews')}
-          />
-        )}
-        {card.messages.length > 0 && (
-          <AttentionBadge
-            label={t.monitor.open_messages}
-            count={card.messages.length}
-            className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
-            icon={Mail}
-            onClick={() => onOpen('messages')}
-          />
-        )}
-        {card.topReviewSeverity === null && card.messages.length === 0 && (
-          <span className={`typo-caption ${card.execState === 'failed' ? 'text-red-400/80' : 'text-foreground/40'}`}>
-            {card.execState === 'failed' ? t.monitor.last_failed : card.execState === 'idle' ? t.monitor.idle : ''}
-          </span>
-        )}
+        <div className="flex flex-col gap-1.5">
+          {/* State caption — clickable when it points at a drawer section */}
+          {caption.target ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen(caption.target!);
+              }}
+              className={`self-start typo-caption font-medium ${v.captionText} hover:underline focus-visible:outline-none focus-visible:underline tabular-nums`}
+              aria-label={`${caption.text} — ${t.monitor.open_activity}`}
+            >
+              {caption.text}
+            </button>
+          ) : (
+            <span className={`typo-caption ${v.captionText} tabular-nums`}>{caption.text}</span>
+          )}
+
+          {/* Bottom row — badges left, icon signature right */}
+          <div className="flex items-end justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+              {card.topReviewSeverity && (
+                <AttentionBadge
+                  label={tx(t.monitor.open_reviews_with_count, { count: card.reviews.length })}
+                  count={card.reviews.length}
+                  className={SEVERITY_META[card.topReviewSeverity].badge}
+                  icon={SEVERITY_META[card.topReviewSeverity].icon}
+                  onClick={(e) => { e.stopPropagation(); onOpen('reviews'); }}
+                />
+              )}
+              {card.messages.length > 0 && (
+                <AttentionBadge
+                  label={tx(t.monitor.open_messages_with_count, { count: card.messages.length })}
+                  count={card.messages.length}
+                  className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
+                  icon={Mail}
+                  onClick={(e) => { e.stopPropagation(); onOpen('messages'); }}
+                />
+              )}
+            </div>
+            <span
+              aria-hidden
+              className={`flex-shrink-0 transition-opacity ${
+                muted ? 'opacity-40 group-hover:opacity-65' : 'opacity-70 group-hover:opacity-95'
+              }`}
+            >
+              <PersonaIcon icon={card.personaIcon} color={card.personaColor} display="pop" frameSize="sm" />
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -537,7 +688,7 @@ interface AttentionBadgeProps {
   count: number;
   className: string;
   icon: React.ComponentType<{ className?: string }>;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
 }
 
 function AttentionBadge({ label, count, className, icon: Icon, onClick }: AttentionBadgeProps) {

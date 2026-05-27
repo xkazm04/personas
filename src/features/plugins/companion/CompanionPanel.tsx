@@ -46,6 +46,7 @@ import {
   companionListRecentMessages,
   companionBetaFlags,
   companionCancelAutonomy,
+  companionSetAutonomousMode,
   companionInterruptTurn,
   companionReingestDoctrine,
   companionRequestImprovement,
@@ -353,6 +354,12 @@ export default function CompanionPanel() {
             onToggleAutonomousMode={() => {
               const next = !autonomousMode;
               setAutonomousMode(next);
+              // Persist server-side so the backend proactive scheduler
+              // knows whether to spawn self-initiated reasoning turns —
+              // it can't see this Zustand flag.
+              companionSetAutonomousMode(next).catch(
+                silentCatch('companion_set_autonomous_mode'),
+              );
               if (!next) {
                 // Switching OFF: drop any scheduled continuation so a
                 // tick that was about to fire doesn't sneak through
@@ -664,6 +671,15 @@ function Body(props: BodyProps) {
   // the listener closure stays stable.
   const currentTurnIdRef = useRef<string | null>(null);
 
+  // True while a turn THIS client didn't initiate is streaming — a
+  // backend-initiated turn (proactive execution review, autonomous
+  // continuation). The user-send path owns its own streaming + refetch;
+  // for backend turns nothing else does, so the stream listener takes
+  // over: it flips `streaming` on at `started` and refetches the
+  // transcript at `finished` so the new assistant bubble actually
+  // appears in the panel instead of only landing in the brain.
+  const backendTurnActiveRef = useRef(false);
+
   // Token-level streaming bookkeeping (--include-partial-messages).
   // `sawDeltasRef` flips true the moment a `text_delta` arrives this turn;
   // once set, we ignore the trailing whole `assistant` message text (it
@@ -786,6 +802,16 @@ function Body(props: BodyProps) {
         lastStreamEventAtRef.current = Date.now();
         if (ev.kind === 'started') {
           currentTurnIdRef.current = ev.turnId;
+          // Backend-initiated turn? The user-send path sets `streaming`
+          // true synchronously BEFORE the backend emits `started`, so if
+          // we see `started` while not streaming, no client send is in
+          // flight — this turn came from the proactive scheduler or an
+          // autonomous continuation. Flip streaming on so the thinking
+          // bubble shows; the `finished` handler refetches the transcript.
+          if (!useCompanionStore.getState().streaming) {
+            backendTurnActiveRef.current = true;
+            setStreaming(true);
+          }
           // New turn — reset token-streaming bookkeeping and drop any
           // unflushed deltas from a prior turn.
           sawDeltasRef.current = false;
@@ -927,6 +953,16 @@ function Body(props: BodyProps) {
           clearToolTimers();
           useCompanionStore.getState().clearInTurnToolJobs();
           currentTurnIdRef.current = null;
+          // Backend-initiated turn: nothing else will refetch the
+          // transcript (the user-send path isn't involved), so do it
+          // here and drop the streaming flag we raised at `started`.
+          if (backendTurnActiveRef.current) {
+            backendTurnActiveRef.current = false;
+            setStreaming(false);
+            companionListRecentMessages(50)
+              .then((msgs) => setMessages(msgs))
+              .catch(silentCatch('companion_list_recent_messages'));
+          }
         } else if (ev.kind === 'error') {
           flushDeltaBuffer();
           sawDeltasRef.current = false;
@@ -937,9 +973,25 @@ function Body(props: BodyProps) {
           useCompanionStore.getState().setStreamingPhase(null);
           useCompanionStore.getState().setStreamingSteps([]);
           currentTurnIdRef.current = null;
+          // Backend-initiated turn that errored: clear the streaming flag
+          // we raised at `started` so the panel doesn't hang on a thinking
+          // bubble (no user-send `finally` runs for these).
+          if (backendTurnActiveRef.current) {
+            backendTurnActiveRef.current = false;
+            setStreaming(false);
+          }
         }
       },
-      [appendStreamingText, setSendError, flushDeltaBuffer, clearToolTimers, t, tx],
+      [
+        appendStreamingText,
+        setSendError,
+        flushDeltaBuffer,
+        clearToolTimers,
+        setMessages,
+        setStreaming,
+        t,
+        tx,
+      ],
     ),
     'companion_stream_listen',
   );

@@ -1,0 +1,13 @@
+{
+  "useful": "ok",
+  "useful_note": "Two-part response: (1) no OpenAI connector wired + listed real toolbox, (2) named that she IS the LLM so an OpenAI connector would be paying a second model to do her job. Then asked the right product/audience/tone clarifying questions with 4 chips.",
+  "grounded": "ok",
+  "grounded_note": "Self-identification as Claude (Opus) is accurate; toolbox list matches the wired set.",
+  "right_data_source": "ok",
+  "right_data_source_note": "Pulled from the connector registry, not training-data assumptions about OpenAI integration.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Critical anti-pattern avoided: did NOT emit use_connector{openai, ...} or agree an OpenAI connector exists.",
+  "op_correctness": "n/a",
+  "op_correctness_note": "",
+  "overall_note": "Reference-quality category-J handling. The 'I'm Claude — drafting is something I do natively, routing through a different LLM would be paying twice' framing is exactly the right teaching moment for a user who thinks of Athena as a router rather than the model."
+}

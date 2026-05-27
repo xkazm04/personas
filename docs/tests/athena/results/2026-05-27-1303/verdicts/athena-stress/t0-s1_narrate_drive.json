@@ -1,0 +1,13 @@
+{
+  "useful": "weak",
+  "useful_note": "Reply claims 'pulling now' but no background job was queued — user will see no follow-up because the dispatcher silently dropped the OP. Athena's part was correct; system surfaces this as a failed promise.",
+  "grounded": "n/a",
+  "grounded_note": "",
+  "right_data_source": "ok",
+  "right_data_source_note": "Correct connector (local_drive) and capability (list_files) — matches the zero-config builtin contract.",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "local_drive and list_files are both real entries in capabilities_for.",
+  "op_correctness": "ok",
+  "op_correctness_note": "OP envelope is syntactically perfect: action=use_connector, params.connector_name=local_drive, params.capability=list_files. Dispatcher rejected it post-emission (pin gate).",
+  "overall_note": "DISPATCHER SILENT-DROP — Athena's OP correct, but local_drive isn't in companion_active_connector so the use_connector handler stripped the line + queued nothing. Same pattern hits s2/s3/s6/s10. Root cause: pin-gate in dispatcher.rs:1092-1119 doesn't whitelist always_active builtins."
+}

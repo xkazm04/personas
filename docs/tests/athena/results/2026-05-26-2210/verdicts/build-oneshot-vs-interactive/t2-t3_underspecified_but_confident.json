@@ -1,0 +1,18 @@
+{
+  "useful": "ok",
+  "useful_note": "Excellent disambiguation — Athena named three existing email agents already running (so the user doesn't end up with overlap), then asked exactly one clarifying question with 4 concrete chip options. The 'something else' chip is the right escape hatch. The 'Hold on' tone respects the user's 'just build' phrasing while still refusing the bad pattern.",
+
+  "grounded": "ok",
+  "grounded_note": "Names three specific existing agents by name (Gmail Important Emails Agent, Expense Receipts Gmail Agent, Email Support Operator) — these trace to the actual persona roster the harness can verify. The 'pending review' callout for Email Support Operator is the kind of grounded specificity the playbook rewards.",
+
+  "right_data_source": "n/a",
+  "right_data_source_note": "",
+
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "No capability claims outside Athena's surface. The named agents are real personas, not invented.",
+
+  "op_correctness": "ok",
+  "op_correctness_note": "Correctly suppressed build_oneshot and prefill despite the 'just build' phrasing — under-specification overrides confidence, matching the scenario's surface map.",
+
+  "overall_note": "Textbook handling of an underspecified-but-confident intent. The named-existing-agents move is what makes the clarification useful instead of generic."
+}

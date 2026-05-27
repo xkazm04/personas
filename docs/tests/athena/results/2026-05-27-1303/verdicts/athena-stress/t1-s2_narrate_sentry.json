@@ -1,0 +1,13 @@
+{
+  "useful": "weak",
+  "useful_note": "Same as s1 — 'pulling Sentry now' but background_jobs_queued is 0; the next-turn system episode won't materialize. Sentry isn't pinned in this test instance, so the dispatcher pin-gate rejects.",
+  "grounded": "n/a",
+  "grounded_note": "",
+  "right_data_source": "ok",
+  "right_data_source_note": "Correct connector (sentry) + capability (list_issues).",
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Both real entries in capabilities_for.",
+  "op_correctness": "ok",
+  "op_correctness_note": "OP envelope syntactically correct; dispatcher rejected silently.",
+  "overall_note": "SAME DISPATCHER SILENT-DROP. Athena was right to assume Sentry is wired (it IS in capabilities_for), but it's not pinned in companion_active_connector so the pin-gate fires. Better failure mode would be to surface a 'pin Sentry first' system episode the next turn so Athena can self-correct."
+}

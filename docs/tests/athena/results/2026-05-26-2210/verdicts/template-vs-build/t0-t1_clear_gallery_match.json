@@ -1,0 +1,18 @@
+{
+  "useful": "weak",
+  "useful_note": "The reply is coherent and the prefill is well-scoped — but Athena chose the build-from-scratch path for an intent that is a textbook gallery candidate. The scenario's whole point is that 'Sentry-to-Slack on critical issues' should hit template_suggestions first (the registry likely has 'Sentry Watcher' or similar). The user got a working path, just not the one that preserves the gallery's curated customization flow.",
+
+  "grounded": "n/a",
+  "grounded_note": "",
+
+  "right_data_source": "fail",
+  "right_data_source_note": "Surface map: 'intent matches gallery template → show_template_suggestions'. Athena pulled from training-data knowledge of 'how to build a Sentry-to-Slack agent' rather than querying companion_match_templates against the gallery. The fixture's whole purpose is to catch this kind of source bypass.",
+
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Sentry and Slack are wired; no fabricated services. Build spec stays inside scope.",
+
+  "op_correctness": "fail",
+  "op_correctness_note": "forbid_approval[prefill_persona_create] failed AND expect_card[template_suggestions] failed. Two-axis op miss: emitted the build op when a suggestion card was prescribed.",
+
+  "overall_note": "Same pattern as design-family t0: Athena bypasses the gallery-first surface for intents the gallery probably has. Either the prompt's bias-toward-adoption rule isn't strong enough, or Athena's reasoning about 'intent specificity' overrides it too easily for well-described intents. The fix is likely a prompt addendum: 'before emitting prefill_persona_create, query companion_match_templates and emit show_template_suggestions if any near-match exists'."
+}

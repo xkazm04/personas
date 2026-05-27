@@ -99,6 +99,16 @@ export async function companionCancelAutonomy(): Promise<void> {
 }
 
 /**
+ * Persist the autonomous-mode toggle server-side so the backend
+ * proactive scheduler (which runs with no frontend call in the loop)
+ * knows whether to spawn self-initiated reasoning turns. The header
+ * toggle calls this whenever it flips, alongside its own Zustand state.
+ */
+export async function companionSetAutonomousMode(enabled: boolean): Promise<void> {
+  return invoke<void>('companion_set_autonomous_mode', { enabled });
+}
+
+/**
  * ElevenLabs TTS proxy. Backend reads the decrypted API key from the
  * vault, calls ElevenLabs, and returns the audio bytes as base64 (which
  * crosses the Tauri IPC boundary cleanly). Frontend wraps the bytes in a

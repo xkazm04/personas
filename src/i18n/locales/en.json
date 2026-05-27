@@ -131,7 +131,13 @@
     "status_cancelled": "Cancelled",
     "group_by_toggle": "By team",
     "group_by_toggle_title": "Group persona cards by their home team",
-    "group_ungrouped": "No team"
+    "group_ungrouped": "No team",
+    "caption_pending": "Pending review",
+    "caption_input_many": "{count} need input",
+    "caption_draft_many": "{count} drafts ready",
+    "caption_queued_many": "{count} queued",
+    "open_reviews_with_count": "Open {count} review(s)",
+    "open_messages_with_count": "Open {count} message(s)"
   },
   "common": {
     "unknown_error": "Unknown error",

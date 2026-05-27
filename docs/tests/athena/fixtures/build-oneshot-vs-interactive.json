@@ -1,0 +1,100 @@
+{
+  "id": "build-oneshot-vs-interactive",
+  "purpose": "Athena picks build_oneshot vs prefill_persona_create{interactive} based on user confidence + intent specificity. Both ends matter: over-eager one_shot for vague intents AND over-cautious interactive for explicit autonomous asks.",
+  "tags": ["decision-making", "build", "autonomy"],
+  "doc": "docs/tests/athena/scenarios/build-oneshot-vs-interactive.md",
+
+  "setup": {
+    "reset_conversation": true,
+    "open_companion_panel": true,
+    "enabled_plugins": [],
+    "pinned_connectors": []
+  },
+
+  "turns": [
+    {
+      "id": "t1_confident_autonomy",
+      "user_message": "Just build me an agent that watches Sentry and posts new critical issues to my #alerts Slack channel. Decide everything yourself, I'll review when it's done.",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_approvals": [
+        { "action_kind": "build_oneshot" }
+      ],
+      "forbid_approvals": [
+        { "action_kind": "prefill_persona_create", "params_match": { "mode": "interactive" } }
+      ],
+      "expect_reply_has_quick_replies_min": 1,
+      "judge": {
+        "axes": ["useful", "no_hallucinated_capabilities"],
+        "surface_map": {
+          "confident 'just build it'": "build_oneshot",
+          "interactive override": "QR chip 'Make it interactive' — not a forced re-prompt"
+        },
+        "anti_patterns": [
+          "Pushed interactive despite explicit autonomous request",
+          "Promised behaviors outside the user's scope (e.g. 'also watch warnings, not just critical')",
+          "Did not acknowledge what the user will see post-build (notification, draft persona)"
+        ]
+      }
+    },
+    {
+      "id": "t2_explicit_walkthrough",
+      "user_message": "I want an agent that watches Sentry. Walk me through what you'd build.",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_chat_cards_any": [
+        { "kind": "persona_walkthrough" }
+      ],
+      "forbid_approvals": [
+        { "action_kind": "build_oneshot" }
+      ],
+      "judge": {
+        "axes": ["useful", "op_correctness"],
+        "surface_map": {
+          "explicit 'walk me through'": "show_persona_walkthrough or prefill_persona_create{interactive} — never build_oneshot"
+        },
+        "anti_patterns": [
+          "Emitted build_oneshot despite explicit walkthrough request",
+          "Walkthrough lacks the seven readiness items"
+        ]
+      }
+    },
+    {
+      "id": "t3_underspecified_but_confident",
+      "user_message": "Just build me something that helps with my email.",
+      "wait_for_finish_timeout_ms": 60000,
+      "forbid_approvals": [
+        { "action_kind": "build_oneshot" },
+        { "action_kind": "prefill_persona_create" }
+      ],
+      "expect_reply_has_quick_replies_min": 2,
+      "judge": {
+        "axes": ["useful"],
+        "surface_map": {
+          "vague 'help with email' even with 'just build'": "ONE specific clarifying question with QR chips — under-specification overrides confidence"
+        },
+        "anti_patterns": [
+          "Emitted build_oneshot for an under-specified intent despite the 'just build' phrasing",
+          "Asked three sequential clarifying questions instead of one with chips",
+          "Asked a vague 'tell me more' with no chips"
+        ]
+      }
+    },
+    {
+      "id": "t4_clarified",
+      "user_message": "Triage incoming. Just build it.",
+      "wait_for_finish_timeout_ms": 90000,
+      "expect_approvals": [
+        { "action_kind": "build_oneshot" }
+      ],
+      "judge": {
+        "axes": ["useful", "op_correctness"],
+        "surface_map": {
+          "clarified intent + confidence": "build_oneshot — commit, don't re-litigate"
+        },
+        "anti_patterns": [
+          "Asked for more clarification after the user already committed",
+          "Switched to interactive after the user said 'just build it'"
+        ]
+      }
+    }
+  ]
+}

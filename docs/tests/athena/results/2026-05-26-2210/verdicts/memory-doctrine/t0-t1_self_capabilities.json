@@ -1,0 +1,18 @@
+{
+  "useful": "ok",
+  "useful_note": "The reply is genuinely informative — names 86 agents, 17 pending reviews including specific critical ones, 2 open healing issues by persona name, and the registered repo ID. The 4 QR chips are concrete and pick up the highest-priority threads. As a 'first message to Athena' experience, this is strong.",
+
+  "grounded": "ok",
+  "grounded_note": "Numbers and named items (86 agents, 17 reviews, the two healing-issue persona names, the project id proj_d408831e82) are real-time bridge-verifiable state — exactly the third grounding category the rubric allows. The 'I'll tell you I don't have a memory rather than invent' line is the right framing.",
+
+  "right_data_source": "weak",
+  "right_data_source_note": "Pulled from live fleet/review/healing state (great) — but enumerated capabilities in prose instead of letting the show_design_capabilities card do it (the scenario's surface map prescribes the card for safety against hallucinated-capability claims). The card's hardcoded vocabulary is exactly the anti-hallucination protection the scenario tests for.",
+
+  "no_hallucinated_capabilities": "ok",
+  "no_hallucinated_note": "Every capability mentioned is real: read fleet/reviews/healing (verifiable), prefill build wizard (prefill_persona_create), one-shot (build_oneshot), template suggestions (show_template_suggestions), tier/triggers/decompose (design-family ops), open_route, open_lab, compose_dashboard, compose_cockpit, scan_codebase, write_fact/procedural/goal/ritual. All are in the dispatcher allowlist.",
+
+  "op_correctness": "fail",
+  "op_correctness_note": "expect_card[design_capabilities] failed — Athena prose-enumerated capabilities instead of emitting the card. Even though the capabilities listed are accurate, the scenario tests that the structured card is the surface for this intent (so future drift in the prose can't introduce hallucinations).",
+
+  "overall_note": "Substantively excellent reply, but wrong primary surface — prose enumeration risks the very thing the design_capabilities card was built to prevent. Prompt nudge needed: 'on \"what can you do?\" intents, lead with show_design_capabilities; reserve prose for the intro line only.'"
+}
