@@ -121,7 +121,18 @@ second pass once built.
 
 ---
 
-## 4. Learning loop over multi-turn — **[partial: a real gap to fix + eval to add]**
+## 4. Learning loop over multi-turn — **[loop-fix DONE ✅ · longitudinal eval next]**
+
+> **Update 2026-05-27 (commit 10afb58fa):** the human-feedback loop is now wired +
+> verified end-to-end. **Injection** — the runner calls `get_recent_resolved` and
+> injects a "## Prior Human Feedback — Apply These Decisions" block (verified in an
+> execution log: `[LEARNING] Injected 1 prior human-review decision(s)`).
+> **Synthesis** — moved into the single chokepoint `manual_reviews::update_status`
+> so every resolution path produces exactly one importance-5 `learned` memory,
+> use_case-scoped (verified delta=1, dedup'd; removed the duplicate command-layer
+> synthesis in reviews.rs). Remaining in this section: the **longitudinal eval**
+> harness + dimensions below.
+
 
 The user's emphasis: long-running teams must *improve* via lab + memory + human
 reviews, and we don't measure it. Analysis findings:
