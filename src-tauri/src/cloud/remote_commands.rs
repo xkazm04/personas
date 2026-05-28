@@ -301,3 +301,19 @@ pub async fn remote_command_reject(
         )
         .await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn expiry_window_classification() {
+        let old = (chrono::Utc::now() - chrono::Duration::hours(2)).to_rfc3339();
+        let recent = (chrono::Utc::now() - chrono::Duration::minutes(5)).to_rfc3339();
+        assert!(is_expired(&old), "a 2h-old request should be expired");
+        assert!(!is_expired(&recent), "a 5m-old request should not be expired");
+        // Unparseable timestamps must NOT be treated as expired (fail-safe:
+        // a malformed requested_at shouldn't silently drop a real request).
+        assert!(!is_expired("not-a-timestamp"));
+    }
+}

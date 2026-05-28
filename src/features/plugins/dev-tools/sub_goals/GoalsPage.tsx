@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Target, Plus } from 'lucide-react';
+import { Target, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { IconGoals } from '@/features/shared/components/layout/sidebar/SidebarIcons';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -26,6 +28,7 @@ export default function GoalsPage() {
   );
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const goals = useSystemStore((s) => s.goals);
+  const goalsTab = useSystemStore((s) => s.goalsTab);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -38,6 +41,12 @@ export default function GoalsPage() {
     } catch {
       addToast('Obsidian sync failed — configure vault in Obsidian Brain plugin first', 'error');
     }
+  };
+
+  // Open Athena with a preset question to help the user set up project goals.
+  const handleAskAthena = () => {
+    useCompanionStore.getState().setPendingPrompt({ text: dl.goal_ask_athena_prompt, autoSend: true });
+    useCompanionStore.getState().setState('open');
   };
 
   return (
@@ -65,22 +74,46 @@ export default function GoalsPage() {
       />
 
       <ContentBody>
-        {goals.length === 0 ? (
+        {(goalsTab === 'timeline' || goalsTab === 'portfolio' || goalsTab === 'attention') ? (
+          <GoalScaffold tab={goalsTab} />
+        ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
-            <Target className="w-10 h-10 text-foreground mb-3" />
-            <p className="typo-body text-foreground mb-4">
+            {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
+            <div className="relative flex items-center justify-center mb-5" style={{ width: 168, height: 168 }}>
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{ background: 'radial-gradient(circle at 50% 50%, rgba(139,92,246,0.18), transparent 70%)' }}
+              />
+              <div className="relative w-[120px] h-[120px] text-violet-400">
+                <IconGoals active className="w-full h-full" />
+              </div>
+            </div>
+            <h3 className="typo-section-title text-foreground">
               {t.plugins.dev_tools.goals_tab_no_goals}
+            </h3>
+            <p className="typo-body text-foreground mt-1 mb-5 max-w-md">
+              {dl.goal_empty_subtitle}
             </p>
-            <Button
-              variant="accent"
-              accentColor="violet"
-              size="sm"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              disabled={!activeProjectId}
-              onClick={() => setEditorOpen(true)}
-            >
-              {dl.goal_new_title}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="accent"
+                accentColor="violet"
+                size="sm"
+                icon={<Plus className="w-3.5 h-3.5" />}
+                disabled={!activeProjectId}
+                onClick={() => setEditorOpen(true)}
+              >
+                {dl.goal_new_title}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={<Sparkles className="w-3.5 h-3.5" />}
+                onClick={handleAskAthena}
+              >
+                {dl.goal_ask_athena}
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4 pb-6">
@@ -96,7 +129,7 @@ export default function GoalsPage() {
                 {t.plugins.dev_tools.sync_to_obsidian}
               </Button>
             </div>
-            <GoalConstellation />
+            <GoalConstellation variant={goalsTab as 'board' | 'map'} />
           </div>
         )}
       </ContentBody>
@@ -109,5 +142,32 @@ export default function GoalsPage() {
         />
       )}
     </ContentBox>
+  );
+}
+
+/** Scaffold placeholder for the not-yet-built L2 tabs (Timeline / Portfolio /
+ *  Attention) — keeps the sub-nav navigable end-to-end and sets expectations. */
+function GoalScaffold({ tab }: { tab: 'timeline' | 'portfolio' | 'attention' }) {
+  const { t } = useTranslation();
+  const dl = t.plugins.dev_lifecycle;
+  const copy = {
+    timeline: { title: dl.goal_scaffold_timeline_title, sub: dl.goal_scaffold_timeline_sub },
+    portfolio: { title: dl.goal_scaffold_portfolio_title, sub: dl.goal_scaffold_portfolio_sub },
+    attention: { title: dl.goal_scaffold_attention_title, sub: dl.goal_scaffold_attention_sub },
+  }[tab];
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="relative flex items-center justify-center mb-5" style={{ width: 140, height: 140 }}>
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(circle at 50% 50%, rgba(139,92,246,0.14), transparent 70%)' }}
+        />
+        <div className="relative w-[92px] h-[92px] text-violet-400/70">
+          <IconGoals className="w-full h-full" />
+        </div>
+      </div>
+      <h3 className="typo-section-title text-foreground">{copy.title}</h3>
+      <p className="typo-body text-foreground mt-1 max-w-md">{copy.sub}</p>
+    </div>
   );
 }
