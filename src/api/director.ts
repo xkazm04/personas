@@ -39,12 +39,22 @@ export async function getDirectorPersonaId(): Promise<string> {
   return invoke<string>('get_director_persona_id');
 }
 
+// Phase 2 runs the Director persona through the execution runner and polls it
+// to completion, so a single evaluation can take minutes (backend ceiling is
+// 360s). Use generous timeouts well above the default 90s.
+const DIRECTOR_RUN_TIMEOUT_MS = 420_000; // 7 min — one target
+const DIRECTOR_BATCH_TIMEOUT_MS = 1_800_000; // 30 min — sequential over many
+
 export async function runDirectorOnPersona(personaId: string): Promise<number> {
-  return invoke<number>('run_director_on_persona', { personaId });
+  return invoke<number>('run_director_on_persona', { personaId }, { timeoutMs: DIRECTOR_RUN_TIMEOUT_MS });
 }
 
 export async function runDirectorBatch(maxPersonas?: number): Promise<DirectorReport> {
-  return invoke<DirectorReport>('run_director_batch', { maxPersonas: maxPersonas ?? null });
+  return invoke<DirectorReport>(
+    'run_director_batch',
+    { maxPersonas: maxPersonas ?? null },
+    { timeoutMs: DIRECTOR_BATCH_TIMEOUT_MS },
+  );
 }
 
 export async function listDirectorVerdicts(personaId?: string): Promise<DirectorVerdictRow[]> {

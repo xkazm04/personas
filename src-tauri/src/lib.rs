@@ -1037,6 +1037,13 @@ pub fn run() {
             }
             st.checkpoint("persona_jobs_worker");
 
+            // Cloud sync writer (Phase 1a): pushes a secret-free read-projection
+            // of local data to the user's own Supabase tenant for the web
+            // dashboard. Default off (opt-in via Settings); leader-gated inside
+            // the loop. Event-driven wakes come from the CDC drain (notify_dirty).
+            cloud::sync::spawn_sync_loop(app.handle().clone(), state_arc.clone());
+            st.checkpoint("cloud_sync_writer");
+
             // F-CRON: scheduled-curation worker. Ticks every 60s,
             // reads `persona_curation_schedule` rows, evaluates the
             // cron expression vs `last_curation_at` (or `created_at`
@@ -1981,6 +1988,7 @@ pub fn run() {
             // Communication -- Observability: Metrics
             commands::communication::observability::metrics::get_metrics_summary,
             commands::communication::observability::metrics::get_metrics_chart_data,
+            commands::communication::observability::metrics::get_value_rollup,
             commands::communication::observability::metrics::get_all_monthly_spend,
             commands::communication::observability::metrics::get_overview_bundle,
             commands::communication::observability::metrics::get_prompt_performance,
@@ -2436,6 +2444,9 @@ pub fn run() {
             commands::infrastructure::cloud::smee_relay_update,
             commands::infrastructure::cloud::smee_relay_set_status,
             commands::infrastructure::cloud::smee_relay_delete,
+            commands::infrastructure::cloud_sync::cloud_sync_set_enabled,
+            commands::infrastructure::cloud_sync::cloud_sync_status,
+            commands::infrastructure::cloud_sync::cloud_sync_now,
             // Infrastructure -- GitLab
             commands::infrastructure::gitlab::gitlab_connect,
             commands::infrastructure::gitlab::gitlab_connect_from_vault,

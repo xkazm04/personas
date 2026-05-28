@@ -12,7 +12,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 
 | Tab | Availability | Behavior | Implementation |
 | --- | --- | --- | --- |
-| Account | Starter+ | Auth/account state, telemetry toggle, radio, and software-update controls (see [Software updates](#software-updates)) | `sub_account/components/AccountSettings.tsx` |
+| Account | Starter+ | Auth/account state, telemetry toggle, radio, software-update controls (see [Software updates](#software-updates)), and — once signed in with Google — the **Cloud dashboard sync** toggle (see [Cloud dashboard sync](#cloud-dashboard-sync)) | `sub_account/components/AccountSettings.tsx`, `CloudSyncCard.tsx` |
 | Appearance | Starter+ | Theme, custom theme creator, text size, **density** (Compact / Comfortable / Cozy), timezone, brightness, dim/CVD-safe/high-contrast/reduce-motion toggles, pseudo-locale toggle, translation contributor | `sub_appearance/components/*` |
 | Notifications | Starter+ | Notification preferences, weekly health digest, outbound webhook subscriptions (Slack/Discord/Teams/generic JSON). Each severity row has a "Test" button that fires a synthetic healing toast at that severity — useful to preview what an alert looks like without waiting for a real one. | `sub_notifications/components/NotificationSettings.tsx`, `WebhookSubscriptionsPanel.tsx`, `src-tauri/src/notifications.rs`, `src-tauri/src/engine/webhook_notifier.rs` |
 | Engine | Dev-only | Runtime capability badges and operation rows | `sub_engine/components/*`, `libs/engineCapabilities.ts` |
@@ -36,6 +36,28 @@ The Appearance tab's **Density** control (Compact / Comfortable / Cozy) is app-w
 The Account tab's **Updates** card is the user-facing surface for the Tauri auto-updater (`tauri-plugin-updater`, configured in `src-tauri/tauri.conf.json` against the GitHub releases endpoint). `useAutoUpdater` (`src/hooks/utility/data/useAutoUpdater.ts`) checks 5 seconds after launch and then every 6 hours; a manual **Check for Updates** button forces a check on demand.
 
 The card shows the current installed version (via `getVersion()`) and a relative "last checked" timestamp so the user can confirm the background poll is running. After a manual check it also shows the result inline (up-to-date / failed) for a few seconds, so the outcome persists past the toast. A **Recent updates** list below the button shows the version-upgrade timeline, recorded in `localStorage` by `src/lib/updateHistory.ts` — `useAutoUpdater` calls `recordVersion()` once per launch, appending an entry the first time the app runs on each new version. A **Clear** control resets the list (`clearUpdateHistory()`). When an update is found, `UpdateBanner` (`src/features/shared/components/feedback/UpdateBanner.tsx`) appears at the top of the app with the release notes, a live download-progress bar during install, and (when personas are mid-execution) a preflight warning before the app restarts. The preflight offers three choices — install anyway, defer until running tasks finish (auto-installs once the running count hits zero), or keep working.
+
+## Data portability
+
+The **Data** tab (`sub_portability/`, backed by `core/data_portability.rs`) exports the workspace to a portable ZIP archive (`manifest.json` inside a `.zip`) and imports it back. Imported entities are always created as **new, disabled** rows with an `(imported)` name suffix — import never overwrites existing data.
+
+The **Export Workspace** button opens a selection modal where you pick exactly what to include across three categories:
+
+- **Personas** — agents plus their triggers, event subscriptions, tool links, test suites, and (unless opted out) memories.
+- **Teams** — team canvases plus members, connections, and (unless opted out) team memories (the `team_memories` / `sub_teamMemory` store). On import, team memories are recreated under the new team id as manually-curated entries; run-specific provenance (`run_id` / `member_id` / `persona_id`) is intentionally dropped because it references rows that don't travel with the bundle.
+- **Credentials** — non-secret metadata by default. Secrets are only embedded when you set an export passphrase, which AES-256-GCM-encrypts them into the bundle (format version 3).
+
+An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories — useful for sharing a clean template. The **Workspace Overview** stat cards (including a **Team Memories** count) preview what's in the workspace before exporting.
+
+Credential-only export/import (password-protected `.cred.enc` files) lives in a separate **Credential Vault** section of the same tab and is independent of the workspace bundle.
+
+## Cloud dashboard sync
+
+The Account tab's **Cloud Dashboard Sync** card (`sub_account/components/CloudSyncCard.tsx`) appears only when the user is signed in with Google. It opts the device into pushing a **read-only projection** of local data (personas, executions, events, manual reviews, messages, metrics, tool usage) to the user's own Supabase tenant, so the web dashboard can render it. Isolation is enforced server-side by Supabase Row-Level Security keyed on `auth.uid()`; the desktop authenticates with the public anon key plus the user's own Google-OAuth JWT, so **no privileged secret is embedded in the app**.
+
+The projection is secret-free by construction: the encrypted `model_profile`, encrypted event payloads, and the entire credential vault are never read into the sync rows — execution and credentials never leave the device. Default off; opt-in is persisted in `app_settings.cloud_sync_enabled`.
+
+Backend: `src-tauri/src/cloud/sync/` (PostgREST upsert client + per-table incremental cursors in `app_settings`, a 45s periodic + CDC-driven sync loop, leader-gated). Commands `cloud_sync_set_enabled` / `cloud_sync_status` / `cloud_sync_now` (`commands/infrastructure/cloud_sync.rs`), front-end wrappers in `src/api/cloudSync.ts`. The Supabase schema + RLS live in `personas-web/scripts/setup-sync-db.sql` (applied via `npm run db:migrate:sync`).
 
 ## Ambient context
 

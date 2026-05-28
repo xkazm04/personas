@@ -14,7 +14,7 @@ export type OrbAnchor = 'auto' | 'left' | 'right' | 'above' | 'below' | 'center'
  * closed enum (not arbitrary callbacks) so walkthroughs stay declarative data
  * and the set of things a guided step can *do* is auditable.
  */
-export type GuidancePreAction = 'open_build_entry';
+export type GuidancePreAction = 'open_build_entry' | 'open_credential_add';
 
 export interface GuidanceStep {
   /** Stable id (for keys + test assertions). */
@@ -31,6 +31,15 @@ export interface GuidanceStep {
   preAction?: GuidancePreAction;
   /** Override the auto-advance dwell (ms). Default derives from narration length. */
   dwellMs?: number;
+  /**
+   * Wait for the user to actually click the highlighted element before
+   * advancing — a "your turn" beat, not a timed slide. Suppresses the
+   * auto-advance dwell (Skip/Stop still work). Requires `highlightTestId`; with
+   * none set it falls back to the timer so a walkthrough can never hard-stall.
+   * Independent of the universal click-to-advance (clicking the highlight always
+   * advances) — this just removes the timer so the step *only* moves on a click.
+   */
+  holdForClick?: boolean;
 }
 
 export interface GuidanceWalkthrough {

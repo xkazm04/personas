@@ -1841,14 +1841,16 @@ const bridge: TestBridge = {
     personaIds: string[],
     teamIds: string[],
     credentialIds: string[],
-    passphrase: string | null,
-    filePath: string,
+    includeMemories: boolean | null = true,
+    passphrase: string | null = null,
+    filePath = '',
   ) {
     try {
       const wrote = await invoke<boolean>('export_selective_to_path', {
         personaIds,
         teamIds,
         credentialIds,
+        includeMemories,
         passphrase,
         filePath,
       });

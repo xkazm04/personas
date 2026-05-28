@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { Pause, Play, SkipForward, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
-import { getWalkthrough } from '../guidance/walkthroughs';
+import { resolveWalkthrough } from '../guidance/walkthroughs';
 import { ORB_SIZE } from './AthenaOrb';
 
 const CAPTION_GAP = 12;
@@ -21,12 +21,13 @@ export function GuideCaption() {
   const stepIndex = useCompanionStore((s) => s.guidanceStepIndex);
   const playing = useCompanionStore((s) => s.guidancePlaying);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
+  const adHoc = useCompanionStore((s) => s.adHocWalkthrough);
   const pauseGuidance = useCompanionStore((s) => s.pauseGuidance);
   const resumeGuidance = useCompanionStore((s) => s.resumeGuidance);
   const advanceGuidance = useCompanionStore((s) => s.advanceGuidance);
   const stopGuidance = useCompanionStore((s) => s.stopGuidance);
 
-  const walkthrough = getWalkthrough(activeWalkthrough);
+  const walkthrough = resolveWalkthrough(activeWalkthrough, adHoc);
   if (!walkthrough || !orbTarget) return null;
   const step = walkthrough.steps[stepIndex];
   if (!step) return null;
@@ -48,6 +49,11 @@ export function GuideCaption() {
       <p data-testid="athena-guide-caption-text" className="typo-body text-foreground/90">
         {step.narration(t)}
       </p>
+      {step.holdForClick && step.highlightTestId && (
+        <p data-testid="athena-guide-click-hint" className="mt-1.5 typo-caption text-primary/80">
+          {t.plugins.companion.guide_click_hint}
+        </p>
+      )}
       <div className="mt-2 flex items-center justify-between">
         <span className="typo-caption text-foreground">
           {tx(t.plugins.companion.guide_step_label, {

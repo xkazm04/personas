@@ -9,6 +9,7 @@ import { SUMMARY_GRID } from '@/features/overview/libs/dashboardGrid';
 import { AnomalyBadge } from './MetricsCards';
 import { KpiTile } from '@/features/overview/components/shared/KpiTile';
 import { MetricsCharts } from './MetricsCharts';
+import { ValueRollupSection } from './ValueRollupSection';
 
 interface ExecutionMetricsDashboardProps {
   onClose?: () => void;
@@ -90,6 +91,9 @@ export function ExecutionMetricsDashboard({ onClose }: ExecutionMetricsDashboard
         <KpiTile icon={CheckCircle} label={t.overview.activity.success_rate} color="emerald" numericValue={m.overallSuccessRatePct} format={(v) => `${v.toFixed(1)}%`} />
         <KpiTile icon={Clock} label={t.overview.activity.avg_latency} color="amber" numericValue={m.data.avg_latency_ms} format={fmtMs} />
       </div>
+
+      {/* Business-value rollup (value-delivered rate, cost-per-value, outcomes) */}
+      <ValueRollupSection days={m.days} />
 
       {/* Anomalies */}
       {m.data.cost_anomalies.length > 0 && (
