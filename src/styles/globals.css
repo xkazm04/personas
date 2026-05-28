@@ -4659,3 +4659,89 @@ html[data-motion="reduce"] .animate-fade-slide-in {
 .athena-chat-md h1 { margin-top: 1.25rem; }
 .athena-chat-md h2 { margin-top: 1.1rem; }
 .athena-chat-md h3 { margin-top: 0.9rem; }
+
+/* ---------------------------------------------------------------------------
+   Athena chat — syntax highlighting tuned to the app palette, SCOPED to the
+   chat bubbles. The global `@import github-dark-dimmed` (globals.css top) is a
+   fixed DARK theme: it forces a `#22272e` background + dark token colors onto
+   every code block, which clashes with the brand and is unreadable on the
+   light themes. These rules (a) drop the fixed background so the block sits on
+   the themed chrome surface, (b) base text on --foreground, and (c) recolor
+   tokens from a small token-driven palette — keyword/function follow the
+   theme's --primary/--accent; string/number/attr use curated hues. A
+   `[data-theme^="light"]` block darkens everything for contrast on light
+   surfaces. Plain selectors at (0,2,0) beat the imported (0,1,0) `.hljs-*`
+   rules, so no `!important` is needed. Scoped to `.athena-chat-md` only — the
+   ~20 other MarkdownRenderer surfaces keep the stock github-dark-dimmed theme.
+   --------------------------------------------------------------------------- */
+.athena-chat-md .hljs {
+  background: transparent;
+  color: var(--foreground);
+  --md-syn-comment: color-mix(in srgb, var(--foreground) 45%, transparent);
+  --md-syn-keyword: var(--primary);
+  --md-syn-function: var(--accent);
+  --md-syn-string: #7ee787;
+  --md-syn-number: #f0a36b;
+  --md-syn-attr: #79c0ff;
+  --md-syn-punct: color-mix(in srgb, var(--foreground) 70%, transparent);
+  --md-syn-deletion: #f85149;
+}
+[data-theme^="light"] .athena-chat-md .hljs {
+  --md-syn-comment: color-mix(in srgb, var(--foreground) 55%, #0f172a);
+  --md-syn-keyword: color-mix(in srgb, var(--primary) 65%, #0f172a);
+  --md-syn-function: color-mix(in srgb, var(--accent) 55%, #0f172a);
+  --md-syn-string: #0a7d33;
+  --md-syn-number: #b4530a;
+  --md-syn-attr: #0550ae;
+  --md-syn-punct: color-mix(in srgb, var(--foreground) 60%, #0f172a);
+  --md-syn-deletion: #b42318;
+}
+.athena-chat-md .hljs-comment,
+.athena-chat-md .hljs-quote,
+.athena-chat-md .hljs-meta {
+  color: var(--md-syn-comment);
+  font-style: italic;
+}
+.athena-chat-md .hljs-keyword,
+.athena-chat-md .hljs-built_in,
+.athena-chat-md .hljs-type,
+.athena-chat-md .hljs-literal,
+.athena-chat-md .hljs-selector-tag {
+  color: var(--md-syn-keyword);
+}
+.athena-chat-md .hljs-string,
+.athena-chat-md .hljs-regexp,
+.athena-chat-md .hljs-addition {
+  color: var(--md-syn-string);
+}
+.athena-chat-md .hljs-number,
+.athena-chat-md .hljs-symbol,
+.athena-chat-md .hljs-bullet {
+  color: var(--md-syn-number);
+}
+.athena-chat-md .hljs-title,
+.athena-chat-md .hljs-title.function_,
+.athena-chat-md .hljs-section {
+  color: var(--md-syn-function);
+}
+.athena-chat-md .hljs-attr,
+.athena-chat-md .hljs-attribute,
+.athena-chat-md .hljs-variable,
+.athena-chat-md .hljs-template-variable,
+.athena-chat-md .hljs-tag,
+.athena-chat-md .hljs-name {
+  color: var(--md-syn-attr);
+}
+.athena-chat-md .hljs-punctuation,
+.athena-chat-md .hljs-operator {
+  color: var(--md-syn-punct);
+}
+.athena-chat-md .hljs-deletion {
+  color: var(--md-syn-deletion);
+}
+.athena-chat-md .hljs-strong {
+  font-weight: 600;
+}
+.athena-chat-md .hljs-emphasis {
+  font-style: italic;
+}
