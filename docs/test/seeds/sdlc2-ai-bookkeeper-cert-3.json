@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-cert-3",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": true,
+  "goal": "Stabilization run: master currently has a known Next.js lint regression in src/app/page.tsx — a raw <a href=\"/\"> element flagged by @next/next/no-html-link-for-pages. The Release Manager has held the last two releases on this debt (cert-1 shipped it via scope-creep, cert-2 held formatMoney's release on it). As the Solution Architect, scope a minimal fix: replace the raw <a> with next/link's <Link> component, preserving the same visible behavior (href, children, any styling). The Engineer (Dev Clone) MUST implement the fix with NO scope creep — only src/app/page.tsx changes, no piggyback features, no visual refresh — and add or update a focused test confirming the navigation works. The Reviewer must verify the change is minimal and the behavior is preserved. Security can confirm no new attack surface. The Release Manager runs the full quality gate (build + lint + tests) and merges + versions a PATCH release (0.5.x) since this is a non-functional fix. The Docs Steward updates CHANGELOG with the stabilization entry. Success = trunk is GREEN after merge (lint passes), and the run delivers a clean, scope-disciplined increment to master.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "A minimal page.tsx fix (raw <a> → <Link>), focused test, suite green INCLUDING lint, PATCH-bump release merged to master by Release Manager (no self-veto this time — the precondition is now actually satisfied). Third held-out cert seed — exercises the stabilization/debt-cleanup muscle distinct from cert-1 (composition) and cert-2 (display), and resolves the recurring lint debt so cert-4+ can run on a clean trunk."
+}
