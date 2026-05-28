@@ -116,6 +116,15 @@ Four steps over always-visible Vault anchors (no modal):
 
 No new testids were needed — `credential-manager` and `vault-type-picker` already existed. Athena fires this topic when the user asks how to connect/add a service and wants to do it themselves (constitution v27).
 
+## Interactive progression (click-to-advance)
+
+Walkthroughs aren't only timed slides. Two behaviors make them responsive:
+
+- **Universal click-to-advance** — clicking the element Athena is pointing at advances the tour immediately. The glow is `pointer-events-none`, so the click also reaches the real element underneath: clicking "Connections" in the sidebar both navigates *and* moves the tour on ("do it and continue"). The listener is `capture` + `once`, so the element's own handler still runs and a step never double-advances.
+- **`holdForClick` steps** — a step can set `holdForClick: true` to become a "your turn" beat: the auto-advance dwell is suppressed and the step waits for the click (Skip/Stop still work), with a `guide_click_hint` line shown beside the orb. Requires a `highlightTestId`; with none, it falls back to the timer so a walkthrough can never hard-stall. `connector_setup`'s **add** step uses this — the tour waits until the user actually picks a connector type before wrapping up.
+
+The auto-advance timer is unchanged for ordinary steps, so the hands-off auto-play demo (and its e2e) still walk every step on a dwell.
+
 ---
 
 ## Accessibility & resource discipline

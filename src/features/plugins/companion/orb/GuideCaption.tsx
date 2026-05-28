@@ -49,6 +49,11 @@ export function GuideCaption() {
       <p data-testid="athena-guide-caption-text" className="typo-body text-foreground/90">
         {step.narration(t)}
       </p>
+      {step.holdForClick && step.highlightTestId && (
+        <p data-testid="athena-guide-click-hint" className="mt-1.5 typo-caption text-primary/80">
+          {t.plugins.companion.guide_click_hint}
+        </p>
+      )}
       <div className="mt-2 flex items-center justify-between">
         <span className="typo-caption text-foreground">
           {tx(t.plugins.companion.guide_step_label, {

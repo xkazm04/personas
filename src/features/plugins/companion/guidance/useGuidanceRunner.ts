@@ -114,6 +114,7 @@ export function useGuidanceRunner() {
   const adHoc = useCompanionStore((s) => s.adHocWalkthrough);
   const appliedKeyRef = useRef<string | null>(null);
   const lastAdHocRef = useRef<GuidanceWalkthrough | null>(null);
+  const clickCleanupRef = useRef<(() => void) | null>(null);
 
   // Surface the orb when a walkthrough starts (close the panel back to the orb
   // so the demo is visible). No-op if the orb is already showing.
@@ -158,6 +159,10 @@ export function useGuidanceRunner() {
     let cancelled = false;
     let advanceTimer: ReturnType<typeof setTimeout> | null = null;
 
+    // Clear any prior step's click-to-advance listener before (re)wiring.
+    clickCleanupRef.current?.();
+    clickCleanupRef.current = null;
+
     if (isFreshStep) {
       appliedKeyRef.current = key;
       // Clear the prior step's ring immediately for a clean off→navigate→on feel.
@@ -188,11 +193,28 @@ export function useGuidanceRunner() {
         useCompanionStore.getState().setOrbGuideTarget(
           computeOrbTarget(target, step.orbAnchor ?? 'auto'),
         );
+
+        // Universal click-to-advance: clicking the thing Athena points at moves
+        // the tour on (the glow is pointer-events-none, so the click also hits
+        // the real element — "do it and continue"). Capture + once so the
+        // element's own handler still runs and we never double-advance.
+        if (target) {
+          const onClick = () => {
+            if (cancelled) return;
+            useCompanionStore.getState().advanceGuidance();
+          };
+          target.addEventListener('click', onClick, { capture: true, once: true });
+          clickCleanupRef.current = () =>
+            target.removeEventListener('click', onClick, { capture: true });
+        }
       })();
     }
 
-    // Auto-advance timer — armed whenever playing; re-armed on resume.
-    if (playing) {
+    // Auto-advance timer — armed when playing, EXCEPT on a `holdForClick` step
+    // that has a real anchor to click (then it waits for the click / Skip). A
+    // hold step with no anchor still gets the timer so it can't hard-stall.
+    const holding = !!step.holdForClick && !!step.highlightTestId;
+    if (playing && !holding) {
       const t = getActiveTranslations();
       const dwell = step.dwellMs ?? defaultDwell(step.narration(t));
       advanceTimer = setTimeout(() => {
@@ -204,6 +226,8 @@ export function useGuidanceRunner() {
     return () => {
       cancelled = true;
       if (advanceTimer) clearTimeout(advanceTimer);
+      clickCleanupRef.current?.();
+      clickCleanupRef.current = null;
     };
   }, [activeWalkthrough, stepIndex, playing, adHoc]);
 }

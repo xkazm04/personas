@@ -1596,6 +1596,7 @@
     "guide_pause": "Pause",
     "guide_resume": "Resume",
     "guide_step_label": "Step {current} of {total}",
+    "guide_click_hint": "जारी रखने के लिए हाइलाइट किए गए क्षेत्र पर क्लिक करें",
     "guide_pc_title": "Creating a persona",
     "guide_pc_intro": "Let me walk you through creating a persona — watch where I point.",
     "guide_pc_open": "This is the build studio, where every persona starts.",

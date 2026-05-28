@@ -11200,6 +11200,7 @@ export type Translations = {
       guide_pause: string;
       guide_resume: string;
       guide_step_label: string;
+      guide_click_hint: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;

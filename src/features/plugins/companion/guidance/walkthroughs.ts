@@ -82,6 +82,9 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
         preAction: 'open_credential_add',
         highlightTestId: 'vault-type-picker',
         orbAnchor: 'auto',
+        // "Your turn" beat — wait until the user actually picks a connector type
+        // (a click inside the picker) before moving to the wrap-up.
+        holdForClick: true,
       },
       {
         id: 'outro',
