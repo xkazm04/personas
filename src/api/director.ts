@@ -63,6 +63,22 @@ export async function listDirectorVerdicts(personaId?: string): Promise<Director
   });
 }
 
+/**
+ * Recent Director scores per persona, oldest→newest. Personas with no scored
+ * executions return `[]`. Powers the verdict-trend sparkline on the personas
+ * table — one batched call covers every visible row.
+ */
+export async function listDirectorScoreTrends(
+  personaIds: string[],
+  limit?: number,
+): Promise<Record<string, number[]>> {
+  if (personaIds.length === 0) return {};
+  return invoke<Record<string, number[]>>('list_director_score_trends', {
+    personaIds,
+    limit: limit ?? null,
+  });
+}
+
 /** Whether the Director uses the Obsidian Brain vault as long-term memory. */
 export async function getDirectorBrainEnabled(): Promise<boolean> {
   return invoke<boolean>('get_director_brain_enabled');

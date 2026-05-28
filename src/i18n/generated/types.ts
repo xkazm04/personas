@@ -3072,6 +3072,8 @@ export type Translations = {
     brain_title: string;
     brain_subtitle: string;
     brain_unavailable: string;
+    col_verdict: string;
+    col_verdict_tooltip: string;
   };
   vault: {
     title: string;

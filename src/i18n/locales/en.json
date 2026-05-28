@@ -3065,7 +3065,9 @@
     "no_verdicts": "No verdicts yet — run a review to see coaching here",
     "brain_title": "Director long-term memory",
     "brain_subtitle": "Let the Director read past coaching from your Obsidian Brain and write each new review back.",
-    "brain_unavailable": "Configure an Obsidian vault to give the Director long-term memory."
+    "brain_unavailable": "Configure an Obsidian vault to give the Director long-term memory.",
+    "col_verdict": "Verdict",
+    "col_verdict_tooltip": "Director score trend across recent runs (0-5)"
   },
   "vault": {
     "title": "Vault",
