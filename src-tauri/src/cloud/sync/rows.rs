@@ -570,3 +570,109 @@ pub fn fetch_knowledge_patterns(
     )?;
     Ok(stamp!(rows, device_id))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn keys(v: &serde_json::Value) -> Vec<String> {
+        v.as_object()
+            .expect("row serializes to a JSON object")
+            .keys()
+            .cloned()
+            .collect()
+    }
+
+    /// The credentials-stay-local guarantee: a synced persona row must never
+    /// carry the AES-encrypted or device-local columns. This is enforced
+    /// structurally (the struct has no such field) — assert it so a future
+    /// field addition can't silently leak one.
+    #[test]
+    fn persona_row_excludes_secret_and_local_columns() {
+        let row = SyncedPersonaRow {
+            id: "p1".into(),
+            device_id: Some("d1".into()),
+            project_id: "default".into(),
+            name: "n".into(),
+            description: None,
+            system_prompt: "s".into(),
+            structured_prompt: None,
+            icon: None,
+            color: None,
+            enabled: true,
+            max_concurrent: 1,
+            timeout_ms: 1,
+            max_budget_usd: None,
+            max_turns: None,
+            design_context: None,
+            home_team_id: None,
+            template_category: None,
+            created_at: "t".into(),
+            updated_at: "t".into(),
+        };
+        let k = keys(&serde_json::to_value(&row).unwrap());
+        for forbidden in [
+            "model_profile",
+            "notification_channels",
+            "sensitive",
+            "last_design_result",
+            "last_test_report",
+        ] {
+            assert!(!k.contains(&forbidden.to_string()), "persona row leaked `{forbidden}`");
+        }
+    }
+
+    /// Event payloads are AES-encrypted at rest (`payload`/`payload_iv`); the
+    /// sync projection carries event metadata only.
+    #[test]
+    fn event_row_excludes_encrypted_payload() {
+        let row = SyncedEventRow {
+            id: "e1".into(),
+            device_id: None,
+            project_id: "default".into(),
+            event_type: "x".into(),
+            source_type: "y".into(),
+            source_id: None,
+            target_persona_id: None,
+            status: "pending".into(),
+            error_message: None,
+            processed_at: None,
+            created_at: "t".into(),
+        };
+        let k = keys(&serde_json::to_value(&row).unwrap());
+        assert!(!k.contains(&"payload".to_string()), "event row leaked `payload`");
+        assert!(!k.contains(&"payload_iv".to_string()), "event row leaked `payload_iv`");
+    }
+
+    /// user_id is never sent on the wire — Supabase fills it from auth.uid()
+    /// via the column default, and RLS enforces it. Sending it would be a
+    /// (harmless but wrong) attempt to set another user's scope.
+    #[test]
+    fn rows_never_send_user_id() {
+        let exec = SyncedExecutionRow {
+            id: "x1".into(),
+            device_id: None,
+            persona_id: "p1".into(),
+            trigger_id: None,
+            status: "completed".into(),
+            input_data: None,
+            output_data: None,
+            claude_session_id: None,
+            model_used: None,
+            input_tokens: 0,
+            output_tokens: 0,
+            cost_usd: 0.0,
+            error_message: None,
+            duration_ms: None,
+            started_at: None,
+            completed_at: None,
+            created_at: "t".into(),
+        };
+        let k = keys(&serde_json::to_value(&exec).unwrap());
+        assert!(!k.contains(&"user_id".to_string()), "exec row should not send user_id");
+        // Spot-check the execution projection also omits device-local plumbing.
+        for forbidden in ["log_file_path", "execution_flows", "claimed_by_instance", "claim_expires_at"] {
+            assert!(!k.contains(&forbidden.to_string()), "exec row leaked `{forbidden}`");
+        }
+    }
+}
