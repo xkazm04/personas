@@ -192,6 +192,21 @@ pub const MONTHLY_COST_CEILING_USD: &str = "monthly_cost_ceiling_usd";
 /// Default monthly cost ceiling in USD. `0.0` means no ceiling.
 pub const MONTHLY_COST_CEILING_USD_DEFAULT: f64 = 0.0;
 
+/// Whether desktop → cloud dashboard sync is enabled. Value: `"true"` / `"false"`.
+/// Default off; the user opts in from Settings. Read by the background sync loop.
+pub const CLOUD_SYNC_ENABLED: &str = "cloud_sync_enabled";
+
+/// Stable per-device id used to tag synced rows with their origin. Minted as a
+/// UUID on first sync and persisted here. Value: free-form UUID string.
+pub const CLOUD_SYNC_DEVICE_ID: &str = "cloud_sync_device_id";
+
+/// RFC3339 timestamp of the last successful cloud sync pass. Value: free-form.
+pub const CLOUD_SYNC_LAST_AT: &str = "cloud_sync_last_at";
+
+/// Per-table incremental sync watermark. Full key: `cloud_sync_cursor:<table>`
+/// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
+pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
+
 /// Exact keys allowed in the settings store.
 const ALLOWED_KEYS: &[&str] = &[
     OLLAMA_API_KEY,
@@ -223,6 +238,9 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
     MONTHLY_COST_CEILING_USD,
+    CLOUD_SYNC_ENABLED,
+    CLOUD_SYNC_DEVICE_ID,
+    CLOUD_SYNC_LAST_AT,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).
@@ -240,6 +258,7 @@ const ALLOWED_PREFIXES: &[&str] = &[
     AUTO_ROLLBACK_PREFIX,
     AUTO_OPTIMIZE_PREFIX,
     HEALTH_WATCH_PREFIX,
+    CLOUD_SYNC_CURSOR_PREFIX,
 ];
 
 /// Returns true if `suffix` is a syntactically acceptable persona_id-shaped
@@ -306,12 +325,14 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         COMPANION_CONSTITUTION_VERSION => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (version), got {value:?}")
         }),
-        CLI_SESSION_AWARENESS_ENABLED | COMPANION_AUTONOMOUS_MODE => match value {
-            "true" | "false" => Ok(()),
-            _ => Err(format!(
-                "value for '{key}' must be the literal string 'true' or 'false', got {value:?}"
-            )),
-        },
+        CLI_SESSION_AWARENESS_ENABLED | COMPANION_AUTONOMOUS_MODE | CLOUD_SYNC_ENABLED => {
+            match value {
+                "true" | "false" => Ok(()),
+                _ => Err(format!(
+                    "value for '{key}' must be the literal string 'true' or 'false', got {value:?}"
+                )),
+            }
+        }
         MONTHLY_COST_CEILING_USD => match value.parse::<f64>() {
             Ok(n) if n.is_finite() && n >= 0.0 => Ok(()),
             _ => Err(format!(
