@@ -11290,6 +11290,10 @@ export type Translations = {
       day_yesterday: string;
       you_label: string;
       copy_conversation: string;
+      search_toggle: string;
+      search_placeholder: string;
+      search_results: string;
+      search_no_results: string;
       thinking: string;
       phase_reviewing: string;
       phase_thinking: string;

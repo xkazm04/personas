@@ -9,6 +9,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   RotateCcw,
+  Search,
   Square,
   X,
 } from 'lucide-react';
@@ -83,6 +84,7 @@ import { QueuedMessages } from './QueuedMessages';
 import { WelcomeHero } from './WelcomeHero';
 import { TypingDots } from './TypingDots';
 import { useChatScroll } from './useChatScroll';
+import { ChatSearch } from './ChatSearch';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -514,6 +516,8 @@ function Header({
   onToggleAutonomousMode: () => void;
 }) {
   const { t } = useTranslation();
+  const searchOpen = useCompanionStore((s) => s.chatSearchOpen);
+  const setSearchOpen = useCompanionStore((s) => s.setChatSearchOpen);
   return (
     <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 bg-foreground/[0.02] shrink-0">
       <div className="flex items-center gap-2 min-w-0">
@@ -540,6 +544,21 @@ function Header({
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={() => setSearchOpen(!searchOpen)}
+          data-testid="companion-toggle-search"
+          aria-pressed={searchOpen}
+          className={`p-1.5 rounded-interactive transition-colors focus-ring ${
+            searchOpen
+              ? 'bg-primary/15 text-primary hover:bg-primary/20'
+              : 'text-foreground hover:text-foreground hover:bg-foreground/5'
+          }`}
+          aria-label={t.plugins.companion.search_toggle}
+          title={t.plugins.companion.search_toggle}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onToggleAutonomousMode}
           data-testid="companion-toggle-autonomous"
@@ -1673,6 +1692,7 @@ function Body(props: BodyProps) {
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
         <div className="relative flex-1 min-h-0 flex flex-col">
+        <ChatSearch messages={messages} onOpenInBrain={handleOpenInBrain} />
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
           {!initialized && !initError && (
             <div className="flex items-center gap-3 text-foreground typo-body">
