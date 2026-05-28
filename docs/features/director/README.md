@@ -35,6 +35,10 @@ user resolved them), polls it to completion, and parses its output:
   overall verdict. The score + a rendered markdown of the full assessment are
   written onto the **reviewed execution** (`persona_executions.director_score`
   / `director_review_md`).
+- Zero-to-three `DIRECTOR_WIN: {"category":"…","note":"…"}` lines → things the
+  persona is **doing well** in that category. Rendered as a "What's working"
+  section at the top of the review markdown so coaching isn't purely
+  corrective. Wins are not routed to the review queue.
 - Zero-to-four `DIRECTOR_VERDICT: {…}` lines → coaching notes, routed into
   `persona_manual_reviews` (the existing Human Review queue). Approving /
   rejecting them feeds the human-feedback learning loop, which the next cycle
@@ -60,6 +64,12 @@ embeddings, so it works in the lite build. Toggle via
 
 ## Where verdicts surface
 
+- **Director panel** (`src/features/agents/components/allPersonas/DirectorPanel.tsx`):
+  the unified management card at the top of the personas page. Shows the
+  scope summary (how many personas are starred + when the last review ran),
+  a **Run review now** button (batch-runs the Director over starred personas),
+  the Brain long-term-memory toggle (when a vault is configured), and a
+  **Recent verdicts** list of the most recent coaching notes.
 - **Activity list** (`src/features/agents/sub_activity`): a **Verdict** column
   (0-5 stars, 2nd column) reads `director_score` per execution. Unreviewed
   runs show "—".
@@ -83,11 +93,17 @@ embeddings, so it works in the lite build. Toggle via
 
 - Engine: `src-tauri/src/engine/director.rs` (rubric, evaluator, scoring,
   routing).
+- Brain bridge: `src-tauri/src/engine/director_brain.rs` (vault read/write
+  helpers, split out of `director.rs` so the gating + filesystem code stays
+  separate from the evaluator pipeline).
 - Commands: `src-tauri/src/commands/infrastructure/director.rs`.
 - Scope/score storage: `personas.starred`, `persona_executions.director_score`
   / `director_review_md` (migrations in `src-tauri/src/db/migrations/`).
-- UI: `src/features/agents/sub_activity/*` (Verdict column),
-  `src/features/agents/sub_executions/detail/*` (Director tab).
+- UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx` (management
+  card), `src/features/agents/sub_activity/*` (Verdict column),
+  `src/features/agents/sub_executions/detail/*` (Director tab). All UI strings
+  live under the consolidated `t.director.*` i18n namespace
+  (`src/i18n/locales/en.json`).
 
 ## Testing
 

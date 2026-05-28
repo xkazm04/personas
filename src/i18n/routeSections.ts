@@ -21,7 +21,7 @@ const ROUTE_SECTIONS: Record<SidebarSection, readonly TranslationSection[]> = {
   home: ['home', 'onboarding', 'system_health'],
   overview: ['overview', 'execution', 'execution_status', 'event_types', 'alerts', 'models'],
   goals: ['plugins', 'pipeline'],
-  personas: ['agents', 'matrix_v3', 'design', 'execution', 'models', 'templates'],
+  personas: ['agents', 'director', 'matrix_v3', 'design', 'execution', 'models', 'templates'],
   events: ['triggers', 'event_types', 'alerts', 'schedules', 'shared'],
   credentials: ['vault', 'connector_roles', 'connector_licensing', 'auth'],
   'design-reviews': ['design', 'feedback_labels', 'templates', 'recipes', 'recipe_shared'],
