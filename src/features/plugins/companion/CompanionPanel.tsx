@@ -1688,6 +1688,11 @@ function Body(props: BodyProps) {
               const isLastAssistant =
                 m.role === 'assistant' && i === lastAssistantIdx;
               const prev = i > 0 ? messages[i - 1] : undefined;
+              const next = i < messages.length - 1 ? messages[i + 1] : undefined;
+              // Group consecutive same-role messages: only the first shows the
+              // avatar, and the run is pulled tighter together.
+              const groupStart = !prev || prev.role !== m.role;
+              const groupEnd = !next || next.role !== m.role;
               const priorUser =
                 isLastAssistant && prev?.role === 'user' ? prev.content : '';
               const connectorJobIds =
@@ -1708,6 +1713,9 @@ function Body(props: BodyProps) {
                     role={m.role}
                     index={i}
                     onOpenInBrain={handleOpenInBrain}
+                    createdAt={m.createdAt}
+                    groupStart={groupStart}
+                    groupEnd={groupEnd}
                   >
                     {m.content}
                   </Bubble>
