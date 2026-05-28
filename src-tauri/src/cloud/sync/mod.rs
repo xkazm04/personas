@@ -291,8 +291,76 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
     tables.push(sync!(7, rows::fetch_memories));
     tables.push(sync!(8, rows::fetch_knowledge_patterns));
 
-    let total = tables.iter().map(|t| t.rows).sum();
+    // Delete propagation (v2): mirror local persona deletions into the cloud.
+    // Kept out of the displayed grid (it has no upsert cursor of its own row),
+    // but its outcome still influences is_clean()/last_error.
+    tables.push(process_tombstones(pool, client).await);
+
+    // "Rows synced" counts upserted data rows — not the heartbeat or deletes.
+    let total = tables
+        .iter()
+        .filter(|t| t.remote != "synced_devices" && t.remote != "deletes")
+        .map(|t| t.rows)
+        .sum();
     SyncReport { tables, total }
+}
+
+/// Synced child tables keyed by `persona_id` (mirror of the local
+/// `ON DELETE CASCADE` from `personas`).
+const PERSONA_SCOPED_TABLES: &[&str] = &[
+    "synced_executions",
+    "synced_manual_reviews",
+    "synced_messages",
+    "synced_metrics_snapshots",
+    "synced_tool_usage",
+    "synced_memories",
+    "synced_knowledge_patterns",
+];
+
+/// Delete every cloud row belonging to a deleted persona, mirroring the local
+/// cascade. RLS scopes each delete to this user. Personas row deleted last so a
+/// mid-cascade failure leaves the persona present (and thus retried next pass)
+/// rather than orphaning its children.
+async fn delete_persona_cascade(client: &SyncClient, persona_id: &str) -> Result<(), AppError> {
+    for table in PERSONA_SCOPED_TABLES {
+        client.delete(&format!("{table}?persona_id=eq.{persona_id}")).await?;
+    }
+    // Events reference the persona via target_persona_id, not persona_id.
+    client
+        .delete(&format!("synced_events?target_persona_id=eq.{persona_id}"))
+        .await?;
+    client
+        .delete(&format!("synced_personas?id=eq.{persona_id}"))
+        .await?;
+    Ok(())
+}
+
+/// Process persona tombstones since the cursor: cascade-delete each in the
+/// cloud, then advance the cursor only if all deletes succeeded (so a failure
+/// is retried next pass). Fault-isolated like a table — returns its outcome.
+async fn process_tombstones(pool: &DbPool, client: &SyncClient) -> LastTable {
+    let cursor_prev = cursor::get_cursor(pool, "tombstones", false);
+    let tick_start = now_rfc3339();
+    let tombstones = match rows::fetch_tombstones(pool, &cursor_prev) {
+        Ok(t) => t,
+        Err(e) => {
+            return LastTable { remote: "deletes".into(), rows: 0, error: Some(e.to_string()) };
+        }
+    };
+
+    let mut deleted: u64 = 0;
+    for tomb in &tombstones {
+        if let Err(e) = delete_persona_cascade(client, &tomb.persona_id).await {
+            tracing::warn!(persona_id = %tomb.persona_id, error = %e, "cloud sync: delete propagation failed");
+            // Don't advance the cursor — the failed (and any later) tombstone
+            // is reprocessed next pass. Deletes are idempotent.
+            return LastTable { remote: "deletes".into(), rows: deleted, error: Some(e.to_string()) };
+        }
+        deleted += 1;
+    }
+
+    let _ = cursor::set_cursor(pool, "tombstones", &tick_start);
+    LastTable { remote: "deletes".into(), rows: deleted, error: None }
 }
 
 /// Run one full sync pass. No-op when sync is disabled or no Supabase JWT is

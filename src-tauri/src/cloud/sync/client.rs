@@ -139,4 +139,27 @@ impl SyncClient {
         }
         Ok(())
     }
+
+    /// DELETE rows matching a PostgREST path/query (e.g.
+    /// `synced_executions?persona_id=eq.<id>`). RLS still scopes the delete to
+    /// the authenticated user's rows. Idempotent — deleting nothing is success.
+    pub async fn delete(&self, path_and_query: &str) -> Result<(), AppError> {
+        let resp = self
+            .http
+            .delete(format!("{}/{}", self.rest_base, path_and_query))
+            .header("apikey", &self.anon_key)
+            .bearer_auth(&self.jwt)
+            .header("Prefer", "return=minimal")
+            .send()
+            .await
+            .map_err(|e| AppError::Cloud(format!("cloud DELETE {path_and_query}: {e}")))?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Cloud(format!(
+                "cloud DELETE {path_and_query} failed: {status} {body}"
+            )));
+        }
+        Ok(())
+    }
 }

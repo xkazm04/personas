@@ -5,8 +5,9 @@
 //!   - `personas.model_profile` / `notification_channels` are AES-encrypted at
 //!     rest with a per-device key → omitted (they'd be undecryptable ciphertext
 //!     cloud-side anyway).
-//!   - `persona_events.payload` / `payload_iv` (encrypted) → omitted; only event
-//!     metadata syncs (per the chosen "metadata only" policy).
+//!   - `persona_events.payload` is synced as a *sanitized* projection (v2):
+//!     decrypted locally, secret-scrubbed, and size-bounded (see
+//!     `project_event_payload`). The raw `payload_iv` is never synced.
 //!   - The entire credential/vault table family is never touched.
 //!
 //! Field names are snake_case to match the Supabase columns 1:1, so the upsert
@@ -18,7 +19,105 @@ use rusqlite::{params, Row};
 use serde::Serialize;
 
 use crate::db::DbPool;
+use crate::engine::crypto;
 use crate::error::AppError;
+
+// ---------------------------------------------------------------------------
+// Event-payload sanitization (v2)
+// ---------------------------------------------------------------------------
+//
+// Phase-1 synced event metadata only (payload = null). v2 pushes a sanitized
+// body so the dashboard can show what an event carried — but never a secret.
+// The boundary is defense-in-depth: only structured JSON is synced (opaque
+// blobs are dropped), values under secret-looking keys are redacted, values
+// that *look* like tokens are redacted regardless of key, and the whole thing
+// is size-bounded so a large payload can't bloat the projection.
+
+/// Max serialized payload pushed to the cloud; larger → a bounded marker.
+const MAX_PAYLOAD_BYTES: usize = 4096;
+
+/// Key substrings (case-insensitive) whose values are always redacted.
+const SECRET_KEY_NEEDLES: &[&str] = &[
+    "token", "secret", "password", "passwd", "api_key", "apikey", "authorization",
+    "credential", "cookie", "private_key", "access_key", "client_secret", "bearer",
+];
+
+fn key_is_secret(key: &str) -> bool {
+    let k = key.to_ascii_lowercase();
+    SECRET_KEY_NEEDLES.iter().any(|n| k.contains(n))
+}
+
+/// A string value that looks like a credential even under an innocuous key:
+/// known token prefixes, or a long whitespace-free high-base64/hex-density run.
+fn value_looks_secret(s: &str) -> bool {
+    const PREFIXES: &[&str] = &[
+        "sk-", "sk_", "ghp_", "gho_", "ghs_", "github_pat_", "glpat-", "xox", "AKIA",
+        "ASIA", "eyJ", "Bearer ", "-----BEGIN",
+    ];
+    if PREFIXES.iter().any(|p| s.starts_with(p)) {
+        return true;
+    }
+    if s.len() >= 60 && !s.chars().any(|c| c.is_whitespace()) {
+        let dense = s
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '/' | '-' | '_' | '='))
+            .count();
+        if dense * 100 / s.len() >= 90 {
+            return true;
+        }
+    }
+    false
+}
+
+fn redact_secrets(value: &mut serde_json::Value) {
+    match value {
+        serde_json::Value::Object(map) => {
+            for (k, val) in map.iter_mut() {
+                if key_is_secret(k) {
+                    *val = serde_json::Value::String("[redacted]".into());
+                } else {
+                    redact_secrets(val);
+                }
+            }
+        }
+        serde_json::Value::Array(arr) => {
+            for val in arr.iter_mut() {
+                redact_secrets(val);
+            }
+        }
+        serde_json::Value::String(s) => {
+            if value_looks_secret(s) {
+                *s = "[redacted]".into();
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Sanitize a plaintext event payload for the cloud projection. Returns `None`
+/// for non-JSON input (we never push opaque/unstructured blobs).
+fn sanitize_event_payload(plaintext: &str) -> Option<String> {
+    let mut value: serde_json::Value = serde_json::from_str(plaintext).ok()?;
+    redact_secrets(&mut value);
+    let out = serde_json::to_string(&value).ok()?;
+    if out.len() > MAX_PAYLOAD_BYTES {
+        return Some(format!(r#"{{"_truncated":true,"bytes":{}}}"#, out.len()));
+    }
+    Some(out)
+}
+
+/// Decrypt (if encrypted at rest) then sanitize an event's stored payload.
+/// `iv` present + non-empty → AES-GCM ciphertext; otherwise the column is
+/// already plaintext (per `repos::communication::events`). Decrypt failure →
+/// `None` (never leak ciphertext).
+fn project_event_payload(raw: Option<String>, iv: Option<String>) -> Option<String> {
+    let plaintext = match (raw, iv) {
+        (Some(ct), Some(iv)) if !iv.is_empty() => crypto::decrypt_from_db(&ct, &iv).ok()?,
+        (Some(pt), _) => pt,
+        _ => return None,
+    };
+    sanitize_event_payload(&plaintext)
+}
 
 // ---------------------------------------------------------------------------
 // Row structs (snake_case == Supabase columns)
@@ -86,6 +185,10 @@ pub struct SyncedEventRow {
     pub source_type: String,
     pub source_id: Option<String>,
     pub target_persona_id: Option<String>,
+    /// Sanitized event body (v2). Decrypted locally, secret-scrubbed, and
+    /// size-bounded — see [`project_event_payload`]. `None` when there was no
+    /// payload, decryption failed, or it wasn't structured JSON.
+    pub payload: Option<String>,
     pub status: String,
     pub error_message: Option<String>,
     pub processed_at: Option<String>,
@@ -223,6 +326,8 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<SyncedExecutionRow> {
 }
 
 fn row_to_event(row: &Row) -> rusqlite::Result<SyncedEventRow> {
+    let raw_payload: Option<String> = row.get(6)?;
+    let payload_iv: Option<String> = row.get(7)?;
     Ok(SyncedEventRow {
         id: row.get(0)?,
         device_id: None,
@@ -231,10 +336,11 @@ fn row_to_event(row: &Row) -> rusqlite::Result<SyncedEventRow> {
         source_type: row.get(3)?,
         source_id: row.get(4)?,
         target_persona_id: row.get(5)?,
-        status: row.get(6)?,
-        error_message: row.get(7)?,
-        processed_at: row.get(8)?,
-        created_at: row.get(9)?,
+        payload: project_event_payload(raw_payload, payload_iv),
+        status: row.get(8)?,
+        error_message: row.get(9)?,
+        processed_at: row.get(10)?,
+        created_at: row.get(11)?,
     })
 }
 
@@ -323,7 +429,7 @@ const EXECUTION_COLS: &str = "id, persona_id, trigger_id, status, input_data, ou
     duration_ms, started_at, completed_at, created_at";
 
 const EVENT_COLS: &str = "id, project_id, event_type, source_type, source_id, target_persona_id, \
-    status, error_message, processed_at, created_at";
+    payload, payload_iv, status, error_message, processed_at, created_at";
 
 const REVIEW_COLS: &str = "id, execution_id, persona_id, title, description, severity, \
     context_data, suggested_actions, status, reviewer_notes, resolved_at, created_at, updated_at";
@@ -571,6 +677,32 @@ pub fn fetch_knowledge_patterns(
     Ok(stamp!(rows, device_id))
 }
 
+// ---------------------------------------------------------------------------
+// Tombstones (v2 delete propagation)
+// ---------------------------------------------------------------------------
+
+/// A local persona deletion to propagate to the cloud projection.
+#[derive(Debug, Clone)]
+pub struct Tombstone {
+    pub persona_id: String,
+    pub deleted_at: String,
+}
+
+/// Persona deletions recorded after `cursor_prev` (RFC3339), oldest first.
+/// `persona_tombstones` is persona-scoped; the sync writer cascades each delete
+/// across the synced child tables (mirroring the local `ON DELETE CASCADE`).
+pub fn fetch_tombstones(pool: &DbPool, cursor_prev: &str) -> Result<Vec<Tombstone>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT persona_id, deleted_at FROM persona_tombstones \
+         WHERE datetime(deleted_at) > datetime(?1) ORDER BY deleted_at ASC",
+    )?;
+    let it = stmt.query_map(params![cursor_prev], |r| {
+        Ok(Tombstone { persona_id: r.get(0)?, deleted_at: r.get(1)? })
+    })?;
+    it.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -581,6 +713,51 @@ mod tests {
             .keys()
             .cloned()
             .collect()
+    }
+
+    #[test]
+    fn sanitizer_redacts_secret_keys_keeps_benign() {
+        let out = sanitize_event_payload(
+            r#"{"repo":"acme/web","apiKey":"abc123","branch":"main","authorization":"Bearer x"}"#,
+        )
+        .expect("structured json sanitizes");
+        assert!(out.contains("acme/web"), "benign value kept");
+        assert!(out.contains("\"branch\":\"main\""), "benign value kept");
+        assert!(out.contains("[redacted]"), "secret value redacted");
+        assert!(!out.contains("abc123"), "apiKey value must not survive");
+    }
+
+    #[test]
+    fn sanitizer_redacts_tokenish_values_under_innocuous_keys() {
+        let out = sanitize_event_payload(r#"{"note":"sk-ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"}"#)
+            .expect("structured json sanitizes");
+        assert!(!out.contains("sk-ABCDEF"), "token-prefixed value redacted even under a benign key");
+        assert!(out.contains("[redacted]"));
+    }
+
+    #[test]
+    fn sanitizer_drops_non_json() {
+        // Opaque/unstructured payloads are never pushed.
+        assert_eq!(sanitize_event_payload("not json at all"), None);
+        assert_eq!(sanitize_event_payload(""), None);
+    }
+
+    #[test]
+    fn sanitizer_bounds_size() {
+        let big = format!(r#"{{"blob":"{}"}}"#, "x ".repeat(5000)); // spaces → not "secret"
+        let out = sanitize_event_payload(&big).expect("valid json");
+        assert!(out.len() <= MAX_PAYLOAD_BYTES + 64);
+        assert!(out.contains("_truncated"), "oversized payload replaced with bounded marker");
+    }
+
+    #[test]
+    fn plaintext_payload_without_iv_is_projected() {
+        // No IV → column is plaintext at rest; should sanitize + pass through.
+        let out = project_event_payload(Some(r#"{"x":1}"#.into()), None);
+        assert_eq!(out.as_deref(), Some(r#"{"x":1}"#));
+        // Empty IV is treated as no-IV (plaintext), not a decrypt attempt.
+        let out2 = project_event_payload(Some(r#"{"y":2}"#.into()), Some(String::new()));
+        assert_eq!(out2.as_deref(), Some(r#"{"y":2}"#));
     }
 
     /// The credentials-stay-local guarantee: a synced persona row must never
@@ -622,10 +799,11 @@ mod tests {
         }
     }
 
-    /// Event payloads are AES-encrypted at rest (`payload`/`payload_iv`); the
-    /// sync projection carries event metadata only.
+    /// Event payloads are AES-encrypted at rest (`payload`/`payload_iv`). v2
+    /// syncs a *sanitized* payload (decrypted + secret-scrubbed), but the raw
+    /// IV is never part of the projection.
     #[test]
-    fn event_row_excludes_encrypted_payload() {
+    fn event_row_carries_sanitized_payload_not_iv() {
         let row = SyncedEventRow {
             id: "e1".into(),
             device_id: None,
@@ -634,14 +812,18 @@ mod tests {
             source_type: "y".into(),
             source_id: None,
             target_persona_id: None,
+            payload: Some(r#"{"ok":true}"#.into()),
             status: "pending".into(),
             error_message: None,
             processed_at: None,
             created_at: "t".into(),
         };
         let k = keys(&serde_json::to_value(&row).unwrap());
-        assert!(!k.contains(&"payload".to_string()), "event row leaked `payload`");
-        assert!(!k.contains(&"payload_iv".to_string()), "event row leaked `payload_iv`");
+        // v2: a *sanitized* payload IS synced (decrypted + secret-scrubbed in
+        // project_event_payload). The raw IV must NEVER ride along — syncing it
+        // would let the cloud reconstruct ciphertext context.
+        assert!(k.contains(&"payload".to_string()), "v2 syncs a sanitized payload");
+        assert!(!k.contains(&"payload_iv".to_string()), "event row must never carry payload_iv");
     }
 
     /// user_id is never sent on the wire — Supabase fills it from auth.uid()
