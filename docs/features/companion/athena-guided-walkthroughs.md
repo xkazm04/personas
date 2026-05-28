@@ -1,6 +1,6 @@
 # Athena Guided Walkthroughs
 
-**Status:** Shipped 2026-05-26.
+**Status:** Shipped 2026-05-26; **v2 2026-05-28** (unified+elevated highlight ring, caption progress-rail + Back + keyboard control, walkthrough completion CTAs, `point_at` "Take me there", labeled flash pulse).
 **Scope:** A reusable engine that lets Athena *show* the user how to do something — her floating orb glides to each key area of the screen, the relevant element glows, and she narrates the step. First applied to persona creation.
 
 This is the "show me how" half of Athena's persona-creation help. The other half — "build it for me" — is the existing prefill / one-shot flow (`prefill_persona_create` / `build_oneshot`). When a user describes a persona, Athena can offer **both** via a choice card (`show_persona_creation_offer`).
