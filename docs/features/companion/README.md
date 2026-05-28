@@ -24,6 +24,20 @@ The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`
 
 **STT engine.** Both the footer and orb use the browser Web Speech engine (`useDictation`) via the shared `useHoldToTalk` hook; on WebView2 that forwards audio to the OS vendor's cloud STT. The mic is only ever armed by an explicit press, never on mount. A local, on-device Whisper STT engine (so audio never leaves the machine) is the separate workstream tracked in [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) §4.
 
+## Chat transcript & message UI
+
+The panel body (`CompanionPanel.tsx` → `Bubble.tsx`) is the primary reading surface and carries most of the chat-window polish:
+
+- **Bubbles & grouping.** Assistant turns sit on a defined surface (tint + hairline border + faint elevation) with a small static Athena avatar in the gutter; user turns are right-aligned with a primary tint. Consecutive same-role messages **group** — only the first shows the avatar, the rest align under it with tightened spacing (`groupStart`/`groupEnd` computed in the panel map).
+- **Per-message hover actions.** Hovering (or focusing) a message reveals a copy button (shared `CopyButton`, copies the clean markdown source) and a live relative timestamp (shared `RelativeTime`). The row uses a `grid-rows` 0fr→1fr collapse so it adds zero height when idle and never shifts layout.
+- **Welcome hero.** An empty transcript shows `WelcomeHero` — Athena avatar + greeting + starter-prompt chips that fire real messages through `send()`. The chips reuse the translated slash-palette presets.
+- **Streaming state.** The streaming bubble shows the live phase label (e.g. "Searching the web…") paired with animated `TypingDots`; granular progress comes from the `OperationalThread` checklist (with a progress bar) and the slow-progress hint chip. Reduced motion holds the dots static.
+- **Bottom-aware autoscroll.** `useChatScroll` keeps the transcript pinned to the bottom only while the user is already there; once they scroll up to read history, new content stays put and a floating **Jump to latest** pill appears. Soft top/bottom scroll-fade masks (`companion-scroll`) dissolve messages into the panel chrome at the edges.
+- **Markdown rendering.** Athena's replies render through the shared `MarkdownRenderer` scoped to the chat via `className="athena-chat-md"` + the opt-in `codeBlockActions` prop (other call sites are unaffected). This gives: code blocks with a language-label header + copy + line-wrap toggle + collapse for blocks over 16 lines; a palette-tuned syntax-highlight theme (with a light-theme variant); styled GFM task-lists and zebra-striped tables; external-link affordances; and the inline `chart` bar block. The same treatment is reused inside `ConnectorCallCard` results and `ApprovalCard` params.
+- **Autonomous mode** gives the panel a breathing primary border (`companion-autonomous`) and rings the header avatar so a self-driving Athena is unmistakable.
+
+The connector/schedule/event pickers open through `ComposerPickerShell`, which portals to `document.body` so it's never clipped by the panel's blur/transform/overflow, and is viewport-responsive (grid scales 2→3→4 columns, panel up to 88vh).
+
 ## Floating dockable orb (`minimized` state)
 
 Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes Athena out of the footer into a first-class overlay. A new `CompanionState` value `minimized` (between `collapsed` and `open`) shows `AthenaOrb` — her avatar as a draggable orb portal'd to `document.body` above all app content (`orb/AthenaOrbLayer.tsx`, `orb/AthenaOrb.tsx`).
