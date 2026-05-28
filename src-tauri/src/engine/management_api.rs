@@ -2059,6 +2059,8 @@ mod tests {
             log_truncated: false,
             is_simulation: false,
             business_outcome: "unknown".to_string(),
+            director_score: None,
+            director_review_md: None,
         }
     }
 

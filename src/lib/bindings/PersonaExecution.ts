@@ -29,4 +29,15 @@ is_simulation: boolean,
  * One of `value_delivered`, `no_input_available`, `precondition_failed`,
  * `partial`, `unknown`. See `EXECUTION_MODE_DIRECTIVE` for semantics.
  */
-business_outcome: string, };
+business_outcome: string, 
+/**
+ * The Director's overall 0-5 score for this run, set when the Director
+ * reviews it. `None` ⇒ not reviewed (the Verdict column shows "—").
+ */
+director_score: number | null, 
+/**
+ * Rendered markdown of the Director's full assessment for this run (score +
+ * summary + coaching verdicts). Backs the "Director" tab in the execution
+ * detail modal. `None` until the Director reviews this execution.
+ */
+director_review_md: string | null, };

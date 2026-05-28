@@ -3269,6 +3269,26 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Director verdict score + rendered review markdown, written onto the
+    // execution the Director reviewed. `director_score` (0-5) backs the Verdict
+    // column in the activity list; `director_review_md` backs the Director tab.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions.director_score",
+            description: "Add director_score + director_review_md to persona_executions",
+            already_applied: |conn| has_column(conn, "persona_executions", "director_score"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN director_score INTEGER;\n\
+                     ALTER TABLE persona_executions ADD COLUMN director_review_md TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

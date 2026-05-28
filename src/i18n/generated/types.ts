@@ -753,6 +753,7 @@ export type Translations = {
       loading_memories: string;
       memories_created: string;
       tab_detail: string;
+      tab_director: string;
       tab_inspector: string;
       tab_trace: string;
       tab_pipeline: string;
@@ -2483,6 +2484,9 @@ export type Translations = {
       approve: string;
       reject: string;
       col_activity: string;
+      col_verdict: string;
+      verdict_none: string;
+      verdict_tooltip: string;
       col_use_case: string;
       col_status: string;
       col_time: string;

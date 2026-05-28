@@ -61,6 +61,16 @@ pub struct PersonaExecution {
     /// `partial`, `unknown`. See `EXECUTION_MODE_DIRECTIVE` for semantics.
     #[serde(default = "default_business_outcome")]
     pub business_outcome: String,
+    /// The Director's overall 0-5 score for this run, set when the Director
+    /// reviews it. `None` ⇒ not reviewed (the Verdict column shows "—").
+    #[serde(default)]
+    #[ts(type = "number | null")]
+    pub director_score: Option<i64>,
+    /// Rendered markdown of the Director's full assessment for this run (score +
+    /// summary + coaching verdicts). Backs the "Director" tab in the execution
+    /// detail modal. `None` until the Director reviews this execution.
+    #[serde(default)]
+    pub director_review_md: Option<String>,
 }
 
 fn default_business_outcome() -> String {
