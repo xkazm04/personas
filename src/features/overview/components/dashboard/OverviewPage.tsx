@@ -21,6 +21,7 @@ const KnowledgeHub = lazyRetry(() => import('@/features/overview/components/dash
 const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/components/SLADashboard'));
 
 const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
+const CertificationCommandCenter = lazyRetry(() => import('@/features/overview/sub_certification/CertificationCommandCenter'));
 const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderboard'));
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
 
@@ -85,6 +86,7 @@ function OverviewContent() {
           overviewTab === 'sla' ? <SLADashboard /> :
 
           overviewTab === 'health' ? <PersonaHealthDashboard /> :
+          overviewTab === 'certification' ? <CertificationCommandCenter /> :
           overviewTab === 'leaderboard' ? <LeaderboardPage /> :
           <DashboardWithSubtabs />}
         </Suspense>
