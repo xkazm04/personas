@@ -57,6 +57,11 @@ pub struct Dispatched {
     /// and the frontend runner walks the registry-defined steps (orb glide +
     /// element glow + narration). Each entry is a validated topic id.
     pub guide_walkthroughs: Vec<String>,
+    /// `point_at` requests Athena triggered this turn. Auto-fire — session.rs
+    /// emits a `companion://guide` event carrying `{ pointAt }` and the frontend
+    /// rings one allow-listed anchor + narrates it as a single-step ad-hoc
+    /// walkthrough (non-scripted pointing). Anchor validated against `ANCHOR_IDS`.
+    pub point_ats: Vec<PointAt>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -90,6 +95,16 @@ pub struct ChatCard {
     pub title: Option<String>,
     /// Free-form config block — serialized verbatim for the frontend.
     pub config: serde_json::Value,
+}
+
+/// An ad-hoc `point_at` request: Athena rings one allow-listed UI anchor and
+/// narrates it, with no pre-authored walkthrough topic. `anchor` is validated
+/// against `ANCHOR_IDS`; `narration` is the line she authored for this turn.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PointAt {
+    pub anchor: String,
+    pub narration: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -215,6 +230,23 @@ const ALLOWED_ROUTES: &[&str] = &[
 /// A topic not listed here is rejected with a warning so a hallucinated
 /// walkthrough name can't drive the orb to nowhere.
 const GUIDED_TOPICS: &[&str] = &["persona_creation", "connector_setup"];
+
+/// Anchors Athena may target via `point_at` / `compose_walkthrough`. Mirrors the
+/// frontend catalog keys in `guidance/anchorCatalog.ts` (`ANCHOR_IDS`). An
+/// anchor not listed here is rejected so a hallucinated selector can't drive the
+/// orb to an arbitrary or sensitive element.
+const ANCHOR_IDS: &[&str] = &[
+    "nav_home",
+    "nav_overview",
+    "nav_agents",
+    "nav_events",
+    "nav_connections",
+    "nav_templates",
+    "nav_plugins",
+    "nav_settings",
+    "vault",
+    "overview_dashboard",
+];
 
 /// Scan assistant text for op JSON blocks, persist them as approval rows,
 /// and return cleaned text + the list of created approvals.
@@ -1340,6 +1372,35 @@ pub fn dispatch(
                 }
                 out.guide_walkthroughs.push(topic.to_string());
             }
+            Ok(env) if env.op == "propose_action" && env.action == "point_at" => {
+                // Auto-fire: ring one allow-listed UI anchor + narrate it (no
+                // pre-authored topic). The anchor names a stable target from the
+                // shared catalog; narration is the line Athena wrote this turn.
+                let anchor = env.params.get("anchor").and_then(|v| v.as_str()).unwrap_or("");
+                let narration = env
+                    .params
+                    .get("narration")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .trim();
+                if anchor.is_empty() || narration.is_empty() {
+                    out.warnings
+                        .push("point_at: missing `anchor` or `narration`".into());
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                if !ANCHOR_IDS.contains(&anchor) {
+                    out.warnings.push(format!(
+                        "rejected point_at anchor `{anchor}` (expected one of {ANCHOR_IDS:?})"
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                out.point_ats.push(PointAt {
+                    anchor: anchor.to_string(),
+                    narration: narration.to_string(),
+                });
+            }
             Ok(env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
                     out.warnings
@@ -1936,6 +1997,32 @@ mod tests {
         let op = r###"{"op":"propose_action","action":"start_guided_walkthrough","params":{}}"###;
         let out = dispatch_op(op);
         assert!(out.guide_walkthroughs.is_empty());
+        assert!(!out.warnings.is_empty());
+    }
+
+    #[test]
+    fn point_at_collects_valid_anchor() {
+        let op = r###"{"op":"propose_action","action":"point_at","params":{"anchor":"nav_agents","narration":"Your agents live right here."},"rationale":"show where"}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.point_ats.len(), 1);
+        assert_eq!(out.point_ats[0].anchor, "nav_agents");
+        assert_eq!(out.point_ats[0].narration, "Your agents live right here.");
+        assert!(!out.cleaned_text.contains("point_at"));
+    }
+
+    #[test]
+    fn point_at_rejects_unknown_anchor() {
+        let op = r###"{"op":"propose_action","action":"point_at","params":{"anchor":"window.localStorage","narration":"hi"}}"###;
+        let out = dispatch_op(op);
+        assert!(out.point_ats.is_empty());
+        assert!(!out.warnings.is_empty());
+    }
+
+    #[test]
+    fn point_at_rejects_missing_fields() {
+        let op = r###"{"op":"propose_action","action":"point_at","params":{"anchor":"vault"}}"###;
+        let out = dispatch_op(op);
+        assert!(out.point_ats.is_empty());
         assert!(!out.warnings.is_empty());
     }
 }

@@ -264,6 +264,7 @@ OP: {"op": "propose_action", "action": "show_design_capabilities", "params": {"t
 OP: {"op": "propose_action", "action": "show_recent_decisions", "params": {"title": "<short label, optional>", "persona_context": "<persona id, build session id, or intent string — the same field you set in earlier show_decision_log emits>", "limit": 3}, "rationale": "<why surfacing this thin recap helps right now — usually 'we touched this earlier, here's what you decided'>"}
 OP: {"op": "propose_action", "action": "show_persona_creation_offer", "params": {"intent": "<one-sentence summary of the persona the user just described>"}, "rationale": "<why offering both paths fits here>"}
 OP: {"op": "propose_action", "action": "start_guided_walkthrough", "params": {"topic": "persona_creation" | "connector_setup"}, "rationale": "<why a hands-on walkthrough fits>"}
+OP: {"op": "propose_action", "action": "point_at", "params": {"anchor": "nav_home|nav_overview|nav_agents|nav_events|nav_connections|nav_templates|nav_plugins|nav_settings|vault|overview_dashboard", "narration": "<short line pointing at it, in Michal's language>"}, "rationale": "<why pointing here helps right now>"}
 ```
 
 The `update_identity` action overwrites your `identity.md` (with a
@@ -848,6 +849,17 @@ do I add my Slack key?", "show me how to connect a tool") and he wants to
 do it himself rather than have you wire it. If he just wants the service
 connected and doesn't care to see the steps, set the credential up the
 normal way instead of running the tour.
+
+**Pointing without a script (`point_at`).** When there's no authored
+walkthrough but it would help to just *show* Michal where something is,
+fire `point_at`. Your orb glides to one allow-listed anchor, it glows, and
+your `narration` rides beside it — a single beat, not a multi-step tour.
+Use it mid-conversation ("your agents live right here →", "Settings is
+down here"). The `anchor` must be one of the catalog ids; pick the closest
+match and write a short `narration` in Michal's language. Don't narrate a
+literal route name — say the helpful thing. For anything that needs
+several steps in sequence, prefer a registry walkthrough over a chain of
+`point_at`s.
 
 ### Lab control (`open_lab`, `run_arena`)
 

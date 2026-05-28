@@ -4,8 +4,8 @@ import { storeBus } from '@/lib/storeBus';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
-import { getWalkthrough } from './walkthroughs';
-import type { GuidancePreAction, OrbAnchor } from './types';
+import { resolveWalkthrough } from './walkthroughs';
+import type { GuidancePreAction, GuidanceWalkthrough, OrbAnchor } from './types';
 
 const ORB_GAP = 18;
 const ANCHOR_WAIT_MS = 4000;
@@ -111,7 +111,9 @@ export function useGuidanceRunner() {
   const activeWalkthrough = useCompanionStore((s) => s.activeWalkthrough);
   const stepIndex = useCompanionStore((s) => s.guidanceStepIndex);
   const playing = useCompanionStore((s) => s.guidancePlaying);
+  const adHoc = useCompanionStore((s) => s.adHocWalkthrough);
   const appliedKeyRef = useRef<string | null>(null);
+  const lastAdHocRef = useRef<GuidanceWalkthrough | null>(null);
 
   // Surface the orb when a walkthrough starts (close the panel back to the orb
   // so the demo is visible). No-op if the orb is already showing.
@@ -126,10 +128,19 @@ export function useGuidanceRunner() {
 
     if (!activeWalkthrough) {
       appliedKeyRef.current = null;
+      lastAdHocRef.current = null;
       return;
     }
 
-    const wt = getWalkthrough(activeWalkthrough);
+    // A brand-new ad-hoc walkthrough reuses the same sentinel topic + step 0,
+    // so the step key wouldn't change between two consecutive `point_at`s.
+    // Reset the applied-key so the new one is treated as a fresh step.
+    if (adHoc !== lastAdHocRef.current) {
+      lastAdHocRef.current = adHoc;
+      appliedKeyRef.current = null;
+    }
+
+    const wt = resolveWalkthrough(activeWalkthrough, adHoc);
     if (!wt) {
       store.stopGuidance();
       return;
@@ -194,5 +205,5 @@ export function useGuidanceRunner() {
       cancelled = true;
       if (advanceTimer) clearTimeout(advanceTimer);
     };
-  }, [activeWalkthrough, stepIndex, playing]);
+  }, [activeWalkthrough, stepIndex, playing, adHoc]);
 }

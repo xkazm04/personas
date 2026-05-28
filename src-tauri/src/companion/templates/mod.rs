@@ -243,4 +243,8 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// v27 adds a second `start_guided_walkthrough` topic, `connector_setup`
 /// (Vault → "Add new" connector flow), alongside `persona_creation`, and
 /// teaches when to fire it.
-pub const CONSTITUTION_VERSION: u32 = 27;
+///
+/// v28 adds the `point_at` op: Athena rings one allow-listed UI anchor and
+/// narrates it as a single ad-hoc beat (non-scripted pointing), no authored
+/// topic required.
+pub const CONSTITUTION_VERSION: u32 = 28;

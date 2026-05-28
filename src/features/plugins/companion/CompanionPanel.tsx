@@ -25,6 +25,7 @@ import {
 import { extractStreamPhase, extractToolEvents, phaseLabel } from './extractStreamPhase';
 import { extractTodoWrite } from './operationalSteps';
 import { OperationalThread } from './OperationalThread';
+import { buildPointAtWalkthrough } from './guidance/composeAdHoc';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -1088,16 +1089,24 @@ function Body(props: BodyProps) {
     'companion_navigate_listen',
   );
 
-  // `start_guided_walkthrough` — Athena launches an in-app guided tour.
-  // The runner (AthenaGuideLayer) walks the registry-defined steps: orb
-  // glides to each area, the element glows, she narrates. Topic is already
-  // validated server-side against the allow-list; the runner stops itself
-  // gracefully if an unknown topic ever slips through.
+  // `start_guided_walkthrough` / `point_at` — Athena guides in-app. A `topic`
+  // launches a registry walkthrough (the runner in AthenaGuideLayer walks the
+  // authored steps); a `pointAt` rings one allow-listed anchor and narrates as
+  // a single-step ad-hoc walkthrough (non-scripted pointing). Both are already
+  // validated server-side; the runner stops itself gracefully on anything bad.
   useTauriEvent<CompanionGuideEvent>(
     COMPANION_GUIDE_EVENT,
     useCallback((event) => {
       const topic = event.payload?.topic;
-      if (topic) useCompanionStore.getState().startGuidance(topic);
+      if (topic) {
+        useCompanionStore.getState().startGuidance(topic);
+        return;
+      }
+      const pointAt = event.payload?.pointAt;
+      if (pointAt?.anchor && pointAt.narration) {
+        const wt = buildPointAtWalkthrough(pointAt.anchor, pointAt.narration);
+        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+      }
     }, []),
     'companion_guide_listen',
   );

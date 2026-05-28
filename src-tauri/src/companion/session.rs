@@ -529,6 +529,7 @@ pub async fn send_turn(
                     cockpits: Vec::new(),
                     chat_cards: Vec::new(),
                     guide_walkthroughs: Vec::new(),
+                    point_ats: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     requests_continuation: false,
@@ -625,6 +626,17 @@ pub async fn send_turn(
     for topic in &dispatched.guide_walkthroughs {
         if let Err(e) = app.emit(GUIDE_EVENT, serde_json::json!({ "topic": topic })) {
             tracing::warn!(error = %e, topic = %topic, "companion guide event emit failed");
+        }
+    }
+
+    // Ad-hoc pointing (`point_at`). Same channel as walkthroughs — the frontend
+    // discriminates on `topic` vs `pointAt` and rings one allow-listed anchor.
+    for pa in &dispatched.point_ats {
+        if let Err(e) = app.emit(
+            GUIDE_EVENT,
+            serde_json::json!({ "pointAt": { "anchor": pa.anchor, "narration": pa.narration } }),
+        ) {
+            tracing::warn!(error = %e, anchor = %pa.anchor, "companion point_at event emit failed");
         }
     }
 

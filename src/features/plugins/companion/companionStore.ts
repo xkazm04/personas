@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import type { CompanionState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
 import type { TodoStep } from './operationalSteps';
+import type { GuidanceWalkthrough } from './guidance/types';
+import { ADHOC_TOPIC } from './guidance/walkthroughs';
 import type {
   BackgroundJob,
   BrainKind,
@@ -344,7 +346,16 @@ interface CompanionStore {
   guidancePlaying: boolean;
   guidanceHighlightTestId: string | null;
   orbGuideTarget: { left: number; top: number } | null;
+  /**
+   * Runtime-composed walkthrough (Athena's `point_at` single step or
+   * `compose_walkthrough` multi step), or null. Resolved by
+   * `resolveWalkthrough` when `activeWalkthrough === ADHOC_TOPIC` — the runner
+   * walks these steps exactly like a registry walkthrough.
+   */
+  adHocWalkthrough: GuidanceWalkthrough | null;
   startGuidance: (topic: string) => void;
+  /** Start a runtime-composed walkthrough (sets `activeWalkthrough` to the ad-hoc sentinel). */
+  startAdHocGuidance: (walkthrough: GuidanceWalkthrough) => void;
   setGuidanceStep: (index: number) => void;
   advanceGuidance: () => void;
   pauseGuidance: () => void;
@@ -653,9 +664,20 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   guidancePlaying: false,
   guidanceHighlightTestId: null,
   orbGuideTarget: null,
+  adHocWalkthrough: null,
   startGuidance: (topic) =>
     set({
       activeWalkthrough: topic,
+      adHocWalkthrough: null,
+      guidanceStepIndex: 0,
+      guidancePlaying: true,
+      guidanceHighlightTestId: null,
+      orbGuideTarget: null,
+    }),
+  startAdHocGuidance: (walkthrough) =>
+    set({
+      activeWalkthrough: ADHOC_TOPIC,
+      adHocWalkthrough: walkthrough,
       guidanceStepIndex: 0,
       guidancePlaying: true,
       guidanceHighlightTestId: null,
@@ -669,6 +691,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   stopGuidance: () =>
     set({
       activeWalkthrough: null,
+      adHocWalkthrough: null,
       guidanceStepIndex: 0,
       guidancePlaying: false,
       guidanceHighlightTestId: null,

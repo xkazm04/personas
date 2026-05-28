@@ -732,9 +732,14 @@ export const COMPANION_NAVIGATE_EVENT = 'companion://navigate';
  */
 export const COMPANION_GUIDE_EVENT = 'companion://guide';
 
-/** Payload for COMPANION_GUIDE_EVENT. */
+/**
+ * Payload for COMPANION_GUIDE_EVENT. Either a registry walkthrough `topic`
+ * (`start_guided_walkthrough`) OR an ad-hoc `pointAt` (`point_at`) — Athena
+ * rings one allow-listed anchor and narrates, with no pre-authored topic.
+ */
 export interface CompanionGuideEvent {
-  topic: string;
+  topic?: string;
+  pointAt?: { anchor: string; narration: string };
 }
 
 /** Payload for COMPANION_APPROVALS_EVENT — array of newly-created approvals. */

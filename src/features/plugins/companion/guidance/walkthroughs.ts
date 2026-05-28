@@ -95,7 +95,30 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
 /** Topics Athena is allowed to trigger. Mirrored by the backend allow-list. */
 export const GUIDANCE_TOPICS = Object.keys(WALKTHROUGHS);
 
+/**
+ * Sentinel topic for a walkthrough Athena composed at runtime rather than one
+ * from the static registry — the `point_at` (single step) and
+ * `compose_walkthrough` (multi step) ops. The composed steps live in
+ * `companionStore.adHocWalkthrough`; `resolveWalkthrough` returns that when the
+ * active topic is this sentinel.
+ */
+export const ADHOC_TOPIC = '__adhoc__';
+
 export function getWalkthrough(topic: string | null): GuidanceWalkthrough | null {
   if (!topic) return null;
   return WALKTHROUGHS[topic] ?? null;
+}
+
+/**
+ * Resolve the active walkthrough for the runner + caption: the runtime ad-hoc
+ * walkthrough when the topic is the ad-hoc sentinel, otherwise the registry
+ * entry. One resolver keeps both consumers in sync without duplicating the
+ * registry-vs-adhoc branch.
+ */
+export function resolveWalkthrough(
+  topic: string | null,
+  adHoc: GuidanceWalkthrough | null,
+): GuidanceWalkthrough | null {
+  if (topic === ADHOC_TOPIC) return adHoc;
+  return getWalkthrough(topic);
 }
