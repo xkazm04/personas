@@ -3224,6 +3224,50 @@ fn spawn_delayed_retry(
                     result.error.as_deref(),
                 );
             }
+
+            // Chain trigger evaluation — MUST mirror the regular completion
+            // path at `handle_execution_result` so a successful retry drives
+            // the cascade just like the original would have. Without this, a
+            // P3 transient-failure retry would silently strand the team: the
+            // retry succeeds, but no `team_handoff.*` event fires, so the
+            // next role in the chain never spawns. (Observed cert-3a + cert-
+            // 3b: Security Sentinel retry value_delivered but Release
+            // Manager never spawned because this hook was missing.)
+            //
+            // Chain metadata lives on the *original* execution's input_data
+            // (`create_retry` doesn't copy input_data — the retry row starts
+            // with NULL input). Fall back to the retry exec's own input_data
+            // for the rare case the original was lost.
+            let (chain_depth, mut visited, existing_chain_trace_id) =
+                exec_repo::get_by_id(&pool, &original_exec_id)
+                    .ok()
+                    .and_then(|exec| exec.input_data)
+                    .or_else(|| {
+                        exec_repo::get_by_id(&pool, &exec_id)
+                            .ok()
+                            .and_then(|exec| exec.input_data)
+                    })
+                    .map(|input| chain::extract_chain_metadata(Some(&input)))
+                    .unwrap_or_default();
+            visited.insert(persona_id.clone());
+            let chain_trace_id =
+                existing_chain_trace_id.or_else(|| result.trace_id.clone());
+
+            let cascade_metrics = chain::evaluate_chain_triggers(
+                &pool,
+                &persona_id,
+                status.as_str(),
+                result.output.as_deref(),
+                &exec_id,
+                chain_depth,
+                &visited,
+                chain_trace_id.as_deref(),
+            );
+            // Best-effort metrics recording — same as the regular path
+            // (`handle_execution_result`) does when a scheduler is present.
+            if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+                state.scheduler.record_chain_cascade(&cascade_metrics);
+            }
         }
 
         // 13. Cleanup
