@@ -9,5 +9,6 @@ export const getCloudSyncStatus = () =>
 export const setCloudSyncEnabled = (enabled: boolean) =>
   invokeWithTimeout<void>('cloud_sync_set_enabled', { enabled });
 
-/** Trigger one sync pass now. Requires a live Google session. Returns row count. */
-export const cloudSyncNow = () => invokeWithTimeout<number>('cloud_sync_now');
+/** Trigger one sync pass now. Requires a live Google session. Returns the fresh
+ *  status after the pass so the UI can render the result in one round-trip. */
+export const cloudSyncNow = () => invokeWithTimeout<CloudSyncStatus>('cloud_sync_now');

@@ -8466,6 +8466,11 @@ export type Translations = {
     approve: string;
     approving: string;
     reject: string;
+    queue_count: string;
+    prompt_label: string;
+    no_prompt: string;
+    from_dashboard: string;
+    later: string;
   };
   settings: {
     title: string;
@@ -8513,6 +8518,28 @@ export type Translations = {
       cloud_sync_enable_failed: string;
       cloud_sync_now_failed: string;
       cloud_sync_now_done: string;
+      cloud_sync_state_off: string;
+      cloud_sync_state_active: string;
+      cloud_sync_state_syncing: string;
+      cloud_sync_total: string;
+      cloud_sync_device: string;
+      cloud_sync_tables_title: string;
+      cloud_sync_show_details: string;
+      cloud_sync_hide_details: string;
+      cloud_sync_retry: string;
+      cloud_sync_rows: string;
+      cloud_sync_table_pending: string;
+      cloud_sync_tables: {
+        synced_personas: string;
+        synced_executions: string;
+        synced_events: string;
+        synced_manual_reviews: string;
+        synced_messages: string;
+        synced_metrics_snapshots: string;
+        synced_tool_usage: string;
+        synced_memories: string;
+        synced_knowledge_patterns: string;
+      };
     };
     appearance_extra: {
       simple: string;

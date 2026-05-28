@@ -8459,7 +8459,12 @@
     "safety_note": "This runs locally on this device with its own credentials. Nothing runs until you approve.",
     "approve": "Approve & run",
     "approving": "Starting…",
-    "reject": "Reject"
+    "reject": "Reject",
+    "queue_count": "{index} of {total} pending",
+    "prompt_label": "Prompt",
+    "no_prompt": "No prompt provided.",
+    "from_dashboard": "Requested from the web dashboard",
+    "later": "Decide later"
   },
   "settings": {
     "title": "Settings",
@@ -8501,12 +8506,34 @@
       "cloud_sync_toggle_aria": "Toggle cloud dashboard sync",
       "cloud_sync_now": "Sync now",
       "cloud_sync_syncing": "Syncing...",
-      "cloud_sync_last": "Last synced {time}",
+      "cloud_sync_last": "Last synced",
       "cloud_sync_never": "Not synced yet",
       "cloud_sync_error": "Last sync failed: {error}",
       "cloud_sync_enable_failed": "Couldn't update the sync setting",
       "cloud_sync_now_failed": "Sync failed. Check your connection and try again.",
-      "cloud_sync_now_done": "Synced {count} records"
+      "cloud_sync_now_done": "Synced {count} records",
+      "cloud_sync_state_off": "Off",
+      "cloud_sync_state_active": "Active",
+      "cloud_sync_state_syncing": "Syncing…",
+      "cloud_sync_total": "synced all-time",
+      "cloud_sync_device": "Device {id}",
+      "cloud_sync_tables_title": "Synced data",
+      "cloud_sync_show_details": "Show breakdown",
+      "cloud_sync_hide_details": "Hide breakdown",
+      "cloud_sync_retry": "Retry",
+      "cloud_sync_rows": "rows",
+      "cloud_sync_table_pending": "Awaiting first sync",
+      "cloud_sync_tables": {
+        "synced_personas": "Personas",
+        "synced_executions": "Executions",
+        "synced_events": "Events",
+        "synced_manual_reviews": "Reviews",
+        "synced_messages": "Messages",
+        "synced_metrics_snapshots": "Metrics",
+        "synced_tool_usage": "Tool usage",
+        "synced_memories": "Memories",
+        "synced_knowledge_patterns": "Knowledge"
+      }
     },
     "appearance_extra": {
       "simple": "Simple",
