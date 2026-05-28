@@ -281,6 +281,18 @@ function main() {
   if (isCodeTrack && !increment.delivered) {
     verdict = cap(verdict, 'NOT-READY');
   }
+  // §1.A.2 Self-veto cap: any execution in a code-track run that completed
+  // with business_outcome=`precondition_failed` is the team telling us — in
+  // its own words — that the run is NOT ready to ship (typically: release
+  // manager refusing to bless on a red trunk; or an engineer refusing to
+  // implement against a broken precondition). The team's own quality bar
+  // outranks the deterministic dims. Caps at PROMISING — work may be on
+  // local master but the team didn't bless it, and certification can't
+  // override a team's own veto.
+  const selfVeto = isCodeTrack && executions.some((e) => e.business_outcome === 'precondition_failed');
+  if (selfVeto) {
+    verdict = cap(verdict, 'PROMISING');
+  }
 
   const scorecard = {
     runId,
@@ -288,6 +300,10 @@ function main() {
     seed: run.seed.id,
     code_track: codeTrack,
     delivered_increment: increment,
+    self_veto: selfVeto ? {
+      capped: 'PROMISING',
+      executions: executions.filter((e) => e.business_outcome === 'precondition_failed').map((e) => ({ id: e.id, persona_id: e.persona_id })),
+    } : null,
     rubric_version: judge ? '1-judged' : '1-deterministic',
     note: judge
       ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'

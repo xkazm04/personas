@@ -28,6 +28,14 @@ The acceptance question that separates "a team that talks" from "a team that shi
 - **Effect:** for a code-track seed, no Delivered Increment caps the verdict at `NOT-READY` regardless of how good the analysis was — and a certification run that ships nothing to master cannot count toward the 3-consecutive streak. (Doc-track-only seeds — pure ADR/analysis — are exempt; their deliverable is the grounded document.)
 - **Why merged-to-master, not just committed:** a branch nobody merged is indistinguishable from abandoned work over weeks. Trust requires the team to carry quality work *through* review/security/release *into* the trunk (behind the human-approval gate when one is configured).
 
+### §1.A.2 Self-veto cap — respect the team's own quality bar
+
+Any execution in a code-track run that completed with `business_outcome=precondition_failed` is the team telling us *in its own words* that the run is **not ready to ship** — typically a release manager refusing to bless a red trunk, or an engineer refusing to implement against a broken precondition. The team's own quality bar **outranks the deterministic dims**. A run with one or more `precondition_failed` outcomes caps at **`PROMISING`**; work may be on local master (Delivered Increment can still fire) but the team didn't bless it, and certification can't override a team that vetoed itself.
+
+- **Distinct from §1.A.1:** the Delivered Increment gate measures whether *something* shipped to master; the self-veto cap measures whether the *team* believes what shipped is ship-worthy. Both can hold simultaneously (work delivered locally + release manager held → PROMISING).
+- **Why a cap, not a hard fail:** a self-veto is the team behaving *correctly* under its own rules — that's worth rewarding above NOT-READY. But a green release-bless is what production-readiness means; an honest team-internal hold is `PROMISING`, not `PRODUCTION`.
+- **Effect:** a self-vetoed cert run cannot count toward the 3-consecutive PRODUCTION streak — by definition, since it caps at PROMISING.
+
 Scores are 0–100 per dimension. **Round ties down.** Every score carries a one-line *evidence pointer* (execution id / file path / diff hunk / review id) — a score with no pointer is invalid and scored 0.
 
 ---

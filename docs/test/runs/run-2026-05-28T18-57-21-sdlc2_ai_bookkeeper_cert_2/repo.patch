@@ -1,0 +1,344 @@
+diff --git a/docs/adr/0004-money-display-formatter.md b/docs/adr/0004-money-display-formatter.md
+new file mode 100644
+index 0000000..3f02bfb
+--- /dev/null
++++ b/docs/adr/0004-money-display-formatter.md
+@@ -0,0 +1,113 @@
++# ADR 0004 — Currency-aware money display formatter (`formatMoney`)
++
++- **Status:** Accepted
++- **Date:** 2026-05-28
++- **Deciders:** Solution Architect
++- **Area:** `src/features/ledger/lib` (money display)
++- **Relates to:** ADR 0003 (money arithmetic), ADR 0002 (currency-aware banker's rounding), ADR 0001 (input-boundary validation)
++
++## Context
++
++ADR 0002 (`roundMoney`) and ADR 0003 (`addMoney`/`subtractMoney`) keep the
++*stored* money value canonical to a currency's minor units, drift-free. But the
++ledger had **no display-side primitive**: any UI rendering a balance would reach
++for `` `$${value}` `` or an ad-hoc `toFixed(2)`, which (a) hard-codes the symbol
++and 2-decimal assumption — wrong for JPY (0dp) and BHD (3dp) and for locales that
++place the symbol after the number, and (b) can re-introduce a value that disagrees
++with the stored figure (`toFixed` on a drifted float, or formatting a raw
++`0.1 + 0.2`). The display layer needs a formatter paired with the arithmetic
++stack so *what the user sees is provably what the ledger stored*.
++
++Inspected before deciding: `ledger/lib/round.ts` (`roundMoney`, `minorUnits`,
++`MINOR_UNITS`), `ledger/lib/arithmetic.ts` (`MoneyArithmeticError`, `Money`,
++`MoneyInput`, the `resolveOperand` mixed-currency/non-finite pattern),
++`arithmetic.test.ts`, `ledger/index.ts` (barrel), ADR 0001/0002/0003. No existing
++formatter — confirmed via `search_code` over the ledger feature.
++
++## Decision
++
++Add `src/features/ledger/lib/format.ts` exporting
++`formatMoney(value, currency, locale?)`, a tiny pure function built on the ADR
++0002/0003 primitives.
++
++- **`Intl.NumberFormat` (style: "currency")** is authoritative for symbol
++  placement, digit grouping, and minor-unit precision. It is locale- and
++  currency-correct by construction — `$1,234.50`, `1.234,56 €` (de-DE), `¥1,235`
++  (JPY, zero decimals) — so the module hard-codes no symbol or decimal count.
++- **`locale` defaults to `"en-US"`** when omitted.
++- **Normalized through `roundMoney` before formatting.** The value is passed
++  through `roundMoney(value, currency)` (ADR 0002) first, so display reflects the
++  canonical stored value and can never disagree by float drift:
++  `formatMoney(addMoney(0.1, 0.2, "USD"), "USD") === "$0.30"` exactly. This also
++  normalizes `-0 → 0`, so a zero balance never renders as `-$0.00`.
++- **Fail-loud, reusing ADR 0003's typed error.** A non-finite value or a tagged
++  `Money` whose currency differs from the format currency throws a
++  `MoneyArithmeticError` (`.code` `"not-finite"` / `"mixed-currency"`) — the same
++  pattern `arithmetic.ts` uses, so a EUR amount is never silently rendered with a
++  USD symbol. A blank/unknown currency throws `RangeError` via
++  `roundMoney`/`minorUnits` (and `Intl`).
++
++Operands accept a bare `number` (assumed in `currency`) or a tagged `Money`,
++mirroring `MoneyInput` from ADR 0003. Exported via the feature barrel
++(`features/ledger/index.ts`), matching the co-located pure-lib convention.
++
++**Why let `Intl` derive fraction digits instead of forcing `minorUnits()`?**
++For standard ISO-4217 codes ICU and our `MINOR_UNITS` table agree (USD→2,
++JPY→0, BHD→3); deferring to `Intl` keeps the formatting locale-correct without a
++second source of truth, and `roundMoney` has already pinned the value to our
++minor-unit table, so the two cannot diverge for stored figures. **Why normalize
++through `roundMoney` rather than trust the caller?** Defense in depth — display
++must hold the invariant even if a caller passes an un-rounded intermediate.
++
++## Consequences
++
++- **Positive:** the ledger has one drift-free, currency- and locale-aware money
++  formatter; display is provably consistent with stored value across the ADR 0003
++  arithmetic; corrupt/cross-currency inputs fail loud with the existing typed
++  error; zero new rounding or formatting logic — `roundMoney` and `Intl` stay
++  authoritative.
++- **Negative / residual risk:** `Intl.NumberFormat` output depends on the
++  runtime's ICU data; exact strings (symbol, grouping) are ICU-version-sensitive
++  (UNVERIFIED across all deploy targets — Node ships full ICU by default and the
++  test runtime confirms the expected strings). For a non-ISO currency code unknown
++  to ICU, `Intl` throws `RangeError` — acceptable fail-loud behavior. No
++  per-render `Intl` instance caching yet; negligible for current volumes, revisit
++  if a hot render path appears.
++- **Carried forward:** ADR 0003's deferred N-ary `sumMoney` and ADR 0002 Task 4
++  (`roundToCents → roundMoney` convergence) are unchanged by this ADR.
++
++## Coverage / verification
++
++- `format.test.ts`: 8 tests covering USD default-locale, EUR `de-DE` (comma
++  decimal + trailing €), JPY (zero minor units), negative values (incl. `-0`),
++  very large values, NaN/Infinity rejection (typed `not-finite`, also catchable as
++  `RangeError`), mixed-currency `Money` rejection (typed `mixed-currency`), and the
++  **Reviewer's end-to-end check** `formatMoney(addMoney(0.1, 0.2, "USD"), "USD")
++  === "$0.30"`.
++- `npm test` → **42/42 pass** (12 amount + 13 round + 9 arithmetic + 8 format).
++- `tsc --noEmit` clean. `eslint` on the changed files clean.
++- **Release gate NOT all-green:** full-repo `eslint .` fails on a **pre-existing**
++  error in `src/app/page.tsx` (`@next/next/no-html-link-for-pages`, introduced by
++  commit `d5f670c`, unrelated to this change). Per the release rule, the
++  post-merge state is not lint-clean → **merge blocked, escalated via
++  manual_review.** This formatter change is complete and lint-clean in isolation.
++- Exported through `features/ledger/index.ts`.
++
++## Task breakdown
++
++1. **`formatMoney(value, currency, locale?)` + `Intl` currency formatting** —
++   default locale `en-US`; let `Intl` drive symbol/grouping/precision.
++   *(implemented)* — **2 pts**
++2. **Normalize through `roundMoney` before display** — canonical-value guarantee
++   + `-0 → 0`. *(implemented)* — **1 pt**
++3. **Fail-loud rejection** — reuse `MoneyArithmeticError` for non-finite +
++   mixed-currency `Money`; blank currency via `roundMoney`. *(implemented)* — **1 pt**
++4. **Unit tests** — six required cases + Reviewer consistency check.
++   *(implemented)* — **2 pts**
++5. **Barrel export** — surface `formatMoney` from `features/ledger/index.ts`.
++   *(implemented)* — **1 pt**
++6. **Resolve pre-existing lint error in `src/app/page.tsx`** (replace `<a href="/">`
++   with `next/link` `<Link>`) so the release gate is all-green and this work can
++   merge. *(blocked — outside ledger scope; escalated)* — **1 pt**
++
++**Total: 8 pts — 7 delivered this run, 1 blocking the merge (Task 6, pre-existing).**
+diff --git a/src/features/ledger/index.ts b/src/features/ledger/index.ts
+index 367f305..2c1145c 100644
+--- a/src/features/ledger/index.ts
++++ b/src/features/ledger/index.ts
+@@ -25,6 +25,7 @@ export {
+   addMoney,
+   subtractMoney,
+ } from "./lib/arithmetic";
++export { formatMoney } from "./lib/format";
+ export {
+   type RawTransaction,
+   type RejectedTransaction,
+diff --git a/src/features/ledger/lib/format.test.ts b/src/features/ledger/lib/format.test.ts
+new file mode 100644
+index 0000000..6f57181
+--- /dev/null
++++ b/src/features/ledger/lib/format.test.ts
+@@ -0,0 +1,67 @@
++// Unit tests for currency-aware money formatting.
++//
++// Runner: Node's built-in test runner via the tsx loader. Run the whole suite
++// with `npm test` (globs src/**/*.test.ts), or this file alone with:
++//   npx tsx --test ./src/features/ledger/lib/format.test.ts
++
++import assert from "node:assert/strict";
++import { test } from "node:test";
++import { formatMoney } from "./format";
++import { addMoney } from "./arithmetic";
++import { MoneyArithmeticError } from "./arithmetic";
++
++test("USD with default locale (en-US): symbol + two minor units", () => {
++  assert.equal(formatMoney(1234.5, "USD"), "$1,234.50");
++  assert.equal(formatMoney(0, "USD"), "$0.00");
++  assert.equal(formatMoney(7, "USD"), "$7.00");
++});
++
++test("EUR with de-DE: comma decimal, dot grouping, trailing € symbol", () => {
++  assert.equal(formatMoney(1234.56, "EUR", "de-DE"), "1.234,56 €");
++});
++
++test("JPY has zero minor units (no decimal places)", () => {
++  assert.equal(formatMoney(1235, "JPY"), "¥1,235");
++  assert.equal(formatMoney(1234.4, "JPY"), "¥1,234"); // rounds to whole yen
++});
++
++test("formats negative values with the locale's sign placement", () => {
++  assert.equal(formatMoney(-1234.5, "USD"), "-$1,234.50");
++  // -0 is normalized to 0 by roundMoney → never renders "-$0.00".
++  assert.equal(formatMoney(-0, "USD"), "$0.00");
++  assert.equal(formatMoney(addMoney(0.1, 0.1, "USD") - 0.2, "USD"), "$0.00");
++});
++
++test("formats very large values with full grouping and no precision loss", () => {
++  assert.equal(formatMoney(1234567.89, "USD"), "$1,234,567.89");
++  assert.equal(formatMoney(999999.99, "USD"), "$999,999.99");
++});
++
++test("rejects non-finite values with a typed MoneyArithmeticError", () => {
++  assert.throws(() => formatMoney(NaN, "USD"), MoneyArithmeticError);
++  assert.throws(() => formatMoney(Infinity, "USD"), MoneyArithmeticError);
++  assert.throws(() => formatMoney(-Infinity, "USD"), MoneyArithmeticError);
++  assert.throws(
++    () => formatMoney(NaN, "USD"),
++    (err: unknown) =>
++      err instanceof MoneyArithmeticError && err.code === "not-finite",
++  );
++  // Extends RangeError → existing fail-loud catch sites still catch it.
++  assert.throws(() => formatMoney(NaN, "USD"), RangeError);
++});
++
++test("rejects mixed-currency Money objects with a typed error", () => {
++  assert.throws(
++    () => formatMoney({ amount: 5, currency: "EUR" }, "USD"),
++    (err: unknown) =>
++      err instanceof MoneyArithmeticError && err.code === "mixed-currency",
++  );
++  // A matching tagged Money is accepted and unwrapped.
++  assert.equal(formatMoney({ amount: 1234.5, currency: "USD" }, "USD"), "$1,234.50");
++});
++
++test("display is consistent with stored value across prior arithmetic (Reviewer check)", () => {
++  // The canonical end-to-end guarantee: arithmetic + formatting agree exactly.
++  assert.equal(formatMoney(addMoney(0.1, 0.2, "USD"), "USD"), "$0.30");
++  assert.equal(formatMoney(addMoney(0.1, 0.2, "USD"), "USD", "en-US"), "$0.30");
++});
+diff --git a/src/features/ledger/lib/format.ts b/src/features/ledger/lib/format.ts
+new file mode 100644
+index 0000000..d3d7669
+--- /dev/null
++++ b/src/features/ledger/lib/format.ts
+@@ -0,0 +1,93 @@
++// Currency-aware money formatting for the display layer.
++//
++// This is the display-side pair to the `round.ts` / `arithmetic.ts` stack. Where
++// `roundMoney` (ADR 0002) and `addMoney`/`subtractMoney` (ADR 0003) keep the
++// *stored* value canonical, `formatMoney` turns that canonical value into a
++// human-readable string — and does so by first normalizing through `roundMoney`,
++// so what the user sees can never disagree with what the ledger stores by float
++// drift. Symbol placement, grouping, and minor-unit precision are delegated to
++// `Intl.NumberFormat` (style: "currency"), which is locale- and currency-correct
++// by construction ($1,234.50 / 1.234,56 € / ¥1,235).
++//
++// Pure, side-effect-free, fail-loud — matching `amount.ts` / `round.ts` /
++// `arithmetic.ts`. A non-finite value or a mixed-currency `Money` is a corrupt
++// figure and throws a `MoneyArithmeticError` (ADR 0003's typed error) rather than
++// rendering a misleading string.
++
++import { type CurrencyCode, roundMoney } from "./round";
++import { MoneyArithmeticError, type MoneyInput } from "./arithmetic";
++
++/**
++ * Resolve a `MoneyInput` to a finite number in `currency`, or throw the same
++ * typed error `arithmetic.ts` uses. A tagged `Money` whose currency differs from
++ * `currency` is the only expressible mixed-currency format request — rejected so
++ * a EUR amount is never silently rendered with a USD symbol.
++ */
++function resolveValue(value: MoneyInput, currency: CurrencyCode): number {
++  let amount: number;
++
++  if (typeof value === "number") {
++    amount = value;
++  } else if (value != null && typeof value === "object") {
++    if (value.currency !== currency) {
++      throw new MoneyArithmeticError(
++        "mixed-currency",
++        `Cannot format value: currency ${String(value.currency)} does not ` +
++          `match format currency ${currency}.`,
++      );
++    }
++    amount = value.amount;
++  } else {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Value to format must be a number or Money, received ${String(value)}.`,
++    );
++  }
++
++  if (typeof amount !== "number" || !Number.isFinite(amount)) {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Value to format must be a finite number, received ${String(amount)}.`,
++    );
++  }
++  return amount;
++}
++
++/**
++ * Format a money `value` as a locale-correct currency string.
++ *
++ * - **`Intl.NumberFormat` (style: "currency")** drives symbol placement,
++ *   digit grouping, and minor-unit precision — so JPY renders with zero decimals,
++ *   USD with two, and the symbol sits where the locale expects it.
++ * - **`locale` defaults to `"en-US"`** when omitted.
++ * - **Normalized through `roundMoney` first** (ADR 0002), so the formatted string
++ *   reflects the canonical stored value: `formatMoney(addMoney(0.1, 0.2, "USD"),
++ *   "USD")` is exactly `"$0.30"`, never `"$0.30000000000000004"` and never a
++ *   value that drifted from what arithmetic stored.
++ * - **Fail-loud:** a non-finite value or a mixed-currency `Money` throws a
++ *   `MoneyArithmeticError` (ADR 0003); a blank/invalid currency throws via
++ *   `roundMoney`/`minorUnits` (`RangeError`).
++ *
++ * @throws MoneyArithmeticError if `value` is non-finite or carries a different
++ *   currency; RangeError if `currency` is blank or unknown to `Intl`.
++ */
++export function formatMoney(
++  value: MoneyInput,
++  currency: CurrencyCode,
++  locale: string = "en-US",
++): string {
++  const amount = resolveValue(value, currency);
++
++  // Normalize to the currency's canonical minor-unit value before display.
++  // roundMoney also re-validates the currency code and the finite invariant,
++  // and normalizes -0 → 0 so we never render "-$0.00".
++  const normalized = roundMoney(amount, currency);
++
++  // Intl is authoritative for locale-correct symbol/grouping/precision. We let
++  // it derive fraction digits from the currency (USD→2, JPY→0, BHD→3), which
++  // matches roundMoney's minor-unit table for standard ISO-4217 codes.
++  return new Intl.NumberFormat(locale, {
++    style: "currency",
++    currency,
++  }).format(normalized);
++}
+
+--- UNCOMMITTED WORKING TREE ---
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index aa4b377..bd34ed1 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,21 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+ 
+ ## [Unreleased]
+ 
++### Added
++
++- **Currency-aware money display formatter** (`formatMoney`, ADR 0004). The
++  display-side pair to the rounding (ADR 0002) and add/subtract (ADR 0003) money
++  primitives: `formatMoney(value, currency, locale?)` turns a stored ledger value
++  into a locale-correct currency string (`$1,234.50`, `1.234,56 €`, `¥1,235`).
++  It normalizes through `roundMoney` first, so what the user sees can never drift
++  from what the ledger stores — `formatMoney(addMoney(0.1, 0.2, "USD"), "USD")`
++  is exactly `"$0.30"`, never `"$0.30000000000000004"`. Symbol, grouping, and
++  minor-unit precision are delegated to `Intl.NumberFormat` (JPY→0 decimals,
++  USD→2, BHD→3); `locale` defaults to `"en-US"`. Fail-loud: a non-finite or
++  mixed-currency value throws `MoneyArithmeticError`, a blank/unknown currency
++  throws `RangeError`. Pure and side-effect-free. Backed by 8 new unit tests
++  (full suite 42/42 green).
++
+ ## [0.4.0] - 2026-05-28
+ 
+ Backward-compatible feature release: the ledger money-arithmetic add/subtract
+diff --git a/README.md b/README.md
+index 0288cf7..0801aff 100644
+--- a/README.md
++++ b/README.md
+@@ -71,7 +71,7 @@ src/
+ ├── features/
+ │   └── ledger/           # The dashboard feature module
+ │       ├── components/   # Section components
+-│       ├── lib/          # Money rounding, amount validation + ingest boundary
++│       ├── lib/          # Money rounding, add/subtract arithmetic, display formatting, amount validation + ingest boundary
+ │       ├── data.ts       # Typed mock data
+ │       └── types.ts      # Domain types
+ └── lib/                  # cn(), formatters

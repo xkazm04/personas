@@ -1,0 +1,54 @@
+[
+  {
+    "id": "f2614ace-e50b-4280-acb4-fc1a39d0380c",
+    "execution_id": "0007d44c-3d27-4669-a9bd-7dec3ea6b499",
+    "persona_id": "bdb4bfb1-2e14-495e-bf53-38356cfbf8c1",
+    "title": "Release gate blocked: pre-existing lint error in src/app/page.tsx prevents merge of formatMoney",
+    "description": "The formatMoney deliverable (ADR 0004) is complete, fully tested (42/42), typecheck-clean, and lint-clean on its own three changed files. However, the release rule requires build + lint + tests ALL green on the post-merge state. Full-repo `eslint .` fails with 1 error in src/app/page.tsx (@next/next/no-html-link-for-pages — an <a href=\"/\"> that should be next/link <Link>). This error is PRE-EXISTING and unrelated to the ledger change (page.tsx last touched by commit d5f670c). Per policy I did NOT merge. Decision needed: how to unblock the merge.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T19:01:31.400428800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "a025d205-6ad7-4044-a045-d17070f32864",
+    "execution_id": "51e126a8-1865-4232-99e8-839f0556a665",
+    "persona_id": "06537169-fd6b-4c40-9367-b110680dc48f",
+    "title": "formatMoney committed (12bc223) — merge/release gate blocked on pre-existing page.tsx lint error",
+    "description": "The architect's ADR 0004 formatMoney deliverable is verified and committed to main as 12bc223 (unpushed; review_each_pr means merge is a human gate). Full suite 42/42 pass, tsc clean, the three changed files lint clean. However the release rule requires build+lint+tests ALL green: `eslint .` fails with 1 error in src/app/page.tsx (@next/next/no-html-link-for-pages — an <a href=\"/\"> that should be next/link <Link>). This error is PRE-EXISTING and unrelated (page.tsx last touched by commit d5f670c, brand assets) and lies OUTSIDE the formatMoney work order's scope, so per the 'never modify files outside the accepted item' constraint I did not auto-fix it. Decision needed to unblock the all-green gate.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T19:04:18.215508800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "63ea0844-c5e8-40fa-b347-bcb539916ca5",
+    "execution_id": "aa7908f3-b903-4d3f-89ab-f6390bf26959",
+    "persona_id": "be74563c-6e09-45fc-b9ba-4cc0a5f31b9a",
+    "title": "Release v0.5.0 HELD — fix red lint in src/app/page.tsx, then tag",
+    "description": "The v0.5.0 release (MINOR: formatMoney, ADR 0004) is prepared but held because the full quality gate fails on lint at HEAD 12bc223. typecheck/tests(42)/build are all green; eslint reports 1 error: src/app/page.tsx:9 uses a raw <a href=\"/\"> instead of next/link (@next/next/no-html-link-for-pages). This is pre-existing trunk debt introduced in 885afae (v0.4.0), unrelated to the new increment, but as the last quality gate I do not tag over a red trunk. Fix: add `import Link from \"next/link\"`, change line 9 <a href=\"/\"...> to <Link ...> and line 26 </a> to </Link> (only the /-route anchor trips the rule). Once eslint is clean, the prepared release executes: bump 0.4.0->0.5.0, prepend CHANGELOG Added entry for formatMoney, draft release notes, fold in the uncommitted README tweak, commit, tag, push, publish.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T19:16:20.219625600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "2a6e3d9e-60a6-4a5f-9f93-2212afdb1d35",
+    "execution_id": "894309c0-db21-4ffa-b008-85638deef330",
+    "persona_id": "04564189-698f-46e9-859e-ea19616a8646",
+    "title": "Docs sync for formatMoney — review CHANGELOG [Unreleased] + README edits before they fold into v0.5.0",
+    "description": "Documented the formatMoney feature (12bc223, ADR 0004) by prepending a CHANGELOG entry under the existing [Unreleased] section and adding 'display formatting' to the README ledger/lib structure line. I deliberately used [Unreleased] rather than a [0.5.0] heading because the Release Manager HELD v0.5.0 (red lint trunk in src/app/page.tsx:9). The edits are doc-only (verified via git diff --stat: only CHANGELOG.md + README.md), uncommitted in the working tree. They should fold into the eventual v0.5.0 release commit once the lint blocker is fixed.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T19:18:47.300125800+00:00",
+    "use_case_id": null
+  }
+]
