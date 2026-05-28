@@ -1,9 +1,18 @@
-//! Desktop → cloud sync writer (Phase 1a).
+//! Desktop → cloud sync writer (Phase 1a, v2).
 //!
 //! Periodically (and on local-mutation nudges) pushes a read-projection of the
 //! local SQLite data up to the user's own Supabase tenant, scoped server-side
 //! by Row-Level Security on `auth.uid()`. Execution and the credential vault
 //! never leave the device — only the secret-free projections in `rows` are sent.
+//!
+//! ## v2 — fault-isolated passes
+//!
+//! A pass syncs each table independently. A single table's failure (a transient
+//! network blip, a schema drift on one table) no longer aborts the whole pass or
+//! strands the *other* tables' cursors — every healthy table still advances and
+//! its rows still land. The per-table outcome (rows + error + last-synced) is
+//! surfaced through [`CloudSyncStatus`] so the Settings panel can show exactly
+//! what synced and what didn't.
 
 pub mod client;
 pub(crate) mod cursor;
@@ -29,20 +38,99 @@ static SYNC_WAKE: LazyLock<Notify> = LazyLock::new(Notify::new);
 /// In-memory status surfaced by `cloud_sync_status`.
 static RUNTIME: LazyLock<Mutex<RuntimeState>> = LazyLock::new(|| Mutex::new(RuntimeState::default()));
 
-#[derive(Default, Clone)]
-struct RuntimeState {
-    last_error: Option<String>,
-    rows_synced_last: u64,
+/// Canonical list of synced tables — the single source of truth for both the
+/// pass (below) and the status enumeration. Tuple = `(remote table, cursor key,
+/// full_backfill, resync_recent_window)`.
+///
+/// `full_backfill`: first run starts at the epoch (sync the whole table) vs 90
+/// days back (bound the first push for append-heavy logs).
+/// `resync`: also re-read rows whose `created_at` is within the last 24h, to
+/// capture in-place mutations (status/read-flag transitions) on append tables.
+const SYNC_TABLES: &[(&str, &str, bool, bool)] = &[
+    ("synced_personas", "personas", true, false),
+    ("synced_executions", "executions", false, true),
+    ("synced_events", "events", false, true),
+    ("synced_manual_reviews", "reviews", false, false),
+    ("synced_messages", "messages", false, true),
+    ("synced_metrics_snapshots", "metrics", false, true),
+    ("synced_tool_usage", "tool_usage", false, false),
+    ("synced_memories", "memories", true, false),
+    ("synced_knowledge_patterns", "knowledge_patterns", true, false),
+];
+
+/// Last-pass result for one table, retained in memory for the status surface.
+#[derive(Debug, Clone, Default)]
+struct LastTable {
+    remote: String,
+    rows: u64,
+    error: Option<String>,
 }
 
+#[derive(Default, Clone)]
+struct RuntimeState {
+    syncing: bool,
+    last_error: Option<String>,
+    rows_synced_last: u64,
+    /// Per-table rows + error from the most recent pass, keyed by remote name.
+    tables: Vec<LastTable>,
+}
+
+/// Per-table status surfaced to the UI.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct TableSyncStatus {
+    /// Remote table name, e.g. `synced_executions`.
+    pub table: String,
+    /// Rows pushed for this table in the most recent pass.
+    pub rows_last: u64,
+    /// RFC3339 cursor watermark — the table's last successful sync, or null if
+    /// it has never synced.
+    pub last_synced_at: Option<String>,
+    /// Error from the most recent pass for this table, if it failed.
+    pub error: Option<String>,
+}
+
+/// Cloud-sync status surfaced by `cloud_sync_status` / returned by `cloud_sync_now`.
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub struct CloudSyncStatus {
     pub enabled: bool,
+    /// True while a pass is in flight (drives the "syncing…" UI state).
+    pub syncing: bool,
+    /// This device's stable sync id, or null before the first pass.
+    pub device_id: Option<String>,
+    /// RFC3339 time of the last fully-successful pass.
     pub last_sync_at: Option<String>,
+    /// First error from the most recent pass (null when the last pass was clean).
     pub last_error: Option<String>,
+    /// Rows pushed in the most recent pass (across all tables).
     pub rows_synced_last: u64,
+    /// Lifetime rows pushed across all passes (persisted, monotonic).
+    pub total_rows_synced: u64,
+    /// Per-table breakdown for the most recent pass + cursor watermarks.
+    pub tables: Vec<TableSyncStatus>,
+}
+
+/// Internal result of one pass — drives both the persisted counters and the
+/// in-memory status snapshot.
+struct SyncReport {
+    tables: Vec<LastTable>,
+    total: u64,
+}
+
+impl SyncReport {
+    fn is_clean(&self) -> bool {
+        self.tables.iter().all(|t| t.error.is_none())
+    }
+    fn first_error(&self) -> Option<String> {
+        self.tables.iter().find_map(|t| t.error.clone())
+    }
+}
+
+fn now_rfc3339() -> String {
+    chrono::Utc::now().to_rfc3339()
 }
 
 /// Signal that local data changed; the sync loop debounces and pushes.
@@ -59,22 +147,80 @@ pub fn set_enabled(pool: &DbPool, enabled: bool) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Current sync status (enabled flag + last run telemetry).
+/// Current sync status: persisted facts (enabled, device, last-at, lifetime
+/// total, per-table cursors) merged with the in-memory last-pass snapshot
+/// (syncing flag, per-table rows/errors).
 pub async fn status(pool: &DbPool) -> CloudSyncStatus {
     let rt = RUNTIME.lock().await.clone();
+    let by_remote = |remote: &str| rt.tables.iter().find(|t| t.remote == remote);
+
+    let tables = SYNC_TABLES
+        .iter()
+        .map(|(remote, cursor_key, _, _)| {
+            let last = by_remote(remote);
+            TableSyncStatus {
+                table: (*remote).to_string(),
+                rows_last: last.map(|t| t.rows).unwrap_or(0),
+                last_synced_at: cursor::peek_cursor(pool, cursor_key),
+                error: last.and_then(|t| t.error.clone()),
+            }
+        })
+        .collect();
+
     CloudSyncStatus {
         enabled: cursor::is_enabled(pool),
+        syncing: rt.syncing,
+        device_id: cursor::peek_device_id(pool),
         last_sync_at: cursor::get_last_at(pool),
         last_error: rt.last_error,
         rows_synced_last: rt.rows_synced_last,
+        total_rows_synced: cursor::get_total_rows(pool),
+        tables,
     }
 }
 
-/// Generic per-table pass: read rows changed since the cursor, upsert them, and
-/// advance the cursor to the tick start on success. `cursor_name` keys the
-/// persisted watermark; `full_backfill` controls the first-run cursor default;
-/// `resync` enables the recent-window re-read for tables that mutate in place.
+/// Sync one table: read rows changed since the cursor, upsert them, advance the
+/// cursor on success. Captures its own failure into the returned [`LastTable`]
+/// rather than propagating — so one table's error can't abort the pass.
 async fn sync_table<T, F>(
+    pool: &DbPool,
+    client: &SyncClient,
+    remote_table: &str,
+    cursor_name: &str,
+    full_backfill: bool,
+    resync: bool,
+    device_id: &str,
+    fetch: F,
+) -> LastTable
+where
+    T: Serialize + Send + 'static,
+    F: Fn(&DbPool, String, Option<String>, String) -> Result<Vec<T>, AppError> + Send + 'static,
+{
+    match sync_table_inner(
+        pool,
+        client,
+        remote_table,
+        cursor_name,
+        full_backfill,
+        resync,
+        device_id,
+        fetch,
+    )
+    .await
+    {
+        Ok(rows) => LastTable { remote: remote_table.to_string(), rows, error: None },
+        Err(e) => {
+            tracing::warn!(table = remote_table, error = %e, "cloud sync: table failed (isolated)");
+            LastTable {
+                remote: remote_table.to_string(),
+                rows: 0,
+                error: Some(e.to_string()),
+            }
+        }
+    }
+}
+
+async fn sync_table_inner<T, F>(
     pool: &DbPool,
     client: &SyncClient,
     remote_table: &str,
@@ -89,7 +235,7 @@ where
     F: Fn(&DbPool, String, Option<String>, String) -> Result<Vec<T>, AppError> + Send + 'static,
 {
     let cursor_prev = cursor::get_cursor(pool, cursor_name, full_backfill);
-    let tick_start = chrono::Utc::now().to_rfc3339();
+    let tick_start = now_rfc3339();
     let resync_floor = if resync {
         Some((chrono::Utc::now() - chrono::Duration::hours(24)).to_rfc3339())
     } else {
@@ -108,43 +254,92 @@ where
     Ok(n)
 }
 
-/// Run one full sync pass over every Phase-1 table. Returns the number of rows
-/// pushed. No-op (returns 0) when sync is disabled or no Supabase JWT is
-/// available — the loop treats both as "nothing to do", not an error.
-pub async fn run_sync_once(state: &Arc<AppState>) -> Result<u64, AppError> {
+/// Collect every table's outcome for one pass. Device heartbeat first so the
+/// dashboard always knows this device exists; then each Phase-1 table, fault
+/// isolated. The heartbeat's outcome influences `is_clean()`/`last_error` but is
+/// not shown as a per-table grid row (it has no cursor).
+async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> SyncReport {
+    let mut tables: Vec<LastTable> = Vec::with_capacity(SYNC_TABLES.len() + 1);
+
+    // Device heartbeat (own outcome, kept out of the displayed grid).
+    let dev = rows::device_row(device_id);
+    let heartbeat = match client.upsert("synced_devices", std::slice::from_ref(&dev)).await {
+        Ok(()) => LastTable { remote: "synced_devices".into(), rows: 1, error: None },
+        Err(e) => {
+            tracing::warn!(error = %e, "cloud sync: device heartbeat failed");
+            LastTable { remote: "synced_devices".into(), rows: 0, error: Some(e.to_string()) }
+        }
+    };
+    tables.push(heartbeat);
+
+    // Each Phase-1 table, in SYNC_TABLES order. Typed fetch fns can't live in a
+    // homogeneous list, so the dispatch is explicit — but the (remote, cursor,
+    // backfill, resync) tuples are read from SYNC_TABLES so they can't drift.
+    macro_rules! sync {
+        ($idx:expr, $fetch:expr) => {{
+            let (remote, cursor_key, bf, rs) = SYNC_TABLES[$idx];
+            sync_table(pool, client, remote, cursor_key, bf, rs, device_id, $fetch).await
+        }};
+    }
+    tables.push(sync!(0, rows::fetch_personas));
+    tables.push(sync!(1, rows::fetch_executions));
+    tables.push(sync!(2, rows::fetch_events));
+    tables.push(sync!(3, rows::fetch_reviews));
+    tables.push(sync!(4, rows::fetch_messages));
+    tables.push(sync!(5, rows::fetch_metrics));
+    tables.push(sync!(6, rows::fetch_tool_usage));
+    tables.push(sync!(7, rows::fetch_memories));
+    tables.push(sync!(8, rows::fetch_knowledge_patterns));
+
+    let total = tables.iter().map(|t| t.rows).sum();
+    SyncReport { tables, total }
+}
+
+/// Run one full sync pass. No-op when sync is disabled or no Supabase JWT is
+/// available — both are "nothing to do", not errors. Persists the lifetime
+/// total, advances `last_sync_at` only on a fully-clean pass, and writes the
+/// in-memory status snapshot (including the `syncing` flag). Per-table failures
+/// are logged inside `sync_table` and surfaced via `status()`.
+pub async fn run_sync_once(state: &Arc<AppState>) {
     let pool = state.db.clone();
     if !cursor::is_enabled(&pool) {
-        return Ok(0);
+        return;
     }
 
     let jwt = {
         let auth = state.auth.read().await;
         match auth.access_token.as_ref() {
             Some(s) => s.expose_secret().to_string(),
-            None => return Ok(0),
+            None => return,
         }
     };
 
-    let client = SyncClient::new(jwt)?;
-    let device_id = cursor::resolve_device_id(&pool);
+    // Flip the syncing flag so a concurrent status() call reflects the in-flight
+    // pass. Reset on every exit path below.
+    RUNTIME.lock().await.syncing = true;
 
-    // Device heartbeat first, so the dashboard always knows this device exists.
-    let dev = rows::device_row(&device_id);
-    client.upsert("synced_devices", std::slice::from_ref(&dev)).await?;
+    let report = match SyncClient::new(jwt) {
+        Ok(client) => {
+            let device_id = cursor::resolve_device_id(&pool);
+            collect_pass(&pool, &client, &device_id).await
+        }
+        Err(e) => SyncReport {
+            tables: vec![LastTable { remote: "client".into(), rows: 0, error: Some(e.to_string()) }],
+            total: 0,
+        },
+    };
 
-    let mut total: u64 = 0;
-    total += sync_table(&pool, &client, "synced_personas", "personas", true, false, &device_id, rows::fetch_personas).await?;
-    total += sync_table(&pool, &client, "synced_executions", "executions", false, true, &device_id, rows::fetch_executions).await?;
-    total += sync_table(&pool, &client, "synced_events", "events", false, true, &device_id, rows::fetch_events).await?;
-    total += sync_table(&pool, &client, "synced_manual_reviews", "reviews", false, false, &device_id, rows::fetch_reviews).await?;
-    total += sync_table(&pool, &client, "synced_messages", "messages", false, true, &device_id, rows::fetch_messages).await?;
-    total += sync_table(&pool, &client, "synced_metrics_snapshots", "metrics", false, true, &device_id, rows::fetch_metrics).await?;
-    total += sync_table(&pool, &client, "synced_tool_usage", "tool_usage", false, false, &device_id, rows::fetch_tool_usage).await?;
-    total += sync_table(&pool, &client, "synced_memories", "memories", true, false, &device_id, rows::fetch_memories).await?;
-    total += sync_table(&pool, &client, "synced_knowledge_patterns", "knowledge_patterns", true, false, &device_id, rows::fetch_knowledge_patterns).await?;
+    // Persist: lifetime total always; last-at only on a clean pass.
+    let _ = cursor::add_total_rows(&pool, report.total);
+    if report.is_clean() {
+        let _ = cursor::set_last_at(&pool, &now_rfc3339());
+    }
 
-    let _ = cursor::set_last_at(&pool, &chrono::Utc::now().to_rfc3339());
-    Ok(total)
+    let mut rt = RUNTIME.lock().await;
+    rt.syncing = false;
+    rt.rows_synced_last = report.total;
+    rt.last_error = report.first_error();
+    rt.tables = report.tables;
 }
 
 /// Spawn the background sync loop: a ~45s periodic tick plus event-driven wakes
@@ -167,18 +362,56 @@ pub fn spawn_sync_loop(_app: AppHandle, state: Arc<AppState>) {
                 continue;
             }
 
-            match run_sync_once(&state).await {
-                Ok(n) => {
-                    let mut rt = RUNTIME.lock().await;
-                    rt.last_error = None;
-                    rt.rows_synced_last = n;
-                }
-                Err(e) => {
-                    tracing::warn!(error = %e, "cloud sync tick failed");
-                    let mut rt = RUNTIME.lock().await;
-                    rt.last_error = Some(e.to_string());
-                }
-            }
+            // run_sync_once writes the status snapshot internally and logs any
+            // per-table failures (in sync_table); nothing more for the loop to do.
+            run_sync_once(&state).await;
         }
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn report_clean_when_no_table_errors() {
+        let r = SyncReport {
+            tables: vec![
+                LastTable { remote: "a".into(), rows: 3, error: None },
+                LastTable { remote: "b".into(), rows: 0, error: None },
+            ],
+            total: 3,
+        };
+        assert!(r.is_clean());
+        assert_eq!(r.first_error(), None);
+    }
+
+    #[test]
+    fn report_surfaces_first_error_and_is_not_clean() {
+        // One table failing must NOT mask the others' row counts — fault
+        // isolation: total still reflects the tables that succeeded.
+        let r = SyncReport {
+            tables: vec![
+                LastTable { remote: "a".into(), rows: 5, error: None },
+                LastTable { remote: "b".into(), rows: 0, error: Some("boom".into()) },
+                LastTable { remote: "c".into(), rows: 2, error: None },
+            ],
+            total: 7,
+        };
+        assert!(!r.is_clean());
+        assert_eq!(r.first_error(), Some("boom".into()));
+        assert_eq!(r.total, 7, "healthy tables still contribute rows when a sibling fails");
+    }
+
+    #[test]
+    fn sync_tables_cover_all_phase1_tables() {
+        // The grid + dispatch are driven off this list; guard its length so a
+        // table added to collect_pass without a SYNC_TABLES entry fails CI.
+        assert_eq!(SYNC_TABLES.len(), 9);
+        // cursor keys must be unique (they key app_settings rows).
+        let mut keys: Vec<&str> = SYNC_TABLES.iter().map(|(_, c, _, _)| *c).collect();
+        keys.sort_unstable();
+        keys.dedup();
+        assert_eq!(keys.len(), SYNC_TABLES.len(), "duplicate cursor key in SYNC_TABLES");
+    }
 }

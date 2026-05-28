@@ -208,6 +208,10 @@ pub const CLOUD_SYNC_DEVICE_ID: &str = "cloud_sync_device_id";
 /// RFC3339 timestamp of the last successful cloud sync pass. Value: free-form.
 pub const CLOUD_SYNC_LAST_AT: &str = "cloud_sync_last_at";
 
+/// Lifetime count of rows pushed to the cloud across all passes (monotonic).
+/// Surfaced in the Settings sync panel. Value: a non-negative integer string.
+pub const CLOUD_SYNC_TOTAL_ROWS: &str = "cloud_sync_total_rows";
+
 /// Per-table incremental sync watermark. Full key: `cloud_sync_cursor:<table>`
 /// (e.g. `cloud_sync_cursor:executions`), value: RFC3339 timestamp.
 pub const CLOUD_SYNC_CURSOR_PREFIX: &str = "cloud_sync_cursor:";
@@ -247,6 +251,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
+    CLOUD_SYNC_TOTAL_ROWS,
 ];
 
 /// Prefix patterns for per-persona dynamic keys (e.g. `auto_rollback:<persona_id>`).

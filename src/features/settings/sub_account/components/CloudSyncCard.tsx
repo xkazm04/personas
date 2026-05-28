@@ -1,18 +1,36 @@
-import { useState, useEffect, useCallback } from 'react';
-import { CloudUpload, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { CloudUpload, RefreshCw, ChevronDown, AlertCircle, MonitorSmartphone } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import Button from '@/features/shared/components/buttons/Button';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Numeric } from '@/features/shared/components/display/Numeric';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
-import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useToastStore } from '@/stores/toastStore';
 import { getCloudSyncStatus, setCloudSyncEnabled, cloudSyncNow } from '@/api/cloudSync';
 import type { CloudSyncStatus } from '@/lib/bindings/CloudSyncStatus';
+import type { TableSyncStatus } from '@/lib/bindings/TableSyncStatus';
+
+type ConnState = 'off' | 'active' | 'syncing';
+
+function connState(status: CloudSyncStatus | null): ConnState {
+  if (!status?.enabled) return 'off';
+  return status.syncing ? 'syncing' : 'active';
+}
+
+const STATE_DOT: Record<ConnState, string> = {
+  off: 'bg-muted-foreground/40',
+  active: 'bg-emerald-400',
+  syncing: 'bg-amber-400 animate-pulse',
+};
 
 /**
- * Cloud dashboard sync toggle. Rendered only when the user is signed in with
- * Google (the synced data lands in their own Supabase tenant under their JWT).
+ * Cloud dashboard sync panel (v2). Rendered only when signed in with Google.
+ * Surfaces live connection state, a per-table sync breakdown, lifetime totals,
+ * the device id, and inline error recovery — all driven by the rich
+ * `CloudSyncStatus` the backend returns.
  */
 export default function CloudSyncCard() {
   const { t } = useTranslation();
@@ -20,6 +38,8 @@ export default function CloudSyncCard() {
   const [status, setStatus] = useState<CloudSyncStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const pollTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -31,9 +51,25 @@ export default function CloudSyncCard() {
 
   useEffect(() => {
     void refresh();
+    return () => {
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+    };
   }, [refresh]);
 
+  // While a pass is in flight, poll until it settles so the UI animates live
+  // without the user clicking refresh.
+  useEffect(() => {
+    if (!status?.syncing) return;
+    pollTimer.current = setTimeout(() => {
+      void refresh();
+    }, 1500);
+    return () => {
+      if (pollTimer.current) clearTimeout(pollTimer.current);
+    };
+  }, [status?.syncing, status?.lastSyncAt, refresh]);
+
   const enabled = status?.enabled ?? false;
+  const state = connState(status);
 
   const onToggle = async () => {
     const next = !enabled;
@@ -53,11 +89,11 @@ export default function CloudSyncCard() {
   const onSyncNow = async () => {
     setSyncing(true);
     try {
-      const count = await cloudSyncNow();
+      const fresh = await cloudSyncNow();
+      setStatus(fresh);
       useToastStore
         .getState()
-        .addToast(interpolate(s.cloud_sync_now_done, { count }), 'success');
-      await refresh();
+        .addToast(interpolate(s.cloud_sync_now_done, { count: Number(fresh.rowsSyncedLast) }), 'success');
     } catch (e) {
       toastCatch('CloudSyncCard:syncNow', s.cloud_sync_now_failed)(e);
     } finally {
@@ -65,11 +101,30 @@ export default function CloudSyncCard() {
     }
   };
 
+  const stateLabel =
+    state === 'syncing'
+      ? s.cloud_sync_state_syncing
+      : state === 'active'
+        ? s.cloud_sync_state_active
+        : s.cloud_sync_state_off;
+
+  const tableLabels = s.cloud_sync_tables as Record<string, string>;
+  const tables: TableSyncStatus[] = status?.tables ?? [];
+  const hasError = !!status?.lastError;
+
   return (
     <div className="rounded-modal border border-primary/10 bg-card-bg p-6 space-y-4">
-      <SectionHeading title={s.cloud_sync_title} icon={<CloudUpload className="text-sky-400" />} />
+      <div className="flex items-start justify-between gap-3">
+        <SectionHeading title={s.cloud_sync_title} icon={<CloudUpload className="text-sky-400" />} />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary/30 border border-primary/10 px-2.5 py-1 typo-caption font-medium text-foreground/80">
+          <span className={`w-1.5 h-1.5 rounded-full ${STATE_DOT[state]}`} />
+          {stateLabel}
+        </span>
+      </div>
+
       <p className="typo-body text-foreground leading-relaxed">{s.cloud_sync_description}</p>
 
+      {/* Toggle */}
       <div className="flex items-center justify-between gap-4 rounded-card bg-secondary/20 border border-primary/8 p-4">
         <div className="min-w-0">
           <p className="typo-body font-medium text-foreground/85">{s.cloud_sync_toggle}</p>
@@ -88,29 +143,121 @@ export default function CloudSyncCard() {
       </div>
 
       {enabled && (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button
-            variant="secondary"
-            icon={<RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />}
-            onClick={() => {
-              void onSyncNow();
-            }}
-            disabled={syncing}
-          >
-            {syncing ? s.cloud_sync_syncing : s.cloud_sync_now}
-          </Button>
-          <span className="typo-caption text-foreground">
-            {status?.lastSyncAt
-              ? interpolate(s.cloud_sync_last, { time: formatRelativeTime(status.lastSyncAt) })
-              : s.cloud_sync_never}
-          </span>
-        </div>
-      )}
+        <>
+          {/* Action row + lifetime summary */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Button
+              variant="secondary"
+              icon={<RefreshCw className={`w-4 h-4 ${syncing || status?.syncing ? 'animate-spin' : ''}`} />}
+              onClick={() => {
+                void onSyncNow();
+              }}
+              disabled={syncing || status?.syncing}
+            >
+              {syncing || status?.syncing ? s.cloud_sync_syncing : s.cloud_sync_now}
+            </Button>
+            <span className="typo-caption text-foreground inline-flex items-center gap-1">
+              {status?.lastSyncAt ? (
+                <>
+                  {s.cloud_sync_last} <RelativeTime timestamp={status.lastSyncAt} />
+                </>
+              ) : (
+                s.cloud_sync_never
+              )}
+            </span>
+            {!!status?.totalRowsSynced && (
+              <span className="typo-caption text-foreground/60 inline-flex items-center gap-1">
+                <span aria-hidden>·</span>
+                <Numeric value={Number(status.totalRowsSynced)} /> {s.cloud_sync_total}
+              </span>
+            )}
+          </div>
 
-      {status?.lastError && (
-        <p className="typo-caption text-red-400/80">
-          {interpolate(s.cloud_sync_error, { error: status.lastError })}
-        </p>
+          {/* Device chip */}
+          {status?.deviceId && (
+            <Tooltip content={status.deviceId}>
+              <span className="inline-flex items-center gap-1.5 typo-caption text-foreground/55">
+                <MonitorSmartphone className="w-3.5 h-3.5" />
+                {interpolate(s.cloud_sync_device, { id: status.deviceId.slice(0, 8) })}
+              </span>
+            </Tooltip>
+          )}
+
+          {/* Per-table breakdown (collapsible) */}
+          {tables.length > 0 && (
+            <div className="rounded-card border border-primary/8 bg-secondary/10 overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowDetails((v) => !v)}
+                aria-expanded={showDetails}
+                className="flex w-full items-center justify-between px-4 py-2.5 typo-caption font-medium text-foreground/80 hover:bg-secondary/20 transition-colors"
+              >
+                <span>{s.cloud_sync_tables_title}</span>
+                <span className="inline-flex items-center gap-1.5 text-foreground/55">
+                  {showDetails ? s.cloud_sync_hide_details : s.cloud_sync_show_details}
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform ${showDetails ? 'rotate-180' : ''}`}
+                  />
+                </span>
+              </button>
+
+              {showDetails && (
+                <ul className="divide-y divide-primary/8 border-t border-primary/8">
+                  {tables.map((tbl) => (
+                    <li
+                      key={tbl.table}
+                      className="flex items-center justify-between gap-3 px-4 py-2"
+                    >
+                      <span className="typo-caption font-medium text-foreground/80 truncate">
+                        {tableLabels[tbl.table] ?? tbl.table}
+                      </span>
+                      {tbl.error ? (
+                        <span className="inline-flex items-center gap-1.5 typo-caption text-red-400/90 min-w-0">
+                          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                          <span className="truncate max-w-[14rem]">{tbl.error}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-2 typo-caption text-foreground/55 whitespace-nowrap">
+                          <span className="text-foreground/75 inline-flex items-center gap-1">
+                            <Numeric value={Number(tbl.rowsLast)} /> {s.cloud_sync_rows}
+                          </span>
+                          <span aria-hidden>·</span>
+                          {tbl.lastSyncedAt ? (
+                            <RelativeTime timestamp={tbl.lastSyncedAt} />
+                          ) : (
+                            <span>{s.cloud_sync_table_pending}</span>
+                          )}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {/* Pass-level error + retry */}
+          {hasError && (
+            <div className="flex items-start gap-2.5 rounded-card border border-red-500/20 bg-red-500/5 p-3">
+              <AlertCircle className="w-4 h-4 text-red-400 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <p className="typo-caption text-red-300/90">
+                  {interpolate(s.cloud_sync_error, { error: status?.lastError ?? '' })}
+                </p>
+                <Button
+                  variant="link"
+                  size="xs"
+                  onClick={() => {
+                    void onSyncNow();
+                  }}
+                  disabled={syncing || status?.syncing}
+                >
+                  {s.cloud_sync_retry}
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

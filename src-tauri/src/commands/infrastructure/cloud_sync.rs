@@ -29,10 +29,14 @@ pub async fn cloud_sync_status(
     Ok(sync::status(&state.db).await)
 }
 
-/// Trigger one sync pass now. Requires a live Google-OAuth session (cloud tier)
-/// since it pushes to Supabase. No-op if sync is disabled.
+/// Trigger one sync pass now and return the fresh status (so the UI can render
+/// the result without a follow-up round-trip). Requires a live Google-OAuth
+/// session (cloud tier) since it pushes to Supabase. No-op if sync is disabled.
 #[tauri::command]
 #[requires(cloud)]
-pub async fn cloud_sync_now(state: State<'_, Arc<AppState>>) -> Result<u64, AppError> {
-    sync::run_sync_once(state.inner()).await
+pub async fn cloud_sync_now(
+    state: State<'_, Arc<AppState>>,
+) -> Result<sync::CloudSyncStatus, AppError> {
+    sync::run_sync_once(state.inner()).await;
+    Ok(sync::status(&state.db).await)
 }
