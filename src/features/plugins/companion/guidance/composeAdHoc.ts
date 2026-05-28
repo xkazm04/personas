@@ -34,3 +34,40 @@ export function buildPointAtWalkthrough(
     ],
   };
 }
+
+/** One step of a `compose_walkthrough` — an anchor id + the line to narrate. */
+export interface ComposedStep {
+  anchor: string;
+  narration: string;
+}
+
+/** Multi-step walkthrough for the `compose_walkthrough` op — Athena's
+ *  runtime-assembled tour. Steps whose anchor isn't in the catalog or whose
+ *  narration is blank are dropped (the backend validated already; this is
+ *  belt-and-suspenders). Returns null if no valid steps remain. */
+export function buildComposedWalkthrough(
+  steps: ComposedStep[],
+  title?: string,
+): GuidanceWalkthrough | null {
+  const built = steps
+    .map((s, i) => {
+      const anchor = getAnchor(s.anchor);
+      const text = s.narration?.trim() ?? '';
+      if (!anchor || !text) return null;
+      return {
+        id: `step-${i}`,
+        narration: () => text,
+        highlightTestId: anchor.testId,
+        navigateRoute: anchor.route,
+        orbAnchor: 'auto' as const,
+      };
+    })
+    .filter((s): s is NonNullable<typeof s> => s !== null);
+  if (built.length === 0) return null;
+  const heading = title?.trim() ?? '';
+  return {
+    topic: ADHOC_TOPIC,
+    title: () => heading,
+    steps: built,
+  };
+}

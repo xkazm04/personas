@@ -79,14 +79,17 @@ If the step needs a surface opened first (so the anchor exists), add a new varia
 | `show_persona_creation_offer { intent }` | auto | Renders the `persona_creation_offer` chat-card: **Build it for me** (prefill handoff) + **Show me how to build it** (`startGuidance('persona_creation')`). Use when the user describes a persona but hasn't said how to proceed. |
 | `start_guided_walkthrough { topic }` | auto | Emits `companion://guide` `{ topic }`; the frontend runner starts the registry walkthrough. Topic validated against `GUIDED_TOPICS`. Use when the user explicitly asks to be shown ("show me how to make a persona"). |
 | `point_at { anchor, narration }` | auto | Emits `companion://guide` `{ pointAt }`; rings one allow-listed anchor + narrates as a single-step **ad-hoc** walkthrough — no authored topic. `anchor` validated against `ANCHOR_IDS`. Use mid-conversation to just show *where* something is. |
+| `compose_walkthrough { title?, steps[] }` | auto | Emits `companion://guide` `{ composeWalkthrough }`; runs a **runtime-assembled** multi-step tour (2–6 steps, each an `{ anchor, narration }`). Every anchor validated; an unknown one voids the whole tour. Use for "show me around". |
 
-All bypass the approval pipeline (they're suggestions/navigation, not real-world actions). `companion://guide` is emitted from `session.rs`; `CompanionPanel` listens and calls `startGuidance` (topic) or `startAdHocGuidance` (pointAt). Constitution **v19** taught the first two; **v28** added `point_at`.
+All bypass the approval pipeline (they're suggestions/navigation, not real-world actions). `companion://guide` is emitted from `session.rs`; `CompanionPanel` listens and calls `startGuidance` (topic) or `startAdHocGuidance` (pointAt / composeWalkthrough). Constitution **v19** taught the first two; **v28** added `point_at`; **v29** added `compose_walkthrough`.
 
 ## Ad-hoc pointing & the anchor catalog (`point_at`)
 
 `point_at` is the non-scripted half of guidance: Athena names an `anchor` and a `narration` line, and the orb rings that one element and narrates it — no registry entry needed. The model can't target arbitrary DOM: it must pick from the **anchor catalog** (`guidance/anchorCatalog.ts`), an allow-list of stable, route-level testids. The backend mirrors the catalog keys in `dispatcher.rs` (`ANCHOR_IDS`) and rejects anything else, so a hallucinated selector can't drive the orb to a sensitive or non-existent element.
 
 Mechanically a `point_at` is a **single-step ad-hoc walkthrough**: `companionStore.adHocWalkthrough` holds a runtime-composed `GuidanceWalkthrough` (topic = the `ADHOC_TOPIC` sentinel), and `resolveWalkthrough(activeWalkthrough, adHoc)` returns it so the existing runner + `GuideCaption` walk it exactly like a registry walkthrough. `buildPointAtWalkthrough(anchorId, narration)` (`guidance/composeAdHoc.ts`) maps an anchor id → its testid + route and wraps the narration. Anchors with a `route` switch the sidebar first; the `nav_*` anchors are the always-visible primary sidebar items, so Athena can point at them from any screen without navigating.
+
+`compose_walkthrough` is the **multi-step** sibling: same ad-hoc machinery, but `buildComposedWalkthrough(steps, title?)` maps an array of `{ anchor, narration }` into a multi-step `GuidanceWalkthrough`. The backend clamps the tour to `COMPOSE_MIN_STEPS..=COMPOSE_MAX_STEPS` (2–6) and rejects the whole tour if any step's anchor is off-catalog — a half-valid tour never runs. The runner's `lastAdHocRef` guard treats each freshly-composed walkthrough as a new run even though both reuse the `ADHOC_TOPIC` sentinel and start at step 0, so a second ad-hoc guidance call (point_at *or* compose) restarts cleanly instead of being swallowed as "same step".
 
 ---
 

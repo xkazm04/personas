@@ -25,7 +25,7 @@ import {
 import { extractStreamPhase, extractToolEvents, phaseLabel } from './extractStreamPhase';
 import { extractTodoWrite } from './operationalSteps';
 import { OperationalThread } from './OperationalThread';
-import { buildPointAtWalkthrough } from './guidance/composeAdHoc';
+import { buildPointAtWalkthrough, buildComposedWalkthrough } from './guidance/composeAdHoc';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -1105,6 +1105,12 @@ function Body(props: BodyProps) {
       const pointAt = event.payload?.pointAt;
       if (pointAt?.anchor && pointAt.narration) {
         const wt = buildPointAtWalkthrough(pointAt.anchor, pointAt.narration);
+        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+        return;
+      }
+      const composed = event.payload?.composeWalkthrough;
+      if (composed?.steps?.length) {
+        const wt = buildComposedWalkthrough(composed.steps, composed.title);
         if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
       }
     }, []),

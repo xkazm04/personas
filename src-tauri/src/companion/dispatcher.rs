@@ -62,6 +62,11 @@ pub struct Dispatched {
     /// rings one allow-listed anchor + narrates it as a single-step ad-hoc
     /// walkthrough (non-scripted pointing). Anchor validated against `ANCHOR_IDS`.
     pub point_ats: Vec<PointAt>,
+    /// `compose_walkthrough` requests Athena triggered this turn. Auto-fire —
+    /// session.rs emits `companion://guide` `{ composeWalkthrough }` and the
+    /// frontend runs the runtime-assembled multi-step tour. Each step's anchor
+    /// validated against `ANCHOR_IDS`; step count clamped to a sane range.
+    pub composed_walkthroughs: Vec<ComposedWalkthrough>,
     /// Quick-reply option labels Athena offered for this turn. Each entry
     /// is the literal user message that gets sent on click. Not persisted
     /// — the UI shows them on the latest assistant bubble until the next
@@ -105,6 +110,16 @@ pub struct ChatCard {
 pub struct PointAt {
     pub anchor: String,
     pub narration: String,
+}
+
+/// A `compose_walkthrough` request: Athena assembles a short multi-step tour at
+/// runtime from anchor-catalog entries (vs the static registry). Each step is a
+/// `PointAt` (anchor + narration); the orb glides through them in order.
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ComposedWalkthrough {
+    pub title: Option<String>,
+    pub steps: Vec<PointAt>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -247,6 +262,11 @@ const ANCHOR_IDS: &[&str] = &[
     "vault",
     "overview_dashboard",
 ];
+
+/// A composed walkthrough should be a *short* tour. One stop is `point_at`'s
+/// job; more than this reads as a slideshow the user won't sit through.
+const COMPOSE_MIN_STEPS: usize = 2;
+const COMPOSE_MAX_STEPS: usize = 6;
 
 /// Scan assistant text for op JSON blocks, persist them as approval rows,
 /// and return cleaned text + the list of created approvals.
@@ -1401,6 +1421,63 @@ pub fn dispatch(
                     narration: narration.to_string(),
                 });
             }
+            Ok(env) if env.op == "propose_action" && env.action == "compose_walkthrough" => {
+                // Auto-fire: a runtime-assembled multi-step tour over catalog
+                // anchors. Validate every step (anchor in catalog + non-empty
+                // narration) and the overall length; reject the whole tour on
+                // any bad step so a half-broken walkthrough never runs.
+                let raw_steps = env.params.get("steps").and_then(|v| v.as_array());
+                let Some(raw_steps) = raw_steps else {
+                    out.warnings
+                        .push("compose_walkthrough: missing `steps` array".into());
+                    cleaned_lines.push(line);
+                    continue;
+                };
+                if raw_steps.len() < COMPOSE_MIN_STEPS || raw_steps.len() > COMPOSE_MAX_STEPS {
+                    out.warnings.push(format!(
+                        "rejected compose_walkthrough: {} steps (expected {COMPOSE_MIN_STEPS}-{COMPOSE_MAX_STEPS})",
+                        raw_steps.len()
+                    ));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let mut steps = Vec::with_capacity(raw_steps.len());
+                let mut bad: Option<String> = None;
+                for s in raw_steps {
+                    let anchor = s.get("anchor").and_then(|v| v.as_str()).unwrap_or("");
+                    let narration = s
+                        .get("narration")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("")
+                        .trim();
+                    if anchor.is_empty() || narration.is_empty() {
+                        bad = Some("a step is missing `anchor` or `narration`".into());
+                        break;
+                    }
+                    if !ANCHOR_IDS.contains(&anchor) {
+                        bad = Some(format!("unknown anchor `{anchor}`"));
+                        break;
+                    }
+                    steps.push(PointAt {
+                        anchor: anchor.to_string(),
+                        narration: narration.to_string(),
+                    });
+                }
+                if let Some(reason) = bad {
+                    out.warnings
+                        .push(format!("rejected compose_walkthrough: {reason}"));
+                    cleaned_lines.push(line);
+                    continue;
+                }
+                let title = env
+                    .params
+                    .get("title")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty());
+                out.composed_walkthroughs
+                    .push(ComposedWalkthrough { title, steps });
+            }
             Ok(env) if env.op == "propose_action" => {
                 if !ALLOWED_ACTIONS.contains(&env.action.as_str()) {
                     out.warnings
@@ -2023,6 +2100,32 @@ mod tests {
         let op = r###"{"op":"propose_action","action":"point_at","params":{"anchor":"vault"}}"###;
         let out = dispatch_op(op);
         assert!(out.point_ats.is_empty());
+        assert!(!out.warnings.is_empty());
+    }
+
+    #[test]
+    fn compose_walkthrough_collects_valid_steps() {
+        let op = r###"{"op":"propose_action","action":"compose_walkthrough","params":{"title":"Quick tour","steps":[{"anchor":"nav_agents","narration":"Your agents."},{"anchor":"vault","narration":"Your connections."}]},"rationale":"orient the user"}"###;
+        let out = dispatch_op(op);
+        assert_eq!(out.composed_walkthroughs.len(), 1);
+        assert_eq!(out.composed_walkthroughs[0].steps.len(), 2);
+        assert_eq!(out.composed_walkthroughs[0].title.as_deref(), Some("Quick tour"));
+        assert!(!out.cleaned_text.contains("compose_walkthrough"));
+    }
+
+    #[test]
+    fn compose_walkthrough_rejects_bad_anchor_in_any_step() {
+        let op = r###"{"op":"propose_action","action":"compose_walkthrough","params":{"steps":[{"anchor":"nav_agents","narration":"ok"},{"anchor":"window.localStorage","narration":"bad"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.composed_walkthroughs.is_empty());
+        assert!(!out.warnings.is_empty());
+    }
+
+    #[test]
+    fn compose_walkthrough_rejects_too_few_steps() {
+        let op = r###"{"op":"propose_action","action":"compose_walkthrough","params":{"steps":[{"anchor":"vault","narration":"only one"}]}}"###;
+        let out = dispatch_op(op);
+        assert!(out.composed_walkthroughs.is_empty());
         assert!(!out.warnings.is_empty());
     }
 }

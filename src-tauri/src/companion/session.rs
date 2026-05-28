@@ -530,6 +530,7 @@ pub async fn send_turn(
                     chat_cards: Vec::new(),
                     guide_walkthroughs: Vec::new(),
                     point_ats: Vec::new(),
+                    composed_walkthroughs: Vec::new(),
                     quick_replies: Vec::new(),
                     tts_text: None,
                     requests_continuation: false,
@@ -637,6 +638,21 @@ pub async fn send_turn(
             serde_json::json!({ "pointAt": { "anchor": pa.anchor, "narration": pa.narration } }),
         ) {
             tracing::warn!(error = %e, anchor = %pa.anchor, "companion point_at event emit failed");
+        }
+    }
+
+    // Runtime-composed multi-step tours (`compose_walkthrough`). Same channel;
+    // the frontend builds an ad-hoc walkthrough from the catalog-mapped steps.
+    for cw in &dispatched.composed_walkthroughs {
+        let steps: Vec<_> = cw
+            .steps
+            .iter()
+            .map(|s| serde_json::json!({ "anchor": s.anchor, "narration": s.narration }))
+            .collect();
+        let payload =
+            serde_json::json!({ "composeWalkthrough": { "title": cw.title, "steps": steps } });
+        if let Err(e) = app.emit(GUIDE_EVENT, payload) {
+            tracing::warn!(error = %e, steps = cw.steps.len(), "companion compose_walkthrough event emit failed");
         }
     }
 

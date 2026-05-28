@@ -247,4 +247,8 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// v28 adds the `point_at` op: Athena rings one allow-listed UI anchor and
 /// narrates it as a single ad-hoc beat (non-scripted pointing), no authored
 /// topic required.
-pub const CONSTITUTION_VERSION: u32 = 28;
+///
+/// v29 adds the `compose_walkthrough` op: Athena assembles a short (2-6 stop)
+/// guided tour at runtime from catalog anchors — the multi-step sibling of
+/// `point_at`.
+pub const CONSTITUTION_VERSION: u32 = 29;
