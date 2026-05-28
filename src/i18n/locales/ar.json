@@ -11627,6 +11627,8 @@
       "queued_remove": "إزالة الرسالة المنتظرة",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
+      "guide_back": "رجوع",
+      "guide_goto_step": "انتقل إلى الخطوة {step}",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
       "guide_step_label": "Step {current} of {total}",

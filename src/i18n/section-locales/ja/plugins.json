@@ -1593,6 +1593,8 @@
     "queued_remove": "待機中のメッセージを削除",
     "guide_stop": "Stop",
     "guide_skip": "Skip",
+    "guide_back": "戻る",
+    "guide_goto_step": "ステップ {step} へ移動",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
     "guide_step_label": "Step {current} of {total}",

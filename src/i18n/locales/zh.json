@@ -11627,6 +11627,8 @@
       "queued_remove": "移除排队的消息",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
+      "guide_back": "返回",
+      "guide_goto_step": "跳到第 {step} 步",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
       "guide_step_label": "Step {current} of {total}",

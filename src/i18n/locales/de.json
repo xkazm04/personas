@@ -11627,6 +11627,8 @@
       "queued_remove": "Wartende Nachricht entfernen",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
+      "guide_back": "Zurück",
+      "guide_goto_step": "Zu Schritt {step}",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
       "guide_step_label": "Step {current} of {total}",

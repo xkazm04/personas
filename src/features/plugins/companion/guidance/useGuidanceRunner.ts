@@ -124,6 +124,48 @@ export function useGuidanceRunner() {
     if (st.state !== 'minimized') st.setState('minimized');
   }, [activeWalkthrough]);
 
+  // Keyboard control while a walkthrough is active: ←/→ step, Esc stop, Space
+  // pause/resume. Bound once per walkthrough; reads live state via getState() so
+  // it never needs to re-bind on every step. Ignored while the user is typing.
+  useEffect(() => {
+    if (!activeWalkthrough) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.isContentEditable)
+      ) {
+        return;
+      }
+      const store = useCompanionStore.getState();
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          store.advanceGuidance();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          store.previousGuidance();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          store.stopGuidance();
+          break;
+        case ' ':
+        case 'Spacebar':
+          e.preventDefault();
+          if (store.guidancePlaying) store.pauseGuidance();
+          else store.resumeGuidance();
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeWalkthrough]);
+
   useEffect(() => {
     const store = useCompanionStore.getState();
 

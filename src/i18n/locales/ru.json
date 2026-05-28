@@ -11627,6 +11627,8 @@
       "queued_remove": "Удалить сообщение из очереди",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
+      "guide_back": "Назад",
+      "guide_goto_step": "Перейти к шагу {step}",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
       "guide_step_label": "Step {current} of {total}",

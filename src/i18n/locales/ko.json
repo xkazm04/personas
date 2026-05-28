@@ -11627,6 +11627,8 @@
       "queued_remove": "대기 중인 메시지 제거",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
+      "guide_back": "뒤로",
+      "guide_goto_step": "{step}단계로 이동",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
       "guide_step_label": "Step {current} of {total}",

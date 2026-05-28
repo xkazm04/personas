@@ -358,6 +358,10 @@ interface CompanionStore {
   startAdHocGuidance: (walkthrough: GuidanceWalkthrough) => void;
   setGuidanceStep: (index: number) => void;
   advanceGuidance: () => void;
+  /** Step back one (clamped at 0). Pauses auto-advance — manual nav means the user has taken control. */
+  previousGuidance: () => void;
+  /** Jump to an arbitrary step (clamped ≥ 0). Pauses auto-advance, like `previousGuidance`. */
+  jumpToStep: (index: number) => void;
   pauseGuidance: () => void;
   resumeGuidance: () => void;
   stopGuidance: () => void;
@@ -701,6 +705,13 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setGuidanceStep: (guidanceStepIndex) => set({ guidanceStepIndex }),
   advanceGuidance: () =>
     set((s) => ({ guidanceStepIndex: s.guidanceStepIndex + 1 })),
+  previousGuidance: () =>
+    set((s) => ({
+      guidanceStepIndex: Math.max(0, s.guidanceStepIndex - 1),
+      guidancePlaying: false,
+    })),
+  jumpToStep: (index) =>
+    set({ guidanceStepIndex: Math.max(0, index), guidancePlaying: false }),
   pauseGuidance: () => set({ guidancePlaying: false }),
   resumeGuidance: () => set({ guidancePlaying: true }),
   stopGuidance: () =>

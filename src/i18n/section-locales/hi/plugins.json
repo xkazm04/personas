@@ -1593,6 +1593,8 @@
     "queued_remove": "कतारबद्ध संदेश हटाएँ",
     "guide_stop": "Stop",
     "guide_skip": "Skip",
+    "guide_back": "वापस",
+    "guide_goto_step": "चरण {step} पर जाएँ",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
     "guide_step_label": "Step {current} of {total}",

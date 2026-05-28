@@ -11627,6 +11627,8 @@
       "queued_remove": "সারিবদ্ধ বার্তা সরান",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
+      "guide_back": "পেছনে",
+      "guide_goto_step": "ধাপ {step}-এ যান",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
       "guide_step_label": "Step {current} of {total}",
