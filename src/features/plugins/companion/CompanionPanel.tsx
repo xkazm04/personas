@@ -436,7 +436,7 @@ function Header({
 }) {
   const { t } = useTranslation();
   return (
-    <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
+    <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 bg-foreground/[0.02] shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         {/*
           Header keeps a small static badge — the full Athena avatar now
@@ -503,6 +503,7 @@ function Header({
             <PanelRightClose className="w-4 h-4" />
           )}
         </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onRefreshDoctrine}
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
@@ -520,6 +521,7 @@ function Header({
         >
           <RotateCcw className="w-4 h-4" />
         </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onClose}
           data-testid="companion-close"
