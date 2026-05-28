@@ -7,7 +7,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { KanbanBoard, type KanbanColumn } from '@/features/shared/components/kanban/KanbanBoard';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GoalStatusBadge } from './GoalStatusBadge';
-import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, type GoalLane, type GoalStatus } from './goalStatus';
+import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -126,15 +126,18 @@ function GoalCard({ goal, onOpen }: { goal: DevGoal; onOpen?: () => void }) {
         <span className="text-[9px] text-foreground w-7 text-right tabular-nums">{progressPct}%</span>
       </div>
 
-      {/* Meta row */}
+      {/* Meta row — date turns red when an ongoing goal is past its target. */}
       <div className="flex items-center gap-2 mt-2">
         <GoalStatusBadge status={goal.status} />
-        {goal.target_date && (
-          <span className="text-[9px] text-foreground flex items-center gap-0.5">
-            <Clock className="w-2.5 h-2.5" />
-            <RelativeTime timestamp={goal.target_date} />
-          </span>
-        )}
+        {goal.target_date && (() => {
+          const overdue = isOngoing(goal.status) && new Date(goal.target_date).getTime() < Date.now();
+          return (
+            <span className={`text-[9px] flex items-center gap-0.5 ${overdue ? 'text-red-400 font-medium' : 'text-foreground'}`}>
+              <Clock className="w-2.5 h-2.5" />
+              <RelativeTime timestamp={goal.target_date} />
+            </span>
+          );
+        })()}
       </div>
     </div>
   );

@@ -45,17 +45,16 @@ export default function GoalConstellation({ variant = 'board' }: { variant?: Var
     if (activeProjectId) fetchGoals(activeProjectId);
   }, [activeProjectId, fetchGoals]);
 
-  // Dependencies (Map edges) — only the Map needs them, and fetch in parallel
-  // rather than sequentially. NOTE: P1 replaces this fan-out with a single
-  // cross-goal `listGoalDependenciesForProject` query.
+  // Dependencies (Map edges) — only the Map needs them. One project-scoped query
+  // (no per-goal fan-out); refetches when the project or goal count changes.
   useEffect(() => {
-    if (variant !== 'map' || goals.length === 0) return;
+    if (variant !== 'map' || !activeProjectId || goals.length === 0) return;
     let cancelled = false;
-    Promise.all(goals.map((g) => devApi.listGoalDependencies(g.id).catch(() => [])))
-      .then((lists) => { if (!cancelled) setDependencies(lists.flat()); })
+    devApi.listGoalDependenciesForProject(activeProjectId)
+      .then((deps) => { if (!cancelled) setDependencies(deps); })
       .catch(silentCatch('GoalConstellation.loadDeps'));
     return () => { cancelled = true; };
-  }, [variant, goals]);
+  }, [variant, activeProjectId, goals.length]);
 
   return (
     <div className="space-y-3">
@@ -124,6 +123,20 @@ function GoalMap({
 
   const posMap = useMemo(() => new Map(positions.map((p) => [p.id, p])), [positions]);
 
+  // Adjacency for hover-highlight: hovering a node spotlights it + its direct
+  // neighbours and dims everything else, so dependency chains read at a glance.
+  const neighbors = useMemo(() => {
+    const m = new Map<string, Set<string>>();
+    const add = (a: string, b: string) => {
+      if (!m.has(a)) m.set(a, new Set());
+      m.get(a)!.add(b);
+    };
+    for (const e of edges) { add(e.source, e.target); add(e.target, e.source); }
+    return m;
+  }, [edges]);
+  const isDimmed = (id: string) =>
+    hoveredId !== null && id !== hoveredId && !neighbors.get(hoveredId)?.has(id);
+
   const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 2)), []);
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.2, 0.4)), []);
   const handleReset = useCallback(() => setZoom(1), []);
@@ -169,6 +182,7 @@ function GoalMap({
             const tp = posMap.get(edge.target);
             if (!s || !tp) return null;
             const isParent = edge.type === 'parent';
+            const edgeActive = hoveredId === null || edge.source === hoveredId || edge.target === hoveredId;
             return (
               <line
                 key={`edge-${i}`}
@@ -177,6 +191,7 @@ function GoalMap({
                 strokeWidth={isParent ? 2 : 1.5}
                 strokeDasharray={isParent ? undefined : '4 3'}
                 markerEnd="url(#arrowhead)"
+                opacity={edgeActive ? 1 : 0.12}
               />
             );
           })}
@@ -186,6 +201,7 @@ function GoalMap({
             if (!pos) return null;
             const colors = goalStatusMeta(goal.status).map;
             const isHovered = hoveredId === goal.id;
+            const dimmed = isDimmed(goal.id);
             const r = pos.radius;
             const isStalled = isBlocked(goal.status) || (isInProgress(goal.status) && goal.progress < 10);
 
@@ -195,7 +211,8 @@ function GoalMap({
                 onMouseEnter={() => setHoveredId(goal.id)}
                 onMouseLeave={() => setHoveredId(null)}
                 onClick={() => onGoalClick?.(goal.id)}
-                className="cursor-pointer"
+                className="cursor-pointer transition-opacity"
+                opacity={dimmed ? 0.2 : 1}
               >
                 {isStalled && (
                   <circle cx={pos.x} cy={pos.y} r={r + 6} fill="none" stroke={colors.stroke} strokeWidth={1} opacity={0.4}>
