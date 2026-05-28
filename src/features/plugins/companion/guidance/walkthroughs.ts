@@ -56,12 +56,72 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
     ],
   },
+
+  connector_setup: {
+    topic: 'connector_setup',
+    title: (t) => t.plugins.companion.guide_conn_title,
+    steps: [
+      {
+        id: 'intro',
+        narration: (t) => t.plugins.companion.guide_conn_intro,
+        orbAnchor: 'center',
+      },
+      {
+        id: 'vault',
+        narration: (t) => t.plugins.companion.guide_conn_vault,
+        navigateRoute: 'credentials',
+        // The Vault route container — always present once `credentials` mounts.
+        highlightTestId: 'credential-manager',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'add',
+        narration: (t) => t.plugins.companion.guide_conn_add,
+        // Drives the vault to its "Add new" view (the vault route is already
+        // mounted from the prior step, so the storeBus event has a listener).
+        preAction: 'open_credential_add',
+        highlightTestId: 'vault-type-picker',
+        orbAnchor: 'auto',
+        // "Your turn" beat — wait until the user actually picks a connector type
+        // (a click inside the picker) before moving to the wrap-up.
+        holdForClick: true,
+      },
+      {
+        id: 'outro',
+        narration: (t) => t.plugins.companion.guide_conn_outro,
+        orbAnchor: 'center',
+      },
+    ],
+  },
 };
 
 /** Topics Athena is allowed to trigger. Mirrored by the backend allow-list. */
 export const GUIDANCE_TOPICS = Object.keys(WALKTHROUGHS);
 
+/**
+ * Sentinel topic for a walkthrough Athena composed at runtime rather than one
+ * from the static registry — the `point_at` (single step) and
+ * `compose_walkthrough` (multi step) ops. The composed steps live in
+ * `companionStore.adHocWalkthrough`; `resolveWalkthrough` returns that when the
+ * active topic is this sentinel.
+ */
+export const ADHOC_TOPIC = '__adhoc__';
+
 export function getWalkthrough(topic: string | null): GuidanceWalkthrough | null {
   if (!topic) return null;
   return WALKTHROUGHS[topic] ?? null;
+}
+
+/**
+ * Resolve the active walkthrough for the runner + caption: the runtime ad-hoc
+ * walkthrough when the topic is the ad-hoc sentinel, otherwise the registry
+ * entry. One resolver keeps both consumers in sync without duplicating the
+ * registry-vs-adhoc branch.
+ */
+export function resolveWalkthrough(
+  topic: string | null,
+  adHoc: GuidanceWalkthrough | null,
+): GuidanceWalkthrough | null {
+  if (topic === ADHOC_TOPIC) return adHoc;
+  return getWalkthrough(topic);
 }
