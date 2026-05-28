@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { User, Bot, CheckCircle2, Clock, AlertCircle, Target, Minus, Plus } from 'lucide-react';
+import { User, Bot, CheckCircle2, Clock, AlertCircle, Target, Minus, Plus, Maximize2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
@@ -39,7 +39,7 @@ const DRAG_MIME = 'application/x-personas-goal-id';
 // Goal card (presentational — the shared board owns drag wiring)
 // ---------------------------------------------------------------------------
 
-function GoalCard({ goal }: { goal: DevGoal }) {
+function GoalCard({ goal, onOpen }: { goal: DevGoal; onOpen?: () => void }) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const updateGoal = useSystemStore((s) => s.updateGoal);
@@ -70,6 +70,20 @@ function GoalCard({ goal }: { goal: DevGoal }) {
             <p className="text-[11px] text-foreground mt-0.5 line-clamp-2">{goal.description}</p>
           )}
         </div>
+        {onOpen && (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onOpen(); }}
+            aria-label={dl.goal_open_detail}
+            title={dl.goal_open_detail}
+            className={[
+              'shrink-0 w-5 h-5 rounded-interactive flex items-center justify-center text-foreground transition-opacity',
+              hovered ? 'opacity-100 hover:bg-primary/10' : 'opacity-0 pointer-events-none',
+            ].join(' ')}
+          >
+            <Maximize2 className="w-3 h-3" />
+          </button>
+        )}
       </div>
 
       {/* Progress bar + nudge buttons (buttons appear on hover) */}
@@ -147,7 +161,7 @@ function StatusChip({ status }: { status: string }) {
 // Main kanban — thin wrapper over the shared board
 // ---------------------------------------------------------------------------
 
-export default function GoalKanban() {
+export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) => void } = {}) {
   const { t } = useTranslation();
   const dt = t.plugins.dev_tools;
   const goals = useSystemStore((s) => s.goals);
@@ -197,7 +211,7 @@ export default function GoalKanban() {
       onItemMove={handleMove}
       dragMimeType={DRAG_MIME}
       fallbackColumnId="your_turn"
-      renderCard={(g) => <GoalCard goal={g} />}
+      renderCard={(g) => <GoalCard goal={g} onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined} />}
       renderEmptyColumn={(_columnId, isDropTarget) => (
         <p className="text-[11px] text-foreground text-center py-6">
           {isDropTarget ? t.plugins.dev_lifecycle.kanban_drop_here : dt.no_goals_here}

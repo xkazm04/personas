@@ -6,9 +6,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import * as devApi from '@/api/devTools/devTools';
-import { GoalProjectPulse } from './GoalProjectPulse';
-import { GoalDependencyFlow } from './GoalDependencyFlow';
 import GoalKanban from './GoalKanban';
+import { GoalDetailDrawer } from './GoalDetailDrawer';
+import { GoalEditorModal } from './GoalEditorModal';
 import { silentCatch } from '@/lib/silentCatch';
 
 
@@ -123,47 +123,37 @@ function nodeRadius(goal: DevGoal): number {
 }
 
 // ---------------------------------------------------------------------------
-// Variant switcher (prototype scaffolding — removed when a winner is picked)
+// Board + Map — the two consolidated goal surfaces. Clicking a goal in either
+// opens the shared GoalDetailDrawer (checklist + progress nudge + activity).
+// Pulse (spotlight) and Flow were prototype variants now folded into the
+// drawer; Map keeps the force graph + dependency edges.
 // ---------------------------------------------------------------------------
 
-type VariantId = 'baseline' | 'pulse' | 'flow' | 'kanban';
+type VariantId = 'board' | 'map';
 
 export default function GoalConstellation() {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  // Variant strip — resolved from i18n so each view tab is translatable. The
-  // Kanban variant surfaces the standalone <GoalKanban> "your turn / agent's
-  // turn / done" board that was previously unreachable from this page.
   const VARIANTS: { id: VariantId; label: string; subtitle: string }[] = [
-    { id: 'baseline', label: dl.goal_view_baseline_label, subtitle: dl.goal_view_baseline_sub },
-    { id: 'pulse',    label: dl.goal_view_pulse_label,    subtitle: dl.goal_view_pulse_sub },
-    { id: 'flow',     label: dl.goal_view_flow_label,     subtitle: dl.goal_view_flow_sub },
-    { id: 'kanban',   label: dl.goal_view_kanban_label,   subtitle: dl.goal_view_kanban_sub },
+    { id: 'board', label: dl.goal_view_board_label, subtitle: dl.goal_view_board_sub },
+    { id: 'map',   label: dl.goal_view_map_label,   subtitle: dl.goal_view_map_sub },
   ];
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
 
   const [dependencies, setDependencies] = useState<DevGoalDependency[]>([]);
-  const [variant, setVariant] = useState<VariantId>('baseline');
-  // Goal id seeded into the Pulse variant when the user clicks a node in the
-  // Baseline force graph — switches variants and pre-selects the goal so the
-  // user lands on the spotlight already focused on what they clicked.
-  const [pulseSeedId, setPulseSeedId] = useState<string | null>(null);
-  const handleBaselineGoalClick = (goalId: string) => {
-    setPulseSeedId(goalId);
-    setVariant('pulse');
-  };
+  const [variant, setVariant] = useState<VariantId>('board');
+  // Goal opened in the detail drawer (from a Board card or a Map node), and
+  // the goal being edited (the drawer's Edit hands off to GoalEditorModal).
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
+  const [editGoal, setEditGoal] = useState<DevGoal | null>(null);
 
-  // Consume any pending spotlight handoff (e.g. from a ContextMap
-  // goal-coverage badge click). Read once on mount; clear so it can't
-  // refire on a future mount.
+  // Consume any pending detail handoff (e.g. from a ContextMap goal-coverage
+  // badge click). Read once on mount; clear so it can't refire.
   useEffect(() => {
     const pending = useSystemStore.getState().pendingGoalSpotlightId;
-    if (pending) {
-      setPulseSeedId(pending);
-      setVariant('pulse');
-    }
+    if (pending) setDetailGoalId(pending);
     useSystemStore.getState().setPendingGoalSpotlightId(null);
   }, []);
 
@@ -171,7 +161,7 @@ export default function GoalConstellation() {
     if (activeProjectId) fetchGoals(activeProjectId);
   }, [activeProjectId, fetchGoals]);
 
-  // Fetch all dependencies for the project's goals
+  // Fetch all dependencies for the project's goals (Map edges).
   useEffect(() => {
     let cancelled = false;
     async function loadDeps() {
@@ -199,7 +189,7 @@ export default function GoalConstellation() {
 
   return (
     <div className="space-y-3">
-      {/* Variant tab strip */}
+      {/* View toggle — Board (operational) / Map (big-picture) */}
       <div className="flex items-center gap-1 p-1 rounded-card border border-primary/10 bg-card/30 w-fit">
         {VARIANTS.map((v) => {
           const active = v.id === variant;
@@ -222,23 +212,29 @@ export default function GoalConstellation() {
         })}
       </div>
 
-      {variant === 'baseline' && (
+      {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} />}
+      {variant === 'map' && (
         <GoalConstellationBaseline
           goals={goals}
           dependencies={dependencies}
-          onGoalClick={handleBaselineGoalClick}
+          onGoalClick={setDetailGoalId}
         />
       )}
-      {variant === 'pulse' && (
-        <GoalProjectPulse
-          key={pulseSeedId ?? 'pulse-auto'}
-          goals={goals}
-          dependencies={dependencies}
-          initialSelectedId={pulseSeedId}
+
+      <GoalDetailDrawer
+        isOpen={!!detailGoalId}
+        goalId={detailGoalId}
+        onClose={() => setDetailGoalId(null)}
+        onEdit={(g) => { setDetailGoalId(null); setEditGoal(g); }}
+      />
+      {activeProjectId && (
+        <GoalEditorModal
+          isOpen={!!editGoal}
+          editGoal={editGoal}
+          projectId={activeProjectId}
+          onClose={() => setEditGoal(null)}
         />
       )}
-      {variant === 'flow' && <GoalDependencyFlow goals={goals} dependencies={dependencies} />}
-      {variant === 'kanban' && <GoalKanban />}
     </div>
   );
 }
