@@ -4780,3 +4780,27 @@ html[data-motion="reduce"] .animate-fade-slide-in {
 .athena-chat-md tbody tr:hover td {
   background: color-mix(in srgb, var(--primary) 7%, transparent);
 }
+
+/* Athena chat — link affordance (scoped). Links are bare primary text today;
+   give them a soft always-on underline that strengthens on hover, plus a small
+   external-link arrow so it reads as "opens outside the app" (every chat link
+   is rendered target=_blank). The `[href]` guard skips the unsafe-href <span>
+   fallback, which has no arrow. */
+.athena-chat-md a[href] {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+.athena-chat-md a[href]:hover {
+  text-decoration-color: var(--primary);
+}
+.athena-chat-md a[href]::after {
+  content: "↗";
+  display: inline-block;
+  margin-left: 0.1em;
+  font-size: 0.85em;
+  line-height: 1;
+  color: color-mix(in srgb, var(--primary) 70%, transparent);
+}
