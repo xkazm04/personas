@@ -13355,6 +13355,7 @@
     "login_timed_out": "Connexion expirée. Veuillez réessayer."
   },
   "shared": {
+    "code_toggle_wrap": "Activer/désactiver le retour à la ligne",
     "blast_checking_impact": "Vérification de l’impact...",
     "blast_safe_to_delete": "Aucune ressource dépendante trouvée. Suppression possible.",
     "blast_impact": "Impact",

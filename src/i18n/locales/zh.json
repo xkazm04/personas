@@ -13355,6 +13355,7 @@
     "login_timed_out": "登录超时。请重试。"
   },
   "shared": {
+    "code_toggle_wrap": "切换自动换行",
     "blast_checking_impact": "检查影响...",
     "blast_safe_to_delete": "未找到依赖资源。可以安全删除。",
     "blast_impact": "影响",

@@ -13431,6 +13431,7 @@ export type Translations = {
     search_label: string;
     resize_column: string;
     copy_full_id: string;
+    code_toggle_wrap: string;
     copy_tooltip: string;
     copy_copied: string;
     copy_copied_bang: string;

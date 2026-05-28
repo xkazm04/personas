@@ -13355,6 +13355,7 @@
     "login_timed_out": "Anmeldung hat sich zeitlich überschritten. Bitte erneut versuchen."
   },
   "shared": {
+    "code_toggle_wrap": "Zeilenumbruch umschalten",
     "blast_checking_impact": "Auswirkung wird geprüft...",
     "blast_safe_to_delete": "Keine abhängigen Ressourcen gefunden. Sicher zu löschen.",
     "blast_impact": "Auswirkung",

@@ -13355,6 +13355,7 @@
     "login_timed_out": "Login timed out. Please try again."
   },
   "shared": {
+    "code_toggle_wrap": "লাইন র‍্যাপ টগল করুন",
     "blast_checking_impact": "Checking impact...",
     "blast_safe_to_delete": "No dependent resources found. Safe to delete.",
     "blast_impact": "Impact",

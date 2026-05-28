@@ -13425,6 +13425,7 @@
     "search_label": "Search {label}",
     "resize_column": "Resize column — drag to adjust, double-click to reset",
     "copy_full_id": "Copy full ID",
+    "code_toggle_wrap": "Toggle line wrap",
     "copy_tooltip": "Copy",
     "copy_copied": "Copied",
     "copy_copied_bang": "Copied!",

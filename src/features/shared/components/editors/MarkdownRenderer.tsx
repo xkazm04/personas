@@ -1,11 +1,19 @@
-import { isValidElement, useMemo, type ReactElement, type ReactNode } from 'react';
+import {
+  isValidElement,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
+import { WrapText } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface MarkdownRendererProps {
@@ -34,6 +42,53 @@ function extractText(node: ReactNode): string {
     return extractText((node.props as { children?: ReactNode }).children);
   }
   return '';
+}
+
+/**
+ * Chrome for a fenced code block when `codeBlockActions` is on: a header bar
+ * (language label + line-wrap toggle + copy) over the code. The wrap toggle is
+ * per-block state — long lines either scroll horizontally (default) or soft-wrap.
+ */
+function CodeBlockShell({
+  lang,
+  codeText,
+  children,
+}: {
+  lang?: string;
+  codeText: string;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [wrap, setWrap] = useState(false);
+  return (
+    <div className="my-3 rounded-xl border border-primary/10 bg-background/60 overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-primary/10 bg-foreground/[0.03]">
+        <span className="typo-caption font-mono lowercase tracking-wide text-primary/80">
+          {lang}
+        </span>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setWrap((w) => !w)}
+            aria-pressed={wrap}
+            aria-label={t.shared.code_toggle_wrap}
+            title={t.shared.code_toggle_wrap}
+            className={`p-1.5 rounded-lg transition-colors focus-ring ${
+              wrap
+                ? 'text-primary bg-primary/10'
+                : 'text-foreground hover:text-foreground/80 hover:bg-secondary/50'
+            }`}
+          >
+            <WrapText className="w-3.5 h-3.5" />
+          </button>
+          {codeText && <CopyButton text={codeText} iconSize="w-3.5 h-3.5" />}
+        </div>
+      </div>
+      <pre className={`m-0 ${wrap ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto'}`}>
+        {children}
+      </pre>
+    </div>
+  );
 }
 
 /** Inline bar chart for ```chart code blocks. Expects label:value lines. */
@@ -154,10 +209,10 @@ function buildComponents(codeBlockActions: boolean): Components {
   },
   pre: ({ children }) => {
     if (!codeBlockActions) return <pre className="mb-3">{children}</pre>;
-    // Header bar: language label (left) + copy button (right). Every fenced
-    // and indented block is wrapped in <pre>, so owning the chrome here (not
-    // in `code`) means even a no-language block still gets the header + a
-    // real <pre>. The inner <code> element carries the language class and the
+    // Header bar: language label + wrap toggle + copy. Every fenced and
+    // indented block is wrapped in <pre>, so owning the chrome here (not in
+    // `code`) means even a no-language block still gets the header + a real
+    // <pre>. The inner <code> element carries the language class and the
     // (highlight-tokenized) text in its props.
     const codeEl = isValidElement(children)
       ? (children as ReactElement<{ className?: string; children?: ReactNode }>)
@@ -165,15 +220,9 @@ function buildComponents(codeBlockActions: boolean): Components {
     const lang = /language-(\w+)/.exec(codeEl?.props?.className ?? '')?.[1];
     const codeText = extractText(codeEl?.props?.children).replace(/\n$/, '');
     return (
-      <div className="my-3 rounded-xl border border-primary/10 bg-background/60 overflow-hidden">
-        <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-primary/10 bg-foreground/[0.03]">
-          <span className="typo-caption font-mono lowercase tracking-wide text-primary/80">
-            {lang}
-          </span>
-          {codeText && <CopyButton text={codeText} iconSize="w-3.5 h-3.5" />}
-        </div>
-        <pre className="m-0 overflow-x-auto">{children}</pre>
-      </div>
+      <CodeBlockShell lang={lang} codeText={codeText}>
+        {children}
+      </CodeBlockShell>
     );
   },
   blockquote: ({ children }) => (

@@ -13355,6 +13355,7 @@
     "login_timed_out": "Время входа истекло. Попробуйте снова."
   },
   "shared": {
+    "code_toggle_wrap": "Перенос строк",
     "blast_checking_impact": "Проверка влияния...",
     "blast_safe_to_delete": "Зависимых ресурсов не найдено. Можно удалить.",
     "blast_impact": "Влияние",

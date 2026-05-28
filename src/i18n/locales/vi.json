@@ -13355,6 +13355,7 @@
     "login_timed_out": "Đăng nhập hết thời gian. Vui lòng thử lại."
   },
   "shared": {
+    "code_toggle_wrap": "Bật/tắt ngắt dòng",
     "blast_checking_impact": "Đang kiểm tra tác động...",
     "blast_safe_to_delete": "Không tìm thấy tài nguyên phụ thuộc. An toàn để xóa.",
     "blast_impact": "Tác động",

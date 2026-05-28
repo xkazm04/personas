@@ -13355,6 +13355,7 @@
     "login_timed_out": "Login habis waktu. Silakan coba lagi."
   },
   "shared": {
+    "code_toggle_wrap": "Alihkan bungkus baris",
     "blast_checking_impact": "Memeriksa dampak...",
     "blast_safe_to_delete": "Tidak ada sumber daya dependen ditemukan. Aman untuk dihapus.",
     "blast_impact": "Dampak",

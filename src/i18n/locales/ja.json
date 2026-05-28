@@ -13355,6 +13355,7 @@
     "login_timed_out": "ログインがタイムアウトしました。もう一度お試しください。"
   },
   "shared": {
+    "code_toggle_wrap": "行の折り返しを切り替え",
     "blast_checking_impact": "影響を確認中...",
     "blast_safe_to_delete": "依存するリソースが見つかりません。安全に削除できます。",
     "blast_impact": "影響",
