@@ -1,0 +1,15 @@
+[
+  {
+    "id": "5e30b93e-c814-4981-b151-3d7ffb838728",
+    "execution_id": "9e2e4a82-e648-486c-9c47-d2e721767282",
+    "persona_id": "b654b7f7-2b5c-4a9c-8e7d-6430fec41b7b",
+    "title": "Security findings — /api/categorize route + standing postcss CVE (5th scan)",
+    "description": "New API route introduced prompt-injection and cost-DoS exposure; postcss CVE remains unremediated for a 5th consecutive scan. Triage each finding.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T23:23:50.947350600+00:00",
+    "use_case_id": null
+  }
+]

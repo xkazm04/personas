@@ -1,0 +1,352 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index eaff3e8..2a98ad9 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,8 +8,26 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+ 
+ ## [Unreleased]
+ 
++## [0.7.0] - 2026-05-29
++
++Backward-compatible feature release. Bundles the **v3 upgrade** — a swappable
++data-layer boundary, real Gemini-backed transaction categorization with a
++heuristic fallback, and a ledger-explorer UI — plus the **`getFiscalPeriod`**
++date utility. No breaking changes since `0.6.0`; under the pre-1.0 `0.x` policy
++a feature release increments the **minor**, so this lands as `0.7.0`. Bump
++derived from `git log v0.6.0..HEAD` (two `feat` commits — `0ace17d` v3 upgrade,
++`44191ce` fiscal-period utility — additive, none breaking), not guessed.
++
+ ### Added
+ 
++- **Fiscal-period date utility** (`getFiscalPeriod`, `src/features/ledger/lib/period.ts`,
++  exported via the `@/features/ledger` barrel). Maps a `Date` to its fiscal
++  period (year/quarter/month + period bounds) for reporting and transaction
++  grouping. Period unit = the calendar month containing the date (ERP
++  accounting-period); fiscal-year label = the calendar year the fiscal year
++  starts; `fiscalYearStartMonth` defaults to `1` and is validated `1..12`.
++  Pure, side-effect-free, fail-loud `RangeError`; follows the co-located
++  round/arithmetic/format/trial-balance lib pattern [ADR-0006].
+ - **Swappable data-layer boundary** (`src/lib/data/`). Typed async fetchers
+   (`getTransactions`, `getCustomers`, `getLedgerStats`, `getMonthlySeries`,
+   `getCloseChecklist`, `getInboxThread`, `getReviewQueue`) plus pure aggregation
+@@ -43,7 +61,8 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+ 
+ - 28 new unit tests for the categorization heuristic + defensive model-JSON
+   parser, the data-layer aggregation helpers, and the ledger-view
+-  search/filter/sort/CSV transforms (full suite 49 → 77 green).
++  search/filter/sort/CSV transforms, plus 10 for `getFiscalPeriod` boundaries
++  and validation (full suite 49 → 87 green).
+ 
+ ## [0.6.0] - 2026-05-29
+ 
+diff --git a/docs/releases/v0.7.0.md b/docs/releases/v0.7.0.md
+new file mode 100644
+index 0000000..3c2867a
+--- /dev/null
++++ b/docs/releases/v0.7.0.md
+@@ -0,0 +1,68 @@
++# Release v0.7.0 — v3 Upgrade: Data Layer, Real Gemini Categorization & Fiscal Periods
++
++**Date:** 2026-05-29
++**Bump:** MINOR (`0.6.0 → 0.7.0`)
++**Tag:** `v0.7.0` → release commit
++
++## Why this version
++
++Backward-compatible feature release, **no breaking changes** since `0.6.0`.
++Under `0.x` semantic versioning a feature release increments the **minor**, so
++this lands as `0.7.0`. The bump is derived from the merged history, not guessed:
++`git log v0.6.0..HEAD` is two `feat` commits — `0ace17d` (v3 upgrade) and
++`44191ce` (fiscal-period utility) — both additive, neither breaking.
++
++## Headline
++
++The app gains its **first server API route** and a **swappable data boundary**:
++`POST /api/categorize` runs real Gemini-backed transaction categorization (with
++a deterministic heuristic fallback so keyless builds still work), the dashboard
++reads through a single typed data layer that can be repointed at a real DB
++without touching consumers, and the ledger picks up a pure `getFiscalPeriod`
++utility for reporting and transaction grouping.
++
++## What's new
++
++- **Real Gemini transaction categorization** — `POST /api/categorize` (Node
++  runtime). Given `{ description, amount }` returns typed JSON
++  `{ debitAccount, creditAccount, category, confidence, rationale, source }`.
++  Calls `gemini-3.5-flash` when `GEMINI_API_KEY` is set; otherwise (and on any
++  parse/network failure) falls back to a deterministic keyword→account
++  heuristic. Wired into the landing page via a new `CategorizePanel`.
++- **Swappable data-layer boundary** (`src/lib/data/`) — typed async fetchers
++  (`getTransactions`, `getCustomers`, `getLedgerStats`, …) plus pure aggregation
++  helpers behind one boundary; dashboard pages now fetch as async server
++  components. Bodies return mock fixtures today, repointable at a real DB/API.
++- **Ledger explorer UI** — client-side search, income/expense filtering,
++  sortable Date/Amount/Confidence columns, CSV export, and empty-state handling;
++  view preferences persist to localStorage via a Zustand `persist` store.
++- **Fiscal-period date utility** — `getFiscalPeriod` maps a `Date` to its fiscal
++  period (year/quarter/month + bounds); pure, fail-loud `RangeError`,
++  `fiscalYearStartMonth` validated `1..12` [ADR-0006].
++- Dashboard route segment gains `loading.tsx` skeletons and an `error.tsx` retry
++  boundary now that its components fetch async.
++
++## Quality gate
++
++All four gates green on the release commit:
++
++- `tsc --noEmit` — clean
++- `eslint .` — clean
++- `tsx --test` — **87/87 pass**
++- `next build` — success (8 routes; `/api/categorize` server-rendered on demand)
++
++## Known issues / carry-forward
++
++- **postcss XSS — GHSA-qx2v-qp2m-jg93** (moderate) remains open: `next@16.2.6`
++  nests `postcss@8.4.31` (< 8.5.10). Non-blocking (build-time CSS stringify, not
++  user-input-fed). Fix = a one-line `package.json` `overrides` pin
++  (`"postcss": ">=8.5.10"`); do **not** `npm audit fix --force` (it proposes a
++  wrong `next@9.3.3` downgrade).
++- **Security findings on the new `/api/categorize` route** (filed by the
++  security scan at this commit, routed to engineering): unauthenticated /
++  unthrottled paid-model endpoint (cost-DoS) and raw user `description`
++  interpolated into the model prompt (prompt injection). Bounded today by
++  shape-validation + heuristic fallback + React JSX escaping; recommended
++  hardening = auth + rate-limit + a chart-of-accounts allow-list on returned
++  accounts. Does not block this release but should be addressed before the route
++  is exposed to untrusted traffic.
+diff --git a/package.json b/package.json
+index 7dc81a0..553da10 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "ai-bookkeeper",
+-  "version": "0.6.0",
++  "version": "0.7.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+diff --git a/src/features/ledger/index.ts b/src/features/ledger/index.ts
+index b28fb14..7fcae4d 100644
+--- a/src/features/ledger/index.ts
++++ b/src/features/ledger/index.ts
+@@ -26,6 +26,7 @@ export {
+   subtractMoney,
+ } from "./lib/arithmetic";
+ export { formatMoney } from "./lib/format";
++export { type FiscalPeriod, getFiscalPeriod } from "./lib/period";
+ export {
+   type TrialBalanceEntry,
+   type TrialBalanceResult,
+diff --git a/src/features/ledger/lib/period.test.ts b/src/features/ledger/lib/period.test.ts
+new file mode 100644
+index 0000000..ee1af9e
+--- /dev/null
++++ b/src/features/ledger/lib/period.test.ts
+@@ -0,0 +1,75 @@
++// Unit tests for fiscal-period mapping (ADR 0006).
++//
++// Runner: Node's built-in test runner via the tsx loader. Run the whole suite
++// with `npm test` (globs src/**/*.test.ts), or this file alone with:
++//   npx tsx --test ./src/features/ledger/lib/period.test.ts
++//
++// Dates are constructed with the numeric `new Date(y, mIndex, d)` constructor
++// (mIndex is 0-based) so the tests are timezone-deterministic — never
++// `new Date("2026-01-15")`, which parses as UTC midnight.
++
++import assert from "node:assert/strict";
++import { test } from "node:test";
++import { getFiscalPeriod } from "./period";
++
++test("calendar-year default: Jan 15 → quarter 1, fiscal month 1", () => {
++  const p = getFiscalPeriod(new Date(2026, 0, 15));
++  assert.equal(p.year, 2026);
++  assert.equal(p.quarter, 1);
++  assert.equal(p.month, 1);
++});
++
++test("July fiscal start: Jul 1 → fiscal month 1, quarter 1, year 2026", () => {
++  const p = getFiscalPeriod(new Date(2026, 6, 1), 7);
++  assert.equal(p.year, 2026);
++  assert.equal(p.quarter, 1);
++  assert.equal(p.month, 1);
++});
++
++test("July fiscal start: Mar 15 → prior fiscal year 2025, quarter 3, month 9", () => {
++  const p = getFiscalPeriod(new Date(2026, 2, 15), 7);
++  assert.equal(p.year, 2025);
++  assert.equal(p.quarter, 3);
++  assert.equal(p.month, 9);
++});
++
++test("calendar-year default: Dec 31 → quarter 4, fiscal month 12", () => {
++  const p = getFiscalPeriod(new Date(2026, 11, 31));
++  assert.equal(p.year, 2026);
++  assert.equal(p.quarter, 4);
++  assert.equal(p.month, 12);
++});
++
++test("leap-year Feb 29: periodEnd is Feb 29 23:59:59.999, no throw", () => {
++  const p = getFiscalPeriod(new Date(2024, 1, 29));
++  assert.equal(p.periodStart.getTime(), new Date(2024, 1, 1, 0, 0, 0, 0).getTime());
++  assert.equal(p.periodEnd.getTime(), new Date(2024, 1, 29, 23, 59, 59, 999).getTime());
++  assert.equal(p.periodEnd.getDate(), 29);
++});
++
++test("period boundaries are contiguous and non-overlapping (Mar → Apr)", () => {
++  const mar = getFiscalPeriod(new Date(2026, 2, 10));
++  const apr = getFiscalPeriod(new Date(2026, 3, 10));
++  // March ends Mar 31 23:59:59.999, April starts Apr 1 00:00:00.000.
++  assert.equal(mar.periodEnd.getTime(), new Date(2026, 2, 31, 23, 59, 59, 999).getTime());
++  assert.equal(apr.periodStart.getTime(), new Date(2026, 3, 1, 0, 0, 0, 0).getTime());
++  // Exactly 1ms apart — no gap, no overlap.
++  assert.equal(apr.periodStart.getTime() - mar.periodEnd.getTime(), 1);
++});
++
++test("invalid fiscalYearStartMonth=0 throws RangeError", () => {
++  assert.throws(() => getFiscalPeriod(new Date(2026, 0, 15), 0), RangeError);
++});
++
++test("invalid fiscalYearStartMonth=13 throws RangeError", () => {
++  assert.throws(() => getFiscalPeriod(new Date(2026, 0, 15), 13), RangeError);
++});
++
++test("non-finite date throws RangeError", () => {
++  assert.throws(() => getFiscalPeriod(new Date(NaN)), RangeError);
++});
++
++test("non-Date argument throws RangeError", () => {
++  // @ts-expect-error — guarding the runtime boundary, not the type boundary.
++  assert.throws(() => getFiscalPeriod("2026-01-15"), RangeError);
++});
+diff --git a/src/features/ledger/lib/period.ts b/src/features/ledger/lib/period.ts
+new file mode 100644
+index 0000000..0085b72
+--- /dev/null
++++ b/src/features/ledger/lib/period.ts
+@@ -0,0 +1,81 @@
++// Fiscal-period mapping for a calendar Date (ADR 0006).
++//
++// Maps an arbitrary `Date` to the fiscal period that contains it so reporting
++// code can group transactions by fiscal year / quarter / month. This is a pure
++// date utility with *no* money semantics — it does not touch roundMoney /
++// addMoney / formatMoney and is independent of ADR 0001–0005.
++//
++// Two conventions are pinned here (the spec left them open):
++//
++//   1. The "period" unit is the CALENDAR MONTH containing the date — the
++//      ERP/bookkeeping accounting-period convention. `periodStart`/`periodEnd`
++//      therefore bound that calendar month (local time).
++//   2. The fiscal-year LABEL (`year`) is the calendar year in which the fiscal
++//      year STARTS. With a July start, Mar 2026 belongs to fiscal year 2025.
++//
++// All derivation uses LOCAL date accessors (getFullYear/getMonth/getDate) and
++// the numeric Date constructor so results are timezone-deterministic — never
++// parse from an ISO string here.
++//
++// Pure, side-effect-free, fail-loud with RangeError, matching the repo's other
++// co-located ledger libs (round.ts, arithmetic.ts, format.ts, trial-balance.ts).
++
++/** A fiscal period: the calendar month containing a date, labelled against a
++ *  configurable fiscal-year start. */
++export interface FiscalPeriod {
++  /** Fiscal-year label = the calendar year in which the fiscal year starts. */
++  year: number;
++  /** Fiscal quarter, 1–4. */
++  quarter: 1 | 2 | 3 | 4;
++  /** Fiscal month number, 1–12 (1 = first month of the fiscal year). */
++  month: number;
++  /** First day of the calendar month containing `date`, local 00:00:00.000. */
++  periodStart: Date;
++  /** Last day of that calendar month, local 23:59:59.999. */
++  periodEnd: Date;
++}
++
++/**
++ * Resolve the fiscal period containing `date`.
++ *
++ * @param date A valid Date.
++ * @param fiscalYearStartMonth The calendar month (1–12) the fiscal year starts
++ *   on. Defaults to 1 (the fiscal year equals the calendar year).
++ *
++ * @throws RangeError if `date` is not a finite Date, or `fiscalYearStartMonth`
++ *   is supplied and is not an integer in 1..12 (so 0 and 13 are rejected).
++ */
++export function getFiscalPeriod(
++  date: Date,
++  fiscalYearStartMonth: number = 1,
++): FiscalPeriod {
++  if (!(date instanceof Date) || !Number.isFinite(date.getTime())) {
++    throw new RangeError(
++      `getFiscalPeriod: date must be a valid Date, received ${String(date)}.`,
++    );
++  }
++  if (
++    !Number.isInteger(fiscalYearStartMonth) ||
++    fiscalYearStartMonth < 1 ||
++    fiscalYearStartMonth > 12
++  ) {
++    throw new RangeError(
++      `getFiscalPeriod: fiscalYearStartMonth must be an integer in 1..12, received ${String(
++        fiscalYearStartMonth,
++      )}.`,
++    );
++  }
++
++  const calYear = date.getFullYear();
++  const calMonth = date.getMonth() + 1; // getMonth is 0-based.
++
++  const fiscalMonth = ((calMonth - fiscalYearStartMonth + 12) % 12) + 1;
++  const quarter = (Math.floor((fiscalMonth - 1) / 3) + 1) as 1 | 2 | 3 | 4;
++  const year = calMonth >= fiscalYearStartMonth ? calYear : calYear - 1;
++
++  const periodStart = new Date(calYear, calMonth - 1, 1, 0, 0, 0, 0);
++  // Day 0 of the next month = last day of this month; leap Feb → 29 naturally.
++  const periodEnd = new Date(calYear, calMonth, 0, 23, 59, 59, 999);
++
++  return { year, quarter, month: fiscalMonth, periodStart, periodEnd };
++}
+
+--- UNCOMMITTED WORKING TREE ---
+diff --git a/README.md b/README.md
+index 643f441..18cc8ab 100644
+--- a/README.md
++++ b/README.md
+@@ -15,9 +15,10 @@ XPrize hackathon entry · 90-day MVP scaffold · built with Gemini on Google Clo
+ - Ledger explorer — client-side search, income/expense filter, sortable columns, and CSV export over the data layer; view preferences persisted to `localStorage` via Zustand
+ - Ruled Ledger visual identity v2 — paper-cream + ink + emerald, T-account card frame, 28px page ruling
+ - Ink-mode theme toggle with pre-paint inline script (no cream-flash on load), persisted to `localStorage`
+-- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`; part of a 77-test unit suite
++- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`; part of an 87-test unit suite
+ - Ledger ingest boundary (`ingestTransaction`) — validates every amount from SMS/OCR/Plaid sources at one seam, with user-facing rejection reasons routed to the review queue
+ - Trial-balance verifier (`isBalanced` · `verifyTrialBalance`) — answers "do debits equal credits?" over double-entry rows, with the signed difference and the accounts active on only one side; totals fold through the audited money kernel so `0.10 + 0.20` vs `0.30` balances, and mixed-currency / non-finite rows fail loud
++- Fiscal-period mapping (`getFiscalPeriod`) — places any date into its fiscal year / quarter / month with period bounds, so transactions and reports group into the right accounting period (configurable fiscal-year start, fail-loud on bad input)
+ - Mocked dashboard: transactions, text-in inbox, review queue, month-end close checklist, revenue chart, customer side-panel, benchmarks, tax credits, wealth-score
+ - PWA manifest + multi-size icon set + Open Graph share card
+ - `prefers-reduced-motion` honored on every Framer Motion wrapper; skip-to-content link; `focus-visible` rings on every interactive element
+@@ -56,7 +57,7 @@ npm run dev                  # http://localhost:3000
+ | `npm run start` | Serve the production build |
+ | `npm run lint` | ESLint (flat config) |
+ | `npm run typecheck` | `tsc --noEmit` |
+-| `npm test` | Unit tests via `tsx --test src/**/*.test.ts` (77 tests) |
++| `npm test` | Unit tests via `tsx --test src/**/*.test.ts` (87 tests) |
+ | `npm run test:watch` | Unit tests in watch mode |
+ | `npm run e2e` | Playwright end-to-end tests |
+ | `npm run e2e:ui` | Playwright UI mode |
+@@ -103,7 +104,7 @@ src/
+     data/                    # Swappable data-layer boundary (transactions / accounts / reports)
+   features/
+     ledger/                  # Transactions, inbox, review queue, close checklist, money arithmetic
+-      lib/                   # round / amount / arithmetic / format / ingest / trial-balance + co-located .test.ts files
++      lib/                   # round / amount / arithmetic / format / ingest / trial-balance / period + co-located .test.ts files
+     customers/               # Customer panel, merge candidates, Zustand store
+     benchmarks/              # Industry benchmarks card
+     tax-credits/             # Tax-credit scanner + evidence chips
+@@ -147,7 +148,7 @@ Copy `.env.example` to `.env.local`. None are required to run the UI; they wire
+ ## Testing
+ 
+ ```bash
+-npm test         # 42 unit tests via `tsx --test src/**/*.test.ts`
++npm test         # 87 unit tests via `tsx --test src/**/*.test.ts`
+ npm run e2e      # Playwright e2e (home-nav regression per ADR-0006, etc.)
+ ```
+ 
