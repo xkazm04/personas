@@ -11901,6 +11901,10 @@ export type Translations = {
     dev_lifecycle: {
       goal_new_title: string;
       goal_edit_title: string;
+      goal_status_open: string;
+      goal_status_in_progress: string;
+      goal_status_blocked: string;
+      goal_status_done: string;
       goal_empty_subtitle: string;
       goal_ask_athena: string;
       goal_ask_athena_prompt: string;

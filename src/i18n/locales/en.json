@@ -11895,6 +11895,10 @@
     "dev_lifecycle": {
       "goal_new_title": "New goal",
       "goal_edit_title": "Edit goal",
+      "goal_status_open": "Open",
+      "goal_status_in_progress": "In progress",
+      "goal_status_blocked": "Blocked",
+      "goal_status_done": "Done",
       "goal_empty_subtitle": "Set the high-level direction for this project. Create goals, link teams to advance them, and let Athena track progress.",
       "goal_ask_athena": "Ask Athena to set up goals",
       "goal_ask_athena_prompt": "Help me set up development goals for this project. Suggest a few high-level goals based on what you know about it, and we can refine them together.",
