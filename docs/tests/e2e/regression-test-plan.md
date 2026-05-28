@@ -160,8 +160,19 @@
 
 ## Part B — Test ID Inventory
 
-### B.1 — Static Test IDs (101 live, 25 deleted)
+### B.1 — Static Test IDs (~101 live, 25 removed — see note)
 
+> **The alphabetical dump below is a raw snapshot and has NOT been pruned — it
+> still lists some of the struck ids (e.g. `agent-search`, `create-agent-btn`,
+> the `group-*` set). This removed-list is authoritative: do not author new
+> scenarios against a struck id, even though it appears in the dump.**
+>
+> **Sidebar-nav drift:** `dev-tools`, `team`, and `twin` are no longer top-level
+> sidebar sections — they're nested under the **Plugins** sidebar nav
+> (`PluginsSidebarNav.tsx`). Scenarios below that reach them via
+> `sidebar-dev-tools` / `sidebar-team` now route through the Plugins nav; update
+> the selector if a scenario can't find the old top-level id.
+>
 > 25 testids were removed with the GroupedAgentSidebar dead code deletion:
 > `sidebar-all-agents-btn`, `create-agent-btn`, `agent-search`, `sidebar-create-group-btn`,
 > `sidebar-new-group-input`, `sidebar-confirm-group-btn`, `sidebar-cancel-group-btn`,

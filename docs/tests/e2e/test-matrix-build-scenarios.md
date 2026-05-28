@@ -1,7 +1,7 @@
 # PersonaMatrix Build Test Scenarios
 
 20 end-to-end agent creation scenarios for validating the PersonaMatrix build flow.
-Run with the test automation framework (`docs/test-automation-guide.md`).
+Run with the test automation framework (`docs/development/test-automation.md`).
 
 ## Prerequisites
 

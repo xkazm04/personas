@@ -269,7 +269,7 @@ POST /wait-toast {"text": "completed", "timeout_ms": 180000}
 
 ```sql
 SELECT id, status, started_at, completed_at, output_tokens, cost_usd
-FROM executions
+FROM persona_executions
 WHERE persona_id = '<agent-id>' AND DATE(started_at) = DATE('now')
 ORDER BY started_at DESC LIMIT 1;
 ```
@@ -306,7 +306,7 @@ POST /click-testid {"test_id": "tab-messages"}
 #### 3.6 Verify Today's Date
 ```sql
 SELECT id, persona_id, status, started_at, completed_at
-FROM executions
+FROM persona_executions
 WHERE persona_id = '<agent-id>'
   AND DATE(started_at) = DATE('now')
 ORDER BY started_at DESC LIMIT 1;
@@ -316,7 +316,7 @@ ORDER BY started_at DESC LIMIT 1;
 
 #### 3.7 Verify Output Content
 ```sql
-SELECT substr(output_text, 1, 500) FROM execution_messages
+SELECT substr(content, 1, 500) FROM persona_messages
 WHERE execution_id = '<execution-id>'
 ORDER BY created_at ASC LIMIT 5;
 ```
