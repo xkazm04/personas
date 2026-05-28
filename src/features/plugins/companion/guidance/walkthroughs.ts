@@ -55,6 +55,10 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
         orbAnchor: 'center',
       },
     ],
+    cta: {
+      label: (t) => t.plugins.companion.guide_cta_build,
+      action: 'build_persona',
+    },
   },
 
   connector_setup: {
@@ -92,6 +96,10 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
         orbAnchor: 'center',
       },
     ],
+    cta: {
+      label: (t) => t.plugins.companion.guide_cta_connect,
+      action: 'open_connector_add',
+    },
   },
 };
 

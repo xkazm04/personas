@@ -11275,9 +11275,15 @@ export type Translations = {
       orb_dismiss: string;
       guide_stop: string;
       guide_skip: string;
+      guide_take_me_there: string;
+      guide_back: string;
       guide_pause: string;
+      guide_flash_composed: string;
       guide_resume: string;
+      guide_cta_build: string;
+      guide_cta_connect: string;
       guide_step_label: string;
+      guide_goto_step: string;
       guide_click_hint: string;
       guide_pc_title: string;
       guide_pc_intro: string;

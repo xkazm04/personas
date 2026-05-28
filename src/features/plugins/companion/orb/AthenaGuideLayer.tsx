@@ -1,7 +1,6 @@
 import { createPortal } from 'react-dom';
 import { useGuidanceRunner } from '../guidance/useGuidanceRunner';
-import { AthenaGuideGlow } from './AthenaGuideGlow';
-import { AthenaFlashGlow } from './AthenaFlashGlow';
+import { TrackedGlowRing } from './TrackedGlowRing';
 import { GuideCaption } from './GuideCaption';
 
 /**
@@ -12,12 +11,13 @@ import { GuideCaption } from './GuideCaption';
  *
  * Hosts the walkthrough runner (`useGuidanceRunner`, which drives the orb +
  * highlight per step) and renders only what an active walkthrough needs:
- *  - `AthenaGuideGlow` — the non-dimming element ring (renders nothing unless
- *    `guidanceHighlightTestId` is set).
- *  - `AthenaFlashGlow` — the proactive one-shot "look here" ring (renders
- *    nothing unless `flashHighlightTestId` is set); fires on navigate/compose.
- *  - `GuideCaption` — the narration card + Pause/Skip/Stop controls (renders
- *    nothing unless a walkthrough is active).
+ *  - `TrackedGlowRing source="guide"` — the non-dimming walkthrough ring
+ *    (renders nothing unless `guidanceHighlightTestId` is set).
+ *  - `TrackedGlowRing source="flash"` — the proactive one-shot "look here" ring
+ *    (renders nothing unless `flashHighlightTestId` is set); fires on
+ *    navigate/compose. Same primitive, different store slot + CSS treatment.
+ *  - `GuideCaption` — the narration card + Back/Pause/Skip/Stop controls
+ *    (renders nothing unless a walkthrough is active).
  *
  * The layer itself is `pointer-events-none`; interactive children opt back in.
  * Distinct from `AthenaOrbLayer` (which only mounts while `state === 'minimized'`)
@@ -31,8 +31,8 @@ export default function AthenaGuideLayer() {
       aria-live="polite"
       data-testid="athena-guide-layer"
     >
-      <AthenaGuideGlow />
-      <AthenaFlashGlow />
+      <TrackedGlowRing source="guide" />
+      <TrackedGlowRing source="flash" />
       <GuideCaption />
     </div>,
     document.body,

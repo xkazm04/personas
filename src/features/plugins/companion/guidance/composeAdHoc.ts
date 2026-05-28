@@ -1,5 +1,7 @@
 import { ADHOC_TOPIC } from './walkthroughs';
 import { getAnchor } from './anchorCatalog';
+import { navigateToSection } from './appActions';
+import { getActiveTranslations } from '@/i18n/useTranslation';
 import type { GuidanceWalkthrough } from './types';
 
 /**
@@ -20,7 +22,7 @@ export function buildPointAtWalkthrough(
   const anchor = getAnchor(anchorId);
   if (!anchor) return null;
   const text = narration.trim();
-  return {
+  const wt: GuidanceWalkthrough = {
     topic: ADHOC_TOPIC,
     title: () => text,
     steps: [
@@ -33,6 +35,17 @@ export function buildPointAtWalkthrough(
       },
     ],
   };
+  // When Athena points at a nav item without opening it (no `route`, but a
+  // `dest`), offer a "Take me there" CTA that navigates to the section. Content
+  // anchors (with a `route`) already took the user there, so they get no CTA.
+  if (!anchor.route && anchor.dest) {
+    const dest = anchor.dest;
+    wt.cta = {
+      label: () => getActiveTranslations().plugins.companion.guide_take_me_there,
+      onSelect: () => navigateToSection(dest),
+    };
+  }
+  return wt;
 }
 
 /** One step of a `compose_walkthrough` — an anchor id + the line to narrate. */
