@@ -8844,6 +8844,7 @@ export type Translations = {
       groups: string;
       credentials: string;
       memories: string;
+      team_memories: string;
       test_suites: string;
       export_import_title: string;
       export_import_hint: string;
@@ -8862,6 +8863,9 @@ export type Translations = {
       import_tools: string;
       import_groups: string;
       import_credentials_count: string;
+      import_team_memories: string;
+      include_memories_label: string;
+      include_memories_note: string;
       export_title: string;
       export_subtitle: string;
       close: string;

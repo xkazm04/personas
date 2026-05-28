@@ -20,8 +20,9 @@ use crate::db::repos::core::{
 };
 use crate::db::repos::execution::test_suites as suite_repo;
 use crate::db::repos::resources::{
-    audit_log, connectors as connector_repo, credentials as cred_repo, teams as team_repo,
-    tools as tool_repo, triggers as trigger_repo,
+    audit_log, connectors as connector_repo, credentials as cred_repo,
+    team_memories as team_memory_repo, teams as team_repo, tools as tool_repo,
+    triggers as trigger_repo,
 };
 use crate::db::DbPool;
 use crate::engine::crypto;
@@ -64,6 +65,7 @@ const MAX_MEMORIES_PER_PERSONA: usize = MAX_MEMORIES;
 const MAX_TEST_SUITES_PER_PERSONA: usize = 100;
 const MAX_TEAM_MEMBERS: usize = 50;
 const MAX_TEAM_CONNECTIONS: usize = 200;
+const MAX_TEAM_MEMORIES_PER_TEAM: usize = 500;
 
 // ============================================================================
 // Export bundle types
@@ -152,6 +154,26 @@ pub struct TeamExport {
     pub icon: Option<String>,
     pub members: Vec<TeamMemberExport>,
     pub connections: Vec<TeamConnectionExport>,
+    // Team-scoped memories (sub_teamMemory feature). Optional + serde-default so
+    // bundles written before this field existed still deserialize cleanly — no
+    // format-version bump needed. Stripped to an empty vec when the user opts out
+    // of memories at export time.
+    #[serde(default)]
+    pub memories: Vec<TeamMemoryExport>,
+}
+
+/// A team memory in the portability bundle. Mirrors the durable content fields
+/// of `MemoryExport` (the persona equivalent). Run-specific provenance
+/// (`run_id` / `member_id` / `persona_id`) is intentionally NOT exported: it
+/// references rows that don't travel with the bundle, so it is nulled on import
+/// and the memory lands as a manually-curated entry.
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TeamMemoryExport {
+    pub title: String,
+    pub content: String,
+    pub category: String,
+    pub importance: i32,
+    pub tags: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -192,6 +214,7 @@ pub struct PortabilityImportResult {
     pub teams_created: u32,
     pub tools_created: u32,
     pub credentials_created: u32,
+    pub team_memories_created: u32,
     pub warnings: Vec<String>,
     pub id_mapping: std::collections::HashMap<String, String>,
 }
@@ -208,6 +231,7 @@ pub struct ExportStats {
     pub team_count: u32,
     pub credential_count: u32,
     pub memory_count: u32,
+    pub team_memory_count: u32,
     pub test_suite_count: u32,
 }
 
@@ -232,12 +256,19 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
         test_suite_count += suite_repo::list_by_persona(pool, &p.id)?.len() as u32;
     }
 
+    let mut team_memory_count: u32 = 0;
+    for t in &teams {
+        team_memory_count +=
+            team_memory_repo::get_total_count(pool, &t.id, None, None, None)? as u32;
+    }
+
     Ok(ExportStats {
         persona_count: personas.len() as u32,
         tool_count: tools.len() as u32,
         team_count: teams.len() as u32,
         credential_count: credentials.len() as u32,
         memory_count,
+        team_memory_count,
         test_suite_count,
     })
 }
@@ -250,10 +281,12 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
 pub async fn export_full(
     state: State<'_, Arc<AppState>>,
     app: AppHandle,
+    include_memories: Option<bool>,
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     let pool = &state.db;
-    let mut bundle = build_export_bundle(pool, ExportScope::Full)?;
+    let mut bundle =
+        build_export_bundle(pool, ExportScope::Full, include_memories.unwrap_or(true))?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -276,6 +309,7 @@ pub async fn export_selective(
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
+    include_memories: Option<bool>,
     passphrase: Option<String>,
 ) -> Result<bool, AppError> {
     // When passphrase is provided (credential secrets involved), upgrade to privileged
@@ -291,7 +325,7 @@ pub async fn export_selective(
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
     };
-    let mut bundle = build_export_bundle(pool, scope)?;
+    let mut bundle = build_export_bundle(pool, scope, include_memories.unwrap_or(true))?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -450,6 +484,7 @@ pub async fn export_selective_to_path(
     persona_ids: Vec<String>,
     team_ids: Vec<String>,
     credential_ids: Vec<String>,
+    include_memories: Option<bool>,
     passphrase: Option<String>,
     file_path: String,
 ) -> Result<bool, AppError> {
@@ -465,7 +500,7 @@ pub async fn export_selective_to_path(
         team_ids: team_ids.clone(),
         credential_ids: credential_ids.clone(),
     };
-    let mut bundle = build_export_bundle(pool, scope)?;
+    let mut bundle = build_export_bundle(pool, scope, include_memories.unwrap_or(true))?;
 
     if let Some(ref pp) = passphrase {
         if pp.len() >= 8 {
@@ -551,7 +586,30 @@ pub async fn import_portability_bundle_from_path(
 // Internal helpers
 // ============================================================================
 
-fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityBundle, AppError> {
+/// Reduce a team memory's `tags` column to a portable value. The team-memory
+/// editor stores tags as a `{ "source": ..., "revisions": [...] }` object where
+/// `revisions` is the local edit history (up to 20 prior full versions). That
+/// blob is large, unbounded-ish, and meaningless in another workspace — so we
+/// keep only the durable `source` marker and drop the revision history. Plain
+/// (non-object) tags pass through unchanged.
+fn portable_team_memory_tags(tags: &Option<String>) -> Option<String> {
+    let raw = tags.as_deref()?;
+    if let Ok(val) = serde_json::from_str::<serde_json::Value>(raw) {
+        if val.get("revisions").is_some() {
+            return match val.get("source").and_then(|v| v.as_str()) {
+                Some(s) if !s.is_empty() => Some(s.to_string()),
+                _ => None,
+            };
+        }
+    }
+    Some(raw.to_string())
+}
+
+fn build_export_bundle(
+    pool: &DbPool,
+    scope: ExportScope,
+    include_memories: bool,
+) -> Result<PortabilityBundle, AppError> {
     let all_personas = persona_repo::get_all(pool)?;
     let all_tools = tool_repo::get_all_definitions(pool)?;
     let all_teams = team_repo::get_all(pool)?;
@@ -620,7 +678,13 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
 
         let triggers = triggers_map.remove(&p.id).unwrap_or_default();
         let subscriptions = subscriptions_map.remove(&p.id).unwrap_or_default();
-        let memories = memories_map.remove(&p.id).unwrap_or_default();
+        // Honor the export-time memory opt-out: drop the persona's memories
+        // when the user unchecked "Include memories".
+        let memories = if include_memories {
+            memories_map.remove(&p.id).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
         let tools = tools_map.remove(&p.id).unwrap_or_default();
         let test_suites = suites_map.remove(&p.id).unwrap_or_default();
 
@@ -713,6 +777,22 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
         let members = team_repo::get_members(pool, &t.id)?;
         let connections = team_repo::get_connections(pool, &t.id)?;
 
+        // Team memories ride along with their team, gated by the same
+        // include_memories opt-out as persona memories.
+        let team_memories = if include_memories {
+            team_memory_repo::get_all(
+                pool,
+                &t.id,
+                None,
+                None,
+                None,
+                Some(MAX_TEAM_MEMORIES_PER_TEAM as i64),
+                Some(0),
+            )?
+        } else {
+            Vec::new()
+        };
+
         team_exports.push(TeamExport {
             id: t.id.clone(),
             name: t.name.clone(),
@@ -720,6 +800,16 @@ fn build_export_bundle(pool: &DbPool, scope: ExportScope) -> Result<PortabilityB
             canvas_data: t.canvas_data.clone(),
             team_config: t.team_config.clone(),
             icon: export_safe_icon(t.icon.as_deref(), None),
+            memories: team_memories
+                .iter()
+                .map(|m| TeamMemoryExport {
+                    title: m.title.clone(),
+                    content: m.content.clone(),
+                    category: m.category.clone(),
+                    importance: m.importance,
+                    tags: portable_team_memory_tags(&m.tags),
+                })
+                .collect(),
             members: members
                 .iter()
                 .map(|m| TeamMemberExport {
@@ -1134,6 +1224,35 @@ fn validate_bundle(bundle: &PortabilityBundle) -> Result<(), AppError> {
             &t.connections,
             MAX_TEAM_CONNECTIONS,
         )?;
+        validation::require_max_count(
+            &format!("{prefix}.memories"),
+            &t.memories,
+            MAX_TEAM_MEMORIES_PER_TEAM,
+        )?;
+
+        for (j, m) in t.memories.iter().enumerate() {
+            validation::require_non_empty(&format!("{prefix}.memory[{j}].title"), &m.title)?;
+            validation::require_max_len(
+                &format!("{prefix}.memory[{j}].title"),
+                &m.title,
+                MAX_NAME_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.memory[{j}].content"),
+                &m.content,
+                MAX_MEMORY_CONTENT_LEN,
+            )?;
+            validation::require_max_len(
+                &format!("{prefix}.memory[{j}].category"),
+                &m.category,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+            validation::require_optional_max_len(
+                &format!("{prefix}.memory[{j}].tags"),
+                &m.tags,
+                MAX_SHORT_FIELD_LEN,
+            )?;
+        }
 
         for (j, m) in t.members.iter().enumerate() {
             validation::require_optional_max_len(
@@ -1182,6 +1301,7 @@ fn import_bundle(
         teams_created: 0,
         tools_created: 0,
         credentials_created: 0,
+        team_memories_created: 0,
         warnings: Vec::new(),
         id_mapping: std::collections::HashMap::new(),
     };
@@ -1508,6 +1628,29 @@ fn import_bundle(
                             "Team '{}' connection: {}",
                             t.name, e
                         ));
+                    }
+                }
+
+                // Sub-entities: team memories. Run-specific provenance
+                // (run_id / member_id / persona_id) does not survive the
+                // bundle — those rows aren't exported — so import them as
+                // manually-curated memories with null provenance. Importance
+                // is clamped to the 1–10 range the repo enforces on create.
+                for m in &t.memories {
+                    let mid = uuid::Uuid::new_v4().to_string();
+                    let importance = m.importance.clamp(1, 10);
+                    if let Err(e) = tx.execute(
+                        "INSERT INTO team_memories
+                         (id, team_id, run_id, member_id, persona_id, title, content, category, importance, tags, created_at, updated_at)
+                         VALUES (?1, ?2, NULL, NULL, NULL, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
+                        rusqlite::params![mid, new_team_id, m.title, m.content, m.category, importance, m.tags, now],
+                    ) {
+                        result.warnings.push(format!(
+                            "Team '{}' memory ({}): {}",
+                            t.name, m.title, e
+                        ));
+                    } else {
+                        result.team_memories_created += 1;
                     }
                 }
             }
@@ -2303,5 +2446,137 @@ fn classify_credential_field_type(key: &str) -> &'static str {
         "identity"
     } else {
         "text"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    fn empty_bundle() -> PortabilityBundle {
+        PortabilityBundle {
+            format_version: 2,
+            exported_at: "2026-05-28T00:00:00Z".into(),
+            app_version: "test".into(),
+            scope: ExportScope::Full,
+            personas: Vec::new(),
+            tool_definitions: Vec::new(),
+            teams: Vec::new(),
+            credentials: Vec::new(),
+            encrypted_credentials: None,
+        }
+    }
+
+    fn team_with_memories(memories: Vec<TeamMemoryExport>) -> TeamExport {
+        TeamExport {
+            id: "old-team-1".into(),
+            name: "Squad".into(),
+            description: None,
+            canvas_data: None,
+            team_config: None,
+            icon: None,
+            members: Vec::new(),
+            connections: Vec::new(),
+            memories,
+        }
+    }
+
+    #[test]
+    fn import_bundle_recreates_team_memories_under_new_team_id() {
+        let pool = init_test_db().unwrap();
+        let mut bundle = empty_bundle();
+        bundle.teams.push(team_with_memories(vec![
+            TeamMemoryExport {
+                title: "Pricing rule".into(),
+                content: "Always round up".into(),
+                category: "decision".into(),
+                importance: 7,
+                tags: Some("manual".into()),
+            },
+            TeamMemoryExport {
+                title: "Customer note".into(),
+                content: "VIP threshold $1k".into(),
+                category: "observation".into(),
+                importance: 4,
+                tags: None,
+            },
+        ]));
+
+        let result = import_bundle(&pool, &bundle).expect("import must succeed");
+        assert_eq!(result.teams_created, 1);
+        assert_eq!(result.team_memories_created, 2);
+
+        let new_team_id = result
+            .id_mapping
+            .get("old-team-1")
+            .expect("team id should be remapped");
+        let count =
+            team_memory_repo::get_total_count(&pool, new_team_id, None, None, None).unwrap();
+        assert_eq!(count, 2);
+
+        let rows =
+            team_memory_repo::get_all(&pool, new_team_id, None, None, None, Some(50), Some(0))
+                .unwrap();
+        // Provenance is intentionally nulled — imported memories are manual.
+        assert!(rows
+            .iter()
+            .all(|m| m.run_id.is_none() && m.member_id.is_none() && m.persona_id.is_none()));
+        assert!(rows.iter().any(|m| m.importance == 7));
+    }
+
+    #[test]
+    fn import_bundle_with_empty_team_memories_creates_none() {
+        let pool = init_test_db().unwrap();
+        let mut bundle = empty_bundle();
+        bundle.teams.push(team_with_memories(Vec::new()));
+
+        let result = import_bundle(&pool, &bundle).expect("import must succeed");
+        assert_eq!(result.teams_created, 1);
+        assert_eq!(result.team_memories_created, 0);
+    }
+
+    #[test]
+    fn validate_bundle_rejects_too_many_team_memories() {
+        let mut bundle = empty_bundle();
+        let memories = (0..=MAX_TEAM_MEMORIES_PER_TEAM)
+            .map(|i| TeamMemoryExport {
+                title: format!("m{i}"),
+                content: "c".into(),
+                category: "observation".into(),
+                importance: 3,
+                tags: None,
+            })
+            .collect();
+        bundle.teams.push(team_with_memories(memories));
+        assert!(validate_bundle(&bundle).is_err());
+    }
+
+    #[test]
+    fn validate_bundle_rejects_empty_team_memory_title() {
+        let mut bundle = empty_bundle();
+        bundle.teams.push(team_with_memories(vec![TeamMemoryExport {
+            title: "   ".into(),
+            content: "c".into(),
+            category: "observation".into(),
+            importance: 3,
+            tags: None,
+        }]));
+        assert!(validate_bundle(&bundle).is_err());
+    }
+
+    #[test]
+    fn portable_team_memory_tags_strips_revision_history() {
+        let with_revisions =
+            Some(r#"{"source":"auto","revisions":[{"title":"old"}]}"#.to_string());
+        assert_eq!(portable_team_memory_tags(&with_revisions), Some("auto".into()));
+
+        let empty_source = Some(r#"{"source":"","revisions":[]}"#.to_string());
+        assert_eq!(portable_team_memory_tags(&empty_source), None);
+
+        let plain = Some("manual".to_string());
+        assert_eq!(portable_team_memory_tags(&plain), Some("manual".into()));
+
+        assert_eq!(portable_team_memory_tags(&None), None);
     }
 }

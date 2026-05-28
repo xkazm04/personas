@@ -8,22 +8,22 @@ import {
   Info,
   Check,
   Minus,
+  Users,
+  Brain,
 } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
+import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { listPersonas } from '@/api/agents/personas';
 import { listCredentials } from '@/api/vault/credentials';
+import { listTeams } from '@/api/pipeline/teams';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaCredential } from '@/lib/bindings/PersonaCredential';
+import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useTranslation } from '@/i18n/useTranslation';
-
-// Teams export is currently not exposed in the UI. The onExport prop still
-// carries `teamIds: string[]` so callers (and the backend payload) keep their
-// signature; this modal passes [] for that arg. When teams ship, re-add a
-// Teams category here and populate selectedTeamIds.
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,7 +51,7 @@ interface CategoryConfig {
 interface ExportSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: (personaIds: string[], teamIds: string[], credentialIds: string[], passphrase?: string) => void;
+  onExport: (personaIds: string[], teamIds: string[], credentialIds: string[], includeMemories: boolean, passphrase?: string) => void;
   exporting: boolean;
 }
 
@@ -217,11 +217,14 @@ export function ExportSelectionModal({
   exporting,
 }: ExportSelectionModalProps) {
   const [personas, setPersonas] = useState<Persona[]>([]);
+  const [teams, setTeams] = useState<PersonaTeam[]>([]);
   const [credentials, setCredentials] = useState<PersonaCredential[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [selectedPersonaIds, setSelectedPersonaIds] = useState<Set<string>>(new Set());
+  const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(new Set());
   const [selectedCredentialIds, setSelectedCredentialIds] = useState<Set<string>>(new Set());
+  const [includeMemories, setIncludeMemories] = useState(true);
   const [exportPassphrase, setExportPassphrase] = useState('');
   const { t, tx } = useTranslation();
   const s = t.settings.portability;
@@ -231,13 +234,16 @@ export function ExportSelectionModal({
     if (!isOpen) return;
     setLoading(true);
     setExportPassphrase('');
-    Promise.all([listPersonas(), listCredentials()])
-      .then(([p, c]) => {
+    setIncludeMemories(true);
+    Promise.all([listPersonas(), listCredentials(), listTeams()])
+      .then(([p, c, tm]) => {
         setPersonas(p);
         setCredentials(c);
+        setTeams(tm);
         // Select all by default.
         setSelectedPersonaIds(new Set(p.map((x) => x.id)));
         setSelectedCredentialIds(new Set(c.map((x) => x.id)));
+        setSelectedTeamIds(new Set(tm.map((x) => x.id)));
       })
       .finally(() => setLoading(false));
   }, [isOpen]);
@@ -246,7 +252,7 @@ export function ExportSelectionModal({
     () => [
       {
         key: 'personas',
-        label: 'Personas',
+        label: s.personas,
         icon: <Bot className="w-4 h-4" />,
         color: 'bg-violet-500/15 text-violet-400',
         items: personas.map((p) => ({
@@ -266,8 +272,19 @@ export function ExportSelectionModal({
         })),
       },
       {
+        key: 'teams',
+        label: s.teams,
+        icon: <Users className="w-4 h-4" />,
+        color: 'bg-sky-500/15 text-sky-400',
+        items: teams.map((tm) => ({
+          id: tm.id,
+          name: tm.name,
+          description: tm.description,
+        })),
+      },
+      {
         key: 'credentials',
-        label: 'Credentials',
+        label: s.credentials,
         icon: <Key className="w-4 h-4" />,
         color: 'bg-amber-500/15 text-amber-400',
         items: credentials.map((c) => ({
@@ -277,14 +294,15 @@ export function ExportSelectionModal({
         })),
       },
     ],
-    [personas, credentials],
+    [personas, teams, credentials, s.personas, s.teams, s.credentials],
   );
 
   // Selection helpers
   const stateMap = useMemo<Record<string, [Set<string>, React.Dispatch<React.SetStateAction<Set<string>>>]>>(() => ({
     personas: [selectedPersonaIds, setSelectedPersonaIds],
+    teams: [selectedTeamIds, setSelectedTeamIds],
     credentials: [selectedCredentialIds, setSelectedCredentialIds],
-  }), [selectedCredentialIds, selectedPersonaIds]);
+  }), [selectedCredentialIds, selectedPersonaIds, selectedTeamIds]);
 
   const toggleAll = useCallback(
     (key: string, items: ExportableItem[]) => {
@@ -314,26 +332,29 @@ export function ExportSelectionModal({
   );
 
   // Global select/deselect all.
-  const totalItems = personas.length + credentials.length;
-  const totalSelected = selectedPersonaIds.size + selectedCredentialIds.size;
+  const totalItems = personas.length + teams.length + credentials.length;
+  const totalSelected = selectedPersonaIds.size + selectedTeamIds.size + selectedCredentialIds.size;
   const allGlobalSelected = totalItems > 0 && totalSelected === totalItems;
   const someGlobalSelected = totalSelected > 0;
 
   const toggleGlobalAll = useCallback(() => {
     if (allGlobalSelected) {
       setSelectedPersonaIds(new Set());
+      setSelectedTeamIds(new Set());
       setSelectedCredentialIds(new Set());
     } else {
       setSelectedPersonaIds(new Set(personas.map((p) => p.id)));
+      setSelectedTeamIds(new Set(teams.map((tm) => tm.id)));
       setSelectedCredentialIds(new Set(credentials.map((c) => c.id)));
     }
-  }, [allGlobalSelected, personas, credentials]);
+  }, [allGlobalSelected, personas, teams, credentials]);
 
   const handleExport = () => {
     onExport(
       Array.from(selectedPersonaIds),
-      [], // teams not exposed in this modal; see top-of-file comment
+      Array.from(selectedTeamIds),
       Array.from(selectedCredentialIds),
+      includeMemories,
       exportPassphrase.length >= 8 ? exportPassphrase : undefined,
     );
   };
@@ -343,6 +364,7 @@ export function ExportSelectionModal({
   const isFullExport =
     totalItems > 0 &&
     selectedPersonaIds.size === personas.length &&
+    selectedTeamIds.size === teams.length &&
     selectedCredentialIds.size === credentials.length;
 
   return (
@@ -405,6 +427,25 @@ export function ExportSelectionModal({
                   onToggleItem={(id) => toggleItem(cat.key, id)}
                 />
               ))}
+            </div>
+
+            {/* Include memories toggle */}
+            <div className="rounded-modal border border-primary/10 bg-secondary/5 px-5 py-4 flex items-center gap-4">
+              <div className="w-8 h-8 rounded-card flex items-center justify-center bg-fuchsia-500/15 text-fuchsia-400 flex-shrink-0">
+                <Brain className="w-4 h-4" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="typo-body font-medium text-foreground">{s.include_memories_label}</div>
+                <p className="typo-caption text-foreground leading-relaxed mt-0.5">
+                  {s.include_memories_note}
+                </p>
+              </div>
+              <AccessibleToggle
+                checked={includeMemories}
+                onChange={() => setIncludeMemories((v) => !v)}
+                label={s.include_memories_label}
+                data-testid="export-include-memories-toggle"
+              />
             </div>
 
             {/* Passphrase for credential encryption */}

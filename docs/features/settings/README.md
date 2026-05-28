@@ -37,6 +37,20 @@ The Account tab's **Updates** card is the user-facing surface for the Tauri auto
 
 The card shows the current installed version (via `getVersion()`) and a relative "last checked" timestamp so the user can confirm the background poll is running. After a manual check it also shows the result inline (up-to-date / failed) for a few seconds, so the outcome persists past the toast. A **Recent updates** list below the button shows the version-upgrade timeline, recorded in `localStorage` by `src/lib/updateHistory.ts` — `useAutoUpdater` calls `recordVersion()` once per launch, appending an entry the first time the app runs on each new version. A **Clear** control resets the list (`clearUpdateHistory()`). When an update is found, `UpdateBanner` (`src/features/shared/components/feedback/UpdateBanner.tsx`) appears at the top of the app with the release notes, a live download-progress bar during install, and (when personas are mid-execution) a preflight warning before the app restarts. The preflight offers three choices — install anyway, defer until running tasks finish (auto-installs once the running count hits zero), or keep working.
 
+## Data portability
+
+The **Data** tab (`sub_portability/`, backed by `core/data_portability.rs`) exports the workspace to a portable ZIP archive (`manifest.json` inside a `.zip`) and imports it back. Imported entities are always created as **new, disabled** rows with an `(imported)` name suffix — import never overwrites existing data.
+
+The **Export Workspace** button opens a selection modal where you pick exactly what to include across three categories:
+
+- **Personas** — agents plus their triggers, event subscriptions, tool links, test suites, and (unless opted out) memories.
+- **Teams** — team canvases plus members, connections, and (unless opted out) team memories (the `team_memories` / `sub_teamMemory` store). On import, team memories are recreated under the new team id as manually-curated entries; run-specific provenance (`run_id` / `member_id` / `persona_id`) is intentionally dropped because it references rows that don't travel with the bundle.
+- **Credentials** — non-secret metadata by default. Secrets are only embedded when you set an export passphrase, which AES-256-GCM-encrypts them into the bundle (format version 3).
+
+An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories — useful for sharing a clean template. The **Workspace Overview** stat cards (including a **Team Memories** count) preview what's in the workspace before exporting.
+
+Credential-only export/import (password-protected `.cred.enc` files) lives in a separate **Credential Vault** section of the same tab and is independent of the workspace bundle.
+
 ## Ambient context
 
 Settings also contains `AmbientContextPanel.tsx`, backed by `src/api/system/ambientContext.ts`. It controls desktop sensory context, per-persona policies, context rules, context-rule matches, stream stats, and validation screenshot capture. Desktop-only backend state lives behind feature gates in `AppState`.
