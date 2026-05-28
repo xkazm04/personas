@@ -9,7 +9,7 @@ import {
   type DirectorVerdictRow,
 } from '@/api/director';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
-import { AsyncButton } from '@/features/shared/components/buttons/AsyncButton';
+import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -111,7 +111,7 @@ export function DirectorPanel() {
               <>
                 {' · '}
                 <span className="text-foreground/55">{t.director.last_review}</span>{' '}
-                <RelativeTime ts={lastVerdictAt} />
+                <RelativeTime timestamp={lastVerdictAt} />
               </>
             )}
           </div>
@@ -187,7 +187,7 @@ export function DirectorPanel() {
                   >
                     {v.title}
                   </span>
-                  <RelativeTime ts={v.createdAt} className="text-foreground/50 shrink-0" />
+                  <RelativeTime timestamp={v.createdAt} className="text-foreground/50 shrink-0" />
                 </li>
               ))}
             </ul>

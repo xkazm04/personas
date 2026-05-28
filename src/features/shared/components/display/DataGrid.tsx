@@ -22,8 +22,8 @@ export interface DataGridColumn<T> {
   filterComponent?: React.ReactNode;
   /** If true, column header is clickable to toggle sort */
   sortable?: boolean;
-  /** Align content: 'left' (default) | 'right' */
-  align?: 'left' | 'right';
+  /** Align content: 'left' (default) | 'right' | 'center' */
+  align?: 'left' | 'right' | 'center';
   /** Custom cell renderer. If not provided, displays `row[key]` as string */
   render: (row: T, index: number) => React.ReactNode;
 }
@@ -289,7 +289,7 @@ export function DataGrid<T>({
             <div
               key={col.key}
               className={`${headerPadCls} flex items-center typo-label text-foreground ${
-                col.align === 'right' ? 'justify-end' : ''
+                col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
               }`}
             >
               {col.label}
@@ -357,7 +357,7 @@ export function DataGrid<T>({
                 <div
                   key={col.key}
                   className={`${rowPadCls} flex items-center min-w-0 ${
-                    col.align === 'right' ? 'justify-end' : ''
+                    col.align === 'right' ? 'justify-end' : col.align === 'center' ? 'justify-center' : ''
                   }`}
                 >
                   {col.render(row, idx)}
