@@ -2,34 +2,37 @@ import { useCallback, useMemo, useState } from 'react';
 import { User, Bot, CheckCircle2, Clock, AlertCircle, Target, Minus, Plus, Maximize2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { tokenLabel } from '@/i18n/tokenMaps';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { toastCatch } from '@/lib/silentCatch';
 import { KanbanBoard, type KanbanColumn } from '@/features/shared/components/kanban/KanbanBoard';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
+import { GoalStatusBadge } from './GoalStatusBadge';
+import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 
 // ---------------------------------------------------------------------------
-// Lane definitions — now feed the shared <KanbanBoard> primitive. Labels are
-// resolved in-component (i18n); the rest is column chrome + status mapping.
+// Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
+// canonical GOAL_STATUS_META.lane, so the board can't drift from the rest of
+// the module. Labels resolve via i18n; chrome is lane-local.
 // ---------------------------------------------------------------------------
 
 type LaneLabelKey = 'your_turn' | 'agents_turn' | 'done';
 
 interface LaneMeta {
-  id: string;
+  id: GoalLane;
   labelKey: LaneLabelKey;
   icon: typeof User;
   iconColor: string;
   borderColor: string;
   bgColor: string;
   ringColor: string;
-  statuses: string[];
-  targetStatus: string;
+  /** Canonical status written when a card is dropped into this lane. */
+  targetStatus: GoalStatus;
 }
 
-const LANE_META: LaneMeta[] = [
-  { id: 'your_turn', labelKey: 'your_turn', icon: User, iconColor: 'text-amber-400', borderColor: 'border-amber-500/25', bgColor: 'bg-amber-500/5', ringColor: 'ring-amber-400/50', statuses: ['review', 'pending', 'blocked'], targetStatus: 'pending' },
-  { id: 'agent_turn', labelKey: 'agents_turn', icon: Bot, iconColor: 'text-blue-400', borderColor: 'border-blue-500/25', bgColor: 'bg-blue-500/5', ringColor: 'ring-blue-400/50', statuses: ['in_progress', 'running'], targetStatus: 'in_progress' },
-  { id: 'done', labelKey: 'done', icon: CheckCircle2, iconColor: 'text-emerald-400', borderColor: 'border-emerald-500/25', bgColor: 'bg-emerald-500/5', ringColor: 'ring-emerald-400/50', statuses: ['completed', 'done'], targetStatus: 'completed' },
+const LANE_CHROME: LaneMeta[] = [
+  { id: 'your_turn', labelKey: 'your_turn', icon: User, iconColor: 'text-amber-400', borderColor: 'border-amber-500/25', bgColor: 'bg-amber-500/5', ringColor: 'ring-amber-400/50', targetStatus: 'open' },
+  { id: 'agent_turn', labelKey: 'agents_turn', icon: Bot, iconColor: 'text-blue-400', borderColor: 'border-blue-500/25', bgColor: 'bg-blue-500/5', ringColor: 'ring-blue-400/50', targetStatus: 'in-progress' },
+  { id: 'done', labelKey: 'done', icon: CheckCircle2, iconColor: 'text-emerald-400', borderColor: 'border-emerald-500/25', bgColor: 'bg-emerald-500/5', ringColor: 'ring-emerald-400/50', targetStatus: 'done' },
 ];
 
 const PROGRESS_STEP = 5;
@@ -123,37 +126,20 @@ function GoalCard({ goal, onOpen }: { goal: DevGoal; onOpen?: () => void }) {
         <span className="text-[9px] text-foreground w-7 text-right tabular-nums">{progressPct}%</span>
       </div>
 
-      {/* Meta row */}
+      {/* Meta row — date turns red when an ongoing goal is past its target. */}
       <div className="flex items-center gap-2 mt-2">
-        <StatusChip status={goal.status} />
-        {goal.target_date && (
-          <span className="text-[9px] text-foreground flex items-center gap-0.5">
-            <Clock className="w-2.5 h-2.5" />
-            {goal.target_date}
-          </span>
-        )}
+        <GoalStatusBadge status={goal.status} />
+        {goal.target_date && (() => {
+          const overdue = isOngoing(goal.status) && new Date(goal.target_date).getTime() < Date.now();
+          return (
+            <span className={`text-[9px] flex items-center gap-0.5 ${overdue ? 'text-red-400 font-medium' : 'text-foreground'}`}>
+              <Clock className="w-2.5 h-2.5" />
+              <RelativeTime timestamp={goal.target_date} />
+            </span>
+          );
+        })()}
       </div>
     </div>
-  );
-}
-
-const STATUS_CHIP_CLASSES: Record<string, string> = {
-  pending: 'text-foreground border-primary/15 bg-primary/5',
-  review: 'text-amber-400 border-amber-500/25 bg-amber-500/10',
-  blocked: 'text-red-400 border-red-500/25 bg-red-500/10',
-  in_progress: 'text-blue-400 border-blue-500/25 bg-blue-500/10',
-  running: 'text-blue-400 border-blue-500/25 bg-blue-500/10',
-  completed: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
-  done: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
-};
-
-function StatusChip({ status }: { status: string }) {
-  const { t } = useTranslation();
-  const className = STATUS_CHIP_CLASSES[status] ?? 'text-foreground border-primary/15 bg-primary/5';
-  return (
-    <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full border ${className}`}>
-      {tokenLabel(t, 'goal_state', status)}
-    </span>
   );
 }
 
@@ -168,7 +154,7 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
   const updateGoal = useSystemStore((s) => s.updateGoal);
 
   const columns: KanbanColumn[] = useMemo(
-    () => LANE_META.map((l) => ({
+    () => LANE_CHROME.map((l) => ({
       id: l.id,
       label: dt[l.labelKey],
       icon: l.icon,
@@ -176,7 +162,8 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
       borderColor: l.borderColor,
       bgColor: l.bgColor,
       ringColor: l.ringColor,
-      statuses: l.statuses,
+      // Canonical statuses whose lane is this column (single source of truth).
+      statuses: GOAL_STATUSES.filter((s) => GOAL_STATUS_META[s].lane === l.id),
       targetStatus: l.targetStatus,
     })),
     [dt],
@@ -207,7 +194,7 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
       columns={columns}
       items={goals}
       getItemId={(g) => g.id}
-      getItemStatus={(g) => g.status}
+      getItemStatus={(g) => normalizeGoalStatus(g.status)}
       onItemMove={handleMove}
       dragMimeType={DRAG_MIME}
       fallbackColumnId="your_turn"

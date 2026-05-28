@@ -22,43 +22,50 @@ Press `Esc` (or click the titlebar button again) to close.
 
 ## The global fleet activity strip
 
-A **1px-tall, 20-slot activity strip** sits directly under the titlebar in
+A **1px-tall, 20-bar activity strip** sits directly under the titlebar in
 *every* screen of the app (not just the Monitor) — so you always have a
 peripheral read on how much live work the fleet is doing without opening
 the Monitor.
 
-- One slot = one currently-running execution. Slots fill left-to-right.
-- The colour is the active theme's primary (cyan on midnight, amber on
-  amber, magenta on magenta, etc.).
-- Each slot **fades and scales in** when an execution starts and fades out
-  when it finishes, so the strip is a live heartbeat — not a per-persona
-  map and not a summary of attention.
+- One bright bar = one currently-running execution. Bars fill left→right.
+- Running bars **ramp the active theme's primary → accent** across the lit
+  region (cyan→bright-cyan on midnight; the ramp re-tints per theme), and a
+  soft highlight "comet" sweeps across them to signal liveness.
+- A **dim tail** of bars trails the bright ones for queued runs, so the
+  strip reads as *live work + pressure* — never a per-persona map or a
+  summary of attention (that is the grid's job).
+- Bars **spring in/out** as executions start and finish.
+- **Hovering** the strip reveals a floating readout — running / queued
+  counts, the oldest run's age, and live USD cost — as an overlay that
+  never reflows the app. **Clicking** the strip opens the Monitor.
 - The strip caps at 20 simultaneous runs; beyond that the visual saturates
   (and the Monitor's per-persona view is the place to dig in).
-- When no executions are running the strip is invisible but still
-  reserves its 1px, so the page never re-flows as work comes and goes.
+- When nothing is running the strip is invisible and non-interactive but
+  still reserves its 1px, so the page never re-flows as work comes and goes.
 
-The component is `FleetActivityStrip` and is mounted between `<TitleBar />`
-and the rest of the app in `App.tsx`. Reduced-motion users get the same
-populated state without the fade animation.
+The component is `FleetActivityStrip` (mounted between `<TitleBar />` and the
+app body in `App.tsx`); its slot math lives in the pure, unit-tested
+`fleetStripModel.ts`. Reduced-motion users get the populated state without
+the spring/comet animation.
 
 ## The grid
 
 One card per persona, fleet-wide — including idle personas.
 
-### Card anatomy — the Pillar layout
+### Card anatomy — the Pillar layout (v2)
 
-Each card has a hairline **1px top strip** that carries the state signal,
-with the title anchored to the top and the caption + badges + icon
+Each card has a hairline **1px top strip** carrying the state signal, with the
+title anchored to the top and caption + telemetry + health + badges + icon
 grouped at the bottom via flex justify-between:
 
 ```
 ┌──────────────────────────┐
 │──────────────────────────│   1px top strip (state colour)
-│ Persona Name             │   title, 2-line clamp — anchored top
+│ Persona Name        🔧  │   title button (primary open) · hover quick-open
 │                          │
-│                          │
-│ running · 2m 14s         │   state caption (clickable)
+│ running · 2m 14s         │   state caption (live elapsed, clickable)
+│ 12 tools · $0.030        │   live telemetry (running cards only)
+│ ▪▪▪▫▪▪▪  92%             │   recent-run health micro-bar + success rate
 │ [3⚠] [2✉]            🧠 │   badges left · persona icon bottom-right
 └──────────────────────────┘
 ```
@@ -66,23 +73,38 @@ grouped at the bottom via flex justify-between:
 - **Top strip** — encodes execution state at the highest priority level
   (running > failed > input_required > draft_ready > queued > attention >
   idle). The strip pulses for live work (`running`, `input_required`).
-- **Title** — fills the full card width, clamps to two lines, and anchors
-  to the top of the card so the bottom rail is always visually aligned
-  across the grid.
+- **Title** — fills the full card width, clamps to two lines, anchors to the
+  top, and is itself a **button** that opens the card's most relevant drawer
+  section (activity for active states, reviews/messages for attention,
+  capabilities for idle) — so every card has a clear primary action.
+- **Hover quick-open** — a wrench affordance (top-right, on hover) jumps
+  straight to the **Capabilities** section to quick-fire the persona.
 - **State caption** — a short, colour-coded label (`running · 2m 14s`,
-  `Last run failed`, `Input needed`, `Draft ready`, `Queued`, `Pending
-  review`, `Idle`). When the caption refers to live work, it is clickable
-  and opens the drawer's **Activity** section.
+  `Last run failed`, `Input needed`, …). When it refers to live work it is
+  clickable and opens the **Activity** section.
+- **Live telemetry** — running cards show live tool-call count and USD cost,
+  summed across that persona's running processes.
+- **Health micro-bar** — the last seven run outcomes as colour ticks
+  (green = completed, red = failed, amber = other), oldest→newest, with the
+  success-rate percent. Hovering shows `% success · runs today`. Hidden when
+  the persona has no run history.
 - **Attention badges** — bottom-left. Reviews (tinted by highest severity)
   and unread messages each get their own badge; clicking opens the
   corresponding drawer section.
 - **Persona icon** — bottom-right as a slightly muted signature mark; lifts
   to full opacity on hover.
 
-Idle cards (no badges, no active work) become wholly clickable and open the
-**Capabilities** section so you can quick-fire the persona.
+The card's visual/state mapping is resolved by pure, unit-tested helpers in
+`monitorModel.ts` (`pillarVisual`, `captionDescriptor`, `primaryDrawerSection`,
+`healthSegments`), keeping the component to markup + i18n.
 
 Cards sort worst-first: failures → things needing you → just-busy → idle.
+
+### Header live chip
+
+When any execution is running, the Monitor header shows a pulsing **live
+chip** — running count plus aggregate in-flight USD cost — derived from the
+`summarizeFleet` rollup.
 
 ### Group by
 

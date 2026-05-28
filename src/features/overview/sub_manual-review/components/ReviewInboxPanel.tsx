@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { CheckSquare, Square, X, MessageSquare, PanelRightClose, PanelRight, Loader2 } from 'lucide-react';
+import { CheckSquare, Square, X, MessageSquare, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { createRafCoalescer } from '@/lib/utils/interaction/rafCoalescer';
@@ -9,8 +9,6 @@ import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
 import { debtText } from '@/i18n/DebtText';
 
-
-type ViewMode = 'default' | 'table';
 
 interface ReviewInboxPanelProps {
   filteredReviews: ManualReviewItem[];
@@ -43,8 +41,6 @@ export function ReviewInboxPanel({
   loadingMore,
 }: ReviewInboxPanelProps) {
   const { t } = useTranslation();
-  const [viewMode, setViewMode] = useState<ViewMode>('default');
-  const [slideOverOpen, setSlideOverOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -76,58 +72,15 @@ export function ReviewInboxPanel({
     document.addEventListener('pointerup', onUp);
   }, [sidebarWidth]);
 
-  const handleReviewClick = (id: string) => {
-    onSelectReview(id);
-    if (viewMode === 'table') {
-      setSlideOverOpen(true);
-    }
-  };
-
-  const handleCloseSlideOver = () => {
-    setSlideOverOpen(false);
-  };
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* View mode toggle */}
-      {!IS_MOBILE && (
-        <div className="flex items-center justify-end px-3 py-1.5 border-b border-primary/[0.06] bg-secondary/10">
-          <div className="flex rounded-card border border-primary/15 overflow-hidden">
-            <button
-              onClick={() => { setViewMode('default'); setSlideOverOpen(false); }}
-              className={`flex items-center gap-1 px-2.5 py-1 typo-caption transition-colors ${
-                viewMode === 'default'
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:text-foreground/70'
-              }`}
-              title={t.overview.review.split_tooltip}
-            >
-              <PanelRight className="w-3 h-3" />
-              {t.overview.review.split}
-            </button>
-            <button
-              onClick={() => { setViewMode('table'); setSlideOverOpen(false); }}
-              className={`flex items-center gap-1 px-2.5 py-1 typo-caption transition-colors ${
-                viewMode === 'table'
-                  ? 'bg-primary/10 text-foreground/90'
-                  : 'text-foreground hover:text-foreground/70'
-              }`}
-              title={t.overview.review.table_tooltip}
-            >
-              <PanelRightClose className="w-3 h-3" />
-              {t.overview.review.table}
-            </button>
-          </div>
-        </div>
-      )}
-
       <div ref={containerRef} className="flex-1 flex overflow-hidden relative">
         {/* Left: Inbox list */}
         <div
           data-inbox-list
           className={`animate-fade-in flex-shrink-0 border-r border-primary/10 flex flex-col overflow-hidden`}
           style={
-            !IS_MOBILE && viewMode === 'default'
+            !IS_MOBILE
               ? { width: sidebarWidth != null ? `${sidebarWidth}px` : 'clamp(340px, 30%, 420px)' }
               : undefined
           }
@@ -154,7 +107,7 @@ export function ReviewInboxPanel({
                   <InboxItem
                     review={review}
                     isActive={review.id === activeReviewId}
-                    onClick={() => handleReviewClick(review.id)}
+                    onClick={() => onSelectReview(review.id)}
                   />
                 </div>
               </div>
@@ -169,7 +122,7 @@ export function ReviewInboxPanel({
         </div>
 
         {/* Resize handle */}
-        {!IS_MOBILE && viewMode === 'default' && (
+        {!IS_MOBILE && (
           <div
             onPointerDown={handleResizeStart}
             className="w-1 flex-shrink-0 cursor-col-resize group relative z-10 hover:bg-primary/20 active:bg-primary/30 transition-colors"
@@ -181,7 +134,7 @@ export function ReviewInboxPanel({
         )}
 
         {/* Right: Conversation thread (split mode) */}
-        {!IS_MOBILE && viewMode === 'default' && (
+        {!IS_MOBILE && (
             <div
               key="split-panel"
               className="animate-fade-slide-in flex-1 min-w-0 flex flex-col overflow-hidden"
@@ -201,32 +154,6 @@ export function ReviewInboxPanel({
                   </div>
                 </div>
               )}
-            </div>
-          )}
-
-        {/* Slide-over panel (table mode) */}
-        {!IS_MOBILE && viewMode === 'table' && slideOverOpen && activeReview && (
-            <div
-              key="slide-over"
-              className="animate-fade-in absolute right-0 top-0 bottom-0 w-[480px] 2xl:w-[560px] bg-background border-l border-primary/10 shadow-elevation-4 shadow-black/20 flex flex-col z-20"
-            >
-              <div className="flex items-center justify-between px-3 py-2 border-b border-primary/10 flex-shrink-0 bg-secondary/20">
-                <span className="typo-caption text-foreground">{t.overview.review.review_detail}</span>
-                <button
-                  onClick={handleCloseSlideOver}
-                  className="p-1.5 rounded-card hover:bg-secondary/50 text-foreground hover:text-muted-foreground transition-colors"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <ConversationThread
-                  key={activeReview.id}
-                  review={activeReview}
-                  onAction={onAction}
-                  isProcessing={isProcessing}
-                />
-              </div>
             </div>
           )}
 

@@ -144,6 +144,15 @@ export type Translations = {
     caption_queued_many: string;
     open_reviews_with_count: string;
     open_messages_with_count: string;
+    live_telemetry: string;
+    health_summary: string;
+    strip_aria: string;
+    strip_running: string;
+    strip_queued: string;
+    strip_oldest: string;
+    strip_open_hint: string;
+    live_chip: string;
+    live_chip_title: string;
   };
   common: {
     unknown_error: string;
@@ -2821,6 +2830,10 @@ export type Translations = {
       delete_drafts: string;
       delete_drafts_message: string;
       system_persona_undeletable: string;
+    };
+    director_brain: {
+      title: string;
+      subtitle: string;
     };
     persona_list: {
       all_personas: string;
@@ -8462,6 +8475,11 @@ export type Translations = {
     approve: string;
     approving: string;
     reject: string;
+    queue_count: string;
+    prompt_label: string;
+    no_prompt: string;
+    from_dashboard: string;
+    later: string;
   };
   settings: {
     title: string;
@@ -8509,6 +8527,28 @@ export type Translations = {
       cloud_sync_enable_failed: string;
       cloud_sync_now_failed: string;
       cloud_sync_now_done: string;
+      cloud_sync_state_off: string;
+      cloud_sync_state_active: string;
+      cloud_sync_state_syncing: string;
+      cloud_sync_total: string;
+      cloud_sync_device: string;
+      cloud_sync_tables_title: string;
+      cloud_sync_show_details: string;
+      cloud_sync_hide_details: string;
+      cloud_sync_retry: string;
+      cloud_sync_rows: string;
+      cloud_sync_table_pending: string;
+      cloud_sync_tables: {
+        synced_personas: string;
+        synced_executions: string;
+        synced_events: string;
+        synced_manual_reviews: string;
+        synced_messages: string;
+        synced_metrics_snapshots: string;
+        synced_tool_usage: string;
+        synced_memories: string;
+        synced_knowledge_patterns: string;
+      };
     };
     appearance_extra: {
       simple: string;
@@ -11235,9 +11275,15 @@ export type Translations = {
       orb_dismiss: string;
       guide_stop: string;
       guide_skip: string;
+      guide_take_me_there: string;
+      guide_back: string;
       guide_pause: string;
+      guide_flash_composed: string;
       guide_resume: string;
+      guide_cta_build: string;
+      guide_cta_connect: string;
       guide_step_label: string;
+      guide_goto_step: string;
       guide_click_hint: string;
       guide_pc_title: string;
       guide_pc_intro: string;
@@ -11912,6 +11958,42 @@ export type Translations = {
     dev_lifecycle: {
       goal_new_title: string;
       goal_edit_title: string;
+      goal_status_open: string;
+      goal_status_in_progress: string;
+      goal_status_blocked: string;
+      goal_status_done: string;
+      portfolio_title: string;
+      portfolio_total_goals: string;
+      portfolio_at_risk: string;
+      portfolio_avg_progress: string;
+      portfolio_projects_label: string;
+      portfolio_overdue_label: string;
+      portfolio_at_risk_label: string;
+      portfolio_no_projects: string;
+      portfolio_no_projects_sub: string;
+      portfolio_open_board: string;
+      attention_title: string;
+      attention_all_clear: string;
+      attention_all_clear_sub: string;
+      attention_kind_awaiting_review: string;
+      attention_kind_overdue: string;
+      attention_kind_stalled: string;
+      attention_kind_unstaffed: string;
+      attention_resolve_skip: string;
+      attention_resolve_abort: string;
+      attention_open_goal: string;
+      attention_assign_team: string;
+      attention_ask_athena: string;
+      attention_ask_athena_prompt: string;
+      timeline_title: string;
+      timeline_no_dated: string;
+      timeline_no_dated_sub: string;
+      timeline_overdue_group: string;
+      timeline_group_this_week: string;
+      timeline_group_this_month: string;
+      timeline_group_later: string;
+      timeline_undated_group: string;
+      timeline_today: string;
       goal_empty_subtitle: string;
       goal_ask_athena: string;
       goal_ask_athena_prompt: string;

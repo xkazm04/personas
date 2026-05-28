@@ -46,6 +46,9 @@ export const AGENT_ICONS: AgentIconEntry[] = [
   { id: 'notification', label: 'Notification',  categories: ['notification', 'alerts'],      suggestedColor: '#fbbf24' },
   { id: 'calendar',     label: 'Calendar',      categories: ['project_management', 'scheduling'], suggestedColor: '#2dd4bf' },
   { id: 'search',       label: 'Search',        categories: ['research', 'intelligence'],    suggestedColor: '#818cf8' },
+  // System-owned Director meta-persona. `director` is not a template category,
+  // so this icon is never auto-assigned — it's set explicitly on the Director.
+  { id: 'director',     label: 'Director',      categories: ['director'],                     suggestedColor: '#8b5cf6' },
 ];
 
 // ── Prefix Convention ─────────────────────────────────────────────────────────

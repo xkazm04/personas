@@ -12,10 +12,11 @@ pub mod workspace;
 pub use competitions::*;
 
 use crate::db::models::{
-    ContextHealthSnapshot, CrossProjectRelation, DevContext, DevContextGroup,
+    AttentionQueue, ContextHealthSnapshot, CrossProjectRelation, DevContext, DevContextGroup,
     DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea,
     DevPipeline, DevProject, DevScan, DevTask, GitOperationResult, GoalProgressSuggestion,
-    PortfolioHealthSummary, RiskMatrixEntry, TechRadarEntry, TestRunResult, TriageRule,
+    PortfolioHealthSummary, PortfolioSummary, RiskMatrixEntry, TechRadarEntry, TestRunResult,
+    TriageRule,
 };
 use crate::db::repos::dev_tools as repo;
 use crate::error::AppError;
@@ -412,6 +413,45 @@ pub fn dev_tools_resolve_goal_progress(
         steps_done,
         steps_total,
     ))
+}
+
+// ---- Goals v2: cross-project surfaces (Portfolio / Attention / Timeline / Map) ----
+
+/// Every goal across all projects — backs the Portfolio + Timeline surfaces.
+#[tauri::command]
+pub fn dev_tools_list_all_goals(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<DevGoal>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_all_goals(&state.db)
+}
+
+/// All dependency edges for one project's goals (single query; Map edges).
+#[tauri::command]
+pub fn dev_tools_list_goal_dependencies_for_project(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<DevGoalDependency>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_goal_dependencies_for_project(&state.db, &project_id)
+}
+
+/// Cross-project health rollup (per-project counts by status, at-risk, avg progress).
+#[tauri::command]
+pub fn dev_tools_portfolio_summary(
+    state: State<'_, Arc<AppState>>,
+) -> Result<PortfolioSummary, AppError> {
+    require_auth_sync(&state)?;
+    repo::portfolio_summary(&state.db)
+}
+
+/// Cross-project "needs you" queue (awaiting-review / overdue / stalled / unstaffed).
+#[tauri::command]
+pub fn dev_tools_attention_queue(
+    state: State<'_, Arc<AppState>>,
+) -> Result<AttentionQueue, AppError> {
+    require_auth_sync(&state)?;
+    repo::attention_queue(&state.db)
 }
 
 // ============================================================================

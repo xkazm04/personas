@@ -14,11 +14,12 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   Target, X, Plus, Trash2, Check, Circle, CheckCircle2, AlertCircle,
-  Clock, Users, ListChecks, Activity, Loader2, Pencil, SkipForward, Ban,
+  Clock, Users, ListChecks, Activity, Pencil, SkipForward, Ban,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
@@ -34,6 +35,8 @@ import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
 import type { GoalProgressSuggestion } from '@/lib/bindings/GoalProgressSuggestion';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
+import { GoalStatusBadge } from './GoalStatusBadge';
+import { isComplete } from './goalStatus';
 
 interface Props {
   isOpen: boolean;
@@ -43,14 +46,8 @@ interface Props {
   onEdit: (goal: DevGoal) => void;
 }
 
-const STATUS_TINT: Record<string, string> = {
-  open: 'text-blue-400 border-blue-500/25 bg-blue-500/10',
-  'in-progress': 'text-amber-400 border-amber-500/25 bg-amber-500/10',
-  in_progress: 'text-amber-400 border-amber-500/25 bg-amber-500/10',
-  blocked: 'text-red-400 border-red-500/25 bg-red-500/10',
-  done: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
-  completed: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/10',
-};
+/** Neutral chip for team-side statuses (queued/running/awaiting_review/…). */
+const TEAM_CHIP = 'text-foreground border-primary/15 bg-primary/5';
 
 function stepIsDone(status: string) {
   return status === 'done' || status === 'skipped';
@@ -182,9 +179,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
           <div className="min-w-0">
             <h2 id="goal-detail-title" className="typo-section-title text-foreground">{goal.title}</h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${STATUS_TINT[goal.status] ?? STATUS_TINT.open}`}>
-                {tokenLabel(t, 'goal_state', goal.status)}
-              </span>
+              <GoalStatusBadge status={goal.status} />
               <span className="typo-caption text-foreground tabular-nums">{goal.progress}%</span>
             </div>
           </div>
@@ -220,7 +215,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
 
       {loading && (
         <div className="flex items-center gap-2 typo-caption text-foreground mb-3">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t.common.loading}
+          <LoadingSpinner size="sm" /> {t.common.loading}
         </div>
       )}
 
@@ -273,7 +268,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
           <ul className="space-y-1.5">
             {subgoals.map((sg) => (
               <li key={sg.id} className="flex items-center gap-2.5 typo-body">
-                {STATUS_TINT[sg.status]?.includes('emerald') || sg.progress >= 100
+                {isComplete(sg.status) || sg.progress >= 100
                   ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                   : <Circle className="w-4 h-4 text-foreground shrink-0" />}
                 <span className="flex-1 text-foreground truncate">{sg.title}</span>
@@ -325,7 +320,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
           <ul className="space-y-1.5">
             {assignments.map((asgn) => (
               <li key={asgn.id} className="group flex items-center gap-2.5 typo-body">
-                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${STATUS_TINT[asgn.status] ?? STATUS_TINT.open}`}>
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${TEAM_CHIP}`}>
                   {tokenLabel(t, 'execution', asgn.status)}
                 </span>
                 <span className="flex-1 text-foreground truncate">{asgn.title}</span>

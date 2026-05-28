@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import { storeBus } from '@/lib/storeBus';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
 import { resolveWalkthrough } from './walkthroughs';
-import type { GuidancePreAction, GuidanceWalkthrough, OrbAnchor } from './types';
+import { runPreAction } from './appActions';
+import type { GuidanceWalkthrough, OrbAnchor } from './types';
 
 const ORB_GAP = 18;
 const ANCHOR_WAIT_MS = 4000;
@@ -74,29 +74,6 @@ function defaultDwell(text: string): number {
   return Math.max(3800, Math.min(9000, text.length * 60));
 }
 
-function runPreAction(action: GuidancePreAction) {
-  switch (action) {
-    case 'open_build_entry': {
-      // Make the persona build studio the visible surface so the step's
-      // anchors mount. `isCreatingPersona` is what PersonasPage checks to
-      // render UnifiedBuildEntry (vs the persona list / editor).
-      const sys = useSystemStore.getState();
-      sys.setSidebarSection('personas');
-      sys.setIsCreatingPersona(true);
-      break;
-    }
-    case 'open_credential_add': {
-      // Drive the vault into its "Add new" view so the connector type picker
-      // mounts to point at. The credential nav lives in a React context, not a
-      // global store; `storeBus` is its from-outside-React escape hatch (the
-      // onboarding tour uses the same event). The vault route must already be
-      // mounted — author this as a step *after* the one that navigates there.
-      storeBus.emit('tour:navigate-credential-view', { key: 'add-new' });
-      break;
-    }
-  }
-}
-
 /**
  * Drives an active guided walkthrough: for each step it navigates, runs any
  * pre-action, waits for the anchor to mount, rings it with the glow, glides the
@@ -122,6 +99,48 @@ export function useGuidanceRunner() {
     if (!activeWalkthrough) return;
     const st = useCompanionStore.getState();
     if (st.state !== 'minimized') st.setState('minimized');
+  }, [activeWalkthrough]);
+
+  // Keyboard control while a walkthrough is active: ←/→ step, Esc stop, Space
+  // pause/resume. Bound once per walkthrough; reads live state via getState() so
+  // it never needs to re-bind on every step. Ignored while the user is typing.
+  useEffect(() => {
+    if (!activeWalkthrough) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.isContentEditable)
+      ) {
+        return;
+      }
+      const store = useCompanionStore.getState();
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          store.advanceGuidance();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          store.previousGuidance();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          store.stopGuidance();
+          break;
+        case ' ':
+        case 'Spacebar':
+          e.preventDefault();
+          if (store.guidancePlaying) store.pauseGuidance();
+          else store.resumeGuidance();
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [activeWalkthrough]);
 
   useEffect(() => {

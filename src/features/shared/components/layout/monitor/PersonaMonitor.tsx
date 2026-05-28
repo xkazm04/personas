@@ -1,16 +1,15 @@
 // PersonaMonitor — the full-screen fleet monitor.
 //
-// One card per persona, fleet-wide. The 2px-tall fleet ActivityStrip below
-// the header gives a single-glance read of the most urgent slice of the
-// fleet. Each persona card is a "pillar" — a colour-tinted top strip encodes
-// execution state, the title fills the full width (2-line clamp), a state
-// caption opens the relevant drawer section, and the persona icon shrinks to
-// a signature mark in the bottom-right. Reviews and messages get their own
-// badges in the bottom row.
+// One card per persona, fleet-wide. Each persona card is a "pillar" — a 1px
+// state-coloured top strip, a full-width title (2-line clamp) that is also the
+// primary open affordance, a state caption with live elapsed/telemetry, a
+// recent-run health micro-bar, and the persona icon as a signature mark in the
+// bottom-right. Reviews and messages get their own badges. The global fleet
+// pulse lives in the app chrome (see FleetActivityStrip), not here.
 
 import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Mail, FolderGit2, Layers, ChevronDown } from 'lucide-react';
+import { X, Activity, Mail, FolderGit2, Layers, ChevronDown, Wrench } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -25,8 +24,14 @@ import { MonitorDrawer } from './MonitorDrawer';
 import {
   buildMonitorModel, SEVERITY_META,
   processStatusMeta, processStatusLabel, severityLabel, elapsedStr, severityBucket,
+  pillarVisual, captionDescriptor, primaryDrawerSection, healthSegments, HEALTH_TONE_CLASS,
+  summarizeFleet,
   type PersonaCardModel, type SeverityBucket, type ProcessEntry, type DrawerSection,
+  type CaptionDescriptor,
 } from './monitorModel';
+
+/** How many recent-run outcomes the card health micro-bar shows. */
+const HEALTH_BAR_LENGTH = 7;
 
 interface PersonaMonitorProps {
   onClose: () => void;
@@ -159,11 +164,10 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // it reads as premium texture, not a competing foreground.
   const isDark = useIsDarkTheme();
 
+  // Fleet rollup powers the header subtitle + the live-cost chip.
+  const fleet = useMemo(() => summarizeFleet(displayCards), [displayCards]);
   const attentionCards = displayCards.filter((c) => c.attentionCount > 0).length;
-  const runningCount = useMemo(
-    () => Object.values(activeProcesses).filter((p) => p.status === 'running').length,
-    [activeProcesses],
-  );
+  const runningCount = fleet.running;
 
   return (
     <motion.div
@@ -199,6 +203,19 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {fleet.running > 0 && (
+            <span
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary typo-caption tabular-nums"
+              title={tx(t.monitor.live_chip_title, { tools: fleet.liveToolCalls })}
+            >
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />
+                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-primary" />
+              </span>
+              {tx(t.monitor.live_chip, { running: fleet.running })}
+              {fleet.liveCostUsd > 0 && <span className="text-foreground">· ${fleet.liveCostUsd.toFixed(3)}</span>}
+            </span>
+          )}
           {activeProject && (
             <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 typo-caption">
               <FolderGit2 className="w-3 h-3" />
@@ -417,149 +434,73 @@ function SystemBand({ processes, now }: { processes: ProcessEntry[]; now: number
 }
 
 // ---------------------------------------------------------------------------
-// Persona card — Pillar layout
+// Persona card — Pillar layout (v2)
 // ---------------------------------------------------------------------------
 //
 // Anatomy:
 //   ┌────────────────────────┐
-//   │ ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓│  4px top strip (state colour, pulses if running)
-//   │ Persona Name           │  title — full width, 2-line clamp
-//   │ running · 2m 14s       │  state caption (click → state's drawer section)
+//   │────────────────────────│  1px top strip (state colour, pulses if running)
+//   │ Persona Name        ⟶ │  title button (primary open) · hover quick-open
+//   │                        │
+//   │ running · 2m 14s       │  state caption (live elapsed)
+//   │ 12 tools · $0.03       │  live telemetry (running only)
+//   │ ▪▪▪▫▪▪▪  92%           │  recent-run health micro-bar + success rate
 //   │ [3⚠] [2✉]          🧠 │  badges left · icon signature bottom-right
 //   └────────────────────────┘
 //
-// The strip and the state caption together replace the prior whole-card
-// background tinting + pulsing ring + activity dot — fewer competing
-// signals, more legible at mass scale.
+// All visual/state logic is resolved by the pure helpers in monitorModel
+// (pillarVisual / captionDescriptor / primaryDrawerSection / healthSegments)
+// so the component is just markup + i18n.
 
-interface PillarStateVisual {
-  /** Top-strip class (background colour and any animation hint). */
-  strip: string;
-  /** State caption text class. */
-  captionText: string;
-  /** Subtle card background tint, kept very light so the strip stays the focal point. */
-  cardBg: string;
-  /** Card border colour. */
-  cardBorder: string;
-  /** Whether the strip should pulse opacity (live work). */
-  pulse: boolean;
-}
-
-// Resolved per-card by precedence: running > failed > input_required >
-// draft_ready > queued > attention > idle. Kept inline so the card file is
-// the single source of truth for its own visual contract.
-function pillarVisuals(card: PersonaCardModel): PillarStateVisual {
-  if (card.running > 0) {
-    return {
-      strip: 'bg-primary',
-      captionText: 'text-primary',
-      cardBg: 'bg-primary/[0.06]',
-      cardBorder: 'border-primary/35',
-      pulse: true,
-    };
-  }
-  if (card.execState === 'failed') {
-    return {
-      strip: 'bg-red-400',
-      captionText: 'text-red-400',
-      cardBg: 'bg-red-500/[0.07]',
-      cardBorder: 'border-red-500/30',
-      pulse: false,
-    };
-  }
-  if (card.inputRequired > 0) {
-    return {
-      strip: 'bg-amber-400',
-      captionText: 'text-amber-300',
-      cardBg: 'bg-amber-500/[0.06]',
-      cardBorder: 'border-amber-500/25',
-      pulse: true,
-    };
-  }
-  if (card.draftReady > 0) {
-    return {
-      strip: 'bg-violet-400',
-      captionText: 'text-violet-300',
-      cardBg: 'bg-violet-500/[0.06]',
-      cardBorder: 'border-violet-500/25',
-      pulse: false,
-    };
-  }
-  if (card.queued > 0) {
-    return {
-      strip: 'bg-primary/55',
-      captionText: 'text-primary/85',
-      cardBg: 'bg-secondary/30',
-      cardBorder: 'border-primary/15',
-      pulse: false,
-    };
-  }
-  if (card.attentionCount > 0) {
-    return {
-      strip: 'bg-amber-300/70',
-      captionText: 'text-foreground/70',
-      cardBg: 'bg-secondary/30',
-      cardBorder: 'border-primary/15',
-      pulse: false,
-    };
-  }
-  return {
-    strip: 'bg-primary/15',
-    captionText: 'text-foreground/45',
-    cardBg: 'bg-secondary/15',
-    cardBorder: 'border-primary/8',
-    pulse: false,
-  };
-}
-
-interface CaptionContent {
-  text: string;
-  /** Drawer section to open when the caption is clicked. Null = caption is not clickable. */
-  target: DrawerSection | null;
-}
-
-function captionContent(
+/** Format a CaptionDescriptor into translated, live caption text. */
+function captionText(
+  desc: CaptionDescriptor,
   card: PersonaCardModel,
   now: number,
   t: ReturnType<typeof useTranslation>['t'],
   tx: ReturnType<typeof useTranslation>['tx'],
-): CaptionContent {
-  if (card.running > 0 && card.runningSince !== null) {
-    return {
-      text: `${t.monitor.status_running.toLowerCase()} · ${elapsedStr(card.runningSince, now)}`,
-      target: 'activity',
-    };
+): string {
+  switch (desc.key) {
+    case 'running':
+      return card.runningSince !== null
+        ? `${t.monitor.status_running.toLowerCase()} · ${elapsedStr(card.runningSince, now)}`
+        : t.monitor.status_running;
+    case 'failed':
+      return t.monitor.last_failed;
+    case 'input_required':
+      return desc.count > 1 ? tx(t.monitor.caption_input_many, { count: desc.count }) : t.monitor.status_input_required;
+    case 'draft_ready':
+      return desc.count > 1 ? tx(t.monitor.caption_draft_many, { count: desc.count }) : t.monitor.status_draft_ready;
+    case 'queued':
+      return desc.count > 1 ? tx(t.monitor.caption_queued_many, { count: desc.count }) : t.monitor.status_queued;
+    case 'attention':
+      return t.monitor.caption_pending;
+    case 'idle':
+      return t.monitor.idle;
   }
-  if (card.execState === 'failed') return { text: t.monitor.last_failed, target: 'activity' };
-  if (card.inputRequired > 0) {
-    return {
-      text: card.inputRequired > 1
-        ? tx(t.monitor.caption_input_many, { count: card.inputRequired })
-        : t.monitor.status_input_required,
-      target: 'activity',
-    };
-  }
-  if (card.draftReady > 0) {
-    return {
-      text: card.draftReady > 1
-        ? tx(t.monitor.caption_draft_many, { count: card.draftReady })
-        : t.monitor.status_draft_ready,
-      target: 'activity',
-    };
-  }
-  if (card.queued > 0) {
-    return {
-      text: card.queued > 1
-        ? tx(t.monitor.caption_queued_many, { count: card.queued })
-        : t.monitor.status_queued,
-      target: 'activity',
-    };
-  }
-  if (card.attentionCount > 0) {
-    // Badges already convey the kind — caption stays passive.
-    return { text: t.monitor.caption_pending, target: null };
-  }
-  return { text: t.monitor.idle, target: null };
+}
+
+/** Recent-run health micro-bar: a fixed-width row of outcome ticks. */
+function HealthBar({ card }: { card: PersonaCardModel }) {
+  const { t, tx } = useTranslation();
+  if (card.totalRecent === 0) return null;
+  const segments = healthSegments(card, HEALTH_BAR_LENGTH);
+  const pct = card.successRate !== null ? Math.round(card.successRate * 100) : null;
+  const title = pct !== null
+    ? tx(t.monitor.health_summary, { pct, today: card.runsToday })
+    : undefined;
+  return (
+    <div className="flex items-center gap-1.5" title={title}>
+      <div className="flex items-center gap-px" aria-hidden>
+        {segments.map((tone, i) => (
+          <span key={i} className={`w-1.5 h-2 rounded-[1px] ${HEALTH_TONE_CLASS[tone]}`} />
+        ))}
+      </div>
+      {pct !== null && (
+        <span className="typo-caption text-foreground tabular-nums">{pct}%</span>
+      )}
+    </div>
+  );
 }
 
 interface PersonaCardTileProps {
@@ -576,34 +517,19 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
   // top-strip pulse explicitly. Reduced-motion users see a steady mid-opacity
   // strip in the same colour, which still communicates "live" without flicker.
   const prefersReducedMotion = useReducedMotion();
-  const v = pillarVisuals(card);
-  const muted = card.execState === 'idle';
-  const caption = captionContent(card, now, t, tx);
-
-  // Idle cards still use the whole-card affordance — clicking opens the
-  // Capabilities drawer so the user can quick-fire the persona.
-  const idleProps = muted
-    ? {
-        role: 'button' as const,
-        tabIndex: 0,
-        'aria-label': `${card.personaName} — ${t.monitor.view_capabilities}`,
-        onClick: () => onOpen('capabilities'),
-        onKeyDown: (e: React.KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onOpen('capabilities');
-          }
-        },
-      }
-    : {};
+  const v = pillarVisual(card);
+  const muted = v.key === 'idle';
+  const desc = captionDescriptor(card);
+  const caption = captionText(desc, card, now, t, tx);
+  const primary = primaryDrawerSection(card);
+  const showTelemetry = card.running > 0 && (card.liveToolCalls > 0 || card.liveCostUsd > 0);
 
   return (
     <div
-      {...idleProps}
       title={card.personaName}
       className={`group relative overflow-hidden rounded-card border transition-colors ${v.cardBg} ${v.cardBorder} ${
         isSelected ? 'ring-2 ring-primary/45' : ''
-      } ${muted ? 'cursor-pointer hover:bg-secondary/35' : 'hover:bg-secondary/25'}`}
+      } hover:bg-secondary/30`}
     >
       {/* 1px top strip — the state focal point */}
       {v.pulse && !prefersReducedMotion ? (
@@ -620,31 +546,54 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
         />
       )}
 
-      {/* Title anchors top, caption + badges + icon group anchor bottom. */}
-      <div className="relative flex flex-col justify-between gap-2 px-3 pt-3 pb-2.5 min-h-[96px]">
-        <h4
-          className={`typo-body font-semibold leading-snug line-clamp-2 ${muted ? 'text-foreground/55' : 'text-foreground/95'}`}
+      {/* Hover quick-open — opens the capabilities drawer to quick-fire. */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onOpen('capabilities'); }}
+        aria-label={`${card.personaName} — ${t.monitor.view_capabilities}`}
+        title={t.monitor.view_capabilities}
+        className="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-5 h-5 rounded-full border border-primary/20 bg-background/70 text-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:text-primary hover:border-primary/40"
+      >
+        <Wrench className="w-2.5 h-2.5" />
+      </button>
+
+      {/* Title anchors top, caption + health + badges + icon group anchor bottom. */}
+      <div className="relative flex flex-col justify-between gap-2 px-3 pt-3 pb-2.5 min-h-[104px]">
+        {/* Title is the primary open affordance for every card. */}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpen(primary); }}
+          className={`self-start text-left typo-body font-semibold leading-snug line-clamp-2 rounded-[2px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
+            muted ? 'text-foreground/60 hover:text-foreground/90' : 'text-foreground/95 hover:text-primary'
+          }`}
         >
           {card.personaName}
-        </h4>
+        </button>
 
         <div className="flex flex-col gap-1.5">
           {/* State caption — clickable when it points at a drawer section */}
-          {caption.target ? (
+          {desc.target ? (
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onOpen(caption.target!);
-              }}
+              onClick={(e) => { e.stopPropagation(); onOpen(desc.target!); }}
               className={`self-start typo-caption font-medium ${v.captionText} hover:underline focus-visible:outline-none focus-visible:underline tabular-nums`}
-              aria-label={`${caption.text} — ${t.monitor.open_activity}`}
+              aria-label={`${caption} — ${t.monitor.open_activity}`}
             >
-              {caption.text}
+              {caption}
             </button>
           ) : (
-            <span className={`typo-caption ${v.captionText} tabular-nums`}>{caption.text}</span>
+            <span className={`typo-caption ${v.captionText} tabular-nums`}>{caption}</span>
           )}
+
+          {/* Live telemetry — running cards only */}
+          {showTelemetry && (
+            <span className="typo-caption text-foreground tabular-nums font-mono">
+              {tx(t.monitor.live_telemetry, { tools: card.liveToolCalls, cost: card.liveCostUsd.toFixed(3) })}
+            </span>
+          )}
+
+          {/* Recent-run health micro-bar */}
+          <HealthBar card={card} />
 
           {/* Bottom row — badges left, icon signature right */}
           <div className="flex items-end justify-between gap-2">

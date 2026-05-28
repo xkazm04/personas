@@ -23,18 +23,26 @@ export interface GuidanceAnchor {
   testId: string;
   /** Sidebar route to switch to before pointing (omit for always-visible targets). */
   route?: SidebarSection;
+  /**
+   * The section a "Take me there" CTA should navigate to when Athena points at
+   * this anchor without opening it — set on the `nav_*` anchors (which ring a
+   * sidebar button but don't navigate). Content anchors use `route` instead
+   * (the runner already takes the user there), so they omit `dest`.
+   */
+  dest?: SidebarSection;
 }
 
 export const ANCHOR_CATALOG: Record<string, GuidanceAnchor> = {
-  // Primary sidebar items — always visible, no route switch needed.
-  nav_home: { testId: 'sidebar-home' },
-  nav_overview: { testId: 'sidebar-overview' },
-  nav_agents: { testId: 'sidebar-personas' },
-  nav_events: { testId: 'sidebar-events' },
-  nav_connections: { testId: 'sidebar-credentials' },
-  nav_templates: { testId: 'sidebar-design-reviews' },
-  nav_plugins: { testId: 'sidebar-plugins' },
-  nav_settings: { testId: 'sidebar-settings' },
+  // Primary sidebar items — always visible, no route switch needed. `dest` is
+  // the section their "Take me there" CTA navigates to.
+  nav_home: { testId: 'sidebar-home', dest: 'home' },
+  nav_overview: { testId: 'sidebar-overview', dest: 'overview' },
+  nav_agents: { testId: 'sidebar-personas', dest: 'personas' },
+  nav_events: { testId: 'sidebar-events', dest: 'events' },
+  nav_connections: { testId: 'sidebar-credentials', dest: 'credentials' },
+  nav_templates: { testId: 'sidebar-design-reviews', dest: 'design-reviews' },
+  nav_plugins: { testId: 'sidebar-plugins', dest: 'plugins' },
+  nav_settings: { testId: 'sidebar-settings', dest: 'settings' },
 
   // Route-level content containers — carry a route so the surface mounts.
   vault: { testId: 'credential-manager', route: 'credentials' },

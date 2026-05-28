@@ -3,8 +3,8 @@
  *
  * Closes the authoring gap: before this, goals could only be born from a
  * GitHub-issue import. Title is required; status + target date are optional.
- * Status option labels resolve through the shared `goal_state` token map so
- * they stay consistent with the Board lanes and Pulse view.
+ * Status options + labels come from the canonical `goalStatus` model so they
+ * stay consistent with the Board lanes, Map, and detail drawer.
  */
 import { useEffect, useState } from 'react';
 import { Target, X, Plus, Pencil, Trash2 } from 'lucide-react';
@@ -12,12 +12,10 @@ import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useTranslation } from '@/i18n/useTranslation';
-import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
-
-const STATUS_OPTIONS = ['open', 'in-progress', 'blocked', 'done'] as const;
+import { GOAL_STATUSES, goalStatusLabel } from './goalStatus';
 
 interface Props {
   isOpen: boolean;
@@ -156,9 +154,9 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
           <div>
             <label className="typo-caption font-medium text-foreground mb-1.5 block">{dl.goal_field_status}</label>
             <ThemedSelect value={status} onValueChange={setStatus}>
-              {STATUS_OPTIONS.map((s) => (
+              {GOAL_STATUSES.map((s) => (
                 <option key={s} value={s}>
-                  {tokenLabel(t, 'goal_state', s)}
+                  {goalStatusLabel(dl, s)}
                 </option>
               ))}
             </ThemedSelect>

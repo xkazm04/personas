@@ -55,8 +55,9 @@ const DIRECTOR_DESCRIPTION: &str = "Watches every persona and suggests practical
      Approve or dismiss its notes in your review queue — your decisions \
      teach it your taste.";
 
-/// Icon (lucide name) and accent color for the Director persona row.
-const DIRECTOR_ICON: &str = "compass";
+/// Bespoke Director icon (curated agent-icon catalog entry — a violet
+/// compass-star). Resolved by `resolvePersonaIcon` / the agent-icon sprite.
+const DIRECTOR_ICON: &str = "agent-icon:director";
 const DIRECTOR_COLOR: &str = "#8b5cf6";
 
 /// Locked best-practice rubric. Consumed by the Phase 2 LLM evaluator as the
@@ -658,6 +659,12 @@ pub fn ensure_director_persona(pool: &DbPool) -> Result<String, AppError> {
         .ok();
 
     if let Some(id) = existing {
+        // Migrate the icon for Directors seeded before the bespoke icon landed
+        // (they carry the legacy "compass" lucide name → fallback render).
+        let _ = conn.execute(
+            "UPDATE personas SET icon = ?1 WHERE id = ?2 AND (icon IS NULL OR icon = 'compass')",
+            params![DIRECTOR_ICON, id],
+        );
         return Ok(id);
     }
 

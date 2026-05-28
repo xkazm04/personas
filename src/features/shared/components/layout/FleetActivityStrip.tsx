@@ -1,93 +1,169 @@
-// FleetActivityStrip — the always-on, 1px-tall fleet pulse rendered
-// directly under the titlebar across the whole app.
+// FleetActivityStrip (v2) — the always-on fleet pulse rendered directly under
+// the titlebar across the whole app.
 //
-// One slot per running execution, populated left-to-right. The strip is a
-// fixed 20-slot row spanning the full window width; each slot fades in when
-// a new execution starts and fades out when one finishes, so the strip is a
-// live "swarm heartbeat" — not a summary of attention, not a per-persona
-// map. Idle (zero running) renders an invisible 1px reserve so the page
-// layout never jumps.
+// One bright bar per running execution, filling left→right along a 20-bar
+// track that spans the full window width. A dim tail of bars trails for
+// queued runs, so the strip reads as "how much live work + how much pressure"
+// at a single glance — without ever summarising attention or mapping personas
+// (that is the Monitor's job).
+//
+// v2 over v1:
+//   • Bars ramp the active theme's primary → accent across the lit region.
+//   • Bars spring in/out as executions start and finish.
+//   • A subtle highlight "comet" sweeps across the running region (liveness).
+//   • Hovering reveals a floating readout (counts · oldest age · live cost)
+//     without reflowing the app (the 1px reserve is fixed; the readout is an
+//     overlay).
+//   • Clicking the strip opens the Persona Monitor.
+//
+// The resting height stays a 1px hairline; the interactive hit-zone is a few
+// px tall but absolutely positioned so it never pushes content down.
 
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import { useTranslation } from '@/i18n/useTranslation';
+import { computeFleetPulse, layoutSlots, STRIP_SLOTS } from './fleetStripModel';
+import { elapsedStr } from './monitor/monitorModel';
 
-/** Number of slots composing the strip's full width. */
-const TOTAL_SLOTS = 20;
+/** Bar fill colour along the primary→accent ramp for running slot `index`. */
+function runningSlotColor(index: number, runningCount: number): string {
+  if (runningCount <= 1) return 'var(--primary)';
+  const t = Math.min(1, index / (runningCount - 1));
+  const pct = Math.round(t * 100);
+  return `color-mix(in srgb, var(--accent) ${pct}%, var(--primary))`;
+}
 
-/** Indices we render every time, regardless of running count. */
-const SLOT_INDICES: ReadonlyArray<number> = Array.from({ length: TOTAL_SLOTS }, (_, i) => i);
-
-/**
- * Global fleet activity strip.
- *
- * The number of running executions is selected as a primitive so the strip
- * re-renders only when the count changes — not on every process status
- * tick. Each slot is then animated independently via framer-motion.
- */
 export default function FleetActivityStrip() {
-  const runningCount = useOverviewStore((s) => {
-    let n = 0;
-    // Object.values would allocate every render; loop counts in place.
-    const procs = s.activeProcesses;
-    for (const key in procs) {
-      if (procs[key]!.status === 'running') n += 1;
-    }
-    return n;
-  });
+  const { t, tx } = useTranslation();
   const prefersReducedMotion = useReducedMotion();
+  const setMonitorOpen = useSystemStore((s) => s.setMonitorOpen);
 
-  // Clamp to the slot count — a swarm of 40 simultaneous runs maxes out
-  // the strip at 20 lit slots (the bar's ceiling is intentional: past 20
-  // the visual saturates and adding more says nothing useful).
-  const lit = useMemo(() => Math.min(runningCount, TOTAL_SLOTS), [runningCount]);
+  // Subscribe to the whole map but reduce to the pulse with a memo keyed on the
+  // map identity — the store replaces `activeProcesses` immutably on change, so
+  // this recomputes exactly when the fleet's live state moves.
+  const activeProcesses = useOverviewStore((s) => s.activeProcesses);
+  const pulse = useMemo(() => computeFleetPulse(activeProcesses), [activeProcesses]);
+  const slots = useMemo(() => layoutSlots(pulse, STRIP_SLOTS), [pulse]);
 
-  // Hide the row entirely when nothing is running so the 1px doesn't pick
-  // up faint pixel-grid artefacts; we still take up the 1px so layout
-  // remains stable.
-  const someoneRunning = runningCount > 0;
+  const running = pulse.running;
+  const queued = pulse.queued;
+  const active = running > 0 || queued > 0;
+  const runningCells = Math.min(running, STRIP_SLOTS);
+
+  const [hovered, setHovered] = useState(false);
+
+  // Tick once a second only while the readout is open and something runs, so
+  // the "oldest" age stays live without a permanent timer.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!hovered || running === 0) return;
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [hovered, running]);
 
   return (
     <div
-      className="flex-shrink-0 w-full h-[1px] flex items-stretch gap-px px-3"
-      aria-hidden={!someoneRunning}
-      role={someoneRunning ? 'progressbar' : undefined}
-      aria-label={someoneRunning ? `${runningCount} running` : undefined}
-      aria-valuenow={someoneRunning ? runningCount : undefined}
-      aria-valuemin={0}
-      aria-valuemax={TOTAL_SLOTS}
+      className="relative w-full h-[1px] flex-shrink-0 z-30"
       data-testid="fleet-activity-strip"
     >
-      {SLOT_INDICES.map((i) => {
-        const isLit = i < lit;
-        // Reduced motion: skip the fade animation; toggle opacity instantly.
-        if (prefersReducedMotion) {
-          return (
-            <span
-              key={i}
+      <button
+        type="button"
+        // Absolutely positioned so the taller hit-zone never reflows content;
+        // the visible bar sits at the very top (the 1px reserve line).
+        className={`absolute inset-x-0 top-0 h-2.5 px-3 ${active ? 'cursor-pointer' : 'pointer-events-none'}`}
+        aria-hidden={!active}
+        aria-label={active ? tx(t.monitor.strip_aria, { running, queued }) : undefined}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        onFocus={() => setHovered(true)}
+        onBlur={() => setHovered(false)}
+        onClick={() => active && setMonitorOpen(true)}
+      >
+        {/* Bar track — pinned to the top hairline. */}
+        <span className="absolute inset-x-3 top-0 h-[1px] flex items-stretch gap-px overflow-hidden">
+          {slots.map((kind, i) => {
+            const isRunning = kind === 'running';
+            const isQueued = kind === 'queued';
+            const color = isRunning ? runningSlotColor(i, runningCells) : undefined;
+            if (prefersReducedMotion) {
+              return (
+                <span
+                  key={i}
+                  className={`flex-1 h-full rounded-[0.5px] ${isQueued ? 'bg-primary/30' : ''}`}
+                  style={{
+                    background: color,
+                    opacity: kind === 'empty' ? 0 : 1,
+                  }}
+                />
+              );
+            }
+            return (
+              <motion.span
+                key={i}
+                className={`flex-1 h-full origin-center rounded-[0.5px] ${isQueued ? 'bg-primary/30' : ''}`}
+                style={color ? { background: color } : undefined}
+                initial={false}
+                animate={{
+                  opacity: kind === 'empty' ? 0 : isQueued ? 0.55 : 1,
+                  scaleY: kind === 'empty' ? 0.3 : 1,
+                }}
+                transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+              />
+            );
+          })}
+
+          {/* Liveness "comet" — a soft highlight sweeping across the running
+              region. One animated element; gated by reduced motion. */}
+          {!prefersReducedMotion && runningCells > 0 && (
+            <motion.span
               aria-hidden
-              className="flex-1 h-full bg-primary"
-              style={{ opacity: isLit ? 1 : 0 }}
+              className="pointer-events-none absolute top-0 left-0 h-full w-10 bg-gradient-to-r from-transparent via-foreground/50 to-transparent"
+              animate={{ x: ['-12%', `${(runningCells / STRIP_SLOTS) * 100}%`] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.6 }}
             />
-          );
-        }
-        return (
-          <motion.span
-            key={i}
-            aria-hidden
-            className="flex-1 h-full bg-primary origin-center"
-            initial={false}
-            animate={isLit
-              ? { opacity: 1, scaleY: 1 }
-              : { opacity: 0, scaleY: 0.35 }}
-            transition={{
-              opacity: { duration: isLit ? 0.32 : 0.45, ease: 'easeOut' },
-              scaleY:  { duration: 0.32, ease: 'easeOut' },
-            }}
-          />
-        );
-      })}
+          )}
+        </span>
+      </button>
+
+      {/* Hover readout — floats below the hairline as an overlay (no reflow). */}
+      {hovered && active && (
+        <motion.div
+          initial={{ opacity: 0, y: -3 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.12 }}
+          className="absolute left-3 top-2.5 z-50 flex items-center gap-2.5 rounded-card border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3 px-3 py-1.5 pointer-events-none"
+          role="status"
+          data-testid="fleet-strip-readout"
+        >
+          <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            {tx(t.monitor.strip_running, { count: running })}
+          </span>
+          {queued > 0 && (
+            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+              {tx(t.monitor.strip_queued, { count: queued })}
+            </span>
+          )}
+          {pulse.oldestRunningSince !== null && (
+            <span className="typo-caption text-foreground tabular-nums">
+              {tx(t.monitor.strip_oldest, { elapsed: elapsedStr(pulse.oldestRunningSince, now) })}
+            </span>
+          )}
+          {pulse.liveCostUsd > 0 && (
+            <span className="typo-caption text-foreground tabular-nums">
+              ${pulse.liveCostUsd.toFixed(3)}
+            </span>
+          )}
+          <span className="typo-caption text-foreground border-l border-primary/15 pl-2.5">
+            {t.monitor.strip_open_hint}
+          </span>
+        </motion.div>
+      )}
     </div>
   );
 }

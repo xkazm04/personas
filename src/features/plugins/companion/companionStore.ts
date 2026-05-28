@@ -334,7 +334,7 @@ interface CompanionStore {
    * is a registry-defined sequence of steps (see `guidance/walkthroughs.ts`);
    * Athena triggers one by topic (`startGuidance`) and the runner
    * (`guidance/useGuidanceRunner`) walks the steps, writing the per-step
-   * highlight + orb target that the glow overlay (`orb/AthenaGuideGlow`) and the
+   * highlight + orb target that the glow overlay (`orb/TrackedGlowRing`) and the
    * orb (`orb/AthenaOrb`) read.
    *
    *  - `activeWalkthrough` — topic id of the running walkthrough, or null.
@@ -363,6 +363,10 @@ interface CompanionStore {
   startAdHocGuidance: (walkthrough: GuidanceWalkthrough) => void;
   setGuidanceStep: (index: number) => void;
   advanceGuidance: () => void;
+  /** Step back one (clamped at 0). Pauses auto-advance — manual nav means the user has taken control. */
+  previousGuidance: () => void;
+  /** Jump to an arbitrary step (clamped ≥ 0). Pauses auto-advance, like `previousGuidance`. */
+  jumpToStep: (index: number) => void;
   pauseGuidance: () => void;
   resumeGuidance: () => void;
   stopGuidance: () => void;
@@ -371,12 +375,14 @@ interface CompanionStore {
   /**
    * Proactive one-shot "look here" highlight — independent of walkthroughs.
    * Rings an element briefly (auto-clears after `ms`) when Athena navigates or
-   * composes a surface, so the user's eye lands on what she just brought up. No
+   * composes a surface, so the user's eye lands on what she just brought up. An
+   * optional `label` rides as a small chip on the ring ("Just composed"). No
    * orb, no caption, fire-and-forget. Skipped while a walkthrough is active so
    * it never fights the guidance ring.
    */
   flashHighlightTestId: string | null;
-  flashHighlight: (testId: string, ms?: number) => void;
+  flashHighlightLabel: string | null;
+  flashHighlight: (testId: string, opts?: { ms?: number; label?: string }) => void;
 }
 
 /** Compact projection of an assignment + its current status, surfaced as
@@ -701,6 +707,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       guidanceHighlightTestId: null,
       orbGuideTarget: null,
       flashHighlightTestId: null,
+      flashHighlightLabel: null,
     }),
   startAdHocGuidance: (walkthrough) =>
     set({
@@ -711,10 +718,18 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       guidanceHighlightTestId: null,
       orbGuideTarget: null,
       flashHighlightTestId: null,
+      flashHighlightLabel: null,
     }),
   setGuidanceStep: (guidanceStepIndex) => set({ guidanceStepIndex }),
   advanceGuidance: () =>
     set((s) => ({ guidanceStepIndex: s.guidanceStepIndex + 1 })),
+  previousGuidance: () =>
+    set((s) => ({
+      guidanceStepIndex: Math.max(0, s.guidanceStepIndex - 1),
+      guidancePlaying: false,
+    })),
+  jumpToStep: (index) =>
+    set({ guidanceStepIndex: Math.max(0, index), guidancePlaying: false }),
   pauseGuidance: () => set({ guidancePlaying: false }),
   resumeGuidance: () => set({ guidancePlaying: true }),
   stopGuidance: () =>
@@ -730,15 +745,18 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
     set({ guidanceHighlightTestId }),
   setOrbGuideTarget: (orbGuideTarget) => set({ orbGuideTarget }),
   flashHighlightTestId: null,
-  flashHighlight: (testId, ms = 2400) => {
+  flashHighlightLabel: null,
+  flashHighlight: (testId, opts) => {
     // A walkthrough owns the ring while it runs — don't fight it.
     if (get().activeWalkthrough) return;
     if (flashTimer) clearTimeout(flashTimer);
-    set({ flashHighlightTestId: testId });
+    set({ flashHighlightTestId: testId, flashHighlightLabel: opts?.label ?? null });
     flashTimer = setTimeout(() => {
       flashTimer = null;
       // Only clear if this flash is still the active one (a newer flash wins).
-      if (get().flashHighlightTestId === testId) set({ flashHighlightTestId: null });
-    }, ms);
+      if (get().flashHighlightTestId === testId) {
+        set({ flashHighlightTestId: null, flashHighlightLabel: null });
+      }
+    }, opts?.ms ?? 2400);
   },
 }));

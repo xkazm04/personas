@@ -279,7 +279,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
   return (
     <div className="flex h-full overflow-hidden">
       {/* ---- Queue Sidebar ---- */}
-      <div className="w-[220px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
+      <div className="w-[330px] flex-shrink-0 border-r border-primary/10 bg-secondary/20 flex flex-col">
         <div className="px-3 py-2.5 border-b border-primary/10 flex items-center justify-between">
           <span className="typo-label font-semibold text-foreground uppercase tracking-wider">{t.overview.review_focus.queue} ({pending.length})</span>
           <div className="flex items-center gap-1.5">
@@ -320,7 +320,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
                   </span>
                 </div>
                 {r.persona_name && (
-                  <span className="typo-caption text-foreground ml-4 block truncate mt-0.5">{r.persona_name}</span>
+                  <span className="typo-caption font-normal text-foreground/80 ml-4 block truncate mt-0.5">{r.persona_name}</span>
                 )}
               </button>
             );

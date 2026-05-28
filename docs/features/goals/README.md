@@ -6,18 +6,29 @@ Goals give **high-level direction** to both development and teams, and are the c
 
 ## Where it lives
 
-- **Top-level sidebar section** — `Goals` (between Overview and Agents), in addition to the legacy Dev Tools › Goals tab (a contextual shortcut). Both render the same project-scoped surface (`src/features/plugins/dev-tools/sub_goals/`).
-- **Scope** — the active dev project, chosen via the shared `LifecycleProjectPicker` in the header.
+- **Top-level sidebar section** — `Goals` (between Overview and Agents), in addition to the legacy Dev Tools › Goals tab (a contextual shortcut). Both render the same surface (`src/features/plugins/dev-tools/sub_goals/`).
+- **L2 sub-nav** — five surfaces: **Board · Map · Timeline · Portfolio · Attention**. Board / Map / Timeline are scoped to the active project (`LifecycleProjectPicker` in the header); **Portfolio** and **Attention** are cross-project.
+
+## Canonical status model
+
+All status handling funnels through `goalStatus.ts` — a `GoalStatus` type (`open | in-progress | blocked | done`), a tolerant `normalizeGoalStatus` (maps the hyphen/underscore/team-step/alias variants onto one set), predicates (`isComplete` / `isOngoing` / …), and `GOAL_STATUS_META` (icon + lane + chip + tint + map colours). `GoalStatusBadge` renders status everywhere from it. The Rust side mirrors this in `normalize_goal_status` so cross-project rollups bucket exactly like the UI. (v1 compared `in-progress` vs `in_progress` inconsistently and silently mis-laned in-progress goals — v2 makes that class of bug impossible.)
 
 ## Surfaces
 
-### Board + Map
-The surface offers two consolidated views (a toggle in the header):
+### Board + Map (active project)
+- **Board** — a `your turn → agent's turn → done` kanban; lane membership derives from `GOAL_STATUS_META.lane`. Cards have progress nudges, an open-details affordance, and a date that turns red when an ongoing goal is overdue.
+- **Map** — a force-directed graph (`forceLayout.ts`) over parent/child + dependency edges; hovering a node spotlights it + its direct neighbours and dims the rest. Edges/colours come from the canonical model.
 
-- **Board** (default) — a `your turn → agent's turn → done` kanban. Lanes are driven by real status; a team step that lands in `awaiting_review` surfaces in *your turn*. Each card has nudge buttons for progress and an open-details affordance.
-- **Map** — a force-directed constellation with parent/child + dependency edges, for the big-picture view of how goals relate.
+### Timeline (active project)
+`GoalsTimeline` — ongoing goals on a vertical target-date rail, bucketed **Overdue → This week → This month → Later → No date**, each row showing the relative due date, status, and progress. Opens the goal on click.
 
-Clicking a goal in either view opens the **detail drawer**.
+### Portfolio (cross-project)
+`GoalsPortfolio` — mission control across every project. Grand-total tiles + a card per project with a canonical-status segmented bar, at-risk / overdue surfacing, and avg progress. Click a project to switch to it and jump to its Board. Backed by the one-pass `dev_tools_portfolio_summary` rollup (no N+1).
+
+### Attention (cross-project)
+`GoalsAttention` — one ranked "needs you" queue over `dev_tools_attention_queue`: **awaiting-review** team steps (resolve inline with skip/abort), **overdue**, **stalled** (untouched ≥ 7 days), and **unstaffed** (no linked team) goals. Each row opens the goal via the active-project + spotlight handoff; a header **Ask Athena to triage** hands the whole queue to the companion.
+
+Clicking a goal in Board / Map / Timeline / Attention opens the **detail drawer**.
 
 ### Authoring
 `+ New goal` (header and empty state) opens `GoalEditorModal` — create/edit/delete with title, description, status, and target date. (Goals can also still be imported from GitHub issues.)
@@ -54,4 +65,6 @@ Progress is **hybrid**: signals + step/checklist completion compute a suggestion
 | `dev_goal_signals` | progress/activity log (dev, team, and athena signals) |
 | `team_assignments.goal_id` | the soft link from a team assignment to the goal it advances |
 
-Key commands: `dev_tools_{list,create,update,delete,reorder}_goal(s)`, `dev_tools_{list,create,update,delete,reorder}_goal_item(s)`, `dev_tools_list_child_goals`, `dev_tools_resolve_goal_progress`, `set_team_assignment_goal`, `list_team_assignments_for_goal`.
+Key commands — per-goal/project: `dev_tools_{list,create,update,delete,reorder}_goal(s)`, `dev_tools_{list,create,update,delete,reorder}_goal_item(s)`, `dev_tools_list_child_goals`, `dev_tools_resolve_goal_progress`, `set_team_assignment_goal`, `list_team_assignments_for_goal`.
+
+Cross-project (v2): `dev_tools_list_all_goals`, `dev_tools_list_goal_dependencies_for_project` (single-query Map edges), `dev_tools_portfolio_summary` (one-pass per-project rollup), `dev_tools_attention_queue` (awaiting-review / overdue / stalled / unstaffed). Aggregates use the stored `progress` column + canonical status buckets, never the per-goal resolver — so they stay flat at portfolio scale (10 projects / 100 goals).
