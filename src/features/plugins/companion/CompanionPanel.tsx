@@ -1781,7 +1781,7 @@ function Body(props: BodyProps) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                      className={`rounded-card border px-3 py-1.5 typo-caption ${
+                      className={`flex items-center gap-2 rounded-card border px-3 py-1.5 typo-caption ${
                         slowLevel === 2
                           ? 'border-amber-500/30 bg-amber-500/[0.06] text-amber-300'
                           : 'border-foreground/10 bg-foreground/[0.04] text-foreground'
@@ -1789,9 +1789,12 @@ function Body(props: BodyProps) {
                       data-testid="companion-slow-progress"
                       data-slow-level={slowLevel}
                     >
-                      {slowLevel === 2
-                        ? t.plugins.companion.slow_progress_firm
-                        : t.plugins.companion.slow_progress_soft}
+                      <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      <span>
+                        {slowLevel === 2
+                          ? t.plugins.companion.slow_progress_firm
+                          : t.plugins.companion.slow_progress_soft}
+                      </span>
                     </motion.div>
                   )}
                 </AnimatePresence>

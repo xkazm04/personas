@@ -50,6 +50,12 @@ export function OperationalThread({ steps }: { steps: TodoStep[] }) {
           {completed}/{steps.length}
         </span>
       </div>
+      <div className="h-1 rounded-full bg-foreground/[0.08] overflow-hidden">
+        <div
+          className="h-full rounded-full bg-primary/70 transition-all duration-500"
+          style={{ width: `${(completed / steps.length) * 100}%` }}
+        />
+      </div>
       <ul className="space-y-1">
         {steps.map((step, i) => (
           <li key={`${i}-${step.content}`} className="flex items-start gap-2">
