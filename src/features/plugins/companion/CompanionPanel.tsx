@@ -79,6 +79,7 @@ import { ActivityTray } from './ActivityTray';
 import { TaskTag } from './TaskTag';
 import { QueuedMessages } from './QueuedMessages';
 import { WelcomeHero } from './WelcomeHero';
+import { TypingDots } from './TypingDots';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -1789,11 +1790,17 @@ function Body(props: BodyProps) {
                   */}
                   <Bubble role="assistant" streaming index={messages.length}>
                     {/* Athena's own progress beat (Variant B) wins over the
-                        derived phase; fall back to phase, then "Thinking…". */}
-                    {streamingBeat ??
-                      (streamingPhase
-                        ? phaseLabel(t, tx, streamingPhase)
-                        : t.plugins.companion.thinking)}
+                        derived phase; fall back to phase, then "Thinking…".
+                        Animated dots signal "in progress" alongside the label. */}
+                    <span className="inline-flex items-center gap-2">
+                      <span>
+                        {streamingBeat ??
+                          (streamingPhase
+                            ? phaseLabel(t, tx, streamingPhase)
+                            : t.plugins.companion.thinking)}
+                      </span>
+                      <TypingDots />
+                    </span>
                   </Bubble>
                   <button
                     type="button"
