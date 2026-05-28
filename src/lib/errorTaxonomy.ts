@@ -24,6 +24,7 @@ export type ErrorCategory =
   | 'validation'
   | 'tool_error'
   | 'api_error'
+  | 'transient_process_failure'
   | 'unknown';
 
 // ---------------------------------------------------------------------------
@@ -158,6 +159,22 @@ export function classifyError(error: string): ErrorCategory {
     return 'validation';
   }
 
+  // Transient CLI process failure — mirrors Rust check. Runner emits
+  // `Execution failed (exit code N): <stderr-trimmed>` and an empty/short
+  // tail signals a silent process exit (OOM, signal, network blip in the
+  // provider's retry). One-shot auto-retry resolves these.
+  if (lower.startsWith('execution failed (exit code')) {
+    const colonIdx = lower.indexOf('): ');
+    if (colonIdx >= 0) {
+      const suffix = lower.slice(colonIdx + 3).trim();
+      if (suffix.length === 0 || suffix.length <= 16) {
+        return 'transient_process_failure';
+      }
+    } else {
+      return 'transient_process_failure';
+    }
+  }
+
   return 'unknown';
 }
 
@@ -178,7 +195,11 @@ export function classifyUnknownError(err: unknown): ErrorCategory {
 
 /** Categories that the healing engine can automatically retry. */
 export function isAutoFixable(category: ErrorCategory): boolean {
-  return category === 'rate_limit' || category === 'timeout';
+  return (
+    category === 'rate_limit' ||
+    category === 'timeout' ||
+    category === 'transient_process_failure'
+  );
 }
 
 /** Categories that should trigger provider failover. */
@@ -202,7 +223,8 @@ export function defaultSeverity(category: ErrorCategory): ErrorSeverity {
     case 'timeout':
     case 'tool_error':
     case 'network': return 'medium';
-    case 'validation': return 'low';
+    case 'validation':
+    case 'transient_process_failure': return 'low';
     case 'unknown': return 'medium';
   }
 }
@@ -245,6 +267,7 @@ export function categoryLabel(category: ErrorCategory): string {
     case 'validation': return 'Validation';
     case 'tool_error': return 'Tool Error';
     case 'api_error': return 'API Error';
+    case 'transient_process_failure': return 'Transient Process Failure';
     case 'unknown': return 'Unknown';
   }
 }

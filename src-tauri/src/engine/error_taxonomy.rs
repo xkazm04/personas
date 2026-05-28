@@ -41,6 +41,17 @@ pub enum ErrorCategory {
     ToolError,
     /// API error (500, 502, 503, server-side).
     ApiError,
+    /// Transient CLI process failure — non-zero exit with no meaningful stderr.
+    ///
+    /// Emitted by the runner when the spawned CLI process exits with a non-zero
+    /// code but produces no diagnostic output. Common after OOM kills, signal
+    /// interrupts, brief network hiccups inside the provider's own retry loop,
+    /// and other process-level transients. Distinct from `ApiError` (5xx from
+    /// the provider) and `Network` (connection refused / DNS) — those produce
+    /// stderr content that classifies them precisely. One-shot retry via the
+    /// healing rule-based path typically resolves these; the persona-level
+    /// `consecutive_failures < 3` guard prevents an infinite transient loop.
+    TransientProcessFailure,
     /// No known pattern matched.
     Unknown,
 }
@@ -163,6 +174,26 @@ pub fn classify_error(error: &str, timed_out: bool, session_limit: bool) -> Erro
         return ErrorCategory::Validation;
     }
 
+    // Transient CLI process failure — last specific check before the Unknown
+    // fallback. Pattern emitted by `runner::mod` at line 2241:
+    //     format!("Execution failed (exit code {}): {}", exit_code, stderr_text.trim())
+    // When `stderr_text.trim()` is empty/whitespace or extremely short (≤16
+    // chars, e.g. "Killed", "Signal 9"), the process exited without
+    // producing diagnostic output — the transient signature. Real errors
+    // (auth, network, rate-limit, validation) emit informative stderr that
+    // gets classified by the earlier matchers above.
+    if lower.starts_with("execution failed (exit code") {
+        if let Some(colon_pos) = lower.find("): ") {
+            let suffix = lower[colon_pos + 3..].trim();
+            if suffix.is_empty() || suffix.len() <= 16 {
+                return ErrorCategory::TransientProcessFailure;
+            }
+        } else {
+            // Format without trailing message — treat as transient.
+            return ErrorCategory::TransientProcessFailure;
+        }
+    }
+
     ErrorCategory::Unknown
 }
 
@@ -178,7 +209,12 @@ pub fn classify_error_str(error: &str) -> ErrorCategory {
 /// Returns `true` for categories that can be automatically retried by the
 /// healing engine.
 pub fn is_auto_fixable(category: &ErrorCategory) -> bool {
-    matches!(category, ErrorCategory::RateLimit | ErrorCategory::Timeout)
+    matches!(
+        category,
+        ErrorCategory::RateLimit
+            | ErrorCategory::Timeout
+            | ErrorCategory::TransientProcessFailure
+    )
 }
 
 /// Phase C5b — returns `true` for categories that represent **technical**
@@ -200,6 +236,7 @@ pub fn is_technical_failure(category: &ErrorCategory) -> bool {
             | ErrorCategory::CredentialError
             | ErrorCategory::Network
             | ErrorCategory::ApiError
+            | ErrorCategory::TransientProcessFailure
     )
 }
 
@@ -227,6 +264,7 @@ pub fn default_severity(category: &ErrorCategory) -> ErrorSeverity {
         ErrorCategory::ToolError => ErrorSeverity::Medium,
         ErrorCategory::Network => ErrorSeverity::Medium,
         ErrorCategory::Validation => ErrorSeverity::Low,
+        ErrorCategory::TransientProcessFailure => ErrorSeverity::Low,
         ErrorCategory::Unknown => ErrorSeverity::Medium,
     }
 }
@@ -245,6 +283,7 @@ pub fn db_category(category: &ErrorCategory) -> &'static str {
         | ErrorCategory::CredentialError => "config",
         ErrorCategory::ToolError => "tool",
         ErrorCategory::Validation => "prompt",
+        ErrorCategory::TransientProcessFailure => "external",
         ErrorCategory::Unknown => "external",
     }
 }
@@ -436,12 +475,47 @@ mod tests {
         );
     }
 
+    #[test]
+    fn test_classify_transient_process_failure() {
+        // Exact runner pattern with empty stderr after the colon.
+        assert_eq!(
+            classify_error_str("Execution failed (exit code 1): "),
+            ErrorCategory::TransientProcessFailure
+        );
+        // Exit code with empty tail (just "Execution failed (exit code N)").
+        assert_eq!(
+            classify_error_str("Execution failed (exit code 137)"),
+            ErrorCategory::TransientProcessFailure
+        );
+        // Short generic kill signal — still transient.
+        assert_eq!(
+            classify_error_str("Execution failed (exit code 137): Killed"),
+            ErrorCategory::TransientProcessFailure
+        );
+        // Long informative stderr — NOT transient, falls through to Unknown.
+        // (Real categories would already have matched earlier.)
+        assert_eq!(
+            classify_error_str(
+                "Execution failed (exit code 2): garbage that is sufficiently long to look diagnostic"
+            ),
+            ErrorCategory::Unknown
+        );
+        // Real categorized errors still classify correctly even if they
+        // happen to share the prefix (they don't in practice — the runner
+        // pattern only fires for true exit-code-based failures).
+        assert_eq!(
+            classify_error_str("Execution failed (exit code 1): rate limit exceeded"),
+            ErrorCategory::RateLimit
+        );
+    }
+
     // --- helpers ---
 
     #[test]
     fn test_is_auto_fixable() {
         assert!(is_auto_fixable(&ErrorCategory::RateLimit));
         assert!(is_auto_fixable(&ErrorCategory::Timeout));
+        assert!(is_auto_fixable(&ErrorCategory::TransientProcessFailure));
         assert!(!is_auto_fixable(&ErrorCategory::SessionLimit));
         assert!(!is_auto_fixable(&ErrorCategory::ProviderNotFound));
         assert!(!is_auto_fixable(&ErrorCategory::CredentialError));

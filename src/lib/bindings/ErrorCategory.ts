@@ -9,4 +9,4 @@
  * - `designDrift` regex-based classification
  * - `healthCheckSlice::inferSeverity`
  */
-export type ErrorCategory = "rate_limit" | "session_limit" | "timeout" | "provider_not_found" | "credential_error" | "network" | "validation" | "tool_error" | "api_error" | "unknown";
+export type ErrorCategory = "rate_limit" | "session_limit" | "timeout" | "provider_not_found" | "credential_error" | "network" | "validation" | "tool_error" | "api_error" | "transient_process_failure" | "unknown";

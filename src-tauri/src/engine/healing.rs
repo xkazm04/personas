@@ -318,6 +318,54 @@ pub fn diagnose(
             db_category: "prompt".into(),
             suggested_fix: Some("Check input data format and prompt structure.".into()),
         },
+        FailureCategory::TransientProcessFailure => {
+            // Transient CLI process failure — empty/short stderr suggests the
+            // process died without diagnostic output (OOM, signal, brief
+            // network blip inside the provider's own retry). Exhaust
+            // MAX_RETRY_COUNT short-backoff retries before escalating;
+            // knowledge-base preemptive escalation also applies.
+            let kb_escalate = kb_hint
+                .map(|h| h.occurrence_count >= KB_ESCALATION_THRESHOLD)
+                .unwrap_or(false);
+
+            if retry_count >= MAX_RETRY_COUNT || kb_escalate {
+                HealingDiagnosis {
+                    category: *category,
+                    action: HealingAction::CreateIssue,
+                    title: "Transient process failures exhausted".into(),
+                    description: format!(
+                        "The CLI process repeatedly exited with no diagnostic output and {} retries have been exhausted. Likely a deeper environmental issue (OOM, crashed sub-process, host resource pressure). Error: {}",
+                        MAX_RETRY_COUNT,
+                        truncate(error, 200),
+                    ),
+                    severity: "medium".into(),
+                    db_category: "external".into(),
+                    suggested_fix: Some(
+                        "Inspect host resources (memory, CPU), provider CLI version, and recent logs near the silent crash.".into(),
+                    ),
+                }
+            } else {
+                // Short fixed backoff — the failure is process-level, no
+                // benefit to long exponential delay. Use a small grow factor
+                // to ride out very brief environmental hiccups.
+                let delay = std::cmp::min(5u64.saturating_mul(1 << consecutive_failures), 30);
+                HealingDiagnosis {
+                    category: *category,
+                    action: HealingAction::RetryWithBackoff { delay_secs: delay },
+                    title: "Transient process failure".into(),
+                    description: format!(
+                        "The CLI exited with no diagnostic output. Will retry after {}s. Error: {}",
+                        delay,
+                        truncate(error, 200),
+                    ),
+                    severity: "low".into(),
+                    db_category: "external".into(),
+                    suggested_fix: Some(format!(
+                        "Automatic retry with {delay}s backoff."
+                    )),
+                }
+            }
+        }
         FailureCategory::Unknown => HealingDiagnosis {
             category: *category,
             action: HealingAction::CreateIssue,
