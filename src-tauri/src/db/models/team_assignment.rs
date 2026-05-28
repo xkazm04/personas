@@ -152,6 +152,9 @@ pub struct TeamAssignment {
     pub max_parallel_steps: i32,
     pub source: String,
     pub companion_op_id: Option<String>,
+    /// Goals hub: the `dev_goals` row this assignment advances (soft link, no FK).
+    /// Terminal/step transitions write `dev_goal_signals` for the linked goal.
+    pub goal_id: Option<String>,
     pub created_at: String,
     pub started_at: Option<String>,
     pub completed_at: Option<String>,
@@ -217,6 +220,9 @@ pub struct CreateTeamAssignmentInput {
     pub source: Option<String>,
     #[serde(default)]
     pub companion_op_id: Option<String>,
+    /// Goals hub: optionally link this assignment to a `dev_goals` row.
+    #[serde(default)]
+    pub goal_id: Option<String>,
     /// Pre-decomposed step list. Phase A REQUIRES this to be non-empty (manual
     /// matching means the user has already chosen personas at composer time).
     /// Phase B will allow `steps = []` + auto-decompose via Sonnet.

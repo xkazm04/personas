@@ -3876,6 +3876,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             source              TEXT NOT NULL DEFAULT 'team_ui'
                                 CHECK(source IN ('team_ui','athena','api')),
             companion_op_id     TEXT,
+            goal_id             TEXT,
             created_at          TEXT NOT NULL DEFAULT (datetime('now')),
             started_at          TEXT,
             completed_at        TEXT,
@@ -3928,6 +3929,53 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         );
         CREATE INDEX IF NOT EXISTS idx_team_assignment_events_assignment
             ON team_assignment_events(assignment_id, created_at);",
+    )?;
+
+    // -- Goals hub: link team assignments to a dev goal --------------------------
+    // A linked assignment advances a `dev_goals` row: its step checklist + states
+    // surface on the goal, and terminal/step transitions write `dev_goal_signals`.
+    // Soft link (plain TEXT, no FK) to match the codebase's ALTER style and keep
+    // fresh-install (CREATE block above) and migrated schemas identical.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_assignments.goal_id",
+            description: "Link team assignments to a dev goal (goals hub)",
+            already_applied: |conn| has_column(conn, "team_assignments", "goal_id"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE team_assignments ADD COLUMN goal_id TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- Goals hub: lightweight ad-hoc checklist items on a dev goal -------------
+    // Composed alongside sub-goals + linked-assignment steps into the goal's
+    // unified checklist. Heavier breakdown stays in dev_goals (parent_goal_id).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_goal_items",
+            description: "Lightweight checklist items on a dev goal (goals hub)",
+            already_applied: |conn| has_table(conn, "dev_goal_items"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_goal_items (
+                        id          TEXT PRIMARY KEY,
+                        goal_id     TEXT NOT NULL REFERENCES dev_goals(id) ON DELETE CASCADE,
+                        title       TEXT NOT NULL,
+                        done        INTEGER NOT NULL DEFAULT 0,
+                        order_index INTEGER NOT NULL DEFAULT 0,
+                        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_goal_items_goal
+                        ON dev_goal_items(goal_id, order_index);",
+                )?;
+                Ok(())
+            },
+        },
     )?;
 
     // -- Team assignment templates (Phase C4) ------------------------------------

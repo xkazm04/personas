@@ -218,6 +218,29 @@ pub fn delete_team_assignment(
     repo::delete(&state.db, &id)
 }
 
+/// Goals hub: link or unlink an assignment to a `dev_goals` row.
+/// `goalId = null` unlinks. A linked assignment advances the goal: its step
+/// transitions write `dev_goal_signals` and feed the goal's progress resolver.
+#[tauri::command]
+pub fn set_team_assignment_goal(
+    state: State<'_, Arc<AppState>>,
+    assignment_id: String,
+    goal_id: Option<String>,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    repo::set_goal_link(&state.db, &assignment_id, goal_id.as_deref())
+}
+
+/// Goals hub: every assignment linked to a given dev goal.
+#[tauri::command]
+pub fn list_team_assignments_for_goal(
+    state: State<'_, Arc<AppState>>,
+    goal_id: String,
+) -> Result<Vec<TeamAssignment>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_for_goal(&state.db, &goal_id)
+}
+
 /// Phase C1 — Companion bridge. Athena's dispatcher calls this when the
 /// user says "have the X team do Y" in chat. Does end-to-end:
 ///   1. Resolves eligible candidates from the team roster
@@ -307,6 +330,7 @@ pub async fn companion_assign_team_inner(
         max_parallel_steps: Some(3),
         source: Some("athena".into()),
         companion_op_id: Some(op_id.clone()),
+        goal_id: None,
         steps: proposed
             .into_iter()
             .map(|p| crate::db::models::CreateTeamAssignmentStepInput {
@@ -471,6 +495,7 @@ pub fn instantiate_assignment_template(
         max_parallel_steps: Some(tpl.max_parallel_steps),
         source: Some("team_ui".into()),
         companion_op_id: None,
+        goal_id: None,
         steps,
     };
     repo::create(&state.db, input)

@@ -2059,6 +2059,8 @@ pub fn run() {
             commands::teams::assignments::abort_team_assignment,
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
+            commands::teams::assignments::set_team_assignment_goal,
+            commands::teams::assignments::list_team_assignments_for_goal,
             commands::teams::assignments::decompose_team_assignment_goal,
             commands::teams::assignments::companion_assign_team,
             commands::teams::assignments::create_assignment_template,
@@ -2535,6 +2537,14 @@ pub fn run() {
             // Dev Tools -- Goal Signals
             commands::infrastructure::dev_tools::dev_tools_list_goal_signals,
             commands::infrastructure::dev_tools::dev_tools_create_goal_signal,
+            // Dev Tools -- Goal Items + progress resolver (goals hub)
+            commands::infrastructure::dev_tools::dev_tools_list_goal_items,
+            commands::infrastructure::dev_tools::dev_tools_create_goal_item,
+            commands::infrastructure::dev_tools::dev_tools_update_goal_item,
+            commands::infrastructure::dev_tools::dev_tools_delete_goal_item,
+            commands::infrastructure::dev_tools::dev_tools_reorder_goal_items,
+            commands::infrastructure::dev_tools::dev_tools_list_child_goals,
+            commands::infrastructure::dev_tools::dev_tools_resolve_goal_progress,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,

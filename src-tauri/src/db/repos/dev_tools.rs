@@ -4,7 +4,8 @@ use rusqlite::{params, Row};
 
 use crate::db::models::{
     DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup, DevContextGroupRelationship,
-    DevGoal, DevGoalDependency, DevGoalSignal, DevIdea, DevProject, DevScan, DevTask, TriageRule,
+    DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea, DevProject, DevScan, DevTask,
+    GoalProgressSuggestion, TriageRule,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -597,6 +598,182 @@ pub fn create_goal_signal(
             .map_err(AppError::Database)
         }
     )
+}
+
+// ============================================================================
+// Goal Items (lightweight ad-hoc checklist) + child goals + progress resolver
+// ============================================================================
+
+fn row_to_goal_item(row: &Row) -> rusqlite::Result<DevGoalItem> {
+    Ok(DevGoalItem {
+        id: row.get("id")?,
+        goal_id: row.get("goal_id")?,
+        title: row.get("title")?,
+        done: row.get::<_, i64>("done")? != 0,
+        order_index: row.get("order_index")?,
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+pub fn list_goal_items(pool: &DbPool, goal_id: &str) -> Result<Vec<DevGoalItem>, AppError> {
+    timed_query!("dev_goal_items", "dev_goal_items::list", {
+        let conn = pool.get()?;
+        let mut stmt = conn
+            .prepare("SELECT * FROM dev_goal_items WHERE goal_id = ?1 ORDER BY order_index")?;
+        let rows = stmt.query_map(params![goal_id], row_to_goal_item)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+pub fn create_goal_item(
+    pool: &DbPool,
+    goal_id: &str,
+    title: &str,
+) -> Result<DevGoalItem, AppError> {
+    if title.trim().is_empty() {
+        return Err(AppError::Validation("Title cannot be empty".into()));
+    }
+    timed_query!("dev_goal_items", "dev_goal_items::create", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let max_order: i32 = conn
+            .query_row(
+                "SELECT COALESCE(MAX(order_index), -1) FROM dev_goal_items WHERE goal_id = ?1",
+                params![goal_id],
+                |row| row.get(0),
+            )
+            .unwrap_or(-1);
+        conn.execute(
+            "INSERT INTO dev_goal_items (id, goal_id, title, done, order_index, created_at, updated_at)
+             VALUES (?1, ?2, ?3, 0, ?4, ?5, ?5)",
+            params![id, goal_id, title.trim(), max_order + 1, now],
+        )?;
+        conn.query_row(
+            "SELECT * FROM dev_goal_items WHERE id = ?1",
+            params![id],
+            row_to_goal_item,
+        )
+        .map_err(AppError::Database)
+    })
+}
+
+pub fn update_goal_item(
+    pool: &DbPool,
+    id: &str,
+    title: Option<&str>,
+    done: Option<bool>,
+) -> Result<DevGoalItem, AppError> {
+    timed_query!("dev_goal_items", "dev_goal_items::update", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        if let Some(t) = title {
+            conn.execute(
+                "UPDATE dev_goal_items SET title = ?1, updated_at = ?2 WHERE id = ?3",
+                params![t.trim(), now, id],
+            )?;
+        }
+        if let Some(d) = done {
+            conn.execute(
+                "UPDATE dev_goal_items SET done = ?1, updated_at = ?2 WHERE id = ?3",
+                params![d as i64, now, id],
+            )?;
+        }
+        conn.query_row(
+            "SELECT * FROM dev_goal_items WHERE id = ?1",
+            params![id],
+            row_to_goal_item,
+        )
+        .map_err(|e| match e {
+            rusqlite::Error::QueryReturnedNoRows => AppError::NotFound(format!("Goal item {id}")),
+            other => AppError::Database(other),
+        })
+    })
+}
+
+pub fn delete_goal_item(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("dev_goal_items", "dev_goal_items::delete", {
+        let conn = pool.get()?;
+        let rows = conn.execute("DELETE FROM dev_goal_items WHERE id = ?1", params![id])?;
+        Ok(rows > 0)
+    })
+}
+
+pub fn reorder_goal_items(pool: &DbPool, ids: &[String]) -> Result<(), AppError> {
+    timed_query!("dev_goal_items", "dev_goal_items::reorder", {
+        let conn = pool.get()?;
+        for (i, id) in ids.iter().enumerate() {
+            conn.execute(
+                "UPDATE dev_goal_items SET order_index = ?1, updated_at = ?2 WHERE id = ?3",
+                params![i as i32, chrono::Utc::now().to_rfc3339(), id],
+            )?;
+        }
+        Ok(())
+    })
+}
+
+/// Sub-goals: `dev_goals` rows whose `parent_goal_id` is this goal.
+pub fn list_child_goals(pool: &DbPool, parent_goal_id: &str) -> Result<Vec<DevGoal>, AppError> {
+    timed_query!("dev_goals", "dev_goals::list_child_goals", {
+        let conn = pool.get()?;
+        let mut stmt = conn
+            .prepare("SELECT * FROM dev_goals WHERE parent_goal_id = ?1 ORDER BY order_index")?;
+        let rows = stmt.query_map(params![parent_goal_id], row_to_goal)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// A `dev_goals` status counts as "complete" for progress derivation.
+pub fn goal_status_is_complete(status: &str) -> bool {
+    matches!(status, "done" | "completed")
+}
+
+/// A `team_assignment_steps` status counts as "complete" (advances the goal).
+pub fn step_status_is_complete(status: &str) -> bool {
+    matches!(status, "done" | "skipped")
+}
+
+/// Pure hybrid-progress computation (no DB — unit-testable). Composes the goal's
+/// ad-hoc checklist items, its sub-goals, and its linked team-assignment steps
+/// into one done/total tally and derives a suggested progress %. When there is
+/// nothing to derive from, `suggested` falls back to `current` so we never push
+/// a hand-set goal back to 0%. The UI surfaces `suggested != current` as an
+/// accept/edit nudge — we never write progress silently.
+pub fn compute_suggested_progress(
+    goal_id: &str,
+    current: i32,
+    items_done: usize,
+    items_total: usize,
+    subgoals_done: usize,
+    subgoals_total: usize,
+    steps_done: usize,
+    steps_total: usize,
+) -> GoalProgressSuggestion {
+    let done = items_done + subgoals_done + steps_done;
+    let total = items_total + subgoals_total + steps_total;
+    let suggested = if total == 0 {
+        current
+    } else {
+        ((done as f64 / total as f64) * 100.0).round() as i32
+    };
+    let reason = if total == 0 {
+        "No checklist, sub-goals, or linked team steps to derive progress from".to_string()
+    } else {
+        format!(
+            "{done}/{total} complete ({items_done}/{items_total} checklist, {subgoals_done}/{subgoals_total} sub-goals, {steps_done}/{steps_total} team steps)"
+        )
+    };
+    GoalProgressSuggestion {
+        goal_id: goal_id.to_string(),
+        current,
+        suggested,
+        done_count: done as i32,
+        total_count: total as i32,
+        reason,
+    }
 }
 
 // ============================================================================
@@ -3047,4 +3224,43 @@ pub fn list_competition_slots(
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(AppError::Database)
     })
+}
+
+#[cfg(test)]
+mod goal_progress_tests {
+    use super::compute_suggested_progress;
+
+    #[test]
+    fn empty_falls_back_to_current() {
+        let s = compute_suggested_progress("g1", 42, 0, 0, 0, 0, 0, 0);
+        assert_eq!(s.suggested, 42, "nothing to derive from → keep current");
+        assert_eq!(s.total_count, 0);
+        assert!(s.reason.contains("No checklist"));
+    }
+
+    #[test]
+    fn derives_across_all_three_sources() {
+        // 3 items (1 done) + 2 sub-goals (1 done) + 5 steps (3 done) = 5/10 = 50%
+        let s = compute_suggested_progress("g1", 0, 1, 3, 1, 2, 3, 5);
+        assert_eq!(s.done_count, 5);
+        assert_eq!(s.total_count, 10);
+        assert_eq!(s.suggested, 50);
+    }
+
+    #[test]
+    fn all_complete_is_hundred() {
+        let s = compute_suggested_progress("g1", 10, 4, 4, 0, 0, 2, 2);
+        assert_eq!(s.suggested, 100);
+        assert_eq!(s.done_count, s.total_count);
+    }
+
+    #[test]
+    fn rounds_to_nearest_percent() {
+        // 1/3 = 33.33 → 33
+        let s = compute_suggested_progress("g1", 0, 1, 3, 0, 0, 0, 0);
+        assert_eq!(s.suggested, 33);
+        // 2/3 = 66.67 → 67
+        let s = compute_suggested_progress("g1", 0, 2, 3, 0, 0, 0, 0);
+        assert_eq!(s.suggested, 67);
+    }
 }

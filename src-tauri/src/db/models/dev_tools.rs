@@ -178,6 +178,41 @@ pub struct DevGoalSignal {
 }
 
 // ============================================================================
+// Dev Goal Items (lightweight ad-hoc checklist on a goal)
+// ============================================================================
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevGoalItem {
+    pub id: String,
+    pub goal_id: String,
+    pub title: String,
+    pub done: bool,
+    pub order_index: i32,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
+// Goal progress suggestion (hybrid auto-suggest, computed on read)
+// ============================================================================
+
+/// Result of `resolve_goal_progress` — the goal's stored progress alongside a
+/// progress value DERIVED from its composed checklist (ad-hoc items + sub-goals
+/// + linked team-assignment steps). The UI surfaces `suggested != current` as an
+/// accept/edit nudge; a manual override always wins (we never silently write).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct GoalProgressSuggestion {
+    pub goal_id: String,
+    pub current: i32,
+    pub suggested: i32,
+    pub done_count: i32,
+    pub total_count: i32,
+    pub reason: String,
+}
+
+// ============================================================================
 // Dev Context Groups
 // ============================================================================
 
