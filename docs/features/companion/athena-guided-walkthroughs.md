@@ -77,9 +77,19 @@ If the step needs a surface opened first (so the anchor exists), add a new varia
 | Op | Fire | Effect |
 | --- | --- | --- |
 | `show_persona_creation_offer { intent }` | auto | Renders the `persona_creation_offer` chat-card: **Build it for me** (prefill handoff) + **Show me how to build it** (`startGuidance('persona_creation')`). Use when the user describes a persona but hasn't said how to proceed. |
-| `start_guided_walkthrough { topic }` | auto | Emits `companion://guide`; the frontend runner starts the registry walkthrough. Topic validated against `GUIDED_TOPICS`. Use when the user explicitly asks to be shown ("show me how to make a persona"). |
+| `start_guided_walkthrough { topic }` | auto | Emits `companion://guide` `{ topic }`; the frontend runner starts the registry walkthrough. Topic validated against `GUIDED_TOPICS`. Use when the user explicitly asks to be shown ("show me how to make a persona"). |
+| `point_at { anchor, narration }` | auto | Emits `companion://guide` `{ pointAt }`; rings one allow-listed anchor + narrates as a single-step **ad-hoc** walkthrough — no authored topic. `anchor` validated against `ANCHOR_IDS`. Use mid-conversation to just show *where* something is. |
+| `compose_walkthrough { title?, steps[] }` | auto | Emits `companion://guide` `{ composeWalkthrough }`; runs a **runtime-assembled** multi-step tour (2–6 steps, each an `{ anchor, narration }`). Every anchor validated; an unknown one voids the whole tour. Use for "show me around". |
 
-Both bypass the approval pipeline (they're suggestions/navigation, not real-world actions). `companion://guide` is emitted from `session.rs`; `CompanionPanel` listens and calls `startGuidance`. Constitution **v19** teaches both.
+All bypass the approval pipeline (they're suggestions/navigation, not real-world actions). `companion://guide` is emitted from `session.rs`; `CompanionPanel` listens and calls `startGuidance` (topic) or `startAdHocGuidance` (pointAt / composeWalkthrough). Constitution **v19** taught the first two; **v28** added `point_at`; **v29** added `compose_walkthrough`.
+
+## Ad-hoc pointing & the anchor catalog (`point_at`)
+
+`point_at` is the non-scripted half of guidance: Athena names an `anchor` and a `narration` line, and the orb rings that one element and narrates it — no registry entry needed. The model can't target arbitrary DOM: it must pick from the **anchor catalog** (`guidance/anchorCatalog.ts`), an allow-list of stable, route-level testids. The backend mirrors the catalog keys in `dispatcher.rs` (`ANCHOR_IDS`) and rejects anything else, so a hallucinated selector can't drive the orb to a sensitive or non-existent element.
+
+Mechanically a `point_at` is a **single-step ad-hoc walkthrough**: `companionStore.adHocWalkthrough` holds a runtime-composed `GuidanceWalkthrough` (topic = the `ADHOC_TOPIC` sentinel), and `resolveWalkthrough(activeWalkthrough, adHoc)` returns it so the existing runner + `GuideCaption` walk it exactly like a registry walkthrough. `buildPointAtWalkthrough(anchorId, narration)` (`guidance/composeAdHoc.ts`) maps an anchor id → its testid + route and wraps the narration. Anchors with a `route` switch the sidebar first; the `nav_*` anchors are the always-visible primary sidebar items, so Athena can point at them from any screen without navigating.
+
+`compose_walkthrough` is the **multi-step** sibling: same ad-hoc machinery, but `buildComposedWalkthrough(steps, title?)` maps an array of `{ anchor, narration }` into a multi-step `GuidanceWalkthrough`. The backend clamps the tour to `COMPOSE_MIN_STEPS..=COMPOSE_MAX_STEPS` (2–6) and rejects the whole tour if any step's anchor is off-catalog — a half-valid tour never runs. The runner's `lastAdHocRef` guard treats each freshly-composed walkthrough as a new run even though both reuse the `ADHOC_TOPIC` sentinel and start at step 0, so a second ad-hoc guidance call (point_at *or* compose) restarts cleanly instead of being swallowed as "same step".
 
 ---
 
@@ -94,6 +104,34 @@ Five steps over always-visible build-studio anchors (no modal):
 5. **outro** — orb returns to center; "Want me to build one for you now?"
 
 The only testid added for this was `persona-build-entry`; the rest already existed.
+
+## The `connector_setup` walkthrough
+
+Four steps over always-visible Vault anchors (no modal):
+
+1. **intro** — orb floats to center; "Want to connect a service like GitHub or Slack?"
+2. **vault** — navigates to `credentials`, rings `credential-manager` (the Vault route container).
+3. **add** — runs the `open_credential_add` pre-action, which `storeBus.emit('tour:navigate-credential-view', { key: 'add-new' })`s the vault into its "Add new" view (the same escape hatch the onboarding tour uses to drive the credential nav from outside React), then rings `vault-type-picker` (the connector type chooser). The vault route is already mounted from the prior step, so the event has a listener — author any storeBus-driven step *after* the step that navigates to its route.
+4. **outro** — orb returns to center; "Pin the credential to a persona and it can use the service."
+
+No new testids were needed — `credential-manager` and `vault-type-picker` already existed. Athena fires this topic when the user asks how to connect/add a service and wants to do it themselves (constitution v27).
+
+## Interactive progression (click-to-advance)
+
+Walkthroughs aren't only timed slides. Two behaviors make them responsive:
+
+- **Universal click-to-advance** — clicking the element Athena is pointing at advances the tour immediately. The glow is `pointer-events-none`, so the click also reaches the real element underneath: clicking "Connections" in the sidebar both navigates *and* moves the tour on ("do it and continue"). The listener is `capture` + `once`, so the element's own handler still runs and a step never double-advances.
+- **`holdForClick` steps** — a step can set `holdForClick: true` to become a "your turn" beat: the auto-advance dwell is suppressed and the step waits for the click (Skip/Stop still work), with a `guide_click_hint` line shown beside the orb. Requires a `highlightTestId`; with none, it falls back to the timer so a walkthrough can never hard-stall. `connector_setup`'s **add** step uses this — the tour waits until the user actually picks a connector type before wrapping up.
+
+The auto-advance timer is unchanged for ordinary steps, so the hands-off auto-play demo (and its e2e) still walk every step on a dwell.
+
+## Proactive "look here" glow (`flashHighlight`)
+
+Not every highlight needs a whole walkthrough. When Athena *navigates* (`open_route`) or *composes a surface* (`compose_cockpit` / `compose_dashboard`), the destination's primary container pulses for a couple of seconds so the user's eye lands on what she just brought up — no orb, no caption, fire-and-forget. This is the lightweight sibling of the walkthrough glow:
+
+- `companionStore.flashHighlight(testId, ms?)` sets `flashHighlightTestId` and schedules an auto-clear (a newer flash cancels the prior one's pending clear). It **skips while a walkthrough is active** so it never fights the guidance ring, and starting a walkthrough clears any pending flash.
+- `AthenaFlashGlow` (in `AthenaGuideLayer`) renders the ring from `flashHighlightTestId`, reusing `useTrackedElementRect` + the `athena-guide-glow` keyframe. Like the guide glow it's `pointer-events-none` and static under reduced motion.
+- Wiring lives in `CompanionPanel`: the `companion://navigate` handler flashes `ROUTE_FLASH_ANCHORS[route]` (only routes with a stable always-present container — `overview` → `overview-page`, `credentials` → `credential-manager`, `settings` → `settings-page`); the compose-cockpit/dashboard handlers flash `cockpit-panel` after switching to Home → Cockpit. No new op or backend change — it rides existing events.
 
 ---
 

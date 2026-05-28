@@ -216,6 +216,69 @@ pub struct MetricsChartData {
 }
 
 // ============================================================================
+// Observability: Business-value rollup
+// ============================================================================
+
+/// Business-value + efficiency rollup over a window of executions.
+///
+/// Aggregates the per-execution `business_outcome` self-assessment into a
+/// value-delivered rate and a cost-per-value-delivered figure, plus a
+/// per-model breakdown so model-tier efficiency is legible. Simulations are
+/// excluded (their delivery is stubbed, so their outcome is not a real value
+/// signal). Consumed by the activity dashboard's value tile and by the
+/// Director's evaluation context.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ValueRollup {
+    /// Window length in days.
+    #[ts(type = "number")]
+    pub period_days: i64,
+    /// Non-simulation executions in the window (the population base).
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    /// Executions carrying a real (non-`unknown`) business_outcome — the
+    /// denominator for `value_delivered_rate`.
+    #[ts(type = "number")]
+    pub assessed_executions: i64,
+    #[ts(type = "number")]
+    pub value_delivered: i64,
+    #[ts(type = "number")]
+    pub partial: i64,
+    #[ts(type = "number")]
+    pub precondition_failed: i64,
+    #[ts(type = "number")]
+    pub no_input_available: i64,
+    /// Executions with no assessable outcome (old runs, crashes, non-completing).
+    #[ts(type = "number")]
+    pub unknown: i64,
+    /// `value_delivered / assessed_executions` (0.0 when none assessed).
+    pub value_delivered_rate: f64,
+    /// Total non-simulation cost in the window.
+    pub total_cost_usd: f64,
+    /// `total_cost_usd / value_delivered`. `None` when nothing delivered value
+    /// (dividing by zero is meaningless — the UI shows an em dash).
+    pub cost_per_value_delivered: Option<f64>,
+    /// Per-model efficiency breakdown, descending by cost.
+    pub models: Vec<ModelValueShare>,
+}
+
+/// One model's slice of the value rollup — how much it ran, what it cost, and
+/// how often it actually delivered value. Lets the Director (and the user) see
+/// whether an expensive tier is earning its keep.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelValueShare {
+    pub model: String,
+    #[ts(type = "number")]
+    pub executions: i64,
+    pub cost_usd: f64,
+    #[ts(type = "number")]
+    pub value_delivered: i64,
+}
+
+// ============================================================================
 // Observability: Execution Heatmap (GitHub-style contribution graph)
 // ============================================================================
 

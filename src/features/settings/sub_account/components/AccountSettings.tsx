@@ -14,6 +14,7 @@ import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import Button from '@/features/shared/components/buttons/Button';
 import RadioSettingsCard from '@/features/shared/components/layout/radio/components/RadioSettingsCard';
+import CloudSyncCard from './CloudSyncCard';
 
 export default function AccountSettings() {
   const user = useAuthStore((s) => s.user);
@@ -255,6 +256,8 @@ export default function AccountSettings() {
             </div>
           )}
         </div>
+
+        {isAuthenticated && user && <CloudSyncCard />}
         </div>
       </ContentBody>
     </ContentBox>

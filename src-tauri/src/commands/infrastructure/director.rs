@@ -21,24 +21,32 @@ pub fn get_director_persona_id(state: State<'_, Arc<AppState>>) -> Result<String
 
 /// Evaluate a single target persona. Returns the number of verdicts emitted
 /// (0 is the healthy outcome; verdicts land in `persona_manual_reviews`).
+///
+/// Async + long-running: Phase 2 runs the Director persona through the
+/// execution runner and polls it to completion, so this can take up to a few
+/// minutes. The frontend invoke must use a generous timeout.
 #[tauri::command]
-pub fn run_director_on_persona(
+pub async fn run_director_on_persona(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     persona_id: String,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
-    director::run_director_cycle_for(&state.db, &persona_id)
+    director::run_director_cycle_for(state.inner(), app, &persona_id).await
 }
 
 /// Evaluate every enabled persona (except the Director itself). Returns an
 /// aggregate report. `max_personas` caps the batch size — unset means "all".
+///
+/// Async + long-running: each target is a sequential Director persona run.
 #[tauri::command]
-pub fn run_director_batch(
+pub async fn run_director_batch(
     state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
     max_personas: Option<i64>,
 ) -> Result<DirectorReport, AppError> {
     require_auth_sync(&state)?;
-    director::run_director_cycle_batch(&state.db, max_personas)
+    director::run_director_cycle_batch(state.inner(), app, max_personas).await
 }
 
 /// Read Director verdicts (manual reviews with `context_data.source=director`).

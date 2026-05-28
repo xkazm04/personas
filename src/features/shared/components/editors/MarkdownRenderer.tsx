@@ -1,15 +1,94 @@
-import { useMemo } from 'react';
+import {
+  isValidElement,
+  useMemo,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
+import { WrapText } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  /**
+   * Opt-in: render fenced code blocks with a header bar (language label +
+   * copy button), the way Claude.ai / ChatGPT present code. Off by default
+   * so the ~20 other MarkdownRenderer call sites stay bare; the Athena chat
+   * passes it on.
+   */
+  codeBlockActions?: boolean;
+}
+
+/**
+ * Flatten a React node tree to its text content. rehype-highlight replaces a
+ * code block's plain-string child with an array of `<span class="hljs-…">`
+ * tokens, so the copy button can't just read `children` as a string — it has
+ * to walk the highlighted element tree.
+ */
+function extractText(node: ReactNode): string {
+  if (node == null || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (isValidElement(node)) {
+    return extractText((node.props as { children?: ReactNode }).children);
+  }
+  return '';
+}
+
+/**
+ * Chrome for a fenced code block when `codeBlockActions` is on: a header bar
+ * (language label + line-wrap toggle + copy) over the code. The wrap toggle is
+ * per-block state — long lines either scroll horizontally (default) or soft-wrap.
+ */
+function CodeBlockShell({
+  lang,
+  codeText,
+  children,
+}: {
+  lang?: string;
+  codeText: string;
+  children: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [wrap, setWrap] = useState(false);
+  return (
+    <div className="my-3 rounded-xl border border-primary/10 bg-background/60 overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-primary/10 bg-foreground/[0.03]">
+        <span className="typo-caption font-mono lowercase tracking-wide text-primary/80">
+          {lang}
+        </span>
+        <div className="flex items-center gap-0.5">
+          <button
+            type="button"
+            onClick={() => setWrap((w) => !w)}
+            aria-pressed={wrap}
+            aria-label={t.shared.code_toggle_wrap}
+            title={t.shared.code_toggle_wrap}
+            className={`p-1.5 rounded-lg transition-colors focus-ring ${
+              wrap
+                ? 'text-primary bg-primary/10'
+                : 'text-foreground hover:text-foreground/80 hover:bg-secondary/50'
+            }`}
+          >
+            <WrapText className="w-3.5 h-3.5" />
+          </button>
+          {codeText && <CopyButton text={codeText} iconSize="w-3.5 h-3.5" />}
+        </div>
+      </div>
+      <pre className={`m-0 ${wrap ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto'}`}>
+        {children}
+      </pre>
+    </div>
+  );
 }
 
 /** Inline bar chart for ```chart code blocks. Expects label:value lines. */
@@ -29,19 +108,32 @@ function InlineBarChart({ raw }: { raw: string }) {
   if (entries.length === 0) return <pre className="typo-code text-foreground">{raw}</pre>;
 
   return (
-    <div className="my-3 space-y-1.5 p-3 rounded-xl border border-primary/10 bg-secondary/20">
-      {entries.map((e, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <span className="typo-caption text-foreground w-28 truncate text-right">{e.label}</span>
-          <div className="flex-1 h-5 rounded bg-primary/[0.06] overflow-hidden">
-            <div
-              className="h-full rounded bg-gradient-to-r from-primary/40 to-primary/60 transition-all"
-              style={{ width: `${(e.value / max) * 100}%` }}
-            />
+    <div className="my-3 space-y-2 p-3.5 rounded-xl border border-primary/10 bg-secondary/20">
+      {entries.map((e, i) => {
+        const pct = (e.value / max) * 100;
+        const isMax = e.value === max;
+        return (
+          <div key={i} className="flex items-center gap-3">
+            <span className="typo-caption text-foreground w-28 truncate text-right">{e.label}</span>
+            <div className="flex-1 h-6 rounded-md bg-foreground/[0.06] overflow-hidden">
+              <div
+                className={`h-full rounded-md transition-all duration-500 ${
+                  isMax
+                    ? 'bg-gradient-to-r from-primary to-accent'
+                    : 'bg-gradient-to-r from-primary/50 to-primary/75'
+                }`}
+                // Floor non-zero bars at 3% so small-but-present values stay visible.
+                style={{ width: `${e.value > 0 ? Math.max(pct, 3) : 0}%` }}
+              />
+            </div>
+            <span
+              className={`typo-code w-14 text-right ${isMax ? 'text-primary font-semibold' : 'text-foreground'}`}
+            >
+              {e.value}
+            </span>
           </div>
-          <span className="text-xs font-mono text-foreground w-14 text-right">{e.value}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -66,7 +158,8 @@ function filterMetaContent(content: string): string {
   return cleaned;
 }
 
-const components: Components = {
+function buildComponents(codeBlockActions: boolean): Components {
+  return {
   // Generous top spacing on headings — markdown bodies read better when
   // each section is visually offset from the prior paragraph, not just
   // stacked tightly. Bottom margin stays moderate so the heading still
@@ -83,23 +176,33 @@ const components: Components = {
   p: ({ children }) => (
     <p className="typo-body text-foreground/90 mb-3 leading-relaxed">{children}</p>
   ),
-  ul: ({ children }) => (
-    <ul className="list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ul>
+  // Forward the node's own className so remark-gfm's `contains-task-list` /
+  // `task-list-item` markers survive (the chat scopes task-list styling off
+  // them; the classes are inert on every other call site).
+  ul: ({ className, children }) => (
+    <ul className={`list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground/90${className ? ` ${className}` : ''}`}>{children}</ul>
   ),
   ol: ({ children }) => (
     <ol className="list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ol>
   ),
-  li: ({ children }) => (
-    <li className="text-foreground/90">{children}</li>
+  li: ({ className, children }) => (
+    <li className={`text-foreground/90${className ? ` ${className}` : ''}`}>{children}</li>
   ),
   code: ({ className, children, ...props }) => {
-    const isBlock = className?.includes('language-');
     const isChart = className?.includes('language-chart');
     if (isChart) {
       return <InlineBarChart raw={String(children).replace(/\n$/, '')} />;
     }
+    const isBlock = className?.includes('language-');
     if (isBlock) {
-      return (
+      // With codeBlockActions the <pre> wrapper supplies the border/bg and
+      // header bar, so the code element stays minimal; otherwise it carries
+      // its own block chrome (unchanged for every non-chat call site).
+      return codeBlockActions ? (
+        <code className={`block p-4 typo-code ${className || ''}`} {...props}>
+          {children}
+        </code>
+      ) : (
         <code
           className={`block p-4 bg-background/60 border border-primary/10 rounded-xl typo-code overflow-x-auto ${className || ''}`}
           {...props}
@@ -117,9 +220,24 @@ const components: Components = {
       </code>
     );
   },
-  pre: ({ children }) => (
-    <pre className="mb-3">{children}</pre>
-  ),
+  pre: ({ children }) => {
+    if (!codeBlockActions) return <pre className="mb-3">{children}</pre>;
+    // Header bar: language label + wrap toggle + copy. Every fenced and
+    // indented block is wrapped in <pre>, so owning the chrome here (not in
+    // `code`) means even a no-language block still gets the header + a real
+    // <pre>. The inner <code> element carries the language class and the
+    // (highlight-tokenized) text in its props.
+    const codeEl = isValidElement(children)
+      ? (children as ReactElement<{ className?: string; children?: ReactNode }>)
+      : null;
+    const lang = /language-(\w+)/.exec(codeEl?.props?.className ?? '')?.[1];
+    const codeText = extractText(codeEl?.props?.children).replace(/\n$/, '');
+    return (
+      <CodeBlockShell lang={lang} codeText={codeText}>
+        {children}
+      </CodeBlockShell>
+    );
+  },
   blockquote: ({ children }) => (
     <blockquote className="border-l-2 border-violet-500/30 pl-4 pr-3 py-2 italic text-foreground/90 my-3 bg-violet-500/5 rounded-r-lg">
       {children}
@@ -163,10 +281,19 @@ const components: Components = {
   em: ({ children }) => (
     <em className="italic text-foreground">{children}</em>
   ),
-};
+  };
+}
 
-export function MarkdownRenderer({ content, className }: MarkdownRendererProps) {
+export function MarkdownRenderer({
+  content,
+  className,
+  codeBlockActions = false,
+}: MarkdownRendererProps) {
   const filtered = useMemo(() => filterMetaContent(content), [content]);
+  const components = useMemo(
+    () => buildComponents(codeBlockActions),
+    [codeBlockActions],
+  );
 
   return (
     <div className={className}>

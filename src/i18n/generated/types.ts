@@ -5761,6 +5761,10 @@ export type Translations = {
       success_rate: string;
       avg_latency: string;
       cost_anomalies: string;
+      value_section_title: string;
+      value_delivered_rate: string;
+      cost_per_value: string;
+      value_delivered_count: string;
       no_data: string;
       cost_per_day: string;
       executions_by_status: string;
@@ -8476,6 +8480,20 @@ export type Translations = {
       updates_current_version: string;
       updates_last_checked: string;
       updates_history_title: string;
+      cloud_sync_title: string;
+      cloud_sync_description: string;
+      cloud_sync_toggle: string;
+      cloud_sync_on: string;
+      cloud_sync_off: string;
+      cloud_sync_toggle_aria: string;
+      cloud_sync_now: string;
+      cloud_sync_syncing: string;
+      cloud_sync_last: string;
+      cloud_sync_never: string;
+      cloud_sync_error: string;
+      cloud_sync_enable_failed: string;
+      cloud_sync_now_failed: string;
+      cloud_sync_now_done: string;
     };
     appearance_extra: {
       simple: string;
@@ -11205,12 +11223,18 @@ export type Translations = {
       guide_pause: string;
       guide_resume: string;
       guide_step_label: string;
+      guide_click_hint: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;
       guide_pc_compose: string;
       guide_pc_autonomous: string;
       guide_pc_outro: string;
+      guide_conn_title: string;
+      guide_conn_intro: string;
+      guide_conn_vault: string;
+      guide_conn_add: string;
+      guide_conn_outro: string;
       offer_intro: string;
       offer_build: string;
       offer_build_hint: string;
@@ -13466,6 +13490,7 @@ export type Translations = {
     search_label: string;
     resize_column: string;
     copy_full_id: string;
+    code_toggle_wrap: string;
     copy_tooltip: string;
     copy_copied: string;
     copy_copied_bang: string;

@@ -25,6 +25,7 @@ import {
 import { extractStreamPhase, extractToolEvents, phaseLabel } from './extractStreamPhase';
 import { extractTodoWrite } from './operationalSteps';
 import { OperationalThread } from './OperationalThread';
+import { buildPointAtWalkthrough, buildComposedWalkthrough } from './guidance/composeAdHoc';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -120,6 +121,17 @@ const VALID_NAV_ROUTES: SidebarSection[] = [
   'schedules',
   'settings',
 ];
+
+// After Athena navigates, briefly ring the destination's primary surface so the
+// user's eye lands on what she brought them to (proactive "look here" glow).
+// Only routes with a stable, always-present container testid are listed —
+// others simply don't flash. `home` is omitted because its default tab varies;
+// the compose-cockpit/dashboard handlers flash `cockpit-panel` explicitly.
+const ROUTE_FLASH_ANCHORS: Partial<Record<SidebarSection, string>> = {
+  overview: 'overview-page',
+  credentials: 'credential-manager',
+  settings: 'settings-page',
+};
 
 /**
  * Athena's chat panel — Phase 1: real chat over a long-lived Claude CLI
@@ -268,7 +280,9 @@ export default function CompanionPanel() {
           style={morph.style}
           className={`fixed bottom-12 left-4 z-[60] ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
-          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
+          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
+            autonomousMode ? 'companion-autonomous' : ''
+          }`}
           role="region"
           aria-label={t.plugins.companion.panel_label}
           data-testid="companion-panel"
@@ -436,7 +450,7 @@ function Header({
 }) {
   const { t } = useTranslation();
   return (
-    <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
+    <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 bg-foreground/[0.02] shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         {/*
           Header keeps a small static badge — the full Athena avatar now
@@ -444,7 +458,9 @@ function Header({
           here would be visual noise.
         */}
         <span
-          className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary"
+          className={`inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary transition-shadow ${
+            autonomousMode ? 'ring-1 ring-primary/40' : ''
+          }`}
           aria-hidden
         >
           <Bot className="w-3.5 h-3.5" />
@@ -503,6 +519,7 @@ function Header({
             <PanelRightClose className="w-4 h-4" />
           )}
         </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onRefreshDoctrine}
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
@@ -520,6 +537,7 @@ function Header({
         >
           <RotateCcw className="w-4 h-4" />
         </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onClose}
           data-testid="companion-close"
@@ -1084,20 +1102,40 @@ function Body(props: BodyProps) {
       }
       if (!VALID_NAV_ROUTES.includes(route as SidebarSection)) return;
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
+      // Briefly ring the destination's primary surface (if one is mapped) so
+      // the eye lands on what Athena navigated to. The flash tracker waits for
+      // the element to mount, so firing immediately after the route switch is
+      // fine; it self-clears and yields to any active walkthrough.
+      const flashAnchor = ROUTE_FLASH_ANCHORS[route as SidebarSection];
+      if (flashAnchor) useCompanionStore.getState().flashHighlight(flashAnchor);
     }, []),
     'companion_navigate_listen',
   );
 
-  // `start_guided_walkthrough` — Athena launches an in-app guided tour.
-  // The runner (AthenaGuideLayer) walks the registry-defined steps: orb
-  // glides to each area, the element glows, she narrates. Topic is already
-  // validated server-side against the allow-list; the runner stops itself
-  // gracefully if an unknown topic ever slips through.
+  // `start_guided_walkthrough` / `point_at` — Athena guides in-app. A `topic`
+  // launches a registry walkthrough (the runner in AthenaGuideLayer walks the
+  // authored steps); a `pointAt` rings one allow-listed anchor and narrates as
+  // a single-step ad-hoc walkthrough (non-scripted pointing). Both are already
+  // validated server-side; the runner stops itself gracefully on anything bad.
   useTauriEvent<CompanionGuideEvent>(
     COMPANION_GUIDE_EVENT,
     useCallback((event) => {
       const topic = event.payload?.topic;
-      if (topic) useCompanionStore.getState().startGuidance(topic);
+      if (topic) {
+        useCompanionStore.getState().startGuidance(topic);
+        return;
+      }
+      const pointAt = event.payload?.pointAt;
+      if (pointAt?.anchor && pointAt.narration) {
+        const wt = buildPointAtWalkthrough(pointAt.anchor, pointAt.narration);
+        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+        return;
+      }
+      const composed = event.payload?.composeWalkthrough;
+      if (composed?.steps?.length) {
+        const wt = buildComposedWalkthrough(composed.steps, composed.title);
+        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+      }
     }, []),
     'companion_guide_listen',
   );
@@ -1147,6 +1185,7 @@ function Body(props: BodyProps) {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
+      useCompanionStore.getState().flashHighlight('cockpit-panel');
     }, []),
     'companion_compose_dashboard_listen',
   );
@@ -1168,6 +1207,7 @@ function Body(props: BodyProps) {
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
       sys.setCompanionPanelCompact(true);
+      useCompanionStore.getState().flashHighlight('cockpit-panel');
     }, []),
     'companion_compose_cockpit_listen',
   );
@@ -1562,7 +1602,7 @@ function Body(props: BodyProps) {
   return (
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
           {!initialized && !initError && (
             <div className="flex items-center gap-3 text-foreground typo-body">
               <LoadingSpinner size="sm" />
@@ -1655,7 +1695,7 @@ function Body(props: BodyProps) {
               const steps =
                 m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
               return (
-                <div key={m.id} className="space-y-1">
+                <div key={m.id} className="space-y-1 animate-fade-slide-in">
                   {recall && (
                     <RecallStrip
                       preview={recall}
@@ -1775,7 +1815,7 @@ function Body(props: BodyProps) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                      className={`rounded-card border px-3 py-1.5 typo-caption ${
+                      className={`flex items-center gap-2 rounded-card border px-3 py-1.5 typo-caption ${
                         slowLevel === 2
                           ? 'border-amber-500/30 bg-amber-500/[0.06] text-amber-300'
                           : 'border-foreground/10 bg-foreground/[0.04] text-foreground'
@@ -1783,9 +1823,12 @@ function Body(props: BodyProps) {
                       data-testid="companion-slow-progress"
                       data-slow-level={slowLevel}
                     >
-                      {slowLevel === 2
-                        ? t.plugins.companion.slow_progress_firm
-                        : t.plugins.companion.slow_progress_soft}
+                      <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      <span>
+                        {slowLevel === 2
+                          ? t.plugins.companion.slow_progress_firm
+                          : t.plugins.companion.slow_progress_soft}
+                      </span>
                     </motion.div>
                   )}
                 </AnimatePresence>

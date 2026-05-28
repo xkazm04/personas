@@ -7,35 +7,40 @@
 //! decisions are captured back into `persona_memories` (category
 //! `director_feedback`) so future cycles calibrate to the user's taste.
 //!
-//! # Phase 1 (this file)
-//! - Deterministic evaluator only (rule-based over existing signals)
-//! - Verdicts route to `persona_manual_reviews` (severity info/warning/error)
-//! - Batch-capable; currently invoked manually per-persona or over all enabled
-//! - Self-evaluation of the Director persona is always skipped
-//!
-//! # Phase 2 (planned)
-//! - LLM evaluator: swap `DeterministicEvaluator` for a `PromptEvaluator`
-//!   that spawns the Director persona through the normal execution runner
-//!   with `DIRECTOR_RUBRIC` as its system prompt and the gathered context as
-//!   the CLI stdin payload. Approve/reject on reviews writes feedback
-//!   memories that the next cycle reads as few-shot.
+//! # Phase 2 (this file)
+//! - LLM evaluator: the Director **is** a persona whose `system_prompt` is
+//!   `DIRECTOR_RUBRIC`. To evaluate a target we run the Director persona
+//!   through the normal execution runner with a synthetic payload describing
+//!   the target (identity + value/efficiency rollup + healing + memory sample
+//!   + past verdicts), then parse `DIRECTOR_VERDICT: {...}` lines out of its
+//!   output. The deterministic rule-based evaluator was retired — the LLM is
+//!   now the sole verdict source.
+//! - The Director's evaluation runs are real, fully-visible execution rows
+//!   (cost-tracked, shown in the activity feed) — no special hiding.
+//! - Verdicts route to `persona_manual_reviews` (severity info/warning/error);
+//!   approve/reject feeds the human-feedback learning loop and the next
+//!   cycle reads the prior verdicts + their disposition.
+//! - Self-evaluation of the Director persona is always skipped.
 //!
 //! # Phase 3 (planned)
 //! - Three-way verdict routing: info → `persona_messages`,
 //!   warning → manual reviews, error + auto-fixable → `persona_healing_issues`
 //!   + `ai_healing::apply_db_fixes`. Scheduler tick in `background.rs`.
 
+use std::sync::Arc;
+
 use rusqlite::params;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use crate::db::models::{CreateManualReviewInput, Persona};
+use crate::db::models::{CreateManualReviewInput, Persona, PersonaExecution, ValueRollup};
 use crate::db::repos::communication::manual_reviews;
 use crate::db::repos::core::{memories, personas};
-use crate::db::repos::execution::{executions, healing};
+use crate::db::repos::execution::{executions, healing, metrics};
 use crate::db::repos::resources::triggers;
 use crate::db::DbPool;
 use crate::error::AppError;
+use crate::AppState;
 
 // ---------------------------------------------------------------------------
 // Locked constants
@@ -199,174 +204,262 @@ pub struct PersonaEvaluationContext {
 }
 
 // ---------------------------------------------------------------------------
-// Evaluator trait
+// LLM evaluator (Phase 2)
 // ---------------------------------------------------------------------------
+//
+// The Director is itself a persona whose `system_prompt` is `DIRECTOR_RUBRIC`.
+// To evaluate a target we run the Director persona through the normal
+// execution runner with a synthetic payload describing the target, poll the
+// run to a terminal state, and parse `DIRECTOR_VERDICT: {...}` marker lines out
+// of its output. This reuses the whole execution stack (model resolution, cost
+// tracking, the activity feed) — the evaluation is a real, fully-visible run.
 
-/// An evaluator turns a gathered context into zero or more verdicts.
-/// Phase 1 ships a `DeterministicEvaluator`. Phase 2 will add a
-/// `PromptEvaluator` that drives the Director persona through the CLI runner.
-pub trait DirectorEvaluator {
-    fn evaluate(&self, ctx: &PersonaEvaluationContext) -> Vec<DirectorVerdict>;
+/// Outer ceiling for polling a Director evaluation run to a terminal state.
+/// The Director persona's own `timeout_ms` (5 min) bounds the run itself; this
+/// is a little longer to absorb queue + finalize latency.
+const DIRECTOR_RUN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(360);
+const DIRECTOR_POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(1500);
+
+/// Window (days) of execution history summarised into the Director's payload.
+const PAYLOAD_VALUE_WINDOW_DAYS: i64 = 30;
+
+/// The literal prefix the rubric instructs the Director to emit before each
+/// verdict's JSON object.
+const VERDICT_MARKER: &str = "DIRECTOR_VERDICT:";
+
+/// Max verdicts accepted from a single run (the rubric asks for 0–4; this is a
+/// hard cap against a runaway response).
+const MAX_VERDICTS_PER_RUN: usize = 6;
+
+/// Shape of a single `DIRECTOR_VERDICT: {...}` JSON object. Severity/category
+/// deserialize straight into the existing enums via their serde renames.
+#[derive(Debug, Deserialize)]
+struct RawVerdict {
+    severity: DirectorSeverity,
+    category: DirectorCategory,
+    title: String,
+    #[serde(default)]
+    description: String,
+    #[serde(default)]
+    rationale: Option<String>,
+    #[serde(default)]
+    suggested_actions: Vec<String>,
 }
 
-/// Rule-based evaluator. Cheap, deterministic, catches the objective class of
-/// issues that do not need an LLM to spot.
-pub struct DeterministicEvaluator;
-
-impl DirectorEvaluator for DeterministicEvaluator {
-    fn evaluate(&self, ctx: &PersonaEvaluationContext) -> Vec<DirectorVerdict> {
-        let mut out = Vec::new();
-        let pid = ctx.persona.id.clone();
-
-        // Rule 1 — Open critical healing
-        if ctx.open_critical_healing > 0 {
-            out.push(DirectorVerdict {
-                target_persona_id: pid.clone(),
-                severity: DirectorSeverity::Error,
-                category: DirectorCategory::Health,
-                title: "Resolve critical healing issues".to_string(),
-                description: format!(
-                    "This persona has {} open critical healing {}. \
-                     Leaving these unresolved blocks progress because the app \
-                     will keep retrying the same failure pattern.",
-                    ctx.open_critical_healing,
-                    if ctx.open_critical_healing == 1 {
-                        "issue"
-                    } else {
-                        "issues"
-                    },
-                ),
-                rationale: Some(format!(
-                    "{} critical issues in persona_healing_issues (status='open')",
-                    ctx.open_critical_healing,
-                )),
-                suggested_actions: vec![
-                    "Open the Health tab and triage each critical issue.".into(),
-                    "If the root cause is an expired credential, rotate it first.".into(),
-                ],
-            });
+/// Parse every `DIRECTOR_VERDICT: {json}` line out of the Director's output.
+/// Malformed lines are skipped (logged) rather than failing the whole cycle —
+/// one bad object should not discard the good verdicts in the same run.
+pub fn parse_verdicts(output: &str, target_persona_id: &str) -> Vec<DirectorVerdict> {
+    let mut out = Vec::new();
+    for line in output.lines() {
+        let trimmed = line.trim();
+        let Some(idx) = trimmed.find(VERDICT_MARKER) else {
+            continue;
+        };
+        let json_part = trimmed[idx + VERDICT_MARKER.len()..].trim();
+        if json_part.is_empty() {
+            continue;
         }
-
-        // Rule 2 — Broader open healing (warning tier)
-        if ctx.open_critical_healing == 0 && ctx.open_healing_issues >= 3 {
-            out.push(DirectorVerdict {
-                target_persona_id: pid.clone(),
-                severity: DirectorSeverity::Warning,
-                category: DirectorCategory::Health,
-                title: "Backlog of healing issues is piling up".to_string(),
-                description: format!(
-                    "There are {} open healing issues (none critical). A \
-                     steady accumulation usually means the same failure mode \
-                     is recurring and a config adjustment would stop it.",
-                    ctx.open_healing_issues,
-                ),
-                rationale: Some(format!(
-                    "{} open rows in persona_healing_issues",
-                    ctx.open_healing_issues,
-                )),
-                suggested_actions: vec![
-                    "Group the issues by category and fix the most frequent one first.".into(),
-                ],
-            });
-        }
-
-        // Rule 3 — No triggers AND no recent runs → likely dormant
-        if ctx.trigger_count == 0 && ctx.total_executions == 0 {
-            out.push(DirectorVerdict {
-                target_persona_id: pid.clone(),
-                severity: DirectorSeverity::Info,
-                category: DirectorCategory::Triggers,
-                title: "Persona has no triggers and has never run".to_string(),
-                description: "Without a trigger or a manual run, this persona \
-                     contributes nothing. Either add a trigger (schedule, webhook, \
-                     file watch) or archive it to reduce noise in the grid."
-                    .to_string(),
-                rationale: Some("trigger_count=0 AND total_executions=0".into()),
-                suggested_actions: vec![
-                    "Add at least one trigger, or disable the persona to hide it from the grid."
-                        .into(),
-                ],
-            });
-        }
-
-        // Rule 4 — Has run before but hasn't run in 30+ days → stale
-        if let Some(days) = ctx.days_since_last_run {
-            if days >= 30 && ctx.total_executions > 0 {
-                out.push(DirectorVerdict {
-                    target_persona_id: pid.clone(),
-                    severity: DirectorSeverity::Info,
-                    category: DirectorCategory::Usefulness,
-                    title: "Persona has gone quiet".to_string(),
-                    description: format!(
-                        "No executions in {} days. If you still need this \
-                         persona, a missing/disabled trigger is the usual cause. \
-                         If you do not need it, archive it.",
-                        days,
-                    ),
-                    rationale: Some(format!("days_since_last_run={}", days)),
-                    suggested_actions: vec![
-                        "Check the trigger list for disabled/broken entries.".into(),
-                        "If obsolete, disable the persona.".into(),
-                    ],
-                });
+        match serde_json::from_str::<RawVerdict>(json_part) {
+            Ok(raw) => out.push(DirectorVerdict {
+                target_persona_id: target_persona_id.to_string(),
+                severity: raw.severity,
+                category: raw.category,
+                title: raw.title,
+                description: raw.description,
+                rationale: raw.rationale,
+                suggested_actions: raw.suggested_actions,
+            }),
+            Err(e) => {
+                tracing::warn!(error = %e, line = %json_part, "Director: skipping malformed verdict line");
             }
         }
+    }
+    out
+}
 
-        // Rule 5 — Success rate < 50% on a meaningful sample
-        if ctx.total_executions >= 5 {
-            let total = ctx.total_executions as f64;
-            let success_rate = ctx.success_count as f64 / total;
-            if success_rate < 0.5 {
-                out.push(DirectorVerdict {
-                    target_persona_id: pid.clone(),
-                    severity: DirectorSeverity::Warning,
-                    category: DirectorCategory::Health,
-                    title: "Success rate is below 50%".to_string(),
-                    description: format!(
-                        "Only {} of the last {} executions succeeded ({:.0}%). \
-                         Repeated failures usually point to a prompt that is \
-                         too ambitious for the bound tools, or a missing credential.",
-                        ctx.success_count,
-                        ctx.total_executions,
-                        success_rate * 100.0,
-                    ),
-                    rationale: Some(format!(
-                        "success={}, total={}, rate={:.2}",
-                        ctx.success_count, ctx.total_executions, success_rate,
-                    )),
-                    suggested_actions: vec![
-                        "Open the last failed execution and read the error.".into(),
-                        "Narrow the persona's scope to match what its tools can actually do."
-                            .into(),
-                    ],
-                });
-            }
+/// Char-safe truncation with an ellipsis. (Byte-slicing a multibyte boundary
+/// panics — see the runner's safe-truncate incident.)
+fn truncate(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        return s.to_string();
+    }
+    let head: String = s.chars().take(max).collect();
+    format!("{head}…")
+}
+
+/// Build the synthetic input payload the Director persona analyses. Mirrors the
+/// five inputs the rubric promises: identity, execution summary (incl. the
+/// value/efficiency rollup), open healing, a memory sample, and the Director's
+/// own past verdicts on this persona + how the user responded.
+fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup: &ValueRollup) -> String {
+    let p = &ctx.persona;
+    let mut s = String::new();
+
+    s.push_str(
+        "Evaluate the persona below against your rubric and emit DIRECTOR_VERDICT lines. \
+         Be specific to THIS persona's evidence; if it is healthy and useful with nothing \
+         concrete to improve, emit zero verdicts.\n\n",
+    );
+
+    // 1. Identity
+    s.push_str("## Persona identity\n");
+    s.push_str(&format!("- Name: {}\n", p.name));
+    if let Some(desc) = &p.description {
+        s.push_str(&format!("- Description: {desc}\n"));
+    }
+    s.push_str(&format!(
+        "- System prompt ({} chars): {}\n\n",
+        p.system_prompt.trim().len(),
+        truncate(p.system_prompt.trim(), 1200),
+    ));
+
+    // 2. Execution summary
+    s.push_str("## Recent execution summary\n");
+    s.push_str(&format!(
+        "- Last {} runs: {} total, {} succeeded, {} failed\n",
+        ctx.recent_executions_limit, ctx.total_executions, ctx.success_count, ctx.failure_count,
+    ));
+    if let Some(days) = ctx.days_since_last_run {
+        s.push_str(&format!("- Days since last run: {days}\n"));
+    }
+    s.push_str(&format!("- Triggers configured: {}\n", ctx.trigger_count));
+    s.push_str(&format!("- Avg cost/run: ${:.4}\n\n", ctx.avg_cost_usd));
+
+    // 2b. Business-value + efficiency rollup
+    s.push_str(&format!(
+        "## Business value & model efficiency (last {} days, simulations excluded)\n",
+        rollup.period_days,
+    ));
+    s.push_str(&format!(
+        "- Outcomes: {} value_delivered, {} partial, {} precondition_failed, {} no_input_available, {} unassessed\n",
+        rollup.value_delivered,
+        rollup.partial,
+        rollup.precondition_failed,
+        rollup.no_input_available,
+        rollup.unknown,
+    ));
+    s.push_str(&format!(
+        "- Value-delivered rate (of assessed): {:.0}%\n",
+        rollup.value_delivered_rate * 100.0,
+    ));
+    s.push_str(&format!("- Total cost: ${:.2}\n", rollup.total_cost_usd));
+    match rollup.cost_per_value_delivered {
+        Some(c) => s.push_str(&format!("- Cost per value-delivered run: ${c:.2}\n")),
+        None => s.push_str("- Cost per value-delivered run: n/a (no run delivered value)\n"),
+    }
+    if !rollup.models.is_empty() {
+        s.push_str("- Model efficiency (model: runs, cost, value-delivered):\n");
+        for m in &rollup.models {
+            s.push_str(&format!(
+                "    - {}: {} runs, ${:.2}, {} value-delivered\n",
+                m.model, m.executions, m.cost_usd, m.value_delivered,
+            ));
         }
+    }
+    s.push('\n');
 
-        // Rule 6 — Very short system_prompt (< 120 chars) AND non-trivial usage
-        if ctx.persona.system_prompt.trim().len() < 120 && ctx.total_executions >= 3 {
-            out.push(DirectorVerdict {
-                target_persona_id: pid.clone(),
-                severity: DirectorSeverity::Info,
-                category: DirectorCategory::Prompt,
-                title: "System prompt is very short".to_string(),
-                description: "A short prompt often leaves the agent guessing about \
-                     tone, audience, and stop-conditions. Adding a sentence on \
-                     *who this persona is for* and *what 'done' looks like* typically \
-                     improves usefulness more than any other change."
-                    .to_string(),
-                rationale: Some(format!(
-                    "system_prompt length = {} chars",
-                    ctx.persona.system_prompt.trim().len(),
-                )),
-                suggested_actions: vec![
-                    "Add a one-sentence audience line.".into(),
-                    "Add a 'this task is done when …' line.".into(),
-                ],
-            });
+    // 3. Open healing
+    s.push_str("## Open healing issues\n");
+    s.push_str(&format!(
+        "- {} open ({} critical)\n\n",
+        ctx.open_healing_issues, ctx.open_critical_healing,
+    ));
+
+    // 4. Memory sample
+    let memories = memories::get_by_persona(pool, &p.id, Some(8)).unwrap_or_default();
+    s.push_str(&format!("## Memory sample ({} total)\n", ctx.memory_count));
+    if memories.is_empty() {
+        s.push_str("- (none)\n");
+    } else {
+        for m in memories.iter().take(8) {
+            s.push_str(&format!("- [{}] {}\n", m.category, truncate(&m.content, 160)));
         }
+    }
+    s.push('\n');
 
-        out
+    // 5. Past Director verdicts + their disposition
+    let past = list_verdicts(pool, Some(p.id.as_str())).unwrap_or_default();
+    s.push_str("## Your past verdicts on this persona\n");
+    if past.is_empty() {
+        s.push_str("- (none yet)\n");
+    } else {
+        for v in past.iter().take(10) {
+            s.push_str(&format!("- [{}] \"{}\" ({})\n", v.status, v.title, v.category));
+        }
+        s.push_str(
+            "Respect prior dispositions: do not re-emit a verdict the user already \
+             resolved/rejected unless the situation has materially changed.\n",
+        );
+    }
+
+    s
+}
+
+/// Run the Director persona to evaluate `ctx.persona` and return parsed
+/// verdicts. The Director runs as a real (fully-visible) execution; we poll it
+/// to a terminal state and parse its output. Returns an empty vec (logged) if
+/// the run fails or emits nothing parseable — there is no deterministic
+/// fallback (Phase 2 retired the rule-based evaluator wholesale).
+async fn evaluate_with_llm(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    director_id: &str,
+    ctx: &PersonaEvaluationContext,
+) -> Result<Vec<DirectorVerdict>, AppError> {
+    let rollup = metrics::get_value_rollup(
+        &state.db,
+        Some(PAYLOAD_VALUE_WINDOW_DAYS),
+        Some(ctx.persona.id.as_str()),
+    )?;
+    let payload = build_director_payload(&state.db, ctx, &rollup);
+
+    let spawned = crate::commands::execution::executions::execute_persona_inner(
+        state,
+        app,
+        director_id.to_string(),
+        /* trigger_id */ None,
+        Some(payload),
+        /* use_case_id */ None,
+        /* continuation */ None,
+        /* idempotency_key */ None,
+        /* is_simulation */ false,
+    )
+    .await?;
+
+    let Some(exec) = await_execution_terminal(&state.db, &spawned.id).await else {
+        tracing::warn!(
+            director_run = %spawned.id,
+            target = %ctx.persona.id,
+            "Director run did not reach a terminal state within the timeout",
+        );
+        return Ok(Vec::new());
+    };
+
+    let output = exec.output_data.unwrap_or_default();
+    if output.trim().is_empty() {
+        tracing::warn!(director_run = %exec.id, status = %exec.status, "Director run produced no output");
+        return Ok(Vec::new());
+    }
+
+    let mut verdicts = parse_verdicts(&output, &ctx.persona.id);
+    verdicts.truncate(MAX_VERDICTS_PER_RUN);
+    Ok(verdicts)
+}
+
+/// Poll an execution row until it reaches a terminal state or the timeout
+/// elapses. Returns the final row (terminal if we got there, last-seen
+/// otherwise; `None` only if the row can't be read at the deadline).
+async fn await_execution_terminal(pool: &DbPool, execution_id: &str) -> Option<PersonaExecution> {
+    let start = std::time::Instant::now();
+    loop {
+        match executions::get_by_id(pool, execution_id) {
+            Ok(ex) if ex.state().is_terminal() => return Some(ex),
+            Ok(ex) if start.elapsed() >= DIRECTOR_RUN_TIMEOUT => return Some(ex),
+            Err(_) if start.elapsed() >= DIRECTOR_RUN_TIMEOUT => return None,
+            _ => {}
+        }
+        tokio::time::sleep(DIRECTOR_POLL_INTERVAL).await;
     }
 }
 
@@ -529,31 +622,43 @@ pub fn gather_context(
 // ---------------------------------------------------------------------------
 
 /// Run one Director cycle against a single target persona. Returns the number
-/// of verdicts emitted (0 is the healthy outcome).
-pub fn run_director_cycle_for(pool: &DbPool, target_persona_id: &str) -> Result<i64, AppError> {
-    let director_id = get_director_persona_id(pool)?;
+/// of verdicts emitted (0 is the healthy outcome). Async because the LLM
+/// evaluator runs the Director persona through the execution runner.
+pub async fn run_director_cycle_for(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
+    target_persona_id: &str,
+) -> Result<i64, AppError> {
+    let director_id = get_director_persona_id(&state.db)?;
     if target_persona_id == director_id {
         // Never evaluate yourself.
         return Ok(0);
     }
 
-    let ctx = gather_context(pool, target_persona_id)?;
+    let ctx = gather_context(&state.db, target_persona_id)?;
 
-    let evaluator = DeterministicEvaluator;
-    let verdicts = evaluator.evaluate(&ctx);
+    // A persona with NO executions cannot anchor a manual review (FK requires
+    // execution_id) and there is nothing to analyse — skip silently.
+    if ctx.latest_execution_id.is_none() {
+        return Ok(0);
+    }
 
-    route_verdicts(pool, &ctx, &verdicts)?;
+    let verdicts = evaluate_with_llm(state, app, &director_id, &ctx).await?;
+    route_verdicts(&state.db, &ctx, &verdicts)?;
     Ok(verdicts.len() as i64)
 }
 
 /// Batch cycle. Iterates enabled user personas (skipping the Director itself),
-/// evaluates each, returns an aggregate report.
-pub fn run_director_cycle_batch(
-    pool: &DbPool,
+/// evaluates each via the LLM evaluator, returns an aggregate report. Runs are
+/// sequential — each Director evaluation is a real persona run, so this is
+/// rate-limited by nature.
+pub async fn run_director_cycle_batch(
+    state: &Arc<AppState>,
+    app: tauri::AppHandle,
     max_personas: Option<i64>,
 ) -> Result<DirectorReport, AppError> {
-    let director_id = get_director_persona_id(pool)?;
-    let enabled = personas::get_enabled(pool)?;
+    let director_id = get_director_persona_id(&state.db)?;
+    let enabled = personas::get_enabled(&state.db)?;
 
     let mut evaluated = 0i64;
     let mut emitted = 0i64;
@@ -569,7 +674,7 @@ pub fn run_director_cycle_batch(
             continue;
         }
 
-        let ctx = match gather_context(pool, &p.id) {
+        let ctx = match gather_context(&state.db, &p.id) {
             Ok(c) => c,
             Err(e) => {
                 tracing::warn!(persona_id = %p.id, error = %e, "Director: failed to gather context, skipping");
@@ -579,22 +684,22 @@ pub fn run_director_cycle_batch(
 
         // A persona with NO executions cannot anchor a manual review (FK
         // constraint requires execution_id). Tally the skip so the report is
-        // honest; Phase 3 will switch those to `persona_messages` which does
-        // not have the FK.
+        // honest; Phase 3 will switch those to `persona_messages` (no FK).
         if ctx.latest_execution_id.is_none() {
-            // Still count "no triggers + no executions" advice since those
-            // don't need an execution anchor — but for Phase 1 we can't emit
-            // them either without the FK. Count as skipped.
             skipped += 1;
             continue;
         }
 
-        let evaluator = DeterministicEvaluator;
-        let verdicts = evaluator.evaluate(&ctx);
-        route_verdicts(pool, &ctx, &verdicts)?;
-
-        evaluated += 1;
-        emitted += verdicts.len() as i64;
+        match evaluate_with_llm(state, app.clone(), &director_id, &ctx).await {
+            Ok(verdicts) => {
+                route_verdicts(&state.db, &ctx, &verdicts)?;
+                evaluated += 1;
+                emitted += verdicts.len() as i64;
+            }
+            Err(e) => {
+                tracing::warn!(persona_id = %p.id, error = %e, "Director: LLM evaluation failed, skipping");
+            }
+        }
     }
 
     Ok(DirectorReport {
@@ -828,75 +933,86 @@ mod tests {
     }
 
     #[test]
-    fn healthy_persona_emits_zero_verdicts() {
-        let mut ctx = ctx_baseline(dummy_persona(
-            "You are a helpful assistant that drafts weekly summary reports \
-             for the operations team. A task is done when the summary has \
-             been posted to the shared channel and no one has flagged errors.",
-        ));
-        ctx.total_executions = 10;
-        ctx.success_count = 10;
-        ctx.trigger_count = 1;
-        ctx.days_since_last_run = Some(2);
-
-        let out = DeterministicEvaluator.evaluate(&ctx);
-        assert_eq!(out.len(), 0, "healthy persona should produce no verdicts");
+    fn parse_verdicts_extracts_valid_lines() {
+        let output = "Preamble about the persona.\n\
+DIRECTOR_VERDICT: {\"severity\":\"warning\",\"category\":\"usefulness\",\"title\":\"Tighten the scope\",\"description\":\"Most runs report no_input_available.\",\"rationale\":\"12/20 no_input\",\"suggested_actions\":[\"Add a precondition check\"]}\n\
+Trailing prose.\n\
+DIRECTOR_VERDICT: {\"severity\":\"info\",\"category\":\"prompt\",\"title\":\"Add a done-line\",\"suggested_actions\":[]}\n";
+        let v = parse_verdicts(output, "p-1");
+        assert_eq!(v.len(), 2);
+        assert_eq!(v[0].target_persona_id, "p-1");
+        assert_eq!(v[0].severity, DirectorSeverity::Warning);
+        assert_eq!(v[0].category, DirectorCategory::Usefulness);
+        assert_eq!(v[0].suggested_actions.len(), 1);
+        assert_eq!(v[1].category, DirectorCategory::Prompt);
+        assert_eq!(v[1].description, ""); // defaulted when absent
     }
 
     #[test]
-    fn critical_healing_emits_error_verdict() {
-        let mut ctx = ctx_baseline(dummy_persona("short"));
-        ctx.total_executions = 10;
-        ctx.success_count = 10;
-        ctx.trigger_count = 1;
-        ctx.open_healing_issues = 2;
-        ctx.open_critical_healing = 2;
-
-        let out = DeterministicEvaluator.evaluate(&ctx);
-        assert!(out.iter().any(
-            |v| v.severity == DirectorSeverity::Error && v.category == DirectorCategory::Health
-        ));
+    fn parse_verdicts_skips_malformed_keeps_valid() {
+        let output = "DIRECTOR_VERDICT: {this is not json}\n\
+DIRECTOR_VERDICT: {\"severity\":\"error\",\"category\":\"health\",\"title\":\"Resolve breaker\"}\n";
+        let v = parse_verdicts(output, "p-2");
+        assert_eq!(v.len(), 1, "malformed line skipped, valid one kept");
+        assert_eq!(v[0].severity, DirectorSeverity::Error);
+        assert_eq!(v[0].category, DirectorCategory::Health);
+        assert!(v[0].suggested_actions.is_empty());
+        assert!(v[0].rationale.is_none());
     }
 
     #[test]
-    fn low_success_rate_emits_warning() {
+    fn parse_verdicts_none_without_marker() {
+        assert!(parse_verdicts("regular output, no verdict markers", "p-3").is_empty());
+    }
+
+    #[test]
+    fn truncate_is_char_safe_on_multibyte() {
+        // Byte-slicing index 3 here would split the 3-byte '≤' and panic.
+        assert_eq!(truncate("≤≤≤≤≤", 3), "≤≤≤…");
+    }
+
+    #[test]
+    fn truncate_noop_when_short() {
+        assert_eq!(truncate("hello", 10), "hello");
+    }
+
+    #[test]
+    fn build_payload_includes_value_and_efficiency_sections() {
+        let pool = crate::db::init_test_db().expect("init test db");
         let mut ctx = ctx_baseline(dummy_persona(
-            "You are a helpful assistant that drafts weekly summary reports \
-             with enough detail to satisfy the ops team's review.",
+            "You are a weekly ops summary assistant. Done = summary posted.",
         ));
-        ctx.total_executions = 10;
-        ctx.success_count = 3;
-        ctx.failure_count = 7;
+        ctx.total_executions = 12;
+        ctx.success_count = 9;
+        ctx.failure_count = 3;
         ctx.trigger_count = 1;
         ctx.days_since_last_run = Some(1);
 
-        let out = DeterministicEvaluator.evaluate(&ctx);
-        assert!(out
-            .iter()
-            .any(|v| v.severity == DirectorSeverity::Warning
-                && v.category == DirectorCategory::Health));
-    }
+        let rollup = ValueRollup {
+            period_days: 30,
+            total_executions: 12,
+            assessed_executions: 10,
+            value_delivered: 6,
+            partial: 2,
+            precondition_failed: 1,
+            no_input_available: 1,
+            unknown: 2,
+            value_delivered_rate: 0.6,
+            total_cost_usd: 1.20,
+            cost_per_value_delivered: Some(0.20),
+            models: vec![crate::db::models::ModelValueShare {
+                model: "claude-opus-4-7".into(),
+                executions: 12,
+                cost_usd: 1.20,
+                value_delivered: 6,
+            }],
+        };
 
-    #[test]
-    fn short_prompt_with_usage_emits_info() {
-        let mut ctx = ctx_baseline(dummy_persona("Be helpful."));
-        ctx.total_executions = 5;
-        ctx.success_count = 5;
-        ctx.trigger_count = 1;
-        ctx.days_since_last_run = Some(2);
-
-        let out = DeterministicEvaluator.evaluate(&ctx);
-        assert!(out.iter().any(|v| v.category == DirectorCategory::Prompt));
-    }
-
-    #[test]
-    fn dormant_persona_emits_info() {
-        let mut ctx = ctx_baseline(dummy_persona(
-            "You are a helpful assistant that drafts weekly summary reports \
-             with enough detail to satisfy the ops team's review.",
-        ));
-        // never run, no triggers
-        let out = DeterministicEvaluator.evaluate(&ctx);
-        assert!(out.iter().any(|v| v.category == DirectorCategory::Triggers));
+        let payload = build_director_payload(&pool, &ctx, &rollup);
+        assert!(payload.contains("## Persona identity"));
+        assert!(payload.contains("Business value & model efficiency"));
+        assert!(payload.contains("Value-delivered rate"));
+        assert!(payload.contains("claude-opus-4-7"));
+        assert!(payload.contains("DIRECTOR_VERDICT"));
     }
 }

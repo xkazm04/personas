@@ -238,6 +238,16 @@ pub fn spawn_cdc_drain_task(app_handle: AppHandle, receiver: CdcReceiver, db: cr
                 None => continue,
             };
 
+            // Cloud sync: nudge the writer when a synced table mutates so the
+            // web dashboard reflects changes promptly. The sync loop debounces
+            // and no-ops when sync is disabled, so this is cheap.
+            if matches!(
+                event.table.as_str(),
+                "personas" | "persona_executions" | "persona_events" | "persona_messages"
+            ) {
+                crate::cloud::sync::notify_dirty();
+            }
+
             // Special handling for persona_events: fetch full row for event bus
             if event.table == "persona_events" && event.action == CdcAction::Insert {
                 match fetch_persona_event_by_rowid(&db, event.rowid) {

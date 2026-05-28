@@ -5,7 +5,10 @@
  *   - System (autonomous-continuation): slim centered divider with the
  *     marker text. Detected by the `[autonomous continuation` prefix the
  *     backend writes when persisting a `TurnOrigin::Autonomous` episode.
- *   - Assistant (default): left-aligned, neutral tint, markdown-rendered.
+ *   - Assistant (default): left-aligned with a small Athena avatar in the
+ *     gutter, defined surface (tint + hairline border + faint lift), and
+ *     markdown-rendered body. The avatar is a static poster image (not the
+ *     `<video>` AthenaAvatar) so per-bubble cost stays at zero decode.
  *
  * Streaming bubbles use `streaming=true` to flip the testid + dim the
  * opacity. The actual streaming text is filtered upstream (CompanionPanel
@@ -18,6 +21,7 @@
  * Brain Viewer entry. Skipped during streaming — the partial text would
  * make the chip set flicker as tokens come and go mid-reply.
  */
+import { Infinity as InfinityIcon } from 'lucide-react';
 import type { BrainKind } from '@/api/companion';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { stripModelDirectives } from './athenaLabels';
@@ -53,7 +57,8 @@ export function Bubble({
         data-companion-bubble-index={index}
       >
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
-        <span className="typo-caption tracking-wide uppercase text-primary/70">
+        <span className="inline-flex items-center gap-1.5 typo-caption tracking-wide uppercase text-primary/70">
+          <InfinityIcon className="w-3 h-3" aria-hidden />
           {children as string}
         </span>
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
@@ -81,25 +86,38 @@ export function Bubble({
 
   return (
     <div
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'}`}
       data-testid={
         streaming ? 'companion-bubble-streaming' : `companion-bubble-${role}`
       }
       data-companion-bubble-role={role}
       data-companion-bubble-index={index}
     >
-      <div className={`max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+      {!isUser && (
+        <img
+          src="/athena/athena_baseline.jpg"
+          alt=""
+          aria-hidden
+          draggable={false}
+          className="w-7 h-7 mt-0.5 rounded-full object-cover ring-1 ring-primary/25 shrink-0 select-none"
+        />
+      )}
+      <div className={`min-w-0 max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
         <div
-          className={`rounded-card px-3.5 py-2.5 typo-body break-words ${
+          className={`rounded-card px-3.5 py-2.5 typo-body leading-relaxed break-words ${
             isUser
-              ? 'bg-primary/15 text-foreground whitespace-pre-wrap'
-              : 'bg-foreground/5 text-foreground'
+              ? 'bg-primary/15 border border-primary/20 text-foreground whitespace-pre-wrap'
+              : 'bg-foreground/[0.06] border border-foreground/10 text-foreground shadow-elevation-1'
           } ${streaming ? 'opacity-90' : ''}`}
         >
           {isUser || !displayIsString ? (
             displayText
           ) : (
-            <MarkdownRenderer content={displayText as string} />
+            <MarkdownRenderer
+              content={displayText as string}
+              className="athena-chat-md"
+              codeBlockActions
+            />
           )}
         </div>
         {showBrainLinks && (
