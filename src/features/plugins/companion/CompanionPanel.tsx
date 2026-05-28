@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
+  ArrowDown,
   BookOpen,
   Bot,
   Infinity as InfinityIcon,
@@ -80,6 +81,7 @@ import { TaskTag } from './TaskTag';
 import { QueuedMessages } from './QueuedMessages';
 import { WelcomeHero } from './WelcomeHero';
 import { TypingDots } from './TypingDots';
+import { useChatScroll } from './useChatScroll';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -1259,13 +1261,11 @@ function Body(props: BodyProps) {
     'companion_approvals_listen',
   );
 
-  // Auto-scroll on new content.
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [messages, streamingText, streaming]);
+  // Bottom-aware autoscroll: pin to the bottom on new content only while the
+  // user is already there; once they scroll up to read history, leave them be
+  // and surface the jump-to-latest pill (gated on `atBottom`) instead.
+  const { scrollRef, atBottom, scrollToBottom, maybeAutoScroll } = useChatScroll();
+  useEffect(maybeAutoScroll, [messages, streamingText, streaming, maybeAutoScroll]);
 
   // Voice is "active" only when the chosen engine has everything it
   // needs: ElevenLabs requires a credential + voice id; Piper requires
@@ -1604,6 +1604,7 @@ function Body(props: BodyProps) {
   return (
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
+        <div className="relative flex-1 min-h-0 flex flex-col">
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
           {!initialized && !initError && (
             <div className="flex items-center gap-3 text-foreground typo-body">
@@ -1911,6 +1912,18 @@ function Body(props: BodyProps) {
             <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
               {sendError}
             </div>
+          )}
+        </div>
+          {!atBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom()}
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 rounded-full bg-secondary/95 border border-foreground/15 shadow-elevation-3 px-3 py-1.5 typo-caption font-medium text-foreground hover:bg-secondary backdrop-blur-sm transition-colors focus-ring animate-fade-slide-in"
+              data-testid="companion-jump-to-latest"
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+              {t.plugins.companion.jump_to_latest}
+            </button>
           )}
         </div>
         <ActivityTray />
