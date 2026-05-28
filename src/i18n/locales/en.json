@@ -2825,10 +2825,6 @@
       "delete_drafts_message": "{count} draft agent(s) will be permanently removed.",
       "system_persona_undeletable": "The Director is a system persona and can't be deleted."
     },
-    "director_brain": {
-      "title": "Director long-term memory",
-      "subtitle": "Let the Director read past coaching from your Obsidian Brain and write each new review back."
-    },
     "persona_list": {
       "all_personas": "All Personas",
       "star_director_add": "Star to add to the Director's coaching scope",
@@ -3056,6 +3052,20 @@
       "discord_poll_inbound_label": "Poll for incoming Discord messages",
       "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
     }
+  },
+  "director": {
+    "panel_title": "Director",
+    "scope_summary": "Coaching {count} starred personas",
+    "scope_empty": "No personas starred — star one to put it in scope",
+    "last_review": "Last review",
+    "run_batch": "Run review now",
+    "run_batch_hint": "Score every starred persona's latest run",
+    "no_scope_hint": "Star at least one persona to enable",
+    "recent_verdicts": "Recent verdicts",
+    "no_verdicts": "No verdicts yet — run a review to see coaching here",
+    "brain_title": "Director long-term memory",
+    "brain_subtitle": "Let the Director read past coaching from your Obsidian Brain and write each new review back.",
+    "brain_unavailable": "Configure an Obsidian vault to give the Director long-term memory."
   },
   "vault": {
     "title": "Vault",

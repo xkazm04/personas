@@ -2831,10 +2831,6 @@ export type Translations = {
       delete_drafts_message: string;
       system_persona_undeletable: string;
     };
-    director_brain: {
-      title: string;
-      subtitle: string;
-    };
     persona_list: {
       all_personas: string;
       star_director_add: string;
@@ -3062,6 +3058,20 @@ export type Translations = {
       discord_poll_inbound_label: string;
       discord_poll_inbound_help: string;
     };
+  };
+  director: {
+    panel_title: string;
+    scope_summary: string;
+    scope_empty: string;
+    last_review: string;
+    run_batch: string;
+    run_batch_hint: string;
+    no_scope_hint: string;
+    recent_verdicts: string;
+    no_verdicts: string;
+    brain_title: string;
+    brain_subtitle: string;
+    brain_unavailable: string;
   };
   vault: {
     title: string;
