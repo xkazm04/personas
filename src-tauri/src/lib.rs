@@ -7,6 +7,7 @@ pub mod daemon;
 mod db;
 mod engine;
 pub use commands::artist::persistence as artist_persistence;
+pub use commands::eval_runs;
 pub use engine::provider::EngineKind;
 pub use engine::render_plan;
 mod error;
@@ -2230,6 +2231,10 @@ pub fn run() {
             commands::drive::drive_reveal_in_os,
             // Live Roadmap -- runtime-fetched roadmap content
             commands::live_roadmap::fetch_roadmap,
+            // Eval / Certification -- read-only viewer over docs/test/runs bundles (dev-only UI)
+            commands::eval_runs::list_eval_runs,
+            commands::eval_runs::get_cert_status,
+            commands::eval_runs::get_eval_run,
             // Obsidian Brain -- Second Brain Sync
             commands::obsidian_brain::obsidian_brain_detect_vaults,
             commands::obsidian_brain::obsidian_brain_test_connection,
