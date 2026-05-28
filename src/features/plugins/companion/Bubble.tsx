@@ -21,6 +21,7 @@
  * Brain Viewer entry. Skipped during streaming — the partial text would
  * make the chip set flicker as tokens come and go mid-reply.
  */
+import { Infinity as InfinityIcon } from 'lucide-react';
 import type { BrainKind } from '@/api/companion';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { stripModelDirectives } from './athenaLabels';
@@ -56,7 +57,8 @@ export function Bubble({
         data-companion-bubble-index={index}
       >
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
-        <span className="typo-caption tracking-wide uppercase text-primary/70">
+        <span className="inline-flex items-center gap-1.5 typo-caption tracking-wide uppercase text-primary/70">
+          <InfinityIcon className="w-3 h-3" aria-hidden />
           {children as string}
         </span>
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
