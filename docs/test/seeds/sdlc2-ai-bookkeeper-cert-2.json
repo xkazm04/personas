@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-cert-2",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": true,
+  "goal": "The ledger now has roundMoney + addMoney/subtractMoney. The display layer needs a paired formatter. As the Solution Architect, scope a tiny formatMoney utility; then the team must IMPLEMENT it. Add src/features/ledger/lib/format.ts exporting formatMoney(value, currency, locale?) that returns a human-readable money string: (1) uses Intl.NumberFormat with style:'currency' for locale-correct symbol placement and minor-unit precision, (2) defaults locale to 'en-US' if omitted, (3) rejects mixed-currency Money objects and non-finite values via the same MoneyArithmeticError pattern, (4) normalizes the input through roundMoney before formatting so display can never disagree with stored value by float drift. The engineer writes the code + unit tests covering: USD default-locale, EUR with 'de-DE' (comma decimal + €), JPY (zero minor units), negative values, very large values, NaN/Infinity rejection. The Reviewer must verify display is consistent with stored value across the prior arithmetic (formatMoney(addMoney(0.1, 0.2, 'USD'), 'USD') must show exactly $0.30). Release: build + lint + tests ALL green before merge — if lint fails on the post-merge state, do NOT merge, escalate via manual_review. Do not stop at a plan — ship a real deliverable.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "A real typed format.ts that uses Intl.NumberFormat + roundMoney + edge-case tests (USD/EUR/JPY + 0.1+0.2 round-trip via addMoney), suite green AND lint green, merged to master by Release Manager (who must enforce the lint gate this time — cert-1 NOT-READY was the lint gap). Second held-out cert seed — exercises the release-manager template fix + adds the display layer to the money primitive stack."
+}
