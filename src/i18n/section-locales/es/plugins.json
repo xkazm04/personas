@@ -1597,6 +1597,8 @@
     "guide_goto_step": "Ir al paso {step}",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
+    "guide_cta_build": "Empezar a crear",
+    "guide_cta_connect": "Abrir el catálogo",
     "guide_step_label": "Step {current} of {total}",
     "guide_click_hint": "Haz clic en el área resaltada para continuar",
     "guide_pc_title": "Creating a persona",

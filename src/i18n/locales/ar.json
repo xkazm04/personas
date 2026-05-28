@@ -11631,6 +11631,8 @@
       "guide_goto_step": "انتقل إلى الخطوة {step}",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
+      "guide_cta_build": "ابدأ الإنشاء",
+      "guide_cta_connect": "افتح الكتالوج",
       "guide_step_label": "Step {current} of {total}",
       "guide_click_hint": "انقر على المنطقة المميَّزة للمتابعة",
       "guide_pc_title": "Creating a persona",

@@ -1597,6 +1597,8 @@
     "guide_goto_step": "ধাপ {step}-এ যান",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
+    "guide_cta_build": "তৈরি শুরু করুন",
+    "guide_cta_connect": "ক্যাটালগ খুলুন",
     "guide_step_label": "Step {current} of {total}",
     "guide_click_hint": "চালিয়ে যেতে হাইলাইট করা অংশে ক্লিক করুন",
     "guide_pc_title": "Creating a persona",

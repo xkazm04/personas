@@ -1,11 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import { storeBus } from '@/lib/storeBus';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
 import { resolveWalkthrough } from './walkthroughs';
-import type { GuidancePreAction, GuidanceWalkthrough, OrbAnchor } from './types';
+import { runPreAction } from './appActions';
+import type { GuidanceWalkthrough, OrbAnchor } from './types';
 
 const ORB_GAP = 18;
 const ANCHOR_WAIT_MS = 4000;
@@ -72,29 +72,6 @@ function computeOrbTarget(
 /** Reading-time estimate for a narration line, clamped to a sane range. */
 function defaultDwell(text: string): number {
   return Math.max(3800, Math.min(9000, text.length * 60));
-}
-
-function runPreAction(action: GuidancePreAction) {
-  switch (action) {
-    case 'open_build_entry': {
-      // Make the persona build studio the visible surface so the step's
-      // anchors mount. `isCreatingPersona` is what PersonasPage checks to
-      // render UnifiedBuildEntry (vs the persona list / editor).
-      const sys = useSystemStore.getState();
-      sys.setSidebarSection('personas');
-      sys.setIsCreatingPersona(true);
-      break;
-    }
-    case 'open_credential_add': {
-      // Drive the vault into its "Add new" view so the connector type picker
-      // mounts to point at. The credential nav lives in a React context, not a
-      // global store; `storeBus` is its from-outside-React escape hatch (the
-      // onboarding tour uses the same event). The vault route must already be
-      // mounted — author this as a step *after* the one that navigates there.
-      storeBus.emit('tour:navigate-credential-view', { key: 'add-new' });
-      break;
-    }
-  }
 }
 
 /**

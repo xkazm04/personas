@@ -54,8 +54,11 @@ The store is intentionally dumb — it holds raw state; the runner owns the regi
 | `highlightTestId?` | Element to ring this step. Omit for a pure narration beat (intro/outro). |
 | `orbAnchor?` | Where the orb parks: `auto` (most room) / `left` / `right` / `above` / `below` / `center`. |
 | `navigateRoute?` | Switch the sidebar route before the step. |
-| `preAction?` | An allow-listed app action (closed enum, not arbitrary callbacks) — currently `open_build_entry`. |
+| `preAction?` | An allow-listed app action (closed enum, not arbitrary callbacks) — `open_build_entry` / `open_credential_add`. |
 | `dwellMs?` | Override the auto-advance dwell; default derives from narration length. |
+| `holdForClick?` | Wait for the user to click the highlighted element before advancing (a "your turn" beat). |
+
+A `GuidanceWalkthrough` may also carry an optional **`cta`** — `{ label, action }` — rendered as a primary button on the last step to close the show→do loop. `action` is a closed enum (`GuidanceCtaAction`: `build_persona` / `open_connector_add`) resolved through `guidance/appActions.ts`, the same module that runs step `preAction`s — so the full set of app-driving effects guidance can trigger lives in one auditable place. `persona_creation` ends with **Start building** (opens the build studio); `connector_setup` ends with **Open the catalog** (drives the Vault to "Add new"). Clicking runs the action and stops the walkthrough. Ad-hoc walkthroughs (`point_at` / `compose`) carry no `cta`.
 
 ---
 

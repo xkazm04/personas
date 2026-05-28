@@ -1,9 +1,11 @@
 import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ChevronLeft, Pause, Play, SkipForward, X } from 'lucide-react';
+import { ArrowRight, ChevronLeft, Pause, Play, SkipForward, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import Button from '@/features/shared/components/buttons/Button';
 import { useCompanionStore } from '../companionStore';
 import { resolveWalkthrough } from '../guidance/walkthroughs';
+import { runGuidanceCta } from '../guidance/appActions';
 import { ORB_SIZE } from './AthenaOrb';
 
 const CAPTION_GAP = 12;
@@ -42,6 +44,8 @@ export function GuideCaption() {
 
   const total = walkthrough.steps.length;
   const isMulti = total > 1;
+  const isLast = stepIndex === total - 1;
+  const cta = walkthrough.cta;
 
   const dockedLeft = orbTarget.left + ORB_SIZE / 2 < window.innerWidth / 2;
   const pos: CSSProperties = dockedLeft
@@ -79,6 +83,24 @@ export function GuideCaption() {
         <p data-testid="athena-guide-click-hint" className="mt-1.5 typo-caption text-primary/80">
           {t.plugins.companion.guide_click_hint}
         </p>
+      )}
+
+      {/* Completion CTA — the "now do it" hand-off, shown on the last step. */}
+      {isLast && cta && (
+        <Button
+          variant="primary"
+          size="sm"
+          block
+          iconRight={<ArrowRight className="w-3.5 h-3.5" />}
+          data-testid="athena-guide-cta"
+          className="mt-2.5"
+          onClick={() => {
+            runGuidanceCta(cta.action);
+            stopGuidance();
+          }}
+        >
+          {cta.label(t)}
+        </Button>
       )}
 
       {/* Segmented progress rail — each segment jumps to its step. */}

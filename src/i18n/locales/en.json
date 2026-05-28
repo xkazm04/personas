@@ -11232,6 +11232,8 @@
       "guide_back": "Back",
       "guide_pause": "Pause",
       "guide_resume": "Resume",
+      "guide_cta_build": "Start building",
+      "guide_cta_connect": "Open the catalog",
       "guide_step_label": "Step {current} of {total}",
       "guide_goto_step": "Go to step {step}",
       "guide_click_hint": "Click the highlighted area to continue",

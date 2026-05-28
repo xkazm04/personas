@@ -1597,6 +1597,8 @@
     "guide_goto_step": "跳到第 {step} 步",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
+    "guide_cta_build": "开始构建",
+    "guide_cta_connect": "打开目录",
     "guide_step_label": "Step {current} of {total}",
     "guide_click_hint": "点击高亮区域以继续",
     "guide_pc_title": "Creating a persona",

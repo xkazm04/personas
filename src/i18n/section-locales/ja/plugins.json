@@ -1597,6 +1597,8 @@
     "guide_goto_step": "ステップ {step} へ移動",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
+    "guide_cta_build": "作成を始める",
+    "guide_cta_connect": "カタログを開く",
     "guide_step_label": "Step {current} of {total}",
     "guide_click_hint": "続けるにはハイライトされた部分をクリックしてください",
     "guide_pc_title": "Creating a persona",

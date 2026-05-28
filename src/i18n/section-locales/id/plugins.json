@@ -1597,6 +1597,8 @@
     "guide_goto_step": "Ke langkah {step}",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
+    "guide_cta_build": "Mulai membangun",
+    "guide_cta_connect": "Buka katalog",
     "guide_step_label": "Step {current} of {total}",
     "guide_click_hint": "Klik area yang disorot untuk melanjutkan",
     "guide_pc_title": "Creating a persona",

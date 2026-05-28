@@ -1597,6 +1597,8 @@
     "guide_goto_step": "Đến bước {step}",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
+    "guide_cta_build": "Bắt đầu tạo",
+    "guide_cta_connect": "Mở danh mục",
     "guide_step_label": "Step {current} of {total}",
     "guide_click_hint": "Nhấp vào vùng được làm nổi bật để tiếp tục",
     "guide_pc_title": "Creating a persona",

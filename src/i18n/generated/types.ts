@@ -11238,6 +11238,8 @@ export type Translations = {
       guide_back: string;
       guide_pause: string;
       guide_resume: string;
+      guide_cta_build: string;
+      guide_cta_connect: string;
       guide_step_label: string;
       guide_goto_step: string;
       guide_click_hint: string;
