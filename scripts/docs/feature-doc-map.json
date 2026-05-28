@@ -130,6 +130,14 @@
   },
   "entries": [
     {
+      "doc": "docs/features/director/README.md",
+      "sourceGlobs": [
+        "src-tauri/src/engine/director.rs",
+        "src-tauri/src/commands/infrastructure/director.rs"
+      ],
+      "marketingModule": "agents"
+    },
+    {
       "doc": "docs/features/personas/README.md",
       "sourceGlobs": [
         "src/features/personas/**",
