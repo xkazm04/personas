@@ -358,6 +358,7 @@
   "sidebar": {
     "home": "Home",
     "overview": "Overview",
+    "goals": "Goals",
     "agents": "Agents",
     "events": "Events",
     "keys": "Connections",

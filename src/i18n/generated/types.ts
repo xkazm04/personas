@@ -364,6 +364,7 @@ export type Translations = {
   sidebar: {
     home: string;
     overview: string;
+    goals: string;
     agents: string;
     events: string;
     keys: string;

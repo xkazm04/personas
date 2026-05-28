@@ -5,6 +5,8 @@ import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
 import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
+import type { DevGoalItem } from "@/lib/bindings/DevGoalItem";
+import type { GoalProgressSuggestion } from "@/lib/bindings/GoalProgressSuggestion";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -154,6 +156,37 @@ export const addGoalDependency = (goalId: string, dependsOnId: string, dependenc
 
 export const removeGoalDependency = (id: string) =>
   invoke<boolean>("dev_tools_remove_goal_dependency", { id });
+
+// ============================================================================
+// Goal Items (lightweight ad-hoc checklist) + hybrid progress resolver
+// ============================================================================
+
+export const listGoalItems = (goalId: string) =>
+  safeInvoke<DevGoalItem[]>([], "dev_tools_list_goal_items", { goalId });
+
+export const createGoalItem = (goalId: string, title: string) =>
+  invoke<DevGoalItem>("dev_tools_create_goal_item", { goalId, title });
+
+export const updateGoalItem = (id: string, updates: { title?: string; done?: boolean }) =>
+  invoke<DevGoalItem>("dev_tools_update_goal_item", {
+    id,
+    title: updates.title,
+    done: updates.done,
+  });
+
+export const deleteGoalItem = (id: string) =>
+  invoke<boolean>("dev_tools_delete_goal_item", { id });
+
+export const reorderGoalItems = (ids: string[]) =>
+  invoke<void>("dev_tools_reorder_goal_items", { ids });
+
+export const listChildGoals = (parentGoalId: string) =>
+  safeInvoke<DevGoal[]>([], "dev_tools_list_child_goals", { parentGoalId });
+
+/** Hybrid progress: composes checklist items + sub-goals + linked team-assignment
+ *  steps into a suggested %. Read-only — the UI surfaces it as an accept/edit nudge. */
+export const resolveGoalProgress = (goalId: string) =>
+  invoke<GoalProgressSuggestion>("dev_tools_resolve_goal_progress", { goalId });
 
 // ============================================================================
 // Cross-Project Metadata Map

@@ -306,6 +306,7 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
         maxParallelSteps: maxParallel,
         source: 'team_ui',
         companionOpId: null,
+        goalId: null,
         steps: steps.map((s) => ({
           title: s.title.trim(),
           description: s.description.trim() ? s.description.trim() : null,

@@ -23,6 +23,7 @@ const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m =
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
+const GoalsPage = lazy(() => import('@/features/plugins/dev-tools/sub_goals/GoalsPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
 const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
@@ -227,6 +228,7 @@ export default function PersonasPage() {
     if (sidebarSection === 'overview') {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
+    if (sidebarSection === 'goals') return <ErrorBoundary name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;

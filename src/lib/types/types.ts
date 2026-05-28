@@ -392,7 +392,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
+export type SidebarSection = "home" | "overview" | "goals" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */

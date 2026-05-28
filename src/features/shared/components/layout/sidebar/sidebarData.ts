@@ -34,6 +34,7 @@ export interface SectionDef {
 export const sections: SectionDef[] = [
   { id: 'home', icon: Home, label: 'Home' },
   { id: 'overview', icon: BarChart3, label: 'Overview' },
+  { id: 'goals', icon: Target, label: 'Goals', minTier: TIERS.TEAM },
   { id: 'personas', icon: Bot, label: 'Agents' },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
