@@ -4745,3 +4745,28 @@ html[data-motion="reduce"] .animate-fade-slide-in {
 .athena-chat-md .hljs-emphasis {
   font-style: italic;
 }
+
+/* Athena chat — GFM task lists + nested-list rhythm (scoped). remark-gfm
+   tags task lists with `contains-task-list` / `task-list-item` (forwarded by
+   the ul/li renderers); drop the bullet, theme the native checkbox, and
+   tighten the gaps between nesting levels. */
+.athena-chat-md .contains-task-list {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+.athena-chat-md .task-list-item {
+  list-style: none;
+}
+.athena-chat-md .task-list-item input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+.athena-chat-md li > ul,
+.athena-chat-md li > ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}

@@ -108,14 +108,17 @@ function buildComponents(codeBlockActions: boolean): Components {
   p: ({ children }) => (
     <p className="typo-body text-foreground/90 mb-3 leading-relaxed">{children}</p>
   ),
-  ul: ({ children }) => (
-    <ul className="list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ul>
+  // Forward the node's own className so remark-gfm's `contains-task-list` /
+  // `task-list-item` markers survive (the chat scopes task-list styling off
+  // them; the classes are inert on every other call site).
+  ul: ({ className, children }) => (
+    <ul className={`list-disc pl-5 space-y-1.5 mb-3 typo-body text-foreground/90${className ? ` ${className}` : ''}`}>{children}</ul>
   ),
   ol: ({ children }) => (
     <ol className="list-decimal pl-5 space-y-1.5 mb-3 typo-body text-foreground/90">{children}</ol>
   ),
-  li: ({ children }) => (
-    <li className="text-foreground/90">{children}</li>
+  li: ({ className, children }) => (
+    <li className={`text-foreground/90${className ? ` ${className}` : ''}`}>{children}</li>
   ),
   code: ({ className, children, ...props }) => {
     const isChart = className?.includes('language-chart');
