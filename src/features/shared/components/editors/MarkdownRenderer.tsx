@@ -9,7 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
-import { WrapText } from 'lucide-react';
+import { WrapText, ChevronsUpDown, ChevronsDownUp } from 'lucide-react';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
@@ -44,10 +44,15 @@ function extractText(node: ReactNode): string {
   return '';
 }
 
+/** A fenced block taller than this collapses by default with an expander. */
+const LONG_CODE_LINES = 16;
+
 /**
  * Chrome for a fenced code block when `codeBlockActions` is on: a header bar
- * (language label + line-wrap toggle + copy) over the code. The wrap toggle is
- * per-block state — long lines either scroll horizontally (default) or soft-wrap.
+ * (language label + collapse toggle + line-wrap toggle + copy) over the code.
+ * Per-block state: wrap toggles horizontal-scroll vs soft-wrap; long blocks
+ * (> LONG_CODE_LINES) start collapsed under a height cap with a gradient
+ * "show all N lines" strip, so a wall of code never dominates the transcript.
  */
 function CodeBlockShell({
   lang,
@@ -58,8 +63,16 @@ function CodeBlockShell({
   codeText: string;
   children: ReactNode;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [wrap, setWrap] = useState(false);
+  const lineCount = useMemo(
+    () => (codeText ? codeText.split('\n').length : 0),
+    [codeText],
+  );
+  const collapsible = lineCount > LONG_CODE_LINES;
+  const [collapsed, setCollapsed] = useState(true);
+  const isCollapsed = collapsible && collapsed;
+
   return (
     <div className="my-3 rounded-xl border border-primary/10 bg-background/60 overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-3 py-1.5 border-b border-primary/10 bg-foreground/[0.03]">
@@ -67,6 +80,23 @@ function CodeBlockShell({
           {lang}
         </span>
         <div className="flex items-center gap-0.5">
+          {collapsible && (
+            <button
+              type="button"
+              onClick={() => setCollapsed((c) => !c)}
+              aria-pressed={!collapsed}
+              aria-label={collapsed ? t.shared.code_expand_block : t.shared.code_collapse_block}
+              title={collapsed ? t.shared.code_expand_block : t.shared.code_collapse_block}
+              className="p-1.5 rounded-lg text-foreground hover:text-foreground/80 hover:bg-secondary/50 transition-colors focus-ring"
+              data-testid="companion-code-collapse-toggle"
+            >
+              {collapsed ? (
+                <ChevronsUpDown className="w-3.5 h-3.5" />
+              ) : (
+                <ChevronsDownUp className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setWrap((w) => !w)}
@@ -84,9 +114,21 @@ function CodeBlockShell({
           {codeText && <CopyButton text={codeText} iconSize="w-3.5 h-3.5" />}
         </div>
       </div>
-      <pre className={`m-0 ${wrap ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto'}`}>
-        {children}
-      </pre>
+      <div className={`relative ${isCollapsed ? 'max-h-72 overflow-hidden' : ''}`}>
+        <pre className={`m-0 ${wrap ? 'whitespace-pre-wrap break-words' : 'overflow-x-auto'}`}>
+          {children}
+        </pre>
+        {isCollapsed && (
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            className="absolute inset-x-0 bottom-0 flex items-end justify-center pt-10 pb-2 typo-caption font-medium text-primary hover:text-primary/80 bg-gradient-to-t from-background via-background/85 to-transparent focus-ring"
+            data-testid="companion-code-expand"
+          >
+            {tx(t.shared.code_show_lines, { count: lineCount })}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

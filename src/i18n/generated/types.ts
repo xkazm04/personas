@@ -13517,6 +13517,9 @@ export type Translations = {
     resize_column: string;
     copy_full_id: string;
     code_toggle_wrap: string;
+    code_expand_block: string;
+    code_collapse_block: string;
+    code_show_lines: string;
     copy_tooltip: string;
     copy_copied: string;
     copy_copied_bang: string;
