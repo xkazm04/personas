@@ -137,7 +137,16 @@
     "caption_draft_many": "{count} drafts ready",
     "caption_queued_many": "{count} queued",
     "open_reviews_with_count": "Open {count} review(s)",
-    "open_messages_with_count": "Open {count} message(s)"
+    "open_messages_with_count": "Open {count} message(s)",
+    "live_telemetry": "{tools} tools · ${cost}",
+    "health_summary": "{pct}% success · {today} today",
+    "strip_aria": "Fleet pulse — {running} running, {queued} queued",
+    "strip_running": "{count} running",
+    "strip_queued": "{count} queued",
+    "strip_oldest": "oldest {elapsed}",
+    "strip_open_hint": "Open monitor",
+    "live_chip": "{running} live",
+    "live_chip_title": "{tools} tool calls in flight"
   },
   "common": {
     "unknown_error": "Unknown error",

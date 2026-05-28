@@ -144,6 +144,15 @@ export type Translations = {
     caption_queued_many: string;
     open_reviews_with_count: string;
     open_messages_with_count: string;
+    live_telemetry: string;
+    health_summary: string;
+    strip_aria: string;
+    strip_running: string;
+    strip_queued: string;
+    strip_oldest: string;
+    strip_open_hint: string;
+    live_chip: string;
+    live_chip_title: string;
   };
   common: {
     unknown_error: string;
