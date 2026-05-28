@@ -10,6 +10,7 @@
  *   · Body scrolls if content overflows; header/footer stay pinned
  */
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
@@ -49,7 +50,14 @@ export function ComposerPickerShell({
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose, onApply]);
 
-  return (
+  // Portal to <body> so the overlay escapes any transformed / backdrop-
+  // filtered ancestor. When opened from the companion chat panel (which sets
+  // backdrop-blur + a framer-motion transform + overflow-hidden), a plain
+  // `fixed inset-0` is contained by — and clipped to — that panel instead of
+  // the viewport: the modal's top/bottom got cut off and it was squeezed to
+  // the panel's (compact) width. Rendering at the body level makes `fixed`
+  // viewport-relative again for every caller.
+  const overlay = (
     <AnimatePresence>
       {open && (
         <motion.div
@@ -100,4 +108,8 @@ export function ComposerPickerShell({
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(overlay, document.body)
+    : overlay;
 }
