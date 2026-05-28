@@ -1661,7 +1661,7 @@ function Body(props: BodyProps) {
               const steps =
                 m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
               return (
-                <div key={m.id} className="space-y-1">
+                <div key={m.id} className="space-y-1 animate-fade-slide-in">
                   {recall && (
                     <RecallStrip
                       preview={recall}
