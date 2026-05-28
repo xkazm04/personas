@@ -4826,3 +4826,24 @@ html[data-motion="reduce"] .companion-autonomous {
   animation: none;
   border-color: color-mix(in srgb, var(--primary) 45%, transparent);
 }
+
+/* Companion transcript — soft top/bottom scroll fades so messages dissolve
+   into the panel chrome at the edges instead of hard-cutting. The 14px fade
+   sits inside the scroll area's vertical padding, so message text isn't
+   clipped — only the empty padding gutter fades. */
+.companion-scroll {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+}

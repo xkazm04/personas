@@ -1568,7 +1568,7 @@ function Body(props: BodyProps) {
   return (
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
           {!initialized && !initError && (
             <div className="flex items-center gap-3 text-foreground typo-body">
               <LoadingSpinner size="sm" />
