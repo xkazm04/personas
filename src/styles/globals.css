@@ -4770,3 +4770,13 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
 }
+
+/* Athena chat — table zebra + row hover (scoped). The renderer gives tables a
+   faintly-tinted surface + borders; banding alternate rows and a subtle hover
+   make data-heavy replies far easier to scan. */
+.athena-chat-md tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+.athena-chat-md tbody tr:hover td {
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
