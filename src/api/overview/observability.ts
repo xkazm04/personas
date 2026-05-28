@@ -7,6 +7,7 @@ import type { AlertSeverity } from "@/lib/bindings/AlertSeverity";
 import type { FiredAlert } from "@/lib/bindings/FiredAlert";
 import type { MetricsChartData } from "@/lib/bindings/MetricsChartData";
 import type { MetricsSummary } from "@/lib/bindings/MetricsSummary";
+import type { ValueRollup } from "@/lib/bindings/ValueRollup";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { PromptAbTestResult } from "@/lib/bindings/PromptAbTestResult";
 import type { PromptPerformanceData } from "@/lib/bindings/PromptPerformanceData";
@@ -30,6 +31,16 @@ export const getMetricsChartData = (
   personaId?: string,
 ) =>
   invoke<MetricsChartData>("get_metrics_chart_data", {
+    days: days,
+    personaId: personaId,
+  });
+
+/**
+ * Business-value + efficiency rollup. Omit personaId for the all-personas
+ * headline; pass one to scope to a single persona.
+ */
+export const getValueRollup = (days?: number, personaId?: string) =>
+  invoke<ValueRollup>("get_value_rollup", {
     days: days,
     personaId: personaId,
   });

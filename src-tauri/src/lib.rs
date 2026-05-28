@@ -1981,6 +1981,7 @@ pub fn run() {
             // Communication -- Observability: Metrics
             commands::communication::observability::metrics::get_metrics_summary,
             commands::communication::observability::metrics::get_metrics_chart_data,
+            commands::communication::observability::metrics::get_value_rollup,
             commands::communication::observability::metrics::get_all_monthly_spend,
             commands::communication::observability::metrics::get_overview_bundle,
             commands::communication::observability::metrics::get_prompt_performance,
