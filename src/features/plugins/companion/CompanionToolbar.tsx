@@ -231,7 +231,7 @@ export function CompanionToolbar({
 }
 
 function Divider() {
-  return <div className="my-1 w-6 border-t border-foreground/10" aria-hidden />;
+  return <div className="my-1.5 w-5 border-t border-foreground/15" aria-hidden />;
 }
 
 function ToolbarButton({
@@ -256,7 +256,7 @@ function ToolbarButton({
       data-testid={testId}
       className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-colors focus-ring disabled:opacity-40 disabled:cursor-not-allowed ${
         active
-          ? 'bg-primary/15 text-primary'
+          ? 'bg-primary/15 text-primary ring-1 ring-primary/30'
           : 'text-foreground hover:text-foreground hover:bg-foreground/5'
       }`}
       aria-label={label}
