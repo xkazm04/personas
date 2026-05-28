@@ -5404,6 +5404,10 @@ export type Translations = {
       cloud_count: string;
       mock_review: string;
       seed_tooltip: string;
+      split: string;
+      split_tooltip: string;
+      table: string;
+      table_tooltip: string;
       empty_title: string;
       empty_subtitle: string;
       filter_all: string;
