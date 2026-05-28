@@ -226,7 +226,7 @@ export function Composer({
           />
         </div>
       )}
-      <div className="flex items-end gap-2 rounded-card bg-foreground/5 px-3 py-2">
+      <div className="flex items-end gap-2 rounded-card bg-foreground/5 border border-foreground/10 px-3 py-2 transition-colors focus-within:border-primary/40 focus-within:bg-foreground/[0.07]">
         <textarea
           ref={taRef}
           value={displayValue}
