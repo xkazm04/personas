@@ -13,6 +13,7 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { useTranslation } from "@/i18n/useTranslation";
 
 interface ComposerPickerShellProps {
   open: boolean;
@@ -37,6 +38,7 @@ interface ComposerPickerShellProps {
 export function ComposerPickerShell({
   open, onClose, onApply, title, subtitle, icon, children, footer, size = "md", solid = false,
 }: ComposerPickerShellProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -65,7 +67,7 @@ export function ComposerPickerShell({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[100] bg-black/70 surface-blur-modal flex items-center justify-center p-4"
+          className="fixed inset-0 z-[100] bg-black/70 surface-blur-modal flex items-center justify-center p-3 sm:p-6"
           onClick={onClose}
         >
           <motion.div
@@ -73,7 +75,7 @@ export function ComposerPickerShell({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
             transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border border-card-border ${solid ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[82vh]`}
+            className={`relative w-full ${size === "lg" ? "max-w-3xl" : "max-w-2xl"} rounded-modal border border-card-border ${solid ? "bg-secondary" : "bg-card-bg"} shadow-elevation-4 overflow-hidden flex flex-col max-h-[88vh]`}
             onClick={(e) => e.stopPropagation()}
           >
             <header className="flex items-center gap-3 px-5 py-4 border-b border-border/25 bg-gradient-to-r from-primary/10 via-transparent to-transparent">
@@ -92,7 +94,7 @@ export function ComposerPickerShell({
                 type="button"
                 onClick={onClose}
                 className="shrink-0 text-foreground hover:text-foreground hover:bg-foreground/5 p-1.5 rounded-interactive transition-colors"
-                aria-label="Close"
+                aria-label={t.common.close}
               >
                 <X className="w-5 h-5" />
               </button>
