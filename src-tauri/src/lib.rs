@@ -2568,6 +2568,11 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_reorder_goal_items,
             commands::infrastructure::dev_tools::dev_tools_list_child_goals,
             commands::infrastructure::dev_tools::dev_tools_resolve_goal_progress,
+            // Dev Tools -- Goals v2 cross-project surfaces (Portfolio / Attention / Timeline / Map)
+            commands::infrastructure::dev_tools::dev_tools_list_all_goals,
+            commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
+            commands::infrastructure::dev_tools::dev_tools_portfolio_summary,
+            commands::infrastructure::dev_tools::dev_tools_attention_queue,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,

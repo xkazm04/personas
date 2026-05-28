@@ -213,6 +213,81 @@ pub struct GoalProgressSuggestion {
 }
 
 // ============================================================================
+// Goals v2 — cross-project rollups (Portfolio) + needs-action queue (Attention)
+// ============================================================================
+
+/// Per-project health rollup for the Portfolio surface. Counts use the canonical
+/// goal-status buckets (see `normalize_goal_status`); `at_risk` = ongoing goals
+/// that are overdue or stalled. Computed in one pass over all goals — no N+1.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioProjectSummary {
+    pub project_id: String,
+    pub project_name: String,
+    pub team_id: Option<String>,
+    pub total: i32,
+    pub open: i32,
+    pub in_progress: i32,
+    pub blocked: i32,
+    pub done: i32,
+    /// Ongoing (not done) goals that are overdue or stalled.
+    pub at_risk: i32,
+    /// Ongoing goals whose target_date is in the past.
+    pub overdue: i32,
+    /// Mean progress (0-100) across the project's goals (0 when none).
+    pub avg_progress: i32,
+}
+
+/// The whole portfolio: per-project rollups + a grand total row.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioSummary {
+    pub projects: Vec<PortfolioProjectSummary>,
+    pub total_goals: i32,
+    pub total_open: i32,
+    pub total_in_progress: i32,
+    pub total_blocked: i32,
+    pub total_done: i32,
+    pub total_at_risk: i32,
+    pub avg_progress: i32,
+}
+
+/// One row in the cross-project Attention queue — a goal (or team step) that
+/// needs the user. `kind` ∈ awaiting_review | overdue | stalled | unstaffed.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AttentionItem {
+    pub kind: String,
+    pub goal_id: String,
+    pub goal_title: String,
+    pub project_id: String,
+    pub project_name: String,
+    pub status: String,
+    pub progress: i32,
+    /// Human-meaningful context: e.g. "8 days overdue", "stalled 11d", step title.
+    pub detail: String,
+    /// Present for `awaiting_review` rows so the UI can resolve the step inline.
+    pub assignment_id: Option<String>,
+    pub step_id: Option<String>,
+    /// 0 = highest urgency; drives ranking in the queue.
+    pub rank: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct AttentionQueue {
+    pub items: Vec<AttentionItem>,
+    pub awaiting_review: i32,
+    pub overdue: i32,
+    pub stalled: i32,
+    pub unstaffed: i32,
+}
+
+// ============================================================================
 // Dev Context Groups
 // ============================================================================
 

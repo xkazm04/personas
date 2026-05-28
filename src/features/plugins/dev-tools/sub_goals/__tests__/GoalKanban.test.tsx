@@ -162,7 +162,8 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
     fireEvent.dragOver(doneLane, { dataTransfer });
     fireEvent.drop(doneLane, { dataTransfer });
 
-    expect(updateGoal).toHaveBeenCalledWith('g-move', { status: 'completed' });
+    // v2: the Done lane writes the canonical `done` status (was `completed`).
+    expect(updateGoal).toHaveBeenCalledWith('g-move', { status: 'done' });
   });
 
   it('drop on the same lane the goal is already in is a no-op', () => {
