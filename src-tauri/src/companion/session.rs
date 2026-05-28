@@ -909,7 +909,7 @@ async fn run_cli(
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
-        "claude-opus-4-7".into(),
+        "claude-opus-4-8".into(),
         "--system-prompt-file".into(),
         prompt_file.to_string_lossy().to_string(),
     ]);

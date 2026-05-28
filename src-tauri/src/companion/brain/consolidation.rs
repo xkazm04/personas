@@ -830,7 +830,7 @@ async fn call_claude_oneshot(prompt: &str) -> Result<ProposalEnvelope, AppError>
         "--dangerously-skip-permissions".into(),
         "--exclude-dynamic-system-prompt-sections".into(),
         "--model".into(),
-        "claude-opus-4-7".into(),
+        "claude-opus-4-8".into(),
     ]);
 
     let mut child = Command::new(&cmd_program)

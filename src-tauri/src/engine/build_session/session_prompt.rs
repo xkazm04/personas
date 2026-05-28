@@ -624,7 +624,7 @@ The agent runs on a platform with built-in communication protocols. When composi
     **Tier guide:**
     - **Haiku** (`claude-haiku-4-5-20251001`) — narrow, mostly-deterministic work. Pick when the capability is: a single-tool fetch followed by a templated digest; a simple classifier with a small fixed label set; trivial transformations (reformatting, key extraction, deduplication); a fast notifier that just relays a payload to a channel. Cost is ~5× lower than Sonnet, latency ~3× faster. NEVER pick Haiku when the capability needs to chain 3+ tools, draft natural-sounding prose for an external audience, or reason about ambiguous user intent.
     - **Sonnet** (`claude-sonnet-4-6`) — the default. Pick when the capability needs solid prose generation (digest summaries, draft replies, meeting notes), multi-tool orchestration of 2–4 tools, or any non-trivial reasoning over an event payload. Sonnet is the right answer for most "monitor + summarize + notify" personas, most ticket-triage personas, and most "research a topic and write a brief" personas.
-    - **Opus** (`claude-opus-4-7`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
+    - **Opus** (`claude-opus-4-8`) — top-tier reasoning, premium price. Pick ONLY when: the capability runs a long agentic loop with branching decisions and self-correction; the capability writes/refactors non-trivial code; the capability does deep research synthesis across 5+ sources where missing a connection is a real failure; the capability handles regulated/compliance-sensitive judgments where misjudgment has high cost. Opus is OVERKILL for digests and notifications — picking it on a daily-summary capability is the most common failure mode.
 
     **Per-capability, not per-persona.** A persona with two capabilities — `uc_classify_email` (label as urgent/followup/fyi) and `uc_draft_reply` (compose a personalized response) — should pick **Haiku** for `uc_classify_email` and **Sonnet** for `uc_draft_reply`. Mixed-tier personas are normal and good.
 
@@ -632,7 +632,7 @@ The agent runs on a platform with built-in communication protocols. When composi
     ```
     "model_override": "claude-sonnet-4-6"
     "model_override": "claude-haiku-4-5-20251001"
-    "model_override": "claude-opus-4-7"
+    "model_override": "claude-opus-4-8"
     "model_override": {{"model": "claude-haiku-4-5-20251001", "effort": "low"}}
     ```
 
