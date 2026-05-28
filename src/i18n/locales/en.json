@@ -8468,7 +8468,21 @@
       "updates_check_failed": "Couldn't check for updates. Try again in a moment.",
       "updates_current_version": "You're on v{version}",
       "updates_last_checked": "Last checked {time}",
-      "updates_history_title": "Recent updates"
+      "updates_history_title": "Recent updates",
+      "cloud_sync_title": "Cloud Dashboard Sync",
+      "cloud_sync_description": "Sync a read-only copy of your personas, runs, and activity to your private cloud so you can view them in the web dashboard. Your connector credentials never leave this device.",
+      "cloud_sync_toggle": "Sync to cloud dashboard",
+      "cloud_sync_on": "Your data is syncing to the cloud dashboard.",
+      "cloud_sync_off": "Your data stays on this device only.",
+      "cloud_sync_toggle_aria": "Toggle cloud dashboard sync",
+      "cloud_sync_now": "Sync now",
+      "cloud_sync_syncing": "Syncing...",
+      "cloud_sync_last": "Last synced {time}",
+      "cloud_sync_never": "Not synced yet",
+      "cloud_sync_error": "Last sync failed: {error}",
+      "cloud_sync_enable_failed": "Couldn't update the sync setting",
+      "cloud_sync_now_failed": "Sync failed. Check your connection and try again.",
+      "cloud_sync_now_done": "Synced {count} records"
     },
     "appearance_extra": {
       "simple": "Simple",

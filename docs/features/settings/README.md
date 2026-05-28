@@ -12,7 +12,7 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 
 | Tab | Availability | Behavior | Implementation |
 | --- | --- | --- | --- |
-| Account | Starter+ | Auth/account state, telemetry toggle, radio, and software-update controls (see [Software updates](#software-updates)) | `sub_account/components/AccountSettings.tsx` |
+| Account | Starter+ | Auth/account state, telemetry toggle, radio, software-update controls (see [Software updates](#software-updates)), and — once signed in with Google — the **Cloud dashboard sync** toggle (see [Cloud dashboard sync](#cloud-dashboard-sync)) | `sub_account/components/AccountSettings.tsx`, `CloudSyncCard.tsx` |
 | Appearance | Starter+ | Theme, custom theme creator, text size, **density** (Compact / Comfortable / Cozy), timezone, brightness, dim/CVD-safe/high-contrast/reduce-motion toggles, pseudo-locale toggle, translation contributor | `sub_appearance/components/*` |
 | Notifications | Starter+ | Notification preferences, weekly health digest, outbound webhook subscriptions (Slack/Discord/Teams/generic JSON). Each severity row has a "Test" button that fires a synthetic healing toast at that severity — useful to preview what an alert looks like without waiting for a real one. | `sub_notifications/components/NotificationSettings.tsx`, `WebhookSubscriptionsPanel.tsx`, `src-tauri/src/notifications.rs`, `src-tauri/src/engine/webhook_notifier.rs` |
 | Engine | Dev-only | Runtime capability badges and operation rows | `sub_engine/components/*`, `libs/engineCapabilities.ts` |
@@ -50,6 +50,14 @@ The **Export Workspace** button opens a selection modal where you pick exactly w
 An **Include memories** toggle (on by default) controls whether persona and team memories ride along. Turning it off exports agents and teams without their accumulated memories — useful for sharing a clean template. The **Workspace Overview** stat cards (including a **Team Memories** count) preview what's in the workspace before exporting.
 
 Credential-only export/import (password-protected `.cred.enc` files) lives in a separate **Credential Vault** section of the same tab and is independent of the workspace bundle.
+
+## Cloud dashboard sync
+
+The Account tab's **Cloud Dashboard Sync** card (`sub_account/components/CloudSyncCard.tsx`) appears only when the user is signed in with Google. It opts the device into pushing a **read-only projection** of local data (personas, executions, events, manual reviews, messages, metrics, tool usage) to the user's own Supabase tenant, so the web dashboard can render it. Isolation is enforced server-side by Supabase Row-Level Security keyed on `auth.uid()`; the desktop authenticates with the public anon key plus the user's own Google-OAuth JWT, so **no privileged secret is embedded in the app**.
+
+The projection is secret-free by construction: the encrypted `model_profile`, encrypted event payloads, and the entire credential vault are never read into the sync rows — execution and credentials never leave the device. Default off; opt-in is persisted in `app_settings.cloud_sync_enabled`.
+
+Backend: `src-tauri/src/cloud/sync/` (PostgREST upsert client + per-table incremental cursors in `app_settings`, a 45s periodic + CDC-driven sync loop, leader-gated). Commands `cloud_sync_set_enabled` / `cloud_sync_status` / `cloud_sync_now` (`commands/infrastructure/cloud_sync.rs`), front-end wrappers in `src/api/cloudSync.ts`. The Supabase schema + RLS live in `personas-web/scripts/setup-sync-db.sql` (applied via `npm run db:migrate:sync`).
 
 ## Ambient context
 

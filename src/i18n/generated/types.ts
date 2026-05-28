@@ -8475,6 +8475,20 @@ export type Translations = {
       updates_current_version: string;
       updates_last_checked: string;
       updates_history_title: string;
+      cloud_sync_title: string;
+      cloud_sync_description: string;
+      cloud_sync_toggle: string;
+      cloud_sync_on: string;
+      cloud_sync_off: string;
+      cloud_sync_toggle_aria: string;
+      cloud_sync_now: string;
+      cloud_sync_syncing: string;
+      cloud_sync_last: string;
+      cloud_sync_never: string;
+      cloud_sync_error: string;
+      cloud_sync_enable_failed: string;
+      cloud_sync_now_failed: string;
+      cloud_sync_now_done: string;
     };
     appearance_extra: {
       simple: string;
