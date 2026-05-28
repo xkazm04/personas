@@ -363,6 +363,15 @@ interface CompanionStore {
   stopGuidance: () => void;
   setGuidanceHighlightTestId: (testId: string | null) => void;
   setOrbGuideTarget: (target: { left: number; top: number } | null) => void;
+  /**
+   * Proactive one-shot "look here" highlight — independent of walkthroughs.
+   * Rings an element briefly (auto-clears after `ms`) when Athena navigates or
+   * composes a surface, so the user's eye lands on what she just brought up. No
+   * orb, no caption, fire-and-forget. Skipped while a walkthrough is active so
+   * it never fights the guidance ring.
+   */
+  flashHighlightTestId: string | null;
+  flashHighlight: (testId: string, ms?: number) => void;
 }
 
 /** Compact projection of an assignment + its current status, surfaced as
@@ -383,6 +392,10 @@ export interface PendingPromptPayload {
   text: string;
   autoSend?: boolean;
 }
+
+/** Auto-clear timer for the proactive `flashHighlight` ring (module-scoped so a
+ *  newer flash cancels the prior one's pending clear). */
+let flashTimer: ReturnType<typeof setTimeout> | null = null;
 
 export const useCompanionStore = create<CompanionStore>((set, get) => ({
   state: 'collapsed',
@@ -673,6 +686,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       guidancePlaying: true,
       guidanceHighlightTestId: null,
       orbGuideTarget: null,
+      flashHighlightTestId: null,
     }),
   startAdHocGuidance: (walkthrough) =>
     set({
@@ -682,6 +696,7 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       guidancePlaying: true,
       guidanceHighlightTestId: null,
       orbGuideTarget: null,
+      flashHighlightTestId: null,
     }),
   setGuidanceStep: (guidanceStepIndex) => set({ guidanceStepIndex }),
   advanceGuidance: () =>
@@ -700,4 +715,16 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
   setGuidanceHighlightTestId: (guidanceHighlightTestId) =>
     set({ guidanceHighlightTestId }),
   setOrbGuideTarget: (orbGuideTarget) => set({ orbGuideTarget }),
+  flashHighlightTestId: null,
+  flashHighlight: (testId, ms = 2400) => {
+    // A walkthrough owns the ring while it runs — don't fight it.
+    if (get().activeWalkthrough) return;
+    if (flashTimer) clearTimeout(flashTimer);
+    set({ flashHighlightTestId: testId });
+    flashTimer = setTimeout(() => {
+      flashTimer = null;
+      // Only clear if this flash is still the active one (a newer flash wins).
+      if (get().flashHighlightTestId === testId) set({ flashHighlightTestId: null });
+    }, ms);
+  },
 }));

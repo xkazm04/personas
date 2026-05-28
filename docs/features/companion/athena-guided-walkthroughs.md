@@ -125,6 +125,14 @@ Walkthroughs aren't only timed slides. Two behaviors make them responsive:
 
 The auto-advance timer is unchanged for ordinary steps, so the hands-off auto-play demo (and its e2e) still walk every step on a dwell.
 
+## Proactive "look here" glow (`flashHighlight`)
+
+Not every highlight needs a whole walkthrough. When Athena *navigates* (`open_route`) or *composes a surface* (`compose_cockpit` / `compose_dashboard`), the destination's primary container pulses for a couple of seconds so the user's eye lands on what she just brought up — no orb, no caption, fire-and-forget. This is the lightweight sibling of the walkthrough glow:
+
+- `companionStore.flashHighlight(testId, ms?)` sets `flashHighlightTestId` and schedules an auto-clear (a newer flash cancels the prior one's pending clear). It **skips while a walkthrough is active** so it never fights the guidance ring, and starting a walkthrough clears any pending flash.
+- `AthenaFlashGlow` (in `AthenaGuideLayer`) renders the ring from `flashHighlightTestId`, reusing `useTrackedElementRect` + the `athena-guide-glow` keyframe. Like the guide glow it's `pointer-events-none` and static under reduced motion.
+- Wiring lives in `CompanionPanel`: the `companion://navigate` handler flashes `ROUTE_FLASH_ANCHORS[route]` (only routes with a stable always-present container — `overview` → `overview-page`, `credentials` → `credential-manager`, `settings` → `settings-page`); the compose-cockpit/dashboard handlers flash `cockpit-panel` after switching to Home → Cockpit. No new op or backend change — it rides existing events.
+
 ---
 
 ## Accessibility & resource discipline

@@ -122,6 +122,17 @@ const VALID_NAV_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
+// After Athena navigates, briefly ring the destination's primary surface so the
+// user's eye lands on what she brought them to (proactive "look here" glow).
+// Only routes with a stable, always-present container testid are listed —
+// others simply don't flash. `home` is omitted because its default tab varies;
+// the compose-cockpit/dashboard handlers flash `cockpit-panel` explicitly.
+const ROUTE_FLASH_ANCHORS: Partial<Record<SidebarSection, string>> = {
+  overview: 'overview-page',
+  credentials: 'credential-manager',
+  settings: 'settings-page',
+};
+
 /**
  * Athena's chat panel — Phase 1: real chat over a long-lived Claude CLI
  * session. Composer + transcript + streaming bubble. Subscribes to
@@ -1085,6 +1096,12 @@ function Body(props: BodyProps) {
       }
       if (!VALID_NAV_ROUTES.includes(route as SidebarSection)) return;
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
+      // Briefly ring the destination's primary surface (if one is mapped) so
+      // the eye lands on what Athena navigated to. The flash tracker waits for
+      // the element to mount, so firing immediately after the route switch is
+      // fine; it self-clears and yields to any active walkthrough.
+      const flashAnchor = ROUTE_FLASH_ANCHORS[route as SidebarSection];
+      if (flashAnchor) useCompanionStore.getState().flashHighlight(flashAnchor);
     }, []),
     'companion_navigate_listen',
   );
@@ -1162,6 +1179,7 @@ function Body(props: BodyProps) {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
+      useCompanionStore.getState().flashHighlight('cockpit-panel');
     }, []),
     'companion_compose_dashboard_listen',
   );
@@ -1183,6 +1201,7 @@ function Body(props: BodyProps) {
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
       sys.setCompanionPanelCompact(true);
+      useCompanionStore.getState().flashHighlight('cockpit-panel');
     }, []),
     'companion_compose_cockpit_listen',
   );
