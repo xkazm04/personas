@@ -84,27 +84,49 @@ def main() -> int:
     for t in targets:
         print(f"[setup] star {t['name']}: {invoke(bridge, 'set_persona_starred', {'id': t['id'], 'starred': True}, timeout=30)}")
 
+    import time as _time
+
     results = []
     for t in targets:
         latest = db.latest_execution(t["id"])
         exec_id = latest["id"] if latest else None
         print(f"[run] Director on {t['name']} (anchor exec {exec_id}) ...")
-        resp = invoke(bridge, "run_director_on_persona", {"personaId": t["id"]}, timeout=320)
-        print(f"[run]   bridge -> {resp}")
+        # The bridge's invokeCommand hard-caps a single call at ~25s while a
+        # real Director run is minutes long. Fire it (the Tauri command keeps
+        # running in the backend after the bridge stops waiting) and poll the
+        # DB for the score landing on the reviewed execution.
+        try:
+            resp = invoke(bridge, "run_director_on_persona", {"personaId": t["id"]}, timeout=30)
+            print(f"[run]   bridge -> {resp}")
+        except Exception as e:  # noqa: BLE001 — bridge timeout is expected
+            print(f"[run]   bridge dispatch (continuing to poll): {e}")
 
-        row = db.query(
-            "SELECT director_score, director_review_md FROM persona_executions WHERE id = ?",
-            (exec_id,),
-        ) if exec_id else []
-        score = row[0]["director_score"] if row else None
-        has_md = bool(row[0]["director_review_md"]) if row else False
-        reviews = db.scalar(
-            "SELECT COUNT(*) FROM persona_manual_reviews WHERE persona_id = ? AND context_data LIKE ?",
-            (t["id"], DIRECTOR_REVIEW_LIKE),
-        )
+        score, has_md, reviews = None, False, 0
+        deadline = _time.monotonic() + 360
+        last_status = None
+        while _time.monotonic() < deadline:
+            if exec_id:
+                row = db.query(
+                    "SELECT director_score, director_review_md FROM persona_executions WHERE id = ?",
+                    (exec_id,),
+                )
+                if row:
+                    score = row[0]["director_score"]
+                    has_md = bool(row[0]["director_review_md"])
+                    if isinstance(score, int):
+                        break
+            reviews = db.scalar(
+                "SELECT COUNT(*) FROM persona_manual_reviews WHERE persona_id = ? AND context_data LIKE ?",
+                (t["id"], DIRECTOR_REVIEW_LIKE),
+            ) or 0
+            new_status = f"score={score} reviews={reviews}"
+            if new_status != last_status:
+                print(f"[poll]   {new_status} (waiting up to 360s)")
+                last_status = new_status
+            _time.sleep(6)
         ok = isinstance(score, int) and 0 <= score <= 5
         results.append((t["name"], score, has_md, reviews, ok))
-        print(f"[verify] {t['name']}: score={score} md={'y' if has_md else 'n'} director_reviews={reviews} -> {'PASS' if ok else 'FAIL'}")
+        print(f"[verify] {t['name']}: score={score} md={'y' if has_md else 'n'} director_reviews={reviews} -> {'PASS' if ok else 'FAIL (no score after poll deadline)'}")
 
     print("\n=== Director verdict scorecard ===")
     for name, score, has_md, reviews, ok in results:
