@@ -3,7 +3,7 @@
  *
  * Drives the running tauri:dev:test app through the test-automation HTTP
  * bridge (:17320) using DOM-level primitives only — no IPC shortcuts, so it
- * exercises the real user path. See docs/tests/autonomous-dev-team-adoption-test.md.
+ * exercises the real user path. See docs/tests/autonomy-eval/autonomous-dev-team-adoption-test.md.
  *
  * Usage (node 18+):
  *   node tests/playwright/dev-team-adoption-driver.mjs health

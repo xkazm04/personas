@@ -25,7 +25,7 @@ result JSON for triage.
 3. A populated vault helps: templates that need `gmail`/`notion`/`attio`
    etc. only deliver value if those credentials exist and have data.
 4. Work in a git worktree if you will edit source mid-run
-   (`docs/tests/parallel-cli-workflow.md`).
+   (`docs/tests/strategy/parallel-cli-workflow.md`).
 
 ## The harness
 

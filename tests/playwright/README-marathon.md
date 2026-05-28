@@ -1,8 +1,8 @@
 # Template Marathon — operator guide
 
 Self-driving 50-template adoption stress test. See
-[`docs/tests/template-marathon-plan.md`](../../docs/tests/template-marathon-plan.md)
-for the full design rationale; this file is the runbook.
+[`docs/tests/e2e/template-adoption-test-procedure.md`](../../docs/tests/e2e/template-adoption-test-procedure.md)
+for the full procedure + the 7-phase contract; this file is the operator quick-reference.
 
 ## What it does
 

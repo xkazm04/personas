@@ -1,4 +1,4 @@
-// EVALUATE layer — FIRST CUT, deterministic only (docs/test/evaluation-rubric.md).
+// EVALUATE layer — FIRST CUT, deterministic only (docs/tests/autonomy-eval/evaluation-rubric.md).
 // No LLM-judge yet (that's a follow-up, costs money per artifact). This scores
 // the dimensions we can measure mechanically — crucially the GROUNDING GATE
 // (do an artifact's cited file paths actually exist in the repo?), the single

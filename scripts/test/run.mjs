@@ -1,4 +1,4 @@
-// RUN layer (docs/test/run-protocol.md §2) — arrange + start + sustain a team
+// RUN layer (docs/tests/autonomy-eval/run-protocol.md §2) — arrange + start + sustain a team
 // on a seed goal, then gather an immutable bundle. Drives the LIVE app via the
 // bridge; verifies via SQLite. No scoring (that's P4).
 //

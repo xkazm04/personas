@@ -5,7 +5,7 @@ Pulls the latest adoption_*.json and glyph-sweep-*.json from
 docs/tests/results/, joins with persona-level DB facts (cost, duration,
 artifact counts), and writes a single persona-generation-{run_id}.json
 report matching the §8 schema from
-docs/tests/template-adoption-scenarios.md.
+docs/tests/e2e/template-adoption-scenarios.md.
 
 Usage:
   uvx python tools/test-mcp/aggregate_run_report.py

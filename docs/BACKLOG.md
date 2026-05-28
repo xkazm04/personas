@@ -137,7 +137,7 @@ These are docs that don't track a feature but encode "how we work." They prevent
 |---|---|---|
 | Doc-writing style guide | Status banners, line-citation policy (vs section refs), where status terminology lives ("shipped" vs "partial" vs "proposal"). The audit found drifting line citations in `features/events/event-routing.md` because nothing said "don't cite specific line ranges in long-lived docs." | `development/doc-style.md` [M] |
 | Design tokens reference | `harness/typography-mapping.md` is a high-value semantic-typography map that's misfiled in `harness/` (which is supposed to be evidence, not reference). Move to `development/design-tokens.md` and expand to cover radius, elevation, and spacing tokens (cross-link `.claude/Design.md`). | [M] |
-| Test taxonomy | `tests/regression-test-plan.md` is a test ID inventory; `development/test-automation.md` documents the bridge tooling. There's no top-level explanation of *which* test type to use *when* (Vitest unit vs Playwright e2e via the bridge vs Rust integration tests vs MCP smoke tests). | `tests/taxonomy.md` [M] |
+| Test taxonomy | `tests/e2e/regression-test-plan.md` is a test ID inventory; `development/test-automation.md` documents the bridge tooling. There's no top-level explanation of *which* test type to use *when* (Vitest unit vs Playwright e2e via the bridge vs Rust integration tests vs MCP smoke tests). | `tests/taxonomy.md` [M] |
 | Error handling pattern | CLAUDE.md mentions `toastCatch` / `silentCatch` / `resolveError` / the registry, but the only canonical reference for the registry's pattern is in CLAUDE.md prose. A dedicated doc with examples (when to add a new error-registry pattern, the `_message` / `_suggestion` key shape, the i18n bridge) would help. | `development/error-handling.md` [M] |
 | Tauri IPC contract walk-through | Adding a Tauri command requires: write Rust handler, run `generate-command-names.mjs`, call via `invokeWithTimeout`, optionally regenerate ts-rs bindings. CLAUDE.md sketches each step but there's no end-to-end "add a new command" recipe. | `development/tauri-ipc-recipe.md` [M] |
 | Skill authoring | `.claude/skills/*` host the in-CLI tooling. There's no doc on writing a new skill, the Phase 0/13 active-runs ritual for skills that materially edit files, or where templates live. (Architect skill has its own `skill.md` but it's the contract, not a tutorial.) | `development/skills.md` [L] |
@@ -176,7 +176,7 @@ After the wave-report subdir cleanup applied in this pass, the remaining root fi
 
 ### `tests/`
 
-All test plans and use-case fixtures verified OK in audit. No changes pending. The `tests/uc-large-set/` reference set is allowed to grow; consider a per-file fixture index if it exceeds ~10 files. **[—]**
+All test plans and use-case fixtures verified OK in audit. No changes pending. The `tests/fixtures/uc-large-set/` reference set is allowed to grow; consider a per-file fixture index if it exceeds ~10 files. **[—]**
 
 ### Archive-grade snapshots from completed harness runs
 

@@ -8,7 +8,7 @@ test_complete). Does NOT do the drive-event / execution phase; the
 goal is structural build-flow verification, not end-to-end execution
 of each persona's real work.
 
-Mirrors the test plan in docs/tests/test-matrix-build-scenarios.md
+Mirrors the test plan in docs/tests/e2e/test-matrix-build-scenarios.md
 (scenarios 1-10 by default; --scenarios accepts a subset).
 
 Prerequisites:
@@ -41,7 +41,7 @@ from lib import Bridge, Client, EventLog
 
 
 # ---- Scenario catalogue --------------------------------------------------
-# Mirrors docs/tests/test-matrix-build-scenarios.md scenarios 1-10. Keep
+# Mirrors docs/tests/e2e/test-matrix-build-scenarios.md scenarios 1-10. Keep
 # slugs short — they become the cleanup identifier if the run aborts.
 
 SCENARIOS: list[tuple[str, str]] = [
