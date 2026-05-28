@@ -114,6 +114,7 @@ export function Bubble({
             <MarkdownRenderer
               content={displayText as string}
               className="athena-chat-md"
+              codeBlockActions
             />
           )}
         </div>
