@@ -5446,10 +5446,6 @@ export type Translations = {
       add_notes: string;
       notes_placeholder: string;
       select_action_first: string;
-      split: string;
-      table: string;
-      split_tooltip: string;
-      table_tooltip: string;
       review_detail: string;
       select_review: string;
       technical_context: string;
@@ -11894,6 +11890,15 @@ export type Translations = {
     dev_lifecycle: {
       goal_new_title: string;
       goal_edit_title: string;
+      goal_empty_subtitle: string;
+      goal_ask_athena: string;
+      goal_ask_athena_prompt: string;
+      goal_scaffold_timeline_title: string;
+      goal_scaffold_timeline_sub: string;
+      goal_scaffold_portfolio_title: string;
+      goal_scaffold_portfolio_sub: string;
+      goal_scaffold_attention_title: string;
+      goal_scaffold_attention_sub: string;
       goal_field_title: string;
       goal_field_title_placeholder: string;
       goal_field_description: string;

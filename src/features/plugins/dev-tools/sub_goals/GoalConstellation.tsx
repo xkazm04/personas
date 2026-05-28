@@ -131,7 +131,7 @@ function nodeRadius(goal: DevGoal): number {
 
 type VariantId = 'board' | 'map';
 
-export default function GoalConstellation() {
+export default function GoalConstellation({ variant: forcedVariant }: { variant?: VariantId } = {}) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const VARIANTS: { id: VariantId; label: string; subtitle: string }[] = [
@@ -143,7 +143,10 @@ export default function GoalConstellation() {
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
 
   const [dependencies, setDependencies] = useState<DevGoalDependency[]>([]);
-  const [variant, setVariant] = useState<VariantId>('board');
+  // When a parent (the Goals L2 sub-nav) drives the view, `forcedVariant` wins and
+  // the in-component toggle is hidden; otherwise the internal toggle is the source.
+  const [internalVariant, setVariant] = useState<VariantId>('board');
+  const variant = forcedVariant ?? internalVariant;
   // Goal opened in the detail drawer (from a Board card or a Map node), and
   // the goal being edited (the drawer's Edit hands off to GoalEditorModal).
   const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
@@ -189,28 +192,30 @@ export default function GoalConstellation() {
 
   return (
     <div className="space-y-3">
-      {/* View toggle — Board (operational) / Map (big-picture) */}
-      <div className="flex items-center gap-1 p-1 rounded-card border border-primary/10 bg-card/30 w-fit">
-        {VARIANTS.map((v) => {
-          const active = v.id === variant;
-          return (
-            <button
-              key={v.id}
-              type="button"
-              onClick={() => setVariant(v.id)}
-              className={[
-                'px-3 py-1.5 rounded-interactive transition-colors text-left',
-                active
-                  ? 'bg-violet-500/15 border border-violet-500/30 text-foreground'
-                  : 'border border-transparent text-foreground hover:bg-secondary/30',
-              ].join(' ')}
-            >
-              <div className="typo-heading font-semibold leading-tight">{v.label}</div>
-              <div className="typo-caption text-foreground leading-tight">{v.subtitle}</div>
-            </button>
-          );
-        })}
-      </div>
+      {/* View toggle — only when not driven by the L2 sub-nav (e.g. dev-tools L3 tab) */}
+      {!forcedVariant && (
+        <div className="flex items-center gap-1 p-1 rounded-card border border-primary/10 bg-card/30 w-fit">
+          {VARIANTS.map((v) => {
+            const active = v.id === variant;
+            return (
+              <button
+                key={v.id}
+                type="button"
+                onClick={() => setVariant(v.id)}
+                className={[
+                  'px-3 py-1.5 rounded-interactive transition-colors text-left',
+                  active
+                    ? 'bg-violet-500/15 border border-violet-500/30 text-foreground'
+                    : 'border border-transparent text-foreground hover:bg-secondary/30',
+                ].join(' ')}
+              >
+                <div className="typo-heading font-semibold leading-tight">{v.label}</div>
+                <div className="typo-caption text-foreground leading-tight">{v.subtitle}</div>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} />}
       {variant === 'map' && (
