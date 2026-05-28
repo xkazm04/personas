@@ -5760,6 +5760,10 @@ export type Translations = {
       success_rate: string;
       avg_latency: string;
       cost_anomalies: string;
+      value_section_title: string;
+      value_delivered_rate: string;
+      cost_per_value: string;
+      value_delivered_count: string;
       no_data: string;
       cost_per_day: string;
       executions_by_status: string;
