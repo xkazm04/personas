@@ -14,6 +14,7 @@ import { PersonaOverviewBatchBar } from './PersonaOverviewBatchBar';
 import { PersonaOverviewToolbar } from './PersonaOverviewToolbar';
 import { PersonaOverviewCardList } from './PersonaOverviewCardList';
 import { PersonaGroupDropRail } from './PersonaGroupDropRail';
+import { DirectorBrainToggle } from './DirectorBrainToggle';
 import { PersonaOverviewEmptyState } from './PersonaOverviewEmptyState';
 import { PersonaOverviewVariantGrid } from './PersonaOverviewVariantGrid';
 import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantConstellation';
@@ -246,6 +247,8 @@ export default function PersonaOverviewPage() {
             data-persona-drop-target attr on each chip is how the
             constellation drag locates them on pointerup. */}
         <PersonaGroupDropRail filterId={groupFilter} onSelectFilter={setGroupFilter} />
+
+        <DirectorBrainToggle />
 
         {filteredData.length === 0 && hasActiveFilter ? (
           <PersonaOverviewEmptyState onResetFilters={handleResetFilters} />

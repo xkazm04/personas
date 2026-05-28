@@ -2822,6 +2822,10 @@ export type Translations = {
       delete_drafts_message: string;
       system_persona_undeletable: string;
     };
+    director_brain: {
+      title: string;
+      subtitle: string;
+    };
     persona_list: {
       all_personas: string;
       star_director_add: string;

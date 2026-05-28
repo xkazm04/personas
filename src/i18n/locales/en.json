@@ -2816,6 +2816,10 @@
       "delete_drafts_message": "{count} draft agent(s) will be permanently removed.",
       "system_persona_undeletable": "The Director is a system persona and can't be deleted."
     },
+    "director_brain": {
+      "title": "Director long-term memory",
+      "subtitle": "Let the Director read past coaching from your Obsidian Brain and write each new review back."
+    },
     "persona_list": {
       "all_personas": "All Personas",
       "star_director_add": "Star to add to the Director's coaching scope",
