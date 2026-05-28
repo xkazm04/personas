@@ -54,8 +54,31 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.149 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.154 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.151–2.1.154: 2.1.151 not released upstream. 2.1.154 ships Opus
+        //   4.8 + the `xhigh` effort tier (both already wired personas-side: the
+        //   `opus` alias auto-resolves to 4.8, and `EFFORT_LEVELS` already
+        //   carries `xhigh`) and — wrapping-relevant — fixes API 400 on models
+        //   that don't support the effort parameter when effort is set, which
+        //   matters because `build_cli_args` pins `--effort` on EVERY spawn
+        //   unconditionally (`prompt/cli_args.rs:121`); the lean system prompt is
+        //   now the default for Opus 4.8 (a token-cost shift to expect when the
+        //   companion/brain `claude-opus-4-7` pins adopt 4.8). 2.1.153 fixes two
+        //   defects squarely on personas's spawn surface: (a) a hang where the
+        //   CLI failed to exit when stdin was closed without EOF in stream-json
+        //   mode — personas pipes the prompt into stdin and closes it on every
+        //   run; (b) a custom API gateway receiving the user's Anthropic OAuth
+        //   credential instead of the gateway's own token — a BYOM credential
+        //   leak for users on a custom `ANTHROPIC_BASE_URL` (`engine/byom.rs`);
+        //   plus a stateful-MCP `tools/list` reconnect-loop regression (INBOUND
+        //   MCP). 2.1.152 fixes `cache_creation_input_tokens` reporting 0, which
+        //   improves the `total_cost_usd` personas trusts directly
+        //   (`parser.rs:227`), and clears stuck sessions from stale thinking-block
+        //   signatures after a model/login switch (passive on `--resume` chat
+        //   sessions); `--fallback-model` session-switch (2.1.152) is
+        //   informational — personas has its own `engine/failover.rs`.
+        //   /research run 2026-05-28.
         // - 2.1.147–2.1.150: 2.1.150 is internal-only (no user-facing changes);
         //   2.1.149 is mostly interactive-TUI (`/usage` per-category breakdown,
         //   `/diff` keyboard scrolling) — none in the `-p`/stream-json wire — BUT
@@ -136,7 +159,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.149")
+        Some("2.1.154")
     }
 }
 
