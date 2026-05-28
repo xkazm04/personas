@@ -124,7 +124,8 @@
     "persona_meta": {
       "name": "T: Code Reviewer",
       "icon": "ScanSearch",
-      "color": "#6366f1"
+      "color": "#6366f1",
+      "timeout_ms": 900000
     }
   }
 }

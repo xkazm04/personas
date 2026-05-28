@@ -144,7 +144,8 @@
     "persona_meta": {
       "name": "T: Security Sentinel",
       "icon": "ShieldAlert",
-      "color": "#dc2626"
+      "color": "#dc2626",
+      "timeout_ms": 900000
     }
   }
 }

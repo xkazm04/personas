@@ -132,7 +132,8 @@
     "persona_meta": {
       "name": "T: Solution Architect",
       "icon": "DraftingCompass",
-      "color": "#8b5cf6"
+      "color": "#8b5cf6",
+      "timeout_ms": 900000
     }
   }
 }

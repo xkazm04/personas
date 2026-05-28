@@ -245,7 +245,8 @@
       "name": "T: Dev Clone",
       "icon": "Bot",
       "color": "#6366F1",
-      "max_concurrent": 4
+      "max_concurrent": 4,
+      "timeout_ms": 900000
     }
   }
 }

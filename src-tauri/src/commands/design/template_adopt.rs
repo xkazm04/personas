@@ -337,6 +337,21 @@ pub fn instant_adopt_template_inner(
         .and_then(|m| m.get("model_profile"))
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
+    // Phase 2 / cert: bake `timeout_ms` + `max_concurrent` from persona_meta so
+    // adoptions don't regress to the create-defaults (300s/1) — autonomous code
+    // work needs longer timeouts + concurrent capacity. Sane bounds applied so
+    // a bad template can't set absurd values. Applied post-create (the n8n
+    // draft doesn't carry these columns, same pattern as last_design_result).
+    let template_timeout_ms: Option<i32> = persona_meta
+        .and_then(|m| m.get("timeout_ms"))
+        .and_then(|v| v.as_i64())
+        .filter(|n| (10_000..=24 * 3_600_000).contains(n))
+        .map(|n| n as i32);
+    let template_max_concurrent: Option<i32> = persona_meta
+        .and_then(|m| m.get("max_concurrent"))
+        .and_then(|v| v.as_i64())
+        .filter(|n| (1..=64).contains(n))
+        .map(|n| n as i32);
     let persona_name = persona_meta
         .and_then(|m| m.get("name"))
         .and_then(|v| v.as_str())
@@ -567,6 +582,29 @@ pub fn instant_adopt_template_inner(
                 "UPDATE personas SET last_design_result = ?1, updated_at = ?2 WHERE id = ?3",
                 rusqlite::params![ldr, chrono::Utc::now().to_rfc3339(), pid],
             );
+        }
+    }
+
+    // Apply persona_meta's timeout_ms / max_concurrent post-create (the n8n draft
+    // doesn't carry these). Without this, code-track templates (SDLC) regress to
+    // 300s/1 every adoption — the run-4 / capstone-run blocker. Best-effort.
+    if let Some(pid) = created_persona_id.as_deref() {
+        if template_timeout_ms.is_some() || template_max_concurrent.is_some() {
+            if let Ok(conn) = state.db.get() {
+                let now = chrono::Utc::now().to_rfc3339();
+                if let Some(t) = template_timeout_ms {
+                    let _ = conn.execute(
+                        "UPDATE personas SET timeout_ms = ?1, updated_at = ?2 WHERE id = ?3",
+                        rusqlite::params![t, &now, pid],
+                    );
+                }
+                if let Some(mc) = template_max_concurrent {
+                    let _ = conn.execute(
+                        "UPDATE personas SET max_concurrent = ?1, updated_at = ?2 WHERE id = ?3",
+                        rusqlite::params![mc, &now, pid],
+                    );
+                }
+            }
         }
     }
 

@@ -144,7 +144,8 @@
     "persona_meta": {
       "name": "T: Docs Steward",
       "icon": "BookText",
-      "color": "#0ea5e9"
+      "color": "#0ea5e9",
+      "timeout_ms": 900000
     }
   }
 }

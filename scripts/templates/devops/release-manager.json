@@ -203,7 +203,8 @@
     "persona_meta": {
       "name": "T: Release Manager",
       "icon": "Tag",
-      "color": "#f59e0b"
+      "color": "#f59e0b",
+      "timeout_ms": 900000
     }
   }
 }
