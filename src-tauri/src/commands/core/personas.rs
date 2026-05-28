@@ -36,6 +36,19 @@ pub fn get_persona(state: State<'_, Arc<AppState>>, id: String) -> Result<Person
     repo::get_by_id(&state.db, &id)
 }
 
+/// Star/unstar a persona. A starred persona is in the Director's coaching
+/// scope (the Director batch only reviews starred personas). Returns the new
+/// starred value.
+#[tauri::command]
+#[requires(auth)]
+pub fn set_persona_starred(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    starred: bool,
+) -> Result<bool, AppError> {
+    repo::set_starred(&state.db, &id, starred)
+}
+
 #[tauri::command]
 #[requires(auth)]
 pub fn create_persona(
@@ -479,6 +492,16 @@ async fn delete_persona_inner(
     state: &Arc<AppState>,
     id: &str,
 ) -> Result<DeletePersonaResult, AppError> {
+    // ── Phase 1a: Protect system-owned personas (the Director) from deletion ──
+    if let Ok(persona) = repo::get_by_id(&state.db, id) {
+        if persona.trust_origin == crate::db::models::PersonaTrustOrigin::System {
+            return Err(AppError::Forbidden(format!(
+                "'{}' is a system persona and cannot be deleted.",
+                persona.name
+            )));
+        }
+    }
+
     // ── Phase 1b: Cancel all running/queued executions for this persona ──
     let running = match exec_repo::get_running(&state.db) {
         Ok(r) => r,

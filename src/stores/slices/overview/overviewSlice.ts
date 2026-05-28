@@ -199,6 +199,10 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
         seen.add(r.id);
         merged.push({
           ...r,
+          // Director verdict fields aren't part of the global JOIN row; the
+          // per-persona Activity list (full PersonaExecution) carries them.
+          director_score: null,
+          director_review_md: null,
           persona_name: r.persona_name ?? undefined,
           persona_icon: r.persona_icon ?? undefined,
           persona_color: r.persona_color ?? undefined,

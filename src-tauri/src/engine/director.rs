@@ -83,15 +83,25 @@ For each persona you are asked about, you will receive:
 5. Your own past verdicts on this persona and how the user responded
    (accepted / rejected / ignored).
 
-Produce between 0 and 4 coaching verdicts. A verdict is prose, not a score.
-For each verdict output a single JSON object on its own line prefixed with
-the literal marker `DIRECTOR_VERDICT: ` so the app can parse it:
+First, output exactly ONE overall score line — ALWAYS, even when the persona is
+healthy and you have no coaching to add:
+
+DIRECTOR_SCORE: {"score":0-5,"summary":"<=140 chars: the one-line verdict on this persona's health + usefulness"}
+
+Score guide: 5 = excellent, delivering value, nothing to improve; 4 = good, minor
+polish possible; 3 = works but with real gaps; 2 = frequently failing or low
+value; 1 = barely functional; 0 = broken or useless.
+
+Then produce between 0 and 4 coaching verdicts. A verdict is prose. For each,
+output a single JSON object on its own line prefixed with the literal marker
+`DIRECTOR_VERDICT: ` so the app can parse it:
 
 DIRECTOR_VERDICT: {"severity":"info|warning|error","category":"prompt|health|triggers|credentials|memory|usefulness","title":"<=60 chars imperative phrase","description":"1-3 sentences explaining the observation and why it matters","rationale":"concrete evidence from the context above","suggested_actions":["short prose suggestion","..."]}
 
 Rules:
-- Silence is a valid response. If the persona is healthy AND you see no
-  concrete way to improve its usefulness, emit zero verdicts.
+- The DIRECTOR_SCORE line is MANDATORY. Coaching verdicts are optional: if the
+  persona is healthy AND you see no concrete way to improve its usefulness, emit
+  the score line and zero verdicts.
 - Prefer observations grounded in specific evidence over generic advice.
 - Do NOT suggest prompt rewrites verbatim — describe the change shape and
   let the user author the actual text.
@@ -278,6 +288,75 @@ pub fn parse_verdicts(output: &str, target_persona_id: &str) -> Vec<DirectorVerd
     out
 }
 
+/// The literal prefix for the single overall-score line the rubric mandates.
+const SCORE_MARKER: &str = "DIRECTOR_SCORE:";
+
+#[derive(Debug, Deserialize)]
+struct RawScore {
+    score: i64,
+    #[serde(default)]
+    summary: String,
+}
+
+/// Parse the single `DIRECTOR_SCORE: {json}` line into (score 0-5, summary).
+/// `None` if absent/malformed — the run still yields coaching verdicts; we
+/// just won't write a score onto the execution.
+fn parse_score(output: &str) -> Option<(i64, String)> {
+    for line in output.lines() {
+        let trimmed = line.trim();
+        let Some(idx) = trimmed.find(SCORE_MARKER) else {
+            continue;
+        };
+        let json_part = trimmed[idx + SCORE_MARKER.len()..].trim();
+        if json_part.is_empty() {
+            continue;
+        }
+        if let Ok(raw) = serde_json::from_str::<RawScore>(json_part) {
+            return Some((raw.score.clamp(0, 5), raw.summary));
+        }
+    }
+    None
+}
+
+/// Render the Director's assessment (overall score + summary + coaching
+/// verdicts) as markdown for the execution's "Director" tab.
+fn render_review_md(score: i64, summary: &str, verdicts: &[DirectorVerdict]) -> String {
+    let s = score.clamp(0, 5) as usize;
+    let stars: String = "★".repeat(s) + &"☆".repeat(5 - s);
+    let mut md = format!("## Director review — {stars} ({score}/5)\n\n");
+    if !summary.is_empty() {
+        md.push_str(summary);
+        md.push_str("\n\n");
+    }
+    if verdicts.is_empty() {
+        md.push_str("_No coaching notes — the persona looks healthy._\n");
+    } else {
+        for v in verdicts {
+            md.push_str(&format!(
+                "### {} _({} · {})_\n\n",
+                v.title,
+                v.severity.as_str(),
+                v.category.as_str()
+            ));
+            if !v.description.is_empty() {
+                md.push_str(&v.description);
+                md.push_str("\n\n");
+            }
+            if let Some(r) = &v.rationale {
+                md.push_str(&format!("**Evidence:** {r}\n\n"));
+            }
+            if !v.suggested_actions.is_empty() {
+                md.push_str("**Suggested actions:**\n");
+                for a in &v.suggested_actions {
+                    md.push_str(&format!("- {a}\n"));
+                }
+                md.push('\n');
+            }
+        }
+    }
+    md
+}
+
 /// Char-safe truncation with an ellipsis. (Byte-slicing a multibyte boundary
 /// panics — see the runner's safe-truncate incident.)
 fn truncate(s: &str, max: usize) -> String {
@@ -412,7 +491,20 @@ async fn evaluate_with_llm(
         Some(PAYLOAD_VALUE_WINDOW_DAYS),
         Some(ctx.persona.id.as_str()),
     )?;
-    let payload = build_director_payload(&state.db, ctx, &rollup);
+    let mut payload = build_director_payload(&state.db, ctx, &rollup);
+
+    // Long-term memory (Brain): when enabled + a vault is configured, fold prior
+    // Director notes for this persona into the payload so coaching compounds.
+    let brain_on = brain_enabled(&state.db);
+    if brain_on {
+        if let Some(history) = read_brain_history(&state.db, &ctx.persona.name) {
+            payload.push_str(
+                "\n\n## Prior coaching from your long-term memory (Brain)\nUse this to build on past advice and avoid repeating yourself:\n\n",
+            );
+            payload.push_str(&truncate(&history, 4000));
+            payload.push('\n');
+        }
+    }
 
     let spawned = crate::commands::execution::executions::execute_persona_inner(
         state,
@@ -444,7 +536,90 @@ async fn evaluate_with_llm(
 
     let mut verdicts = parse_verdicts(&output, &ctx.persona.id);
     verdicts.truncate(MAX_VERDICTS_PER_RUN);
+
+    // Overall 0-5 score + rendered markdown → written onto the reviewed (target)
+    // execution so the activity Verdict column + Director tab can read it.
+    // Coaching verdicts continue to route to manual_reviews (the caller does
+    // that). Only write when a score line was actually emitted.
+    if let (Some(exec_id), Some((score, summary))) =
+        (ctx.latest_execution_id.as_deref(), parse_score(&output))
+    {
+        let md = render_review_md(score, &summary, &verdicts);
+        if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
+            tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
+        }
+        // Write the review into the Brain vault as durable long-term memory.
+        if brain_on {
+            write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+        }
+    }
+
     Ok(verdicts)
+}
+
+// ---------------------------------------------------------------------------
+// Brain long-term memory (gated on `director.brain_enabled` + a configured vault)
+// ---------------------------------------------------------------------------
+
+/// Vault-relative folder for a persona's Director notes, e.g. `Director/My-Bot`.
+fn director_vault_folder(persona_name: &str) -> String {
+    let slug: String = persona_name
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c } else { '-' })
+        .collect();
+    format!("Director/{}", slug.trim_matches('-'))
+}
+
+/// True when the Director may use the Brain vault: the setting is on AND a vault
+/// is configured.
+fn brain_enabled(pool: &DbPool) -> bool {
+    let on = matches!(
+        crate::db::repos::core::settings::get(pool, crate::db::settings_keys::DIRECTOR_BRAIN_ENABLED),
+        Ok(Some(v)) if v == "true"
+    );
+    on && crate::commands::obsidian_brain::mirror_vault_root(pool).is_some()
+}
+
+/// Read up to the 3 most recent Director notes for this persona from the vault.
+/// Plain `std::fs` (no embeddings); best-effort. Returns concatenated markdown.
+fn read_brain_history(pool: &DbPool, persona_name: &str) -> Option<String> {
+    let cfg = crate::commands::obsidian_brain::mirror_vault_root(pool)?;
+    let dir = std::path::Path::new(&cfg.vault_path).join(director_vault_folder(persona_name));
+    let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&dir)
+        .ok()?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("md"))
+        .collect();
+    files.sort();
+    let recent: Vec<String> = files
+        .iter()
+        .rev()
+        .take(3)
+        .filter_map(|p| std::fs::read_to_string(p).ok())
+        .collect();
+    (!recent.is_empty()).then(|| recent.join("\n\n---\n\n"))
+}
+
+/// Write the Director's review note into the vault as durable memory (best-effort).
+fn write_brain_note(pool: &DbPool, persona_id: &str, persona_name: &str, review_md: &str) {
+    let Some(cfg) = crate::commands::obsidian_brain::mirror_vault_root(pool) else {
+        return;
+    };
+    let rel = format!(
+        "{}/{}.md",
+        director_vault_folder(persona_name),
+        chrono::Utc::now().format("%Y-%m-%d-%H%M%S")
+    );
+    if let Err(e) = crate::commands::obsidian_brain::mirror_write_note(
+        pool,
+        &cfg.vault_path,
+        &rel,
+        "director_verdict",
+        persona_id,
+        review_md,
+    ) {
+        tracing::warn!(error = %e, persona = %persona_id, "Director: failed to write Brain note");
+    }
 }
 
 /// Poll an execution row until it reaches a terminal state or the timeout
@@ -658,7 +833,9 @@ pub async fn run_director_cycle_batch(
     max_personas: Option<i64>,
 ) -> Result<DirectorReport, AppError> {
     let director_id = get_director_persona_id(&state.db)?;
-    let enabled = personas::get_enabled(&state.db)?;
+    // Scope: the Director only coaches STARRED personas (set via the star
+    // toggle in the personas table). Empty scope ⇒ a no-op cycle.
+    let enabled = personas::get_starred(&state.db)?;
 
     let mut evaluated = 0i64;
     let mut emitted = 0i64;
@@ -908,6 +1085,7 @@ mod tests {
             enabled: true,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 300_000,
             model_profile: None,
@@ -963,6 +1141,25 @@ DIRECTOR_VERDICT: {\"severity\":\"error\",\"category\":\"health\",\"title\":\"Re
     #[test]
     fn parse_verdicts_none_without_marker() {
         assert!(parse_verdicts("regular output, no verdict markers", "p-3").is_empty());
+    }
+
+    #[test]
+    fn parse_score_extracts_and_clamps() {
+        let out = "preamble\nDIRECTOR_SCORE: {\"score\":5,\"summary\":\"Delivering value, no action needed.\"}\nmore";
+        let (score, summary) = parse_score(out).expect("score present");
+        assert_eq!(score, 5);
+        assert_eq!(summary, "Delivering value, no action needed.");
+        // out-of-range clamps to 0..=5
+        assert_eq!(parse_score("DIRECTOR_SCORE: {\"score\":9}").unwrap().0, 5);
+        assert!(parse_score("no score line here").is_none());
+    }
+
+    #[test]
+    fn render_review_md_healthy_has_stars_and_no_notes() {
+        let md = render_review_md(5, "All good.", &[]);
+        assert!(md.contains("★★★★★"));
+        assert!(md.contains("(5/5)"));
+        assert!(md.contains("No coaching notes"));
     }
 
     #[test]

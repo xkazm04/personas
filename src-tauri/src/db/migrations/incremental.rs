@@ -3250,6 +3250,45 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Per-persona star: marks a persona as "in the Director's coaching scope".
+    // Promotes the previously localStorage-only favorite to a durable column so
+    // the Director batch (`get_starred`) can read it.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas.starred",
+            description: "Add starred flag to personas (Director coaching scope)",
+            already_applied: |conn| has_column(conn, "personas", "starred"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN starred INTEGER NOT NULL DEFAULT 0;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Director verdict score + rendered review markdown, written onto the
+    // execution the Director reviewed. `director_score` (0-5) backs the Verdict
+    // column in the activity list; `director_review_md` backs the Director tab.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions.director_score",
+            description: "Add director_score + director_review_md to persona_executions",
+            already_applied: |conn| has_column(conn, "persona_executions", "director_score"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN director_score INTEGER;\n\
+                     ALTER TABLE persona_executions ADD COLUMN director_review_md TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

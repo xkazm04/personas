@@ -9,6 +9,7 @@ import { OpenInLangfuseButton } from '@/features/plugins/langfuse/OpenInLangfuse
 import { hasNonEmptyJson } from './executionDetailTypes';
 import { ExecutionDetailTabs, type DetailTab } from './ExecutionDetailTabs';
 import { ExecutionDetailContent } from './ExecutionDetailContent';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { AnnotationEditor } from '../components/AnnotationEditor';
 import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations';
 import { useDryRun } from '../libs/useDryRun';
@@ -33,6 +34,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
   const hasToolSteps = Array.isArray(execution.tool_steps) && execution.tool_steps.length > 0;
   const hasInputData = hasNonEmptyJson(execution.input_data, 'object');
   const hasOutputData = hasNonEmptyJson(execution.output_data, 'object');
+  const directorReviewMd = execution.director_review_md ?? null;
 
   return (
     <div className="space-y-4">
@@ -42,6 +44,7 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           hasToolSteps={hasToolSteps}
+          hasDirectorReview={!!directorReviewMd}
           executionStatus={execution.status}
         />
         <div className="flex items-center gap-2">
@@ -63,7 +66,13 @@ export function ExecutionDetail({ execution }: ExecutionDetailProps) {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
         <div className="min-w-0 space-y-4">
           {/* Tab Content */}
-          {activeTab === 'replay' ? (
+          {activeTab === 'director' && directorReviewMd ? (
+            <div className="rounded-modal border border-violet-500/20 bg-violet-500/[0.03] p-5">
+              <div className="max-w-3xl mx-auto">
+                <MarkdownRenderer content={directorReviewMd} />
+              </div>
+            </div>
+          ) : activeTab === 'replay' ? (
             <ReplaySandbox execution={execution} />
           ) : activeTab === 'pipeline' ? (
             <PipelineWaterfall execution={execution} />

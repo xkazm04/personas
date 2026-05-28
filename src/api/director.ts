@@ -62,3 +62,13 @@ export async function listDirectorVerdicts(personaId?: string): Promise<Director
     personaId: personaId ?? null,
   });
 }
+
+/** Whether the Director uses the Obsidian Brain vault as long-term memory. */
+export async function getDirectorBrainEnabled(): Promise<boolean> {
+  return invoke<boolean>('get_director_brain_enabled');
+}
+
+/** Toggle the Director's Brain long-term memory (gated on a configured vault). */
+export async function setDirectorBrainEnabled(enabled: boolean): Promise<void> {
+  return invoke<void>('set_director_brain_enabled', { enabled });
+}

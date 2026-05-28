@@ -1920,6 +1920,7 @@ mod tests {
             enabled: true,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 30_000,
             notification_channels: None,
@@ -1971,6 +1972,7 @@ mod tests {
             enabled: true,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 30_000,
             notification_channels: None,
@@ -2057,6 +2059,8 @@ mod tests {
             log_truncated: false,
             is_simulation: false,
             business_outcome: "unknown".to_string(),
+            director_score: None,
+            director_review_md: None,
         }
     }
 

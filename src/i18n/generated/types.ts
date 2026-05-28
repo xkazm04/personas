@@ -753,6 +753,7 @@ export type Translations = {
       loading_memories: string;
       memories_created: string;
       tab_detail: string;
+      tab_director: string;
       tab_inspector: string;
       tab_trace: string;
       tab_pipeline: string;
@@ -2483,6 +2484,9 @@ export type Translations = {
       approve: string;
       reject: string;
       col_activity: string;
+      col_verdict: string;
+      verdict_none: string;
+      verdict_tooltip: string;
       col_use_case: string;
       col_status: string;
       col_time: string;
@@ -2816,9 +2820,12 @@ export type Translations = {
       delete_agents_message: string;
       delete_drafts: string;
       delete_drafts_message: string;
+      system_persona_undeletable: string;
     };
     persona_list: {
       all_personas: string;
+      star_director_add: string;
+      star_director_remove: string;
       delete_drafts_btn: string;
       badge_draft: string;
       badge_disabled: string;
@@ -5397,6 +5404,10 @@ export type Translations = {
       cloud_count: string;
       mock_review: string;
       seed_tooltip: string;
+      split: string;
+      split_tooltip: string;
+      table: string;
+      table_tooltip: string;
       empty_title: string;
       empty_subtitle: string;
       filter_all: string;

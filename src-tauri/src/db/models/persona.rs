@@ -478,6 +478,10 @@ pub struct Persona {
     pub enabled: bool,
     pub sensitive: bool,
     pub headless: bool,
+    /// Per-persona star: marks the persona as in the Director's coaching scope.
+    /// Promoted from a localStorage-only favorite to a durable column.
+    #[serde(default)]
+    pub starred: bool,
     pub max_concurrent: i32,
     pub timeout_ms: i32,
     pub notification_channels: Option<String>,

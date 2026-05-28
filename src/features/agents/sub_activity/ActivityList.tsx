@@ -1,10 +1,11 @@
 import { useMemo } from 'react';
 import { Star } from 'lucide-react';
 import { formatRelativeTime, getStatusEntry, badgeClass } from '@/lib/utils/formatters';
-import { TYPE_ICONS, renderImportanceStars, type ActivityItem } from './activityTypes';
+import { TYPE_ICONS, renderImportanceStars, renderScoreStars, type ActivityItem } from './activityTypes';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ExecutionAnnotation } from '@/lib/bindings/ExecutionAnnotation';
+import type { PersonaExecution } from '@/lib/bindings/PersonaExecution';
 
 interface ActivityListProps {
   items: ActivityItem[];
@@ -18,7 +19,7 @@ function useColumns(
   useCaseOptions: { id: string; title: string }[],
   annotationsByExecution: Map<string, ExecutionAnnotation>,
 ): TableColumn<ActivityItem>[] {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const useCaseTitleById = useMemo(() => {
     const m = new Map<string, string>();
     for (const uc of useCaseOptions) m.set(uc.id, uc.title);
@@ -76,6 +77,32 @@ function useColumns(
               </div>
             )}
           </div>
+        );
+      },
+    },
+    {
+      key: 'verdict',
+      label: t.agents.activity.col_verdict,
+      width: '110px',
+      sortable: true,
+      sortFn: (a, b) => {
+        const sa = a.type === 'execution' ? ((a.raw as PersonaExecution).director_score ?? -1) : -1;
+        const sb = b.type === 'execution' ? ((b.raw as PersonaExecution).director_score ?? -1) : -1;
+        return sa - sb;
+      },
+      render: (item) => {
+        if (item.type !== 'execution') return <span className="typo-body text-foreground/30">—</span>;
+        const score = (item.raw as PersonaExecution).director_score;
+        if (score == null) {
+          return <span className="typo-body text-foreground/30" title={t.agents.activity.verdict_none}>—</span>;
+        }
+        return (
+          <span
+            className="typo-body text-amber-400 tabular-nums whitespace-nowrap"
+            title={tx(t.agents.activity.verdict_tooltip, { score })}
+          >
+            {renderScoreStars(score)}
+          </span>
         );
       },
     },

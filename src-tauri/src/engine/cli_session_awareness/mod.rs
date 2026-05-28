@@ -97,6 +97,7 @@ mod integration_tests {
             enabled: true,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 60_000,
             notification_channels: None,

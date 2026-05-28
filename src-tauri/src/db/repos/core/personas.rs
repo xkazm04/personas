@@ -366,6 +366,7 @@ fn row_to_persona_with_mode(row: &Row, mode: ProfileMode) -> rusqlite::Result<Pe
         enabled: row.get::<_, i32>("enabled")? != 0,
         sensitive: row.get::<_, i32>("sensitive")? != 0,
         headless: row.get::<_, i32>("headless").unwrap_or(0) != 0,
+        starred: row.get::<_, i32>("starred").unwrap_or(0) != 0,
         max_concurrent: row.get("max_concurrent")?,
         timeout_ms: row.get("timeout_ms")?,
         notification_channels,
@@ -534,6 +535,32 @@ pub fn get_enabled(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
         }
         Ok(result)
     })
+}
+
+/// Personas the user has starred — the Director's coaching scope. Excludes
+/// the Director itself is the caller's concern (cycle runners skip it).
+#[instrument(skip(pool))]
+pub fn get_starred(pool: &DbPool) -> Result<Vec<Persona>, AppError> {
+    timed_query!("personas", "personas::get_starred", {
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare_cached("SELECT * FROM personas WHERE starred = 1 ORDER BY name")?;
+        let rows = stmt.query_map([], row_to_persona)?;
+        Ok(collect_rows(rows, "personas::get_starred"))
+    })
+}
+
+/// Toggle a persona's starred flag (Director scope). Returns the new value.
+pub fn set_starred(pool: &DbPool, id: &str, starred: bool) -> Result<bool, AppError> {
+    let conn = pool.get()?;
+    let updated = conn.execute(
+        "UPDATE personas SET starred = ?1, updated_at = datetime('now') WHERE id = ?2",
+        rusqlite::params![if starred { 1 } else { 0 }, id],
+    )?;
+    if updated == 0 {
+        return Err(AppError::NotFound(format!("persona {id}")));
+    }
+    Ok(starred)
 }
 
 #[instrument(skip(pool, input), fields(persona_name = %input.name))]
