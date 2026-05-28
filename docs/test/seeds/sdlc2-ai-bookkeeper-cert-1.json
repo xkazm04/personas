@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-cert-1",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": true,
+  "goal": "The ledger now has roundMoney(value, currency). Build on it: as the Solution Architect, scope a tiny money-arithmetic module that uses it; then the team must IMPLEMENT it. Add src/features/ledger/lib/arithmetic.ts exporting addMoney(a, b, currency) and subtractMoney(a, b, currency). Both must (1) reject mixed-currency or non-finite inputs (throw a typed error), (2) operate at the currency's minor-unit precision so 0.1 + 0.2 yields exactly 0.30 for USD, (3) apply roundMoney to the final result. The engineer writes the code + unit tests covering: same-currency add/subtract, sub-cent precision drift (0.1+0.2), large magnitudes, negative results from subtract, NaN/Infinity rejection, mixed-currency rejection. The Reviewer must verify it composes correctly with roundMoney from the prior delivery. Release merges to master only with build+lint+tests green. Do not stop at a plan — ship a real deliverable.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "A real typed arithmetic.ts that imports and uses roundMoney + edge-case tests including the 0.1+0.2 drift case + mixed-currency rejection, suite green, merged to master by Release Manager. First held-out cert seed — validates the team generalizes beyond the training task."
+}
