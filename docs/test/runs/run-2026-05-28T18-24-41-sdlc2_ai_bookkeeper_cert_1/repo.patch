@@ -1,0 +1,517 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 11ef5ec..aa4b377 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,34 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+ 
+ ## [Unreleased]
+ 
++## [0.4.0] - 2026-05-28
++
++Backward-compatible feature release: the ledger money-arithmetic add/subtract
++layer (ADR 0003) on top of the rounding foundation, plus the "Ruled Ledger"
++visual v2 identity. No breaking changes since `0.3.0`, so under the pre-1.0
++policy this lands as a **minor**. Bump derived from `git log v0.3.0..HEAD`
++(two `feat` commits + one asset `chore`), not guessed.
++
++### Added
++
++- **Money add/subtract arithmetic** (`addMoney` / `subtractMoney`, ADR 0003). A
++  currency-aware add and subtract built directly on the ADR 0002 rounding
++  primitive: each operand is scaled to integer minor units, combined in integer
++  space, then scaled back and canonicalized through `roundMoney`, so `0.1 + 0.2`
++  yields exactly `0.30` (USD) instead of IEEE-754's `0.30000000000000004` — float
++  drift never survives the integer round-trip. Operands may be bare numbers or
++  currency-tagged `Money`; a mixed-currency or non-finite operand throws a typed
++  `MoneyArithmeticError` (extends `RangeError`) rather than silently corrupting a
++  balance. Pure, side-effect-free, fail-loud. Backed by 34 passing unit tests.
++- **"Ruled Ledger" visual v2 identity.** A cohesive visual upgrade across the app
++  shell, landing page, dashboard, and ledger cards: paper-stock surfaces, ink
++  typography, a single emerald accent, T-account card framing, and the
++  Fraunces + IBM Plex type pairing. Restyles existing UI primitives (Badge,
++  Button, Card, StatCard, SectionHeader) and feature cards — no API or behavior
++  changes.
++- **Brand assets.** Leonardo-generated logo, favicon, and hero background for the
++  Ruled Ledger identity.
++
+ ## [0.3.0] - 2026-05-27
+ 
+ Backward-compatible feature release on the ledger money layer. No breaking
+diff --git a/docs/adr/0003-money-arithmetic-module.md b/docs/adr/0003-money-arithmetic-module.md
+new file mode 100644
+index 0000000..384c4de
+--- /dev/null
++++ b/docs/adr/0003-money-arithmetic-module.md
+@@ -0,0 +1,106 @@
++# ADR 0003 — Currency-aware money arithmetic (add / subtract)
++
++- **Status:** Accepted
++- **Date:** 2026-05-28
++- **Deciders:** Solution Architect
++- **Area:** `src/features/ledger/lib` (money arithmetic)
++- **Relates to:** ADR 0002 (currency-aware banker's rounding), ADR 0001 (input-boundary validation)
++
++## Context
++
++ADR 0002 delivered `roundMoney(value, currency)` — a pure, currency-aware,
++half-even rounding primitive — but left the ledger with **no safe way to combine
++two money figures**. Any consumer needing a sum or difference (running balances,
++SDE rollups, expense-vs-income deltas) would reach for `a + b`, which reintroduces
++exactly the IEEE-754 drift ADR 0001/0002 were built to contain: `0.1 + 0.2`
++evaluates to `0.30000000000000004`, and chains of such adds accumulate sub-cent
++error into reported totals.
++
++Inspected before deciding: `ledger/lib/round.ts` (`roundMoney`, `minorUnits`,
++`MINOR_UNITS`/`DEFAULT_MINOR_UNITS`), `ledger/lib/round.test.ts`,
++`ledger/lib/amount.ts` (canonical signed-`number` representation, fail-loud
++`RangeError` convention, `MAX_AMOUNT` $1M ceiling), `ledger/index.ts` (barrel),
++ADR 0001/0002. No existing module performs money arithmetic — confirmed via
++`search_code` over the ledger feature.
++
++## Decision
++
++Add `src/features/ledger/lib/arithmetic.ts` — a tiny, pure module exporting
++`addMoney(a, b, currency)` and `subtractMoney(a, b, currency)`, built directly on
++ADR 0002's primitives.
++
++- **Integer minor-unit arithmetic.** Each operand is scaled to integer minor
++  units (`Math.round(value * 10**minorUnits(currency))`), combined in integer
++  space, then scaled back. The float drift never survives the integer round-trip,
++  so `addMoney(0.1, 0.2, "USD") === 0.30` exactly. Precision follows the currency:
++  cents for USD, none for JPY, mils for BHD.
++- **Composes with `roundMoney`.** The final value is passed through
++  `roundMoney(result, currency)`, so ADR 0002 stays the single source of truth for
++  the minor-unit/half-even canonical form (and for `-0 → 0` normalization). The
++  arithmetic layer does not re-implement rounding.
++- **Fail-loud, typed.** A new `MoneyArithmeticError extends RangeError` carries a
++  `.code` of `"not-finite"` or `"mixed-currency"`. Non-finite operands and
++  currency mismatches throw rather than silently corrupting a balance — extending,
++  not contradicting, the `RangeError` fail-loud boundary of `amount.ts`/`round.ts`,
++  so existing catch sites keep working while gaining a discriminable cause.
++- **Mixed-currency detection.** Operands accept either a bare `number` (assumed in
++  the operation's `currency`) or a tagged `Money { amount, currency }`. A tagged
++  operand whose currency differs from the operation currency is the only way a
++  cross-currency add is expressible — and it is rejected. This keeps the common
++  `(number, number, currency)` call ergonomic while making the mixed-currency
++  contract testable and explicit.
++
++Exported via the feature barrel (`features/ledger/index.ts`), matching the repo's
++co-located pure-lib convention (`amount.ts`, `round.ts`, `customers/lib/normalize.ts`).
++
++**Why not operate directly on floats and only round at the end?** Rounding the
++final sum alone does not undo drift that has already crossed a representable
++boundary in a long chain; doing the add in integer space prevents the drift from
++ever entering. **Why not a generic N-ary `sum()`?** Out of scope for this
++delivery — the two binary operators cover the stated need; an N-ary reducer over
++`addMoney` is a trivial follow-up if an aggregation consumer appears (ties into
++ADR 0002 Task 4).
++
++## Consequences
++
++- **Positive:** ledger consumers now have a drift-free, currency-aware add/subtract
++  that is canonical-by-construction; corrupt or cross-currency inputs fail loud
++  with a typed, discriminable error; zero new rounding logic — `roundMoney` remains
++  authoritative.
++- **Negative / residual risk:** `Math.round` on the scaled operand is half-up, but
++  it only canonicalizes a single operand that is expected to already sit at minor-
++  unit precision (the ledger's invariant); genuine tie-bias is handled by the
++  half-even `roundMoney` on the result. Scaling is reliable only within
++  `Number.MAX_SAFE_INTEGER` — well clear of the $1M per-tx ceiling (ADR 0001), but
++  the module does **not** enforce `MAX_AMOUNT` itself; bounding sums remains a
++  caller/`isValidSignedAmount` concern (UNVERIFIED whether a consumer will need an
++  overflow guard — revisit if aggregation lands).
++- **Carried forward:** an N-ary `sumMoney` and the ADR 0002 Task 4 convergence
++  (`roundToCents → roundMoney`) both unlock once a real aggregation path exists.
++
++## Coverage / verification
++
++- `arithmetic.test.ts`: 9 tests covering same-currency add/subtract, sub-cent drift
++  (`0.1 + 0.2 → 0.30` + penny chains), large magnitudes, negative subtraction
++  results (incl. `-0 → 0`), JPY/BHD non-2dp currencies, NaN/Infinity rejection
++  (typed `not-finite`, also catchable as `RangeError`), mixed-currency rejection
++  (typed `mixed-currency`), the **roundMoney composition / idempotence** check, and
++  blank-currency rejection.
++- `npm test` → **34/34 pass** (12 amount + 13 round + 9 arithmetic).
++- `tsc --noEmit` clean. `eslint` clean. `next build` succeeds.
++- Exported through `features/ledger/index.ts`.
++
++## Task breakdown
++
++1. **`addMoney` / `subtractMoney` + integer minor-unit core** — scale → integer
++   combine → `roundMoney`; mixed-currency + non-finite typed rejection. *(implemented)* — **3 pts**
++2. **`MoneyArithmeticError` typed error** — `extends RangeError`, `.code`
++   discriminator. *(implemented)* — **1 pt**
++3. **Unit tests** — six required cases + composition/idempotence + blank currency.
++   *(implemented)* — **2 pts**
++4. **Barrel export** — surface `addMoney`/`subtractMoney`/`Money`/`MoneyArithmeticError`
++   from `features/ledger/index.ts`. *(implemented)* — **1 pt**
++5. **N-ary `sumMoney` reducer over `addMoney`** *(follow-up, blocked on first
++   aggregation consumer; pairs with ADR 0002 Task 4)*. — **2 pts**
++
++**Total: 9 pts — 7 delivered this run, 2 deferred (Task 5).**
+diff --git a/docs/releases/v0.4.0.md b/docs/releases/v0.4.0.md
+new file mode 100644
+index 0000000..33f0b17
+--- /dev/null
++++ b/docs/releases/v0.4.0.md
+@@ -0,0 +1,74 @@
++# Release v0.4.0 — Money Arithmetic + Ruled Ledger Visual v2
++
++**Date:** 2026-05-28
++**Bump:** MINOR (`0.3.0 → 0.4.0`)
++**Tag:** `v0.4.0` → `300e220`
++
++## Why this version
++
++Backward-compatible feature additions, **no breaking changes** since `0.3.0`.
++Under `0.x` semantic versioning a feature release increments the **minor**, so
++this lands as `0.4.0`. The bump is derived from the merged history, not guessed:
++`git log v0.3.0..HEAD` is two `feat` commits (ADR 0003 money arithmetic; visual
++v2 identity) plus one asset `chore` — all additive, none breaking.
++
++## Headline
++
++The ledger money layer gains its arithmetic operations — `addMoney` /
++`subtractMoney` (ADR 0003) — built on the ADR 0002 rounding primitive so sums and
++differences are exact at minor-unit precision. Alongside it, the app adopts the
++"Ruled Ledger" visual v2 identity.
++
++## What's new
++
++- **Money add/subtract arithmetic** (`addMoney` / `subtractMoney`, ADR 0003).
++  Currency-aware add and subtract performed in integer minor-unit space, then
++  canonicalized through `roundMoney` — `0.1 + 0.2` is exactly `0.30` (USD), the
++  IEEE-754 drift never survives the integer round-trip. Operands are bare numbers
++  or currency-tagged `Money`; mixed-currency or non-finite operands throw a typed
++  `MoneyArithmeticError` (extends `RangeError`) rather than corrupting a balance.
++  Pure, side-effect-free, fail-loud. 34 unit tests pass.
++- **"Ruled Ledger" visual v2 identity.** Paper-stock surfaces, ink typography, a
++  single emerald accent, T-account card framing, Fraunces + IBM Plex pairing —
++  applied across the shell, landing, dashboard, and ledger/feature cards. UI-only;
++  no API or behavior change.
++- **Brand assets.** Logo, favicon, and hero background for the new identity.
++
++## Bump rationale (auditable)
++
++| Input | Signal | Bump |
++|-------|--------|------|
++| `feat(ledger): money arithmetic add/subtract (ADR 0003)` (`300e220`) | new backward-compatible API | MINOR |
++| `feat: visual v2 upgrade — "Ruled Ledger" identity` (`885afae`) | UI-only, no API change | PATCH-equiv |
++| `chore: add brand assets` (`d5f670c`) | non-code assets | — |
++| Breaking changes since `v0.3.0`? | none | — |
++
++→ Highest applicable bump = **MINOR** → `0.4.0`.
++
++## Release-integrity gate (cleared)
++
++The `v0.3.0` integrity gate — the barrel `src/features/ledger/index.ts` re-exporting
++then-untracked `amount.ts` / `ingest.ts` — is now **cleared**: those files were
++committed in `3aaf2c9`, and `arithmetic.ts` in `300e220`. All barrel-referenced
++modules are git-tracked. `tsc --noEmit` is clean and the full test suite passes
++(34/34). The previously deferred **`v0.3.0` tag has been cut at `3aaf2c9`** as part
++of this release, and `v0.4.0` is tagged at `300e220`.
++
++## Known issues / carried-over follow-ups
++
++- **`postcss` XSS still open (partial fix)** — GHSA-qx2v-qp2m-jg93 (moderate).
++  The top-level `postcss` is pinned `^8.5.15` (`package.json`), but `next@16.2.6`
++  hard-pins a nested `postcss@8.4.31` (`node_modules/next/node_modules/postcss`)
++  that the direct bump does not reach; `npm audit` reports 2 moderate. The fix is
++  a `package.json` `overrides` block (`"postcss": ">=8.5.10"`) — **not**
++  `npm audit fix --force` (which proposes a breaking `next@9.3.3` downgrade).
++  Build-time CSS stringify only; real-world reachability low. Tracked for the next
++  dependency-maintenance cycle (Security Sentinel scan @ `300e220`).
++- **No `MAX_AMOUNT` bound in `combine()`** (`arithmetic.ts:88`) — `addMoney` /
++  `subtractMoney` accept any finite operand, unlike the `$1M` cap `amount.ts`
++  enforces at the input boundary. Precision-safe today; a future `sumMoney`
++  reducer or an explicit bound should own aggregate-overflow protection. Low /
++  data-integrity, not exploitable.
++- Keep ledger secrets (`GEMINI_API_KEY`, `PLAID_SECRET`, `TWILIO_AUTH_TOKEN`,
++  `STRIPE_SECRET_KEY`) server-side; never `NEXT_PUBLIC_`-prefix them when the
++  adapters are wired.
+diff --git a/package.json b/package.json
+index bff1e4e..690d8a6 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "ai-bookkeeper",
+-  "version": "0.3.0",
++  "version": "0.4.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+diff --git a/public/brand/logo.png b/public/brand/logo.png
+index b17db9f..2b95ffc 100644
+Binary files a/public/brand/logo.png and b/public/brand/logo.png differ
+diff --git a/src/app/icon.png b/src/app/icon.png
+index abeb2f5..486fbab 100644
+Binary files a/src/app/icon.png and b/src/app/icon.png differ
+diff --git a/src/features/ledger/index.ts b/src/features/ledger/index.ts
+index 187c0f3..367f305 100644
+--- a/src/features/ledger/index.ts
++++ b/src/features/ledger/index.ts
+@@ -17,6 +17,14 @@ export {
+   minorUnits,
+   roundMoney,
+ } from "./lib/round";
++export {
++  type Money,
++  type MoneyInput,
++  type MoneyArithmeticErrorCode,
++  MoneyArithmeticError,
++  addMoney,
++  subtractMoney,
++} from "./lib/arithmetic";
+ export {
+   type RawTransaction,
+   type RejectedTransaction,
+diff --git a/src/features/ledger/lib/arithmetic.test.ts b/src/features/ledger/lib/arithmetic.test.ts
+new file mode 100644
+index 0000000..6a397bf
+--- /dev/null
++++ b/src/features/ledger/lib/arithmetic.test.ts
+@@ -0,0 +1,102 @@
++// Unit tests for currency-aware money addition/subtraction.
++//
++// Runner: Node's built-in test runner via the tsx loader. Run the whole suite
++// with `npm test` (globs src/**/*.test.ts), or this file alone with:
++//   npx tsx --test ./src/features/ledger/lib/arithmetic.test.ts
++
++import assert from "node:assert/strict";
++import { test } from "node:test";
++import {
++  MoneyArithmeticError,
++  addMoney,
++  subtractMoney,
++} from "./arithmetic";
++import { roundMoney } from "./round";
++
++test("adds and subtracts same-currency amounts", () => {
++  assert.equal(addMoney(10.25, 4.5, "USD"), 14.75);
++  assert.equal(subtractMoney(10.25, 4.5, "USD"), 5.75);
++  assert.equal(addMoney(100, 200, "USD"), 300);
++  assert.equal(subtractMoney(200, 50, "USD"), 150);
++});
++
++test("eliminates sub-cent precision drift (0.1 + 0.2 === 0.30, USD)", () => {
++  // The whole point of integer-minor-unit arithmetic: no 0.30000000000000004.
++  const sum = addMoney(0.1, 0.2, "USD");
++  assert.equal(sum, 0.3);
++  assert.ok(Object.is(sum, 0.3));
++  // A chain of penny adds stays exact.
++  assert.equal(addMoney(addMoney(0.1, 0.2, "USD"), 0.1, "USD"), 0.4);
++  assert.equal(subtractMoney(0.3, 0.1, "USD"), 0.2);
++});
++
++test("handles large magnitudes without losing precision", () => {
++  assert.equal(addMoney(999_999.99, 0.01, "USD"), 1_000_000);
++  assert.equal(subtractMoney(1_000_000, 0.01, "USD"), 999_999.99);
++  assert.equal(addMoney(123_456.78, 876_543.21, "USD"), 999_999.99);
++});
++
++test("produces valid negative results from subtraction", () => {
++  assert.equal(subtractMoney(4.5, 10.25, "USD"), -5.75);
++  assert.equal(subtractMoney(0, 0.3, "USD"), -0.3);
++  // -0 is normalized to 0 (matches roundMoney's contract).
++  assert.equal(subtractMoney(0.1, 0.1, "USD"), 0);
++  assert.ok(Object.is(subtractMoney(0.1, 0.1, "USD"), 0));
++});
++
++test("respects non-2dp currencies (JPY 0dp, BHD 3dp)", () => {
++  assert.equal(addMoney(1234, 1, "JPY"), 1235);
++  assert.equal(subtractMoney(1000, 1, "JPY"), 999);
++  assert.equal(addMoney(1.001, 0.002, "BHD"), 1.003);
++});
++
++test("rejects NaN and Infinity operands with a typed error", () => {
++  assert.throws(() => addMoney(NaN, 1, "USD"), MoneyArithmeticError);
++  assert.throws(() => addMoney(1, Infinity, "USD"), MoneyArithmeticError);
++  assert.throws(() => subtractMoney(-Infinity, 1, "USD"), MoneyArithmeticError);
++  assert.throws(
++    () => addMoney(NaN, 1, "USD"),
++    (err: unknown) =>
++      err instanceof MoneyArithmeticError && err.code === "not-finite",
++  );
++  // MoneyArithmeticError extends RangeError → fail-loud catch sites still catch.
++  assert.throws(() => addMoney(NaN, 1, "USD"), RangeError);
++});
++
++test("rejects mixed-currency operands with a typed error", () => {
++  assert.throws(
++    () => addMoney({ amount: 5, currency: "EUR" }, 3, "USD"),
++    MoneyArithmeticError,
++  );
++  assert.throws(
++    () => subtractMoney(10, { amount: 2, currency: "GBP" }, "USD"),
++    (err: unknown) =>
++      err instanceof MoneyArithmeticError && err.code === "mixed-currency",
++  );
++  // Matching tagged currency is accepted and unwrapped.
++  assert.equal(
++    addMoney({ amount: 1.1, currency: "USD" }, { amount: 2.2, currency: "USD" }, "USD"),
++    3.3,
++  );
++});
++
++test("composes with roundMoney: result is already canonical (idempotent)", () => {
++  // The Reviewer's key check — feeding the result back through roundMoney is a
++  // no-op, proving arithmetic emits a value canonical to the currency's units.
++  for (const [a, b, ccy] of [
++    [0.1, 0.2, "USD"],
++    [2.675, 0.005, "USD"],
++    [1234, 1, "JPY"],
++    [1.001, 0.002, "BHD"],
++  ] as const) {
++    const r = addMoney(a, b, ccy);
++    assert.equal(roundMoney(r, ccy), r);
++    const s = subtractMoney(a, b, ccy);
++    assert.equal(roundMoney(s, ccy), s);
++  }
++});
++
++test("rejects a blank/invalid currency code (via roundMoney/minorUnits guard)", () => {
++  assert.throws(() => addMoney(1, 2, ""), RangeError);
++  assert.throws(() => subtractMoney(1, 2, "   "), RangeError);
++});
+diff --git a/src/features/ledger/lib/arithmetic.ts b/src/features/ledger/lib/arithmetic.ts
+new file mode 100644
+index 0000000..e4f20e7
+--- /dev/null
++++ b/src/features/ledger/lib/arithmetic.ts
+@@ -0,0 +1,135 @@
++// Currency-aware money addition and subtraction.
++//
++// Builds directly on `round.ts`: arithmetic is performed at the currency's
++// minor-unit precision (cents for USD, none for JPY, mils for BHD) by scaling
++// each operand to integer minor units, doing the add/subtract in integer space,
++// then scaling back. This is what makes `0.1 + 0.2` yield exactly `0.30` for USD
++// instead of IEEE-754's `0.30000000000000004` — the float drift never survives
++// the round-trip through integers. The final figure is passed through
++// `roundMoney` so the result is canonical to the currency's minor units and the
++// half-even tie convention (ADR 0002) is the single source of truth for rounding.
++//
++// Pure, side-effect-free, fail-loud — matching `amount.ts` / `round.ts`. A
++// non-finite operand or a currency mismatch is a corrupt money figure and throws
++// rather than silently propagating into balances (cf. ADR 0001/0002 boundary).
++
++import { type CurrencyCode, minorUnits, roundMoney } from "./round";
++
++/** A money figure tagged with its currency. Operands may be passed either as a
++ *  bare `number` (already in the operation's `currency`) or as a tagged `Money`,
++ *  in which case its `currency` must match — this is how a mixed-currency add is
++ *  detected and rejected rather than silently producing a meaningless sum. */
++export interface Money {
++  amount: number;
++  currency: CurrencyCode;
++}
++
++/** A bare amount (assumed to be in the operation's currency) or a tagged Money. */
++export type MoneyInput = number | Money;
++
++/** Discriminates the two ways a money operation can be rejected. */
++export type MoneyArithmeticErrorCode = "mixed-currency" | "not-finite";
++
++/**
++ * Typed error for invalid money arithmetic. Extends `RangeError` so existing
++ * fail-loud catch sites (which already expect `RangeError` from `roundMoney` /
++ * `parseAmount`) keep working, while `.code` lets callers distinguish *why*.
++ */
++export class MoneyArithmeticError extends RangeError {
++  readonly code: MoneyArithmeticErrorCode;
++  constructor(code: MoneyArithmeticErrorCode, message: string) {
++    super(message);
++    this.name = "MoneyArithmeticError";
++    this.code = code;
++  }
++}
++
++/** Resolve a MoneyInput to a finite number in `currency`, or throw a typed error. */
++function resolveOperand(
++  operand: MoneyInput,
++  currency: CurrencyCode,
++  label: string,
++): number {
++  let amount: number;
++
++  if (typeof operand === "number") {
++    amount = operand;
++  } else if (operand != null && typeof operand === "object") {
++    if (operand.currency !== currency) {
++      throw new MoneyArithmeticError(
++        "mixed-currency",
++        `Cannot operate on ${label}: currency ${String(operand.currency)} ` +
++          `does not match operation currency ${currency}.`,
++      );
++    }
++    amount = operand.amount;
++  } else {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Operand ${label} must be a number or Money, received ${String(operand)}.`,
++    );
++  }
++
++  if (typeof amount !== "number" || !Number.isFinite(amount)) {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Operand ${label} must be a finite number, received ${String(amount)}.`,
++    );
++  }
++  return amount;
++}
++
++/**
++ * Core integer-space combine. Both operands are scaled to integer minor units
++ * (absorbing the float noise that makes `0.1 * 100 === 10.000000000000002`),
++ * combined as integers, scaled back, then run through `roundMoney` so the result
++ * is canonical and half-even per ADR 0002.
++ */
++function combine(
++  a: MoneyInput,
++  b: MoneyInput,
++  currency: CurrencyCode,
++  sign: 1 | -1,
++): number {
++  // `minorUnits` validates the currency code (throws RangeError on blank).
++  const factor = 10 ** minorUnits(currency);
++
++  const aMinor = Math.round(resolveOperand(a, currency, "a") * factor);
++  const bMinor = Math.round(resolveOperand(b, currency, "b") * factor);
++
++  // Integer arithmetic — no sub-unit drift. Result divided back to a decimal,
++  // then canonicalized (handles -0 normalization and any residual float noise).
++  const resultMinor = aMinor + sign * bMinor;
++  return roundMoney(resultMinor / factor, currency);
++}
++
++/**
++ * Add two money figures of the same `currency`, at the currency's minor-unit
++ * precision. Composes with `roundMoney` (ADR 0002) for the final value.
++ *
++ * @throws MoneyArithmeticError if an operand is non-finite or carries a
++ *   different currency; RangeError if `currency` is blank/invalid.
++ */
++export function addMoney(
++  a: MoneyInput,
++  b: MoneyInput,
++  currency: CurrencyCode,
++): number {
++  return combine(a, b, currency, 1);
++}
++
++/**
++ * Subtract `b` from `a`, both of the same `currency`, at minor-unit precision.
++ * Negative results are valid (an expense exceeding income). Composes with
++ * `roundMoney` (ADR 0002) for the final value.
++ *
++ * @throws MoneyArithmeticError if an operand is non-finite or carries a
++ *   different currency; RangeError if `currency` is blank/invalid.
++ */
++export function subtractMoney(
++  a: MoneyInput,
++  b: MoneyInput,
++  currency: CurrencyCode,
++): number {
++  return combine(a, b, currency, -1);
++}

@@ -37,7 +37,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'development/user-lifecycle-manager.json': '001eddcc7a2638dd',
   'devops/devops-guardian.json': '0007f1fec44d92b6',
   'devops/incident-logger.json': '001dda9e9fa6e6cd',
-  'devops/release-manager.json': '0009f5a8beda0117',
+  'devops/release-manager.json': '0009da93c528f376',
   'devops/sentry-production-monitor.json': '000fbd253b82f8fa',
   'devops/telegram-ops-command-center.json': '001544818958bc1a',
   'devops/workflow-error-intelligence.json': '00163aea7e79db06',

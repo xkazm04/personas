@@ -46,7 +46,7 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/user-lifecycle-manager.json", "001eddcc7a2638dd");
     m.insert("devops/devops-guardian.json", "0007f1fec44d92b6");
     m.insert("devops/incident-logger.json", "001dda9e9fa6e6cd");
-    m.insert("devops/release-manager.json", "0009f5a8beda0117");
+    m.insert("devops/release-manager.json", "0009da93c528f376");
     m.insert("devops/sentry-production-monitor.json", "000fbd253b82f8fa");
     m.insert("devops/telegram-ops-command-center.json", "001544818958bc1a");
     m.insert("devops/workflow-error-intelligence.json", "00163aea7e79db06");

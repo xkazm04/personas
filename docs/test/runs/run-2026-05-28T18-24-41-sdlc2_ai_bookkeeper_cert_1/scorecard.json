@@ -1,0 +1,81 @@
+{
+  "runId": "run-2026-05-28T18-24-41-sdlc2_ai_bookkeeper_cert_1",
+  "team": "SDLC2 — ai-bookkeeper",
+  "seed": "sdlc2/ai-bookkeeper-cert-1",
+  "code_track": {
+    "build": {
+      "status": "pass"
+    },
+    "lint": {
+      "status": "fail",
+      "tail": "> ai-bookkeeper@0.4.0 lint\n> eslint .\n\n\nC:\\Users\\mkdol\\xprice\\ai-bookkeeper\\src\\app\\page.tsx\n  9:11  error  Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages\n\n✖ 1 problem (1 error, 0 warnings)"
+    },
+    "test": {
+      "status": "pass"
+    }
+  },
+  "delivered_increment": {
+    "delivered": true,
+    "masterHead": "de4137be55c1f592719d8e73a24e735aa0ef3418",
+    "sourceFiles": [
+      "src/features/ledger/index.ts",
+      "src/features/ledger/lib/arithmetic.test.ts",
+      "src/features/ledger/lib/arithmetic.ts"
+    ]
+  },
+  "rubric_version": "1-deterministic",
+  "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 83,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 100
+  },
+  "judge": null,
+  "team_score": 97,
+  "provisional_verdict": "NOT-READY",
+  "facts": {
+    "executions": 6,
+    "completed": 5,
+    "failed": 1,
+    "cascade_stalled": true,
+    "value_delivered": 5,
+    "personasExecuted": 6,
+    "memberCount": 6,
+    "eventsDelivered": 16,
+    "reviews": 3,
+    "pendingReviews": 3,
+    "learnedMemories": 5,
+    "cost_usd": 5.115302750000001,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "CHANGELOG.md",
+      "total": 2,
+      "valid": 2,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/0003-money-arithmetic-module.md",
+      "total": 10,
+      "valid": 10,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/releases/v0.4.0.md",
+      "total": 5,
+      "valid": 5,
+      "pct": 100,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 3,
+    "pendingReviews": 3,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}
