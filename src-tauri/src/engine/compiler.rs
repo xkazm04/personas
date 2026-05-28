@@ -206,6 +206,7 @@ mod tests {
             enabled: true,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 300000,
             notification_channels: None,

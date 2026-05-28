@@ -2816,9 +2816,12 @@ export type Translations = {
       delete_agents_message: string;
       delete_drafts: string;
       delete_drafts_message: string;
+      system_persona_undeletable: string;
     };
     persona_list: {
       all_personas: string;
+      star_director_add: string;
+      star_director_remove: string;
       delete_drafts_btn: string;
       badge_draft: string;
       badge_disabled: string;

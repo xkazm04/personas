@@ -43,6 +43,10 @@ export const duplicatePersona = (sourceId: string) =>
 export const deletePersona = (id: string) =>
   invoke<DeletePersonaResult>("delete_persona", { id });
 
+/** Star/unstar a persona (its membership in the Director's coaching scope). */
+export const setPersonaStarred = (id: string, starred: boolean) =>
+  invoke<boolean>("set_persona_starred", { id, starred });
+
 export interface BlastRadiusItem {
   category: string;
   description: string;

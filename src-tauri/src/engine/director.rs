@@ -658,7 +658,9 @@ pub async fn run_director_cycle_batch(
     max_personas: Option<i64>,
 ) -> Result<DirectorReport, AppError> {
     let director_id = get_director_persona_id(&state.db)?;
-    let enabled = personas::get_enabled(&state.db)?;
+    // Scope: the Director only coaches STARRED personas (set via the star
+    // toggle in the personas table). Empty scope ⇒ a no-op cycle.
+    let enabled = personas::get_starred(&state.db)?;
 
     let mut evaluated = 0i64;
     let mut emitted = 0i64;
@@ -908,6 +910,7 @@ mod tests {
             enabled: true,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 300_000,
             model_profile: None,

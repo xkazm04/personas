@@ -3250,6 +3250,25 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Per-persona star: marks a persona as "in the Director's coaching scope".
+    // Promotes the previously localStorage-only favorite to a durable column so
+    // the Director batch (`get_starred`) can read it.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas.starred",
+            description: "Add starred flag to personas (Director coaching scope)",
+            already_applied: |conn| has_column(conn, "personas", "starred"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN starred INTEGER NOT NULL DEFAULT 0;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

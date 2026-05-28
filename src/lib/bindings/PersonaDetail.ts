@@ -16,7 +16,12 @@ export type PersonaDetail = { tools: Array<PersonaToolDefinition>, triggers: Arr
  * Non-empty when one or more sub-resource queries failed.
  * Each entry describes which resource could not be loaded.
  */
-warnings: Array<string>, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
+warnings: Array<string>, id: string, project_id: string, name: string, description: string | null, system_prompt: string, structured_prompt: string | null, icon: string | null, color: string | null, enabled: boolean, sensitive: boolean, headless: boolean, 
+/**
+ * Per-persona star: marks the persona as in the Director's coaching scope.
+ * Promoted from a localStorage-only favorite to a durable column.
+ */
+starred: boolean, max_concurrent: number, timeout_ms: number, notification_channels: string | null, last_design_result: string | null, 
 /**
  * JSON-encoded report from the most recent `test_build_draft` run for
  * this persona (A-grade Phase 2, 2026-05-03). Shape matches the value

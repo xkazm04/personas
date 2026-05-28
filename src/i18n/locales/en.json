@@ -2809,10 +2809,13 @@
       "delete_agents": "Delete {count} Agent(s)",
       "delete_agents_message": "{count} agent(s) and all their configuration will be permanently removed.",
       "delete_drafts": "Delete {count} Draft(s)",
-      "delete_drafts_message": "{count} draft agent(s) will be permanently removed."
+      "delete_drafts_message": "{count} draft agent(s) will be permanently removed.",
+      "system_persona_undeletable": "The Director is a system persona and can't be deleted."
     },
     "persona_list": {
       "all_personas": "All Personas",
+      "star_director_add": "Star to add to the Director's coaching scope",
+      "star_director_remove": "Starred — in the Director's coaching scope. Click to remove.",
       "delete_drafts_btn": "Delete Drafts ({count})",
       "badge_draft": "Draft",
       "badge_disabled": "Disabled",
