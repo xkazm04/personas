@@ -292,6 +292,12 @@
       "marketingModule": "plugins"
     },
     {
+      "doc": "docs/features/goals/README.md",
+      "sourceGlobs": [
+        "src/features/plugins/dev-tools/sub_goals/**"
+      ]
+    },
+    {
       "doc": "docs/features/fleet.md",
       "sourceGlobs": [
         "src/features/plugins/fleet/**",

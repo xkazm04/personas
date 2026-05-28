@@ -162,6 +162,14 @@ Wire:
 
 Why approval-gated when `use_connector` isn't: a scheduled check-in puts a future obligation on the user's attention. Unlike connector calls (which run on pre-greenlit pinned credentials), the consent isn't already present — Athena's "I'll ping you about X in 3 days" needs the user to actually agree before the row lands.
 
+## Project goals (dev direction) — read + propose + react
+
+Athena is wired into the project [Goals](../goals/README.md) surface at the **read + propose, writes-gated** authority level:
+
+- **Read** — `prompt.rs::format_project_goals(sys_db)` injects each dev project's active goals (id, progress, status, latest signal) into her system prompt (appended to the plugins block, in both the ml and non-ml builders), so she's aware of project direction and can reference a goal by id.
+- **Propose (gated)** — the `update_dev_goal { goal_id, status?, progress?, note? }` op (`ALLOWED_ACTIONS` + `execute_update_dev_goal` in `approvals.rs`, constitution **v27**) lets her propose a status/progress change. It is **approval-gated and deliberately NOT in `AUTOAPPROVE_ALLOWLIST`** — goal writes never auto-resolve, even in autonomous mode. On approval it writes an `athena_update` `dev_goal_signal`.
+- **React (proactive)** — `proactive::triggers::dev_goal_nudges(sys_db)` emits budget+dedupe-gated nudges (`dev_goal_target`, `dev_goal_stalled`) when a project goal is target-approaching/overdue or stalled (in-progress/blocked, untouched ≥ 7 days). Because `dev_goals` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`). On engage, the prompt context lets her reason and propose the gated update.
+
 ## MCP request panel (D3 — batched approvals)
 
 Pending MCP requests from fleet sessions land in `McpRequestPanel` above the chat transcript: one card per request, with guidance prompts taking text input and approvals taking ✓/✗ + an optional note. The panel groups by `fleetSessionId` so cards from the same session render together — and when a single session has 2+ pending `approval`-kind requests, the group header renders a primary "Approve all" button that fires `resolveMcpRequest(_, { approved: true, note: '' })` for every approval in that group in parallel (`Promise.allSettled` so one failure doesn't stall the rest). Guidance requests are never batched — they need typed answers.
