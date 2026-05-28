@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-cert-4",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": true,
+  "goal": "Add a trial-balance verifier to the ledger — a brand-new module that does NOT exist yet (verified: no src/features/ledger/lib/trial-balance.ts in master). As the Solution Architect, scope a focused TEAM HANDOFF for the Engineer (Dev Clone) to IMPLEMENT this work end-to-end. The Engineer MUST actually create three source files on master (not just plan, not just ADR): (1) src/features/ledger/lib/trial-balance.ts exporting isBalanced(entries) and verifyTrialBalance(entries) — entries are Array<{account: string, currency: string, debit?: number, credit?: number}>; isBalanced returns boolean (sum of debits === sum of credits, using addMoney from arithmetic.ts so 0.10+0.20 debit vs 0.30 credit checks as balanced); verifyTrialBalance returns {balanced, totalDebits, totalCredits, difference, asymmetricAccounts: string[]} for inspection; both reject mixed-currency or non-finite via MoneyArithmeticError. (2) src/features/ledger/lib/trial-balance.test.ts covering: balanced trivial, balanced via integer-precision-recovery (0.1+0.2 vs 0.3), unbalanced with difference reported, empty entries (balanced: true, totals 0), single-side accounts surfaced in asymmetricAccounts, NaN/Infinity rejection, mixed-currency rejection. (3) src/features/ledger/index.ts barrel updated to export both. The Release Manager MUST verify all three source files exist on master AND build+lint+tests are green BEFORE merging+tagging (a release with only docs/changelog/version-bump means the engineer did not implement — escalate via manual_review, do not ship). Do not stop at a plan, do not ship version-only.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "A real new trial-balance.ts that composes with arithmetic.ts addMoney + tests including the 0.10+0.20 integer-precision balance check + mixed-currency rejection, barrel updated, suite green INCLUDING lint, merged to master by Release Manager — and the §1.A.1 Delivered Increment gate sees actual .ts source files in the patch, NOT just CHANGELOG/version-bump. Fourth held-out cert seed — first to test the full stack of recent fixes: architect v2 TEAM HANDOFF MODE, engine retry-chain fix (dfd5af06d), input_data preservation on retry (a703bf45e), rescue-aware cascade-stall cap (4f94eff98). If PRODUCTION → cert streak begins 1/3."
+}
