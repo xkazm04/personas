@@ -236,7 +236,11 @@ pub async fn build_system_prompt(
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
     let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
-    let plugins_md = format_plugins(&plugin_names, &projects, &tracking_pulses_md);
+    let plugins_md = format!(
+        "{}{}",
+        format_plugins(&plugin_names, &projects, &tracking_pulses_md),
+        format_project_goals(sys_db),
+    );
 
     let preview = summarize_recall(&recall, briefing.is_some());
     let composed = compose(
@@ -314,7 +318,11 @@ pub async fn build_system_prompt(
     let plugin_names = plugins::list_enabled(user_db).unwrap_or_default();
     let projects = crate::companion::projects::list(user_db).unwrap_or_default();
     let tracking_pulses_md = format_project_tracking_pulses(user_db, &plugin_names);
-    let plugins_md = format_plugins(&plugin_names, &projects, &tracking_pulses_md);
+    let plugins_md = format!(
+        "{}{}",
+        format_plugins(&plugin_names, &projects, &tracking_pulses_md),
+        format_project_goals(sys_db),
+    );
 
     let preview = summarize_recall(&recall, false);
     let composed = compose(
@@ -400,6 +408,62 @@ fn capitalize(s: &str) -> String {
 /// at this before responding so she doesn't lose track of what the
 /// user said they're working toward. NOT cited the way facts are —
 /// goals are ongoing, not historical claims.
+/// Goals hub: inject the dev projects' goals + latest progress signal so Athena
+/// is aware of project-level direction and can reference a goal by id when she
+/// proposes an `update_dev_goal`. Reads the main app DB (sys_db). Ungated so it
+/// runs in both ml and non-ml prompt builds. Capped to keep the prompt lean.
+fn format_project_goals(sys_db: &DbPool) -> String {
+    use crate::db::repos::dev_tools as dt;
+    let projects = match dt::list_projects(sys_db, None) {
+        Ok(p) => p,
+        Err(_) => return String::new(),
+    };
+    let mut body = String::new();
+    let mut shown = 0usize;
+    for proj in &projects {
+        if shown >= 12 {
+            break;
+        }
+        let goals = dt::list_goals_by_project(sys_db, &proj.id, None).unwrap_or_default();
+        let active: Vec<_> = goals
+            .iter()
+            .filter(|g| g.status != "done" && g.status != "completed")
+            .collect();
+        if active.is_empty() {
+            continue;
+        }
+        body.push_str(&format!("\n**{}**\n", proj.name.trim()));
+        for g in active.iter().take(6) {
+            if shown >= 12 {
+                break;
+            }
+            let latest = dt::list_goal_signals(sys_db, &g.id, Some(1))
+                .ok()
+                .and_then(|v| v.into_iter().next())
+                .map(|s| {
+                    let m = s.message.unwrap_or(s.signal_type);
+                    format!(" · latest: {}", first_paragraph(&m, 80))
+                })
+                .unwrap_or_default();
+            body.push_str(&format!(
+                "- {title} (id {id}) — {prog}% [{status}]{latest}\n",
+                title = g.title.trim(),
+                id = g.id,
+                prog = g.progress,
+                status = g.status,
+                latest = latest,
+            ));
+            shown += 1;
+        }
+    }
+    if body.is_empty() {
+        return String::new();
+    }
+    format!(
+        "\n\n# Project goals (dev direction + progress)\n\nProject-level goals you can track. To propose a change, use `update_dev_goal` with the goal's id.{body}"
+    )
+}
+
 fn format_goals(goals: &[Goal]) -> String {
     if goals.is_empty() {
         return String::new();

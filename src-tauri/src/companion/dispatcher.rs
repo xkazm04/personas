@@ -141,6 +141,8 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",
+    // Goals hub — propose a dev-goal progress/status update (approval-gated).
+    "update_dev_goal",
     // Athena's future check-in commitments. Goes through approval
     // because it puts a future obligation on the user's attention —
     // unlike connector calls (real-world action that runs once on

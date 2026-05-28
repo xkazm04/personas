@@ -215,6 +215,7 @@ pub async fn companion_approve_action(
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
+        "update_dev_goal" => execute_update_dev_goal(&state, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&params),
@@ -822,6 +823,48 @@ fn execute_write_goal(
     Ok(ExecuteResult::message(format!(
         "Goal `{id}` recorded: \"{}\" (priority {}).",
         title, priority
+    )))
+}
+
+/// Goals hub — apply an Athena-proposed dev-goal update (approval-gated; never
+/// auto-approved). Updates status/progress on the main-DB `dev_goals` row and
+/// records an `athena_update` signal so the change shows in the goal's feed.
+fn execute_update_dev_goal(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::db::repos::dev_tools as dt;
+    let goal_id = params
+        .get("goal_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("update_dev_goal: missing `goal_id`".into()))?;
+    let status = params.get("status").and_then(|v| v.as_str());
+    let progress = params
+        .get("progress")
+        .and_then(|v| v.as_i64())
+        .map(|n| n.clamp(0, 100) as i32);
+    let note = params.get("note").and_then(|v| v.as_str());
+    if status.is_none() && progress.is_none() {
+        return Err(AppError::Internal(
+            "update_dev_goal: nothing to update (need `status` and/or `progress`)".into(),
+        ));
+    }
+    dt::update_goal(
+        &state.db, goal_id, None, None, status, progress, None, None, None, None,
+    )?;
+    let summary = note.map(str::to_string).unwrap_or_else(|| {
+        let mut parts = Vec::new();
+        if let Some(s) = status {
+            parts.push(format!("status → {s}"));
+        }
+        if let Some(p) = progress {
+            parts.push(format!("progress → {p}%"));
+        }
+        format!("Athena updated goal ({})", parts.join(", "))
+    });
+    let _ = dt::create_goal_signal(&state.db, goal_id, "athena_update", None, progress, Some(&summary));
+    Ok(ExecuteResult::message(format!(
+        "Dev goal `{goal_id}` updated — {summary}."
     )))
 }
 

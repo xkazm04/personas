@@ -239,4 +239,4 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// external-source clarification, listing the read verbs explicitly
 /// (pulling/fetching/checking/looking up/listing/summarizing/scanning/
 /// reading) and noting that none of them exempt local builtins.
-pub const CONSTITUTION_VERSION: u32 = 26;
+pub const CONSTITUTION_VERSION: u32 = 27;
