@@ -3583,6 +3583,47 @@ pub fn list_competition_slots(
 }
 
 #[cfg(test)]
+mod goal_status_tests {
+    use super::{days_between, goal_status_is_ongoing, normalize_goal_status};
+
+    #[test]
+    fn normalize_buckets_match_the_frontend_model() {
+        for raw in ["in-progress", "in_progress", "running", "active", "matching"] {
+            assert_eq!(normalize_goal_status(raw), "in-progress", "{raw}");
+        }
+        for raw in ["blocked", "review", "awaiting_review"] {
+            assert_eq!(normalize_goal_status(raw), "blocked", "{raw}");
+        }
+        for raw in ["done", "completed", "complete", "skipped"] {
+            assert_eq!(normalize_goal_status(raw), "done", "{raw}");
+        }
+        for raw in ["open", "pending", "queued", "weird", ""] {
+            assert_eq!(normalize_goal_status(raw), "open", "{raw}");
+        }
+        assert_eq!(normalize_goal_status("  In_Progress "), "in-progress");
+    }
+
+    #[test]
+    fn ongoing_is_inverse_of_done() {
+        assert!(!goal_status_is_ongoing("done"));
+        assert!(!goal_status_is_ongoing("completed"));
+        assert!(goal_status_is_ongoing("open"));
+        assert!(goal_status_is_ongoing("in_progress"));
+        assert!(goal_status_is_ongoing("blocked"));
+    }
+
+    #[test]
+    fn days_between_handles_rfc3339_date_only_and_garbage() {
+        assert_eq!(
+            days_between("2026-05-01T00:00:00Z", "2026-05-09T00:00:00Z"),
+            8
+        );
+        assert_eq!(days_between("2026-05-01", "2026-05-04"), 3);
+        assert_eq!(days_between("not-a-date", "2026-05-04"), 0);
+    }
+}
+
+#[cfg(test)]
 mod goal_progress_tests {
     use super::compute_suggested_progress;
 
