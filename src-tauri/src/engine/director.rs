@@ -491,7 +491,20 @@ async fn evaluate_with_llm(
         Some(PAYLOAD_VALUE_WINDOW_DAYS),
         Some(ctx.persona.id.as_str()),
     )?;
-    let payload = build_director_payload(&state.db, ctx, &rollup);
+    let mut payload = build_director_payload(&state.db, ctx, &rollup);
+
+    // Long-term memory (Brain): when enabled + a vault is configured, fold prior
+    // Director notes for this persona into the payload so coaching compounds.
+    let brain_on = brain_enabled(&state.db);
+    if brain_on {
+        if let Some(history) = read_brain_history(&state.db, &ctx.persona.name) {
+            payload.push_str(
+                "\n\n## Prior coaching from your long-term memory (Brain)\nUse this to build on past advice and avoid repeating yourself:\n\n",
+            );
+            payload.push_str(&truncate(&history, 4000));
+            payload.push('\n');
+        }
+    }
 
     let spawned = crate::commands::execution::executions::execute_persona_inner(
         state,
@@ -535,9 +548,78 @@ async fn evaluate_with_llm(
         if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
             tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
         }
+        // Write the review into the Brain vault as durable long-term memory.
+        if brain_on {
+            write_brain_note(&state.db, &ctx.persona.id, &ctx.persona.name, &md);
+        }
     }
 
     Ok(verdicts)
+}
+
+// ---------------------------------------------------------------------------
+// Brain long-term memory (gated on `director.brain_enabled` + a configured vault)
+// ---------------------------------------------------------------------------
+
+/// Vault-relative folder for a persona's Director notes, e.g. `Director/My-Bot`.
+fn director_vault_folder(persona_name: &str) -> String {
+    let slug: String = persona_name
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c } else { '-' })
+        .collect();
+    format!("Director/{}", slug.trim_matches('-'))
+}
+
+/// True when the Director may use the Brain vault: the setting is on AND a vault
+/// is configured.
+fn brain_enabled(pool: &DbPool) -> bool {
+    let on = matches!(
+        crate::db::repos::core::settings::get(pool, crate::db::settings_keys::DIRECTOR_BRAIN_ENABLED),
+        Ok(Some(v)) if v == "true"
+    );
+    on && crate::commands::obsidian_brain::mirror_vault_root(pool).is_some()
+}
+
+/// Read up to the 3 most recent Director notes for this persona from the vault.
+/// Plain `std::fs` (no embeddings); best-effort. Returns concatenated markdown.
+fn read_brain_history(pool: &DbPool, persona_name: &str) -> Option<String> {
+    let cfg = crate::commands::obsidian_brain::mirror_vault_root(pool)?;
+    let dir = std::path::Path::new(&cfg.vault_path).join(director_vault_folder(persona_name));
+    let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&dir)
+        .ok()?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("md"))
+        .collect();
+    files.sort();
+    let recent: Vec<String> = files
+        .iter()
+        .rev()
+        .take(3)
+        .filter_map(|p| std::fs::read_to_string(p).ok())
+        .collect();
+    (!recent.is_empty()).then(|| recent.join("\n\n---\n\n"))
+}
+
+/// Write the Director's review note into the vault as durable memory (best-effort).
+fn write_brain_note(pool: &DbPool, persona_id: &str, persona_name: &str, review_md: &str) {
+    let Some(cfg) = crate::commands::obsidian_brain::mirror_vault_root(pool) else {
+        return;
+    };
+    let rel = format!(
+        "{}/{}.md",
+        director_vault_folder(persona_name),
+        chrono::Utc::now().format("%Y-%m-%d-%H%M%S")
+    );
+    if let Err(e) = crate::commands::obsidian_brain::mirror_write_note(
+        pool,
+        &cfg.vault_path,
+        &rel,
+        "director_verdict",
+        persona_id,
+        review_md,
+    ) {
+        tracing::warn!(error = %e, persona = %persona_id, "Director: failed to write Brain note");
+    }
 }
 
 /// Poll an execution row until it reaches a terminal state or the timeout

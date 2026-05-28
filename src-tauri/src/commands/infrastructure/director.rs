@@ -58,3 +58,28 @@ pub fn list_director_verdicts(
     require_auth_sync(&state)?;
     director::list_verdicts(&state.db, persona_id.as_deref())
 }
+
+/// Whether the Director may use the Obsidian Brain vault as long-term memory.
+#[tauri::command]
+pub fn get_director_brain_enabled(state: State<'_, Arc<AppState>>) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    Ok(matches!(
+        crate::db::repos::core::settings::get(&state.db, crate::db::settings_keys::DIRECTOR_BRAIN_ENABLED),
+        Ok(Some(v)) if v == "true"
+    ))
+}
+
+/// Toggle the Director's Brain long-term memory. Takes effect on the next review
+/// (also gated on a vault being configured).
+#[tauri::command]
+pub fn set_director_brain_enabled(
+    state: State<'_, Arc<AppState>>,
+    enabled: bool,
+) -> Result<(), AppError> {
+    require_auth_sync(&state)?;
+    crate::db::repos::core::settings::set(
+        &state.db,
+        crate::db::settings_keys::DIRECTOR_BRAIN_ENABLED,
+        if enabled { "true" } else { "false" },
+    )
+}

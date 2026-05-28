@@ -2536,6 +2536,8 @@ pub fn run() {
             commands::infrastructure::director::run_director_on_persona,
             commands::infrastructure::director::run_director_batch,
             commands::infrastructure::director::list_director_verdicts,
+            commands::infrastructure::director::get_director_brain_enabled,
+            commands::infrastructure::director::set_director_brain_enabled,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project,

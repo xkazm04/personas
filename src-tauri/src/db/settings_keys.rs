@@ -183,6 +183,11 @@ pub const COMPANION_AUTONOMOUS_MODE: &str = "companion_autonomous_mode";
 /// backfilled. Free-form timestamp value (no typed validation).
 pub const COMPANION_EXEC_REVIEW_CURSOR: &str = "companion_exec_review_cursor";
 
+/// Whether the Director may use the Obsidian Brain vault as long-term memory:
+/// read prior coaching notes before a review + write a verdict note after.
+/// Additionally gated on the vault being configured. Stored `"true"`/`"false"`.
+pub const DIRECTOR_BRAIN_ENABLED: &str = "director_brain_enabled";
+
 /// Global monthly cost ceiling in USD. Drives the Settings → Limits tab
 /// progress bar and warning state. Stage 1 is informational-only; Stage 2
 /// will gate execution dispatch when this is set and the running month
@@ -237,6 +242,7 @@ const ALLOWED_KEYS: &[&str] = &[
     CLI_SESSION_AWARENESS_ENABLED,
     COMPANION_AUTONOMOUS_MODE,
     COMPANION_EXEC_REVIEW_CURSOR,
+    DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,

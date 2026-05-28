@@ -43,6 +43,21 @@ user resolved them), polls it to completion, and parses its output:
 Because the score lives on the execution (not a review row), healthy personas
 get a high score with **no** review-queue spam.
 
+## Long-term memory (Obsidian Brain)
+
+When the **Brain** plugin is enabled (a vault is configured) and the
+`director.brain_enabled` setting is on, each review:
+
+- **reads** the persona's prior Director notes from `<vault>/Director/<persona>/`
+  and folds them into the payload ("Prior coaching from your long-term memory"),
+  so advice compounds instead of repeating;
+- **writes** the new assessment back as a dated markdown note in that folder.
+
+Both are best-effort (a vault failure never breaks a review) and use plain file
+I/O via the mirror API (`mirror_vault_root` / `mirror_write_note`) — no
+embeddings, so it works in the lite build. Toggle via
+`get_director_brain_enabled` / `set_director_brain_enabled`.
+
 ## Where verdicts surface
 
 - **Activity list** (`src/features/agents/sub_activity`): a **Verdict** column
@@ -62,6 +77,7 @@ get a high score with **no** review-queue spam.
 | `run_director_batch(max_personas?)` | Review all starred personas sequentially. |
 | `list_director_verdicts(persona_id?)` | Read Director-sourced coaching reviews. |
 | `set_persona_starred(id, starred)` | Add/remove a persona from the Director's scope. |
+| `get_director_brain_enabled()` / `set_director_brain_enabled(enabled)` | Read/toggle the Brain long-term-memory wiring. |
 
 ## Source map
 
