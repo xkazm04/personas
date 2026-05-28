@@ -1,0 +1,67 @@
+[
+  {
+    "id": "1de91eb7-556e-420b-a363-d12ed8cb93af",
+    "execution_id": "8cdc5b4a-d221-4df7-8c6c-97fe9f027827",
+    "persona_id": "bdb4bfb1-2e14-495e-bf53-38356cfbf8c1",
+    "title": "Release version for cert-3 stabilization: 0.4.1 (PATCH) vs seed's 0.5.x",
+    "description": "The seed requested a '0.5.x PATCH release', but the current version is 0.4.0, so a non-functional PATCH is 0.4.1 — 0.5.0 would be a MINOR bump, contradicting the seed's own 'this is a non-functional fix' rationale. ADR-0006 recommends 0.4.1. This is the Release Manager's versioning call before merge.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T21:59:22.133311300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "6164a49f-52dd-4e2b-ac94-64ea58969c44",
+    "execution_id": "94e48a9f-92da-4109-9384-b7bf54a15427",
+    "persona_id": "06537169-fd6b-4c40-9367-b110680dc48f",
+    "title": "Triage: backlog candidates from ai-bookkeeper scan (2026-05-29)",
+    "description": "Standalone backlog scan surfaced 1 high-value consolidation candidate (ADR 0005, fully verified in code) and 1 housekeeping item. No work is implemented until you accept — and per ADR-0005 scope correction, its Task 6 is stale (page.tsx lint already green) and should be dropped. Accept fans out to implementation as a focused PR sequence; defer re-queues; reject (with reason) suppresses the category.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T22:06:54.967268+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "fdd9a412-f398-442c-b137-5a6d2398ff3b",
+    "execution_id": "2ef775d7-de4a-4f6b-be59-3d7b8335bf21",
+    "persona_id": "06537169-fd6b-4c40-9367-b110680dc48f",
+    "title": "Backlog triage — ai-bookkeeper (2 candidates need accept/reject/defer)",
+    "description": "Standalone scan surfaced 2 backlog candidates at HEAD b510ec9. Nothing is implemented without your accept. bl-0005 is a Proposed architectural change (8 feature consumers) — human territory. bl-hk1 is a low-risk docs-trail commit. Resolving these records your preference for future scans.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T22:08:59.052751800+00:00",
+    "use_case_id": "uc_triage"
+  },
+  {
+    "id": "226105d0-d01d-4078-a151-471f35d76fc2",
+    "execution_id": "3ff078b9-d928-4c6f-a9aa-6f1d602eda55",
+    "persona_id": "b654b7f7-2b5c-4a9c-8e7d-6430fec41b7b",
+    "title": "Apply one-line postcss overrides fix (H1, open 5 scans)",
+    "description": "The postcss XSS CVE (GHSA-qx2v-qp2m-jg93) has been open across 5 consecutive scans. The fix is a single-line `overrides` block in package.json pinning postcss>=8.5.10, which reaches the transitive next@16.2.6 pin that a top-level bump cannot. This is an actionable, low-risk external change awaiting a decision.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T22:11:53.511214200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "5a6e841a-d656-442b-a5cd-b62297cb7959",
+    "execution_id": "f6dae323-863f-4141-a91d-ab67b9008493",
+    "persona_id": "04564189-698f-46e9-859e-ea19616a8646",
+    "title": "Approve README enumeration fix — add ingest.ts to ledger/lib tree (v0.5.0 docs sync)",
+    "description": "The v0.5.0 README rewrite (commit cf108a7) enumerates src/features/ledger/lib/ as 'round / amount / arithmetic / format' but omits the ingest.ts module (ingest boundary, shipped v0.3.0). I edited the file-tree comment in place to add '/ ingest'. This is the only working-tree change this run; the CHANGELOG [0.5.0] section needed no edit. The change documents no new code and is not committed/pushed.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T22:20:31.847293500+00:00",
+    "use_case_id": "uc_docs_sync"
+  }
+]

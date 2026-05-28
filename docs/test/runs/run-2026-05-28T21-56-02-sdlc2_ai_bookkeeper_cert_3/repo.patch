@@ -1,0 +1,543 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index bd34ed1..19d5b98 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,18 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+ 
+ ## [Unreleased]
+ 
++## [0.5.0] - 2026-05-29
++
++Backward-compatible feature release. The display-side money formatter
++(`formatMoney`, ADR 0004) completes the rounding → arithmetic → display money
++trio, joined by the Phase 2/3 product showcase (interactive ledger demo, Framer
++Motion choreography, pricing + FAQ pages, ink-mode toggle, a11y polish, PWA +
++share assets) and a home-nav e2e regression guard (ADR 0006). No breaking changes
++since `0.4.0`; under the pre-1.0 `0.x` policy a feature release increments the
++**minor**, so this lands as `0.5.0`. Bump derived from `git log v0.4.0..HEAD`
++(three `feat` commits, one `test`, one `docs` — all additive, none breaking),
++not guessed.
++
+ ### Added
+ 
+ - **Currency-aware money display formatter** (`formatMoney`, ADR 0004). The
+@@ -22,6 +34,24 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+   mixed-currency value throws `MoneyArithmeticError`, a blank/unknown currency
+   throws `RangeError`. Pure and side-effect-free. Backed by 8 new unit tests
+   (full suite 42/42 green).
++- **Phase 3 product showcase.** An interactive double-entry ledger demo,
++  Framer Motion choreography (`src/lib/motion.ts`, `Motion` components), new
++  pricing and FAQ pages, and an ink-mode toggle — with accessibility polish
++  across the shell. UI-only; no API or ledger-behavior change.
++- **Phase 2 polish.** Regenerated hero background, an Open Graph share card, and
++  a PWA manifest + icon set. Presentation/assets only.
++
++### Tests
++
++- **Home-nav regression guard** (e2e, ADR 0006). Playwright guard that locks in
++  the `next/link` home navigation fixed in this line — preventing a regression of
++  the raw-anchor lint defect that previously held the release.
++
++### Docs
++
++- Rewrote README to reflect current capabilities and structure (Phase 3 showcase:
++  interactive double-entry ledger demo, ink-mode toggle, Framer Motion choreography,
++  pricing + FAQ pages, money-arithmetic suite, brand asset set, e2e harness).
+ 
+ ## [0.4.0] - 2026-05-28
+ 
+diff --git a/README.md b/README.md
+index 0801aff..e66b238 100644
+--- a/README.md
++++ b/README.md
+@@ -1,49 +1,41 @@
+-# xprize-ai-bookkeeper · Ledgerline
++# Ledgerline · AI Bookkeeper
+ 
+-> Done-for-you bookkeeping for solo trades — text a receipt, and your books close themselves.
++> Text a receipt. We'll close your books by the 1st.
+ 
+-XPrize hackathon entry · 90-day MVP scaffold · built with Gemini on Google Cloud.
++Done-for-you bookkeeping for solo trades — plumbers, electricians, HVAC techs, landscapers. The customer never opens an app: they text a receipt photo, forward an invoice, or ask "how much did I make in April?", and a Gemini-backed concierge categorizes the transaction, files the quarterly tax estimate, and hands a clean package to their CPA at year-end. Replaces the $400/month bookkeeping firm with a flat $59/month plan over SMS.
+ 
+----
++XPrize hackathon entry · 90-day MVP scaffold · built with Gemini on Google Cloud. The dashboard, integrations, and customer data are mocked — this is the design-and-architecture foundation a 12-week build starts from.
+ 
+-## Overview
++## Features
+ 
+-Solo trades operators — plumbers, electricians, HVAC techs, landscapers — generate real revenue but hate accounting. **Ledgerline** replaces the $400/month bookkeeping firm with a $59/month AI agent that runs over SMS. The customer never opens an app: they text a receipt photo, forward an invoice, or ask "how much did I make in April?" — and the books close themselves.
++- SMS-first concierge flow — receipt, invoice, and Q&A intake (mocked UI)
++- Interactive double-entry ledger demo on the landing page — pick a transaction, watch debits and credits post into a T-account in real time
++- Ruled Ledger visual identity v2 — paper-cream + ink + emerald, T-account card frame, 28px page ruling
++- Ink-mode theme toggle with pre-paint inline script (no cream-flash on load), persisted to `localStorage`
++- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`; covered by 42 unit tests
++- Ledger ingest boundary (`ingestTransaction`) — validates every amount from SMS/OCR/Plaid sources at one seam, with user-facing rejection reasons routed to the review queue
++- Mocked dashboard: transactions, text-in inbox, review queue, month-end close checklist, revenue chart, customer side-panel, benchmarks, tax credits, wealth-score
++- PWA manifest + multi-size icon set + Open Graph share card
++- `prefers-reduced-motion` honored on every Framer Motion wrapper; skip-to-content link; `focus-visible` rings on every interactive element
++- Playwright e2e harness for regression guards (e.g. home-nav per ADR-0006)
+ 
+-- **Customer:** solo trades, $50K–$500K revenue, 1–3 person crews
+-- **Wedge:** it works like texting a friend — no app, no spreadsheet
+-- **Pricing:** $59 Solo · $129 Crew · $299 one-time year-end CPA hand-off
+-- **Trial:** 14 days, no credit card
+-
+-## What's in this repo
+-
+-A Next.js 16 application scaffold with a finalized design direction:
+-
+-- **Design system** — semantic CSS-variable tokens, a shared UI primitive kit, feature-module architecture (modelled on a production codebase's conventions)
+-- **Three routes** (see below) — a marketing landing, a brand landing, and the working product dashboard
+-- **`/docs`** — the 12-week build backlog and pre-launch checklist
+-
+-The dashboard, data and integrations are mocked — this is the design-and-architecture foundation a 12-week build starts from.
++## Tech stack
+ 
+-## Routes
++- **Framework** — Next.js 16.2 (App Router) · React 19.2 · TypeScript 6 (strict)
++- **Styling** — Tailwind CSS 4 (Oxide engine, `@tailwindcss/postcss`) · token-driven via `src/app/globals.css`
++- **Motion** — Framer Motion 12 (wrappers in `src/components/Motion.tsx`, shared ease curve `easeLedger` in `src/lib/motion.ts`)
++- **State** — Zustand 5 (customer-side feature stores)
++- **AI** — `@google/generative-ai` 0.24 (Gemini 1.5 Pro for reasoning/Q&A; vision for OCR — wiring stubbed)
++- **Tests** — Node test runner via `tsx --test` for unit suites · Playwright for e2e
++- **Lint** — ESLint 10 flat config · `eslint-plugin-react-hooks` 7 · `@next/eslint-plugin-next`
+ 
+-| Route | Purpose |
+-| --- | --- |
+-| `/` | Marketing landing page |
+-| `/landing-claude` | Brand landing — "The thread" (SMS-conversation concept) |
+-| `/dashboard` | The product — **Ledger desk**: transactions, text-in inbox, review queue, month-end close |
++## Visual identity
+ 
+-## Tech stack
+-
+-- **Framework:** Next.js 16 (App Router) · React 19 · TypeScript 6 (strict) · Tailwind CSS 4
+-- **AI:** Google Gemini 1.5 Pro (reasoning, Q&A) · Gemini vision / Document AI (receipt OCR)
+-- **Integrations:** Plaid (banking) · Twilio (SMS/MMS) · Stripe (billing)
+-- **Cloud:** Google Cloud Run · Cloud SQL · Cloud Scheduler · BigQuery
+-- **Tooling:** ESLint 10 flat config · `tsc` strict typecheck
++**Ruled Ledger** — paper-cream `#f4e6c9`, ink `#0e0f0c`, emerald `#0b6e4f`. Display: **Fraunces** (variable, optical-size + `SOFT` axes). Body: **IBM Plex Sans**. Numerics / stamps: **JetBrains Mono**. Signature motif: T-account card frame with a thin top rule and a thick ink bottom rule, 28px horizontal page ruling, hand-drafted bookkeeping heritage. Ships paper-cream light and ink-black dark themes via `data-theme` swap, persisted to `localStorage`, with a pre-paint inline script in `src/app/layout.tsx` to prevent FOUC.
+ 
+ ## Getting started
+ 
+-**Prerequisites:** Node.js ≥ 20, npm.
++**Prerequisites:** Node.js >= 20, npm.
+ 
+ ```bash
+ npm install
+@@ -53,43 +45,116 @@ npm run dev                  # http://localhost:3000
+ 
+ ## Scripts
+ 
+-| Script | Action |
++| Script | What it does |
+ | --- | --- |
+-| `npm run dev` | Start the dev server |
++| `npm run dev` | Next.js dev server |
+ | `npm run build` | Production build |
+ | `npm run start` | Serve the production build |
+-| `npm run lint` | ESLint |
++| `npm run lint` | ESLint (flat config) |
+ | `npm run typecheck` | `tsc --noEmit` |
+-| `npm test` | Run unit tests (`tsx --test`) |
++| `npm test` | Unit tests via `tsx --test src/**/*.test.ts` (42 tests) |
++| `npm run test:watch` | Unit tests in watch mode |
++| `npm run e2e` | Playwright end-to-end tests |
++| `npm run e2e:ui` | Playwright UI mode |
++| `npm run e2e:headed` | Playwright in a visible browser |
++
++## Routes
++
++- `/` — landing: hero + interactive double-entry `LedgerDemo` + three principles + how-it-works + numbers band + pricing teaser + closing card
++- `/pricing` — three tiers (Solo · Crew · Year-end CPA) presented as T-account rows with debit/credit columns, plus a compact line-by-line comparison table
++- `/faq` — eight thoughtful Q&As, native `<details>` for SSR-safe disclosure with layered Framer Motion animation
++- `/dashboard` — Ledger desk: transactions, text-in inbox, review queue, month-end close checklist, revenue chart, customer side-panel, benchmarks, tax credits, wealth-score
++- `/landing-claude` — alternate brand landing: "The thread" (entire page rendered as an SMS conversation)
+ 
+ ## Project structure
+ 
+ ```
+ src/
+-├── app/                  # Next.js routes (/, /landing-claude, /dashboard)
+-├── components/           # App shell + shared UI kit (components/ui)
+-├── features/
+-│   └── ledger/           # The dashboard feature module
+-│       ├── components/   # Section components
+-│       ├── lib/          # Money rounding, add/subtract arithmetic, display formatting, amount validation + ingest boundary
+-│       ├── data.ts       # Typed mock data
+-│       └── types.ts      # Domain types
+-└── lib/                  # cn(), formatters
+-docs/                     # BACKLOG.md, CHECKLIST.md
++  app/
++    layout.tsx               # Root layout: fonts, metadata, manifest, pre-paint theme script, skip-to-content
++    page.tsx                 # Landing
++    globals.css              # Design tokens + Tailwind 4 theme bridge
++    pricing/page.tsx         # Pricing
++    faq/page.tsx             # FAQ
++    dashboard/page.tsx       # Dashboard
++    landing-claude/page.tsx  # Alternate landing ("the thread")
++  components/
++    Motion.tsx               # <Stagger> / <Rise> / <HoverCard> wrappers, reduced-motion safe
++    LedgerDemo.tsx           # Interactive double-entry T-account demo
++    ThemeToggle.tsx          # data-theme toggle, hydration-safe
++    FaqEntry.tsx             # Animated native <details> row
++    DashboardTopBar.tsx      # Shared dashboard chrome
++  lib/
++    motion.ts                # easeLedger curve, fadeUp / staggerContainer / viewport variants
++    cn.ts                    # className merge helper
++    format.ts                # Display formatters
++  features/
++    ledger/                  # Transactions, inbox, review queue, close checklist, money arithmetic
++      lib/                   # round / amount / arithmetic / format + co-located .test.ts files
++    customers/               # Customer panel, merge candidates, Zustand store
++    benchmarks/              # Industry benchmarks card
++    tax-credits/             # Tax-credit scanner + evidence chips
++    wealth-score/            # Wealth-score driver bars
++public/
++  brand/                     # logo.png, hero-bg.png
++  icons/                     # PWA icons 16/32/48/96/180/192/512
++  og.png                     # Open Graph share card (1200x630)
++  manifest.webmanifest
++docs/
++  BACKLOG.md  CHECKLIST.md  adr/   # 12-week plan, pre-launch checklist, ADRs
+ ```
+ 
+-## Design system
++## Brand assets
++
++- `public/brand/logo.png` — primary mark (T-account glyph on cream, emerald balance line)
++- `public/brand/hero-bg.png` — transparent ledger-spread decorative illustration
++- `public/icons/` — multi-size icon set: `icon-16/32/48/96/192/512.png` + `apple-touch-icon.png`
++- `public/og.png` — Open Graph / Twitter card (1200x630)
++- `public/manifest.webmanifest` — PWA manifest, themed `#0b6e4f`
++
++## Accessibility
++
++- `prefers-reduced-motion` honored on every Motion wrapper (`<Rise>`, `<Stagger>`, `<HoverCard>`)
++- Skip-to-content link as the first body child on every page
++- `focus-visible:ring-2` on every interactive element (links, buttons, nav, theme toggle)
++- Heading hierarchy verified (h1 -> h2 -> h3) across landing, pricing, FAQ, dashboard
++- Theme toggle is hydration-safe (pre-paint inline script + `suppressHydrationWarning` on `<html>`)
++- FAQ uses native `<details>` so disclosure works without JS
+ 
+-The UI is built on semantic design tokens (`bg-surface`, `text-accent`, `border-border`, …) defined as CSS variables in `src/app/globals.css`, so the whole app re-themes from one place. Components live in feature modules with co-located `types.ts` and `data.ts`.
++## Environment variables
++
++Copy `.env.example` to `.env.local`. None are required to run the UI; they wire up the eventual integrations.
++
++- `GEMINI_API_KEY` · `GOOGLE_CLOUD_PROJECT` · `GOOGLE_APPLICATION_CREDENTIALS` · `GEMINI_MODEL` — Gemini / Vertex AI
++- `PLAID_CLIENT_ID` · `PLAID_SECRET` · `PLAID_ENV` — banking
++- `TWILIO_ACCOUNT_SID` · `TWILIO_AUTH_TOKEN` · `TWILIO_PHONE_NUMBER` — SMS / MMS intake
++- `STRIPE_SECRET_KEY` · `STRIPE_WEBHOOK_SECRET` · `STRIPE_PUBLISHABLE_KEY` — billing
++- `DATABASE_URL` · `NEXT_PUBLIC_APP_URL` — app
++
++## Testing
++
++```bash
++npm test         # 42 unit tests via `tsx --test src/**/*.test.ts`
++npm run e2e      # Playwright e2e (home-nav regression per ADR-0006, etc.)
++```
++
++Unit suites live next to the code they cover under `src/features/ledger/lib/*.test.ts`. Playwright specs live in `e2e/` with config in `playwright.config.ts`.
++
++## Building & deployment
++
++```bash
++npm run build
++npm run start
++```
++
++Designed for Google Cloud Run: build, containerize, deploy. Background jobs (monthly close, quarterly tax estimate, Plaid sync) are intended to run on Cloud Scheduler -> Cloud Run workers. Static routes are prerendered at build; the PWA manifest and icon set are served from `/public`. Update `metadataBase` in `src/app/layout.tsx` (currently `https://ai-bookkeeper.app`) to your production origin.
+ 
+ ## Documentation
+ 
+ - [`docs/BACKLOG.md`](docs/BACKLOG.md) — 12-week hackathon build plan (epics, GTM, pricing, risks, metrics)
+ - [`docs/CHECKLIST.md`](docs/CHECKLIST.md) — pre-launch checklist
+-
+-## Deployment
+-
+-Designed for **Google Cloud Run**: `npm run build`, containerize, deploy. Background jobs (monthly close, quarterly tax estimate, Plaid sync) run on Cloud Scheduler → Cloud Run workers.
++- [`docs/adr/`](docs/adr/) — architecture decision records (rounding, arithmetic, format, ingest, money-formatting consolidation, home-link guard)
++- [`CHANGELOG.md`](CHANGELOG.md) — Keep-a-Changelog format, semver under pre-1.0 minor-bump policy
+ 
+ ## License
+ 
+diff --git a/docs/adr/0005-money-formatting-consolidation.md b/docs/adr/0005-money-formatting-consolidation.md
+new file mode 100644
+index 0000000..a2367bf
+--- /dev/null
++++ b/docs/adr/0005-money-formatting-consolidation.md
+@@ -0,0 +1,117 @@
++# ADR 0005 — Consolidate money formatting onto one shared kernel; adopt `formatMoney` app-wide
++
++- **Status:** Proposed
++- **Date:** 2026-05-28
++- **Deciders:** Solution Architect (scheduled weekly review)
++- **Area:** `src/lib` (shared formatters), `src/features/ledger/lib` (money primitives), all feature cards that render money
++- **Relates to / extends:** ADR 0004 (`formatMoney`), ADR 0003 (arithmetic), ADR 0002 (`roundMoney`), ADR 0001 (input validation)
++
++## Context
++
++The weekly review traced money rendering across the whole app, not just the
++ledger feature. Finding: there are **two parallel money formatters**, and the
++ADR-blessed one is **orphaned**.
++
++- `src/features/ledger/lib/format.ts` — `formatMoney(value, currency, locale?)`
++  (ADR 0004): currency- and locale-aware, normalizes through `roundMoney`
++  (ADR 0002) so display is provably drift-free, fail-loud on non-finite /
++  mixed-currency. **Consumers: 0.** Only re-exported by the ledger barrel.
++- `src/lib/format.ts` — `formatCurrency(value, decimals?)` /
++  `formatSignedCurrency(value)`: a hard-coded **USD-only** `Intl.NumberFormat`,
++  **no `roundMoney` normalization**, no currency-awareness, no fail-loud path.
++  **Consumers: 9** — every feature that shows money:
++  `benchmarks/{BenchmarksCard,ComparisonBar}`,
++  `customers/{CustomerPanel,MergeCandidatesCard}`,
++  `tax-credits/{EvidenceChip,TaxCreditsCard}`, `wealth-score/WealthScoreCard`,
++  `ledger/TransactionsCard`.
++- `wealth-score/WealthScoreCard.tsx:195-196` adds a **third** path: inline
++  `` `$${(value/1_000_000).toFixed(1)}M` `` abbreviation.
++
++Consequence: ADR 0004's central guarantee — *what the user sees is provably what
++the ledger stored* — is currently **unrealized in the product**. Every visible
++balance flows through the un-normalized USD-only path; a drifted intermediate
++(`0.1 + 0.2`) or a non-USD amount would render wrong, and the typed fail-loud
++safety never fires.
++
++Layering observation (evidence): `@/features/ledger` is already a **de-facto
++shared kernel** — 5 feature modules import `type Transaction` from it
++(`benchmarks/lib/compare`, `customers/CustomerPanel`,
++`customers/MergeCandidatesCard`, `tax-credits/{scan,types}`,
++`wealth-score/lib/compute`). But the money *primitives* (round / arithmetic /
++format) living inside `features/ledger/lib` means any feature wanting drift-free
++money must take a **feature → feature** dependency on `ledger`. The
++architecturally correct home for cross-cutting domain primitives is a shared
++kernel, not a sibling feature.
++
++Inspected: `src/lib/format.ts`, `src/features/ledger/lib/format.ts`,
++`ledger/index.ts`, the 9 import sites above, `wealth-score/WealthScoreCard.tsx`,
++ADR 0001–0004.
++
++## Decision
++
++Converge on **one** money-formatting authority and adopt it app-wide. No new
++rounding/arithmetic logic — this is consolidation + adoption of what ADR 0002–0004
++already built.
++
++1. **Promote the money primitives to a shared kernel `src/lib/money/`.** Move
++   `round.ts`, `arithmetic.ts`, `format.ts` (and their tests) out of
++   `features/ledger/lib` into `src/lib/money/`, re-exported via a barrel. This
++   removes the feature→feature coupling: any module imports money from `@/lib/money`,
++   not from a sibling feature. `features/ledger` keeps owning the `Transaction`
++   domain type and ledger UI; the *generic* money kernel becomes shared.
++   *(`amount.ts`/`ingest.ts` are ledger-input-boundary specific — leave in
++   `features/ledger/lib`, importing the kernel.)*
++2. **Make `formatMoney` the single formatter.** Reimplement
++   `src/lib/format.ts:formatCurrency` / `formatSignedCurrency` as **thin
++   back-compat wrappers** over `formatMoney(value, "USD")` so the drift-free
++   normalization + fail-loud path applies everywhere with no call-site churn on
++   day one. `formatSignedCurrency` keeps its `+ / −` prefix semantics.
++3. **Re-point the 9 consumers** to the shared kernel and retire the un-normalized
++   path. Replace `wealth-score`'s inline `$…M/$…K` abbreviator with a small
++   `formatMoneyCompact` helper in the kernel (or `Intl` `notation: "compact"`)
++   so abbreviation is also drift-safe and centrally owned.
++4. **Guardrail:** add an ESLint rule / review-checklist item forbidding raw
++   `` `$${…}` ``/`toFixed` on money outside `src/lib/money`, so a fourth path
++   can't reappear.
++
++**Alternative considered — make `@/features/ledger` the official kernel** (leave
++primitives in place, just adopt `formatMoney` from there). Rejected: it cements
++a feature as everyone's dependency, blurs the feature boundary, and makes the
++ledger feature un-removable. The shared-kernel move is one extra step now and
++prevents a structural smell from ossifying while only 5 imports exist.
++
++## Consequences
++
++- **Positive:** the ADR 0004 drift-free/currency-aware/fail-loud guarantee becomes
++  *real* for every balance the user sees; one money authority instead of three;
++  feature→feature coupling on money is removed; multi-currency and locale support
++  land app-wide for free; the guardrail stops regression.
++- **Negative / cost:** a mechanical move of 6 files + their import paths (test
++  suite must stay 42/42), and re-pointing 9 components. Low risk — wrappers keep
++  signatures stable, so the change can ship incrementally (kernel move → wrappers →
++  re-point per feature).
++- **Carried forward (unchanged):** ADR 0003's deferred N-ary `sumMoney` and ADR
++  0002 Task 4 (`roundToCents → roundMoney` convergence) — both still blocked on a
++  real aggregation consumer; the kernel move makes their eventual home obvious.
++- **UNVERIFIED:** `formatSignedCurrency` uses a U+2212 minus (`−`); confirm the
++  wrapper preserves it (golden-string tests) so existing UI doesn't shift to ASCII `-`.
++
++## Task breakdown
++
++1. Create `src/lib/money/` kernel; move `round.ts` + `arithmetic.ts` +
++   `format.ts` + tests; add barrel. Keep `features/ledger/lib` re-exporting for
++   one release to avoid a big-bang. — **3 pts**
++2. Reimplement `src/lib/format.ts` `formatCurrency`/`formatSignedCurrency` as
++   wrappers over `formatMoney(_, "USD")`; preserve `+`/`−` semantics; golden-string
++   tests. — **2 pts**
++3. Re-point the 9 money-render components to the shared kernel; delete dead paths. — **2 pts**
++4. Replace `WealthScoreCard` inline `$…M/$…K` with a kernel `formatMoneyCompact`
++   (or `Intl` compact notation) + tests. — **2 pts**
++5. Add lint guardrail forbidding raw money templates/`toFixed` outside
++   `src/lib/money`. — **2 pts**
++6. **(Recurring, from ADR 0004 Task 6)** Fix pre-existing release-gate blocker
++   `src/app/page.tsx:9` `<a href="/">` → `next/link` `<Link>`
++   (`@next/next/no-html-link-for-pages`), so `eslint .` is green. — **1 pt**
++
++**Total: 12 pts.** Verdict: **no new money primitive is needed** — the gap is
++*adoption + consolidation* of ADR 0002–0004, plus the recurring lint blocker.
+diff --git a/docs/adr/0006-stabilization-home-link-guard.md b/docs/adr/0006-stabilization-home-link-guard.md
+new file mode 100644
+index 0000000..8d87c46
+--- /dev/null
++++ b/docs/adr/0006-stabilization-home-link-guard.md
+@@ -0,0 +1,37 @@
++# ADR 0006 — Stabilization: home-route link uses next/link, add a navigation guard test
++
++Status: Accepted
++Date: 2026-05-28
++Seed: sdlc2/ai-bookkeeper-cert-3
++Supersedes/relates: stabilization debt carried by cert-1 (shipped via scope-creep) and cert-2 (held formatMoney's release on it)
++
++## Context
++The stabilization seed reports a Next.js lint regression in `src/app/page.tsx`: a raw
++`<a href="/">` element flagged by `@next/next/no-html-link-for-pages`, blocking release for two cycles.
++
++Empirical finding (inspected the committed tree, not the seed's description):
++- `src/app/page.tsx:12` — the home/brand link is ALREADY `<Link href="/">` (next/link). `next/link` is imported (`page.tsx:2`).
++- Every internal page route on the page already uses `<Link>`: `/` (l.12), `/pricing` (l.35,119,366,429), `/faq` (l.38,435), `/dashboard` (l.41,409,441).
++- The only raw `<a>` tags target in-page hash anchors (`#how`, `#start` — l.31,45,106,401), which `no-html-link-for-pages` does NOT flag.
++- `eslint .` exits 0 (GREEN). The functional `<a>`→`<Link>` conversion the seed asks for is already present — it is a no-op.
++
++So the trunk is already lint-green; the risk is regression recurrence, not an open defect. The debt that churned cert-1/cert-2 has no behavioral guard locking it in.
++
++## Decision
++Do NOT modify `src/app/page.tsx` — the `<Link href="/">` fix is already in place; touching it would be unjustified churn.
++Lock in the fix with the minimal increment the seed explicitly requested: ONE focused Playwright e2e test asserting the home/brand link performs client-side Next navigation back to `/`. Lint (`eslint .`) remains the structural guard for `no-html-link-for-pages` and is already in the quality gate.
++
++Considered and rejected:
++- React-render unit test of `page.tsx`: testing-library/jsdom are NOT installed; adding them is scope creep, forbidden this run.
++- Editing `page.tsx` to "convert `<a>`": no raw page-link `<a>` exists; nothing to convert.
++
++## Consequences
++- Trunk stays GREEN; a behavioral regression guard now exists so the debt cannot silently return.
++- New file only: `e2e/home-nav.spec.ts`. `src/app/page.tsx` is untouched.
++- Non-functional change → PATCH release. NOTE: current version is `0.4.0`, so the PATCH is `0.4.1`. The seed's "0.5.x" does not match the actual version (0.5.0 would be a MINOR). Versioning is the Release Manager's call — flagged for resolution.
++
++### Out of scope this run (do NOT bundle)
++- ADR 0005 money-formatting consolidation (separate, already drafted as docs/adr/0005).
++- Converting hash-anchor `<a>` (`#how`/`#start`) to buttons or smooth-scroll handlers.
++- Any visual refresh, copy change, or component refactor on the landing page.
++- Adding a component-test harness (testing-library) — defer until a real consumer needs it.
+diff --git a/docs/releases/v0.5.0.md b/docs/releases/v0.5.0.md
+new file mode 100644
+index 0000000..78346b0
+--- /dev/null
++++ b/docs/releases/v0.5.0.md
+@@ -0,0 +1,79 @@
++# Release v0.5.0 — Money Display Formatter + Phase 2/3 Showcase
++
++**Date:** 2026-05-29
++**Bump:** MINOR (`0.4.0 → 0.5.0`)
++**Tag:** `v0.5.0` → release commit
++
++## Why this version
++
++Backward-compatible feature additions, **no breaking changes** since `0.4.0`.
++Under `0.x` semantic versioning a feature release increments the **minor**, so
++this lands as `0.5.0`. The bump is derived from the merged history, not guessed:
++`git log v0.4.0..HEAD` is three `feat` commits (formatMoney ADR 0004; Phase 2
++polish; Phase 3 showcase) plus one `test` (e2e home-nav guard) and one `docs`
++(README) — all additive, none breaking.
++
++## Headline
++
++The money layer is now complete end-to-end: `formatMoney` (ADR 0004) is the
++display-side counterpart to `roundMoney` (ADR 0002) and `addMoney`/`subtractMoney`
++(ADR 0003), so what the user sees can never drift from what the ledger stores.
++Around it ships the Phase 2/3 product showcase — an interactive ledger demo,
++motion choreography, pricing + FAQ pages, ink-mode toggle, and a11y polish.
++
++## What's new
++
++- **Currency-aware money display formatter** (`formatMoney`, ADR 0004).
++  `formatMoney(value, currency, locale?)` normalizes through `roundMoney` first,
++  then delegates symbol/grouping/minor-unit precision to `Intl.NumberFormat`
++  (JPY→0, USD→2, BHD→3; `locale` defaults to `"en-US"`). Fail-loud: non-finite
++  or mixed-currency throws `MoneyArithmeticError`; blank/unknown currency throws
++  `RangeError`. `formatMoney(addMoney(0.1, 0.2, "USD"), "USD")` is exactly
++  `"$0.30"`. Pure, side-effect-free. 8 new unit tests (suite 42/42 green).
++- **Phase 3 showcase.** Interactive double-entry ledger demo, Framer Motion
++  choreography (`src/lib/motion.ts`), pricing + FAQ pages, ink-mode toggle, a11y
++  polish. UI-only; no API or behavior change.
++- **Phase 2 polish.** Regenerated hero background, OG share card, PWA manifest +
++  icon set. Presentation/assets only.
++- **Home-nav e2e regression guard** (ADR 0006). Playwright guard locking in the
++  `next/link` home navigation, preventing regression of the raw-anchor lint
++  defect that previously held this release.
++
++## Bump rationale (auditable)
++
++| Input | Signal | Bump |
++|-------|--------|------|
++| `feat(ledger): formatMoney (ADR 0004)` (`12bc223`) | new backward-compatible API | MINOR |
++| `feat: phase 3 showcase` (`ac478e9`) | UI/feature, no API change | MINOR-equiv |
++| `feat: phase 2 polish` (`b444125`) | assets/presentation | PATCH-equiv |
++| `test(e2e): home-nav guard (ADR 0006)` (`b510ec9`) | test only | — |
++| `docs: rewrite README` (`cf108a7`) | docs only | — |
++| Breaking changes since `v0.4.0`? | none | — |
++
++→ Highest applicable bump = **MINOR** → `0.5.0`.
++
++## Release-quality gate (cleared)
++
++The `v0.5.0` release was previously **held** at `12bc223`: a red ESLint error
++(`@next/next/no-html-link-for-pages` — a raw `<a href="/">` in
++`src/app/page.tsx`, introduced inside `v0.4.0`'s visual v2 work) failed the
++trunk-quality bar. That defect is now **fixed** — `page.tsx` uses `next/link`,
++and ADR 0006 added a Playwright guard against its regression. The full gate is
++green on this release:
++
++- `eslint .` — **clean** (0 errors, 0 warnings)
++- `tsc --noEmit` — **clean**
++- `tsx --test` — **42/42 pass**
++- `next build` — **success** (8 static routes prerendered)
++
++All four green → tag cut.
++
++## Known issues / carried-over follow-ups
++
++- **`postcss` XSS still open (partial fix)** — GHSA-qx2v-qp2m-jg93 (moderate).
++  Top-level `postcss` is pinned `^8.5.15`, but `next@16.2.6` nests
++  `postcss@8.4.31`, unreachable by the top-level bump. Fix is a one-line
++  `package.json` `overrides` block (`{"postcss": ">=8.5.10"}`) then `npm install`
++  — **not** npm's suggested `next@9.3.3` downgrade. Build-time CSS only;
++  non-blocking for this release. Tracked by the security scan (5 consecutive
++  scans) and filed for human decision.
+diff --git a/package.json b/package.json
+index b0af109..91242c7 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "ai-bookkeeper",
+-  "version": "0.4.0",
++  "version": "0.5.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+
+--- UNCOMMITTED WORKING TREE ---
+diff --git a/README.md b/README.md
+index e66b238..3a7333e 100644
+--- a/README.md
++++ b/README.md
+@@ -90,7 +90,7 @@ src/
+     format.ts                # Display formatters
+   features/
+     ledger/                  # Transactions, inbox, review queue, close checklist, money arithmetic
+-      lib/                   # round / amount / arithmetic / format + co-located .test.ts files
++      lib/                   # round / amount / arithmetic / format / ingest + co-located .test.ts files
+     customers/               # Customer panel, merge candidates, Zustand store
+     benchmarks/              # Industry benchmarks card
+     tax-credits/             # Tax-credit scanner + evidence chips
