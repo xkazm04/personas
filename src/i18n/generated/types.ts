@@ -11283,6 +11283,8 @@ export type Translations = {
       hello_phase_zero: string;
       brain_at: string;
       empty_transcript: string;
+      welcome_title: string;
+      welcome_subtitle: string;
       thinking: string;
       phase_reviewing: string;
       phase_thinking: string;

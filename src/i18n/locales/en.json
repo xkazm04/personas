@@ -11277,6 +11277,8 @@
       "hello_phase_zero": "I'm here, but I haven't found my voice yet — chat lands in the next phase.",
       "brain_at": "Brain seeded at",
       "empty_transcript": "Say something. I'm listening.",
+      "welcome_title": "How can I help today?",
+      "welcome_subtitle": "I can see your agents, executions, and memory. Ask me anything, or start with one of these.",
       "thinking": "Thinking…",
       "phase_reviewing": "Reviewing result…",
       "phase_thinking": "Thinking…",

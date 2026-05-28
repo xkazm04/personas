@@ -78,6 +78,7 @@ import { RecallStrip } from './RecallStrip';
 import { ActivityTray } from './ActivityTray';
 import { TaskTag } from './TaskTag';
 import { QueuedMessages } from './QueuedMessages';
+import { WelcomeHero } from './WelcomeHero';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -1661,9 +1662,10 @@ function Body(props: BodyProps) {
             ))}
           </AnimatePresence>
           {initialized && messages.length === 0 && !streaming && proactive.length === 0 && (
-            <p className="typo-body text-foreground">
-              {t.plugins.companion.empty_transcript}
-            </p>
+            <WelcomeHero
+              onPick={(text) => void send(text)}
+              disabled={!initialized || streaming}
+            />
           )}
           {(() => {
             // Find the last assistant index so RefineChips renders only
