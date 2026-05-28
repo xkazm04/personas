@@ -4621,3 +4621,41 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   opacity: 1 !important;
   transform: none !important;
 }
+
+/* ===========================================================================
+   Athena chat markdown — contrast + rhythm tuning, SCOPED to the companion
+   chat bubbles. The shared MarkdownRenderer is used by ~20 other surfaces;
+   these rules apply only where Bubble.tsx passes `className="athena-chat-md"`,
+   so nothing else is affected. Plain (unlayered) selectors win over Tailwind's
+   layered utilities regardless of specificity, so no `!important` is needed.
+   `first:mt-0` keeps higher specificity, so the leading heading stays flush.
+   =========================================================================== */
+
+/* Body + list copy at full foreground contrast (renderer ships these at
+   text-foreground/90, which reads slightly washed inside the bubble). */
+.athena-chat-md p,
+.athena-chat-md li {
+  color: var(--foreground);
+}
+
+/* Inline code: lift from the dim primary/70 to legible foreground on a
+   slightly stronger primary-tinted chip. */
+.athena-chat-md :not(pre) > code {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+/* Blockquote: tokenized primary accent instead of the renderer's hardcoded
+   violet-500, so it tracks whatever theme/vibe the user has selected. */
+.athena-chat-md blockquote {
+  border-left-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+/* Tighten heading top-rhythm for the narrow chat column — the renderer's
+   default mt-10/mt-8/mt-6 are tuned for full-width docs and read as dead
+   gaps inside a reply bubble. */
+.athena-chat-md h1 { margin-top: 1.25rem; }
+.athena-chat-md h2 { margin-top: 1.1rem; }
+.athena-chat-md h3 { margin-top: 0.9rem; }

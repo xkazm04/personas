@@ -111,7 +111,10 @@ export function Bubble({
           {isUser || !displayIsString ? (
             displayText
           ) : (
-            <MarkdownRenderer content={displayText as string} />
+            <MarkdownRenderer
+              content={displayText as string}
+              className="athena-chat-md"
+            />
           )}
         </div>
         {showBrainLinks && (
