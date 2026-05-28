@@ -3,9 +3,10 @@ use std::collections::{HashMap, HashSet};
 use rusqlite::{params, Row};
 
 use crate::db::models::{
-    DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup, DevContextGroupRelationship,
-    DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea, DevProject, DevScan, DevTask,
-    GoalProgressSuggestion, TriageRule,
+    AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
+    DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea,
+    DevProject, DevScan, DevTask, GoalProgressSuggestion, PortfolioProjectSummary, PortfolioSummary,
+    TriageRule,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -734,6 +735,361 @@ pub fn goal_status_is_complete(status: &str) -> bool {
 /// A `team_assignment_steps` status counts as "complete" (advances the goal).
 pub fn step_status_is_complete(status: &str) -> bool {
     matches!(status, "done" | "skipped")
+}
+
+/// Canonical goal-status bucket — Rust mirror of the frontend `goalStatus.ts`
+/// normalizer, so cross-project rollups bucket exactly like the UI renders.
+pub fn normalize_goal_status(raw: &str) -> &'static str {
+    match raw.trim().to_ascii_lowercase().as_str() {
+        "in-progress" | "in_progress" | "running" | "active" | "matching" => "in-progress",
+        "blocked" | "review" | "awaiting_review" => "blocked",
+        "done" | "completed" | "complete" | "skipped" => "done",
+        _ => "open",
+    }
+}
+
+/// Not terminal — counts as active work (drives at-risk / portfolio rollups).
+pub fn goal_status_is_ongoing(status: &str) -> bool {
+    normalize_goal_status(status) != "done"
+}
+
+// ============================================================================
+// Goals v2 — cross-project queries (Portfolio / Attention / Timeline / Map)
+// ============================================================================
+
+/// Every goal across all projects (project → order_index). Backs the Portfolio
+/// + Timeline surfaces; the frontend joins with the project list it already holds.
+pub fn list_all_goals(pool: &DbPool) -> Result<Vec<DevGoal>, AppError> {
+    timed_query!("dev_goals", "dev_goals::list_all_goals", {
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare("SELECT * FROM dev_goals ORDER BY project_id, order_index")?;
+        let rows = stmt.query_map([], row_to_goal)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// All dependency edges whose goal lives in the given project — one query
+/// instead of the per-goal fan-out the Map used in v1.
+pub fn list_goal_dependencies_for_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Vec<DevGoalDependency>, AppError> {
+    timed_query!(
+        "dev_goal_dependencies",
+        "dev_goal_dependencies::list_for_project",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare(
+                "SELECT d.id, d.goal_id, d.depends_on_id, d.dependency_type, d.created_at
+                 FROM dev_goal_dependencies d
+                 JOIN dev_goals g ON g.id = d.goal_id
+                 WHERE g.project_id = ?1",
+            )?;
+            let rows = stmt
+                .query_map(params![project_id], |row| {
+                    Ok(DevGoalDependency {
+                        id: row.get("id")?,
+                        goal_id: row.get("goal_id")?,
+                        depends_on_id: row.get("depends_on_id")?,
+                        dependency_type: row.get("dependency_type")?,
+                        created_at: row.get("created_at")?,
+                    })
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(rows)
+        }
+    )
+}
+
+/// Cross-project health rollup. One pass over all goals + projects — no N+1.
+/// `at_risk` = ongoing goals that are overdue (target_date past) or stalled
+/// (untouched ≥ 7 days, by `updated_at`, and not already overdue).
+pub fn portfolio_summary(pool: &DbPool) -> Result<PortfolioSummary, AppError> {
+    let projects = list_projects(pool, None)?;
+    let goals = list_all_goals(pool)?;
+    let now = chrono::Utc::now();
+    let now_s = now.to_rfc3339();
+    let stale_before = (now - chrono::Duration::days(7)).to_rfc3339();
+
+    // Accumulator per project, seeded so projects with zero goals still appear.
+    struct Acc {
+        name: String,
+        team_id: Option<String>,
+        total: i32,
+        open: i32,
+        in_progress: i32,
+        blocked: i32,
+        done: i32,
+        overdue: i32,
+        stalled: i32,
+        progress_sum: i64,
+    }
+    let mut acc: HashMap<String, Acc> = HashMap::new();
+    for p in &projects {
+        acc.insert(
+            p.id.clone(),
+            Acc {
+                name: p.name.clone(),
+                team_id: p.team_id.clone(),
+                total: 0,
+                open: 0,
+                in_progress: 0,
+                blocked: 0,
+                done: 0,
+                overdue: 0,
+                stalled: 0,
+                progress_sum: 0,
+            },
+        );
+    }
+
+    for g in &goals {
+        let Some(a) = acc.get_mut(&g.project_id) else { continue };
+        a.total += 1;
+        a.progress_sum += g.progress as i64;
+        match normalize_goal_status(&g.status) {
+            "in-progress" => a.in_progress += 1,
+            "blocked" => a.blocked += 1,
+            "done" => a.done += 1,
+            _ => a.open += 1,
+        }
+        if goal_status_is_ongoing(&g.status) {
+            let overdue = g.target_date.as_deref().is_some_and(|d| d < now_s.as_str());
+            if overdue {
+                a.overdue += 1;
+            } else if g.updated_at.as_str() < stale_before.as_str() {
+                a.stalled += 1;
+            }
+        }
+    }
+
+    let mut summaries: Vec<PortfolioProjectSummary> = acc
+        .into_iter()
+        .map(|(id, a)| PortfolioProjectSummary {
+            project_id: id,
+            project_name: a.name,
+            team_id: a.team_id,
+            total: a.total,
+            open: a.open,
+            in_progress: a.in_progress,
+            blocked: a.blocked,
+            done: a.done,
+            at_risk: a.overdue + a.stalled,
+            overdue: a.overdue,
+            avg_progress: if a.total > 0 {
+                (a.progress_sum / a.total as i64) as i32
+            } else {
+                0
+            },
+        })
+        .collect();
+    // Busiest projects first; at-risk breaks ties so trouble floats up.
+    summaries.sort_by(|x, y| {
+        y.total
+            .cmp(&x.total)
+            .then(y.at_risk.cmp(&x.at_risk))
+            .then(x.project_name.cmp(&y.project_name))
+    });
+
+    let total_goals: i32 = summaries.iter().map(|s| s.total).sum();
+    let progress_total: i64 = goals.iter().map(|g| g.progress as i64).sum();
+    Ok(PortfolioSummary {
+        total_open: summaries.iter().map(|s| s.open).sum(),
+        total_in_progress: summaries.iter().map(|s| s.in_progress).sum(),
+        total_blocked: summaries.iter().map(|s| s.blocked).sum(),
+        total_done: summaries.iter().map(|s| s.done).sum(),
+        total_at_risk: summaries.iter().map(|s| s.at_risk).sum(),
+        avg_progress: if total_goals > 0 {
+            (progress_total / total_goals as i64) as i32
+        } else {
+            0
+        },
+        total_goals,
+        projects: summaries,
+    })
+}
+
+/// Cross-project "needs you" queue. Four kinds, ranked: awaiting_review team
+/// steps (0) → overdue goals (1) → stalled goals (2) → unstaffed goals (3).
+pub fn attention_queue(pool: &DbPool) -> Result<AttentionQueue, AppError> {
+    let conn = pool.get()?;
+    let now = chrono::Utc::now();
+    let now_s = now.to_rfc3339();
+    let stale_before = (now - chrono::Duration::days(7)).to_rfc3339();
+    let mut items: Vec<AttentionItem> = Vec::new();
+
+    // 1) Team-assignment steps awaiting review (goal-linked only).
+    {
+        let mut stmt = conn.prepare(
+            "SELECT s.id AS step_id, s.title AS step_title, a.id AS assignment_id,
+                    g.id AS goal_id, g.title AS goal_title, g.status AS goal_status,
+                    g.progress AS goal_progress, p.id AS project_id, p.name AS project_name
+             FROM team_assignment_steps s
+             JOIN team_assignments a ON a.id = s.assignment_id
+             JOIN dev_goals g ON g.id = a.goal_id
+             JOIN dev_projects p ON p.id = g.project_id
+             WHERE s.status = 'awaiting_review'
+             ORDER BY s.started_at DESC",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(AttentionItem {
+                    kind: "awaiting_review".into(),
+                    goal_id: row.get("goal_id")?,
+                    goal_title: row.get("goal_title")?,
+                    project_id: row.get("project_id")?,
+                    project_name: row.get("project_name")?,
+                    status: row.get("goal_status")?,
+                    progress: row.get::<_, Option<i32>>("goal_progress")?.unwrap_or(0),
+                    detail: row.get::<_, String>("step_title")?,
+                    assignment_id: Some(row.get("assignment_id")?),
+                    step_id: Some(row.get("step_id")?),
+                    rank: 0,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        items.extend(rows);
+    }
+    let awaiting_review = items.len() as i32;
+
+    // 2) Overdue + 3) stalled — from goals joined to their project.
+    let mut overdue = 0i32;
+    let mut stalled = 0i32;
+    {
+        let mut stmt = conn.prepare(
+            "SELECT g.id, g.title, g.status, g.progress, g.target_date, g.updated_at,
+                    p.id AS project_id, p.name AS project_name
+             FROM dev_goals g JOIN dev_projects p ON p.id = g.project_id
+             WHERE g.status NOT IN ('done','completed','complete')",
+        )?;
+        struct OngoingGoal {
+            id: String,
+            title: String,
+            status: String,
+            progress: i32,
+            target_date: Option<String>,
+            updated_at: String,
+            project_id: String,
+            project_name: String,
+        }
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(OngoingGoal {
+                    id: row.get("id")?,
+                    title: row.get("title")?,
+                    status: row.get("status")?,
+                    progress: row.get::<_, Option<i32>>("progress")?.unwrap_or(0),
+                    target_date: row.get("target_date")?,
+                    updated_at: row.get("updated_at")?,
+                    project_id: row.get("project_id")?,
+                    project_name: row.get("project_name")?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        for g in rows {
+            if !goal_status_is_ongoing(&g.status) {
+                continue;
+            }
+            let is_overdue = g.target_date.as_deref().is_some_and(|d| d < now_s.as_str());
+            if is_overdue {
+                overdue += 1;
+                let days = days_between(g.target_date.as_deref().unwrap_or(""), &now_s);
+                items.push(AttentionItem {
+                    kind: "overdue".into(),
+                    goal_id: g.id,
+                    goal_title: g.title,
+                    project_id: g.project_id,
+                    project_name: g.project_name,
+                    status: g.status,
+                    progress: g.progress,
+                    detail: format!("{days}d overdue"),
+                    assignment_id: None,
+                    step_id: None,
+                    rank: 1,
+                });
+            } else if g.updated_at.as_str() < stale_before.as_str() {
+                stalled += 1;
+                let days = days_between(&g.updated_at, &now_s);
+                items.push(AttentionItem {
+                    kind: "stalled".into(),
+                    goal_id: g.id,
+                    goal_title: g.title,
+                    project_id: g.project_id,
+                    project_name: g.project_name,
+                    status: g.status,
+                    progress: g.progress,
+                    detail: format!("stalled {days}d"),
+                    assignment_id: None,
+                    step_id: None,
+                    rank: 2,
+                });
+            }
+        }
+    }
+
+    // 4) Unstaffed — ongoing goals with no linked team assignment.
+    let mut unstaffed = 0i32;
+    {
+        let mut stmt = conn.prepare(
+            "SELECT g.id, g.title, g.status, g.progress, p.id AS project_id, p.name AS project_name
+             FROM dev_goals g JOIN dev_projects p ON p.id = g.project_id
+             WHERE g.status NOT IN ('done','completed','complete')
+               AND NOT EXISTS (SELECT 1 FROM team_assignments a WHERE a.goal_id = g.id)",
+        )?;
+        let rows = stmt
+            .query_map([], |row| {
+                Ok(AttentionItem {
+                    kind: "unstaffed".into(),
+                    goal_id: row.get("id")?,
+                    goal_title: row.get("title")?,
+                    project_id: row.get("project_id")?,
+                    project_name: row.get("project_name")?,
+                    status: row.get("status")?,
+                    progress: row.get::<_, Option<i32>>("progress")?.unwrap_or(0),
+                    detail: String::new(),
+                    assignment_id: None,
+                    step_id: None,
+                    rank: 3,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        for it in rows {
+            if goal_status_is_ongoing(&it.status) {
+                unstaffed += 1;
+                items.push(it);
+            }
+        }
+    }
+
+    items.sort_by_key(|i| i.rank);
+    Ok(AttentionQueue {
+        items,
+        awaiting_review,
+        overdue,
+        stalled,
+        unstaffed,
+    })
+}
+
+/// Whole days between two RFC3339/ISO timestamps (`from` → `to`), 0 on parse fail.
+fn days_between(from: &str, to: &str) -> i64 {
+    let parse = |s: &str| {
+        chrono::DateTime::parse_from_rfc3339(s)
+            .map(|d| d.with_timezone(&chrono::Utc))
+            .ok()
+            .or_else(|| {
+                chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d")
+                    .ok()
+                    .and_then(|d| d.and_hms_opt(0, 0, 0))
+                    .map(|dt| dt.and_utc())
+            })
+    };
+    match (parse(from), parse(to)) {
+        (Some(a), Some(b)) => (b - a).num_days().abs(),
+        _ => 0,
+    }
 }
 
 /// Pure hybrid-progress computation (no DB — unit-testable). Composes the goal's
