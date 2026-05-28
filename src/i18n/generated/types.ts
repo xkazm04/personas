@@ -11288,6 +11288,8 @@ export type Translations = {
       jump_to_latest: string;
       day_today: string;
       day_yesterday: string;
+      you_label: string;
+      copy_conversation: string;
       thinking: string;
       phase_reviewing: string;
       phase_thinking: string;

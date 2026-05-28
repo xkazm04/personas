@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowDown,
@@ -15,6 +15,7 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { useCompanionStore } from './companionStore';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
@@ -128,6 +129,25 @@ function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: stri
   });
 }
 
+/**
+ * Serialize the visible conversation to role-labeled markdown for the "copy
+ * conversation" header action. System markers are dropped; turns are separated
+ * by a horizontal rule so the result pastes cleanly into notes or an issue.
+ */
+function buildTranscriptMarkdown(
+  messages: ReturnType<typeof useCompanionStore.getState>['messages'],
+  youLabel: string,
+  athenaLabel: string,
+): string {
+  return messages
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => {
+      const label = m.role === 'user' ? youLabel : athenaLabel;
+      return `**${label}:**\n\n${m.content.trim()}`;
+    })
+    .join('\n\n---\n\n');
+}
+
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
 // only used when the turn returns no QR chips, so this preset is never
 // a dead-end. Each entry is the literal user message that will be sent
@@ -182,6 +202,15 @@ export default function CompanionPanel() {
   const initError = useCompanionStore((s) => s.initError);
 
   const messages = useCompanionStore((s) => s.messages);
+  const conversationMarkdown = useMemo(
+    () =>
+      buildTranscriptMarkdown(
+        messages,
+        t.plugins.companion.you_label,
+        t.plugins.companion.name,
+      ),
+    [messages, t.plugins.companion.you_label, t.plugins.companion.name],
+  );
   const streaming = useCompanionStore((s) => s.streaming);
   const streamingText = useCompanionStore((s) => s.streamingText);
   const sendError = useCompanionStore((s) => s.sendError);
@@ -341,6 +370,7 @@ export default function CompanionPanel() {
             className="absolute inset-0 -z-10 opacity-[0.05]"
           />
           <Header
+            transcript={conversationMarkdown}
             onClose={() => setState(orbEnabled ? 'minimized' : 'collapsed')}
             onReset={async () => {
               // Clear UI state immediately so the wipe feels instant.
@@ -465,6 +495,7 @@ export default function CompanionPanel() {
 }
 
 function Header({
+  transcript,
   onClose,
   onReset,
   onRefreshDoctrine,
@@ -473,6 +504,7 @@ function Header({
   autonomousMode,
   onToggleAutonomousMode,
 }: {
+  transcript: string;
   onClose: () => void;
   onReset: () => void;
   onRefreshDoctrine: () => void;
@@ -553,6 +585,13 @@ function Header({
           )}
         </button>
         <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
+        {transcript && (
+          <CopyButton
+            text={transcript}
+            tooltip={t.plugins.companion.copy_conversation}
+            iconSize="w-4 h-4"
+          />
+        )}
         <button
           onClick={onRefreshDoctrine}
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
