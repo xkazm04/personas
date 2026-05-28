@@ -11628,6 +11628,7 @@
       "guide_stop": "Stop",
       "guide_skip": "Skip",
       "guide_back": "Zurück",
+      "guide_take_me_there": "Dorthin bringen",
       "guide_goto_step": "Zu Schritt {step}",
       "guide_pause": "Pause",
       "guide_resume": "Resume",

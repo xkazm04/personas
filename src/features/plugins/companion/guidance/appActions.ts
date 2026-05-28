@@ -1,5 +1,6 @@
 import { useSystemStore } from '@/stores/systemStore';
 import { storeBus } from '@/lib/storeBus';
+import type { SidebarSection } from '@/lib/types/types';
 import type { GuidanceCtaAction, GuidancePreAction } from './types';
 
 /**
@@ -29,6 +30,13 @@ export function openBuildStudio() {
 export function openCredentialAddView() {
   useSystemStore.getState().setSidebarSection('credentials');
   storeBus.emit('tour:navigate-credential-view', { key: 'add-new' });
+}
+
+/** Navigate the sidebar to a section — the "Take me there" hand-off for a
+ *  `point_at` that rings a nav item. The section comes from the anchor catalog
+ *  (`dest`), so it stays bounded to the allow-listed set. */
+export function navigateToSection(section: SidebarSection) {
+  useSystemStore.getState().setSidebarSection(section);
 }
 
 /** Run a step's allow-listed pre-action (open a surface so its anchor mounts). */

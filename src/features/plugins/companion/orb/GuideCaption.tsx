@@ -95,7 +95,10 @@ export function GuideCaption() {
           data-testid="athena-guide-cta"
           className="mt-2.5"
           onClick={() => {
-            runGuidanceCta(cta.action);
+            // Registry CTAs carry an allow-listed `action`; ad-hoc ones carry an
+            // `onSelect` closure (built at runtime, e.g. point_at "take me there").
+            if (cta.onSelect) cta.onSelect();
+            else if (cta.action) runGuidanceCta(cta.action);
             stopGuidance();
           }}
         >

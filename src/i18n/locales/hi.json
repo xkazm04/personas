@@ -11628,6 +11628,7 @@
       "guide_stop": "Stop",
       "guide_skip": "Skip",
       "guide_back": "वापस",
+      "guide_take_me_there": "मुझे वहाँ ले चलें",
       "guide_goto_step": "चरण {step} पर जाएँ",
       "guide_pause": "Pause",
       "guide_resume": "Resume",

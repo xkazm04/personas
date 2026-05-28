@@ -24,13 +24,19 @@ export type GuidancePreAction = 'open_build_entry' | 'open_credential_add';
  */
 export type GuidanceCtaAction = 'build_persona' | 'open_connector_add';
 
-/** Primary button shown on a walkthrough's last step to hand the user off into action. */
-export interface GuidanceCta {
-  /** Button label, resolved from i18n at render (stays translatable + type-safe). */
-  label: (t: Translations) => string;
-  /** Allow-listed action to run on click; the walkthrough then stops. */
-  action: GuidanceCtaAction;
-}
+/**
+ * Primary button shown on a walkthrough's last step to hand the user off into
+ * action; clicking runs it and stops the walkthrough. Two shapes:
+ *  - `action` — an allow-listed closed-enum effect. Used by the **registry**
+ *    walkthroughs so authored data stays declarative + auditable.
+ *  - `onSelect` — a closure. Used only by **runtime-built** ad-hoc walkthroughs
+ *    (`point_at`/`compose`), where the builder constructs the handler in code
+ *    (e.g. navigate to the anchor's `dest`) rather than authoring static data.
+ */
+export type GuidanceCta = { label: (t: Translations) => string } & (
+  | { action: GuidanceCtaAction; onSelect?: never }
+  | { onSelect: () => void; action?: never }
+);
 
 export interface GuidanceStep {
   /** Stable id (for keys + test assertions). */

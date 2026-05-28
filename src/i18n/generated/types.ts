@@ -11235,6 +11235,7 @@ export type Translations = {
       orb_dismiss: string;
       guide_stop: string;
       guide_skip: string;
+      guide_take_me_there: string;
       guide_back: string;
       guide_pause: string;
       guide_resume: string;

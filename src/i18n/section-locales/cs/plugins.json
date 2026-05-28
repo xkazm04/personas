@@ -1594,6 +1594,7 @@
     "guide_stop": "Stop",
     "guide_skip": "Skip",
     "guide_back": "Zpět",
+    "guide_take_me_there": "Přejít tam",
     "guide_goto_step": "Přejít na krok {step}",
     "guide_pause": "Pause",
     "guide_resume": "Resume",

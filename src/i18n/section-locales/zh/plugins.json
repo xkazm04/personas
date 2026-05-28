@@ -1594,6 +1594,7 @@
     "guide_stop": "Stop",
     "guide_skip": "Skip",
     "guide_back": "返回",
+    "guide_take_me_there": "带我前往",
     "guide_goto_step": "跳到第 {step} 步",
     "guide_pause": "Pause",
     "guide_resume": "Resume",
