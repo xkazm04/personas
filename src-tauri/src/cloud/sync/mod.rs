@@ -6,7 +6,7 @@
 //! never leave the device — only the secret-free projections in `rows` are sent.
 
 pub mod client;
-mod cursor;
+pub(crate) mod cursor;
 mod rows;
 
 use std::sync::{Arc, LazyLock};

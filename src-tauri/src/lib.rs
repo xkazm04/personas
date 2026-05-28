@@ -1044,6 +1044,12 @@ pub fn run() {
             cloud::sync::spawn_sync_loop(app.handle().clone(), state_arc.clone());
             st.checkpoint("cloud_sync_writer");
 
+            // Cloud remote commands (Phase 2): polls Supabase for run-requests
+            // from the web dashboard and surfaces them as explicit approval
+            // prompts. Never auto-executes; leader-gated + sync-enabled-gated.
+            cloud::remote_commands::spawn_poll_loop(app.handle().clone(), state_arc.clone());
+            st.checkpoint("cloud_remote_commands");
+
             // F-CRON: scheduled-curation worker. Ticks every 60s,
             // reads `persona_curation_schedule` rows, evaluates the
             // cron expression vs `last_curation_at` (or `created_at`
@@ -2449,6 +2455,9 @@ pub fn run() {
             commands::infrastructure::cloud_sync::cloud_sync_set_enabled,
             commands::infrastructure::cloud_sync::cloud_sync_status,
             commands::infrastructure::cloud_sync::cloud_sync_now,
+            cloud::remote_commands::remote_command_list_pending,
+            cloud::remote_commands::remote_command_approve,
+            cloud::remote_commands::remote_command_reject,
             // Infrastructure -- GitLab
             commands::infrastructure::gitlab::gitlab_connect,
             commands::infrastructure::gitlab::gitlab_connect_from_vault,

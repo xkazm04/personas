@@ -8448,6 +8448,14 @@ export type Translations = {
     dead_letter_no_matches: string;
     dead_letter_clear_filters_to_see: string;
   };
+  remote_approval: {
+    title: string;
+    body: string;
+    safety_note: string;
+    approve: string;
+    approving: string;
+    reject: string;
+  };
   settings: {
     title: string;
     settings_saved: string;

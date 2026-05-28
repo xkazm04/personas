@@ -8442,6 +8442,14 @@
     "dead_letter_no_matches": "No events match the current filters",
     "dead_letter_clear_filters_to_see": "Clear filters to see all dead-lettered events"
   },
+  "remote_approval": {
+    "title": "Remote run request",
+    "body": "Your dashboard requested a run of {persona} on this device.",
+    "safety_note": "This runs locally on this device with its own credentials. Nothing runs until you approve.",
+    "approve": "Approve & run",
+    "approving": "Starting…",
+    "reject": "Reject"
+  },
   "settings": {
     "title": "Settings",
     "settings_saved": "Saved",

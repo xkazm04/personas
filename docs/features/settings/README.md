@@ -59,6 +59,8 @@ The projection is secret-free by construction: the encrypted `model_profile`, en
 
 Backend: `src-tauri/src/cloud/sync/` (PostgREST upsert client + per-table incremental cursors in `app_settings`, a 45s periodic + CDC-driven sync loop, leader-gated). Commands `cloud_sync_set_enabled` / `cloud_sync_status` / `cloud_sync_now` (`commands/infrastructure/cloud_sync.rs`), front-end wrappers in `src/api/cloudSync.ts`. The Supabase schema + RLS live in `personas-web/scripts/setup-sync-db.sql` (applied via `npm run db:migrate:sync`).
 
+**Remote run requests (Phase 2).** When sync is on, the dashboard can *request* a persona run on this device. The request lands in the Supabase `pending_commands` table; `src-tauri/src/cloud/remote_commands.rs` polls it (15s, leader-gated) and surfaces an **explicit approval prompt** (`src/features/cloud/RemoteApprovalPrompt.tsx`, mounted at the app root). Nothing runs until the user approves — on approval the persona runs locally via the normal execution path and the result syncs back; on reject/expiry the request is closed. The web only ever sends a `persona_id` + prompt; execution and credentials never leave the device. Commands: `remote_command_list_pending` / `remote_command_approve` / `remote_command_reject`.
+
 ## Ambient context
 
 Settings also contains `AmbientContextPanel.tsx`, backed by `src/api/system/ambientContext.ts`. It controls desktop sensory context, per-persona policies, context rules, context-rule matches, stream stats, and validation screenshot capture. Desktop-only backend state lives behind feature gates in `AppState`.

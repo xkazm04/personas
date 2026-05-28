@@ -5,6 +5,7 @@
 //! on `auth.uid()` — no secret is hidden in this binary; the anon key is public
 //! by design (it's the same key the web app ships in every page).
 
+use serde::de::DeserializeOwned;
 use serde::Serialize;
 
 use crate::error::AppError;
@@ -86,6 +87,55 @@ impl SyncClient {
                     "cloud sync upsert {table} failed: {status} {body}"
                 )));
             }
+        }
+        Ok(())
+    }
+
+    /// GET a PostgREST path (table + query string) and deserialize the JSON array.
+    pub async fn get<T: DeserializeOwned>(&self, path_and_query: &str) -> Result<T, AppError> {
+        let resp = self
+            .http
+            .get(format!("{}/{}", self.rest_base, path_and_query))
+            .header("apikey", &self.anon_key)
+            .bearer_auth(&self.jwt)
+            .send()
+            .await
+            .map_err(|e| AppError::Cloud(format!("cloud GET {path_and_query}: {e}")))?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Cloud(format!(
+                "cloud GET {path_and_query} failed: {status} {body}"
+            )));
+        }
+        resp.json()
+            .await
+            .map_err(|e| AppError::Cloud(format!("cloud GET {path_and_query} decode: {e}")))
+    }
+
+    /// PATCH rows matching a PostgREST path/query with the given JSON body.
+    pub async fn patch<B: Serialize>(
+        &self,
+        path_and_query: &str,
+        body: &B,
+    ) -> Result<(), AppError> {
+        let resp = self
+            .http
+            .patch(format!("{}/{}", self.rest_base, path_and_query))
+            .header("apikey", &self.anon_key)
+            .bearer_auth(&self.jwt)
+            .header("Content-Type", "application/json")
+            .header("Prefer", "return=minimal")
+            .json(body)
+            .send()
+            .await
+            .map_err(|e| AppError::Cloud(format!("cloud PATCH {path_and_query}: {e}")))?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Cloud(format!(
+                "cloud PATCH {path_and_query} failed: {status} {body}"
+            )));
         }
         Ok(())
     }
