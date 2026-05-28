@@ -4804,3 +4804,25 @@ html[data-motion="reduce"] .animate-fade-slide-in {
   line-height: 1;
   color: color-mix(in srgb, var(--primary) 70%, transparent);
 }
+
+/* Companion panel — autonomous-mode ambient signal. When "infinite" mode is
+   on, the panel border slowly breathes the theme primary so the self-driving
+   state is unmistakable (the lone tinted header toggle under-signals it). Only
+   the border-color animates, so the panel's elevation shadow is untouched.
+   Reduced motion gets a static primary border instead. */
+@keyframes companion-autonomous-breathe {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+  }
+}
+.companion-autonomous {
+  animation: companion-autonomous-breathe 4s ease-in-out infinite;
+}
+html[data-motion="reduce"] .companion-autonomous {
+  animation: none;
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+}

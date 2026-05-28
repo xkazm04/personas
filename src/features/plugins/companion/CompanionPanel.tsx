@@ -268,7 +268,9 @@ export default function CompanionPanel() {
           style={morph.style}
           className={`fixed bottom-12 left-4 z-[60] ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
-          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
+          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
+            autonomousMode ? 'companion-autonomous' : ''
+          }`}
           role="region"
           aria-label={t.plugins.companion.panel_label}
           data-testid="companion-panel"
@@ -444,7 +446,9 @@ function Header({
           here would be visual noise.
         */}
         <span
-          className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary"
+          className={`inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary transition-shadow ${
+            autonomousMode ? 'ring-1 ring-primary/40' : ''
+          }`}
           aria-hidden
         >
           <Bot className="w-3.5 h-3.5" />
