@@ -1909,8 +1909,31 @@ function Body(props: BodyProps) {
             </AnimatePresence>
           </div>
           {sendError && (
-            <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
-              {sendError}
+            <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400 flex items-start justify-between gap-3">
+              <span className="min-w-0 break-words">{sendError}</span>
+              {(() => {
+                // On a failed turn the optimistic user bubble stays in
+                // `messages`, so the last user message is what we re-send.
+                const lastUser = [...messages]
+                  .reverse()
+                  .find((m) => m.role === 'user');
+                if (!lastUser) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSendError(null);
+                      void send(lastUser.content);
+                    }}
+                    disabled={streaming}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-0.5 text-rose-400 font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="companion-retry-send"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    {t.common.retry}
+                  </button>
+                );
+              })()}
             </div>
           )}
         </div>
