@@ -465,3 +465,108 @@ pub fn fetch_tool_usage(
     )?;
     Ok(stamp!(rows, device_id))
 }
+
+// ---------------------------------------------------------------------------
+// Knowledge: persona memories + learned execution patterns
+// ---------------------------------------------------------------------------
+
+#[derive(Debug, Serialize)]
+pub struct SyncedMemoryRow {
+    pub id: String,
+    pub device_id: Option<String>,
+    pub persona_id: String,
+    pub title: String,
+    pub content: String,
+    pub category: Option<String>,
+    pub source_execution_id: Option<String>,
+    pub importance: Option<i64>,
+    pub tags: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SyncedKnowledgePatternRow {
+    pub id: String,
+    pub device_id: Option<String>,
+    pub persona_id: String,
+    pub use_case_id: Option<String>,
+    pub knowledge_type: String,
+    pub pattern_key: String,
+    pub pattern_data: String,
+    pub success_count: i64,
+    pub failure_count: i64,
+    pub avg_cost_usd: f64,
+    pub avg_duration_ms: f64,
+    pub confidence: f64,
+    pub last_execution_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+fn row_to_memory(row: &Row) -> rusqlite::Result<SyncedMemoryRow> {
+    Ok(SyncedMemoryRow {
+        id: row.get(0)?,
+        device_id: None,
+        persona_id: row.get(1)?,
+        title: row.get(2)?,
+        content: row.get(3)?,
+        category: row.get(4)?,
+        source_execution_id: row.get(5)?,
+        importance: row.get(6)?,
+        tags: row.get(7)?,
+        created_at: row.get(8)?,
+        updated_at: row.get(9)?,
+    })
+}
+
+fn row_to_knowledge(row: &Row) -> rusqlite::Result<SyncedKnowledgePatternRow> {
+    Ok(SyncedKnowledgePatternRow {
+        id: row.get(0)?,
+        device_id: None,
+        persona_id: row.get(1)?,
+        use_case_id: row.get(2)?,
+        knowledge_type: row.get(3)?,
+        pattern_key: row.get(4)?,
+        pattern_data: row.get(5)?,
+        success_count: row.get(6)?,
+        failure_count: row.get(7)?,
+        avg_cost_usd: row.get(8)?,
+        avg_duration_ms: row.get(9)?,
+        confidence: row.get(10)?,
+        last_execution_id: row.get(11)?,
+        created_at: row.get(12)?,
+        updated_at: row.get(13)?,
+    })
+}
+
+const MEMORY_COLS: &str = "id, persona_id, title, content, category, source_execution_id, \
+    importance, tags, created_at, updated_at";
+
+const KNOWLEDGE_COLS: &str = "id, persona_id, use_case_id, knowledge_type, pattern_key, \
+    pattern_data, success_count, failure_count, avg_cost_usd, avg_duration_ms, confidence, \
+    last_execution_id, created_at, updated_at";
+
+pub fn fetch_memories(
+    pool: &DbPool,
+    cursor_prev: String,
+    _resync_floor: Option<String>,
+    device_id: String,
+) -> Result<Vec<SyncedMemoryRow>, AppError> {
+    let rows = fetch(
+        pool, "persona_memories", MEMORY_COLS, "updated_at", &cursor_prev, None, row_to_memory,
+    )?;
+    Ok(stamp!(rows, device_id))
+}
+
+pub fn fetch_knowledge_patterns(
+    pool: &DbPool,
+    cursor_prev: String,
+    _resync_floor: Option<String>,
+    device_id: String,
+) -> Result<Vec<SyncedKnowledgePatternRow>, AppError> {
+    let rows = fetch(
+        pool, "execution_knowledge", KNOWLEDGE_COLS, "updated_at", &cursor_prev, None, row_to_knowledge,
+    )?;
+    Ok(stamp!(rows, device_id))
+}

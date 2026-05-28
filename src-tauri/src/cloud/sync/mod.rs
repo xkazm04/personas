@@ -140,6 +140,8 @@ pub async fn run_sync_once(state: &Arc<AppState>) -> Result<u64, AppError> {
     total += sync_table(&pool, &client, "synced_messages", "messages", false, true, &device_id, rows::fetch_messages).await?;
     total += sync_table(&pool, &client, "synced_metrics_snapshots", "metrics", false, true, &device_id, rows::fetch_metrics).await?;
     total += sync_table(&pool, &client, "synced_tool_usage", "tool_usage", false, false, &device_id, rows::fetch_tool_usage).await?;
+    total += sync_table(&pool, &client, "synced_memories", "memories", true, false, &device_id, rows::fetch_memories).await?;
+    total += sync_table(&pool, &client, "synced_knowledge_patterns", "knowledge_patterns", true, false, &device_id, rows::fetch_knowledge_patterns).await?;
 
     let _ = cursor::set_last_at(&pool, &chrono::Utc::now().to_rfc3339());
     Ok(total)
