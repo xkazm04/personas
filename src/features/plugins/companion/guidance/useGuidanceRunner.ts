@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
+import { storeBus } from '@/lib/storeBus';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
@@ -82,6 +83,15 @@ function runPreAction(action: GuidancePreAction) {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('personas');
       sys.setIsCreatingPersona(true);
+      break;
+    }
+    case 'open_credential_add': {
+      // Drive the vault into its "Add new" view so the connector type picker
+      // mounts to point at. The credential nav lives in a React context, not a
+      // global store; `storeBus` is its from-outside-React escape hatch (the
+      // onboarding tour uses the same event). The vault route must already be
+      // mounted — author this as a step *after* the one that navigates there.
+      storeBus.emit('tour:navigate-credential-view', { key: 'add-new' });
       break;
     }
   }

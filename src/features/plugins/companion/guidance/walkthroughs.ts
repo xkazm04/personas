@@ -56,6 +56,40 @@ export const WALKTHROUGHS: Record<string, GuidanceWalkthrough> = {
       },
     ],
   },
+
+  connector_setup: {
+    topic: 'connector_setup',
+    title: (t) => t.plugins.companion.guide_conn_title,
+    steps: [
+      {
+        id: 'intro',
+        narration: (t) => t.plugins.companion.guide_conn_intro,
+        orbAnchor: 'center',
+      },
+      {
+        id: 'vault',
+        narration: (t) => t.plugins.companion.guide_conn_vault,
+        navigateRoute: 'credentials',
+        // The Vault route container — always present once `credentials` mounts.
+        highlightTestId: 'credential-manager',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'add',
+        narration: (t) => t.plugins.companion.guide_conn_add,
+        // Drives the vault to its "Add new" view (the vault route is already
+        // mounted from the prior step, so the storeBus event has a listener).
+        preAction: 'open_credential_add',
+        highlightTestId: 'vault-type-picker',
+        orbAnchor: 'auto',
+      },
+      {
+        id: 'outro',
+        narration: (t) => t.plugins.companion.guide_conn_outro,
+        orbAnchor: 'center',
+      },
+    ],
+  },
 };
 
 /** Topics Athena is allowed to trigger. Mirrored by the backend allow-list. */

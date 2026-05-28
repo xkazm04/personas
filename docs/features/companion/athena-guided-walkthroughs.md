@@ -95,6 +95,17 @@ Five steps over always-visible build-studio anchors (no modal):
 
 The only testid added for this was `persona-build-entry`; the rest already existed.
 
+## The `connector_setup` walkthrough
+
+Four steps over always-visible Vault anchors (no modal):
+
+1. **intro** — orb floats to center; "Want to connect a service like GitHub or Slack?"
+2. **vault** — navigates to `credentials`, rings `credential-manager` (the Vault route container).
+3. **add** — runs the `open_credential_add` pre-action, which `storeBus.emit('tour:navigate-credential-view', { key: 'add-new' })`s the vault into its "Add new" view (the same escape hatch the onboarding tour uses to drive the credential nav from outside React), then rings `vault-type-picker` (the connector type chooser). The vault route is already mounted from the prior step, so the event has a listener — author any storeBus-driven step *after* the step that navigates to its route.
+4. **outro** — orb returns to center; "Pin the credential to a persona and it can use the service."
+
+No new testids were needed — `credential-manager` and `vault-type-picker` already existed. Athena fires this topic when the user asks how to connect/add a service and wants to do it themselves (constitution v27).
+
 ---
 
 ## Accessibility & resource discipline

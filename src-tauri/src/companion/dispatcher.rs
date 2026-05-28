@@ -214,7 +214,7 @@ const ALLOWED_ROUTES: &[&str] = &[
 /// frontend registry keys in `guidance/walkthroughs.ts` (`GUIDANCE_TOPICS`).
 /// A topic not listed here is rejected with a warning so a hallucinated
 /// walkthrough name can't drive the orb to nowhere.
-const GUIDED_TOPICS: &[&str] = &["persona_creation"];
+const GUIDED_TOPICS: &[&str] = &["persona_creation", "connector_setup"];
 
 /// Scan assistant text for op JSON blocks, persist them as approval rows,
 /// and return cleaned text + the list of created approvals.

@@ -14,7 +14,7 @@ export type OrbAnchor = 'auto' | 'left' | 'right' | 'above' | 'below' | 'center'
  * closed enum (not arbitrary callbacks) so walkthroughs stay declarative data
  * and the set of things a guided step can *do* is auditable.
  */
-export type GuidancePreAction = 'open_build_entry';
+export type GuidancePreAction = 'open_build_entry' | 'open_credential_add';
 
 export interface GuidanceStep {
   /** Stable id (for keys + test assertions). */
