@@ -11631,6 +11631,7 @@
       "guide_take_me_there": "خذني إلى هناك",
       "guide_goto_step": "انتقل إلى الخطوة {step}",
       "guide_pause": "Pause",
+      "guide_flash_composed": "تم إنشاؤه للتو",
       "guide_resume": "Resume",
       "guide_cta_build": "ابدأ الإنشاء",
       "guide_cta_connect": "افتح الكتالوج",

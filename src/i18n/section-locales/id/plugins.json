@@ -1597,6 +1597,7 @@
     "guide_take_me_there": "Bawa saya ke sana",
     "guide_goto_step": "Ke langkah {step}",
     "guide_pause": "Pause",
+    "guide_flash_composed": "Baru dibuat",
     "guide_resume": "Resume",
     "guide_cta_build": "Mulai membangun",
     "guide_cta_connect": "Buka katalog",

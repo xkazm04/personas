@@ -1597,6 +1597,7 @@
     "guide_take_me_there": "আমাকে সেখানে নিয়ে চলুন",
     "guide_goto_step": "ধাপ {step}-এ যান",
     "guide_pause": "Pause",
+    "guide_flash_composed": "এইমাত্র তৈরি",
     "guide_resume": "Resume",
     "guide_cta_build": "তৈরি শুরু করুন",
     "guide_cta_connect": "ক্যাটালগ খুলুন",

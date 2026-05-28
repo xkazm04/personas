@@ -11631,6 +11631,7 @@
       "guide_take_me_there": "मुझे वहाँ ले चलें",
       "guide_goto_step": "चरण {step} पर जाएँ",
       "guide_pause": "Pause",
+      "guide_flash_composed": "अभी बनाया गया",
       "guide_resume": "Resume",
       "guide_cta_build": "बनाना शुरू करें",
       "guide_cta_connect": "कैटलॉग खोलें",

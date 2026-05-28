@@ -1597,6 +1597,7 @@
     "guide_take_me_there": "Llévame allí",
     "guide_goto_step": "Ir al paso {step}",
     "guide_pause": "Pause",
+    "guide_flash_composed": "Recién creado",
     "guide_resume": "Resume",
     "guide_cta_build": "Empezar a crear",
     "guide_cta_connect": "Abrir el catálogo",

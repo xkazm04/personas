@@ -11238,6 +11238,7 @@ export type Translations = {
       guide_take_me_there: string;
       guide_back: string;
       guide_pause: string;
+      guide_flash_composed: string;
       guide_resume: string;
       guide_cta_build: string;
       guide_cta_connect: string;

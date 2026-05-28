@@ -11,7 +11,7 @@ import {
   Square,
   X,
 } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useCompanionStore } from './companionStore';
@@ -1185,7 +1185,9 @@ function Body(props: BodyProps) {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
-      useCompanionStore.getState().flashHighlight('cockpit-panel');
+      useCompanionStore.getState().flashHighlight('cockpit-panel', {
+        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+      });
     }, []),
     'companion_compose_dashboard_listen',
   );
@@ -1207,7 +1209,9 @@ function Body(props: BodyProps) {
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
       sys.setCompanionPanelCompact(true);
-      useCompanionStore.getState().flashHighlight('cockpit-panel');
+      useCompanionStore.getState().flashHighlight('cockpit-panel', {
+        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+      });
     }, []),
     'companion_compose_cockpit_listen',
   );

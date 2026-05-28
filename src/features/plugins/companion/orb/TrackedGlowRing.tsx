@@ -45,6 +45,9 @@ export function TrackedGlowRing({ source }: { source: GlowSource }) {
   const testId = useCompanionStore((s) =>
     source === 'guide' ? s.guidanceHighlightTestId : s.flashHighlightTestId,
   );
+  // Only the flash ring carries a label chip ("Just composed"); the guide ring
+  // has the caption for narration, so it never needs one.
+  const label = useCompanionStore((s) => (source === 'flash' ? s.flashHighlightLabel : null));
   const reduceMotion = useReducedMotion();
   const rect = useTrackedElementRect(testId, {
     padding: GLOW_PADDING,
@@ -72,6 +75,14 @@ export function TrackedGlowRing({ source }: { source: GlowSource }) {
         <span className="athena-ring__corner athena-ring__corner--bl" />
         <span className="athena-ring__corner athena-ring__corner--br" />
       </div>
+      {label && (
+        <span
+          data-testid="athena-flash-label"
+          className="absolute left-0 -top-7 inline-flex items-center rounded-full bg-primary px-2 py-0.5 typo-caption text-btn-primary-fg shadow-elevation-2 whitespace-nowrap athena-flash-label"
+        >
+          {label}
+        </span>
+      )}
     </div>
   );
 }

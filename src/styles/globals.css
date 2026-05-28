@@ -1530,6 +1530,19 @@ body[data-drag-active="true"] * {
   opacity: 0.95;
 }
 
+/* Flash ring's optional label chip ("Just composed") — slides up into place
+   above the ring. Steady (no slide) under reduced motion. */
+@keyframes athena-flash-label-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.athena-flash-label {
+  animation: athena-flash-label-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .athena-flash-label { animation: none; }
+}
+
 /* GlyphHeroSigil petal pulse — driven by CSS so the 8 petals don't
    force a framer-motion reconciliation on every parent re-render
    during a build (formerly: each parent update at ~30Hz from
