@@ -295,9 +295,16 @@ function PluginToggleButton({
       data-companion-plugin-enabled={enabled ? 'true' : 'false'}
       className={`w-8 h-8 rounded-interactive inline-flex items-center justify-center transition-all focus-ring ${
         enabled
-          ? 'bg-primary/25 text-primary ring-1 ring-primary/60 shadow-[0_0_10px_rgba(96,165,250,0.35)]'
+          ? 'bg-primary/25 text-primary ring-1 ring-primary/60'
           : 'text-foreground hover:text-foreground hover:bg-foreground/5'
       }`}
+      // Themed glow that tracks the active theme's primary, instead of the
+      // old hardcoded blue rgba that was off-brand on every non-blue theme.
+      style={
+        enabled
+          ? { boxShadow: '0 0 10px color-mix(in srgb, var(--primary) 40%, transparent)' }
+          : undefined
+      }
       aria-label={label}
       title={label}
       aria-pressed={enabled}
