@@ -1,0 +1,54 @@
+[
+  {
+    "id": "261d1b0e-f0a4-42da-8af2-9a868cb73b4b",
+    "execution_id": "669b4f39-41df-4a6e-9624-8ccc3d680a79",
+    "persona_id": "bdb4bfb1-2e14-495e-bf53-38356cfbf8c1",
+    "title": "cert-3 premise is stale: home-link regression already fixed — proceed with guard-test-only increment?",
+    "description": "The stabilization seed asks to convert a raw <a href=\"/\"> to <Link> in src/app/page.tsx. Empirically that conversion is ALREADY in the committed tree (page.tsx:12 = <Link href=\"/\">) and eslint . already exits 0 (trunk GREEN). I scoped the only remaining scope-disciplined increment: one Playwright e2e regression-guard test (page.tsx untouched). Decision needed before the engineer runs. Also: seed says PATCH 0.5.x but package.json is 0.4.0 → PATCH is 0.4.1, not 0.5.x.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T21:15:33.112821300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d70d3622-29c0-4114-b58c-16f8cdc43825",
+    "execution_id": "069dbbf7-dc31-48a9-b128-625f8bcf8425",
+    "persona_id": "06537169-fd6b-4c40-9367-b110680dc48f",
+    "title": "ADR-0006 implemented (b510ec9) — approve merge + resolve 2 pre-existing e2e failures + version target",
+    "description": "Implemented the single scoped task from the Architect handoff: added e2e/home-nav.spec.ts asserting the header brand link returns to / via client-side next/link navigation (no full reload). page.tsx untouched. Gate: eslint . exit 0, tsc --noEmit exit 0, the new spec passes (1 passed). Committed locally as b510ec9 on main; NOT pushed/merged because autonomy is review_each_pr.\n\nTWO decisions needed:\n1) The FULL e2e suite shows 2 PRE-EXISTING failures unrelated to this change — e2e/dashboard.spec.ts:12 (dashboard shell text) and e2e/wealth-score.spec.ts:49 (playbook-upside pill). These are tracked, unmodified files failing on current main HEAD; I did NOT fix them (out-of-scope constraint). They will block any 'full-suite-green' release gate and should be ticketed independently.\n2) Version target: seed says 0.5.x but package.json is 0.4.0 and this is non-functional → PATCH 0.4.1 (0.5.x would be a MINOR).",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T21:20:36.262365800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "26d6ee34-dc38-44a4-a663-b2da6802e903",
+    "execution_id": "77e2bba3-55f8-470b-a77b-e5ccec3724e3",
+    "persona_id": "86aaee7b-e3f5-4966-8fbb-5b5f342ccbac",
+    "title": "Code Review verdict: APPROVE b510ec9 (ADR-0006 home-nav guard) — merge + ticket 2 pre-existing e2e failures",
+    "description": "Code review of b510ec9 is COMPLETE with verdict APPROVE. The change adds only e2e/home-nav.spec.ts (behavioral regression guard for the header brand link's client-side navigation). Reviewer re-ran the gate independently: tsc --noEmit exit 0, eslint on the new file exit 0, build-integrity PASS (single test file, no untracked-sibling barrel trap), scope clean (page.tsx untouched). No security/correctness/critical findings; 2 Low advisory notes only. Decisions for the human merge gate (autonomy = review_each_pr): approve the merge, and decide how to handle the 2 PRE-EXISTING out-of-scope e2e failures (dashboard.spec.ts:12, wealth-score.spec.ts:49) that block a full-suite-green release.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T21:24:15.357315200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "e876274b-69cc-4cf5-b5a0-fb44cf97840c",
+    "execution_id": "f5e09596-604b-4442-bd0e-69518d00eefb",
+    "persona_id": "b654b7f7-2b5c-4a9c-8e7d-6430fec41b7b",
+    "title": "Security findings triage — ai-bookkeeper @ b510ec9",
+    "description": "Two open findings need a decision. The postcss High has persisted across 4 scans and requires a one-line code change (overrides pin) to resolve.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T21:27:29.654685100+00:00",
+    "use_case_id": null
+  }
+]

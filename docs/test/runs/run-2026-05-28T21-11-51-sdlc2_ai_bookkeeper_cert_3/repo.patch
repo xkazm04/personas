@@ -1,0 +1,219 @@
+diff --git a/e2e/home-nav.spec.ts b/e2e/home-nav.spec.ts
+new file mode 100644
+index 0000000..c3cd975
+--- /dev/null
++++ b/e2e/home-nav.spec.ts
+@@ -0,0 +1,45 @@
++import { test, expect } from "@playwright/test";
++
++// Regression guard for ADR 0006 (stabilization: home-route link & navigation).
++//
++// The home/brand link in the site header must be a real next/link client
++// route — NOT a raw <a href="/"> (which @next/next/no-html-link-for-pages
++// forbids, and which forces a full document reload). `eslint .` is the
++// structural guard against the raw <a>; this spec is the *behavioral* guard
++// that the brand link actually performs client-side navigation back to /.
++//
++// Follows the existing @playwright/test convention in this dir (see
++// dashboard.spec.ts) — the dev server + baseURL auto-boot via
++// playwright.config.ts.
++test.describe("home navigation", () => {
++  test("brand link returns to / via client navigation (no full reload)", async ({
++    page,
++  }) => {
++    await page.goto("/pricing");
++
++    // Tag the live window. A full document reload (raw <a>) recreates the
++    // window and clears this flag; a client-side next/link navigation keeps it.
++    await page.evaluate(() => {
++      (window as unknown as { __noReload?: boolean }).__noReload = true;
++    });
++
++    // The footer "Ledgerline" is a plain <span>, so the only link whose
++    // accessible name contains "Ledgerline" is the header brand link.
++    // .first() pins to the header regardless.
++    await page
++      .getByRole("link", { name: /Ledgerline/ })
++      .first()
++      .click();
++
++    await expect(page).toHaveURL(/\/$/);
++
++    // SPA navigation preserved the window → no full reload occurred.
++    const noReload = await page.evaluate(
++      () => (window as unknown as { __noReload?: boolean }).__noReload,
++    );
++    expect(noReload).toBe(true);
++
++    // Home route rendered.
++    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
++  });
++});
+
+--- NEW UNTRACKED FILES ---
+
+diff --git a/docs/adr/0005-money-formatting-consolidation.md b/docs/adr/0005-money-formatting-consolidation.md
+new file mode 100644
+--- /dev/null
++++ b/docs/adr/0005-money-formatting-consolidation.md
++# ADR 0005 — Consolidate money formatting onto one shared kernel; adopt `formatMoney` app-wide
++
++- **Status:** Proposed
++- **Date:** 2026-05-28
++- **Deciders:** Solution Architect (scheduled weekly review)
++- **Area:** `src/lib` (shared formatters), `src/features/ledger/lib` (money primitives), all feature cards that render money
++- **Relates to / extends:** ADR 0004 (`formatMoney`), ADR 0003 (arithmetic), ADR 0002 (`roundMoney`), ADR 0001 (input validation)
++
++## Context
++
++The weekly review traced money rendering across the whole app, not just the
++ledger feature. Finding: there are **two parallel money formatters**, and the
++ADR-blessed one is **orphaned**.
++
++- `src/features/ledger/lib/format.ts` — `formatMoney(value, currency, locale?)`
++  (ADR 0004): currency- and locale-aware, normalizes through `roundMoney`
++  (ADR 0002) so display is provably drift-free, fail-loud on non-finite /
++  mixed-currency. **Consumers: 0.** Only re-exported by the ledger barrel.
++- `src/lib/format.ts` — `formatCurrency(value, decimals?)` /
++  `formatSignedCurrency(value)`: a hard-coded **USD-only** `Intl.NumberFormat`,
++  **no `roundMoney` normalization**, no currency-awareness, no fail-loud path.
++  **Consumers: 9** — every feature that shows money:
++  `benchmarks/{BenchmarksCard,ComparisonBar}`,
++  `customers/{CustomerPanel,MergeCandidatesCard}`,
++  `tax-credits/{EvidenceChip,TaxCreditsCard}`, `wealth-score/WealthScoreCard`,
++  `ledger/TransactionsCard`.
++- `wealth-score/WealthScoreCard.tsx:195-196` adds a **third** path: inline
++  `` `$${(value/1_000_000).toFixed(1)}M` `` abbreviation.
++
++Consequence: ADR 0004's central guarantee — *what the user sees is provably what
++the ledger stored* — is currently **unrealized in the product**. Every visible
++balance flows through the un-normalized USD-only path; a drifted intermediate
++(`0.1 + 0.2`) or a non-USD amount would render wrong, and the typed fail-loud
++safety never fires.
++
++Layering observation (evidence): `@/features/ledger` is already a **de-facto
++shared kernel** — 5 feature modules import `type Transaction` from it
++(`benchmarks/lib/compare`, `customers/CustomerPanel`,
++`customers/MergeCandidatesCard`, `tax-credits/{scan,types}`,
++`wealth-score/lib/compute`). But the money *primitives* (round / arithmetic /
++format) living inside `features/ledger/lib` means any feature wanting drift-free
++money must take a **feature → feature** dependency on `ledger`. The
++architecturally correct home for cross-cutting domain primitives is a shared
++kernel, not a sibling feature.
++
++Inspected: `src/lib/format.ts`, `src/features/ledger/lib/format.ts`,
++`ledger/index.ts`, the 9 import sites above, `wealth-score/WealthScoreCard.tsx`,
++ADR 0001–0004.
++
++## Decision
++
++Converge on **one** money-formatting authority and adopt it app-wide. No new
++rounding/arithmetic logic — this is consolidation + adoption of what ADR 0002–0004
++already built.
++
++1. **Promote the money primitives to a shared kernel `src/lib/money/`.** Move
++   `round.ts`, `arithmetic.ts`, `format.ts` (and their tests) out of
++   `features/ledger/lib` into `src/lib/money/`, re-exported via a barrel. This
++   removes the feature→feature coupling: any module imports money from `@/lib/money`,
++   not from a sibling feature. `features/ledger` keeps owning the `Transaction`
++   domain type and ledger UI; the *generic* money kernel becomes shared.
++   *(`amount.ts`/`ingest.ts` are ledger-input-boundary specific — leave in
++   `features/ledger/lib`, importing the kernel.)*
++2. **Make `formatMoney` the single formatter.** Reimplement
++   `src/lib/format.ts:formatCurrency` / `formatSignedCurrency` as **thin
++   back-compat wrappers** over `formatMoney(value, "USD")` so the drift-free
++   normalization + fail-loud path applies everywhere with no call-site churn on
++   day one. `formatSignedCurrency` keeps its `+ / −` prefix semantics.
++3. **Re-point the 9 consumers** to the shared kernel and retire the un-normalized
++   path. Replace `wealth-score`'s inline `$…M/$…K` abbreviator with a small
++   `formatMoneyCompact` helper in the kernel (or `Intl` `notation: "compact"`)
++   so abbreviation is also drift-safe and centrally owned.
++4. **Guardrail:** add an ESLint rule / review-checklist item forbidding raw
++   `` `$${…}` ``/`toFixed` on money outside `src/lib/money`, so a fourth path
++   can't reappear.
++
++**Alternative considered — make `@/features/ledger` the official kernel** (leave
++primitives in place, just adopt `formatMoney` from there). Rejected: it cements
++a feature as everyone's dependency, blurs the feature boundary, and makes the
++ledger feature un-removable. The shared-kernel move is one extra step now and
++prevents a structural smell from ossifying while only 5 imports exist.
++
++## Consequences
++
++- **Positive:** the ADR 0004 drift-free/currency-aware/fail-loud guarantee becomes
++  *real* for every balance the user sees; one money authority instead of three;
++  feature→feature coupling on money is removed; multi-currency and locale support
++  land app-wide for free; the guardrail stops regression.
++- **Negative / cost:** a mechanical move of 6 files + their import paths (test
++  suite must stay 42/42), and re-pointing 9 components. Low risk — wrappers keep
++  signatures stable, so the change can ship incrementally (kernel move → wrappers →
++  re-point per feature).
++- **Carried forward (unchanged):** ADR 0003's deferred N-ary `sumMoney` and ADR
++  0002 Task 4 (`roundToCents → roundMoney` convergence) — both still blocked on a
++  real aggregation consumer; the kernel move makes their eventual home obvious.
++- **UNVERIFIED:** `formatSignedCurrency` uses a U+2212 minus (`−`); confirm the
++  wrapper preserves it (golden-string tests) so existing UI doesn't shift to ASCII `-`.
++
++## Task breakdown
++
++1. Create `src/lib/money/` kernel; move `round.ts` + `arithmetic.ts` +
++   `format.ts` + tests; add barrel. Keep `features/ledger/lib` re-exporting for
++   one release to avoid a big-bang. — **3 pts**
++2. Reimplement `src/lib/format.ts` `formatCurrency`/`formatSignedCurrency` as
++   wrappers over `formatMoney(_, "USD")`; preserve `+`/`−` semantics; golden-string
++   tests. — **2 pts**
++3. Re-point the 9 money-render components to the shared kernel; delete dead paths. — **2 pts**
++4. Replace `WealthScoreCard` inline `$…M/$…K` with a kernel `formatMoneyCompact`
++   (or `Intl` compact notation) + tests. — **2 pts**
++5. Add lint guardrail forbidding raw money templates/`toFixed` outside
++   `src/lib/money`. — **2 pts**
++6. **(Recurring, from ADR 0004 Task 6)** Fix pre-existing release-gate blocker
++   `src/app/page.tsx:9` `<a href="/">` → `next/link` `<Link>`
++   (`@next/next/no-html-link-for-pages`), so `eslint .` is green. — **1 pt**
++
++**Total: 12 pts.** Verdict: **no new money primitive is needed** — the gap is
++*adoption + consolidation* of ADR 0002–0004, plus the recurring lint blocker.
++
+
+diff --git a/docs/adr/0006-stabilization-home-link-guard.md b/docs/adr/0006-stabilization-home-link-guard.md
+new file mode 100644
+--- /dev/null
++++ b/docs/adr/0006-stabilization-home-link-guard.md
++# ADR 0006 — Stabilization: home-route link uses next/link, add a navigation guard test
++
++Status: Accepted
++Date: 2026-05-28
++Seed: sdlc2/ai-bookkeeper-cert-3
++Supersedes/relates: stabilization debt carried by cert-1 (shipped via scope-creep) and cert-2 (held formatMoney's release on it)
++
++## Context
++The stabilization seed reports a Next.js lint regression in `src/app/page.tsx`: a raw
++`<a href="/">` element flagged by `@next/next/no-html-link-for-pages`, blocking release for two cycles.
++
++Empirical finding (inspected the committed tree, not the seed's description):
++- `src/app/page.tsx:12` — the home/brand link is ALREADY `<Link href="/">` (next/link). `next/link` is imported (`page.tsx:2`).
++- Every internal page route on the page already uses `<Link>`: `/` (l.12), `/pricing` (l.35,119,366,429), `/faq` (l.38,435), `/dashboard` (l.41,409,441).
++- The only raw `<a>` tags target in-page hash anchors (`#how`, `#start` — l.31,45,106,401), which `no-html-link-for-pages` does NOT flag.
++- `eslint .` exits 0 (GREEN). The functional `<a>`→`<Link>` conversion the seed asks for is already present — it is a no-op.
++
++So the trunk is already lint-green; the risk is regression recurrence, not an open defect. The debt that churned cert-1/cert-2 has no behavioral guard locking it in.
++
++## Decision
++Do NOT modify `src/app/page.tsx` — the `<Link href="/">` fix is already in place; touching it would be unjustified churn.
++Lock in the fix with the minimal increment the seed explicitly requested: ONE focused Playwright e2e test asserting the home/brand link performs client-side Next navigation back to `/`. Lint (`eslint .`) remains the structural guard for `no-html-link-for-pages` and is already in the quality gate.
++
++Considered and rejected:
++- React-render unit test of `page.tsx`: testing-library/jsdom are NOT installed; adding them is scope creep, forbidden this run.
++- Editing `page.tsx` to "convert `<a>`": no raw page-link `<a>` exists; nothing to convert.
++
++## Consequences
++- Trunk stays GREEN; a behavioral regression guard now exists so the debt cannot silently return.
++- New file only: `e2e/home-nav.spec.ts`. `src/app/page.tsx` is untouched.
++- Non-functional change → PATCH release. NOTE: current version is `0.4.0`, so the PATCH is `0.4.1`. The seed's "0.5.x" does not match the actual version (0.5.0 would be a MINOR). Versioning is the Release Manager's call — flagged for resolution.
++
++### Out of scope this run (do NOT bundle)
++- ADR 0005 money-formatting consolidation (separate, already drafted as docs/adr/0005).
++- Converting hash-anchor `<a>` (`#how`/`#start`) to buttons or smooth-scroll handlers.
++- Any visual refresh, copy change, or component refactor on the landing page.
++- Adding a component-test harness (testing-library) — defer until a real consumer needs it.
++
