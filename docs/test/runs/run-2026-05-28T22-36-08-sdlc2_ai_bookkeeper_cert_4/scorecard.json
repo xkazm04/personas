@@ -1,0 +1,90 @@
+{
+  "runId": "run-2026-05-28T22-36-08-sdlc2_ai_bookkeeper_cert_4",
+  "team": "SDLC2 — ai-bookkeeper",
+  "seed": "sdlc2/ai-bookkeeper-cert-4",
+  "code_track": {
+    "build": {
+      "status": "pass"
+    },
+    "lint": {
+      "status": "pass"
+    },
+    "test": {
+      "status": "pass"
+    }
+  },
+  "delivered_increment": {
+    "delivered": true,
+    "masterHead": "0ace17d87efbed5632619253df2dca18bf3ca1e4",
+    "sourceFiles": [
+      "src/app/api/categorize/route.ts",
+      "src/app/dashboard/error.tsx",
+      "src/app/dashboard/loading.tsx",
+      "src/app/dashboard/page.tsx",
+      "src/app/page.tsx",
+      "src/components/CategorizePanel.tsx",
+      "src/components/ui/Skeleton.tsx",
+      "src/components/ui/index.ts"
+    ]
+  },
+  "self_veto": null,
+  "rubric_version": "1-deterministic",
+  "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 86,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 100
+  },
+  "judge": null,
+  "team_score": 97,
+  "provisional_verdict": "PRODUCTION",
+  "facts": {
+    "executions": 7,
+    "completed": 6,
+    "failed": 1,
+    "failed_not_rescued": 0,
+    "rescued_failures": [
+      "5e011184-ddca-48f0-a4b6-c0f1bead5201"
+    ],
+    "cascade_stalled": false,
+    "value_delivered": 6,
+    "personasExecuted": 6,
+    "memberCount": 6,
+    "eventsDelivered": 17,
+    "reviews": 1,
+    "pendingReviews": 1,
+    "learnedMemories": 6,
+    "cost_usd": 7.482742249999999,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "CHANGELOG.md",
+      "total": 5,
+      "valid": 5,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "README.md",
+      "total": 32,
+      "valid": 32,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/releases/v0.6.0.md",
+      "total": 1,
+      "valid": 1,
+      "pct": 100,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 1,
+    "pendingReviews": 1,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}
