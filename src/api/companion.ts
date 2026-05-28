@@ -732,9 +732,21 @@ export const COMPANION_NAVIGATE_EVENT = 'companion://navigate';
  */
 export const COMPANION_GUIDE_EVENT = 'companion://guide';
 
-/** Payload for COMPANION_GUIDE_EVENT. */
+/**
+ * Payload for COMPANION_GUIDE_EVENT. One of:
+ *  - `topic` — a registry walkthrough (`start_guided_walkthrough`).
+ *  - `pointAt` — a single ad-hoc beat (`point_at`): ring one allow-listed
+ *    anchor and narrate it, no pre-authored topic.
+ *  - `composeWalkthrough` — a multi-step ad-hoc tour (`compose_walkthrough`):
+ *    Athena assembles the steps at runtime from the anchor catalog.
+ */
 export interface CompanionGuideEvent {
-  topic: string;
+  topic?: string;
+  pointAt?: { anchor: string; narration: string };
+  composeWalkthrough?: {
+    title?: string;
+    steps: { anchor: string; narration: string }[];
+  };
 }
 
 /** Payload for COMPANION_APPROVALS_EVENT — array of newly-created approvals. */

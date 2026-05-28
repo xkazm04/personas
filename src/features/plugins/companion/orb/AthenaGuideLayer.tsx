@@ -1,6 +1,7 @@
 import { createPortal } from 'react-dom';
 import { useGuidanceRunner } from '../guidance/useGuidanceRunner';
 import { AthenaGuideGlow } from './AthenaGuideGlow';
+import { AthenaFlashGlow } from './AthenaFlashGlow';
 import { GuideCaption } from './GuideCaption';
 
 /**
@@ -13,6 +14,8 @@ import { GuideCaption } from './GuideCaption';
  * highlight per step) and renders only what an active walkthrough needs:
  *  - `AthenaGuideGlow` — the non-dimming element ring (renders nothing unless
  *    `guidanceHighlightTestId` is set).
+ *  - `AthenaFlashGlow` — the proactive one-shot "look here" ring (renders
+ *    nothing unless `flashHighlightTestId` is set); fires on navigate/compose.
  *  - `GuideCaption` — the narration card + Pause/Skip/Stop controls (renders
  *    nothing unless a walkthrough is active).
  *
@@ -29,6 +32,7 @@ export default function AthenaGuideLayer() {
       data-testid="athena-guide-layer"
     >
       <AthenaGuideGlow />
+      <AthenaFlashGlow />
       <GuideCaption />
     </div>,
     document.body,

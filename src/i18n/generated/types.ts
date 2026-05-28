@@ -11204,12 +11204,18 @@ export type Translations = {
       guide_pause: string;
       guide_resume: string;
       guide_step_label: string;
+      guide_click_hint: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;
       guide_pc_compose: string;
       guide_pc_autonomous: string;
       guide_pc_outro: string;
+      guide_conn_title: string;
+      guide_conn_intro: string;
+      guide_conn_vault: string;
+      guide_conn_add: string;
+      guide_conn_outro: string;
       offer_intro: string;
       offer_build: string;
       offer_build_hint: string;
