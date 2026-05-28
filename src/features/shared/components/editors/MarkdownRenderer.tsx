@@ -108,19 +108,32 @@ function InlineBarChart({ raw }: { raw: string }) {
   if (entries.length === 0) return <pre className="typo-code text-foreground">{raw}</pre>;
 
   return (
-    <div className="my-3 space-y-1.5 p-3 rounded-xl border border-primary/10 bg-secondary/20">
-      {entries.map((e, i) => (
-        <div key={i} className="flex items-center gap-3">
-          <span className="typo-caption text-foreground w-28 truncate text-right">{e.label}</span>
-          <div className="flex-1 h-5 rounded bg-primary/[0.06] overflow-hidden">
-            <div
-              className="h-full rounded bg-gradient-to-r from-primary/40 to-primary/60 transition-all"
-              style={{ width: `${(e.value / max) * 100}%` }}
-            />
+    <div className="my-3 space-y-2 p-3.5 rounded-xl border border-primary/10 bg-secondary/20">
+      {entries.map((e, i) => {
+        const pct = (e.value / max) * 100;
+        const isMax = e.value === max;
+        return (
+          <div key={i} className="flex items-center gap-3">
+            <span className="typo-caption text-foreground w-28 truncate text-right">{e.label}</span>
+            <div className="flex-1 h-6 rounded-md bg-foreground/[0.06] overflow-hidden">
+              <div
+                className={`h-full rounded-md transition-all duration-500 ${
+                  isMax
+                    ? 'bg-gradient-to-r from-primary to-accent'
+                    : 'bg-gradient-to-r from-primary/50 to-primary/75'
+                }`}
+                // Floor non-zero bars at 3% so small-but-present values stay visible.
+                style={{ width: `${e.value > 0 ? Math.max(pct, 3) : 0}%` }}
+              />
+            </div>
+            <span
+              className={`typo-code w-14 text-right ${isMax ? 'text-primary font-semibold' : 'text-foreground'}`}
+            >
+              {e.value}
+            </span>
           </div>
-          <span className="text-xs font-mono text-foreground w-14 text-right">{e.value}</span>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
