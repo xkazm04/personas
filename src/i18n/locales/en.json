@@ -11280,6 +11280,8 @@
       "welcome_title": "How can I help today?",
       "welcome_subtitle": "I can see your agents, executions, and memory. Ask me anything, or start with one of these.",
       "jump_to_latest": "Jump to latest",
+      "day_today": "Today",
+      "day_yesterday": "Yesterday",
       "thinking": "Thinking…",
       "phase_reviewing": "Reviewing result…",
       "phase_thinking": "Thinking…",

@@ -11286,6 +11286,8 @@ export type Translations = {
       welcome_title: string;
       welcome_subtitle: string;
       jump_to_latest: string;
+      day_today: string;
+      day_yesterday: string;
       thinking: string;
       phase_reviewing: string;
       phase_thinking: string;

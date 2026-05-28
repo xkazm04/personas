@@ -99,6 +99,35 @@ import { useAgentStore } from '@/stores/agentStore';
 // worth a persistent, glanceable task.
 const IN_TURN_TOOL_THRESHOLD_MS = 6000;
 
+const ONE_DAY_MS = 86_400_000;
+
+/** Same calendar day in local time. */
+function sameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/**
+ * Label for a transcript day separator: "Today" / "Yesterday" for the recent
+ * days (callers pass the localized strings), otherwise a locale-formatted
+ * weekday + date. Matches how RelativeTime defers absolute dates to the
+ * browser locale.
+ */
+function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  if (sameLocalDay(d, now)) return todayLabel;
+  if (sameLocalDay(d, new Date(now.getTime() - ONE_DAY_MS))) return yesterdayLabel;
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
 // only used when the turn returns no QR chips, so this preset is never
 // a dead-end. Each entry is the literal user message that will be sent
@@ -1695,6 +1724,17 @@ function Body(props: BodyProps) {
               // avatar, and the run is pulled tighter together.
               const groupStart = !prev || prev.role !== m.role;
               const groupEnd = !next || next.role !== m.role;
+              // Day separator above the first message of each new calendar day.
+              const daySep =
+                m.createdAt &&
+                (!prev?.createdAt ||
+                  !sameLocalDay(new Date(prev.createdAt), new Date(m.createdAt)))
+                  ? daySeparatorLabel(
+                      m.createdAt,
+                      t.plugins.companion.day_today,
+                      t.plugins.companion.day_yesterday,
+                    )
+                  : null;
               const priorUser =
                 isLastAssistant && prev?.role === 'user' ? prev.content : '';
               const connectorJobIds =
@@ -1705,6 +1745,18 @@ function Body(props: BodyProps) {
                 m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
               return (
                 <div key={m.id} className="space-y-1 animate-fade-slide-in">
+                  {daySep && (
+                    <div
+                      className="flex items-center gap-2 my-1"
+                      data-testid="companion-day-separator"
+                    >
+                      <div className="flex-1 h-px bg-foreground/10" aria-hidden />
+                      <span className="rounded-full bg-foreground/[0.06] border border-foreground/10 px-2.5 py-0.5 typo-caption text-foreground">
+                        {daySep}
+                      </span>
+                      <div className="flex-1 h-px bg-foreground/10" aria-hidden />
+                    </div>
+                  )}
                   {recall && (
                     <RecallStrip
                       preview={recall}
