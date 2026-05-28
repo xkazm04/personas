@@ -26,6 +26,7 @@ import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { debtText } from '@/i18n/DebtText';
+import { listDirectorScoreTrends } from '@/api/director';
 
 
 
@@ -72,7 +73,33 @@ export default function PersonaOverviewPage() {
   // team. Lives here rather than in `AgentListViewConfig` because the rail
   // owns the toggle UX and it doesn't belong in the saved view preset.
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
+  const [scoreTrendsMap, setScoreTrendsMap] = useState<Record<string, number[]>>({});
   const isMobile = useIsMobile();
+
+  // Batched fetch of Director score trends keyed by persona id. Sample is
+  // every visible persona — one round-trip, refreshes when the id set
+  // changes (persona created/deleted). Empty arrays for unscored personas
+  // mean the cell collapses cleanly to a "—".
+  const personaIdsKey = useMemo(
+    () => personas.map((p) => p.id).sort().join(','),
+    [personas],
+  );
+  useEffect(() => {
+    const ids = personaIdsKey ? personaIdsKey.split(',') : [];
+    if (ids.length === 0) {
+      setScoreTrendsMap({});
+      return;
+    }
+    let active = true;
+    listDirectorScoreTrends(ids)
+      .then((map) => {
+        if (active) setScoreTrendsMap(map);
+      })
+      .catch(silentCatch('PersonaOverviewPage:scoreTrends'));
+    return () => {
+      active = false;
+    };
+  }, [personaIdsKey]);
 
   useEffect(() => {
     try { localStorage.setItem(LAYOUT_STORAGE_KEY, layout); } catch (err) { silentCatch("features/agents/components/allPersonas/PersonaOverviewPage:catch2")(err); }
@@ -204,7 +231,7 @@ export default function PersonaOverviewPage() {
   const columns = usePersonaColumns({
     view, setView, selectedIds, onToggleSelect: handleToggleSelect, isFavorite, toggleFavorite,
     onRowClick: handleRowClick,
-    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, connectorNamesMap, allConnectorNames,
+    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap, connectorNamesMap, allConnectorNames,
   });
 
   return (

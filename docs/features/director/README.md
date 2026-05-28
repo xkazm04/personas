@@ -70,6 +70,13 @@ embeddings, so it works in the lite build. Toggle via
   a **Run review now** button (batch-runs the Director over starred personas),
   the Brain long-term-memory toggle (when a vault is configured), and a
   **Recent verdicts** list of the most recent coaching notes.
+- **Personas table** (`src/features/agents/components/allPersonas/PersonaOverviewColumns.tsx`):
+  a **Verdict** column shows each persona's score-trend sparkline — the
+  most recent N (default 10) `director_score` values for that persona,
+  oldest→newest, colored by the latest score (red/amber/green). At a
+  glance you can see whether coaching is moving the needle for a row.
+  Personas with no scored executions render "—". Powered by
+  `list_director_score_trends`.
 - **Activity list** (`src/features/agents/sub_activity`): a **Verdict** column
   (0-5 stars, 2nd column) reads `director_score` per execution. Unreviewed
   runs show "—".
@@ -86,6 +93,7 @@ embeddings, so it works in the lite build. Toggle via
 | `run_director_on_persona(persona_id)` | Review one persona now (async, minutes; a real LLM run). |
 | `run_director_batch(max_personas?)` | Review all starred personas sequentially. |
 | `list_director_verdicts(persona_id?)` | Read Director-sourced coaching reviews. |
+| `list_director_score_trends(persona_ids, limit?)` | Batched recent score history per persona (oldest→newest); powers the personas-table sparkline. |
 | `set_persona_starred(id, starred)` | Add/remove a persona from the Director's scope. |
 | `get_director_brain_enabled()` / `set_director_brain_enabled(enabled)` | Read/toggle the Brain long-term-memory wiring. |
 

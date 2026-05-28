@@ -2,6 +2,7 @@
 //!
 //! See `src-tauri/src/engine/director.rs` for architecture and phasing.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tauri::State;
@@ -57,6 +58,20 @@ pub fn list_director_verdicts(
 ) -> Result<Vec<DirectorVerdictRow>, AppError> {
     require_auth_sync(&state)?;
     director::list_verdicts(&state.db, persona_id.as_deref())
+}
+
+/// Batched Director score trends keyed by persona id (oldest→newest). Personas
+/// with no scored executions get an empty array. `limit` clamps the per-persona
+/// window (default 10, hard ceiling 30 to keep the SVG sparkline readable).
+#[tauri::command]
+pub fn list_director_score_trends(
+    state: State<'_, Arc<AppState>>,
+    persona_ids: Vec<String>,
+    limit: Option<i64>,
+) -> Result<HashMap<String, Vec<i64>>, AppError> {
+    require_auth_sync(&state)?;
+    let limit = limit.unwrap_or(10).clamp(2, 30);
+    director::list_score_trends(&state.db, &persona_ids, limit)
 }
 
 /// Whether the Director may use the Obsidian Brain vault as long-term memory.

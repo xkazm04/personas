@@ -27,6 +27,7 @@
 //!   warning → manual reviews, error + auto-fixable → `persona_healing_issues`
 //!   + `ai_healing::apply_db_fixes`. Scheduler tick in `background.rs`.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use rusqlite::params;
@@ -1072,6 +1073,30 @@ pub fn list_verdicts(
 
     let results: Vec<DirectorVerdictRow> = rows.filter_map(|r| r.ok()).collect();
     Ok(results)
+}
+
+/// Recent Director scores per persona, oldest→newest. Empty arrays when a
+/// persona has no scored executions. Used by the personas-table trend
+/// sparkline so a glance shows whether coaching is moving the needle.
+pub fn list_score_trends(
+    pool: &DbPool,
+    persona_ids: &[String],
+    limit: i64,
+) -> Result<HashMap<String, Vec<i64>>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT director_score FROM persona_executions \
+         WHERE persona_id = ?1 AND director_score IS NOT NULL \
+         ORDER BY created_at DESC LIMIT ?2",
+    )?;
+    let mut out: HashMap<String, Vec<i64>> = HashMap::with_capacity(persona_ids.len());
+    for pid in persona_ids {
+        let rows = stmt.query_map(params![pid, limit], |row| row.get::<_, i64>(0))?;
+        let mut scores: Vec<i64> = rows.filter_map(|r| r.ok()).collect();
+        scores.reverse();
+        out.insert(pid.clone(), scores);
+    }
+    Ok(out)
 }
 
 // ---------------------------------------------------------------------------
