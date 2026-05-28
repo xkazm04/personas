@@ -5439,10 +5439,6 @@
       "add_notes": "메모 추가",
       "notes_placeholder": "검토 메모 추가...",
       "select_action_first": "먼저 제안된 작업 선택",
-      "split": "분할",
-      "table": "테이블",
-      "split_tooltip": "채팅 분할 보기",
-      "table_tooltip": "테이블만",
       "review_detail": "검토 세부 정보",
       "select_review": "검토를 선택해 보기",
       "technical_context": "기술적 문맥"

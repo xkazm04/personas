@@ -5439,10 +5439,6 @@
       "add_notes": "Agregar notas",
       "notes_placeholder": "Agregar notas de revisión...",
       "select_action_first": "Selecciona primero una acción sugerida",
-      "split": "Dividir",
-      "table": "Tabla",
-      "split_tooltip": "Vista dividida con chat",
-      "table_tooltip": "Solo tabla",
       "review_detail": "Detalle de Revisión",
       "select_review": "Selecciona una revisión para ver",
       "technical_context": "Contexto Técnico"

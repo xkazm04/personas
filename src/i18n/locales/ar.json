@@ -5439,10 +5439,6 @@
       "add_notes": "إضافة ملاحظات",
       "notes_placeholder": "إضافة ملاحظات المراجعة...",
       "select_action_first": "اختر إجراءً مقترحاً أولاً",
-      "split": "تقسيم",
-      "table": "جدول",
-      "split_tooltip": "عرض منقسم مع الدردشة",
-      "table_tooltip": "الجدول فقط",
       "review_detail": "تفاصيل المراجعة",
       "select_review": "اختر مراجعة للعرض",
       "technical_context": "السياق التقني"

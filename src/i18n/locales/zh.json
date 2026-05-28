@@ -5439,10 +5439,6 @@
       "add_notes": "添加备注",
       "notes_placeholder": "添加审核备注...",
       "select_action_first": "请先选择建议的操作",
-      "split": "分屏",
-      "table": "表格",
-      "split_tooltip": "带聊天的分屏视图",
-      "table_tooltip": "仅表格",
       "review_detail": "审核详情",
       "select_review": "选择要查看的审核",
       "technical_context": "技术上下文"

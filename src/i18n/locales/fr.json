@@ -5439,10 +5439,6 @@
       "add_notes": "Ajouter des notes",
       "notes_placeholder": "Ajouter des notes de révision...",
       "select_action_first": "Sélectionnez d'abord une action suggérée",
-      "split": "Fractionner",
-      "table": "Tableau",
-      "split_tooltip": "Vue fractionnée avec chat",
-      "table_tooltip": "Tableau uniquement",
       "review_detail": "Détail de la révision",
       "select_review": "Sélectionnez une révision à afficher",
       "technical_context": "Contexte technique"

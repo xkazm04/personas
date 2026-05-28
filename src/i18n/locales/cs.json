@@ -5439,10 +5439,6 @@
       "add_notes": "Přidat poznámky",
       "notes_placeholder": "Přidej poznámky ke kontrole...",
       "select_action_first": "Nejprve vyber navrženou akci",
-      "split": "Rozdělené",
-      "table": "Tabulka",
-      "split_tooltip": "Rozdělené zobrazení s chatem",
-      "table_tooltip": "Pouze tabulka",
       "review_detail": "Detail kontroly",
       "select_review": "Vyber kontrolu k zobrazení",
       "technical_context": "Technický kontext"
