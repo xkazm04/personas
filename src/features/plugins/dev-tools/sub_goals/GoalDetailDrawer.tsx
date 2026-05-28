@@ -25,6 +25,7 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import * as devApi from '@/api/devTools/devTools';
 import {
   listTeamAssignmentsForGoal, listTeamAssignmentSteps, resolveTeamAssignmentReview,
+  setTeamAssignmentGoal,
 } from '@/api/pipeline/assignments';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
@@ -32,6 +33,7 @@ import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
 import type { GoalProgressSuggestion } from '@/lib/bindings/GoalProgressSuggestion';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
+import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 
 interface Props {
   isOpen: boolean;
@@ -65,6 +67,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   const [items, setItems] = useState<DevGoalItem[]>([]);
   const [subgoals, setSubgoals] = useState<DevGoal[]>([]);
   const [steps, setSteps] = useState<TeamAssignmentStep[]>([]);
+  const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
   const [signals, setSignals] = useState<DevGoalSignal[]>([]);
   const [newItem, setNewItem] = useState('');
 
@@ -83,6 +86,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       setItems(its);
       setSubgoals(kids);
       setSignals(sigs);
+      setAssignments(assignments);
       const stepLists = await Promise.all(
         assignments.map((a) => listTeamAssignmentSteps(a.id).catch(() => [] as TeamAssignmentStep[])),
       );
@@ -146,6 +150,15 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       await refresh();
     } catch (err) {
       toastCatch('Failed to resolve step')(err);
+    }
+  };
+
+  const handleUnlinkTeam = async (assignmentId: string) => {
+    try {
+      await setTeamAssignmentGoal(assignmentId, null);
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to unlink team')(err);
     }
   };
 
@@ -302,6 +315,29 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
                 </li>
               );
             })}
+          </ul>
+        </Section>
+      )}
+
+      {/* Linked team assignments */}
+      {assignments.length > 0 && (
+        <Section icon={Users} label={dl.goal_detail_linked_teams}>
+          <ul className="space-y-1.5">
+            {assignments.map((asgn) => (
+              <li key={asgn.id} className="group flex items-center gap-2.5 typo-body">
+                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${STATUS_TINT[asgn.status] ?? STATUS_TINT.open}`}>
+                  {tokenLabel(t, 'execution', asgn.status)}
+                </span>
+                <span className="flex-1 text-foreground truncate">{asgn.title}</span>
+                <button
+                  type="button"
+                  onClick={() => handleUnlinkTeam(asgn.id)}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground hover:text-red-400 typo-caption"
+                >
+                  {dl.goal_unlink_team}
+                </button>
+              </li>
+            ))}
           </ul>
         </Section>
       )}

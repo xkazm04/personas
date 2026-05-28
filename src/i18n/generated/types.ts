@@ -11878,6 +11878,8 @@ export type Translations = {
       goal_detail_checklist: string;
       goal_detail_subgoals: string;
       goal_detail_team_steps: string;
+      goal_detail_linked_teams: string;
+      goal_unlink_team: string;
       goal_detail_activity: string;
       goal_item_add: string;
       goal_item_add_placeholder: string;
@@ -13114,6 +13116,8 @@ export type Translations = {
       title: string;
       close: string;
       new_assignment: string;
+      link_goal_label: string;
+      link_goal_none: string;
       empty_title: string;
       empty_hint: string;
       title_placeholder: string;

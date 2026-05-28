@@ -8,6 +8,8 @@ import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { CreateTeamAssignmentInput } from '@/lib/bindings/CreateTeamAssignmentInput';
 import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
+import * as devApi from '@/api/devTools/devTools';
+import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { useAssignmentProgressListener } from './useAssignmentProgressListener';
 
 interface AssignmentsPanelProps {
@@ -198,6 +200,24 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
   const [savingTemplate, setSavingTemplate] = useState(false);
   const [templateSaved, setTemplateSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Goals hub: optionally link this assignment to a dev goal so its step
+  // transitions advance the goal. Scoped to the dev project bound to this team.
+  const [linkedGoalId, setLinkedGoalId] = useState<string | null>(null);
+  const [goalOptions, setGoalOptions] = useState<DevGoal[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const projects = await devApi.listProjects();
+        const proj = projects.find((p) => p.team_id === teamId);
+        if (!proj) { if (!cancelled) setGoalOptions([]); return; }
+        const goals = await devApi.listGoals(proj.id);
+        if (!cancelled) setGoalOptions(goals);
+      } catch { if (!cancelled) setGoalOptions([]); }
+    })();
+    return () => { cancelled = true; };
+  }, [teamId]);
 
   const personaRequired = strategy === 'manual';
 
@@ -306,7 +326,7 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
         maxParallelSteps: maxParallel,
         source: 'team_ui',
         companionOpId: null,
-        goalId: null,
+        goalId: linkedGoalId,
         steps: steps.map((s) => ({
           title: s.title.trim(),
           description: s.description.trim() ? s.description.trim() : null,
@@ -347,6 +367,22 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
           {decomposing ? a.auto_decomposing : a.auto_decompose}
         </button>
       </div>
+
+      {goalOptions.length > 0 && (
+        <div className="flex items-center gap-2 pt-1">
+          <label className="typo-caption font-medium text-foreground/70">{a.link_goal_label}</label>
+          <select
+            value={linkedGoalId ?? ''}
+            onChange={(e) => setLinkedGoalId(e.target.value || null)}
+            className="flex-1 px-2 py-1 rounded-input bg-secondary/50 border border-primary/15 typo-caption text-foreground focus:outline-none focus:border-orange-500/40"
+          >
+            <option value="">{a.link_goal_none}</option>
+            {goalOptions.map((g) => (
+              <option key={g.id} value={g.id}>{g.title}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="flex items-center gap-2 pt-1">
         <label className="typo-caption font-medium text-foreground/70">{a.strategy_label}</label>
