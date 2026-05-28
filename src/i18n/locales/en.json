@@ -11854,6 +11854,15 @@
       "scan_history": "Scan History ("
     },
     "dev_lifecycle": {
+      "goal_new_title": "New goal",
+      "goal_edit_title": "Edit goal",
+      "goal_field_title": "Title",
+      "goal_field_title_placeholder": "What outcome are you driving toward?",
+      "goal_field_description": "Description",
+      "goal_field_description_placeholder": "Optional context, scope, or what success looks like…",
+      "goal_field_status": "Status",
+      "goal_field_target_date": "Target date",
+      "goal_delete_confirm": "Delete this goal?",
       "start_a_competition": "Start a Competition",
       "start_a_competition_desc": "Spawn 2–4 competitors with different strategies to tackle the same task. The winner's approach gets promoted.",
       "task_title": "Task title",

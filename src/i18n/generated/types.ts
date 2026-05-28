@@ -11860,6 +11860,15 @@ export type Translations = {
       scan_history: string;
     };
     dev_lifecycle: {
+      goal_new_title: string;
+      goal_edit_title: string;
+      goal_field_title: string;
+      goal_field_title_placeholder: string;
+      goal_field_description: string;
+      goal_field_description_placeholder: string;
+      goal_field_status: string;
+      goal_field_target_date: string;
+      goal_delete_confirm: string;
       start_a_competition: string;
       start_a_competition_desc: string;
       task_title: string;
