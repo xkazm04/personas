@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-cert-6",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": true,
+  "goal": "Add an account-code classifier to the ledger — a brand-new pure-function module that does NOT exist yet (verified: no src/features/ledger/lib/account-classifier.ts in master). As the Solution Architect, scope a focused TEAM HANDOFF for the Engineer (Dev Clone) to IMPLEMENT this work end-to-end. The Engineer MUST actually create three source files on master (not just plan, not just ADR): (1) src/features/ledger/lib/account-classifier.ts exporting classifyAccount(code: string) — returns {category: 'asset'|'liability'|'equity'|'income'|'expense', normalBalance: 'debit'|'credit', code: string} based on standard 4-digit chart-of-accounts conventions: 1xxx=asset (normalBalance debit), 2xxx=liability (credit), 3xxx=equity (credit), 4xxx=income (credit), 5xxx-9xxx=expense (debit). Reject non-string + empty + non-numeric + out-of-range (must be 4 digits, 1000-9999) via RangeError. Pure, no I/O. (2) src/features/ledger/lib/account-classifier.test.ts covering: each category boundary (1000, 1999, 2000, 2999, 3000, 3999, 4000, 4999, 5000, 9999), invalid codes (empty, 'abc', '0', '999', '10000', non-string), all five categories return correct normalBalance, code field round-trips unchanged. (3) src/features/ledger/index.ts barrel updated to export classifyAccount. **STRICT SCOPE BOUNDARY** (same as cert-5 which shipped cleanly): do NOT bundle any other work into this release — no Phase X showcase, no dashboard changes, no unrelated refactors, no in-flight feature consolidation. The deliverable IS the account-classifier module ONLY. The Release Manager MUST verify the repo.patch contains ONLY the three named source files + the conventional release artifacts (CHANGELOG entry, version bump, release notes). If the diff contains anything else, that's scope creep — escalate via manual_review, do not ship.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "Third + FINAL cert-window run for ai-bookkeeper. A real new account-classifier.ts pure function with category-boundary tests + invalid-input tests + barrel export, suite green INCLUDING lint, merged to master by Release Manager. Strict-scope discipline (proven on cert-5): repo.patch contains EXACTLY the three named source files + release artifacts. If PRODUCTION → cert window streak 3/3 → SDLC2 ai-bookkeeper CERTIFIED as production-quality for weeks unattended. This is the existential closing run for the multi-day workstream."
+}
