@@ -27,7 +27,11 @@
   "executions": 8,
   "completed": 7,
   "failed": 1,
-  "cascade_stalled": true,
+  "failed_not_rescued": 0,
+  "rescued_failures": [
+    "dc608a70-6970-42c8-9939-88db3999d8fa"
+  ],
+  "cascade_stalled": false,
   "value_delivered": 7,
   "personasExecuted": 6,
   "memberCount": 6,

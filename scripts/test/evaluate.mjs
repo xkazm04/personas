@@ -254,8 +254,29 @@ function main() {
   // FAILED, did not close its goal — it cannot exceed NOT-READY no matter how
   // good the work that DID run (rubric §0/§2 goal-closure). Run-2 finding: a
   // single failed execution (engine panic) stalled the success-gated chain.
+  //
+  // A failed exec WITH a successful retry = the team RECOVERED (P3 healing
+  // mechanism working), NOT a stall. Build a set of failed exec_ids that
+  // were rescued: those that have a follow-on exec with
+  // retry_of_execution_id pointing back AND status='completed'. Cascade-
+  // stall cap respects rescue — rewarding autonomy that visibly recovered
+  // from transients. Caught after cert-3 #3 (engine retry-chain fix
+  // dfd5af06d): cascade reached 6/6 with all chain triggers firing, but
+  // raw `failedExecs > 0` capped NOT-READY because Dev Clone's first
+  // failed exec wasn't credited as rescued by its successful retry=1.
+  const rescuedExecIds = new Set(
+    executions
+      .filter((e) => e.status === 'completed' && e.retry_of_execution_id)
+      .map((e) => e.retry_of_execution_id),
+  );
+  const failedExecsNotRescued = executions.filter(
+    (e) => e.status === 'failed' && !rescuedExecIds.has(e.id),
+  ).length;
+  const rescuedFailures = executions
+    .filter((e) => e.status === 'failed' && rescuedExecIds.has(e.id))
+    .map((e) => e.id);
   const failedExecs = total - completed;
-  const cascadeStalled = personasExecuted < memberCount || failedExecs > 0;
+  const cascadeStalled = personasExecuted < memberCount || failedExecsNotRescued > 0;
   const rank = { BROKEN: 0, 'NOT-READY': 1, PROMISING: 2, PRODUCTION: 3 };
   const cap = (v, max) => (rank[v] > rank[max] ? max : v);
   let verdict = judge
@@ -322,6 +343,8 @@ function main() {
       executions: total,
       completed,
       failed: failedExecs,
+      failed_not_rescued: failedExecsNotRescued,
+      rescued_failures: rescuedFailures,
       cascade_stalled: cascadeStalled,
       value_delivered: valueDelivered,
       personasExecuted,

@@ -36,6 +36,14 @@ Any execution in a code-track run that completed with `business_outcome=precondi
 - **Why a cap, not a hard fail:** a self-veto is the team behaving *correctly* under its own rules — that's worth rewarding above NOT-READY. But a green release-bless is what production-readiness means; an honest team-internal hold is `PROMISING`, not `PRODUCTION`.
 - **Effect:** a self-vetoed cert run cannot count toward the 3-consecutive PRODUCTION streak — by definition, since it caps at PROMISING.
 
+### §1.A.3 Rescue-aware cascade-stall cap
+
+The cascade-stall cap (`personasExecuted < memberCount || failedExecsNotRescued > 0`) treats a failed execution **with a successful retry** as the team RECOVERED — not as a stall. A failed exec rescued by P3 healing retry (engine: `spawn_delayed_retry`; detected via `retry_of_execution_id` linkage from a `status=completed` successor) is a positive autonomy signal: the team observed the transient, retried, and continued.
+
+- **A failure WITHOUT a successful retry still caps NOT-READY** — that's a true stall.
+- **A failure WITH a successful retry is credited** (surfaced in scorecard `facts.rescued_failures: [exec_id, ...]`) and does NOT trigger the cap.
+- **Why:** without this credit, the engine's own retry mechanism punishes the team for the very thing it was designed to do (recover from transients). Cert-3 #3 (run-2026-05-28T21-56-02) reached 6/6 cascade with every chain trigger firing including the post-retry one, but raw `failedExecs > 0` would have capped NOT-READY — masking that the team genuinely recovered.
+
 Scores are 0–100 per dimension. **Round ties down.** Every score carries a one-line *evidence pointer* (execution id / file path / diff hunk / review id) — a score with no pointer is invalid and scored 0.
 
 ---

@@ -25,7 +25,8 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
     .prepare(
       `SELECT id, persona_id, status, business_outcome, model_used, input_tokens, output_tokens,
               cost_usd, duration_ms, error_message, started_at, completed_at, created_at,
-              trigger_id, use_case_id, output_data, tool_steps, log_file_path
+              trigger_id, use_case_id, output_data, tool_steps, log_file_path,
+              retry_of_execution_id, retry_count
        FROM persona_executions
        WHERE persona_id IN (${ph}) AND created_at >= ?
        ORDER BY created_at ASC`,
