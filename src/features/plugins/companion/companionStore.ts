@@ -329,7 +329,7 @@ interface CompanionStore {
    * is a registry-defined sequence of steps (see `guidance/walkthroughs.ts`);
    * Athena triggers one by topic (`startGuidance`) and the runner
    * (`guidance/useGuidanceRunner`) walks the steps, writing the per-step
-   * highlight + orb target that the glow overlay (`orb/AthenaGuideGlow`) and the
+   * highlight + orb target that the glow overlay (`orb/TrackedGlowRing`) and the
    * orb (`orb/AthenaOrb`) read.
    *
    *  - `activeWalkthrough` — topic id of the running walkthrough, or null.

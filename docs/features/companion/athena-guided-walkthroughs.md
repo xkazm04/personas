@@ -13,7 +13,7 @@ A guided walkthrough composes two primitives that any part of the app can reuse:
 
 1. **Orb choreography** — the floating orb (`AthenaOrb`) is normally moved only by user drag. During a walkthrough the runner writes an ephemeral `orbGuideTarget` (viewport-px top-left) to `companionStore`, and the orb glides there with a framer-motion spring (a hard jump under `prefers-reduced-motion`). User gestures are ignored while a walkthrough is active so the glide isn't fought.
 
-2. **Element glow** — `AthenaGuideGlow` rings any element matching `[data-testid="${guidanceHighlightTestId}"]` with a non-dimming, pulsing accent ring (the `athena-guide-glow` keyframe over `--color-primary`). Unlike the onboarding `TourSpotlight` (which dims the whole screen with an SVG cutout), this leaves the rest of the UI fully visible and clickable — it reads like Athena *pointing* at something, not a modal trapping the UI. Both share the element-tracking core (`useTrackedElementRect`): rect + `MutationObserver` + scroll/resize re-measure + a missing-target retry window.
+2. **Element glow** — `TrackedGlowRing` rings any element matching `[data-testid="${guidanceHighlightTestId}"]` with a non-dimming highlight: a soft breathing halo framed by four crisp corner brackets that "lock on" to the target (the `athena-ring` styles over `--color-primary`, tokenized via `color-mix`). Unlike the onboarding `TourSpotlight` (which dims the whole screen with an SVG cutout), this leaves the rest of the UI fully visible and clickable — it reads like Athena *pointing* at something, not a modal trapping the UI. Both share the element-tracking core (`useTrackedElementRect`): rect + `MutationObserver` + scroll/resize re-measure + a missing-target retry window. `TrackedGlowRing` is the **single** highlight primitive — the proactive "look here" flash is the same component with `source="flash"` (a different store slot + a brighter, self-clearing CSS treatment).
 
 A narration **caption** (`GuideCaption`) rides beside the orb with the step text, a step counter, and Pause / Skip / Stop controls.
 
@@ -36,8 +36,9 @@ companionStore (ephemeral, session-scoped guidance state)
         │     past last step → stopGuidance() (clears highlight + orb target; orb docks)
         │
         └── AthenaGuideLayer               orb/AthenaGuideLayer.tsx   (portal to <body>, z-60, mounted in App.tsx)
-              ├── <AthenaGuideGlow/>       non-dimming ring (renders only when guidanceHighlightTestId set)
-              └── <GuideCaption/>          narration + Pause/Skip/Stop (renders only when a walkthrough is active)
+              ├── <TrackedGlowRing source="guide"/>  non-dimming ring (renders only when guidanceHighlightTestId set)
+              ├── <TrackedGlowRing source="flash"/>  proactive look-here ring (renders only when flashHighlightTestId set)
+              └── <GuideCaption/>          narration + Back/Pause/Skip/Stop (renders only when a walkthrough is active)
 
 AthenaOrb (orb/AthenaOrb.tsx) reads orbGuideTarget and glides; renders in AthenaOrbLayer (z-50, only while state === 'minimized').
 ```
@@ -130,7 +131,7 @@ The auto-advance timer is unchanged for ordinary steps, so the hands-off auto-pl
 Not every highlight needs a whole walkthrough. When Athena *navigates* (`open_route`) or *composes a surface* (`compose_cockpit` / `compose_dashboard`), the destination's primary container pulses for a couple of seconds so the user's eye lands on what she just brought up — no orb, no caption, fire-and-forget. This is the lightweight sibling of the walkthrough glow:
 
 - `companionStore.flashHighlight(testId, ms?)` sets `flashHighlightTestId` and schedules an auto-clear (a newer flash cancels the prior one's pending clear). It **skips while a walkthrough is active** so it never fights the guidance ring, and starting a walkthrough clears any pending flash.
-- `AthenaFlashGlow` (in `AthenaGuideLayer`) renders the ring from `flashHighlightTestId`, reusing `useTrackedElementRect` + the `athena-guide-glow` keyframe. Like the guide glow it's `pointer-events-none` and static under reduced motion.
+- `TrackedGlowRing source="flash"` (in `AthenaGuideLayer`) renders the ring from `flashHighlightTestId` — the same primitive as the walkthrough ring, with a brighter, self-clearing `.athena-ring--flash` treatment. `pointer-events-none` and static under reduced motion.
 - Wiring lives in `CompanionPanel`: the `companion://navigate` handler flashes `ROUTE_FLASH_ANCHORS[route]` (only routes with a stable always-present container — `overview` → `overview-page`, `credentials` → `credential-manager`, `settings` → `settings-page`); the compose-cockpit/dashboard handlers flash `cockpit-panel` after switching to Home → Cockpit. No new op or backend change — it rides existing events.
 
 ---
@@ -162,7 +163,7 @@ Bridge methods (`window.__TEST__`): `startGuidedWalkthrough(topic)`, `guidanceSt
 | Step types | `src/features/plugins/companion/guidance/types.ts` |
 | Walkthrough registry | `src/features/plugins/companion/guidance/walkthroughs.ts` |
 | Runner | `src/features/plugins/companion/guidance/useGuidanceRunner.ts` |
-| Glow overlay | `src/features/plugins/companion/orb/AthenaGuideGlow.tsx` |
+| Glow ring (guide + flash) | `src/features/plugins/companion/orb/TrackedGlowRing.tsx` |
 | Caption + controls | `src/features/plugins/companion/orb/GuideCaption.tsx` |
 | Layer host | `src/features/plugins/companion/orb/AthenaGuideLayer.tsx` |
 | Orb glide | `src/features/plugins/companion/orb/AthenaOrb.tsx` |
