@@ -42,6 +42,8 @@ use crate::db::DbPool;
 use crate::error::AppError;
 use crate::AppState;
 
+use super::director_brain::{brain_enabled, read_brain_history, write_brain_note};
+
 // ---------------------------------------------------------------------------
 // Locked constants
 // ---------------------------------------------------------------------------
@@ -93,6 +95,16 @@ Score guide: 5 = excellent, delivering value, nothing to improve; 4 = good, mino
 polish possible; 3 = works but with real gaps; 2 = frequently failing or low
 value; 1 = barely functional; 0 = broken or useless.
 
+Next, if anything is genuinely working well, output between 0 and 3 wins —
+short reinforcements of what's earning value. Wins are NOT noise; only emit
+them when there's concrete evidence (e.g., a recent run delivered value, a
+prior coaching note has been resolved, an expensive failure mode has stopped):
+
+DIRECTOR_WIN: {"category":"prompt|health|triggers|credentials|memory|usefulness","note":"<=160 chars: what's working and the evidence"}
+
+Coaching needs a different channel than reinforcement: emit wins for strengths,
+verdicts for things to change. Don't restate a verdict as a win.
+
 Then produce between 0 and 4 coaching verdicts. A verdict is prose. For each,
 output a single JSON object on its own line prefixed with the literal marker
 `DIRECTOR_VERDICT: ` so the app can parse it:
@@ -100,9 +112,9 @@ output a single JSON object on its own line prefixed with the literal marker
 DIRECTOR_VERDICT: {"severity":"info|warning|error","category":"prompt|health|triggers|credentials|memory|usefulness","title":"<=60 chars imperative phrase","description":"1-3 sentences explaining the observation and why it matters","rationale":"concrete evidence from the context above","suggested_actions":["short prose suggestion","..."]}
 
 Rules:
-- The DIRECTOR_SCORE line is MANDATORY. Coaching verdicts are optional: if the
-  persona is healthy AND you see no concrete way to improve its usefulness, emit
-  the score line and zero verdicts.
+- The DIRECTOR_SCORE line is MANDATORY. Wins and coaching verdicts are both
+  OPTIONAL: a healthy persona may yield the score line + zero wins + zero
+  verdicts. Don't fabricate either to fill space.
 - Prefer observations grounded in specific evidence over generic advice.
 - Do NOT suggest prompt rewrites verbatim — describe the change shape and
   let the user author the actual text.
@@ -319,9 +331,69 @@ fn parse_score(output: &str) -> Option<(i64, String)> {
     None
 }
 
-/// Render the Director's assessment (overall score + summary + coaching
+/// The literal prefix for each optional "what's working" line the rubric may
+/// emit (v2: wins channel alongside coaching verdicts).
+const WIN_MARKER: &str = "DIRECTOR_WIN:";
+
+/// Max wins accepted from a single run. The rubric asks for 0–3; this is a
+/// hard cap against runaway emissions, mirroring `MAX_VERDICTS_PER_RUN`.
+const MAX_WINS_PER_RUN: usize = 5;
+
+/// A reinforcement note from the Director — what's working and why. Internal
+/// to this module (rendered into `director_review_md`; not shipped as a
+/// separate row, so no ts-rs export needed).
+#[derive(Debug, Clone)]
+pub(super) struct DirectorWin {
+    pub category: DirectorCategory,
+    pub note: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawWin {
+    category: DirectorCategory,
+    #[serde(default)]
+    note: String,
+}
+
+/// Parse every `DIRECTOR_WIN: {json}` line. Mirrors `parse_verdicts`: malformed
+/// lines are skipped (logged), good lines are accepted. Capped at
+/// `MAX_WINS_PER_RUN` to keep a runaway model from drowning the review.
+pub(super) fn parse_wins(output: &str) -> Vec<DirectorWin> {
+    let mut out = Vec::new();
+    for line in output.lines() {
+        let trimmed = line.trim();
+        let Some(idx) = trimmed.find(WIN_MARKER) else {
+            continue;
+        };
+        let json_part = trimmed[idx + WIN_MARKER.len()..].trim();
+        if json_part.is_empty() {
+            continue;
+        }
+        match serde_json::from_str::<RawWin>(json_part) {
+            Ok(raw) if !raw.note.trim().is_empty() => out.push(DirectorWin {
+                category: raw.category,
+                note: raw.note,
+            }),
+            Ok(_) => {} // empty note — silently drop
+            Err(e) => {
+                tracing::warn!(error = %e, line = %json_part, "Director: skipping malformed win line");
+            }
+        }
+        if out.len() >= MAX_WINS_PER_RUN {
+            break;
+        }
+    }
+    out
+}
+
+/// Render the Director's assessment (overall score + summary + wins + coaching
 /// verdicts) as markdown for the execution's "Director" tab.
-fn render_review_md(score: i64, summary: &str, verdicts: &[DirectorVerdict]) -> String {
+fn render_review_md(
+    score: i64,
+    summary: &str,
+    wins: &[DirectorWin],
+    verdicts: &[DirectorVerdict],
+) -> String {
     let s = score.clamp(0, 5) as usize;
     let stars: String = "★".repeat(s) + &"☆".repeat(5 - s);
     let mut md = format!("## Director review — {stars} ({score}/5)\n\n");
@@ -329,12 +401,24 @@ fn render_review_md(score: i64, summary: &str, verdicts: &[DirectorVerdict]) -> 
         md.push_str(summary);
         md.push_str("\n\n");
     }
+    if !wins.is_empty() {
+        md.push_str("### What's working\n\n");
+        for w in wins {
+            md.push_str(&format!("- _({})_ {}\n", w.category.as_str(), w.note));
+        }
+        md.push('\n');
+    }
     if verdicts.is_empty() {
-        md.push_str("_No coaching notes — the persona looks healthy._\n");
+        if wins.is_empty() {
+            md.push_str("_No coaching notes — the persona looks healthy._\n");
+        } else {
+            md.push_str("_No coaching needed beyond the wins above._\n");
+        }
     } else {
+        md.push_str("### Coaching\n\n");
         for v in verdicts {
             md.push_str(&format!(
-                "### {} _({} · {})_\n\n",
+                "#### {} _({} · {})_\n\n",
                 v.title,
                 v.severity.as_str(),
                 v.category.as_str()
@@ -537,15 +621,19 @@ async fn evaluate_with_llm(
 
     let mut verdicts = parse_verdicts(&output, &ctx.persona.id);
     verdicts.truncate(MAX_VERDICTS_PER_RUN);
+    // v2: also parse the optional "wins" channel — reinforcements alongside
+    // coaching verdicts. Cap is enforced by `parse_wins`.
+    let wins = parse_wins(&output);
 
     // Overall 0-5 score + rendered markdown → written onto the reviewed (target)
     // execution so the activity Verdict column + Director tab can read it.
     // Coaching verdicts continue to route to manual_reviews (the caller does
-    // that). Only write when a score line was actually emitted.
+    // that). Wins are reinforcement-only — they live in the rendered markdown,
+    // not in the review queue. Only write when a score line was actually emitted.
     if let (Some(exec_id), Some((score, summary))) =
         (ctx.latest_execution_id.as_deref(), parse_score(&output))
     {
-        let md = render_review_md(score, &summary, &verdicts);
+        let md = render_review_md(score, &summary, &wins, &verdicts);
         if let Err(e) = executions::set_director_review(&state.db, exec_id, score, &md) {
             tracing::warn!(error = %e, execution = %exec_id, "Director: failed to persist review score");
         }
@@ -558,70 +646,9 @@ async fn evaluate_with_llm(
     Ok(verdicts)
 }
 
-// ---------------------------------------------------------------------------
-// Brain long-term memory (gated on `director.brain_enabled` + a configured vault)
-// ---------------------------------------------------------------------------
-
-/// Vault-relative folder for a persona's Director notes, e.g. `Director/My-Bot`.
-fn director_vault_folder(persona_name: &str) -> String {
-    let slug: String = persona_name
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '-' })
-        .collect();
-    format!("Director/{}", slug.trim_matches('-'))
-}
-
-/// True when the Director may use the Brain vault: the setting is on AND a vault
-/// is configured.
-fn brain_enabled(pool: &DbPool) -> bool {
-    let on = matches!(
-        crate::db::repos::core::settings::get(pool, crate::db::settings_keys::DIRECTOR_BRAIN_ENABLED),
-        Ok(Some(v)) if v == "true"
-    );
-    on && crate::commands::obsidian_brain::mirror_vault_root(pool).is_some()
-}
-
-/// Read up to the 3 most recent Director notes for this persona from the vault.
-/// Plain `std::fs` (no embeddings); best-effort. Returns concatenated markdown.
-fn read_brain_history(pool: &DbPool, persona_name: &str) -> Option<String> {
-    let cfg = crate::commands::obsidian_brain::mirror_vault_root(pool)?;
-    let dir = std::path::Path::new(&cfg.vault_path).join(director_vault_folder(persona_name));
-    let mut files: Vec<std::path::PathBuf> = std::fs::read_dir(&dir)
-        .ok()?
-        .filter_map(|e| e.ok().map(|e| e.path()))
-        .filter(|p| p.extension().and_then(|s| s.to_str()) == Some("md"))
-        .collect();
-    files.sort();
-    let recent: Vec<String> = files
-        .iter()
-        .rev()
-        .take(3)
-        .filter_map(|p| std::fs::read_to_string(p).ok())
-        .collect();
-    (!recent.is_empty()).then(|| recent.join("\n\n---\n\n"))
-}
-
-/// Write the Director's review note into the vault as durable memory (best-effort).
-fn write_brain_note(pool: &DbPool, persona_id: &str, persona_name: &str, review_md: &str) {
-    let Some(cfg) = crate::commands::obsidian_brain::mirror_vault_root(pool) else {
-        return;
-    };
-    let rel = format!(
-        "{}/{}.md",
-        director_vault_folder(persona_name),
-        chrono::Utc::now().format("%Y-%m-%d-%H%M%S")
-    );
-    if let Err(e) = crate::commands::obsidian_brain::mirror_write_note(
-        pool,
-        &cfg.vault_path,
-        &rel,
-        "director_verdict",
-        persona_id,
-        review_md,
-    ) {
-        tracing::warn!(error = %e, persona = %persona_id, "Director: failed to write Brain note");
-    }
-}
+// Brain long-term-memory helpers live in `super::director_brain` since v2 —
+// `brain_enabled`, `read_brain_history`, `write_brain_note` are imported at the
+// top of this file alongside the evaluator's other dependencies.
 
 /// Poll an execution row until it reaches a terminal state or the timeout
 /// elapses. Returns the final row (terminal if we got there, last-seen
@@ -1163,10 +1190,37 @@ DIRECTOR_VERDICT: {\"severity\":\"error\",\"category\":\"health\",\"title\":\"Re
 
     #[test]
     fn render_review_md_healthy_has_stars_and_no_notes() {
-        let md = render_review_md(5, "All good.", &[]);
+        let md = render_review_md(5, "All good.", &[], &[]);
         assert!(md.contains("★★★★★"));
         assert!(md.contains("(5/5)"));
         assert!(md.contains("No coaching notes"));
+    }
+
+    #[test]
+    fn parse_wins_extracts_valid_lines_and_skips_malformed() {
+        let out = "preamble\n\
+DIRECTOR_WIN: {\"category\":\"usefulness\",\"note\":\"Value-delivered rate climbed from 40% to 75% this week.\"}\n\
+DIRECTOR_WIN: {not json}\n\
+DIRECTOR_WIN: {\"category\":\"prompt\",\"note\":\"\"}\n\
+DIRECTOR_WIN: {\"category\":\"health\",\"note\":\"Open healing issues went to zero.\"}\n";
+        let wins = parse_wins(out);
+        assert_eq!(wins.len(), 2, "malformed + empty-note skipped, two kept");
+        assert_eq!(wins[0].category, DirectorCategory::Usefulness);
+        assert!(wins[0].note.starts_with("Value-delivered rate"));
+        assert_eq!(wins[1].category, DirectorCategory::Health);
+        assert!(parse_wins("no win markers here at all").is_empty());
+    }
+
+    #[test]
+    fn render_review_md_with_wins_renders_strengths_section() {
+        let wins = vec![DirectorWin {
+            category: DirectorCategory::Usefulness,
+            note: "Run delivered actionable summary on first try.".to_string(),
+        }];
+        let md = render_review_md(4, "Solid run.", &wins, &[]);
+        assert!(md.contains("What's working"));
+        assert!(md.contains("actionable summary"));
+        assert!(md.contains("No coaching needed beyond the wins"));
     }
 
     #[test]
