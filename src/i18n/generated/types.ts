@@ -3057,6 +3057,8 @@ export type Translations = {
       };
       discord_poll_inbound_label: string;
       discord_poll_inbound_help: string;
+      slack_poll_inbound_label: string;
+      slack_poll_inbound_help: string;
     };
   };
   director: {
