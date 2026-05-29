@@ -397,6 +397,7 @@ export type CommandName =
   | "dev_tools_list_goal_dependencies"
   | "dev_tools_list_goal_dependencies_for_project"
   | "dev_tools_list_goal_items"
+  | "dev_tools_list_goal_items_for_project"
   | "dev_tools_list_goal_signals"
   | "dev_tools_list_goals"
   | "dev_tools_list_health_snapshots"

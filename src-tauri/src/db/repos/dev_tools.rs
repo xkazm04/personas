@@ -803,6 +803,28 @@ pub fn list_goal_dependencies_for_project(
     )
 }
 
+/// Every checklist item across one project's goals — one query instead of the
+/// per-goal fan-out the Board would otherwise do for ~100 cards. Ordered by
+/// goal then order_index so the frontend can group by `goal_id` in a single pass.
+pub fn list_goal_items_for_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Vec<DevGoalItem>, AppError> {
+    timed_query!("dev_goal_items", "dev_goal_items::list_for_project", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT i.id, i.goal_id, i.title, i.done, i.order_index, i.created_at, i.updated_at
+             FROM dev_goal_items i
+             JOIN dev_goals g ON g.id = i.goal_id
+             WHERE g.project_id = ?1
+             ORDER BY i.goal_id, i.order_index",
+        )?;
+        let rows = stmt.query_map(params![project_id], row_to_goal_item)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// Cross-project health rollup. One pass over all goals + projects — no N+1.
 /// `at_risk` = ongoing goals that are overdue (target_date past) or stalled
 /// (untouched ≥ 7 days, by `updated_at`, and not already overdue).
