@@ -2746,6 +2746,51 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Slack inbound polling — mirror of the Discord tables above. Cursor
+    // state per (persona, channel) keyed by the latest message `ts`, plus a
+    // log of messages we've fanned out to execute_persona so we can dedupe
+    // across restarts and post threaded replies once the run finishes. See
+    // `engine/slack_poller.rs` for the loop that consumes these tables.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "slack_inbound_polling",
+            description: "Create slack_poll_state and slack_inbound_messages",
+            already_applied: |conn| has_table(conn, "slack_poll_state"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS slack_poll_state (
+                        persona_id      TEXT NOT NULL,
+                        channel_id      TEXT NOT NULL,
+                        last_ts         TEXT NOT NULL DEFAULT '',
+                        last_polled_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                        PRIMARY KEY (persona_id, channel_id)
+                    );
+                     CREATE TABLE IF NOT EXISTS slack_inbound_messages (
+                        message_ts          TEXT NOT NULL,
+                        channel_id          TEXT NOT NULL,
+                        persona_id          TEXT NOT NULL,
+                        credential_id       TEXT NOT NULL,
+                        author_id           TEXT NOT NULL DEFAULT '',
+                        thread_ts           TEXT NOT NULL DEFAULT '',
+                        execution_id        TEXT,
+                        replied_message_ts  TEXT,
+                        received_at         TEXT NOT NULL DEFAULT (datetime('now')),
+                        replied_at          TEXT,
+                        error               TEXT,
+                        PRIMARY KEY (channel_id, message_ts)
+                    );
+                     CREATE INDEX IF NOT EXISTS idx_slack_inbound_pending
+                         ON slack_inbound_messages(persona_id, channel_id, replied_message_ts);
+                     CREATE INDEX IF NOT EXISTS idx_slack_inbound_received
+                         ON slack_inbound_messages(received_at DESC);",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     // Widen persona_executions.status CHECK to include 'incomplete' — a
     // valid ExecutionState terminal variant the original constraint
     // omitted. Must run last: the rebuild copies the table via its own
