@@ -12089,6 +12089,12 @@ export type Translations = {
       goal_progress_accept: string;
       goal_detail_checklist: string;
       goal_detail_subgoals: string;
+      goal_detail_dependencies: string;
+      goal_dep_depends_on: string;
+      goal_dep_follows: string;
+      goal_dep_add_depends_on: string;
+      goal_dep_add_follows: string;
+      goal_dep_none: string;
       goal_detail_team_steps: string;
       goal_detail_linked_teams: string;
       goal_unlink_team: string;

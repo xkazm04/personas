@@ -7,7 +7,8 @@ Goals give **high-level direction** to both development and teams, and are the c
 ## Where it lives
 
 - **Top-level sidebar section** — `Goals` (between Overview and Agents), in addition to the legacy Dev Tools › Goals tab (a contextual shortcut). Both render the same surface (`src/features/plugins/dev-tools/sub_goals/`).
-- **L2 sub-nav** — five surfaces: **Board · Map · Timeline · Portfolio · Attention**. Board / Map / Timeline are scoped to the active project (`LifecycleProjectPicker` in the header); **Portfolio** and **Attention** are cross-project.
+- **L2 sub-nav** — four surfaces: **Board · Map · Timeline · Portfolio**. Board / Map / Timeline are scoped to the active project (`LifecycleProjectPicker` in the header); **Portfolio** is cross-project (and now carries the per-project "needs you" drawer — the former standalone Attention tab was folded into it).
+- **Persistence** — the active project is persisted (`systemStore` partialize), so goals re-fetch after a hard refresh.
 
 ## Canonical status model
 
@@ -17,7 +18,7 @@ All status handling funnels through `goalStatus.ts` — a `GoalStatus` type (`op
 
 ### Board + Map (active project)
 - **Board** — a `your turn → agent's turn → done` kanban; lane membership derives from `GOAL_STATUS_META.lane`. Cards have progress nudges, an open-details affordance, and a date that turns red when an ongoing goal is overdue.
-- **Map** — a force-directed graph (`forceLayout.ts`) over parent/child + dependency edges; hovering a node spotlights it + its direct neighbours and dims the rest. Edges/colours come from the canonical model.
+- **Map** — a force-directed graph (`forceLayout.ts`) over parent/child + dependency edges; hovering a node spotlights it + its direct neighbours and dims the rest. Edges are **type-distinct**: parent (violet, solid), `blocks`/depends-on (red, dashed), `follows` (sky, dashed), with a matching legend. Authored from the detail drawer's Dependencies section.
 
 ### Timeline (active project)
 `GoalsTimeline` — ongoing goals on a vertical target-date rail, bucketed **Overdue → This week → This month → Later → No date**, each row showing the relative due date, status, and progress. Opens the goal on click.
@@ -25,10 +26,10 @@ All status handling funnels through `goalStatus.ts` — a `GoalStatus` type (`op
 ### Portfolio (cross-project)
 `GoalsPortfolio` — mission control across every project. Grand-total tiles + a card per project with a canonical-status segmented bar, at-risk / overdue surfacing, and avg progress. Click a project to switch to it and jump to its Board. Backed by the one-pass `dev_tools_portfolio_summary` rollup (no N+1).
 
-### Attention (cross-project)
-`GoalsAttention` — one ranked "needs you" queue over `dev_tools_attention_queue`: **awaiting-review** team steps (resolve inline with skip/abort), **overdue**, **stalled** (untouched ≥ 7 days), and **unstaffed** (no linked team) goals. Each row opens the goal via the active-project + spotlight handoff; a header **Ask Athena to triage** hands the whole queue to the companion.
+### Attention (per-project, inside Portfolio)
+Folded into Portfolio: it fetches the cross-project `dev_tools_attention_queue` and groups items by project, so each project card shows a **"N need attention"** pill (covering awaiting-review / overdue / stalled / unstaffed). Clicking it opens `GoalAttentionDrawer` — a right-edge slide-over (`BaseModal placement="right-drawer"`) scoped to that project, with the same inline **skip / abort** (awaiting-review) + **open goal** actions; resolving refreshes the queue.
 
-Clicking a goal in Board / Map / Timeline / Attention opens the **detail drawer**.
+Clicking a goal in Board / Map / Timeline / the attention drawer opens the **detail drawer**.
 
 ### Authoring
 `+ New goal` (header and empty state) opens `GoalEditorModal` — create/edit/delete with title, description, status, and target date. (Goals can also still be imported from GitHub issues.)
@@ -39,6 +40,7 @@ Clicking a goal in Board / Map / Timeline / Attention opens the **detail drawer*
 - **Hybrid progress nudge** — `dev_tools_resolve_goal_progress` composes the goal's checklist items, sub-goals, and linked team-assignment steps into a *suggested* progress %. When it differs from the stored value, the drawer offers **Accept / edit** — progress is never written silently; a manual override always wins.
 - **Composed checklist** — ad-hoc items (add / toggle / delete), sub-goals, and linked team-assignment steps in one list. A team step in `awaiting_review` gets inline **skip / abort** intervention (via the team-assignment review path).
 - **Linked teams** — the team assignments advancing this goal (title + status) with **unlink**.
+- **Dependencies & follow-ups** — author cross-goal links: **Depends on** (a `blocks` edge — must finish first; backend cycle-checks) and **Follows** (a `follows` edge — sequence). Pick from the project's goals; add/remove via `add_goal_dependency` / `remove_goal_dependency`. These render on the Map.
 - **Activity feed** — recent `dev_goal_signals`, including the `team_*` and `athena_update` signals described below.
 
 ## How progress flows in

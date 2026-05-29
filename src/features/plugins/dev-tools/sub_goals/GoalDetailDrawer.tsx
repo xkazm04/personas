@@ -11,12 +11,13 @@
  * Read paths are drawer-local (ephemeral, refetched on open + after each
  * mutation) rather than in the global store, since this is modal-scoped.
  */
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
   Target, X, Plus, Trash2, Check, Circle, CheckCircle2, AlertCircle,
-  Clock, Users, ListChecks, Activity, Pencil, SkipForward, Ban,
+  Clock, Users, ListChecks, Activity, Pencil, SkipForward, Ban, GitMerge, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
@@ -32,11 +33,17 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
+import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import type { GoalProgressSuggestion } from '@/lib/bindings/GoalProgressSuggestion';
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { isComplete } from './goalStatus';
+
+/** Dependency kinds the drawer authors (free-text on the wire; cycle-checked
+ *  backend-side for 'blocks'). 'blocks' = must finish first; 'follows' = sequence. */
+const DEP_BLOCKS = 'blocks';
+const DEP_FOLLOWS = 'follows';
 
 interface Props {
   isOpen: boolean;
@@ -56,6 +63,7 @@ function stepIsDone(status: string) {
 export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
+  const allGoals = useSystemStore((s) => s.goals);
   const goal = useSystemStore((s) => s.goals.find((g) => g.id === goalId) ?? null);
   const updateGoal = useSystemStore((s) => s.updateGoal);
 
@@ -66,23 +74,26 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   const [steps, setSteps] = useState<TeamAssignmentStep[]>([]);
   const [assignments, setAssignments] = useState<TeamAssignment[]>([]);
   const [signals, setSignals] = useState<DevGoalSignal[]>([]);
+  const [deps, setDeps] = useState<DevGoalDependency[]>([]);
   const [newItem, setNewItem] = useState('');
 
   const refresh = useCallback(async () => {
     if (!goalId) return;
     setLoading(true);
     try {
-      const [prog, its, kids, assignments, sigs] = await Promise.all([
+      const [prog, its, kids, assignments, sigs, dps] = await Promise.all([
         devApi.resolveGoalProgress(goalId).catch(() => null),
         devApi.listGoalItems(goalId),
         devApi.listChildGoals(goalId),
         listTeamAssignmentsForGoal(goalId).catch(() => []),
         devApi.listGoalSignals(goalId),
+        devApi.listGoalDependencies(goalId).catch(() => []),
       ]);
       setProgress(prog);
       setItems(its);
       setSubgoals(kids);
       setSignals(sigs);
+      setDeps(dps);
       setAssignments(assignments);
       const stepLists = await Promise.all(
         assignments.map((a) => listTeamAssignmentSteps(a.id).catch(() => [] as TeamAssignmentStep[])),
@@ -158,6 +169,32 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       toastCatch('Failed to unlink team')(err);
     }
   };
+
+  const addDep = async (dependsOnId: string, type: string) => {
+    if (!goalId || !dependsOnId) return;
+    try {
+      await devApi.addGoalDependency(goalId, dependsOnId, type);
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to add dependency')(err);
+    }
+  };
+  const removeDep = async (id: string) => {
+    try {
+      await devApi.removeGoalDependency(id);
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to remove dependency')(err);
+    }
+  };
+
+  // Outgoing deps split by kind; resolve linked goal titles from the store.
+  const goalById = useMemo(() => new Map(allGoals.map((g) => [g.id, g])), [allGoals]);
+  const blocksDeps = deps.filter((d) => d.dependency_type !== DEP_FOLLOWS);
+  const followsDeps = deps.filter((d) => d.dependency_type === DEP_FOLLOWS);
+  // Candidate goals to link: same project, not self, not already linked.
+  const linkedIds = new Set(deps.map((d) => d.depends_on_id));
+  const candidates = allGoals.filter((g) => g.id !== goalId && !linkedIds.has(g.id));
 
   if (!goal) return null;
   const showNudge = progress && progress.total_count > 0 && progress.suggested !== goal.progress;
@@ -279,6 +316,32 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
         </Section>
       )}
 
+      {/* Dependencies + follow-ups (always shown so the add pickers are reachable) */}
+      <Section icon={GitMerge} label={dl.goal_detail_dependencies}>
+        <div className="space-y-3">
+          <DepGroup
+            label={dl.goal_dep_depends_on}
+            rows={blocksDeps}
+            goalById={goalById}
+            candidates={candidates}
+            addPlaceholder={dl.goal_dep_add_depends_on}
+            emptyLabel={dl.goal_dep_none}
+            onAdd={(id) => addDep(id, DEP_BLOCKS)}
+            onRemove={removeDep}
+          />
+          <DepGroup
+            label={dl.goal_dep_follows}
+            rows={followsDeps}
+            goalById={goalById}
+            candidates={candidates}
+            addPlaceholder={dl.goal_dep_add_follows}
+            emptyLabel={dl.goal_dep_none}
+            onAdd={(id) => addDep(id, DEP_FOLLOWS)}
+            onRemove={removeDep}
+          />
+        </div>
+      </Section>
+
       {/* Linked team-assignment steps + intervention */}
       {steps.length > 0 && (
         <Section icon={Users} label={dl.goal_detail_team_steps}>
@@ -363,6 +426,58 @@ function Section({ icon: Icon, label, children }: { icon: typeof Target; label: 
         <h3 className="typo-caption uppercase tracking-[0.18em] text-foreground">{label}</h3>
       </div>
       {children}
+    </div>
+  );
+}
+
+/** One dependency kind (Depends on / Follows): linked-goal rows + an add picker. */
+function DepGroup({
+  label, rows, goalById, candidates, addPlaceholder, emptyLabel, onAdd, onRemove,
+}: {
+  label: string;
+  rows: DevGoalDependency[];
+  goalById: Map<string, DevGoal>;
+  candidates: DevGoal[];
+  addPlaceholder: string;
+  emptyLabel: string;
+  onAdd: (dependsOnId: string) => void;
+  onRemove: (id: string) => void;
+}) {
+  return (
+    <div>
+      <p className="typo-caption uppercase tracking-[0.16em] text-foreground/70 mb-1">{label}</p>
+      {rows.length > 0 ? (
+        <ul className="space-y-1 mb-1.5">
+          {rows.map((d) => {
+            const linked = goalById.get(d.depends_on_id);
+            return (
+              <li key={d.id} className="group flex items-center gap-2 typo-body">
+                <ArrowRight className="w-3.5 h-3.5 text-foreground/60 shrink-0" />
+                <span className="flex-1 text-foreground truncate">{linked?.title ?? d.depends_on_id}</span>
+                {linked && <GoalStatusBadge status={linked.status} />}
+                <button
+                  type="button"
+                  onClick={() => onRemove(d.id)}
+                  aria-label={`Remove ${linked?.title ?? 'dependency'}`}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground hover:text-red-400"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <p className="typo-caption text-foreground/60 italic mb-1.5">{emptyLabel}</p>
+      )}
+      {candidates.length > 0 && (
+        <ThemedSelect value="" onValueChange={(v) => { if (v) onAdd(v); }}>
+          <option value="">{addPlaceholder}</option>
+          {candidates.map((g) => (
+            <option key={g.id} value={g.id}>{g.title}</option>
+          ))}
+        </ThemedSelect>
+      )}
     </div>
   );
 }

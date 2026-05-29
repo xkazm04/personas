@@ -138,6 +138,14 @@ function GoalMap({
   const isDimmed = (id: string) =>
     hoveredId !== null && id !== hoveredId && !neighbors.get(hoveredId)?.has(id);
 
+  // Edge styling by relationship: parent (violet, solid), follows (sky, dashed),
+  // blocks/other (red, dashed). Keeps the graph readable as a real dependency map.
+  const edgeStyle = (type: string): { stroke: string; width: number; dash?: string; label: string } => {
+    if (type === 'parent') return { stroke: 'rgba(139, 92, 246, 0.4)', width: 2, label: dl.legend_parent };
+    if (type === 'follows') return { stroke: 'rgba(56, 189, 248, 0.5)', width: 1.5, dash: '4 3', label: dl.goal_dep_follows };
+    return { stroke: 'rgba(248, 113, 113, 0.45)', width: 1.5, dash: '4 3', label: dl.goal_dep_depends_on };
+  };
+
   const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 2)), []);
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.2, 0.4)), []);
   const handleReset = useCallback(() => setZoom(1), []);
@@ -186,18 +194,20 @@ function GoalMap({
             const s = posMap.get(edge.source);
             const tp = posMap.get(edge.target);
             if (!s || !tp) return null;
-            const isParent = edge.type === 'parent';
+            const style = edgeStyle(edge.type);
             const edgeActive = hoveredId === null || edge.source === hoveredId || edge.target === hoveredId;
             return (
               <line
                 key={`edge-${i}`}
                 x1={s.x} y1={s.y} x2={tp.x} y2={tp.y}
-                stroke={isParent ? 'rgba(139, 92, 246, 0.3)' : 'rgba(245, 158, 11, 0.25)'}
-                strokeWidth={isParent ? 2 : 1.5}
-                strokeDasharray={isParent ? undefined : '4 3'}
+                stroke={style.stroke}
+                strokeWidth={style.width}
+                strokeDasharray={style.dash}
                 markerEnd="url(#arrowhead)"
-                opacity={edgeActive ? 1 : 0.12}
-              />
+                opacity={edgeActive ? 1 : 0.1}
+              >
+                {edgeActive && hoveredId !== null && <title>{style.label}</title>}
+              </line>
             );
           })}
 
@@ -269,17 +279,24 @@ function GoalMap({
         </svg>
       </div>
 
-      {/* Legend */}
-      <div className="flex items-center gap-4 typo-caption text-foreground">
+      {/* Legend — node status (fill) + edge relationship (line colour). */}
+      <div className="flex items-center gap-4 flex-wrap typo-caption text-foreground">
         {GOAL_STATUSES.map((status) => (
           <div key={status} className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded-full" style={{ backgroundColor: goalStatusMeta(status).map.fill }} />
             {goalStatusLabel(dl, status)}
           </div>
         ))}
-        <span className="mx-2">|</span>
-        <span>{t.plugins.dev_tools.legend_parent}</span>
-        <span>{t.plugins.dev_tools.legend_dependency}</span>
+        <span className="text-foreground/40">|</span>
+        {(['parent', 'blocks', 'follows'] as const).map((type) => {
+          const st = edgeStyle(type);
+          return (
+            <div key={type} className="flex items-center gap-1.5">
+              <span className="w-4 h-0 border-t-2" style={{ borderColor: st.stroke, borderStyle: st.dash ? 'dashed' : 'solid' }} />
+              {st.label}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
