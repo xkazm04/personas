@@ -10,7 +10,7 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import { gatherBundle } from './gather.mjs';
 
-const arg = (n, f = null) => { const i = process.argv.indexOf(n); return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f; };
+import { arg } from './lib/cli.mjs';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log(`[${new Date().toLocaleTimeString()}]`, ...a);
 const SEEDS_DIR = join('docs', 'test', 'seeds');

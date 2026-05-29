@@ -51,10 +51,7 @@ function runRepoChecks(repoRoot, cmds, timeoutMs = 240000) {
   return out;
 }
 
-const arg = (n, f = null) => {
-  const i = process.argv.indexOf(n);
-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f;
-};
+import { arg } from './lib/cli.mjs';
 const RUNS = join('docs', 'test', 'runs');
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 

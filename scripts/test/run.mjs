@@ -14,10 +14,7 @@ import { lintTeam } from './health-lint.mjs';
 import { gatherBundle } from './gather.mjs';
 import * as bridge from './bridge.mjs';
 
-const arg = (name, fallback = null) => {
-  const i = process.argv.indexOf(name);
-  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : fallback;
-};
+import { argStrict as arg } from './lib/cli.mjs';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const nowIso = () => new Date().toISOString();
 const log = (...a) => console.log(`[${new Date().toLocaleTimeString()}]`, ...a);

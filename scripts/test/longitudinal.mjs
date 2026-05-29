@@ -15,7 +15,7 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import * as bridge from './bridge.mjs';
 
-const arg = (n, f = null) => { const i = process.argv.indexOf(n); return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : f; };
+import { argStrict as arg } from './lib/cli.mjs';
 const has = (n) => process.argv.includes(n);
 const log = (...a) => console.log(`[${new Date().toLocaleTimeString()}]`, ...a);
 const SEEDS = join('docs', 'test', 'seeds');

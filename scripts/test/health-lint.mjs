@@ -22,10 +22,7 @@ const HANDOFF_TRIGGER_TYPES = new Set(['event_listener', 'chain', 'webhook', 'po
 // Trigger types that let an ENTRY member self-start without a human.
 const SELFSTART_TRIGGER_TYPES = new Set(['schedule', 'event_listener', 'webhook', 'polling']);
 
-function arg(name, fallback = null) {
-  const i = process.argv.indexOf(name);
-  return i >= 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : fallback;
-}
+import { argStrict as arg } from './lib/cli.mjs';
 const HAS = (name) => process.argv.includes(name);
 
 function triggerEvent(config) {

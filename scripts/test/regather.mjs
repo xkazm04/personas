@@ -13,10 +13,7 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import { gatherBundle } from './gather.mjs';
 
-const arg = (n, f = null) => {
-  const i = process.argv.indexOf(n);
-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f;
-};
+import { arg } from './lib/cli.mjs';
 const RUNS = join('docs', 'test', 'runs');
 
 function gitStatusFingerprint(root) {
