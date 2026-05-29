@@ -11530,6 +11530,7 @@ export type Translations = {
       reject: string;
       toolbar_label: string;
       help_capabilities: string;
+      analyze_fleet: string;
       voice_enable: string;
       voice_disable: string;
       voice_controls_label: string;

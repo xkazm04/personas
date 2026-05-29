@@ -2096,6 +2096,11 @@ function Body(props: BodyProps) {
       </div>
       <CompanionToolbar
         onAskCapabilities={askCapabilities}
+        onAnalyzeFleet={() =>
+          void send(
+            'Analyze the fleet — review how the teams are doing against the certification rubric and flag anything off track. Use analyze_fleet.',
+          )
+        }
         onOpenBrain={() =>
           setBrainView({
             open: !brainView.open,
