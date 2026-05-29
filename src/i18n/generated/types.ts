@@ -12119,6 +12119,13 @@ export type Translations = {
       goal_item_add_placeholder: string;
       goal_item_mark_done: string;
       goal_item_mark_undone: string;
+      goal_card_items_more: string;
+      goal_card_add_todos: string;
+      goal_card_todos_done: string;
+      goal_map_here: string;
+      goal_map_next: string;
+      goal_map_next_desc: string;
+      goal_map_drag_hint: string;
       goal_intervene_skip: string;
       goal_intervene_abort: string;
       goal_open_detail: string;
