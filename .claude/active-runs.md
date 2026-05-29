@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### slack-inbound — Slack hackathon Phase 1 (connector ext + inbound poller)
+- Started: 2026-05-29 08:42 (this session)
+- Status: CODE-COMPLETE on branch (6 commits ff831bb79..93306661f), pending live sandbox round-trip + merge. cargo check + cargo test --lib (10 passed) + tsc (0 err) + i18n gate + eslint-staged all green. NOT yet merged to master.
+- Branch: worktree-slack-inbound (from master 388070f37)
+- Worktree: .claude/worktrees/slack-inbound/
+- Paths: NEW src-tauri/src/engine/slack_poller.rs + src-tauri/src/engine/channel_reply.rs (extracted from discord_poller.rs), src-tauri/src/engine/mod.rs (mod decls), src-tauri/src/lib.rs (poller registration only), src-tauri/src/db/migrations/incremental.rs (NEW slack_poll_state + slack_inbound_messages tables), scripts/connectors/builtin/slack.json (+user_token field), src-tauri/src/db/builtin_connectors.rs (regen), src/features/<persona notif-channels editor> (Slack pollInbound/channelId parity), src/i18n/locales/en.json (additive channel keys). Ledger edited in MAIN checkout only (per feedback_active_runs_md_unsafe_in_concurrent_worktrees).
+- Note: Hybrid Slack hackathon scope, Phase 1 of 6. Mirrors discord_poller. ChannelSpecV2Type::Slack + slack.json seed already exist. DISJOINT from all active sessions (director/companion/goals don't touch engine pollers or slack). Atomic commits per task; shared CARGO_TARGET_DIR; cargo check + cargo test --lib only.
+
 ### director-v2 — Director feature suite v2 (home page, wins channel, refactor)
 - Started: 2026-05-28 (this session)
 - Status: started
