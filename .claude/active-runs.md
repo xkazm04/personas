@@ -32,7 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### director-v2 — Director feature suite v2 (home page, wins channel, refactor)
+### fleet-cicd — Fleet-analysis Athena skill + app-native GitHub release + team-engagement spec
+- Started: 2026-05-29 (autonomous, user away ~1h, explicit "work all 6 phases + push" authorization)
+- Status: started
+- Branch: master (additive, green-only atomic commits; user develops on master + wants progress pushed)
+- Paths: `src-tauri/src/engine/platforms/github.rs` (+create_release/patch-bump), `src-tauri/src/commands/tools/github_platform.rs` (+github_create_patch_release), `src-tauri/src/lib.rs` (register), `src-tauri/src/companion/{dispatcher.rs,templates/constitution.md}` + `src-tauri/src/commands/companion/approvals.rs` (analyze_fleet action+executor), `src/features/plugins/companion/**` (side-panel skill button + report card), `docs/tests/athena/{fixtures,scenarios}/analyze-fleet.*`, `docs/plans/team-engagement.md` (3a+3b spec), `docs/features/companion/README.md` (doc sync), `src/lib/bindings/**` (ts-rs regen), `src/api/github*`.
+- Note: Disjoint from the stale 2026-05-28 director-v2/companion-guidance Active entries (>24h, already merged from origin). Will NOT touch the in-flight Leonardo tooling (untracked) or the 23 untracked run-dirs at docs/test/runs/. Live steps (create CICD goal, run scans, live Athena drive, seed brain) prepared as scripts + handed off (require running app). Target repo: xprize-ai-bookkeeper (certified team).
+
+
 - Started: 2026-05-28 (this session)
 - Status: started
 - Branch: worktree-director-v2 (from master 1d11c4f23)
