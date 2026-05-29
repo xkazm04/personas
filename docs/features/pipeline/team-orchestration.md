@@ -20,7 +20,7 @@ A "team" is a set of personas plus the wiring that decides **who runs, when, and
 
 Both modes execute the same primitive — a single `persona_executions` run — and feed the same shared state and the same observability layer. The mode is a property of *how work is initiated*, not of the team object itself.
 
-> **Field-observed (2026-05-29):** of 16 live teams, **all run in mode A** and **none are linked to a `dev_goal`** (`scripts/test/fleet-analyze.mjs` flags `NO-GOAL-LINK`). They deliver value (50–92%) but nothing ties them to a tracked objective. Closing that gap — goal-linking + the Athena fleet analysis + the CICD goal — is the current direction (see [Direction](#direction)).
+> **Field-observed (2026-05-29):** the fleet was consolidated to **7 active teams**, all running in mode A. Each is now **linked to its project's goal** via `dev_projects.team_id` (backfilled by name match), and those goals now reach every member's execution through the team-alignment block (below) — closing the `NO-GOAL-LINK` injection gap. They still show `has-goal/NOT-advancing` (no `team_assignments.goal_id` yet), so the next step is for teams to actually *work* their goals via assignments. The Athena fleet analysis + the CICD goal remain the broader direction (see [Direction](#direction)).
 
 ## The team object
 
@@ -62,8 +62,13 @@ What a member actually sees at execution time is assembled in `engine/runner/mod
 
 - **`shared_instructions`** — the team directive from `home_team_id`, appended to the persona's prompt (~L184-188).
 - **Structured team memory** — a compact top-15 digest of `team_memories` (decisions/constraints, ranked by `importance`) via `team_memory_repo::get_for_injection(pool, team_id, 15)` (~L771-796). `team_memories` (team_id, run_id, member_id, category, importance 1-10) is the shared knowledge store; team members + the orchestrator write to it during/after runs.
+- **Team-alignment "pre-ritual"** *(2026-05-29 — idea 3a, shipped)* — a compact `## Team Alignment` block injected for every member execution (`engine/runner/team_context.rs`, wired at ~L809, right after the team-memory seam). It gives the persona, in the same wrapper for every teammate: **who it is** (its role on the team — its own capabilities are already in `## Active Capabilities`), **who wraps it** (the roster: each teammate + a one-line capability, so it coordinates instead of duplicating a lane), **the team's active goals** (the team's non-done `dev_goals` — see [how goals resolve](#how-a-teams-goals-are-resolved) — flagged `▶` when a `team_assignment` is canonically advancing them), and **the alignment doctrine**: the persona self-decides, *from its own capabilities*, whether/how the work advances a goal — align where it genuinely relates, don't force-fit, record real progress via team memory / goal signal. Relevance is **LLM-driven** (the persona self-filters against the goals), not a per-execution match — cheaper on the hot path and "driven inner from persona design." Hard-bounded (roster ≤8, goals ≤6, lines truncated) per the run-10 prompt-bloat guardrail; skipped on session resume.
 
-**What it does NOT see today** (the cooperation gap, spec'd in [team-engagement.md](../../plans/team-engagement.md)): the teammate roster, the team goal, a product vision, or peer workload. A persona runs near-isolated from its team — it optimizes its own task, not team efficiency. That's idea 3a.
+### How a team's goals are resolved
+
+The block answers "what is my team's mission?" by walking **team → project → goals**, via the canonical durable link **`dev_projects.team_id`** (the column built for "this team owns this project"; set in the project editor or by backfill). Resolution order in `team_context.rs::gather_active_goals`: the executing persona's pinned project (`design_context.dev_project_id`) first, else `dev_projects.team_id = <team>`, else the goals the team is directly advancing (`team_assignments.goal_id`). This is the **same `dev_goals` spine** the Goals UI and team assignments use — so goals authored in either surface now steer runtime team behavior, not just the Goals views. (The per-task "advancing" link `team_assignments.goal_id` stays the granular signal; `dev_projects.team_id` is the durable team-mission link.)
+
+**Still NOT injected** (remaining cooperation gaps, spec'd in [team-engagement.md](../../plans/team-engagement.md)): a product/business vision and live peer workload. Idea 3b (independent product validation of outputs) is also still open.
 
 ## Observability & analysis layer
 
@@ -81,7 +86,7 @@ The pieces above are mostly siloed. The active work threads them together:
 
 1. **Goal-link the teams** — every team should tie to a `dev_goal` so progress is trackable (the `NO-GOAL-LINK` gap). The CICD goal is the first concrete instance.
 2. **Athena fleet analysis** — a manually-triggered skill that gathers the per-team analysis (Director + value rollup + goal progress + fleet-analyze), recalls the team's long-term timeline from graph memory, applies the certification rubric, and proposes improvements. Engine = `fleet-analyze.mjs`; wiring plan in [`docs/plans/fleet-cicd-status.md`](../../plans/fleet-cicd-status.md).
-3. **Cooperation context (3a) + product validation (3b)** — [`docs/plans/team-engagement.md`](../../plans/team-engagement.md).
+3. **Cooperation context (3a) — ✅ shipped 2026-05-29** as the team-alignment block above (roster + capabilities + active goals + self-filter doctrine). Remaining: product/business vision + peer-workload awareness, and **product validation (3b)** — [`docs/plans/team-engagement.md`](../../plans/team-engagement.md).
 
 ## Key files
 
@@ -90,7 +95,8 @@ The pieces above are mostly siloed. The active work threads them together:
 | Team model + relations | `src-tauri/src/db/models/{team.rs,team_memory.rs,team_assignment.rs}` |
 | Mode A — event matching | `src-tauri/src/engine/bus.rs`; `db/models/trigger.rs` |
 | Mode B — orchestrator | `src-tauri/src/engine/team_assignment_orchestrator.rs`, `team_assignment_matching.rs` |
-| Runtime context injection | `src-tauri/src/engine/runner/mod.rs` (~L184, ~L771) |
+| Runtime context injection | `src-tauri/src/engine/runner/mod.rs` (~L184, ~L771, ~L809) |
+| Team-alignment block | `src-tauri/src/engine/runner/team_context.rs` |
 | Shared memory | `src-tauri/src/db/repos/resources/team_memories.rs` |
 | Director / scoring | `src-tauri/src/engine/director.rs`, `director_brain.rs` |
 | Value rollup | `src-tauri/src/db/repos/execution/metrics.rs` |

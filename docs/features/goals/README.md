@@ -51,6 +51,12 @@ Clicking a goal in Board / Map / Timeline / the attention drawer opens the **det
 
 Progress is **hybrid**: signals + step/checklist completion compute a suggestion; the user (or Athena, gated) accepts it.
 
+## How goals reach team executions
+
+Goals are not just a planning view — since 2026-05-29 they **steer runtime team behavior**. Every member of a team executes with a compact `## Team Alignment` block in its prompt (`engine/runner/team_context.rs`) that lists the team's **active goals** alongside the teammate roster, and instructs the persona to judge — from its own capabilities — whether and how its work advances them (align where it relates, don't force-fit). See [team-orchestration.md › Shared state](../pipeline/team-orchestration.md#shared-state-reaching-a-running-persona).
+
+The block resolves a team's goals by walking **team → project → goals** via the canonical durable link **`dev_projects.team_id`** ("this team owns this project"; goals belong to the project). This makes `dev_projects.team_id` the team-mission link and `team_assignments.goal_id` the granular per-task "advancing" link — both pointing at the **same `dev_goals` spine**, so a goal authored anywhere (Goals UI, an assignment's *Advance goal* picker) flows into executions. Resolution order: the persona's pinned project (`design_context.dev_project_id`) → `dev_projects.team_id` → goals the team is directly advancing.
+
 ## Athena integration
 
 - **Reads** — active project goals (id, progress, status, latest signal) are injected into Athena's system prompt, so she's aware of project direction and can reference goals by id.
@@ -65,7 +71,8 @@ Progress is **hybrid**: signals + step/checklist completion compute a suggestion
 | `dev_goal_dependencies` | cross-goal blocking edges (Map) |
 | `dev_goal_items` | lightweight ad-hoc checklist items |
 | `dev_goal_signals` | progress/activity log (dev, team, and athena signals) |
-| `team_assignments.goal_id` | the soft link from a team assignment to the goal it advances |
+| `team_assignments.goal_id` | the soft link from a team assignment to the goal it advances (granular "advancing" signal) |
+| `dev_projects.team_id` | the durable team↔project link — a team owns a project, so the project's goals are the team's mission (drives execution-time goal awareness) |
 
 Key commands — per-goal/project: `dev_tools_{list,create,update,delete,reorder}_goal(s)`, `dev_tools_{list,create,update,delete,reorder}_goal_item(s)`, `dev_tools_list_child_goals`, `dev_tools_resolve_goal_progress`, `set_team_assignment_goal`, `list_team_assignments_for_goal`.
 
