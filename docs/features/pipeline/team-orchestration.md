@@ -20,7 +20,7 @@ A "team" is a set of personas plus the wiring that decides **who runs, when, and
 
 Both modes execute the same primitive — a single `persona_executions` run — and feed the same shared state and the same observability layer. The mode is a property of *how work is initiated*, not of the team object itself.
 
-> **Field-observed (2026-05-29):** the fleet was consolidated to **7 active teams**, all running in mode A. Each is now **linked to its project's goal** via `dev_projects.team_id` (backfilled by name match), and those goals now reach every member's execution through the team-alignment block (below) — closing the `NO-GOAL-LINK` injection gap. They still show `has-goal/NOT-advancing` (no `team_assignments.goal_id` yet), so the next step is for teams to actually *work* their goals via assignments. The Athena fleet analysis + the CICD goal remain the broader direction (see [Direction](#direction)).
+> **Field-observed (2026-05-29):** the fleet was consolidated to **7 active teams**, all running in mode A. Each is now **linked to its project's goal** via `dev_projects.team_id` (backfilled by name match), and those goals now reach every member's execution through the team-alignment block (below) — closing the `NO-GOAL-LINK` injection gap. **Advancement is now wired** (2026-05-29): the `advance_team_goal` command + the goal-drawer *Advance with team* button + a default-OFF autonomous tick turn a goal into a goal-linked assignment, and on team-`done` the orchestrator auto-writes the goal's progress + checks off the worked to-dos (see [Mode B](#mode-b--goal-driven-assignments)). The Athena fleet analysis + the CICD goal remain the broader direction (see [Direction](#direction)).
 
 ## The team object
 
@@ -54,7 +54,9 @@ Layered on top of a team; the user/Athena supplies a **goal** instead of pre-wir
 
 Status machines: assignment `queued → running → awaiting_review | done | failed | aborted`; step `pending → matching → running → awaiting_review | done | skipped | failed`. Tables: `team_assignments`, `team_assignment_steps`, `team_assignment_events`, `team_assignment_templates`. `team_assignments.goal_id` is the soft link to a `dev_goal`.
 
-**Provenance matters:** `source = 'athena'` assignments carry a `companion_op_id` (tie back to a companion operation); `source = 'team_ui'` assignments surface via the checklist/board only.
+**Provenance matters:** `source = 'athena'` assignments carry a `companion_op_id` (tie back to a companion operation); `source = 'team_ui'` assignments surface via the checklist/board only; `source = 'api'` is the programmatic goal-advance initiator below.
+
+**Advancing a goal (2026-05-29):** `engine/goal_advance.rs::advance_goal` — invoked by the `advance_team_goal` command, the goal-drawer *Advance with team* button, and the default-OFF `GoalAdvanceSubscription` tick — creates a **goal-linked** assignment (`goal_id` set, `source = 'api'`) and runs it. **Hybrid step source**: one step per open `dev_goal_item` (title verbatim) if the goal has to-dos, else an LLM decomposition. A one-active-assignment-per-goal guard prevents double-spawn. When the assignment reaches `done`, the orchestrator checks off the worked to-dos (step title ↔ to-do title) and writes the goal's progress via `dev_tools::apply_resolved_goal_progress` (status `open → in-progress → done`; never regresses a manual value) — closing the loop so a team that does the work actually moves its goal. Full detail: [goals/README.md › Advancing a goal](../goals/README.md#advancing-a-goal-teams-work-it).
 
 ## Shared state reaching a running persona
 
@@ -95,6 +97,7 @@ The pieces above are mostly siloed. The active work threads them together:
 | Team model + relations | `src-tauri/src/db/models/{team.rs,team_memory.rs,team_assignment.rs}` |
 | Mode A — event matching | `src-tauri/src/engine/bus.rs`; `db/models/trigger.rs` |
 | Mode B — orchestrator | `src-tauri/src/engine/team_assignment_orchestrator.rs`, `team_assignment_matching.rs` |
+| Goal advancement + close-loop | `src-tauri/src/engine/goal_advance.rs`; `db/repos/dev_tools.rs::apply_resolved_goal_progress`; autonomous tick in `engine/subscription.rs::GoalAdvanceSubscription` |
 | Runtime context injection | `src-tauri/src/engine/runner/mod.rs` (~L184, ~L771, ~L809) |
 | Team-alignment block | `src-tauri/src/engine/runner/team_context.rs` |
 | Shared memory | `src-tauri/src/db/repos/resources/team_memories.rs` |

@@ -57,6 +57,15 @@ Goals are not just a planning view — since 2026-05-29 they **steer runtime tea
 
 The block resolves a team's goals by walking **team → project → goals** via the canonical durable link **`dev_projects.team_id`** ("this team owns this project"; goals belong to the project). This makes `dev_projects.team_id` the team-mission link and `team_assignments.goal_id` the granular per-task "advancing" link — both pointing at the **same `dev_goals` spine**, so a goal authored anywhere (Goals UI, an assignment's *Advance goal* picker) flows into executions. Resolution order: the persona's pinned project (`design_context.dev_project_id`) → `dev_projects.team_id` → goals the team is directly advancing.
 
+## Advancing a goal (teams work it)
+
+Linking a goal to a team makes it *visible* to executions; **advancing** is the team actually working it. An advance turns a goal into a running, goal-linked `team_assignment`:
+
+- **Initiator** — `engine/goal_advance.rs::advance_goal` (command `advance_team_goal`) builds an assignment **with `goal_id` set** and runs it on the orchestrator, behind a one-active-assignment-per-goal guard. **Hybrid step source**: if the goal has open to-dos (`dev_goal_items`), one step per to-do (title verbatim); otherwise the goal is LLM-decomposed.
+- **Triggers** — the **Advance with team** button in the goal detail drawer (shown when the goal's project has an owning team and the goal isn't complete); Athena (team path); and the autonomous tick below.
+- **Progress closes automatically** — when a goal-linked assignment reaches `done`, the orchestrator checks off the to-dos it worked (step title ↔ to-do title) and writes the goal's progress via `apply_resolved_goal_progress`. This is what makes a team that did the work actually *move* the goal — `dev_goal_signals` are observational, and before this progress only moved on a manual accept. Status flips `open → in-progress` the moment the first step runs and `→ done` at 100%; progress never regresses a hand-set value.
+- **Autonomous advancement** — `GoalAdvanceSubscription`, gated by the **default-OFF** `autonomous_goal_advancement` setting, ticks every 5 min and keeps each goal-linked team's active goal moving unattended. Guardrails: one active assignment per goal, a 30-min per-goal cooldown after any assignment (no failure-retry stampede), eligible-persona check, and a per-tick cap. Nothing spends tokens autonomously until you opt in.
+
 ## Athena integration
 
 - **Reads** — active project goals (id, progress, status, latest signal) are injected into Athena's system prompt, so she's aware of project direction and can reference goals by id.

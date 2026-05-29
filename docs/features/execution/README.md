@@ -81,6 +81,7 @@ src-tauri/src/engine/webhook.rs                  (HTTP webhook server on port 94
 src-tauri/src/engine/scheduler.rs + cron.rs      (trigger time computation)
 src-tauri/src/engine/prompt.rs                   (prompt assembly + memory injection)
 src-tauri/src/engine/runner/team_context.rs      (team-alignment block: roster + capabilities + active team goals + self-filter doctrine, injected per execution)
+src-tauri/src/engine/goal_advance.rs             (turn a team's dev_goal into a goal-linked assignment; orchestrator auto-writes goal progress on done)
 src-tauri/src/engine/cli_process.rs              (Claude CLI subprocess driver)
 src-tauri/src/engine/parser.rs                   (protocol message extraction from stdout)
 src-tauri/src/engine/dispatch.rs                 (protocol message → DB write)
