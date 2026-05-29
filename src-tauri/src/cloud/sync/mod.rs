@@ -56,6 +56,8 @@ const SYNC_TABLES: &[(&str, &str, bool, bool)] = &[
     ("synced_tool_usage", "tool_usage", false, false),
     ("synced_memories", "memories", true, false),
     ("synced_knowledge_patterns", "knowledge_patterns", true, false),
+    ("synced_healing_issues", "healing_issues", false, true),
+    ("synced_triggers", "triggers", true, false),
 ];
 
 /// Last-pass result for one table, retained in memory for the status surface.
@@ -290,6 +292,8 @@ async fn collect_pass(pool: &DbPool, client: &SyncClient, device_id: &str) -> Sy
     tables.push(sync!(6, rows::fetch_tool_usage));
     tables.push(sync!(7, rows::fetch_memories));
     tables.push(sync!(8, rows::fetch_knowledge_patterns));
+    tables.push(sync!(9, rows::fetch_healing_issues));
+    tables.push(sync!(10, rows::fetch_triggers));
 
     // Delete propagation (v2): mirror local persona deletions into the cloud.
     // Kept out of the displayed grid (it has no upsert cursor of its own row),
@@ -475,7 +479,7 @@ mod tests {
     fn sync_tables_cover_all_phase1_tables() {
         // The grid + dispatch are driven off this list; guard its length so a
         // table added to collect_pass without a SYNC_TABLES entry fails CI.
-        assert_eq!(SYNC_TABLES.len(), 9);
+        assert_eq!(SYNC_TABLES.len(), 11);
         // cursor keys must be unique (they key app_settings rows).
         let mut keys: Vec<&str> = SYNC_TABLES.iter().map(|(_, c, _, _)| *c).collect();
         keys.sort_unstable();

@@ -260,6 +260,40 @@ pub struct SyncedToolUsageRow {
     pub created_at: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct SyncedHealingIssueRow {
+    pub id: String,
+    pub device_id: Option<String>,
+    pub persona_id: String,
+    pub execution_id: Option<String>,
+    pub title: String,
+    pub description: Option<String>,
+    pub severity: String,
+    pub category: String,
+    pub suggested_fix: Option<String>,
+    pub auto_fixed: bool,
+    pub is_circuit_breaker: bool,
+    pub status: String,
+    pub created_at: String,
+    pub resolved_at: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SyncedTriggerRow {
+    pub id: String,
+    pub device_id: Option<String>,
+    pub persona_id: String,
+    pub trigger_type: String,
+    // NOTE: `config` is intentionally NOT synced — webhook triggers can store a
+    // secret token in their config JSON. Upcoming-routines only needs the type
+    // + schedule timing, so the secret never has a column to ride on.
+    pub enabled: bool,
+    pub last_triggered_at: Option<String>,
+    pub next_trigger_at: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 // ---------------------------------------------------------------------------
 // Device heartbeat row
 // ---------------------------------------------------------------------------
@@ -673,6 +707,79 @@ pub fn fetch_knowledge_patterns(
 ) -> Result<Vec<SyncedKnowledgePatternRow>, AppError> {
     let rows = fetch(
         pool, "execution_knowledge", KNOWLEDGE_COLS, "updated_at", &cursor_prev, None, row_to_knowledge,
+    )?;
+    Ok(stamp!(rows, device_id))
+}
+
+// ---------------------------------------------------------------------------
+// Healing issues (overview health surface) + triggers (upcoming routines)
+// ---------------------------------------------------------------------------
+
+const HEALING_COLS: &str = "id, persona_id, execution_id, title, description, severity, category, \
+    suggested_fix, auto_fixed, is_circuit_breaker, status, created_at, resolved_at";
+
+const TRIGGER_COLS: &str = "id, persona_id, trigger_type, enabled, last_triggered_at, \
+    next_trigger_at, created_at, updated_at";
+
+fn row_to_healing(row: &Row) -> rusqlite::Result<SyncedHealingIssueRow> {
+    let auto_fixed: i64 = row.get(8)?;
+    let is_cb: i64 = row.get(9)?;
+    Ok(SyncedHealingIssueRow {
+        id: row.get(0)?,
+        device_id: None,
+        persona_id: row.get(1)?,
+        execution_id: row.get(2)?,
+        title: row.get(3)?,
+        description: row.get(4)?,
+        severity: row.get(5)?,
+        category: row.get(6)?,
+        suggested_fix: row.get(7)?,
+        auto_fixed: auto_fixed != 0,
+        is_circuit_breaker: is_cb != 0,
+        status: row.get(10)?,
+        created_at: row.get(11)?,
+        resolved_at: row.get(12)?,
+    })
+}
+
+fn row_to_trigger(row: &Row) -> rusqlite::Result<SyncedTriggerRow> {
+    let enabled: i64 = row.get(3)?;
+    Ok(SyncedTriggerRow {
+        id: row.get(0)?,
+        device_id: None,
+        persona_id: row.get(1)?,
+        trigger_type: row.get(2)?,
+        enabled: enabled != 0,
+        last_triggered_at: row.get(4)?,
+        next_trigger_at: row.get(5)?,
+        created_at: row.get(6)?,
+        updated_at: row.get(7)?,
+    })
+}
+
+pub fn fetch_healing_issues(
+    pool: &DbPool,
+    cursor_prev: String,
+    resync_floor: Option<String>,
+    device_id: String,
+) -> Result<Vec<SyncedHealingIssueRow>, AppError> {
+    // created_at watermark + resync window: healing issues mutate in place
+    // (status open→resolved, auto_fixed flips), so re-pull recent rows.
+    let rows = fetch(
+        pool, "persona_healing_issues", HEALING_COLS, "created_at", &cursor_prev,
+        resync_floor.as_deref(), row_to_healing,
+    )?;
+    Ok(stamp!(rows, device_id))
+}
+
+pub fn fetch_triggers(
+    pool: &DbPool,
+    cursor_prev: String,
+    _resync_floor: Option<String>,
+    device_id: String,
+) -> Result<Vec<SyncedTriggerRow>, AppError> {
+    let rows = fetch(
+        pool, "persona_triggers", TRIGGER_COLS, "updated_at", &cursor_prev, None, row_to_trigger,
     )?;
     Ok(stamp!(rows, device_id))
 }
