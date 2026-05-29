@@ -1,9 +1,0 @@
-{
-  "useful": "ok",
-  "useful_note": "use_case_set card emitted (confirmed in dispatcher output). Prose adds the GitHub read-only constraint (no post_comment) and names the two real decisions (Dependabot volume, no-write-to-GitHub).",
-  "grounded": "ok", "grounded_note": "GitHub capability inventory accurate (list_repos, list_open_prs read-only).",
-  "right_data_source": "ok", "right_data_source_note": "Card fired on the trigger phrasing.",
-  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "",
-  "op_correctness": "weak", "op_correctness_note": "Card emitted but hard assertion expect_card[use_case_set] FAILED config_match — Athena emitted >5 use cases (the rich PR-reviewer decomposition includes Dependabot + more), exceeding the fixture's use_cases_max:5. This is fixture strictness vs doctrine's '3-5' guideline, NOT a card-emission failure.",
-  "overall_note": "Card emits reliably (3/3 across sweep); config_match fails 2/3 when she emits a 6th well-tagged case. Recommend relaxing use_cases_max to 6 OR accepting that complex intents legitimately warrant more cases. Athena's behavior is correct."
-}

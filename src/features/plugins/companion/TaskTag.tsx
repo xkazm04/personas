@@ -42,7 +42,7 @@ export function TaskTag({ job }: { job: BackgroundJob }) {
     >
       <div className="flex items-center gap-2 typo-caption">
         <Icon className={`w-3.5 h-3.5 shrink-0 ${tone} ${running ? 'animate-spin' : ''}`} />
-        <span className="flex-1 truncate text-foreground/90" title={title}>
+        <span className="flex-1 truncate text-foreground" title={title}>
           {title}
         </span>
         {note && <span className="text-foreground/55 shrink-0 tabular-nums">{note}</span>}

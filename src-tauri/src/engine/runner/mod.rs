@@ -768,7 +768,7 @@ pub async fn run_execution(
         prompt_text
     };
 
-    // Structured shared-team knowledge (L2 — docs/test/structured-shared-memory-design.md):
+    // Structured shared-team knowledge (L2 — docs/tests/autonomy-eval/structured-shared-memory-design.md):
     // inject a COMPACT digest of the team's shared, bounded ledger (decisions /
     // constraints / glossary in `team_memories`) so every member shares one source
     // of truth instead of N per-persona dupes. Bounded by team-memory eviction +

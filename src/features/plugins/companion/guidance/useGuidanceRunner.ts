@@ -3,8 +3,9 @@ import { useSystemStore } from '@/stores/systemStore';
 import { getActiveTranslations } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from '../orb/AthenaOrb';
-import { getWalkthrough } from './walkthroughs';
-import type { GuidancePreAction, OrbAnchor } from './types';
+import { resolveWalkthrough } from './walkthroughs';
+import { runPreAction } from './appActions';
+import type { GuidanceWalkthrough, OrbAnchor } from './types';
 
 const ORB_GAP = 18;
 const ANCHOR_WAIT_MS = 4000;
@@ -73,20 +74,6 @@ function defaultDwell(text: string): number {
   return Math.max(3800, Math.min(9000, text.length * 60));
 }
 
-function runPreAction(action: GuidancePreAction) {
-  switch (action) {
-    case 'open_build_entry': {
-      // Make the persona build studio the visible surface so the step's
-      // anchors mount. `isCreatingPersona` is what PersonasPage checks to
-      // render UnifiedBuildEntry (vs the persona list / editor).
-      const sys = useSystemStore.getState();
-      sys.setSidebarSection('personas');
-      sys.setIsCreatingPersona(true);
-      break;
-    }
-  }
-}
-
 /**
  * Drives an active guided walkthrough: for each step it navigates, runs any
  * pre-action, waits for the anchor to mount, rings it with the glow, glides the
@@ -101,7 +88,10 @@ export function useGuidanceRunner() {
   const activeWalkthrough = useCompanionStore((s) => s.activeWalkthrough);
   const stepIndex = useCompanionStore((s) => s.guidanceStepIndex);
   const playing = useCompanionStore((s) => s.guidancePlaying);
+  const adHoc = useCompanionStore((s) => s.adHocWalkthrough);
   const appliedKeyRef = useRef<string | null>(null);
+  const lastAdHocRef = useRef<GuidanceWalkthrough | null>(null);
+  const clickCleanupRef = useRef<(() => void) | null>(null);
 
   // Surface the orb when a walkthrough starts (close the panel back to the orb
   // so the demo is visible). No-op if the orb is already showing.
@@ -111,15 +101,66 @@ export function useGuidanceRunner() {
     if (st.state !== 'minimized') st.setState('minimized');
   }, [activeWalkthrough]);
 
+  // Keyboard control while a walkthrough is active: ←/→ step, Esc stop, Space
+  // pause/resume. Bound once per walkthrough; reads live state via getState() so
+  // it never needs to re-bind on every step. Ignored while the user is typing.
+  useEffect(() => {
+    if (!activeWalkthrough) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (
+        el &&
+        (el.tagName === 'INPUT' ||
+          el.tagName === 'TEXTAREA' ||
+          el.tagName === 'SELECT' ||
+          el.isContentEditable)
+      ) {
+        return;
+      }
+      const store = useCompanionStore.getState();
+      switch (e.key) {
+        case 'ArrowRight':
+          e.preventDefault();
+          store.advanceGuidance();
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          store.previousGuidance();
+          break;
+        case 'Escape':
+          e.preventDefault();
+          store.stopGuidance();
+          break;
+        case ' ':
+        case 'Spacebar':
+          e.preventDefault();
+          if (store.guidancePlaying) store.pauseGuidance();
+          else store.resumeGuidance();
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeWalkthrough]);
+
   useEffect(() => {
     const store = useCompanionStore.getState();
 
     if (!activeWalkthrough) {
       appliedKeyRef.current = null;
+      lastAdHocRef.current = null;
       return;
     }
 
-    const wt = getWalkthrough(activeWalkthrough);
+    // A brand-new ad-hoc walkthrough reuses the same sentinel topic + step 0,
+    // so the step key wouldn't change between two consecutive `point_at`s.
+    // Reset the applied-key so the new one is treated as a fresh step.
+    if (adHoc !== lastAdHocRef.current) {
+      lastAdHocRef.current = adHoc;
+      appliedKeyRef.current = null;
+    }
+
+    const wt = resolveWalkthrough(activeWalkthrough, adHoc);
     if (!wt) {
       store.stopGuidance();
       return;
@@ -136,6 +177,10 @@ export function useGuidanceRunner() {
 
     let cancelled = false;
     let advanceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Clear any prior step's click-to-advance listener before (re)wiring.
+    clickCleanupRef.current?.();
+    clickCleanupRef.current = null;
 
     if (isFreshStep) {
       appliedKeyRef.current = key;
@@ -167,11 +212,28 @@ export function useGuidanceRunner() {
         useCompanionStore.getState().setOrbGuideTarget(
           computeOrbTarget(target, step.orbAnchor ?? 'auto'),
         );
+
+        // Universal click-to-advance: clicking the thing Athena points at moves
+        // the tour on (the glow is pointer-events-none, so the click also hits
+        // the real element — "do it and continue"). Capture + once so the
+        // element's own handler still runs and we never double-advance.
+        if (target) {
+          const onClick = () => {
+            if (cancelled) return;
+            useCompanionStore.getState().advanceGuidance();
+          };
+          target.addEventListener('click', onClick, { capture: true, once: true });
+          clickCleanupRef.current = () =>
+            target.removeEventListener('click', onClick, { capture: true });
+        }
       })();
     }
 
-    // Auto-advance timer — armed whenever playing; re-armed on resume.
-    if (playing) {
+    // Auto-advance timer — armed when playing, EXCEPT on a `holdForClick` step
+    // that has a real anchor to click (then it waits for the click / Skip). A
+    // hold step with no anchor still gets the timer so it can't hard-stall.
+    const holding = !!step.holdForClick && !!step.highlightTestId;
+    if (playing && !holding) {
       const t = getActiveTranslations();
       const dwell = step.dwellMs ?? defaultDwell(step.narration(t));
       advanceTimer = setTimeout(() => {
@@ -183,6 +245,8 @@ export function useGuidanceRunner() {
     return () => {
       cancelled = true;
       if (advanceTimer) clearTimeout(advanceTimer);
+      clickCleanupRef.current?.();
+      clickCleanupRef.current = null;
     };
-  }, [activeWalkthrough, stepIndex, playing]);
+  }, [activeWalkthrough, stepIndex, playing, adHoc]);
 }

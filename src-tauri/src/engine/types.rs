@@ -433,6 +433,7 @@ impl EphemeralPersona {
             enabled: false,
             sensitive: false,
             headless: false,
+            starred: false,
             max_concurrent: 1,
             timeout_ms: 30_000,
             notification_channels: None,

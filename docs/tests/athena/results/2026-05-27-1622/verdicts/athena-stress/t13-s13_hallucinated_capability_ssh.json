@@ -1,9 +1,0 @@
-{
-  "useful": "ok",
-  "useful_note": "Explicit refusal + distinguishes local shell (on user's machine inside Personas) from remote prod access. 'This is a known gap I've got flagged' + offers to sketch the SSH connector or accept it's a one-off.",
-  "grounded": "ok", "grounded_note": "No persona-by-name references; clean.",
-  "right_data_source": "ok", "right_data_source_note": "",
-  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "No SSH execution claimed.",
-  "op_correctness": "ok", "op_correctness_note": "No OP — correct refusal.",
-  "overall_note": "Reference-quality category-J. The local-vs-remote-shell distinction is precise and useful."
-}

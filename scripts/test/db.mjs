@@ -1,5 +1,5 @@
 // Read-only SQLite access for the Team Autonomy Evaluation Framework.
-// See docs/test/run-protocol.md §1, §4. We NEVER open these DBs writable —
+// See docs/tests/autonomy-eval/run-protocol.md §1, §4. We NEVER open these DBs writable —
 // the live app owns them; we are an observer that reads truth.
 import Database from 'better-sqlite3';
 import { homedir } from 'node:os';

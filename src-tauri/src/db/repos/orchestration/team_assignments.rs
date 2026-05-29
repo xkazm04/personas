@@ -31,6 +31,7 @@ fn row_to_assignment(row: &rusqlite::Row) -> rusqlite::Result<TeamAssignment> {
         max_parallel_steps: row.get("max_parallel_steps")?,
         source: row.get("source")?,
         companion_op_id: row.get("companion_op_id")?,
+        goal_id: row.get("goal_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         started_at: row.get("started_at")?,
         completed_at: row.get("completed_at")?,
@@ -183,8 +184,8 @@ pub fn create(
 
     tx.execute(
         "INSERT INTO team_assignments
-            (id, team_id, title, goal, status, match_strategy, max_parallel_steps, source, companion_op_id)
-         VALUES (?1, ?2, ?3, ?4, 'queued', ?5, ?6, ?7, ?8)",
+            (id, team_id, title, goal, status, match_strategy, max_parallel_steps, source, companion_op_id, goal_id)
+         VALUES (?1, ?2, ?3, ?4, 'queued', ?5, ?6, ?7, ?8, ?9)",
         params![
             assignment_id,
             input.team_id,
@@ -194,6 +195,7 @@ pub fn create(
             max_parallel,
             source,
             input.companion_op_id,
+            input.goal_id,
         ],
     )?;
 
@@ -256,7 +258,7 @@ pub fn get_by_id(pool: &DbPool, id: &str) -> Result<TeamAssignment, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, team_id, title, goal, status, match_strategy, max_parallel_steps,
-                source, companion_op_id, created_at, started_at, completed_at, error_message
+                source, companion_op_id, goal_id, created_at, started_at, completed_at, error_message
          FROM team_assignments WHERE id = ?1",
     )?;
     stmt.query_row([id], row_to_assignment).map_err(|e| match e {
@@ -271,13 +273,48 @@ pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamAssignment>
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
         "SELECT id, team_id, title, goal, status, match_strategy, max_parallel_steps,
-                source, companion_op_id, created_at, started_at, completed_at, error_message
+                source, companion_op_id, goal_id, created_at, started_at, completed_at, error_message
          FROM team_assignments
          WHERE team_id = ?1
          ORDER BY created_at DESC",
     )?;
     let rows = stmt.query_map([team_id], row_to_assignment)?;
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Goals hub: every assignment linked to a `dev_goals` row, any status.
+/// Backs the goal's progress resolver + live activity surface.
+pub fn list_for_goal(pool: &DbPool, goal_id: &str) -> Result<Vec<TeamAssignment>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, team_id, title, goal, status, match_strategy, max_parallel_steps,
+                source, companion_op_id, goal_id, created_at, started_at, completed_at, error_message
+         FROM team_assignments
+         WHERE goal_id = ?1
+         ORDER BY created_at DESC",
+    )?;
+    let rows = stmt.query_map([goal_id], row_to_assignment)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
+/// Goals hub: (re)link or unlink an assignment to a `dev_goals` row.
+/// `goal_id = None` clears the link.
+pub fn set_goal_link(
+    pool: &DbPool,
+    assignment_id: &str,
+    goal_id: Option<&str>,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    let n = conn.execute(
+        "UPDATE team_assignments SET goal_id = ?1 WHERE id = ?2",
+        params![goal_id, assignment_id],
+    )?;
+    if n == 0 {
+        return Err(AppError::NotFound(format!(
+            "Assignment '{assignment_id}' not found"
+        )));
+    }
+    Ok(())
 }
 
 pub fn list_steps(pool: &DbPool, assignment_id: &str) -> Result<Vec<TeamAssignmentStep>, AppError> {

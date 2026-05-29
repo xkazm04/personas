@@ -3,6 +3,7 @@ import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
 import { ToastContainer } from "@/features/shared/components/feedback/ToastContainer";
+import RemoteApprovalPrompt from "@/features/cloud/RemoteApprovalPrompt";
 import { FirstUseConsentModal, hasUserConsented, storedConsentVersion } from "@/features/shared/components/overlays/FirstUseConsentModal";
 import { useAuthStore } from "@/stores/authStore";
 import VibeThemeProvider from "@/features/shared/components/layout/VibeThemeProvider";
@@ -321,6 +322,8 @@ export default function App() {
               when Catalog dispatches GO_LIST, autopilot panels reset,
               or edit forms close after save. */}
           <ResourcePickerHost />
+          {/* Phase 2: approval gate for run-requests from the web dashboard. */}
+          <RemoteApprovalPrompt />
           {import.meta.env.DEV && isMobilePreview && (
             <div className={`fixed top-1 right-1 z-[999] ${TOOLS_BTN_COMPACT} rounded-card bg-cyan-500/90 text-foreground typo-caption font-bold shadow-elevation-3 pointer-events-none select-none`}>
               {t.chrome.mobile_preview}

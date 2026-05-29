@@ -18,7 +18,7 @@ const BORDER_RADIUS = 12;
  *
  * The element-tracking core (measure + observer + missing-target retry) now
  * lives in the shared `useTrackedElementRect` hook, also used by Athena's
- * non-dimming `AthenaGuideGlow`. This component owns only the dimming visual.
+ * non-dimming `TrackedGlowRing`. This component owns only the dimming visual.
  */
 export default function TourSpotlight() {
   const tourActive = useSystemStore((s) => s.tourActive);

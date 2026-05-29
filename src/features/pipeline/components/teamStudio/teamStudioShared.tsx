@@ -328,6 +328,7 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         maxParallelSteps: 16,
         source: 'team_ui',
         companionOpId: null,
+        goalId: null,
         steps: stepInputs,
       });
       if (!assignment) return;

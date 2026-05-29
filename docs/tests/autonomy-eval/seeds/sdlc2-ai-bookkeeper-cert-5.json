@@ -1,0 +1,24 @@
+{
+  "id": "sdlc2/ai-bookkeeper-cert-5",
+  "team": "b0414f59-1113-4325-b0c7-279c2fcb0e4a",
+  "repo": "ai-bookkeeper",
+  "tracks": [
+    "code"
+  ],
+  "exercises_roles": [
+    "architect",
+    "engineer",
+    "reviewer",
+    "security",
+    "release",
+    "docs"
+  ],
+  "held_out": true,
+  "goal": "Add a fiscal-period helper to the ledger — a brand-new standalone date utility that does NOT exist yet (verified: no src/features/ledger/lib/period.ts in master). As the Solution Architect, scope a focused TEAM HANDOFF for the Engineer (Dev Clone) to IMPLEMENT this work end-to-end. The Engineer MUST actually create three source files on master (not just plan, not just ADR): (1) src/features/ledger/lib/period.ts exporting getFiscalPeriod(date: Date, fiscalYearStartMonth?: number) — returns {year: number, quarter: 1|2|3|4, month: number, periodStart: Date, periodEnd: Date} for the given date; fiscalYearStartMonth defaults to 1 (calendar year); handles non-calendar fiscal years correctly (e.g. July-start = month 7 of calendar year is fiscal month 1, quarter 1). Reject non-finite dates + invalid fiscalYearStartMonth (must be 1-12) via RangeError. (2) src/features/ledger/lib/period.test.ts covering: Jan 15 in calendar year (quarter 1), Jul 1 with July-start (fiscal month 1 / quarter 1 / fiscal year), Dec 31 in calendar year (quarter 4 / month 12), leap-year Feb 29 (handled), period boundaries (last day of one period vs first day of next), invalid fiscalYearStartMonth=0 + 13 rejected. (3) src/features/ledger/index.ts barrel updated to export getFiscalPeriod. **STRICT SCOPE BOUNDARY:** do NOT bundle any other work into this release — no Phase X showcase, no dashboard changes, no unrelated refactors, no consolidation of in-flight branches. The deliverable IS the period.ts module ONLY. The Release Manager MUST verify the repo.patch contains ONLY the three named source files + the conventional release artifacts (CHANGELOG entry, version bump, release notes). If the diff contains anything else, that's scope creep — escalate via manual_review, do not ship.",
+  "repo_cmds": {
+    "build": "npm run build",
+    "lint": "npm run lint",
+    "test": "npm test"
+  },
+  "acceptance_hint": "Second cert-window run for ai-bookkeeper. A real new period.ts with date-arithmetic for fiscal periods + edge-case tests (leap years, July-start fiscal year, period boundaries) + barrel export, suite green INCLUDING lint, merged to master by Release Manager. Strict scope discipline test: the team must resist bundling its in-flight Phase 4 dashboard work. If the repo.patch contains the three named source files PLUS only release artifacts (no other src/* changes), task-fidelity is satisfied. If PRODUCTION → cert window streak 2/3."
+}

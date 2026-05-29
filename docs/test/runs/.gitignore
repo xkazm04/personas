@@ -1,3 +1,0 @@
-# Per-run logs are large (copied execution transcripts) — keep locally, do not commit.
-# The structured JSON bundles (executions/reviews/memories/events/summary/run/scorecard) ARE committed.
-*/logs/

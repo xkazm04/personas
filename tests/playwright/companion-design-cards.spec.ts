@@ -18,7 +18,7 @@ import { bridge, CompanionBridge } from './companion-bridge';
  *       a free port (`PERSONAS_TEST_PORT=17321 ...`).
  *
  * The bridge method `setCompanionChatCards` is non-hot-reloadable per
- * `docs/tests/parallel-cli-workflow.md` §3 #1 — the bridge initializes
+ * `docs/tests/strategy/parallel-cli-workflow.md` §3 #1 — the bridge initializes
  * once when the WebView mounts. After this branch's `bridge.ts` change
  * lands in the running app, a full process restart is required for the
  * new method to be callable on `window.__TEST__`.

@@ -1,0 +1,6 @@
+# Run bundles are large per-run execution dumps. Keep them local; do NOT commit.
+# Committed on purpose: one golden sample (_example-run/) and the analysis
+# writeups (FINDINGS.md, baseline-health.*, health-after-handoff-fix.*).
+run-*/
+longitudinal-*.json
+*/logs/

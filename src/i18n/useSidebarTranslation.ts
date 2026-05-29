@@ -18,6 +18,7 @@ function buildSidebarLabelMap(sb: SidebarBundle): Map<string, string> {
     // Level 1 sections
     ['home', sb.home],
     ['overview', sb.overview],
+    ['goals', sb.goals],
     ['personas', sb.agents],
     ['events', sb.events],
     ['credentials', sb.keys],

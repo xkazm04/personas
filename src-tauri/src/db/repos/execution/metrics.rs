@@ -7,9 +7,9 @@ use tracing::{info, instrument, warn};
 use crate::db::models::{
     AnomalyDrilldownData, CorrelatedEvent, DashboardCostAnomaly, DashboardDailyPoint,
     DashboardTopPersona, ExecutionDashboardData, ExecutionHeatmapData, HeatmapDay, HeatmapInsights,
-    MetricAnomaly, MetricsChartData, MetricsChartPoint, MetricsPersonaBreakdown, PersonaCostEntry,
-    PersonaPromptVersion, PromptPerformanceData, PromptPerformancePoint, RootCauseSuggestion,
-    VersionMarker,
+    MetricAnomaly, MetricsChartData, MetricsChartPoint, MetricsPersonaBreakdown, ModelValueShare,
+    PersonaCostEntry, PersonaPromptVersion, PromptPerformanceData, PromptPerformancePoint,
+    RootCauseSuggestion, ValueRollup, VersionMarker,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -440,6 +440,129 @@ pub fn get_summary_with_conn(
         })
     })
     .map_err(AppError::from)
+}
+
+// ============================================================================
+// Business-value rollup (business_outcome aggregation)
+// ============================================================================
+
+/// Aggregate the per-execution `business_outcome` self-assessment over a
+/// window into a value-delivered rate, a cost-per-value figure, and a
+/// per-model efficiency breakdown. Excludes simulations (their delivery is
+/// stubbed, so the outcome is not a real value signal). `persona_id = None`
+/// rolls up across all personas (the dashboard headline); `Some(id)` scopes to
+/// one persona (the Director's evaluation context).
+pub fn get_value_rollup(
+    pool: &DbPool,
+    days: Option<i64>,
+    persona_id: Option<&str>,
+) -> Result<ValueRollup, AppError> {
+    let days = days.unwrap_or(30).clamp(1, 365);
+    let conn = pool.get()?;
+    get_value_rollup_with_conn(&conn, days, persona_id)
+}
+
+pub fn get_value_rollup_with_conn(
+    conn: &Connection,
+    days: i64,
+    persona_id: Option<&str>,
+) -> Result<ValueRollup, AppError> {
+    let date_expr = format!("-{days} days");
+    let pid_clause = if persona_id.is_some() {
+        " AND persona_id = ?2"
+    } else {
+        ""
+    };
+
+    let params_vec: Vec<String> = match persona_id {
+        Some(pid) => vec![date_expr.clone(), pid.to_string()],
+        None => vec![date_expr.clone()],
+    };
+    let param_refs: Vec<&dyn rusqlite::ToSql> = params_vec
+        .iter()
+        .map(|s| s as &dyn rusqlite::ToSql)
+        .collect();
+
+    // 1) Outcome counts + total cost (single row).
+    let counts_sql = format!(
+        "SELECT
+            COUNT(*) AS total,
+            COALESCE(SUM(CASE WHEN business_outcome = 'value_delivered' THEN 1 ELSE 0 END), 0) AS vd,
+            COALESCE(SUM(CASE WHEN business_outcome = 'partial' THEN 1 ELSE 0 END), 0) AS partial,
+            COALESCE(SUM(CASE WHEN business_outcome = 'precondition_failed' THEN 1 ELSE 0 END), 0) AS pf,
+            COALESCE(SUM(CASE WHEN business_outcome = 'no_input_available' THEN 1 ELSE 0 END), 0) AS nia,
+            COALESCE(SUM(cost_usd), 0.0) AS cost
+         FROM persona_executions
+         WHERE created_at >= datetime('now', ?1)
+           AND COALESCE(is_simulation, 0) = 0{pid_clause}"
+    );
+
+    let (total, vd, partial, pf, nia, cost): (i64, i64, i64, i64, i64, f64) =
+        conn.query_row(&counts_sql, param_refs.as_slice(), |row| {
+            Ok((
+                row.get("total")?,
+                row.get("vd")?,
+                row.get("partial")?,
+                row.get("pf")?,
+                row.get("nia")?,
+                row.get("cost")?,
+            ))
+        })?;
+
+    let assessed = vd + partial + pf + nia;
+    let unknown = (total - assessed).max(0);
+    let value_delivered_rate = if assessed > 0 {
+        vd as f64 / assessed as f64
+    } else {
+        0.0
+    };
+    let cost_per_value_delivered = if vd > 0 {
+        Some(cost / vd as f64)
+    } else {
+        None
+    };
+
+    // 2) Per-model efficiency breakdown.
+    let models_sql = format!(
+        "SELECT
+            COALESCE(NULLIF(model_used, ''), 'unknown') AS model,
+            COUNT(*) AS executions,
+            COALESCE(SUM(cost_usd), 0.0) AS cost,
+            COALESCE(SUM(CASE WHEN business_outcome = 'value_delivered' THEN 1 ELSE 0 END), 0) AS vd
+         FROM persona_executions
+         WHERE created_at >= datetime('now', ?1)
+           AND COALESCE(is_simulation, 0) = 0{pid_clause}
+         GROUP BY model
+         ORDER BY cost DESC"
+    );
+
+    let models = {
+        let mut stmt = conn.prepare(&models_sql)?;
+        let rows = stmt.query_map(param_refs.as_slice(), |row| {
+            Ok(ModelValueShare {
+                model: row.get("model")?,
+                executions: row.get("executions")?,
+                cost_usd: row.get("cost")?,
+                value_delivered: row.get("vd")?,
+            })
+        })?;
+        rows.filter_map(|r| r.ok()).collect::<Vec<_>>()
+    };
+
+    Ok(ValueRollup {
+        period_days: days,
+        total_executions: total,
+        assessed_executions: assessed,
+        value_delivered: vd,
+        partial,
+        precondition_failed: pf,
+        no_input_available: nia,
+        unknown,
+        value_delivered_rate,
+        total_cost_usd: cost,
+        cost_per_value_delivered,
+        models,
+    })
 }
 
 // ============================================================================

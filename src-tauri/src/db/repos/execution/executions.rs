@@ -42,6 +42,10 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         business_outcome: row
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
+        director_score: row.get::<_, Option<i64>>("director_score").unwrap_or(None),
+        director_review_md: row
+            .get::<_, Option<String>>("director_review_md")
+            .unwrap_or(None),
     })
 }
 
@@ -68,6 +72,22 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
     })
+}
+
+/// Write the Director's review result (0-5 score + rendered markdown) onto an
+/// execution row. Called after the Director reviews that execution.
+pub fn set_director_review(
+    pool: &DbPool,
+    execution_id: &str,
+    score: i64,
+    review_md: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_executions SET director_score = ?1, director_review_md = ?2 WHERE id = ?3",
+        rusqlite::params![score, review_md, execution_id],
+    )?;
+    Ok(())
 }
 
 fn build_fts5_query(query: &str) -> String {
@@ -994,11 +1014,24 @@ pub fn create_retry(
         let id = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().to_rfc3339();
 
+        // Copy `input_data` from the original execution so the retry inherits
+        // the same task context. Without this the retry's input_data is NULL
+        // and a persona that selects its capability based on input shape
+        // (e.g. Dev Clone's TEAM MODE detection on a team_handoff payload)
+        // silently routes to its standalone default instead — observed in
+        // cert-3 #3 where Dev Clone retry ran uc_backlog_scan instead of
+        // uc_implementation because the team_handoff payload was lost. A
+        // retry by definition re-attempts the same work; it must see the
+        // same input. Chain metadata (depth/visited/trace) is also embedded
+        // in input_data, which lets the post-retry chain-trigger fix from
+        // engine/mod.rs:spawn_delayed_retry read from the retry exec
+        // directly instead of falling back to the original.
         let conn = pool.get()?;
         let mut stmt = conn.prepare_cached(
             "INSERT INTO persona_executions
-             (id, persona_id, status, input_tokens, output_tokens, cost_usd, retry_of_execution_id, retry_count, created_at)
-             VALUES (?1, ?2, 'queued', 0, 0, 0, ?3, ?4, ?5)",
+             (id, persona_id, status, input_tokens, output_tokens, cost_usd, retry_of_execution_id, retry_count, created_at, input_data)
+             VALUES (?1, ?2, 'queued', 0, 0, 0, ?3, ?4, ?5,
+                     (SELECT input_data FROM persona_executions WHERE id = ?3))",
         )?;
         stmt.execute(params![id, persona_id, original_exec_id, retry_count, now])?;
 

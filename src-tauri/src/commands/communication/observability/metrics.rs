@@ -8,7 +8,7 @@ use ts_rs::TS;
 
 use crate::db::models::{
     AnomalyDrilldownData, ExecutionDashboardData, ExecutionHeatmapData, MetricsChartData,
-    MetricsSummary,
+    MetricsSummary, ValueRollup,
 };
 use crate::db::repos::execution::metrics as repo;
 use crate::error::AppError;
@@ -66,6 +66,23 @@ pub fn get_metrics_chart_data(
     require_auth_sync(&state)?;
     let days = days.map(|d| d.clamp(1, 365));
     repo::get_chart_data(&state.db, days, persona_id.as_deref())
+}
+
+/// Business-value + efficiency rollup over the window. `persona_id = None`
+/// rolls up across all personas (dashboard headline tile); `Some(id)` scopes
+/// to one persona. Aggregates the per-execution `business_outcome`
+/// self-assessment into a value-delivered rate, cost-per-value, and per-model
+/// breakdown. Excludes simulations.
+#[tauri::command]
+#[instrument(skip(state), fields(days, persona_id))]
+pub fn get_value_rollup(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+    persona_id: Option<String>,
+) -> Result<ValueRollup, AppError> {
+    require_auth_sync(&state)?;
+    let days = days.map(|d| d.clamp(1, 365));
+    repo::get_value_rollup(&state.db, days, persona_id.as_deref())
 }
 
 /// Returns per-persona monthly spend.

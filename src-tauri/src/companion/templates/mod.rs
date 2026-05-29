@@ -239,4 +239,21 @@ pub const IDENTITY_MD_TEMPLATE: &str = include_str!("identity.md");
 /// external-source clarification, listing the read verbs explicitly
 /// (pulling/fetching/checking/looking up/listing/summarizing/scanning/
 /// reading) and noting that none of them exempt local builtins.
-pub const CONSTITUTION_VERSION: u32 = 26;
+///
+/// v27 adds a second `start_guided_walkthrough` topic, `connector_setup`
+/// (Vault → "Add new" connector flow), alongside `persona_creation`, and
+/// teaches when to fire it.
+///
+/// v28 adds the `point_at` op: Athena rings one allow-listed UI anchor and
+/// narrates it as a single ad-hoc beat (non-scripted pointing), no authored
+/// topic required.
+///
+/// v29 adds the `compose_walkthrough` op: Athena assembles a short (2-6 stop)
+/// guided tour at runtime from catalog anchors — the multi-step sibling of
+/// `point_at`.
+///
+/// v30 (goals hub) adds the `update_dev_goal` op: Athena proposes a
+/// status/progress change to a project (dev) goal. Approval-gated; never
+/// auto-resolved. Paired with project-goal awareness in the prompt + the
+/// `dev_goal_target` / `dev_goal_stalled` proactive triggers.
+pub const CONSTITUTION_VERSION: u32 = 30;

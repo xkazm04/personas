@@ -22,7 +22,7 @@ const MODEL_OPTIONS = [
   { key: 'inherit', model: null },
   { key: 'haiku', model: 'claude-haiku-4-5-20251001' },
   { key: 'sonnet', model: 'claude-sonnet-4-6' },
-  { key: 'opus', model: 'claude-opus-4-7' },
+  { key: 'opus', model: 'claude-opus-4-8' },
 ] as const;
 
 function modelKeyFromProfile(profile: string | null): string {

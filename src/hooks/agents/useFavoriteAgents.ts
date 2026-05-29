@@ -1,53 +1,67 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useAgentStore } from '@/stores/agentStore';
+import { setPersonaStarred } from '@/api/agents/personas';
+import { silentCatch } from '@/lib/silentCatch';
 
-const STORAGE_KEY = 'personas:favorite-agents';
+/**
+ * Persona "favorite" = the DB-backed `starred` flag, which is also the
+ * Director's coaching scope (the Director only reviews starred personas).
+ * Previously this was localStorage-only; it now reads `persona.starred` from
+ * the agent store and persists toggles via `set_persona_starred`.
+ */
 
-// Module-level state shared across all hook consumers
-let favorites: Set<string> = new Set();
-const listeners = new Set<() => void>();
-
-function load(): Set<string> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-function persist(ids: Set<string>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...ids]));
-}
-
-function notify() {
-  for (const l of listeners) l();
-}
-
-// Initialize on module load
-favorites = load();
-
-function subscribe(cb: () => void) {
-  listeners.add(cb);
-  return () => { listeners.delete(cb); };
-}
-
-function getSnapshot(): Set<string> {
-  return favorites;
-}
+const LEGACY_KEY = 'personas:favorite-agents';
+// Module-level guard so the one-time localStorage→DB import runs at most once
+// per app session regardless of how many components mount the hook.
+let legacyImportDone = false;
 
 export function useFavoriteAgents() {
-  const favs = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const personas = useAgentStore((s) => s.personas);
+
+  const favorites = useMemo(
+    () => new Set(personas.filter((p) => p.starred).map((p) => p.id)),
+    [personas],
+  );
+
+  // One-time migration of pre-existing localStorage favorites into the DB.
+  useEffect(() => {
+    if (legacyImportDone || personas.length === 0) return;
+    legacyImportDone = true;
+    const raw = (() => {
+      try {
+        return localStorage.getItem(LEGACY_KEY);
+      } catch {
+        return null;
+      }
+    })();
+    if (!raw) return;
+    try {
+      const ids = new Set(JSON.parse(raw) as string[]);
+      const toStar = personas.filter((p) => ids.has(p.id) && !p.starred);
+      if (toStar.length > 0) {
+        void Promise.all(toStar.map((p) => setPersonaStarred(p.id, true)))
+          .then(() => useAgentStore.getState().fetchPersonas())
+          .catch(silentCatch('useFavoriteAgents:migrate'));
+      }
+      localStorage.removeItem(LEGACY_KEY);
+    } catch {
+      /* corrupt legacy value — drop it */
+      try {
+        localStorage.removeItem(LEGACY_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [personas]);
 
   const toggleFavorite = useCallback((id: string) => {
-    const next = new Set(favorites);
-    if (next.has(id)) next.delete(id);
-    else next.add(id);
-    favorites = next;
-    persist(next);
-    notify();
+    const cur = useAgentStore.getState().personas.find((p) => p.id === id)?.starred ?? false;
+    setPersonaStarred(id, !cur)
+      .then(() => useAgentStore.getState().fetchPersonas())
+      .catch(silentCatch('useFavoriteAgents:toggle'));
   }, []);
 
-  const isFavorite = useCallback((id: string) => favs.has(id), [favs]);
+  const isFavorite = useCallback((id: string) => favorites.has(id), [favorites]);
 
-  return { favorites: favs, toggleFavorite, isFavorite };
+  return { favorites, toggleFavorite, isFavorite };
 }

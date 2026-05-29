@@ -17,7 +17,7 @@ project-selector banner sits above every tab except **Projects**.
 | --- | --- | --- |
 | Overview | `sub_overview` | Per-project metrics rollup. Six vital-sign tiles (issues, PRs, commits, unresolved, events 24h/7d) are drag-reorderable (order persists per project) and clickable: repo tiles deep-link to the connected GitHub/GitLab subpage, monitoring tiles reveal the Sentry connection chain. The header carries a live "updated Nm ago" timestamp and a manual Refresh control. |
 | Projects | `sub_projects` | Register, edit, archive projects (see below). |
-| Goals | `sub_goals` | Track project goals. A variant tab strip switches between four views: **Constellation** (force-directed graph), **Project Pulse** (triage + spotlight), **Dependency Flow** (dependency-aware swimlanes), and **Kanban** (your-turn / agent's-turn / done board). **This is the home for goal management** — the Projects tab no longer embeds a goal board. |
+| Goals | `sub_goals` | Track project goals across **Board** (your-turn / agent's-turn / done kanban) and **Map** (force-directed graph + dependency edges), with `+ New goal` authoring and a detail drawer (checklist + hybrid progress nudge + team-step intervention + activity feed). **Goals is now also a top-level sidebar section**; this tab is a contextual shortcut to the same surface. Full reference: [`../goals/README.md`](goals/README.md). |
 | Context Map | `sub_context` | Codebase scan results: groups, contexts, entry points, keywords. |
 | Idea Scanner | `sub_scanner` | Generate improvement ideas from the codebase. |
 | Idea Triage | `sub_triage` | Accept / reject scanned ideas into the backlog. |

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 E2E Test: Vault Credential Creation — All 9 Options
-Executes scenarios from docs/tests/vault-credential-creation.md
+Executes scenarios from docs/tests/e2e/vault-credential-creation.md
 """
 
 import httpx

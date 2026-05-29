@@ -276,7 +276,7 @@ async fn call_claude_oneshot(prompt: &str) -> Result<Briefing, AppError> {
         // fires above the budget threshold) and a poor synthesis worse
         // than raw chunks. If costs are a concern, swap to sonnet here.
         "--model".into(),
-        "claude-opus-4-7".into(),
+        "claude-opus-4-8".into(),
     ]);
 
     let mut child = Command::new(&cmd_program)

@@ -30,7 +30,7 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use futures_util::FutureExt;
-use tauri::{AppHandle, Emitter, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 use crate::companion::brain::doctrine;
 use crate::companion::dev_session;
@@ -346,7 +346,7 @@ async fn run_proactive_tick(
     ambient_ctx: Option<&crate::engine::ambient_context::AmbientContextHandle>,
     rule_engine: Option<&crate::engine::context_rules::ContextRuleEngineHandle>,
 ) -> Result<(), AppError> {
-    let extra = match (ambient_ctx, rule_engine) {
+    let mut extra = match (ambient_ctx, rule_engine) {
         (Some(ctx), Some(eng)) => proactive_engine::triggers::ambient_match(ctx, eng)
             .await
             .unwrap_or_else(|e| {
@@ -355,6 +355,10 @@ async fn run_proactive_tick(
             }),
         _ => Vec::new(),
     };
+    // Goals hub: surface stalled / target-approaching project goals. dev_goals
+    // live in the main app DB, reachable here via the managed AppState.
+    let app_state = app.state::<Arc<AppState>>();
+    extra.extend(proactive_engine::triggers::dev_goal_nudges(&app_state.db));
     let new_msgs = proactive_engine::evaluate_with_extra_candidates(pool, extra)?;
     if new_msgs.is_empty() {
         return Ok(());

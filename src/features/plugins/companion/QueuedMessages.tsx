@@ -28,7 +28,7 @@ export function QueuedMessages() {
           data-queued-mode={m.mode}
         >
           <Clock className="w-3.5 h-3.5 shrink-0 text-foreground/50" />
-          <span className="flex-1 truncate text-foreground/80" title={m.text}>
+          <span className="flex-1 truncate text-foreground" title={m.text}>
             {m.text}
           </span>
           <span className="shrink-0 text-foreground/45">{t.plugins.companion.queued_badge}</span>

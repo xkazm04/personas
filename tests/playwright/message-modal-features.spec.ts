@@ -16,7 +16,7 @@ import { CompanionBridge, bridge } from './companion-bridge';
  * the test relies on the `seed_linked_message_and_review` Tauri command
  * which is `#[cfg(debug_assertions)]`).
  *
- * Patterns mirror `docs/tests/template-adoption-scenarios.md`:
+ * Patterns mirror `docs/tests/e2e/template-adoption-scenarios.md`:
  * deterministic seeding via test-only IPC, DOM-driven assertions via
  * the test bridge, no Chromium launch.
  */

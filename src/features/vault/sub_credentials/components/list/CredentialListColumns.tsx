@@ -3,7 +3,7 @@ import { Key, Plug, Trash2, CheckCircle2, XCircle, HelpCircle } from 'lucide-rea
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { type DataGridColumn } from '@/features/shared/components/display/DataGrid';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { formatRelativeTime, timeAgo } from '@/lib/utils/formatters';
 import type { ConnectorDefinition, CredentialMetadata } from '@/lib/types/types';
 import { capitalize } from './credentialListTypes';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -139,6 +139,16 @@ export function useCredentialColumns({
         filterValue: healthFilter,
         onFilterChange: setHealthFilter,
         render: (row: CredRow) => <HealthBadge success={row.credential.healthcheck_last_success} />,
+      },
+      {
+        key: 'last-used',
+        label: 'Last Used',
+        width: '0.7fr',
+        sortable: true,
+        align: 'right' as const,
+        render: (row: CredRow) => (
+          <span className="typo-body text-foreground">{timeAgo(row.credential.last_used_at)}</span>
+        ),
       },
       {
         key: 'created',

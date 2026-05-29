@@ -340,7 +340,7 @@ These ship in a later stage when there's editor work happening anyway.
 2. **Migration produces 375 recipes overnight.** Recipes table currently sparse (likely <100 rows). Going to 500+ may surface query plan issues. Mitigation: the index added in Phase 1a is a unique composite — keeps lookups O(log n). Audit recipe list queries in `crud.rs` for unindexed scans.
 3. **Round-trip parity.** A recipe-derived template adoption MUST produce the same persona as the inline-UC adoption did. Mitigation: capture a `persona_ir` snapshot from a pre-migration adoption, then post-migration re-adopt the same template, diff the two `agent_ir` rows. Any divergence is a Phase 2 parser bug.
 4. **Recipe-version drift across template re-imports.** If a template author edits a UC, the recipe gets `Updated` and bumped to `1.0.1`. Existing personas adopted from that template still pin to `1.0.0`. The new "newer version available" UX doesn't exist yet (Phase 3). Mitigation: ship Phase 1a + 1b with version pinning in `adoption_metadata` (per the existing `useAdoption.ts:30` TODO); ship the UX in a follow-up.
-5. **Test fixtures.** The 5-tier 30-template scenarios in `docs/tests/template-adoption-scenarios.md` rely on the inline-UC shape. Mitigation: those fixtures auto-update during the migration (template JSON files are the same fixtures the test scripts read). Re-run the e2e suite after Phase 2 to confirm parity.
+5. **Test fixtures.** The 5-tier 30-template scenarios in `docs/tests/e2e/template-adoption-scenarios.md` rely on the inline-UC shape. Mitigation: those fixtures auto-update during the migration (template JSON files are the same fixtures the test scripts read). Re-run the e2e suite after Phase 2 to confirm parity.
 
 ---
 
@@ -434,7 +434,7 @@ git push  # to whatever branch is ready for merge
 - Memory: `project_recipe_redesign` — concept agreement (2026-05-02), defines Recipe / Use Case / Template split
 - `unclear-wins/idea-728d3714-persona-hub-a-signed-template` — signing infrastructure, explicitly waiting on this Stage B work; the `source_template_id` field added in Phase 1a is the same field the signing layer would key against
 - `docs/concepts/persona-hub-marketplace.md` — public marketplace shelved, decision gate references "Recipe redesign settles"
-- `docs/tests/template-adoption-scenarios.md` §6.4–6.5 — Stage B test scenarios (recipe-as-use-case adoption, version drift detection)
+- `docs/tests/e2e/template-adoption-scenarios.md` §6.4–6.5 — Stage B test scenarios (recipe-as-use-case adoption, version drift detection)
 - `src-tauri/src/db/models/recipe.rs` — existing recipe schema
 - `src-tauri/src/db/migrations/{incremental,helpers}.rs` — where Phase 1a SQL goes
 - `src-tauri/src/engine/template_v3.rs` — Phase 2 parser updates

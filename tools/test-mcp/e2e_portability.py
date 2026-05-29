@@ -122,7 +122,7 @@ def fatal(step: str, **kw) -> None:
 # ---- Steps -------------------------------------------------------------
 
 def step_preflight() -> None:
-    print("\n[1/6] Preflight")
+    print("\n[1/7] Preflight")
     try:
         h = get("/health")
     except Exception as e:
@@ -134,7 +134,7 @@ def step_preflight() -> None:
 
 
 def step_baseline() -> dict:
-    print("\n[2/6] Baseline")
+    print("\n[2/7] Baseline")
     stats_resp = bridge("getPortabilityStats")
     if not stats_resp.get("success"):
         fatal("getPortabilityStats failed", error=stats_resp.get("error"))
@@ -160,7 +160,7 @@ def step_baseline() -> dict:
 
 
 def step_export(persona_ids: list[str], bundle_path: str) -> None:
-    print("\n[3/6] Export")
+    print("\n[3/7] Export")
     # Best-effort: clear any stale file at this path so a half-written bundle
     # from a prior run can't masquerade as a successful export.
     if os.path.exists(bundle_path):
@@ -173,6 +173,7 @@ def step_export(persona_ids: list[str], bundle_path: str) -> None:
         "personaIds": persona_ids,
         "teamIds": [],
         "credentialIds": [],
+        "includeMemories": True,
         "passphrase": None,
         "filePath": bundle_path,
     }, timeout_secs=90)
@@ -191,7 +192,7 @@ def step_export(persona_ids: list[str], bundle_path: str) -> None:
 
 
 def step_validate_bundle(bundle_path: str, expected_persona_count: int) -> None:
-    print("\n[4/6] Validate bundle on disk")
+    print("\n[4/7] Validate bundle on disk")
     try:
         with zipfile.ZipFile(bundle_path) as zf:
             names = zf.namelist()
@@ -225,14 +226,23 @@ def step_validate_bundle(bundle_path: str, expected_persona_count: int) -> None:
         fatal("persona record missing required fields",
               missing=missing, keys=sorted(sample.keys()))
 
+    # Teams (when present) must carry a `memories` list — guards against a
+    # serde rename on TeamExport.memories silently dropping team memories.
+    bundle_teams = manifest.get("teams") or []
+    for tm in bundle_teams:
+        if "memories" not in tm:
+            fatal("team record missing 'memories' field (serde drift on TeamExport?)",
+                  team=tm.get("name"), keys=sorted(tm.keys()))
+
     record("manifest valid", "ok",
            format_version=fmt,
            personas=len(bundle_personas),
+           teams=len(bundle_teams),
            keys_in_persona=len(sample.keys()))
 
 
 def step_import(bundle_path: str, expected_persona_count: int) -> dict:
-    print("\n[5/6] Import")
+    print("\n[6/7] Import")
     resp = bridge("importPortabilityFromPath", {
         "passphrase": None,
         "filePath": bundle_path,
@@ -254,6 +264,7 @@ def step_import(bundle_path: str, expected_persona_count: int) -> dict:
     record("import succeeded", "ok",
            personas_created=created,
            teams_created=int(result.get("teams_created") or 0),
+           team_memories_created=int(result.get("team_memories_created") or 0),
            credentials_created=int(result.get("credentials_created") or 0),
            tools_created=int(result.get("tools_created") or 0),
            groups_created=int(result.get("groups_created") or 0),
@@ -261,8 +272,51 @@ def step_import(bundle_path: str, expected_persona_count: int) -> dict:
     return {"result": result, "id_mapping": result.get("id_mapping") or {}}
 
 
+def step_memory_toggle(persona_ids: list[str]) -> None:
+    """Export the same personas with includeMemories=False and assert the
+    bundle carries no persona or team memories. Directly validates the
+    Include-memories opt-out independent of whether the workspace has memories."""
+    print("\n[5/7] Memory toggle (includeMemories=False)")
+    fd, toggle_path = tempfile.mkstemp(suffix="_portability_nomem.zip", prefix="personas_smoke_")
+    os.close(fd)
+    try:
+        os.remove(toggle_path)
+    except OSError:
+        pass
+
+    try:
+        resp = bridge("exportPortabilityToPath", {
+            "personaIds": persona_ids,
+            "teamIds": [],
+            "credentialIds": [],
+            "includeMemories": False,
+            "passphrase": None,
+            "filePath": toggle_path,
+        }, timeout_secs=90)
+        if not resp.get("success") or not os.path.exists(toggle_path):
+            record("memory-toggle export failed", "info", error=resp.get("error"))
+            return
+
+        with zipfile.ZipFile(toggle_path) as zf:
+            with zf.open("manifest.json") as fh:
+                manifest = json.load(fh)
+
+        persona_mem = sum(len(p.get("memories") or []) for p in (manifest.get("personas") or []))
+        team_mem = sum(len(tm.get("memories") or []) for tm in (manifest.get("teams") or []))
+        if persona_mem or team_mem:
+            fatal("includeMemories=False still exported memories",
+                  persona_memories=persona_mem, team_memories=team_mem)
+        record("memory opt-out honored", "ok", persona_memories=0, team_memories=0)
+    finally:
+        if os.path.exists(toggle_path):
+            try:
+                os.remove(toggle_path)
+            except OSError:
+                pass
+
+
 def step_cleanup(import_outcome: dict, baseline_persona_ids: list[str]) -> None:
-    print("\n[6/6] Cleanup")
+    print("\n[7/7] Cleanup")
     if args.keep_imports:
         record("cleanup skipped (--keep-imports)", "info")
         return
@@ -337,6 +391,7 @@ def main() -> int:
         baseline = step_baseline()
         step_export(baseline["persona_ids"], bundle_path)
         step_validate_bundle(bundle_path, baseline["persona_count"])
+        step_memory_toggle(baseline["persona_ids"])
         import_outcome = step_import(bundle_path, baseline["persona_count"])
         step_cleanup(import_outcome, baseline["persona_ids"])
     finally:

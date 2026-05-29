@@ -59,7 +59,7 @@ export function CredentialList({
       cats.add(getConnectorForType(c.service_type)?.category || 'other');
     }
     return [
-      { value: '', label: `All Categories (${cats.size})` },
+      { value: '', label: 'All' },
       ...Array.from(cats).sort().map((c) => ({
         value: c,
         label: capitalize(c),

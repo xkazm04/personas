@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useConfirmDestructive } from '@/features/shared/components/overlays/ConfirmDestructiveModal';
 import { getPersonaBlastRadius } from '@/api/agents/personas';
+import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
 import type { Persona } from '@/lib/bindings/Persona';
@@ -36,6 +37,10 @@ export function usePersonaActions({
     (id: string) => {
       const persona = personas.find((p) => p.id === id);
       if (!persona) return;
+      if (persona.trust_origin === 'system') {
+        useToastStore.getState().addToast(t.agents.overview_actions.system_persona_undeletable, 'warning');
+        return;
+      }
       confirm({
         title: t.agents.overview_actions.delete_agent,
         message: t.agents.overview_actions.delete_agent_message,
@@ -56,13 +61,17 @@ export function usePersonaActions({
         },
       });
     },
-    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, deletePersona, setSelectedIds],
+    [personas, confirm, t.agents.overview_actions.delete_agent, t.agents.overview_actions.delete_agent_message, t.agents.overview_actions.system_persona_undeletable, deletePersona, setSelectedIds],
   );
 
   const handleBatchDelete = useCallback(() => {
     if (selectedIds.size === 0) return;
-    const ids = [...selectedIds];
+    // System personas (the Director) can't be deleted — drop them from the batch.
+    const ids = [...selectedIds].filter(
+      (id) => personas.find((p) => p.id === id)?.trust_origin !== 'system',
+    );
     const count = ids.length;
+    if (count === 0) return;
     confirm({
       title: tx(t.agents.overview_actions.delete_agents, { count }),
       message: tx(t.agents.overview_actions.delete_agents_message, { count }),
@@ -77,7 +86,7 @@ export function usePersonaActions({
         }
       },
     });
-  }, [selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, deletePersona]);
+  }, [personas, selectedIds, confirm, tx, t.agents.overview_actions.delete_agents, t.agents.overview_actions.delete_agents_message, setSelectedIds, deletePersona]);
 
   const draftIds = useMemo(
     () => personas.filter((p) => isDraft(p)).map((p) => p.id),

@@ -1,5 +1,5 @@
-// Persona-health lint — the PRE-RUN GATE (docs/test/evaluation-rubric.md §4)
-// and the standalone P1 baseline (docs/test/run-protocol.md §9).
+// Persona-health lint — the PRE-RUN GATE (docs/tests/autonomy-eval/evaluation-rubric.md §4)
+// and the standalone P1 baseline (docs/tests/autonomy-eval/run-protocol.md §9).
 //
 // Read-only. Answers: "are these teams structurally sound enough that running
 // them would teach us anything?" A team that cannot autonomously cascade, or

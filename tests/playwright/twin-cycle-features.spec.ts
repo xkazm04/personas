@@ -20,7 +20,7 @@ import { bridge, CompanionBridge } from './companion-bridge';
  *     friend-twin-130914's commits. If the running app is on master
  *     and the worktree hasn't been merged, the new-feature assertions
  *     will fail — that's the intended signal: merging activates these
- *     features. See docs/tests/parallel-cli-workflow.md "dual-checkout
+ *     features. See docs/tests/strategy/parallel-cli-workflow.md "dual-checkout
  *     trap" for why frontend changes only reach the running app via
  *     the main checkout's source (or via merge into master).
  */

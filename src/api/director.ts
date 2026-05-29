@@ -39,16 +39,52 @@ export async function getDirectorPersonaId(): Promise<string> {
   return invoke<string>('get_director_persona_id');
 }
 
+// Phase 2 runs the Director persona through the execution runner and polls it
+// to completion, so a single evaluation can take minutes (backend ceiling is
+// 360s). Use generous timeouts well above the default 90s.
+const DIRECTOR_RUN_TIMEOUT_MS = 420_000; // 7 min — one target
+const DIRECTOR_BATCH_TIMEOUT_MS = 1_800_000; // 30 min — sequential over many
+
 export async function runDirectorOnPersona(personaId: string): Promise<number> {
-  return invoke<number>('run_director_on_persona', { personaId });
+  return invoke<number>('run_director_on_persona', { personaId }, { timeoutMs: DIRECTOR_RUN_TIMEOUT_MS });
 }
 
 export async function runDirectorBatch(maxPersonas?: number): Promise<DirectorReport> {
-  return invoke<DirectorReport>('run_director_batch', { maxPersonas: maxPersonas ?? null });
+  return invoke<DirectorReport>(
+    'run_director_batch',
+    { maxPersonas: maxPersonas ?? null },
+    { timeoutMs: DIRECTOR_BATCH_TIMEOUT_MS },
+  );
 }
 
 export async function listDirectorVerdicts(personaId?: string): Promise<DirectorVerdictRow[]> {
   return invoke<DirectorVerdictRow[]>('list_director_verdicts', {
     personaId: personaId ?? null,
   });
+}
+
+/**
+ * Recent Director scores per persona, oldest→newest. Personas with no scored
+ * executions return `[]`. Powers the verdict-trend sparkline on the personas
+ * table — one batched call covers every visible row.
+ */
+export async function listDirectorScoreTrends(
+  personaIds: string[],
+  limit?: number,
+): Promise<Record<string, number[]>> {
+  if (personaIds.length === 0) return {};
+  return invoke<Record<string, number[]>>('list_director_score_trends', {
+    personaIds,
+    limit: limit ?? null,
+  });
+}
+
+/** Whether the Director uses the Obsidian Brain vault as long-term memory. */
+export async function getDirectorBrainEnabled(): Promise<boolean> {
+  return invoke<boolean>('get_director_brain_enabled');
+}
+
+/** Toggle the Director's Brain long-term memory (gated on a configured vault). */
+export async function setDirectorBrainEnabled(enabled: boolean): Promise<void> {
+  return invoke<void>('set_director_brain_enabled', { enabled });
 }

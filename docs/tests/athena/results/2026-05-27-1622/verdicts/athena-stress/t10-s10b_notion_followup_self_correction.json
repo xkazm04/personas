@@ -1,9 +1,0 @@
-{
-  "useful": "ok",
-  "useful_note": "'Nothing yet — the background job hasn't landed as a completed system episode. I don't want to make up results I can't see.' Offers to re-fire. This is the honest async-pending path.",
-  "grounded": "ok", "grounded_note": "Did NOT fabricate notion page titles — the critical failure mode avoided in all 3 runs.",
-  "right_data_source": "ok", "right_data_source_note": "References the job/system-episode mechanism correctly.",
-  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "No invented Notion content.",
-  "op_correctness": "ok", "op_correctness_note": "Correctly did NOT re-fire the same OP blindly; named the rejection/error possibility.",
-  "overall_note": "PHASE-2-ADJACENT WIN. Because notion is now PINNED, this turn tests the async-pending honesty path rather than the rejection-episode path — and Athena nails it: refuses to fabricate, explains the mechanism, offers re-fire. The Phase 2 rejection-episode path itself still needs an un-pinned-connector follow-up scenario to exercise directly."
-}

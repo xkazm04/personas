@@ -1038,6 +1038,19 @@ pub fn run() {
             }
             st.checkpoint("persona_jobs_worker");
 
+            // Cloud sync writer (Phase 1a): pushes a secret-free read-projection
+            // of local data to the user's own Supabase tenant for the web
+            // dashboard. Default off (opt-in via Settings); leader-gated inside
+            // the loop. Event-driven wakes come from the CDC drain (notify_dirty).
+            cloud::sync::spawn_sync_loop(app.handle().clone(), state_arc.clone());
+            st.checkpoint("cloud_sync_writer");
+
+            // Cloud remote commands (Phase 2): polls Supabase for run-requests
+            // from the web dashboard and surfaces them as explicit approval
+            // prompts. Never auto-executes; leader-gated + sync-enabled-gated.
+            cloud::remote_commands::spawn_poll_loop(app.handle().clone(), state_arc.clone());
+            st.checkpoint("cloud_remote_commands");
+
             // F-CRON: scheduled-curation worker. Ticks every 60s,
             // reads `persona_curation_schedule` rows, evaluates the
             // cron expression vs `last_curation_at` (or `created_at`
@@ -1352,6 +1365,7 @@ pub fn run() {
             // Core -- Personas
             commands::core::personas::list_personas,
             commands::core::personas::get_persona,
+            commands::core::personas::set_persona_starred,
             commands::core::personas::create_persona,
             commands::core::personas::update_persona,
             commands::core::personas::update_persona_parameters,
@@ -1982,6 +1996,7 @@ pub fn run() {
             // Communication -- Observability: Metrics
             commands::communication::observability::metrics::get_metrics_summary,
             commands::communication::observability::metrics::get_metrics_chart_data,
+            commands::communication::observability::metrics::get_value_rollup,
             commands::communication::observability::metrics::get_all_monthly_spend,
             commands::communication::observability::metrics::get_overview_bundle,
             commands::communication::observability::metrics::get_prompt_performance,
@@ -2060,6 +2075,8 @@ pub fn run() {
             commands::teams::assignments::abort_team_assignment,
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
+            commands::teams::assignments::set_team_assignment_goal,
+            commands::teams::assignments::list_team_assignments_for_goal,
             commands::teams::assignments::decompose_team_assignment_goal,
             commands::teams::assignments::companion_assign_team,
             commands::teams::assignments::create_assignment_template,
@@ -2441,6 +2458,12 @@ pub fn run() {
             commands::infrastructure::cloud::smee_relay_update,
             commands::infrastructure::cloud::smee_relay_set_status,
             commands::infrastructure::cloud::smee_relay_delete,
+            commands::infrastructure::cloud_sync::cloud_sync_set_enabled,
+            commands::infrastructure::cloud_sync::cloud_sync_status,
+            commands::infrastructure::cloud_sync::cloud_sync_now,
+            cloud::remote_commands::remote_command_list_pending,
+            cloud::remote_commands::remote_command_approve,
+            cloud::remote_commands::remote_command_reject,
             // Infrastructure -- GitLab
             commands::infrastructure::gitlab::gitlab_connect,
             commands::infrastructure::gitlab::gitlab_connect_from_vault,
@@ -2518,6 +2541,9 @@ pub fn run() {
             commands::infrastructure::director::run_director_on_persona,
             commands::infrastructure::director::run_director_batch,
             commands::infrastructure::director::list_director_verdicts,
+            commands::infrastructure::director::list_director_score_trends,
+            commands::infrastructure::director::get_director_brain_enabled,
+            commands::infrastructure::director::set_director_brain_enabled,
             // Dev Tools -- Projects
             commands::infrastructure::dev_tools::dev_tools_list_projects,
             commands::infrastructure::dev_tools::dev_tools_get_project,
@@ -2540,6 +2566,19 @@ pub fn run() {
             // Dev Tools -- Goal Signals
             commands::infrastructure::dev_tools::dev_tools_list_goal_signals,
             commands::infrastructure::dev_tools::dev_tools_create_goal_signal,
+            // Dev Tools -- Goal Items + progress resolver (goals hub)
+            commands::infrastructure::dev_tools::dev_tools_list_goal_items,
+            commands::infrastructure::dev_tools::dev_tools_create_goal_item,
+            commands::infrastructure::dev_tools::dev_tools_update_goal_item,
+            commands::infrastructure::dev_tools::dev_tools_delete_goal_item,
+            commands::infrastructure::dev_tools::dev_tools_reorder_goal_items,
+            commands::infrastructure::dev_tools::dev_tools_list_child_goals,
+            commands::infrastructure::dev_tools::dev_tools_resolve_goal_progress,
+            // Dev Tools -- Goals v2 cross-project surfaces (Portfolio / Attention / Timeline / Map)
+            commands::infrastructure::dev_tools::dev_tools_list_all_goals,
+            commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
+            commands::infrastructure::dev_tools::dev_tools_portfolio_summary,
+            commands::infrastructure::dev_tools::dev_tools_attention_queue,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,

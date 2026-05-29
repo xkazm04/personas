@@ -44,7 +44,7 @@ export function QuickReplies({
           key={`${i}-${opt}`}
           onClick={() => onPick(opt)}
           disabled={disabled}
-          className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-primary/10 hover:bg-primary/20 text-primary px-2.5 py-1.5 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
+          className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary px-2.5 py-1.5 typo-caption font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-ring"
           title={opt}
         >
           <span

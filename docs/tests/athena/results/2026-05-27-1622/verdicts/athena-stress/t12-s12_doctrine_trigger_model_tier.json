@@ -1,9 +1,0 @@
-{
-  "useful": "ok",
-  "useful_note": "model_tier_choice card emitted. Leads with the Slack read-only blocker (list_channels only, no message-read) — proactive surfacing. 'Start on Haiku, instrument misclassifications, reach for Sonnet only if hard cases prove it'.",
-  "grounded": "ok", "grounded_note": "Tier rationale + Slack capability inventory accurate.",
-  "right_data_source": "ok", "right_data_source_note": "Card fired on trigger phrasing.",
-  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "",
-  "op_correctness": "ok", "op_correctness_note": "Hard assertion passed.",
-  "overall_note": "Reference-quality category-I with proactive blocker surfacing."
-}

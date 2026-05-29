@@ -19,7 +19,7 @@ use std::sync::Arc;
 
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
-use tauri::State;
+use tauri::{Manager, State};
 
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::session::DEFAULT_SESSION_ID;
@@ -215,6 +215,7 @@ pub async fn companion_approve_action(
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
+        "update_dev_goal" => execute_update_dev_goal(&state, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
         "fleet_send_input" => execute_fleet_send_input(&params),
@@ -281,6 +282,81 @@ pub async fn companion_reject_action(
         message: reason,
         client_action: None,
     })
+}
+
+// ── Goal 3: conservative autoapprove ────────────────────────────────────
+
+/// Action kinds that auto-resolve when autonomous mode is on. Conservative
+/// by design — only low-blast-radius, reversible actions land here:
+/// memory writes (scoped), background scan jobs, future self-nudges.
+/// External writes (`use_connector` writes — Gmail send, Discord post),
+/// DB mutations (`execute_mutation`), agent creation (`build_oneshot` /
+/// `prefill_persona_create`), team work (`assign_team`) ALWAYS stay
+/// gated — autonomous mode does not override the user's click on those.
+const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
+    "write_fact",
+    "write_backlog_item",
+    "enqueue_dev_job",
+    "schedule_proactive",
+];
+
+/// If `approval.action` is on the conservative autoapprove allowlist,
+/// resolve it immediately (executes the action + transitions status the
+/// same way `companion_approve_action` does on a user click). Returns
+/// `Ok(true)` when the approval was auto-resolved (success OR failure),
+/// `Ok(false)` when it was left pending for the user.
+///
+/// Caller contract: only call this when autonomous mode is on (the
+/// reviewer / autonomous chain already gated on the toggle; this helper
+/// does NOT re-check it, so manual flows can't accidentally invoke
+/// autoapprove behavior). Best-effort: a DB / executor failure surfaces
+/// as an Err and the approval is left in 'running' status; the caller
+/// can log + continue. Mirrors `companion_approve_action`'s structure
+/// to keep the manual + auto paths in lockstep.
+pub async fn auto_resolve_if_allowed(
+    app: &tauri::AppHandle,
+    approval: &crate::companion::dispatcher::CreatedApproval,
+) -> Result<bool, AppError> {
+    if !AUTOAPPROVE_ALLOWLIST.contains(&approval.action.as_str()) {
+        return Ok(false);
+    }
+    let state = app.state::<Arc<AppState>>();
+    // Same atomic pending→running transition the manual path uses.
+    let (action, params) = load_pending(&state, &approval.id)?;
+    // Belt-and-suspenders: re-check the loaded action matches the
+    // allowlist. CreatedApproval.action and the persisted payload are
+    // written together so this is unreachable in practice; if it ever
+    // diverges (manual DB tampering), finalize as approved_failed
+    // rather than leaving the row stuck in 'running'.
+    if !AUTOAPPROVE_ALLOWLIST.contains(&action.as_str()) {
+        finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
+        return Ok(false);
+    }
+    let exec_result = match action.as_str() {
+        "write_fact" => execute_write_fact(&state, &params).await,
+        "write_backlog_item" => execute_write_backlog_item(&state, &params),
+        "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
+        "schedule_proactive" => execute_schedule_proactive(&state, &params),
+        _ => unreachable!("allowlist mismatch"),
+    };
+    let (status_text, embedder_log) = match exec_result {
+        Ok(r) => (
+            APPROVAL_STATUS_APPROVED,
+            format!(
+                "[Athena action auto-approved & executed — conservative policy] {action}\n\n{}",
+                r.message
+            ),
+        ),
+        Err(e) => (
+            APPROVAL_STATUS_APPROVED_FAILED,
+            format!(
+                "[Athena action auto-approved but failed — conservative policy] {action}\n\nExecution failed: {e}"
+            ),
+        ),
+    };
+    finalize_approval(&state, &approval.id, status_text)?;
+    log_action_episode(&state, &embedder_log).await;
+    Ok(true)
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────
@@ -747,6 +823,48 @@ fn execute_write_goal(
     Ok(ExecuteResult::message(format!(
         "Goal `{id}` recorded: \"{}\" (priority {}).",
         title, priority
+    )))
+}
+
+/// Goals hub — apply an Athena-proposed dev-goal update (approval-gated; never
+/// auto-approved). Updates status/progress on the main-DB `dev_goals` row and
+/// records an `athena_update` signal so the change shows in the goal's feed.
+fn execute_update_dev_goal(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    use crate::db::repos::dev_tools as dt;
+    let goal_id = params
+        .get("goal_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("update_dev_goal: missing `goal_id`".into()))?;
+    let status = params.get("status").and_then(|v| v.as_str());
+    let progress = params
+        .get("progress")
+        .and_then(|v| v.as_i64())
+        .map(|n| n.clamp(0, 100) as i32);
+    let note = params.get("note").and_then(|v| v.as_str());
+    if status.is_none() && progress.is_none() {
+        return Err(AppError::Internal(
+            "update_dev_goal: nothing to update (need `status` and/or `progress`)".into(),
+        ));
+    }
+    dt::update_goal(
+        &state.db, goal_id, None, None, status, progress, None, None, None, None,
+    )?;
+    let summary = note.map(str::to_string).unwrap_or_else(|| {
+        let mut parts = Vec::new();
+        if let Some(s) = status {
+            parts.push(format!("status → {s}"));
+        }
+        if let Some(p) = progress {
+            parts.push(format!("progress → {p}%"));
+        }
+        format!("Athena updated goal ({})", parts.join(", "))
+    });
+    let _ = dt::create_goal_signal(&state.db, goal_id, "athena_update", None, progress, Some(&summary));
+    Ok(ExecuteResult::message(format!(
+        "Dev goal `{goal_id}` updated — {summary}."
     )))
 }
 
