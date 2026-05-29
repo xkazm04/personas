@@ -9,6 +9,31 @@ prose **coaching verdicts**.
 It is the longitudinal, portfolio-level counterpart to Athena's per-execution
 reactive review.
 
+## The command center (the Director's home)
+
+The Director has a **dedicated top-level route** (`director` sidebar section,
+TEAM tier) — `src/features/director/DirectorPage.tsx`, lazy-loaded from
+`PersonasPage`. It has four L2 sub-tabs, all fed by the shared
+`useDirector` hook (`src/features/director/useDirector.ts`, the single source of
+truth for every Director surface):
+
+- **Overview** — the portfolio scorecard. KPI cards for fleet value-delivered
+  rate, average verdict score, cost-per-value, and in-scope count; a 0–5
+  **score distribution** bar across in-scope personas; a **model efficiency**
+  table; and the recent coaching feed. All of this comes from the
+  `get_director_portfolio` command, which finally surfaces the `ValueRollup`
+  that until now only ever reached the LLM payload.
+- **Roster** — the first-class scope manager: each starred persona with its
+  latest score, trend sparkline, value rate, and last-review time, plus inline
+  "Review now" / remove-from-scope, and one-click add-to-scope for unstarred
+  personas.
+- **Reviews** — the full coaching history, filterable by severity, each verdict
+  expandable to its rationale + suggested actions.
+- **Memory** — the Brain long-term-memory toggle (relocated here) + a deep-link
+  into the Obsidian Brain plugin.
+
+The header carries a **Review all in scope** action reachable from every tab.
+
 ## Scope — the star
 
 The Director only coaches **starred** personas. Starring is done from the
@@ -64,12 +89,12 @@ embeddings, so it works in the lite build. Toggle via
 
 ## Where verdicts surface
 
-- **Director panel** (`src/features/agents/components/allPersonas/DirectorPanel.tsx`):
-  the unified management card at the top of the personas page. Shows the
-  scope summary (how many personas are starred + when the last review ran),
-  a **Run review now** button (batch-runs the Director over starred personas),
-  the Brain long-term-memory toggle (when a vault is configured), and a
-  **Recent verdicts** list of the most recent coaching notes.
+- **Command center** (`src/features/director/`): the primary surface — see the
+  section above.
+- **Agents-page teaser** (`src/features/agents/components/allPersonas/DirectorPanel.tsx`):
+  a slim status strip at the top of the personas page (scope + avg score + last
+  review) with an **Open Director** deep-link into the command center. Since v2
+  it no longer duplicates the dashboard — the full management lives in the route.
 - **Personas table** (`src/features/agents/components/allPersonas/PersonaOverviewColumns.tsx`):
   a **Verdict** column shows each persona's score-trend sparkline — the
   most recent N (default 10) `director_score` values for that persona,
@@ -94,6 +119,7 @@ embeddings, so it works in the lite build. Toggle via
 | `run_director_batch(max_personas?)` | Review all starred personas sequentially. |
 | `list_director_verdicts(persona_id?)` | Read Director-sourced coaching reviews. |
 | `list_director_score_trends(persona_ids, limit?)` | Batched recent score history per persona (oldest→newest); powers the personas-table sparkline. |
+| `get_director_portfolio(days?)` | Portfolio analytics for the command center: fleet value rollup + in-scope roster + 0–5 score distribution + headline counts. Composes existing aggregates (no new SQL). |
 | `set_persona_starred(id, starred)` | Add/remove a persona from the Director's scope. |
 | `get_director_brain_enabled()` / `set_director_brain_enabled(enabled)` | Read/toggle the Brain long-term-memory wiring. |
 
@@ -105,10 +131,19 @@ embeddings, so it works in the lite build. Toggle via
   helpers, split out of `director.rs` so the gating + filesystem code stays
   separate from the evaluator pipeline).
 - Commands: `src-tauri/src/commands/infrastructure/director.rs`.
+- Portfolio analytics: `director_portfolio()` in `engine/director.rs` (structs
+  `DirectorPortfolio` / `DirectorRosterEntry` / `DirectorScoreBand`), reusing
+  `metrics::get_value_rollup`.
 - Scope/score storage: `personas.starred`, `persona_executions.director_score`
   / `director_review_md` (migrations in `src-tauri/src/db/migrations/`).
-- UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx` (management
-  card), `src/features/agents/sub_activity/*` (Verdict column),
+- Command center: `src/features/director/` — `DirectorPage.tsx`,
+  `useDirector.ts` (shared data/actions hook), `directorScore.ts` +
+  `ScoreSparkline.tsx` (shared 0–5 score visual language), `panels/*`.
+- Shared primitive: `src/features/shared/components/display/StatCard.tsx` (KPI
+  card, added with this feature).
+- Other UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx`
+  (slim teaser) + `VerdictTrendCell.tsx` (table sparkline),
+  `src/features/agents/sub_activity/*` (Verdict column),
   `src/features/agents/sub_executions/detail/*` (Director tab). All UI strings
   live under the consolidated `t.director.*` i18n namespace
   (`src/i18n/locales/en.json`).
