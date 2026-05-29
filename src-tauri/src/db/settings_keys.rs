@@ -197,6 +197,15 @@ pub const MONTHLY_COST_CEILING_USD: &str = "monthly_cost_ceiling_usd";
 /// Default monthly cost ceiling in USD. `0.0` means no ceiling.
 pub const MONTHLY_COST_CEILING_USD_DEFAULT: f64 = 0.0;
 
+/// Whether the autonomous goal-advancement tick may, unattended, turn a
+/// goal-linked team's active goal into a running `team_assignment`. Default OFF
+/// — nothing spends tokens autonomously until the user opts in from Settings.
+/// Read by `engine::subscription::GoalAdvanceSubscription`. Stored
+/// `"true"` / `"false"`.
+pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
+/// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
+pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
+
 /// Whether desktop → cloud dashboard sync is enabled. Value: `"true"` / `"false"`.
 /// Default off; the user opts in from Settings. Read by the background sync loop.
 pub const CLOUD_SYNC_ENABLED: &str = "cloud_sync_enabled";
@@ -248,6 +257,7 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_EXEC_REVIEW_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
+    AUTONOMOUS_GOAL_ADVANCEMENT,
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
@@ -336,7 +346,10 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         COMPANION_CONSTITUTION_VERSION => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (version), got {value:?}")
         }),
-        CLI_SESSION_AWARENESS_ENABLED | COMPANION_AUTONOMOUS_MODE | CLOUD_SYNC_ENABLED => {
+        CLI_SESSION_AWARENESS_ENABLED
+        | COMPANION_AUTONOMOUS_MODE
+        | CLOUD_SYNC_ENABLED
+        | AUTONOMOUS_GOAL_ADVANCEMENT => {
             match value {
                 "true" | "false" => Ok(()),
                 _ => Err(format!(

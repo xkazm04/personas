@@ -406,7 +406,7 @@ pub fn start_loops(
             scheduler: scheduler.clone(),
             app: app.clone(),
             pool: pool.clone(),
-            engine,
+            engine: engine.clone(),
         }),
         Box::new(TriggerSchedulerSubscription {
             scheduler: scheduler.clone(),
@@ -454,6 +454,13 @@ pub fn start_loops(
         Box::new(subscription::DigestSubscription {
             pool: pool.clone(),
             app: app.clone(),
+        }),
+        // Autonomous goal advancement — default-OFF; gated on the
+        // AUTONOMOUS_GOAL_ADVANCEMENT setting inside its tick.
+        Box::new(subscription::GoalAdvanceSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+            engine: engine.clone(),
         }),
     ];
 
