@@ -1100,6 +1100,167 @@ pub fn list_score_trends(
 }
 
 // ---------------------------------------------------------------------------
+// Portfolio analytics (command center)
+// ---------------------------------------------------------------------------
+//
+// Composes existing aggregates — `metrics::get_value_rollup` (fleet + per
+// persona), `personas::get_starred`, and the score-trend query — into a single
+// payload for the Director command center. No new SQL aggregation: the
+// value-rollup that Phase 2 only ever fed to the LLM is finally surfaced.
+
+/// One persona in the Director's coaching scope, with its latest verdict score,
+/// recent trend, and value signal. Powers the command-center roster and the
+/// Overview score distribution.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectorRosterEntry {
+    pub persona_id: String,
+    pub name: String,
+    pub icon: Option<String>,
+    pub color: Option<String>,
+    /// Latest `director_score` (0-5); `None` when never reviewed.
+    #[ts(type = "number | null")]
+    pub latest_score: Option<i64>,
+    /// Recent score history, oldest→newest (for the sparkline).
+    #[ts(type = "number[]")]
+    pub score_trend: Vec<i64>,
+    /// `value_delivered_rate` over the window (0.0 when nothing assessed).
+    pub value_delivered_rate: f64,
+    #[ts(type = "number")]
+    pub total_executions: i64,
+    /// ISO timestamp of the most recent scored review; `None` when never reviewed.
+    pub last_reviewed_at: Option<String>,
+}
+
+/// Count of in-scope personas whose latest score falls in this 0-5 band. Always
+/// emitted for every band 0..=5 so the distribution bar has stable buckets.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectorScoreBand {
+    #[ts(type = "number")]
+    pub score: i64,
+    #[ts(type = "number")]
+    pub count: i64,
+}
+
+/// Portfolio-level Director analytics for the command center: the whole-fleet
+/// value rollup, the in-scope roster, the latest-score distribution, and
+/// headline counts. Composed entirely from existing aggregates.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct DirectorPortfolio {
+    /// Whole-fleet value rollup (all personas, not only starred) — the
+    /// Director's domain is the whole fleet's value, so the headline KPIs are
+    /// fleet-wide.
+    pub rollup: ValueRollup,
+    /// One entry per starred (in-scope) persona.
+    pub roster: Vec<DirectorRosterEntry>,
+    /// Latest-score histogram across in-scope personas (always 6 bands 0..=5).
+    pub score_distribution: Vec<DirectorScoreBand>,
+    #[ts(type = "number")]
+    pub in_scope: i64,
+    #[ts(type = "number")]
+    pub reviewed: i64,
+    #[ts(type = "number")]
+    pub unreviewed: i64,
+    /// Mean latest-score across reviewed in-scope personas; `None` when none
+    /// have been reviewed yet.
+    pub avg_score: Option<f64>,
+    #[ts(type = "number")]
+    pub period_days: i64,
+}
+
+/// Assemble the command-center portfolio. `days` clamps the value-rollup window
+/// (1..=365, default handled by the caller). Best-effort per-persona rollups: a
+/// single persona's failed rollup degrades that row to zeroed value, never the
+/// whole call.
+pub fn director_portfolio(pool: &DbPool, days: i64) -> Result<DirectorPortfolio, AppError> {
+    let days = days.clamp(1, 365);
+
+    // Fleet-wide rollup — reuses the persona_id=None path.
+    let rollup = metrics::get_value_rollup(pool, Some(days), None)?;
+
+    let starred = personas::get_starred(pool)?;
+    let ids: Vec<String> = starred.iter().map(|p| p.id.clone()).collect();
+
+    // Batched score trends (oldest→newest) for every in-scope persona.
+    let trends = list_score_trends(pool, &ids, 12)?;
+
+    let conn = pool.get()?;
+    let mut last_reviewed_stmt = conn.prepare(
+        "SELECT MAX(created_at) FROM persona_executions \
+         WHERE persona_id = ?1 AND director_score IS NOT NULL",
+    )?;
+
+    let mut roster: Vec<DirectorRosterEntry> = Vec::with_capacity(starred.len());
+    for p in &starred {
+        let score_trend = trends.get(&p.id).cloned().unwrap_or_default();
+        let latest_score = score_trend.last().copied();
+        let last_reviewed_at: Option<String> = last_reviewed_stmt
+            .query_row(params![p.id], |row| row.get::<_, Option<String>>(0))
+            .unwrap_or(None);
+        // Per-persona value signal; degrade to zeros if the rollup query fails.
+        let (value_delivered_rate, total_executions) =
+            match metrics::get_value_rollup(pool, Some(days), Some(&p.id)) {
+                Ok(r) => (r.value_delivered_rate, r.total_executions),
+                Err(_) => (0.0, 0),
+            };
+        roster.push(DirectorRosterEntry {
+            persona_id: p.id.clone(),
+            name: p.name.clone(),
+            icon: p.icon.clone(),
+            color: p.color.clone(),
+            latest_score,
+            score_trend,
+            value_delivered_rate,
+            total_executions,
+            last_reviewed_at,
+        });
+    }
+
+    // Latest-score distribution across the 6 bands.
+    let mut band_counts = [0i64; 6];
+    let mut reviewed = 0i64;
+    let mut score_sum = 0i64;
+    for entry in &roster {
+        if let Some(s) = entry.latest_score {
+            let idx = s.clamp(0, 5) as usize;
+            band_counts[idx] += 1;
+            reviewed += 1;
+            score_sum += s.clamp(0, 5);
+        }
+    }
+    let score_distribution: Vec<DirectorScoreBand> = (0..=5)
+        .map(|score| DirectorScoreBand {
+            score,
+            count: band_counts[score as usize],
+        })
+        .collect();
+
+    let in_scope = roster.len() as i64;
+    let unreviewed = in_scope - reviewed;
+    let avg_score = if reviewed > 0 {
+        Some(score_sum as f64 / reviewed as f64)
+    } else {
+        None
+    };
+
+    Ok(DirectorPortfolio {
+        rollup,
+        roster,
+        score_distribution,
+        in_scope,
+        reviewed,
+        unreviewed,
+        avg_score,
+        period_days: days,
+    })
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 

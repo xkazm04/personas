@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use tauri::State;
 
-use crate::engine::director::{self, DirectorReport, DirectorVerdictRow};
+use crate::engine::director::{self, DirectorPortfolio, DirectorReport, DirectorVerdictRow};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -72,6 +72,18 @@ pub fn list_director_score_trends(
     require_auth_sync(&state)?;
     let limit = limit.unwrap_or(10).clamp(2, 30);
     director::list_score_trends(&state.db, &persona_ids, limit)
+}
+
+/// Portfolio analytics for the Director command center: fleet value rollup +
+/// in-scope roster + latest-score distribution + headline counts. `days` clamps
+/// the value-rollup window (default 30, 1..=365).
+#[tauri::command]
+pub fn get_director_portfolio(
+    state: State<'_, Arc<AppState>>,
+    days: Option<i64>,
+) -> Result<DirectorPortfolio, AppError> {
+    require_auth_sync(&state)?;
+    director::director_portfolio(&state.db, days.unwrap_or(30))
 }
 
 /// Whether the Director may use the Obsidian Brain vault as long-term memory.
