@@ -32,6 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### goals-exec-awareness — Unify goals + wire team-alignment "pre-ritual" into persona executions
+- Started: 2026-05-29 (this session)
+- Status: COMPLETE — 2 commits (4f3ff8d2a code + 43d50f7e9 docs) on master. cargo check --lib --features desktop + 10 unit tests green. Live-validated on :17320: [TEAM-ALIGN] confirmed in execution 5143b881 log; 7 teams backfilled dev_projects.team_id (via dev_tools_update_project); read-only probe shows roster+capabilities+active-goal all resolve per team. Left in Active (ledger concurrently dirty); relocate to Recently completed later.
+- Branch: master (disjoint scope; need master for live :17320 rebuild/restart validation)
+- Paths: NEW src-tauri/src/engine/runner/team_context.rs + src-tauri/src/engine/runner/mod.rs (add `mod team_context;` + injection block after the team-memory seam ~L799 only), docs/features/goals/README.md + docs/features/pipeline/team-orchestration.md (alignment-block section). Rust-only on the read path; no schema, no IPC, no bindings.
+- Note: Implements the team-engagement 3a "team-context block" — injects roster+capabilities + active team goals + alignment doctrine into every member execution; persona self-decides relevance (LLM-driven, no per-exec matching). DISJOINT from orb/slack/director/companion worktrees (none touch engine/runner/). Atomic per-file commits; `cargo check --lib` only (running app holds the .exe lock).
+
 ### orb-decisions — Athena orb quick-response (numeric buttons + leader-key shortcut mode)
 - Started: 2026-05-29
 - Status: COMPLETE — 5 commits (1a6544d90..d99f84667), NOT merged, awaiting user review. cargo check (P1) + tsc 0 + eslint 0 + vite build + 11 unit tests (6 orbDecision + 5 keyboard) + i18n gate all green. Constitution v31. Leader key = ';'. Left in Active (ledger concurrently dirty); relocate to Recently completed on merge.
