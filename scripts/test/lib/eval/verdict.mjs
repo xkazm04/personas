@@ -7,6 +7,8 @@
 // preserved vs. the prior inline caps — guarded by tests/cli/verdict.test.mjs
 // and the golden-diff over the three reference runs.
 
+import { RUBRIC } from '../rubric.mjs';
+
 /** Verdict ordering, worst → best. */
 export const RANK = { BROKEN: 0, 'NOT-READY': 1, PROMISING: 2, PRODUCTION: 3 };
 
@@ -24,10 +26,11 @@ export function cap(v, max) {
  * band below NOT-READY other than the health-gated BROKEN. Do not "simplify".
  */
 export function band(team, minPersona, autonomyOk, healthOk) {
+  const b = RUBRIC.band;
   if (!healthOk) return 'BROKEN';
-  if (team >= 80 && minPersona >= 60 && autonomyOk) return 'PRODUCTION';
-  if (team >= 60) return 'PROMISING';
-  if (team >= 30) return 'NOT-READY';
+  if (team >= b.productionTeam && minPersona >= b.productionMinPersona && autonomyOk) return 'PRODUCTION';
+  if (team >= b.promisingTeam) return 'PROMISING';
+  if (team >= b.notReadyFloor) return 'NOT-READY';
   return 'NOT-READY';
 }
 

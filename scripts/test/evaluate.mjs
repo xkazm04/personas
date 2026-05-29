@@ -13,6 +13,7 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import { band, computeVerdict } from './lib/eval/verdict.mjs';
 import { repoFileIndex, groundingForText, addedDocsFromPatch } from './lib/eval/grounding.mjs';
+import { RUBRIC } from './lib/rubric.mjs';
 
 /**
  * §1.A code-track deterministic check — run the repo's OWN build/lint/test and
@@ -163,10 +164,10 @@ function main() {
   }
 
   // --- roll-up ---
-  const detTeam = Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60)) / 5);
+  const detTeam = Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? RUBRIC.fallbackScore)) / RUBRIC.rollup.deterministicDivisor);
   // When judged, fold portfolio-balance + judged-output into the team score and drop "provisional".
   const teamScore = judge
-    ? Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60) + (portfolioBalance ?? 60) + (judgeDims.meanJudge ?? 60)) / 7)
+    ? Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? RUBRIC.fallbackScore) + (portfolioBalance ?? RUBRIC.fallbackScore) + (judgeDims.meanJudge ?? RUBRIC.fallbackScore)) / RUBRIC.rollup.judgedDivisor)
     : detTeam;
   const healthOk = run.summary.counts.executions > 0 && completed > 0;
   // Cascade-stall cap: a run where not every member executed, or any execution
@@ -177,7 +178,7 @@ function main() {
   const cascadeStalled = personasExecuted < memberCount || failedExecs > 0;
   const base = judge
     ? band(teamScore, minPersonaOutput ?? 0, autonomyOk, healthOk)
-    : band(detTeam, groundingPct ?? 60, autonomyOk, healthOk);
+    : band(detTeam, groundingPct ?? RUBRIC.fallbackScore, autonomyOk, healthOk);
   // §1.A.1 Delivered Increment gate: a code-track run that ships NOTHING to
   // master (all work on un-merged branches, or master moved by version/docs only)
   // cannot be PRODUCTION — the deliverable is the point. Doc-track seeds are
