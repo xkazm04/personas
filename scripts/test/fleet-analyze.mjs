@@ -99,23 +99,46 @@ function directorVerdicts(db, personaIds) {
 }
 
 function goalsFor(db, teamId) {
-  // team_assignments soft-links to dev_goals via goal_id.
+  // Path A: team_assignments soft-link to dev_goals via goal_id.
   const assignments = safe('assignments', () =>
     db.prepare(
       `SELECT id, title, goal, status, goal_id, created_at
        FROM team_assignments WHERE team_id = ? ORDER BY created_at DESC LIMIT 20`,
     ).all(teamId), []);
-  const goalIds = [...new Set(assignments.map((a) => a.goal_id).filter(Boolean))];
-  let goals = [];
-  if (goalIds.length) {
-    const ph = inClause(goalIds.length);
-    goals = safe('goals', () =>
+  const goalIds = new Set(assignments.map((a) => a.goal_id).filter(Boolean));
+  // Path B (the natural association): the team's pinned dev_project → goals on
+  // that project. A team works its repo; goals live on the project, not the
+  // assignment. Resolve the pin from a member persona's design_context.
+  const projectId = safe('team_project', () => {
+    const rows = db.prepare(
+      `SELECT design_context dc FROM personas
+       WHERE (home_team_id = @t OR id IN (SELECT persona_id FROM persona_team_members WHERE team_id = @t))
+         AND design_context IS NOT NULL`,
+    ).all({ t: teamId });
+    for (const r of rows) {
+      try {
+        const j = JSON.parse(r.dc);
+        const p = j.dev_project_id || j.devProjectId;
+        if (p) return p;
+      } catch { /* skip unparseable design_context */ }
+    }
+    return null;
+  }, null);
+  const byId = new Map();
+  if (projectId) {
+    safe('project_goals', () =>
       db.prepare(
-        `SELECT id, title, status, progress, target_date, updated_at
-         FROM dev_goals WHERE id IN (${ph})`,
-      ).all(...goalIds), []);
+        `SELECT id, title, status, progress, target_date, updated_at FROM dev_goals WHERE project_id = ?`,
+      ).all(projectId), []).forEach((g) => byId.set(g.id, g));
   }
-  return { assignments, goals };
+  if (goalIds.size) {
+    const ph = inClause(goalIds.size);
+    safe('goals', () =>
+      db.prepare(
+        `SELECT id, title, status, progress, target_date, updated_at FROM dev_goals WHERE id IN (${ph})`,
+      ).all(...goalIds), []).forEach((g) => byId.set(g.id, g));
+  }
+  return { assignments, goals: [...byId.values()], projectId };
 }
 
 // ── summarization ─────────────────────────────────────────────────────────
@@ -152,10 +175,8 @@ function assessOnTrack(sum, goalsInfo, roster, execs) {
   // A team can be orchestrated two ways: event-chains (the original SDLC flow)
   // or goal-driven team_assignments. "No goal link" means we can't track it
   // against an objective — informational, NOT "not orchestrated".
-  if (!goalsInfo.assignments.length && !goalsInfo.goals.length)
-    flags.push('NO-GOAL-LINK: runs via event-chains but is not tied to a tracked goal (no team_assignment / dev_goal)');
-  else if (goalsInfo.assignments.length && !goalsInfo.goals.length)
-    flags.push('UNLINKED: assignment(s) exist but none link a dev_goal (goal_id null)');
+  if (!goalsInfo.goals.length)
+    flags.push('NO-GOAL-LINK: not tied to any tracked goal (none on its pinned project, no linked assignment)');
   if (sum.total === 0) flags.push(`IDLE: no executions in the last ${DAYS}d`);
   if (sum.failureRate >= 30) flags.push(`HIGH-FAILURE: ${sum.failureRate}% of runs failed`);
   if (sum.total > 0 && sum.valueDeliveredRate < 30) flags.push(`LOW-VALUE: only ${sum.valueDeliveredRate}% value_delivered`);

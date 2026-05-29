@@ -954,13 +954,50 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
                 ))
             },
         );
-        let goal_linked: i64 = conn
+        // Goal-linked via EITHER a team_assignment's goal_id OR a goal on the
+        // team's pinned dev_project (the natural association — a team works its
+        // repo; goals live on the project, not the assignment).
+        let assignment_goals: i64 = conn
             .query_row(
                 "SELECT COUNT(*) FROM team_assignments ta JOIN dev_goals g ON g.id = ta.goal_id WHERE ta.team_id = ?1",
                 params![id],
                 |r| r.get(0),
             )
             .unwrap_or(0);
+        let project_id: Option<String> = {
+            let mut found = None;
+            if let Ok(mut stmt) = conn.prepare(
+                "SELECT design_context FROM personas WHERE (home_team_id = ?1 OR id IN (SELECT persona_id FROM persona_team_members WHERE team_id = ?1)) AND design_context IS NOT NULL",
+            ) {
+                if let Ok(rows) = stmt.query_map(params![id], |r| r.get::<_, String>(0)) {
+                    for dc in rows.flatten() {
+                        if let Ok(j) = serde_json::from_str::<serde_json::Value>(&dc) {
+                            if let Some(p) = j
+                                .get("dev_project_id")
+                                .or_else(|| j.get("devProjectId"))
+                                .and_then(|v| v.as_str())
+                            {
+                                found = Some(p.to_string());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            found
+        };
+        let project_goals: i64 = project_id
+            .as_deref()
+            .map(|pid| {
+                conn.query_row(
+                    "SELECT COUNT(*) FROM dev_goals WHERE project_id = ?1",
+                    params![pid],
+                    |r| r.get::<_, i64>(0),
+                )
+                .unwrap_or(0)
+            })
+            .unwrap_or(0);
+        let goal_linked = assignment_goals + project_goals;
         match agg {
             Ok((total, failed, vd, partial, pf, cost, dir)) => {
                 let dir_s = dir.map(|d| format!("{d:.1}/5")).unwrap_or_else(|| "—".into());
