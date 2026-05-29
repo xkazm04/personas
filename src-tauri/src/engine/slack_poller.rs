@@ -1,33 +1,35 @@
-//! Discord inbound polling loop.
+//! Slack inbound polling loop.
 //!
-//! Every `POLL_TICK_INTERVAL` seconds we sweep every enabled persona whose
-//! `notification_channels` contains at least one `type: "discord"` entry with
-//! `config.pollInbound == true` and `config.channelId` set. For each such
-//! (persona, channel) we:
+//! The Slack analogue of `engine/discord_poller.rs`. Every `POLL_TICK_INTERVAL`
+//! seconds we sweep every enabled persona whose `notification_channels`
+//! contains at least one `type: "slack"` entry with `config.pollInbound == true`
+//! and `config.channelId` set. For each such (persona, channel) we:
 //!
-//! 1. Read the cursor (`last_message_id`) from `discord_poll_state`.
-//! 2. GET `https://discord.com/api/v10/channels/{channel_id}/messages?after={cursor}&limit=50`
-//!    using the persona's Discord credential bot_token.
-//! 3. For every message that's not from a bot and we haven't already logged in
-//!    `discord_inbound_messages`, fire `execute_persona_inner` with input_data
-//!    `{ source: "discord", channelId, messageId, author, content, ... }` and
-//!    persist `(message_id, execution_id)` so replies can be posted later.
-//! 4. Advance the cursor to the newest message id seen.
+//! 1. Read the cursor (`last_ts`) from `slack_poll_state`.
+//! 2. GET `https://slack.com/api/conversations.history?channel={id}&oldest={ts}`
+//!    using the persona's Slack credential bot_token.
+//! 3. For every message that isn't from a bot and we haven't already logged in
+//!    `slack_inbound_messages`, fire `execute_persona_inner` with input_data
+//!    `{ source: "slack", channelId, messageId, author, content, ... }` and
+//!    persist `(channel_id, message_ts)` so replies can be posted later.
+//! 4. Advance the cursor to the newest `ts` seen.
 //!
 //! After picking up new messages, we run a second pass that finds rows in
-//! `discord_inbound_messages` with `execution_id IS NOT NULL` and
-//! `replied_message_id IS NULL` whose persona_execution has finished, then
-//! POSTs the execution's final output back to the same channel and records
-//! the resulting message id.
+//! `slack_inbound_messages` with `execution_id IS NOT NULL` and
+//! `replied_message_ts IS NULL` whose persona_execution has finished, then
+//! POSTs the execution's final output back to the same thread via
+//! `chat.postMessage` and records the resulting message `ts`.
 //!
-//! ## Why polling, not Gateway WebSocket
+//! ## Why polling, not the Events API / Socket Mode
 //!
-//! Gateway is the right long-term answer (real-time, no rate-limit waste) but
-//! polling is enough for the 1:1 test channel use case, has no external
-//! dependency beyond the bot_token credential already in the vault, and
-//! survives restarts trivially via the persisted cursor. The Gateway upgrade
-//! path is to swap this module's `fetch_new_messages` for a WSS consumer that
-//! pushes onto the same dispatch path.
+//! The Events API (push) is the right long-term answer, but polling is enough
+//! for the 1:1 test-channel use case, needs no inbound HTTP endpoint or Socket
+//! Mode connection (just the bot_token already in the vault), and survives
+//! restarts trivially via the persisted cursor. The upgrade path is to swap
+//! `fetch_new_messages` for a Socket Mode / Events consumer that pushes onto
+//! the same dispatch path. As with Discord, a burst of more than `FETCH_LIMIT`
+//! messages between two ticks can outrun the cursor; the realtime upgrade
+//! removes that ceiling.
 
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -45,23 +47,26 @@ use crate::error::AppError;
 use crate::notifications;
 use crate::AppState;
 
-/// Tick interval. 5s is the same cadence as `webhook_notifier`. Discord's
-/// per-route rate limit for GET /channels/{id}/messages is 5 req/5s under
-/// most token tiers, so one tick per channel comfortably fits.
+/// Tick interval. 5s matches the Discord poller and `webhook_notifier`.
+/// Slack's Web API Tier 3 (conversations.history) allows ~50 req/min, so one
+/// GET per channel per 5s tick fits comfortably for a handful of channels.
 pub const POLL_TICK_INTERVAL: Duration = Duration::from_secs(5);
 
-/// HTTP timeout per Discord API request. Keep tight so a single hung GET
-/// can't stall the whole tick.
+/// HTTP timeout per Slack API request. Keep tight so a single hung GET can't
+/// stall the whole tick.
 const HTTP_TIMEOUT: Duration = Duration::from_secs(8);
 
-/// Max messages fetched per (channel, tick). 50 is half Discord's hard limit
-/// (100). Sized to absorb a chatty channel between ticks while staying inside
-/// the route's burst budget.
+/// Max messages fetched per (channel, tick). 50 absorbs a chatty channel
+/// between ticks while staying well inside the rate budget.
 const FETCH_LIMIT: u32 = 50;
 
-/// Max replies attempted per tick. Bounds the outbound burst when a backlog
-/// of finished executions piles up after a restart.
+/// Max replies attempted per tick. Bounds the outbound burst when a backlog of
+/// finished executions piles up after a restart.
 const MAX_REPLIES_PER_TICK: usize = 25;
+
+/// Slack `text` hard-caps around 40000 chars in chat.postMessage. Truncate with
+/// headroom so a long Claude reply doesn't error the whole post.
+const SLACK_TEXT_LIMIT: usize = 39000;
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -69,25 +74,25 @@ const MAX_REPLIES_PER_TICK: usize = 25;
 
 /// Run the polling loop forever. Spawned from `lib.rs` startup.
 pub async fn run_poller(pool: DbPool, app: AppHandle, state: Arc<AppState>) {
-    // Grace period — same as webhook_notifier — so startup tracing finishes
+    // Grace period — same as the Discord poller — so startup tracing finishes
     // before we start churning the DB.
     tokio::time::sleep(Duration::from_secs(10)).await;
     loop {
         // Leader-only (multi-driver orchestration, ADR 2026-05-26): the poller
-        // fetches inbound Discord messages and dispatches persona runs that
-        // reply back to the channel — two instances would double-reply. A
-        // follower idles and resumes within one tick on promotion.
+        // fetches inbound Slack messages and dispatches persona runs that reply
+        // back to the channel — two instances would double-reply. A follower
+        // idles and resumes within one tick on promotion.
         if state.leadership.is_leader() {
             match tick(&pool, &app, &state).await {
                 Ok(report) if report.picked + report.replied > 0 => {
                     tracing::debug!(
                         picked = report.picked,
                         replied = report.replied,
-                        "discord_poller: tick complete"
+                        "slack_poller: tick complete"
                     );
                 }
                 Ok(_) => {}
-                Err(e) => tracing::warn!(error = %e, "discord_poller tick failed"),
+                Err(e) => tracing::warn!(error = %e, "slack_poller tick failed"),
             }
         }
         tokio::time::sleep(POLL_TICK_INTERVAL).await;
@@ -103,7 +108,7 @@ struct TickReport {
 async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<TickReport, AppError> {
     let mut report = TickReport::default();
 
-    // ── Pass 1: find personas with inbound Discord channels ───────────────
+    // ── Pass 1: find personas with inbound Slack channels ─────────────────
     let personas = persona_repo::get_enabled(pool)?;
     for persona in personas {
         let channels = match notifications::parse_channels_v2(persona.notification_channels.as_deref()) {
@@ -117,7 +122,7 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
             }
             if !matches!(
                 channel.channel_type,
-                crate::db::models::ChannelSpecV2Type::Discord
+                crate::db::models::ChannelSpecV2Type::Slack
             ) {
                 continue;
             }
@@ -130,8 +135,11 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
             if !poll_inbound {
                 continue;
             }
+            // The messaging picker stores the Slack channel id under `channel`
+            // (DESTINATION_FIELDS slack key); accept channelId/channel_id too.
             let Some(channel_id) = config
-                .get("channelId")
+                .get("channel")
+                .or_else(|| config.get("channelId"))
                 .or_else(|| config.get("channel_id"))
                 .and_then(JsonValue::as_str)
                 .map(str::to_owned)
@@ -144,7 +152,7 @@ async fn tick(pool: &DbPool, app: &AppHandle, state: &Arc<AppState>) -> Result<T
                     persona_id = %persona.id,
                     channel_id = %channel_id,
                     error = %e,
-                    "discord_poller: channel poll failed"
+                    "slack_poller: channel poll failed"
                 ),
             }
         }
@@ -172,71 +180,69 @@ async fn poll_channel(
 
     let bot_token = load_bot_token(pool, credential_id).ok_or_else(|| {
         AppError::Validation(format!(
-            "Discord credential {} has no bot_token field",
+            "Slack credential {} has no bot_token field",
             credential_id
         ))
     })?;
 
     let messages = fetch_new_messages(&bot_token, channel_id, cursor.as_deref()).await?;
     if messages.is_empty() {
-        // Touch the polled-at timestamp so the UI can show liveness without
-        // creating a row mutation when the cursor doesn't move.
+        // Touch the polled-at timestamp so the UI can show liveness without a
+        // row mutation when the cursor doesn't move.
         touch_cursor(pool, persona_id, channel_id)?;
         return Ok(0);
     }
 
     let mut dispatched = 0usize;
-    let mut newest_id: Option<String> = cursor.clone();
-    // Count non-bot messages whose content came back empty. If EVERY human
-    // message in a fetch is empty, the bot almost certainly lacks the
-    // privileged Message Content Intent — Discord strips `content` from
-    // REST responses without it. We surface that as a warning instead of
-    // silently doing nothing forever.
-    let mut human_msgs = 0usize;
-    let mut empty_human_msgs = 0usize;
+    let mut newest_ts: Option<String> = cursor.clone();
 
-    // Discord returns messages newest-first. Reverse so we dispatch in
+    // Slack returns messages newest-first. Reverse so we dispatch in
     // chronological order — easier to read in logs and matches the order a
     // human watching the channel would see them.
     for msg in messages.into_iter().rev() {
-        // Track newest seen regardless of whether we dispatch, so a bot's
-        // own message still advances the cursor.
-        if newest_id
+        // Track newest seen regardless of whether we dispatch, so a bot's own
+        // message still advances the cursor.
+        if newest_ts
             .as_deref()
-            .map(|c| compare_snowflakes(&msg.id, c).is_gt())
+            .map(|c| compare_ts(&msg.ts, c).is_gt())
             .unwrap_or(true)
         {
-            newest_id = Some(msg.id.clone());
+            newest_ts = Some(msg.ts.clone());
         }
 
-        if msg.author_is_bot {
+        // Skip anything authored by a bot/integration (our own replies carry a
+        // bot_id) and system events (channel_join, etc. carry a subtype).
+        // Normal user messages — top-level and thread replies — have neither.
+        if msg.is_bot || msg.has_subtype {
             continue;
         }
-        human_msgs += 1;
-        if msg.content.trim().is_empty() {
-            // Either an attachment/sticker/embed-only message, or — if this
-            // is true for every human message — a missing Message Content
-            // Intent. The post-loop check below disambiguates.
-            empty_human_msgs += 1;
+        if msg.text.trim().is_empty() {
             continue;
         }
-        if message_already_logged(pool, &msg.id)? {
+        if message_already_logged(pool, channel_id, &msg.ts)? {
             continue;
         }
+
+        // Reply in-thread: thread under the message's existing thread root if
+        // it's already a thread reply, otherwise start a thread on the message.
+        let reply_thread_ts = if msg.thread_ts.is_empty() {
+            msg.ts.clone()
+        } else {
+            msg.thread_ts.clone()
+        };
 
         let input_data = json!({
-            "source": "discord",
+            "source": "slack",
             "channelId": channel_id,
-            "messageId": msg.id,
+            "messageId": msg.ts,
             "author": {
-                "id": msg.author_id,
-                "username": msg.author_username,
+                "id": msg.user,
             },
-            "content": msg.content,
-            "timestamp": msg.timestamp,
+            "content": msg.text,
+            "timestamp": msg.ts,
         });
 
-        let idempotency_key = format!("discord:{}:{}", channel_id, msg.id);
+        let idempotency_key = format!("slack:{}:{}", channel_id, msg.ts);
         let execution_result = crate::commands::execution::executions::execute_persona_inner(
             state,
             app.clone(),
@@ -257,11 +263,12 @@ async fn poll_channel(
 
         log_inbound_message(
             pool,
-            &msg.id,
-            persona_id,
+            &msg.ts,
             channel_id,
+            persona_id,
             credential_id,
-            &msg.author_id,
+            &msg.user,
+            &reply_thread_ts,
             execution_id.as_deref(),
             error.as_deref(),
         )?;
@@ -270,32 +277,17 @@ async fn poll_channel(
             tracing::warn!(
                 persona_id = persona_id,
                 channel_id = channel_id,
-                message_id = %msg.id,
+                message_ts = %msg.ts,
                 error = ?error,
-                "discord_poller: execute_persona_inner failed"
+                "slack_poller: execute_persona_inner failed"
             );
         } else {
             dispatched += 1;
         }
     }
 
-    if let Some(id) = newest_id {
-        write_cursor(pool, persona_id, channel_id, &id)?;
-    }
-
-    // Every human message in this fetch had empty content — the bot is
-    // almost certainly missing the privileged Message Content Intent.
-    if human_msgs > 0 && empty_human_msgs == human_msgs {
-        tracing::warn!(
-            persona_id = persona_id,
-            channel_id = channel_id,
-            messages = human_msgs,
-            "discord_poller: all {} user message(s) had empty content — enable the \
-             Message Content Intent for this bot in the Discord Developer Portal \
-             (Application → Bot → Privileged Gateway Intents), or the poller can \
-             never see what users type",
-            human_msgs,
-        );
+    if let Some(ts) = newest_ts {
+        write_cursor(pool, persona_id, channel_id, &ts)?;
     }
 
     Ok(dispatched)
@@ -317,7 +309,8 @@ async fn process_pending_replies(pool: &DbPool) -> Result<usize, AppError> {
             None => {
                 mark_reply_error(
                     pool,
-                    &row.message_id,
+                    &row.channel_id,
+                    &row.message_ts,
                     "credential missing bot_token at reply time",
                 )?;
                 continue;
@@ -327,46 +320,48 @@ async fn process_pending_replies(pool: &DbPool) -> Result<usize, AppError> {
             Ok(Some(t)) => t,
             Ok(None) => continue, // execution still running — leave for next tick
             Err(e) => {
-                mark_reply_error(pool, &row.message_id, &e.to_string())?;
+                mark_reply_error(pool, &row.channel_id, &row.message_ts, &e.to_string())?;
                 continue;
             }
         };
-        match post_reply(&bot_token, &row.channel_id, &row.message_id, &reply_text).await {
-            Ok(reply_id) => {
-                mark_replied(pool, &row.message_id, &reply_id)?;
+        match post_reply(&bot_token, &row.channel_id, &row.thread_ts, &reply_text).await {
+            Ok(reply_ts) => {
+                mark_replied(pool, &row.channel_id, &row.message_ts, &reply_ts)?;
                 sent += 1;
             }
-            Err(e) => mark_reply_error(pool, &row.message_id, &e.to_string())?,
+            Err(e) => mark_reply_error(pool, &row.channel_id, &row.message_ts, &e.to_string())?,
         }
     }
     Ok(sent)
 }
 
 // ---------------------------------------------------------------------------
-// Discord HTTP
+// Slack HTTP
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
-struct DiscordMessage {
-    id: String,
-    content: String,
-    author_id: String,
-    author_username: String,
-    author_is_bot: bool,
-    timestamp: String,
+struct SlackMessage {
+    ts: String,
+    text: String,
+    user: String,
+    thread_ts: String,
+    is_bot: bool,
+    has_subtype: bool,
 }
 
 async fn fetch_new_messages(
     bot_token: &str,
     channel_id: &str,
-    after_id: Option<&str>,
-) -> Result<Vec<DiscordMessage>, AppError> {
+    after_ts: Option<&str>,
+) -> Result<Vec<SlackMessage>, AppError> {
     let mut url = format!(
-        "https://discord.com/api/v10/channels/{}/messages?limit={}",
+        "https://slack.com/api/conversations.history?channel={}&limit={}",
         channel_id, FETCH_LIMIT
     );
-    if let Some(id) = after_id.filter(|s| !s.is_empty()) {
-        url.push_str(&format!("&after={}", id));
+    if let Some(ts) = after_ts.filter(|s| !s.is_empty()) {
+        // `oldest` + `inclusive=false` returns only messages strictly newer
+        // than the cursor.
+        url.push_str(&format!("&oldest={}&inclusive=false", ts));
     }
 
     let client = reqwest::Client::builder()
@@ -376,62 +371,74 @@ async fn fetch_new_messages(
 
     let resp = client
         .get(&url)
-        .header("Authorization", format!("Bot {}", bot_token))
-        .header("User-Agent", "Personas-Desktop/1.0 (Discord poller)")
+        .header("Authorization", format!("Bearer {}", bot_token))
+        .header("User-Agent", "Personas-Desktop/1.0 (Slack poller)")
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("Discord GET messages failed: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("Slack conversations.history failed: {e}")))?;
 
     let status = resp.status();
     if !status.is_success() {
         let body = resp.text().await.unwrap_or_default();
         return Err(AppError::Internal(format!(
-            "Discord GET messages {}: {}",
+            "Slack conversations.history HTTP {}: {}",
             status,
             body.chars().take(300).collect::<String>()
         )));
     }
 
-    let raw: Vec<JsonValue> = resp
+    let payload: JsonValue = resp
         .json()
         .await
-        .map_err(|e| AppError::Internal(format!("Discord JSON decode failed: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("Slack JSON decode failed: {e}")))?;
+
+    // Slack returns HTTP 200 with {"ok":false,"error":"..."} for most failures
+    // (not_in_channel, missing_scope, invalid_auth, ...).
+    if !payload.get("ok").and_then(JsonValue::as_bool).unwrap_or(false) {
+        let err = payload
+            .get("error")
+            .and_then(JsonValue::as_str)
+            .unwrap_or("unknown");
+        return Err(AppError::Internal(format!(
+            "Slack conversations.history not ok: {} (invite the bot to the channel \
+             and grant channels:history / groups:history if this is not_in_channel / missing_scope)",
+            err
+        )));
+    }
+
+    let raw = payload
+        .get("messages")
+        .and_then(JsonValue::as_array)
+        .cloned()
+        .unwrap_or_default();
 
     let mut out = Vec::with_capacity(raw.len());
     for v in raw {
-        let Some(id) = v.get("id").and_then(JsonValue::as_str) else { continue };
-        let content = v
-            .get("content")
+        let Some(ts) = v.get("ts").and_then(JsonValue::as_str) else { continue };
+        let text = v
+            .get("text")
             .and_then(JsonValue::as_str)
             .unwrap_or("")
             .to_string();
-        let author = v.get("author").cloned().unwrap_or(JsonValue::Null);
-        let author_id = author
-            .get("id")
+        let user = v
+            .get("user")
             .and_then(JsonValue::as_str)
             .unwrap_or("")
             .to_string();
-        let author_username = author
-            .get("username")
+        let thread_ts = v
+            .get("thread_ts")
             .and_then(JsonValue::as_str)
             .unwrap_or("")
             .to_string();
-        let author_is_bot = author
-            .get("bot")
-            .and_then(JsonValue::as_bool)
-            .unwrap_or(false);
-        let timestamp = v
-            .get("timestamp")
-            .and_then(JsonValue::as_str)
-            .unwrap_or("")
-            .to_string();
-        out.push(DiscordMessage {
-            id: id.to_string(),
-            content,
-            author_id,
-            author_username,
-            author_is_bot,
-            timestamp,
+        let is_bot = v.get("bot_id").is_some();
+        let has_subtype = v.get("subtype").is_some();
+        out.push(SlackMessage {
+            ts: ts.to_string(),
+            text,
+            user,
+            thread_ts,
+            is_bot,
+            has_subtype,
         });
     }
     Ok(out)
@@ -440,18 +447,17 @@ async fn fetch_new_messages(
 async fn post_reply(
     bot_token: &str,
     channel_id: &str,
-    in_reply_to_message_id: &str,
+    thread_ts: &str,
     text: &str,
 ) -> Result<String, AppError> {
-    let url = format!(
-        "https://discord.com/api/v10/channels/{}/messages",
-        channel_id
-    );
-    let body = json!({
-        "content": truncate_for_discord(text),
-        "message_reference": { "message_id": in_reply_to_message_id },
-        "allowed_mentions": { "parse": [] },
+    let url = "https://slack.com/api/chat.postMessage";
+    let mut body = json!({
+        "channel": channel_id,
+        "text": truncate_for_slack(text),
     });
+    if !thread_ts.is_empty() {
+        body["thread_ts"] = json!(thread_ts);
+    }
 
     let client = reqwest::Client::builder()
         .timeout(HTTP_TIMEOUT)
@@ -459,44 +465,43 @@ async fn post_reply(
         .map_err(|e| AppError::Internal(format!("HTTP client error: {e}")))?;
 
     let resp = client
-        .post(&url)
-        .header("Authorization", format!("Bot {}", bot_token))
-        .header("User-Agent", "Personas-Desktop/1.0 (Discord poller)")
-        .header("Content-Type", "application/json")
+        .post(url)
+        .header("Authorization", format!("Bearer {}", bot_token))
+        .header("User-Agent", "Personas-Desktop/1.0 (Slack poller)")
+        .header("Content-Type", "application/json; charset=utf-8")
         .body(body.to_string())
         .send()
         .await
-        .map_err(|e| AppError::Internal(format!("Discord POST message failed: {e}")))?;
+        .map_err(|e| AppError::Internal(format!("Slack chat.postMessage failed: {e}")))?;
 
-    let status = resp.status();
     let resp_body = resp.text().await.unwrap_or_default();
-    if !status.is_success() {
+    let parsed: JsonValue = serde_json::from_str(&resp_body)
+        .map_err(|e| AppError::Internal(format!("Slack chat.postMessage decode failed: {e}")))?;
+    if !parsed.get("ok").and_then(JsonValue::as_bool).unwrap_or(false) {
+        let err = parsed
+            .get("error")
+            .and_then(JsonValue::as_str)
+            .unwrap_or("unknown");
         return Err(AppError::Internal(format!(
-            "Discord POST message {}: {}",
-            status,
-            resp_body.chars().take(300).collect::<String>()
+            "Slack chat.postMessage not ok: {}",
+            err
         )));
     }
-    let parsed: JsonValue = serde_json::from_str(&resp_body)
-        .map_err(|e| AppError::Internal(format!("Discord POST decode failed: {e}")))?;
-    let id = parsed
-        .get("id")
+    let ts = parsed
+        .get("ts")
         .and_then(JsonValue::as_str)
         .unwrap_or("")
         .to_string();
-    Ok(id)
+    Ok(ts)
 }
 
-/// Discord caps message content at 2000 chars for unboosted bots. Truncate
-/// with a marker so a long Claude reply doesn't 400 the whole post.
-fn truncate_for_discord(text: &str) -> String {
-    // Leave headroom for the 14-char "\n… (truncated)" marker so the total
-    // stays under Discord's 2000-char hard cap (1980 + 14 = 1994).
-    const LIMIT: usize = 1980;
-    if text.chars().count() <= LIMIT {
+/// Slack caps `text` around 40000 chars. Truncate with a marker so a long
+/// Claude reply doesn't error the whole post.
+fn truncate_for_slack(text: &str) -> String {
+    if text.chars().count() <= SLACK_TEXT_LIMIT {
         return text.to_string();
     }
-    let mut out: String = text.chars().take(LIMIT).collect();
+    let mut out: String = text.chars().take(SLACK_TEXT_LIMIT).collect();
     out.push_str("\n… (truncated)");
     out
 }
@@ -509,7 +514,7 @@ fn read_cursor(pool: &DbPool, persona_id: &str, channel_id: &str) -> Result<Opti
     let conn = pool.get()?;
     let row = conn
         .query_row(
-            "SELECT last_message_id FROM discord_poll_state
+            "SELECT last_ts FROM slack_poll_state
              WHERE persona_id = ?1 AND channel_id = ?2",
             params![persona_id, channel_id],
             |row| row.get::<_, String>(0),
@@ -522,16 +527,16 @@ fn write_cursor(
     pool: &DbPool,
     persona_id: &str,
     channel_id: &str,
-    message_id: &str,
+    ts: &str,
 ) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO discord_poll_state (persona_id, channel_id, last_message_id, last_polled_at)
+        "INSERT INTO slack_poll_state (persona_id, channel_id, last_ts, last_polled_at)
          VALUES (?1, ?2, ?3, datetime('now'))
          ON CONFLICT(persona_id, channel_id) DO UPDATE SET
-             last_message_id = excluded.last_message_id,
+             last_ts = excluded.last_ts,
              last_polled_at = excluded.last_polled_at",
-        params![persona_id, channel_id, message_id],
+        params![persona_id, channel_id, ts],
     )?;
     Ok(())
 }
@@ -539,7 +544,7 @@ fn write_cursor(
 fn touch_cursor(pool: &DbPool, persona_id: &str, channel_id: &str) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
-        "INSERT INTO discord_poll_state (persona_id, channel_id, last_message_id, last_polled_at)
+        "INSERT INTO slack_poll_state (persona_id, channel_id, last_ts, last_polled_at)
          VALUES (?1, ?2, '', datetime('now'))
          ON CONFLICT(persona_id, channel_id) DO UPDATE SET
              last_polled_at = excluded.last_polled_at",
@@ -548,11 +553,11 @@ fn touch_cursor(pool: &DbPool, persona_id: &str, channel_id: &str) -> Result<(),
     Ok(())
 }
 
-fn message_already_logged(pool: &DbPool, message_id: &str) -> Result<bool, AppError> {
+fn message_already_logged(pool: &DbPool, channel_id: &str, message_ts: &str) -> Result<bool, AppError> {
     let conn = pool.get()?;
     let count: i64 = conn.query_row(
-        "SELECT COUNT(*) FROM discord_inbound_messages WHERE message_id = ?1",
-        params![message_id],
+        "SELECT COUNT(*) FROM slack_inbound_messages WHERE channel_id = ?1 AND message_ts = ?2",
+        params![channel_id, message_ts],
         |row| row.get(0),
     )?;
     Ok(count > 0)
@@ -561,25 +566,27 @@ fn message_already_logged(pool: &DbPool, message_id: &str) -> Result<bool, AppEr
 #[allow(clippy::too_many_arguments)]
 fn log_inbound_message(
     pool: &DbPool,
-    message_id: &str,
-    persona_id: &str,
+    message_ts: &str,
     channel_id: &str,
+    persona_id: &str,
     credential_id: &str,
     author_id: &str,
+    thread_ts: &str,
     execution_id: Option<&str>,
     error: Option<&str>,
 ) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
-        "INSERT OR IGNORE INTO discord_inbound_messages
-             (message_id, persona_id, channel_id, credential_id, author_id, execution_id, error)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+        "INSERT OR IGNORE INTO slack_inbound_messages
+             (message_ts, channel_id, persona_id, credential_id, author_id, thread_ts, execution_id, error)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
         params![
-            message_id,
-            persona_id,
+            message_ts,
             channel_id,
+            persona_id,
             credential_id,
             author_id,
+            thread_ts,
             execution_id,
             error,
         ],
@@ -589,29 +596,31 @@ fn log_inbound_message(
 
 #[derive(Debug)]
 struct PendingReply {
-    message_id: String,
+    message_ts: String,
     channel_id: String,
     credential_id: String,
+    thread_ts: String,
     execution_id: String,
 }
 
 fn list_pending_replies(pool: &DbPool, limit: usize) -> Result<Vec<PendingReply>, AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
-        "SELECT message_id, channel_id, credential_id, execution_id
-         FROM discord_inbound_messages
+        "SELECT message_ts, channel_id, credential_id, thread_ts, execution_id
+         FROM slack_inbound_messages
          WHERE execution_id IS NOT NULL
-           AND replied_message_id IS NULL
+           AND replied_message_ts IS NULL
            AND error IS NULL
          ORDER BY received_at ASC
          LIMIT ?1",
     )?;
     let rows = stmt.query_map(params![limit as i64], |row| {
         Ok(PendingReply {
-            message_id: row.get(0)?,
+            message_ts: row.get(0)?,
             channel_id: row.get(1)?,
             credential_id: row.get(2)?,
-            execution_id: row.get(3)?,
+            thread_ts: row.get(3)?,
+            execution_id: row.get(4)?,
         })
     })?;
     let mut out = Vec::new();
@@ -621,28 +630,38 @@ fn list_pending_replies(pool: &DbPool, limit: usize) -> Result<Vec<PendingReply>
     Ok(out)
 }
 
-fn mark_replied(pool: &DbPool, message_id: &str, replied_message_id: &str) -> Result<(), AppError> {
+fn mark_replied(
+    pool: &DbPool,
+    channel_id: &str,
+    message_ts: &str,
+    replied_message_ts: &str,
+) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
-        "UPDATE discord_inbound_messages
-         SET replied_message_id = ?1, replied_at = datetime('now')
-         WHERE message_id = ?2",
-        params![replied_message_id, message_id],
+        "UPDATE slack_inbound_messages
+         SET replied_message_ts = ?1, replied_at = datetime('now')
+         WHERE channel_id = ?2 AND message_ts = ?3",
+        params![replied_message_ts, channel_id, message_ts],
     )?;
     Ok(())
 }
 
-fn mark_reply_error(pool: &DbPool, message_id: &str, error: &str) -> Result<(), AppError> {
+fn mark_reply_error(
+    pool: &DbPool,
+    channel_id: &str,
+    message_ts: &str,
+    error: &str,
+) -> Result<(), AppError> {
     let conn = pool.get()?;
     conn.execute(
-        "UPDATE discord_inbound_messages SET error = ?1 WHERE message_id = ?2",
-        params![error, message_id],
+        "UPDATE slack_inbound_messages SET error = ?1 WHERE channel_id = ?2 AND message_ts = ?3",
+        params![error, channel_id, message_ts],
     )?;
     Ok(())
 }
 
 // ---------------------------------------------------------------------------
-// Credential + execution helpers
+// Credential helpers
 // ---------------------------------------------------------------------------
 
 fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
@@ -656,12 +675,12 @@ fn load_bot_token(pool: &DbPool, credential_id: &str) -> Option<String> {
         .cloned()
 }
 
-/// Discord IDs are snowflake u64s; their natural string ordering only matches
-/// numeric ordering when both strings are the same length. Compare numerically
-/// so a 19-digit id is not treated as "less than" an 18-digit one.
-fn compare_snowflakes(a: &str, b: &str) -> std::cmp::Ordering {
-    match (a.parse::<u64>(), b.parse::<u64>()) {
-        (Ok(an), Ok(bn)) => an.cmp(&bn),
+/// Slack message `ts` values are stringified Unix timestamps with microsecond
+/// precision ("1716981234.123456"). Compare numerically so ordering is correct
+/// regardless of string length.
+fn compare_ts(a: &str, b: &str) -> std::cmp::Ordering {
+    match (a.parse::<f64>(), b.parse::<f64>()) {
+        (Ok(an), Ok(bn)) => an.partial_cmp(&bn).unwrap_or(std::cmp::Ordering::Equal),
         _ => a.cmp(b),
     }
 }
@@ -675,22 +694,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn snowflake_compare_handles_different_lengths() {
-        assert!(compare_snowflakes("1000000000000000000", "999999999999999999").is_gt());
-        assert!(compare_snowflakes("100", "200").is_lt());
-        assert!(compare_snowflakes("100", "100").is_eq());
+    fn ts_compare_is_numeric_not_lexical() {
+        // Lexically "1716981234.9" > "1716981234.10", but numerically it's <.
+        assert!(compare_ts("1716981234.100000", "1716981234.090000").is_gt());
+        assert!(compare_ts("1716981234.000100", "1716981234.000200").is_lt());
+        assert!(compare_ts("1716981234.000100", "1716981234.000100").is_eq());
+        // Whole-second rollover.
+        assert!(compare_ts("1716981235.000000", "1716981234.999999").is_gt());
     }
 
     #[test]
-    fn truncate_for_discord_keeps_short_text() {
-        assert_eq!(truncate_for_discord("hello"), "hello");
+    fn truncate_for_slack_keeps_short_text() {
+        assert_eq!(truncate_for_slack("hello"), "hello");
     }
 
     #[test]
-    fn truncate_for_discord_caps_long_text() {
-        let long = "x".repeat(3000);
-        let out = truncate_for_discord(&long);
+    fn truncate_for_slack_caps_long_text() {
+        let long = "x".repeat(50000);
+        let out = truncate_for_slack(&long);
         assert!(out.ends_with("… (truncated)"));
-        assert!(out.chars().count() <= 2000);
+        assert!(out.chars().count() <= SLACK_TEXT_LIMIT + 16);
     }
 }

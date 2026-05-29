@@ -159,6 +159,7 @@ pub mod session_pool;
 #[cfg(feature = "p2p")]
 pub mod share_link;
 pub mod shared_event_relay;
+pub mod slack_poller;
 pub mod smee_relay;
 pub mod ssrf_safe_dns;
 pub mod str_utils;

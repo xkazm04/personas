@@ -12,7 +12,11 @@
 //! char limit, Slack's `ts` threading, snowflake cursor comparison) live in
 //! the individual poller modules.
 
+use rusqlite::{params, OptionalExtension};
 use serde_json::Value as JsonValue;
+
+use crate::db::DbPool;
+use crate::error::AppError;
 
 /// Pull the user-facing reply text out of a persona execution's `output_data`.
 ///
@@ -96,6 +100,69 @@ pub fn match_json_object(bytes: &[u8], start: usize) -> Option<usize> {
         }
     }
     None
+}
+
+/// Turn a finished persona execution into the text a connector should post.
+///
+/// Returns `Ok(Some(text))` when the execution has finished and we have a body
+/// to post, `Ok(None)` when it's still running (try again next tick), and
+/// `Err` when the execution row is missing or in a state we shouldn't reply
+/// for (cancelled, etc.). The `_(…)_` markers render as italics in both
+/// Discord and Slack mrkdwn, so this is transport-agnostic.
+pub fn build_reply_text(pool: &DbPool, execution_id: &str) -> Result<Option<String>, AppError> {
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT status, output_data, error_message FROM persona_executions WHERE id = ?1",
+            params![execution_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, Option<String>>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            },
+        )
+        .optional()?;
+    let (status, output, error_message) = match row {
+        Some(r) => r,
+        None => {
+            return Err(AppError::Validation(format!(
+                "execution {} disappeared before reply",
+                execution_id
+            )))
+        }
+    };
+
+    match status.as_str() {
+        "completed" => {
+            let text = output
+                .as_deref()
+                .map(extract_reply_from_output)
+                .unwrap_or_default();
+            let trimmed = text.trim();
+            if trimmed.is_empty() {
+                Ok(Some("_(persona produced no reply text)_".to_string()))
+            } else {
+                Ok(Some(trimmed.to_string()))
+            }
+        }
+        "failed" => Ok(Some(format!(
+            "_(persona run failed: {})_",
+            error_message
+                .as_deref()
+                .or(output.as_deref())
+                .unwrap_or("unknown error")
+                .chars()
+                .take(200)
+                .collect::<String>()
+        ))),
+        "cancelled" => Err(AppError::Validation(format!(
+            "execution {} was cancelled",
+            execution_id
+        ))),
+        _ => Ok(None), // queued/running — try again next tick
+    }
 }
 
 // ---------------------------------------------------------------------------

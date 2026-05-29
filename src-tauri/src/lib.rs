@@ -1130,6 +1130,27 @@ pub fn run() {
             }
             st.checkpoint("discord_poller");
 
+            // Slack inbound poller. The Slack analogue of the Discord poller:
+            // for every persona whose notification channels include an enabled
+            // `type: "slack"` entry with `config.pollInbound == true`, fetch new
+            // messages every 5s via conversations.history, dispatch them through
+            // `execute_persona_inner`, then post the run's final output back to
+            // the same thread via chat.postMessage. See `engine/slack_poller.rs`.
+            {
+                let pool_for_slack = pool.clone();
+                let app_for_slack = app.handle().clone();
+                let state_for_slack = state_arc.clone();
+                tauri::async_runtime::spawn(async move {
+                    engine::slack_poller::run_poller(
+                        pool_for_slack,
+                        app_for_slack,
+                        state_for_slack,
+                    )
+                    .await;
+                });
+            }
+            st.checkpoint("slack_poller");
+
             // Test automation HTTP server.
             //
             // Bind happens synchronously here so an EADDRINUSE failure is logged
