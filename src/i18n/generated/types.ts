@@ -12093,6 +12093,9 @@ export type Translations = {
       goal_field_description_placeholder: string;
       goal_field_status: string;
       goal_field_target_date: string;
+      goal_target_asap: string;
+      goal_target_1day: string;
+      goal_target_1week: string;
       goal_delete_confirm: string;
       goal_view_board_label: string;
       goal_view_board_sub: string;

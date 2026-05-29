@@ -17,6 +17,17 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GOAL_STATUSES, goalStatusLabel } from './goalStatus';
 
+/** Quick target-date presets (offset in days from now; ASAP = today). */
+type TargetChoice = 'asap' | '1day' | '1week';
+const TARGET_OFFSET_DAYS: Record<TargetChoice, number> = { asap: 0, '1day': 1, '1week': 7 };
+
+function targetChoiceToIso(choice: TargetChoice | null): string | undefined {
+  if (!choice) return undefined;
+  const d = new Date();
+  d.setDate(d.getDate() + TARGET_OFFSET_DAYS[choice]);
+  return d.toISOString();
+}
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -37,7 +48,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<string>('open');
-  const [targetDate, setTargetDate] = useState('');
+  const [targetChoice, setTargetChoice] = useState<TargetChoice | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -47,7 +58,9 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
     setTitle(editGoal?.title ?? '');
     setDescription(editGoal?.description ?? '');
     setStatus(editGoal?.status ?? 'open');
-    setTargetDate(editGoal?.target_date ? editGoal.target_date.slice(0, 10) : '');
+    // Presets aren't reverse-mappable from a stored date; leave unselected so an
+    // edit only changes the target when the user explicitly picks one.
+    setTargetChoice(null);
     setConfirmDelete(false);
   }, [isOpen, editGoal]);
 
@@ -60,7 +73,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
     if (!title.trim() || saving) return;
     setSaving(true);
     try {
-      const targetIso = targetDate ? new Date(targetDate).toISOString() : undefined;
+      const targetIso = targetChoiceToIso(targetChoice);
       if (isEdit && editGoal) {
         await updateGoal(editGoal.id, {
           title: title.trim(),
@@ -130,7 +143,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
             onChange={(e) => setTitle(e.target.value)}
             placeholder={dl.goal_field_title_placeholder}
             autoFocus
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/80 focus-ring"
           />
         </div>
 
@@ -145,7 +158,7 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
             onChange={(e) => setDescription(e.target.value)}
             placeholder={dl.goal_field_description_placeholder}
             rows={3}
-            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring resize-none"
+            className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground/80 focus-ring resize-none"
           />
         </div>
 
@@ -162,16 +175,32 @@ export function GoalEditorModal({ isOpen, onClose, projectId, editGoal }: Props)
             </ThemedSelect>
           </div>
           <div>
-            <label htmlFor="goal-target" className="typo-caption font-medium text-foreground mb-1.5 block">
+            <span className="typo-caption font-medium text-foreground mb-1.5 block">
               {dl.goal_field_target_date}
-            </label>
-            <input
-              id="goal-target"
-              type="date"
-              value={targetDate}
-              onChange={(e) => setTargetDate(e.target.value)}
-              className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground focus-ring"
-            />
+            </span>
+            <div role="radiogroup" aria-label={dl.goal_field_target_date} className="flex gap-1.5">
+              {(['asap', '1day', '1week'] as const).map((c) => {
+                const selected = targetChoice === c;
+                const label = c === 'asap' ? dl.goal_target_asap : c === '1day' ? dl.goal_target_1day : dl.goal_target_1week;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    // Click again to clear (no target).
+                    onClick={() => setTargetChoice(selected ? null : c)}
+                    className={`flex-1 px-2 py-2 typo-caption font-medium rounded-input border transition-colors focus-ring ${
+                      selected
+                        ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
+                        : 'border-primary/10 bg-secondary/40 text-foreground hover:bg-secondary/60'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

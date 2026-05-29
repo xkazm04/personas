@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Target, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { IconGoals } from '@/features/shared/components/layout/sidebar/SidebarIcons';
@@ -31,9 +31,18 @@ export default function GoalsPage() {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const goals = useSystemStore((s) => s.goals);
   const goalsTab = useSystemStore((s) => s.goalsTab);
+  const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
+
+  // Load goals for the active project at the page level — NOT inside
+  // GoalConstellation, which only mounts once goals exist. Fetching here means
+  // an empty board still loads goals on refresh (fixes goals vanishing until a
+  // manual add re-triggered the fetch).
+  useEffect(() => {
+    if (activeProjectId) fetchGoals(activeProjectId);
+  }, [activeProjectId, fetchGoals]);
 
   const handleSyncToObsidian = async () => {
     if (!activeProjectId) return;

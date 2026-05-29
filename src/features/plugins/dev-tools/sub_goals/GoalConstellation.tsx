@@ -26,7 +26,6 @@ type VariantId = 'board' | 'map';
 export default function GoalConstellation({ variant = 'board' }: { variant?: VariantId } = {}) {
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const fetchGoals = useSystemStore((s) => s.fetchGoals);
 
   const [dependencies, setDependencies] = useState<DevGoalDependency[]>([]);
   // Goal opened in the detail drawer (from a Board card or a Map node), and the
@@ -42,9 +41,7 @@ export default function GoalConstellation({ variant = 'board' }: { variant?: Var
     useSystemStore.getState().setPendingGoalSpotlightId(null);
   }, []);
 
-  useEffect(() => {
-    if (activeProjectId) fetchGoals(activeProjectId);
-  }, [activeProjectId, fetchGoals]);
+  // (Goals are fetched at the GoalsPage level so an empty board still loads.)
 
   // Dependencies (Map edges) — only the Map needs them. One project-scoped query
   // (no per-goal fan-out); refetches when the project or goal count changes.
