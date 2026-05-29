@@ -149,8 +149,13 @@ function summarize(execs) {
 function assessOnTrack(sum, goalsInfo, roster, execs) {
   const flags = [];
   const activeGoals = goalsInfo.goals.filter((g) => g.status !== 'done');
-  if (!goalsInfo.assignments.length) flags.push('NO-ASSIGNMENT: team has no team_assignment — nothing orchestrating it toward a goal');
-  else if (!goalsInfo.goals.length) flags.push('UNLINKED: assignment(s) exist but none link a dev_goal (goal_id null)');
+  // A team can be orchestrated two ways: event-chains (the original SDLC flow)
+  // or goal-driven team_assignments. "No goal link" means we can't track it
+  // against an objective — informational, NOT "not orchestrated".
+  if (!goalsInfo.assignments.length && !goalsInfo.goals.length)
+    flags.push('NO-GOAL-LINK: runs via event-chains but is not tied to a tracked goal (no team_assignment / dev_goal)');
+  else if (goalsInfo.assignments.length && !goalsInfo.goals.length)
+    flags.push('UNLINKED: assignment(s) exist but none link a dev_goal (goal_id null)');
   if (sum.total === 0) flags.push(`IDLE: no executions in the last ${DAYS}d`);
   if (sum.failureRate >= 30) flags.push(`HIGH-FAILURE: ${sum.failureRate}% of runs failed`);
   if (sum.total > 0 && sum.valueDeliveredRate < 30) flags.push(`LOW-VALUE: only ${sum.valueDeliveredRate}% value_delivered`);
