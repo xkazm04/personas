@@ -227,6 +227,7 @@ pub async fn companion_approve_action(
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
         // Phase C3 — Team assignment dispatch.
         "assign_team" => execute_assign_team(&state, &app, &params).await,
+        "analyze_fleet" => execute_analyze_fleet(&state, &app, &params).await,
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -866,6 +867,78 @@ fn execute_update_dev_goal(
     Ok(ExecuteResult::message(format!(
         "Dev goal `{goal_id}` updated — {summary}."
     )))
+}
+
+/// Spawn a proactive Athena turn that reviews the whole fleet (or one team)
+/// against the certification rubric — the post-certification "are the teams on
+/// track?" analysis. Athena gathers current state from her observability digest
+/// + connectors, recalls her prior per-team note (timeline continuity), writes
+/// an updated note, and proposes improvements via her normal approval-gated ops.
+async fn execute_analyze_fleet(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let team = params.get("team_id").and_then(|v| v.as_str());
+    let days = params
+        .get("days")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(14)
+        .clamp(1, 90);
+    let directive = build_fleet_directive(team, days);
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        std::sync::Arc::new(state.user_db.clone()),
+        std::sync::Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "fleet_analysis".to_string(),
+        team.map(str::to_string),
+        directive,
+    );
+    let scope = team
+        .map(|t| format!("team `{t}`"))
+        .unwrap_or_else(|| "the whole fleet".into());
+    Ok(ExecuteResult::message(format!(
+        "Fleet analysis started — Athena is reviewing {scope} over the last {days}d and will report back here."
+    )))
+}
+
+/// The directive handed to the proactive fleet-analysis turn. It names the
+/// certification rubric dimensions, demands grounding in current data, asks for
+/// a per-team timeline memory note (continuity across runs), and licenses a
+/// short "nothing material changed" stop so Athena doesn't manufacture work.
+fn build_fleet_directive(team: Option<&str>, days: i64) -> String {
+    let scope = match team {
+        Some(t) => format!("the team with id `{t}`"),
+        None => "every active team (the whole fleet)".to_string(),
+    };
+    format!(
+        "Run a fleet analysis of {scope} over the last {days} days. You are the \
+         post-certification analyst: the user is letting all teams run and needs to not \
+         lose control.\n\n\
+         Gather current state from what you can see — your observability digest, and the \
+         personas_database connector if you need per-team detail (executions, \
+         business_outcome, director_score, cost, goal links). For each team, assess \
+         against these certification dimensions:\n\
+         1. On track — is the team tied to a tracked goal and is progress advancing? Many \
+         teams run via event-chains with NO goal link — flag that.\n\
+         2. Value delivery — share of runs that are value_delivered vs partial / \
+         precondition_failed / no_input_available.\n\
+         3. Health — failure rate, retries, stalls.\n\
+         4. Cost — total + cost-per-value; call out outliers.\n\
+         5. Roster validity — are only the team's own personas executing for it?\n\
+         6. Portfolio balance — is the team only feature-pushing, or also testing / \
+         stabilizing / cleaning up?\n\n\
+         Then: (a) recall any prior fleet-analysis note for these teams from your memory \
+         so you can speak to the timeline (did last round's gap get fixed?); (b) write a \
+         concise per-team timeline note via write_fact (scope the fact to the team) so the \
+         next analysis builds on this one; (c) propose at most a few concrete improvements \
+         — a goal link/update (update_dev_goal), a template or roster fix, or a persona to \
+         add — as your normal approval-gated ops, not just prose.\n\n\
+         Ground every claim in real data. If a team is healthy and nothing material \
+         changed since your last note, say so in one line rather than inventing work."
+    )
 }
 
 fn execute_update_goal_status(

@@ -208,6 +208,13 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // is enforced in operative_memory::record_intervention.
     "fleet_intervene",
     "fleet_redirect_op",
+    // Fleet/team analysis — a manually-requested "how are the teams doing?"
+    // review. Spawns a proactive Athena reasoning turn over the fleet
+    // (executions, outcomes, Director verdicts, goal progress) using the
+    // certification rubric, and asks her to write a per-team timeline note to
+    // memory + propose improvements. Approval-gated because it spawns a CLI
+    // reasoning turn (cost) — same rationale as run_persona / assign_team.
+    "analyze_fleet",
 ];
 
 /// Lab modes valid for `open_lab`. Mirrors the `lab-mode-*` testids in
