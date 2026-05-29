@@ -97,13 +97,12 @@ export const directorItems: SubNavItem[] = [
   { id: 'memory', label: 'Memory', icon: Brain },
 ];
 
-/** Goals L2 sub-nav — Board/Map are live; Timeline/Portfolio/Attention scaffolded. */
+/** Goals L2 sub-nav. (Attention folded into Portfolio's per-project drawer.) */
 export const goalItems: SubNavItem[] = [
   { id: 'board', label: 'Board', icon: LayoutDashboard },
   { id: 'map', label: 'Map', icon: Waypoints },
   { id: 'timeline', label: 'Timeline', icon: CalendarClock },
   { id: 'portfolio', label: 'Portfolio', icon: Layers },
-  { id: 'attention', label: 'Attention', icon: AlertOctagon },
 ];
 
 export const eventBusItems: SubNavItem[] = [

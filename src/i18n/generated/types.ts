@@ -12042,6 +12042,7 @@ export type Translations = {
       portfolio_no_projects: string;
       portfolio_no_projects_sub: string;
       portfolio_open_board: string;
+      portfolio_needs_attention: string;
       attention_title: string;
       attention_all_clear: string;
       attention_all_clear_sub: string;

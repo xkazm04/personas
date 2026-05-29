@@ -12,7 +12,6 @@ import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker'
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsPortfolio } from './GoalsPortfolio';
-import { GoalsAttention } from './GoalsAttention';
 import { GoalsTimeline } from './GoalsTimeline';
 
 /**
@@ -79,8 +78,6 @@ export default function GoalsPage() {
       <ContentBody>
         {goalsTab === 'portfolio' ? (
           <GoalsPortfolio />
-        ) : goalsTab === 'attention' ? (
-          <GoalsAttention />
         ) : goalsTab === 'timeline' ? (
           <GoalsTimeline />
         ) : goals.length === 0 ? (

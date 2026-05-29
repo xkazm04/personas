@@ -394,7 +394,7 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 export type SidebarSection = "home" | "overview" | "goals" | "personas" | "director" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
-export type GoalsTab = "board" | "map" | "timeline" | "portfolio" | "attention";
+export type GoalsTab = "board" | "map" | "timeline" | "portfolio";
 /** Sub-tabs of the Director command center. */
 export type DirectorTab = "overview" | "roster" | "reviews" | "memory" | "attention";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";

@@ -7,17 +7,19 @@
  * the active project and jump to its Board. Backed by the single-query
  * `dev_tools_portfolio_summary` rollup (no N+1).
  */
-import { useEffect, useState, type ComponentType } from 'react';
-import { Target, AlertTriangle, Clock, FolderKanban, ArrowUpRight } from 'lucide-react';
+import { useCallback, useEffect, useState, type ComponentType } from 'react';
+import { Target, AlertTriangle, Clock, FolderKanban, ArrowUpRight, Bell } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
 import { silentCatch } from '@/lib/silentCatch';
-import { portfolioSummary } from '@/api/devTools/devTools';
+import { portfolioSummary, attentionQueue } from '@/api/devTools/devTools';
 import type { PortfolioSummary } from '@/lib/bindings/PortfolioSummary';
 import type { PortfolioProjectSummary } from '@/lib/bindings/PortfolioProjectSummary';
+import type { AttentionItem } from '@/lib/bindings/AttentionItem';
 import { GOAL_STATUS_META } from './goalStatus';
 import { GoalAtmosphere, GOAL_PANEL, goalAccentEdgeStyle } from './goalsTheme';
+import { GoalAttentionDrawer } from './GoalAttentionDrawer';
 
 // Segment order + colour for the status bar (canonical model is the source).
 const SEGMENTS = [
@@ -39,23 +41,41 @@ export function GoalsPortfolio() {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
+  // Cross-project attention items grouped by project — drives the per-project
+  // "N need attention" button + the slide-over drawer (replaces the Attention tab).
+  const [attnByProject, setAttnByProject] = useState<Map<string, AttentionItem[]>>(new Map());
+  const [drawerProject, setDrawerProject] = useState<{ id: string; name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
   const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     let cancelled = false;
-    portfolioSummary()
-      .then((s) => { if (!cancelled) setSummary(s); })
-      .catch(silentCatch('GoalsPortfolio.summary'))
-      .finally(() => { if (!cancelled) setLoading(false); });
+    Promise.all([
+      portfolioSummary().catch(() => null),
+      attentionQueue().catch(() => null),
+    ]).then(([sum, queue]) => {
+      if (cancelled) return;
+      if (sum) setSummary(sum);
+      const grouped = new Map<string, AttentionItem[]>();
+      for (const item of queue?.items ?? []) {
+        const arr = grouped.get(item.projectId) ?? [];
+        arr.push(item);
+        grouped.set(item.projectId, arr);
+      }
+      setAttnByProject(grouped);
+    }).catch(silentCatch('GoalsPortfolio.loadData')).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => loadData(), [loadData]);
 
   const openProject = (projectId: string) => {
     setActiveProject(projectId);
     setGoalsTab('board');
   };
+
+  const drawerItems = drawerProject ? (attnByProject.get(drawerProject.id) ?? []) : [];
 
   if (loading) {
     return <div className="flex justify-center py-16"><LoadingSpinner size="md" /></div>;
@@ -86,9 +106,28 @@ export function GoalsPortfolio() {
       {/* Project cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {summary.projects.map((p, i) => (
-          <ProjectCard key={p.projectId} p={p} index={i} onOpen={() => openProject(p.projectId)} openLabel={dl.portfolio_open_board} overdueLabel={dl.portfolio_overdue_label} atRiskLabel={dl.portfolio_at_risk_label} />
+          <ProjectCard
+            key={p.projectId}
+            p={p}
+            index={i}
+            attentionCount={attnByProject.get(p.projectId)?.length ?? 0}
+            onOpen={() => openProject(p.projectId)}
+            onOpenAttention={() => setDrawerProject({ id: p.projectId, name: p.projectName })}
+            openLabel={dl.portfolio_open_board}
+            overdueLabel={dl.portfolio_overdue_label}
+            atRiskLabel={dl.portfolio_at_risk_label}
+            attentionLabel={dl.portfolio_needs_attention}
+          />
         ))}
       </div>
+
+      <GoalAttentionDrawer
+        isOpen={!!drawerProject}
+        onClose={() => setDrawerProject(null)}
+        projectName={drawerProject?.name ?? ''}
+        items={drawerItems}
+        onResolved={loadData}
+      />
     </div>
   );
 }
@@ -111,24 +150,31 @@ function StatTile({ label, value, icon: Icon, tint, index, glow = false }: { lab
 }
 
 function ProjectCard({
-  p, onOpen, openLabel, overdueLabel, atRiskLabel, index,
+  p, onOpen, onOpenAttention, attentionCount, openLabel, overdueLabel, atRiskLabel, attentionLabel, index,
 }: {
   p: PortfolioProjectSummary;
   onOpen: () => void;
+  onOpenAttention: () => void;
+  attentionCount: number;
   openLabel: string;
   overdueLabel: string;
   atRiskLabel: string;
+  attentionLabel: string;
   index: number;
 }) {
   const counts = { open: p.open, inProgress: p.inProgress, blocked: p.blocked, done: p.done };
   const total = p.total || 1; // avoid /0 for the bar
   return (
-    <button
-      type="button"
+    // Clickable card (opens the project's Board). A div (not a button) so the
+    // attention pill can be a real nested button without invalid button-in-button.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); } }}
       title={openLabel}
       style={{ ...goalAccentEdgeStyle(projectAccentStatus(p)), animationDelay: `${index * 40}ms` }}
-      className={`group relative overflow-hidden text-left p-4 pl-5 w-full animate-fade-slide-in ${GOAL_PANEL}`}
+      className={`group relative overflow-hidden text-left p-4 pl-5 w-full cursor-pointer animate-fade-slide-in ${GOAL_PANEL}`}
     >
       <ArrowUpRight className="absolute top-3 right-3 w-3.5 h-3.5 text-foreground opacity-0 -translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform] duration-200" />
       <div className="flex items-start justify-between gap-2 pr-5">
@@ -164,6 +210,17 @@ function ProjectCard({
           );
         })}
       </div>
-    </button>
+
+      {/* Needs-attention button — opens the per-project slide-over drawer. */}
+      {attentionCount > 0 && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpenAttention(); }}
+          className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-interactive border border-amber-500/25 bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 transition-colors focus-ring"
+        >
+          <Bell className="w-3 h-3" /> {attentionCount} {attentionLabel}
+        </button>
+      )}
+    </div>
   );
 }
