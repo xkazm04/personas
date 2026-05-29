@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { obsidianAvailable } from '@/api/obsidianBrain';
 import { setPersonaStarred } from '@/api/agents/personas';
 import {
@@ -14,7 +15,6 @@ import {
   type DirectorVerdictRow,
 } from '@/api/director';
 import type { Persona } from '@/lib/bindings/Persona';
-import type { DirectorTab } from '@/lib/types/types';
 import { silentCatch } from '@/lib/silentCatch';
 
 /**
@@ -43,13 +43,14 @@ export interface UseDirector {
   runOnPersona: (personaId: string) => Promise<void>;
   setStarred: (personaId: string, starred: boolean) => Promise<void>;
   setBrainEnabled: (enabled: boolean) => void;
-  openDirector: (tab?: DirectorTab) => void;
+  /** Navigate to the Director surface (Overview › Director sub-tab). */
+  openDirector: () => void;
 }
 
 export function useDirector(): UseDirector {
   const personas = useAgentStore((s) => s.personas);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
-  const setDirectorTab = useSystemStore((s) => s.setDirectorTab);
+  const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
 
   const director = useMemo(
     () => personas.find((p) => p.trust_origin === 'system' && p.name === 'Director'),
@@ -128,13 +129,10 @@ export function useDirector(): UseDirector {
     });
   }, []);
 
-  const openDirector = useCallback(
-    (tab?: DirectorTab) => {
-      if (tab) setDirectorTab(tab);
-      setSidebarSection('director');
-    },
-    [setDirectorTab, setSidebarSection],
-  );
+  const openDirector = useCallback(() => {
+    setOverviewTab('director');
+    setSidebarSection('overview');
+  }, [setOverviewTab, setSidebarSection]);
 
   return {
     ready,

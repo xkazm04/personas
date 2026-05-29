@@ -4,7 +4,7 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useDirector } from '@/features/director/useDirector';
+import { useDirector } from '@/features/overview/sub_director/useDirector';
 
 /**
  * Slim Director teaser on the All Agents page. Since v2 the full management

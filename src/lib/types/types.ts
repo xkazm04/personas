@@ -392,17 +392,15 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "goals" | "personas" | "director" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
+export type SidebarSection = "home" | "overview" | "goals" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type GoalsTab = "board" | "map" | "timeline" | "portfolio" | "attention";
-/** Sub-tabs of the Director command center. */
-export type DirectorTab = "overview" | "roster" | "reviews" | "memory" | "attention";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
 export type DesignSubTab = "use-cases" | "prompt" | "connectors" | "triggers" | "messaging" | "automations";
 /** Legacy EditorTab values kept only for migrating persisted state. */
 export type LegacyEditorTab = "prompt" | "connectors" | "health";
-export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard";
+export type OverviewTab = "home" | "incidents" | "executions" | "manual-review" | "messages" | "events" | "knowledge" | "sla" | "health" | "observability" | "leaderboard" | "director";
 export type TemplateTab = "n8n" | "generated" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys" | "history" | "limits";

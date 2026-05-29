@@ -3125,7 +3125,20 @@
     "group_declining": "Declining trend",
     "group_declining_hint": "Latest score dropped from the previous review.",
     "group_stale": "Stale reviews",
-    "group_stale_hint": "Last reviewed over two weeks ago — re-check that they still earn their keep."
+    "group_stale_hint": "Last reviewed over two weeks ago — re-check that they still earn their keep.",
+    "add_to_scope": "Add to scope",
+    "add_search_placeholder": "Search agents…",
+    "only_flagged": "Only needs attention",
+    "col_flags": "Attention",
+    "flag_new": "New",
+    "flag_low": "Low",
+    "flag_declining": "Declining",
+    "flag_stale": "Stale",
+    "detail_attention": "Needs attention",
+    "detail_history": "Coaching history",
+    "detail_value_rate": "Value delivered",
+    "table_title": "Coaching scope",
+    "all_clear": "All agents in scope are healthy"
   },
   "vault": {
     "title": "Vault",
