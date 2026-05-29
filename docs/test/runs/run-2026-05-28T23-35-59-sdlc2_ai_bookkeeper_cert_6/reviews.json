@@ -1,0 +1,54 @@
+[
+  {
+    "id": "eeff6bd8-1a07-442a-bfa8-dccfe316baea",
+    "execution_id": "0173920b-b152-4a11-82dc-d3fc12bdbee1",
+    "persona_id": "bdb4bfb1-2e14-495e-bf53-38356cfbf8c1",
+    "title": "Greenlight ADR 0005 (money-formatting consolidation, 11 pts) this release?",
+    "description": "ADR 0005 has been Proposed for one full cycle without execution. It is a pure consolidation/adoption of already-built primitives (ADR 0002–0004), not new design. Drift is now accumulating: v0.7.0's new LedgerExplorer UI was wired to the un-normalized USD-only formatter, so the user-facing 'display == stored' guarantee remains unrealized and the gap widens each release. This is a prioritization decision (business judgment), not an architectural one — the path is settled. Approving routes the 11-pt plan to the delivery engineer via architecture.analysis.completed.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T23:43:27.681347100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "b315db56-5c95-4316-a373-fe61104a5364",
+    "execution_id": "700ebfbb-9759-428a-b9b3-4bb210ca01c3",
+    "persona_id": "06537169-fd6b-4c40-9367-b110680dc48f",
+    "title": "Merge ADR-0005 money-kernel consolidation (commit ea3641d) to remote?",
+    "description": "ADR-0005 is implemented on main as commit ea3641d (16 files, +650/-346): shared src/lib/money kernel, formatMoney adopted app-wide via kernel-backed wrappers, WealthScoreCard compact helper, and an ESLint render-layer guardrail. Full gate is green — tsc clean, npm test 95/95, `eslint .` clean. Under review_each_pr autonomy the change is committed but UNPUSHED, awaiting human approval before it ships to remote / merges. This is the merge-approval decision. Separately, a 4th un-normalized money path (src/components/CategorizePanel.tsx) was discovered outside ADR-0005's scope and needs its own backlog item.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-28T23:57:45.767197700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "12b33ead-beaa-4d20-9fb7-331cc483a325",
+    "execution_id": "654068ba-f190-49d0-9434-92a666a3e5e6",
+    "persona_id": "b654b7f7-2b5c-4a9c-8e7d-6430fec41b7b",
+    "title": "Security triage — ai-bookkeeper @ ea3641d (1 High, 2 Medium, 1 Low)",
+    "description": "New scan findings requiring remediation decisions. H1 (postcss CVE) is a standing item now on its 5th scan; M1/M2 are new with the first API route. Approve to track for fix, or reject if accepted as risk.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-29T00:06:05.921175600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "f0f5af17-b5a8-48b8-9e07-7f8ff8303a5d",
+    "execution_id": "fe31b9d7-6e5b-4038-96f0-8da7d0debf4f",
+    "persona_id": "04564189-698f-46e9-859e-ea19616a8646",
+    "title": "Approve v0.8.0 README doc edits (working-tree, uncommitted)",
+    "description": "Synced README to the ADR-0005 money-kernel release. 3 doc-only, in-place edits to README.md (code untouched; git status shows only README.md): (1) added 'money/' to the src/lib/ structure tree + annotated format.ts as kernel-backed wrappers; (2) marked features/ledger/lib round/arithmetic/format as re-export shims → @/lib/money in the enumeration; (3) extended the money-arithmetic Features bullet with the app-wide no-drift guarantee. CHANGELOG [0.8.0] + release note were already accurate (no edit). These are working-tree changes awaiting commit.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-29T00:17:39.261745500+00:00",
+    "use_case_id": "uc_docs_sync"
+  }
+]

@@ -1,0 +1,100 @@
+{
+  "runId": "run-2026-05-28T23-35-59-sdlc2_ai_bookkeeper_cert_6",
+  "team": "SDLC2 — ai-bookkeeper",
+  "seed": "sdlc2/ai-bookkeeper-cert-6",
+  "code_track": {
+    "build": {
+      "status": "pass"
+    },
+    "lint": {
+      "status": "pass"
+    },
+    "test": {
+      "status": "pass"
+    }
+  },
+  "delivered_increment": {
+    "delivered": true,
+    "masterHead": "5b6a4312896b85c06bf6282cbb388e5397125f4d",
+    "sourceFiles": [
+      "eslint.config.mjs",
+      "src/features/ledger/index.ts",
+      "src/features/ledger/lib/arithmetic.ts",
+      "src/features/ledger/lib/format.ts",
+      "src/features/ledger/lib/round.ts",
+      "src/features/wealth-score/components/WealthScoreCard.tsx",
+      "src/lib/format.test.ts",
+      "src/lib/format.ts"
+    ]
+  },
+  "self_veto": null,
+  "rubric_version": "1-deterministic",
+  "note": "FIRST-CUT deterministic scorecard. Correctness / actionability / role-fidelity (judge §1.B) + portfolio balance (§2.1) NOT yet scored — verdict is provisional.",
+  "deterministic_dims": {
+    "cascade_completion": 100,
+    "work_density": 86,
+    "handoff_health": 100,
+    "learning_loop": 100,
+    "grounding_pct": 97
+  },
+  "judge": null,
+  "team_score": 97,
+  "provisional_verdict": "PRODUCTION",
+  "facts": {
+    "executions": 7,
+    "completed": 6,
+    "failed": 1,
+    "failed_not_rescued": 0,
+    "rescued_failures": [
+      "960dce95-12a9-4b31-8c99-d96983d81b4f"
+    ],
+    "cascade_stalled": false,
+    "value_delivered": 6,
+    "personasExecuted": 6,
+    "memberCount": 6,
+    "eventsDelivered": 17,
+    "reviews": 4,
+    "pendingReviews": 4,
+    "learnedMemories": 6,
+    "cost_usd": 9.409293,
+    "repoChanged": true
+  },
+  "grounding": [
+    {
+      "file": "CHANGELOG.md",
+      "total": 9,
+      "valid": 9,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "README.md",
+      "total": 33,
+      "valid": 33,
+      "pct": 100,
+      "invalid": []
+    },
+    {
+      "file": "docs/adr/0005-money-formatting-consolidation.md",
+      "total": 18,
+      "valid": 16,
+      "pct": 89,
+      "invalid": [
+        "wealth-score/WealthScoreCard.tsx",
+        "ledger/LedgerExplorer.tsx"
+      ]
+    },
+    {
+      "file": "docs/releases/v0.8.0.md",
+      "total": 2,
+      "valid": 2,
+      "pct": 100,
+      "invalid": []
+    }
+  ],
+  "autonomy": {
+    "interventions": 4,
+    "pendingReviews": 4,
+    "note": "pending reviews = work awaiting a human; the orchestration layer (P3) would auto-resolve per policy"
+  }
+}

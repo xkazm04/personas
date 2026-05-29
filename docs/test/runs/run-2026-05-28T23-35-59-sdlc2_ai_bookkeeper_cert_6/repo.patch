@@ -1,0 +1,1372 @@
+diff --git a/CHANGELOG.md b/CHANGELOG.md
+index 2a98ad9..d399e9c 100644
+--- a/CHANGELOG.md
++++ b/CHANGELOG.md
+@@ -8,6 +8,56 @@ While the project is pre-1.0 (`0.x`), breaking changes increment the **minor** v
+ 
+ ## [Unreleased]
+ 
++## [0.8.0] - 2026-05-29
++
++Backward-compatible feature release. Consolidates the money primitives
++(`round` · `arithmetic` · `format`) into a single shared **`src/lib/money`
++kernel** and adopts the drift-free, fail-loud `formatMoney` app-wide, so every
++visible balance is provably the canonical stored value. No breaking changes
++since `0.7.0` — the old `src/features/ledger/lib/{round,arithmetic,format}`
++entry points are retained as re-export shims for one release — so under the
++pre-1.0 `0.x` policy a feature release increments the **minor**, landing as
++`0.8.0`. Bump derived from `git log v0.7.0..HEAD` (one `feat` commit — `ea3641d`
++ADR-0005 money-kernel consolidation — additive, none breaking), not guessed.
++
++### Added
++
++- **Shared money kernel** (`src/lib/money/`, exported via the `@/lib/money`
++  barrel) — `roundMoney`, `addMoney`/`subtractMoney`,
++  `formatMoney`/`formatMoneyCompact` plus currency minor-unit resolution, with
++  co-located round/arithmetic/format test suites. The canonical home for the
++  banker's-rounding, fail-loud money primitives [ADR-0005].
++- **ESLint money-formatting guardrail** — feature components are now linted
++  against raw `` $${…} `` / `.toFixed()` money rendering, forcing all visible
++  balances through the kernel formatter so display can't drift from stored.
++
++### Changed
++
++- `formatCurrency` / `formatSignedCurrency` (`src/lib/format.ts`) re-implemented
++  as thin kernel-backed wrappers — the U+2212 minus sign is preserved and
++  golden-string tests were added to pin the output.
++- All 8 money-render surfaces (including the v0.7.0 `LedgerExplorer`, which had
++  wired to the un-normalized formatter) now route through the kernel, realizing
++  ADR-0004's "display == stored" guarantee that previously had 0 consumers.
++- `WealthScoreCard`'s inline `$…M` / `$…K` abbreviator replaced with the kernel
++  `formatMoneyCompact`.
++- `src/features/ledger/lib/{round,arithmetic,format}` reduced to re-export shims
++  pointing at the kernel (kept one release for a clean deprecation window).
++
++### Tests
++
++- **95/95 unit tests pass** (`tsx --test`); golden-string format tests and the
++  full money-kernel suite migrated alongside the kernel.
++
++### Known issues / carry-forward
++
++- **postcss XSS — GHSA-qx2v-qp2m-jg93** (moderate) remains open: `next@16.2.6`
++  nests `postcss@8.4.31` (< 8.5.10). Non-blocking (build-time CSS stringify, not
++  user-input-fed). Fix = one-line `package.json` `overrides` pin
++  (`"postcss": ">=8.5.10"`); do **not** `npm audit fix --force`.
++- `CategorizePanel.tsx` is a fourth un-normalized money-render path, left out of
++  ADR-0005's scope and ticketed as a follow-up.
++
+ ## [0.7.0] - 2026-05-29
+ 
+ Backward-compatible feature release. Bundles the **v3 upgrade** — a swappable
+diff --git a/README.md b/README.md
+index 643f441..3e1a27d 100644
+--- a/README.md
++++ b/README.md
+@@ -15,9 +15,10 @@ XPrize hackathon entry · 90-day MVP scaffold · built with Gemini on Google Clo
+ - Ledger explorer — client-side search, income/expense filter, sortable columns, and CSV export over the data layer; view preferences persisted to `localStorage` via Zustand
+ - Ruled Ledger visual identity v2 — paper-cream + ink + emerald, T-account card frame, 28px page ruling
+ - Ink-mode theme toggle with pre-paint inline script (no cream-flash on load), persisted to `localStorage`
+-- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`; part of a 77-test unit suite
++- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`; part of a 95-test unit suite
+ - Ledger ingest boundary (`ingestTransaction`) — validates every amount from SMS/OCR/Plaid sources at one seam, with user-facing rejection reasons routed to the review queue
+ - Trial-balance verifier (`isBalanced` · `verifyTrialBalance`) — answers "do debits equal credits?" over double-entry rows, with the signed difference and the accounts active on only one side; totals fold through the audited money kernel so `0.10 + 0.20` vs `0.30` balances, and mixed-currency / non-finite rows fail loud
++- Fiscal-period mapping (`getFiscalPeriod`) — places any date into its fiscal year / quarter / month with period bounds, so transactions and reports group into the right accounting period (configurable fiscal-year start, fail-loud on bad input)
+ - Mocked dashboard: transactions, text-in inbox, review queue, month-end close checklist, revenue chart, customer side-panel, benchmarks, tax credits, wealth-score
+ - PWA manifest + multi-size icon set + Open Graph share card
+ - `prefers-reduced-motion` honored on every Framer Motion wrapper; skip-to-content link; `focus-visible` rings on every interactive element
+@@ -56,7 +57,7 @@ npm run dev                  # http://localhost:3000
+ | `npm run start` | Serve the production build |
+ | `npm run lint` | ESLint (flat config) |
+ | `npm run typecheck` | `tsc --noEmit` |
+-| `npm test` | Unit tests via `tsx --test src/**/*.test.ts` (77 tests) |
++| `npm test` | Unit tests via `tsx --test src/**/*.test.ts` (95 tests) |
+ | `npm run test:watch` | Unit tests in watch mode |
+ | `npm run e2e` | Playwright end-to-end tests |
+ | `npm run e2e:ui` | Playwright UI mode |
+@@ -103,7 +104,7 @@ src/
+     data/                    # Swappable data-layer boundary (transactions / accounts / reports)
+   features/
+     ledger/                  # Transactions, inbox, review queue, close checklist, money arithmetic
+-      lib/                   # round / amount / arithmetic / format / ingest / trial-balance + co-located .test.ts files
++      lib/                   # round / amount / arithmetic / format / ingest / trial-balance / period + co-located .test.ts files
+     customers/               # Customer panel, merge candidates, Zustand store
+     benchmarks/              # Industry benchmarks card
+     tax-credits/             # Tax-credit scanner + evidence chips
+@@ -147,7 +148,7 @@ Copy `.env.example` to `.env.local`. None are required to run the UI; they wire
+ ## Testing
+ 
+ ```bash
+-npm test         # 42 unit tests via `tsx --test src/**/*.test.ts`
++npm test         # 95 unit tests via `tsx --test src/**/*.test.ts`
+ npm run e2e      # Playwright e2e (home-nav regression per ADR-0006, etc.)
+ ```
+ 
+diff --git a/docs/adr/0005-money-formatting-consolidation.md b/docs/adr/0005-money-formatting-consolidation.md
+index a2367bf..042ca22 100644
+--- a/docs/adr/0005-money-formatting-consolidation.md
++++ b/docs/adr/0005-money-formatting-consolidation.md
+@@ -115,3 +115,84 @@ prevents a structural smell from ossifying while only 5 imports exist.
+ 
+ **Total: 12 pts.** Verdict: **no new money primitive is needed** — the gap is
+ *adoption + consolidation* of ADR 0002–0004, plus the recurring lint blocker.
++
++---
++
++## Review addendum — 2026-05-29 (scheduled weekly review)
++
++**Status unchanged: Proposed — still unexecuted.** Re-affirmed against the
++current tree; this ADR remains the correct path. No new decision; no
++contradiction. One ground-truth update to the consumer map below.
++
++**Verified state (2026-05-29):**
++- `src/lib/money/` still does **not** exist; `round.ts`/`arithmetic.ts`/`format.ts`
++  remain in `src/features/ledger/lib/`.
++- `formatMoney` still has **0 real consumers** (only the `@/features/ledger`
++  barrel re-exports it, `index.ts:28`).
++- `src/lib/format.ts` is unchanged: USD-hardcoded, no `roundMoney`, no fail-loud.
++
++**Consumer-map drift since the 2026-05-28 review (v0.7.0):** the ledger render
++site moved. `TransactionsCard.tsx` is now a thin async server wrapper
++(`getTransactions()` → `<LedgerExplorer/>`); the actual money render is the
++**new** client component `LedgerExplorer.tsx:222`, wired straight to the
++un-normalized `formatSignedCurrency`. So a brand-new UI surface shipped in
++v0.7.0 was immediately attached to the wrong formatter — the exact regression
++Task 5's guardrail is meant to stop. Current un-normalized consumers (8 files):
++`benchmarks/{BenchmarksCard,ComparisonBar}`, `customers/{CustomerPanel,MergeCandidatesCard}`,
++`tax-credits/{EvidenceChip,TaxCreditsCard}`, `wealth-score/WealthScoreCard`,
++`ledger/LedgerExplorer`. Third path (`WealthScoreCard.tsx:195` inline `$…M` `toFixed`) still present.
++
++**New evidence strengthening the shared-kernel decision (Decision §1):** v0.7.0
++introduced `src/lib/data/` (swappable data-layer boundary). There is now an
++established precedent for cross-cutting non-feature libs living under `src/lib/`,
++so `src/lib/money/` sits naturally beside `src/lib/data/`. The "make
++`@/features/ledger` the kernel" alternative is now even weaker.
++
++**Task-breakdown refresh (no scope change, 12 pts total still holds):**
++- Task 1: the "keep 42/42" note is stale — the green baseline grew with v0.7.0
++  (`period.test`, `trial-balance.test`, `src/lib/data/data.test`; 9 test files).
++  Constraint becomes "suite stays green at the current baseline", not literal 42.
++- Task 3: re-point target is now `ledger/LedgerExplorer.tsx:222` (not
++  `TransactionsCard`).
++- Task 6 (recurring lint blocker): ADR 0006 already verified `src/app/page.tsx`
++  is lint-green — this sub-task is **resolved/no-op**; drop from the plan.
++
++Net: re-affirm ADR 0005 and prioritize execution. Drift is accumulating
++(new render site this cycle); deferring a third cycle widens the gap.
++
++---
++
++## Implementation note — 2026-05-29 (Dev Clone, team handoff)
++
++**Status: Accepted — implemented.** Shipped on `main` from the Architect's
++re-affirmed 11-pt breakdown. Suite green at 95 tests / 11 files (was 87 / 9);
++`tsc --noEmit` clean; `eslint .` clean.
++
++- **Task 1** — created the shared kernel `src/lib/money/` (`round.ts` +
++  `arithmetic.ts` + `format.ts` + their tests + `index.ts` barrel). The three
++  `features/ledger/lib/{round,arithmetic,format}.ts` files are now thin
++  `export *` re-export shims (kept one release per the ADR); `trial-balance.ts`
++  and the ledger barrel keep working through them. `amount.ts`/`ingest.ts`
++  stayed put as ledger-ingest-specific, as decided.
++- **Task 2** — `src/lib/format.ts` `formatCurrency`/`formatSignedCurrency`
++  re-implemented as kernel-backed wrappers over `formatMoney(_, "USD")`; the old
++  hand-rolled USD-only `Intl` path is retired. U+2212 signed-minus + `+`/unsigned
++  semantics locked by new golden-string tests (`src/lib/format.test.ts`) — the
++  ADR's UNVERIFIED item is now verified.
++- **Task 3** — all 8 money-render consumers (incl. `ledger/LedgerExplorer`) now
++  flow component → kernel-backed `@/lib/format` → `formatMoney` → `roundMoney`,
++  so every visible balance is drift-free with zero call-site churn (signatures
++  stable, per the ADR's incremental-shipping note).
++- **Task 4** — `WealthScoreCard`'s inline `$…M/$…K` abbreviator replaced with the
++  new drift-safe kernel `formatMoneyCompact` (Intl compact notation); old
++  `toFixed`/raw-template lines removed.
++- **Task 5** — ESLint guardrail (`no-restricted-syntax`) added, scoped to
++  `src/features/**/components/**`, forbidding raw `` `$${…}` `` money templates
++  and `.toFixed` in the render layer. Verified it fires on a probe; `eslint .`
++  stays green.
++
++**Follow-up surfaced (out of scope here):** `src/components/CategorizePanel.tsx`
++hand-formats money with `` `${sign}$${Math.abs(n).toLocaleString(...)}` `` — a
++*fourth* un-normalized path not in this ADR's consumer map and outside the
++guardrail's component glob. Recommend a follow-up backlog item to route it
++through the kernel and widen the guardrail.
+diff --git a/docs/releases/v0.8.0.md b/docs/releases/v0.8.0.md
+new file mode 100644
+index 0000000..ed4c0b9
+--- /dev/null
++++ b/docs/releases/v0.8.0.md
+@@ -0,0 +1,79 @@
++# Release v0.8.0 — Shared Money Kernel: One Formatter, No Drift
++
++**Date:** 2026-05-29
++**Bump:** MINOR (`0.7.0 → 0.8.0`)
++**Tag:** `v0.8.0` → release commit
++
++## Why this version
++
++Backward-compatible feature release, **no breaking changes** since `0.7.0`.
++Under `0.x` semantic versioning a feature release increments the **minor**, so
++this lands as `0.8.0`. The bump is derived from the merged history, not guessed:
++`git log v0.7.0..HEAD` is a single `feat` commit — `ea3641d` (ADR-0005
++money-kernel consolidation) — additive, not breaking. The prior per-feature
++`src/features/ledger/lib/{round,arithmetic,format}` entry points are kept as
++re-export shims for one release, so no consumer breaks.
++
++## Headline
++
++The money primitives finally live in **one place**. `round` · `arithmetic` ·
++`format` are promoted to a shared **`src/lib/money`** kernel, and the
++drift-free, fail-loud `formatMoney` is adopted **app-wide** — so every visible
++balance is provably the canonical stored value. This closes the gap ADR-0004
++opened but never realized: `formatMoney` previously had **0 real consumers**
++while all 8 money-render surfaces flowed through an un-normalized USD-only path,
++and v0.7.0's new `LedgerExplorer` had wired straight to the wrong formatter,
++proving the drift was still accumulating.
++
++## What's new
++
++- **Shared money kernel** (`src/lib/money/`, via the `@/lib/money` barrel) —
++  `roundMoney`, `addMoney`/`subtractMoney`, `formatMoney`/`formatMoneyCompact`,
++  and currency minor-unit resolution, with co-located round/arithmetic/format
++  test suites. The single canonical home for the banker's-rounding, fail-loud
++  money primitives [ADR-0005].
++- **ESLint money-formatting guardrail** — feature components are linted against
++  raw `` $${…} `` / `.toFixed()` money rendering, so visible balances can't
++  bypass the kernel formatter and drift from stored values.
++- **`formatCurrency` / `formatSignedCurrency`** re-implemented as thin
++  kernel-backed wrappers (U+2212 minus preserved; golden-string tests pin the
++  output).
++- **All 8 money-render surfaces** — including the v0.7.0 `LedgerExplorer` and
++  `WealthScoreCard`'s inline `$…M`/`$…K` abbreviator (now
++  `formatMoneyCompact`) — route through the kernel.
++
++## Quality gate
++
++All four gates green on the release commit:
++
++- `tsc --noEmit` — clean
++- `eslint .` — clean (including the new money-formatting guardrail rule)
++- `tsx --test` — **95/95 pass**
++- `next build` — success (8 routes; `/api/categorize` server-rendered on demand)
++
++## Known issues / carry-forward
++
++- **postcss XSS — GHSA-qx2v-qp2m-jg93** (moderate) remains open: `next@16.2.6`
++  nests `postcss@8.4.31` (< 8.5.10). Non-blocking (build-time CSS stringify, not
++  user-input-fed). Fix = a one-line `package.json` `overrides` pin
++  (`"postcss": ">=8.5.10"`); do **not** `npm audit fix --force` (it proposes a
++  wrong `next@9.3.3` downgrade).
++- **`CategorizePanel.tsx`** is a fourth un-normalized money-render path left
++  outside ADR-0005's scope — ticketed for a later item.
++- The `src/features/ledger/lib/{round,arithmetic,format}` re-export shims are a
++  one-release deprecation window; plan to remove them in a future release.
++
++## Security carry-forward (from the upstream scan @ ea3641d)
++
++The release commit is the same tree the security scan cleared. Standing,
++non-blocking items handed to triage:
++
++- `/api/categorize` (the first app/api route) is **unauthenticated with no rate
++  limiting** in front of paid Gemini calls — denial-of-wallet / DoS (Medium).
++- `description` is **unbounded** before the model prompt — token-cost
++  amplification + prompt-injection surface (Medium).
++- Model-returned account names are **not validated** against a chart of accounts
++  (Low).
++
++These are tracked separately and were not introduced by this increment; they do
++not block the release.
+diff --git a/eslint.config.mjs b/eslint.config.mjs
+index 2f29c41..32dad72 100644
+--- a/eslint.config.mjs
++++ b/eslint.config.mjs
+@@ -41,5 +41,32 @@ export default tseslint.config(
+       // does not hold here. Re-enable if we migrate to next/font.
+       "@next/next/no-page-custom-font": "off",
+     },
++  },
++  // Money-rendering guardrail (ADR 0005, Task 5). Feature components must render
++  // money through the shared kernel (`@/lib/money` — formatMoney /
++  // formatMoneyCompact, or the kernel-backed `@/lib/format` helpers), never with
++  // a hand-rolled `` `$${…}` `` template or `.toFixed`. This stops a fourth,
++  // un-normalized money path from reappearing in the UI (the exact regression
++  // that wired v0.7.0's LedgerExplorer to the un-normalized formatter). Scoped to
++  // the render layer; the kernel itself (`src/lib/money`) is exempt by design.
++  {
++    files: ["src/features/**/components/**/*.{ts,tsx}"],
++    rules: {
++      "no-restricted-syntax": [
++        "error",
++        {
++          // A template chunk ending in `$` — i.e. `$` immediately before an
++          // interpolation, as in `` `$${value}` `` — the raw money-template smell.
++          selector: "TemplateElement[value.raw=/\\$$/]",
++          message:
++            "Render money through @/lib/money (formatMoney / formatMoneyCompact) or @/lib/format — no raw `$${…}` money templates in components (ADR 0005).",
++        },
++        {
++          selector: "CallExpression[callee.property.name='toFixed']",
++          message:
++            "Do not hand-format money with .toFixed in components; use @/lib/money (formatMoney / formatMoneyCompact) so display stays drift-free (ADR 0005).",
++        },
++      ],
++    },
+   }
+ );
+diff --git a/package.json b/package.json
+index 553da10..cf7bec1 100644
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "ai-bookkeeper",
+-  "version": "0.7.0",
++  "version": "0.8.0",
+   "private": true,
+   "type": "module",
+   "scripts": {
+diff --git a/src/features/ledger/index.ts b/src/features/ledger/index.ts
+index 7fcae4d..bac3f11 100644
+--- a/src/features/ledger/index.ts
++++ b/src/features/ledger/index.ts
+@@ -25,7 +25,11 @@ export {
+   addMoney,
+   subtractMoney,
+ } from "./lib/arithmetic";
+-export { formatMoney } from "./lib/format";
++export {
++  type MoneyFormatOptions,
++  formatMoney,
++  formatMoneyCompact,
++} from "./lib/format";
+ export { type FiscalPeriod, getFiscalPeriod } from "./lib/period";
+ export {
+   type TrialBalanceEntry,
+diff --git a/src/features/ledger/lib/arithmetic.ts b/src/features/ledger/lib/arithmetic.ts
+index e4f20e7..3af973b 100644
+--- a/src/features/ledger/lib/arithmetic.ts
++++ b/src/features/ledger/lib/arithmetic.ts
+@@ -1,135 +1,7 @@
+-// Currency-aware money addition and subtraction.
++// Back-compat re-export shim (ADR 0005).
+ //
+-// Builds directly on `round.ts`: arithmetic is performed at the currency's
+-// minor-unit precision (cents for USD, none for JPY, mils for BHD) by scaling
+-// each operand to integer minor units, doing the add/subtract in integer space,
+-// then scaling back. This is what makes `0.1 + 0.2` yield exactly `0.30` for USD
+-// instead of IEEE-754's `0.30000000000000004` — the float drift never survives
+-// the round-trip through integers. The final figure is passed through
+-// `roundMoney` so the result is canonical to the currency's minor units and the
+-// half-even tie convention (ADR 0002) is the single source of truth for rounding.
+-//
+-// Pure, side-effect-free, fail-loud — matching `amount.ts` / `round.ts`. A
+-// non-finite operand or a currency mismatch is a corrupt money figure and throws
+-// rather than silently propagating into balances (cf. ADR 0001/0002 boundary).
+-
+-import { type CurrencyCode, minorUnits, roundMoney } from "./round";
+-
+-/** A money figure tagged with its currency. Operands may be passed either as a
+- *  bare `number` (already in the operation's `currency`) or as a tagged `Money`,
+- *  in which case its `currency` must match — this is how a mixed-currency add is
+- *  detected and rejected rather than silently producing a meaningless sum. */
+-export interface Money {
+-  amount: number;
+-  currency: CurrencyCode;
+-}
+-
+-/** A bare amount (assumed to be in the operation's currency) or a tagged Money. */
+-export type MoneyInput = number | Money;
+-
+-/** Discriminates the two ways a money operation can be rejected. */
+-export type MoneyArithmeticErrorCode = "mixed-currency" | "not-finite";
+-
+-/**
+- * Typed error for invalid money arithmetic. Extends `RangeError` so existing
+- * fail-loud catch sites (which already expect `RangeError` from `roundMoney` /
+- * `parseAmount`) keep working, while `.code` lets callers distinguish *why*.
+- */
+-export class MoneyArithmeticError extends RangeError {
+-  readonly code: MoneyArithmeticErrorCode;
+-  constructor(code: MoneyArithmeticErrorCode, message: string) {
+-    super(message);
+-    this.name = "MoneyArithmeticError";
+-    this.code = code;
+-  }
+-}
+-
+-/** Resolve a MoneyInput to a finite number in `currency`, or throw a typed error. */
+-function resolveOperand(
+-  operand: MoneyInput,
+-  currency: CurrencyCode,
+-  label: string,
+-): number {
+-  let amount: number;
+-
+-  if (typeof operand === "number") {
+-    amount = operand;
+-  } else if (operand != null && typeof operand === "object") {
+-    if (operand.currency !== currency) {
+-      throw new MoneyArithmeticError(
+-        "mixed-currency",
+-        `Cannot operate on ${label}: currency ${String(operand.currency)} ` +
+-          `does not match operation currency ${currency}.`,
+-      );
+-    }
+-    amount = operand.amount;
+-  } else {
+-    throw new MoneyArithmeticError(
+-      "not-finite",
+-      `Operand ${label} must be a number or Money, received ${String(operand)}.`,
+-    );
+-  }
+-
+-  if (typeof amount !== "number" || !Number.isFinite(amount)) {
+-    throw new MoneyArithmeticError(
+-      "not-finite",
+-      `Operand ${label} must be a finite number, received ${String(amount)}.`,
+-    );
+-  }
+-  return amount;
+-}
+-
+-/**
+- * Core integer-space combine. Both operands are scaled to integer minor units
+- * (absorbing the float noise that makes `0.1 * 100 === 10.000000000000002`),
+- * combined as integers, scaled back, then run through `roundMoney` so the result
+- * is canonical and half-even per ADR 0002.
+- */
+-function combine(
+-  a: MoneyInput,
+-  b: MoneyInput,
+-  currency: CurrencyCode,
+-  sign: 1 | -1,
+-): number {
+-  // `minorUnits` validates the currency code (throws RangeError on blank).
+-  const factor = 10 ** minorUnits(currency);
+-
+-  const aMinor = Math.round(resolveOperand(a, currency, "a") * factor);
+-  const bMinor = Math.round(resolveOperand(b, currency, "b") * factor);
+-
+-  // Integer arithmetic — no sub-unit drift. Result divided back to a decimal,
+-  // then canonicalized (handles -0 normalization and any residual float noise).
+-  const resultMinor = aMinor + sign * bMinor;
+-  return roundMoney(resultMinor / factor, currency);
+-}
+-
+-/**
+- * Add two money figures of the same `currency`, at the currency's minor-unit
+- * precision. Composes with `roundMoney` (ADR 0002) for the final value.
+- *
+- * @throws MoneyArithmeticError if an operand is non-finite or carries a
+- *   different currency; RangeError if `currency` is blank/invalid.
+- */
+-export function addMoney(
+-  a: MoneyInput,
+-  b: MoneyInput,
+-  currency: CurrencyCode,
+-): number {
+-  return combine(a, b, currency, 1);
+-}
+-
+-/**
+- * Subtract `b` from `a`, both of the same `currency`, at minor-unit precision.
+- * Negative results are valid (an expense exceeding income). Composes with
+- * `roundMoney` (ADR 0002) for the final value.
+- *
+- * @throws MoneyArithmeticError if an operand is non-finite or carries a
+- *   different currency; RangeError if `currency` is blank/invalid.
+- */
+-export function subtractMoney(
+-  a: MoneyInput,
+-  b: MoneyInput,
+-  currency: CurrencyCode,
+-): number {
+-  return combine(a, b, currency, -1);
+-}
++// Currency-aware money arithmetic moved to the shared kernel `src/lib/money`.
++// This shim keeps existing `@/features/ledger` imports working for one release
++// while consumers migrate to `@/lib/money`. New code should import from
++// `@/lib/money`.
++export * from "@/lib/money/arithmetic";
+diff --git a/src/features/ledger/lib/format.ts b/src/features/ledger/lib/format.ts
+index d3d7669..5cfaf2e 100644
+--- a/src/features/ledger/lib/format.ts
++++ b/src/features/ledger/lib/format.ts
+@@ -1,93 +1,6 @@
+-// Currency-aware money formatting for the display layer.
++// Back-compat re-export shim (ADR 0005).
+ //
+-// This is the display-side pair to the `round.ts` / `arithmetic.ts` stack. Where
+-// `roundMoney` (ADR 0002) and `addMoney`/`subtractMoney` (ADR 0003) keep the
+-// *stored* value canonical, `formatMoney` turns that canonical value into a
+-// human-readable string — and does so by first normalizing through `roundMoney`,
+-// so what the user sees can never disagree with what the ledger stores by float
+-// drift. Symbol placement, grouping, and minor-unit precision are delegated to
+-// `Intl.NumberFormat` (style: "currency"), which is locale- and currency-correct
+-// by construction ($1,234.50 / 1.234,56 € / ¥1,235).
+-//
+-// Pure, side-effect-free, fail-loud — matching `amount.ts` / `round.ts` /
+-// `arithmetic.ts`. A non-finite value or a mixed-currency `Money` is a corrupt
+-// figure and throws a `MoneyArithmeticError` (ADR 0003's typed error) rather than
+-// rendering a misleading string.
+-
+-import { type CurrencyCode, roundMoney } from "./round";
+-import { MoneyArithmeticError, type MoneyInput } from "./arithmetic";
+-
+-/**
+- * Resolve a `MoneyInput` to a finite number in `currency`, or throw the same
+- * typed error `arithmetic.ts` uses. A tagged `Money` whose currency differs from
+- * `currency` is the only expressible mixed-currency format request — rejected so
+- * a EUR amount is never silently rendered with a USD symbol.
+- */
+-function resolveValue(value: MoneyInput, currency: CurrencyCode): number {
+-  let amount: number;
+-
+-  if (typeof value === "number") {
+-    amount = value;
+-  } else if (value != null && typeof value === "object") {
+-    if (value.currency !== currency) {
+-      throw new MoneyArithmeticError(
+-        "mixed-currency",
+-        `Cannot format value: currency ${String(value.currency)} does not ` +
+-          `match format currency ${currency}.`,
+-      );
+-    }
+-    amount = value.amount;
+-  } else {
+-    throw new MoneyArithmeticError(
+-      "not-finite",
+-      `Value to format must be a number or Money, received ${String(value)}.`,
+-    );
+-  }
+-
+-  if (typeof amount !== "number" || !Number.isFinite(amount)) {
+-    throw new MoneyArithmeticError(
+-      "not-finite",
+-      `Value to format must be a finite number, received ${String(amount)}.`,
+-    );
+-  }
+-  return amount;
+-}
+-
+-/**
+- * Format a money `value` as a locale-correct currency string.
+- *
+- * - **`Intl.NumberFormat` (style: "currency")** drives symbol placement,
+- *   digit grouping, and minor-unit precision — so JPY renders with zero decimals,
+- *   USD with two, and the symbol sits where the locale expects it.
+- * - **`locale` defaults to `"en-US"`** when omitted.
+- * - **Normalized through `roundMoney` first** (ADR 0002), so the formatted string
+- *   reflects the canonical stored value: `formatMoney(addMoney(0.1, 0.2, "USD"),
+- *   "USD")` is exactly `"$0.30"`, never `"$0.30000000000000004"` and never a
+- *   value that drifted from what arithmetic stored.
+- * - **Fail-loud:** a non-finite value or a mixed-currency `Money` throws a
+- *   `MoneyArithmeticError` (ADR 0003); a blank/invalid currency throws via
+- *   `roundMoney`/`minorUnits` (`RangeError`).
+- *
+- * @throws MoneyArithmeticError if `value` is non-finite or carries a different
+- *   currency; RangeError if `currency` is blank or unknown to `Intl`.
+- */
+-export function formatMoney(
+-  value: MoneyInput,
+-  currency: CurrencyCode,
+-  locale: string = "en-US",
+-): string {
+-  const amount = resolveValue(value, currency);
+-
+-  // Normalize to the currency's canonical minor-unit value before display.
+-  // roundMoney also re-validates the currency code and the finite invariant,
+-  // and normalizes -0 → 0 so we never render "-$0.00".
+-  const normalized = roundMoney(amount, currency);
+-
+-  // Intl is authoritative for locale-correct symbol/grouping/precision. We let
+-  // it derive fraction digits from the currency (USD→2, JPY→0, BHD→3), which
+-  // matches roundMoney's minor-unit table for standard ISO-4217 codes.
+-  return new Intl.NumberFormat(locale, {
+-    style: "currency",
+-    currency,
+-  }).format(normalized);
+-}
++// Drift-free money formatting moved to the shared kernel `src/lib/money`. This
++// shim keeps existing `@/features/ledger` imports working for one release while
++// consumers migrate to `@/lib/money`. New code should import from `@/lib/money`.
++export * from "@/lib/money/format";
+diff --git a/src/features/ledger/lib/round.ts b/src/features/ledger/lib/round.ts
+index 0310eb5..adb299f 100644
+--- a/src/features/ledger/lib/round.ts
++++ b/src/features/ledger/lib/round.ts
+@@ -1,101 +1,6 @@
+-// Currency-aware monetary rounding (banker's rounding / round-half-to-even).
++// Back-compat re-export shim (ADR 0005).
+ //
+-// `amount.ts` validates amounts at the input boundary and canonicalizes USD to
+-// two decimals with `roundToCents` (half-UP via Math.round). This module is the
+-// general arithmetic primitive for rounding a money value to *any* currency's
+-// minor units using half-EVEN, the convention financial systems use to avoid
+-// the upward bias half-up introduces when summing many rows (see ADR 0001's
+-// "residual risk: sub-cent drift in aggregates").
+-//
+-// Half-even means a value exactly halfway between two representable units
+-// rounds toward the even neighbour: 0.005 → 0.00, 0.015 → 0.02, 2.675 → 2.68.
+-//
+-// Pure, side-effect-free, matching the repo's other co-located libs
+-// (amount.ts, customers/lib/normalize.ts, benchmarks/lib/categorize.ts).
+-
+-/** ISO-4217-style code. Kept as a widened string so callers aren't blocked on
+- *  an exhaustive enum; unknown codes fall back to DEFAULT_MINOR_UNITS. */
+-export type CurrencyCode = string;
+-
+-/** Minor-unit (decimal) digits per currency. Most are 2; a few common
+- *  exceptions are spelled out. Unlisted codes default to 2. */
+-export const MINOR_UNITS: Readonly<Record<string, number>> = {
+-  USD: 2,
+-  EUR: 2,
+-  GBP: 2,
+-  CAD: 2,
+-  AUD: 2,
+-  CHF: 2,
+-  CNY: 2,
+-  // zero-decimal currencies
+-  JPY: 0,
+-  KRW: 0,
+-  CLP: 0,
+-  ISK: 0,
+-  VND: 0,
+-  // three-decimal currencies
+-  BHD: 3,
+-  KWD: 3,
+-  OMR: 3,
+-  TND: 3,
+-};
+-
+-/** Minor-unit digits for any currency not listed in MINOR_UNITS. */
+-export const DEFAULT_MINOR_UNITS = 2;
+-
+-/** Resolve a currency's minor-unit digit count (case-insensitive). */
+-export function minorUnits(currency: CurrencyCode): number {
+-  if (typeof currency !== "string" || currency.trim() === "") {
+-    throw new RangeError("roundMoney: currency must be a non-empty string code.");
+-  }
+-  const units = MINOR_UNITS[currency.trim().toUpperCase()];
+-  return units ?? DEFAULT_MINOR_UNITS;
+-}
+-
+-// Floating-point ties are never exactly representable — 0.005 * 100 is
+-// 0.49999999999999994, not 0.5 — so half-detection uses an epsilon. This is
+-// reliable while the scaled magnitude stays within Number.MAX_SAFE_INTEGER
+-// (~9.0e15); beyond that, integer spacing exceeds 1 and the input no longer
+-// carries sub-unit precision anyway.
+-const HALF_EPSILON = 1e-9;
+-
+-/**
+- * Round a monetary `value` to `currency`'s minor units using banker's rounding
+- * (round-half-to-even).
+- *
+- * NaN/Infinity-safe in the strict sense: a non-finite `value` is a corrupt
+- * money figure, so it is rejected with a RangeError rather than silently
+- * propagating into balances — consistent with the ledger's fail-loud boundary
+- * (cf. amount.ts rejecting `not-finite`). Callers that may hold untrusted input
+- * should validate via `parseAmount` first; this primitive assumes a real number.
+- *
+- * @throws RangeError if `value` is not a finite number, or `currency` is blank.
+- */
+-export function roundMoney(value: number, currency: CurrencyCode): number {
+-  if (typeof value !== "number" || !Number.isFinite(value)) {
+-    throw new RangeError(
+-      `roundMoney: value must be a finite number, received ${String(value)}.`,
+-    );
+-  }
+-
+-  const digits = minorUnits(currency);
+-  const factor = 10 ** digits;
+-  const scaled = value * factor;
+-
+-  const floor = Math.floor(scaled);
+-  const remainder = scaled - floor;
+-
+-  let roundedUnits: number;
+-  if (Math.abs(remainder - 0.5) <= HALF_EPSILON) {
+-    // Exact half: pick the even neighbour.
+-    roundedUnits = floor % 2 === 0 ? floor : floor + 1;
+-  } else {
+-    // Not a tie: ordinary nearest. Math.round breaks its own ties upward, but
+-    // ties are handled above, so only genuine non-half values reach here.
+-    roundedUnits = Math.round(scaled);
+-  }
+-
+-  const result = roundedUnits / factor;
+-  // Normalize -0 to 0 so formatters and equality checks behave.
+-  return result === 0 ? 0 : result;
+-}
++// The money-rounding primitive moved to the shared kernel `src/lib/money`. This
++// shim keeps existing `@/features/ledger` imports working for one release while
++// consumers migrate to `@/lib/money`. New code should import from `@/lib/money`.
++export * from "@/lib/money/round";
+diff --git a/src/features/wealth-score/components/WealthScoreCard.tsx b/src/features/wealth-score/components/WealthScoreCard.tsx
+index 0478713..c203e0c 100644
+--- a/src/features/wealth-score/components/WealthScoreCard.tsx
++++ b/src/features/wealth-score/components/WealthScoreCard.tsx
+@@ -3,7 +3,7 @@
+ import { useState } from "react";
+ import { Card, CardHeader } from "@/components/ui";
+ import { cn } from "@/lib/cn";
+-import { formatCurrency } from "@/lib/format";
++import { formatMoneyCompact } from "@/lib/money";
+ import { SDE_MULTIPLE } from "../data";
+ import { type ValuationDriver, type WealthScore } from "../types";
+ import { DriverBar } from "./DriverBar";
+@@ -190,11 +190,11 @@ function DriverRow({ driver }: { driver: ValuationDriver }) {
+ }
+ 
+ /** Compact dollar formatting for the wealth-score visuals.
+- *  $880,000 → "$880K"; $1,250,000 → "$1.3M"; small values fall through. */
++ *  $880,000 → "$880K"; $1,250,000 → "$1.3M"; small values render in full.
++ *  Delegates to the drift-safe money kernel (ADR 0005) so abbreviation can
++ *  never disagree with the stored valuation. */
+ function compactCurrency(value: number): string {
+-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
+-  if (value >= 1_000) return `$${Math.round(value / 1_000)}K`;
+-  return formatCurrency(value, false);
++  return formatMoneyCompact(value, "USD");
+ }
+ 
+ function formatDriverValue(value: number, unit: ValuationDriver["unit"]): string {
+diff --git a/src/lib/format.test.ts b/src/lib/format.test.ts
+new file mode 100644
+index 0000000..30cc0c6
+--- /dev/null
++++ b/src/lib/format.test.ts
+@@ -0,0 +1,43 @@
++// Golden-string tests for the app-wide display formatters.
++//
++// These lock the back-compat contract after ADR 0005 re-implemented
++// formatCurrency / formatSignedCurrency as kernel-backed wrappers: the rendered
++// strings (incl. the U+2212 signed-minus the UI relies on) must not shift, and
++// formatting must now be drift-safe via the money kernel.
++//   npx tsx --test ./src/lib/format.test.ts
++
++import assert from "node:assert/strict";
++import { test } from "node:test";
++import {
++  formatCurrency,
++  formatSignedCurrency,
++  formatNumber,
++  formatPercent,
++} from "./format";
++
++test("formatCurrency: cents by default, whole dollars when decimals=false", () => {
++  assert.equal(formatCurrency(1234.5), "$1,234.50");
++  assert.equal(formatCurrency(7), "$7.00");
++  assert.equal(formatCurrency(880, false), "$880");
++  assert.equal(formatCurrency(880000, false), "$880,000");
++});
++
++test("formatCurrency is drift-safe (normalized through the money kernel)", () => {
++  // 0.1 + 0.2 === 0.30000000000000004 — must still render as $0.30.
++  assert.equal(formatCurrency(0.1 + 0.2), "$0.30");
++});
++
++test("formatSignedCurrency: + prefix, U+2212 minus, unsigned zero", () => {
++  assert.equal(formatSignedCurrency(5), "+$5.00");
++  assert.equal(formatSignedCurrency(-5), "−$5.00");
++  assert.equal(formatSignedCurrency(0), "$0.00");
++  // The negative sign is the U+2212 MINUS SIGN, not an ASCII hyphen.
++  assert.ok(formatSignedCurrency(-5).startsWith("−"));
++  assert.ok(!formatSignedCurrency(-5).startsWith("-"));
++});
++
++test("formatNumber / formatPercent are unchanged", () => {
++  assert.equal(formatNumber(1234567), "1,234,567");
++  assert.equal(formatPercent(42), "42%");
++  assert.equal(formatPercent(42.5, 1), "42.5%");
++});
+diff --git a/src/lib/format.ts b/src/lib/format.ts
+index 788db49..6efe61a 100644
+--- a/src/lib/format.ts
++++ b/src/lib/format.ts
+@@ -1,27 +1,43 @@
+-const usd = new Intl.NumberFormat("en-US", {
+-  style: "currency",
+-  currency: "USD",
+-  minimumFractionDigits: 2,
+-  maximumFractionDigits: 2,
+-});
++// App-wide display formatting helpers.
++//
++// The currency helpers are thin, back-compat wrappers over the shared money
++// kernel `@/lib/money` (ADR 0005). Every visible balance therefore flows through
++// `formatMoney` → `roundMoney`, so what the user sees is provably the canonical
++// stored value (ADR 0002/0004): drift-free and fail-loud, with no call-site
++// churn. The previous hand-rolled USD-only `Intl` path has been retired.
++//
++// USD is the app's display currency today; these helpers hard-code it so feature
++// cards keep their existing one-arg call sites. Multi-currency rendering should
++// call `formatMoney(value, currency)` from `@/lib/money` directly.
+ 
+-const usd0 = new Intl.NumberFormat("en-US", {
+-  style: "currency",
+-  currency: "USD",
+-  maximumFractionDigits: 0,
+-});
++import { formatMoney } from "@/lib/money";
+ 
+-const number = new Intl.NumberFormat("en-US");
++const DISPLAY_CURRENCY = "USD";
+ 
++/**
++ * Format a USD amount for display. `decimals = false` renders whole dollars
++ * ($880), `true` (default) renders cents ($880.00). Drift-normalized and
++ * fail-loud via the money kernel.
++ */
+ export function formatCurrency(value: number, decimals = true): string {
+-  return (decimals ? usd : usd0).format(value);
++  return formatMoney(value, DISPLAY_CURRENCY, "en-US", {
++    fractionDigits: decimals ? undefined : 0,
++  });
+ }
+ 
++/**
++ * Format a USD amount with an explicit sign prefix: `+$5.00` for positive,
++ * `−$5.00` (U+2212 minus) for negative, unsigned `$0.00` for zero. The magnitude
++ * is rendered through the kernel so it is drift-free; the sign is applied here to
++ * preserve the existing `+ / −` UI semantics.
++ */
+ export function formatSignedCurrency(value: number): string {
+   const sign = value > 0 ? "+" : value < 0 ? "−" : "";
+-  return `${sign}${usd.format(Math.abs(value))}`;
++  return `${sign}${formatMoney(Math.abs(value), DISPLAY_CURRENCY)}`;
+ }
+ 
++const number = new Intl.NumberFormat("en-US");
++
+ export function formatNumber(value: number): string {
+   return number.format(value);
+ }
+diff --git a/src/features/ledger/lib/arithmetic.test.ts b/src/lib/money/arithmetic.test.ts
+similarity index 100%
+rename from src/features/ledger/lib/arithmetic.test.ts
+rename to src/lib/money/arithmetic.test.ts
+diff --git a/src/lib/money/arithmetic.ts b/src/lib/money/arithmetic.ts
+new file mode 100644
+index 0000000..e4f20e7
+--- /dev/null
++++ b/src/lib/money/arithmetic.ts
+@@ -0,0 +1,135 @@
++// Currency-aware money addition and subtraction.
++//
++// Builds directly on `round.ts`: arithmetic is performed at the currency's
++// minor-unit precision (cents for USD, none for JPY, mils for BHD) by scaling
++// each operand to integer minor units, doing the add/subtract in integer space,
++// then scaling back. This is what makes `0.1 + 0.2` yield exactly `0.30` for USD
++// instead of IEEE-754's `0.30000000000000004` — the float drift never survives
++// the round-trip through integers. The final figure is passed through
++// `roundMoney` so the result is canonical to the currency's minor units and the
++// half-even tie convention (ADR 0002) is the single source of truth for rounding.
++//
++// Pure, side-effect-free, fail-loud — matching `amount.ts` / `round.ts`. A
++// non-finite operand or a currency mismatch is a corrupt money figure and throws
++// rather than silently propagating into balances (cf. ADR 0001/0002 boundary).
++
++import { type CurrencyCode, minorUnits, roundMoney } from "./round";
++
++/** A money figure tagged with its currency. Operands may be passed either as a
++ *  bare `number` (already in the operation's `currency`) or as a tagged `Money`,
++ *  in which case its `currency` must match — this is how a mixed-currency add is
++ *  detected and rejected rather than silently producing a meaningless sum. */
++export interface Money {
++  amount: number;
++  currency: CurrencyCode;
++}
++
++/** A bare amount (assumed to be in the operation's currency) or a tagged Money. */
++export type MoneyInput = number | Money;
++
++/** Discriminates the two ways a money operation can be rejected. */
++export type MoneyArithmeticErrorCode = "mixed-currency" | "not-finite";
++
++/**
++ * Typed error for invalid money arithmetic. Extends `RangeError` so existing
++ * fail-loud catch sites (which already expect `RangeError` from `roundMoney` /
++ * `parseAmount`) keep working, while `.code` lets callers distinguish *why*.
++ */
++export class MoneyArithmeticError extends RangeError {
++  readonly code: MoneyArithmeticErrorCode;
++  constructor(code: MoneyArithmeticErrorCode, message: string) {
++    super(message);
++    this.name = "MoneyArithmeticError";
++    this.code = code;
++  }
++}
++
++/** Resolve a MoneyInput to a finite number in `currency`, or throw a typed error. */
++function resolveOperand(
++  operand: MoneyInput,
++  currency: CurrencyCode,
++  label: string,
++): number {
++  let amount: number;
++
++  if (typeof operand === "number") {
++    amount = operand;
++  } else if (operand != null && typeof operand === "object") {
++    if (operand.currency !== currency) {
++      throw new MoneyArithmeticError(
++        "mixed-currency",
++        `Cannot operate on ${label}: currency ${String(operand.currency)} ` +
++          `does not match operation currency ${currency}.`,
++      );
++    }
++    amount = operand.amount;
++  } else {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Operand ${label} must be a number or Money, received ${String(operand)}.`,
++    );
++  }
++
++  if (typeof amount !== "number" || !Number.isFinite(amount)) {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Operand ${label} must be a finite number, received ${String(amount)}.`,
++    );
++  }
++  return amount;
++}
++
++/**
++ * Core integer-space combine. Both operands are scaled to integer minor units
++ * (absorbing the float noise that makes `0.1 * 100 === 10.000000000000002`),
++ * combined as integers, scaled back, then run through `roundMoney` so the result
++ * is canonical and half-even per ADR 0002.
++ */
++function combine(
++  a: MoneyInput,
++  b: MoneyInput,
++  currency: CurrencyCode,
++  sign: 1 | -1,
++): number {
++  // `minorUnits` validates the currency code (throws RangeError on blank).
++  const factor = 10 ** minorUnits(currency);
++
++  const aMinor = Math.round(resolveOperand(a, currency, "a") * factor);
++  const bMinor = Math.round(resolveOperand(b, currency, "b") * factor);
++
++  // Integer arithmetic — no sub-unit drift. Result divided back to a decimal,
++  // then canonicalized (handles -0 normalization and any residual float noise).
++  const resultMinor = aMinor + sign * bMinor;
++  return roundMoney(resultMinor / factor, currency);
++}
++
++/**
++ * Add two money figures of the same `currency`, at the currency's minor-unit
++ * precision. Composes with `roundMoney` (ADR 0002) for the final value.
++ *
++ * @throws MoneyArithmeticError if an operand is non-finite or carries a
++ *   different currency; RangeError if `currency` is blank/invalid.
++ */
++export function addMoney(
++  a: MoneyInput,
++  b: MoneyInput,
++  currency: CurrencyCode,
++): number {
++  return combine(a, b, currency, 1);
++}
++
++/**
++ * Subtract `b` from `a`, both of the same `currency`, at minor-unit precision.
++ * Negative results are valid (an expense exceeding income). Composes with
++ * `roundMoney` (ADR 0002) for the final value.
++ *
++ * @throws MoneyArithmeticError if an operand is non-finite or carries a
++ *   different currency; RangeError if `currency` is blank/invalid.
++ */
++export function subtractMoney(
++  a: MoneyInput,
++  b: MoneyInput,
++  currency: CurrencyCode,
++): number {
++  return combine(a, b, currency, -1);
++}
+diff --git a/src/features/ledger/lib/format.test.ts b/src/lib/money/format.test.ts
+similarity index 66%
+rename from src/features/ledger/lib/format.test.ts
+rename to src/lib/money/format.test.ts
+index 6f57181..2d6a712 100644
+--- a/src/features/ledger/lib/format.test.ts
++++ b/src/lib/money/format.test.ts
+@@ -65,3 +65,32 @@ test("display is consistent with stored value across prior arithmetic (Reviewer
+   assert.equal(formatMoney(addMoney(0.1, 0.2, "USD"), "USD"), "$0.30");
+   assert.equal(formatMoney(addMoney(0.1, 0.2, "USD"), "USD", "en-US"), "$0.30");
+ });
++
++// ── ADR 0005: display-shaping options + compact helper ──────────────────────
++
++import { formatMoneyCompact } from "./format";
++
++test("fractionDigits:0 renders whole dollars (back-compat for formatCurrency(_, false))", () => {
++  assert.equal(formatMoney(880, "USD", "en-US", { fractionDigits: 0 }), "$880");
++  assert.equal(formatMoney(880000, "USD", "en-US", { fractionDigits: 0 }), "$880,000");
++  assert.equal(formatMoney(1234.6, "USD", "en-US", { fractionDigits: 0 }), "$1,235");
++  // Still drift-normalized before the precision narrowing.
++  assert.equal(formatMoney(addMoney(0.1, 0.2, "USD"), "USD", "en-US", { fractionDigits: 0 }), "$0");
++});
++
++test("default (no options) keeps the currency's natural precision", () => {
++  assert.equal(formatMoney(880, "USD"), "$880.00");
++  assert.equal(formatMoney(1234.5, "USD"), "$1,234.50");
++});
++
++test("formatMoneyCompact abbreviates, drift-safe, matching the prior $…K/$…M style", () => {
++  assert.equal(formatMoneyCompact(880_000, "USD"), "$880K");
++  assert.equal(formatMoneyCompact(1_250_000, "USD"), "$1.3M");
++  assert.equal(formatMoneyCompact(999, "USD"), "$999");
++  assert.equal(formatMoneyCompact(0, "USD"), "$0");
++});
++
++test("formatMoneyCompact is fail-loud on non-finite values", () => {
++  assert.throws(() => formatMoneyCompact(NaN, "USD"), MoneyArithmeticError);
++  assert.throws(() => formatMoneyCompact(Infinity, "USD"), MoneyArithmeticError);
++});
+diff --git a/src/lib/money/format.ts b/src/lib/money/format.ts
+new file mode 100644
+index 0000000..cd79f2f
+--- /dev/null
++++ b/src/lib/money/format.ts
+@@ -0,0 +1,144 @@
++// Currency-aware money formatting for the display layer.
++//
++// This is the display-side pair to the `round.ts` / `arithmetic.ts` stack in the
++// shared money kernel (`src/lib/money`, ADR 0005). Where `roundMoney` (ADR 0002)
++// and `addMoney`/`subtractMoney` (ADR 0003) keep the *stored* value canonical,
++// `formatMoney` turns that canonical value into a human-readable string — and
++// does so by first normalizing through `roundMoney`, so what the user sees can
++// never disagree with what the ledger stores by float drift. Symbol placement,
++// grouping, and minor-unit precision are delegated to `Intl.NumberFormat`
++// (style: "currency"), which is locale- and currency-correct by construction
++// ($1,234.50 / 1.234,56 € / ¥1,235).
++//
++// Pure, side-effect-free, fail-loud. A non-finite value or a mixed-currency
++// `Money` is a corrupt figure and throws a `MoneyArithmeticError` (ADR 0003's
++// typed error) rather than rendering a misleading string.
++
++import { type CurrencyCode, roundMoney } from "./round";
++import { MoneyArithmeticError, type MoneyInput } from "./arithmetic";
++
++/**
++ * Resolve a `MoneyInput` to a finite number in `currency`, or throw the same
++ * typed error `arithmetic.ts` uses. A tagged `Money` whose currency differs from
++ * `currency` is the only expressible mixed-currency format request — rejected so
++ * a EUR amount is never silently rendered with a USD symbol.
++ */
++function resolveValue(value: MoneyInput, currency: CurrencyCode): number {
++  let amount: number;
++
++  if (typeof value === "number") {
++    amount = value;
++  } else if (value != null && typeof value === "object") {
++    if (value.currency !== currency) {
++      throw new MoneyArithmeticError(
++        "mixed-currency",
++        `Cannot format value: currency ${String(value.currency)} does not ` +
++          `match format currency ${currency}.`,
++      );
++    }
++    amount = value.amount;
++  } else {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Value to format must be a number or Money, received ${String(value)}.`,
++    );
++  }
++
++  if (typeof amount !== "number" || !Number.isFinite(amount)) {
++    throw new MoneyArithmeticError(
++      "not-finite",
++      `Value to format must be a finite number, received ${String(amount)}.`,
++    );
++  }
++  return amount;
++}
++
++/** Display-shaping options for `formatMoney` — never affect the stored value,
++ *  only how the (already drift-normalized) figure is rendered. */
++export interface MoneyFormatOptions {
++  /**
++   * Override the currency's default minor-unit digit count for *display only*
++   * (sets both min and max fraction digits). The value is still normalized to
++   * the currency's true minor units via `roundMoney` first, so this only
++   * controls rendered precision — e.g. whole-dollar display (`0`) for compact
++   * dashboards. Omit to use the currency's natural precision (USD→2, JPY→0).
++   */
++  fractionDigits?: number;
++  /** Render with `Intl` compact notation ($1.3M, ¥1,235, 880 K€). */
++  compact?: boolean;
++}
++
++/**
++ * Format a money `value` as a locale-correct currency string.
++ *
++ * - **`Intl.NumberFormat` (style: "currency")** drives symbol placement,
++ *   digit grouping, and minor-unit precision — so JPY renders with zero decimals,
++ *   USD with two, and the symbol sits where the locale expects it.
++ * - **`locale` defaults to `"en-US"`** when omitted.
++ * - **Normalized through `roundMoney` first** (ADR 0002), so the formatted string
++ *   reflects the canonical stored value: `formatMoney(addMoney(0.1, 0.2, "USD"),
++ *   "USD")` is exactly `"$0.30"`, never `"$0.30000000000000004"` and never a
++ *   value that drifted from what arithmetic stored.
++ * - **`options`** (ADR 0005) shapes display only: `fractionDigits` overrides
++ *   rendered precision; `compact` switches to abbreviated notation.
++ * - **Fail-loud:** a non-finite value or a mixed-currency `Money` throws a
++ *   `MoneyArithmeticError` (ADR 0003); a blank/invalid currency throws via
++ *   `roundMoney`/`minorUnits` (`RangeError`).
++ *
++ * @throws MoneyArithmeticError if `value` is non-finite or carries a different
++ *   currency; RangeError if `currency` is blank or unknown to `Intl`.
++ */
++export function formatMoney(
++  value: MoneyInput,
++  currency: CurrencyCode,
++  locale: string = "en-US",
++  options: MoneyFormatOptions = {},
++): string {
++  const amount = resolveValue(value, currency);
++
++  // Normalize to the currency's canonical minor-unit value before display.
++  // roundMoney also re-validates the currency code and the finite invariant,
++  // and normalizes -0 → 0 so we never render "-$0.00".
++  const normalized = roundMoney(amount, currency);
++
++  // Intl is authoritative for locale-correct symbol/grouping/precision. By
++  // default we let it derive fraction digits from the currency (USD→2, JPY→0,
++  // BHD→3), which matches roundMoney's minor-unit table for standard ISO-4217
++  // codes. Display options only narrow how that canonical figure is shown.
++  const intlOptions: Intl.NumberFormatOptions = {
++    style: "currency",
++    currency,
++  };
++  if (options.fractionDigits !== undefined) {
++    intlOptions.minimumFractionDigits = options.fractionDigits;
++    intlOptions.maximumFractionDigits = options.fractionDigits;
++  }
++  if (options.compact) {
++    intlOptions.notation = "compact";
++  }
++
++  return new Intl.NumberFormat(locale, intlOptions).format(normalized);
++}
++
++/**
++ * Compact (abbreviated) currency display for dashboards and visuals
++ * ($880K, $1.3M, ¥1,235). The single drift-safe replacement for hand-rolled
++ * `` `$${(v/1e6).toFixed(1)}M` `` abbreviators (ADR 0005 Task 4): the figure is
++ * normalized through `roundMoney` first and abbreviation is delegated to `Intl`
++ * compact notation, so it is currency-aware and can never disagree with the
++ * stored value. `Intl` compact's default precision matches the prior style
++ * ($880,000 → "$880K", $1,250,000 → "$1.3M").
++ *
++ * Values below the currency's first compact threshold render in full
++ * (`$999`, `$0`), matching the old `< 1_000` fall-through.
++ *
++ * @throws MoneyArithmeticError / RangeError on the same fail-loud conditions as
++ *   `formatMoney`.
++ */
++export function formatMoneyCompact(
++  value: MoneyInput,
++  currency: CurrencyCode,
++  locale: string = "en-US",
++): string {
++  return formatMoney(value, currency, locale, { compact: true });
++}
+diff --git a/src/lib/money/index.ts b/src/lib/money/index.ts
+new file mode 100644
+index 0000000..8d228a1
+--- /dev/null
++++ b/src/lib/money/index.ts
+@@ -0,0 +1,34 @@
++// Shared money kernel (ADR 0005).
++//
++// The single home for cross-cutting monetary primitives — rounding (ADR 0002),
++// currency-aware arithmetic (ADR 0003), and drift-free display formatting
++// (ADR 0004). Promoted out of `features/ledger/lib` so any feature can import
++// drift-safe money from `@/lib/money` without taking a feature→feature
++// dependency on the ledger. `features/ledger/lib/{round,arithmetic,format}`
++// remain as thin back-compat re-export shims for one release.
++//
++// Ledger-input-boundary helpers (`amount.ts`, `ingest.ts`) intentionally stay in
++// `features/ledger/lib` — they are ledger-ingest specific, not generic money.
++
++export {
++  type CurrencyCode,
++  MINOR_UNITS,
++  DEFAULT_MINOR_UNITS,
++  minorUnits,
++  roundMoney,
++} from "./round";
++
++export {
++  type Money,
++  type MoneyInput,
++  type MoneyArithmeticErrorCode,
++  MoneyArithmeticError,
++  addMoney,
++  subtractMoney,
++} from "./arithmetic";
++
++export {
++  type MoneyFormatOptions,
++  formatMoney,
++  formatMoneyCompact,
++} from "./format";
+diff --git a/src/features/ledger/lib/round.test.ts b/src/lib/money/round.test.ts
+similarity index 100%
+rename from src/features/ledger/lib/round.test.ts
+rename to src/lib/money/round.test.ts
+diff --git a/src/lib/money/round.ts b/src/lib/money/round.ts
+new file mode 100644
+index 0000000..0310eb5
+--- /dev/null
++++ b/src/lib/money/round.ts
+@@ -0,0 +1,101 @@
++// Currency-aware monetary rounding (banker's rounding / round-half-to-even).
++//
++// `amount.ts` validates amounts at the input boundary and canonicalizes USD to
++// two decimals with `roundToCents` (half-UP via Math.round). This module is the
++// general arithmetic primitive for rounding a money value to *any* currency's
++// minor units using half-EVEN, the convention financial systems use to avoid
++// the upward bias half-up introduces when summing many rows (see ADR 0001's
++// "residual risk: sub-cent drift in aggregates").
++//
++// Half-even means a value exactly halfway between two representable units
++// rounds toward the even neighbour: 0.005 → 0.00, 0.015 → 0.02, 2.675 → 2.68.
++//
++// Pure, side-effect-free, matching the repo's other co-located libs
++// (amount.ts, customers/lib/normalize.ts, benchmarks/lib/categorize.ts).
++
++/** ISO-4217-style code. Kept as a widened string so callers aren't blocked on
++ *  an exhaustive enum; unknown codes fall back to DEFAULT_MINOR_UNITS. */
++export type CurrencyCode = string;
++
++/** Minor-unit (decimal) digits per currency. Most are 2; a few common
++ *  exceptions are spelled out. Unlisted codes default to 2. */
++export const MINOR_UNITS: Readonly<Record<string, number>> = {
++  USD: 2,
++  EUR: 2,
++  GBP: 2,
++  CAD: 2,
++  AUD: 2,
++  CHF: 2,
++  CNY: 2,
++  // zero-decimal currencies
++  JPY: 0,
++  KRW: 0,
++  CLP: 0,
++  ISK: 0,
++  VND: 0,
++  // three-decimal currencies
++  BHD: 3,
++  KWD: 3,
++  OMR: 3,
++  TND: 3,
++};
++
++/** Minor-unit digits for any currency not listed in MINOR_UNITS. */
++export const DEFAULT_MINOR_UNITS = 2;
++
++/** Resolve a currency's minor-unit digit count (case-insensitive). */
++export function minorUnits(currency: CurrencyCode): number {
++  if (typeof currency !== "string" || currency.trim() === "") {
++    throw new RangeError("roundMoney: currency must be a non-empty string code.");
++  }
++  const units = MINOR_UNITS[currency.trim().toUpperCase()];
++  return units ?? DEFAULT_MINOR_UNITS;
++}
++
++// Floating-point ties are never exactly representable — 0.005 * 100 is
++// 0.49999999999999994, not 0.5 — so half-detection uses an epsilon. This is
++// reliable while the scaled magnitude stays within Number.MAX_SAFE_INTEGER
++// (~9.0e15); beyond that, integer spacing exceeds 1 and the input no longer
++// carries sub-unit precision anyway.
++const HALF_EPSILON = 1e-9;
++
++/**
++ * Round a monetary `value` to `currency`'s minor units using banker's rounding
++ * (round-half-to-even).
++ *
++ * NaN/Infinity-safe in the strict sense: a non-finite `value` is a corrupt
++ * money figure, so it is rejected with a RangeError rather than silently
++ * propagating into balances — consistent with the ledger's fail-loud boundary
++ * (cf. amount.ts rejecting `not-finite`). Callers that may hold untrusted input
++ * should validate via `parseAmount` first; this primitive assumes a real number.
++ *
++ * @throws RangeError if `value` is not a finite number, or `currency` is blank.
++ */
++export function roundMoney(value: number, currency: CurrencyCode): number {
++  if (typeof value !== "number" || !Number.isFinite(value)) {
++    throw new RangeError(
++      `roundMoney: value must be a finite number, received ${String(value)}.`,
++    );
++  }
++
++  const digits = minorUnits(currency);
++  const factor = 10 ** digits;
++  const scaled = value * factor;
++
++  const floor = Math.floor(scaled);
++  const remainder = scaled - floor;
++
++  let roundedUnits: number;
++  if (Math.abs(remainder - 0.5) <= HALF_EPSILON) {
++    // Exact half: pick the even neighbour.
++    roundedUnits = floor % 2 === 0 ? floor : floor + 1;
++  } else {
++    // Not a tie: ordinary nearest. Math.round breaks its own ties upward, but
++    // ties are handled above, so only genuine non-half values reach here.
++    roundedUnits = Math.round(scaled);
++  }
++
++  const result = roundedUnits / factor;
++  // Normalize -0 to 0 so formatters and equality checks behave.
++  return result === 0 ? 0 : result;
++}
+
+--- UNCOMMITTED WORKING TREE ---
+diff --git a/README.md b/README.md
+index 3e1a27d..470ded3 100644
+--- a/README.md
++++ b/README.md
+@@ -15,7 +15,7 @@ XPrize hackathon entry · 90-day MVP scaffold · built with Gemini on Google Clo
+ - Ledger explorer — client-side search, income/expense filter, sortable columns, and CSV export over the data layer; view preferences persisted to `localStorage` via Zustand
+ - Ruled Ledger visual identity v2 — paper-cream + ink + emerald, T-account card frame, 28px page ruling
+ - Ink-mode theme toggle with pre-paint inline script (no cream-flash on load), persisted to `localStorage`
+-- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`; part of a 95-test unit suite
++- Currency-aware money arithmetic (`roundMoney` · `addMoney` · `subtractMoney` · `formatMoney`) with banker's rounding and a typed `MoneyArithmeticError`, all on a single shared `@/lib/money` kernel adopted app-wide so every displayed balance provably matches the stored value (no formatter drift); part of a 95-test unit suite
+ - Ledger ingest boundary (`ingestTransaction`) — validates every amount from SMS/OCR/Plaid sources at one seam, with user-facing rejection reasons routed to the review queue
+ - Trial-balance verifier (`isBalanced` · `verifyTrialBalance`) — answers "do debits equal credits?" over double-entry rows, with the signed difference and the accounts active on only one side; totals fold through the audited money kernel so `0.10 + 0.20` vs `0.30` balances, and mixed-currency / non-finite rows fail loud
+ - Fiscal-period mapping (`getFiscalPeriod`) — places any date into its fiscal year / quarter / month with period bounds, so transactions and reports group into the right accounting period (configurable fiscal-year start, fail-loud on bad input)
+@@ -97,14 +97,15 @@ src/
+   lib/
+     motion.ts                # easeLedger curve, fadeUp / staggerContainer / viewport variants
+     cn.ts                    # className merge helper
+-    format.ts                # Display formatters
++    format.ts                # Display formatters (kernel-backed wrappers — formatCurrency / formatSignedCurrency)
++    money/                   # Shared money kernel — round · arithmetic · format primitives + @/lib/money barrel [ADR-0005]
+     categorize.ts            # Categorization types + heuristic + defensive JSON parser (pure)
+     ledger-view.ts           # Search / filter / sort / CSV transforms (pure)
+     preferences.ts           # Persisted ledger-view Zustand store
+     data/                    # Swappable data-layer boundary (transactions / accounts / reports)
+   features/
+     ledger/                  # Transactions, inbox, review queue, close checklist, money arithmetic
+-      lib/                   # round / amount / arithmetic / format / ingest / trial-balance / period + co-located .test.ts files
++      lib/                   # amount / ingest / trial-balance / period (+ round·arithmetic·format re-export shims → @/lib/money, ADR-0005) + co-located .test.ts files
+     customers/               # Customer panel, merge candidates, Zustand store
+     benchmarks/              # Industry benchmarks card
+     tax-credits/             # Tax-credit scanner + evidence chips
+@@ -152,7 +153,7 @@ npm test         # 95 unit tests via `tsx --test src/**/*.test.ts`
+ npm run e2e      # Playwright e2e (home-nav regression per ADR-0006, etc.)
+ ```
+ 
+-Unit suites live next to the code they cover under `src/features/ledger/lib/*.test.ts`. Playwright specs live in `e2e/` with config in `playwright.config.ts`.
++Unit suites live next to the code they cover under `src/features/ledger/lib/*.test.ts` and the shared money kernel `src/lib/money/*.test.ts` (plus `src/lib/format.test.ts`). Playwright specs live in `e2e/` with config in `playwright.config.ts`.
+ 
+ ## Building & deployment
+ 
