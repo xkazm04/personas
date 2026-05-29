@@ -294,6 +294,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-28 — completed] /research — claude-code-2-1-137-to-154**
+  - **What:** Harvested Claude Code CHANGELOG 2.1.137→2.1.154. Host-first read of `provider/claude.rs` showed the version floor was already at 2.1.149 (advanced by an undocumented 2026-05-23 run that covered 2.1.137–2.1.150), so the effective new range was just 2.1.152/153/154. 2 code findings, both executed in-session; 10 catches + ~70 NA (interactive-TUI / `claude agents` / background-session).
+  - **Commits (master):** `2ab31b304` (minimum_version floor 2.1.149→2.1.154 + wrapping-fix doc paragraph), `3ad9c1dfb` (Opus 4.8 adoption: bumped explicit `claude-opus-4-7` pins → `claude-opus-4-8` in Athena session + brain ×3 + build_session design-agent guidance + team-studio dropdown), `bfc301892` (codebase-stack.md fact reconciliation).
+  - **Paths:** `src-tauri/src/engine/provider/claude.rs`, `src-tauri/src/companion/{session,brain/reflection,brain/recall_synthesis,brain/consolidation}.rs`, `src-tauri/src/engine/build_session/session_prompt.rs`, `src/features/pipeline/components/teamStudio/TeamWorkspacePane.tsx`, `.claude/codebase-stack.md`; Obsidian Research/Lessons (outside repo). `cargo check --features desktop` + `tsc` + eslint clean.
+  - **Note:** Companion/brain spawn path has no `--effort` flag → on Opus 4.8 (high-effort default) those now run at high effort; pin `--effort medium` there separately if cost matters. Memory note: `Research/2026-05-28-claude-code-2-1-137-to-154`.
+  - **Status:** completed (commit: 2ab31b304, 3ad9c1dfb, bfc301892)
+
 - **[2026-05-26 — completed on master] Athena async-UX — translations pass (closes the milestone)**
   - **What:** Translated the 8 async-UX `plugins.companion` keys (`task_status_{queued,running,done,failed}`, `tasks_running_{one,other}`, `queued_{badge,remove}`) into all 13 non-English locales. Added to source `locales/<lang>.json` then regenerated via `split-locales.mjs` — only `section-locales/<lang>/plugins.json` changed (source/section were in sync, zero unrelated drift swept in). `check-coverage` green (no extras; the remaining "missing" warnings are other sessions' `guide_*`/`offer_*` keys, not mine). en.json + generated/types/enSectionStrings untouched (English unchanged).
   - **Commits (master):** this turn. Milestone: `47db6276b` (P1) · `045bb1eab` (P2) · `f96ddb312` (P3+P4) · `55ff7c28c` (P4b) · this (i18n). **Milestone fully complete.**
