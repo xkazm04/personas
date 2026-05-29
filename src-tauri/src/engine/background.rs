@@ -784,6 +784,16 @@ pub(crate) async fn event_bus_tick(
             .iter()
             .flat_map(|(_, matches)| matches.iter().map(|m| m.persona_id.clone()))
             .collect();
+        // Also fetch each event's source persona so the cross-team bleed guard
+        // can compare home teams — the source may not be among matched personas.
+        for (idx, _) in &event_matches {
+            let ev = &events[*idx];
+            if ev.source_type.starts_with("persona:") {
+                if let Some(src) = ev.source_id.clone() {
+                    ids.push(src);
+                }
+            }
+        }
         ids.sort();
         ids.dedup();
         ids
@@ -846,6 +856,35 @@ pub(crate) async fn event_bus_tick(
                     "Event bus: skipping — persona is disabled"
                 );
                 continue;
+            }
+
+            // Cross-team bleed guard. Adoption wires intra-team subscriptions
+            // with source_filter "*"; in a multi-team / multi-repo deployment
+            // that lets one team's event (e.g. ai-bookkeeper's release.published)
+            // wake every team's matching persona, which then refuses the
+            // off-repo work and burns a precondition_failed run. Suppress a
+            // wildcard match that crosses a team boundary (same-team, explicit
+            // filters, and teamless personas are untouched).
+            if event.source_type.starts_with("persona:") {
+                let src_home = event
+                    .source_id
+                    .as_deref()
+                    .and_then(|sid| persona_map.get(sid))
+                    .and_then(|p| p.home_team_id.as_deref());
+                if bus::is_cross_team_wildcard_bleed(
+                    m.source_filter.as_deref(),
+                    persona.home_team_id.as_deref(),
+                    src_home,
+                ) {
+                    tracing::info!(
+                        persona_id = %persona.id,
+                        persona_name = %persona.name,
+                        source_id = ?event.source_id,
+                        event_type = %event.event_type,
+                        "Event bus: skipping — cross-team wildcard bleed suppressed"
+                    );
+                    continue;
+                }
             }
 
             // Cascade guard. Scope it to the capability when the match is
