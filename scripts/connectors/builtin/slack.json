@@ -15,7 +15,16 @@
       "type": "password",
       "required": true,
       "placeholder": "xoxb-...",
-      "helpText": "From Slack App -> OAuth & Permissions -> Bot User OAuth Token",
+      "helpText": "From Slack App -> OAuth & Permissions -> Bot User OAuth Token. For inbound (a persona that replies in a channel) add the channels:history, groups:history and chat:write scopes.",
+      "sensitive": true
+    },
+    {
+      "key": "user_token",
+      "label": "User OAuth Token (optional)",
+      "type": "password",
+      "required": false,
+      "placeholder": "xoxp-...",
+      "helpText": "Optional. Only needed for Real-Time Search of private channels / DMs and for the Slack MCP server. From OAuth & Permissions -> User OAuth Token (xoxp-...) with the search:read.* scopes.",
       "sensitive": true
     }
   ],
@@ -72,7 +81,7 @@
     "auth_type": "bot_token",
     "auth_type_label": "Bot Token",
     "docs_url": "https://api.slack.com/authentication/token-types",
-    "setup_guide": "1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Go to 'OAuth & Permissions' in the sidebar\n3. Add the bot token scopes your integration needs\n4. Click 'Install to Workspace' and authorize\n5. Copy the xoxb-... Bot User OAuth Token and paste it here",
+    "setup_guide": "1. Go to api.slack.com/apps and create a new app (or select existing)\n2. Go to 'OAuth & Permissions' in the sidebar\n3. Add the bot token scopes your integration needs. For a persona that reads and replies in a channel: chat:write, channels:history, groups:history, channels:read\n4. Click 'Install to Workspace' and authorize\n5. Copy the xoxb-... Bot User OAuth Token and paste it into Bot User OAuth Token\n6. (Optional, for Real-Time Search of private channels/DMs and the Slack MCP server) Add the search:read.public / search:read.private user scopes, reinstall, and paste the xoxp-... User OAuth Token into User OAuth Token",
     "pricing_tier": "free",
     "llm_usage_hint": {
       "overview": "Slack Web API. Bearer token in $SLACK_BOT_TOKEN. Base URL: https://slack.com/api. Responses always include {\"ok\": bool, \"error\": \"...\" } -- check ok before trusting the payload.",
@@ -86,7 +95,9 @@
         "Always check the 'ok' field in the response -- Slack returns HTTP 200 with {\"ok\":false,\"error\":\"...\"} for most failures.",
         "Channel IDs (like C01234ABC) work everywhere; channel names with a hash prefix only work in chat.postMessage.",
         "Bot tokens need specific scopes per endpoint: chat:write, channels:read, channels:history, etc. missing_scope errors tell you which.",
-        "Use Content-Type: application/json; charset=utf-8 for POST bodies; form-encoded is legacy."
+        "Use Content-Type: application/json; charset=utf-8 for POST bodies; form-encoded is legacy.",
+        "For inbound polling the bot must be a MEMBER of the channel (invite it) and the token needs channels:history (public) or groups:history (private) -- conversations.history returns not_in_channel otherwise.",
+        "Real-Time Search of private channels, DMs and group DMs requires a USER token (xoxp-, search:read.private/.im/.mpim); a bot token only reaches public results."
       ]
     }
   }
