@@ -1,3 +1,6 @@
-results/*.json
-results/*.md
+# Per-run suite output (bundles/verdicts/reports) is large + non-deterministic.
+# Keep it local; do NOT commit. The run layout is documented in README.md.
+# NOTE: the previous `results/*.json` pattern only matched direct children, so
+# nested results/<stamp>/** got committed by accident — this ignores the whole tree.
+results/*
 !results/.gitkeep

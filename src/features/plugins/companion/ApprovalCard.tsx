@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, X, Loader2 } from 'lucide-react';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   companionApproveAction,
@@ -147,9 +148,13 @@ export function ApprovalCard({
         <summary className="cursor-pointer typo-caption hover:text-foreground transition-colors">
           {t.plugins.companion.action_params}
         </summary>
-        <pre className="mt-1.5 typo-code px-2 py-1.5 rounded bg-foreground/5 overflow-x-auto">
-          {prettyParams}
-        </pre>
+        <div className="mt-1.5">
+          <MarkdownRenderer
+            content={'```json\n' + prettyParams + '\n```'}
+            className="athena-chat-md"
+            codeBlockActions
+          />
+        </div>
       </details>
 
       {error && (

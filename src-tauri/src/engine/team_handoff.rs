@@ -7,7 +7,7 @@
 //! `event_subscriptions` field. Personas whose job lives in `structured_prompt`
 //! (empty `use_cases` — e.g. the SDLC roster) therefore got **no** handoff
 //! wiring, so the chain died after the entry member and the team could not
-//! cascade autonomously (see `docs/test/runs/baseline-health.md`). The
+//! cascade autonomously (see `docs/tests/autonomy-eval/runs/baseline-health.md`). The
 //! connection graph (the visual design) was never translated into the event
 //! triggers the runtime needs.
 //!

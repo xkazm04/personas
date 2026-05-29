@@ -5,7 +5,10 @@
  *   - System (autonomous-continuation): slim centered divider with the
  *     marker text. Detected by the `[autonomous continuation` prefix the
  *     backend writes when persisting a `TurnOrigin::Autonomous` episode.
- *   - Assistant (default): left-aligned, neutral tint, markdown-rendered.
+ *   - Assistant (default): left-aligned with a small Athena avatar in the
+ *     gutter, defined surface (tint + hairline border + faint lift), and
+ *     markdown-rendered body. The avatar is a static poster image (not the
+ *     `<video>` AthenaAvatar) so per-bubble cost stays at zero decode.
  *
  * Streaming bubbles use `streaming=true` to flip the testid + dim the
  * opacity. The actual streaming text is filtered upstream (CompanionPanel
@@ -18,8 +21,11 @@
  * Brain Viewer entry. Skipped during streaming — the partial text would
  * make the chip set flicker as tokens come and go mid-reply.
  */
+import { Infinity as InfinityIcon } from 'lucide-react';
 import type { BrainKind } from '@/api/companion';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { stripModelDirectives } from './athenaLabels';
 import { BrainLinksStrip } from './BrainLinksStrip';
 
@@ -29,12 +35,21 @@ export function Bubble({
   index,
   children,
   onOpenInBrain,
+  createdAt,
+  groupStart = true,
+  groupEnd = true,
 }: {
   role: string;
   streaming?: boolean;
   index: number;
   children: React.ReactNode;
   onOpenInBrain?: (kind: BrainKind, id: string) => void;
+  /** ISO timestamp for the hover meta row. Omitted for the streaming bubble. */
+  createdAt?: string;
+  /** First message of a consecutive same-role run — shows the avatar. */
+  groupStart?: boolean;
+  /** Last of the run — actions row sits below it; spacing relaxes after. */
+  groupEnd?: boolean;
 }) {
   const isUser = role === 'user';
   const isSystem = role === 'system';
@@ -53,7 +68,8 @@ export function Bubble({
         data-companion-bubble-index={index}
       >
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
-        <span className="typo-caption tracking-wide uppercase text-primary/70">
+        <span className="inline-flex items-center gap-1.5 typo-caption tracking-wide uppercase text-primary/70">
+          <InfinityIcon className="w-3 h-3" aria-hidden />
           {children as string}
         </span>
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
@@ -79,27 +95,53 @@ export function Bubble({
   const showBrainLinks =
     !isUser && displayIsString && !streaming && !!onOpenInBrain;
 
+  // Hover meta row (copy + relative time). Collapsed to zero height via a
+  // grid-rows 0fr→1fr trick so it adds no vertical bloat across a long
+  // transcript and never shifts layout — it expands smoothly only while the
+  // message row is hovered/focused. Skipped for the streaming bubble.
+  const showMeta = !streaming && displayIsString;
+
   return (
     <div
-      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+      className={`group flex gap-2.5 ${isUser ? 'justify-end' : 'justify-start'} ${
+        groupStart ? '' : '-mt-1.5'
+      } ${groupEnd ? '' : 'mb-0'}`}
       data-testid={
         streaming ? 'companion-bubble-streaming' : `companion-bubble-${role}`
       }
       data-companion-bubble-role={role}
       data-companion-bubble-index={index}
+      data-group-start={groupStart ? 'true' : 'false'}
     >
-      <div className={`max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
+      {!isUser &&
+        (groupStart ? (
+          <img
+            src="/athena/athena_baseline.jpg"
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="w-7 h-7 mt-0.5 rounded-full object-cover ring-1 ring-primary/25 shrink-0 select-none"
+          />
+        ) : (
+          // Spacer keeps grouped bubbles aligned under the first one's body.
+          <div className="w-7 shrink-0" aria-hidden />
+        ))}
+      <div className={`min-w-0 max-w-[85%] flex flex-col gap-1 ${isUser ? 'items-end' : 'items-start'}`}>
         <div
-          className={`rounded-card px-3.5 py-2.5 typo-body break-words ${
+          className={`rounded-card px-3.5 py-2.5 typo-body leading-relaxed break-words ${
             isUser
-              ? 'bg-primary/15 text-foreground whitespace-pre-wrap'
-              : 'bg-foreground/5 text-foreground'
+              ? 'bg-primary/15 border border-primary/20 text-foreground whitespace-pre-wrap'
+              : 'bg-foreground/[0.06] border border-foreground/10 text-foreground shadow-elevation-1'
           } ${streaming ? 'opacity-90' : ''}`}
         >
           {isUser || !displayIsString ? (
             displayText
           ) : (
-            <MarkdownRenderer content={displayText as string} />
+            <MarkdownRenderer
+              content={displayText as string}
+              className="athena-chat-md"
+              codeBlockActions
+            />
           )}
         </div>
         {showBrainLinks && (
@@ -108,6 +150,23 @@ export function Bubble({
             onOpen={onOpenInBrain}
             variant="inline"
           />
+        )}
+        {showMeta && (
+          <div className="grid grid-rows-[0fr] transition-[grid-template-rows] duration-150 ease-out group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr]">
+            <div className="overflow-hidden">
+              <div
+                className={`flex items-center gap-1 ${isUser ? 'flex-row-reverse' : ''}`}
+              >
+                <CopyButton text={displayText as string} iconSize="w-3 h-3" />
+                {createdAt && (
+                  <RelativeTime
+                    timestamp={createdAt}
+                    className="typo-caption text-foreground px-1"
+                  />
+                )}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </div>

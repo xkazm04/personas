@@ -3,6 +3,7 @@ pub mod auth;
 pub mod bridge_manifest;
 pub mod byom;
 pub mod cloud;
+pub mod cloud_sync;
 pub mod context_generation;
 pub mod dev_tools;
 pub mod director;

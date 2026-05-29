@@ -22,7 +22,6 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 | [persona-execution-image-attachments.md](persona-execution-image-attachments.md) | Proposal |
 | [persona-hub-marketplace.md](persona-hub-marketplace.md) | Shelved — engineering foundation in active backlog; marketplace pending Recipe redesign + adoption signal |
 | [recipe-from-template-migration.md](recipe-from-template-migration.md) | Design — Stage B in flight; Phase 1a (schema additions) ready to implement |
-| [real-api-testing.md](real-api-testing.md) | Proposal — Path 2 (synthesize trace) recommended (~4–8h) |
 
 ## Moved out
 
@@ -31,6 +30,7 @@ This folder is only for not-yet-implemented proposals, experiments, and design e
 - **athena-desktop-aware (CLI session awareness, Phase 5 v1)** — moved 2026-05-11 to [`../features/companion/athena-cli-session-awareness.md`](../features/companion/athena-cli-session-awareness.md). Persona-editor UI gap (limitation #1) closed in the same wave (`4c08b020`).
 - **agent-operations-hub** — moved 2026-05-10 to [`../features/agents/operations-hub.md`](../features/agents/operations-hub.md) (Phase 1 chat ops dispatch shipped; Phases 2-3 tracked under Future work in the new doc).
 - **cli-coordination-active-runs** — moved 2026-05-10 to [`../architecture/cli-coordination.md`](../architecture/cli-coordination.md) (v1 + v2 cross-skill adoption + v3 parallel-safety primitives shipped).
+- **real-api-testing** — archived 2026-05-28 to [`../_archive/concepts/real-api-testing.md`](../_archive/concepts/real-api-testing.md). The proposal shipped (`test_build_draft` exists in `build_sessions.rs`); kept for history.
 - **in-app-http-service** — moved 2026-05-10 to [`../architecture/in-app-http-service.md`](../architecture/in-app-http-service.md) (reusable infrastructure pattern; first consumer is Langfuse auto-login).
 - **simple-mode-roadmap** — moved 2026-05-10 from `harness/` to [`../features/interface-modes/simple-mode.md`](../features/interface-modes/simple-mode.md) (all 4 phases shipped).
 - Implemented event routing docs moved to [../features/events/event-routing.md](../features/events/event-routing.md).

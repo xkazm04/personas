@@ -42,6 +42,10 @@ fn row_to_execution(row: &Row) -> rusqlite::Result<PersonaExecution> {
         business_outcome: row
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
+        director_score: row.get::<_, Option<i64>>("director_score").unwrap_or(None),
+        director_review_md: row
+            .get::<_, Option<String>>("director_review_md")
+            .unwrap_or(None),
     })
 }
 
@@ -68,6 +72,22 @@ fn row_to_execution_list_item(row: &Row) -> rusqlite::Result<ExecutionListItem> 
             .get::<_, Option<String>>("business_outcome")?
             .unwrap_or_else(|| "unknown".to_string()),
     })
+}
+
+/// Write the Director's review result (0-5 score + rendered markdown) onto an
+/// execution row. Called after the Director reviews that execution.
+pub fn set_director_review(
+    pool: &DbPool,
+    execution_id: &str,
+    score: i64,
+    review_md: &str,
+) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE persona_executions SET director_score = ?1, director_review_md = ?2 WHERE id = ?3",
+        rusqlite::params![score, review_md, execution_id],
+    )?;
+    Ok(())
 }
 
 fn build_fts5_query(query: &str) -> String {

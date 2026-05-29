@@ -18,13 +18,6 @@ export function nodeRadius(goal: DevGoal): number {
   return 18 + (goal.progress / 100) * 14;
 }
 
-export const STATUS_COLORS: Record<string, { fill: string; stroke: string; glow: string }> = {
-  open: { fill: '#3B82F6', stroke: '#60A5FA', glow: 'rgba(59, 130, 246, 0.3)' },
-  'in-progress': { fill: '#F59E0B', stroke: '#FBBF24', glow: 'rgba(245, 158, 11, 0.4)' },
-  done: { fill: '#10B981', stroke: '#34D399', glow: 'rgba(16, 185, 129, 0.3)' },
-  blocked: { fill: '#EF4444', stroke: '#F87171', glow: 'rgba(239, 68, 68, 0.4)' },
-};
-
 export function runForceSimulation(
   nodes: NodePos[],
   edges: { source: string; target: string }[],

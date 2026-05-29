@@ -24,6 +24,23 @@ The footer initiation control is Athena's actual animated avatar (`AthenaAvatar`
 
 **STT engine.** Both the footer and orb use the browser Web Speech engine (`useDictation`) via the shared `useHoldToTalk` hook; on WebView2 that forwards audio to the OS vendor's cloud STT. The mic is only ever armed by an explicit press, never on mount. A local, on-device Whisper STT engine (so audio never leaves the machine) is the separate workstream tracked in [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) §4.
 
+## Chat transcript & message UI
+
+The panel body (`CompanionPanel.tsx` → `Bubble.tsx`) is the primary reading surface and carries most of the chat-window polish:
+
+- **Bubbles & grouping.** Assistant turns sit on a defined surface (tint + hairline border + faint elevation) with a small static Athena avatar in the gutter; user turns are right-aligned with a primary tint. Consecutive same-role messages **group** — only the first shows the avatar, the rest align under it with tightened spacing (`groupStart`/`groupEnd` computed in the panel map).
+- **Per-message hover actions.** Hovering (or focusing) a message reveals a copy button (shared `CopyButton`, copies the clean markdown source) and a live relative timestamp (shared `RelativeTime`). The row uses a `grid-rows` 0fr→1fr collapse so it adds zero height when idle and never shifts layout.
+- **Welcome hero.** An empty transcript shows `WelcomeHero` — Athena avatar + greeting + starter-prompt chips that fire real messages through `send()`. The chips reuse the translated slash-palette presets.
+- **Streaming state.** The streaming bubble shows the live phase label (e.g. "Searching the web…") paired with animated `TypingDots`; granular progress comes from the `OperationalThread` checklist (with a progress bar) and the slow-progress hint chip. Reduced motion holds the dots static.
+- **Bottom-aware autoscroll.** `useChatScroll` keeps the transcript pinned to the bottom only while the user is already there; once they scroll up to read history, new content stays put and a floating **Jump to latest** pill appears. Soft top/bottom scroll-fade masks (`companion-scroll`) dissolve messages into the panel chrome at the edges.
+- **Markdown rendering.** Athena's replies render through the shared `MarkdownRenderer` scoped to the chat via `className="athena-chat-md"` + the opt-in `codeBlockActions` prop (other call sites are unaffected). This gives: code blocks with a language-label header + copy + line-wrap toggle + collapse for blocks over 16 lines; a palette-tuned syntax-highlight theme (with a light-theme variant); styled GFM task-lists and zebra-striped tables; external-link affordances; and the inline `chart` bar block. The same treatment is reused inside `ConnectorCallCard` results and `ApprovalCard` params.
+- **Day separators.** A centered date chip (Today / Yesterday / locale date) marks the first message of each new calendar day.
+- **Header actions & search.** The header carries a **search** toggle (opens an in-transcript find bar — `ChatSearch` overlays matching messages with a live count, backed by `chatSearchOpen`/`chatSearchQuery` in the store) and a **copy-conversation** action (serializes the transcript to role-labeled markdown via the shared `CopyButton`).
+- **Failed-turn retry.** When a send errors, the error chip offers a Retry that re-sends the last user message.
+- **Autonomous mode** gives the panel a breathing primary border (`companion-autonomous`) and rings the header avatar so a self-driving Athena is unmistakable.
+
+The connector/schedule/event pickers open through `ComposerPickerShell`, which portals to `document.body` so it's never clipped by the panel's blur/transform/overflow, and is viewport-responsive (grid scales 2→3→4 columns, panel up to 88vh).
+
 ## Floating dockable orb (`minimized` state)
 
 Step 2 of [`athena-orb-overlay-plan.md`](./athena-orb-overlay-plan.md) promotes Athena out of the footer into a first-class overlay. A new `CompanionState` value `minimized` (between `collapsed` and `open`) shows `AthenaOrb` — her avatar as a draggable orb portal'd to `document.body` above all app content (`orb/AthenaOrbLayer.tsx`, `orb/AthenaOrb.tsx`).
@@ -161,6 +178,14 @@ Wire:
 - UI: the existing `ProactiveCard` renders the message — a sky-blue accent + "scheduled by Athena" label disambiguates the kind. Engage / Dismiss work identically.
 
 Why approval-gated when `use_connector` isn't: a scheduled check-in puts a future obligation on the user's attention. Unlike connector calls (which run on pre-greenlit pinned credentials), the consent isn't already present — Athena's "I'll ping you about X in 3 days" needs the user to actually agree before the row lands.
+
+## Project goals (dev direction) — read + propose + react
+
+Athena is wired into the project [Goals](../goals/README.md) surface at the **read + propose, writes-gated** authority level:
+
+- **Read** — `prompt.rs::format_project_goals(sys_db)` injects each dev project's active goals (id, progress, status, latest signal) into her system prompt (appended to the plugins block, in both the ml and non-ml builders), so she's aware of project direction and can reference a goal by id.
+- **Propose (gated)** — the `update_dev_goal { goal_id, status?, progress?, note? }` op (`ALLOWED_ACTIONS` + `execute_update_dev_goal` in `approvals.rs`, constitution **v27**) lets her propose a status/progress change. It is **approval-gated and deliberately NOT in `AUTOAPPROVE_ALLOWLIST`** — goal writes never auto-resolve, even in autonomous mode. On approval it writes an `athena_update` `dev_goal_signal`.
+- **React (proactive)** — `proactive::triggers::dev_goal_nudges(sys_db)` emits budget+dedupe-gated nudges (`dev_goal_target`, `dev_goal_stalled`) when a project goal is target-approaching/overdue or stalled (in-progress/blocked, untouched ≥ 7 days). Because `dev_goals` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`). On engage, the prompt context lets her reason and propose the gated update.
 
 ## MCP request panel (D3 — batched approvals)
 

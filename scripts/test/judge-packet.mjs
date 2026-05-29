@@ -1,7 +1,7 @@
 // Assemble a per-run JUDGE PACKET — the artifacts the agent-judge (§7) reads
 // in-conversation to score §1.B dims (correctness/actionability/specificity/
 // role-fidelity) + the §2.1 work-taxonomy/portfolio-balance labels. The judge
-// then writes docs/test/runs/<run>/judge.json, which evaluate.mjs merges into
+// then writes docs/tests/autonomy-eval/runs/<run>/judge.json, which evaluate.mjs merges into
 // the final (non-provisional) verdict.
 //
 // Usage: node scripts/test/judge-packet.mjs --run <runId>
@@ -66,7 +66,7 @@ function main() {
   }
   console.log('## Repo artifacts (for work-taxonomy classification)');
   console.log(`repo.patch present: ${existsSync(join(dir, 'repo.patch'))} · repoChanged: ${run.repoChangedDuringRun}`);
-  console.log('(read docs/test/runs/' + runId + '/repo.patch for the diff + new untracked files)');
+  console.log('(read docs/tests/autonomy-eval/runs/' + runId + '/repo.patch for the diff + new untracked files)');
 }
 
 main();

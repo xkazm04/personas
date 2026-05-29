@@ -12,6 +12,10 @@ matchStrategy: string | null, maxParallelSteps: number | null,
  */
 source: string | null, companionOpId: string | null, 
 /**
+ * Goals hub: optionally link this assignment to a `dev_goals` row.
+ */
+goalId: string | null, 
+/**
  * Pre-decomposed step list. Phase A REQUIRES this to be non-empty (manual
  * matching means the user has already chosen personas at composer time).
  * Phase B will allow `steps = []` + auto-decompose via Sonnet.

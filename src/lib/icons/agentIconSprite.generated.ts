@@ -2,7 +2,7 @@
 export const AGENT_ICON_SPRITES = {
   "dark": {
     "src": "/agent_icons/sprite-dark.webp",
-    "columns": 20,
+    "columns": 21,
     "cells": {
       "assistant": 0,
       "automation": 1,
@@ -11,24 +11,25 @@ export const AGENT_ICON_SPRITES = {
       "content": 4,
       "data": 5,
       "devops": 6,
-      "document": 7,
-      "email": 8,
-      "finance": 9,
-      "hr": 10,
-      "legal": 11,
-      "marketing": 12,
-      "monitor": 13,
-      "notification": 14,
-      "research": 15,
-      "sales": 16,
-      "search": 17,
-      "security": 18,
-      "support": 19
+      "director": 7,
+      "document": 8,
+      "email": 9,
+      "finance": 10,
+      "hr": 11,
+      "legal": 12,
+      "marketing": 13,
+      "monitor": 14,
+      "notification": 15,
+      "research": 16,
+      "sales": 17,
+      "search": 18,
+      "security": 19,
+      "support": 20
     }
   },
   "light": {
     "src": "/agent_icons/sprite-light.webp",
-    "columns": 20,
+    "columns": 21,
     "cells": {
       "assistant": 0,
       "automation": 1,
@@ -37,19 +38,20 @@ export const AGENT_ICON_SPRITES = {
       "content": 4,
       "data": 5,
       "devops": 6,
-      "document": 7,
-      "email": 8,
-      "finance": 9,
-      "hr": 10,
-      "legal": 11,
-      "marketing": 12,
-      "monitor": 13,
-      "notification": 14,
-      "research": 15,
-      "sales": 16,
-      "search": 17,
-      "security": 18,
-      "support": 19
+      "director": 7,
+      "document": 8,
+      "email": 9,
+      "finance": 10,
+      "hr": 11,
+      "legal": 12,
+      "marketing": 13,
+      "monitor": 14,
+      "notification": 15,
+      "research": 16,
+      "sales": 17,
+      "search": 18,
+      "security": 19,
+      "support": 20
     }
   }
 } as const;

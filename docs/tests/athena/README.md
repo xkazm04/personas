@@ -310,7 +310,7 @@ should have one purpose stated in its first paragraph.
 - **No two-instance isolation.** The suite hits the dev app on `:17320`.
   Don't run it concurrently with a manual chat session — both will mutate
   the same companion DB. See
-  [`docs/tests/parallel-cli-workflow.md`](../parallel-cli-workflow.md).
+  [`docs/tests/strategy/parallel-cli-workflow.md`](../strategy/parallel-cli-workflow.md).
 - **Background jobs may not have completed by turn capture.** The harness
   records whichever state jobs were in at turn-finish. A `running`
   `scan_codebase` is correct queueing, not a broken scan — the judge
@@ -327,4 +327,4 @@ should have one purpose stated in its first paragraph.
 - [`docs/features/companion/athena-usecases.md`](../../features/companion/athena-usecases.md) — the capability inventory this suite mirrors
 - [`docs/features/companion/README.md`](../../features/companion/README.md) — Athena architecture
 - [`docs/development/test-automation.md`](../../development/test-automation.md) — the HTTP bridge the harness drives
-- [`docs/tests/coverage-strategy.md`](../coverage-strategy.md) — where this suite sits in the broader test pyramid
+- [`docs/tests/strategy/coverage-strategy.md`](../strategy/coverage-strategy.md) — where this suite sits in the broader test pyramid

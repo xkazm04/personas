@@ -1,9 +1,0 @@
-{
-  "useful": "ok",
-  "useful_note": "Sentry isn't in the user's 6 pinned connectors. The OP fired and was either rejected (Phase 2 episode) or honestly surfaced. Reply is the right heads-up shape.",
-  "grounded": "n/a", "grounded_note": "",
-  "right_data_source": "ok", "right_data_source_note": "sentry/list_issues correct intent.",
-  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "",
-  "op_correctness": "ok", "op_correctness_note": "OP emitted with correct grammar; sentry not pinned so Phase 2 rejection episode would land.",
-  "overall_note": "Sentry not pinned this session; the OP-emission discipline held regardless."
-}

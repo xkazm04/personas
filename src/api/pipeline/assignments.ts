@@ -51,6 +51,14 @@ export const resolveTeamAssignmentReview = (
 export const deleteTeamAssignment = (id: string) =>
   invoke<boolean>("delete_team_assignment", { id });
 
+/** Goals hub: link (or unlink with `null`) an assignment to a dev goal. */
+export const setTeamAssignmentGoal = (assignmentId: string, goalId: string | null) =>
+  invoke<void>("set_team_assignment_goal", { assignmentId, goalId });
+
+/** Goals hub: every assignment linked to a given dev goal. */
+export const listTeamAssignmentsForGoal = (goalId: string) =>
+  invoke<TeamAssignment[]>("list_team_assignments_for_goal", { goalId });
+
 /** Phase B3: ask Sonnet (via subscription) to break a natural-language
  *  goal into ordered steps. Returns proposed `DecomposedStep[]`; the
  *  composer wraps them into editable rows before the user submits. */

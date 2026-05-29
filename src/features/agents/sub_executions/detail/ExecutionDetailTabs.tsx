@@ -1,17 +1,18 @@
-import { ListTree, Search, Activity, Zap, Play } from 'lucide-react';
+import { ListTree, Search, Activity, Zap, Play, Compass } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { isTerminalState } from '@/lib/execution/executionState';
 
-export type DetailTab = 'detail' | 'inspector' | 'trace' | 'pipeline' | 'replay';
+export type DetailTab = 'detail' | 'director' | 'inspector' | 'trace' | 'pipeline' | 'replay';
 
 interface ExecutionDetailTabsProps {
   activeTab: DetailTab;
   setActiveTab: (tab: DetailTab) => void;
   hasToolSteps: boolean;
+  hasDirectorReview: boolean;
   executionStatus: string;
 }
 
-export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, executionStatus }: ExecutionDetailTabsProps) {
+export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, hasDirectorReview, executionStatus }: ExecutionDetailTabsProps) {
   const { t } = useTranslation();
   const tabClass = (tab: DetailTab, special?: boolean) =>
     `flex items-center gap-2 px-3 py-1.5 rounded-modal typo-heading transition-all ${
@@ -28,6 +29,12 @@ export function ExecutionDetailTabs({ activeTab, setActiveTab, hasToolSteps, exe
         <ListTree className="w-3.5 h-3.5" />
         {t.agents.executions.tab_detail}
       </button>
+      {hasDirectorReview && (
+        <button onClick={() => setActiveTab('director')} className={tabClass('director', true)}>
+          <Compass className="w-3.5 h-3.5" />
+          {t.agents.executions.tab_director}
+        </button>
+      )}
       {hasToolSteps && (
         <button onClick={() => setActiveTab('inspector')} className={tabClass('inspector')}>
           <Search className="w-3.5 h-3.5" />

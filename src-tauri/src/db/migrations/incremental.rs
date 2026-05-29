@@ -3250,6 +3250,45 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Per-persona star: marks a persona as "in the Director's coaching scope".
+    // Promotes the previously localStorage-only favorite to a durable column so
+    // the Director batch (`get_starred`) can read it.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "personas.starred",
+            description: "Add starred flag to personas (Director coaching scope)",
+            already_applied: |conn| has_column(conn, "personas", "starred"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE personas ADD COLUMN starred INTEGER NOT NULL DEFAULT 0;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // Director verdict score + rendered review markdown, written onto the
+    // execution the Director reviewed. `director_score` (0-5) backs the Verdict
+    // column in the activity list; `director_review_md` backs the Director tab.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "persona_executions.director_score",
+            description: "Add director_score + director_review_md to persona_executions",
+            already_applied: |conn| has_column(conn, "persona_executions", "director_score"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE persona_executions ADD COLUMN director_score INTEGER;\n\
+                     ALTER TABLE persona_executions ADD COLUMN director_review_md TEXT;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 
@@ -3876,6 +3915,7 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
             source              TEXT NOT NULL DEFAULT 'team_ui'
                                 CHECK(source IN ('team_ui','athena','api')),
             companion_op_id     TEXT,
+            goal_id             TEXT,
             created_at          TEXT NOT NULL DEFAULT (datetime('now')),
             started_at          TEXT,
             completed_at        TEXT,
@@ -3928,6 +3968,53 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
         );
         CREATE INDEX IF NOT EXISTS idx_team_assignment_events_assignment
             ON team_assignment_events(assignment_id, created_at);",
+    )?;
+
+    // -- Goals hub: link team assignments to a dev goal --------------------------
+    // A linked assignment advances a `dev_goals` row: its step checklist + states
+    // surface on the goal, and terminal/step transitions write `dev_goal_signals`.
+    // Soft link (plain TEXT, no FK) to match the codebase's ALTER style and keep
+    // fresh-install (CREATE block above) and migrated schemas identical.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "team_assignments.goal_id",
+            description: "Link team assignments to a dev goal (goals hub)",
+            already_applied: |conn| has_column(conn, "team_assignments", "goal_id"),
+            apply: |conn| {
+                ddl_step(conn, "ALTER TABLE team_assignments ADD COLUMN goal_id TEXT;")?;
+                Ok(())
+            },
+        },
+    )?;
+
+    // -- Goals hub: lightweight ad-hoc checklist items on a dev goal -------------
+    // Composed alongside sub-goals + linked-assignment steps into the goal's
+    // unified checklist. Heavier breakdown stays in dev_goals (parent_goal_id).
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "dev_goal_items",
+            description: "Lightweight checklist items on a dev goal (goals hub)",
+            already_applied: |conn| has_table(conn, "dev_goal_items"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "CREATE TABLE IF NOT EXISTS dev_goal_items (
+                        id          TEXT PRIMARY KEY,
+                        goal_id     TEXT NOT NULL REFERENCES dev_goals(id) ON DELETE CASCADE,
+                        title       TEXT NOT NULL,
+                        done        INTEGER NOT NULL DEFAULT 0,
+                        order_index INTEGER NOT NULL DEFAULT 0,
+                        created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+                        updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_dev_goal_items_goal
+                        ON dev_goal_items(goal_id, order_index);",
+                )?;
+                Ok(())
+            },
+        },
     )?;
 
     // -- Team assignment templates (Phase C4) ------------------------------------

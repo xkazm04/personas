@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
+  ArrowDown,
   BookOpen,
   Bot,
   Infinity as InfinityIcon,
@@ -8,12 +9,14 @@ import {
   PanelRightClose,
   PanelRightOpen,
   RotateCcw,
+  Search,
   Square,
   X,
 } from 'lucide-react';
-import { useTranslation } from '@/i18n/useTranslation';
+import { useTranslation, getActiveTranslations } from '@/i18n/useTranslation';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import { useCompanionStore } from './companionStore';
 import { Bubble } from './Bubble';
 import { Composer } from './Composer';
@@ -25,6 +28,7 @@ import {
 import { extractStreamPhase, extractToolEvents, phaseLabel } from './extractStreamPhase';
 import { extractTodoWrite } from './operationalSteps';
 import { OperationalThread } from './OperationalThread';
+import { buildPointAtWalkthrough, buildComposedWalkthrough } from './guidance/composeAdHoc';
 import {
   COMPANION_APPROVALS_EVENT,
   COMPANION_CHAT_CARDS_EVENT,
@@ -77,6 +81,10 @@ import { RecallStrip } from './RecallStrip';
 import { ActivityTray } from './ActivityTray';
 import { TaskTag } from './TaskTag';
 import { QueuedMessages } from './QueuedMessages';
+import { WelcomeHero } from './WelcomeHero';
+import { TypingDots } from './TypingDots';
+import { useChatScroll } from './useChatScroll';
+import { ChatSearch } from './ChatSearch';
 import { classifyMidTurnIntent } from './midTurnIntent';
 import { RefineChips } from './RefineChips';
 import { BubbleReadAloud } from './BubbleReadAloud';
@@ -93,6 +101,54 @@ import { useAgentStore } from '@/stores/agentStore';
 // transient streaming-phase chip; above it the work is slow enough to be
 // worth a persistent, glanceable task.
 const IN_TURN_TOOL_THRESHOLD_MS = 6000;
+
+const ONE_DAY_MS = 86_400_000;
+
+/** Same calendar day in local time. */
+function sameLocalDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/**
+ * Label for a transcript day separator: "Today" / "Yesterday" for the recent
+ * days (callers pass the localized strings), otherwise a locale-formatted
+ * weekday + date. Matches how RelativeTime defers absolute dates to the
+ * browser locale.
+ */
+function daySeparatorLabel(iso: string, todayLabel: string, yesterdayLabel: string): string {
+  const d = new Date(iso);
+  const now = new Date();
+  if (sameLocalDay(d, now)) return todayLabel;
+  if (sameLocalDay(d, new Date(now.getTime() - ONE_DAY_MS))) return yesterdayLabel;
+  return d.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+/**
+ * Serialize the visible conversation to role-labeled markdown for the "copy
+ * conversation" header action. System markers are dropped; turns are separated
+ * by a horizontal rule so the result pastes cleanly into notes or an issue.
+ */
+function buildTranscriptMarkdown(
+  messages: ReturnType<typeof useCompanionStore.getState>['messages'],
+  youLabel: string,
+  athenaLabel: string,
+): string {
+  return messages
+    .filter((m) => m.role === 'user' || m.role === 'assistant')
+    .map((m) => {
+      const label = m.role === 'user' ? youLabel : athenaLabel;
+      return `**${label}:**\n\n${m.content.trim()}`;
+    })
+    .join('\n\n---\n\n');
+}
 
 // Fallback follow-ups for the "What can Athena do?" toolbar preset —
 // only used when the turn returns no QR chips, so this preset is never
@@ -121,6 +177,17 @@ const VALID_NAV_ROUTES: SidebarSection[] = [
   'settings',
 ];
 
+// After Athena navigates, briefly ring the destination's primary surface so the
+// user's eye lands on what she brought them to (proactive "look here" glow).
+// Only routes with a stable, always-present container testid are listed —
+// others simply don't flash. `home` is omitted because its default tab varies;
+// the compose-cockpit/dashboard handlers flash `cockpit-panel` explicitly.
+const ROUTE_FLASH_ANCHORS: Partial<Record<SidebarSection, string>> = {
+  overview: 'overview-page',
+  credentials: 'credential-manager',
+  settings: 'settings-page',
+};
+
 /**
  * Athena's chat panel — Phase 1: real chat over a long-lived Claude CLI
  * session. Composer + transcript + streaming bubble. Subscribes to
@@ -137,6 +204,15 @@ export default function CompanionPanel() {
   const initError = useCompanionStore((s) => s.initError);
 
   const messages = useCompanionStore((s) => s.messages);
+  const conversationMarkdown = useMemo(
+    () =>
+      buildTranscriptMarkdown(
+        messages,
+        t.plugins.companion.you_label,
+        t.plugins.companion.name,
+      ),
+    [messages, t.plugins.companion.you_label, t.plugins.companion.name],
+  );
   const streaming = useCompanionStore((s) => s.streaming);
   const streamingText = useCompanionStore((s) => s.streamingText);
   const sendError = useCompanionStore((s) => s.sendError);
@@ -268,7 +344,9 @@ export default function CompanionPanel() {
           style={morph.style}
           className={`fixed bottom-12 left-4 z-[60] ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
-          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out`}
+          } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
+            autonomousMode ? 'companion-autonomous' : ''
+          }`}
           role="region"
           aria-label={t.plugins.companion.panel_label}
           data-testid="companion-panel"
@@ -294,6 +372,7 @@ export default function CompanionPanel() {
             className="absolute inset-0 -z-10 opacity-[0.05]"
           />
           <Header
+            transcript={conversationMarkdown}
             onClose={() => setState(orbEnabled ? 'minimized' : 'collapsed')}
             onReset={async () => {
               // Clear UI state immediately so the wipe feels instant.
@@ -418,6 +497,7 @@ export default function CompanionPanel() {
 }
 
 function Header({
+  transcript,
   onClose,
   onReset,
   onRefreshDoctrine,
@@ -426,6 +506,7 @@ function Header({
   autonomousMode,
   onToggleAutonomousMode,
 }: {
+  transcript: string;
   onClose: () => void;
   onReset: () => void;
   onRefreshDoctrine: () => void;
@@ -435,8 +516,10 @@ function Header({
   onToggleAutonomousMode: () => void;
 }) {
   const { t } = useTranslation();
+  const searchOpen = useCompanionStore((s) => s.chatSearchOpen);
+  const setSearchOpen = useCompanionStore((s) => s.setChatSearchOpen);
   return (
-    <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 shrink-0">
+    <header className="flex items-center justify-between gap-2 px-4 py-3 border-b border-foreground/10 bg-foreground/[0.02] shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         {/*
           Header keeps a small static badge — the full Athena avatar now
@@ -444,7 +527,9 @@ function Header({
           here would be visual noise.
         */}
         <span
-          className="inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary"
+          className={`inline-flex w-7 h-7 items-center justify-center rounded-full bg-primary/15 text-primary transition-shadow ${
+            autonomousMode ? 'ring-1 ring-primary/40' : ''
+          }`}
           aria-hidden
         >
           <Bot className="w-3.5 h-3.5" />
@@ -459,6 +544,21 @@ function Header({
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={() => setSearchOpen(!searchOpen)}
+          data-testid="companion-toggle-search"
+          aria-pressed={searchOpen}
+          className={`p-1.5 rounded-interactive transition-colors focus-ring ${
+            searchOpen
+              ? 'bg-primary/15 text-primary hover:bg-primary/20'
+              : 'text-foreground hover:text-foreground hover:bg-foreground/5'
+          }`}
+          aria-label={t.plugins.companion.search_toggle}
+          title={t.plugins.companion.search_toggle}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onToggleAutonomousMode}
           data-testid="companion-toggle-autonomous"
@@ -503,6 +603,14 @@ function Header({
             <PanelRightClose className="w-4 h-4" />
           )}
         </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
+        {transcript && (
+          <CopyButton
+            text={transcript}
+            tooltip={t.plugins.companion.copy_conversation}
+            iconSize="w-4 h-4"
+          />
+        )}
         <button
           onClick={onRefreshDoctrine}
           className="p-1.5 rounded-interactive text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors focus-ring"
@@ -520,6 +628,7 @@ function Header({
         >
           <RotateCcw className="w-4 h-4" />
         </button>
+        <div className="w-px h-5 bg-foreground/15 mx-0.5" aria-hidden />
         <button
           onClick={onClose}
           data-testid="companion-close"
@@ -1084,20 +1193,40 @@ function Body(props: BodyProps) {
       }
       if (!VALID_NAV_ROUTES.includes(route as SidebarSection)) return;
       useSystemStore.getState().setSidebarSection(route as SidebarSection);
+      // Briefly ring the destination's primary surface (if one is mapped) so
+      // the eye lands on what Athena navigated to. The flash tracker waits for
+      // the element to mount, so firing immediately after the route switch is
+      // fine; it self-clears and yields to any active walkthrough.
+      const flashAnchor = ROUTE_FLASH_ANCHORS[route as SidebarSection];
+      if (flashAnchor) useCompanionStore.getState().flashHighlight(flashAnchor);
     }, []),
     'companion_navigate_listen',
   );
 
-  // `start_guided_walkthrough` — Athena launches an in-app guided tour.
-  // The runner (AthenaGuideLayer) walks the registry-defined steps: orb
-  // glides to each area, the element glows, she narrates. Topic is already
-  // validated server-side against the allow-list; the runner stops itself
-  // gracefully if an unknown topic ever slips through.
+  // `start_guided_walkthrough` / `point_at` — Athena guides in-app. A `topic`
+  // launches a registry walkthrough (the runner in AthenaGuideLayer walks the
+  // authored steps); a `pointAt` rings one allow-listed anchor and narrates as
+  // a single-step ad-hoc walkthrough (non-scripted pointing). Both are already
+  // validated server-side; the runner stops itself gracefully on anything bad.
   useTauriEvent<CompanionGuideEvent>(
     COMPANION_GUIDE_EVENT,
     useCallback((event) => {
       const topic = event.payload?.topic;
-      if (topic) useCompanionStore.getState().startGuidance(topic);
+      if (topic) {
+        useCompanionStore.getState().startGuidance(topic);
+        return;
+      }
+      const pointAt = event.payload?.pointAt;
+      if (pointAt?.anchor && pointAt.narration) {
+        const wt = buildPointAtWalkthrough(pointAt.anchor, pointAt.narration);
+        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+        return;
+      }
+      const composed = event.payload?.composeWalkthrough;
+      if (composed?.steps?.length) {
+        const wt = buildComposedWalkthrough(composed.steps, composed.title);
+        if (wt) useCompanionStore.getState().startAdHocGuidance(wt);
+      }
     }, []),
     'companion_guide_listen',
   );
@@ -1147,6 +1276,9 @@ function Body(props: BodyProps) {
       const sys = useSystemStore.getState();
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
+      useCompanionStore.getState().flashHighlight('cockpit-panel', {
+        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+      });
     }, []),
     'companion_compose_dashboard_listen',
   );
@@ -1168,6 +1300,9 @@ function Body(props: BodyProps) {
       sys.setSidebarSection('home');
       sys.setHomeTab('cockpit');
       sys.setCompanionPanelCompact(true);
+      useCompanionStore.getState().flashHighlight('cockpit-panel', {
+        label: getActiveTranslations().plugins.companion.guide_flash_composed,
+      });
     }, []),
     'companion_compose_cockpit_listen',
   );
@@ -1217,13 +1352,11 @@ function Body(props: BodyProps) {
     'companion_approvals_listen',
   );
 
-  // Auto-scroll on new content.
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [messages, streamingText, streaming]);
+  // Bottom-aware autoscroll: pin to the bottom on new content only while the
+  // user is already there; once they scroll up to read history, leave them be
+  // and surface the jump-to-latest pill (gated on `atBottom`) instead.
+  const { scrollRef, atBottom, scrollToBottom, maybeAutoScroll } = useChatScroll();
+  useEffect(maybeAutoScroll, [messages, streamingText, streaming, maybeAutoScroll]);
 
   // Voice is "active" only when the chosen engine has everything it
   // needs: ElevenLabs requires a credential + voice id; Piper requires
@@ -1562,7 +1695,9 @@ function Body(props: BodyProps) {
   return (
     <div className="flex flex-row flex-1 min-h-0">
       <div className="relative flex flex-col flex-1 min-w-0">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3">
+        <div className="relative flex-1 min-h-0 flex flex-col">
+        <ChatSearch messages={messages} onOpenInBrain={handleOpenInBrain} />
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-5 space-y-3 scrollbar-thin companion-scroll">
           {!initialized && !initError && (
             <div className="flex items-center gap-3 text-foreground typo-body">
               <LoadingSpinner size="sm" />
@@ -1621,9 +1756,10 @@ function Body(props: BodyProps) {
             ))}
           </AnimatePresence>
           {initialized && messages.length === 0 && !streaming && proactive.length === 0 && (
-            <p className="typo-body text-foreground">
-              {t.plugins.companion.empty_transcript}
-            </p>
+            <WelcomeHero
+              onPick={(text) => void send(text)}
+              disabled={!initialized || streaming}
+            />
           )}
           {(() => {
             // Find the last assistant index so RefineChips renders only
@@ -1646,6 +1782,22 @@ function Body(props: BodyProps) {
               const isLastAssistant =
                 m.role === 'assistant' && i === lastAssistantIdx;
               const prev = i > 0 ? messages[i - 1] : undefined;
+              const next = i < messages.length - 1 ? messages[i + 1] : undefined;
+              // Group consecutive same-role messages: only the first shows the
+              // avatar, and the run is pulled tighter together.
+              const groupStart = !prev || prev.role !== m.role;
+              const groupEnd = !next || next.role !== m.role;
+              // Day separator above the first message of each new calendar day.
+              const daySep =
+                m.createdAt &&
+                (!prev?.createdAt ||
+                  !sameLocalDay(new Date(prev.createdAt), new Date(m.createdAt)))
+                  ? daySeparatorLabel(
+                      m.createdAt,
+                      t.plugins.companion.day_today,
+                      t.plugins.companion.day_yesterday,
+                    )
+                  : null;
               const priorUser =
                 isLastAssistant && prev?.role === 'user' ? prev.content : '';
               const connectorJobIds =
@@ -1655,7 +1807,19 @@ function Body(props: BodyProps) {
               const steps =
                 m.role === 'assistant' ? stepsByEpisodeId[m.id] : undefined;
               return (
-                <div key={m.id} className="space-y-1">
+                <div key={m.id} className="space-y-1 animate-fade-slide-in">
+                  {daySep && (
+                    <div
+                      className="flex items-center gap-2 my-1"
+                      data-testid="companion-day-separator"
+                    >
+                      <div className="flex-1 h-px bg-foreground/10" aria-hidden />
+                      <span className="rounded-full bg-foreground/[0.06] border border-foreground/10 px-2.5 py-0.5 typo-caption text-foreground">
+                        {daySep}
+                      </span>
+                      <div className="flex-1 h-px bg-foreground/10" aria-hidden />
+                    </div>
+                  )}
                   {recall && (
                     <RecallStrip
                       preview={recall}
@@ -1666,6 +1830,9 @@ function Body(props: BodyProps) {
                     role={m.role}
                     index={i}
                     onOpenInBrain={handleOpenInBrain}
+                    createdAt={m.createdAt}
+                    groupStart={groupStart}
+                    groupEnd={groupEnd}
                   >
                     {m.content}
                   </Bubble>
@@ -1739,11 +1906,17 @@ function Body(props: BodyProps) {
                   */}
                   <Bubble role="assistant" streaming index={messages.length}>
                     {/* Athena's own progress beat (Variant B) wins over the
-                        derived phase; fall back to phase, then "Thinking…". */}
-                    {streamingBeat ??
-                      (streamingPhase
-                        ? phaseLabel(t, tx, streamingPhase)
-                        : t.plugins.companion.thinking)}
+                        derived phase; fall back to phase, then "Thinking…".
+                        Animated dots signal "in progress" alongside the label. */}
+                    <span className="inline-flex items-center gap-2">
+                      <span>
+                        {streamingBeat ??
+                          (streamingPhase
+                            ? phaseLabel(t, tx, streamingPhase)
+                            : t.plugins.companion.thinking)}
+                      </span>
+                      <TypingDots />
+                    </span>
                   </Bubble>
                   <button
                     type="button"
@@ -1775,7 +1948,7 @@ function Body(props: BodyProps) {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-                      className={`rounded-card border px-3 py-1.5 typo-caption ${
+                      className={`flex items-center gap-2 rounded-card border px-3 py-1.5 typo-caption ${
                         slowLevel === 2
                           ? 'border-amber-500/30 bg-amber-500/[0.06] text-amber-300'
                           : 'border-foreground/10 bg-foreground/[0.04] text-foreground'
@@ -1783,9 +1956,12 @@ function Body(props: BodyProps) {
                       data-testid="companion-slow-progress"
                       data-slow-level={slowLevel}
                     >
-                      {slowLevel === 2
-                        ? t.plugins.companion.slow_progress_firm
-                        : t.plugins.companion.slow_progress_soft}
+                      <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                      <span>
+                        {slowLevel === 2
+                          ? t.plugins.companion.slow_progress_firm
+                          : t.plugins.companion.slow_progress_soft}
+                      </span>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -1848,9 +2024,44 @@ function Body(props: BodyProps) {
             </AnimatePresence>
           </div>
           {sendError && (
-            <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400">
-              {sendError}
+            <div className="rounded-card border border-rose-500/30 bg-rose-500/10 px-3 py-2 typo-caption text-rose-400 flex items-start justify-between gap-3">
+              <span className="min-w-0 break-words">{sendError}</span>
+              {(() => {
+                // On a failed turn the optimistic user bubble stays in
+                // `messages`, so the last user message is what we re-send.
+                const lastUser = [...messages]
+                  .reverse()
+                  .find((m) => m.role === 'user');
+                if (!lastUser) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSendError(null);
+                      void send(lastUser.content);
+                    }}
+                    disabled={streaming}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-interactive border border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 px-2 py-0.5 text-rose-400 font-medium transition-colors focus-ring disabled:opacity-50 disabled:cursor-not-allowed"
+                    data-testid="companion-retry-send"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    {t.common.retry}
+                  </button>
+                );
+              })()}
             </div>
+          )}
+        </div>
+          {!atBottom && (
+            <button
+              type="button"
+              onClick={() => scrollToBottom()}
+              className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-1.5 rounded-full bg-secondary/95 border border-foreground/15 shadow-elevation-3 px-3 py-1.5 typo-caption font-medium text-foreground hover:bg-secondary backdrop-blur-sm transition-colors focus-ring animate-fade-slide-in"
+              data-testid="companion-jump-to-latest"
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+              {t.plugins.companion.jump_to_latest}
+            </button>
           )}
         </div>
         <ActivityTray />

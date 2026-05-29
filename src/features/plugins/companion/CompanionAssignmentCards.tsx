@@ -50,6 +50,7 @@ function AssignmentCardRow({
   onOpen: () => void;
   onDismiss: () => void;
 }) {
+  const { t } = useTranslation();
   const Icon =
     card.status === 'done'
       ? CircleCheck
@@ -87,7 +88,7 @@ function AssignmentCardRow({
           onDismiss();
         }}
         className="flex-shrink-0 opacity-0 group-hover:opacity-100 p-1 rounded-interactive hover:bg-primary/10 text-foreground/50"
-        aria-label="Dismiss"
+        aria-label={t.common.dismiss}
       >
         <X className="w-3 h-3" />
       </button>

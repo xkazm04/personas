@@ -51,7 +51,7 @@ uvx --with httpx python tools/test-mcp/smoke_test.py
 
 ---
 
-## Available Tools (20)
+## Available Tools (23)
 
 ### Primitives (low-level)
 
@@ -116,12 +116,6 @@ home, executions, manual-review, messages, events, knowledge, sla, schedules
 
 ```
 projects, context-map, idea-scanner, idea-triage, task-runner
-```
-
-### Brotherhood Tabs
-
-```
-dashboard, enrollment, encounters, proposals
 ```
 
 ---
@@ -303,56 +297,6 @@ Stable selectors that survive UI refactors. Use with `click_testid` and `fill_fi
 | `vault-foraging-container` | Auto-discover container |
 | `vault-foraging-scan` | Start scan button |
 
-### Brotherhood Plugin
-
-| testid | Element |
-|---|---|
-| `brotherhood-page` | Plugin page root |
-| `tab-brotherhood` | Brotherhood plugin tab in sidebar |
-| `tab-brotherhood-dashboard` | Dashboard sub-tab |
-| `tab-brotherhood-enrollment` | Brothers sub-tab |
-| `tab-brotherhood-encounters` | Encounters sub-tab |
-| `tab-brotherhood-proposals` | Proposals sub-tab |
-| `brotherhood-enroll-btn` | Enroll new brother button |
-| `brotherhood-enroll-dialog` | Enrollment dialog container |
-| `brotherhood-enroll-persona-select` | Persona dropdown |
-| `brotherhood-enroll-display-name` | Display name input |
-| `brotherhood-enroll-specialty` | Specialty textarea |
-| `brotherhood-enroll-tags` | Capability tags input |
-| `brotherhood-enroll-disclosure-{level}` | Disclosure radio (silhouette/outline/open/transparent) |
-| `brotherhood-enroll-preview-toggle` | Toggle membrane preview |
-| `brotherhood-enroll-submit` | Submit enrollment |
-| `brotherhood-enroll-cancel` | Cancel enrollment |
-| `brotherhood-brother-card-{id}` | Enrolled brother card |
-| `brotherhood-brother-edit-{id}` | Edit profile button |
-| `brotherhood-brother-preview-{id}` | Preview external view |
-| `brotherhood-brother-unenroll-{id}` | Unenroll button |
-| `brotherhood-new-encounter-btn` | New encounter button |
-| `brotherhood-encounter-dialog` | Encounter creation dialog |
-| `brotherhood-encounter-initiator` | Initiator selector |
-| `brotherhood-encounter-responder` | Responder selector |
-| `brotherhood-encounter-type-{type}` | Type radio (compare/consult/spar/mentor) |
-| `brotherhood-encounter-topic` | Topic input |
-| `brotherhood-encounter-max-rounds` | Rounds selector |
-| `brotherhood-encounter-budget` | Budget input |
-| `brotherhood-encounter-start` | Start encounter button |
-| `brotherhood-encounter-card-{id}` | Encounter card |
-| `brotherhood-encounter-cancel-{id}` | Cancel encounter button |
-| `brotherhood-encounter-detail` | Encounter detail view |
-| `brotherhood-round-{n}` | Round container |
-| `brotherhood-bubble-initiator-{n}` | Initiator message bubble |
-| `brotherhood-bubble-responder-{n}` | Responder message bubble |
-| `brotherhood-eval-summary` | Evaluation summary |
-| `brotherhood-proposal-card-{id}` | Proposal card |
-| `brotherhood-proposal-approve-lab-{id}` | Approve & Lab Test |
-| `brotherhood-proposal-approve-direct-{id}` | Apply directly |
-| `brotherhood-proposal-reject-{id}` | Reject proposal |
-| `brotherhood-proposal-detail` | Proposal detail view |
-| `brotherhood-proposal-diff` | Diff view container |
-| `brotherhood-stat-enrolled` | Enrolled count stat |
-| `brotherhood-stat-encounters` | Encounters count stat |
-| `brotherhood-stat-fitness` | Fitness gain stat |
-
 ### Page Containers
 
 | testid | Element |
@@ -434,31 +378,6 @@ Stable selectors that survive UI refactors. Use with `click_testid` and `fill_fi
 ```
 1. search_agents("email")
 2. agent_cards()                  → filtered list of matching cards
-```
-
-### Run a Brotherhood encounter
-
-```
-1. navigate("plugins")
-2. click_testid("tab-brotherhood")
-3. click_testid("tab-brotherhood-enrollment")
-4. click_testid("brotherhood-enroll-btn")
-5. fill_field("brotherhood-enroll-display-name", "Code Reviewer")
-6. fill_field("brotherhood-enroll-specialty", "Reviews code quality")
-7. click_testid("brotherhood-enroll-disclosure-outline")
-8. click_testid("brotherhood-enroll-submit")
-   → First brother enrolled
-9. Repeat steps 4-8 for second persona
-10. click_testid("tab-brotherhood-encounters")
-11. click_testid("brotherhood-new-encounter-btn")
-12. fill_field("brotherhood-encounter-initiator", "{brother1Id}")
-13. fill_field("brotherhood-encounter-responder", "{brother2Id}")
-14. click_testid("brotherhood-encounter-type-compare")
-15. click_testid("brotherhood-encounter-start")
-    → Encounter runs, generates proposals
-16. click_testid("tab-brotherhood-proposals")
-17. click_testid("brotherhood-proposal-approve-lab-{id}")
-    → Lab A/B test created
 ```
 
 ### Check what's on screen

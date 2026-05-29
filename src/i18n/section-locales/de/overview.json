@@ -419,10 +419,6 @@
     "add_notes": "Notizen hinzufügen",
     "notes_placeholder": "Überprüfungsnotizen hinzufügen...",
     "select_action_first": "Zuerst eine vorgeschlagene Aktion auswählen",
-    "split": "Teilen",
-    "table": "Tabelle",
-    "split_tooltip": "Geteilte Ansicht mit Chat",
-    "table_tooltip": "Nur Tabelle",
     "review_detail": "Überprüfungsdetails",
     "select_review": "Überprüfung auswählen",
     "technical_context": "Technischer Kontext"

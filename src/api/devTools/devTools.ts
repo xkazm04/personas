@@ -5,6 +5,10 @@ import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
 import type { DevGoalDependency } from "@/lib/bindings/DevGoalDependency";
+import type { DevGoalItem } from "@/lib/bindings/DevGoalItem";
+import type { GoalProgressSuggestion } from "@/lib/bindings/GoalProgressSuggestion";
+import type { PortfolioSummary } from "@/lib/bindings/PortfolioSummary";
+import type { AttentionQueue } from "@/lib/bindings/AttentionQueue";
 import type { DevContextGroup } from "@/lib/bindings/DevContextGroup";
 import type { DevContext } from "@/lib/bindings/DevContext";
 import type { DevContextGroupRelationship } from "@/lib/bindings/DevContextGroupRelationship";
@@ -154,6 +158,57 @@ export const addGoalDependency = (goalId: string, dependsOnId: string, dependenc
 
 export const removeGoalDependency = (id: string) =>
   invoke<boolean>("dev_tools_remove_goal_dependency", { id });
+
+// ============================================================================
+// Goal Items (lightweight ad-hoc checklist) + hybrid progress resolver
+// ============================================================================
+
+export const listGoalItems = (goalId: string) =>
+  safeInvoke<DevGoalItem[]>([], "dev_tools_list_goal_items", { goalId });
+
+export const createGoalItem = (goalId: string, title: string) =>
+  invoke<DevGoalItem>("dev_tools_create_goal_item", { goalId, title });
+
+export const updateGoalItem = (id: string, updates: { title?: string; done?: boolean }) =>
+  invoke<DevGoalItem>("dev_tools_update_goal_item", {
+    id,
+    title: updates.title,
+    done: updates.done,
+  });
+
+export const deleteGoalItem = (id: string) =>
+  invoke<boolean>("dev_tools_delete_goal_item", { id });
+
+export const reorderGoalItems = (ids: string[]) =>
+  invoke<void>("dev_tools_reorder_goal_items", { ids });
+
+export const listChildGoals = (parentGoalId: string) =>
+  safeInvoke<DevGoal[]>([], "dev_tools_list_child_goals", { parentGoalId });
+
+/** Hybrid progress: composes checklist items + sub-goals + linked team-assignment
+ *  steps into a suggested %. Read-only — the UI surfaces it as an accept/edit nudge. */
+export const resolveGoalProgress = (goalId: string) =>
+  invoke<GoalProgressSuggestion>("dev_tools_resolve_goal_progress", { goalId });
+
+// ============================================================================
+// Goals v2 — cross-project surfaces (Portfolio / Attention / Timeline / Map)
+// ============================================================================
+
+/** Every goal across all projects (Portfolio + Timeline). */
+export const listAllGoals = () =>
+  invoke<DevGoal[]>("dev_tools_list_all_goals", {});
+
+/** All dependency edges for one project's goals in a single query (Map). */
+export const listGoalDependenciesForProject = (projectId: string) =>
+  invoke<DevGoalDependency[]>("dev_tools_list_goal_dependencies_for_project", { projectId });
+
+/** Cross-project health rollup (per-project counts, at-risk, avg progress). */
+export const portfolioSummary = () =>
+  invoke<PortfolioSummary>("dev_tools_portfolio_summary", {});
+
+/** Cross-project "needs you" queue (awaiting-review / overdue / stalled / unstaffed). */
+export const attentionQueue = () =>
+  invoke<AttentionQueue>("dev_tools_attention_queue", {});
 
 // ============================================================================
 // Cross-Project Metadata Map

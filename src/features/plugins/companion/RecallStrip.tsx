@@ -82,7 +82,7 @@ export function RecallStrip({
         <span className="flex-1">{summary}</span>
         {preview.synthesized && (
           <span
-            className="inline-flex items-center gap-0.5 text-violet-300/80"
+            className="inline-flex items-center gap-0.5 rounded-interactive bg-primary/10 border border-primary/20 px-1.5 py-0.5 text-primary"
             title={t.plugins.companion.recall_synthesized_tooltip}
           >
             <Sparkles className="w-3 h-3" />

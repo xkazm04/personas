@@ -1,4 +1,4 @@
-// GATHER layer (docs/test/run-protocol.md §4) — collect everything a run
+// GATHER layer (docs/tests/autonomy-eval/run-protocol.md §4) — collect everything a run
 // produced into an immutable bundle, read from SQLite truth (never trusting a
 // command's success flag). Keyed on the run window + the team's persona ids.
 import { writeFileSync, mkdirSync, copyFileSync, existsSync, readFileSync } from 'node:fs';

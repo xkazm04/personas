@@ -3,7 +3,7 @@
  * DOM node count + freeze-detector events + store-monitor between each action
  * to localize which step causes the DOM-growth / main-thread freeze that exits
  * the app. DOM-level bridge only (1:1 user path). See
- * docs/tests/autonomous-dev-team-adoption-test.md.
+ * docs/tests/autonomy-eval/autonomous-dev-team-adoption-test.md.
  */
 const BASE = 'http://localhost:17320';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));

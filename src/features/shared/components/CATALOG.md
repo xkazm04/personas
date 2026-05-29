@@ -165,7 +165,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DeferUntilIdle` | _(add a `@catalog` tag)_ |
 | `DesktopFooter` | _(add a `@catalog` tag)_ |
 | `EqualizerBars` | the YT progress bar occupies). |
-| `FleetActivityStrip` | Number of slots composing the strip's full width. |
+| `FleetActivityStrip` | _(add a `@catalog` tag)_ |
 | `MonitorCapabilities` | _(add a `@catalog` tag)_ |
 | `MonitorDrawer` | _(add a `@catalog` tag)_ |
 | `NowPlayingCard` | Expanded "now playing" card anchored above the footer title segment. |
@@ -262,4 +262,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_178 components, 93 without a `@catalog` description._
+_178 components, 94 without a `@catalog` description._

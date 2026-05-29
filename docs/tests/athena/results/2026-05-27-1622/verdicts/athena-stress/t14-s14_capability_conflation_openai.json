@@ -1,9 +1,0 @@
-{
-  "useful": "ok",
-  "useful_note": "'No OpenAI connector — and you don't need one. Drafting copy is something I do directly.' Asks for product/audience before drafting.",
-  "grounded": "ok", "grounded_note": "Self-identification accurate.",
-  "right_data_source": "ok", "right_data_source_note": "",
-  "no_hallucinated_capabilities": "ok", "no_hallucinated_note": "No use_connector{openai} emitted.",
-  "op_correctness": "n/a", "op_correctness_note": "",
-  "overall_note": "Reference-quality category-J capability-conflation refusal."
-}

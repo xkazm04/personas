@@ -128,7 +128,11 @@ export function ConnectorCallCard({ job }: { job: BackgroundJob }) {
               {job.errorText}
             </div>
           ) : job.resultText ? (
-            <MarkdownRenderer content={job.resultText} />
+            <MarkdownRenderer
+              content={job.resultText}
+              className="athena-chat-md"
+              codeBlockActions
+            />
           ) : null}
         </div>
       )}

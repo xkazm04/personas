@@ -11,6 +11,7 @@ import { BuildingBadge, HEALTH_STYLES, StatusBadge, TrustScoreBar } from './Pers
 import { SetupStatusBadge } from '@/features/shared/components/display/SetupStatusBadge';
 import { PersonaOverviewFilterHeader, type FilterOption } from './PersonaOverviewFilterHeader';
 import { ConnectorsCell, FavoriteCell, NameCell, SelectCell } from './PersonaOverviewCells';
+import { VerdictTrendCell } from './VerdictTrendCell';
 import type { AgentListViewConfig } from './ViewPresetBar';
 
 interface UsePersonaColumnsArgs {
@@ -26,6 +27,7 @@ interface UsePersonaColumnsArgs {
   healthMap: Record<string, PersonaHealth | undefined>;
   triggerCounts: Record<string, number>;
   lastRunMap: Record<string, string | null>;
+  scoreTrendsMap: Record<string, number[]>;
   connectorNamesMap: Map<string, string[]>;
   allConnectorNames: string[];
 }
@@ -44,7 +46,7 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
   const { t } = useTranslation();
   const {
     view, setView, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick,
-    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap,
+    isBuilding, isDraft, healthMap, triggerCounts, lastRunMap, scoreTrendsMap,
     connectorNamesMap, allConnectorNames,
   } = args;
 
@@ -136,6 +138,10 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
             : <TrustScoreBar score={p.trust_score ?? 0} />,
       },
       {
+        key: 'verdict', label: t.director.col_verdict, width: '88px', align: 'center',
+        render: (p) => <VerdictTrendCell scores={scoreTrendsMap[p.id]} />,
+      },
+      {
         key: 'triggers', label: t.common.triggers, width: '90px', sortable: true, align: 'right',
         render: (p) => (
           <Tooltip content={`${triggerCounts[p.id] ?? 0} active trigger(s)`}>
@@ -161,6 +167,6 @@ export function usePersonaColumns(args: UsePersonaColumnsArgs): DataGridColumn<P
         },
       },
     ],
-    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.common.connectors, t.common.triggers, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap],
+    [t.agents.persona_list.col_persona, t.agents.persona_list.never, t.agents.overview_columns.status, t.agents.overview_columns.trust, t.agents.overview_columns.last_run, t.common.connectors, t.common.triggers, t.director.col_verdict, view, connectorOptions, STATUS_FILTER_OPTIONS, HEALTH_FILTER_OPTIONS, selectedIds, onToggleSelect, isFavorite, toggleFavorite, onRowClick, setView, connectorNamesMap, isBuilding, healthMap, isDraft, triggerCounts, lastRunMap, scoreTrendsMap],
   );
 }

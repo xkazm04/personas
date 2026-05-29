@@ -78,8 +78,9 @@ export function FavoriteCell({
   isFavorite: boolean;
   onToggle: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
-    <Tooltip content={isFavorite ? 'Remove from favorites' : 'Add to favorites'}>
+    <Tooltip content={isFavorite ? t.agents.persona_list.star_director_remove : t.agents.persona_list.star_director_add}>
       <button
         type="button"
         onClick={(e) => {

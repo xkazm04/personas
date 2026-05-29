@@ -284,10 +284,32 @@ export function IconPlugins({ active = false, className = '' }: IconProps) {
   );
 }
 
+// -- Goals: locking bullseye / target reticle ----------------------------
+
+export function IconGoals({ active = false, className = '' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Concentric target rings */}
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.45 : 0.28} />
+      <circle cx="12" cy="12" r="6.4" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.7 : 0.45} />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.3" opacity={active ? 0.85 : 0.55} />
+      {/* Soft center fill + breathing bullseye */}
+      <circle cx="12" cy="12" r="3" fill="currentColor" opacity={active ? 0.1 : 0.05} />
+      <circle cx="12" cy="12" r="1.7" fill="currentColor" className={a('pi-breathe', active)} opacity={active ? undefined : 0.6} />
+      {/* Lock-on reticle ticks (N/E/S/W) */}
+      <line x1="12" y1="0.5" x2="12" y2="2.8" stroke="currentColor" strokeWidth="1.3" className={a('pi-pulse', active)} opacity={active ? 0.8 : 0.35} />
+      <line x1="23.5" y1="12" x2="21.2" y2="12" stroke="currentColor" strokeWidth="1.3" className={a('pi-pulse-d', active)} opacity={active ? 0.8 : 0.35} />
+      <line x1="12" y1="23.5" x2="12" y2="21.2" stroke="currentColor" strokeWidth="1.3" className={a('pi-pulse', active)} opacity={active ? 0.8 : 0.35} />
+      <line x1="0.5" y1="12" x2="2.8" y2="12" stroke="currentColor" strokeWidth="1.3" className={a('pi-pulse-d', active)} opacity={active ? 0.8 : 0.35} />
+    </svg>
+  );
+}
+
 /** Map section ID -> custom icon */
 export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
   home: IconHome,
   overview: IconOverview,
+  goals: IconGoals,
   personas: IconAgents,
   events: IconEvents,
   credentials: IconKeys,

@@ -263,7 +263,7 @@ pub fn update_status(
         }
 
         // Learning loop: a resolved (approved/rejected) review IS human feedback.
-        // Phase-1 structured shared memory (docs/test/structured-shared-memory-design.md):
+        // Phase-1 structured shared memory (docs/tests/autonomy-eval/structured-shared-memory-design.md):
         // when the persona belongs to a team, route the feedback to the SHARED,
         // bounded, evictable team ledger (L2) as a typed decision/constraint —
         // approved → `decision`, rejected → `constraint` — so it's one shared record

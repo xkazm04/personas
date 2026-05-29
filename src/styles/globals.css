@@ -1443,28 +1443,104 @@ body[data-drag-active="true"] * {
   }
 }
 
-/* Athena guided-walkthrough element highlight — a non-dimming accent ring
-   (AthenaGuideGlow). The border colour comes from the `border-primary` utility;
-   these animate the outer bloom. `-static` is the prefers-reduced-motion
-   fallback (a steady ring, no pulse). */
-@keyframes athena-guide-glow {
+/* Athena's non-dimming element highlight (TrackedGlowRing) — a soft breathing
+   halo framed by four crisp corner brackets that "lock on" to the target. Two
+   treatments share the shape: `--guide` breathes continuously while a
+   walkthrough step is active; `--flash` is a brighter two-pulse the store clears
+   after ~2.4s. `--static` is the prefers-reduced-motion fallback (a steady ring,
+   no animation). Colours are tokenized off `--color-primary` via color-mix so
+   the ring tracks the active theme. */
+.athena-ring {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 85%, transparent);
+  will-change: box-shadow, opacity, transform;
+}
+
+.athena-ring__corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--color-primary);
+}
+.athena-ring__corner--tl { top: -2px; left: -2px; border-right: 0; border-bottom: 0; border-top-left-radius: 6px; }
+.athena-ring__corner--tr { top: -2px; right: -2px; border-left: 0; border-bottom: 0; border-top-right-radius: 6px; }
+.athena-ring__corner--bl { bottom: -2px; left: -2px; border-right: 0; border-top: 0; border-bottom-left-radius: 6px; }
+.athena-ring__corner--br { bottom: -2px; right: -2px; border-left: 0; border-top: 0; border-bottom-right-radius: 6px; }
+
+@keyframes athena-ring-lockon {
+  from { opacity: 0; transform: scale(1.06); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes athena-ring-breathe {
   0%, 100% {
-    box-shadow: 0 0 0 2px var(--color-primary), 0 0 12px 2px var(--color-primary);
-    opacity: 0.85;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 32%, transparent),
+                0 0 14px 2px color-mix(in srgb, var(--color-primary) 26%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 3px var(--color-primary), 0 0 22px 6px var(--color-primary);
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 55%, transparent),
+                0 0 26px 7px color-mix(in srgb, var(--color-primary) 44%, transparent);
+  }
+}
+
+@keyframes athena-ring-flashpulse {
+  0%, 100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 40%, transparent),
+                0 0 16px 3px color-mix(in srgb, var(--color-primary) 34%, transparent);
+    opacity: 0.9;
+  }
+  50% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 78%, transparent),
+                0 0 32px 9px color-mix(in srgb, var(--color-primary) 60%, transparent);
     opacity: 1;
   }
 }
 
-.athena-guide-glow-pulse {
-  animation: athena-guide-glow 1.6s ease-in-out infinite;
-  will-change: box-shadow, opacity;
+@keyframes athena-ring-corner-in {
+  from { opacity: 0; }
+  to   { opacity: 0.95; }
 }
 
-.athena-guide-glow-static {
-  box-shadow: 0 0 0 2px var(--color-primary), 0 0 12px 2px var(--color-primary);
+.athena-ring--guide {
+  animation:
+    athena-ring-lockon 360ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    athena-ring-breathe 2.4s ease-in-out 360ms infinite;
+}
+.athena-ring--flash {
+  animation:
+    athena-ring-lockon 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both,
+    athena-ring-flashpulse 1.05s ease-in-out 260ms 2;
+}
+.athena-ring--guide .athena-ring__corner,
+.athena-ring--flash .athena-ring__corner {
+  animation: athena-ring-corner-in 420ms ease-out both;
+}
+
+/* prefers-reduced-motion: a steady ring + steady corners, no animation. */
+.athena-ring--static,
+.athena-ring--static.athena-ring--guide,
+.athena-ring--static.athena-ring--flash {
+  animation: none;
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--color-primary) 50%, transparent),
+              0 0 14px 2px color-mix(in srgb, var(--color-primary) 32%, transparent);
+}
+.athena-ring--static .athena-ring__corner {
+  animation: none;
+  opacity: 0.95;
+}
+
+/* Flash ring's optional label chip ("Just composed") — slides up into place
+   above the ring. Steady (no slide) under reduced motion. */
+@keyframes athena-flash-label-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.athena-flash-label {
+  animation: athena-flash-label-in 240ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .athena-flash-label { animation: none; }
 }
 
 /* GlyphHeroSigil petal pulse — driven by CSS so the 8 petals don't
@@ -4620,4 +4696,251 @@ html[data-motion="reduce"] .cell-edge-shimmer::after {
 html[data-motion="reduce"] .animate-fade-slide-in {
   opacity: 1 !important;
   transform: none !important;
+}
+
+/* ===========================================================================
+   Athena chat markdown — contrast + rhythm tuning, SCOPED to the companion
+   chat bubbles. The shared MarkdownRenderer is used by ~20 other surfaces;
+   these rules apply only where Bubble.tsx passes `className="athena-chat-md"`,
+   so nothing else is affected. Plain (unlayered) selectors win over Tailwind's
+   layered utilities regardless of specificity, so no `!important` is needed.
+   `first:mt-0` keeps higher specificity, so the leading heading stays flush.
+   =========================================================================== */
+
+/* Body + list copy at full foreground contrast (renderer ships these at
+   text-foreground/90, which reads slightly washed inside the bubble). */
+.athena-chat-md p,
+.athena-chat-md li {
+  color: var(--foreground);
+}
+
+/* Inline code: lift from the dim primary/70 to legible foreground on a
+   slightly stronger primary-tinted chip. */
+.athena-chat-md :not(pre) > code {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--primary) 13%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+/* Blockquote: tokenized primary accent instead of the renderer's hardcoded
+   violet-500, so it tracks whatever theme/vibe the user has selected. */
+.athena-chat-md blockquote {
+  border-left-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+/* Tighten heading top-rhythm for the narrow chat column — the renderer's
+   default mt-10/mt-8/mt-6 are tuned for full-width docs and read as dead
+   gaps inside a reply bubble. */
+.athena-chat-md h1 { margin-top: 1.25rem; }
+.athena-chat-md h2 { margin-top: 1.1rem; }
+.athena-chat-md h3 { margin-top: 0.9rem; }
+
+/* ---------------------------------------------------------------------------
+   Athena chat — syntax highlighting tuned to the app palette, SCOPED to the
+   chat bubbles. The global `@import github-dark-dimmed` (globals.css top) is a
+   fixed DARK theme: it forces a `#22272e` background + dark token colors onto
+   every code block, which clashes with the brand and is unreadable on the
+   light themes. These rules (a) drop the fixed background so the block sits on
+   the themed chrome surface, (b) base text on --foreground, and (c) recolor
+   tokens from a small token-driven palette — keyword/function follow the
+   theme's --primary/--accent; string/number/attr use curated hues. A
+   `[data-theme^="light"]` block darkens everything for contrast on light
+   surfaces. Plain selectors at (0,2,0) beat the imported (0,1,0) `.hljs-*`
+   rules, so no `!important` is needed. Scoped to `.athena-chat-md` only — the
+   ~20 other MarkdownRenderer surfaces keep the stock github-dark-dimmed theme.
+   --------------------------------------------------------------------------- */
+.athena-chat-md .hljs {
+  background: transparent;
+  color: var(--foreground);
+  --md-syn-comment: color-mix(in srgb, var(--foreground) 45%, transparent);
+  --md-syn-keyword: var(--primary);
+  --md-syn-function: var(--accent);
+  --md-syn-string: #7ee787;
+  --md-syn-number: #f0a36b;
+  --md-syn-attr: #79c0ff;
+  --md-syn-punct: color-mix(in srgb, var(--foreground) 70%, transparent);
+  --md-syn-deletion: #f85149;
+}
+[data-theme^="light"] .athena-chat-md .hljs {
+  --md-syn-comment: color-mix(in srgb, var(--foreground) 55%, #0f172a);
+  --md-syn-keyword: color-mix(in srgb, var(--primary) 65%, #0f172a);
+  --md-syn-function: color-mix(in srgb, var(--accent) 55%, #0f172a);
+  --md-syn-string: #0a7d33;
+  --md-syn-number: #b4530a;
+  --md-syn-attr: #0550ae;
+  --md-syn-punct: color-mix(in srgb, var(--foreground) 60%, #0f172a);
+  --md-syn-deletion: #b42318;
+}
+.athena-chat-md .hljs-comment,
+.athena-chat-md .hljs-quote,
+.athena-chat-md .hljs-meta {
+  color: var(--md-syn-comment);
+  font-style: italic;
+}
+.athena-chat-md .hljs-keyword,
+.athena-chat-md .hljs-built_in,
+.athena-chat-md .hljs-type,
+.athena-chat-md .hljs-literal,
+.athena-chat-md .hljs-selector-tag {
+  color: var(--md-syn-keyword);
+}
+.athena-chat-md .hljs-string,
+.athena-chat-md .hljs-regexp,
+.athena-chat-md .hljs-addition {
+  color: var(--md-syn-string);
+}
+.athena-chat-md .hljs-number,
+.athena-chat-md .hljs-symbol,
+.athena-chat-md .hljs-bullet {
+  color: var(--md-syn-number);
+}
+.athena-chat-md .hljs-title,
+.athena-chat-md .hljs-title.function_,
+.athena-chat-md .hljs-section {
+  color: var(--md-syn-function);
+}
+.athena-chat-md .hljs-attr,
+.athena-chat-md .hljs-attribute,
+.athena-chat-md .hljs-variable,
+.athena-chat-md .hljs-template-variable,
+.athena-chat-md .hljs-tag,
+.athena-chat-md .hljs-name {
+  color: var(--md-syn-attr);
+}
+.athena-chat-md .hljs-punctuation,
+.athena-chat-md .hljs-operator {
+  color: var(--md-syn-punct);
+}
+.athena-chat-md .hljs-deletion {
+  color: var(--md-syn-deletion);
+}
+.athena-chat-md .hljs-strong {
+  font-weight: 600;
+}
+.athena-chat-md .hljs-emphasis {
+  font-style: italic;
+}
+
+/* Athena chat — GFM task lists + nested-list rhythm (scoped). remark-gfm
+   tags task lists with `contains-task-list` / `task-list-item` (forwarded by
+   the ul/li renderers); drop the bullet, theme the native checkbox, and
+   tighten the gaps between nesting levels. */
+.athena-chat-md .contains-task-list {
+  list-style: none;
+  padding-left: 0.25rem;
+}
+.athena-chat-md .task-list-item {
+  list-style: none;
+}
+.athena-chat-md .task-list-item input[type="checkbox"] {
+  accent-color: var(--primary);
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.5rem;
+  vertical-align: middle;
+  transform: translateY(-1px);
+}
+.athena-chat-md li > ul,
+.athena-chat-md li > ol {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Athena chat — table zebra + row hover (scoped). The renderer gives tables a
+   faintly-tinted surface + borders; banding alternate rows and a subtle hover
+   make data-heavy replies far easier to scan. */
+.athena-chat-md tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--foreground) 4%, transparent);
+}
+.athena-chat-md tbody tr:hover td {
+  background: color-mix(in srgb, var(--primary) 7%, transparent);
+}
+
+/* Athena chat — link affordance (scoped). Links are bare primary text today;
+   give them a soft always-on underline that strengthens on hover, plus a small
+   external-link arrow so it reads as "opens outside the app" (every chat link
+   is rendered target=_blank). The `[href]` guard skips the unsafe-href <span>
+   fallback, which has no arrow. */
+.athena-chat-md a[href] {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--primary) 40%, transparent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+.athena-chat-md a[href]:hover {
+  text-decoration-color: var(--primary);
+}
+.athena-chat-md a[href]::after {
+  content: "↗";
+  display: inline-block;
+  margin-left: 0.1em;
+  font-size: 0.85em;
+  line-height: 1;
+  color: color-mix(in srgb, var(--primary) 70%, transparent);
+}
+
+/* Companion panel — autonomous-mode ambient signal. When "infinite" mode is
+   on, the panel border slowly breathes the theme primary so the self-driving
+   state is unmistakable (the lone tinted header toggle under-signals it). Only
+   the border-color animates, so the panel's elevation shadow is untouched.
+   Reduced motion gets a static primary border instead. */
+@keyframes companion-autonomous-breathe {
+  0%,
+  100% {
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+  50% {
+    border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+  }
+}
+.companion-autonomous {
+  animation: companion-autonomous-breathe 4s ease-in-out infinite;
+}
+html[data-motion="reduce"] .companion-autonomous {
+  animation: none;
+  border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+/* Companion transcript — soft top/bottom scroll fades so messages dissolve
+   into the panel chrome at the edges instead of hard-cutting. The 14px fade
+   sits inside the scroll area's vertical padding, so message text isn't
+   clipped — only the empty padding gutter fades. */
+.companion-scroll {
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 14px,
+    #000 calc(100% - 14px),
+    transparent 100%
+  );
+}
+
+/* Companion streaming "typing" dots — three primary dots bouncing in sequence
+   next to the phase label so the wait state reads as active. Staggered delays
+   give the classic typing-indicator wave. Reduced motion holds them static. */
+@keyframes companion-typing-bounce {
+  0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+.companion-typing-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--primary) 75%, transparent);
+  animation: companion-typing-bounce 1.2s ease-in-out infinite;
+}
+.companion-typing-dot:nth-child(2) { animation-delay: 0.15s; }
+.companion-typing-dot:nth-child(3) { animation-delay: 0.3s; }
+html[data-motion="reduce"] .companion-typing-dot {
+  animation: none;
+  opacity: 0.55;
 }

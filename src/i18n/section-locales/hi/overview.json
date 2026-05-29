@@ -419,10 +419,6 @@
     "add_notes": "नोट्स जोड़ें",
     "notes_placeholder": "समीक्षा नोट्स जोड़ें...",
     "select_action_first": "पहले एक सुझाई गई कार्रवाई चुनें",
-    "split": "विभाजित",
-    "table": "टेबल",
-    "split_tooltip": "चैट के साथ विभाजित दृश्य",
-    "table_tooltip": "केवल टेबल",
     "review_detail": "समीक्षा विवरण",
     "select_review": "देखने के लिए एक समीक्षा चुनें",
     "technical_context": "तकनीकी संदर्भ"

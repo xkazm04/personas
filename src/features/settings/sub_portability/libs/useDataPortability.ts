@@ -54,12 +54,12 @@ export function useDataPortability() {
       });
   }, []);
 
-  const handleExportFull = useCallback(async (passphrase?: string) => {
+  const handleExportFull = useCallback(async (includeMemories: boolean, passphrase?: string) => {
     if (exportStatus === 'loading') return;
     setExportStatus('loading');
     setErrorMsg('');
     try {
-      const saved = await exportFull(passphrase);
+      const saved = await exportFull(includeMemories, passphrase);
       setExportStatus(saved ? 'success' : 'idle');
     } catch (e) {
       silentCatch("useDataPortability:exportFull")(e);
@@ -72,13 +72,14 @@ export function useDataPortability() {
     personaIds: string[],
     teamIds: string[],
     credentialIds: string[],
+    includeMemories: boolean,
     passphrase?: string,
   ) => {
     if (exportStatus === 'loading') return;
     setExportStatus('loading');
     setErrorMsg('');
     try {
-      const saved = await exportSelective(personaIds, teamIds, credentialIds, passphrase);
+      const saved = await exportSelective(personaIds, teamIds, credentialIds, includeMemories, passphrase);
       setExportStatus(saved ? 'success' : 'idle');
       if (saved) setShowExportModal(false);
     } catch (e) {

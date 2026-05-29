@@ -289,6 +289,13 @@ async fn tick_loop(
                 None,
             )?;
             emit_progress(app, assignment_id, "awaiting_review", None);
+            record_assignment_goal_signal(
+                pool,
+                assignment.goal_id.as_deref(),
+                assignment_id,
+                "team_awaiting_review",
+                Some(&assignment.title),
+            );
             return Ok(());
         }
         if all_terminal && in_flight.is_empty() {
@@ -299,6 +306,17 @@ async fn tick_loop(
             };
             assignment_repo::update_assignment_status(pool, assignment_id, final_status, None)?;
             emit_progress(app, assignment_id, final_status, None);
+            record_assignment_goal_signal(
+                pool,
+                assignment.goal_id.as_deref(),
+                assignment_id,
+                if final_status == "failed" {
+                    "team_failed"
+                } else {
+                    "team_done"
+                },
+                Some(&assignment.title),
+            );
             return Ok(());
         }
 
@@ -331,9 +349,10 @@ async fn tick_loop(
                 let step_clone = step.clone();
                 let strategy = assignment.match_strategy.clone();
                 let assignment_id_owned = assignment_id.to_string();
+                let goal_id = assignment.goal_id.clone();
 
                 let handle = tokio::spawn(async move {
-                    let result = run_step(&deps_clone, &strategy, step_clone).await;
+                    let result = run_step(&deps_clone, &strategy, step_clone, goal_id).await;
                     if let Err(e) = result {
                         tracing::error!(
                             step_id = %step_id,
@@ -368,6 +387,7 @@ async fn run_step(
     deps: &OrchestratorDeps,
     strategy: &str,
     step: TeamAssignmentStep,
+    goal_id: Option<String>,
 ) -> Result<(), AppError> {
     let pool = &deps.pool;
     let app = &deps.app;
@@ -443,6 +463,13 @@ async fn run_step(
                     .map(|s| s.chars().take(2000).collect::<String>());
                 assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                record_assignment_goal_signal(
+                    pool,
+                    goal_id.as_deref(),
+                    &step.assignment_id,
+                    "team_step",
+                    summary.as_deref().or(Some(step.title.as_str())),
+                );
                 return Ok(());
             }
             "failed" | "cancelled" => {
@@ -646,4 +673,33 @@ fn emit_progress(app: &AppHandle, assignment_id: &str, status: &str, step_id: Op
         "step_id": step_id,
     });
     let _ = app.emit(event_name::TEAM_ASSIGNMENT_PROGRESS, payload);
+}
+
+/// Goals hub: when a linked assignment (its `goal_id` is set) makes progress,
+/// write a `dev_goal_signal` so the goal surfaces live team activity and the
+/// progress resolver can derive a suggestion. No-op for unlinked assignments;
+/// best-effort (a signal-write failure must never stall orchestration).
+fn record_assignment_goal_signal(
+    pool: &DbPool,
+    goal_id: Option<&str>,
+    assignment_id: &str,
+    signal_type: &str,
+    message: Option<&str>,
+) {
+    let Some(goal_id) = goal_id else { return };
+    if let Err(e) = crate::db::repos::dev_tools::create_goal_signal(
+        pool,
+        goal_id,
+        signal_type,
+        Some(assignment_id),
+        None,
+        message,
+    ) {
+        tracing::warn!(
+            goal_id,
+            assignment_id,
+            error = %e,
+            "Failed to record team→goal signal",
+        );
+    }
 }

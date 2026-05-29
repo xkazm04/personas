@@ -59,7 +59,7 @@ use crate::companion::brain::{backlog, goals, rituals};
 use crate::engine::ambient_context::{AmbientContextHandle, ContextEvent};
 #[cfg(feature = "desktop")]
 use crate::engine::context_rules::ContextRuleEngineHandle;
-use crate::db::UserDbPool;
+use crate::db::{DbPool, UserDbPool};
 use crate::error::AppError;
 
 use super::Nudge;
@@ -192,6 +192,78 @@ fn goal_target_approaching(pool: &UserDbPool) -> Result<Vec<Nudge>, AppError> {
         });
     }
     Ok(out)
+}
+
+// ── dev_goal_nudges (project goals — target-approaching / stalled) ───────
+
+const DEV_GOAL_STALL_DAYS: i64 = 7;
+const DEV_GOAL_TARGET_LOOKAHEAD_DAYS: i64 = 3;
+
+/// Goals hub: scan the main-DB `dev_goals` (project goals) and surface ones
+/// that are target-approaching/overdue or stalled. Takes `sys_db` (the main
+/// app pool) because dev_goals don't live in the companion `user_db`; callers
+/// that have it (the manual `companion_evaluate_proactive_now` + the desktop
+/// tick) pass the result as `extra` candidates to
+/// [`super::evaluate_with_extra_candidates`], so the same quiet-hours / budget /
+/// dedupe guards still apply. On engage, the Phase-4a prompt context lets
+/// Athena reason about the goal and (gated) propose `update_dev_goal`.
+pub fn dev_goal_nudges(sys_db: &DbPool) -> Vec<Nudge> {
+    use crate::db::repos::dev_tools as dt;
+    let now = Utc::now();
+    let projects = match dt::list_projects(sys_db, None) {
+        Ok(p) => p,
+        Err(_) => return Vec::new(),
+    };
+    let mut out = Vec::new();
+    for proj in &projects {
+        let goals = dt::list_goals_by_project(sys_db, &proj.id, None).unwrap_or_default();
+        for g in goals {
+            if g.status == "done" || g.status == "completed" {
+                continue;
+            }
+            // Target approaching / overdue wins over a stall nudge for the
+            // same goal (more actionable), so handle it first + continue.
+            if let Some(parsed) = g.target_date.as_deref().and_then(parse_date_or_datetime) {
+                let days = (parsed - now).num_days();
+                if days <= DEV_GOAL_TARGET_LOOKAHEAD_DAYS {
+                    let when = if days < 0 {
+                        format!("was due {} day(s) ago", -days)
+                    } else if days == 0 {
+                        "is due today".to_string()
+                    } else {
+                        format!("is due in {days} day(s)")
+                    };
+                    out.push(Nudge {
+                        trigger_kind: "dev_goal_target".into(),
+                        trigger_ref: Some(g.id.clone()),
+                        message: format!(
+                            "Project goal **{}** {when} and sits at {}%. Want to review where it stands?",
+                            g.title, g.progress
+                        ),
+                    });
+                    continue;
+                }
+            }
+            // Stalled: actively-tracked but untouched for STALL_DAYS.
+            let tracked = matches!(g.status.as_str(), "in-progress" | "in_progress" | "blocked");
+            if tracked && g.progress < 100 {
+                if let Some(updated) = parse_date_or_datetime(&g.updated_at) {
+                    let stalled_days = (now - updated).num_days();
+                    if stalled_days >= DEV_GOAL_STALL_DAYS {
+                        out.push(Nudge {
+                            trigger_kind: "dev_goal_stalled".into(),
+                            trigger_ref: Some(g.id.clone()),
+                            message: format!(
+                                "Project goal **{}** has been stalled at {}% for {} days. Want to look at what's blocking it?",
+                                g.title, g.progress, stalled_days
+                            ),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    out
 }
 
 // ── backlog_aging ───────────────────────────────────────────────────────

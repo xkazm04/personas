@@ -1,4 +1,5 @@
 {
+  "code_toggle_wrap": "Přepnout zalamování řádků",
   "blast_checking_impact": "Kontrola dopadu...",
   "blast_safe_to_delete": "Nenalezeny žádné závislé zdroje. Bezpečné smazat.",
   "blast_impact": "Dopad",

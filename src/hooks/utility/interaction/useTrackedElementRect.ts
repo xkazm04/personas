@@ -48,7 +48,7 @@ const MAX_MISSING_TARGET_RETRIES = 4;
  * returned rect.
  *
  * This is the shared measurement core behind both the onboarding
- * `TourSpotlight` (dimming cutout) and Athena's `AthenaGuideGlow` (non-dimming
+ * `TourSpotlight` (dimming cutout) and Athena's `TrackedGlowRing` (non-dimming
  * ring). It owns rect math + observer lifecycle + the missing-target retry; the
  * callers own the visual.
  */

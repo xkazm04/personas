@@ -46,3 +46,9 @@ export function renderImportanceStars(status: string): string {
   const filled = Math.round(importance / 2);
   return '\u2605'.repeat(filled) + '\u2606'.repeat(5 - filled);
 }
+
+/** Render a 0-5 Director verdict score as filled/hollow stars (\u2605\u2605\u2605\u2606\u2606). */
+export function renderScoreStars(score: number): string {
+  const filled = Math.min(5, Math.max(0, Math.round(score)));
+  return '\u2605'.repeat(filled) + '\u2606'.repeat(5 - filled);
+}
