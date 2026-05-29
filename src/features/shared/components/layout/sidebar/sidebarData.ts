@@ -9,6 +9,7 @@ import {
   User, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
+  Clapperboard, Users,
   type LucideIcon,
 } from 'lucide-react';
 import type { SidebarSection, HomeTab, OverviewTab } from '@/lib/types/types';
@@ -36,6 +37,7 @@ export const sections: SectionDef[] = [
   { id: 'overview', icon: BarChart3, label: 'Overview' },
   { id: 'goals', icon: Target, label: 'Goals', minTier: TIERS.TEAM },
   { id: 'personas', icon: Bot, label: 'Agents' },
+  { id: 'director', icon: Clapperboard, label: 'Director', minTier: TIERS.TEAM },
   { id: 'events', icon: Radio, label: 'Events', minTier: TIERS.TEAM },
   { id: 'credentials', icon: Key, label: 'Connections' },
   { id: 'design-reviews', icon: FlaskConical, label: 'Templates' },
@@ -84,6 +86,14 @@ export const credentialItems: SubNavItem[] = [
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate },
   { id: 'graph', label: 'Dependencies', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
+];
+
+/** Director command-center L2 sub-nav. */
+export const directorItems: SubNavItem[] = [
+  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'roster', label: 'Roster', icon: Users },
+  { id: 'reviews', label: 'Reviews', icon: ClipboardCheck },
+  { id: 'memory', label: 'Memory', icon: Brain },
 ];
 
 /** Goals L2 sub-nav — Board/Map are live; Timeline/Portfolio/Attention scaffolded. */

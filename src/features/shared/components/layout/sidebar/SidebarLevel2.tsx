@@ -8,7 +8,7 @@ import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
-import type { HomeTab, GoalsTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
+import type { HomeTab, GoalsTab, DirectorTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { getNavReleases, RELEASE_STATUS_META, type Release } from '@/data/releases';
 import { useReleasesTranslation } from '@/features/home/sub_releases/i18n/useReleasesTranslation';
@@ -18,7 +18,7 @@ import SidebarLevel3 from './SidebarLevel3';
 import type { SubNavBadge } from './SidebarSubNav';
 import {
   homeItems, overviewItems, credentialItems, templateItems,
-  eventBusItems, getSettingsItems, goalItems,
+  eventBusItems, getSettingsItems, goalItems, directorItems,
 } from './sidebarData';
 import { SETTINGS_ICON_ACCENTS } from '@/lib/design/statusTokens';
 import { useTier } from '@/hooks/utility/interaction/useTier';
@@ -71,6 +71,8 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
   const setHomeTab = useSystemStore((s) => s.setHomeTab);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
+  const directorTab = useSystemStore((s) => s.directorTab);
+  const setDirectorTab = useSystemStore((s) => s.setDirectorTab);
   const templateTab = useSystemStore((s) => s.templateTab);
   const setTemplateTab = useSystemStore((s) => s.setTemplateTab);
   // Badge counts passed as props from Sidebar (single useBadgeCounts instance)
@@ -172,6 +174,16 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 
     case 'personas':
       return <AgentsSidebarNav onCreatePersona={onCreatePersona} />;
+
+    case 'director':
+      return (
+        <SidebarSubNav
+          items={directorItems}
+          activeId={directorTab}
+          onSelect={(id) => setDirectorTab(id as DirectorTab)}
+          variant="overview"
+        />
+      );
 
     case 'events': {
       const visibleEventItems = isDev ? eventBusItems : eventBusItems.filter(i => !i.devOnly);
