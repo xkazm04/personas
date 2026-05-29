@@ -1154,6 +1154,158 @@ pub fn compute_suggested_progress(
     }
 }
 
+/// Auto-close the progress loop: recompute a goal's progress from its checklist
+/// + sub-goals + linked team-assignment steps and **write it**. The orchestrator
+/// calls this when a goal-linked assignment finishes, so a team that actually did
+/// the work moves the goal — `dev_tools_resolve_goal_progress` only *suggests* a
+/// value for the user to accept, which never happens for an unattended team.
+///
+/// Guarantees:
+/// - **Never regresses** below the current (possibly hand-set) progress — a team
+///   can only push a goal forward, so a manual override is safe.
+/// - Transitions status `open → in-progress` (stamping `started_at`) once there's
+///   any progress, and `→ done` (stamping `completed_at`) at 100%.
+///
+/// Returns the written progress %. Callers treat failures as best-effort.
+pub fn apply_resolved_goal_progress(pool: &DbPool, goal_id: &str) -> Result<i32, AppError> {
+    let goal = get_goal_by_id(pool, goal_id)?;
+
+    let items = list_goal_items(pool, goal_id)?;
+    let items_done = items.iter().filter(|i| i.done).count();
+    let subgoals = list_child_goals(pool, goal_id)?;
+    let subgoals_done = subgoals
+        .iter()
+        .filter(|g| goal_status_is_complete(&g.status) || g.progress >= 100)
+        .count();
+    let assignments =
+        crate::db::repos::orchestration::team_assignments::list_for_goal(pool, goal_id)?;
+    let mut steps_total = 0usize;
+    let mut steps_done = 0usize;
+    for a in &assignments {
+        let steps = crate::db::repos::orchestration::team_assignments::list_steps(pool, &a.id)?;
+        steps_total += steps.len();
+        steps_done += steps
+            .iter()
+            .filter(|s| step_status_is_complete(&s.status))
+            .count();
+    }
+
+    let sugg = compute_suggested_progress(
+        goal_id,
+        goal.progress,
+        items_done,
+        items.len(),
+        subgoals_done,
+        subgoals.len(),
+        steps_done,
+        steps_total,
+    );
+    // Never regress a manually-higher value; teams only push progress up.
+    let new_progress = sugg.suggested.max(goal.progress);
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let cur = normalize_goal_status(&goal.status);
+    let mut new_status: Option<&str> = None;
+    let mut started_at: Option<Option<&str>> = None;
+    let mut completed_at: Option<Option<&str>> = None;
+
+    if new_progress >= 100 {
+        if cur != "done" {
+            new_status = Some("done");
+            completed_at = Some(Some(now.as_str()));
+        }
+        if goal.started_at.is_none() {
+            started_at = Some(Some(now.as_str()));
+        }
+    } else if new_progress > 0 && cur == "open" {
+        new_status = Some("in-progress");
+        if goal.started_at.is_none() {
+            started_at = Some(Some(now.as_str()));
+        }
+    }
+
+    update_goal(
+        pool,
+        goal_id,
+        None,                  // title
+        None,                  // description
+        new_status,            // status
+        Some(new_progress),    // progress
+        None,                  // target_date
+        None,                  // context_id
+        started_at,            // started_at
+        completed_at,          // completed_at
+    )?;
+
+    Ok(new_progress)
+}
+
+/// Mark a goal `open → in-progress` (stamping `started_at`) when work begins —
+/// called by the orchestrator the moment a goal-linked step starts running, so
+/// the goal reflects activity before any step has finished. No-op when the goal
+/// is already past `open`. Best-effort.
+pub fn mark_goal_in_progress(pool: &DbPool, goal_id: &str) -> Result<(), AppError> {
+    let goal = get_goal_by_id(pool, goal_id)?;
+    if normalize_goal_status(&goal.status) != "open" {
+        return Ok(());
+    }
+    let now = chrono::Utc::now().to_rfc3339();
+    let started_at = if goal.started_at.is_none() {
+        Some(Some(now.as_str()))
+    } else {
+        None
+    };
+    update_goal(
+        pool, goal_id, None, None, Some("in-progress"), None, None, None, started_at, None,
+    )?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod apply_progress_tests {
+    use super::*;
+    use crate::db::init_test_db;
+
+    #[test]
+    fn applies_checklist_ratio_and_transitions_status() {
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        assert_eq!(normalize_goal_status(&goal.status), "open");
+
+        // 2 to-dos, 1 done → 50% → in-progress.
+        let i1 = create_goal_item(&pool, &goal.id, "todo a").unwrap();
+        let _i2 = create_goal_item(&pool, &goal.id, "todo b").unwrap();
+        update_goal_item(&pool, &i1.id, None, Some(true)).unwrap();
+
+        let p = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(p, 50);
+        let g = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(g.progress, 50);
+        assert_eq!(normalize_goal_status(&g.status), "in-progress");
+        assert!(g.started_at.is_some());
+
+        // Finish the second → 100% → done.
+        update_goal_item(&pool, &_i2.id, None, Some(true)).unwrap();
+        let p2 = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(p2, 100);
+        let g2 = get_goal_by_id(&pool, &goal.id).unwrap();
+        assert_eq!(normalize_goal_status(&g2.status), "done");
+        assert!(g2.completed_at.is_some());
+    }
+
+    #[test]
+    fn never_regresses_a_manual_value() {
+        let pool = init_test_db().unwrap();
+        let project = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
+        let goal = create_goal(&pool, &project.id, "G", None, None, None, None, None).unwrap();
+        // Hand-set 80%, no items/steps → resolver would suggest fallback(current)=80; never below.
+        update_goal(&pool, &goal.id, None, None, None, Some(80), None, None, None, None).unwrap();
+        let p = apply_resolved_goal_progress(&pool, &goal.id).unwrap();
+        assert_eq!(p, 80);
+    }
+}
+
 // ============================================================================
 // Goal Dependencies
 // ============================================================================

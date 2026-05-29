@@ -129,6 +129,7 @@ pub mod persona_jobs;
 pub mod pipeline;
 pub mod pipeline_executor;
 pub mod platform_rules;
+pub mod goal_advance;
 pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
 pub mod team_handoff;
