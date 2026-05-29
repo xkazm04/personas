@@ -149,7 +149,9 @@ pub async fn advance_goal(
         goal: goal_text,
         match_strategy: Some("llm_eval".into()),
         max_parallel_steps: Some(3),
-        source: Some("goal_advance".into()),
+        // `source` is CHECK-constrained to team_ui|athena|api — this initiator
+        // (manual command + autonomous tick) is programmatic, so "api".
+        source: Some("api".into()),
         companion_op_id: None,
         goal_id: Some(goal_id.to_string()),
         steps,
