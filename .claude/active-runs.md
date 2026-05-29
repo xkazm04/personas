@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### orb-decisions — Athena orb quick-response (numeric buttons + leader-key shortcut mode)
+- Started: 2026-05-29
+- Status: COMPLETE — 5 commits (1a6544d90..d99f84667), NOT merged, awaiting user review. cargo check (P1) + tsc 0 + eslint 0 + vite build + 11 unit tests (6 orbDecision + 5 keyboard) + i18n gate all green. Constitution v31. Leader key = ';'. Left in Active (ledger concurrently dirty); relocate to Recently completed on merge.
+- Branch: worktree-orb-decisions
+- Worktree: .claude/worktrees/orb-decisions/
+- Paths: src/features/plugins/companion/{orb/,companionStore.ts,ApprovalCard.tsx,ProactiveCard.tsx,QuickReplies.tsx} + new orb/orbDecision* + new leader-mode under src/lib/keyboard/, src/lib/keyboard/{shortcutRegistry,ShortcutCheatSheet,WorkspaceShortcuts}.tsx, src-tauri/src/commands/companion/approvals.rs + companion/proactive/mod.rs (add shortPrompt) + dispatcher.rs + templates/constitution.md, src/api/companion.ts, src/lib/bindings/ (regen), src/i18n/locales/*.json (additive plugins.companion.orb_*/shortcut_* only), docs/features/companion/README.md + new orb-quick-response doc. Leader key = ';'.
+- Note: 2 features — (1) orb numbered quick-response buttons + animated question bubble + TTS of Athena-authored shortPrompt; (2) ';' leader → which-key shortcut mode, number→orbDecision response, expandable registry. Ledger edited in MAIN checkout only (per feedback_active_runs_md_unsafe_in_concurrent_worktrees). Coexists with concurrent companion chat-window branch (unmerged) via worktree isolation.
+
 ### slack-inbound — Slack hackathon Phase 1 (connector ext + inbound poller)
 - Started: 2026-05-29 08:42 (this session)
 - Status: CODE-COMPLETE on branch (6 commits ff831bb79..93306661f), pending live sandbox round-trip + merge. cargo check + cargo test --lib (10 passed) + tsc (0 err) + i18n gate + eslint-staged all green. NOT yet merged to master.
