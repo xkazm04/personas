@@ -364,6 +364,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-29 — completed] sync — reconcile local master ↔ origin/master to 1:1**
+  - **What:** Local master (24 commits: certification/eval/engine/template work) and origin/master (113 commits: director/companion/goals/cloud/monitor) had diverged from base `188f24f93`. Merged origin into master (`57ed232a5`) keeping both sides; pushed so both now point to `1470816f2` (0/0 divergence verified).
+  - **Conflicts (9, all preserving progress):** 6 cert seeds relocated `docs/test/seeds/` → origin's `docs/tests/autonomy-eval/seeds/` (content byte-identical); `active-runs.md` unioned both Recently-completed entries; `template_checksums.rs` + `templateChecksums.ts` regenerated (114 checksums covering both sides' templates).
+  - **Follow-up commit `1470816f2`:** untracked the 8 cert `run-*/` evidence dirs (88 files) that survived the merge tracked under the abandoned `docs/test/runs/` path; relocated on disk under the new hub where the `run-*/` gitignore covers them — adopts origin's keep-local-only policy, evidence preserved locally.
+  - **Validation:** `npx tsc --noEmit` clean (0 errors); `cargo check --features desktop` clean (exit 0, 144 pre-existing warnings); pre-push typecheck + i18n-coverage hooks green.
+  - **Left untouched (not mine):** 23 other sessions' untracked `run-*/` dirs + `_ab-*.log` scratch at `docs/test/runs/`; in-flight Leonardo skill tooling (`leonardo-image.mjs` + 3 new tools) in working tree.
+
 - **[2026-05-28 — completed] /research — claude-code-2-1-137-to-154**
   - **What:** Harvested Claude Code CHANGELOG 2.1.137→2.1.154. Host-first read of `provider/claude.rs` showed the version floor was already at 2.1.149 (advanced by an undocumented 2026-05-23 run that covered 2.1.137–2.1.150), so the effective new range was just 2.1.152/153/154. 2 code findings, both executed in-session; 10 catches + ~70 NA (interactive-TUI / `claude agents` / background-session).
   - **Commits (master):** `2ab31b304` (minimum_version floor 2.1.149→2.1.154 + wrapping-fix doc paragraph), `3ad9c1dfb` (Opus 4.8 adoption: bumped explicit `claude-opus-4-7` pins → `claude-opus-4-8` in Athena session + brain ×3 + build_session design-agent guidance + team-studio dropdown), `bfc301892` (codebase-stack.md fact reconciliation).
