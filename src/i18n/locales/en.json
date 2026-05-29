@@ -11525,6 +11525,7 @@
       "toolbar_label": "Quick actions",
       "help_capabilities": "What can Athena do?",
       "analyze_fleet": "Analyze the fleet",
+      "analyze_fleet_started": "Fleet analysis started — Athena is reviewing the teams.",
       "voice_enable": "Enable spoken summaries",
       "voice_disable": "Mute spoken summaries",
       "voice_controls_label": "Voice controls",

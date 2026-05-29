@@ -11531,6 +11531,7 @@ export type Translations = {
       toolbar_label: string;
       help_capabilities: string;
       analyze_fleet: string;
+      analyze_fleet_started: string;
       voice_enable: string;
       voice_disable: string;
       voice_controls_label: string;

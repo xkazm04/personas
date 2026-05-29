@@ -885,17 +885,7 @@ async fn execute_analyze_fleet(
         .and_then(|v| v.as_i64())
         .unwrap_or(14)
         .clamp(1, 90);
-    let directive = build_fleet_directive(team, days);
-    crate::companion::session::spawn_proactive_turn(
-        app.clone(),
-        std::sync::Arc::new(state.user_db.clone()),
-        std::sync::Arc::new(state.db.clone()),
-        #[cfg(feature = "ml")]
-        state.embedding_manager.clone(),
-        "fleet_analysis".to_string(),
-        team.map(str::to_string),
-        directive,
-    );
+    spawn_fleet_analysis(state, app, team, days);
     let scope = team
         .map(|t| format!("team `{t}`"))
         .unwrap_or_else(|| "the whole fleet".into());
@@ -939,6 +929,46 @@ fn build_fleet_directive(team: Option<&str>, days: i64) -> String {
          Ground every claim in real data. If a team is healthy and nothing material \
          changed since your last note, say so in one line rather than inventing work."
     )
+}
+
+/// Shared spawn used by both the approval-gated `analyze_fleet` op executor and
+/// the direct `companion_analyze_fleet` command (the skill button). Spawns a
+/// proactive turn carrying the fleet-analysis directive.
+fn spawn_fleet_analysis(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    team: Option<&str>,
+    days: i64,
+) {
+    let directive = build_fleet_directive(team, days);
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        std::sync::Arc::new(state.user_db.clone()),
+        std::sync::Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "fleet_analysis".to_string(),
+        team.map(str::to_string),
+        directive,
+    );
+}
+
+/// Direct, deterministic fleet-analysis trigger for the "Analyze fleet" skill
+/// button. Unlike a chat message — which Athena can reasonably shortcut to an
+/// inline read from her observability digest — this ALWAYS spawns the
+/// rubric-graded proactive turn that writes the per-team timeline note (the
+/// continuity that is the whole point). The button click is the consent, so
+/// there is no approval gate.
+#[tauri::command]
+pub fn companion_analyze_fleet(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    team_id: Option<String>,
+    days: Option<i64>,
+) -> Result<String, AppError> {
+    let days = days.unwrap_or(14).clamp(1, 90);
+    spawn_fleet_analysis(&state, &app, team_id.as_deref(), days);
+    Ok("Fleet analysis started.".to_string())
 }
 
 fn execute_update_goal_status(

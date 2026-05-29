@@ -2305,6 +2305,7 @@ pub fn run() {
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
+            commands::companion::approvals::companion_analyze_fleet,
             commands::companion::brain::companion_list_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,

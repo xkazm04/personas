@@ -56,6 +56,7 @@ import {
   companionRequestImprovement,
   companionResetConversation,
   companionSendMessage,
+  companionAnalyzeFleet,
   type BackgroundJob,
   type BrainKind,
   type CompanionRecallPreviewEvent,
@@ -2096,11 +2097,13 @@ function Body(props: BodyProps) {
       </div>
       <CompanionToolbar
         onAskCapabilities={askCapabilities}
-        onAnalyzeFleet={() =>
-          void send(
-            'How are the teams doing? Review the fleet and flag anything off track.',
-          )
-        }
+        onAnalyzeFleet={() => {
+          // Deterministic trigger — bypasses the chat turn so Athena can't
+          // shortcut to an inline read; spawns the rubric-graded analysis turn
+          // (which streams back into this panel) + writes the timeline note.
+          void companionAnalyzeFleet().catch(silentCatch('companion_analyze_fleet'));
+          useToastStore.getState().addToast(t.plugins.companion.analyze_fleet_started, 'success');
+        }}
         onOpenBrain={() =>
           setBrainView({
             open: !brainView.open,
