@@ -63,6 +63,7 @@ pub mod desktop_discovery;
 #[cfg(feature = "desktop")]
 pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
+pub mod channel_reply;
 pub mod desktop_security;
 pub mod digest;
 pub mod director;
