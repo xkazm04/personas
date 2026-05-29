@@ -17,6 +17,26 @@
       "tourEvent": "tour:persona-promoted",
       "description": "Coaches user from prompt → draft → adopted persona via the build session"
     },
+    "team-canvas-intro": {
+      "stepFile": null,
+      "tourEvent": "tour:team-canvas-explored",
+      "description": "Teams tour — what a team is: canvas, nodes=agents, edges=handoffs, home-team anchor"
+    },
+    "team-chaining": {
+      "stepFile": null,
+      "tourEvent": "tour:team-chaining-understood",
+      "description": "Teams tour — event-chain orchestration (finish → emit → listen → run)"
+    },
+    "team-assignments": {
+      "stepFile": null,
+      "tourEvent": "tour:team-assignment-explored",
+      "description": "Teams tour — goal-driven assignments (decompose, match, parallel DAG, review)"
+    },
+    "team-memory-goals": {
+      "stepFile": null,
+      "tourEvent": "tour:team-memory-explored",
+      "description": "Teams tour — shared team memory, goal linking, Director/Attention oversight"
+    },
     "template-picker": {
       "stepFile": "src/features/onboarding/components/TemplatePickerStep.tsx",
       "tourEvent": "tour:persona-draft-ready",
@@ -404,6 +424,7 @@
         "src-tauri/src/engine/team_assignment_orchestrator.rs",
         "src-tauri/src/engine/team_assignment_matching.rs"
       ],
+      "onboardingFlows": ["team-canvas-intro", "team-chaining", "team-assignments", "team-memory-goals"],
       "marketingModule": "pipeline"
     },
     {

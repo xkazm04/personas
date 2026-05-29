@@ -4,6 +4,7 @@ import {
   Puzzle, Bot, User, Wrench, Layers,
   CalendarClock, CalendarRange, Clock,
   LayoutGrid, Wand2, BookOpen, Rocket,
+  Network, ListChecks, Target,
 } from 'lucide-react';
 import {
   getTourSurface,
@@ -44,6 +45,11 @@ const ICON_MAP: Record<string, typeof Key> = {
   'templates-page': LayoutGrid,
   'templates-adopt': Wand2,
   'recipes-tab': BookOpen,
+  // Teams & Orchestration
+  'team-canvas-intro': Network,
+  'team-chaining': Link,
+  'team-assignments': ListChecks,
+  'team-memory-goals': Target,
 };
 
 export function getStepIcon(stepId: string): typeof Key {
@@ -60,6 +66,7 @@ const STEP_TO_SURFACE: Record<string, TourSurfaceKey> = {
   'plugins-browse': 'amber', 'plugin-companion': 'amber', 'plugin-twin': 'amber', 'plugin-dev-tools': 'amber', 'plugin-others': 'amber',
   'schedules-page': 'emerald', 'schedules-views': 'emerald', 'schedules-attach': 'emerald',
   'templates-page': 'indigo', 'templates-adopt': 'indigo', 'recipes-tab': 'indigo',
+  'team-canvas-intro': 'emerald', 'team-chaining': 'emerald', 'team-assignments': 'emerald', 'team-memory-goals': 'emerald',
 };
 
 /**

@@ -28,6 +28,7 @@ const TOURS = [
   'plugins-explorer',
   'schedules-mastery',
   'templates-recipes',
+  'teams-orchestration',
 ] as const;
 
 let app: CompanionBridge;
