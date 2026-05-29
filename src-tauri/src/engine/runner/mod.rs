@@ -8,6 +8,7 @@ mod credentials;
 mod env;
 mod globals;
 mod stages;
+mod team_context;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
@@ -792,6 +793,35 @@ pub async fn run_execution(
                     prompt_text
                 }
             },
+            _ => prompt_text,
+        }
+    } else {
+        prompt_text
+    };
+
+    // Team-alignment "pre-ritual" — wrap every member execution with awareness
+    // of its team: who its teammates are (roster + capabilities), and the team's
+    // active goals. The persona then self-decides — from its own capabilities —
+    // whether and how the work aligns (LLM-driven relevance, no per-execution
+    // match). This is what makes goals actually steer team behavior at runtime,
+    // rather than living only in the Goals UI. Bounded + DB-free rendering — see
+    // `team_context.rs`. Skip on session resume (already in the persona's context).
+    let prompt_text = if !is_session_resume {
+        match persona.home_team_id.as_deref() {
+            Some(team_id) if !team_id.is_empty() => {
+                let team_name = workspace
+                    .as_ref()
+                    .map(|w| w.name.as_str())
+                    .unwrap_or("your team");
+                match team_context::build_team_alignment_block(&pool, &persona, team_name, team_id) {
+                    Some(block) => {
+                        logger
+                            .log("[TEAM-ALIGN] Injected team roster + active-goal alignment block");
+                        format!("{prompt_text}{block}")
+                    }
+                    None => prompt_text,
+                }
+            }
             _ => prompt_text,
         }
     } else {
