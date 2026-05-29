@@ -464,6 +464,16 @@ pub fn dev_tools_attention_queue(
     repo::attention_queue(&state.db)
 }
 
+/// `(goal_id, team_name)` pairs for every goal a team_assignment is advancing —
+/// powers the "advancing team" badge on the goal Map (O4).
+#[tauri::command]
+pub fn dev_tools_goal_advancing_teams(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<(String, String)>, AppError> {
+    require_auth_sync(&state)?;
+    repo::goal_advancing_teams(&state.db)
+}
+
 // ============================================================================
 // Context Groups
 // ============================================================================

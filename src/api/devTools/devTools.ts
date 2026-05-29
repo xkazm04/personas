@@ -214,6 +214,10 @@ export const portfolioSummary = () =>
 export const attentionQueue = () =>
   invoke<AttentionQueue>("dev_tools_attention_queue", {});
 
+/** [goalId, teamName] for goals a team_assignment is advancing — the goal Map's "advancing team" badge (O4). Returns [] on failure (viz-only). */
+export const goalAdvancingTeams = () =>
+  safeInvoke<[string, string][]>([], "dev_tools_goal_advancing_teams", {});
+
 // ============================================================================
 // Cross-Project Metadata Map
 // ============================================================================

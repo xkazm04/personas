@@ -3604,6 +3604,22 @@ pub fn list_competition_slots(
     })
 }
 
+/// `(goal_id, team_name)` for every team_assignment that advances a goal — the
+/// canonical "this team is working this goal" link, surfaced on the goal Map.
+pub fn goal_advancing_teams(pool: &DbPool) -> Result<Vec<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT DISTINCT ta.goal_id, t.name
+         FROM team_assignments ta JOIN persona_teams t ON t.id = ta.team_id
+         WHERE ta.goal_id IS NOT NULL",
+    )?;
+    let rows = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
 #[cfg(test)]
 mod goal_status_tests {
     use super::{days_between, goal_status_is_ongoing, normalize_goal_status};
