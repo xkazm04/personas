@@ -16,20 +16,7 @@ import { gatherBundle } from './gather.mjs';
 import { arg } from './lib/cli.mjs';
 const RUNS = join('docs', 'test', 'runs');
 
-function gitStatusFingerprint(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-}
-function gitHead(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-}
+import { head as gitHead, statusFingerprint as gitStatusFingerprint } from './lib/git.mjs';
 
 const runId = arg('--run');
 if (!runId) {

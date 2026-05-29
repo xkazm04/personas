@@ -41,31 +41,7 @@ function configHash(db, personaIds) {
   return h.digest('hex').slice(0, 16);
 }
 
-function gitHead(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-}
-function gitDirty(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' }).trim().length > 0;
-  } catch {
-    return null;
-  }
-}
-// Fingerprint the working tree (tracked + untracked) so we detect changes a
-// run made even when it didn't COMMIT (HEAD unchanged). Run-2/3 finding:
-// HEAD-only detection reported "repo changed: false" while the team had
-// modified src files + added tests in the working tree.
-function gitStatusFingerprint(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-}
+import { head as gitHead, dirty as gitDirty, statusFingerprint as gitStatusFingerprint } from './lib/git.mjs';
 
 async function main() {
   const seedId = arg('--seed');

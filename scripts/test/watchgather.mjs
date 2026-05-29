@@ -22,7 +22,7 @@ function loadSeed(id) {
   }
   throw new Error(`seed not found: ${id}`);
 }
-const gitHead = (root) => { try { return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { return null; } };
+import { head as gitHead } from './lib/git.mjs';
 
 const seed = loadSeed(arg('--seed'));
 const sinceIso = arg('--since');

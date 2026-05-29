@@ -56,7 +56,7 @@ function memState(personaIds, teamId) {
   return { total: m.total || 0, learned: m.learned || 0, fromReviews: m.from_reviews || 0, access: m.access || 0, active: m.active || 0, maxVersion: v.maxv || 0, promptVersions: v.versions || 0, resolvedReviews: r.resolved || 0, pendingReviews: r.pending || 0, teamLedger, teamDecisions };
 }
 
-function gitBase(root) { try { return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { return null; } }
+import { head as gitBase } from './lib/git.mjs';
 function resetRepo(root, base) {
   try {
     // back to a clean base branch; drop dev-clone/* work-branches
