@@ -894,40 +894,113 @@ async fn execute_analyze_fleet(
     )))
 }
 
-/// The directive handed to the proactive fleet-analysis turn. It names the
-/// certification rubric dimensions, demands grounding in current data, asks for
-/// a per-team timeline memory note (continuity across runs), and licenses a
-/// short "nothing material changed" stop so Athena doesn't manufacture work.
-fn build_fleet_directive(team: Option<&str>, days: i64) -> String {
+/// Compact per-team execution digest from the OPERATIONAL store (state.db),
+/// embedded in the directive so the turn reasons over real numbers. Best-effort:
+/// any query failure degrades to a short note rather than aborting the turn.
+fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) -> String {
+    let conn = match db.get() {
+        Ok(c) => c,
+        Err(e) => return format!("(fleet data unavailable: {e})"),
+    };
+    let window = format!("-{days} days");
+    let all_teams: Vec<(String, String)> = match conn
+        .prepare("SELECT id, name FROM persona_teams WHERE COALESCE(enabled,1)=1 ORDER BY name")
+    {
+        Ok(mut stmt) => stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .map(|rows| rows.filter_map(Result::ok).collect())
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    let teams: Vec<(String, String)> = all_teams
+        .into_iter()
+        .filter(|(id, name)| {
+            team.map_or(true, |t| {
+                t == id || name.to_lowercase().contains(&t.to_lowercase())
+            })
+        })
+        .collect();
+    if teams.is_empty() {
+        return "(no matching teams in the operational store)".to_string();
+    }
+    let mut out = format!("## Fleet data — operational store (personas.db), last {days}d\n");
+    for (id, name) in teams {
+        let short = &id[..id.len().min(8)];
+        let agg = conn.query_row(
+            "SELECT COUNT(*),
+                    SUM(CASE WHEN status IN ('failed','error','timeout') THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN business_outcome='value_delivered' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN business_outcome='partial' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN business_outcome='precondition_failed' THEN 1 ELSE 0 END),
+                    COALESCE(SUM(cost_usd),0),
+                    AVG(director_score)
+             FROM persona_executions
+             WHERE COALESCE(is_simulation,0)=0
+               AND created_at >= datetime('now', ?1)
+               AND persona_id IN (
+                 SELECT id FROM personas WHERE home_team_id = ?2
+                 UNION SELECT persona_id FROM persona_team_members WHERE team_id = ?2
+               )",
+            params![window, id],
+            |r| {
+                Ok((
+                    r.get::<_, i64>(0)?,
+                    r.get::<_, i64>(1).unwrap_or(0),
+                    r.get::<_, i64>(2).unwrap_or(0),
+                    r.get::<_, i64>(3).unwrap_or(0),
+                    r.get::<_, i64>(4).unwrap_or(0),
+                    r.get::<_, f64>(5).unwrap_or(0.0),
+                    r.get::<_, Option<f64>>(6).unwrap_or(None),
+                ))
+            },
+        );
+        let goal_linked: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM team_assignments ta JOIN dev_goals g ON g.id = ta.goal_id WHERE ta.team_id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        match agg {
+            Ok((total, failed, vd, partial, pf, cost, dir)) => {
+                let dir_s = dir.map(|d| format!("{d:.1}/5")).unwrap_or_else(|| "—".into());
+                out.push_str(&format!(
+                    "- **{name}** (`{short}`): {total} exec · {failed} failed · value-delivered {vd} · partial {partial} · precond-failed {pf} · ${cost:.2} · director {dir_s} · goal-linked: {}\n",
+                    if goal_linked > 0 { "yes" } else { "NO" }
+                ));
+            }
+            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data)\n")),
+        }
+    }
+    out
+}
+
+/// The directive handed to the proactive fleet-analysis turn. The per-team data
+/// is pre-gathered (`gather_fleet_digest`) and embedded, so Athena reasons over
+/// real numbers instead of trying to fetch them via the wrong-DB connector.
+fn build_fleet_directive(team: Option<&str>, days: i64, digest: &str) -> String {
     let scope = match team {
-        Some(t) => format!("the team with id `{t}`"),
+        Some(t) => format!("the team `{t}`"),
         None => "every active team (the whole fleet)".to_string(),
     };
     format!(
         "Run a fleet analysis of {scope} over the last {days} days. You are the \
          post-certification analyst: the user is letting all teams run and needs to not \
          lose control.\n\n\
-         Gather current state from what you can see — your observability digest, and the \
-         personas_database connector if you need per-team detail (executions, \
-         business_outcome, director_score, cost, goal links). For each team, assess \
-         against these certification dimensions:\n\
-         1. On track — is the team tied to a tracked goal and is progress advancing? Many \
-         teams run via event-chains with NO goal link — flag that.\n\
-         2. Value delivery — share of runs that are value_delivered vs partial / \
-         precondition_failed / no_input_available.\n\
-         3. Health — failure rate, retries, stalls.\n\
-         4. Cost — total + cost-per-value; call out outliers.\n\
-         5. Roster validity — are only the team's own personas executing for it?\n\
-         6. Portfolio balance — is the team only feature-pushing, or also testing / \
-         stabilizing / cleaning up?\n\n\
-         Then: (a) recall any prior fleet-analysis note for these teams from your memory \
-         so you can speak to the timeline (did last round's gap get fixed?); (b) write a \
-         concise per-team timeline note via write_fact (scope the fact to the team) so the \
-         next analysis builds on this one; (c) propose at most a few concrete improvements \
-         — a goal link/update (update_dev_goal), a template or roster fix, or a persona to \
-         add — as your normal approval-gated ops, not just prose.\n\n\
-         Ground every claim in real data. If a team is healthy and nothing material \
-         changed since your last note, say so in one line rather than inventing work."
+         The per-team data is ALREADY GATHERED for you below, from the OPERATIONAL store. \
+         Reason over THIS — do NOT try to fetch it via a connector (your personas_database \
+         connector points at the companion-brain DB, not the execution store):\n\n\
+         {digest}\n\n\
+         For each team, assess against these certification dimensions: (1) on-track — is it \
+         tied to a tracked goal (goal-linked: NO is a real gap); (2) value delivery — \
+         value-delivered vs partial / precond-failed; (3) health — failures; (4) cost + \
+         outliers; (5) portfolio balance. Then: (a) recall any prior fleet-analysis note \
+         from your memory for timeline continuity (did last round's gap get fixed?); \
+         (b) write a concise per-team timeline note via write_fact (scope the fact to the \
+         team) so the next review builds on this one; (c) propose at most a few concrete \
+         improvements (update_dev_goal, a template/roster fix, a persona to add) as your \
+         approval-gated ops. Ground every claim in the data above. If a team is healthy and \
+         nothing changed since your last note, say so in one line."
     )
 }
 
@@ -940,7 +1013,12 @@ fn spawn_fleet_analysis(
     team: Option<&str>,
     days: i64,
 ) {
-    let directive = build_fleet_directive(team, days);
+    // Pre-gather per-team data from the OPERATIONAL store (state.db) and embed
+    // it in the directive. Athena's personas_database connector points at the
+    // companion-brain DB, not the execution store, so asking her to fetch it
+    // fails — we supply it instead.
+    let digest = gather_fleet_digest(&state.db, team, days);
+    let directive = build_fleet_directive(team, days, &digest);
     crate::companion::session::spawn_proactive_turn(
         app.clone(),
         std::sync::Arc::new(state.user_db.clone()),
