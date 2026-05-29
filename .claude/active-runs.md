@@ -32,6 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### goals-advance — Teams advance their goals (initiator + close-loop + autonomous tick + UI)
+- Started: 2026-05-29 (this session, follows goals-exec-awareness)
+- Status: COMPLETE — 5 commits on master: 9bade8928 (P1-P3 close-loop + initiator) + 5ec15df6c (P4 default-OFF tick) + ee2e37a36 (source CHECK fix) + 02e0a7b3b (UI button) + 01a72d3e6 (docs). cargo check --lib --features desktop + 3 unit tests (apply_resolved_goal_progress) green; tsc clean. Live-validated on :17320: advance_team_goal built a 4-step (one per to-do) goal-linked running assignment on ai-bookkeeper + flipped goal open→in-progress; aborted + reverted to pre-test state. NOT pushed (staying local). Left in Active (ledger concurrently dirty).
+- Branch: master (need master for live :17320 rebuild/restart validation)
+- Paths: NEW src-tauri/src/engine/goal_advance.rs; engine/team_assignment_orchestrator.rs (close-loop hooks); db/repos/dev_tools.rs (apply_resolved_goal_progress + mark_goal_in_progress); engine/subscription.rs + background.rs (GoalAdvanceSubscription); db/settings_keys.rs (autonomous_goal_advancement); commands/teams/assignments.rs + lib.rs (advance_team_goal); src/api/pipeline/assignments.ts + sub_goals/GoalDetailDrawer.tsx + i18n (Advance button). DISJOINT from orb/slack/director/companion worktrees.
+- Note: Hybrid step source (to-dos→steps verbatim, else decompose); progress auto-closes on team-done (never regresses manual); autonomous tick default-OFF with one-active-per-goal + 30-min cooldown guardrails.
+
 ### goals-exec-awareness — Unify goals + wire team-alignment "pre-ritual" into persona executions
 - Started: 2026-05-29 (this session)
 - Status: COMPLETE — 2 commits (4f3ff8d2a code + 43d50f7e9 docs) on master. cargo check --lib --features desktop + 10 unit tests green. Live-validated on :17320: [TEAM-ALIGN] confirmed in execution 5143b881 log; 7 teams backfilled dev_projects.team_id (via dev_tools_update_project); read-only probe shows roster+capabilities+active-goal all resolve per team. Left in Active (ledger concurrently dirty); relocate to Recently completed later.
