@@ -57,6 +57,38 @@ pub struct GitHubPullRequest {
     pub state: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct GitHubRelease {
+    pub id: i64,
+    pub tag_name: String,
+    pub name: String,
+    pub html_url: String,
+    pub draft: bool,
+    pub prerelease: bool,
+    pub created_at: String,
+}
+
+/// Result of an automated patch-release attempt.
+///
+/// `created == false` with `new_tag == Some(..)` means a release *would* be
+/// cut (either a dry-run, or skipped only because the run was a dry-run).
+/// `created == false` with `new_tag == None` means there was nothing to
+/// release (no new commits on the default branch since the last release).
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct PatchReleaseOutcome {
+    pub created: bool,
+    pub previous_tag: Option<String>,
+    pub new_tag: Option<String>,
+    pub commits_since: i64,
+    pub release_url: Option<String>,
+    pub dry_run: bool,
+    pub reason: String,
+}
+
 /// Raw GitHub API repo response (subset of fields).
 #[derive(Debug, Deserialize)]
 struct GhRepoRaw {
@@ -81,6 +113,43 @@ struct GhPullRequestRaw {
 struct GhRefRaw {
     #[serde(rename = "ref")]
     ref_name: String,
+}
+
+/// Raw GitHub API release response (subset of fields).
+#[derive(Debug, Deserialize)]
+struct GhReleaseRaw {
+    id: i64,
+    tag_name: String,
+    #[serde(default)]
+    name: Option<String>,
+    html_url: String,
+    #[serde(default)]
+    draft: bool,
+    #[serde(default)]
+    prerelease: bool,
+    created_at: String,
+}
+
+impl From<GhReleaseRaw> for GitHubRelease {
+    fn from(r: GhReleaseRaw) -> Self {
+        let tag_name = r.tag_name;
+        GitHubRelease {
+            id: r.id,
+            // GitHub allows a null release name — fall back to the tag.
+            name: r.name.filter(|n| !n.is_empty()).unwrap_or_else(|| tag_name.clone()),
+            tag_name,
+            html_url: r.html_url,
+            draft: r.draft,
+            prerelease: r.prerelease,
+            created_at: r.created_at,
+        }
+    }
+}
+
+/// Raw GitHub API compare response (only the field we need).
+#[derive(Debug, Deserialize)]
+struct GhCompareRaw {
+    ahead_by: i64,
 }
 
 impl GitHubClient {
@@ -279,6 +348,256 @@ impl GitHubClient {
         Err(AppError::Execution(format!(
             "GitHub dispatch returned HTTP {status}: {resp_body}"
         )))
+    }
+
+    // ---- Releases (app-native CICD) ----
+
+    /// Fetch the latest published (non-draft, non-prerelease) release.
+    ///
+    /// Returns `Ok(None)` when the repo has no releases yet (GitHub 404).
+    pub async fn get_latest_release(
+        &self,
+        owner: &str,
+        repo: &str,
+    ) -> Result<Option<GitHubRelease>, AppError> {
+        let url = format!("https://api.github.com/repos/{owner}/{repo}/releases/latest");
+        let resp = self
+            .http
+            .get(&url)
+            .headers(self.headers())
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("GitHub latest-release request failed: {e}")))?;
+
+        if resp.status().as_u16() == 404 {
+            return Ok(None);
+        }
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Execution(format!(
+                "GitHub latest-release returned HTTP {status}: {body}"
+            )));
+        }
+
+        let raw: GhReleaseRaw = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Execution(format!("Failed to parse GitHub release: {e}")))?;
+        Ok(Some(raw.into()))
+    }
+
+    /// Number of commits `head` is ahead of `base` (a tag, branch, or SHA).
+    pub async fn compare_commits(
+        &self,
+        owner: &str,
+        repo: &str,
+        base: &str,
+        head: &str,
+    ) -> Result<i64, AppError> {
+        let url = format!("https://api.github.com/repos/{owner}/{repo}/compare/{base}...{head}");
+        let resp = self
+            .http
+            .get(&url)
+            .headers(self.headers())
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("GitHub compare request failed: {e}")))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Execution(format!(
+                "GitHub compare returned HTTP {status}: {body}"
+            )));
+        }
+
+        let raw: GhCompareRaw = resp
+            .json()
+            .await
+            .map_err(|e| AppError::Execution(format!("Failed to parse GitHub compare: {e}")))?;
+        Ok(raw.ahead_by)
+    }
+
+    /// Create a release. GitHub creates the underlying tag from
+    /// `target_commitish` (defaults to the repo's default branch) if it does
+    /// not already exist.
+    pub async fn create_release(
+        &self,
+        owner: &str,
+        repo: &str,
+        tag_name: &str,
+        name: &str,
+        body: &str,
+        target_commitish: Option<&str>,
+    ) -> Result<GitHubRelease, AppError> {
+        let url = format!("https://api.github.com/repos/{owner}/{repo}/releases");
+        let mut payload = serde_json::json!({
+            "tag_name": tag_name,
+            "name": name,
+            "body": body,
+            "draft": false,
+            "prerelease": false,
+        });
+        if let Some(t) = target_commitish {
+            payload["target_commitish"] = serde_json::json!(t);
+        }
+
+        let resp = self
+            .http
+            .post(&url)
+            .headers(self.headers())
+            .json(&payload)
+            .send()
+            .await
+            .map_err(|e| AppError::Execution(format!("GitHub release create failed: {e}")))?;
+
+        if !resp.status().is_success() {
+            let status = resp.status().as_u16();
+            let resp_body = resp.text().await.unwrap_or_default();
+            return Err(AppError::Execution(format!(
+                "GitHub release create returned HTTP {status}: {resp_body}"
+            )));
+        }
+
+        let raw: GhReleaseRaw = resp.json().await.map_err(|e| {
+            AppError::Execution(format!("Failed to parse GitHub release response: {e}"))
+        })?;
+        Ok(raw.into())
+    }
+
+    /// The CICD primitive: if the default branch has advanced since the last
+    /// release (a merge landed), cut a new release with the PATCH number
+    /// incremented. No-op when there are no new commits. `dry_run` reports
+    /// what it would do without creating anything.
+    pub async fn create_patch_release(
+        &self,
+        owner: &str,
+        repo: &str,
+        base_branch: &str,
+        dry_run: bool,
+    ) -> Result<PatchReleaseOutcome, AppError> {
+        let latest = self.get_latest_release(owner, repo).await?;
+        let previous_tag = latest.as_ref().map(|r| r.tag_name.clone());
+
+        // Detect new commits on the default branch since the last release.
+        let commits_since = match previous_tag.as_deref() {
+            Some(tag) => self.compare_commits(owner, repo, tag, base_branch).await?,
+            None => 0,
+        };
+
+        if previous_tag.is_some() && commits_since == 0 {
+            return Ok(PatchReleaseOutcome {
+                created: false,
+                previous_tag,
+                new_tag: None,
+                commits_since: 0,
+                release_url: None,
+                dry_run,
+                reason: "No new commits on the default branch since the last release — nothing to release.".into(),
+            });
+        }
+
+        let new_tag = match previous_tag.as_deref() {
+            Some(t) => bump_patch(t)?,
+            None => "v0.0.1".to_string(),
+        };
+
+        if dry_run {
+            return Ok(PatchReleaseOutcome {
+                created: false,
+                previous_tag: previous_tag.clone(),
+                new_tag: Some(new_tag.clone()),
+                commits_since,
+                release_url: None,
+                dry_run: true,
+                reason: format!(
+                    "Dry run: would create release {new_tag} ({commits_since} new commit(s) since {})",
+                    previous_tag.as_deref().unwrap_or("the initial commit")
+                ),
+            });
+        }
+
+        let body = format!(
+            "Automated patch release cut by Personas.\n\n{} new commit(s) since {}.",
+            commits_since,
+            previous_tag.as_deref().unwrap_or("the initial commit"),
+        );
+        let release = self
+            .create_release(owner, repo, &new_tag, &new_tag, &body, Some(base_branch))
+            .await?;
+
+        Ok(PatchReleaseOutcome {
+            created: true,
+            previous_tag,
+            new_tag: Some(release.tag_name.clone()),
+            commits_since,
+            release_url: Some(release.html_url),
+            dry_run: false,
+            reason: format!("Created release {} on {owner}/{repo}.", release.tag_name),
+        })
+    }
+}
+
+/// Increment the PATCH component of a `MAJOR.MINOR.PATCH` semver tag,
+/// preserving an optional leading `v`/`V`. A two-part `MAJOR.MINOR` is
+/// treated as `MAJOR.MINOR.0`. Pre-release / build-metadata suffixes are not
+/// supported (returns a `Validation` error) — release tags here are plain.
+pub fn bump_patch(tag: &str) -> Result<String, AppError> {
+    let trimmed = tag.trim();
+    let (prefix, rest) = match trimmed.strip_prefix(['v', 'V']) {
+        Some(stripped) => ("v", stripped),
+        None => ("", trimmed),
+    };
+    let mut parts: Vec<u64> = rest
+        .split('.')
+        .map(|p| p.parse::<u64>())
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|_| {
+            AppError::Validation(format!("Cannot parse a MAJOR.MINOR.PATCH version from tag '{tag}'"))
+        })?;
+    if parts.is_empty() || parts.len() > 3 {
+        return Err(AppError::Validation(format!(
+            "Tag '{tag}' is not a MAJOR.MINOR.PATCH version"
+        )));
+    }
+    while parts.len() < 3 {
+        parts.push(0);
+    }
+    parts[2] += 1;
+    Ok(format!("{prefix}{}.{}.{}", parts[0], parts[1], parts[2]))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bump_patch;
+
+    #[test]
+    fn bumps_patch_preserving_v_prefix() {
+        assert_eq!(bump_patch("v0.0.1").unwrap(), "v0.0.2");
+        assert_eq!(bump_patch("v1.2.9").unwrap(), "v1.2.10");
+    }
+
+    #[test]
+    fn bumps_patch_without_prefix() {
+        assert_eq!(bump_patch("0.1.2").unwrap(), "0.1.3");
+    }
+
+    #[test]
+    fn pads_two_part_version() {
+        assert_eq!(bump_patch("v2.5").unwrap(), "v2.5.1");
+    }
+
+    #[test]
+    fn tolerates_surrounding_whitespace() {
+        assert_eq!(bump_patch("  v3.0.0  ").unwrap(), "v3.0.1");
+    }
+
+    #[test]
+    fn rejects_non_semver() {
+        assert!(bump_patch("latest").is_err());
+        assert!(bump_patch("v1.2.3-rc.1").is_err());
+        assert!(bump_patch("1.2.3.4").is_err());
     }
 }
 

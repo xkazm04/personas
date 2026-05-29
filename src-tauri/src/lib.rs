@@ -2121,6 +2121,7 @@ pub fn run() {
             // Tools -- GitHub Platform
             commands::tools::github_platform::github_list_repos,
             commands::tools::github_platform::github_check_permissions,
+            commands::tools::github_platform::github_create_patch_release,
             // Tools -- Deploy Automation
             commands::tools::deploy_automation::deploy_automation,
             // Tools -- Triggers

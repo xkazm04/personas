@@ -364,6 +364,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Recently completed (last 14 days)
 
+- **[2026-05-29 — handoff] fleet-cicd — app-native release + fleet-analysis engine + team-engagement spec (autonomous, user away)**
+  - **What:** 6-phase feature package; landed the reliable, build-safe parts and handed off the live/Athena-turn parts. **Phase 1** — app-native GitHub patch-release capability (`github.rs`: get_latest_release/compare_commits/create_release/`bump_patch`+5 tests/`create_patch_release` poll-then-release orchestrator; `github_create_patch_release` Tauri command). **Engine** — `scripts/test/fleet-analyze.mjs` read-only per-team on-track/gap watcher (the Phase-2 CICD watcher + the data source for the planned Athena skill). **Phase 6** — `docs/plans/team-engagement.md` (3a soft-motivation + 3b Product Critic spec).
+  - **Commits (master):** `6b2be45e6` (ledger), `a3eaf49ef` (3a/3b spec), `a1c133e92` (fleet-analyze), `59db4a18c` (handoff doc), `cd630af28` (Phase 1 + ts-rs bindings). All green: `cargo test --lib` (715 export + 5 bump_patch), `tsc` clean, hooks pass. **Pushed to origin.**
+  - **Deferred → handoff:** `docs/plans/fleet-cicd-status.md` — the Athena `analyze_fleet` action + proactive-turn wiring + side-panel button + live steps (create CICD goal, dry-run release, seed brain with FINDINGS lessons, drive `:17320` test). Deliberately not pushed unattended (most intricate subsystem; risk of breaking the build). Exact pickup plan in that doc.
+  - **Note:** Target `xprize-ai-bookkeeper`. Untouched: Leonardo tooling + 23 untracked run-dirs. Backend release capability not yet UI-surfaced/triggered.
+
 - **[2026-05-29 — completed] sync — reconcile local master ↔ origin/master to 1:1**
   - **What:** Local master (24 commits: certification/eval/engine/template work) and origin/master (113 commits: director/companion/goals/cloud/monitor) had diverged from base `188f24f93`. Merged origin into master (`57ed232a5`) keeping both sides; pushed so both now point to `1470816f2` (0/0 divergence verified).
   - **Conflicts (9, all preserving progress):** 6 cert seeds relocated `docs/test/seeds/` → origin's `docs/tests/autonomy-eval/seeds/` (content byte-identical); `active-runs.md` unioned both Recently-completed entries; `template_checksums.rs` + `templateChecksums.ts` regenerated (114 checksums covering both sides' templates).
