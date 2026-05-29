@@ -202,6 +202,10 @@ export const listAllGoals = () =>
 export const listGoalDependenciesForProject = (projectId: string) =>
   invoke<DevGoalDependency[]>("dev_tools_list_goal_dependencies_for_project", { projectId });
 
+/** All checklist items for one project's goals in a single query (Board card todos). */
+export const listGoalItemsForProject = (projectId: string) =>
+  safeInvoke<DevGoalItem[]>([], "dev_tools_list_goal_items_for_project", { projectId });
+
 /** Cross-project health rollup (per-project counts, at-risk, avg progress). */
 export const portfolioSummary = () =>
   invoke<PortfolioSummary>("dev_tools_portfolio_summary", {});

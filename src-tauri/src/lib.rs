@@ -2580,6 +2580,7 @@ pub fn run() {
             // Dev Tools -- Goals v2 cross-project surfaces (Portfolio / Attention / Timeline / Map)
             commands::infrastructure::dev_tools::dev_tools_list_all_goals,
             commands::infrastructure::dev_tools::dev_tools_list_goal_dependencies_for_project,
+            commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,
             commands::infrastructure::dev_tools::dev_tools_portfolio_summary,
             commands::infrastructure::dev_tools::dev_tools_attention_queue,
             // Dev Tools -- Context Groups

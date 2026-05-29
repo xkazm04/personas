@@ -436,6 +436,16 @@ pub fn dev_tools_list_goal_dependencies_for_project(
     repo::list_goal_dependencies_for_project(&state.db, &project_id)
 }
 
+/// All checklist items for one project's goals (single query; Board card todos).
+#[tauri::command]
+pub fn dev_tools_list_goal_items_for_project(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+) -> Result<Vec<DevGoalItem>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_goal_items_for_project(&state.db, &project_id)
+}
+
 /// Cross-project health rollup (per-project counts by status, at-risk, avg progress).
 #[tauri::command]
 pub fn dev_tools_portfolio_summary(
