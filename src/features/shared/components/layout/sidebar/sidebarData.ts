@@ -91,6 +91,7 @@ export const credentialItems: SubNavItem[] = [
 /** Director command-center L2 sub-nav. */
 export const directorItems: SubNavItem[] = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+  { id: 'attention', label: 'Attention', icon: AlertOctagon },
   { id: 'roster', label: 'Roster', icon: Users },
   { id: 'reviews', label: 'Reviews', icon: ClipboardCheck },
   { id: 'memory', label: 'Memory', icon: Brain },

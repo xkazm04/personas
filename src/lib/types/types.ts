@@ -396,7 +396,7 @@ export type SidebarSection = "home" | "overview" | "goals" | "personas" | "direc
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
 export type GoalsTab = "board" | "map" | "timeline" | "portfolio" | "attention";
 /** Sub-tabs of the Director command center. */
-export type DirectorTab = "overview" | "roster" | "reviews" | "memory";
+export type DirectorTab = "overview" | "roster" | "reviews" | "memory" | "attention";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
 export type DesignSubTab = "use-cases" | "prompt" | "connectors" | "triggers" | "messaging" | "automations";
