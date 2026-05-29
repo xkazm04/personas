@@ -3111,8 +3111,21 @@
     "memory_heading": "Long-term memory",
     "memory_vault_label": "Vault",
     "memory_open_brain": "Open Obsidian Brain",
+    "memory_status_on": "Active",
+    "memory_status_off": "Off",
     "run_all": "Review all in scope",
-    "running": "Reviewing…"
+    "running": "Reviewing…",
+    "tab_attention": "Attention",
+    "attention_all_clear_title": "Nothing needs attention",
+    "attention_all_clear_subtitle": "Every agent in scope has a healthy recent verdict. The Director will flag agents here as scores slip, trends decline, or reviews go stale.",
+    "group_needs_review": "Awaiting first review",
+    "group_needs_review_hint": "In scope but never scored — run the Director to get a baseline.",
+    "group_low_scores": "Low scores",
+    "group_low_scores_hint": "Latest verdict is 2 or below — these agents need coaching.",
+    "group_declining": "Declining trend",
+    "group_declining_hint": "Latest score dropped from the previous review.",
+    "group_stale": "Stale reviews",
+    "group_stale_hint": "Last reviewed over two weeks ago — re-check that they still earn their keep."
   },
   "vault": {
     "title": "Vault",

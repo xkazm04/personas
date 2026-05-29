@@ -13,7 +13,7 @@ reactive review.
 
 The Director has a **dedicated top-level route** (`director` sidebar section,
 TEAM tier) — `src/features/director/DirectorPage.tsx`, lazy-loaded from
-`PersonasPage`. It has four L2 sub-tabs, all fed by the shared
+`PersonasPage`. It has five L2 sub-tabs, all fed by the shared
 `useDirector` hook (`src/features/director/useDirector.ts`, the single source of
 truth for every Director surface):
 
@@ -23,6 +23,11 @@ truth for every Director surface):
   table; and the recent coaching feed. All of this comes from the
   `get_director_portfolio` command, which finally surfaces the `ValueRollup`
   that until now only ever reached the LLM payload.
+- **Attention** — a triage surface derived client-side from the roster:
+  each in-scope agent is bucketed into its single highest-priority concern
+  (awaiting first review → low score ≤2 → declining trend → stale review
+  >14d) with one-click review. Says "nothing needs attention" when all
+  agents are healthy.
 - **Roster** — the first-class scope manager: each starred persona with its
   latest score, trend sparkline, value rate, and last-review time, plus inline
   "Review now" / remove-from-scope, and one-click add-to-scope for unstarred

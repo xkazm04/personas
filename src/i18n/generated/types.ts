@@ -3117,8 +3117,21 @@ export type Translations = {
     memory_heading: string;
     memory_vault_label: string;
     memory_open_brain: string;
+    memory_status_on: string;
+    memory_status_off: string;
     run_all: string;
     running: string;
+    tab_attention: string;
+    attention_all_clear_title: string;
+    attention_all_clear_subtitle: string;
+    group_needs_review: string;
+    group_needs_review_hint: string;
+    group_low_scores: string;
+    group_low_scores_hint: string;
+    group_declining: string;
+    group_declining_hint: string;
+    group_stale: string;
+    group_stale_hint: string;
   };
   vault: {
     title: string;

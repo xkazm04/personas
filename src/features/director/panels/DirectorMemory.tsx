@@ -1,9 +1,9 @@
-import { Brain, ExternalLink } from 'lucide-react';
-import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { Brain, ExternalLink, Check } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DirectorSection } from '../DirectorSection';
 import type { UseDirector } from '../useDirector';
 
 /**
@@ -22,18 +22,36 @@ export function DirectorMemory({ d }: { d: UseDirector }) {
     setSidebarSection('plugins');
   };
 
+  const on = d.vaultConfigured && d.brainEnabled;
+
   return (
     <div className="pb-6">
-      <SectionCard title={t.director.memory_heading} size="sm">
+      <DirectorSection label={t.director.memory_heading} icon={Brain}>
         {d.vaultConfigured ? (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-card bg-secondary/30 border border-primary/10">
-              <div className="min-w-0 flex items-start gap-2.5">
-                <Brain className="w-4 h-4 text-violet-400/80 mt-0.5 shrink-0" />
-                <div className="min-w-0">
-                  <div className="typo-body font-medium text-foreground/90">{t.director.brain_title}</div>
-                  <p className="typo-caption text-foreground/60">{t.director.brain_subtitle}</p>
+          <div className="space-y-4">
+            {/* hero row: glowing brain chip + title + status pill + toggle */}
+            <div className="flex items-center gap-4 px-3.5 py-3.5 rounded-card bg-gradient-to-b from-secondary/40 to-secondary/15 border border-primary/10">
+              <span className="relative inline-flex items-center justify-center w-11 h-11 rounded-xl border border-violet-500/25 bg-violet-500/10 shrink-0">
+                {on && (
+                  <span aria-hidden className="absolute -inset-1.5 rounded-2xl bg-violet-500/30 blur-md animate-glow-breathe motion-reduce:hidden" />
+                )}
+                <Brain className={`relative w-5 h-5 ${on ? 'text-violet-300' : 'text-foreground/45'}`} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="typo-body font-medium text-foreground/90">{t.director.brain_title}</span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill text-[10px] uppercase tracking-wide ${
+                      on
+                        ? 'bg-[color-mix(in_oklab,var(--status-success)_14%,transparent)] text-[var(--status-success)]'
+                        : 'bg-secondary/50 text-foreground/45'
+                    }`}
+                  >
+                    {on && <Check className="w-2.5 h-2.5" />}
+                    {on ? t.director.memory_status_on : t.director.memory_status_off}
+                  </span>
                 </div>
+                <p className="typo-caption text-foreground/60 mt-0.5">{t.director.brain_subtitle}</p>
               </div>
               <AccessibleToggle
                 checked={d.brainEnabled}
@@ -52,8 +70,11 @@ export function DirectorMemory({ d }: { d: UseDirector }) {
             </Button>
           </div>
         ) : (
-          <div className="space-y-3 py-1">
-            <p className="typo-caption text-foreground/55">{t.director.brain_unavailable}</p>
+          <div className="flex flex-col items-center text-center gap-3 py-6">
+            <span className="inline-flex items-center justify-center w-12 h-12 rounded-xl border border-primary/10 bg-secondary/30">
+              <Brain className="w-5 h-5 text-foreground/40" />
+            </span>
+            <p className="typo-body text-foreground/65 max-w-[44ch]">{t.director.brain_unavailable}</p>
             <Button
               variant="secondary"
               size="sm"
@@ -64,7 +85,7 @@ export function DirectorMemory({ d }: { d: UseDirector }) {
             </Button>
           </div>
         )}
-      </SectionCard>
+      </DirectorSection>
     </div>
   );
 }

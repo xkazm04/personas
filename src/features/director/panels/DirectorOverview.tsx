@@ -1,13 +1,24 @@
-import { Bot, Gauge, Star, Coins } from 'lucide-react';
+import { Bot, Gauge, Star, Coins, BarChart3, Cpu, MessageSquareText } from 'lucide-react';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
-import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { StatCard } from '@/features/shared/components/display/StatCard';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import { DirectorSection } from '../DirectorSection';
 import { scoreTone, toneFill } from '../directorScore';
 import type { UseDirector } from '../useDirector';
+
+const SEVERITY_LINE: Record<string, string> = {
+  error: 'var(--status-error)',
+  warning: 'var(--status-warning)',
+  info: 'var(--status-info)',
+};
+const SEVERITY_CHIP: Record<string, string> = {
+  error: 'bg-red-500/15 text-red-400',
+  warning: 'bg-amber-500/15 text-amber-400',
+  info: 'bg-blue-500/15 text-blue-400',
+};
 
 /**
  * Command-center Overview: the portfolio scorecard. Surfaces the value rollup
@@ -35,12 +46,15 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
   const { rollup } = p;
   const avgTone = p.avgScore != null ? scoreTone(p.avgScore) : null;
   const maxBand = Math.max(1, ...p.scoreDistribution.map((b) => b.count));
+  const maxModelRuns = Math.max(1, ...rollup.models.map((m) => m.executions));
 
   return (
     <div className="space-y-4 pb-6">
-      {/* KPI row */}
+      {/* KPI row — staggered entry */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
+          style={{ animationDelay: '0ms' }}
+          className="animate-fade-slide-in"
           label={t.director.kpi_value_rate}
           value={<Numeric value={rollup.valueDeliveredRate} unit="ratio" precision={0} />}
           icon={Gauge}
@@ -48,6 +62,8 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
           hint={t.director.kpi_value_rate_hint}
         />
         <StatCard
+          style={{ animationDelay: '40ms' }}
+          className="animate-fade-slide-in"
           label={t.director.kpi_avg_score}
           value={p.avgScore != null ? <Numeric value={p.avgScore} precision={1} /> : '—'}
           icon={Star}
@@ -55,6 +71,8 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
           hint={t.director.kpi_avg_score_hint}
         />
         <StatCard
+          style={{ animationDelay: '80ms' }}
+          className="animate-fade-slide-in"
           label={t.director.kpi_cost_per_value}
           value={
             rollup.costPerValueDelivered != null ? (
@@ -68,6 +86,8 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
           hint={t.director.kpi_cost_per_value_hint}
         />
         <StatCard
+          style={{ animationDelay: '120ms' }}
+          className="animate-fade-slide-in"
           label={t.director.kpi_in_scope}
           value={<Numeric value={p.inScope} />}
           icon={Star}
@@ -77,23 +97,33 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
       </div>
 
       {/* Score distribution */}
-      <SectionCard title={t.director.score_distribution} size="sm">
+      <DirectorSection label={t.director.score_distribution} icon={BarChart3}>
         {p.reviewed === 0 ? (
           <p className="typo-caption text-foreground/45 py-2">{t.director.score_distribution_empty}</p>
         ) : (
-          <div className="flex items-end gap-2 h-28 pt-2">
-            {p.scoreDistribution.map((band) => {
+          <div className="flex items-end gap-2.5 h-32 pt-3">
+            {p.scoreDistribution.map((band, i) => {
               const tone = scoreTone(band.score);
-              const h = `${(band.count / maxBand) * 100}%`;
+              const hPct = (band.count / maxBand) * 100;
               return (
                 <div key={band.score} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                  <span className="typo-caption text-foreground/60 tabular-nums">{band.count}</span>
-                  <div
-                    className="w-full rounded-t transition-[height]"
-                    style={{ height: h, minHeight: band.count > 0 ? 4 : 0, backgroundColor: band.count > 0 ? tone.color : 'transparent', border: band.count === 0 ? '1px dashed var(--border)' : undefined }}
-                  />
+                  <span className="typo-caption text-foreground/70 tabular-nums">{band.count}</span>
+                  <div className="w-full flex-1 flex items-end">
+                    <div
+                      className="w-full rounded-t-md animate-fade-slide-in"
+                      style={{
+                        height: `${Math.max(hPct, band.count > 0 ? 6 : 0)}%`,
+                        minHeight: band.count > 0 ? 6 : 0,
+                        background: band.count > 0
+                          ? `linear-gradient(to top, ${tone.color}, color-mix(in oklab, ${tone.color} 55%, transparent))`
+                          : 'transparent',
+                        border: band.count === 0 ? '1px dashed var(--border)' : undefined,
+                        animationDelay: `${i * 50}ms`,
+                      }}
+                    />
+                  </div>
                   <span
-                    className="typo-caption tabular-nums px-1.5 rounded"
+                    className="typo-caption tabular-nums px-1.5 rounded font-medium"
                     style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}
                   >
                     {band.score}
@@ -103,49 +133,49 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
             })}
           </div>
         )}
-      </SectionCard>
+      </DirectorSection>
 
       {/* Model efficiency */}
       {rollup.models.length > 0 && (
-        <SectionCard title={t.director.model_efficiency} size="sm">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="typo-caption text-foreground/50 border-b border-primary/10">
-                <th className="py-1.5 font-normal">{t.director.model_col_model}</th>
-                <th className="py-1.5 font-normal text-right">{t.director.model_col_runs}</th>
-                <th className="py-1.5 font-normal text-right">{t.director.model_col_cost}</th>
-                <th className="py-1.5 font-normal text-right">{t.director.model_col_value}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rollup.models.map((m) => (
-                <tr key={m.model} className="border-b border-primary/5 last:border-0">
-                  <td className="py-1.5 typo-caption text-foreground/85 truncate max-w-[200px]" title={m.model}>{m.model}</td>
-                  <td className="py-1.5 text-right"><Numeric value={m.executions} className="typo-caption text-foreground/70" /></td>
-                  <td className="py-1.5 text-right"><Numeric value={m.costUsd} unit="usd" className="typo-caption text-foreground/70" /></td>
-                  <td className="py-1.5 text-right"><Numeric value={m.valueDelivered} className="typo-caption text-foreground/70" /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </SectionCard>
+        <DirectorSection label={t.director.model_efficiency} icon={Cpu}>
+          <div className="space-y-1.5">
+            {rollup.models.map((m) => {
+              const runPct = (m.executions / maxModelRuns) * 100;
+              const valuePct = m.executions > 0 ? (m.valueDelivered / m.executions) * 100 : 0;
+              return (
+                <div key={m.model} className="grid grid-cols-[1.6fr_auto_auto_auto] items-center gap-3 px-1.5 py-1 rounded">
+                  <div className="min-w-0">
+                    <div className="typo-caption text-foreground/85 truncate" title={m.model}>{m.model}</div>
+                    {/* runs bar with value-delivered overlay — motion as information */}
+                    <div className="mt-1 h-1.5 rounded-pill bg-secondary/50 overflow-hidden" style={{ width: `${Math.max(runPct, 8)}%` }}>
+                      <div className="h-full rounded-pill" style={{ width: `${valuePct}%`, background: 'var(--status-success)' }} />
+                    </div>
+                  </div>
+                  <Numeric value={m.executions} className="typo-caption text-foreground/65 text-right tabular-nums" />
+                  <Numeric value={m.costUsd} unit="usd" className="typo-caption text-foreground/65 text-right tabular-nums" />
+                  <span className="typo-caption text-right tabular-nums" style={{ color: 'var(--status-success)' }}>
+                    <Numeric value={m.valueDelivered} />
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </DirectorSection>
       )}
 
       {/* Recent coaching */}
-      <SectionCard title={t.director.recent_verdicts} size="sm">
+      <DirectorSection label={t.director.recent_verdicts} icon={MessageSquareText}>
         {d.verdicts.length === 0 ? (
           <p className="typo-caption text-foreground/45 py-2">{t.director.no_verdicts}</p>
         ) : (
-          <ul className="space-y-1">
+          <ul className="space-y-0.5">
             {d.verdicts.slice(0, 6).map((v) => (
-              <li key={v.reviewId} className="flex items-center gap-2 typo-caption px-1.5 py-1 rounded hover:bg-secondary/30">
-                <span
-                  className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide ${
-                    v.severity === 'error' ? 'bg-red-500/15 text-red-400'
-                      : v.severity === 'warning' ? 'bg-amber-500/15 text-amber-400'
-                        : 'bg-blue-500/15 text-blue-400'
-                  }`}
-                >
+              <li
+                key={v.reviewId}
+                className="row-hover-lift flex items-center gap-2 typo-caption pl-2.5 pr-1.5 py-1.5 rounded"
+                style={{ ['--row-accent' as string]: SEVERITY_LINE[v.severity] ?? SEVERITY_LINE.info }}
+              >
+                <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase tracking-wide ${SEVERITY_CHIP[v.severity] ?? SEVERITY_CHIP.info}`}>
                   {tokenLabel(t, 'severity', v.severity)}
                 </span>
                 <span className="text-foreground/85 truncate flex-1" title={v.description ?? v.title}>{v.title}</span>
@@ -154,7 +184,7 @@ export function DirectorOverview({ d }: { d: UseDirector }) {
             ))}
           </ul>
         )}
-      </SectionCard>
+      </DirectorSection>
     </div>
   );
 }

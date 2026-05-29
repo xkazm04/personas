@@ -12,6 +12,7 @@ import { DirectorOverview } from './panels/DirectorOverview';
 import { DirectorRoster } from './panels/DirectorRoster';
 import { DirectorReviews } from './panels/DirectorReviews';
 import { DirectorMemory } from './panels/DirectorMemory';
+import { DirectorAttention } from './panels/DirectorAttention';
 
 /**
  * Director command center — the top-level home for the coaching meta-persona.
@@ -40,11 +41,20 @@ export default function DirectorPage() {
     <ContentBox>
       <ContentHeader
         icon={
-          d.director ? (
-            <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-5 h-5" />
-          ) : (
-            <Clapperboard className="w-5 h-5 text-violet-400" />
-          )
+          <span className="relative inline-flex items-center justify-center">
+            {/* ambient command-center signal — breathing violet glow behind the mark */}
+            <span
+              aria-hidden
+              className="absolute -inset-2 rounded-full bg-violet-500/30 blur-md animate-glow-breathe motion-reduce:hidden"
+            />
+            <span className="relative inline-flex">
+              {d.director ? (
+                <PersonaIcon icon={d.director.icon} color={d.director.color} size="w-5 h-5" />
+              ) : (
+                <Clapperboard className="w-5 h-5 text-violet-400" />
+              )}
+            </span>
+          </span>
         }
         iconColor="violet"
         title={t.director.panel_title}
@@ -81,6 +91,8 @@ export default function DirectorPage() {
           <div className="flex items-center justify-center py-16">
             <LoadingSpinner />
           </div>
+        ) : directorTab === 'attention' ? (
+          <DirectorAttention d={d} />
         ) : directorTab === 'roster' ? (
           <DirectorRoster d={d} />
         ) : directorTab === 'reviews' ? (

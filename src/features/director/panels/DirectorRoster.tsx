@@ -1,21 +1,25 @@
 import { useMemo, useState } from 'react';
-import { Play, Plus, Star, X } from 'lucide-react';
-import { SectionCard } from '@/features/shared/components/layout/SectionCard';
+import { Play, Plus, Star, X, Users } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
+import { DirectorSection } from '../DirectorSection';
 import { ScoreSparkline } from '../ScoreSparkline';
 import { scoreTone, toneFill } from '../directorScore';
 import type { UseDirector } from '../useDirector';
 
+// Shared column template so the header and every row line up exactly.
+const ROW_GRID = 'grid grid-cols-[1.7fr_56px_64px_1fr_auto_auto] items-center gap-3';
+
 /**
  * Coaching-scope roster — the first-class scope manager. Each starred persona
- * shows its latest score, trend sparkline, value rate, and last-review time,
- * with inline "Review now" + "remove from scope". Unstarred personas are one
- * click from being added to scope.
+ * is a hover-lift row whose left signal line is tinted to its latest score
+ * tone; shows latest score, trend sparkline, value rate, and last-review time,
+ * with inline "Review now" + remove. Unstarred personas are one click from
+ * scope.
  */
 export function DirectorRoster({ d }: { d: UseDirector }) {
   const { t, tx } = useTranslation();
@@ -42,95 +46,118 @@ export function DirectorRoster({ d }: { d: UseDirector }) {
 
   return (
     <div className="space-y-4 pb-6">
-      <SectionCard title={t.director.roster_title} size="sm">
+      <DirectorSection label={t.director.roster_title} icon={Users}>
         {roster.length === 0 ? (
           <p className="typo-caption text-foreground/45 py-2">{t.director.scope_empty}</p>
         ) : (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="typo-caption text-foreground/50 border-b border-primary/10">
-                <th className="py-1.5 font-normal">{t.director.roster_col_agent}</th>
-                <th className="py-1.5 font-normal text-center">{t.director.roster_col_score}</th>
-                <th className="py-1.5 font-normal">{t.director.roster_col_trend}</th>
-                <th className="py-1.5 font-normal text-right">{t.director.roster_col_value}</th>
-                <th className="py-1.5 font-normal text-right">{t.director.roster_col_last}</th>
-                <th className="py-1.5 font-normal" />
-              </tr>
-            </thead>
-            <tbody>
-              {roster.map((r) => {
+          <div>
+            {/* header */}
+            <div className={`${ROW_GRID} px-2.5 pb-2 typo-label uppercase tracking-wider text-foreground/45 border-b border-primary/10`}>
+              <span>{t.director.roster_col_agent}</span>
+              <span className="text-center">{t.director.roster_col_score}</span>
+              <span>{t.director.roster_col_trend}</span>
+              <span className="text-right">{t.director.roster_col_value}</span>
+              <span className="text-right">{t.director.roster_col_last}</span>
+              <span />
+            </div>
+            <div className="mt-1 space-y-0.5">
+              {roster.map((r, i) => {
                 const tone = r.latestScore != null ? scoreTone(r.latestScore) : null;
                 const isRunning = running.has(r.personaId);
                 return (
-                  <tr key={r.personaId} className="border-b border-primary/5 last:border-0 hover:bg-secondary/20">
-                    <td className="py-2">
-                      <span className="flex items-center gap-2 min-w-0">
-                        <PersonaIcon icon={r.icon} color={r.color} size="w-4 h-4" />
-                        <span className="typo-caption text-foreground/85 truncate max-w-[180px]">{r.name}</span>
-                      </span>
-                    </td>
-                    <td className="py-2 text-center">
+                  <div
+                    key={r.personaId}
+                    className={`${ROW_GRID} row-hover-lift animate-fade-slide-in pl-2.5 pr-1.5 py-2 rounded`}
+                    style={{
+                      ['--row-accent' as string]: tone?.color ?? 'var(--primary)',
+                      animationDelay: `${Math.min(i, 12) * 30}ms`,
+                    }}
+                  >
+                    {/* agent */}
+                    <span className="flex items-center gap-2 min-w-0">
+                      <PersonaIcon icon={r.icon} color={r.color} size="w-4 h-4" />
+                      <span className="typo-caption text-foreground/85 truncate">{r.name}</span>
+                    </span>
+                    {/* score */}
+                    <span className="text-center">
                       {r.latestScore != null && tone ? (
                         <span
-                          className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded text-[11px] tabular-nums"
-                          style={{ color: tone.color, backgroundColor: toneFill(tone.color) }}
+                          className="inline-flex items-center justify-center min-w-[1.5rem] px-1.5 py-0.5 rounded text-[11px] tabular-nums font-medium"
+                          style={{ color: tone.color, backgroundColor: toneFill(tone.color, 14) }}
                         >
                           {r.latestScore}
                         </span>
                       ) : (
                         <span className="typo-caption text-foreground/35">—</span>
                       )}
-                    </td>
-                    <td className="py-2">
+                    </span>
+                    {/* trend */}
+                    <span>
                       {r.scoreTrend.length >= 2 ? (
                         <ScoreSparkline scores={r.scoreTrend} />
                       ) : (
                         <span className="typo-caption text-foreground/35">—</span>
                       )}
-                    </td>
-                    <td className="py-2 text-right">
-                      <Numeric value={r.valueDeliveredRate} unit="ratio" precision={0} className="typo-caption text-foreground/70" />
-                    </td>
-                    <td className="py-2 text-right">
+                    </span>
+                    {/* value rate + micro-bar */}
+                    <span className="flex items-center justify-end gap-2">
+                      <span className="h-1.5 w-12 rounded-pill bg-secondary/50 overflow-hidden hidden sm:block">
+                        <span
+                          className="block h-full rounded-pill"
+                          style={{ width: `${Math.round(r.valueDeliveredRate * 100)}%`, background: 'var(--status-success)' }}
+                        />
+                      </span>
+                      <Numeric value={r.valueDeliveredRate} unit="ratio" precision={0} className="typo-caption text-foreground/70 tabular-nums" />
+                    </span>
+                    {/* last review */}
+                    <span className="text-right">
                       {r.lastReviewedAt ? (
                         <RelativeTime timestamp={r.lastReviewedAt} className="typo-caption text-foreground/55" />
                       ) : (
                         <span className="typo-caption text-foreground/35">{t.director.roster_never}</span>
                       )}
-                    </td>
-                    <td className="py-2">
-                      <span className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="secondary"
-                          size="xs"
-                          icon={<Play className="w-3 h-3" />}
-                          disabled={isRunning}
-                          onClick={() => reviewOne(r.personaId)}
+                    </span>
+                    {/* actions */}
+                    <span className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="secondary"
+                        size="xs"
+                        icon={<Play className="w-3 h-3" />}
+                        disabled={isRunning}
+                        onClick={() => reviewOne(r.personaId)}
+                      >
+                        {isRunning ? t.director.running : t.director.roster_review_now}
+                      </Button>
+                      <Tooltip content={t.director.roster_remove}>
+                        <button
+                          type="button"
+                          onClick={() => d.setStarred(r.personaId, false)}
+                          className="p-1 rounded text-foreground/40 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
+                          aria-label={t.director.roster_remove}
                         >
-                          {isRunning ? t.director.running : t.director.roster_review_now}
-                        </Button>
-                        <Tooltip content={t.director.roster_remove}>
-                          <button
-                            type="button"
-                            onClick={() => d.setStarred(r.personaId, false)}
-                            className="p-1 rounded text-foreground/40 hover:text-foreground/80 hover:bg-secondary/40 transition-colors"
-                            aria-label={t.director.roster_remove}
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </Tooltip>
-                      </span>
-                    </td>
-                  </tr>
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
+                    </span>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </div>
         )}
-      </SectionCard>
+      </DirectorSection>
 
       {/* Add to scope */}
-      <SectionCard title={t.director.roster_add_title} size="sm">
+      <DirectorSection
+        label={t.director.roster_add_title}
+        icon={Plus}
+        action={
+          <span className="inline-flex items-center gap-1 typo-caption text-foreground/40">
+            <Star className="w-3 h-3 text-violet-400/60" />
+            {tx(t.director.scope_summary, { count: roster.length })}
+          </span>
+        }
+      >
         {unstarred.length === 0 ? (
           <p className="typo-caption text-foreground/45 py-1">{t.director.roster_add_placeholder}</p>
         ) : (
@@ -140,20 +167,16 @@ export function DirectorRoster({ d }: { d: UseDirector }) {
                 key={p.id}
                 type="button"
                 onClick={() => d.setStarred(p.id, true)}
-                className="inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-primary/10 bg-secondary/20 hover:bg-secondary/40 hover:border-violet-500/30 transition-colors typo-caption text-foreground/80"
+                className="group inline-flex items-center gap-1.5 px-2 py-1 rounded-interactive border border-primary/10 bg-secondary/20 hover:bg-violet-500/10 hover:border-violet-500/30 hover:-translate-y-px transition-[transform,background-color,border-color] duration-150 will-change-transform motion-reduce:hover:translate-y-0 typo-caption text-foreground/80"
               >
                 <PersonaIcon icon={p.icon} color={p.color} size="w-3.5 h-3.5" />
                 <span className="truncate max-w-[140px]">{p.name}</span>
-                <Plus className="w-3 h-3 text-violet-400/70" />
+                <Plus className="w-3 h-3 text-violet-400/60 group-hover:text-violet-300 transition-colors" />
               </button>
             ))}
           </div>
         )}
-        <p className="typo-caption text-foreground/40 mt-2 flex items-center gap-1">
-          <Star className="w-3 h-3" />
-          {tx(t.director.scope_summary, { count: roster.length })}
-        </p>
-      </SectionCard>
+      </DirectorSection>
     </div>
   );
 }
