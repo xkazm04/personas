@@ -11,6 +11,9 @@ import { join } from 'node:path';
 import { execSync, execFileSync } from 'node:child_process';
 import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
+import { band, computeVerdict } from './lib/eval/verdict.mjs';
+import { repoFileIndex, groundingForText, addedDocsFromPatch } from './lib/eval/grounding.mjs';
+import { RUBRIC } from './lib/rubric.mjs';
 
 /**
  * §1.A code-track deterministic check — run the repo's OWN build/lint/test and
@@ -49,87 +52,12 @@ function runRepoChecks(repoRoot, cmds, timeoutMs = 240000) {
   return out;
 }
 
-const arg = (n, f = null) => {
-  const i = process.argv.indexOf(n);
-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f;
-};
+import { arg } from './lib/cli.mjs';
 const RUNS = join('docs', 'test', 'runs');
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 
-// Extract file-path citations from markdown/text. Matches `path/to/file.ext`
-// (optionally `:line`), restricted to source-like extensions so prose nouns
-// aren't mistaken for paths.
-// Extensions ordered so disambiguating ones win the alternation (json before
-// js, tsx before ts, mjs before js) — else ".json" matches as ".js" and a real
-// path reads as ungrounded.
-const CITE_RE = /`?(\.{0,2}\/?[A-Za-z0-9_./-]+\.(?:tsx|ts|jsx|mjs|json|js|rs|py|go|java|css|sql|toml|yaml|yml|md|adr))(?::\d+(?:-\d+)?)?`?/g;
-
-// Index of every real file in the repo (tracked + untracked-not-ignored), as
-// forward-slash repo-relative paths. New team artifacts are untracked, so we
-// include `--others --exclude-standard`. Used for suffix-match grounding.
-function repoFileIndex(repoRoot) {
-  if (!repoRoot) return [];
-  try {
-    const out = execFileSync('git', ['-C', repoRoot, 'ls-files', '--cached', '--others', '--exclude-standard'], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-    return out.split('\n').map((s) => s.trim().replace(/\\/g, '/')).filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
-function groundingForText(text, repoRoot, fileDir, repoFiles = []) {
-  const cites = new Map(); // path -> exists
-  let m;
-  while ((m = CITE_RE.exec(text)) !== null) {
-    const p = m[1];
-    if (p.startsWith('http')) continue;
-    const isPathy = p.includes('/') || p.startsWith('./') || p.startsWith('../');
-    // Primary resolution: relative links (./x, ../x) against the citing file's
-    // dir; repo-relative paths against repo root.
-    let ok = false;
-    if (p.startsWith('./') || p.startsWith('../')) ok = existsSync(join(fileDir || repoRoot, p));
-    else if (p.includes('/')) ok = existsSync(join(repoRoot, p));
-    else ok = existsSync(join(repoRoot, p)); // bare filename at repo root (CHANGELOG.md, package.json)
-    // Suffix-match fallback: ADRs legitimately cite shorthand relative to their
-    // stated Area (`components/FunnelCard.tsx` for src/features/placements/...)
-    // or a sibling (`./conversion.ts`). These don't resolve against repo-root or
-    // the doc's own dir, but DO correspond to a real repo file. Match the cited
-    // tail as a path-suffix of an actual file; a hallucinated path matches none.
-    if (!ok) {
-      const tail = p.replace(/^(\.\.?\/)+/, '').replace(/^\/+/, '');
-      if (tail) ok = repoFiles.some((rf) => rf === tail || rf.endsWith('/' + tail));
-    }
-    // A bare token (no '/', no ./) that resolves to nothing is treated as prose,
-    // NOT a citation — this drops brand nouns that the extension regex catches
-    // (Next.js, Node.js, Vue.js) from the denominator instead of scoring them
-    // as ungrounded. Slashed/relative tokens are unambiguously path citations,
-    // so a non-resolving one IS a real hallucination and counts invalid.
-    if (!ok && !isPathy) continue;
-    if (!cites.has(p) || ok) cites.set(p, ok);
-  }
-  const total = cites.size;
-  const valid = [...cites.values()].filter(Boolean).length;
-  const invalid = [...cites.entries()].filter(([, ok]) => !ok).map(([p]) => p);
-  return { total, valid, pct: total ? Math.round((valid / total) * 100) : null, invalid: invalid.slice(0, 8) };
-}
-
-// Pull added markdown files (doc-track artifacts) from the run's repo.patch.
-function addedDocsFromPatch(patchPath) {
-  if (!existsSync(patchPath)) return [];
-  const patch = readFileSync(patchPath, 'utf8');
-  const files = [];
-  const re = /^diff --git a\/(\S+) b\/(\S+)/gm;
-  let m;
-  while ((m = re.exec(patch)) !== null) {
-    const f = m[2];
-    // Exclude .claude/ tooling artifacts (goal-analysis/idea cards, CLAUDE.md) —
-    // these are agent scaffolding, not team deliverables, and shouldn't count
-    // toward the team's grounding score.
-    if (f.startsWith('.claude/')) continue;
-    if (/\.(md|adr)$/i.test(f) || f.includes('/adr/')) files.push(f);
-  }
-  return [...new Set(files)];
-}
+// Grounding gate (CITE_RE, repoFileIndex, groundingForText) + doc-artifact
+// discovery (addedDocsFromPatch) extracted to ./lib/eval/grounding.mjs.
 
 // §1.A.1 Delivered Increment: did `master`/`main` ADVANCE during the run window
 // with a real source increment (feature/fix/test) — not just a version bump or
@@ -154,14 +82,6 @@ function deliveredIncrement(repoRoot, baseHead) {
   } catch (e) {
     return { delivered: false, reason: 'git error: ' + e.message };
   }
-}
-
-function band(team, minPersona, autonomyOk, healthOk) {
-  if (!healthOk) return 'BROKEN';
-  if (team >= 80 && minPersona >= 60 && autonomyOk) return 'PRODUCTION';
-  if (team >= 60) return 'PROMISING';
-  if (team >= 30) return 'NOT-READY';
-  return 'NOT-READY';
 }
 
 function main() {
@@ -244,10 +164,10 @@ function main() {
   }
 
   // --- roll-up ---
-  const detTeam = Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60)) / 5);
+  const detTeam = Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? RUBRIC.fallbackScore)) / RUBRIC.rollup.deterministicDivisor);
   // When judged, fold portfolio-balance + judged-output into the team score and drop "provisional".
   const teamScore = judge
-    ? Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? 60) + (portfolioBalance ?? 60) + (judgeDims.meanJudge ?? 60)) / 7)
+    ? Math.round((cascade_completion + work_density + handoff_health + learning_loop + (groundingPct ?? RUBRIC.fallbackScore) + (portfolioBalance ?? RUBRIC.fallbackScore) + (judgeDims.meanJudge ?? RUBRIC.fallbackScore)) / RUBRIC.rollup.judgedDivisor)
     : detTeam;
   const healthOk = run.summary.counts.executions > 0 && completed > 0;
   // Cascade-stall cap: a run where not every member executed, or any execution
@@ -276,44 +196,40 @@ function main() {
     .filter((e) => e.status === 'failed' && rescuedExecIds.has(e.id))
     .map((e) => e.id);
   const failedExecs = total - completed;
+  // Rescue-aware cascade stall (master §1.A.3): a failed exec WITH a completed
+  // retry = the team RECOVERED (P3 healing), not a stall — only un-rescued
+  // failures cap. Master's superior logic, expressed through the fold below.
   const cascadeStalled = personasExecuted < memberCount || failedExecsNotRescued > 0;
-  const rank = { BROKEN: 0, 'NOT-READY': 1, PROMISING: 2, PRODUCTION: 3 };
-  const cap = (v, max) => (rank[v] > rank[max] ? max : v);
-  let verdict = judge
+  const base = judge
     ? band(teamScore, minPersonaOutput ?? 0, autonomyOk, healthOk)
-    : band(detTeam, groundingPct ?? 60, autonomyOk, healthOk);
-  if (cascadeStalled) verdict = cap(verdict, 'NOT-READY');
-  // §1.A cap: a code-track run that leaves the repo's build OR tests FAILING is
-  // not production, no matter how eloquent the design — the strongest
-  // ungameable gate. (lint fail is a WARN, not a cap.)
-  if (codeTrack && (codeTrack.build?.status === 'fail' || codeTrack.test?.status === 'fail')) {
-    verdict = cap(verdict, 'NOT-READY');
-  }
-  // A flaky test suite (passed only on retry) is a real quality concern but a
-  // softer one than a hard red — caps at PROMISING.
-  if (codeTrack && codeTrack.test?.status === 'flaky') {
-    verdict = cap(verdict, 'PROMISING');
-  }
+    : band(detTeam, groundingPct ?? RUBRIC.fallbackScore, autonomyOk, healthOk);
   // §1.A.1 Delivered Increment gate: a code-track run that ships NOTHING to
   // master (all work on un-merged branches, or master moved by version/docs only)
-  // cannot be PRODUCTION — the deliverable is the point. Caps at NOT-READY.
-  // Doc-track seeds are exempt (their deliverable is the grounded document).
+  // cannot be PRODUCTION — the deliverable is the point. Doc-track seeds are
+  // exempt (their deliverable is the grounded document).
   const increment = isCodeTrack ? deliveredIncrement(repoRoot, run.repoHeadPre) : { delivered: true, reason: 'doc-track exempt' };
-  if (isCodeTrack && !increment.delivered) {
-    verdict = cap(verdict, 'NOT-READY');
-  }
-  // §1.A.2 Self-veto cap: any execution in a code-track run that completed
-  // with business_outcome=`precondition_failed` is the team telling us — in
-  // its own words — that the run is NOT ready to ship (typically: release
-  // manager refusing to bless on a red trunk; or an engineer refusing to
-  // implement against a broken precondition). The team's own quality bar
-  // outranks the deterministic dims. Caps at PROMISING — work may be on
-  // local master but the team didn't bless it, and certification can't
-  // override a team's own veto.
+  // §1.A.2 Self-veto: any execution in a code-track run that completed with
+  // business_outcome=`precondition_failed` is the team telling us — in its own
+  // words — that the run is NOT ready to ship (release manager refusing to bless
+  // a red trunk; engineer refusing to implement against a broken precondition).
   const selfVeto = isCodeTrack && executions.some((e) => e.business_outcome === 'precondition_failed');
-  if (selfVeto) {
-    verdict = cap(verdict, 'PROMISING');
-  }
+  // The five rubric caps collapsed into ONE ordered fold (see lib/eval/verdict.mjs).
+  // Each lowers the verdict to at most its `to`; the fold is order-independent
+  // (cap is min-by-rank) but ordered to mirror the rubric narrative.
+  const verdict = computeVerdict(base, [
+    // Cascade stall (§0/§2 goal-closure): not every member ran, or an execution
+    // FAILED → the goal didn't close, no matter how good the work that did run.
+    { when: cascadeStalled, to: 'NOT-READY' },
+    // §1.A: a code-track run that leaves build OR tests FAILING is not production
+    // (the strongest ungameable gate). lint fail is a WARN, not a cap.
+    { when: !!(codeTrack && (codeTrack.build?.status === 'fail' || codeTrack.test?.status === 'fail')), to: 'NOT-READY' },
+    // §1.A: a flaky test suite (passed only on retry) is a softer concern → PROMISING.
+    { when: !!(codeTrack && codeTrack.test?.status === 'flaky'), to: 'PROMISING' },
+    // §1.A.1: code-track shipped nothing to master → NOT-READY.
+    { when: isCodeTrack && !increment.delivered, to: 'NOT-READY' },
+    // §1.A.2: the team self-vetoed; its own quality bar outranks the dims → PROMISING.
+    { when: selfVeto, to: 'PROMISING' },
+  ]);
 
   const scorecard = {
     runId,

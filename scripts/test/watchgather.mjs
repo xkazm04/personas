@@ -10,7 +10,7 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import { gatherBundle } from './gather.mjs';
 
-const arg = (n, f = null) => { const i = process.argv.indexOf(n); return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f; };
+import { arg } from './lib/cli.mjs';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const log = (...a) => console.log(`[${new Date().toLocaleTimeString()}]`, ...a);
 const SEEDS_DIR = join('docs', 'test', 'seeds');
@@ -22,7 +22,7 @@ function loadSeed(id) {
   }
   throw new Error(`seed not found: ${id}`);
 }
-const gitHead = (root) => { try { return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { return null; } };
+import { head as gitHead } from './lib/git.mjs';
 
 const seed = loadSeed(arg('--seed'));
 const sinceIso = arg('--since');

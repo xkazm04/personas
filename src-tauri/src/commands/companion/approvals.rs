@@ -227,6 +227,7 @@ pub async fn companion_approve_action(
         "fleet_redirect_op" => execute_fleet_redirect_op(&app, &params),
         // Phase C3 — Team assignment dispatch.
         "assign_team" => execute_assign_team(&state, &app, &params).await,
+        "analyze_fleet" => execute_analyze_fleet(&state, &app, &params).await,
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -866,6 +867,223 @@ fn execute_update_dev_goal(
     Ok(ExecuteResult::message(format!(
         "Dev goal `{goal_id}` updated — {summary}."
     )))
+}
+
+/// Spawn a proactive Athena turn that reviews the whole fleet (or one team)
+/// against the certification rubric — the post-certification "are the teams on
+/// track?" analysis. Athena gathers current state from her observability digest
+/// + connectors, recalls her prior per-team note (timeline continuity), writes
+/// an updated note, and proposes improvements via her normal approval-gated ops.
+async fn execute_analyze_fleet(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let team = params.get("team_id").and_then(|v| v.as_str());
+    let days = params
+        .get("days")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(14)
+        .clamp(1, 90);
+    spawn_fleet_analysis(state, app, team, days);
+    let scope = team
+        .map(|t| format!("team `{t}`"))
+        .unwrap_or_else(|| "the whole fleet".into());
+    Ok(ExecuteResult::message(format!(
+        "Fleet analysis started — Athena is reviewing {scope} over the last {days}d and will report back here."
+    )))
+}
+
+/// Compact per-team execution digest from the OPERATIONAL store (state.db),
+/// embedded in the directive so the turn reasons over real numbers. Best-effort:
+/// any query failure degrades to a short note rather than aborting the turn.
+fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) -> String {
+    let conn = match db.get() {
+        Ok(c) => c,
+        Err(e) => return format!("(fleet data unavailable: {e})"),
+    };
+    let window = format!("-{days} days");
+    let all_teams: Vec<(String, String)> = match conn
+        .prepare("SELECT id, name FROM persona_teams WHERE COALESCE(enabled,1)=1 ORDER BY name")
+    {
+        Ok(mut stmt) => stmt
+            .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))
+            .map(|rows| rows.filter_map(Result::ok).collect())
+            .unwrap_or_default(),
+        Err(_) => Vec::new(),
+    };
+    let teams: Vec<(String, String)> = all_teams
+        .into_iter()
+        .filter(|(id, name)| {
+            team.map_or(true, |t| {
+                t == id || name.to_lowercase().contains(&t.to_lowercase())
+            })
+        })
+        .collect();
+    if teams.is_empty() {
+        return "(no matching teams in the operational store)".to_string();
+    }
+    let mut out = format!("## Fleet data — operational store (personas.db), last {days}d\n");
+    for (id, name) in teams {
+        let short = &id[..id.len().min(8)];
+        let agg = conn.query_row(
+            "SELECT COUNT(*),
+                    SUM(CASE WHEN status IN ('failed','error','timeout') THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN business_outcome='value_delivered' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN business_outcome='partial' THEN 1 ELSE 0 END),
+                    SUM(CASE WHEN business_outcome='precondition_failed' THEN 1 ELSE 0 END),
+                    COALESCE(SUM(cost_usd),0),
+                    AVG(director_score)
+             FROM persona_executions
+             WHERE COALESCE(is_simulation,0)=0
+               AND created_at >= datetime('now', ?1)
+               AND persona_id IN (
+                 SELECT id FROM personas WHERE home_team_id = ?2
+                 UNION SELECT persona_id FROM persona_team_members WHERE team_id = ?2
+               )",
+            params![window, id],
+            |r| {
+                Ok((
+                    r.get::<_, i64>(0)?,
+                    r.get::<_, i64>(1).unwrap_or(0),
+                    r.get::<_, i64>(2).unwrap_or(0),
+                    r.get::<_, i64>(3).unwrap_or(0),
+                    r.get::<_, i64>(4).unwrap_or(0),
+                    r.get::<_, f64>(5).unwrap_or(0.0),
+                    r.get::<_, Option<f64>>(6).unwrap_or(None),
+                ))
+            },
+        );
+        // Goal-linked via EITHER a team_assignment's goal_id OR a goal on the
+        // team's pinned dev_project (the natural association — a team works its
+        // repo; goals live on the project, not the assignment).
+        let assignment_goals: i64 = conn
+            .query_row(
+                "SELECT COUNT(*) FROM team_assignments ta JOIN dev_goals g ON g.id = ta.goal_id WHERE ta.team_id = ?1",
+                params![id],
+                |r| r.get(0),
+            )
+            .unwrap_or(0);
+        let project_id: Option<String> = {
+            let mut found = None;
+            if let Ok(mut stmt) = conn.prepare(
+                "SELECT design_context FROM personas WHERE (home_team_id = ?1 OR id IN (SELECT persona_id FROM persona_team_members WHERE team_id = ?1)) AND design_context IS NOT NULL",
+            ) {
+                if let Ok(rows) = stmt.query_map(params![id], |r| r.get::<_, String>(0)) {
+                    for dc in rows.flatten() {
+                        if let Ok(j) = serde_json::from_str::<serde_json::Value>(&dc) {
+                            if let Some(p) = j
+                                .get("dev_project_id")
+                                .or_else(|| j.get("devProjectId"))
+                                .and_then(|v| v.as_str())
+                            {
+                                found = Some(p.to_string());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            found
+        };
+        let project_goals: i64 = project_id
+            .as_deref()
+            .map(|pid| {
+                conn.query_row(
+                    "SELECT COUNT(*) FROM dev_goals WHERE project_id = ?1",
+                    params![pid],
+                    |r| r.get::<_, i64>(0),
+                )
+                .unwrap_or(0)
+            })
+            .unwrap_or(0);
+        let goal_linked = assignment_goals + project_goals;
+        match agg {
+            Ok((total, failed, vd, partial, pf, cost, dir)) => {
+                let dir_s = dir.map(|d| format!("{d:.1}/5")).unwrap_or_else(|| "—".into());
+                out.push_str(&format!(
+                    "- **{name}** (`{short}`): {total} exec · {failed} failed · value-delivered {vd} · partial {partial} · precond-failed {pf} · ${cost:.2} · director {dir_s} · goal-linked: {}\n",
+                    if goal_linked > 0 { "yes" } else { "NO" }
+                ));
+            }
+            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data)\n")),
+        }
+    }
+    out
+}
+
+/// The directive handed to the proactive fleet-analysis turn. The per-team data
+/// is pre-gathered (`gather_fleet_digest`) and embedded, so Athena reasons over
+/// real numbers instead of trying to fetch them via the wrong-DB connector.
+fn build_fleet_directive(team: Option<&str>, days: i64, digest: &str) -> String {
+    let scope = match team {
+        Some(t) => format!("the team `{t}`"),
+        None => "every active team (the whole fleet)".to_string(),
+    };
+    format!(
+        "Run a fleet analysis of {scope} over the last {days} days. You are the \
+         post-certification analyst: the user is letting all teams run and needs to not \
+         lose control.\n\n\
+         The per-team data is ALREADY GATHERED for you below, from the OPERATIONAL store. \
+         Reason over THIS — do NOT try to fetch it via a connector (your personas_database \
+         connector points at the companion-brain DB, not the execution store):\n\n\
+         {digest}\n\n\
+         For each team, assess against these certification dimensions: (1) on-track — is it \
+         tied to a tracked goal (goal-linked: NO is a real gap); (2) value delivery — \
+         value-delivered vs partial / precond-failed; (3) health — failures; (4) cost + \
+         outliers; (5) portfolio balance. Then: (a) recall any prior fleet-analysis note \
+         from your memory for timeline continuity (did last round's gap get fixed?); \
+         (b) write a concise per-team timeline note via write_fact (scope the fact to the \
+         team) so the next review builds on this one; (c) propose at most a few concrete \
+         improvements (update_dev_goal, a template/roster fix, a persona to add) as your \
+         approval-gated ops. Ground every claim in the data above. If a team is healthy and \
+         nothing changed since your last note, say so in one line."
+    )
+}
+
+/// Shared spawn used by both the approval-gated `analyze_fleet` op executor and
+/// the direct `companion_analyze_fleet` command (the skill button). Spawns a
+/// proactive turn carrying the fleet-analysis directive.
+fn spawn_fleet_analysis(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    team: Option<&str>,
+    days: i64,
+) {
+    // Pre-gather per-team data from the OPERATIONAL store (state.db) and embed
+    // it in the directive. Athena's personas_database connector points at the
+    // companion-brain DB, not the execution store, so asking her to fetch it
+    // fails — we supply it instead.
+    let digest = gather_fleet_digest(&state.db, team, days);
+    let directive = build_fleet_directive(team, days, &digest);
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        std::sync::Arc::new(state.user_db.clone()),
+        std::sync::Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "fleet_analysis".to_string(),
+        team.map(str::to_string),
+        directive,
+    );
+}
+
+/// Direct, deterministic fleet-analysis trigger for the "Analyze fleet" skill
+/// button. Unlike a chat message — which Athena can reasonably shortcut to an
+/// inline read from her observability digest — this ALWAYS spawns the
+/// rubric-graded proactive turn that writes the per-team timeline note (the
+/// continuity that is the whole point). The button click is the consent, so
+/// there is no approval gate.
+#[tauri::command]
+pub fn companion_analyze_fleet(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    team_id: Option<String>,
+    days: Option<i64>,
+) -> Result<String, AppError> {
+    let days = days.unwrap_or(14).clamp(1, 90);
+    spawn_fleet_analysis(&state, &app, team_id.as_deref(), days);
+    Ok("Fleet analysis started.".to_string())
 }
 
 fn execute_update_goal_status(

@@ -2,6 +2,8 @@
 
 Pipeline is the visual workflow canvas for composing multi-persona teams. It renders persona nodes on an `@xyflow/react`-driven graph, lets users wire connections between them, supports a dry-run debugger, and surfaces optimization suggestions. Team memory — long-running shared context across the personas in a team — is owned by `sub_teamMemory/`.
 
+> **For the orchestration logic** — the two execution modes (event-chain vs goal-driven assignments), how shared state reaches a running persona, and the observability/analysis layer — see **[team-orchestration.md](./team-orchestration.md)**. This README maps the UI surfaces; that doc explains the model underneath.
+
 ## Page host
 
 `src/features/pipeline/components/TeamCanvas.tsx` is the page host, lazy-mounted in `src/features/personas/PersonasPage.tsx` for `sidebarSection === 'teams'`. The Teams sub-view is gated and currently surfaced through dev/team builds (sidebar entry depends on tier).

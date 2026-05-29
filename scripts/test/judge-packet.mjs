@@ -10,10 +10,7 @@ import { join } from 'node:path';
 import { openRead, MAIN_DB, tryJson } from './db.mjs';
 import { teamInfo } from './model.mjs';
 
-const arg = (n, f = null) => {
-  const i = process.argv.indexOf(n);
-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f;
-};
+import { arg } from './lib/cli.mjs';
 const RUNS = join('docs', 'test', 'runs');
 const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const clip = (s, n) => (s == null ? '' : String(s).length > n ? String(s).slice(0, n) + `\n…[+${String(s).length - n} chars]` : String(s));

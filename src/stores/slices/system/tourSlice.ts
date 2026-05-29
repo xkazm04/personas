@@ -17,7 +17,8 @@ export type TourId =
   | "orchestration-events"
   | "plugins-explorer"
   | "schedules-mastery"
-  | "templates-recipes";
+  | "templates-recipes"
+  | "teams-orchestration";
 
 /**
  * The single source of truth for tour completion event keys.
@@ -65,6 +66,11 @@ export const TOUR_EVENTS = [
   'tour:templates-page-viewed',
   'tour:template-adopted',
   'tour:recipes-explored',
+  // Teams & Orchestration
+  'tour:team-canvas-explored',
+  'tour:team-chaining-understood',
+  'tour:team-assignment-explored',
+  'tour:team-memory-explored',
 ] as const;
 
 export type TourEventKey = (typeof TOUR_EVENTS)[number];
@@ -110,6 +116,11 @@ export const EXPLORATION_TOUR_EVENTS = new Set<TourEventKey>([
   'tour:templates-page-viewed',
   'tour:template-adopted',
   'tour:recipes-explored',
+  // Teams & Orchestration — all walk-around stops (acknowledge advances)
+  'tour:team-canvas-explored',
+  'tour:team-chaining-understood',
+  'tour:team-assignment-explored',
+  'tour:team-memory-explored',
 ]);
 
 /** True when a step's completion is gated on the user clicking acknowledge rather than a real interaction. */
@@ -589,6 +600,69 @@ const TEMPLATES_RECIPES_STEPS: TourStepDef[] = [
   },
 ];
 
+const TEAMS_ORCHESTRATION_STEPS: TourStepDef[] = [
+  {
+    id: "team-canvas-intro",
+    title: "What a Team Is",
+    description: "A team is a set of agents plus the wiring that decides who runs, when, and with what shared context. The Team Canvas is where you compose it — persona nodes, connection edges, and per-team defaults. Roster membership and the runtime 'home team' anchor are distinct: an agent is placed on a team's canvas, and separately anchored to a team for its shared instructions and memory.",
+    hint: "Open a team and look at the canvas — nodes are agents, edges are handoffs.",
+    nav: { sidebarSection: "teams" },
+    completeOn: "tour:team-canvas-explored",
+    panelWidth: 360,
+    narration: "A team is more than a folder of agents. It's the wiring — who runs, when, and what context they share. This canvas is where you compose that.",
+    subSteps: [
+      { id: "nodes", label: "Nodes are agents", hint: "Each node is a persona; its role and model overrides live in the node config." },
+      { id: "edges", label: "Edges are handoffs", hint: "A connection means one agent's output can hand off to the next — the basis of event-chains (next step)." },
+      { id: "defaults", label: "Team defaults", hint: "Shared instructions, default model profile, and budget caps cascade from the team to every member at run time." },
+    ],
+  },
+  {
+    id: "team-chaining",
+    title: "How Teams Run: Event-Chains",
+    description: "The original orchestration mode, and how most teams run today. An agent finishes → emits an event → a subscribed agent runs. There is no central driver — work propagates through the event bus. This is reactive and cheap; the handoff graph you wired on the canvas is what actually fires.",
+    hint: "Trace one chain: which agent kicks it off, and who listens for its completion?",
+    nav: { sidebarSection: "teams" },
+    completeOn: "tour:team-chaining-understood",
+    panelWidth: 360,
+    narration: "Most teams run as event-chains. One agent finishes, emits an event, and the next agent — listening for it — wakes up. No central conductor, just a relay.",
+    subSteps: [
+      { id: "emit", label: "Finish → emit", hint: "A completed execution publishes an event (e.g. execution_completed) with its output." },
+      { id: "listen", label: "Listen → run", hint: "An agent with a matching event subscription fires next. Wiring this subscription is what makes the chain real — miss it and the chain silently no-ops." },
+      { id: "condition", label: "Conditions", hint: "Chain conditions (Any / Success / Failure / JSONPath) let a handoff fire only when the upstream output matches." },
+    ],
+  },
+  {
+    id: "team-assignments",
+    title: "Goal-Driven Assignments",
+    description: "The newer mode: instead of pre-wiring every step, give the team a goal in plain language. The system decomposes it into a checklist, matches each step to an agent (manual / embedding / LLM), and runs them in a parallel DAG — pausing for your review only on failure. The orange ListChecks badge on the canvas opens it.",
+    hint: "Open the assignments panel and read a goal → checklist breakdown.",
+    nav: { sidebarSection: "teams" },
+    completeOn: "tour:team-assignment-explored",
+    panelWidth: 360,
+    narration: "Sometimes you don't want to wire every step. Give the team a goal in plain language, and it breaks the goal into a checklist, picks the right agent for each part, and runs them in parallel.",
+    subSteps: [
+      { id: "goal", label: "Describe a goal", hint: "\"Review these PRs and draft a changelog\" — the decompose step turns it into ordered, editable steps." },
+      { id: "match", label: "Match agents", hint: "Each step is matched to an agent: manual (you pin), embedding (local cosine), or llm_eval (a Sonnet call picks)." },
+      { id: "parallel", label: "Parallel DAG + review", hint: "Up to max_parallel_steps run at once; failure pauses only that assignment, with inline Edit / Reassign / Skip." },
+    ],
+  },
+  {
+    id: "team-memory-goals",
+    title: "Shared Memory, Goals & Oversight",
+    description: "Teams accumulate shared memory — decisions and constraints that get injected into every member's context on its next run, so the team converges instead of repeating itself. Link a team to a goal to track progress, and let the Director score executions and the Attention queue surface only what needs you. This is the 'set the direction, stay high-level' loop.",
+    hint: "Open the team-memory panel; note how decisions persist across runs.",
+    nav: { sidebarSection: "teams" },
+    completeOn: "tour:team-memory-explored",
+    panelWidth: 360,
+    narration: "Teams remember. Decisions land in shared memory and flow into every teammate's next run. Link the team to a goal, and you can stay high-level while it converges.",
+    subSteps: [
+      { id: "memory", label: "Shared team memory", hint: "A compact digest of the team's top decisions is injected into each member's prompt — shared context without manual hand-offs." },
+      { id: "goal-link", label: "Link to a goal", hint: "Tie the team to a tracked goal so progress, due dates, and stalls are visible — instead of running untracked." },
+      { id: "oversight", label: "High-level oversight", hint: "The Director scores runs and the Attention queue raises only what needs a human — so you set direction, not babysit." },
+    ],
+  },
+];
+
 export const TOUR_REGISTRY: TourDef[] = [
   {
     id: "getting-started",
@@ -645,6 +719,14 @@ export const TOUR_REGISTRY: TourDef[] = [
     icon: "FlaskConical",
     color: "indigo",
     steps: TEMPLATES_RECIPES_STEPS,
+  },
+  {
+    id: "teams-orchestration",
+    title: "Teams & Orchestration",
+    description: "Compose multiple agents into a team, run them as event-chains or goal-driven assignments, and steer the whole team with shared memory and goals.",
+    icon: "GitBranch",
+    color: "emerald",
+    steps: TEAMS_ORCHESTRATION_STEPS,
   },
 ];
 
@@ -926,6 +1008,7 @@ export const createTourSlice: StateCreator<
     "plugins-explorer": persisted?.tours?.["plugins-explorer"]?.completed ?? false,
     "schedules-mastery": persisted?.tours?.["schedules-mastery"]?.completed ?? false,
     "templates-recipes": persisted?.tours?.["templates-recipes"]?.completed ?? false,
+    "teams-orchestration": persisted?.tours?.["teams-orchestration"]?.completed ?? false,
   };
 
   function getPersistedTours(): PersistedTourState['tours'] {

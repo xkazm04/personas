@@ -33,6 +33,7 @@ import type { TourSlice } from "./slices/system/tourSlice";
 import type { BudgetEnforcementSlice } from "./slices/agents/budgetEnforcementSlice";
 import type { AlertSlice } from "./slices/overview/alertSlice";
 import type { PersonaHealthSlice } from "./slices/overview/personaHealthSlice";
+import type { CertificationSlice } from "./slices/overview/certificationSlice";
 import type { DevToolsSlice } from "./slices/system/devToolsSlice";
 import type { FleetSlice } from "./slices/system/fleetSlice";
 import type { NetworkSlice } from "./slices/network/networkSlice";
@@ -206,6 +207,7 @@ export type OverviewStore = CoreState &
   CronAgentsSlice &
   AlertSlice &
   PersonaHealthSlice &
+  CertificationSlice &
   ProcessActivitySlice;
 
 /** Pipeline domain: triggers, teams, recipes, assignments */

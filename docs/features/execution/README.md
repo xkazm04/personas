@@ -179,6 +179,17 @@ This doc set covers pillar 3. For pillar 1 see
    runaway loops when persona A emits events that B listens to and B
    emits events that A listens to. Check the log for `cascade guard`
    messages if a trigger mysteriously doesn't fire.
+3a. **Cross-team bleed guard**: team adoption wires intra-team subscriptions
+   with `source_filter = "*"` (any source), so a teammate's event reaches the
+   subscriber. In a multi-team / multi-repo deployment that wildcard also lets
+   one team's event (e.g. `ai-bookkeeper`'s `release.published`) wake **every**
+   team's matching persona — which then refuses the off-repo work and burns a
+   `precondition_failed` run. The dispatcher (`background.rs`) now suppresses a
+   wildcard match that crosses a team boundary: when both the subscriber and the
+   event's source persona are anchored to `home_team_id`s that differ, the match
+   is dropped (`bus::is_cross_team_wildcard_bleed`). Same-team chains, explicit
+   `source_filter`s, and teamless personas are untouched. Look for `cross-team
+   wildcard bleed suppressed` in the log.
 4. **Dead-letter queue for failed events**: `persona_events.status`
    moves `pending → processing → completed/failed/dead_letter` with a
    retry counter. Events hit `dead_letter` after too many retries.

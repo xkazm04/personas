@@ -5,6 +5,7 @@ pub mod core;
 pub mod credentials;
 pub mod design;
 pub mod drive;
+pub mod eval_runs;
 pub mod execution;
 pub mod fleet;
 pub mod infrastructure;

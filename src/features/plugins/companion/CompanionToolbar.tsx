@@ -3,6 +3,7 @@ import {
   Brain,
   HelpCircle,
   Plus,
+  Radar,
   Wrench,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -44,11 +45,13 @@ import { VoiceControlPopover } from './VoiceControlPopover';
  */
 export function CompanionToolbar({
   onAskCapabilities,
+  onAnalyzeFleet,
   onOpenBrain,
   brainOpen,
   disabled,
 }: {
   onAskCapabilities: () => void;
+  onAnalyzeFleet: () => void;
   onOpenBrain: () => void;
   brainOpen: boolean;
   disabled: boolean;
@@ -143,6 +146,13 @@ export function CompanionToolbar({
         label={t.plugins.companion.help_capabilities}
         onClick={onAskCapabilities}
         disabled={disabled}
+      />
+      <ToolbarButton
+        icon={<Radar className="w-4 h-4" />}
+        label={t.plugins.companion.analyze_fleet}
+        onClick={onAnalyzeFleet}
+        disabled={disabled}
+        testId="companion-analyze-fleet"
       />
       <ToolbarButton
         icon={<Brain className="w-4 h-4" />}

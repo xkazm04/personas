@@ -22,6 +22,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | Health | Persona health cards, heartbeat, predictive alerts, burn-rate/cascade views | `sub_health` |
 | Director | The Director coaching command center (relocated here from a top-level sidebar section). Thin subheader (scope + Brain memory toggle + add-to-scope + review-all), portfolio scorecard (value rate / avg verdict / cost-per-value / score distribution / model efficiency), and one coaching table consolidating Roster + Attention + Reviews — each starred agent row shows score · trend · value · attention tags, clicking opens a per-agent detail modal with full verdict history. See `docs/features/director/README.md`. | `sub_director` |
 | Leaderboard | Persona rankings, podium, radar score details | `sub_leaderboard` |
+| Certification | **Dev-only.** Read-only viewer over the team-autonomy eval/certification bundles in `docs/test/runs/` — per-team certification status, sortable run history, and per-run detail (dimensions, gates, grounding, trajectory, judge panel). Hidden from production builds. | `sub_certification`, `commands/eval_runs.rs` |
 
 ## Additional overview modules
 
@@ -66,3 +67,38 @@ Overview reads from:
 - Notification helpers for delivery stats and channel tests.
 
 Feature-specific contracts remain in [execution](../execution/README.md), [events](../events/README.md), and [personas](../personas/README.md).
+
+## Certification Command Center (dev-only)
+
+`sub_certification` is a **read-only viewer** over the team-autonomy
+evaluation/certification framework's on-disk bundles. The eval logic stays in
+the host-side CLI harness (`scripts/test/`) — which needs git, `npm
+build/lint/test`, and the test-automation bridge — and writes immutable JSON
+bundles to `docs/test/runs/<runId>/`. This tab only *reads* those bundles; it
+never runs an eval. The bundle JSON is the shared contract between the CLI
+writer and the Rust reader.
+
+**Three views** (`sub_certification/CertificationCommandCenter.tsx`):
+- **Overview** — one `TeamCertCard` per team: a 3-pip certification streak, the
+  latest verdict, and a verdict-distribution bar over the team's held-out runs.
+- **Run History** — a sortable `UnifiedTable` of every run (verdict, score,
+  gate markers, started-at). Click a row to drill in.
+- **Detail** — deterministic dimensions, build/lint/test gates + delivered
+  increment, citation grounding, score trajectory, and (when scored) the
+  LLM-judge panel.
+
+**Three commands** (`src-tauri/src/commands/eval_runs.rs` — unauthenticated,
+filesystem-only reads, acceptable because the surface is dev-only):
+- `list_eval_runs` → run summaries, newest first.
+- `get_cert_status` → per-team streak / `certified` flag / verdict counts.
+- `get_eval_run(runId)` → full per-run detail (reads only `scorecard.json` +
+  `run.json`, plus cheap same-team summaries for the trajectory; never the
+  large `executions.json` / `events.json` / `repo.patch`).
+
+**Source resolution:** `PERSONAS_EVAL_RUNS_DIR` env → `docs/test/runs` (dev cwd
+= repo root) → walk up from the executable. No directory found → an empty
+state. **Certification rule:** a team is *certified* after **3 consecutive
+PRODUCTION verdicts on held-out seeds** (the streak is capped at 3).
+
+The tab is gated `devOnly` in the sidebar and is not present in packaged
+installers.

@@ -13,26 +13,10 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import { gatherBundle } from './gather.mjs';
 
-const arg = (n, f = null) => {
-  const i = process.argv.indexOf(n);
-  return i >= 0 && process.argv[i + 1] ? process.argv[i + 1] : f;
-};
+import { arg } from './lib/cli.mjs';
 const RUNS = join('docs', 'test', 'runs');
 
-function gitStatusFingerprint(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'status', '--porcelain'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-}
-function gitHead(root) {
-  try {
-    return execFileSync('git', ['-C', root, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
-  } catch {
-    return null;
-  }
-}
+import { head as gitHead, statusFingerprint as gitStatusFingerprint } from './lib/git.mjs';
 
 const runId = arg('--run');
 if (!runId) {

@@ -10,6 +10,11 @@ pub struct EventMatch {
     pub payload: Option<String>,
     pub source_id: Option<String>,
     pub use_case_id: Option<String>,
+    /// The subscription's `source_filter` that produced this match. Carried so
+    /// the dispatcher can apply the cross-team bleed guard (a wildcard `"*"`
+    /// match across team boundaries is suppressed — see
+    /// `is_cross_team_wildcard_bleed`). `None` = self-scoped (own events only).
+    pub source_filter: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -163,8 +168,34 @@ pub fn match_event<T: MatchableSubscription>(
             payload: event.payload.clone(),
             source_id: event.source_id.clone(),
             use_case_id: sub.use_case_id().map(String::from),
+            source_filter: sub.source_filter().map(String::from),
         })
         .collect()
+}
+
+/// Cross-team bleed guard. Adoption wires a team persona's intra-team
+/// subscriptions with `source_filter = "*"` (any source) so the bus delivers a
+/// teammate's event. In a single-team app that's fine, but with multiple teams
+/// each pinned to its own repo it lets one team's `release.published` (etc.)
+/// wake EVERY team's matching persona — which then correctly refuses the
+/// off-repo work, burning a `precondition_failed` run each time (observed:
+/// SDLC2 Medical Bill at 0% value, all 3 runs ai-bookkeeper releases it
+/// declined). This returns true when a match should be SUPPRESSED: it only
+/// fires for the wildcard opt-in (`"*"`) crossing a team boundary — an explicit
+/// specific `source_filter` (intentional cross-team routing) and teamless
+/// personas / non-persona sources are left untouched.
+pub fn is_cross_team_wildcard_bleed(
+    source_filter: Option<&str>,
+    subscriber_home_team: Option<&str>,
+    source_home_team: Option<&str>,
+) -> bool {
+    if source_filter != Some("*") {
+        return false; // self-scoped or an explicit, intentional source_filter
+    }
+    match (subscriber_home_team, source_home_team) {
+        (Some(sub), Some(src)) => sub != src, // both anchored, different teams → bleed
+        _ => false,                           // a teamless side → don't over-filter
+    }
 }
 
 /// Phase C4 — collapse `(persona_id, use_case_id)` duplicates within a match
@@ -242,6 +273,21 @@ fn source_filter_matches(filter: &str, source_id: Option<&str>) -> bool {
 mod tests {
     use super::*;
     use crate::db::models::PersonaEventStatus;
+
+    #[test]
+    fn cross_team_wildcard_bleed_guard() {
+        // Wildcard across a team boundary → suppress (the bug).
+        assert!(is_cross_team_wildcard_bleed(Some("*"), Some("teamA"), Some("teamB")));
+        // Wildcard within the same team → deliver (intra-team chain).
+        assert!(!is_cross_team_wildcard_bleed(Some("*"), Some("teamA"), Some("teamA")));
+        // Explicit specific source_filter → never our concern (intentional routing).
+        assert!(!is_cross_team_wildcard_bleed(Some("persona-x"), Some("teamA"), Some("teamB")));
+        // Self-scoped (no filter) → not handled here.
+        assert!(!is_cross_team_wildcard_bleed(None, Some("teamA"), Some("teamB")));
+        // A teamless side (global persona or non-persona source) → don't over-filter.
+        assert!(!is_cross_team_wildcard_bleed(Some("*"), None, Some("teamB")));
+        assert!(!is_cross_team_wildcard_bleed(Some("*"), Some("teamA"), None));
+    }
 
     fn make_event(event_type: &str) -> PersonaEvent {
         PersonaEvent {
@@ -508,6 +554,7 @@ mod tests {
             payload: None,
             source_id: None,
             use_case_id: use_case_id.map(str::to_string),
+            source_filter: None,
         }
     }
 

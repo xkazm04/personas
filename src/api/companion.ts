@@ -89,6 +89,20 @@ export async function companionSendMessage(
 }
 
 /**
+ * Deterministic fleet-analysis trigger (the "Analyze fleet" skill button).
+ * Spawns the rubric-graded proactive turn directly — no chat round-trip — so
+ * Athena can't shortcut to an inline read; the dedicated turn writes the
+ * per-team timeline note. Returns immediately (the turn runs in the
+ * background and streams into the chat).
+ */
+export async function companionAnalyzeFleet(
+  teamId?: string,
+  days?: number,
+): Promise<string> {
+  return invoke<string>('companion_analyze_fleet', { teamId, days });
+}
+
+/**
  * Cancel any scheduled autonomous-continuation tick. Backend best-
  * effort: drops the JoinHandle if pending; if a continuation already
  * started, this is a no-op (use `companionInterruptTurn` to stop the

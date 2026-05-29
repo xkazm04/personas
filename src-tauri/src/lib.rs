@@ -7,6 +7,7 @@ pub mod daemon;
 mod db;
 mod engine;
 pub use commands::artist::persistence as artist_persistence;
+pub use commands::eval_runs;
 pub use engine::provider::EngineKind;
 pub use engine::render_plan;
 mod error;
@@ -2120,6 +2121,7 @@ pub fn run() {
             // Tools -- GitHub Platform
             commands::tools::github_platform::github_list_repos,
             commands::tools::github_platform::github_check_permissions,
+            commands::tools::github_platform::github_create_patch_release,
             // Tools -- Deploy Automation
             commands::tools::deploy_automation::deploy_automation,
             // Tools -- Triggers
@@ -2247,6 +2249,10 @@ pub fn run() {
             commands::drive::drive_reveal_in_os,
             // Live Roadmap -- runtime-fetched roadmap content
             commands::live_roadmap::fetch_roadmap,
+            // Eval / Certification -- read-only viewer over docs/test/runs bundles (dev-only UI)
+            commands::eval_runs::list_eval_runs,
+            commands::eval_runs::get_cert_status,
+            commands::eval_runs::get_eval_run,
             // Obsidian Brain -- Second Brain Sync
             commands::obsidian_brain::obsidian_brain_detect_vaults,
             commands::obsidian_brain::obsidian_brain_test_connection,
@@ -2299,6 +2305,7 @@ pub fn run() {
             commands::companion::approvals::companion_list_pending_approvals,
             commands::companion::approvals::companion_approve_action,
             commands::companion::approvals::companion_reject_action,
+            commands::companion::approvals::companion_analyze_fleet,
             commands::companion::brain::companion_list_brain_items,
             commands::companion::brain::companion_get_brain_item,
             commands::companion::brain::companion_delete_brain_item,

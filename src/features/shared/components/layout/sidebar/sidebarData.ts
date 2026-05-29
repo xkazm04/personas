@@ -2,7 +2,7 @@ import {
   BarChart3, Bot, Zap, Key, Activity, ClipboardCheck, MessageSquare,
   FlaskConical, Brain, Cloud, Plus, LayoutTemplate, Monitor, Upload,
   List, Settings, Globe, Palette, GitBranch, LayoutDashboard, Cpu,
-  Network, Database, Home, Compass, Shield, HardDriveDownload, Heart,
+  Network, Database, Home, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers, Workflow,
   GraduationCap, BookOpen, Trophy, AlertOctagon, Target, CalendarClock,
@@ -78,6 +78,9 @@ export const overviewItems: Array<{ id: OverviewTab; icon: LucideIcon; label: st
   { id: 'health', icon: Heart, label: 'Health' },
   { id: 'director', icon: Clapperboard, label: 'Director', minTier: TIERS.TEAM },
   { id: 'leaderboard', icon: Trophy, label: 'Leaderboard' },
+  // Dev-only: in-app viewer over the team-autonomy eval/certification bundles
+  // (docs/test/runs/). Never shipped in packaged installers.
+  { id: 'certification', icon: ShieldCheck, label: 'Certification', devOnly: true },
 ];
 
 export const credentialItems: SubNavItem[] = [
