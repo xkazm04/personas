@@ -12191,6 +12191,11 @@ export type Translations = {
       goal_detail_team_steps: string;
       goal_detail_linked_teams: string;
       goal_unlink_team: string;
+      goal_advance_label: string;
+      goal_advance_button: string;
+      goal_advance_starting: string;
+      goal_advance_active: string;
+      goal_advance_hint: string;
       goal_detail_activity: string;
       goal_item_add: string;
       goal_item_add_placeholder: string;
