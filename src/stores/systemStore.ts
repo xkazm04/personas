@@ -54,6 +54,10 @@ export const useSystemStore = create<SystemStore>()(
       storage: createDedupedJSONStorage(),
       partialize: (state) => ({
         sidebarSection: state.sidebarSection,
+        // Persist the active dev project so Goals (and other dev-tools surfaces)
+        // re-fetch their data after a hard refresh. Without this it reset to null
+        // on reload, and goals — though safely in SQLite — never re-fetched.
+        activeProjectId: state.activeProjectId,
         fleetNotifyAwaiting: state.fleetNotifyAwaiting,
         fleetActiveSessionId: state.fleetActiveSessionId,
         homeTab: state.homeTab,
