@@ -986,27 +986,82 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
             }
             found
         };
-        let project_goals: i64 = project_id
-            .as_deref()
-            .map(|pid| {
-                conn.query_row(
-                    "SELECT COUNT(*) FROM dev_goals WHERE project_id = ?1",
-                    params![pid],
-                    |r| r.get::<_, i64>(0),
-                )
-                .unwrap_or(0)
-            })
-            .unwrap_or(0);
-        let goal_linked = assignment_goals + project_goals;
+        // Goal ENGAGEMENT (extended scope): is a team_assignment actively
+        // advancing a goal, and how are the goal's breakdown to-dos progressing?
+        let advancing = assignment_goals > 0;
+        let mut goal_summ: Vec<String> = Vec::new();
+        if let Some(pid) = project_id.as_deref() {
+            if let Ok(mut stmt) = conn.prepare(
+                "SELECT id, title, status, COALESCE(progress,0) FROM dev_goals WHERE project_id = ?1 ORDER BY created_at DESC LIMIT 5",
+            ) {
+                if let Ok(rows) = stmt.query_map(params![pid], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, String>(2)?,
+                        r.get::<_, i64>(3)?,
+                    ))
+                }) {
+                    for (gid, title, status, progress) in rows.flatten() {
+                        let (td, tt): (i64, i64) = conn
+                            .query_row(
+                                "SELECT COALESCE(SUM(done),0), COUNT(*) FROM dev_goal_items WHERE goal_id = ?1",
+                                params![gid],
+                                |r| Ok((r.get(0)?, r.get(1)?)),
+                            )
+                            .unwrap_or((0, 0));
+                        let blk: i64 = conn
+                            .query_row(
+                                "SELECT COUNT(*) FROM dev_goal_dependencies WHERE goal_id = ?1",
+                                params![gid],
+                                |r| r.get(0),
+                            )
+                            .unwrap_or(0);
+                        let blk_s = if blk > 0 { format!(", {blk} blocker(s)") } else { String::new() };
+                        let t: String = title.chars().take(40).collect();
+                        goal_summ.push(format!("\"{t}\" {status} {progress}% (to-dos {td}/{tt}{blk_s})"));
+                    }
+                }
+            }
+        }
+        let last_signal: Option<String> = project_id.as_deref().and_then(|pid| {
+            conn.query_row(
+                "SELECT s.signal_type FROM dev_goal_signals s JOIN dev_goals g ON g.id = s.goal_id WHERE g.project_id = ?1 ORDER BY s.created_at DESC LIMIT 1",
+                params![pid],
+                |r| r.get::<_, String>(0),
+            )
+            .ok()
+        });
+        let goal_state = if goal_summ.is_empty() {
+            "goal: NONE".to_string()
+        } else {
+            let mode = if advancing { "ADVANCING" } else { "has-goal/NOT-advancing" };
+            let sig = last_signal.map(|s| format!(" · last-goal-signal {s}")).unwrap_or_default();
+            format!("goal [{mode}]: {}{sig}", goal_summ.join("; "))
+        };
         match agg {
             Ok((total, failed, vd, partial, pf, cost, dir)) => {
-                let dir_s = dir.map(|d| format!("{d:.1}/5")).unwrap_or_else(|| "—".into());
+                // Director score + band (mirrors the Director command-center banding
+                // so the digest carries the same quality semantics, not a bare number).
+                let dir_s = dir
+                    .map(|d| {
+                        let band = if d >= 4.0 {
+                            "excellent"
+                        } else if d >= 3.0 {
+                            "healthy"
+                        } else if d >= 2.0 {
+                            "at-risk"
+                        } else {
+                            "broken"
+                        };
+                        format!("{d:.1}/5 ({band})")
+                    })
+                    .unwrap_or_else(|| "— (unrated)".into());
                 out.push_str(&format!(
-                    "- **{name}** (`{short}`): {total} exec · {failed} failed · value-delivered {vd} · partial {partial} · precond-failed {pf} · ${cost:.2} · director {dir_s} · goal-linked: {}\n",
-                    if goal_linked > 0 { "yes" } else { "NO" }
+                    "- **{name}** (`{short}`): {total} exec · {failed} failed · vd {vd} · partial {partial} · precond {pf} · ${cost:.2} · director {dir_s} · {goal_state}\n",
                 ));
             }
-            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data)\n")),
+            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data) · {goal_state}\n")),
         }
     }
     out
@@ -1028,10 +1083,15 @@ fn build_fleet_directive(team: Option<&str>, days: i64, digest: &str) -> String 
          Reason over THIS — do NOT try to fetch it via a connector (your personas_database \
          connector points at the companion-brain DB, not the execution store):\n\n\
          {digest}\n\n\
-         For each team, assess against these certification dimensions: (1) on-track — is it \
-         tied to a tracked goal (goal-linked: NO is a real gap); (2) value delivery — \
-         value-delivered vs partial / precond-failed; (3) health — failures; (4) cost + \
-         outliers; (5) portfolio balance. Then: (a) recall any prior fleet-analysis note \
+         For each team, assess against these certification dimensions: (1) GOAL ENGAGEMENT \
+         (the focus this round) — is a team_assignment ACTIVELY ADVANCING the goal, or does \
+         the goal just sit on the project ('has-goal/NOT-advancing')? How complete are the \
+         goal's breakdown to-dos (the `to-dos X/Y` per goal)? Is it blocked (blocker count)? \
+         When did the team last touch it (`last-goal-signal`)? 'has-goal/NOT-advancing', \
+         '0 to-dos done', or no recent goal signal are real gaps — call them out and propose \
+         a fix. (2) value delivery — value-delivered vs partial / precond-failed; (3) health \
+         — failures; (4) cost + outliers; (5) portfolio balance. Then: (a) recall any prior \
+         fleet-analysis note \
          from your memory for timeline continuity (did last round's gap get fixed?); \
          (b) write a concise per-team timeline note via write_fact (scope the fact to the \
          team) so the next review builds on this one; (c) propose at most a few concrete \
