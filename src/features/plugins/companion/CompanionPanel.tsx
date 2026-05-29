@@ -2098,7 +2098,7 @@ function Body(props: BodyProps) {
         onAskCapabilities={askCapabilities}
         onAnalyzeFleet={() =>
           void send(
-            'Analyze the fleet — review how the teams are doing against the certification rubric and flag anything off track. Use analyze_fleet.',
+            'How are the teams doing? Review the fleet and flag anything off track.',
           )
         }
         onOpenBrain={() =>
