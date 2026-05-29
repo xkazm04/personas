@@ -23,6 +23,7 @@ const SLADashboard = lazyRetry(() => import('@/features/overview/sub_sla/compone
 const PersonaHealthDashboard = lazyRetry(() => import('@/features/overview/sub_health/components/PersonaHealthDashboard'));
 const LeaderboardPage = lazyRetry(() => import('@/features/overview/sub_leaderboard'));
 const IncidentsInbox = lazyRetry(() => import('@/features/overview/sub_incidents'));
+const DirectorCoachingTab = lazyRetry(() => import('@/features/overview/sub_director'));
 
 /** Pulsing panel placeholder matching the dashboard's card geometry. */
 function SkeletonPanel({ className }: { className: string }) {
@@ -85,6 +86,7 @@ function OverviewContent() {
           overviewTab === 'sla' ? <SLADashboard /> :
 
           overviewTab === 'health' ? <PersonaHealthDashboard /> :
+          overviewTab === 'director' ? <DirectorCoachingTab /> :
           overviewTab === 'leaderboard' ? <LeaderboardPage /> :
           <DashboardWithSubtabs />}
         </Suspense>

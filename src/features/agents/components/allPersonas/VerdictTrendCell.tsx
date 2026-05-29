@@ -1,7 +1,7 @@
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { useTranslation } from '@/i18n/useTranslation';
-import { ScoreSparkline } from '@/features/director/ScoreSparkline';
-import { scoreTone, toneFill } from '@/features/director/directorScore';
+import { ScoreSparkline } from '@/features/overview/sub_director/ScoreSparkline';
+import { scoreTone, toneFill } from '@/features/overview/sub_director/directorScore';
 
 /**
  * Compact 0-5 Director-score trend for a persona row. Renders nothing when

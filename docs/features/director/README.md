@@ -9,35 +9,39 @@ prose **coaching verdicts**.
 It is the longitudinal, portfolio-level counterpart to Athena's per-execution
 reactive review.
 
-## The command center (the Director's home)
+## The command center (Overview › Director)
 
-The Director has a **dedicated top-level route** (`director` sidebar section,
-TEAM tier) — `src/features/director/DirectorPage.tsx`, lazy-loaded from
-`PersonasPage`. It has five L2 sub-tabs, all fed by the shared
-`useDirector` hook (`src/features/director/useDirector.ts`, the single source of
-truth for every Director surface):
+The Director's surface is **one Overview sub-tab** —
+`src/features/overview/sub_director/` (default export `DirectorCoachingTab`),
+lazy-loaded by `OverviewPage` for `overviewTab === 'director'`, TEAM-tier. (It
+was briefly a dedicated top-level sidebar section; it was descoped so the code
+layout mirrors the UI layout — the Director lives under Overview where its
+analytics belong.) Everything is fed by the shared `useDirector` hook
+(`sub_director/useDirector.ts`, the single source of truth for the surface and
+the Agents-page teaser).
 
-- **Overview** — the portfolio scorecard. KPI cards for fleet value-delivered
+The single tab stacks, top to bottom:
+
+- **Thin subheader** — scope summary + the **Brain long-term-memory toggle**
+  (gated on a configured vault; otherwise a deep-link to the Obsidian Brain
+  plugin), an **Add to scope** button, and **Review all in scope**.
+- **Scorecard** (the portfolio analytics): KPI cards for fleet value-delivered
   rate, average verdict score, cost-per-value, and in-scope count; a 0–5
-  **score distribution** bar across in-scope personas; a **model efficiency**
-  table; and the recent coaching feed. All of this comes from the
+  **score distribution** bar; and a **model efficiency** table. All from the
   `get_director_portfolio` command, which finally surfaces the `ValueRollup`
   that until now only ever reached the LLM payload.
-- **Attention** — a triage surface derived client-side from the roster:
-  each in-scope agent is bucketed into its single highest-priority concern
-  (awaiting first review → low score ≤2 → declining trend → stale review
-  >14d) with one-click review. Says "nothing needs attention" when all
-  agents are healthy.
-- **Roster** — the first-class scope manager: each starred persona with its
-  latest score, trend sparkline, value rate, and last-review time, plus inline
-  "Review now" / remove-from-scope, and one-click add-to-scope for unstarred
-  personas.
-- **Reviews** — the full coaching history, filterable by severity, each verdict
-  expandable to its rationale + suggested actions.
-- **Memory** — the Brain long-term-memory toggle (relocated here) + a deep-link
-  into the Obsidian Brain plugin.
+- **Coaching table** — one table consolidating what were three tabs (Roster +
+  Attention + Reviews). Each in-scope agent is a row showing score · trend
+  sparkline · value rate · **attention tags** · last review. Attention tags are
+  the client-derived triage lenses (`sub_director/attention.ts`): awaiting first
+  review / low score ≤2 / declining trend / stale review >14d; an "only needs
+  attention" filter focuses triage. **Clicking a row opens a detail modal**
+  (`PersonaDetailModal`) with that agent's score trend, value signal, active
+  attention flags, and full **verdict history** (the Reviews surface, scoped to
+  the agent, expandable to rationale + suggested actions) plus Review-now.
 
-The header carries a **Review all in scope** action reachable from every tab.
+**Add to scope** and **per-agent detail** are modals (`AddToScopeModal` /
+`PersonaDetailModal`) so the tab stays compact.
 
 ## Scope — the star
 
@@ -94,12 +98,13 @@ embeddings, so it works in the lite build. Toggle via
 
 ## Where verdicts surface
 
-- **Command center** (`src/features/director/`): the primary surface — see the
-  section above.
+- **Command center** (`src/features/overview/sub_director/`): the primary
+  surface — the **Overview › Director** sub-tab. See the section above.
 - **Agents-page teaser** (`src/features/agents/components/allPersonas/DirectorPanel.tsx`):
   a slim status strip at the top of the personas page (scope + avg score + last
-  review) with an **Open Director** deep-link into the command center. Since v2
-  it no longer duplicates the dashboard — the full management lives in the route.
+  review) with an **Open Director** deep-link that navigates to
+  Overview › Director. It does not duplicate the dashboard — the full management
+  lives in the sub-tab.
 - **Personas table** (`src/features/agents/components/allPersonas/PersonaOverviewColumns.tsx`):
   a **Verdict** column shows each persona's score-trend sparkline — the
   most recent N (default 10) `director_score` values for that persona,
@@ -141,9 +146,11 @@ embeddings, so it works in the lite build. Toggle via
   `metrics::get_value_rollup`.
 - Scope/score storage: `personas.starred`, `persona_executions.director_score`
   / `director_review_md` (migrations in `src-tauri/src/db/migrations/`).
-- Command center: `src/features/director/` — `DirectorPage.tsx`,
-  `useDirector.ts` (shared data/actions hook), `directorScore.ts` +
-  `ScoreSparkline.tsx` (shared 0–5 score visual language), `panels/*`.
+- Command center: `src/features/overview/sub_director/` —
+  `DirectorCoachingTab.tsx` (the Overview sub-tab: subheader + scorecard +
+  table), `useDirector.ts` (shared data/actions hook), `attention.ts` (triage
+  lenses), `directorScore.ts` + `ScoreSparkline.tsx` (shared 0–5 score visual
+  language), `DirectorSection.tsx` (panel surface), `components/{PersonaCoachingTable,PersonaDetailModal,AddToScopeModal}.tsx`.
 - Shared primitive: `src/features/shared/components/display/StatCard.tsx` (KPI
   card, added with this feature).
 - Other UI: `src/features/agents/components/allPersonas/DirectorPanel.tsx`

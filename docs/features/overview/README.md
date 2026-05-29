@@ -20,6 +20,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | Events | Durable event log with search/filter and detail modal. Table columns are user-resizable. | `sub_events`, `commands/communication/events.rs` |
 | Knowledge | Knowledge rows, graph dashboard, annotations | `sub_knowledge` |
 | Health | Persona health cards, heartbeat, predictive alerts, burn-rate/cascade views | `sub_health` |
+| Director | The Director coaching command center (relocated here from a top-level sidebar section). Thin subheader (scope + Brain memory toggle + add-to-scope + review-all), portfolio scorecard (value rate / avg verdict / cost-per-value / score distribution / model efficiency), and one coaching table consolidating Roster + Attention + Reviews — each starred agent row shows score · trend · value · attention tags, clicking opens a per-agent detail modal with full verdict history. See `docs/features/director/README.md`. | `sub_director` |
 | Leaderboard | Persona rankings, podium, radar score details | `sub_leaderboard` |
 
 ## Additional overview modules

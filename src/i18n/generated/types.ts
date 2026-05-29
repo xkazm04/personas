@@ -3132,6 +3132,19 @@ export type Translations = {
     group_declining_hint: string;
     group_stale: string;
     group_stale_hint: string;
+    add_to_scope: string;
+    add_search_placeholder: string;
+    only_flagged: string;
+    col_flags: string;
+    flag_new: string;
+    flag_low: string;
+    flag_declining: string;
+    flag_stale: string;
+    detail_attention: string;
+    detail_history: string;
+    detail_value_rate: string;
+    table_title: string;
+    all_clear: string;
   };
   vault: {
     title: string;
