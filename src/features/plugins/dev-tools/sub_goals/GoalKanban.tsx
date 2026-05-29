@@ -8,6 +8,7 @@ import { KanbanBoard, type KanbanColumn } from '@/features/shared/components/kan
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
+import { goalAccentEdgeStyle } from './goalsTheme';
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -63,7 +64,8 @@ function GoalCard({ goal, onOpen }: { goal: DevGoal; onOpen?: () => void }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="rounded-modal border border-primary/10 bg-background/60 p-3 transition-all hover:border-primary/20"
+      style={goalAccentEdgeStyle(goal.status)}
+      className="rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 p-3 pl-3.5 transition-[border-color,box-shadow] duration-200 hover:border-primary/25 hover:shadow-elevation-2"
     >
       <div className="flex items-start gap-2">
         <Target className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />

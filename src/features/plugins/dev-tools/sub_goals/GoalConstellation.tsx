@@ -18,6 +18,7 @@ import { GoalDetailDrawer } from './GoalDetailDrawer';
 import { GoalEditorModal } from './GoalEditorModal';
 import { runForceSimulation, nodeRadius, type NodePos } from './forceLayout';
 import { goalStatusMeta, goalStatusLabel, isBlocked, isInProgress, GOAL_STATUSES } from './goalStatus';
+import { GoalAtmosphere } from './goalsTheme';
 import { silentCatch } from '@/lib/silentCatch';
 
 type VariantId = 'board' | 'map';
@@ -151,7 +152,8 @@ function GoalMap({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-3">
+      <GoalAtmosphere />
       {/* Controls */}
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon-sm" onClick={handleZoomIn} title={t.plugins.dev_tools.zoom_in}>
@@ -169,7 +171,10 @@ function GoalMap({
       </div>
 
       {/* SVG Canvas */}
-      <div className="rounded-modal border border-primary/10 bg-background/50 overflow-hidden" style={{ height: HEIGHT * zoom }}>
+      <div
+        className="rounded-modal border border-primary/10 overflow-hidden"
+        style={{ height: HEIGHT * zoom, background: 'radial-gradient(120% 90% at 50% 0%, rgba(139,92,246,0.05), rgba(0,0,0,0)), var(--background)' }}
+      >
         <svg ref={svgRef} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%" height="100%" className="select-none">
           <defs>
             <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">

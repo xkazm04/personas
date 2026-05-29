@@ -20,14 +20,15 @@ import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
 import type { AttentionQueue } from '@/lib/bindings/AttentionQueue';
 import type { AttentionItem } from '@/lib/bindings/AttentionItem';
 import { GoalStatusBadge } from './GoalStatusBadge';
+import { GoalAtmosphere } from './goalsTheme';
 
 type KindKey = 'awaiting_review' | 'overdue' | 'stalled' | 'unstaffed';
 
-const KIND_META: Record<KindKey, { icon: typeof Clock; chip: string; labelKey: 'attention_kind_awaiting_review' | 'attention_kind_overdue' | 'attention_kind_stalled' | 'attention_kind_unstaffed' }> = {
-  awaiting_review: { icon: AlertTriangle, chip: 'text-amber-400 border-amber-500/25 bg-amber-500/10', labelKey: 'attention_kind_awaiting_review' },
-  overdue: { icon: Clock, chip: 'text-red-400 border-red-500/25 bg-red-500/10', labelKey: 'attention_kind_overdue' },
-  stalled: { icon: Clock, chip: 'text-orange-400 border-orange-500/25 bg-orange-500/10', labelKey: 'attention_kind_stalled' },
-  unstaffed: { icon: UserPlus, chip: 'text-sky-400 border-sky-500/25 bg-sky-500/10', labelKey: 'attention_kind_unstaffed' },
+const KIND_META: Record<KindKey, { icon: typeof Clock; chip: string; edge: string; labelKey: 'attention_kind_awaiting_review' | 'attention_kind_overdue' | 'attention_kind_stalled' | 'attention_kind_unstaffed' }> = {
+  awaiting_review: { icon: AlertTriangle, chip: 'text-amber-400 border-amber-500/25 bg-amber-500/10', edge: '#F59E0B', labelKey: 'attention_kind_awaiting_review' },
+  overdue: { icon: Clock, chip: 'text-red-400 border-red-500/25 bg-red-500/10', edge: '#EF4444', labelKey: 'attention_kind_overdue' },
+  stalled: { icon: Clock, chip: 'text-orange-400 border-orange-500/25 bg-orange-500/10', edge: '#FB923C', labelKey: 'attention_kind_stalled' },
+  unstaffed: { icon: UserPlus, chip: 'text-sky-400 border-sky-500/25 bg-sky-500/10', edge: '#38BDF8', labelKey: 'attention_kind_unstaffed' },
 };
 
 export function GoalsAttention() {
@@ -77,8 +78,11 @@ export function GoalsAttention() {
 
   if (!queue || queue.items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <CheckCircle2 className="w-10 h-10 text-emerald-400 mb-3" />
+      <div className="relative flex flex-col items-center justify-center py-16 text-center">
+        <GoalAtmosphere className="[background:radial-gradient(120%_70%_at_50%_-10%,rgba(16,185,129,0.08),transparent_55%)]" />
+        <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center mb-4 animate-fade-scale-in">
+          <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+        </div>
         <h3 className="typo-section-title text-foreground">{dl.attention_all_clear}</h3>
         <p className="typo-body text-foreground mt-1 max-w-md">{dl.attention_all_clear_sub}</p>
       </div>
@@ -86,7 +90,8 @@ export function GoalsAttention() {
   }
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="relative space-y-4 pb-6">
+      <GoalAtmosphere />
       {/* Header: counts + triage */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
@@ -108,7 +113,8 @@ export function GoalsAttention() {
           return (
             <li
               key={`${item.kind}-${item.goalId}-${item.stepId ?? i}`}
-              className="flex items-center gap-3 rounded-modal border border-primary/10 bg-background/50 px-3 py-2.5"
+              style={{ boxShadow: `inset 3px 0 0 0 ${meta.edge}`, animationDelay: `${Math.min(i, 12) * 35}ms` }}
+              className="animate-fade-slide-in flex items-center gap-3 rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 pl-4 pr-3 py-2.5 transition-[border-color] duration-200 hover:border-primary/25"
             >
               <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border whitespace-nowrap flex items-center gap-1 ${meta.chip}`}>
                 <Icon className="w-3 h-3" /> {dl[meta.labelKey]}

@@ -13,6 +13,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { isOngoing, goalStatusMeta } from './goalStatus';
+import { GoalAtmosphere, SectionLabel } from './goalsTheme';
 
 type Bucket = 'overdue' | 'this_week' | 'this_month' | 'later' | 'undated';
 const BUCKET_ORDER: Bucket[] = ['overdue', 'this_week', 'this_month', 'later', 'undated'];
@@ -73,7 +74,8 @@ export function GoalsTimeline() {
   const dated = BUCKET_ORDER.filter((b) => b !== 'undated').reduce((n, b) => n + grouped[b].length, 0);
   if (dated === 0 && grouped.undated.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="relative flex flex-col items-center justify-center py-16 text-center">
+        <GoalAtmosphere />
         <CalendarClock className="w-10 h-10 text-foreground mb-3" />
         <h3 className="typo-section-title text-foreground">{dl.timeline_no_dated}</h3>
         <p className="typo-body text-foreground mt-1 max-w-md">{dl.timeline_no_dated_sub}</p>
@@ -81,27 +83,30 @@ export function GoalsTimeline() {
     );
   }
 
+  let rowIndex = 0;
   return (
-    <div className="space-y-5 pb-6">
+    <div className="relative space-y-5 pb-6">
+      <GoalAtmosphere />
       {BUCKET_ORDER.filter((b) => grouped[b].length > 0).map((b) => (
         <div key={b}>
-          <div className="flex items-center gap-2 mb-2">
-            <span className={`w-2 h-2 rounded-full ${BUCKET_ACCENT[b]}`} />
-            <h3 className="typo-caption uppercase tracking-[0.18em] text-foreground">{labels[b]}</h3>
-            <span className="typo-caption text-foreground tabular-nums">{grouped[b].length}</span>
+          <div className="mb-2">
+            <SectionLabel accent={BUCKET_ACCENT[b]} count={grouped[b].length}>{labels[b]}</SectionLabel>
           </div>
           {/* Rail */}
           <ul className="relative ml-1 border-l border-primary/10 space-y-1.5 pl-4">
-            {grouped[b].map((g) => (
+            {grouped[b].map((g) => {
+              const delay = Math.min(rowIndex++, 14) * 30;
+              return (
               <li key={g.id} className="relative">
                 <span
                   className="absolute -left-[21px] top-2.5 w-2.5 h-2.5 rounded-full border-2 border-background"
-                  style={{ backgroundColor: goalStatusMeta(g.status).map.fill }}
+                  style={{ backgroundColor: goalStatusMeta(g.status).map.fill, boxShadow: `0 0 8px -1px ${goalStatusMeta(g.status).map.glow}` }}
                 />
                 <button
                   type="button"
                   onClick={() => openGoal(g.id)}
-                  className="w-full text-left rounded-modal border border-primary/10 bg-background/50 px-3 py-2 transition-all hover:border-primary/25 hover:bg-primary/[0.03]"
+                  style={{ animationDelay: `${delay}ms` }}
+                  className="animate-fade-slide-in w-full text-left rounded-modal border border-primary/10 bg-gradient-to-br from-card/60 to-card/20 px-3 py-2 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-primary/25 motion-reduce:transform-none focus-ring"
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground truncate flex-1">{g.title}</span>
@@ -120,7 +125,8 @@ export function GoalsTimeline() {
                   </div>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
       ))}

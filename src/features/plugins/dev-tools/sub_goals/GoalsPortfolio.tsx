@@ -8,7 +8,7 @@
  * `dev_tools_portfolio_summary` rollup (no N+1).
  */
 import { useEffect, useState, type ComponentType } from 'react';
-import { Target, AlertTriangle, Clock, FolderKanban } from 'lucide-react';
+import { Target, AlertTriangle, Clock, FolderKanban, ArrowUpRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
@@ -17,6 +17,7 @@ import { portfolioSummary } from '@/api/devTools/devTools';
 import type { PortfolioSummary } from '@/lib/bindings/PortfolioSummary';
 import type { PortfolioProjectSummary } from '@/lib/bindings/PortfolioProjectSummary';
 import { GOAL_STATUS_META } from './goalStatus';
+import { GoalAtmosphere, GOAL_PANEL, goalAccentEdgeStyle } from './goalsTheme';
 
 // Segment order + colour for the status bar (canonical model is the source).
 const SEGMENTS = [
@@ -25,6 +26,14 @@ const SEGMENTS = [
   { key: 'blocked' as const, fill: GOAL_STATUS_META.blocked.map.fill },
   { key: 'done' as const, fill: GOAL_STATUS_META.done.map.fill },
 ];
+
+// Representative status for a project's accent edge — trouble surfaces first.
+function projectAccentStatus(p: PortfolioProjectSummary): string {
+  if (p.overdue > 0) return 'blocked';
+  if (p.atRisk > 0) return 'in-progress';
+  if (p.total > 0 && p.done === p.total) return 'done';
+  return 'open';
+}
 
 export function GoalsPortfolio() {
   const { t } = useTranslation();
@@ -63,28 +72,33 @@ export function GoalsPortfolio() {
   }
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="relative space-y-4 pb-6">
+      <GoalAtmosphere />
+
       {/* Grand-total header */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <StatTile label={dl.portfolio_total_goals} value={summary.totalGoals} icon={Target} tint="text-violet-400" />
-        <StatTile label={dl.portfolio_at_risk} value={summary.totalAtRisk} icon={AlertTriangle} tint={summary.totalAtRisk > 0 ? 'text-amber-400' : 'text-foreground'} />
-        <StatTile label={dl.goal_status_done} value={summary.totalDone} icon={GOAL_STATUS_META.done.icon} tint="text-emerald-400" />
-        <StatTile label={dl.portfolio_avg_progress} value={`${summary.avgProgress}%`} icon={Clock} tint="text-blue-400" />
+        <StatTile index={0} label={dl.portfolio_total_goals} value={summary.totalGoals} icon={Target} tint="text-violet-400" />
+        <StatTile index={1} label={dl.portfolio_at_risk} value={summary.totalAtRisk} icon={AlertTriangle} tint={summary.totalAtRisk > 0 ? 'text-amber-400' : 'text-foreground'} glow={summary.totalAtRisk > 0} />
+        <StatTile index={2} label={dl.goal_status_done} value={summary.totalDone} icon={GOAL_STATUS_META.done.icon} tint="text-emerald-400" />
+        <StatTile index={3} label={dl.portfolio_avg_progress} value={`${summary.avgProgress}%`} icon={Clock} tint="text-blue-400" />
       </div>
 
       {/* Project cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {summary.projects.map((p) => (
-          <ProjectCard key={p.projectId} p={p} onOpen={() => openProject(p.projectId)} openLabel={dl.portfolio_open_board} overdueLabel={dl.portfolio_overdue_label} atRiskLabel={dl.portfolio_at_risk_label} />
+        {summary.projects.map((p, i) => (
+          <ProjectCard key={p.projectId} p={p} index={i} onOpen={() => openProject(p.projectId)} openLabel={dl.portfolio_open_board} overdueLabel={dl.portfolio_overdue_label} atRiskLabel={dl.portfolio_at_risk_label} />
         ))}
       </div>
     </div>
   );
 }
 
-function StatTile({ label, value, icon: Icon, tint }: { label: string; value: number | string; icon: ComponentType<{ className?: string }>; tint: string }) {
+function StatTile({ label, value, icon: Icon, tint, index, glow = false }: { label: string; value: number | string; icon: ComponentType<{ className?: string }>; tint: string; index: number; glow?: boolean }) {
   return (
-    <div className="rounded-card border border-primary/10 bg-card/30 p-3 flex items-center gap-3">
+    <div
+      className={`animate-fade-slide-in rounded-card border p-3 flex items-center gap-3 bg-gradient-to-br from-card/60 to-card/20 ${glow ? 'border-amber-500/25 shadow-[0_0_24px_-8px_rgba(245,158,11,0.35)]' : 'border-primary/10'}`}
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
       <div className={`w-9 h-9 rounded-interactive border border-primary/15 bg-background/40 flex items-center justify-center shrink-0 ${tint}`}>
         <Icon className="w-4 h-4" />
       </div>
@@ -97,13 +111,14 @@ function StatTile({ label, value, icon: Icon, tint }: { label: string; value: nu
 }
 
 function ProjectCard({
-  p, onOpen, openLabel, overdueLabel, atRiskLabel,
+  p, onOpen, openLabel, overdueLabel, atRiskLabel, index,
 }: {
   p: PortfolioProjectSummary;
   onOpen: () => void;
   openLabel: string;
   overdueLabel: string;
   atRiskLabel: string;
+  index: number;
 }) {
   const counts = { open: p.open, inProgress: p.inProgress, blocked: p.blocked, done: p.done };
   const total = p.total || 1; // avoid /0 for the bar
@@ -112,12 +127,14 @@ function ProjectCard({
       type="button"
       onClick={onOpen}
       title={openLabel}
-      className="group text-left rounded-modal border border-primary/10 bg-background/50 p-4 transition-all hover:border-primary/25 hover:bg-primary/[0.03]"
+      style={{ ...goalAccentEdgeStyle(projectAccentStatus(p)), animationDelay: `${index * 40}ms` }}
+      className={`group relative overflow-hidden text-left p-4 pl-5 w-full animate-fade-slide-in ${GOAL_PANEL}`}
     >
-      <div className="flex items-start justify-between gap-2">
+      <ArrowUpRight className="absolute top-3 right-3 w-3.5 h-3.5 text-foreground opacity-0 -translate-y-0.5 group-hover:opacity-100 group-hover:translate-y-0 transition-[opacity,transform] duration-200" />
+      <div className="flex items-start justify-between gap-2 pr-5">
         <div className="min-w-0">
           <h4 className="typo-card-label truncate text-foreground">{p.projectName}</h4>
-          <p className="typo-caption text-foreground tabular-nums">{p.total} {/* goals */}· {p.avgProgress}%</p>
+          <p className="typo-caption text-foreground tabular-nums">{p.total} · {p.avgProgress}%</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {p.overdue > 0 && (
