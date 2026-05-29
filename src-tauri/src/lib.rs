@@ -2537,6 +2537,7 @@ pub fn run() {
             commands::infrastructure::director::run_director_batch,
             commands::infrastructure::director::list_director_verdicts,
             commands::infrastructure::director::list_director_score_trends,
+            commands::infrastructure::director::get_director_portfolio,
             commands::infrastructure::director::get_director_brain_enabled,
             commands::infrastructure::director::set_director_brain_enabled,
             // Dev Tools -- Projects

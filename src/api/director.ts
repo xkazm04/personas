@@ -35,8 +35,67 @@ export interface DirectorVerdictRow {
   executionId: string;
 }
 
+// Portfolio analytics (command center). Mirrors the Rust structs in
+// engine/director.rs; ts-rs also exports canonical bindings under
+// src/lib/bindings/ — these inline shapes match the file's existing convention.
+
+export interface ModelValueShare {
+  model: string;
+  executions: number;
+  costUsd: number;
+  valueDelivered: number;
+}
+
+export interface ValueRollup {
+  periodDays: number;
+  totalExecutions: number;
+  assessedExecutions: number;
+  valueDelivered: number;
+  partial: number;
+  preconditionFailed: number;
+  noInputAvailable: number;
+  unknown: number;
+  valueDeliveredRate: number;
+  totalCostUsd: number;
+  costPerValueDelivered: number | null;
+  models: ModelValueShare[];
+}
+
+export interface DirectorRosterEntry {
+  personaId: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  latestScore: number | null;
+  scoreTrend: number[];
+  valueDeliveredRate: number;
+  totalExecutions: number;
+  lastReviewedAt: string | null;
+}
+
+export interface DirectorScoreBand {
+  score: number;
+  count: number;
+}
+
+export interface DirectorPortfolio {
+  rollup: ValueRollup;
+  roster: DirectorRosterEntry[];
+  scoreDistribution: DirectorScoreBand[];
+  inScope: number;
+  reviewed: number;
+  unreviewed: number;
+  avgScore: number | null;
+  periodDays: number;
+}
+
 export async function getDirectorPersonaId(): Promise<string> {
   return invoke<string>('get_director_persona_id');
+}
+
+/** Portfolio analytics for the command center (fleet rollup + in-scope roster + score distribution). */
+export async function getDirectorPortfolio(days?: number): Promise<DirectorPortfolio> {
+  return invoke<DirectorPortfolio>('get_director_portfolio', { days: days ?? null });
 }
 
 // Phase 2 runs the Director persona through the execution runner and polls it

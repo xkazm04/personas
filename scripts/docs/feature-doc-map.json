@@ -133,7 +133,9 @@
       "doc": "docs/features/director/README.md",
       "sourceGlobs": [
         "src-tauri/src/engine/director.rs",
-        "src-tauri/src/commands/infrastructure/director.rs"
+        "src-tauri/src/engine/director_brain.rs",
+        "src-tauri/src/commands/infrastructure/director.rs",
+        "src/features/director/**"
       ],
       "marketingModule": "agents"
     },

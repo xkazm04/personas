@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**178 reusable components** live under `src/features/shared/components/`.
+**179 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -55,6 +55,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SectionLabel` | Small uppercase section label. |
 | `SetupStatusBadge` | _(add a `@catalog` tag)_ |
 | `SortableHeader` | Visible, already-translated column label. |
+| `StatCard` | Compact KPI / metric card — icon chip + label + big value, with an optional trend delta and hint. Use for dashboard stat rows inst |
 | `StatusBadge` | Status pill mapping a status token to label + color. Use with tokenLabel(). |
 | `StatusDot` | Minimal colored status dot for compact rows. |
 | `StatusShape` | _(add a `@catalog` tag)_ |
@@ -262,4 +263,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_178 components, 94 without a `@catalog` description._
+_179 components, 94 without a `@catalog` description._
