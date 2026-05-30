@@ -88,6 +88,7 @@ pub async fn compile_persona_memories(
         Some(persona_id.as_str()),
         None,
         None,
+        None,
         Some(limit),
         Some(0),
         None,

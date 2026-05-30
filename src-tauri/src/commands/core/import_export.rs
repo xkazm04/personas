@@ -156,6 +156,7 @@ pub async fn export_persona(
         Some(&persona_id),
         None,
         None,
+        None,
         Some(5000),
         None,
         None,

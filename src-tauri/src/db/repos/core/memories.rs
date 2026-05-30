@@ -68,10 +68,16 @@ fn escape_like(input: &str) -> String {
         .replace('_', "\\_")
 }
 
+/// `tier` filter sentinel meaning "every tier except archive" — the default
+/// Memories list view (archived memories are curated-out but still reachable
+/// via the explicit Archived filter).
+pub const TIER_NON_ARCHIVED: &str = "!archive";
+
 fn build_memory_filters(
     persona_id: Option<&str>,
     category: Option<&str>,
     search: Option<&str>,
+    tier: Option<&str>,
 ) -> QueryBuilder {
     let mut qb = QueryBuilder::new();
 
@@ -80,6 +86,15 @@ fn build_memory_filters(
     }
     if let Some(cat) = category {
         qb.where_eq("category", cat.to_string());
+    }
+    match tier {
+        Some(TIER_NON_ARCHIVED) => {
+            qb.where_raw(|i| format!("tier != ?{i}"), vec![Box::new("archive".to_string())]);
+        }
+        Some(t) if !t.is_empty() => {
+            qb.where_eq("tier", t.to_string());
+        }
+        _ => {}
     }
     if let Some(q) = search {
         let trimmed = q.trim();
@@ -128,6 +143,7 @@ pub fn get_all(
     persona_id: Option<&str>,
     category: Option<&str>,
     search: Option<&str>,
+    tier: Option<&str>,
     limit: Option<i64>,
     offset: Option<i64>,
     sort_column: Option<&str>,
@@ -141,7 +157,7 @@ pub fn get_all(
 
         let conn = pool.get()?;
 
-        let mut qb = build_memory_filters(persona_id, category, search);
+        let mut qb = build_memory_filters(persona_id, category, search, tier);
         qb.order_by(order_col, order_dir);
         qb.limit(limit);
         qb.offset(offset);
@@ -428,11 +444,12 @@ pub fn get_total_count(
     persona_id: Option<&str>,
     category: Option<&str>,
     search: Option<&str>,
+    tier: Option<&str>,
 ) -> Result<i64, AppError> {
     timed_query!("persona_memories", "persona_memories::get_total_count", {
         let conn = pool.get()?;
 
-        let qb = build_memory_filters(persona_id, category, search);
+        let qb = build_memory_filters(persona_id, category, search, tier);
         let sql = format!(
             "SELECT COUNT(*) FROM persona_memories {}",
             qb.where_clause()
@@ -500,10 +517,11 @@ pub fn get_stats(
     persona_id: Option<&str>,
     category: Option<&str>,
     search: Option<&str>,
+    tier: Option<&str>,
 ) -> Result<MemoryStats, AppError> {
     timed_query!("persona_memories", "persona_memories::get_stats", {
         let conn = pool.get()?;
-        let qb = build_memory_filters(persona_id, category, search);
+        let qb = build_memory_filters(persona_id, category, search, tier);
         compute_memory_stats(&conn, &qb.where_clause(), &qb.params_ref())
     })
 }
@@ -524,6 +542,7 @@ pub fn get_all_with_stats(
     persona_id: Option<&str>,
     category: Option<&str>,
     search: Option<&str>,
+    tier: Option<&str>,
     limit: Option<i64>,
     offset: Option<i64>,
     sort_column: Option<&str>,
@@ -539,13 +558,13 @@ pub fn get_all_with_stats(
             let order_dir = validated_sort_direction(sort_direction);
 
             let conn = pool.get()?;
-            let filter_qb = build_memory_filters(persona_id, category, search);
+            let filter_qb = build_memory_filters(persona_id, category, search, tier);
             let where_clause = filter_qb.where_clause();
             let stats = compute_memory_stats(&conn, &where_clause, &filter_qb.params_ref())?;
             let total = stats.total;
 
             // Paginated memories — build a new QB with same filters + pagination
-            let mut qb = build_memory_filters(persona_id, category, search);
+            let mut qb = build_memory_filters(persona_id, category, search, tier);
             qb.order_by(order_col, order_dir);
             qb.limit(limit_val);
             qb.offset(offset_val);
@@ -666,6 +685,116 @@ pub fn batch_delete(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
 
         tx.commit()?;
         Ok(total_deleted)
+    })
+}
+
+// ---------------------------------------------------------------------------
+// Director-driven curation: archive (reversible) instead of delete.
+// `tier = 'archive'` is the existing "not injected, still searchable" state
+// (see get_for_injection_v2, which selects only core/active/working).
+// ---------------------------------------------------------------------------
+
+/// Normalize content for cross-run duplicate detection: trim, lowercase,
+/// collapse internal whitespace. Mirrors the intent of the 24h dedup in
+/// [`create`] but spans all time (the 24h guard misses same-content rows from
+/// later runs — the documented Stock-Price-Logger case).
+fn normalize_for_dedup(content: &str) -> String {
+    content.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
+}
+
+/// Archive memories by id (set `tier = 'archive'`). Never touches `core`
+/// (user-pinned). Chunked + transactional like [`batch_delete`]. Reversible via
+/// [`update_tier`]`(id, "active")`. Returns the number of rows archived.
+pub fn archive_by_ids(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> {
+    if ids.is_empty() {
+        return Ok(0);
+    }
+    timed_query!("persona_memories", "persona_memories::archive_by_ids", {
+        const CHUNK_SIZE: usize = 400;
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let tx = conn.unchecked_transaction()?;
+        let mut total: i64 = 0;
+        for chunk in ids.chunks(CHUNK_SIZE) {
+            let mut qb = QueryBuilder::new();
+            qb.where_in("id", chunk.iter().map(|s| s.to_string()).collect());
+            // Guard: never archive a core (user-pinned) memory, even if asked.
+            qb.where_raw(|_| "tier != 'core'".to_string(), vec![]);
+            let sql = format!(
+                "UPDATE persona_memories SET tier = 'archive', updated_at = '{}' {}",
+                now.replace('\'', "''"),
+                qb.where_clause()
+            );
+            total += tx.execute(&sql, qb.params_ref().as_slice())? as i64;
+        }
+        tx.commit()?;
+        Ok(total)
+    })
+}
+
+/// Groups of a persona's memories that share normalized content (≥2 rows each),
+/// excluding `core` and already-`archive`d. Each group is ordered so the
+/// **keeper** is first (highest importance, then oldest) — callers archive the
+/// rest. Deterministic; no LLM.
+pub fn find_duplicate_groups(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<Vec<PersonaMemory>>, AppError> {
+    timed_query!("persona_memories", "persona_memories::find_duplicate_groups", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND tier NOT IN ('core', 'archive')",
+        )?;
+        let rows = stmt.query_map(params![persona_id], row_to_memory)?;
+        let all: Vec<PersonaMemory> = collect_rows(rows, "memories::find_duplicate_groups");
+
+        let mut buckets: std::collections::HashMap<String, Vec<PersonaMemory>> =
+            std::collections::HashMap::new();
+        for m in all {
+            buckets
+                .entry(normalize_for_dedup(&m.content))
+                .or_default()
+                .push(m);
+        }
+        let mut groups: Vec<Vec<PersonaMemory>> = buckets
+            .into_values()
+            .filter(|g| g.len() >= 2)
+            .map(|mut g| {
+                // Keeper first: highest importance, then oldest (stable id tiebreak).
+                g.sort_by(|a, b| {
+                    b.importance
+                        .cmp(&a.importance)
+                        .then(a.created_at.cmp(&b.created_at))
+                        .then(a.id.cmp(&b.id))
+                });
+                g
+            })
+            .collect();
+        // Stable output order (largest groups first) for predictable reporting.
+        groups.sort_by(|a, b| b.len().cmp(&a.len()));
+        Ok(groups)
+    })
+}
+
+/// Stale-ranked archival candidates for the LLM "won't-use" pass: `active` +
+/// `working` (never `core`/`archive`), ordered most-archivable first
+/// (low importance, low access, oldest). Bounded by `limit`.
+pub fn get_archivable_candidates(
+    pool: &DbPool,
+    persona_id: &str,
+    limit: i64,
+) -> Result<Vec<PersonaMemory>, AppError> {
+    timed_query!("persona_memories", "persona_memories::get_archivable_candidates", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_memories
+             WHERE persona_id = ?1 AND tier IN ('active', 'working')
+             ORDER BY importance ASC, access_count ASC, created_at ASC
+             LIMIT ?2",
+        )?;
+        let rows = stmt.query_map(params![persona_id, limit], row_to_memory)?;
+        Ok(collect_rows(rows, "memories::get_archivable_candidates"))
     })
 }
 
@@ -1172,12 +1301,12 @@ mod tests {
         );
 
         // Get all (no filters)
-        let all = get_all(&pool, None, None, None, None, None, None, None).unwrap();
+        let all = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
         assert_eq!(all.len(), 2);
 
         // Get all filtered by persona_id
         let by_persona =
-            get_all(&pool, Some(&persona.id), None, None, None, None, None, None).unwrap();
+            get_all(&pool, Some(&persona.id), None, None, None, None, None, None, None).unwrap();
         assert_eq!(by_persona.len(), 2);
 
         // Get all filtered by category
@@ -1190,13 +1319,14 @@ mod tests {
             None,
             None,
             None,
+            None,
         )
         .unwrap();
         assert_eq!(by_category.len(), 1);
         assert_eq!(by_category[0].title, "User prefers dark mode");
 
         // Get all with limit
-        let limited = get_all(&pool, None, None, None, Some(1), None, None, None).unwrap();
+        let limited = get_all(&pool, None, None, None, None, Some(1), None, None, None).unwrap();
         assert_eq!(limited.len(), 1);
 
         // Get by persona (ordered by importance DESC)
@@ -1210,7 +1340,7 @@ mod tests {
         assert!(deleted);
         assert!(get_by_id(&pool, &m1.id).is_err());
 
-        let remaining = get_all(&pool, None, None, None, None, None, None, None).unwrap();
+        let remaining = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
         assert_eq!(remaining.len(), 1);
     }
 

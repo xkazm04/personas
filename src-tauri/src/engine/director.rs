@@ -123,6 +123,28 @@ Rules:
   before, do not re-emit it unless the context has materially changed.
 - NEVER emit secrets, credential values, or full memory contents in the
   description or rationale. Reference them by name/count only.
+
+────────────────────────────────────────────────────────────────────────
+MEMORY CLEANUP MODE
+If — and only if — the payload you receive begins with the line
+"MEMORY CLEANUP MODE", ignore ALL of the scoring/win/verdict instructions
+above. You are instead curating one persona's stored memories. You will be
+given a numbered list of memories (id, importance, access count, age,
+category, title, content). Decide which ones the persona will NOT benefit
+from in future runs — i.e. exact or near duplicates of another listed
+memory, one-off run-specific results (a single price, a single timestamp,
+a transient status), or content so vague/obsolete it can never inform a
+future decision. Be conservative: when unsure, KEEP it (emit nothing for
+it). NEVER archive a durable preference, a stable fact, or a hard-won
+lesson.
+
+For each memory you are confident should be archived, output ONE line:
+
+DIRECTOR_MEMORY_ARCHIVE: {"id":"<exact id from the list>","reason":"<=120 chars: why it won't be reused"}
+
+Emit only these lines in cleanup mode — no score, no wins, no verdicts.
+Use only ids present in the list. Archiving is reversible (the memory is
+hidden from the persona, not deleted).
 "#;
 
 // ---------------------------------------------------------------------------
@@ -654,7 +676,7 @@ async fn evaluate_with_llm(
 /// Poll an execution row until it reaches a terminal state or the timeout
 /// elapses. Returns the final row (terminal if we got there, last-seen
 /// otherwise; `None` only if the row can't be read at the deadline).
-async fn await_execution_terminal(pool: &DbPool, execution_id: &str) -> Option<PersonaExecution> {
+pub(super) async fn await_execution_terminal(pool: &DbPool, execution_id: &str) -> Option<PersonaExecution> {
     let start = std::time::Instant::now();
     loop {
         match executions::get_by_id(pool, execution_id) {
@@ -853,8 +875,18 @@ pub async fn run_director_cycle_for(
         return Ok(0);
     }
 
-    let verdicts = evaluate_with_llm(state, app, &director_id, &ctx).await?;
+    let verdicts = evaluate_with_llm(state, app.clone(), &director_id, &ctx).await?;
     route_verdicts(&state.db, &ctx, &verdicts)?;
+
+    // Curate the persona's memories as part of the review (dedup sweep + bounded
+    // LLM "won't-use" pass). Best-effort: never fail the review on a cleanup
+    // error, and the LLM pass self-skips when there are no candidates.
+    if let Err(e) =
+        super::director_memory::cleanup_persona_memories(state, app, target_persona_id, false).await
+    {
+        tracing::warn!(persona_id = %target_persona_id, error = %e, "Director: memory cleanup pass failed");
+    }
+
     Ok(verdicts.len() as i64)
 }
 
@@ -911,6 +943,14 @@ pub async fn run_director_cycle_batch(
             Err(e) => {
                 tracing::warn!(persona_id = %p.id, error = %e, "Director: LLM evaluation failed, skipping");
             }
+        }
+
+        // Curate this persona's memories as part of the batch review too
+        // (best-effort; self-skips when there are no candidates).
+        if let Err(e) =
+            super::director_memory::cleanup_persona_memories(state, app.clone(), &p.id, false).await
+        {
+            tracing::warn!(persona_id = %p.id, error = %e, "Director: memory cleanup pass failed");
         }
     }
 
