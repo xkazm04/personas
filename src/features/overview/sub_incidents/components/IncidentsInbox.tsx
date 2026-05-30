@@ -1,11 +1,15 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw, Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
+import { storeBus } from '@/lib/storeBus';
+import { silentCatch } from '@/lib/silentCatch';
+import { getAuditIncident } from '@/api/overview/incidents';
 import { useIncidentsData } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
+import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
@@ -34,6 +38,49 @@ export default function IncidentsInbox() {
       await refresh();
     },
   });
+
+  // Keep the latest loaded incidents in a ref so the deep-link resolver can
+  // prefer the in-memory list without making the storeBus subscription depend
+  // on `incidents` (which would tear down / re-add the listener on every refresh).
+  const incidentsRef = useRef<AuditIncident[]>(incidents);
+  incidentsRef.current = incidents;
+
+  // Deep-link: open a specific incident's detail modal when Athena's
+  // `incident_blocker` nudge is engaged. The engage handler navigates here
+  // (lazy-mounting this component) and both (a) latches the id via
+  // `incidentDeepLink` and (b) emits `incidents:open-detail`. We consume the
+  // latch on mount (covers the case where the emit fired before we subscribed)
+  // AND subscribe to the event (covers the already-mounted case). Resolve from
+  // the loaded list first; otherwise fetch by id.
+  useEffect(() => {
+    let cancelled = false;
+
+    const openById = (incidentId: string) => {
+      const fromList = incidentsRef.current.find((i) => i.id === incidentId);
+      if (fromList) {
+        if (!cancelled) setDetailIncident(fromList);
+        return;
+      }
+      getAuditIncident(incidentId)
+        .then((incident) => {
+          if (!cancelled && incident) setDetailIncident(incident);
+        })
+        .catch(silentCatch('incidents.deep-link.get_audit_incident'));
+    };
+
+    // Late-subscriber bridge: the emit may have fired during lazy-mount.
+    const pending = consumePendingIncidentDeepLink();
+    if (pending) openById(pending);
+
+    const unsubscribe = storeBus.on('incidents:open-detail', ({ incidentId }) => {
+      openById(incidentId);
+    });
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
 
   const toggleSelect = useCallback((id: string, selected: boolean) => {
     setSelectedIds((prev) => {

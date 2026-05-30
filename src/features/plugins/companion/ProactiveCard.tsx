@@ -8,6 +8,8 @@ import {
 } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { storeBus } from '@/lib/storeBus';
+import { setPendingIncidentDeepLink } from '@/features/overview/sub_incidents/libs/incidentDeepLink';
 import { triggerKindLabel } from './athenaLabels';
 
 /**
@@ -41,13 +43,20 @@ export function ProactiveCard({
       if (kind === 'engage') {
         const result = await companionEngageProactive(message.id);
         // Incident-blocker nudges take the user to the Overview → Incidents
-        // inbox (mirrors the compose-cockpit nav pattern). Landing on the
-        // inbox is the goal; deep-linking a specific incident is a follow-up.
+        // inbox (mirrors the compose-cockpit nav pattern), then deep-link the
+        // specific incident's detail modal when the nudge carries its id.
         if (message.triggerKind === 'incident_blocker') {
           // setSidebarSection lives on the system store; setOverviewTab lives
           // on the overview store (same split other nav call-sites use).
           useSystemStore.getState().setSidebarSection('overview');
           useOverviewStore.getState().setOverviewTab('incidents');
+          // triggerRef is the incident id. Latch it for the lazy-mounting inbox
+          // (consumed on mount) AND emit live for an already-mounted inbox.
+          // No triggerRef → fall back to just the navigation above.
+          if (message.triggerRef) {
+            setPendingIncidentDeepLink(message.triggerRef);
+            storeBus.emit('incidents:open-detail', { incidentId: message.triggerRef });
+          }
         }
         onEngaged(result.message);
       } else {
