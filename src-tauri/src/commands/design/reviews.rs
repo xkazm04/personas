@@ -1018,51 +1018,74 @@ pub fn update_manual_review_status(
         // AND the companion-approval path — produces exactly one importance-5
         // `learned` memory, use_case-scoped. Don't duplicate it here.)
 
-        // Publish to the event bus so downstream personas can subscribe
-        let event_type = format!("review_decision.{}", review.status.as_str());
-        match event_repo::publish(
-            &state.db,
-            CreatePersonaEventInput {
-                event_type: event_type.clone(),
-                source_type: "manual_review".into(),
-                source_id: Some(review.id.clone()),
-                target_persona_id: Some(review.persona_id.clone()),
-                payload: Some(
-                    json!({
-                        "review_id": review.id,
-                        "execution_id": review.execution_id,
-                        "persona_id": review.persona_id,
-                        "title": review.title,
-                        "decision": review.status.as_str(),
-                        "reviewer_notes": review.reviewer_notes,
-                        "context_data": review.context_data,
-                    })
-                    .to_string(),
-                ),
-                project_id: None,
-                use_case_id: None,
-            },
-        ) {
-            Ok(event) => {
-                emit_event_bus(&app, &event);
-                tracing::info!(
-                    review_id = %review.id,
-                    event_type = %event_type,
-                    event_id = %event.id,
-                    "Published review decision to event bus"
-                );
-            }
-            Err(e) => {
-                tracing::warn!(
-                    review_id = %review.id,
-                    error = %e,
-                    "Failed to publish review decision to event bus"
-                );
-            }
-        }
+        // Publish review_decision.{status} to the event bus so downstream
+        // personas can subscribe. Shared with Athena's resolution path
+        // (companion/approvals.rs) so the signal is SYMMETRIC regardless of who
+        // resolved the review — P1b fixed the asymmetry where the Athena path
+        // never published this.
+        publish_review_decision(&state.db, &app, &review);
     }
 
     Ok(review)
+}
+
+/// Publish a `review_decision.{status}` event to the persona event bus so
+/// downstream personas can subscribe to human-review outcomes.
+///
+/// Called by BOTH review-resolution paths — `update_manual_review_status`
+/// (user-driven, this file) and Athena's `execute_resolve_human_review`
+/// (companion-driven, `commands/companion/approvals.rs`) — so the bus signal is
+/// identical no matter who resolved the review. Best-effort: a publish failure
+/// is logged, never propagated (the resolution itself already succeeded).
+///
+/// Event names are registered for discoverability in
+/// `engine::event_registry` as `REVIEW_DECISION_{APPROVED,REJECTED,RESOLVED}`.
+pub(crate) fn publish_review_decision(
+    pool: &crate::db::DbPool,
+    app: &tauri::AppHandle,
+    review: &crate::db::models::PersonaManualReview,
+) {
+    let event_type = format!("review_decision.{}", review.status.as_str());
+    match event_repo::publish(
+        pool,
+        CreatePersonaEventInput {
+            event_type: event_type.clone(),
+            source_type: "manual_review".into(),
+            source_id: Some(review.id.clone()),
+            target_persona_id: Some(review.persona_id.clone()),
+            payload: Some(
+                json!({
+                    "review_id": review.id,
+                    "execution_id": review.execution_id,
+                    "persona_id": review.persona_id,
+                    "title": review.title,
+                    "decision": review.status.as_str(),
+                    "reviewer_notes": review.reviewer_notes,
+                    "context_data": review.context_data,
+                })
+                .to_string(),
+            ),
+            project_id: None,
+            use_case_id: None,
+        },
+    ) {
+        Ok(event) => {
+            emit_event_bus(app, &event);
+            tracing::info!(
+                review_id = %review.id,
+                event_type = %event_type,
+                event_id = %event.id,
+                "Published review decision to event bus"
+            );
+        }
+        Err(e) => {
+            tracing::warn!(
+                review_id = %review.id,
+                error = %e,
+                "Failed to publish review decision to event bus"
+            );
+        }
+    }
 }
 
 #[tauri::command]

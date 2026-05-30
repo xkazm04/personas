@@ -581,9 +581,14 @@ async fn execute_resolve_human_review(
     };
 
     // Mirror the body of `update_manual_review_status` (without re-entering
-    // the Tauri command boundary). The same repo + event emit live here.
+    // the Tauri command boundary): resolve, then publish review_decision.* to
+    // the event bus via the SHARED helper so the signal is symmetric with the
+    // user-driven path (P1b — previously this path emitted nothing, so an
+    // Athena-resolved review was invisible to downstream subscribers).
     manual_repo::update_status(&state.db, &review_id, status, comment.clone())?;
-    let _ = app; // event emit handled by the original command path; we keep this minimal.
+    if let Ok(review) = manual_repo::get_by_id(&state.db, &review_id) {
+        crate::commands::design::reviews::publish_review_decision(&state.db, app, &review);
+    }
 
     Ok(ExecuteResult::message(format!(
         "Human Review `{review_id}` marked `{}`{comment_note}.",

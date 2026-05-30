@@ -80,6 +80,13 @@ event_names! {
     DESIGN_REVIEW_OUTPUT       => "design-review-output",
     MANUAL_REVIEW_RESOLVED     => "manual-review-resolved",
     REVIEW_MESSAGE_ADDED       => "review-message-added",
+    // Persona event-bus signals published when a human review is resolved
+    // (by the user OR by Athena). Personas subscribe to drive event-orchestrated
+    // continuation after an approval/rejection. Dynamic in code via
+    // `format!("review_decision.{status}")`; registered here for discoverability.
+    REVIEW_DECISION_APPROVED   => "review_decision.approved",
+    REVIEW_DECISION_REJECTED   => "review_decision.rejected",
+    REVIEW_DECISION_RESOLVED   => "review_decision.resolved",
 
     // Build session
     BUILD_SESSION_EVENT        => "build-session-event",
