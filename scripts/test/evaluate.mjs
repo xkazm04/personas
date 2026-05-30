@@ -13,6 +13,7 @@ import { openRead, MAIN_DB } from './db.mjs';
 import { teamInfo } from './model.mjs';
 import { band, computeVerdict } from './lib/eval/verdict.mjs';
 import { repoFileIndex, groundingForText, addedDocsFromPatch } from './lib/eval/grounding.mjs';
+import { resilienceFacts } from './lib/eval/resilience.mjs';
 import { RUBRIC } from './lib/rubric.mjs';
 
 /**
@@ -96,6 +97,8 @@ function main() {
   const reviews = readJson(join(dir, 'reviews.json'));
   const memories = readJson(join(dir, 'memories.json'));
   const events = readJson(join(dir, 'events.json'));
+  // §6 resilience-track: older bundles lack incidents.json → default [] (golden-safe no-op).
+  const incidents = existsSync(join(dir, 'incidents.json')) ? readJson(join(dir, 'incidents.json')) : [];
 
   const db = openRead(MAIN_DB);
   const info = teamInfo(db, run.summary.team);
@@ -130,6 +133,7 @@ function main() {
 
   // --- §1.A code-track checks (run the repo's own build/lint/test) ---
   const isCodeTrack = Array.isArray(run.seed?.tracks) && run.seed.tracks.includes('code');
+  const isResilienceTrack = Array.isArray(run.seed?.tracks) && run.seed.tracks.includes('resilience');
   const skipChecks = process.argv.includes('--no-build');
   let codeTrack = null;
   if (isCodeTrack && repoRoot && run.seed?.repo_cmds && !skipChecks) {
@@ -213,6 +217,9 @@ function main() {
   // words — that the run is NOT ready to ship (release manager refusing to bless
   // a red trunk; engineer refusing to implement against a broken precondition).
   const selfVeto = isCodeTrack && executions.some((e) => e.business_outcome === 'precondition_failed');
+  // §6 Resilience & Escalation — computed ONLY for resilience-track seeds, so
+  // non-resilience runs are a strict no-op (null) and stay byte-identical.
+  const resilience = isResilienceTrack ? resilienceFacts(incidents, executions, events) : null;
   // The five rubric caps collapsed into ONE ordered fold (see lib/eval/verdict.mjs).
   // Each lowers the verdict to at most its `to`; the fold is order-independent
   // (cap is min-by-rank) but ordered to mirror the rubric narrative.
@@ -229,6 +236,13 @@ function main() {
     { when: isCodeTrack && !increment.delivered, to: 'NOT-READY' },
     // §1.A.2: the team self-vetoed; its own quality bar outranks the dims → PROMISING.
     { when: selfVeto, to: 'PROMISING' },
+    // §6.1 Escalation must close: a resilience-track run that raised a blocker
+    // incident but did NOT auto-resolve+continue+complete it → NOT-READY (the
+    // team can't recover from a blocker unattended — the whole point).
+    { when: isResilienceTrack && !!resilience && resilience.raised > 0 && !resilience.escalationClosed, to: 'NOT-READY' },
+    // §6.2 A resilience-track run that raised NO incident at all isn't exercising
+    // the path the seed is meant to test → PROMISING (inconclusive, not a pass).
+    { when: isResilienceTrack && !!resilience && resilience.raised === 0, to: 'PROMISING' },
   ]);
 
   const scorecard = {
@@ -241,6 +255,9 @@ function main() {
       capped: 'PROMISING',
       executions: executions.filter((e) => e.business_outcome === 'precondition_failed').map((e) => ({ id: e.id, persona_id: e.persona_id })),
     } : null,
+    // §6 subtree added ONLY for resilience-track runs (conditional spread keeps
+    // non-resilience scorecard.json byte-identical — the golden-diff invariant).
+    ...(isResilienceTrack ? { resilience } : {}),
     rubric_version: judge ? '1-judged' : '1-deterministic',
     note: judge
       ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'
@@ -317,6 +334,20 @@ function main() {
   L.push('```json');
   L.push(JSON.stringify(scorecard.facts, null, 2));
   L.push('```');
+  if (isResilienceTrack && resilience) {
+    L.push('');
+    L.push('## Resilience & Escalation (§6)');
+    L.push('| Signal | Value | Basis |');
+    L.push('|---|---|---|');
+    L.push(`| Blocker incidents raised | ${resilience.raised} | persona raise_incident (source_table=persona_blocker) |`);
+    L.push(`| Resolved | ${resilience.resolved} | incident status=resolved |`);
+    L.push(`| Auto-continued | ${resilience.continued} | continued_at stamped (claim_continuation) |`);
+    L.push(`| Continuation execs completed | ${resilience.continuationExecsCompleted} | retry_of_execution_id → status=completed |`);
+    L.push(`| incident_resolved events delivered | ${resilience.incidentResolvedEvents} | bus signal (§6.4) |`);
+    L.push(`| review_decision.* events delivered | ${resilience.reviewDecisionEvents} | bus signal (§6.4) |`);
+    L.push(`| **Escalation closed** | ${resilience.escalationClosed} | every blocker resolved + auto-continued + completed |`);
+    L.push(`| Recovery score (reported, not folded) | ${resilience.recoveryScore ?? 'n/a'} | 0–100 resolved/continued/completed mix |`);
+  }
   if (!judge) {
     L.push('');
     L.push('## Not yet scored (needs agent-judge, §1.B + §2.1)');
@@ -329,7 +360,7 @@ function main() {
   }
   writeFileSync(join(dir, 'scorecard.md'), L.join('\n') + '\n', 'utf8');
 
-  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}`);
+  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}${isResilienceTrack && resilience ? ` resilience[raised=${resilience.raised},closed=${resilience.escalationClosed},recovery=${resilience.recoveryScore}]` : ''}`);
   console.log(`wrote ${join(dir, 'scorecard.md')}`);
 }
 
