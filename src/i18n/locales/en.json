@@ -2829,6 +2829,7 @@
     },
     "persona_list": {
       "all_personas": "All Personas",
+      "render_cap_notice": "Showing {shown} of {total} — narrow with search or filters to see the rest.",
       "star_director_add": "Star to add to the Director's coaching scope",
       "star_director_remove": "Starred — in the Director's coaching scope. Click to remove.",
       "delete_drafts_btn": "Delete Drafts ({count})",
