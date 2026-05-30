@@ -1,27 +1,11 @@
 import type { GlyphDimension, GlyphRow } from "@/features/shared/glyph";
 import type { CellBuildStatus } from "@/lib/types/buildTypes";
 import type { PetalState } from "./glyphLayoutTypes";
+// Glyph-convergence P4: the cell↔dim map is now shared with the seeded flow.
+// Re-exported here so existing importers of this helper keep working unchanged.
+import { CELL_KEY_TO_DIM, DIM_TO_CELL_KEY } from "@/features/shared/glyph/persona-sigil/cellDimMap";
 
-export const CELL_KEY_TO_DIM: Record<string, GlyphDimension> = {
-  // 2026-05-05 — sample-output (5th capability gate) shares the "task"
-  // petal with use-cases. Listed FIRST so Object.fromEntries-based
-  // DIM_TO_CELL_KEY below still resolves "task" back to "use-cases"
-  // (last-key-wins semantics); only the forward lookup picks up the
-  // sample-output entry.
-  "sample-output": "task",
-  "use-cases": "task",
-  connectors: "connector",
-  triggers: "trigger",
-  "human-review": "review",
-  messages: "message",
-  memory: "memory",
-  "error-handling": "error",
-  events: "event",
-};
-
-export const DIM_TO_CELL_KEY: Record<GlyphDimension, string> = Object.fromEntries(
-  Object.entries(CELL_KEY_TO_DIM).map(([k, v]) => [v, k]),
-) as Record<GlyphDimension, string>;
+export { CELL_KEY_TO_DIM, DIM_TO_CELL_KEY };
 
 export const DIM_LABEL: Record<GlyphDimension, string> = {
   trigger: "When",
