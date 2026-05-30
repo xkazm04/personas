@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "Lancer",
+    "glyph_intent_placeholder": "p. ex. Résume mes e-mails non lus chaque matin",
+    "glyph_dim_label": {
+      "trigger": "Quand",
+      "task": "Quoi",
+      "connector": "Applis",
+      "message": "Messages",
+      "review": "Validation",
+      "memory": "Mémoire",
+      "event": "Événements",
+      "error": "Erreurs"
+    },
+    "glyph_dim_desc": {
+      "trigger": "Quand cet agent s'exécute",
+      "task": "Ce que fait cet agent",
+      "connector": "Applis et outils qu'il peut utiliser",
+      "message": "Où il envoie les résultats",
+      "review": "Si vous validez avant publication",
+      "memory": "Ce qu'il retient entre les exécutions",
+      "event": "Les autres agents auxquels il réagit",
+      "error": "Ce qu'il fait en cas d'échec"
+    },
     "title": "Personas",
     "loading": "Chargement...",
     "overview": {

@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "Lanzar",
+    "glyph_intent_placeholder": "p. ej. Resume mis correos sin leer cada mañana",
+    "glyph_dim_label": {
+      "trigger": "Cuándo",
+      "task": "Qué",
+      "connector": "Apps",
+      "message": "Mensajes",
+      "review": "Revisión",
+      "memory": "Memoria",
+      "event": "Eventos",
+      "error": "Errores"
+    },
+    "glyph_dim_desc": {
+      "trigger": "Cuándo se ejecuta este agente",
+      "task": "Qué hace este agente",
+      "connector": "Apps y herramientas que puede usar",
+      "message": "Dónde entrega los resultados",
+      "review": "Si lo apruebas antes de publicar",
+      "memory": "Qué recuerda entre ejecuciones",
+      "event": "Otros agentes a los que reacciona",
+      "error": "Qué hace cuando una ejecución falla"
+    },
     "title": "Personas",
     "loading": "Cargando...",
     "overview": {

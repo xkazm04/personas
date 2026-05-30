@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "Starten",
+    "glyph_intent_placeholder": "z. B. Fasse jeden Morgen meine ungelesenen E-Mails zusammen",
+    "glyph_dim_label": {
+      "trigger": "Wann",
+      "task": "Was",
+      "connector": "Apps",
+      "message": "Nachrichten",
+      "review": "Prüfung",
+      "memory": "Speicher",
+      "event": "Ereignisse",
+      "error": "Fehler"
+    },
+    "glyph_dim_desc": {
+      "trigger": "Wann dieser Agent läuft",
+      "task": "Was dieser Agent tut",
+      "connector": "Apps und Tools, die er nutzen kann",
+      "message": "Wohin er Ergebnisse sendet",
+      "review": "Ob du vor dem Veröffentlichen zustimmst",
+      "memory": "Was er sich zwischen Läufen merkt",
+      "event": "Andere Agenten, auf die er reagiert",
+      "error": "Was er tut, wenn ein Lauf fehlschlägt"
+    },
     "title": "Personas",
     "loading": "Laden...",
     "overview": {

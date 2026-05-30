@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "Spustit",
+    "glyph_intent_placeholder": "např. Shrň mé nepřečtené e-maily každé ráno",
+    "glyph_dim_label": {
+      "trigger": "Kdy",
+      "task": "Co",
+      "connector": "Aplikace",
+      "message": "Zprávy",
+      "review": "Kontrola",
+      "memory": "Paměť",
+      "event": "Události",
+      "error": "Chyby"
+    },
+    "glyph_dim_desc": {
+      "trigger": "Kdy se tento agent spustí",
+      "task": "Co tento agent dělá",
+      "connector": "Aplikace a nástroje, které může použít",
+      "message": "Kam odesílá výsledky",
+      "review": "Zda to schválíte před zveřejněním",
+      "memory": "Co si pamatuje mezi běhy",
+      "event": "Další agenti, na které reaguje",
+      "error": "Co udělá, když běh selže"
+    },
     "title": "Personas",
     "loading": "Načítání...",
     "overview": {

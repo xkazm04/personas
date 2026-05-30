@@ -589,6 +589,28 @@ export type Translations = {
     };
   };
   agents: {
+    glyph_launch: string;
+    glyph_intent_placeholder: string;
+    glyph_dim_label: {
+      trigger: string;
+      task: string;
+      connector: string;
+      message: string;
+      review: string;
+      memory: string;
+      event: string;
+      error: string;
+    };
+    glyph_dim_desc: {
+      trigger: string;
+      task: string;
+      connector: string;
+      message: string;
+      review: string;
+      memory: string;
+      event: string;
+      error: string;
+    };
     title: string;
     loading: string;
     persona_decisions_footer_one: string;

@@ -10,4 +10,6 @@ export { GlyphPetalIcons } from './GlyphPetalIcons';
 export { GlyphOrbitProgress } from './GlyphOrbitProgress';
 export { useBuildingPetalSweep } from './useBuildingPetalSweep';
 export { DIM_LABEL } from './dimLabel';
+export { useGlyphDimText } from './useGlyphDimText';
+export type { GlyphDimText } from './useGlyphDimText';
 export type { PetalState } from './types';

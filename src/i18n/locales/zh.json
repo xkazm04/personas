@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "启动",
+    "glyph_intent_placeholder": "例如：每天早上汇总我的未读邮件",
+    "glyph_dim_label": {
+      "trigger": "何时",
+      "task": "什么",
+      "connector": "应用",
+      "message": "消息",
+      "review": "审核",
+      "memory": "记忆",
+      "event": "事件",
+      "error": "错误"
+    },
+    "glyph_dim_desc": {
+      "trigger": "此助手何时运行",
+      "task": "此助手做什么",
+      "connector": "它可使用的应用和工具",
+      "message": "结果发送到哪里",
+      "review": "发布前是否需要你批准",
+      "memory": "它在多次运行间记住的内容",
+      "event": "它响应的其他助手",
+      "error": "运行失败时如何处理"
+    },
     "title": "Personas",
     "loading": "加载中...",
     "overview": {

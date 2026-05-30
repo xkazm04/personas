@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "Khởi chạy",
+    "glyph_intent_placeholder": "vd. Tóm tắt email chưa đọc của tôi mỗi sáng",
+    "glyph_dim_label": {
+      "trigger": "Khi nào",
+      "task": "Việc gì",
+      "connector": "Ứng dụng",
+      "message": "Tin nhắn",
+      "review": "Duyệt",
+      "memory": "Bộ nhớ",
+      "event": "Sự kiện",
+      "error": "Lỗi"
+    },
+    "glyph_dim_desc": {
+      "trigger": "Khi nào tác nhân này chạy",
+      "task": "Tác nhân này làm gì",
+      "connector": "Ứng dụng và công cụ nó có thể dùng",
+      "message": "Nơi nó gửi kết quả",
+      "review": "Có cần bạn duyệt trước khi đăng không",
+      "memory": "Những gì nó nhớ giữa các lần chạy",
+      "event": "Các tác nhân khác mà nó phản hồi",
+      "error": "Nó làm gì khi một lần chạy thất bại"
+    },
     "title": "Personas",
     "loading": "Đang tải...",
     "overview": {

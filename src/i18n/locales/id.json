@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "Luncurkan",
+    "glyph_intent_placeholder": "mis. Rangkum email saya yang belum dibaca tiap pagi",
+    "glyph_dim_label": {
+      "trigger": "Kapan",
+      "task": "Apa",
+      "connector": "Aplikasi",
+      "message": "Pesan",
+      "review": "Tinjauan",
+      "memory": "Memori",
+      "event": "Peristiwa",
+      "error": "Kesalahan"
+    },
+    "glyph_dim_desc": {
+      "trigger": "Kapan agen ini berjalan",
+      "task": "Apa yang dilakukan agen ini",
+      "connector": "Aplikasi dan alat yang dapat digunakannya",
+      "message": "Ke mana hasil dikirim",
+      "review": "Apakah Anda menyetujui sebelum dipublikasikan",
+      "memory": "Apa yang diingatnya antar-proses",
+      "event": "Agen lain yang ditanggapinya",
+      "error": "Apa yang dilakukannya saat proses gagal"
+    },
     "title": "Personas",
     "loading": "Memuat...",
     "overview": {

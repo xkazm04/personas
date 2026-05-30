@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "চালু করুন",
+    "glyph_intent_placeholder": "যেমন প্রতিদিন সকালে আমার অপঠিত ইমেল সারসংক্ষেপ করো",
+    "glyph_dim_label": {
+      "trigger": "কখন",
+      "task": "কী",
+      "connector": "অ্যাপ",
+      "message": "বার্তা",
+      "review": "পর্যালোচনা",
+      "memory": "স্মৃতি",
+      "event": "ইভেন্ট",
+      "error": "ত্রুটি"
+    },
+    "glyph_dim_desc": {
+      "trigger": "এই এজেন্ট কখন চলে",
+      "task": "এই এজেন্ট কী করে",
+      "connector": "যে অ্যাপ ও টুল এটি ব্যবহার করতে পারে",
+      "message": "এটি কোথায় ফলাফল পাঠায়",
+      "review": "প্রকাশের আগে আপনার অনুমোদন লাগবে কিনা",
+      "memory": "রানের মধ্যে এটি কী মনে রাখে",
+      "event": "অন্য যেসব এজেন্টে এটি সাড়া দেয়",
+      "error": "রান ব্যর্থ হলে এটি কী করে"
+    },
     "title": "Personas",
     "loading": "লোড হচ্ছে...",
     "overview": {

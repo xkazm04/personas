@@ -583,6 +583,28 @@
     }
   },
   "agents": {
+    "glyph_launch": "Launch",
+    "glyph_intent_placeholder": "e.g. Summarize my unread emails each morning",
+    "glyph_dim_label": {
+      "trigger": "When",
+      "task": "What",
+      "connector": "Apps",
+      "message": "Messages",
+      "review": "Review",
+      "memory": "Memory",
+      "event": "Events",
+      "error": "Errors"
+    },
+    "glyph_dim_desc": {
+      "trigger": "When this agent runs",
+      "task": "What this agent does",
+      "connector": "Apps and tools it can use",
+      "message": "Where it delivers results",
+      "review": "Whether you approve before it publishes",
+      "memory": "What it remembers between runs",
+      "event": "Other agents it reacts to",
+      "error": "What it does when a run fails"
+    },
     "title": "Personas",
     "loading": "Loading...",
     "persona_decisions_footer_one": "1 design decision Athena logged",

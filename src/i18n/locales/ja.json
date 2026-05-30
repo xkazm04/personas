@@ -571,6 +571,28 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_launch": "起動",
+    "glyph_intent_placeholder": "例：毎朝、未読メールを要約する",
+    "glyph_dim_label": {
+      "trigger": "いつ",
+      "task": "なに",
+      "connector": "アプリ",
+      "message": "メッセージ",
+      "review": "確認",
+      "memory": "メモリ",
+      "event": "イベント",
+      "error": "エラー"
+    },
+    "glyph_dim_desc": {
+      "trigger": "このエージェントが実行されるタイミング",
+      "task": "このエージェントの役割",
+      "connector": "使用できるアプリやツール",
+      "message": "結果の送信先",
+      "review": "公開前に承認が必要かどうか",
+      "memory": "実行間で記憶する内容",
+      "event": "反応する他のエージェント",
+      "error": "実行失敗時の動作"
+    },
     "title": "Personas",
     "loading": "読み込み中...",
     "overview": {
