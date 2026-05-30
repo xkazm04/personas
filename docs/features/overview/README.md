@@ -39,6 +39,14 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 
 The local source README at `src/features/overview/README.md` defines folder boundaries: realtime, persisted events, and observability are separate tiers and should not be mixed.
 
+## Footer system-load gauge
+
+The footer's bottom-right cluster shows a small **system-load gauge** (`SystemLoadFooterIcon`) — a CPU icon plus two thin bars (CPU on top, used-RAM below) tinted green / amber / red. It is a *soft, advisory* signal answering **"does this machine have headroom for more local work?"** — a cue to orchestrate more agents or ease off. It is intentionally **not** coupled to the concurrency/rate limits, because host load is influenced by every other process on the PC; treat it as a hint, never a hard gate.
+
+- **Backend**: the `get_system_metrics` IPC command (`src-tauri/src/commands/infrastructure/system_metrics.rs`) samples host CPU% + memory via the `sysinfo` crate from one persistent `System` (CPU usage + memory only — never enumerates processes). It returns raw numbers and a `sampleValid` flag (CPU% needs two samples to be meaningful).
+- **Frontend**: polls every ~2s while the window is visible, then EMA-smooths and applies a green/amber/red **hysteresis** band so the gauge doesn't flicker at a cusp — all in the pure, unit-tested `systemLoad.ts`. Hovering shows exact numbers (`CPU 42% · RAM 61% (6.1 GB free)`) plus the headroom hint.
+- Memory headroom uses **available** RAM (reclaimable-cache-aware), not free RAM. Most valuable in `desktop-full` builds where local embedding/ONNX compute actually consumes CPU/RAM.
+
 ## Resizable table columns
 
 The Events, Activity, Messages, and Memories tables support drag-to-resize columns. The shared primitive is `src/features/shared/components/display/ColumnResize.tsx` — `useColumnWidths(tableId)` holds per-table px overrides and `ColumnResizeHandle` is the divider rendered on each column header's right edge. Drag a divider to resize; double-click it to restore the default width. Overrides persist to `localStorage` under `table-col-widths:<tableId>` (`overview-events`, `overview-activity`, `overview-messages`, `overview-memories`). `UnifiedTable` enables this whenever a `tableId` prop is passed; the custom grid tables in Activity, Messages, and the Memories baseline view wire the hook directly. The Memories table header and each `MemoryRow` share one grid template so columns stay aligned. Knowledge's annotation view is an expandable card list (not a column grid) and is intentionally excluded.
