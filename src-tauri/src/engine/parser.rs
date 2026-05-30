@@ -1017,6 +1017,47 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_raise_incident() {
+        let line = r#"{"raise_incident": {"title": "Stripe key missing", "detail": "STRIPE_API_KEY unset; cannot charge", "severity": "high", "kind": "missing_credential"}}"#;
+        let msg = extract_protocol_message(line).unwrap();
+        match msg {
+            ProtocolMessage::RaiseIncident {
+                title,
+                detail,
+                severity,
+                kind,
+            } => {
+                assert_eq!(title, "Stripe key missing");
+                assert_eq!(detail.as_deref(), Some("STRIPE_API_KEY unset; cannot charge"));
+                assert_eq!(severity.as_deref(), Some("high"));
+                assert_eq!(kind.as_deref(), Some("missing_credential"));
+            }
+            _ => panic!("Expected RaiseIncident, got {msg:?}"),
+        }
+    }
+
+    #[test]
+    fn test_extract_raise_incident_minimal() {
+        // Only title required; optional fields default to None (handler then
+        // applies severity=high / kind=persona_blocker at dispatch time).
+        let line = r#"{"raise_incident": {"title": "Upstream API down"}}"#;
+        match extract_protocol_message(line).unwrap() {
+            ProtocolMessage::RaiseIncident {
+                title,
+                detail,
+                severity,
+                kind,
+            } => {
+                assert_eq!(title, "Upstream API down");
+                assert!(detail.is_none());
+                assert!(severity.is_none());
+                assert!(kind.is_none());
+            }
+            other => panic!("Expected RaiseIncident, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn test_extract_regular_text() {
         assert!(extract_protocol_message("Just some regular text").is_none());
         assert!(extract_protocol_message("console.log('hello')").is_none());
