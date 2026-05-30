@@ -3,9 +3,10 @@ import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
+import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
+import type { DecisionOption } from '../decision/types';
 import { ORB_SIZE } from './AthenaOrb';
 
 const BUBBLE_GAP = 12;
@@ -42,8 +43,6 @@ export function OrbDecisionBubble() {
   const explained = useCompanionStore((s) => s.decisionExplained);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
   const orbPos = useSystemStore((s) => s.companionOrbPos);
-  const clearPendingDecision = useCompanionStore((s) => s.clearPendingDecision);
-  const markDecisionExplained = useCompanionStore((s) => s.markDecisionExplained);
   const setState = useCompanionStore((s) => s.setState);
   const setGuidanceHighlightTestId = useCompanionStore((s) => s.setGuidanceHighlightTestId);
   const flashHighlight = useCompanionStore((s) => s.flashHighlight);
@@ -84,17 +83,10 @@ export function OrbDecisionBubble() {
 
   if (!decision) return null;
 
-  const pick = (run: () => void | Promise<void>) => {
-    try {
-      const r = run();
-      if (r && typeof (r as Promise<void>).then === 'function') {
-        (r as Promise<void>).catch(silentCatch('companion/OrbDecisionBubble:run'));
-      }
-    } catch (err) {
-      silentCatch('companion/OrbDecisionBubble:run')(err);
-    }
-    clearPendingDecision();
-  };
+  // Click → run the option then clear. Shared with the `;`-leader key (Slice 5)
+  // and spoken-number answering (Slice 7) via `runDecisionOption` so all three
+  // input methods resolve identically.
+  const pick = (opt: DecisionOption) => runDecisionOption(opt);
 
   // Position off the orb's last-known target (set by the orb on drag/dock) or
   // the persisted dock fraction as a fallback so the bubble has a home even
@@ -176,7 +168,7 @@ export function OrbDecisionBubble() {
             key={opt.key}
             type="button"
             data-testid={`athena-decision-option-${i + 1}`}
-            onClick={() => pick(opt.run)}
+            onClick={() => pick(opt)}
             title={opt.hint ?? opt.label}
             className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring ${
               opt.danger
@@ -200,7 +192,7 @@ export function OrbDecisionBubble() {
         <button
           type="button"
           data-testid="athena-decision-option-0"
-          onClick={() => markDecisionExplained()}
+          onClick={() => explainDecision()}
           title={t.plugins.companion.decision_explain_hint}
           className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground/80 px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring"
         >
