@@ -17,6 +17,7 @@ pub mod setup;
 pub mod skill_files;
 pub mod static_scan;
 pub mod system;
+pub mod system_metrics;
 pub mod task_executor;
 pub mod tier_usage;
 pub mod twin;

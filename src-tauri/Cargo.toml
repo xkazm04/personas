@@ -102,6 +102,10 @@ tracing-appender = "0.2"
 thiserror = "2"
 rusqlite = { version = "0.38", features = ["bundled", "hooks"] }
 r2d2 = "0.8"
+# System CPU/RAM sampling for the footer load gauge. default-features=false drops
+# disk/network/component + the macOS-heavy multithread feature — we only need
+# the "system" module (CPU usage + memory), and never enumerate processes.
+sysinfo = { version = "0.33", default-features = false, features = ["system"] }
 r2d2_sqlite = "0.32"
 uuid = { version = "1", features = ["v4", "v5"] }
 chrono = { version = "0.4", features = ["serde"] }

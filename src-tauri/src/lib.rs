@@ -346,6 +346,9 @@ pub struct AppState {
             )>,
         >,
     >,
+    /// Persistent host CPU/RAM sampler for the footer load gauge. Holds one
+    /// `System` so consecutive CPU refreshes yield a correct usage delta.
+    pub system_metrics: Mutex<commands::infrastructure::system_metrics::SystemMetricsSampler>,
     /// Desktop connector capability approvals.
     #[cfg(feature = "desktop")]
     pub desktop_approvals: Arc<engine::desktop_security::DesktopApprovalStore>,
@@ -873,6 +876,7 @@ pub fn run() {
                 session_key: Arc::new(engine::crypto::SessionKeyPair::generate()?),
                 tier_config: Arc::new(Mutex::new(engine::tier::TierConfig::default())),
                 tier_usage_cache: Arc::new(Mutex::new(None)),
+                system_metrics: Mutex::new(commands::infrastructure::system_metrics::SystemMetricsSampler::new()),
                 #[cfg(feature = "desktop")]
                 desktop_approvals: Arc::new(engine::desktop_security::DesktopApprovalStore::new()),
                 #[cfg(feature = "desktop")]
@@ -2531,6 +2535,7 @@ pub fn run() {
             commands::infrastructure::workflows::cancel_workflow_job,
             // Tier usage
             commands::infrastructure::tier_usage::get_tier_usage,
+            commands::infrastructure::system_metrics::get_system_metrics,
             // Research Lab
             commands::infrastructure::research_lab::research_lab_list_projects,
             commands::infrastructure::research_lab::research_lab_get_project,
