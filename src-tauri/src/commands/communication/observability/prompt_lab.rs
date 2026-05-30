@@ -24,6 +24,25 @@ pub fn get_prompt_versions(
     repo::get_prompt_versions(&state.db, &persona_id, limit)
 }
 
+/// Batched: prompt versions for many personas in one round-trip, keyed by
+/// persona id. Replaces N per-persona `get_prompt_versions` calls fired by the
+/// observability chart-annotation loader (`useAnnotationData`). One IPC, N
+/// cache-hot DB reads. Architect perf scan, Phase D.
+#[tauri::command]
+pub fn get_prompt_versions_bulk(
+    state: State<'_, Arc<AppState>>,
+    persona_ids: Vec<String>,
+    limit: Option<i64>,
+) -> Result<std::collections::HashMap<String, Vec<PersonaPromptVersion>>, AppError> {
+    require_auth_sync(&state)?;
+    let mut out = std::collections::HashMap::with_capacity(persona_ids.len());
+    for persona_id in persona_ids {
+        let versions = repo::get_prompt_versions(&state.db, &persona_id, limit)?;
+        out.insert(persona_id, versions);
+    }
+    Ok(out)
+}
+
 /// Tag a prompt version as production, experimental, or archived.
 /// When tagging as "production", demotes the previous production version to "experimental".
 #[tauri::command]

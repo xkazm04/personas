@@ -2837,6 +2837,7 @@ export type Translations = {
     };
     persona_list: {
       all_personas: string;
+      render_cap_notice: string;
       star_director_add: string;
       star_director_remove: string;
       delete_drafts_btn: string;
