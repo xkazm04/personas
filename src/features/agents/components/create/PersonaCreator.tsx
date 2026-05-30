@@ -139,6 +139,24 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
     [t],
   );
 
+  // P3: a picked template replaces the launcher surface with the adoption flow
+  // rendered IN the page (inline), not a floating modal — so picking a starter
+  // feels like one continuous surface. Closing returns to the launcher.
+  if (adoptReview) {
+    return (
+      <AdoptionWizardModal
+        inline
+        isOpen
+        review={adoptReview}
+        onClose={() => setAdoptReview(null)}
+        onPersonaCreated={(personaId) => {
+          setAdoptReview(null);
+          onPersonaCreated(personaId);
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex-1 min-h-0 w-full overflow-y-auto" data-testid="persona-creator">
       <div className="mx-auto w-full max-w-[760px] flex flex-col items-stretch gap-8 px-6 py-12">
@@ -240,16 +258,6 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
           )}
         </div>
       </div>
-
-      <AdoptionWizardModal
-        isOpen={!!adoptReview}
-        review={adoptReview}
-        onClose={() => setAdoptReview(null)}
-        onPersonaCreated={(personaId) => {
-          setAdoptReview(null);
-          onPersonaCreated(personaId);
-        }}
-      />
     </div>
   );
 }
