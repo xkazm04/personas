@@ -43,10 +43,12 @@ pub async fn companion_evaluate_proactive_now(
     app: AppHandle,
 ) -> Result<usize, AppError> {
     ipc_auth::require_auth(&state).await?;
-    let mut new_msgs = proactive::evaluate_with_extra_candidates(
-        &state.user_db,
-        proactive::triggers::dev_goal_nudges(&state.db),
-    )?;
+    // Extra candidates sourced from the main app DB (not the companion
+    // user_db): project-goal nudges + OPEN high/critical incident nudges.
+    // Same guards (quiet hours / budget / dedupe) apply via the evaluator.
+    let mut extra = proactive::triggers::dev_goal_nudges(&state.db);
+    extra.extend(proactive::incident_triggers::incident_blocker_nudges(&state.db));
+    let mut new_msgs = proactive::evaluate_with_extra_candidates(&state.user_db, extra)?;
     // Athena's `schedule_proactive` commitments flow through the same
     // emit + status transition as trigger-driven nudges, but their
     // candidate set comes from a time-based sweep instead of
