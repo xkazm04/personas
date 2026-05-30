@@ -318,6 +318,15 @@
   },
   "chrome": {
     "app_title": "Personas",
+    "system_load": {
+      "label": "System load",
+      "cpu": "CPU {pct}%",
+      "ram": "RAM {pct}% ({free} GB free)",
+      "measuring": "Measuring system load…",
+      "headroom_green": "Plenty of headroom for more work",
+      "headroom_amber": "Getting busy — consider easing off",
+      "headroom_red": "At capacity — consider slowing down"
+    },
     "skip_to_content": "Skip to content",
     "minimize": "Minimize",
     "restore": "Restore",

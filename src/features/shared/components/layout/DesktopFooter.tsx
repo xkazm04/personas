@@ -14,6 +14,8 @@ import { DebtText } from '@/i18n/DebtText';
 
 
 
+import SystemLoadFooterIcon from '@/features/shared/components/layout/SystemLoadFooterIcon';
+
 const CompanionFooterIcon = lazy(() => import('@/features/plugins/companion/CompanionFooterIcon'));
 const RadioFooter = lazy(() => import('@/features/shared/components/layout/radio/components/RadioFooter'));
 
@@ -518,6 +520,8 @@ export default function DesktopFooter() {
           rightmost so the notice popover anchors against the window edge
           and never collides with sibling footer popovers. */}
       <div className="flex items-center gap-1.5">
+        <SystemLoadFooterIcon />
+        <div className="w-px h-4 bg-primary/10" />
         <TourResumeFooterIcon />
         <ProjectPickerFooterIcon />
         <div className="w-px h-4 bg-primary/10" />

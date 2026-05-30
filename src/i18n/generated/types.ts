@@ -324,6 +324,15 @@ export type Translations = {
   };
   chrome: {
     app_title: string;
+    system_load: {
+      label: string;
+      cpu: string;
+      ram: string;
+      measuring: string;
+      headroom_green: string;
+      headroom_amber: string;
+      headroom_red: string;
+    };
     skip_to_content: string;
     minimize: string;
     restore: string;
