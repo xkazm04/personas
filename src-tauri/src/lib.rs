@@ -2240,8 +2240,10 @@ pub fn run() {
             commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
+            commands::infrastructure::skill_files::skill_files_list_global,
             commands::infrastructure::skill_files::skill_files_read,
             commands::infrastructure::skill_files::skill_files_write,
+            commands::infrastructure::skill_files::skill_files_install,
             // Bridge Manifest -- declarative desktop bridges
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_list_all,

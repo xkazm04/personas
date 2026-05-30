@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   BookOpen, Search, FileText, ChevronRight, Save,
-  RefreshCw, X, FolderOpen, AlertCircle, Star, Clock, Terminal,
+  RefreshCw, X, FolderOpen, AlertCircle, Star, Clock, Terminal, Download,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -12,6 +12,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
+import { SkillInstallModal } from './SkillInstallModal';
 import { useSkillData } from './useSkillData';
 
 /**
@@ -27,17 +28,25 @@ export default function SkillBrowserPage() {
   const data = useSkillData();
   const {
     skills, filtered, recentSkills, loading, search, setSearch,
+    source, setSource,
     selectedSkill, activeFile, fileContent, editContent, setEditContent,
     editing, setEditing, saving, fileLoading, loadFailed,
     skillFiles, fetchSkills, selectSkill, switchFile, save, cancelEdit,
-    toggleFavorite, isFavorite,
+    toggleFavorite, isFavorite, installSkill,
   } = data;
 
   // "Apply to session" reuses the broadcast composer (PTY-write to N selected
   // sessions), seeded with the skill's slash command. Enabled only when at
   // least one non-exited session exists to receive it.
   const [applyOpen, setApplyOpen] = useState(false);
+  // "Install to repo" copies the selected skill into a chosen project.
+  const [installOpen, setInstallOpen] = useState(false);
   const hasActiveSessions = useSystemStore((s) => s.fleetSessions.some((x) => x.state !== 'exited'));
+
+  const SOURCES: { id: typeof source; label: string }[] = [
+    { id: 'project', label: t.plugins.fleet.skill_source_project },
+    { id: 'global', label: t.plugins.fleet.skill_source_global },
+  ];
 
   return (
     <>
@@ -52,6 +61,25 @@ export default function SkillBrowserPage() {
 
       <ContentBody>
         <ActionRow>
+          {/* Source toggle: active project's skills vs the global library. */}
+          <div className="inline-flex items-center rounded-card border border-primary/10 bg-secondary/30 p-0.5" role="group" aria-label={t.plugins.fleet.skill_source_label}>
+            {SOURCES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                data-testid={`skill-source-${s.id}`}
+                aria-pressed={source === s.id}
+                onClick={() => setSource(s.id)}
+                className={`px-2.5 py-1 rounded-card text-[11px] font-medium transition-colors ${
+                  source === s.id
+                    ? 'bg-primary/10 text-primary border border-primary/25'
+                    : 'text-foreground hover:bg-secondary/40 border border-transparent'
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
           <Button
             variant="secondary"
             size="sm"
@@ -158,6 +186,15 @@ export default function SkillBrowserPage() {
                     <Button
                       variant="secondary"
                       size="sm"
+                      icon={<Download className="w-3 h-3" />}
+                      data-testid="fleet-skill-install"
+                      onClick={() => setInstallOpen(true)}
+                    >
+                      {t.plugins.fleet.skill_install}
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       icon={<Terminal className="w-3 h-3" />}
                       data-testid="fleet-skill-apply"
                       disabled={!hasActiveSessions}
@@ -251,6 +288,18 @@ export default function SkillBrowserPage() {
       onClose={() => setApplyOpen(false)}
       title={t.plugins.fleet.skill_apply_title}
       initialText={selectedSkill ? `/${selectedSkill.name} ` : ''}
+    />
+
+    {/* Install-to-repo: copy the selected skill into a chosen project. */}
+    <SkillInstallModal
+      open={installOpen}
+      onClose={() => setInstallOpen(false)}
+      skillName={selectedSkill?.name ?? null}
+      onInstall={(targetProjectId, overwrite) =>
+        selectedSkill
+          ? installSkill(selectedSkill.name, targetProjectId, overwrite)
+          : Promise.resolve(null)
+      }
     />
     </>
   );

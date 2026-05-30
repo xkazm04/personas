@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
+import type { SkillInstallResult } from "@/lib/bindings/SkillInstallResult";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
@@ -909,6 +910,29 @@ export interface SkillFileContent {
 
 export const listSkills = (projectId?: string | null) =>
   safeInvoke<SkillEntry[]>([], "skill_files_list", { projectId: projectId ?? null });
+
+/** List skills from the user-global library (`~/.claude/skills`). */
+export const listSkillsGlobal = () =>
+  safeInvoke<SkillEntry[]>([], "skill_files_list_global", {});
+
+/**
+ * Install (copy) a skill into a target project's `.claude/skills`.
+ * `sourceProjectId = null` copies from the global library. With
+ * `overwrite = false`, an existing target skill is left untouched
+ * (result.installed === false, result.reason === "exists").
+ */
+export const installSkill = (
+  skillName: string,
+  sourceProjectId: string | null,
+  targetProjectId: string,
+  overwrite: boolean,
+) =>
+  invoke<SkillInstallResult>("skill_files_install", {
+    skillName,
+    sourceProjectId,
+    targetProjectId,
+    overwrite,
+  });
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
   invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });
