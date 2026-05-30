@@ -184,3 +184,38 @@ pub async fn continue_resolved_incidents(
 pub async fn run_tick(engine: Arc<ExecutionEngine>, app: AppHandle, pool: DbPool) {
     let _ = continue_resolved_incidents(&engine, app, pool).await;
 }
+
+/// Reactive background loop that re-runs blocked work when its incident is
+/// resolved. Registered in `engine::background::start_loops`. Always-on: the
+/// trigger is an explicit human/Athena resolve (the consent), not unsupervised
+/// autonomy, so unlike `GoalAdvanceSubscription` it needs no opt-in setting.
+/// Leadership-gated by default so only one instance drives it (the atomic claim
+/// would make double-running safe regardless, but leadership avoids wasted work).
+pub struct IncidentContinuationSubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
+    pub engine: Arc<ExecutionEngine>,
+}
+
+#[async_trait::async_trait]
+impl crate::engine::subscription::ReactiveSubscription for IncidentContinuationSubscription {
+    fn name(&self) -> &'static str {
+        "incident_continuation"
+    }
+
+    fn interval(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(60)
+    }
+
+    fn idle_interval(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(300)
+    }
+
+    fn initial_delay(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(30)
+    }
+
+    async fn tick(&self) {
+        run_tick(self.engine.clone(), self.app.clone(), self.pool.clone()).await;
+    }
+}
