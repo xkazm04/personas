@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "याद रखता है",
+    "glyph_cap_restore": "पुनर्स्थापित करें",
+    "glyph_cap_split": "विभाजित करें",
+    "glyph_cap_remove": "हटाएँ",
     "glyph_cap_count_one": "1 क्षमता",
     "glyph_cap_count_other": "{count} क्षमताएँ",
     "glyph_cap_events_other": "{count} इवेंट",

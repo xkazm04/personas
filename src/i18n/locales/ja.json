@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "記憶する",
+    "glyph_cap_restore": "復元",
+    "glyph_cap_split": "分割",
+    "glyph_cap_remove": "削除",
     "glyph_cap_count_one": "機能 1 件",
     "glyph_cap_count_other": "機能 {count} 件",
     "glyph_cap_events_other": "イベント {count} 件",

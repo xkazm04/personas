@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "Mémorise",
+    "glyph_cap_restore": "Restaurer",
+    "glyph_cap_split": "Diviser",
+    "glyph_cap_remove": "Retirer",
     "glyph_cap_count_one": "1 capacité",
     "glyph_cap_count_other": "{count} capacités",
     "glyph_cap_events_other": "{count} événements",

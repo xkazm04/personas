@@ -583,6 +583,10 @@
     }
   },
   "agents": {
+    "glyph_cap_remembers": "Remembers",
+    "glyph_cap_restore": "Restore",
+    "glyph_cap_split": "Split",
+    "glyph_cap_remove": "Remove",
     "glyph_cap_count_one": "1 capability",
     "glyph_cap_count_other": "{count} capabilities",
     "glyph_cap_events_other": "{count} events",

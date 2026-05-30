@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "기억함",
+    "glyph_cap_restore": "복원",
+    "glyph_cap_split": "분할",
+    "glyph_cap_remove": "제거",
     "glyph_cap_count_one": "기능 1개",
     "glyph_cap_count_other": "기능 {count}개",
     "glyph_cap_events_other": "이벤트 {count}개",

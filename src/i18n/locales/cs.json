@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "Pamatuje si",
+    "glyph_cap_restore": "Obnovit",
+    "glyph_cap_split": "Rozdělit",
+    "glyph_cap_remove": "Odebrat",
     "glyph_cap_count_one": "1 schopnost",
     "glyph_cap_count_other": "{count} schopností",
     "glyph_cap_events_other": "{count} událostí",

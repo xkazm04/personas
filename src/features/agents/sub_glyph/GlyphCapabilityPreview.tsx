@@ -182,7 +182,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         {triggerSummary(cap.suggested_trigger)}
                       </span>
                       {connectorList.length > 0 && (
-                        <Tooltip label={connectorList.join(", ")}>
+                        <Tooltip content={connectorList.join(", ")}>
                           <span className="inline-flex items-center gap-1">
                             {connectorList.slice(0, 4).map((slug) => (
                               <ConnectorIcon key={slug} meta={getConnectorMeta(slug)} size="w-3.5 h-3.5" />
@@ -204,12 +204,12 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                       {memoryEnabled && (
                         <span className="inline-flex items-center gap-1 text-foreground">
                           <Brain className="w-3 h-3" />
-                          <DebtText k="auto_remembers_9c4ae28f" />
+                          {t.agents.glyph_cap_remembers}
                         </span>
                       )}
                       {events.length > 0 && (
                         <Tooltip
-                          label={events
+                          content={events
                             .map((e) => `${e.direction === "emit" ? "→ " : "← "}${e.event_type}`)
                             .join("\n")}
                         >
@@ -234,7 +234,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                       title={debtText("auto_restore_include_this_capability_when_promo_e8f43ec9")}
                     >
                       <Undo2 className="w-3 h-3" />
-                      <DebtText k="auto_restore_4ac0e8c0" />
+                      {t.agents.glyph_cap_restore}
                     </button>
                   ) : (
                     <>
@@ -247,7 +247,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                           title={debtText("auto_open_refine_with_a_prompt_that_asks_the_ag_c0e3037e")}
                         >
                           <Split className="w-3 h-3" />
-                          <DebtText k="auto_split_dca48c50" />
+                          {t.agents.glyph_cap_split}
                         </button>
                       )}
                       <button
@@ -258,7 +258,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         title={debtText("auto_remove_exclude_this_capability_when_promot_dbf501b9")}
                       >
                         <X className="w-3 h-3" />
-                        <DebtText k="auto_remove_command_e4b9b6f6" />
+                        {t.agents.glyph_cap_remove}
                       </button>
                     </>
                   )}

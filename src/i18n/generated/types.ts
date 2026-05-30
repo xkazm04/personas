@@ -589,6 +589,10 @@ export type Translations = {
     };
   };
   agents: {
+    glyph_cap_remembers: string;
+    glyph_cap_restore: string;
+    glyph_cap_split: string;
+    glyph_cap_remove: string;
     glyph_cap_count_one: string;
     glyph_cap_count_other: string;
     glyph_cap_events_other: string;

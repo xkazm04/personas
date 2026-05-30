@@ -571,6 +571,10 @@
     "commander": "القائد"
   },
   "agents": {
+    "glyph_cap_remembers": "يتذكر",
+    "glyph_cap_restore": "استعادة",
+    "glyph_cap_split": "تقسيم",
+    "glyph_cap_remove": "إزالة",
     "glyph_cap_count_one": "قدرة واحدة",
     "glyph_cap_count_other": "{count} قدرات",
     "glyph_cap_events_other": "{count} أحداث",

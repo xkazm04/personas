@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "Mengingat",
+    "glyph_cap_restore": "Pulihkan",
+    "glyph_cap_split": "Pisahkan",
+    "glyph_cap_remove": "Hapus",
     "glyph_cap_count_one": "1 kemampuan",
     "glyph_cap_count_other": "{count} kemampuan",
     "glyph_cap_events_other": "{count} peristiwa",

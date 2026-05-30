@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "记忆",
+    "glyph_cap_restore": "恢复",
+    "glyph_cap_split": "拆分",
+    "glyph_cap_remove": "移除",
     "glyph_cap_count_one": "1 项能力",
     "glyph_cap_count_other": "{count} 项能力",
     "glyph_cap_events_other": "{count} 个事件",

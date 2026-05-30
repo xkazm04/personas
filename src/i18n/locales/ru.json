@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "Запоминает",
+    "glyph_cap_restore": "Восстановить",
+    "glyph_cap_split": "Разделить",
+    "glyph_cap_remove": "Удалить",
     "glyph_cap_count_one": "1 возможность",
     "glyph_cap_count_other": "Возможностей: {count}",
     "glyph_cap_events_other": "Событий: {count}",

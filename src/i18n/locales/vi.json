@@ -571,6 +571,10 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_remembers": "Ghi nhớ",
+    "glyph_cap_restore": "Khôi phục",
+    "glyph_cap_split": "Tách",
+    "glyph_cap_remove": "Xóa",
     "glyph_cap_count_one": "1 khả năng",
     "glyph_cap_count_other": "{count} khả năng",
     "glyph_cap_events_other": "{count} sự kiện",
