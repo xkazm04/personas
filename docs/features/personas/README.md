@@ -89,6 +89,35 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
+## Creating a persona — the unified front door
+
+Both ways to create a persona start from one surface, the **PersonaCreator**
+launcher (`src/features/agents/components/create/PersonaCreator.tsx`), shown
+when you click "Create" with no active build. It is *describe-first*:
+
+1. **Describe it** — an autofocus box ("What should this agent do?"). On
+   submit it seeds `companionPrefill.intent` and hands off to the from-scratch
+   build surface (`UnifiedBuildEntry`), which runs the live LLM build
+   (`start_build_session`).
+2. **Start from a template** — a row of proven starters beneath the box. As
+   you type, it live-matches templates against your description (via
+   `companion_match_templates`, debounced) and swaps the curated starters for
+   ranked matches. Picking one opens the **template adoption** flow.
+
+Adoption from the creator renders **in-page**, not as a floating modal:
+`AdoptionWizardModal` has an `inline` presentation mode that swaps only its
+outer wrapper while keeping all lifecycle logic (reset, discard-confirm,
+orphaned-draft cleanup) shared with the modal path. So both on-ramps stay on
+one continuous surface. Adoption opened from the **gallery** or **onboarding**
+still uses the floating modal — only the creator path is in-page.
+
+Both on-ramps converge at `buildPhase === "draft_ready"` and share the entire
+back half (test → promote) and the same `matrixBuildSlice` state machine; the
+only difference is the front: a *generated* build (the LLM fills the 8
+dimensions via clarifying questions) vs a *seeded* build (the template's
+`agent_ir` arrives pre-populated and the questionnaire only binds parameters).
+Design + the full rollout plan: `docs/concepts/glyph-convergence.md`.
+
 ## Goal planning is a team concern, not a persona one
 
 Defining a plain-language goal and decomposing it into work belongs to the
