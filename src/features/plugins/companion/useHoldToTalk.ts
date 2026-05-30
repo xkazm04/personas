@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCompanionStore } from './companionStore';
+import { parseSpokenDecision } from './decision/parseSpokenDecision';
+import { explainDecision, runDecisionOption } from './decision/resolveDecision';
 import { useSpeechInput } from './useSpeechInput';
 
 /**
@@ -96,7 +98,27 @@ export function useHoldToTalk(): HoldToTalk {
       abortRef.current = false;
       setTalking(false);
       dictation.reset();
-      if (!aborted && text) setVoiceTurnRequest(text);
+      if (!aborted && text) {
+        // Slice 7 — if a decision is pending, the user may be ANSWERING it by
+        // voice ("one", "3", "explain") rather than starting a chat turn. Parse
+        // the final transcript; on a valid answer, resolve the decision (run
+        // the option / explain) and skip the chat turn entirely. Anything that
+        // isn't a decision answer falls through to the normal pipeline.
+        const decision = useCompanionStore.getState().pendingDecision;
+        const answer = decision
+          ? parseSpokenDecision(text, decision.options.length)
+          : null;
+        if (answer) {
+          if (answer.kind === 'explain') {
+            explainDecision();
+          } else {
+            const opt = decision!.options[answer.index];
+            if (opt) runDecisionOption(opt);
+          }
+        } else {
+          setVoiceTurnRequest(text);
+        }
+      }
     }
   }, [dictation.listening, dictation.finalText, dictation, setVoiceTurnRequest]);
 
