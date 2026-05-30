@@ -574,7 +574,7 @@ fn build_detail(l: &Loaded, trajectory: Vec<TrajectoryPoint>) -> EvalRunDetail {
         code_track: subtree(sc, "code_track"),
         delivered_increment: subtree(sc, "delivered_increment"),
         self_veto: subtree(sc, "self_veto"),
-        resilience: sc.and_then(|s| s.get("resilience").cloned()),
+        resilience: sc.get("resilience").cloned(),
         judge: subtree(sc, "judge"),
         facts: subtree(sc, "facts"),
         grounding: subtree(sc, "grounding"),
