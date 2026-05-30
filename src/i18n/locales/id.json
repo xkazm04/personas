@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_heading": "Buat persona",
+    "create_describe_label": "Apa yang harus dilakukan agen ini?",
+    "create_build_cta": "Bangun agen",
+    "create_templates_heading": "Atau mulai dari templat teruji",
+    "create_browse_all": "Lihat semua templat",
+    "create_templates_empty": "Belum ada templat — buka galeri",
+    "create_starter_aria": "Mulai dari {name}",
     "glyph_apps_subtitle_empty": "Cari atau filter untuk memilih aplikasi dari vault",
     "glyph_apps_selected_one": "{count} aplikasi dipilih",
     "glyph_apps_selected_other": "{count} aplikasi dipilih",

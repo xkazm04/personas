@@ -571,6 +571,13 @@
     "commander": "القائد"
   },
   "agents": {
+    "create_heading": "إنشاء شخصية",
+    "create_describe_label": "ماذا يجب أن يفعل هذا الوكيل؟",
+    "create_build_cta": "بناء الوكيل",
+    "create_templates_heading": "أو ابدأ من قالب مُجرّب",
+    "create_browse_all": "تصفّح كل القوالب",
+    "create_templates_empty": "لا قوالب بعد — تصفّح المعرض",
+    "create_starter_aria": "ابدأ من {name}",
     "glyph_apps_subtitle_empty": "ابحث أو صفِّ لاختيار التطبيقات من خزنتك",
     "glyph_apps_selected_one": "تم اختيار تطبيق {count}",
     "glyph_apps_selected_other": "تم اختيار {count} تطبيقات",

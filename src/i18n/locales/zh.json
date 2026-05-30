@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_heading": "创建一个角色",
+    "create_describe_label": "这个助手该做什么？",
+    "create_build_cta": "构建助手",
+    "create_templates_heading": "或从一个成熟的模板开始",
+    "create_browse_all": "浏览所有模板",
+    "create_templates_empty": "暂无模板 — 浏览图库",
+    "create_starter_aria": "从 {name} 开始",
     "glyph_apps_subtitle_empty": "搜索或筛选以从保险库中选择应用",
     "glyph_apps_selected_one": "已选择 {count} 个应用",
     "glyph_apps_selected_other": "已选择 {count} 个应用",

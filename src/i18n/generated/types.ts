@@ -589,6 +589,13 @@ export type Translations = {
     };
   };
   agents: {
+    create_heading: string;
+    create_describe_label: string;
+    create_build_cta: string;
+    create_templates_heading: string;
+    create_browse_all: string;
+    create_templates_empty: string;
+    create_starter_aria: string;
     glyph_apps_subtitle_empty: string;
     glyph_apps_selected_one: string;
     glyph_apps_selected_other: string;

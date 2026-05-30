@@ -1,4 +1,11 @@
 {
+  "create_heading": "Tạo một persona",
+  "create_describe_label": "Tác nhân này nên làm gì?",
+  "create_build_cta": "Tạo tác nhân",
+  "create_templates_heading": "Hoặc bắt đầu từ một mẫu đã được kiểm chứng",
+  "create_browse_all": "Xem tất cả mẫu",
+  "create_templates_empty": "Chưa có mẫu nào — duyệt thư viện",
+  "create_starter_aria": "Bắt đầu từ {name}",
   "glyph_apps_subtitle_empty": "Tìm hoặc lọc để chọn ứng dụng từ kho của bạn",
   "glyph_apps_selected_one": "Đã chọn {count} ứng dụng",
   "glyph_apps_selected_other": "Đã chọn {count} ứng dụng",

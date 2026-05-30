@@ -1,4 +1,11 @@
 {
+  "create_heading": "একটি পার্সোনা তৈরি করুন",
+  "create_describe_label": "এই এজেন্ট কী করবে?",
+  "create_build_cta": "এজেন্ট তৈরি করুন",
+  "create_templates_heading": "বা একটি পরীক্ষিত টেমপ্লেট থেকে শুরু করুন",
+  "create_browse_all": "সব টেমপ্লেট দেখুন",
+  "create_templates_empty": "এখনও কোনো টেমপ্লেট নেই — গ্যালারি দেখুন",
+  "create_starter_aria": "{name} থেকে শুরু করুন",
   "glyph_apps_subtitle_empty": "ভল্ট থেকে অ্যাপ বেছে নিতে খুঁজুন বা ফিল্টার করুন",
   "glyph_apps_selected_one": "{count}টি অ্যাপ নির্বাচিত",
   "glyph_apps_selected_other": "{count}টি অ্যাপ নির্বাচিত",

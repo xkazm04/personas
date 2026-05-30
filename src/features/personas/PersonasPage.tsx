@@ -22,6 +22,7 @@ const HomePage = lazy(() => import('@/features/home/components/HomePage'));
 const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
+const PersonaCreator = lazy(() => import('@/features/agents/components/create/PersonaCreator').then(m => ({ default: m.PersonaCreator })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
 const GoalsPage = lazy(() => import('@/features/plugins/dev-tools/sub_goals/GoalsPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
@@ -169,6 +170,21 @@ export default function PersonasPage() {
   const hasActiveBuild = !!buildPersonaId && buildPhase !== 'initializing' && buildPhase !== 'promoted' && buildPhase !== 'failed' && buildPhase !== 'cancelled';
   const prevSectionRef = useRef(sidebarSection);
 
+  // Glyph-convergence Phase 1: the unified creation launcher (PersonaCreator)
+  // is the default view when starting a fresh create. It's dismissed once the
+  // user commits a from-scratch description (UnifiedBuildEntry then takes
+  // over), and on resume of an already-active build (jump straight to the
+  // build surface). Reset whenever we leave the create area so the next create
+  // opens on the launcher again.
+  const [launcherDismissed, setLauncherDismissed] = useState(false);
+  const inCreateArea = isCreatingPersona || (personasFetched && !isLoading && !error && personas.length === 0);
+  useEffect(() => {
+    if (!inCreateArea) setLauncherDismissed(false);
+  }, [inCreateArea]);
+  const handleCreatorPersonaCreated = useCallback(() => {
+    useSystemStore.getState().setIsCreatingPersona(false);
+  }, []);
+
 
   useEffect(() => {
     const wasElsewhere = prevSectionRef.current !== 'personas';
@@ -176,6 +192,7 @@ export default function PersonasPage() {
     // Only auto-resume when ARRIVING at personas from another section with an active build
     if (sidebarSection === 'personas' && wasElsewhere && hasActiveBuild && !isCreatingPersona) {
       useSystemStore.getState().setIsCreatingPersona(true);
+      setLauncherDismissed(true);
     }
   }, [sidebarSection, hasActiveBuild, isCreatingPersona]);
 
@@ -216,11 +233,16 @@ export default function PersonasPage() {
       // Groups→Teams consolidation (Phase 4): the standalone Groups manager
       // is retired — a team is now the workspace. Any lingering
       // agentTab==='groups' falls through to the default Agents view.
-      if (personasFetched && !isLoading && !error && personas.length === 0) {
-        return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
-      }
-      if (isCreatingPersona) {
-        return <ErrorBoundary name="UnifiedBuildEntry"><Suspense fallback={SectionFallback}><UnifiedBuildEntry /></Suspense></ErrorBoundary>;
+      if ((personasFetched && !isLoading && !error && personas.length === 0) || isCreatingPersona) {
+        const createNode = launcherDismissed
+          ? <UnifiedBuildEntry />
+          : (
+            <PersonaCreator
+              onStartDescribe={() => setLauncherDismissed(true)}
+              onPersonaCreated={handleCreatorPersonaCreated}
+            />
+          );
+        return <ErrorBoundary name="PersonaCreate"><Suspense fallback={SectionFallback}>{createNode}</Suspense></ErrorBoundary>;
       }
     }
 

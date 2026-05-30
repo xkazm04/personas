@@ -28,7 +28,7 @@ So convergence is a **front-half + front-door** problem, not a rebuild.
 ### Distinctive pieces (what genuinely differs)
 - **Modal vs full-page** is the biggest *felt* divergence (adoption is a 1750px modal).
 - **Origin**: `generated` (LLM) vs `seeded` (template `agent_ir`). The seeded path has a pre-`draft_ready` "narrow & bind" questionnaire; the generated path fills cells via live LLM gate questions instead.
-- **Third path — instant adopt**: `instant_adopt_template` → `create_persona_atomically` bypasses build sessions entirely (use-template-verbatim express lane).
+- **Third path — instant adopt**: `instant_adopt_template` → `create_persona_atomically` bypasses build sessions entirely (use-template-verbatim express lane). **Decision: this is folded into the unified flow** (see Decisions below) — it becomes a removal candidate once the seeded path is fast enough to replace it.
 - **Templates ARE "starter examples"** — the recipe-suggestion mechanism in compose (`match_recipes_to_intent`, `ComposerRecipeSuggestion`) and Athena's `TemplateSuggestionsWidget` already prove the "surface a starting point as you type" pattern; it's just not wired into a unified front door.
 
 ### Drift / dead code to retire
@@ -43,7 +43,7 @@ Decisions taken (2026-05-30):
 - **Scope: Deep** — merge the four wrapper components into one `origin`-aware surface; retire the dead code + duplicate canvas.
 - **Front door: describe-first**, template starters below, "Browse all".
 - **Live match: yes** — surface matching templates as the user types intent.
-- **Instant adopt: keep** as a "Use as-is" express lane on the template card/detail (instant vs guided "Customize"); not folded into the unified surface.
+- **Instant adopt: fold into the unified flow** — retire the `instant_adopt_template` → `create_persona_atomically` bypass so every template goes through the unified build surface (seed → bind → test → promote). One code path, one mental model; the verbatim-template speed is recovered by making the seeded path fast (auto-test on `draft_ready`, no questions = straight to promote). The Rust `instant_adopt_template` command + `create_persona_atomically` become removal candidates in Phase 5 once no caller remains.
 
 ### Target architecture
 
@@ -75,7 +75,7 @@ Each phase is independently shippable + validated. **Phase 3 precedes Phase 4 de
 | **2. Live template match** | Wire match-as-you-type into the describe box (template variant of the recipe-suggestion debounce). | Low–med | — |
 | **3. Host adoption in-page** | Render adoption in the page host; bind-questionnaire becomes the seeded pre-phase. Retire the modal chrome. | Med | `AdoptionWizardModal` |
 | **4. Merge sigil wrappers** | Unify the four layout components → one `origin`-aware `GlyphBuildSurface`. | **High** | 3 wrappers |
-| **5. Retire dead code** | Delete `ucPicker`, `PersonaChronologyGlyph`, `ChronologyCommandHub`, legacy `QuestionnaireForm`, dup `GlyphSigilCanvas`. | Low | dead tree |
+| **5. Retire dead code** | Delete `ucPicker`, `PersonaChronologyGlyph`, `ChronologyCommandHub`, legacy `QuestionnaireForm`, dup `GlyphSigilCanvas`; remove the now-unused `instant_adopt_template` / `create_persona_atomically` express path (the one Rust touch in the whole effort). | Low–med | dead tree + bypass |
 
 Phases 1–3 are user-visible → update `docs/features/personas/` + `docs/features/templates/` + onboarding + marketing guide in the same phase. Phases 4–5 are internal refactors.
 
@@ -83,7 +83,7 @@ Phases 1–3 are user-visible → update `docs/features/personas/` + `docs/featu
 
 - **Positive:** one mental model for creation; the "blazing-fast simple" path (pick a proven template, answer 1–2 binding questions) and the "open-ended" path (describe it) live side by side; ~4 wrapper components collapse to 1; dead code removed; future creation work has one place to land.
 - **Cost:** Phase 4 is a high-risk cross-area refactor (`agents/` + `templates/`); must be staged and verified against the live app, not tsc alone.
-- **Backend:** none — the convergence is entirely frontend + routing.
+- **Backend:** effectively none through Phase 4 — the convergence is frontend + routing. The only Rust touch is Phase 5's removal of the now-unused `instant_adopt_template` / `create_persona_atomically` bypass.
 
 ## Key references (file:line maps captured during analysis)
 - Scratch: `src/features/agents/components/matrix/UnifiedBuildEntry.tsx`, `src/features/agents/sub_glyph/*`, `src/features/personas/PersonasPage.tsx`

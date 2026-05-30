@@ -583,6 +583,13 @@
     }
   },
   "agents": {
+    "create_heading": "Create a persona",
+    "create_describe_label": "What should this agent do?",
+    "create_build_cta": "Build agent",
+    "create_templates_heading": "Or start from a proven template",
+    "create_browse_all": "Browse all templates",
+    "create_templates_empty": "No templates yet — browse the gallery",
+    "create_starter_aria": "Start from {name}",
     "glyph_apps_subtitle_empty": "Search or filter to pick apps from your vault",
     "glyph_apps_selected_one": "{count} app selected",
     "glyph_apps_selected_other": "{count} apps selected",

@@ -1,4 +1,11 @@
 {
+  "create_heading": "Создать персону",
+  "create_describe_label": "Что должен делать этот агент?",
+  "create_build_cta": "Создать агента",
+  "create_templates_heading": "Или начните с проверенного шаблона",
+  "create_browse_all": "Все шаблоны",
+  "create_templates_empty": "Шаблонов пока нет — откройте галерею",
+  "create_starter_aria": "Начать с «{name}»",
   "glyph_apps_subtitle_empty": "Найдите или отфильтруйте приложения из хранилища",
   "glyph_apps_selected_one": "Выбрано {count} приложение",
   "glyph_apps_selected_other": "Выбрано приложений: {count}",

@@ -1,4 +1,11 @@
 {
+  "create_heading": "एक पर्सोना बनाएँ",
+  "create_describe_label": "यह एजेंट क्या करे?",
+  "create_build_cta": "एजेंट बनाएँ",
+  "create_templates_heading": "या किसी आज़माए हुए टेम्पलेट से शुरू करें",
+  "create_browse_all": "सभी टेम्पलेट देखें",
+  "create_templates_empty": "अभी कोई टेम्पलेट नहीं — गैलरी देखें",
+  "create_starter_aria": "{name} से शुरू करें",
   "glyph_apps_subtitle_empty": "वॉल्ट से ऐप्स चुनने के लिए खोजें या फ़िल्टर करें",
   "glyph_apps_selected_one": "{count} ऐप चुना गया",
   "glyph_apps_selected_other": "{count} ऐप्स चुने गए",
