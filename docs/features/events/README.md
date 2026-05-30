@@ -75,4 +75,17 @@ If the bot reads a channel but every user message comes back with empty `content
 
 Why polling, not Gateway WebSocket: Gateway is the right long-term answer, but polling is enough for the 1:1 test-channel use case the feature ships with, has no external dependency beyond the bot-token credential already in the vault, and survives restarts trivially via the persisted cursor. The upgrade path is to swap `fetch_new_messages` for a WSS consumer that pushes onto the same dispatch path.
 
+## Slack inbound polling
+
+`src-tauri/src/engine/slack_poller.rs` is the Slack analogue of the Discord poller above; both share the dispatch-protocol reply extractor in `src-tauri/src/engine/channel_reply.rs`. A 5s background tick scans every enabled persona whose `notification_channels` contains at least one `type: "slack"` entry with `config.pollInbound == true` and a channel id (`config.channel` — the key the messaging picker writes; `channelId`/`channel_id` are also accepted), then for each such (persona, channel) it:
+
+1. Reads the per-(persona, channel) cursor from `slack_poll_state` (`last_ts`).
+2. Fetches `GET https://slack.com/api/conversations.history?channel={id}&oldest={cursor}&inclusive=false&limit=50` using the Bot token from the persona's Slack credential. Slack returns HTTP 200 with `{"ok":false,"error":"..."}` for most failures, so the poller checks the `ok` field and surfaces `not_in_channel` / `missing_scope` with a hint to invite the bot and grant `channels:history` / `groups:history`.
+3. Skips messages authored by a bot (any `bot_id` — which includes the persona's own replies) and Slack system events (any `subtype`), plus messages already logged in `slack_inbound_messages` (composite PRIMARY KEY on `(channel_id, message_ts)`), then for each new message fires `execute_persona_inner` with `input_data = { source: "slack", channelId, messageId, author, content, timestamp }` and `idempotency_key = "slack:{channel_id}:{message_ts}"`.
+4. Advances the cursor to the newest `ts` seen (compared numerically, not lexically), even when the only new message was a bot's own — so the loop can't get stuck behind its own replies.
+
+A second pass within the same tick scans `slack_inbound_messages` for rows whose execution is finished but `replied_message_ts IS NULL`, extracts the user-facing reply via the shared `channel_reply::build_reply_text`, and POSTs it back via `POST https://slack.com/api/chat.postMessage` with `thread_ts` set to the originating message's thread root — so replies land in-thread. Replies are truncated to ~39000 chars (Slack's `text` ceiling) with a `… (truncated)` marker; failures land in the row's `error` column so a stuck delivery surfaces in inspection without blocking subsequent messages.
+
+The bot must be a **member of the channel** for `conversations.history` to return messages (otherwise `not_in_channel`). Real-Time Search of private channels and DMs (a later phase) needs a user token (`xoxp`) rather than the bot token — the Slack connector exposes an optional `user_token` field for that. Why polling, not the Events API / Socket Mode: same trade-off as Discord — polling needs no inbound HTTP endpoint, reuses the bot-token credential already in the vault, and survives restarts via the persisted cursor; the realtime upgrade swaps `fetch_new_messages` for an Events / Socket Mode consumer on the same dispatch path.
+
 For deeper routing design details, see [event-routing.md](event-routing.md).

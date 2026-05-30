@@ -63,6 +63,7 @@ pub mod desktop_discovery;
 #[cfg(feature = "desktop")]
 pub mod desktop_runtime;
 #[cfg(feature = "desktop")]
+pub mod channel_reply;
 pub mod desktop_security;
 pub mod digest;
 pub mod director;
@@ -158,6 +159,7 @@ pub mod session_pool;
 #[cfg(feature = "p2p")]
 pub mod share_link;
 pub mod shared_event_relay;
+pub mod slack_poller;
 pub mod smee_relay;
 pub mod ssrf_safe_dns;
 pub mod str_utils;

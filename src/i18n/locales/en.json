@@ -3050,7 +3050,9 @@
         "to": "user@example.com"
       },
       "discord_poll_inbound_label": "Poll for incoming Discord messages",
-      "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel."
+      "discord_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies with its run output. The bot must already be in the channel.",
+      "slack_poll_inbound_label": "Poll for incoming Slack messages",
+      "slack_poll_inbound_help": "When checked, the persona reads new messages in this channel every 5s and replies in-thread with its run output. Invite the bot to the channel first."
     }
   },
   "director": {
