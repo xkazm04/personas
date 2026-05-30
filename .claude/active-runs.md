@@ -32,6 +32,14 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### mission-control — Overview "Home"→"Mission control" rename + heatmap tooltip + fleet-opt actions + routines fix
+- Started: 2026-05-30 (this session)
+- Status: COMPLETE — MERGED to master 2026-05-30 (merge 677f24d8c; 6 commits c6aeeef28..31faea307 + merge of concurrent director-memory work 48b82f8ba). tsc 0 + eslint (touched) 0 + i18n coverage 0 + vite build green. Worktree pending cleanup. DISJOINT from director-memory session except additive en.json keys + overview README (auto-merged; enSectionStrings regen-resolved). Left in Active (ledger concurrently dirty); relocate to Recently completed later.
+- Branch: worktree-mission-control (from master b27f35837)
+- Worktree: .claude/worktrees/mission-control/
+- Paths: src/features/overview/components/dashboard/** (move out) + NEW src/features/overview/sub_missionControl/** (DashboardHomeMissionControl + FleetOptimizationCard + UpcomingRoutinesCard + VaultRecentChangesCard moved here; ResumeSetupCard deleted), src/features/overview/sub_analytics/components/ExecutionHeatmap.tsx (hover→tooltip), src/features/overview/libs/fleetOptimizer.ts (recommendation actions metadata), src/features/shared/components/layout/sidebar/{SidebarSubNav.tsx,SidebarLevel2.tsx} + src/i18n/useSidebarTranslation.ts (label override), src/i18n/locales/en.json (additive sidebar.mission_control + overview.* action keys ONLY), docs/features/overview/README.md + docs/features/companion/README.md, ../personas-web marketing (overview). FRONTEND-ONLY (no Rust). Ledger edited in MAIN checkout only (per feedback_active_runs_md_unsafe_in_concurrent_worktrees).
+- Note: DISJOINT from concurrent director-memory session (director.rs/memories.rs/sub_memories/** — uncommitted in main checkout, untouched here). 4 tasks: (1) sidebar rename, (2) heatmap hover→tooltip, (3) fleet-opt relocate + Open-Lab/Ask-Athena actions, (4) Upcoming-Routines future-only filter. Worktree isolation; node_modules junction to main; per-file staging.
+
 ### orb-decisions — Athena orb quick-response (numeric buttons + leader-key shortcut mode)
 - Started: 2026-05-29
 - Status: COMPLETE — 5 commits (1a6544d90..d99f84667), NOT merged, awaiting user review. cargo check (P1) + tsc 0 + eslint 0 + vite build + 11 unit tests (6 orbDecision + 5 keyboard) + i18n gate all green. Constitution v31. Leader key = ';'. Left in Active (ledger concurrently dirty); relocate to Recently completed on merge.
