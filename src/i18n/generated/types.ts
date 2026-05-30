@@ -11459,6 +11459,19 @@ export type Translations = {
       guide_step_label: string;
       guide_goto_step: string;
       guide_click_hint: string;
+      decision_title: string;
+      decision_explain: string;
+      decision_explain_hint: string;
+      decision_recommend_prefix: string;
+      decision_dismiss: string;
+      decision_approve: string;
+      decision_reject: string;
+      decision_resolve: string;
+      decision_open: string;
+      decision_recommend_approve: string;
+      decision_recommend_review: string;
+      decision_recommend_resolve: string;
+      decision_recommend_review_open: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;
@@ -11699,6 +11712,8 @@ export type Translations = {
       setup_memory_desc: string;
       setup_recall_synthesis_label: string;
       setup_recall_synthesis_desc: string;
+      setup_hands_free_decisions_label: string;
+      setup_hands_free_decisions_desc: string;
       setup_desktop_title: string;
       setup_desktop_desc: string;
       setup_desktop_clipboard_label: string;

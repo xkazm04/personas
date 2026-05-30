@@ -11706,6 +11706,8 @@
       "setup_memory_desc": "Tune how Athena recalls and shapes context for each turn.",
       "setup_recall_synthesis_label": "Recall synthesis (beta)",
       "setup_recall_synthesis_desc": "On dense-recall turns, fold the brain's retrieved chunks through a Claude call into a focused briefing. Adds ~1 extra Claude call on qualifying turns; below the budget threshold no synthesis fires.",
+      "setup_hands_free_decisions_label": "Hands-free decisions",
+      "setup_hands_free_decisions_desc": "Surface pending approvals, reviews, and blocking incidents as numbered choices above the orb, one at a time.",
       "setup_desktop_title": "Desktop awareness (beta)",
       "setup_desktop_desc": "What Athena observes from your desktop. All sources start off. Disabling a source also clears what was already captured.",
       "setup_desktop_clipboard_label": "Clipboard activity",
