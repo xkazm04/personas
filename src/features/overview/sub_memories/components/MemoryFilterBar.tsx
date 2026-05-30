@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Search, X } from 'lucide-react';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { Persona } from '@/lib/types/types';
+import type { MemoryTierFilter } from '@/api/overview/memories';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 
 export interface MemoryFilterBarProps {
@@ -11,6 +12,9 @@ export interface MemoryFilterBarProps {
   onPersonaChange: (value: string | null) => void;
   selectedCategory: string | null;
   onCategoryChange: (value: string | null) => void;
+  /** null = default "active set" view (excludes archived). */
+  selectedTier: MemoryTierFilter | null;
+  onTierChange: (value: MemoryTierFilter | null) => void;
   hasFilters: boolean;
   onClearFilters: () => void;
   personas: Persona[];
@@ -18,7 +22,8 @@ export interface MemoryFilterBarProps {
 
 export function MemoryFilterBar({
   search, onSearchChange, selectedPersonaId, onPersonaChange,
-  selectedCategory, onCategoryChange, hasFilters, onClearFilters, personas,
+  selectedCategory, onCategoryChange, selectedTier, onTierChange,
+  hasFilters, onClearFilters, personas,
 }: MemoryFilterBarProps) {
   const { t } = useTranslation();
   return (
@@ -43,6 +48,18 @@ export function MemoryFilterBar({
           const colors = MEMORY_CATEGORY_COLORS[cat] ?? { label: cat };
           return <option key={cat} value={cat}>{colors.label}</option>;
         })}
+      </ThemedSelect>
+
+      <ThemedSelect
+        value={selectedTier || ''}
+        onChange={(e) => onTierChange((e.target.value || null) as MemoryTierFilter | null)}
+        wrapperClassName="min-w-[120px]"
+      >
+        <option value="">{t.overview.memory_filter.tier_all}</option>
+        <option value="core">{t.overview.memory_filter.tier_core}</option>
+        <option value="active">{t.overview.memory_filter.tier_active}</option>
+        <option value="working">{t.overview.memory_filter.tier_working}</option>
+        <option value="archive">{t.overview.memory_filter.tier_archived}</option>
       </ThemedSelect>
 
       {hasFilters && (

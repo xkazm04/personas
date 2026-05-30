@@ -3148,6 +3148,12 @@ export type Translations = {
     detail_value_rate: string;
     table_title: string;
     all_clear: string;
+    cleanup_memories: string;
+    cleanup_running: string;
+    cleanup_hint: string;
+    cleanup_done: string;
+    cleanup_none: string;
+    cleanup_failed: string;
   };
   vault: {
     title: string;
@@ -6160,6 +6166,11 @@ export type Translations = {
       search_placeholder: string;
       all_agents: string;
       all_categories: string;
+      tier_all: string;
+      tier_core: string;
+      tier_active: string;
+      tier_working: string;
+      tier_archived: string;
     };
     memory_actions: {
       dismiss_suggestion: string;
@@ -6457,6 +6468,7 @@ export type Translations = {
     memory_card: {
       confirm: string;
       cancel: string;
+      restore: string;
     };
     memory_detail: {
       title_label: string;

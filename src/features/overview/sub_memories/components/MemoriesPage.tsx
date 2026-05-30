@@ -8,6 +8,8 @@ import { useShallow } from 'zustand/react/shallow';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import type { MemoryTierFilter } from '@/api/overview/memories';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { MemoryRow } from './MemoryCard';
@@ -112,7 +114,7 @@ function MemoriesPageBaseline() {
   const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
+    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, setMemoryTier, reviewMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
@@ -120,6 +122,7 @@ function MemoriesPageBaseline() {
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
+    setMemoryTier: s.setMemoryTier,
     reviewMemories: s.reviewMemories,
     memoryReviewRunning: s.memoryReviewRunning,
     memoryReviewResult: s.memoryReviewResult,
@@ -130,6 +133,7 @@ function MemoriesPageBaseline() {
   const [search, setSearch] = useState('');
   const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedTier, setSelectedTier] = useState<MemoryTierFilter | null>(null);
   const latestFilterRequestRef = useRef(0);
   const [sort] = useState<SortState>({ column: 'created_at', direction: 'desc' });
   const [showAddForm, setShowAddForm] = useState(false);
@@ -145,12 +149,13 @@ function MemoriesPageBaseline() {
         persona_id: selectedPersonaId || undefined,
         category: selectedCategory || undefined,
         search: search || undefined,
+        tier: selectedTier || undefined,
         sort_column: sort.column,
         sort_direction: sort.direction,
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [fetchMemories, selectedPersonaId, selectedCategory, search, sort]);
+  }, [fetchMemories, selectedPersonaId, selectedCategory, search, selectedTier, sort]);
 
   const personaMap = useMemo(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -158,8 +163,8 @@ function MemoriesPageBaseline() {
     return map;
   }, [personas]);
 
-  const hasFilters = !!selectedPersonaId || !!selectedCategory || !!search;
-  const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); }, []);
+  const hasFilters = !!selectedPersonaId || !!selectedCategory || !!search || !!selectedTier;
+  const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); setSelectedTier(null); }, []);
 
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
   const colWidths = useColumnWidths('overview-memories');
@@ -289,6 +294,17 @@ function MemoriesPageBaseline() {
                 </button>
               )}
             </div>
+            <ThemedSelect
+              value={selectedTier || ''}
+              onChange={(e) => setSelectedTier((e.target.value || null) as MemoryTierFilter | null)}
+              wrapperClassName="min-w-[116px] flex-shrink-0"
+            >
+              <option value="">{t.overview.memory_filter.tier_all}</option>
+              <option value="core">{t.overview.memory_filter.tier_core}</option>
+              <option value="active">{t.overview.memory_filter.tier_active}</option>
+              <option value="working">{t.overview.memory_filter.tier_working}</option>
+              <option value="archive">{t.overview.memory_filter.tier_archived}</option>
+            </ThemedSelect>
             {memoryStats && memoryStats.total > 0 && (
               <>
                 <span className="typo-code font-mono text-foreground flex-shrink-0 tabular-nums">{memoryStats.total} total</span>
@@ -392,7 +408,7 @@ function MemoriesPageBaseline() {
                       const isFocused = virtualRow.index === focusedIndex;
                       return (
                         <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={`${isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''} ${pendingDeleteId === memory.id ? 'bg-red-500/10' : ''}`}>
-                          <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} gridTemplate={memGridTemplate} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} />
+                          <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} gridTemplate={memGridTemplate} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} onRestore={() => setMemoryTier(memory.id, 'active')} />
                         </div>
                       );
                     })}

@@ -24,7 +24,7 @@ export interface MemorySlice {
   memoryReviewError: string | null;
 
   // Actions
-  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; sort_column?: string; sort_direction?: string }) => Promise<void>;
+  fetchMemories: (filters?: { persona_id?: string; category?: string; search?: string; tier?: import("@/api/overview/memories").MemoryTierFilter; sort_column?: string; sort_direction?: string }) => Promise<void>;
   createMemory: (input: { persona_id: string; title: string; content: string; category: string; importance: number; tags: string[] }) => Promise<boolean>;
   deleteMemory: (id: string) => Promise<void>;
   mergeMemories: (
@@ -95,6 +95,9 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
         filters?.persona_id,
         filters?.category,
         filters?.search,
+        // Default the list to the non-archived view; an explicit Archived
+        // filter passes "archive" to surface curated-out memories.
+        filters?.tier ?? "!archive",
         limit,
         0,
         filters?.sort_column,

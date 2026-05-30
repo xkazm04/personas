@@ -108,6 +108,31 @@ export async function runDirectorOnPersona(personaId: string): Promise<number> {
   return invoke<number>('run_director_on_persona', { personaId }, { timeoutMs: DIRECTOR_RUN_TIMEOUT_MS });
 }
 
+/** Outcome of a Director memory-cleanup pass (mirrors engine/director_memory.rs). */
+export interface MemoryCleanupReport {
+  scanned: number;
+  deduped: number;
+  llmArchived: number;
+  archivedIds: string[];
+  dryRun: boolean;
+}
+
+/**
+ * Curate one persona's memories — dedup sweep + bounded LLM "won't-use" pass.
+ * Archives reversibly (tier='archive'); never deletes, never touches core.
+ * Long-running (a real Director run); reuses the single-target timeout.
+ */
+export async function runDirectorMemoryCleanup(
+  personaId: string,
+  dryRun = false,
+): Promise<MemoryCleanupReport> {
+  return invoke<MemoryCleanupReport>(
+    'run_director_memory_cleanup',
+    { personaId, dryRun },
+    { timeoutMs: DIRECTOR_RUN_TIMEOUT_MS },
+  );
+}
+
 export async function runDirectorBatch(maxPersonas?: number): Promise<DirectorReport> {
   return invoke<DirectorReport>(
     'run_director_batch',
