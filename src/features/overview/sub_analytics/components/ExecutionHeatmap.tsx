@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Activity, AlertCircle, Flame, Snowflake, TrendingDown, TrendingUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getExecutionHeatmap } from '@/api/overview/observability';
@@ -173,7 +174,10 @@ export function ExecutionHeatmap({
   const [data, setData] = useState<ExecutionHeatmapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hover, setHover] = useState<FilledDay | null>(null);
+  // Hover carries the cell's viewport rect so the tooltip can anchor to the
+  // cell itself rather than reflowing a text line below the grid (which made
+  // the whole card jump on every cell hover).
+  const [hover, setHover] = useState<{ day: FilledDay; rect: DOMRect } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -256,10 +260,17 @@ export function ExecutionHeatmap({
             />
           </div>
 
-          {hover && (
-            <div className="mt-2 typo-caption text-foreground">
-              <HoverLine day={hover} t={t} tx={tx} />
-            </div>
+          {/*
+            The day readout used to render as a text line below the grid, which
+            reflowed the card on every hover. It now floats as a cell-anchored
+            tooltip (portaled to the body so the grid's overflow-x clip can't
+            cut it off). The shared <Tooltip> can't wrap individual SVG <rect>
+            cells (its trigger is an HTML span), so we position a matching
+            glass tooltip imperatively from the hovered cell's rect.
+          */}
+          {hover && createPortal(
+            <HeatmapTooltip day={hover.day} rect={hover.rect} t={t} tx={tx} />,
+            document.body,
           )}
         </>
       ) : null}
@@ -304,7 +315,7 @@ function HeatmapGrid({
   weeks: FilledDay[][];
   monthLabels: { weekIndex: number; month: number }[];
   thresholds: readonly [number, number, number, number];
-  onHover: (d: FilledDay | null) => void;
+  onHover: (hover: { day: FilledDay; rect: DOMRect } | null) => void;
   onClick?: (date: string) => void;
   t: Translations;
 }) {
@@ -355,7 +366,7 @@ function HeatmapGrid({
                 cursor: interactive ? 'pointer' : 'default',
                 transition: 'transform 120ms ease, filter 120ms ease',
               }}
-              onMouseEnter={() => onHover({ ...day })}
+              onMouseEnter={(e) => onHover({ day, rect: e.currentTarget.getBoundingClientRect() })}
               onMouseLeave={() => onHover(null)}
               onClick={() => interactive && onClick?.(day.date)}
             />
@@ -383,6 +394,39 @@ function HoverLine({
     line += tx(t.overview.heatmap.tooltip_with_cost, { cost: day.cost.toFixed(2) });
   }
   return <span>{line}</span>;
+}
+
+const TOOLTIP_OFFSET = 8;
+
+/**
+ * Cell-anchored floating tooltip. Mirrors the shared `<Tooltip>`'s glass
+ * styling but is positioned imperatively from the hovered SVG cell's bounding
+ * rect — the shared Tooltip can't wrap individual `<rect>` cells (its trigger
+ * is an HTML span). `fixed` + `pointer-events-none` so it never reflows the
+ * card or steals the hover that drives it.
+ */
+function HeatmapTooltip({
+  day, rect, t, tx,
+}: {
+  day: FilledDay;
+  rect: DOMRect;
+  t: Translations;
+  tx: (template: string, params: Record<string, string | number>) => string;
+}) {
+  // Flip below the cell when it sits too close to the viewport top to fit above.
+  const below = rect.top < 60;
+  const left = rect.left + rect.width / 2;
+  const top = below ? rect.bottom + TOOLTIP_OFFSET : rect.top - TOOLTIP_OFFSET;
+  const transform = below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
+  return (
+    <div
+      role="tooltip"
+      className="animate-fade-slide-in fixed z-[9999] pointer-events-none whitespace-nowrap glass-sm rounded-card px-2.5 py-1.5 typo-caption text-foreground shadow-elevation-3"
+      style={{ top, left, transform }}
+    >
+      <HoverLine day={day} t={t} tx={tx} />
+    </div>
+  );
 }
 
 function InsightsRow({
