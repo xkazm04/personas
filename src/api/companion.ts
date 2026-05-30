@@ -975,6 +975,7 @@ export interface ProactiveMessage {
     | 'backlog_aging'
     | 'cadence_due'
     | 'athena_scheduled'
+    | 'incident_blocker'
     | string;
   triggerRef: string | null;
   message: string;

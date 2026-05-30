@@ -6,6 +6,7 @@ import {
   companionEngageProactive,
   type ProactiveMessage,
 } from '@/api/companion';
+import { useSystemStore } from '@/stores/systemStore';
 import { triggerKindLabel } from './athenaLabels';
 
 /**
@@ -38,6 +39,14 @@ export function ProactiveCard({
     try {
       if (kind === 'engage') {
         const result = await companionEngageProactive(message.id);
+        // Incident-blocker nudges take the user to the Overview → Incidents
+        // inbox (mirrors the compose-cockpit nav pattern). Landing on the
+        // inbox is the goal; deep-linking a specific incident is a follow-up.
+        if (message.triggerKind === 'incident_blocker') {
+          const sys = useSystemStore.getState();
+          sys.setSidebarSection('overview');
+          sys.setOverviewTab('incidents');
+        }
         onEngaged(result.message);
       } else {
         await companionDismissProactive(message.id);
@@ -132,6 +141,8 @@ function accentForTrigger(kind: string): string {
       return 'border-amber-500/30 bg-amber-500/[0.06]';
     case 'fleet_op_completed':
       return 'border-emerald-500/30 bg-emerald-500/[0.06]';
+    case 'incident_blocker':
+      return 'border-rose-500/30 bg-rose-500/[0.06]';
     default:
       return 'border-primary/30 bg-primary/[0.06]';
   }

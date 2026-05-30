@@ -11743,6 +11743,7 @@ export type Translations = {
       proactive_kind_fleet_stale: string;
       proactive_kind_fleet_stuck_dispatched: string;
       proactive_kind_fleet_op_completed: string;
+      proactive_kind_incident_blocker: string;
       proactive_kind_unknown: string;
       action_label_run_persona: string;
       action_label_resolve_human_review: string;
