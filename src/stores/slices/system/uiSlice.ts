@@ -209,6 +209,16 @@ export interface UiSlice {
   /** Append an outgoing location to the back stack (dedups the consecutive head). */
   pushNavEntry: (entry: NavEntry) => void;
   navigateBack: () => void;
+  /**
+   * Optional top-most Back handler. When set, {@link navigateBack} (the
+   * titlebar Back button) invokes it INSTEAD of closing a header overlay or
+   * popping the nav history. Used by fullscreen surfaces that own the screen —
+   * e.g. the Fleet terminal grid overlay — so Back dismisses them rather than
+   * navigating the underlying page out from under them. Transient (never
+   * persisted); the surface registers on mount and clears on unmount.
+   */
+  backInterceptor: (() => void) | null;
+  setBackInterceptor: (fn: (() => void) | null) => void;
 }
 
 /** A single back-history location — section + which persona was selected there. */
@@ -387,6 +397,9 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
 
   navigationHistory: [],
 
+  backInterceptor: null,
+  setBackInterceptor: (fn) => set({ backInterceptor: fn }),
+
   pushNavEntry: (entry) => set((state) => {
     if (navRestoring) return state;
     const head = state.navigationHistory[0];
@@ -398,6 +411,14 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   }),
 
   navigateBack: () => startTransition(() => {
+    // A registered fullscreen surface (e.g. the Fleet terminal grid overlay)
+    // intercepts Back first — it owns the screen, so dismissing it takes
+    // priority over header overlays and section history.
+    const interceptor = get().backInterceptor;
+    if (interceptor) {
+      interceptor();
+      return;
+    }
     // An open header overlay sits "above" the section history — Back closes it
     // first and leaves you on exactly the screen it floated over.
     if (get().headerOverlay !== 'none') {

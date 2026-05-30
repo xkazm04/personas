@@ -15,6 +15,15 @@ export interface FleetTransition {
 /** Max transitions kept per session (in-memory; oldest dropped past this). */
 const TRANSITION_CAP = 24;
 
+/** Terminal color theme — `auto` tracks the app's light/dark appearance. */
+export type FleetTerminalTheme = 'auto' | 'dark' | 'light';
+
+/** Clamp bounds for the persisted terminal font zoom (mirror manager consts). */
+const FONT_MIN = 9;
+const FONT_MAX = 22;
+const FONT_DEFAULT = 12;
+const clampFont = (n: number) => Math.min(FONT_MAX, Math.max(FONT_MIN, Math.round(n)));
+
 /**
  * State for the Fleet plugin (DEV-only Claude Code session aggregator).
  *
@@ -34,10 +43,21 @@ export interface FleetSlice {
   fleetNotifyAwaiting: boolean;
   /** Recent lifecycle transitions per session id — feeds the card sparkline. In-memory. */
   fleetTransitions: Record<string, FleetTransition[]>;
+  /** Terminal font size in px (user zoom). Persisted, clamped 9–22. */
+  fleetTerminalFontSize: number;
+  /** Copy selected terminal text to the clipboard automatically. Persisted. */
+  fleetTerminalCopyOnSelect: boolean;
+  /** Terminal color theme; `auto` follows the app appearance. Persisted. */
+  fleetTerminalTheme: FleetTerminalTheme;
 
   fleetRefresh: () => Promise<void>;
   fleetSetActiveSession: (id: string | null) => void;
   fleetSetNotifyAwaiting: (on: boolean) => void;
+  /** Set the terminal font size (clamped); pass a delta via fleetNudgeFont. */
+  fleetSetTerminalFontSize: (px: number) => void;
+  fleetNudgeTerminalFont: (delta: number) => void;
+  fleetSetTerminalCopyOnSelect: (on: boolean) => void;
+  fleetSetTerminalTheme: (theme: FleetTerminalTheme) => void;
   /** Append a transition for a session (no-op if it repeats the last state). */
   fleetRecordTransition: (id: string, state: FleetSessionState) => void;
   /** Patch a single session by id in place (used by event handlers). */
@@ -54,6 +74,9 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetActiveSessionId: null,
   fleetNotifyAwaiting: true,
   fleetTransitions: {},
+  fleetTerminalFontSize: FONT_DEFAULT,
+  fleetTerminalCopyOnSelect: true,
+  fleetTerminalTheme: 'auto',
 
   fleetRefresh: async () => {
     set({ fleetSessionsLoading: true });
@@ -76,6 +99,15 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
 
   fleetSetNotifyAwaiting: (on) => set({ fleetNotifyAwaiting: on }),
+
+  fleetSetTerminalFontSize: (px) => set({ fleetTerminalFontSize: clampFont(px) }),
+
+  fleetNudgeTerminalFont: (delta) =>
+    set((s) => ({ fleetTerminalFontSize: clampFont(s.fleetTerminalFontSize + delta) })),
+
+  fleetSetTerminalCopyOnSelect: (on) => set({ fleetTerminalCopyOnSelect: on }),
+
+  fleetSetTerminalTheme: (theme) => set({ fleetTerminalTheme: theme }),
 
   fleetRecordTransition: (id, state) =>
     set((s) => {

@@ -12,6 +12,7 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
@@ -39,7 +40,9 @@ type ReadFilter = 'all' | 'unread' | 'read';
 import { ROW_SEPARATOR, ROW_SEPARATOR_T } from '@/lib/design/listTokens';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MessageDetailModal } from './MessageDetailModal';
-import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("message-list");
@@ -181,7 +184,28 @@ export default function MessageList() {
   }, [fetchMessages]);
 
   const remaining = messagesTotal - messages.length;
-  const { parentRef, virtualizer } = useVirtualList(filteredMessages, MESSAGE_ROW_HEIGHT);
+
+  // Progressive reveal — spread row mounting across ~2s so a large inbox
+  // doesn't big-bang every row onto one frame after the table frame lands.
+  // Resets on view-mode / filter change; chases realtime arrivals + "load
+  // more" pages. The flat list is already virtualized, so this mainly drives
+  // the gradual-fill feel + the live counter; the threaded view (which is not
+  // virtualized) gets a real mount-cost saving.
+  const activeRevealTotal = viewMode === 'threaded' ? threadSummaries.length : filteredMessages.length;
+  const reveal = useProgressiveReveal(activeRevealTotal, {
+    resetKey: `${viewMode}|${priorityFilter}|${readFilter}|${selectedPersonaId}`,
+    initialCount: 24,
+  });
+  const revealedMessages = useMemo(
+    () => filteredMessages.slice(0, reveal.count),
+    [filteredMessages, reveal.count],
+  );
+  const revealedThreads = useMemo(
+    () => threadSummaries.slice(0, reveal.count),
+    [threadSummaries, reveal.count],
+  );
+
+  const { parentRef, virtualizer } = useVirtualList(revealedMessages, MESSAGE_ROW_HEIGHT);
   const colWidths = useColumnWidths('overview-messages');
   const msgGridTemplate = colWidths.template(MESSAGE_COLUMNS);
 
@@ -225,6 +249,13 @@ export default function MessageList() {
         }
         actions={
           <>
+            {reveal.isRevealing && (
+              <span aria-hidden="true" className="flex items-center gap-1 px-2 py-1 rounded-modal typo-caption text-foreground bg-secondary/20 border border-primary/10">
+                <AnimatedCounter value={reveal.count} mode="roll" />
+                <span>/</span>
+                <Numeric>{activeRevealTotal}</Numeric>
+              </span>
+            )}
             {import.meta.env.DEV && (
               <button onClick={handleSeedMessage} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.messages_view.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.messages_view.mock_message}
@@ -275,7 +306,7 @@ export default function MessageList() {
 
       <ContentBody flex>
         {isLoading ? (
-          <ContentLoader variant="panel" hint="messages" />
+          <ListSkeleton rows={8} rowHeight={MESSAGE_ROW_HEIGHT} />
         ) : viewMode === 'threaded' ? (
           /* ==================== THREADED VIEW ==================== */
           threadSummaries.length === 0 ? (
@@ -293,7 +324,7 @@ export default function MessageList() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
-              {threadSummaries.map((thread) => {
+              {revealedThreads.map((thread) => {
                 const isExpanded = expandedThreadId === thread.threadId;
                 const replies = enrichedThreadReplies.get(thread.threadId);
                 const rawParent = thread.parent;
@@ -302,7 +333,7 @@ export default function MessageList() {
                 const parentPriority = priorityConfig[parent.priority] ?? defaultPriority;
 
                 return (
-                  <div key={thread.threadId} className={`border-b ${ROW_SEPARATOR}`}>
+                  <div key={thread.threadId} className={`border-b ${ROW_SEPARATOR} animate-fade-in`}>
                     {/* Thread header row */}
                     <div
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-primary/[0.05] cursor-pointer transition-colors"
@@ -469,7 +500,7 @@ export default function MessageList() {
                 ) : (
                   <div role="rowgroup" style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                     {virtualizer.getVirtualItems().map((virtualRow) => {
-                      const message = filteredMessages[virtualRow.index]!;
+                      const message = revealedMessages[virtualRow.index]!;
                       const priority = priorityConfig[message.priority] ?? defaultPriority;
                       // Status-accent left border (matches the Activity table):
                       // high-priority rows read red, other unread rows read blue,

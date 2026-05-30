@@ -20,6 +20,9 @@ export default function TitleBar() {
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const navigationHistory = useSystemStore((s) => s.navigationHistory);
   const navigateBack = useSystemStore((s) => s.navigateBack);
+  // A fullscreen surface (e.g. the Fleet grid overlay) can register a Back
+  // handler; surface the Back button so the user can dismiss it from here too.
+  const backInterceptor = useSystemStore((s) => s.backInterceptor);
   // Unified header-overlay controller — Notifications & Monitor are mutually
   // exclusive, and route nav / Back close the active overlay (see uiSlice).
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
@@ -83,7 +86,7 @@ export default function TitleBar() {
        *  pops the last sidebar location (NAV_HISTORY_MAX cap in the store).
        *  Shown whenever there's somewhere to go back to: an open overlay OR a
        *  non-empty history. Sits next to the logo so nav controls cluster. */}
-      {(headerOverlay !== 'none' || navigationHistory.length > 0) && (
+      {(headerOverlay !== 'none' || navigationHistory.length > 0 || backInterceptor !== null) && (
         <button
           type="button"
           className="titlebar-btn ml-1"

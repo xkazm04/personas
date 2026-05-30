@@ -15,6 +15,7 @@ import {
   Bell,
   BellOff,
   Search,
+  LayoutGrid,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -27,6 +28,9 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
+import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
+import { gcTerminals } from '../fleetTerminalManager';
+import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
@@ -99,8 +103,16 @@ export default function FleetGridPage() {
   const removeApproval = useCompanionStore((s) => s.removeApproval);
 
   const { t, tx } = useTranslation();
+
+  // Keep the persisted terminal settings (font, copy-on-select, theme) applied
+  // to every live managed terminal, and track the app's light/dark appearance.
+  useFleetTerminalConfig();
+
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
+  // Fullscreen terminal grid overlay (transient — minimizing returns to the
+  // single-pane view showing the last-selected session).
+  const [gridOpen, setGridOpen] = useState(false);
   const [filter, setFilter] = useState<FleetSessionState | null>(null);
   const [query, setQuery] = useState('');
 
@@ -251,6 +263,30 @@ export default function FleetGridPage() {
     [sessions, activeSessionId],
   );
 
+  // Sessions that can host a live terminal (everything but exited) — drives
+  // the tiled grid view. Most-recently-active first.
+  const liveSessions = useMemo(
+    () =>
+      sessions
+        .filter((s) => s.state !== 'exited')
+        .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
+    [sessions],
+  );
+
+  // Reap managed terminals whose session disappeared (removed from the
+  // registry). Terminals persist across active-session switches and even
+  // across leaving/returning to the Fleet page — only an actual removal
+  // disposes one. Runs on the sessions list, never on unmount.
+  useEffect(() => {
+    gcTerminals(new Set(sessions.map((s) => s.id)));
+  }, [sessions]);
+
+  // If every session exits/closes while the grid overlay is up, minimize back
+  // to the single view rather than showing an empty fullscreen grid.
+  useEffect(() => {
+    if (gridOpen && liveSessions.length === 0) setGridOpen(false);
+  }, [gridOpen, liveSessions.length]);
+
   const handleSpawn = useCallback(async () => {
     if (!activeProject || spawning) return;
     setSpawning(true);
@@ -381,6 +417,17 @@ export default function FleetGridPage() {
 
         <ActionRow>
           <Button
+            data-testid="fleet-grid-open"
+            variant="secondary"
+            size="sm"
+            icon={<LayoutGrid className="w-3.5 h-3.5" />}
+            disabled={liveSessions.length === 0}
+            onClick={() => setGridOpen(true)}
+            title={t.plugins.fleet.grid_open_aria}
+          >
+            {t.plugins.fleet.view_grid}
+          </Button>
+          <Button
             data-testid="fleet-spawn"
             variant="primary"
             size="sm"
@@ -389,7 +436,7 @@ export default function FleetGridPage() {
             onClick={handleSpawn}
             title={activeProject ? `Spawn at ${activeProject.root_path}` : 'Pick a project first'}
           >
-            {spawning ? 'Spawning…' : `Spawn in ${activeProject?.name ?? 'project'}`}
+            {spawning ? 'Spawning…' : 'Spawn'}
           </Button>
           <Button
             data-testid="fleet-broadcast-open"
@@ -494,23 +541,33 @@ export default function FleetGridPage() {
             )}
           </div>
 
-          {/* Active terminal pane (right) */}
-          <div className="col-span-8 border border-primary/10 rounded-modal overflow-hidden bg-[#0a0a0c]">
-            {activeSession ? (
-              activeSession.state === 'exited' ? (
-                <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
-                  <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
-                  <p className="text-[10px]">
-                    {activeSession.exitCode !== null
-                      ? `Exit code ${activeSession.exitCode}`
-                      : 'Process exited unexpectedly'}
-                  </p>
-                </div>
-              ) : (
-                <FleetTerminalPane sessionId={activeSession.id} />
-              )
+          {/* Terminal area (right) — single focused pane. The fullscreen grid
+              overlay (Grid button) takes over for multi-session viewing; while
+              it's open we unmount this pane so the two don't contend for the
+              same managed terminal's holder element. */}
+          <div className="col-span-8 min-h-0">
+            {gridOpen ? (
+              <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
+                <LayoutGrid className="w-10 h-10 mb-3 text-primary" />
+                <p className="typo-caption">{t.plugins.fleet.grid_active_hint}</p>
+              </div>
+            ) : activeSession ? (
+              <div className="h-full border border-primary/10 rounded-modal overflow-hidden bg-[#0a0a0c]">
+                {activeSession.state === 'exited' ? (
+                  <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
+                    <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
+                    <p className="text-[10px]">
+                      {activeSession.exitCode !== null
+                        ? `Exit code ${activeSession.exitCode}`
+                        : 'Process exited unexpectedly'}
+                    </p>
+                  </div>
+                ) : (
+                  <FleetTerminalPane sessionId={activeSession.id} />
+                )}
+              </div>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
+              <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
                 <TerminalIcon className="w-10 h-10 mb-3" />
                 <p className="typo-caption"><DebtText k="auto_select_a_session_to_view_its_terminal_921aba6c" /></p>
               </div>
@@ -520,6 +577,14 @@ export default function FleetGridPage() {
       </ContentBody>
 
       <FleetBroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
+
+      <FleetTerminalOverlay
+        open={gridOpen}
+        sessions={liveSessions}
+        activeSessionId={activeSessionId}
+        onSelect={setActiveSession}
+        onClose={() => setGridOpen(false)}
+      />
     </ContentBox>
   );
 }

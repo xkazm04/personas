@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { CheckSquare, Square, X, MessageSquare, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
@@ -7,6 +7,9 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -25,6 +28,8 @@ interface ReviewInboxPanelProps {
   hasMore?: boolean;
   /** Whether the next page is currently loading (shows a spinner). */
   loadingMore?: boolean;
+  /** Changes to restart the progressive reveal (e.g. the active filter). */
+  revealKey?: string;
 }
 
 export function ReviewInboxPanel({
@@ -39,10 +44,23 @@ export function ReviewInboxPanel({
   sentinelRef,
   hasMore,
   loadingMore,
+  revealKey,
 }: ReviewInboxPanelProps) {
   const { t } = useTranslation();
   const [sidebarWidth, setSidebarWidth] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Progressive reveal — spread inbox rows over ~2s after the panel lands
+  // instead of mounting the whole page at once. Resets when the filter
+  // (revealKey) changes; chases appended keyset pages.
+  const reveal = useProgressiveReveal(filteredReviews.length, {
+    resetKey: revealKey ?? `${filteredReviews.length}`,
+    initialCount: 18,
+  });
+  const revealedReviews = useMemo(
+    () => filteredReviews.slice(0, reveal.count),
+    [filteredReviews, reveal.count],
+  );
 
   const handleResizeStart = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -85,9 +103,14 @@ export function ReviewInboxPanel({
               : undefined
           }
         >
+          {reveal.isRevealing && (
+            <div aria-hidden="true" className="flex items-center justify-end gap-1 px-3 py-1 typo-caption text-foreground border-b border-primary/[0.06] flex-shrink-0">
+              <AnimatedCounter value={reveal.count} mode="roll" /><span>/</span><Numeric>{filteredReviews.length}</Numeric>
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto">
-            {filteredReviews.map((review) => (
-              <div key={review.id} className="flex items-start">
+            {revealedReviews.map((review) => (
+              <div key={review.id} className="flex items-start animate-fade-in">
                 {review.status === 'pending' && (
                   <button
                     onClick={(e) => {
@@ -112,8 +135,10 @@ export function ReviewInboxPanel({
                 </div>
               </div>
             ))}
-            {/* L2 — keyset sentinel: scrolling near it pulls the next page. */}
-            {hasMore && (
+            {/* L2 — keyset sentinel: scrolling near it pulls the next page.
+                Held until the current page finishes revealing so we don't
+                fetch the next page mid-reveal. */}
+            {hasMore && !reveal.isRevealing && (
               <div ref={sentinelRef} className="py-3 flex items-center justify-center">
                 {loadingMore && <Loader2 className="w-4 h-4 animate-spin text-foreground/40" />}
               </div>

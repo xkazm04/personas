@@ -8,6 +8,7 @@ import { checkHooks, installHooks, uninstallHooks } from '@/api/fleet/fleet';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import { FleetMobilePreview } from '../FleetMobilePreview';
 import { FleetPairDevice } from '../FleetPairDevice';
+import { FleetTerminalSettings } from './FleetTerminalSettings';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -186,6 +187,9 @@ export default function FleetSettingsPage() {
               </ul>
             </div>
           )}
+
+          {/* Terminal appearance + behaviour (font, copy-on-select, theme) */}
+          <FleetTerminalSettings />
 
           {/* Pair a device — stage-1 scaffold for the mobile companion */}
           <FleetPairDevice />

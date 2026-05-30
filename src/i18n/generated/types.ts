@@ -8662,6 +8662,28 @@ export type Translations = {
   settings: {
     title: string;
     settings_saved: string;
+    search: {
+      placeholder: string;
+      recommended: string;
+      section: string;
+      trigger_hint: string;
+      trigger_aria: string;
+      reduce_motion: string;
+      dim: string;
+      cvd_safe: string;
+      high_contrast: string;
+      ambient: string;
+      theme: string;
+      text_size: string;
+      brightness: string;
+      density: string;
+      timezone: string;
+      tabs: {
+        limits: string;
+        api_keys: string;
+        history: string;
+      };
+    };
     account: {
       title: string;
       subtitle: string;
@@ -10374,6 +10396,23 @@ export type Translations = {
       needs_input_other: string;
       needs_you_aria: string;
       jump_to_session: string;
+      terminal_font_decrease: string;
+      terminal_font_increase: string;
+      view_grid: string;
+      grid_open_aria: string;
+      grid_back: string;
+      grid_overlay_aria: string;
+      grid_active_hint: string;
+      settings_terminal_title: string;
+      settings_terminal_desc: string;
+      settings_font_size: string;
+      settings_copy_on_select: string;
+      settings_copy_on_select_desc: string;
+      settings_theme: string;
+      settings_theme_auto: string;
+      settings_theme_dark: string;
+      settings_theme_light: string;
+      settings_theme_desc: string;
     };
     title: string;
     subtitle: string;
