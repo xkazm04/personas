@@ -504,6 +504,7 @@ export type CommandName =
   | "fleet_install_hooks"
   | "fleet_kill_session"
   | "fleet_list_sessions"
+  | "fleet_read_transcript"
   | "fleet_remove_session"
   | "fleet_rename_session"
   | "fleet_resize_session"

@@ -24,4 +24,5 @@ pub mod registry;
 pub mod stale;
 #[cfg(feature = "desktop")]
 pub mod transcript;
+pub mod transcript_read;
 pub mod types;

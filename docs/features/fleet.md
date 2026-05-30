@@ -30,6 +30,7 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 | Hook installer | `src-tauri/src/commands/fleet/hook_install.rs` (patches `~/.claude/settings.json`, `_fleet: true` marker preserves user hooks) |
 | Staleness ticker | `src-tauri/src/commands/fleet/stale.rs` (30s interval; 5min cutoff) |
 | JSONL watcher | `src-tauri/src/commands/fleet/transcript.rs` (`notify` recursive watcher, desktop-only) |
+| Transcript reader (P0) | `src-tauri/src/commands/fleet/transcript_read.rs` (`fleet_read_transcript` — parses `<sessionId>.jsonl` content into `FleetTranscriptSummary`: tokens, tools, files touched, message counts, timestamps) |
 | Events | `FLEET_SESSION_OUTPUT`, `FLEET_SESSION_STATE`, `FLEET_SESSION_EXITED`, `FLEET_REGISTRY_CHANGED` (in `event_registry.rs`) |
 
 ## Usage
@@ -158,7 +159,7 @@ Each entry is tagged `_fleet: true` so uninstall is surgical:
 A five-capability arc that exploits Fleet's unique leverage over a bare terminal (PTY ownership, the hook state machine, transcript access, the per-session MCP channel):
 
 - **Skill library (F1).** *P1.1 — apply a skill to live sessions: **done** (Usage step 6). P1.2 — global library + cross-repo install: **done** (Usage step 7).* The "Show skills" browser now has a source toggle (This project / Global library = `~/.claude/skills`) and an "Install to repo" action that copies a skill's files into any registered project's `.claude/skills/`, so a skill applied cross-repo actually exists there. Backend: `skill_files_list_global`, `skill_files_install`.
-- **Transcript intelligence (F2).** Parse `~/.claude/projects/**/*.jsonl` (today only its mtime is read) into a per-session cost / tokens / tools / files-touched timeline + a cross-session searchable activity feed.
+- **Transcript intelligence (F2).** *P0 ingestion core: **done** — `transcript_read.rs` + `fleet_read_transcript` parse the JSONL (previously only its mtime was read) into `FleetTranscriptSummary` (token totals, per-tool counts, files touched, message counts, timestamps).* Next: the F2 UI — a per-session cost/tokens/tools/files-touched timeline (P2.1) + a cross-session searchable activity feed (P2.2), both consuming P0.
 - **Session hibernation (F3).** Auto-checkpoint Idle/Stale sessions, drop the PTY to reclaim the process, and resurrect on demand via `claude --resume <id>` with scrollback rehydrated from the transcript.
 - **Remote attention (F4).** Permission-prompt detection + reply/approve from the "Needs you" surface and (later) a paired mobile client — finishing the inert `FleetPairDevice` handshake.
 - **Fleet recipes (F5).** User-authored multi-session workflows: fan a task out across N repos, or sequence sessions where one's `Stop` hook seeds the next.
