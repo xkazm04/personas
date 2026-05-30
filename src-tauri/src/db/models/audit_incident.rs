@@ -133,6 +133,11 @@ pub struct AuditIncident {
     pub acknowledged_by: Option<String>,
     pub resolved_at: Option<String>,
     pub resolution_note: Option<String>,
+    /// P2.3b — stamped when the incident-continuation reactive loop has re-run
+    /// the blocked work for this (persona_blocker) incident. NULL = not yet
+    /// continued; the consumer claims it atomically so a re-run fires at most
+    /// once.
+    pub continued_at: Option<String>,
     pub created_at: String,
 }
 
