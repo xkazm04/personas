@@ -1667,4 +1667,51 @@ mod tests {
         assert!(deleted);
         assert!(get_by_id(&pool, &exec.id).is_err());
     }
+
+    /// P1 durability invariant: startup recovery must distinguish mid-RUN rows
+    /// (to fail) from durable `queued` rows (to re-admit). `get_running_only`
+    /// sees only `running`; `get_queued_only` sees only `queued`; the legacy
+    /// `get_running` union still sees both.
+    #[test]
+    fn running_only_and_queued_only_partition_by_status() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Partition Agent");
+
+        // One row left queued, one promoted to running (as at shutdown).
+        let queued = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let running = create(&pool, &persona_id, None, None, None, None).unwrap();
+        update_status(
+            &pool,
+            &running.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        let running_only = get_running_only(&pool).unwrap();
+        assert_eq!(running_only.len(), 1);
+        assert_eq!(running_only[0].id, running.id);
+
+        let queued_only = get_queued_only(&pool).unwrap();
+        assert_eq!(queued_only.len(), 1);
+        assert_eq!(queued_only[0].id, queued.id);
+
+        // The legacy union still returns both (back-compat).
+        assert_eq!(get_running(&pool).unwrap().len(), 2);
+
+        // A completed row is in neither partition.
+        update_status(
+            &pool,
+            &running.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Completed,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(get_running_only(&pool).unwrap().len(), 0);
+        assert_eq!(get_queued_only(&pool).unwrap().len(), 1);
+    }
 }
