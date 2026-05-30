@@ -38,11 +38,12 @@ export default function WorkspaceShortcuts() {
         return true;
       }
 
-      // Ctrl/⌘ + M — toggle the Persona Monitor grid.
+      // Ctrl/⌘ + M — toggle the Persona Monitor grid (via the unified
+      // header-overlay controller, so it closes Notifications if open).
       if (mod && !e.altKey && !e.shiftKey && (e.key === 'm' || e.key === 'M')) {
         e.preventDefault();
         const sys = useSystemStore.getState();
-        sys.setMonitorOpen(!sys.monitorOpen);
+        sys.setHeaderOverlay(sys.headerOverlay === 'monitor' ? 'none' : 'monitor');
         return true;
       }
 

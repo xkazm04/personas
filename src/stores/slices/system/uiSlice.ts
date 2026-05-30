@@ -40,6 +40,14 @@ export interface AdoptionDraft {
   selectedUseCaseIds?: string[];
 }
 
+/**
+ * The header overlay surfaces that are mutually exclusive — only one can be
+ * open at a time. `setHeaderOverlay` is the single source of truth that the
+ * titlebar buttons, the Monitor mount, and the Notification center all read,
+ * so opening one structurally closes the other.
+ */
+export type HeaderOverlay = 'none' | 'monitor' | 'notifications';
+
 export interface UiSlice {
   // State
   sidebarSection: SidebarSection;
@@ -96,12 +104,12 @@ export interface UiSlice {
   liveStreamHighlightEventId: string | null;
 
   /**
-   * Whether the full-screen Persona Monitor overlay is open. Lifted to the
-   * store (from local titlebar state) so the companion — Athena — can open
-   * it via her `open_route` "monitor" pseudo-route when the user asks for a
-   * fleet overview.
+   * Which header overlay is currently open — the mutually-exclusive controller
+   * for the Monitor and Notifications surfaces (one enum can't hold two open
+   * overlays). Transient (never persisted). Athena opens the Monitor through
+   * the `setMonitorOpen(true)` shim for her `open_route` "monitor" pseudo-route.
    */
-  monitorOpen: boolean;
+  headerOverlay: HeaderOverlay;
 
   /**
    * Whether the Monitor grid should be partitioned by PersonaGroup. Persisted
@@ -129,6 +137,9 @@ export interface UiSlice {
 
   // Actions
   setSidebarSection: (section: SidebarSection) => void;
+  /** Open / close / switch the active header overlay (mutually exclusive). */
+  setHeaderOverlay: (overlay: HeaderOverlay) => void;
+  /** Back-compat shim — maps to `setHeaderOverlay('monitor' | 'none')`. */
   setMonitorOpen: (open: boolean) => void;
   setMonitorGroupBy: (mode: 'none' | 'group') => void;
   toggleMonitorGroupCollapsed: (groupId: string) => void;
@@ -233,7 +244,7 @@ function currentSelectedPersonaId(): string | null {
 
 export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, get) => ({
   sidebarSection: "home" as SidebarSection,
-  monitorOpen: false,
+  headerOverlay: 'none' as HeaderOverlay,
   monitorGroupBy: 'none' as const,
   monitorCollapsedGroups: [],
   homeHiddenSections: [],
@@ -273,7 +284,14 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
-  setMonitorOpen: (open) => set({ monitorOpen: open }),
+  setHeaderOverlay: (overlay) => set({ headerOverlay: overlay }),
+  // Back-compat shim for callers that only open/close the Monitor (Athena's
+  // open_route 'monitor', the Ctrl+M legacy path, FleetActivityStrip). Opening
+  // switches the controller to 'monitor'; closing only clears it when the
+  // Monitor is the one currently shown.
+  setMonitorOpen: (open) => set((state) => ({
+    headerOverlay: open ? 'monitor' : (state.headerOverlay === 'monitor' ? 'none' : state.headerOverlay),
+  })),
   setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
   toggleHomeSection: (sectionId) =>
     set((state) => {
@@ -292,14 +310,16 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
     }),
 
   setSidebarSection: (section) => startTransition(() => set((state) => {
+    // Navigating any route dismisses an open header overlay (Monitor /
+    // Notifications) — they float over content, so changing content closes them.
     // Idempotent — re-clicking the current section is a no-op for history.
-    if (state.sidebarSection === section) return { sidebarSection: section };
+    if (state.sidebarSection === section) return { sidebarSection: section, headerOverlay: 'none' };
     // While restoring a back-step, swap the section without recording it.
-    if (navRestoring) return { sidebarSection: section };
+    if (navRestoring) return { sidebarSection: section, headerOverlay: 'none' };
     // Capture the full outgoing location (section + which persona was open).
     const entry: NavEntry = { section: state.sidebarSection, personaId: currentSelectedPersonaId() };
     const next = [entry, ...state.navigationHistory].slice(0, NAV_HISTORY_MAX);
-    return { sidebarSection: section, navigationHistory: next };
+    return { sidebarSection: section, navigationHistory: next, headerOverlay: 'none' };
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
   setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
@@ -378,6 +398,12 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   }),
 
   navigateBack: () => startTransition(() => {
+    // An open header overlay sits "above" the section history — Back closes it
+    // first and leaves you on exactly the screen it floated over.
+    if (get().headerOverlay !== 'none') {
+      set({ headerOverlay: 'none' });
+      return;
+    }
     const [head, ...rest] = get().navigationHistory;
     if (!head) return;
     navRestoring = true;

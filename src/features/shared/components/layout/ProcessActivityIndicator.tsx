@@ -14,15 +14,17 @@ import { PersonaMonitor } from "@/features/shared/components/layout/monitor";
  * work (`running`) is shown instead as a pulsing ring around the icon, so
  * colour answers "do I need to act?" and the pulse answers "is the fleet
  * busy?". Open state lives in the system store so Athena can open the
- * Monitor too (see `uiSlice.monitorOpen`).
+ * Monitor too (see `uiSlice.headerOverlay`).
  */
 export default function ProcessActivityIndicator() {
   const { t, tx } = useTranslation();
   // The pulse loops on opacity, which the global <MotionConfig reducedMotion>
   // does NOT disable (it only stops one-shot transforms). Gate it explicitly.
   const prefersReducedMotion = useReducedMotion();
-  const monitorOpen = useSystemStore((s) => s.monitorOpen);
-  const setMonitorOpen = useSystemStore((s) => s.setMonitorOpen);
+  // Monitor open-state is the unified header-overlay controller (mutually
+  // exclusive with Notifications; closed by route nav / Back / Esc).
+  const monitorOpen = useSystemStore((s) => s.headerOverlay === 'monitor');
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
 
   const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
   const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
@@ -42,9 +44,10 @@ export default function ProcessActivityIndicator() {
   return (
     <>
       <button
-        className="titlebar-btn relative"
+        className={`titlebar-btn relative ${monitorOpen ? 'titlebar-btn-active' : ''}`}
         data-testid="titlebar-process-activity"
-        onClick={() => setMonitorOpen(!monitorOpen)}
+        aria-pressed={monitorOpen}
+        onClick={() => setHeaderOverlay(monitorOpen ? 'none' : 'monitor')}
         aria-label={attention > 0 ? tx(t.monitor.titlebar_attention, { count: attention }) : t.monitor.titlebar}
         title={attention > 0 ? tx(t.monitor.titlebar_tooltip, { count: attention }) : t.monitor.titlebar}
       >
@@ -80,7 +83,7 @@ export default function ProcessActivityIndicator() {
           open AND its exit fade-out on close (a bare conditional unmounts
           instantly, skipping the exit animation). */}
       <AnimatePresence>
-        {monitorOpen && <PersonaMonitor onClose={() => setMonitorOpen(false)} />}
+        {monitorOpen && <PersonaMonitor onClose={() => setHeaderOverlay('none')} />}
       </AnimatePresence>
     </>
   );

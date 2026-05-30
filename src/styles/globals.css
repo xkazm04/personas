@@ -91,6 +91,16 @@
   color: var(--foreground);
 }
 
+/* Active state — applied when the button's surface (Schedule route /
+   Notifications tray / Persona Monitor) is the one currently open. A clear
+   theme-primary background highlight, distinct from the subtle hover tint, so
+   the three header surfaces read as "selected" consistently. */
+.titlebar-btn-active,
+.titlebar-btn-active:hover {
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--primary);
+}
+
 .titlebar-btn-close:hover {
   background: #e81123;
   color: #fff;
@@ -101,6 +111,12 @@
 [data-theme="light-ice"] .titlebar-btn:hover,
 [data-theme="light-news"] .titlebar-btn:hover {
   background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .titlebar-btn-active,
+[data-theme="light-ice"] .titlebar-btn-active,
+[data-theme="light-news"] .titlebar-btn-active {
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
 /* Calendar event label color follows the agent color in dark themes but

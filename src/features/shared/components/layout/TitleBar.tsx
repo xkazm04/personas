@@ -14,14 +14,17 @@ const appWindow = IS_DESKTOP ? getCurrentWindow() : null;
 export default function TitleBar() {
   const [maximized, setMaximized] = useState(false);
   const unreadCount = useNotificationCenterStore((s) => s.unreadCount);
-  const notificationsOpen = useNotificationCenterStore((s) => s.isOpen);
-  const setNotificationsOpen = useNotificationCenterStore((s) => s.setOpen);
   const markAllNotificationsRead = useNotificationCenterStore((s) => s.markAllRead);
   const cronAgents = useOverviewStore((s) => s.cronAgents);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const navigationHistory = useSystemStore((s) => s.navigationHistory);
   const navigateBack = useSystemStore((s) => s.navigateBack);
+  // Unified header-overlay controller — Notifications & Monitor are mutually
+  // exclusive, and route nav / Back close the active overlay (see uiSlice).
+  const headerOverlay = useSystemStore((s) => s.headerOverlay);
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  const notificationsOpen = headerOverlay === 'notifications';
 
   const todayScheduleCount = useMemo(() => {
     const now = new Date();
@@ -54,9 +57,9 @@ export default function TitleBar() {
   const handleToggleNotifications = () => {
     if (!notificationsOpen) {
       markAllNotificationsRead();
-      setNotificationsOpen(true);
+      setHeaderOverlay('notifications'); // structurally closes the Monitor if open
     } else {
-      setNotificationsOpen(false);
+      setHeaderOverlay('none');
     }
   };
 
@@ -76,12 +79,11 @@ export default function TitleBar() {
         <span>{t.chrome.app_title}</span>
       </div>
 
-      {/* Back-history button — pops the last sidebar section the user
-       *  navigated away from. Cap of 5 is enforced inside the store
-       *  (NAV_HISTORY_MAX). Hidden when the history is empty so it
-       *  doesn't squat empty space on first launch. Sits next to the
-       *  logo on the left so navigation controls cluster together. */}
-      {navigationHistory.length > 0 && (
+      {/* Back-history button — closes an open header overlay first, otherwise
+       *  pops the last sidebar location (NAV_HISTORY_MAX cap in the store).
+       *  Shown whenever there's somewhere to go back to: an open overlay OR a
+       *  non-empty history. Sits next to the logo so nav controls cluster. */}
+      {(headerOverlay !== 'none' || navigationHistory.length > 0) && (
         <button
           type="button"
           className="titlebar-btn ml-1"
@@ -104,8 +106,9 @@ export default function TitleBar() {
       <div className="flex items-center gap-0.5 mr-1">
         {/* Schedule calendar */}
         <button
-          className={`titlebar-btn relative transition-colors ${isScheduleActive ? 'text-primary' : ''}`}
+          className={`titlebar-btn relative ${isScheduleActive ? 'titlebar-btn-active' : ''}`}
           data-testid="titlebar-schedules"
+          aria-pressed={isScheduleActive}
           onClick={() => setSidebarSection(isScheduleActive ? 'home' : 'schedules')}
           aria-label={`Schedules${todayScheduleCount > 0 ? ` (${todayScheduleCount} today)` : ''}`}
           title={todayScheduleCount > 0 ? `${todayScheduleCount} scheduled today` : 'Schedules'}
@@ -124,10 +127,11 @@ export default function TitleBar() {
         {/* Process activity indicator */}
         <ProcessActivityIndicator />
 
-        {/* Notification bell — stroke takes the theme color while the center is open */}
+        {/* Notification bell — background highlight while the center is open */}
         <button
-          className={`titlebar-btn relative transition-colors ${notificationsOpen ? 'text-primary' : ''}`}
+          className={`titlebar-btn relative ${notificationsOpen ? 'titlebar-btn-active' : ''}`}
           data-testid="titlebar-notifications"
+          aria-pressed={notificationsOpen}
           onClick={handleToggleNotifications}
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
           title={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}

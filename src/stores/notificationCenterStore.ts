@@ -80,7 +80,6 @@ function saveNotifications(items: PipelineNotification[]): void {
 
 interface NotificationCenterStore {
   notifications: PipelineNotification[];
-  isOpen: boolean;
   unreadCount: number;
 
   addNotification: (n: Omit<PipelineNotification, 'id' | 'timestamp' | 'read'>) => void;
@@ -103,8 +102,6 @@ interface NotificationCenterStore {
   markAllRead: () => void;
   dismiss: (id: string) => void;
   clearAll: () => void;
-  setOpen: (open: boolean) => void;
-  toggle: () => void;
 }
 
 let nextId = 0;
@@ -114,7 +111,6 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
 
   return {
     notifications: initial,
-    isOpen: false,
     unreadCount: initial.filter((n) => !n.read).length,
 
     addNotification: (n) => {
@@ -179,8 +175,5 @@ export const useNotificationCenterStore = create<NotificationCenterStore>((set, 
       saveNotifications([]);
       set({ notifications: [], unreadCount: 0 });
     },
-
-    setOpen: (open) => set({ isOpen: open }),
-    toggle: () => set((s) => ({ isOpen: !s.isOpen })),
   };
 });

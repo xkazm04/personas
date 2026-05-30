@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight } from 'lucide-react';
 import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
@@ -45,7 +45,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   const { t } = useTranslation();
   const markRead = useNotificationCenterStore((s) => s.markRead);
   const dismiss = useNotificationCenterStore((s) => s.dismiss);
-  const setOpen = useNotificationCenterStore((s) => s.setOpen);
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setPluginTab = useSystemStore((s) => s.setPluginTab);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
@@ -61,7 +61,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
 
   const handleRedirect = useCallback(() => {
     markRead(notification.id);
-    setOpen(false);
+    setHeaderOverlay('none');
     // Navigate to the target section and tab
     setSidebarSection(redirectSection as Parameters<typeof setSidebarSection>[0]);
     if (redirectTab) {
@@ -98,7 +98,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
         });
       }
     }
-  }, [notification, markRead, setOpen, setSidebarSection, setPluginTab, setDevToolsTab, redirectSection, redirectTab]);
+  }, [notification, markRead, setHeaderOverlay, setSidebarSection, setPluginTab, setDevToolsTab, redirectSection, redirectTab]);
 
   const handleClick = useCallback(() => {
     // For notifications with a known redirect target (execution, review,
@@ -175,7 +175,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
   const { t } = useTranslation();
   const markRead = useNotificationCenterStore((s) => s.markRead);
   const dismiss = useNotificationCenterStore((s) => s.dismiss);
-  const setOpen = useNotificationCenterStore((s) => s.setOpen);
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
 
   const triggerPipeline = useSystemStore((s) => s.gitlabTriggerPipelineAction);
 
@@ -190,9 +190,9 @@ function NotificationItem({ notification }: { notification: PipelineNotification
   const handleRetry = useCallback(() => {
     if (notification.projectId) {
       triggerPipeline(notification.projectId, notification.ref);
-      setOpen(false);
+      setHeaderOverlay('none');
     }
-  }, [notification, triggerPipeline, setOpen]);
+  }, [notification, triggerPipeline, setHeaderOverlay]);
 
   const handleClick = useCallback(() => {
     if (!notification.read) markRead(notification.id);
@@ -278,10 +278,20 @@ function NotificationItem({ notification }: { notification: PipelineNotification
 
 export function NotificationCenter() {
   const { t } = useTranslation();
-  const isOpen = useNotificationCenterStore((s) => s.isOpen);
-  const setOpen = useNotificationCenterStore((s) => s.setOpen);
+  const isOpen = useSystemStore((s) => s.headerOverlay === 'notifications');
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
   const notifications = useNotificationCenterStore((s) => s.notifications);
   const clearAll = useNotificationCenterStore((s) => s.clearAll);
+
+  // Esc closes the tray (parity with the Monitor overlay's Esc handling).
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setHeaderOverlay('none');
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, setHeaderOverlay]);
 
   return (
     <>
@@ -290,7 +300,7 @@ export function NotificationCenter() {
           {/* Backdrop */}
           <div
             className="animate-fade-slide-in fixed inset-0 z-[90] bg-black/30 backdrop-blur-[2px]"
-            onClick={() => setOpen(false)}
+            onClick={() => setHeaderOverlay('none')}
           />
 
           {/* Panel */}
@@ -316,7 +326,7 @@ export function NotificationCenter() {
                   </button>
                 )}
                 <button
-                  onClick={() => setOpen(false)}
+                  onClick={() => setHeaderOverlay('none')}
                   className="p-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
                   aria-label={t.gitlab.close_notification_center}
                 >
