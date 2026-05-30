@@ -44,22 +44,43 @@ export function computeFleetPulse(processes: Record<string, ActiveProcess>): Fle
   return { running, queued, oldestRunningSince, liveCostUsd };
 }
 
-/** Per-slot fill state for the strip, left→right. */
+/** Per-slot fill state for the strip, indexed left→right. */
 export type SlotKind = 'running' | 'queued' | 'empty';
 
 /**
- * Lay the pulse out across `slots` cells: running cells first (bright), then a
- * dim queued tail, then empty. Running alone is capped at the slot count; the
- * queued tail only fills whatever room running leaves.
+ * Center-out fill order for `slots` physical cells.
+ *
+ * Returns physical indices ordered by distance from the centre line, so the
+ * first persona lights the most central bar, the second switches to the other
+ * side, the third steps further out, and so on — the strip grows symmetrically
+ * from the middle. For an even slot count the two central bars (e.g. 9 then 10
+ * for 20 slots) form the first pair; ties break left-first.
+ *
+ * Example (slots = 6): mid = 2.5 → [2, 3, 1, 4, 0, 5].
+ */
+export function centerOutOrder(slots: number): number[] {
+  const mid = (slots - 1) / 2;
+  return Array.from({ length: slots }, (_, i) => i).sort((a, b) => {
+    const da = Math.abs(a - mid);
+    const db = Math.abs(b - mid);
+    if (da !== db) return da - db;
+    return a - b; // equal distance → left side first
+  });
+}
+
+/**
+ * Lay the pulse out across `slots` cells, filling from the centre outward:
+ * running cells claim the most central positions (alternating sides), then a
+ * dim queued tail continues further out, then the rest stay empty. Running
+ * alone is capped at the slot count; the queued tail only fills whatever room
+ * running leaves.
  */
 export function layoutSlots(pulse: FleetPulse, slots: number = STRIP_SLOTS): SlotKind[] {
   const runningCells = Math.min(pulse.running, slots);
   const queuedCells = Math.min(pulse.queued, slots - runningCells);
-  const out: SlotKind[] = [];
-  for (let i = 0; i < slots; i += 1) {
-    if (i < runningCells) out.push('running');
-    else if (i < runningCells + queuedCells) out.push('queued');
-    else out.push('empty');
-  }
+  const order = centerOutOrder(slots);
+  const out: SlotKind[] = new Array<SlotKind>(slots).fill('empty');
+  for (let r = 0; r < runningCells; r += 1) out[order[r]!] = 'running';
+  for (let q = 0; q < queuedCells; q += 1) out[order[runningCells + q]!] = 'queued';
   return out;
 }
