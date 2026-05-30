@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import {
   BookOpen, Search, FileText, ChevronRight, Save,
-  RefreshCw, X, FolderOpen, AlertCircle, Star, Clock,
+  RefreshCw, X, FolderOpen, AlertCircle, Star, Clock, Terminal,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { Button } from '@/features/shared/components/buttons';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSystemStore } from '@/stores/systemStore';
 import type { SkillEntry } from '@/api/devTools/devTools';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
+import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { useSkillData } from './useSkillData';
 
 /**
@@ -30,7 +33,14 @@ export default function SkillBrowserPage() {
     toggleFavorite, isFavorite,
   } = data;
 
+  // "Apply to session" reuses the broadcast composer (PTY-write to N selected
+  // sessions), seeded with the skill's slash command. Enabled only when at
+  // least one non-exited session exists to receive it.
+  const [applyOpen, setApplyOpen] = useState(false);
+  const hasActiveSessions = useSystemStore((s) => s.fleetSessions.some((x) => x.state !== 'exited'));
+
   return (
+    <>
     <ContentBox>
       <ContentHeader
         icon={<BookOpen className="w-5 h-5 text-primary" />}
@@ -145,6 +155,17 @@ export default function SkillBrowserPage() {
                   ))}
 
                   <div className="ml-auto flex items-center gap-1.5 shrink-0">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      icon={<Terminal className="w-3 h-3" />}
+                      data-testid="fleet-skill-apply"
+                      disabled={!hasActiveSessions}
+                      title={hasActiveSessions ? undefined : t.plugins.fleet.skill_apply_no_sessions}
+                      onClick={() => setApplyOpen(true)}
+                    >
+                      {t.plugins.fleet.skill_apply}
+                    </Button>
                     {editing ? (
                       <>
                         <Button variant="ghost" size="icon-sm" onClick={cancelEdit}>
@@ -222,6 +243,16 @@ export default function SkillBrowserPage() {
         </div>
       </ContentBody>
     </ContentBox>
+
+    {/* Apply-to-session: same target picker + PTY-write loop as Broadcast,
+        seeded with the selected skill's slash command. */}
+    <FleetBroadcastModal
+      open={applyOpen}
+      onClose={() => setApplyOpen(false)}
+      title={t.plugins.fleet.skill_apply_title}
+      initialText={selectedSkill ? `/${selectedSkill.name} ` : ''}
+    />
+    </>
   );
 }
 

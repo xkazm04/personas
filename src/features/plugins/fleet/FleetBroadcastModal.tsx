@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, type ReactNode } from 'react';
 import { Send, X, Hourglass, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { BaseModal } from '@/lib/ui/BaseModal';
@@ -21,15 +21,35 @@ import { DebtText, debtText } from '@/i18n/DebtText';
 interface Props {
   open: boolean;
   onClose: () => void;
+  /**
+   * When provided, the composer is seeded with this text each time the modal
+   * opens (and the target selection is reset). Used by the skill browser to
+   * pre-fill a `/skill-name ` command. Leaving it undefined preserves the
+   * plain broadcast behaviour — the composer persists across open/close until
+   * a send clears it.
+   */
+  initialText?: string;
+  /** Optional heading override. Defaults to the broadcast title. */
+  title?: ReactNode;
 }
 
-export function FleetBroadcastModal({ open, onClose }: Props) {
+export function FleetBroadcastModal({ open, onClose, initialText, title }: Props) {
   const sessions = useSystemStore((s) => s.fleetSessions);
 
   const [text, setText] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pressEnter, setPressEnter] = useState(true);
   const [sending, setSending] = useState(false);
+
+  // Seed the composer + reset targets whenever the modal opens in seeded
+  // mode. Scoped to `initialText !== undefined` so the broadcast call site
+  // (no initialText) keeps its persist-across-open-close behaviour.
+  useEffect(() => {
+    if (open && initialText !== undefined) {
+      setText(initialText);
+      setSelected(new Set());
+    }
+  }, [open, initialText]);
 
   const targetable = useMemo(
     () => sessions.filter((s) => s.state !== 'exited'),
@@ -86,7 +106,7 @@ export function FleetBroadcastModal({ open, onClose }: Props) {
       <div data-testid="fleet-broadcast-modal">
         <div className="flex items-center justify-between mb-4">
           <h2 id="fleet-broadcast-title" className="typo-section-title">
-            <DebtText k="auto_broadcast_prompt_26edef52" />
+            {title ?? <DebtText k="auto_broadcast_prompt_26edef52" />}
           </h2>
           <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label="Close">
             <X className="w-4 h-4" />

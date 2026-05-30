@@ -10409,7 +10409,10 @@
       "settings_theme_auto": "Auto",
       "settings_theme_dark": "Dark",
       "settings_theme_light": "Light",
-      "settings_theme_desc": "Auto follows the app's light/dark appearance."
+      "settings_theme_desc": "Auto follows the app's light/dark appearance.",
+      "skill_apply": "Apply to session",
+      "skill_apply_title": "Apply skill to sessions",
+      "skill_apply_no_sessions": "No active sessions — spawn one first"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
