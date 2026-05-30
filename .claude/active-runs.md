@@ -42,7 +42,7 @@ timestamp — the next session can recognize it as abandoned.
 
 ### slack-inbound — Slack hackathon Phase 1 (connector ext + inbound poller)
 - Started: 2026-05-29 08:42 (this session)
-- Status: CODE-COMPLETE on branch (6 commits ff831bb79..93306661f), pending live sandbox round-trip + merge. cargo check + cargo test --lib (10 passed) + tsc (0 err) + i18n gate + eslint-staged all green. NOT yet merged to master.
+- Status: MERGED to master 2026-05-30 (merge ecfbd9de1; 6 commits ff831bb79..93306661f). Worktree removed + branch deleted; main node_modules verified intact. cargo check + tsc green on merged master (1 generated-file conflict resolved by regen). PENDING: live sandbox round-trip (dev:test running from master under this session). Phase 1 of 6 DONE.
 - Branch: worktree-slack-inbound (from master 388070f37)
 - Worktree: .claude/worktrees/slack-inbound/
 - Paths: NEW src-tauri/src/engine/slack_poller.rs + src-tauri/src/engine/channel_reply.rs (extracted from discord_poller.rs), src-tauri/src/engine/mod.rs (mod decls), src-tauri/src/lib.rs (poller registration only), src-tauri/src/db/migrations/incremental.rs (NEW slack_poll_state + slack_inbound_messages tables), scripts/connectors/builtin/slack.json (+user_token field), src-tauri/src/db/builtin_connectors.rs (regen), src/features/<persona notif-channels editor> (Slack pollInbound/channelId parity), src/i18n/locales/en.json (additive channel keys). Ledger edited in MAIN checkout only (per feedback_active_runs_md_unsafe_in_concurrent_worktrees).
