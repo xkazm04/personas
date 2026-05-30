@@ -700,7 +700,7 @@ function DeleteBreakdown({
           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption text-rose-100"
         >
           <span className="font-semibold tabular-nums">{count}</span>
-          <span className="text-rose-100/80">
+          <span className="text-rose-100">
             {kindGroupLabel(t, key as Parameters<typeof kindGroupLabel>[1])}
           </span>
         </span>
@@ -730,7 +730,7 @@ function BulkChip({
     tone === "danger"
       ? "text-rose-100 bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500/25 hover:text-rose-50 hover:border-rose-500/50"
       : tone === "ghost"
-        ? "text-cyan-200/70 hover:bg-cyan-500/15 hover:text-cyan-50"
+        ? "text-cyan-200 hover:bg-cyan-500/15 hover:text-cyan-50"
         : "text-cyan-100 hover:bg-cyan-500/25 hover:text-cyan-50";
   return (
     <button

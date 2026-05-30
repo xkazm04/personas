@@ -102,3 +102,24 @@ PRODUCTION verdicts on held-out seeds** (the streak is capped at 3).
 
 The tab is gated `devOnly` in the sidebar and is not present in packaged
 installers.
+
+## Progressive loading (no big-bang tables)
+
+Overview tables that can hold 100–1000+ rows (Messages, Human Review,
+Knowledge) render **frame-first** and fill in over a short window instead of
+blocking on one large render:
+
+- **`ListSkeleton`** (`shared/components/layout`) — the panel's `ContentHeader`
+  paints immediately and shimmer rows fill the body while the first page loads;
+  no full-panel spinner that hides the chrome.
+- **`useProgressiveReveal(total, { resetKey, initialCount })`**
+  (`hooks/utility/interaction`) — hands already-fetched rows to the (virtualized)
+  list in time-spread chunks sized so any list length settles in ≈2s. Slice the
+  data to `reveal.count` before feeding `useVirtualList`. Resets on filter/view
+  change; chases realtime arrivals and "load more" pages. An `aria-hidden`
+  `AnimatedCounter` "n / total" pill shows the fill resolving.
+- `prefers-reduced-motion` and off-screen tabs reveal everything instantly.
+
+This complements the **L0/L1/L2 layered fetch** (`useLayeredList`,
+`docs/architecture/overview-layered-fetch.md`): layered fetch bounds how much
+data is *loaded*; progressive reveal bounds how fast loaded rows are *mounted*.

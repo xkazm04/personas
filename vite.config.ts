@@ -163,6 +163,23 @@ export default defineConfig(async () => ({
   },
 
   optimizeDeps: {
+    // Pre-bundle the terminal stack at server boot. xterm + its addons are
+    // imported only from the lazily-loaded Fleet chunks (FleetTerminalPane ←
+    // FleetGridPage), so without this Vite first *discovers* them when the
+    // user navigates to Fleet, kicks off an on-the-fly dep re-optimization,
+    // and 504s ("Outdated Optimize Dep") the in-flight dynamic import of
+    // FleetGridPage. Listing them here makes them part of the initial
+    // optimize pass — no mid-session re-optimize, no 504. Add any new
+    // @xterm/addon-* package here too (and clear node_modules/.vite if a
+    // running dev server cached an optimize from before the dep was added).
+    include: [
+      "@xterm/xterm",
+      "@xterm/addon-fit",
+      "@xterm/addon-webgl",
+      "@xterm/addon-unicode11",
+      "@xterm/addon-search",
+      "@xterm/addon-web-links",
+    ],
     rolldownOptions: {
       plugins: [
         {

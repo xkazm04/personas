@@ -54,7 +54,18 @@ Goal? (Enter = scan and propose)
 
 A vague free-text intent (option 1) is layered as a prior over the auto-proposed directions but does not replace them — `/friend` still surfaces 5 options.
 
-If the user typed `/friend` with no arguments, treat as area=`pick for me` + goal=`scan and propose`.
+If the user typed `/friend` with no arguments, treat as area=`pick for me` + goal=`scan and propose` + verified=`no`.
+
+### Q2b — Verified loop? (opt-in)
+
+```
+Verify each cycle against the running app? (Enter = no)
+  1. other → free text
+  2. no — validate with tsc / lint / cargo only   ← default (fast loop)
+  3. yes — drive the real UI on :17320 and observe the DOM before reporting done
+```
+
+`yes` enables **verified mode** for the whole session (see Phase 4.5). It assumes — or boots once at Phase 0 (step 0f) — a worktree-local `tauri:dev:test` instance on port 17320. The cost is a running instance plus, for Rust-touching cycles, a rebuild; the payoff is that no cycle is reported "done" on a clean compile alone — this is the standing rule from the `feedback_verify_before_claiming_done` memory ("never mark a UI phase done on tsc/cargo pass alone; drive the scenario and observe real DOM"). `no` keeps the fast loop and instead emits a concrete manual-verify checklist in the Phase 5 report for any behavior-changing cycle. Verified mode can be toggled mid-session from the deviation lane (`verify on` / `verify off`).
 
 ---
 
@@ -74,8 +85,8 @@ If the user typed `/friend` with no arguments, treat as area=`pick for me` + goa
   - `Lessons/{date}-friend.md` — append-only per-session self-reflection. Shared folder with `/explorer` and `/research`; do NOT create the folder if missing — it lives at `$VAULT/Lessons/`.
   - `Architect/strong-patterns.md` (if present) — canonical shapes the codebase already does well. Phase 2 should **prefer the shape of an existing strong pattern** when proposing directions; reference it in the direction body.
 - **Direction shape** — every proposed direction must:
-  - Add or polish **user-visible product surface** (a new control, a clearer flow, a missing affordance, a small new capability, an interaction that makes an existing feature feel more finished).
-  - Be implementable in **one atomic commit** that ships compiling, lint-clean code.
+  - Add or polish **user-visible product surface** (a new control, a clearer flow, a missing affordance, a new capability, an interaction that makes an existing feature feel more finished).
+  - Ship as **one or more atomic commits** — each individually compiling and lint-clean. A small self-contained polish is one commit; a complete vertical slice (schema → IPC → UI → polish) is a short ordered sequence of atomic commits delivered in the **same cycle** (see Phase 2 "two shapes for ambitious work" and Phase 4). The invariant is per-commit atomicity and never carrying a >30-min uncommitted blob (CLAUDE.md parallel-safety §3) — NOT one-commit-per-cycle.
   - NOT be pure cleanup, dead-code removal, test-only changes, dependency bumps, or refactors without user-visible payoff. Those belong to `/explorer` / `/architect`.
 
 ---
@@ -190,6 +201,20 @@ For the ledger entry and for scoping the scan, resolve area to paths:
 
 For free-text areas (Q1 option 1), use the same resolver as `/explorer` to map a hint → context → primary paths.
 
+### 0f — Boot the verified-mode instance (only if Q2b = yes)
+
+If the user enabled verified mode, start **one** worktree-local test-automation instance for the whole session (not per cycle):
+
+```bash
+# from inside the worktree
+npm run tauri:dev:test   # HTTP automation server on :17320, Vite HMR for frontend cycles
+```
+
+- Probe `http://127.0.0.1:17320` for readiness before the first verification. If the port is already held by another instance, surface it — that instance won't have this worktree's code, so offer to (a) reuse it read-only for verification only, (b) pick a different port via the dev:test env overrides, or (c) downgrade to checklist-only.
+- Frontend-only cycles are picked up live via HMR — no restart. Rust-touching cycles need the instance rebuilt; budget for it or batch Rust changes within a slice.
+- Drive the UI with `clickTestId` (the `__test_respond` path), never the `/eval` queue — it silently drops scripts mid-session (`feedback_tauri_eval_queue_drops` memory). Add the `data-testid`s you intend to assert on while writing the UI in Phase 4.
+- If the instance can't be booted, tell the user once and downgrade the session to checklist-only verification rather than blocking the loop.
+
 ---
 
 ## Phase 1: Load memory + scan
@@ -246,16 +271,36 @@ N. <short title — verb-led, 3–6 words>
 Constraints on the 5:
 
 - **Always development.** UX polish, missing affordances, small new capabilities, clearer flows, finished-feeling interactions, new product surfaces. If a candidate is "remove dead code", "extract a hook", "add tests", "bump a dep", drop it.
-- **Default mix leans larger:** 1 small polish (visible in <1h), 2 medium feature add (1–3h), 2 stretch / bolder (could be 2–4h, may split across stages — see below). `surprise me` mode pushes further toward stretch (drop the small, add a second stretch). If a session signals a "dial down to polish" preference (user picks the small repeatedly, or explicitly says "smaller next time"), shift to 2 small / 2 medium / 1 stretch for subsequent cycles in that session. The default is biased toward larger because users running an unattended development loop are usually capable of taking on ambitious cycles, and small-only menus produce churny sessions that feel like cleanup rather than building.
+- **Default mix leans large (Opus 4.8 calibration):** `1 small polish (<1h) / 1 medium feature add (1–3h) / 2 stretch (a complete vertical slice, ~2–5 atomic commits in one cycle) / 1 campaign (a 3–5 cycle themed arc — see "Campaign lane")`. `surprise me` mode drops the small and adds a second stretch. If a session signals "dial down to polish" (user picks the small repeatedly, or says "smaller next time"), shift to `2 small / 2 medium / 1 stretch` for the rest of that session. The default is biased large because the model now holds long, multi-commit stretches reliably — small-only menus produce churny sessions that feel like cleanup, not building. **Do not hand back a half-feature to keep a cycle short:** if the honest unit of value is a vertical slice, propose the whole slice and deliver it as a commit sequence.
 - **Prefer deepening existing surfaces over net-new surfaces** in an established feature area. If the area already has obvious adjacent polish (a control that needs a sibling, a flow that needs a recap card, a panel that needs a sub-view of its own data), build on what exists. Net-new surfaces (a new tab, a new sidebar rail, a new page-level panel) should be at most **1 of the 5**. The remaining 4 slots are for direct extensions of code already in the area. Reason: net-new surface ideas read well as menu items but rarely match the user's actual want when they're already iterating on a feature.
-- **Stages-of-N split is the natural shape for ambitious cycles**, not a fallback. When a direction's full payoff needs sequencing (schema migration + UI + brain wiring; new SQL view + IPC + tab + chart), present it as "stage 1 of N" with the stage-1 description capturing exactly what lands in this commit. Propose the next stage in a later cycle. This keeps the atomic-commit invariant honest while letting the loop tackle real product work that doesn't fit one commit. Mark explicitly in the direction body: `Stage 1 of N — ships <X>; next stage wires <Y>.` so the user knows what they're picking.
-- **Each cycle is one atomic commit.** No exceptions. Stages-of-N spreads one ambitious direction across multiple cycles, but each cycle individually is still one commit that compiles and lints clean.
+- **Two shapes for ambitious work — pick the honest one:**
+  - **Vertical slice (default for self-contained features):** the whole feature lands *this cycle* as a sequence of atomic commits (e.g. `feat(db): add view` → `feat(ipc): expose command` → `feat(ui): tab + chart` → `polish: empty/loading states`). Each commit compiles and lints clean; the cycle is "done" only when the slice is whole and — in verified mode — observed working. This is the primary way `/friend` now tackles real product work; reach for it freely.
+  - **Stages-of-N (only when a gate between stages helps the user):** reserve this for work that is genuinely sequential *and* worth a human checkpoint mid-way — a risky schema migration the user wants to eyeball before the UI builds on it, or an arc spanning days. Mark it `Stage 1 of N — ships <X>; next stage wires <Y>.` Do NOT use stages-of-N merely to keep a cycle small; that was the old constraint and it no longer applies.
+- **Each commit is atomic; a cycle may be several.** Every commit individually compiles and lints clean and represents one logical step. A polish cycle is one commit; a vertical-slice cycle is a short ordered sequence. Never carry more than ~30 minutes of uncommitted work between commits (CLAUDE.md parallel-safety §3). The old "one commit per cycle" rule is retired — it was a proxy for "don't bite off more than you can finish," which the model now handles directly.
 - **Honor CLAUDE.md.** Every direction must be implementable without violating i18n / design-token / IPC / error-handling / max-lines / parallel-safety rules.
 - **No repeats.** Track proposed-and-completed direction titles within the session; do not re-propose. Track proposed-and-rejected titles within the session too — only re-propose if the user explicitly says "you can re-propose."
 - **Drop in-session 2× soft-skips.** Maintain a set of direction titles the user has soft-skipped (i.e. picked something else when this was on the menu) in the current session. If a title hits the set twice and is still unpicked, **stop re-proposing it for the rest of the session**. The same direction can return in a future session (it's not a hard reject), but burning a 5-slot menu position on something the user has already passed on twice is noise. Net-new-surface ideas in particular tend to keep getting re-proposed because they're easy to generate — this rule is the in-session brake.
 - **Filter against `Friend/passes.md`.** Any candidate whose fingerprint (area + short title + one-line What) closely matches a past hard-reject in this area is silently dropped before presentation. If it's a *near*-match (same target file, different angle), surface it but annotate `↻ previously passed; resurfacing because <reason>`.
 - **Honor `Patterns/friend-preferences.md`.** Distilled rules (e.g. "prefer inline editing over modal overlays in this codebase") are hard constraints, not suggestions. If a candidate violates a preference, drop it.
 - **Honor `Architect/strong-patterns.md`.** When the area has a canonical shape (e.g. "execution panels use the SidePanel primitive, not Dialog"), propose directions that reuse the canonical shape; reference the pattern by name in the direction body.
+
+### Campaign lane
+
+One of the five menu slots may be a **campaign** — a 3–5 cycle themed arc the user opts into *once*, after which the loop drives the whole arc autonomously. Present it like a direction but mark it `Campaign — N cycles` and list the planned cycle titles in the body:
+
+```
+N. <campaign title>
+   Arc:   cycle 1 <title> → cycle 2 <title> → cycle 3 <title>
+   Why:   <the compounded user-visible payoff once the arc lands>
+   Touch: <area-wide estimate>
+```
+
+When the user picks a campaign:
+
+- Run each arc cycle back-to-back through Phase 3 → 4 (→ 4.5 if verified) **without re-prompting between cycles** — report each cycle's commits, then continue to the next planned cycle.
+- Re-prompt the user only when: the risk gate trips, a cycle fails validation in a way you can't fix inline, the arc completes, or the user interrupts. On completion, return to a normal `Next?` menu.
+- A campaign is still a sequence of atomic commits — the same per-commit discipline applies; the only difference is the loop doesn't stop for a menu between the planned cycles.
+- Propose a campaign **only** when the area genuinely has a coherent multi-step build available. If nothing rises to that bar this cycle, fill the slot with a stretch instead — never pad with a contrived arc.
 
 Present:
 
@@ -315,6 +360,7 @@ If the gate does **not** trip, execute immediately without asking. Do not ask fo
 Implement the chosen direction inside the worktree. Treat CLAUDE.md as binding. The non-negotiables most likely to apply on a `/friend` cycle:
 
 ### Frontend
+- **Reuse before building (CLAUDE.md's #1 UI-drift source)** — before writing any UI, check `src/features/shared/components/CATALOG.md` (173 components). Import the existing spinner / empty-state / modal / button / tooltip / copy-button / relative-time / toggle / listbox rather than hand-rolling it: `feedback/LoadingSpinner`, `feedback/EmptyState`, `buttons/Button` + `buttons/AsyncButton`, `buttons/CopyButton`, `display/Tooltip`, `display/RelativeTime`, `display/Numeric`, `forms/AccessibleToggle` / `forms/Listbox` / `forms/FormField`. `BaseModal` for any backdrop (enforced by `custom/enforce-base-modal`). Add a genuinely new reusable pattern to `shared/components/` (with a `@catalog` tag + `npm run gen:catalog`), never to a feature folder.
 - **i18n (no localization gaps)** — every new user-visible string goes to `src/i18n/locales/en.json` under the right section; access via `useTranslation()` / `t.section.key`. Never hardcode JSX text, placeholder, title, or aria-label. **`/friend` overrides CLAUDE.md's "translation teams catch up asynchronously" default**: every cycle that adds new English keys MUST also add translations for those keys to all 13 non-English locale files (`src/i18n/locales/{zh,ar,hi,ru,id,es,fr,bn,ja,vi,de,ko,cs}.json`) in the **same commit**. Rationale: small UX-polish cycles ship faster than translation teams react; if `/friend` only writes English, a non-English user sees an immediate regression (mixed-locale UI) on every cycle. Practical workflow: write English first; then either (a) Edit each non-English file inline if the key count is ≤ ~5, or (b) for larger key batches, spawn 13 parallel general-purpose subagents — one per language — each given the English block + their target file path + an instruction to add the keys preserving the existing JSON structure. Verify with `node scripts/i18n/check-coverage.mjs` — it should report no missing keys before commit.
 - **Design tokens** — `typo-*` for text, `rounded-{interactive,input,card,modal}`, `shadow-elevation-1..4`, `bg-secondary/*` / `text-foreground/*` instead of `bg-white/*` / `text-white/*`. Refer to `.claude/Design.md`.
 - **Tauri IPC** — always `invokeWithTimeout` from `@/lib/tauriInvoke`.
@@ -334,6 +380,17 @@ Implement the chosen direction inside the worktree. Treat CLAUDE.md as binding. 
 ### Docs
 - If the direction is user-visible and touches one of the source areas mapped in `scripts/docs/feature-doc-map.json`, update the matching `docs/features/<area>/README.md` in the **same commit**. The Stop hook will catch this otherwise.
 
+### Self-review (before validation)
+
+Now that cycles run longer, spend one deliberate adversarial pass on the diff before validating — you are the only reviewer this code gets before it lands. Read your own `git diff` and check:
+
+- **Correctness:** edge cases, null/empty/error states, off-by-one, races, stale closures, missing `await`. Would this break if the list were empty or the request failed?
+- **Reuse & drift:** did you re-implement something CATALOG.md already has? Raw Tailwind (`bg-white/*`, `text-white/*`) where a token belongs? Raw `invoke` instead of `invokeWithTimeout`? An empty `catch {}`?
+- **i18n:** any hardcoded JSX text / placeholder / title / aria-label that escaped extraction?
+- **Scope:** does the diff touch only files this direction needed? Anything accidental swept in?
+
+For a small polish cycle, do this inline. For a vertical-slice or campaign cycle (multi-file, multi-commit), spawn a `general-purpose` review subagent on the staged diff (or run `/code-review`) and fix what it surfaces before committing — cheap insurance against a plausible-but-wrong change shipping. Fix findings in the worktree, then validate.
+
 ### Validation (before the commit)
 
 Run, scoped to what was touched:
@@ -347,21 +404,38 @@ If a check fails: fix inline in the worktree, re-validate, then commit. Do **not
 
 ### Commit
 
-One atomic commit per direction. Message shape:
+**One commit per logical step.** A polish cycle is a single commit; a vertical-slice or campaign cycle is an ordered sequence — commit each step as soon as it compiles and lints clean, never batch the whole slice into one mega-commit. Message shape per commit:
 
 ```
-<type>(<scope>): <imperative title from the direction>
+<type>(<scope>): <imperative title for this step>
 
 <2–4 sentences: what changed, why user-visible. No bullet lists.>
 
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>
 ```
 
 `<type>` from {`feat`, `feat(ux)`, `feat(ui)`, `polish`}. `/friend` rarely produces `fix` / `refactor` / `chore` — if you find yourself reaching for those types, the direction was probably stabilization and should have been rejected at Phase 2.
 
-Stage only the files you intentionally touched (`git add <path>` per file, never `git add -A` / `git add .` / `git add -u`). Before the commit, verify the staged count matches: `git diff --cached --stat`. If the staged-file count exceeds what you wrote, run `git restore --staged <unrelated-file>` per file before committing. This is the discipline from CLAUDE.md's parallel-safety section §5.
+Stage only the files you intentionally touched (`git add <path>` per file, never `git add -A` / `git add .` / `git add -u`). Before **each** commit, verify the staged count matches: `git diff --cached --stat`. If the staged-file count exceeds what you wrote, run `git restore --staged <unrelated-file>` per file before committing. This is the discipline from CLAUDE.md's parallel-safety section §5, and it matters more across a multi-commit slice — re-check the index before every commit in the sequence, since a parallel session may have pre-staged files between your commits.
 
-After commit: `git rev-parse --short HEAD` to capture the SHA for the report.
+After each commit: `git rev-parse --short HEAD` to capture the SHA. Collect the range (`<first-sha>..<last-sha>`) for the report.
+
+---
+
+## Phase 4.5: Verify (verified mode only)
+
+Skip this phase entirely if the session is not in verified mode (Q2b = no) — the Phase 5 report carries a manual-verify checklist instead (see below).
+
+In verified mode, after the cycle's commits land, **prove the change works before reporting it done** (a clean compile is not evidence of behavior — the `feedback_verify_before_claiming_done` rule):
+
+1. Ensure the worktree-local `tauri:dev:test` instance (Phase 0f) is up and has the change — frontend via HMR; Rust-touching cycles need it rebuilt first.
+2. Drive the actual scenario the direction claims to deliver, using `clickTestId` against :17320 (never the `/eval` queue). Assert on real DOM: the new control renders, the flow advances, the empty/error states appear when forced.
+3. If the observed behavior contradicts the claim, the cycle is **not done** — fix in the worktree, add a follow-up atomic commit, and re-verify. Never report a red scenario as green.
+4. Record what you drove and saw for the Phase 5 report (`Verified: <scenario> → <observed>`).
+
+If the instance is unavailable this cycle, downgrade *this cycle* to the manual-verify checklist (don't silently claim done) and note the downgrade in the report.
+
+**Manual-verify checklist (non-verified sessions, behavior-changing cycles):** the report must end with a short, concrete `To verify:` list — the exact clicks/inputs and the expected result — so the user (or a later verified cycle) can confirm the change by hand. A cycle that changed user-visible behavior is never reported as flatly "done" without either an observed verification or this checklist.
 
 ---
 
@@ -371,10 +445,14 @@ Print the report:
 
 ```
 ✓ <direction title>  (cycle <n>)
-  Commit: <sha>  ·  Files: <N>  ·  +<a>/-<b>
+  Commits: <first-sha>..<last-sha>  (<count>)  ·  Files: <N>  ·  +<a>/-<b>
   Did:  <one sentence — what changed, behavior-first>
   Checks: tsc <✓|—>  lint <✓|—>  cargo <✓|—>
+  Verified: <scenario → observed | manual checklist below | — no behavior change>
   Worktree: .claude/worktrees/<slug>/   Branch: worktree-<slug>
+
+<non-verified + behavior changed only:>
+  To verify: <exact clicks/inputs → expected result>
 
 Since last cycle: <previous direction or "first cycle">
 
@@ -390,11 +468,11 @@ Next? (Enter = 2)
 
 The 5 new directions follow the same constraints as Phase 2:
 - Always development; no stabilization.
-- Spread across small / medium / stretch.
+- Spread across the calibrated mix (small / medium / stretch / campaign — see Phase 2).
 - Do not re-propose anything already executed or rejected this session.
 - May build on the just-completed cycle (e.g. if cycle N landed a new control, cycle N+1 could propose a polish on it) but should not require it — the user should be able to pick any of the 5 independently.
 
-Loop back to **Phase 3** with the chosen direction. The loop has no built-in stopping condition.
+Loop back to **Phase 3** with the chosen direction (or, for a campaign, run its planned cycles back-to-back per the Campaign lane rules). The loop has no built-in stopping condition.
 
 ### Optional codex-gf feature log
 
@@ -594,7 +672,7 @@ If the user expects "/friend will adapt to my taste by cycle 2," they'll be disa
 ## Non-goals (do not do these)
 
 - **No stabilization.** If a direction reduces to lint cleanup, dead-code removal, type tightening, or test addition without behavior change, drop it from the Phase 2 menu. Suggest the user run `/explorer` for that area.
-- **No multi-commit directions.** If a direction can't be done in one atomic commit while keeping the worktree compiling and lint-clean, split it or reject it.
+- **No non-atomic commits.** A cycle may now span several commits (a vertical slice), but every *individual* commit must compile and lint clean and represent one logical step — never commit broken intermediate state, and never let an uncommitted slice grow past ~30 minutes. If a step can't be made atomic, it isn't ready to commit.
 - **No cross-area scope creep.** If executing a chosen direction reveals it needs to touch files outside the area, Phase 3's risk gate should trip and ask the user.
 - **No auto-merge.** The worktree and branch are left for the user to inspect and merge on their own time.
 - **No silent stash.** Per CLAUDE.md parallel-safety §1: never `git stash` to clean the tree. Use `git add <path>` per file in Phase 4 and verify the staged count.
@@ -607,16 +685,19 @@ If the user expects "/friend will adapt to my taste by cycle 2," they'll be disa
 
 ```
 /friend
-  Q1: Area? (1=other, 2..9=area, 10=pick for me)         ← Enter = 10
-  Q2: Goal? (1=other, 2=scan-and-propose, 3=surprise)    ← Enter = 2
-  →  Phase 0  vault + bootstrap learning files + ledger + worktree
+  Q1:  Area? (1=other, 2..9=area, 10=pick for me)         ← Enter = 10
+  Q2:  Goal? (1=other, 2=scan-and-propose, 3=surprise)    ← Enter = 2
+  Q2b: Verified loop? (2=no, 3=yes)                       ← Enter = 2 (no)
+  →  Phase 0  vault + learning files + ledger + worktree (+ boot :17320 if verified)
   →  Phase 1  load passes + preferences + recent lessons, then scan area
-  →  Phase 2  propose 5 dev directions (filtered against passes + preferences)
+  →  Phase 2  propose 5 dev directions — mix: 1 small / 1 medium / 2 stretch / 1 campaign
 LOOP:
-  →  Phase 3  silent risk gate; ask only if risky
-  →  Phase 4  execute → validate → atomic commit
-  →  Phase 5  report + propose 5 new directions  ─┐
-                                                  │ user picks number → Phase 3
+  →  Phase 3   silent risk gate; ask only if risky
+  →  Phase 4   execute slice → self-review → validate → atomic commit(s)
+  →  Phase 4.5 verified mode: drive :17320, observe DOM (else manual-verify checklist)
+  →  Phase 5   report + propose 5 new directions  ─┐
+                                                   │ user picks number → Phase 3
+                                       (campaign → run planned cycles back-to-back)
 EXIT (stop word / interrupt / context wrap):
   →  Phase 6  capture rejections → session note → Lessons → passes → coverage
               → pattern-promotion check → ledger → exit summary

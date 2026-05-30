@@ -14,7 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { SidebarSection } from '@/lib/types/types';
 import {
   type PaletteItem, type ResultKind,
-  fuzzyMatch, fuzzyScore, trackRecent, getRecentAgentIds,
+  fuzzyMatch, fuzzyScore, entryScore, trackRecent, getRecentAgentIds,
   agentItem, credentialItem, templateItem, automationItem,
   agentActionItems, type AgentActionCallbacks,
 } from './commandPaletteUtils';
@@ -25,6 +25,8 @@ import { CommandPaletteResults } from './CommandPaletteResults';
 import { QuickEditPanel } from './QuickEditPanel';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useAppKeyboard } from '@/lib/keyboard/AppKeyboardProvider';
+import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
+import { useSettingsSearchEntries } from '@/features/settings/search/useSettingsSearchEntries';
 
 // -- Section icons -----------------------------------------------------
 
@@ -41,12 +43,17 @@ const NAV_ITEMS: { id: SidebarSection; label: string; icon: React.ReactNode }[] 
 
 export default function CommandPalette() {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const searchT = t.settings.search;
+  const open = useCommandPaletteStore((s) => s.open);
+  const scope = useCommandPaletteStore((s) => s.scope);
+  const togglePalette = useCommandPaletteStore((s) => s.togglePalette);
+  const closePalette = useCommandPaletteStore((s) => s.closePalette);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [editingPersona, setEditingPersona] = useState<Persona | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const settingsSearch = useSettingsSearchEntries();
 
   const personas = useAgentStore((s) => s.personas);
   const teams = usePipelineStore((s) => s.teams);
@@ -63,7 +70,7 @@ export default function CommandPalette() {
   useAppKeyboard((e) => {
     if (!((e.metaKey || e.ctrlKey) && e.key === 'k')) return false;
     e.preventDefault();
-    setOpen(prev => !prev);
+    togglePalette('all');
     return true;
   }, { priority: 90 });
 
@@ -76,7 +83,7 @@ export default function CommandPalette() {
     }
   }, [open]);
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => closePalette(), [closePalette]);
 
   const isCommandMode = query.startsWith('>');
   const rawSearchQuery = isCommandMode ? query.slice(1).trim() : query.trim();
@@ -188,6 +195,20 @@ export default function CommandPalette() {
     return { agentItems, credItems, templateItems, autoItems, navItems, commandItems };
   }, [personas, groupMap, credentials, recipes, automations, selectPersona, setSidebarSection, setIsCreatingPersona, paletteIcons, agentActions]);
 
+  // Settings entries (inline toggles + deep links). An empty query surfaces the
+  // recommended set only when the palette was opened focused on settings; typing
+  // always searches the full settings catalog regardless of scope.
+  const settingResults = useMemo((): PaletteItem[] => {
+    if (isCommandMode) return [];
+    if (!searchQuery) return scope === 'settings' ? settingsSearch.recommended : [];
+    return settingsSearch.all
+      .map(item => ({ item, score: entryScore(searchQuery, item) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 12)
+      .map(({ item }) => item);
+  }, [settingsSearch, searchQuery, isCommandMode, scope]);
+
   // Stage 2: filtered + scored (recomputed on deferred searchQuery)
   const items = useMemo((): PaletteItem[] => {
     const { agentItems, credItems, templateItems, autoItems, navItems, commandItems } = stableItems;
@@ -200,6 +221,12 @@ export default function CommandPalette() {
         .filter(a => fuzzyMatch(searchQuery, a.label))
         .sort((a, b) => fuzzyScore(searchQuery, b.label) - fuzzyScore(searchQuery, a.label));
     }
+
+    // Settings-focused entry point with an empty query: show recommended
+    // settings only (no recent-agents / navigation clutter).
+    if (scope === 'settings' && !searchQuery) return settingResults;
+    // When focused on settings, settings rank above every other source.
+    if (scope === 'settings') results.push(...settingResults);
 
     // -- Agents --
     if (!searchQuery && recentAgentIds.length > 0) {
@@ -264,8 +291,11 @@ export default function CommandPalette() {
       results.push(...navItems);
     }
 
+    // -- Settings (global scope: ranked after everything else) --
+    if (scope === 'all') results.push(...settingResults);
+
     return results;
-  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations]);
+  }, [stableItems, searchQuery, isCommandMode, personas, groupMap, credentials, recipes, automations, scope, settingResults]);
 
   useEffect(() => {
     setSelectedIndex(i => Math.min(i, Math.max(0, items.length - 1)));
@@ -333,14 +363,19 @@ export default function CommandPalette() {
       addSection('action', 'Commands');
       addSection('agent-action', 'Agent Actions');
     } else {
+      const settingsLabel = !searchQuery && scope === 'settings' ? searchT.recommended : searchT.section;
+      // Settings lead when the palette was opened focused on settings;
+      // otherwise they trail the entity/navigation results.
+      if (scope === 'settings') addSection('setting', settingsLabel);
       addSection('agent', !searchQuery && recentAgentIds.length > 0 ? 'Recent Agents' : 'Agents');
       addSection('credential', 'Credentials');
       addSection('template', 'Templates');
       addSection('automation', 'Automations');
       addSection('navigation', 'Navigation');
+      if (scope === 'all') addSection('setting', settingsLabel);
     }
     return grouped;
-  }, [items, isCommandMode, searchQuery]);
+  }, [items, isCommandMode, searchQuery, scope, searchT]);
 
   return (
     <>
@@ -361,7 +396,7 @@ export default function CommandPalette() {
                   value={query}
                   onChange={e => { setQuery(e.target.value); setSelectedIndex(0); }}
                   onKeyDown={handleKeyDown}
-                  placeholder={t.common.command_palette_placeholder}
+                  placeholder={scope === 'settings' ? searchT.placeholder : t.common.command_palette_placeholder}
                   className="flex-1 bg-transparent typo-body text-foreground placeholder:text-foreground outline-none"
                   spellCheck={false}
                 />

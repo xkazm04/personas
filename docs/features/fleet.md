@@ -19,6 +19,8 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 | Layer | Path |
 |---|---|
 | Plugin UI | `src/features/plugins/fleet/` (3 sub-tabs: `sub_grid`, `sub_decisions`, `sub_settings`) |
+| Terminal manager | `src/features/plugins/fleet/fleetTerminalManager.ts` (long-lived xterm-per-session + addons; see [Terminal](#terminal-experience)) |
+| Terminal settings bridge | `src/features/plugins/fleet/useFleetTerminalConfig.ts` (pushes font/copy/theme into the manager) |
 | Frontend state | `src/stores/slices/system/fleetSlice.ts` |
 | Frontend API | `src/api/fleet/fleet.ts` |
 | Tauri commands | `src-tauri/src/commands/fleet/commands.rs` (`fleet_spawn_session`, `fleet_write_input`, `fleet_resize_session`, `fleet_kill_session`, `fleet_list_sessions`, `fleet_remove_session`, `fleet_install_hooks`, `fleet_uninstall_hooks`, `fleet_check_hooks`) |
@@ -77,6 +79,28 @@ Fleet Settings also carries `FleetPairDevice` — a **stage-1 scaffold** for pai
 
 All of the above are fully internationalized under `plugins.fleet` (state labels, dot tooltips, banner/pill/legend/preview/reply/alert/pairing strings).
 
+## Terminal experience
+
+The session terminals are rendered with **xterm.js**, but the xterm instances are no longer owned by the React pane. They live in a singleton **terminal manager** (`fleetTerminalManager.ts`, parked on `globalThis` so HMR doesn't reset them), keyed by session id. `FleetTerminalPane` is a thin **mount point** that *attaches* a session's terminal into its container on mount and *detaches* (never disposes) on unmount.
+
+Consequences:
+
+- **Lossless, instant session switching.** A terminal keeps its `fleet-session-output` subscription and full scrollback while parked off-screen, so switching the active session — or leaving and returning to the Fleet page — replays nothing and loses nothing. (This retires the old "re-attaching should replay scrollback" roadmap item; output never goes away in the first place.)
+- **Fullscreen grid overlay.** A **Grid** button in the action row (left of Spawn, disabled when no live sessions) maximizes a fullscreen, app-wide terminal grid (`FleetTerminalOverlay`, portaled to `document.body` so it sits above the framer-motion transform ancestors). It starts at `top-12` (below the 48px titlebar) rather than `inset-0` so the always-on-top titlebar — its window controls **and the global Back button** — stay visible and usable above it. The grid is **density-adaptive** — columns = `min(4, ceil(√N))`, i.e. 1×1 → 2×2 → 3×3 → 4×4 as sessions spawn (rows auto-fill and scroll past 16). While the overlay is open the single pane is unmounted so the two don't contend for the same managed terminal's holder; every tile attaches a durable terminal, so maximizing/minimizing is lossless. Terminals for removed sessions are reaped via `gcTerminals` keyed on the live session list.
+- **Three ways back.** The overlay's own header Back button, **Escape**, and the **titlebar Back button** all minimize to the single pane (showing the last-selected session). The titlebar wiring uses a generic `backInterceptor` on `uiSlice.navigateBack`: a fullscreen surface registers a Back handler on mount (and the titlebar surfaces its Back button while one is set), so Back dismisses the overlay instead of navigating the underlying page out from under it. If every session exits while the grid is open it auto-minimizes.
+- **Density-scaled font.** While the grid is open the terminal font is scaled to the grid density via a transient override (`setFleetFontOverride`): 1×1→15px, 2×2→14px, 3×3→13px, 4×4→12px (floored at 12px for legibility). The override never touches the persisted single-view `fleetTerminalFontSize`; it's cleared on minimize.
+- **Renderer + addons.** WebGL rendering (`@xterm/addon-webgl`) is loaded **per attach** and disposed on detach, so N background terminals don't each pin a GL context (it falls back to the DOM renderer if WebGL is unavailable). `@xterm/addon-unicode11` fixes emoji/CJK/box-drawing widths; `@xterm/addon-web-links` makes URLs clickable, opened via `openExternalUrl` after `sanitizeExternalUrl`. The panes are otherwise chrome-free — paste is right-click / Ctrl+Shift+V / Cmd+V; font size, copy-on-select and theme live in Fleet Settings (no per-pane buttons).
+
+### Terminal settings
+
+Fleet Settings → **Terminal** (`FleetTerminalSettings`) exposes, all persisted in `fleetSlice` and applied live to every open terminal (no remount):
+
+- **Font size** — zoom 9–22px (also from the hover `+`/`−` buttons on each pane; `fleetTerminalFontSize`).
+- **Copy on select** — mirror a terminal selection to the clipboard on mouse-up (`fleetTerminalCopyOnSelect`, default on). Right-click still pastes; Ctrl+Shift+V / Cmd+V paste too.
+- **Color theme** — `Auto` (follows the app's `data-theme` light/dark), `Dark`, or `Light` (`fleetTerminalTheme`).
+
+> Pre-bundling note: `@xterm/*` is listed in `vite.config.ts` → `optimizeDeps.include` so Vite optimizes it at server boot. Without that, the first navigation to Fleet (a lazy chunk) triggers an on-the-fly dep re-optimize that 504s the in-flight import.
+
 ## Hook installer details
 
 Each entry is tagged `_fleet: true` so uninstall is surgical:
@@ -114,5 +138,5 @@ Each entry is tagged `_fleet: true` so uninstall is surgical:
 
 - Hard kill (drop the running task's child handle).
 - Send-to-external-session (hook-callback path that lets us queue prompts for sessions whose PTY we don't own).
-- Per-session output ring-buffer (re-attaching to a session that's been off-screen should replay scrollback).
+- ~~Per-session output ring-buffer (re-attaching to a session that's been off-screen should replay scrollback).~~ **Done** — the terminal manager keeps a live xterm (and its scrollback) per session; see [Terminal experience](#terminal-experience).
 - Persisted session memory across Personas restarts (currently registry is in-memory only).

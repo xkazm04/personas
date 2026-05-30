@@ -5,7 +5,18 @@ import type { PersonaAutomation } from '@/lib/bindings/PersonaAutomation';
 
 // -- Types -------------------------------------------------------------
 
-export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'navigation' | 'action' | 'agent-action';
+export type ResultKind = 'agent' | 'credential' | 'template' | 'automation' | 'navigation' | 'action' | 'agent-action' | 'setting';
+
+/**
+ * Binding for an inline on/off control rendered directly in a result row.
+ * When a {@link PaletteItem} carries a `toggle`, the palette renders a switch
+ * and flipping it (Enter / click) calls {@link PaletteToggle.onToggle} without
+ * navigating away or closing the palette.
+ */
+export interface PaletteToggle {
+  isOn: boolean;
+  onToggle: (next: boolean) => void;
+}
 
 export interface PaletteItem {
   id: string;
@@ -14,8 +25,66 @@ export interface PaletteItem {
   description?: string;
   icon: React.ReactNode;
   onSelect: () => void;
-  /** When true, the palette stays open after selection (e.g. quick-edit). */
+  /** Extra terms (synonyms, the parent group) folded into fuzzy matching. */
+  keywords?: string[];
+  /** Present on togglable settings — renders an inline switch in the row. */
+  toggle?: PaletteToggle;
+  /** When true, the palette stays open after selection (e.g. quick-edit, toggles). */
   staysOpen?: boolean;
+}
+
+// -- Reusable search-entry builder -------------------------------------
+// Any feature can expose searchable "setup" entries to the global palette by
+// returning PaletteItems built with `settingEntry()` from a `use<Domain>SearchEntries()`
+// hook (see features/settings/search/useSettingsSearchEntries.tsx for the
+// reference consumer). Togglable entries flip inline; the rest navigate.
+
+interface SettingEntryArgs {
+  /** Unique within the settings/search namespace; prefixed with `setting:`. */
+  id: string;
+  label: string;
+  /** Usually the parent tab/group — shown muted on the right and matched. */
+  description?: string;
+  keywords?: string[];
+  icon: React.ReactNode;
+  /** Provide for an on/off setting — the row renders an inline switch. */
+  toggle?: PaletteToggle;
+  /** Provide for everything else — selecting deep-links to the setting. */
+  onNavigate?: () => void;
+}
+
+/**
+ * Build a `PaletteItem` for a single setting/"setup" entry. Toggles flip in
+ * place (the palette stays open); navigational entries jump to the setting and
+ * close. This is the one wrapper every domain reuses so search rows stay
+ * consistent as new setups are added from across the app.
+ */
+export function settingEntry(args: SettingEntryArgs): PaletteItem {
+  const { id, label, description, keywords, icon, toggle, onNavigate } = args;
+  return {
+    id: `setting:${id}`,
+    kind: 'setting',
+    label,
+    description,
+    keywords,
+    icon,
+    toggle,
+    staysOpen: !!toggle,
+    onSelect: toggle ? () => toggle.onToggle(!toggle.isOn) : (onNavigate ?? (() => {})),
+  };
+}
+
+/**
+ * Relevance score for a palette item against a query, folding in label,
+ * description, and any keywords. Returns 0 when nothing matches.
+ */
+export function entryScore(query: string, item: PaletteItem): number {
+  let best = fuzzyScore(query, item.label);
+  if (item.description) best = Math.max(best, fuzzyScore(query, item.description) * 0.7);
+  if (item.keywords) {
+    for (const kw of item.keywords) best = Math.max(best, fuzzyScore(query, kw) * 0.85);
+  }
+  return best;
 }
 
 // -- Fuzzy match -------------------------------------------------------
