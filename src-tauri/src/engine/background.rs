@@ -462,6 +462,13 @@ pub fn start_loops(
             app: app.clone(),
             engine: engine.clone(),
         }),
+        // Incident auto-continuation (P2.3b): re-run blocked work when its
+        // persona-raised incident is resolved. Idempotent via claim_continuation.
+        Box::new(crate::engine::incident_continuation::IncidentContinuationSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+            engine: engine.clone(),
+        }),
     ];
 
     // Desktop-only subscriptions: file watcher, clipboard monitor, app focus, ambient context
