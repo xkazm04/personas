@@ -1,23 +1,23 @@
-// FleetActivityStrip (v2) — the always-on fleet pulse rendered directly under
+// FleetActivityStrip (v3) — the always-on fleet pulse rendered directly under
 // the titlebar across the whole app.
 //
-// One bright bar per running execution, filling left→right along a 20-bar
-// track that spans the full window width. A dim tail of bars trails for
-// queued runs, so the strip reads as "how much live work + how much pressure"
-// at a single glance — without ever summarising attention or mapping personas
-// (that is the Monitor's job).
+// A 2px-tall, 20-bar hairline that is ALWAYS visible (a faint baseline at rest)
+// and always opens the Monitor on click — so the fleet's live state is legible,
+// and the Monitor reachable, from anywhere in the app.
 //
-// v2 over v1:
-//   • Bars ramp the active theme's primary → accent across the lit region.
-//   • Bars spring in/out as executions start and finish.
-//   • A subtle highlight "comet" sweeps across the running region (liveness).
-//   • Hovering reveals a floating readout (counts · oldest age · live cost)
-//     without reflowing the app (the 1px reserve is fixed; the readout is an
-//     overlay).
-//   • Clicking the strip opens the Persona Monitor.
+// Bars fill from the CENTRE outward: the first running execution lights the
+// central bar, the second switches to the other side, and so on — the strip
+// grows symmetrically from the middle (see fleetStripModel.layoutSlots). A dim
+// tail continues outward for queued runs.
 //
-// The resting height stays a 1px hairline; the interactive hit-zone is a few
-// px tall but absolutely positioned so it never pushes content down.
+// v3 over v2:
+//   • 2px tall, always-visible faint baseline (was 1px, invisible at rest).
+//   • Centre-out fill instead of left→right.
+//   • Position-based primary→accent ramp (centre = primary, edges = accent).
+//   • Centre-origin "breathing" shimmer replaces the left→right comet.
+//
+// The visible bar stays a 2px hairline; the interactive hit-zone is a few px
+// tall but absolutely positioned so it never pushes content down.
 
 import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -28,13 +28,21 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { computeFleetPulse, layoutSlots, STRIP_SLOTS } from './fleetStripModel';
 import { elapsedStr } from './monitor/monitorModel';
 
-/** Bar fill colour along the primary→accent ramp for running slot `index`. */
-function runningSlotColor(index: number, runningCount: number): string {
-  if (runningCount <= 1) return 'var(--primary)';
-  const t = Math.min(1, index / (runningCount - 1));
-  const pct = Math.round(t * 100);
+/** Centre line of the bar track (index space). */
+const MID = (STRIP_SLOTS - 1) / 2;
+
+/**
+ * Bar fill colour along the primary→accent ramp, keyed to the bar's ABSOLUTE
+ * distance from centre — central bars are primary, edge bars accent — so the
+ * ramp is stable regardless of how many are lit.
+ */
+function rampColor(index: number): string {
+  const pct = Math.round((Math.abs(index - MID) / MID) * 100);
   return `color-mix(in srgb, var(--accent) ${pct}%, var(--primary))`;
 }
+
+/** Resting opacity for each slot kind. Empty stays faintly visible (baseline). */
+const SLOT_OPACITY = { running: 1, queued: 0.5, empty: 0.12 } as const;
 
 export default function FleetActivityStrip() {
   const { t, tx } = useTranslation();
@@ -67,70 +75,64 @@ export default function FleetActivityStrip() {
 
   return (
     <div
-      className="relative w-full h-[1px] flex-shrink-0 z-30"
+      className="relative w-full h-[2px] flex-shrink-0 z-30"
       data-testid="fleet-activity-strip"
     >
       <button
         type="button"
         // Absolutely positioned so the taller hit-zone never reflows content;
-        // the visible bar sits at the very top (the 1px reserve line).
-        className={`absolute inset-x-0 top-0 h-2.5 px-3 ${active ? 'cursor-pointer' : 'pointer-events-none'}`}
-        aria-hidden={!active}
-        aria-label={active ? tx(t.monitor.strip_aria, { running, queued }) : undefined}
+        // the visible bar sits at the very top. Always interactive — the strip
+        // is a global affordance to open the Monitor.
+        className="absolute inset-x-0 top-0 h-2.5 px-3 cursor-pointer"
+        aria-label={tx(t.monitor.strip_aria, { running, queued })}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         onFocus={() => setHovered(true)}
         onBlur={() => setHovered(false)}
-        onClick={() => active && setMonitorOpen(true)}
+        onClick={() => setMonitorOpen(true)}
       >
         {/* Bar track — pinned to the top hairline. */}
-        <span className="absolute inset-x-3 top-0 h-[1px] flex items-stretch gap-px overflow-hidden">
+        <span className="absolute inset-x-3 top-0 h-[2px] flex items-stretch gap-px">
           {slots.map((kind, i) => {
-            const isRunning = kind === 'running';
-            const isQueued = kind === 'queued';
-            const color = isRunning ? runningSlotColor(i, runningCells) : undefined;
+            const background = kind === 'running' ? rampColor(i) : 'var(--primary)';
+            const opacity = SLOT_OPACITY[kind];
             if (prefersReducedMotion) {
               return (
                 <span
                   key={i}
-                  className={`flex-1 h-full rounded-[0.5px] ${isQueued ? 'bg-primary/30' : ''}`}
-                  style={{
-                    background: color,
-                    opacity: kind === 'empty' ? 0 : 1,
-                  }}
+                  className="flex-1 h-full rounded-[1px]"
+                  style={{ background, opacity }}
                 />
               );
             }
             return (
               <motion.span
                 key={i}
-                className={`flex-1 h-full origin-center rounded-[0.5px] ${isQueued ? 'bg-primary/30' : ''}`}
-                style={color ? { background: color } : undefined}
+                className="flex-1 h-full rounded-[1px]"
+                style={{ background }}
                 initial={false}
-                animate={{
-                  opacity: kind === 'empty' ? 0 : isQueued ? 0.55 : 1,
-                  scaleY: kind === 'empty' ? 0.3 : 1,
-                }}
-                transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                animate={{ opacity }}
+                transition={{ type: 'spring', stiffness: 380, damping: 28 }}
               />
             );
           })}
 
-          {/* Liveness "comet" — a soft highlight sweeping across the running
+          {/* Liveness — a centre-origin shimmer that breathes over the lit
               region. One animated element; gated by reduced motion. */}
           {!prefersReducedMotion && runningCells > 0 && (
             <motion.span
               aria-hidden
-              className="pointer-events-none absolute top-0 left-0 h-full w-10 bg-gradient-to-r from-transparent via-foreground/50 to-transparent"
-              animate={{ x: ['-12%', `${(runningCells / STRIP_SLOTS) * 100}%`] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.6 }}
+              className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-full bg-gradient-to-r from-transparent via-foreground/45 to-transparent"
+              style={{ width: `${Math.max(12, (runningCells / STRIP_SLOTS) * 100)}%` }}
+              animate={{ opacity: [0, 0.5, 0], scaleX: [0.6, 1, 0.6] }}
+              transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.5 }}
             />
           )}
         </span>
       </button>
 
       {/* Hover readout — floats below the hairline as an overlay (no reflow). */}
-      {hovered && active && (
+      {hovered && (
         <motion.div
           initial={{ opacity: 0, y: -3 }}
           animate={{ opacity: 1, y: 0 }}
@@ -139,29 +141,35 @@ export default function FleetActivityStrip() {
           role="status"
           data-testid="fleet-strip-readout"
         >
-          <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            {tx(t.monitor.strip_running, { count: running })}
-          </span>
-          {queued > 0 && (
-            <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-              {tx(t.monitor.strip_queued, { count: queued })}
-            </span>
+          {active ? (
+            <>
+              <span className="inline-flex items-center gap-1.5 typo-caption font-medium text-primary">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                {tx(t.monitor.strip_running, { count: running })}
+              </span>
+              {queued > 0 && (
+                <span className="inline-flex items-center gap-1.5 typo-caption text-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                  {tx(t.monitor.strip_queued, { count: queued })}
+                </span>
+              )}
+              {pulse.oldestRunningSince !== null && (
+                <span className="typo-caption text-foreground tabular-nums">
+                  {tx(t.monitor.strip_oldest, { elapsed: elapsedStr(pulse.oldestRunningSince, now) })}
+                </span>
+              )}
+              {pulse.liveCostUsd > 0 && (
+                <span className="typo-caption text-foreground tabular-nums">
+                  ${pulse.liveCostUsd.toFixed(3)}
+                </span>
+              )}
+              <span className="typo-caption text-foreground border-l border-primary/15 pl-2.5">
+                {t.monitor.strip_open_hint}
+              </span>
+            </>
+          ) : (
+            <span className="typo-caption text-foreground">{t.monitor.strip_idle_hint}</span>
           )}
-          {pulse.oldestRunningSince !== null && (
-            <span className="typo-caption text-foreground tabular-nums">
-              {tx(t.monitor.strip_oldest, { elapsed: elapsedStr(pulse.oldestRunningSince, now) })}
-            </span>
-          )}
-          {pulse.liveCostUsd > 0 && (
-            <span className="typo-caption text-foreground tabular-nums">
-              ${pulse.liveCostUsd.toFixed(3)}
-            </span>
-          )}
-          <span className="typo-caption text-foreground border-l border-primary/15 pl-2.5">
-            {t.monitor.strip_open_hint}
-          </span>
         </motion.div>
       )}
     </div>

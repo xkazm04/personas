@@ -151,6 +151,7 @@ export type Translations = {
     strip_queued: string;
     strip_oldest: string;
     strip_open_hint: string;
+    strip_idle_hint: string;
     live_chip: string;
     live_chip_title: string;
   };
