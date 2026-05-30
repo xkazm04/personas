@@ -35,16 +35,17 @@ a faint hairline baseline; it brightens as work comes in.
   second switches to the other side, the third steps further out, and so on —
   the strip grows symmetrically from the middle.
 - Running bars **ramp the active theme's primary → accent** by their distance
-  from centre (centre = primary, edges = accent; re-tints per theme). A soft
-  **centre-origin shimmer** breathes over the lit region to signal liveness.
+  from centre (centre = primary, edges = accent; re-tints per theme).
+- Running bars **slowly pulse in unison** to signal work in progress. All
+  running bars read a single shared pulse value, so they breathe synchronised
+  rather than each drifting into its own confusing rhythm.
 - A **dim tail** of bars continues outward for queued runs, so the strip reads
   as *live work + pressure* — never a per-persona map or a summary of
   attention (that is the grid's job).
-- Bars **spring** between states as executions start and finish.
-- **Hovering** reveals a floating readout — running / queued counts, the
-  oldest run's age, and live USD cost (or just an "open monitor" hint when
-  idle) — as an overlay that never reflows the app. **Clicking** the strip
-  (at any time) opens the Monitor.
+- **Hovering** reveals a **centred** floating readout — running / queued
+  counts, the oldest run's age, and live USD cost (or just an "open monitor"
+  hint when idle) — as an overlay that never reflows the app. **Clicking** the
+  strip (at any time) opens the Monitor.
 - The strip caps at 20 simultaneous runs; beyond that the visual saturates
   (and the Monitor's per-persona view is the place to dig in).
 - The 2px height is always reserved, so the page never re-flows as work comes
@@ -53,7 +54,7 @@ a faint hairline baseline; it brightens as work comes in.
 The component is `FleetActivityStrip` (mounted between `<TitleBar />` and the
 app body in `App.tsx`); its centre-out slot math lives in the pure, unit-tested
 `fleetStripModel.ts` (`centerOutOrder` / `layoutSlots`). Reduced-motion users
-get the populated state without the spring/shimmer animation.
+get the populated state without the synchronized pulse animation.
 
 ## The grid
 
