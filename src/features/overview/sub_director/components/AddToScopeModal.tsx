@@ -56,20 +56,20 @@ export function AddToScopeModal({
 
       <div className="px-5 pt-3.5 pb-2">
         <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-input border border-primary/15 bg-secondary/30 focus-within:border-primary/35 transition-colors">
-          <Search className="w-3.5 h-3.5 text-foreground/50 shrink-0" />
+          <Search className="w-3.5 h-3.5 text-foreground shrink-0" />
           <input
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t.director.add_search_placeholder}
-            className="flex-1 bg-transparent outline-none typo-body text-foreground placeholder:text-foreground/40"
+            className="flex-1 bg-transparent outline-none typo-body text-foreground placeholder:text-foreground"
           />
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 pb-4 min-h-0">
         {candidates.length === 0 ? (
-          <p className="typo-body text-foreground/60 text-center py-8">{t.director.roster_add_placeholder}</p>
+          <p className="typo-body text-foreground text-center py-8">{t.director.roster_add_placeholder}</p>
         ) : (
           <ul className="space-y-0.5">
             {candidates.map((p) => {

@@ -17,6 +17,10 @@ import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
+import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
+import { Numeric } from '@/features/shared/components/display/Numeric';
 
 import { AnnotateModal } from './AnnotateModal';
 import { createLogger } from "@/lib/log";
@@ -93,7 +97,18 @@ export default function KnowledgeGraphDashboard() {
   });
 
   const ENTRY_ROW_ESTIMATE = 64;
-  const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(allEntries, ENTRY_ROW_ESTIMATE);
+  // Progressive reveal — KnowledgeRow is heavy (framer-motion + JSON parse +
+  // sparkline), so spread mounting across ~2s after the frame lands rather
+  // than dumping up to 100 rows on one frame. Resets when the filter changes.
+  const entryReveal = useProgressiveReveal(allEntries.length, {
+    resetKey: `${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}`,
+    initialCount: 16,
+  });
+  const revealedEntries = useMemo(
+    () => allEntries.slice(0, entryReveal.count),
+    [allEntries, entryReveal.count],
+  );
+  const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(revealedEntries, ENTRY_ROW_ESTIMATE);
 
   const recentLearnings = !selectedPersonaId && summary ? summary.recent_learnings : [];
   const { parentRef: recentListRef, virtualizer: recentVirtualizer } = useVirtualList(recentLearnings, ENTRY_ROW_ESTIMATE);
@@ -117,6 +132,13 @@ export default function KnowledgeGraphDashboard() {
         subtitle={`${summary?.total_entries ?? 0} patterns learned${summary?.annotation_count ? ` · ${summary.annotation_count} annotations` : ''}`}
         actions={
           <div className="flex items-center gap-2">
+            {entryReveal.isRevealing && (
+              <span aria-hidden="true" className="flex items-center gap-1 px-2 py-1 rounded-modal typo-caption text-foreground bg-secondary/20 border border-primary/10">
+                <AnimatedCounter value={entryReveal.count} mode="roll" />
+                <span>/</span>
+                <Numeric>{allEntries.length}</Numeric>
+              </span>
+            )}
             {import.meta.env.DEV && (
               <button onClick={handleSeedKnowledge} className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-amber-500/10 text-amber-400 border border-amber-500/25 hover:bg-amber-500/20 transition-colors" title={t.overview.knowledge_graph.seed_tooltip}>
                 <Plus className="w-3.5 h-3.5" /> {t.overview.knowledge_graph.mock_pattern}
@@ -251,12 +273,7 @@ export default function KnowledgeGraphDashboard() {
               </div>
             </div>
           ) : loading ? (
-            <div className="flex-1 flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-3">
-                <RefreshCw className="w-5 h-5 text-foreground animate-spin" />
-                <p className="typo-body text-foreground"><DebtText k="auto_loading_knowledge_patterns_247c9e22" /></p>
-              </div>
-            </div>
+            <ListSkeleton rows={6} rowHeight={ENTRY_ROW_ESTIMATE} className="rounded-modal overflow-hidden" />
           ) : allEntries.length === 0 && !selectedPersonaId && !selectedType && !selectedScope ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4 p-6">
               <MotionEmptyState
@@ -289,7 +306,7 @@ export default function KnowledgeGraphDashboard() {
             >
               <div style={{ height: `${entryVirtualizer.getTotalSize()}px`, position: 'relative' }}>
                 {entryVirtualizer.getVirtualItems().map((virtualRow) => {
-                  const entry = allEntries[virtualRow.index]!;
+                  const entry = revealedEntries[virtualRow.index]!;
                   return (
                     <div
                       key={entry.id}

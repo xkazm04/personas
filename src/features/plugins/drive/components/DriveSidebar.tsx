@@ -111,11 +111,11 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
             className="group w-full px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground hover:text-cyan-200 transition-colors"
           >
             {recentCollapsed ? (
-              <ChevronRight className="w-3 h-3 text-foreground group-hover:text-cyan-200/80" />
+              <ChevronRight className="w-3 h-3 text-foreground group-hover:text-cyan-200" />
             ) : (
-              <ChevronDown className="w-3 h-3 text-foreground group-hover:text-cyan-200/80" />
+              <ChevronDown className="w-3 h-3 text-foreground group-hover:text-cyan-200" />
             )}
-            <Clock className="w-3 h-3 text-cyan-300/80" />
+            <Clock className="w-3 h-3 text-cyan-300" />
             <span>{t.plugins.drive.sidebar_recent}</span>
             {drive.recent.length > 0 && (
               <span className="ml-auto typo-caption text-foreground tabular-nums">
@@ -239,7 +239,7 @@ function RecentRail({
                 {MOD_KEY_LABEL}+{shortcutN}
               </kbd>
             )}
-            <span className="typo-caption text-foreground tabular-nums flex-shrink-0 group-hover:text-cyan-200/60">
+            <span className="typo-caption text-foreground tabular-nums flex-shrink-0 group-hover:text-cyan-200">
               {formatRelativeTime(entry.modified, t, tx)}
             </span>
           </button>
@@ -346,7 +346,7 @@ function TreeNode({
           dropActive
             ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_12px_rgba(34,211,238,0.4)]"
             : dragHint
-              ? "ring-1 ring-cyan-400/15 bg-cyan-500/4 text-cyan-100/70"
+              ? "ring-1 ring-cyan-400/15 bg-cyan-500/4 text-cyan-100"
               : isActive
                 ? "bg-gradient-to-r from-cyan-500/20 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.8)]"
                 : "text-foreground hover:bg-secondary/50 hover:text-foreground"
@@ -377,13 +377,13 @@ function TreeNode({
         {expanded && hasChildren ? (
           <FolderOpen
             className={`w-3.5 h-3.5 flex-shrink-0 ${
-              isActive ? "text-cyan-300" : "text-sky-400/80"
+              isActive ? "text-cyan-300" : "text-sky-400"
             }`}
           />
         ) : (
           <Folder
             className={`w-3.5 h-3.5 flex-shrink-0 ${
-              isActive ? "text-cyan-300" : "text-sky-400/70"
+              isActive ? "text-cyan-300" : "text-sky-400"
             }`}
           />
         )}

@@ -222,6 +222,17 @@ interface CompanionStore {
   setVoiceTurnRequest: (text: string | null) => void;
 
   /**
+   * Monotonic nonce bumped each time a pre-composed message is forwarded to
+   * Athena from an outside surface (e.g. the dashboard "Ask Athena" button).
+   * The orb subscribes to it and fires a one-shot "message received" ack glow
+   * (yellow) so the user gets immediate visual confirmation while the (often
+   * long-running) turn spins up. Visual-only — the send itself rides
+   * `voiceTurnRequest`.
+   */
+  forwardAckPulse: number;
+  pulseForwardAck: () => void;
+
+  /**
    * Screen-space center (viewport px) of the orb at the moment the user
    * tapped it to open the chat. Lets `CompanionPanel` animate its entrance
    * from the orb's position (and exit back toward it) for an orb→panel
@@ -543,6 +554,9 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
 
   voiceTurnRequest: null,
   setVoiceTurnRequest: (voiceTurnRequest) => set({ voiceTurnRequest }),
+
+  forwardAckPulse: 0,
+  pulseForwardAck: () => set((s) => ({ forwardAckPulse: s.forwardAckPulse + 1 })),
 
   orbOpenOrigin: null,
   setOrbOpenOrigin: (orbOpenOrigin) => set({ orbOpenOrigin }),

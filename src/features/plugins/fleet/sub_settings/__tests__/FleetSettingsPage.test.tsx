@@ -10,7 +10,7 @@
  * checkHooks() / installHooks() / uninstallHooks() return values.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
@@ -64,7 +64,11 @@ describe('FleetSettingsPage', () => {
     await waitFor(() =>
       expect(screen.getByTestId('fleet-hooks-banner-installed')).toBeInTheDocument(),
     );
-    expect(screen.getByText(/17400/)).toBeInTheDocument();
+    // Scope to the banner — FleetPairDevice also renders 127.0.0.1:<port>,
+    // so an unscoped getByText(/17400/) matches two nodes.
+    expect(
+      within(screen.getByTestId('fleet-hooks-banner-installed')).getByText(/17400/),
+    ).toBeInTheDocument();
     expect(screen.getByTestId('fleet-install-hooks')).toHaveTextContent(/re-?install/i);
     expect(screen.getByTestId('fleet-uninstall-hooks')).not.toBeDisabled();
   });

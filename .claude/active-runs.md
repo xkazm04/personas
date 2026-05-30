@@ -32,6 +32,29 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### settings-search — In-header settings search (unified palette + ambient title-bar trigger + reusable entry registry)
+- Started: 2026-05-30 (this session)
+- Status: COMPLETE — committed to master 2026-05-30 (commit 6180f9eff; 10 files). npx tsc --noEmit 0 + eslint (touched + pre-commit lefthook) 0 + 7 new unit tests green + i18n gen-types/split-locales/check-coverage green. Generated i18n files (types.ts/enSectionStrings/section-locales) intentionally NOT in the commit — left to codegen to avoid committing fleet-terminal's uncommitted en.json keys. Follow-ups also on master: cursor-clarity base rule (in 6180f9eff) and SettingRow description typo-body/+2px @ 70% opacity (commit adcaa3780). Left in Active (ledger concurrently dirty); relocate to Recently completed later.
+- Branch: master (main checkout — single-session interactive work, not a worktree)
+- Paths: NEW src/stores/commandPaletteStore.ts, NEW src/features/settings/search/useSettingsSearchEntries.tsx, NEW src/features/shared/components/overlays/__tests__/commandPaletteUtils.test.ts; EDIT src/features/shared/components/overlays/{commandPaletteUtils.ts,CommandPalette.tsx,CommandPaletteResults.tsx}, src/features/shared/components/layout/TitleBarAmbient.tsx, src/styles/globals.css (.ambient-search-* block only), src/i18n/locales/en.json (ADDITIVE settings.search.* only) + regenerated src/i18n/generated/{types.ts,enSectionStrings.ts} + section-locales/*; docs/features/settings/README.md.
+- Note: FRONTEND-ONLY (no Rust). COORDINATION: en.json edit is purely additive (new `settings.search` subsection) and disjoint from the concurrent fleet-terminal `terminal_*/view_*/settings_terminal_*` keys, but I regenerated the shared i18n generated files (types.ts/enSectionStrings.ts/section-locales) which now also reflect fleet's uncommitted en.json keys — same uncommitted-generated-file situation athena-forward already flagged. No source clobber (Edit-tool targeted inserts only; no git add/stash/commit). Unifies the existing Cmd/Ctrl+K command palette with settings search per user decision; the ambient title-bar art now opens it focused on settings. Reusable `settingEntry()` + `use<Domain>SearchEntries()` provider pattern documented for future "setup" entries from other areas.
+
+### friend — glyph (persona creation UX/UX polish)
+- Started: 2026-05-30 18:16
+- Status: started
+- Branch: worktree-friend-glyph
+- Worktree: .claude/worktrees/friend-glyph/
+- Paths: src/features/agents/sub_glyph/ src/features/templates/sub_generated/adoption/glyph/ src/features/shared/glyph/persona-sigil/ (glyph build sigil only) src/i18n/locales/*.json (additive glyph/composer keys)
+- Note: /friend endless loop — glyph create-from-scratch + from-template visual polish + fast simple UX for non-technical users. Verified mode (:17320 from worktree). Ledger edited in MAIN checkout only.
+
+### athena-forward — Ask-Athena → orb (glow + scripted TTS) + message-duplication fix
+- Started: 2026-05-30 (this session)
+- Status: COMPLETE — MERGED to master 2026-05-30 (ff to 636c5100e; 3 commits 6462c799a..d49dcd5f9 + merge 636c5100e). tsc 0 + eslint (touched) 0 + vite build green on the merged tree. User-authorized: first captured all concurrent sessions' in-flight working-tree work as snapshot 2cd00d21a (fleet-terminal + overview + shared + dep bumps — NOT lost/stashed), then merged athena-forward on top; only overlap was the i18n trio (en.json/types.ts auto-merged, enSectionStrings regen-resolved, union verified by tsc). Worktree pending cleanup.
+- Branch: worktree-athena-forward (from master ef76cdf5e)
+- Worktree: .claude/worktrees/athena-forward/
+- Paths: src/features/overview/sub_missionControl/cards/FleetOptimizationCard.tsx (Ask-Athena handler → orb), NEW src/features/plugins/companion/useForwardToAthena.ts, src/features/plugins/companion/companionStore.ts (ADDITIVE forwardAckPulse + pulseForwardAck only), src/features/plugins/companion/orb/AthenaOrb.tsx (ADDITIVE yellow ack-glow only), src/features/plugins/companion/Composer.tsx (dup fix: consumePendingPrompt), src/features/plugins/companion/CompanionPanel.tsx (dup fix: voiceTurnRequest idempotent read), src/i18n/locales/en.json (additive plugins.companion.forward_ack_speech), docs/features/companion/README.md + docs/features/overview/README.md. Ledger edited in MAIN checkout only.
+- Note: Follow-up to mission-control fleet-opt Ask-Athena. COORDINATION: companion area overlaps unmerged orb-decisions (orb/ + companionStore) — my companionStore/AthenaOrb edits are small + ADDITIVE to minimize their merge pain. Dup root cause = StrictMode double-invoke of clear-store-but-send-from-closure effects (dev-only). Worktree isolation; node_modules junction.
+
 ### mission-control — Overview "Home"→"Mission control" rename + heatmap tooltip + fleet-opt actions + routines fix
 - Started: 2026-05-30 (this session)
 - Status: COMPLETE — MERGED to master 2026-05-30 (merge 677f24d8c; 6 commits c6aeeef28..31faea307 + merge of concurrent director-memory work 48b82f8ba). tsc 0 + eslint (touched) 0 + i18n coverage 0 + vite build green. Worktree pending cleanup. DISJOINT from director-memory session except additive en.json keys + overview README (auto-merged; enSectionStrings regen-resolved). Left in Active (ledger concurrently dirty); relocate to Recently completed later.
@@ -387,6 +410,10 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-05-30 — completed on master] monitor-header — Unified header content-switching**
+  - **What:** The three titlebar surfaces used 3 unrelated mechanisms (Schedule=route, Notifications/Monitor=independent overlays with separate open-flags + different z-index → they stacked/conflicted, Back couldn't reach them, Monitor button had no active state). Introduced one mutually-exclusive controller `uiSlice.headerOverlay` ('none'|'monitor'|'notifications'): opening one closes the other; route nav clears the overlay; `navigateBack` closes the open overlay first then falls back to section history (Back shows when an overlay is open even with empty history); Esc closes Notifications (parity w/ Monitor); all 3 buttons get a consistent `.titlebar-btn-active` bg highlight + aria-pressed. `setMonitorOpen` kept as back-compat shim (Athena open_route, FleetActivityStrip, Ctrl+M→now via controller). notificationCenterStore lost its open-flag (kept the data). New `uiSlice.test.ts` (7 tests).
+  - **Commits (master):** `5659689e9` (migration, 8 files) + `ef76cdf5e` (docs). tsc clean (full tree), eslint clean on touched files (1 pre-existing Tauri-import warning on a TitleBar line I didn't touch), 7/7 uiSlice tests pass. User-approved "Coordinated overlays" plan. NOT live-driven (verified by tsc + unit tests; HMR-live for the user). Overlapped the "Header/footer chrome batch" session's paths but all were committed/clean — per-file staged, index verified clean before each commit.
 
 - **[2026-05-29 — completed] director-v2-opus48 — Director v2 (Opus 4.8): dedicated command center**
   - **What:** Built the top-level `director` route the prior model scoped down from. Backend `get_director_portfolio` composes existing `metrics::get_value_rollup` (fleet + per-persona) + `get_starred` + score trends into portfolio analytics (no new SQL). New `src/features/director/` route: Overview (KPI cards + 0-5 score distribution + model-efficiency table + coaching feed), Roster (scope manager w/ inline review/star), Reviews (filterable history), Memory (brain toggle). Code quality: `useDirector` hook (single source of truth), `directorScore`/`ScoreSparkline` extracted from VerdictTrendCell, new shared `StatCard` primitive. Agents-page DirectorPanel slimmed to a deep-link teaser (-189 lines). Docs + marketing (personas-web `0310edf`) updated; onboarding tour step deferred (low value).

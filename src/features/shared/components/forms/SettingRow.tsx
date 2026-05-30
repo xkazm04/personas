@@ -73,7 +73,10 @@ export function SettingRow({
           <span className="typo-body font-medium">{label}</span>
         </div>
         {description ? (
-          <div className="typo-caption text-foreground/60 mt-1.5">{description}</div>
+          // Description: one step up the type ramp (typo-caption → typo-body,
+          // +2px at base scale) for readability, dimmed to 70% so it stays
+          // secondary to the full-opacity label.
+          <div className="typo-body text-foreground/70 mt-1.5">{description}</div>
         ) : null}
         {countLabel ? (
           <div className="typo-caption text-foreground/50 mt-1">{countLabel}</div>

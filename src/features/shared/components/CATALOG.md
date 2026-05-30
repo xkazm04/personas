@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**179 reusable components** live under `src/features/shared/components/`.
+**180 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -167,6 +167,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `DesktopFooter` | _(add a `@catalog` tag)_ |
 | `EqualizerBars` | the YT progress bar occupies). |
 | `FleetActivityStrip` | _(add a `@catalog` tag)_ |
+| `ListSkeleton` | ListSkeleton — shimmer placeholder rows for a list/table body while the first page loads, so panel chrome lands before data (no bi |
 | `MonitorCapabilities` | _(add a `@catalog` tag)_ |
 | `MonitorDrawer` | _(add a `@catalog` tag)_ |
 | `NowPlayingCard` | Expanded "now playing" card anchored above the footer title segment. |
@@ -189,7 +190,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SidebarSubNav` | _(add a `@catalog` tag)_ |
 | `StationPicker` | _(add a `@catalog` tag)_ |
 | `TitleBar` | _(add a `@catalog` tag)_ |
-| `TitleBarAmbient` | _(add a `@catalog` tag)_ |
+| `TitleBarAmbient` | focused on settings. |
 | `TitleCrossfade` | station switch). |
 | `useMonitorData` | _(add a `@catalog` tag)_ |
 | `useRadioState` | know when to refetch nowPlaying. |
@@ -263,4 +264,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_179 components, 94 without a `@catalog` description._
+_180 components, 93 without a `@catalog` description._

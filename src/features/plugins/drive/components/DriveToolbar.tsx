@@ -214,7 +214,7 @@ export function DriveToolbar({
             autoComplete="off"
             className="flex-1 min-w-0 bg-transparent typo-body font-mono text-cyan-50 placeholder:text-foreground focus:outline-none"
           />
-          <span className="typo-caption text-cyan-200/50 flex-shrink-0 hidden md:inline">
+          <span className="typo-caption text-cyan-200 flex-shrink-0 hidden md:inline">
             {t.plugins.drive.path_input_hint}
           </span>
         </div>
@@ -278,7 +278,7 @@ export function DriveToolbar({
           <button
             type="button"
             onClick={() => onPathEditingChange?.(true)}
-            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground group-hover/breadcrumb:text-cyan-300/70 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0"
+            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground group-hover/breadcrumb:text-cyan-300 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0"
             title={t.plugins.drive.path_input_aria}
             aria-label={t.plugins.drive.path_input_aria}
           >
@@ -466,7 +466,7 @@ function MovePopover({
                 className="w-full flex items-center gap-2 py-1.5 pr-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/15 hover:text-cyan-100 transition-colors"
                 style={{ paddingLeft: `${10 + depth * 14}px` }}
               >
-                <Folder className="w-3.5 h-3.5 text-sky-400/70 flex-shrink-0" />
+                <Folder className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
                 <span className="truncate">
                   {node.name || rootLabel}
                 </span>
@@ -546,7 +546,7 @@ function BreadcrumbPill({
   const stateClass = dropActive
     ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_10px_rgba(34,211,238,0.35)]"
     : dragHint
-      ? "ring-1 ring-cyan-400/20 bg-cyan-500/5 text-cyan-100/85"
+      ? "ring-1 ring-cyan-400/20 bg-cyan-500/5 text-cyan-100"
       : isLast
         ? "typo-section-title"
         : "text-foreground hover:text-cyan-200 hover:bg-primary/10";
@@ -622,7 +622,7 @@ function ActionButton({
     accent:
       "bg-gradient-to-b from-fuchsia-500/25 to-rose-500/10 text-fuchsia-100 border border-fuchsia-500/40 hover:from-fuchsia-500/35 hover:to-rose-500/15 shadow-[0_0_12px_-4px_rgba(217,70,239,0.4)]",
     "muted-accent":
-      "bg-secondary/50 text-fuchsia-200/80 border border-fuchsia-500/20 hover:bg-fuchsia-500/10 hover:text-fuchsia-100 hover:border-fuchsia-500/35",
+      "bg-secondary/50 text-fuchsia-200 border border-fuchsia-500/20 hover:bg-fuchsia-500/10 hover:text-fuchsia-100 hover:border-fuchsia-500/35",
   } as const;
   return (
     <button

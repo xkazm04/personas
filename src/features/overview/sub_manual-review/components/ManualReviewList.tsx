@@ -10,6 +10,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useToastStore } from "@/stores/toastStore";
 import { usePersonaMap, useEnrichedRecords } from "@/hooks/utility/data/usePersonaMap";
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
@@ -302,7 +303,11 @@ export default function ManualReviewList() {
 
       <ContentBody flex>
         <AnimatePresence mode="wait">
-        {filteredReviews.length === 0 ? (
+        {reviewQueue.loading && filteredReviews.length === 0 ? (
+          <div key="loading" className="flex-1 min-h-0 overflow-hidden">
+            <ListSkeleton rows={8} rowHeight={84} />
+          </div>
+        ) : filteredReviews.length === 0 ? (
           <motion.div
             key="empty"
             className="flex-1 flex items-center justify-center p-6"
@@ -349,6 +354,7 @@ export default function ManualReviewList() {
           >
             <ReviewInboxPanel
               filteredReviews={filteredReviews}
+              revealKey={`${filter}|${sourceFilter}|${selectedPersonaId}`}
               activeReviewId={activeReviewId}
               activeReview={activeReview}
               selectedIds={selectedIds}

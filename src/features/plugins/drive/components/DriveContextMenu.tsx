@@ -121,7 +121,7 @@ export function DriveContextMenu({
       <span className="w-3.5 h-3.5 flex-shrink-0">{icon}</span>
       <span className="flex-1">{label}</span>
       {opts.shortcut && (
-        <kbd className="ml-auto typo-caption text-foreground/85 font-mono tracking-tight">
+        <kbd className="ml-auto typo-caption text-foreground font-mono tracking-tight">
           {opts.shortcut}
         </kbd>
       )}

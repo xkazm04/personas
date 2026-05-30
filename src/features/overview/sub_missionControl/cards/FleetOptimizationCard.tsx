@@ -23,7 +23,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { useForwardToAthena } from '@/features/plugins/companion/useForwardToAthena';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
@@ -96,6 +96,7 @@ const SEVERITY_LABEL: Record<string, string> = {
 
 function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
   const { t, tx } = useTranslation();
+  const forwardToAthena = useForwardToAthena();
   const [expanded, setExpanded] = useState(false);
   const config = TYPE_CONFIG[rec.type];
   const Icon = config.icon;
@@ -116,7 +117,8 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
   }, [personaId]);
 
   // Forward the recommendation to Athena (companion) so she can investigate and,
-  // if useful, drive the Lab herself.
+  // if useful, drive the Lab herself. Routes through the orb (not the full
+  // panel) with an ack glow + scripted spoken confirmation — see useForwardToAthena.
   const askAthena = useCallback(() => {
     const focus = personaName
       ? tx(t.overview.fleet_optimization.ask_athena_focus_persona, { persona: personaName })
@@ -127,9 +129,8 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
       action: rec.suggestedAction,
       focus,
     });
-    useCompanionStore.getState().setPendingPrompt({ text, autoSend: true });
-    useCompanionStore.getState().setState('open');
-  }, [rec.title, rec.description, rec.suggestedAction, personaName, t, tx]);
+    forwardToAthena(text);
+  }, [rec.title, rec.description, rec.suggestedAction, personaName, t, tx, forwardToAthena]);
 
   return (
     <div

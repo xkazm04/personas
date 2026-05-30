@@ -108,6 +108,14 @@ export default function DirectorCoachingTab() {
       />
 
       <ContentBody>
+       <div className="relative min-h-full">
+        {/* Decorative Athena backdrop — very low opacity, non-interactive, behind all content. */}
+        <img
+          aria-hidden
+          src="/athena/athena_baseline.jpg"
+          className="pointer-events-none select-none absolute inset-0 w-full h-full object-cover object-center opacity-[0.05]"
+        />
+        <div className="relative z-10">
         {!d.ready ? (
           <div className="flex items-center justify-center py-16"><LoadingSpinner /></div>
         ) : !p || inScope === 0 ? (
@@ -123,7 +131,7 @@ export default function DirectorCoachingTab() {
           <div className="space-y-4 pb-6">
             {/* Thin subheader: secondary stats + Memory toggle */}
             <div className="flex items-center justify-between gap-4 px-3.5 py-2 rounded-card border border-primary/10 bg-secondary/20">
-              <div className="flex items-center gap-4 typo-caption text-foreground/70 flex-wrap">
+              <div className="flex items-center gap-4 typo-caption text-foreground flex-wrap">
                 {p.avgScore != null && (
                   <span className="inline-flex items-center gap-1.5">
                     <Star className="w-3.5 h-3.5 text-violet-300" />
@@ -134,15 +142,15 @@ export default function DirectorCoachingTab() {
                 {lastReviewAt && (
                   <span className="inline-flex items-center gap-1.5">
                     {t.director.last_review}
-                    <RelativeTime timestamp={lastReviewAt} className="text-foreground/80" />
+                    <RelativeTime timestamp={lastReviewAt} className="text-foreground" />
                   </span>
                 )}
               </div>
               {/* Memory toggle */}
               {d.vaultConfigured ? (
                 <div className="flex items-center gap-2 shrink-0">
-                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-violet-300' : 'text-foreground/45'}`} />
-                  <span className="typo-caption text-foreground/80">{t.director.brain_title}</span>
+                  <Brain className={`w-3.5 h-3.5 ${d.brainEnabled ? 'text-violet-300' : 'text-foreground'}`} />
+                  <span className="typo-caption text-foreground">{t.director.brain_title}</span>
                   <AccessibleToggle
                     checked={d.brainEnabled}
                     onChange={() => d.setBrainEnabled(!d.brainEnabled)}
@@ -154,7 +162,7 @@ export default function DirectorCoachingTab() {
                 <button
                   type="button"
                   onClick={openBrain}
-                  className="inline-flex items-center gap-1.5 typo-caption text-foreground/60 hover:text-foreground transition-colors shrink-0"
+                  className="inline-flex items-center gap-1.5 typo-caption text-foreground hover:text-foreground transition-colors shrink-0"
                   title={t.director.brain_unavailable}
                 >
                   <Brain className="w-3.5 h-3.5" />
@@ -177,6 +185,8 @@ export default function DirectorCoachingTab() {
             </DirectorSection>
           </div>
         )}
+        </div>
+       </div>
       </ContentBody>
 
       {/* Modals */}
@@ -235,7 +245,7 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <DirectorSection label={t.director.score_distribution} icon={BarChart3}>
           {p.reviewed === 0 ? (
-            <p className="typo-caption text-foreground/55 py-2">{t.director.score_distribution_empty}</p>
+            <p className="typo-caption text-foreground py-2">{t.director.score_distribution_empty}</p>
           ) : (
             <div className="flex items-end gap-2.5 h-28 pt-2">
               {p.scoreDistribution.map((band, i) => {
@@ -243,7 +253,7 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
                 const hPct = (band.count / maxBand) * 100;
                 return (
                   <div key={band.score} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
-                    <span className="typo-caption text-foreground/80 tabular-nums">{band.count}</span>
+                    <span className="typo-caption text-foreground tabular-nums">{band.count}</span>
                     <div className="w-full flex-1 flex items-end">
                       <div
                         className="w-full rounded-t-md animate-fade-slide-in"
@@ -280,8 +290,8 @@ function Scorecard({ d }: { d: ReturnType<typeof useDirector> }) {
                         <div className="h-full rounded-pill" style={{ width: `${valuePct}%`, background: 'var(--status-success)' }} />
                       </div>
                     </div>
-                    <Numeric value={m.executions} className="typo-caption text-foreground/70 text-right tabular-nums" />
-                    <Numeric value={m.costUsd} unit="usd" className="typo-caption text-foreground/70 text-right tabular-nums" />
+                    <Numeric value={m.executions} className="typo-caption text-foreground text-right tabular-nums" />
+                    <Numeric value={m.costUsd} unit="usd" className="typo-caption text-foreground text-right tabular-nums" />
                     <span className="typo-caption text-right tabular-nums" style={{ color: 'var(--status-success)' }}>
                       <Numeric value={m.valueDelivered} />
                     </span>
