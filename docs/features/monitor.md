@@ -18,35 +18,42 @@ The companion, **Athena**, can also open it — ask her for a fleet overview
 ("how are my personas doing?") and she summarises in chat and opens the grid.
 See [companion](./companion/README.md).
 
-Press `Esc` (or click the titlebar button again) to close.
+Press `Esc` (or click the titlebar button again) to close. The Monitor fades
+in on open and fades out on close (the mount is wrapped in `AnimatePresence`
+so the exit animation plays before it unmounts); reduced-motion users get an
+instant open/close.
 
 ## The global fleet activity strip
 
-A **1px-tall, 20-bar activity strip** sits directly under the titlebar in
-*every* screen of the app (not just the Monitor) — so you always have a
-peripheral read on how much live work the fleet is doing without opening
-the Monitor.
+A **2px-tall, 20-bar activity strip** sits directly under the titlebar in
+*every* screen of the app (not just the Monitor) — so the fleet's live state
+is **always visible**, and the Monitor reachable, from anywhere. At rest it is
+a faint hairline baseline; it brightens as work comes in.
 
-- One bright bar = one currently-running execution. Bars fill left→right.
-- Running bars **ramp the active theme's primary → accent** across the lit
-  region (cyan→bright-cyan on midnight; the ramp re-tints per theme), and a
-  soft highlight "comet" sweeps across them to signal liveness.
-- A **dim tail** of bars trails the bright ones for queued runs, so the
-  strip reads as *live work + pressure* — never a per-persona map or a
-  summary of attention (that is the grid's job).
-- Bars **spring in/out** as executions start and finish.
-- **Hovering** the strip reveals a floating readout — running / queued
-  counts, the oldest run's age, and live USD cost — as an overlay that
-  never reflows the app. **Clicking** the strip opens the Monitor.
+- One bright bar = one currently-running execution. Bars fill **from the
+  centre outward**: the first running execution lights the central bar, the
+  second switches to the other side, the third steps further out, and so on —
+  the strip grows symmetrically from the middle.
+- Running bars **ramp the active theme's primary → accent** by their distance
+  from centre (centre = primary, edges = accent; re-tints per theme). A soft
+  **centre-origin shimmer** breathes over the lit region to signal liveness.
+- A **dim tail** of bars continues outward for queued runs, so the strip reads
+  as *live work + pressure* — never a per-persona map or a summary of
+  attention (that is the grid's job).
+- Bars **spring** between states as executions start and finish.
+- **Hovering** reveals a floating readout — running / queued counts, the
+  oldest run's age, and live USD cost (or just an "open monitor" hint when
+  idle) — as an overlay that never reflows the app. **Clicking** the strip
+  (at any time) opens the Monitor.
 - The strip caps at 20 simultaneous runs; beyond that the visual saturates
   (and the Monitor's per-persona view is the place to dig in).
-- When nothing is running the strip is invisible and non-interactive but
-  still reserves its 1px, so the page never re-flows as work comes and goes.
+- The 2px height is always reserved, so the page never re-flows as work comes
+  and goes.
 
 The component is `FleetActivityStrip` (mounted between `<TitleBar />` and the
-app body in `App.tsx`); its slot math lives in the pure, unit-tested
-`fleetStripModel.ts`. Reduced-motion users get the populated state without
-the spring/comet animation.
+app body in `App.tsx`); its centre-out slot math lives in the pure, unit-tested
+`fleetStripModel.ts` (`centerOutOrder` / `layoutSlots`). Reduced-motion users
+get the populated state without the spring/shimmer animation.
 
 ## The grid
 
