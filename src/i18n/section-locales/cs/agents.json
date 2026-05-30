@@ -1,4 +1,11 @@
 {
+  "glyph_build_awaiting": "Čekání na vaši odpověď",
+  "glyph_build_beat_understanding": "Rozumím vašemu požadavku",
+  "glyph_build_beat_designing": "Navrhuji schopnosti",
+  "glyph_build_beat_wiring": "Propojuji nástroje a spouštěče",
+  "glyph_build_beat_assembling": "Skládám dohromady",
+  "glyph_open": "Otevřít",
+  "glyph_refine": "Vyladit",
   "glyph_cap_remembers": "Pamatuje si",
   "glyph_cap_restore": "Obnovit",
   "glyph_cap_split": "Rozdělit",

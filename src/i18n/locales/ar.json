@@ -571,6 +571,13 @@
     "commander": "القائد"
   },
   "agents": {
+    "glyph_build_awaiting": "في انتظار ردّك",
+    "glyph_build_beat_understanding": "جارٍ فهم طلبك",
+    "glyph_build_beat_designing": "جارٍ تصميم القدرات",
+    "glyph_build_beat_wiring": "جارٍ ربط الأدوات والمشغّلات",
+    "glyph_build_beat_assembling": "جارٍ التجميع",
+    "glyph_open": "فتح",
+    "glyph_refine": "تحسين",
     "glyph_cap_remembers": "يتذكر",
     "glyph_cap_restore": "استعادة",
     "glyph_cap_split": "تقسيم",

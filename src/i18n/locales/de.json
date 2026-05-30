@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_build_awaiting": "Warte auf deine Antwort",
+    "glyph_build_beat_understanding": "Anfrage wird verstanden",
+    "glyph_build_beat_designing": "Fähigkeiten werden entworfen",
+    "glyph_build_beat_wiring": "Tools & Auslöser werden verbunden",
+    "glyph_build_beat_assembling": "Wird zusammengesetzt",
+    "glyph_open": "Öffnen",
+    "glyph_refine": "Verfeinern",
     "glyph_cap_remembers": "Merkt sich",
     "glyph_cap_restore": "Wiederherstellen",
     "glyph_cap_split": "Aufteilen",

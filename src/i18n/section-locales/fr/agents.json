@@ -1,4 +1,11 @@
 {
+  "glyph_build_awaiting": "En attente de votre réponse",
+  "glyph_build_beat_understanding": "Compréhension de votre demande",
+  "glyph_build_beat_designing": "Conception des capacités",
+  "glyph_build_beat_wiring": "Connexion des outils et déclencheurs",
+  "glyph_build_beat_assembling": "Assemblage en cours",
+  "glyph_open": "Ouvrir",
+  "glyph_refine": "Affiner",
   "glyph_cap_remembers": "Mémorise",
   "glyph_cap_restore": "Restaurer",
   "glyph_cap_split": "Diviser",

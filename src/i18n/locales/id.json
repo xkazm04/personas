@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_build_awaiting": "Menunggu jawaban Anda",
+    "glyph_build_beat_understanding": "Memahami permintaan Anda",
+    "glyph_build_beat_designing": "Merancang kemampuan",
+    "glyph_build_beat_wiring": "Menghubungkan alat & pemicu",
+    "glyph_build_beat_assembling": "Menyatukan semuanya",
+    "glyph_open": "Buka",
+    "glyph_refine": "Sempurnakan",
     "glyph_cap_remembers": "Mengingat",
     "glyph_cap_restore": "Pulihkan",
     "glyph_cap_split": "Pisahkan",

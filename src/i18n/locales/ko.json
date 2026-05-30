@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_build_awaiting": "답변을 기다리는 중",
+    "glyph_build_beat_understanding": "요청을 이해하는 중",
+    "glyph_build_beat_designing": "기능을 설계하는 중",
+    "glyph_build_beat_wiring": "도구와 트리거 연결 중",
+    "glyph_build_beat_assembling": "조합하는 중",
+    "glyph_open": "열기",
+    "glyph_refine": "다듬기",
     "glyph_cap_remembers": "기억함",
     "glyph_cap_restore": "복원",
     "glyph_cap_split": "분할",

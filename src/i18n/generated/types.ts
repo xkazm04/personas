@@ -589,6 +589,13 @@ export type Translations = {
     };
   };
   agents: {
+    glyph_build_awaiting: string;
+    glyph_build_beat_understanding: string;
+    glyph_build_beat_designing: string;
+    glyph_build_beat_wiring: string;
+    glyph_build_beat_assembling: string;
+    glyph_open: string;
+    glyph_refine: string;
     glyph_cap_remembers: string;
     glyph_cap_restore: string;
     glyph_cap_split: string;

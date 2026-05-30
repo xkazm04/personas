@@ -583,6 +583,13 @@
     }
   },
   "agents": {
+    "glyph_build_awaiting": "Awaiting your answer",
+    "glyph_build_beat_understanding": "Understanding your request",
+    "glyph_build_beat_designing": "Designing the capabilities",
+    "glyph_build_beat_wiring": "Wiring up tools & triggers",
+    "glyph_build_beat_assembling": "Putting it together",
+    "glyph_open": "Open",
+    "glyph_refine": "Refine",
     "glyph_cap_remembers": "Remembers",
     "glyph_cap_restore": "Restore",
     "glyph_cap_split": "Split",

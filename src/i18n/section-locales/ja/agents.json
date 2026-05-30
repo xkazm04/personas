@@ -1,4 +1,11 @@
 {
+  "glyph_build_awaiting": "回答をお待ちしています",
+  "glyph_build_beat_understanding": "リクエストを理解しています",
+  "glyph_build_beat_designing": "機能を設計しています",
+  "glyph_build_beat_wiring": "ツールとトリガーを接続しています",
+  "glyph_build_beat_assembling": "まとめています",
+  "glyph_open": "開く",
+  "glyph_refine": "調整",
   "glyph_cap_remembers": "記憶する",
   "glyph_cap_restore": "復元",
   "glyph_cap_split": "分割",

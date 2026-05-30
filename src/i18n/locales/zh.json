@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_build_awaiting": "等待你的回答",
+    "glyph_build_beat_understanding": "正在理解你的需求",
+    "glyph_build_beat_designing": "正在设计能力",
+    "glyph_build_beat_wiring": "正在连接工具与触发器",
+    "glyph_build_beat_assembling": "正在组装",
+    "glyph_open": "打开",
+    "glyph_refine": "优化",
     "glyph_cap_remembers": "记忆",
     "glyph_cap_restore": "恢复",
     "glyph_cap_split": "拆分",

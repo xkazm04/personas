@@ -571,6 +571,13 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_build_awaiting": "आपके उत्तर की प्रतीक्षा",
+    "glyph_build_beat_understanding": "आपका अनुरोध समझ रहे हैं",
+    "glyph_build_beat_designing": "क्षमताएँ डिज़ाइन कर रहे हैं",
+    "glyph_build_beat_wiring": "टूल और ट्रिगर जोड़ रहे हैं",
+    "glyph_build_beat_assembling": "एक साथ जोड़ रहे हैं",
+    "glyph_open": "खोलें",
+    "glyph_refine": "परिष्कृत करें",
     "glyph_cap_remembers": "याद रखता है",
     "glyph_cap_restore": "पुनर्स्थापित करें",
     "glyph_cap_split": "विभाजित करें",

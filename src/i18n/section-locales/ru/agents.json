@@ -1,4 +1,11 @@
 {
+  "glyph_build_awaiting": "Ожидание вашего ответа",
+  "glyph_build_beat_understanding": "Разбираемся в запросе",
+  "glyph_build_beat_designing": "Проектируем возможности",
+  "glyph_build_beat_wiring": "Подключаем инструменты и триггеры",
+  "glyph_build_beat_assembling": "Собираем всё вместе",
+  "glyph_open": "Открыть",
+  "glyph_refine": "Уточнить",
   "glyph_cap_remembers": "Запоминает",
   "glyph_cap_restore": "Восстановить",
   "glyph_cap_split": "Разделить",

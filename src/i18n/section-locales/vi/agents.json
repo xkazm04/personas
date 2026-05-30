@@ -1,4 +1,11 @@
 {
+  "glyph_build_awaiting": "Đang chờ câu trả lời của bạn",
+  "glyph_build_beat_understanding": "Đang hiểu yêu cầu của bạn",
+  "glyph_build_beat_designing": "Đang thiết kế các khả năng",
+  "glyph_build_beat_wiring": "Đang kết nối công cụ & trình kích hoạt",
+  "glyph_build_beat_assembling": "Đang ghép lại với nhau",
+  "glyph_open": "Mở",
+  "glyph_refine": "Tinh chỉnh",
   "glyph_cap_remembers": "Ghi nhớ",
   "glyph_cap_restore": "Khôi phục",
   "glyph_cap_split": "Tách",

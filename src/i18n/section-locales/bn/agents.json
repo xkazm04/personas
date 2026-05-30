@@ -1,4 +1,11 @@
 {
+  "glyph_build_awaiting": "আপনার উত্তরের অপেক্ষায়",
+  "glyph_build_beat_understanding": "আপনার অনুরোধ বোঝা হচ্ছে",
+  "glyph_build_beat_designing": "সক্ষমতা ডিজাইন করা হচ্ছে",
+  "glyph_build_beat_wiring": "টুল ও ট্রিগার যুক্ত করা হচ্ছে",
+  "glyph_build_beat_assembling": "একত্র করা হচ্ছে",
+  "glyph_open": "খুলুন",
+  "glyph_refine": "পরিমার্জন",
   "glyph_cap_remembers": "মনে রাখে",
   "glyph_cap_restore": "পুনরুদ্ধার",
   "glyph_cap_split": "বিভক্ত",
