@@ -1637,8 +1637,15 @@ function Body(props: BodyProps) {
   const voiceTurnRequest = useCompanionStore((s) => s.voiceTurnRequest);
   useEffect(() => {
     if (!voiceTurnRequest || streaming) return;
+    // Claim atomically against the live store: StrictMode's dev double-invoke
+    // reuses the same `voiceTurnRequest` closure, and `send()` flips `streaming`
+    // asynchronously, so reading the closure value would fire `send` twice.
+    // Reading fresh from the store and clearing makes the second invoke see
+    // null and bail.
+    const req = useCompanionStore.getState().voiceTurnRequest;
+    if (!req) return;
     useCompanionStore.getState().setVoiceTurnRequest(null);
-    void send(voiceTurnRequest);
+    void send(req);
   }, [voiceTurnRequest, streaming, send]);
 
   // Wrench-send: pipe the textarea content into the self-improve loop.

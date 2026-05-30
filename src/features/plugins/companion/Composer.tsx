@@ -112,13 +112,19 @@ export function Composer({
   const pendingPrompt = useCompanionStore((s) => s.pendingPrompt);
   useEffect(() => {
     if (!pendingPrompt) return;
-    useCompanionStore.getState().setPendingPrompt(null);
+    // Claim atomically: consumePendingPrompt reads-and-clears in the store, so
+    // React StrictMode's dev double-invoke of this effect (which reuses the
+    // same `pendingPrompt` closure) can't fire onSend twice — the second
+    // invoke gets null here and bails. (Clearing the store but sending from the
+    // closure value previously double-sent under StrictMode.)
+    const claimed = useCompanionStore.getState().consumePendingPrompt();
+    if (!claimed) return;
     const forceDraft = (globalThis as { __TEST_FORCE_DRAFT__?: boolean })
       .__TEST_FORCE_DRAFT__;
-    if (pendingPrompt.autoSend && !disabled && !forceDraft) {
-      onSend(pendingPrompt.text);
+    if (claimed.autoSend && !disabled && !forceDraft) {
+      onSend(claimed.text);
     } else {
-      setDraft(pendingPrompt.text);
+      setDraft(claimed.text);
     }
   }, [pendingPrompt, disabled, onSend]);
 
