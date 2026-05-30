@@ -843,6 +843,38 @@ pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     })
 }
 
+/// Only executions whose process was mid-RUN at shutdown (`status='running'`).
+/// Used by startup recovery to fail orphaned runs WITHOUT touching durable
+/// `queued` rows (which are re-admitted instead). See
+/// `ExecutionEngine::recover_stale_executions`.
+pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
+    timed_query!("persona_executions", "persona_executions::get_running_only", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map([], row_to_execution)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Only executions persisted as `queued` (waiting for a slot, never started).
+/// The `persona_executions` row is the durable queue; these are re-admitted on
+/// startup by `ExecutionEngine::requeue_persisted_executions` so scheduled /
+/// event-triggered work is not lost across a restart.
+pub fn get_queued_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
+    timed_query!("persona_executions", "persona_executions::get_queued_only", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map([], row_to_execution)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// Lightweight check: are any executions currently in-flight?
 /// Used by the adaptive polling system to decide between active/idle intervals.
 pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {

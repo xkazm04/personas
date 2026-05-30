@@ -742,6 +742,23 @@ pub fn run() {
 
             let scheduler = Arc::new(engine::background::SchedulerState::new());
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone(), Some(Arc::new(pool.clone()))));
+
+            // Re-admit executions persisted as `queued` when the app last exited
+            // (recover_stale_executions above only fails mid-RUN rows now). This
+            // is what makes scheduled / event-triggered work survive a restart
+            // instead of being silently dropped (P1 durable-queue guarantee).
+            // Spawned so it never blocks startup; re-admission is idempotent.
+            {
+                let requeue_engine = engine.clone();
+                let requeue_app = app.handle().clone();
+                let requeue_pool = pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    requeue_engine
+                        .requeue_persisted_executions(requeue_app, requeue_pool)
+                        .await;
+                });
+            }
+
             let auth = Arc::new(tokio::sync::RwLock::new(
                 commands::infrastructure::auth::AuthStateInner::default(),
             ));
