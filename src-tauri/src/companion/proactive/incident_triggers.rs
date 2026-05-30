@@ -15,8 +15,7 @@
 //! (frontend nav in `CompanionPanel`'s `onProactiveEngage`). Deep-linking to a
 //! specific incident detail is a deliberate follow-up, not part of this trigger.
 
-use crate::db::models::audit_incident::AuditIncident;
-use crate::db::models::IncidentFilters;
+use crate::db::models::{AuditIncident, IncidentFilters};
 use crate::db::repos::execution::audit_incidents;
 use crate::db::DbPool;
 
