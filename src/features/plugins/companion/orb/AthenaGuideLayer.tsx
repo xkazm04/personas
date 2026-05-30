@@ -2,6 +2,7 @@ import { createPortal } from 'react-dom';
 import { useGuidanceRunner } from '../guidance/useGuidanceRunner';
 import { TrackedGlowRing } from './TrackedGlowRing';
 import { GuideCaption } from './GuideCaption';
+import { OrbDecisionBubble } from './OrbDecisionBubble';
 
 /**
  * Root-level host for Athena's guided-walkthrough overlays. Mounted once in
@@ -34,6 +35,7 @@ export default function AthenaGuideLayer() {
       <TrackedGlowRing source="guide" />
       <TrackedGlowRing source="flash" />
       <GuideCaption />
+      <OrbDecisionBubble />
     </div>,
     document.body,
   );
