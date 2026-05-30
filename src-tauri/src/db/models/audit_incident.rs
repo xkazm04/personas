@@ -24,6 +24,11 @@ use ts_rs::TS;
 pub enum IncidentStatus {
     Open,
     Acknowledged,
+    /// Someone is actively working the incident (the "In Progress" state from
+    /// the escalation spec). Distinct from `Acknowledged` (seen-but-not-started):
+    /// the user/Athena has committed to fixing it. `open → in_progress → resolved`
+    /// is the primary escalation lifecycle.
+    InProgress,
     Resolved,
     Dismissed,
 }
@@ -33,6 +38,7 @@ impl IncidentStatus {
         match self {
             IncidentStatus::Open => "open",
             IncidentStatus::Acknowledged => "acknowledged",
+            IncidentStatus::InProgress => "in_progress",
             IncidentStatus::Resolved => "resolved",
             IncidentStatus::Dismissed => "dismissed",
         }
@@ -42,6 +48,7 @@ impl IncidentStatus {
         match s {
             "open" => Some(IncidentStatus::Open),
             "acknowledged" => Some(IncidentStatus::Acknowledged),
+            "in_progress" => Some(IncidentStatus::InProgress),
             "resolved" => Some(IncidentStatus::Resolved),
             "dismissed" => Some(IncidentStatus::Dismissed),
             _ => None,

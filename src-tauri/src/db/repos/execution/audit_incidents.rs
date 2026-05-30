@@ -284,11 +284,19 @@ fn can_transition(from: IncidentStatus, to: IncidentStatus) -> bool {
     matches!(
         (from, to),
         (Open, Acknowledged)
+            | (Open, InProgress)
             | (Open, Resolved)
             | (Open, Dismissed)
+            | (Acknowledged, InProgress)
             | (Acknowledged, Resolved)
             | (Acknowledged, Dismissed)
             | (Acknowledged, Open)
+            // In-progress: the active-work state. Can finish (resolved),
+            // be set aside (dismissed), or revert to open/acknowledged.
+            | (InProgress, Resolved)
+            | (InProgress, Dismissed)
+            | (InProgress, Open)
+            | (InProgress, Acknowledged)
             | (Resolved, Open)
             | (Dismissed, Open)
     )
@@ -329,6 +337,17 @@ fn apply_transition(
              WHERE id = ?2",
             params![now, id],
         )?,
+        IncidentStatus::InProgress => conn.execute(
+            // Stamp acknowledged_at if not already (entering in_progress implies
+            // it's been seen). resolution fields stay clear — work isn't done.
+            "UPDATE audit_incidents
+             SET status = 'in_progress',
+                 acknowledged_at = COALESCE(acknowledged_at, ?1),
+                 acknowledged_by = COALESCE(acknowledged_by, 'user'),
+                 resolved_at = NULL, resolution_note = NULL
+             WHERE id = ?2",
+            params![now, id],
+        )?,
         IncidentStatus::Resolved => conn.execute(
             "UPDATE audit_incidents
              SET status = 'resolved', resolved_at = ?1, resolution_note = ?2
@@ -356,6 +375,14 @@ fn apply_transition(
 pub fn acknowledge(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     timed_query!("audit_incidents", "audit_incidents::acknowledge", {
         apply_transition(pool, id, IncidentStatus::Acknowledged, None)
+    })
+}
+
+/// Mark an incident as actively being worked ("In Progress"). The middle state
+/// of the `open → in_progress → resolved` escalation lifecycle.
+pub fn start_progress(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::start_progress", {
+        apply_transition(pool, id, IncidentStatus::InProgress, None)
     })
 }
 

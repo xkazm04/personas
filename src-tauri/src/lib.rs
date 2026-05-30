@@ -1529,6 +1529,7 @@ pub fn run() {
             commands::execution::audit_incidents::get_audit_incidents_summary,
             commands::execution::audit_incidents::get_audit_incident,
             commands::execution::audit_incidents::acknowledge_audit_incident,
+            commands::execution::audit_incidents::set_incident_in_progress,
             commands::execution::audit_incidents::resolve_audit_incident,
             commands::execution::audit_incidents::dismiss_audit_incident,
             commands::execution::audit_incidents::reopen_audit_incident,

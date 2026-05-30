@@ -61,6 +61,18 @@ pub fn acknowledge_audit_incident(
     repo::acknowledge(&state.db, &id)
 }
 
+/// Mark an incident as actively being worked ("In Progress"): the middle state
+/// of the `open → in_progress → resolved` escalation lifecycle. Set when the
+/// user (or Athena, via the detail modal) commits to fixing the blocker.
+#[tauri::command]
+pub fn set_incident_in_progress(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<bool, AppError> {
+    require_auth_sync(&state)?;
+    repo::start_progress(&state.db, &id)
+}
+
 #[tauri::command]
 pub fn resolve_audit_incident(
     state: State<'_, Arc<AppState>>,
