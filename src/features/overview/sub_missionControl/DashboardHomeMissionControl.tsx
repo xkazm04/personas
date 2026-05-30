@@ -36,21 +36,21 @@ import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineE
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
 import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
-import FleetOptimizationCard from '@/features/overview/components/dashboard/cards/FleetOptimizationCard';
+import FleetOptimizationCard from './cards/FleetOptimizationCard';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
-import { TrafficErrorsChart } from './widgets/TrafficErrorsChart';
-import { DashboardRangeSwitch } from './widgets/DashboardRangeSwitch';
-import { TopPerformersWidget } from './widgets/TopPerformersWidget';
+import { TrafficErrorsChart } from '@/features/overview/components/dashboard/widgets/TrafficErrorsChart';
+import { DashboardRangeSwitch } from '@/features/overview/components/dashboard/widgets/DashboardRangeSwitch';
+import { TopPerformersWidget } from '@/features/overview/components/dashboard/widgets/TopPerformersWidget';
 import { ExecutionHeatmap } from '@/features/overview/sub_analytics/components/ExecutionHeatmap';
 import { lazyRetry } from '@/lib/lazyRetry';
 import { DeferUntilIdle } from '@/features/shared/components/layout/DeferUntilIdle';
 import { fadeUp, staggerContainer } from '@/features/overview/libs/animations';
-import { DashboardEmptyState } from './DashboardEmptyState';
-import { HomeCustomizePopover } from './HomeCustomizePopover';
+import { DashboardEmptyState } from '@/features/overview/components/dashboard/DashboardEmptyState';
+import { HomeCustomizePopover } from '@/features/overview/components/dashboard/HomeCustomizePopover';
 import { DebtText } from '@/i18n/DebtText';
 
 
-const AnalyticsInserts = lazyRetry(() => import('./widgets/AnalyticsInserts'));
+const AnalyticsInserts = lazyRetry(() => import('@/features/overview/components/dashboard/widgets/AnalyticsInserts'));
 const UpcomingRoutinesCard = lazyRetry(() => import('./cards/UpcomingRoutinesCard'));
 const VaultRecentChangesCard = lazyRetry(() => import('./cards/VaultRecentChangesCard'));
 

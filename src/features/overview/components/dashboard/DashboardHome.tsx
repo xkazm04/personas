@@ -1,1 +1,1 @@
-export { default } from './DashboardHomeMissionControl';
+export { default } from '@/features/overview/sub_missionControl/DashboardHomeMissionControl';
