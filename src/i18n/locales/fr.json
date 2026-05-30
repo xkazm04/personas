@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 capacité",
+    "glyph_cap_count_other": "{count} capacités",
+    "glyph_cap_events_other": "{count} événements",
+    "glyph_cap_review_always": "Toujours valider",
+    "glyph_cap_review_auto_triage": "Tri automatique",
+    "glyph_cap_review_low_confidence": "Valider si incertain",
+    "glyph_cap_review_auto_publish": "Publication auto",
+    "glyph_cap_trigger_manual": "Manuel",
+    "glyph_cap_trigger_polling": "Sondage toutes les {seconds} s",
     "glyph_launch": "Lancer",
     "glyph_intent_placeholder": "p. ex. Résume mes e-mails non lus chaque matin",
     "glyph_dim_label": {

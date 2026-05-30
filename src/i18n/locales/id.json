@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 kemampuan",
+    "glyph_cap_count_other": "{count} kemampuan",
+    "glyph_cap_events_other": "{count} peristiwa",
+    "glyph_cap_review_always": "Selalu tinjau",
+    "glyph_cap_review_auto_triage": "Triase otomatis",
+    "glyph_cap_review_low_confidence": "Tinjau jika ragu",
+    "glyph_cap_review_auto_publish": "Publikasi otomatis",
+    "glyph_cap_trigger_manual": "Manual",
+    "glyph_cap_trigger_polling": "Polling tiap {seconds} dtk",
     "glyph_launch": "Luncurkan",
     "glyph_intent_placeholder": "mis. Rangkum email saya yang belum dibaca tiap pagi",
     "glyph_dim_label": {

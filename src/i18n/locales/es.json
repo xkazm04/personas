@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 capacidad",
+    "glyph_cap_count_other": "{count} capacidades",
+    "glyph_cap_events_other": "{count} eventos",
+    "glyph_cap_review_always": "Revisar siempre",
+    "glyph_cap_review_auto_triage": "Clasificación automática",
+    "glyph_cap_review_low_confidence": "Revisar si hay dudas",
+    "glyph_cap_review_auto_publish": "Publicación automática",
+    "glyph_cap_trigger_manual": "Manual",
+    "glyph_cap_trigger_polling": "Sondeo cada {seconds} s",
     "glyph_launch": "Lanzar",
     "glyph_intent_placeholder": "p. ej. Resume mis correos sin leer cada mañana",
     "glyph_dim_label": {

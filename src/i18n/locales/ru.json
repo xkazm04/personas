@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 возможность",
+    "glyph_cap_count_other": "Возможностей: {count}",
+    "glyph_cap_events_other": "Событий: {count}",
+    "glyph_cap_review_always": "Всегда проверять",
+    "glyph_cap_review_auto_triage": "Авторазбор",
+    "glyph_cap_review_low_confidence": "Проверять при сомнении",
+    "glyph_cap_review_auto_publish": "Автопубликация",
+    "glyph_cap_trigger_manual": "Вручную",
+    "glyph_cap_trigger_polling": "Опрос каждые {seconds} с",
     "glyph_launch": "Запустить",
     "glyph_intent_placeholder": "напр. Суммируй мои непрочитанные письма каждое утро",
     "glyph_dim_label": {

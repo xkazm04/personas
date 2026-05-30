@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 क्षमता",
+    "glyph_cap_count_other": "{count} क्षमताएँ",
+    "glyph_cap_events_other": "{count} इवेंट",
+    "glyph_cap_review_always": "हमेशा समीक्षा",
+    "glyph_cap_review_auto_triage": "ऑटो-ट्राइएज",
+    "glyph_cap_review_low_confidence": "संदेह होने पर समीक्षा",
+    "glyph_cap_review_auto_publish": "स्वतः प्रकाशित",
+    "glyph_cap_trigger_manual": "मैन्युअल",
+    "glyph_cap_trigger_polling": "हर {seconds} सेकंड पोलिंग",
     "glyph_launch": "लॉन्च करें",
     "glyph_intent_placeholder": "उदा. हर सुबह मेरे अपठित ईमेल सारांशित करें",
     "glyph_dim_label": {

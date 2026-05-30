@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 schopnost",
+    "glyph_cap_count_other": "{count} schopností",
+    "glyph_cap_events_other": "{count} událostí",
+    "glyph_cap_review_always": "Vždy zkontrolovat",
+    "glyph_cap_review_auto_triage": "Auto-třídění",
+    "glyph_cap_review_low_confidence": "Zkontrolovat při nejistotě",
+    "glyph_cap_review_auto_publish": "Auto-publikace",
+    "glyph_cap_trigger_manual": "Ručně",
+    "glyph_cap_trigger_polling": "Dotaz každých {seconds} s",
     "glyph_launch": "Spustit",
     "glyph_intent_placeholder": "např. Shrň mé nepřečtené e-maily každé ráno",
     "glyph_dim_label": {

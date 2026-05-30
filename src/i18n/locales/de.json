@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 Fähigkeit",
+    "glyph_cap_count_other": "{count} Fähigkeiten",
+    "glyph_cap_events_other": "{count} Ereignisse",
+    "glyph_cap_review_always": "Immer prüfen",
+    "glyph_cap_review_auto_triage": "Auto-Triage",
+    "glyph_cap_review_low_confidence": "Bei Unsicherheit prüfen",
+    "glyph_cap_review_auto_publish": "Auto-Veröffentlichung",
+    "glyph_cap_trigger_manual": "Manuell",
+    "glyph_cap_trigger_polling": "Abruf alle {seconds} s",
     "glyph_launch": "Starten",
     "glyph_intent_placeholder": "z. B. Fasse jeden Morgen meine ungelesenen E-Mails zusammen",
     "glyph_dim_label": {

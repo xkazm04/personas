@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "機能 1 件",
+    "glyph_cap_count_other": "機能 {count} 件",
+    "glyph_cap_events_other": "イベント {count} 件",
+    "glyph_cap_review_always": "常に確認",
+    "glyph_cap_review_auto_triage": "自動振り分け",
+    "glyph_cap_review_low_confidence": "不確実なとき確認",
+    "glyph_cap_review_auto_publish": "自動公開",
+    "glyph_cap_trigger_manual": "手動",
+    "glyph_cap_trigger_polling": "{seconds} 秒ごとにポーリング",
     "glyph_launch": "起動",
     "glyph_intent_placeholder": "例：毎朝、未読メールを要約する",
     "glyph_dim_label": {

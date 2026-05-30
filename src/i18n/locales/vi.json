@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 khả năng",
+    "glyph_cap_count_other": "{count} khả năng",
+    "glyph_cap_events_other": "{count} sự kiện",
+    "glyph_cap_review_always": "Luôn duyệt",
+    "glyph_cap_review_auto_triage": "Tự phân loại",
+    "glyph_cap_review_low_confidence": "Duyệt khi chưa chắc",
+    "glyph_cap_review_auto_publish": "Tự đăng",
+    "glyph_cap_trigger_manual": "Thủ công",
+    "glyph_cap_trigger_polling": "Thăm dò mỗi {seconds} giây",
     "glyph_launch": "Khởi chạy",
     "glyph_intent_placeholder": "vd. Tóm tắt email chưa đọc của tôi mỗi sáng",
     "glyph_dim_label": {

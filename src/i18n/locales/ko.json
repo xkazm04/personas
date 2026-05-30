@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "기능 1개",
+    "glyph_cap_count_other": "기능 {count}개",
+    "glyph_cap_events_other": "이벤트 {count}개",
+    "glyph_cap_review_always": "항상 검토",
+    "glyph_cap_review_auto_triage": "자동 분류",
+    "glyph_cap_review_low_confidence": "불확실 시 검토",
+    "glyph_cap_review_auto_publish": "자동 게시",
+    "glyph_cap_trigger_manual": "수동",
+    "glyph_cap_trigger_polling": "{seconds}초마다 폴링",
     "glyph_launch": "실행",
     "glyph_intent_placeholder": "예: 매일 아침 읽지 않은 이메일 요약하기",
     "glyph_dim_label": {

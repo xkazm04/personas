@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "1 项能力",
+    "glyph_cap_count_other": "{count} 项能力",
+    "glyph_cap_events_other": "{count} 个事件",
+    "glyph_cap_review_always": "始终审核",
+    "glyph_cap_review_auto_triage": "自动分流",
+    "glyph_cap_review_low_confidence": "不确定时审核",
+    "glyph_cap_review_auto_publish": "自动发布",
+    "glyph_cap_trigger_manual": "手动",
+    "glyph_cap_trigger_polling": "每 {seconds} 秒轮询",
     "glyph_launch": "启动",
     "glyph_intent_placeholder": "例如：每天早上汇总我的未读邮件",
     "glyph_dim_label": {

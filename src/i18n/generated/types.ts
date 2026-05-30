@@ -589,6 +589,15 @@ export type Translations = {
     };
   };
   agents: {
+    glyph_cap_count_one: string;
+    glyph_cap_count_other: string;
+    glyph_cap_events_other: string;
+    glyph_cap_review_always: string;
+    glyph_cap_review_auto_triage: string;
+    glyph_cap_review_low_confidence: string;
+    glyph_cap_review_auto_publish: string;
+    glyph_cap_trigger_manual: string;
+    glyph_cap_trigger_polling: string;
     glyph_launch: string;
     glyph_intent_placeholder: string;
     glyph_dim_label: {

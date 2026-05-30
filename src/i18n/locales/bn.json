@@ -571,6 +571,15 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_cap_count_one": "১টি সক্ষমতা",
+    "glyph_cap_count_other": "{count}টি সক্ষমতা",
+    "glyph_cap_events_other": "{count}টি ইভেন্ট",
+    "glyph_cap_review_always": "সর্বদা পর্যালোচনা",
+    "glyph_cap_review_auto_triage": "স্বয়ংক্রিয় ট্রায়াজ",
+    "glyph_cap_review_low_confidence": "সন্দেহ হলে পর্যালোচনা",
+    "glyph_cap_review_auto_publish": "স্বয়ংক্রিয় প্রকাশ",
+    "glyph_cap_trigger_manual": "ম্যানুয়াল",
+    "glyph_cap_trigger_polling": "প্রতি {seconds} সেকেন্ডে পোলিং",
     "glyph_launch": "চালু করুন",
     "glyph_intent_placeholder": "যেমন প্রতিদিন সকালে আমার অপঠিত ইমেল সারসংক্ষেপ করো",
     "glyph_dim_label": {

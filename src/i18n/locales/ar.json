@@ -571,6 +571,15 @@
     "commander": "القائد"
   },
   "agents": {
+    "glyph_cap_count_one": "قدرة واحدة",
+    "glyph_cap_count_other": "{count} قدرات",
+    "glyph_cap_events_other": "{count} أحداث",
+    "glyph_cap_review_always": "مراجعة دائمًا",
+    "glyph_cap_review_auto_triage": "فرز تلقائي",
+    "glyph_cap_review_low_confidence": "مراجعة عند الشك",
+    "glyph_cap_review_auto_publish": "نشر تلقائي",
+    "glyph_cap_trigger_manual": "يدوي",
+    "glyph_cap_trigger_polling": "استطلاع كل {seconds} ثانية",
     "glyph_launch": "تشغيل",
     "glyph_intent_placeholder": "مثال: لخّص رسائلي غير المقروءة كل صباح",
     "glyph_dim_label": {

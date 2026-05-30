@@ -583,6 +583,15 @@
     }
   },
   "agents": {
+    "glyph_cap_count_one": "1 capability",
+    "glyph_cap_count_other": "{count} capabilities",
+    "glyph_cap_events_other": "{count} events",
+    "glyph_cap_review_always": "Always review",
+    "glyph_cap_review_auto_triage": "Auto-triage",
+    "glyph_cap_review_low_confidence": "Review if unsure",
+    "glyph_cap_review_auto_publish": "Auto-publish",
+    "glyph_cap_trigger_manual": "Manual",
+    "glyph_cap_trigger_polling": "Polling every {seconds}s",
     "glyph_launch": "Launch",
     "glyph_intent_placeholder": "e.g. Summarize my unread emails each morning",
     "glyph_dim_label": {
