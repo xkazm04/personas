@@ -10426,7 +10426,12 @@
       "skill_install_no_targets": "No projects registered — add one in Dev Tools → Projects.",
       "skill_install_success": "Installed {skill} into {project} ({count} files)",
       "skill_install_exists": "{skill} already exists in {project} — enable overwrite to replace it",
-      "skill_install_failed": "Failed to install skill"
+      "skill_install_failed": "Failed to install skill",
+      "athena_ask": "Ask Athena",
+      "athena_thinking": "Athena is thinking…",
+      "athena_label": "Athena",
+      "athena_approve_send": "Approve — send to terminal",
+      "athena_dismiss": "Dismiss suggestion"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

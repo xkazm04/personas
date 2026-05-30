@@ -97,11 +97,21 @@ Consequences:
 
 Fleet Settings → **Terminal** (`FleetTerminalSettings`) exposes, all persisted in `fleetSlice` and applied live to every open terminal (no remount):
 
-- **Font size** — zoom 9–22px (also from the hover `+`/`−` buttons on each pane; `fleetTerminalFontSize`).
+- **Font size** — zoom 9–22px (`fleetTerminalFontSize`).
 - **Copy on select** — mirror a terminal selection to the clipboard on mouse-up (`fleetTerminalCopyOnSelect`, default on). Right-click still pastes; Ctrl+Shift+V / Cmd+V paste too.
 - **Color theme** — `Auto` (follows the app's `data-theme` light/dark), `Dark`, or `Light` (`fleetTerminalTheme`).
 
 > Pre-bundling note: `@xterm/*` is listed in `vite.config.ts` → `optimizeDeps.include` so Vite optimizes it at server boot. Without that, the first navigation to Fleet (a lazy chunk) triggers an on-the-fly dep re-optimize that 504s the in-flight import.
+
+### Athena copilot on the grid (experimental)
+
+A UI-fusion layer (`fleetAttention.ts`, `FleetTileAthenaBar.tsx`) that surfaces Athena's existing fleet reasoning *on the terminal tiles*, rather than only in the Needs-You banner. Pure frontend over existing backend (`companion_send_message`, the approval pipeline, `fleet_send_input` / `fleet_intervene`).
+
+- **Attention borders.** Tiles (and the single pane) get a pulsing border by state — violet for `awaiting_input`, amber for `stale`, red for a non-zero `exited` — via the `fleet-attn-*` classes in `globals.css`, chosen by `sessionAttention()` / `attentionClass()`. Healthy tiles stay plain.
+- **On-tile suggestions.** When a pending companion approval is a `fleet_send_input` / `fleet_intervene` targeting a tile's session (matched by parsing `paramsJson.session_id`), the tile shows Athena's proposed text with **Approve** (→ `companion_approve_action` → writes it into the PTY) / **Dismiss**. The existing approval pipeline is the write gate — nothing auto-types.
+- **Ask Athena.** A stale tile with nothing pending shows an "Ask Athena" button that fires a session-scoped turn (`companionSendMessage(craftStalePrompt(session))`) asking her to decide the next step and, if there's a clear winner, propose writing it — which returns as an on-tile suggestion. The tile shows a "thinking" affordance until the turn resolves.
+
+Still experimental (lives on the `worktree-fleet-athena` branch): no autopilot/auto-approve yet, and the suggestion strip currently shows on the grid tiles only (the single pane relies on the Needs-You banner).
 
 ## Hook installer details
 

@@ -2,11 +2,14 @@ import { useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, LayoutGrid } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetTerminalPane } from './FleetTerminalPane';
 import { FleetStatusDots } from './FleetStatusDots';
+import { FleetTileAthenaBar } from './FleetTileAthenaBar';
 import { setFleetFontOverride } from './fleetTerminalManager';
+import { sessionAttention, attentionClass, approvalsForSession } from './fleetAttention';
 
 interface Props {
   open: boolean;
@@ -16,6 +19,13 @@ interface Props {
   onSelect: (id: string) => void;
   /** Minimize — return to the single-pane view. */
   onClose: () => void;
+  /** Athena copilot wiring (suggestions surfaced on each tile). */
+  approvals: PendingApproval[];
+  /** Session ids with an in-flight "Ask Athena" turn. */
+  askingSessionIds: Set<string>;
+  onApprove: (approvalId: string) => void;
+  onReject: (approvalId: string) => void;
+  onAskAthena: (session: FleetSession) => void;
 }
 
 /**
@@ -56,7 +66,18 @@ function densityFont(dim: number): number {
  * pane is unmounted by the parent while this is open so the two don't contend
  * for the same terminal's holder element.
  */
-export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect, onClose }: Props) {
+export function FleetTerminalOverlay({
+  open,
+  sessions,
+  activeSessionId,
+  onSelect,
+  onClose,
+  approvals,
+  askingSessionIds,
+  onApprove,
+  onReject,
+  onAskAthena,
+}: Props) {
   const { t, tx } = useTranslation();
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
   const dim = useMemo(() => gridDim(sessions.length), [sessions.length]);
@@ -130,14 +151,16 @@ export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect
       >
         {sessions.map((s) => {
           const isActive = s.id === activeSessionId;
+          // Attention border wins over the base/active border when set.
+          const attn = attentionClass(sessionAttention(s));
+          const borderCls = attn || (isActive ? 'border-primary/50' : 'border-primary/10 hover:border-primary/25');
+          const tileApprovals = approvalsForSession(approvals, s.id);
           return (
             <div
               key={s.id}
               data-testid={`fleet-overlay-tile-${s.id}`}
               onMouseDown={() => onSelect(s.id)}
-              className={`flex flex-col min-h-0 rounded-modal overflow-hidden border bg-[#0a0a0c] transition-colors ${
-                isActive ? 'border-primary/50' : 'border-primary/10 hover:border-primary/25'
-              }`}
+              className={`flex flex-col min-h-0 rounded-modal overflow-hidden border bg-[#0a0a0c] transition-colors ${borderCls}`}
             >
               <div className="flex items-center gap-1.5 px-2 py-1 border-b border-primary/10 bg-secondary/20 shrink-0">
                 <FleetStatusDots state={s.state} reason={s.stateReason} />
@@ -148,6 +171,14 @@ export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect
               <div className="flex-1 min-h-0">
                 <FleetTerminalPane sessionId={s.id} autoFocus={false} />
               </div>
+              <FleetTileAthenaBar
+                session={s}
+                approvals={tileApprovals}
+                asking={askingSessionIds.has(s.id)}
+                onApprove={onApprove}
+                onReject={onReject}
+                onAsk={onAskAthena}
+              />
             </div>
           );
         })}
