@@ -7,4 +7,4 @@
  * `IncidentStatus::from_str` / `as_str` at the repo boundary. The enum exists
  * for typed UI surfaces and for the lifecycle transition guards in the repo.
  */
-export type IncidentStatus = "open" | "acknowledged" | "inprogress" | "resolved" | "dismissed";
+export type IncidentStatus = "open" | "acknowledged" | "in_progress" | "resolved" | "dismissed";

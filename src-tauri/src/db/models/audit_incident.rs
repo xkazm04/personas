@@ -20,7 +20,12 @@ use ts_rs::TS;
 /// for typed UI surfaces and for the lifecycle transition guards in the repo.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "lowercase")]
+// snake_case (NOT lowercase): single-word variants are unchanged
+// (open/acknowledged/resolved/dismissed) but the two-word InProgress must
+// serialize to "in_progress" to match the DB strings + the manual
+// as_str/from_str at the repo boundary. With "lowercase" it would become
+// "inprogress" and silently never match stored rows / the frontend type.
+#[serde(rename_all = "snake_case")]
 pub enum IncidentStatus {
     Open,
     Acknowledged,
