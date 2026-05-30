@@ -208,6 +208,16 @@ pub fn delete_for_execution(pool: &DbPool, execution_id: &str) -> Result<usize, 
     })
 }
 
+/// Hard-delete ALL manual reviews. FK child `review_messages` cascades.
+/// Returns the number of rows deleted.
+pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("manual_reviews", "manual_reviews::delete_all", {
+        let conn = pool.get()?;
+        let count = conn.execute("DELETE FROM persona_manual_reviews", [])? as usize;
+        Ok(count)
+    })
+}
+
 pub fn get_by_execution(
     pool: &DbPool,
     execution_id: &str,
@@ -738,5 +748,33 @@ mod tests {
         let pool = init_test_db().unwrap();
         let result = get_by_id(&pool, "nonexistent");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_delete_all_reviews() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+
+        for i in 0..2 {
+            create(
+                &pool,
+                CreateManualReviewInput {
+                    execution_id: execution_id.clone(),
+                    persona_id: persona_id.clone(),
+                    title: format!("Review {i}"),
+                    description: None,
+                    severity: None,
+                    context_data: None,
+                    suggested_actions: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+        assert_eq!(get_pending_count(&pool, None).unwrap(), 2);
+
+        let n = delete_all(&pool).unwrap();
+        assert_eq!(n, 2);
+        assert_eq!(get_pending_count(&pool, None).unwrap(), 0);
     }
 }

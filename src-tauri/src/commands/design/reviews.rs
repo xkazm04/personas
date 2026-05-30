@@ -942,6 +942,12 @@ pub fn gc_stale_manual_reviews(
     gc_stale_manual_reviews_inner(&state.db, &cutoff)
 }
 
+#[tauri::command]
+pub fn delete_all_manual_reviews(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
+    require_auth_sync(&state)?;
+    manual_repo::delete_all(&state.db)
+}
+
 /// Inner sweep — extracted so the startup hook (which doesn't have a
 /// `tauri::State`) can call it directly without going through IPC.
 /// Best-effort audit fan-out: a `policy_events::insert` failure logs
