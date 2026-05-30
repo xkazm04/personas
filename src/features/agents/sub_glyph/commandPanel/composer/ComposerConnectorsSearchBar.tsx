@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, SlidersHorizontal } from "lucide-react";
 import { humanizeCategory } from "./ComposerConnectorCard";
+import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -26,6 +27,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
     query, onQueryChange, categories, totalHealthy, category, onCategoryChange,
     filtersOpen, onToggleFilters,
   }, ref) {
+    const { t } = useTranslation();
     return (
       <div className="sticky top-0 z-10 bg-card-bg border-b border-border/20 px-5 py-3 flex flex-col gap-3">
         <div className="flex items-center gap-2">
@@ -45,7 +47,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
               type="button"
               onClick={onToggleFilters}
               aria-pressed={filtersOpen}
-              title={filtersOpen ? "Hide filters" : "Show filters"}
+              title={filtersOpen ? t.agents.glyph_apps_hide_filters : t.agents.glyph_apps_show_filters}
               className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-interactive border transition-colors ${
                 filtersOpen || category !== "__all__"
                   ? "bg-primary/20 border-primary/50 text-foreground"
@@ -54,7 +56,7 @@ export const ComposerConnectorsSearchBar = forwardRef<HTMLInputElement, Composer
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
               <span className="typo-caption font-medium">
-                {category === "__all__" ? "Filter" : humanizeCategory(category)}
+                {category === "__all__" ? t.agents.glyph_apps_filter : humanizeCategory(category)}
               </span>
             </button>
           )}
