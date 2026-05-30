@@ -33,6 +33,7 @@ export default function SidebarSubNav({
   variant = 'compact',
   devItems,
   accents,
+  labelOverrides,
   children,
 }: {
   items: SubNavItem[];
@@ -45,6 +46,12 @@ export default function SidebarSubNav({
   devItems?: Set<string>;
   /** Per-item domain accents — when present, the active item is tinted with the accent. */
   accents?: Record<string, SettingsIconAccent>;
+  /**
+   * Per-item label override keyed by item id. Use when an item's id collides
+   * with another sidebar id in the shared label map (e.g. the overview 'home'
+   * tab vs the top-level 'home' section) and this sub-nav needs its own label.
+   */
+  labelOverrides?: Record<string, string>;
   children?: ReactNode;
 }) {
   const isOverview = variant === 'overview';
@@ -116,7 +123,7 @@ export default function SidebarSubNav({
               <Icon className={`${iconSize} ${isActive ? activeIconColor : 'text-foreground'}`} />
             </div>
             <span className={`typo-heading text-foreground ${isActive ? 'font-semibold' : 'font-normal'}`}>
-              {labelOf(item.id, item.label)}
+              {labelOverrides?.[item.id] ?? labelOf(item.id, item.label)}
             </span>
             {badge && badge.count > 0 && (
               <span className={`ml-auto px-1.5 py-0.5 typo-heading leading-none rounded-full ${badge.className}`}>

@@ -380,6 +380,7 @@
     "cockpit": "Cockpit",
     "system_check": "System Check",
     "dashboard": "Dashboard",
+    "mission_control": "Mission control",
     "executions": "Activity",
     "manual_review": "Approvals",
     "messages": "Messages",

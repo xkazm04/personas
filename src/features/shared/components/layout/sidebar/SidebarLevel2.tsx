@@ -156,6 +156,11 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
           badges={overviewBadges}
           variant="overview"
           devItems={overviewDevSet}
+          // The overview dashboard tab's id is 'home', which collides with the
+          // top-level 'home' section in the shared sidebar label map (both
+          // resolve to t.sidebar.home = "Home"). Override it here so this tab
+          // reads "Mission control" without renaming the top-level section.
+          labelOverrides={{ home: t.sidebar.mission_control }}
         />
       );
     }

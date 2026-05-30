@@ -386,6 +386,7 @@ export type Translations = {
     cockpit: string;
     system_check: string;
     dashboard: string;
+    mission_control: string;
     executions: string;
     manual_review: string;
     messages: string;
