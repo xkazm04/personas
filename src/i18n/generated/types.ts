@@ -10413,6 +10413,11 @@ export type Translations = {
       settings_theme_dark: string;
       settings_theme_light: string;
       settings_theme_desc: string;
+      athena_ask: string;
+      athena_thinking: string;
+      athena_label: string;
+      athena_approve_send: string;
+      athena_dismiss: string;
     };
     title: string;
     subtitle: string;

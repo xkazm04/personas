@@ -10406,7 +10406,12 @@
       "settings_theme_auto": "Auto",
       "settings_theme_dark": "Dark",
       "settings_theme_light": "Light",
-      "settings_theme_desc": "Auto follows the app's light/dark appearance."
+      "settings_theme_desc": "Auto follows the app's light/dark appearance.",
+      "athena_ask": "Ask Athena",
+      "athena_thinking": "Athena is thinking…",
+      "athena_label": "Athena",
+      "athena_approve_send": "Approve — send to terminal",
+      "athena_dismiss": "Dismiss suggestion"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
