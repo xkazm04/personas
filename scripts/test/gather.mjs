@@ -80,6 +80,19 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
     .prepare(`SELECT id, status, node_statuses, started_at, completed_at, error_message FROM pipeline_runs WHERE team_id = ? AND started_at >= ?`)
     .all(teamId, sinceIso);
 
+  // --- audit incidents (escalation + auto-continuation) ---
+  const execIds = executions.map((e) => e.id);
+  const execPh = execIds.length ? inClause(execIds.length) : "''";
+  const incidents = db
+    .prepare(
+      `SELECT id, source_table, source_id, persona_id, execution_id, severity, kind, title,
+              status, acknowledged_at, resolved_at, resolution_note, continued_at, created_at
+       FROM audit_incidents
+       WHERE created_at >= ? AND (persona_id IN (${ph})${execIds.length ? ` OR source_id IN (${execPh})` : ''})
+       ORDER BY created_at ASC`,
+    )
+    .all(sinceIso, ...personaIds, ...(execIds.length ? execIds : []));
+
   db.close();
 
   // --- approvals (companion brain, user DB) ---
@@ -139,6 +152,7 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
   write('events.json', events);
   write('approvals.json', approvals);
   write('pipeline_runs.json', pipelineRuns);
+  write('incidents.json', incidents);
 
   const byStatus = (rows) => rows.reduce((a, r) => ((a[r.status] = (a[r.status] || 0) + 1), a), {});
   const summary = {
@@ -156,6 +170,7 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
       eventsByStatus: byStatus(events),
       approvals: approvals.length,
       pipelineRuns: pipelineRuns.length,
+      incidents: incidents.length,
       logsCopied,
     },
     cost_usd: executions.reduce((s, e) => s + (e.cost_usd || 0), 0),
