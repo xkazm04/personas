@@ -9,6 +9,7 @@
 import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { FleetRegistrySnapshot } from '@/lib/bindings/FleetRegistrySnapshot';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
+import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 
 /**
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
@@ -87,3 +88,13 @@ export const checkHooks = () =>
  */
 export const renameSession = (sessionId: string, name: string | null) =>
   invoke<boolean>('fleet_rename_session', { sessionId, name });
+
+/**
+ * Read + summarize a session's Claude Code transcript
+ * (`~/.claude/projects/**\/<claudeSessionId>.jsonl`) into a structured
+ * rollup: token totals, per-tool counts, files touched, message counts,
+ * timestamps. The P0 ingestion core consumed by the transcript-intelligence
+ * UI (F2). Requires a bound `claudeSessionId` (null while Spawning).
+ */
+export const readTranscript = (claudeSessionId: string) =>
+  invoke<FleetTranscriptSummary>('fleet_read_transcript', { claudeSessionId });
