@@ -3492,6 +3492,15 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_branch TEXT;")
         .ok();
 
+    // -- audit_incidents: auto-continuation guard (P2.3b).
+    // Nullable timestamp stamped when the incident-continuation reactive loop
+    // re-runs the blocked work. NULL = not yet continued. The consumer claims a
+    // resolved persona_blocker incident atomically via
+    // `UPDATE ... SET continued_at = ? WHERE id = ? AND continued_at IS NULL`,
+    // so a tick can never double-fire a re-run. Idempotent ALTER (re-run safe).
+    ddl_step(conn, "ALTER TABLE audit_incidents ADD COLUMN continued_at TEXT;")
+        .ok();
+
     // ── Composition Workflows (persisted DAG definitions) ───────────────
     // Migrates workflows from frontend localStorage to backend SQLite.
     ddl_step(

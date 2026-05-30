@@ -29,6 +29,7 @@ row_mapper!(row_to_incident -> AuditIncident {
     status,
     acknowledged_at [opt], acknowledged_by [opt],
     resolved_at [opt], resolution_note [opt],
+    continued_at [opt],
     created_at,
 });
 
@@ -392,6 +393,27 @@ pub fn resolve(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppE
     })
 }
 
+/// Atomically claim a resolved incident for auto-continuation (P2.3b).
+///
+/// Stamps `continued_at` to now ONLY if it was NULL. The `WHERE continued_at IS
+/// NULL` clause makes this a race-free claim: when the incident-continuation
+/// reactive loop fires on the same incident across overlapping ticks (or two
+/// engine instances), exactly one call updates a row. Returns `true` when THIS
+/// call claimed it (caller re-runs the blocked work), `false` when it was
+/// already claimed (skip — no double re-run).
+pub fn claim_continuation(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::claim_continuation", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE audit_incidents SET continued_at = ?1
+             WHERE id = ?2 AND continued_at IS NULL",
+            params![now, id],
+        )?;
+        Ok(rows > 0)
+    })
+}
+
 pub fn dismiss(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppError> {
     timed_query!("audit_incidents", "audit_incidents::dismiss", {
         apply_transition(pool, id, IncidentStatus::Dismissed, note)
@@ -560,6 +582,28 @@ mod tests {
 
         // resolved -> in_progress is NOT a valid transition (only -> open).
         assert!(apply_transition(&pool, &id, IncidentStatus::InProgress, None).is_err());
+    }
+
+    /// P2.3b race-free claim: the first claim_continuation wins (true) and
+    /// stamps continued_at; every subsequent claim loses (false). This is the
+    /// idempotency guarantee that stops the reactive loop double-firing a re-run.
+    #[test]
+    fn claim_continuation_fires_at_most_once() {
+        let pool = init_test_db().unwrap();
+        let id = promote(&pool, make_input("persona_blocker", "ex-1", "high", "Blocked"))
+            .unwrap()
+            .unwrap();
+
+        // Not yet claimed.
+        assert!(get_by_id(&pool, &id).unwrap().continued_at.is_none());
+
+        // First claim wins + stamps continued_at.
+        assert!(claim_continuation(&pool, &id).unwrap(), "first claim must win");
+        assert!(get_by_id(&pool, &id).unwrap().continued_at.is_some());
+
+        // Second + third claims lose (already continued) — no double re-run.
+        assert!(!claim_continuation(&pool, &id).unwrap(), "second claim must lose");
+        assert!(!claim_continuation(&pool, &id).unwrap(), "third claim must lose");
     }
 
     #[test]
