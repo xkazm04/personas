@@ -366,6 +366,7 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("emit_event", parse_emit_event),
     ("agent_memory", parse_agent_memory),
     ("manual_review", parse_manual_review),
+    ("raise_incident", parse_raise_incident),
     ("execution_flow", parse_execution_flow),
     ("knowledge_annotation", parse_knowledge_annotation),
     ("propose_improvement", parse_propose_improvement),
@@ -417,6 +418,15 @@ fn parse_manual_review(msg: &serde_json::Value) -> Option<ProtocolMessage> {
         context_data: str_field(msg, "context_data"),
         suggested_actions: str_array_field(msg, "suggested_actions"),
         decisions,
+    })
+}
+
+fn parse_raise_incident(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::RaiseIncident {
+        title: str_field_or(msg, "title", ""),
+        detail: str_field(msg, "detail"),
+        severity: str_field(msg, "severity"),
+        kind: str_field(msg, "kind"),
     })
 }
 

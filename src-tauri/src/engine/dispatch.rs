@@ -693,6 +693,52 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 Err(e) => ctx.logger.log(&format!("[REVIEW] Failed to create: {e}")),
             }
         }
+        ProtocolMessage::RaiseIncident {
+            title,
+            detail,
+            severity,
+            kind,
+        } => {
+            // Persona escalated a real blocker as an INCIDENT (not a review).
+            // Route it to the Incidents inbox with the open→in_progress→resolved
+            // lifecycle. source_table = "persona_blocker" + source_id =
+            // execution_id makes the dedup_key the originating execution, so the
+            // SAME execution raising twice is idempotent AND P2.3's resolution
+            // continuation can recover the originating execution to re-run.
+            if title.trim().is_empty() {
+                ctx.logger
+                    .log("[INCIDENT] raise_incident dropped — empty title");
+            } else if ctx.is_simulation {
+                ctx.logger
+                    .log("[SIM] raise_incident skipped (simulation run)");
+            } else {
+                let kind = kind.clone().unwrap_or_else(|| "persona_blocker".to_string());
+                match crate::db::repos::execution::audit_incidents::promote(
+                    ctx.pool,
+                    crate::db::models::CreateAuditIncidentInput {
+                        source_table: "persona_blocker".to_string(),
+                        source_id: ctx.execution_id.to_string(),
+                        persona_id: Some(ctx.persona_id.to_string()),
+                        persona_name: Some(ctx.persona_name.to_string()),
+                        execution_id: Some(ctx.execution_id.to_string()),
+                        severity: severity.clone().unwrap_or_else(|| "high".to_string()),
+                        kind,
+                        title: title.clone(),
+                        detail: detail.clone(),
+                    },
+                ) {
+                    Ok(Some(id)) => ctx.logger.log(&format!(
+                        "[INCIDENT] Raised incident {id}: {title}"
+                    )),
+                    Ok(None) => ctx.logger.log(&format!(
+                        "[INCIDENT] raise_incident deduped (already open for this execution): {title}"
+                    )),
+                    Err(e) => ctx
+                        .logger
+                        .log(&format!("[INCIDENT] Failed to raise incident: {e}")),
+                }
+            }
+        }
         ProtocolMessage::ExecutionFlow { .. } => {
             // Execution flows are handled at the top level, not here
             ctx.logger
