@@ -9,7 +9,9 @@ import { useIncidentActions } from '../libs/useIncidentActions';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
+import { IncidentDetailModal } from './IncidentDetailModal';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
+import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
 const DEFAULT_FILTERS: IncidentFilters = {
   statuses: ['open'], // default to open-only — the inbox's primary use case
@@ -23,6 +25,7 @@ export default function IncidentsInbox() {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
   const actions = useIncidentActions({
@@ -136,11 +139,23 @@ export default function IncidentsInbox() {
                 onResolve={() => void actions.resolve(incident.id)}
                 onDismiss={() => void actions.dismiss(incident.id)}
                 onReopen={() => void actions.reopen(incident.id)}
+                onOpenDetail={() => setDetailIncident(incident)}
               />
             ))}
           </div>
         )}
       </ContentBody>
+
+      {detailIncident && (
+        <IncidentDetailModal
+          incident={detailIncident}
+          onClose={() => setDetailIncident(null)}
+          onChanged={() => {
+            setSelectedIds(new Set());
+            void refresh();
+          }}
+        />
+      )}
     </ContentBox>
   );
 }
