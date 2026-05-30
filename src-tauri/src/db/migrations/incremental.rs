@@ -2239,6 +2239,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 acknowledged_by TEXT,
                 resolved_at     TEXT,
                 resolution_note TEXT,
+                continued_at    TEXT,
                 created_at      TEXT NOT NULL DEFAULT (datetime('now'))
             );
             CREATE INDEX IF NOT EXISTS idx_ai_status   ON audit_incidents(status, created_at DESC);
