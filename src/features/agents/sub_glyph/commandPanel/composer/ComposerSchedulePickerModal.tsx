@@ -17,7 +17,8 @@ import { Clock, Calendar, CalendarDays, CalendarRange, ChevronLeft } from "lucid
 import type { Frequency } from "@/features/agents/shared/quickConfig/quickConfigTypes";
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerScheduleRhythmCard, type Rhythm } from "./ComposerScheduleRhythmCard";
-import { ComposerScheduleDetailForm, DAY_OPTIONS } from "./ComposerScheduleDetailForm";
+import { ComposerScheduleDetailForm } from "./ComposerScheduleDetailForm";
+import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -31,26 +32,25 @@ interface ComposerSchedulePickerModalProps {
   onApply: (next: { frequency: Frequency | null; days: string[]; monthDay: number; time: string }) => void;
 }
 
-function buildPreview(rhythm: Rhythm, days: string[], monthDay: number, time: string): string {
-  if (rhythm === "once") return "No schedule — run manually";
-  if (rhythm === "daily") return `Every day at ${time}`;
-  if (rhythm === "weekly") {
-    const names = days
-      .map((d) => DAY_OPTIONS.find((o) => o.id === d)?.long)
-      .filter(Boolean)
-      .join(", ");
-    return names ? `Every ${names} at ${time}` : `Weekly — pick at least one day`;
-  }
-  const ord = (n: number) => {
-    const suf = n === 1 ? "st" : n === 2 ? "nd" : n === 3 ? "rd" : "th";
-    return `${n}${suf}`;
-  };
-  return `Every month on the ${ord(monthDay)} at ${time}`;
-}
+// buildPreview moved into the component so it can localize via useTranslation.
 
 export function ComposerSchedulePickerModal({
   open, onClose, frequency, days, monthDay, time, onApply,
 }: ComposerSchedulePickerModalProps) {
+  const { t, tx } = useTranslation();
+  // Live human-readable schedule line. Kept day-name-free (the detail form
+  // already shows which days) and uses a plain day-number for monthly so it
+  // localizes cleanly across all 14 locales without per-language ordinals.
+  const buildPreview = (rhythm: Rhythm, selectedDays: string[], dom: number, atTime: string): string => {
+    if (rhythm === "once") return t.agents.glyph_sched_preview_manual;
+    if (rhythm === "daily") return tx(t.agents.glyph_sched_preview_daily, { time: atTime });
+    if (rhythm === "weekly") {
+      return selectedDays.length > 0
+        ? tx(t.agents.glyph_sched_preview_weekly, { time: atTime })
+        : t.agents.glyph_sched_preview_weekly_empty;
+    }
+    return tx(t.agents.glyph_sched_preview_monthly, { day: dom, time: atTime });
+  };
   const [draftRhythm, setDraftRhythm] = useState<Rhythm>(frequency ?? "once");
   const [draftDays, setDraftDays] = useState<string[]>(days);
   const [draftMonthDay, setDraftMonthDay] = useState(monthDay);
@@ -142,31 +142,31 @@ export function ComposerSchedulePickerModal({
                 rhythm="once"
                 icon={<Clock className="w-5 h-5" />}
                 title={debtText("auto_one_off_33219738")}
-                caption="Runs manually — no schedule"
+                caption={t.agents.glyph_sched_cap_once}
                 active={draftRhythm === "once"}
                 onSelect={() => handleRhythmPick("once")}
               />
               <ComposerScheduleRhythmCard
                 rhythm="daily"
                 icon={<Calendar className="w-5 h-5" />}
-                title="Daily"
-                caption="Every day at a set time"
+                title={t.agents.glyph_sched_title_daily}
+                caption={t.agents.glyph_sched_cap_daily}
                 active={draftRhythm === "daily"}
                 onSelect={() => handleRhythmPick("daily")}
               />
               <ComposerScheduleRhythmCard
                 rhythm="weekly"
                 icon={<CalendarDays className="w-5 h-5" />}
-                title="Weekly"
-                caption="On selected days each week"
+                title={t.agents.glyph_sched_title_weekly}
+                caption={t.agents.glyph_sched_cap_weekly}
                 active={draftRhythm === "weekly"}
                 onSelect={() => handleRhythmPick("weekly")}
               />
               <ComposerScheduleRhythmCard
                 rhythm="monthly"
                 icon={<CalendarRange className="w-5 h-5" />}
-                title="Monthly"
-                caption="On a specific day each month"
+                title={t.agents.glyph_sched_title_monthly}
+                caption={t.agents.glyph_sched_cap_monthly}
                 active={draftRhythm === "monthly"}
                 onSelect={() => handleRhythmPick("monthly")}
               />

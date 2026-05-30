@@ -571,6 +571,18 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_sched_title_daily": "Hằng ngày",
+    "glyph_sched_title_weekly": "Hằng tuần",
+    "glyph_sched_title_monthly": "Hằng tháng",
+    "glyph_sched_cap_once": "Chạy thủ công — không lịch",
+    "glyph_sched_cap_daily": "Mỗi ngày vào giờ cố định",
+    "glyph_sched_cap_weekly": "Vào các ngày đã chọn mỗi tuần",
+    "glyph_sched_cap_monthly": "Vào một ngày cụ thể mỗi tháng",
+    "glyph_sched_preview_manual": "Không lịch — chạy thủ công",
+    "glyph_sched_preview_daily": "Hằng ngày lúc {time}",
+    "glyph_sched_preview_weekly": "Hằng tuần lúc {time}",
+    "glyph_sched_preview_weekly_empty": "Hằng tuần — chọn ít nhất một ngày",
+    "glyph_sched_preview_monthly": "Hằng tháng ngày {day} lúc {time}",
     "glyph_promoted_ready": "Tác nhân của bạn đã sẵn sàng",
     "glyph_build_awaiting": "Đang chờ câu trả lời của bạn",
     "glyph_build_beat_understanding": "Đang hiểu yêu cầu của bạn",

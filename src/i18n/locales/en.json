@@ -583,6 +583,18 @@
     }
   },
   "agents": {
+    "glyph_sched_title_daily": "Daily",
+    "glyph_sched_title_weekly": "Weekly",
+    "glyph_sched_title_monthly": "Monthly",
+    "glyph_sched_cap_once": "Runs manually — no schedule",
+    "glyph_sched_cap_daily": "Every day at a set time",
+    "glyph_sched_cap_weekly": "On selected days each week",
+    "glyph_sched_cap_monthly": "On a specific day each month",
+    "glyph_sched_preview_manual": "No schedule — run manually",
+    "glyph_sched_preview_daily": "Daily at {time}",
+    "glyph_sched_preview_weekly": "Weekly at {time}",
+    "glyph_sched_preview_weekly_empty": "Weekly — pick at least one day",
+    "glyph_sched_preview_monthly": "Monthly on day {day} at {time}",
     "glyph_promoted_ready": "Your agent is ready",
     "glyph_build_awaiting": "Awaiting your answer",
     "glyph_build_beat_understanding": "Understanding your request",

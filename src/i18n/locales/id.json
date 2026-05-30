@@ -571,6 +571,18 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_sched_title_daily": "Harian",
+    "glyph_sched_title_weekly": "Mingguan",
+    "glyph_sched_title_monthly": "Bulanan",
+    "glyph_sched_cap_once": "Berjalan manual — tanpa jadwal",
+    "glyph_sched_cap_daily": "Setiap hari pada waktu tertentu",
+    "glyph_sched_cap_weekly": "Pada hari terpilih tiap minggu",
+    "glyph_sched_cap_monthly": "Pada hari tertentu tiap bulan",
+    "glyph_sched_preview_manual": "Tanpa jadwal — jalankan manual",
+    "glyph_sched_preview_daily": "Harian pukul {time}",
+    "glyph_sched_preview_weekly": "Mingguan pukul {time}",
+    "glyph_sched_preview_weekly_empty": "Mingguan — pilih minimal satu hari",
+    "glyph_sched_preview_monthly": "Bulanan tanggal {day} pukul {time}",
     "glyph_promoted_ready": "Agen Anda siap",
     "glyph_build_awaiting": "Menunggu jawaban Anda",
     "glyph_build_beat_understanding": "Memahami permintaan Anda",

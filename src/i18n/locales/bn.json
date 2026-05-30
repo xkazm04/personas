@@ -571,6 +571,18 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_sched_title_daily": "দৈনিক",
+    "glyph_sched_title_weekly": "সাপ্তাহিক",
+    "glyph_sched_title_monthly": "মাসিক",
+    "glyph_sched_cap_once": "ম্যানুয়ালি চলে — কোনো সময়সূচি নেই",
+    "glyph_sched_cap_daily": "প্রতিদিন নির্দিষ্ট সময়ে",
+    "glyph_sched_cap_weekly": "প্রতি সপ্তাহে নির্বাচিত দিনে",
+    "glyph_sched_cap_monthly": "প্রতি মাসে একটি নির্দিষ্ট দিনে",
+    "glyph_sched_preview_manual": "কোনো সময়সূচি নেই — ম্যানুয়ালি চালান",
+    "glyph_sched_preview_daily": "প্রতিদিন {time} এ",
+    "glyph_sched_preview_weekly": "সাপ্তাহিক {time} এ",
+    "glyph_sched_preview_weekly_empty": "সাপ্তাহিক — অন্তত একটি দিন বাছুন",
+    "glyph_sched_preview_monthly": "মাসিক {day} তারিখে {time} এ",
     "glyph_promoted_ready": "আপনার এজেন্ট প্রস্তুত",
     "glyph_build_awaiting": "আপনার উত্তরের অপেক্ষায়",
     "glyph_build_beat_understanding": "আপনার অনুরোধ বোঝা হচ্ছে",

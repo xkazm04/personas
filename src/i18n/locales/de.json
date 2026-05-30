@@ -571,6 +571,18 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_sched_title_daily": "Täglich",
+    "glyph_sched_title_weekly": "Wöchentlich",
+    "glyph_sched_title_monthly": "Monatlich",
+    "glyph_sched_cap_once": "Manueller Lauf — kein Zeitplan",
+    "glyph_sched_cap_daily": "Jeden Tag zur festen Zeit",
+    "glyph_sched_cap_weekly": "An ausgewählten Tagen pro Woche",
+    "glyph_sched_cap_monthly": "An einem bestimmten Tag pro Monat",
+    "glyph_sched_preview_manual": "Kein Zeitplan — manuell ausführen",
+    "glyph_sched_preview_daily": "Täglich um {time}",
+    "glyph_sched_preview_weekly": "Wöchentlich um {time}",
+    "glyph_sched_preview_weekly_empty": "Wöchentlich — mind. einen Tag wählen",
+    "glyph_sched_preview_monthly": "Monatlich am {day}. um {time}",
     "glyph_promoted_ready": "Dein Agent ist bereit",
     "glyph_build_awaiting": "Warte auf deine Antwort",
     "glyph_build_beat_understanding": "Anfrage wird verstanden",

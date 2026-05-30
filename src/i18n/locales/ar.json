@@ -571,6 +571,18 @@
     "commander": "القائد"
   },
   "agents": {
+    "glyph_sched_title_daily": "يوميًا",
+    "glyph_sched_title_weekly": "أسبوعيًا",
+    "glyph_sched_title_monthly": "شهريًا",
+    "glyph_sched_cap_once": "يعمل يدويًا — بلا جدول",
+    "glyph_sched_cap_daily": "كل يوم في وقت محدد",
+    "glyph_sched_cap_weekly": "في أيام محددة كل أسبوع",
+    "glyph_sched_cap_monthly": "في يوم محدد كل شهر",
+    "glyph_sched_preview_manual": "بلا جدول — تشغيل يدوي",
+    "glyph_sched_preview_daily": "يوميًا في {time}",
+    "glyph_sched_preview_weekly": "أسبوعيًا في {time}",
+    "glyph_sched_preview_weekly_empty": "أسبوعيًا — اختر يومًا واحدًا على الأقل",
+    "glyph_sched_preview_monthly": "شهريًا في اليوم {day} الساعة {time}",
     "glyph_promoted_ready": "وكيلك جاهز",
     "glyph_build_awaiting": "في انتظار ردّك",
     "glyph_build_beat_understanding": "جارٍ فهم طلبك",

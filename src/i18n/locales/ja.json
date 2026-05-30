@@ -571,6 +571,18 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_sched_title_daily": "毎日",
+    "glyph_sched_title_weekly": "毎週",
+    "glyph_sched_title_monthly": "毎月",
+    "glyph_sched_cap_once": "手動実行 — スケジュールなし",
+    "glyph_sched_cap_daily": "毎日決まった時刻に",
+    "glyph_sched_cap_weekly": "毎週選んだ曜日に",
+    "glyph_sched_cap_monthly": "毎月特定の日に",
+    "glyph_sched_preview_manual": "スケジュールなし — 手動で実行",
+    "glyph_sched_preview_daily": "毎日 {time}",
+    "glyph_sched_preview_weekly": "毎週 {time}",
+    "glyph_sched_preview_weekly_empty": "毎週 — 少なくとも1日選択",
+    "glyph_sched_preview_monthly": "毎月 {day} 日 {time}",
     "glyph_promoted_ready": "エージェントの準備ができました",
     "glyph_build_awaiting": "回答をお待ちしています",
     "glyph_build_beat_understanding": "リクエストを理解しています",
