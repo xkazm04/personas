@@ -22,6 +22,7 @@
 
 use crate::db::models::Persona;
 use crate::db::repos::dev_tools as dt_repo;
+use crate::db::repos::execution::audit_incidents as incident_repo;
 use crate::db::DbPool;
 use rusqlite::params;
 
@@ -29,6 +30,8 @@ use rusqlite::params;
 const MAX_ROSTER: usize = 8;
 /// Max active goals listed.
 const MAX_GOALS: usize = 6;
+/// Max open incidents surfaced (hard cap — run-10 prompt-bloat guardrail).
+const MAX_INCIDENTS: usize = 5;
 /// Max chars for any single rendered line (capability / goal description).
 const CAP_LINE_CHARS: usize = 140;
 
@@ -48,6 +51,15 @@ struct GoalLine {
     /// `true` when a `team_assignment` for this team is actively advancing the
     /// goal (the canonical `team_assignments.goal_id` link).
     advancing: bool,
+}
+
+/// One open-incident row for the "known incidents to avoid" section. Flat,
+/// pre-stringified shape so the renderer stays DB-free / unit-testable
+/// (mirrors `GoalLine`). `desc` carries the incident's `detail`, one-lined.
+struct IncidentLine {
+    severity: String,
+    title: String,
+    desc: String,
 }
 
 /// Build the team-alignment block for `persona` executing under `team_id`.
@@ -108,12 +120,20 @@ pub fn build_team_alignment_block(
     // --- 2. Active team goals ---
     let goals = gather_active_goals(pool, persona, team_id);
 
+    // --- 3. Open incidents seen by the team's personas (avoid repeat failures) ---
+    // `audit_incidents` has no project/team FK, so scope by the roster's persona
+    // ids (whole team incl. self — a failure any member hit is worth every
+    // member avoiding). roster_rows is already fetched above; no extra query.
+    let roster_ids: Vec<String> = roster_rows.iter().map(|(id, ..)| id.clone()).collect();
+    let incidents = gather_open_incidents(pool, &roster_ids);
+
     render_alignment_block(
         &persona.name,
         self_role.as_deref(),
         team_name,
         &teammates,
         &goals,
+        &incidents,
     )
 }
 
@@ -207,6 +227,55 @@ fn gather_active_goals(pool: &DbPool, persona: &Persona, team_id: &str) -> Vec<G
     goals
 }
 
+/// Resolve open high/critical incidents for the team's personas so members
+/// avoid repeating known failures. DB access is confined here; the renderer
+/// stays pure (mirrors `gather_active_goals`). Scope is by `persona_id` because
+/// `audit_incidents` carries no project/team FK and no `last_seen_at`.
+fn gather_open_incidents(pool: &DbPool, roster_ids: &[String]) -> Vec<IncidentLine> {
+    if roster_ids.is_empty() {
+        return Vec::new();
+    }
+    // Over-fetch (newest-first) so the high/critical filter can still fill
+    // MAX_INCIDENTS even when lower-severity rows lead the recent list.
+    let fetch = (MAX_INCIDENTS as i64) * 8;
+    let mut rows = match incident_repo::list_open_by_personas(pool, roster_ids, fetch) {
+        Ok(r) => r,
+        Err(_) => return Vec::new(),
+    };
+
+    // Keep only high/critical, then rank critical-before-high. Within a severity
+    // the repo already returned newest-first (created_at DESC), and Rust's sort
+    // is stable, so that recency tiebreak is preserved.
+    rows.retain(|i| severity_rank(&i.severity) <= 1);
+    rows.sort_by_key(|i| severity_rank(&i.severity));
+
+    rows.into_iter()
+        .take(MAX_INCIDENTS)
+        .map(|i| IncidentLine {
+            severity: normalized_severity(&i.severity),
+            title: truncate_line(&i.title, CAP_LINE_CHARS),
+            desc: truncate_line(i.detail.as_deref().unwrap_or(""), CAP_LINE_CHARS),
+        })
+        .collect()
+}
+
+/// Sort/filter weight for an incident severity. Lower = more urgent. high/
+/// critical are rank 0–1 (surfaced); medium/low and unknown are >=2 (dropped).
+fn severity_rank(severity: &str) -> u8 {
+    match severity.trim().to_ascii_lowercase().as_str() {
+        "critical" => 0,
+        "high" => 1,
+        "medium" => 2,
+        "low" => 3,
+        _ => 4,
+    }
+}
+
+/// Normalize a severity token to a stable lowercase display bucket.
+fn normalized_severity(severity: &str) -> String {
+    severity.trim().to_ascii_lowercase()
+}
+
 /// Pure renderer — assembles the markdown block from already-gathered data.
 /// Kept DB-free so it's unit-testable. Returns `None` when there is neither a
 /// teammate nor a goal to show.
@@ -216,8 +285,9 @@ fn render_alignment_block(
     team_name: &str,
     teammates: &[Teammate],
     goals: &[GoalLine],
+    incidents: &[IncidentLine],
 ) -> Option<String> {
-    if teammates.is_empty() && goals.is_empty() {
+    if teammates.is_empty() && goals.is_empty() && incidents.is_empty() {
         return None;
     }
 
@@ -274,6 +344,20 @@ fn render_alignment_block(
         }
         if any_advancing {
             out.push_str("\n_▶ = a team assignment is actively advancing this goal._\n");
+        }
+    }
+
+    if !incidents.is_empty() {
+        out.push_str(
+            "\n**Known incidents to avoid** (open issues seen by this team — don't reintroduce these)\n",
+        );
+        for inc in incidents {
+            let desc = if inc.desc.is_empty() {
+                String::new()
+            } else {
+                format!(" — {}", inc.desc)
+            };
+            out.push_str(&format!("- [{}] **{}**{desc}\n", inc.severity, inc.title));
         }
     }
 
@@ -366,9 +450,71 @@ mod tests {
         }
     }
 
+    fn inc(severity: &str, title: &str, desc: &str) -> IncidentLine {
+        IncidentLine {
+            severity: severity.into(),
+            title: title.into(),
+            desc: desc.into(),
+        }
+    }
+
+    #[test]
+    fn renders_incidents_only() {
+        let incidents = vec![
+            inc("critical", "OAuth refresh storms 401s", "Daily token expiry under GCP testing mode"),
+            inc("high", "Adoption modal freeze", ""),
+        ];
+        let block = render_alignment_block("Solo", None, "AI Bookkeeper", &[], &[], &incidents)
+            .expect("incidents-only should still render the block");
+        assert!(block.contains("Known incidents to avoid"));
+        assert!(block.contains("[critical]"));
+        assert!(block.contains("OAuth refresh storms 401s"));
+        assert!(block.contains("Daily token expiry"));
+        // High incident with empty detail renders title without a trailing desc.
+        assert!(block.contains("[high] **Adoption modal freeze**"));
+        assert!(!block.contains("Adoption modal freeze** —"));
+    }
+
+    #[test]
+    fn incidents_appended_after_goals_and_roster() {
+        let teammates = vec![tm("QA Guardian", "reviewer", "Reviews PRs")];
+        let goals = vec![goal("in-progress", 40, "Ship the bookkeeper", true)];
+        let incidents = vec![inc("critical", "Race in goal-advance", "Double-counted progress")];
+        let block = render_alignment_block(
+            "Account Classifier",
+            Some("worker"),
+            "AI Bookkeeper",
+            &teammates,
+            &goals,
+            &incidents,
+        )
+        .expect("renders");
+        let goals_at = block.find("Active team goals").expect("has goals header");
+        let inc_at = block.find("Known incidents to avoid").expect("has incidents header");
+        assert!(inc_at > goals_at, "incidents section must come after goals");
+        assert!(block.contains("Race in goal-advance"));
+    }
+
+    #[test]
+    fn severity_rank_orders_and_filters() {
+        // Ranking: critical < high < medium < low < unknown.
+        assert!(severity_rank("CRITICAL") < severity_rank("high"));
+        assert!(severity_rank("high") < severity_rank("medium"));
+        assert!(severity_rank("medium") < severity_rank("low"));
+        // Filter contract used by gather_open_incidents: rank <= 1 == high/critical.
+        assert!(severity_rank("critical") <= 1);
+        assert!(severity_rank("high") <= 1);
+        assert!(severity_rank("medium") > 1);
+        assert!(severity_rank("low") > 1);
+        assert!(severity_rank("weird") > 1);
+        // Display normalization trims + lowercases.
+        assert_eq!(normalized_severity("  Critical "), "critical");
+        assert_eq!(normalized_severity("HIGH"), "high");
+    }
+
     #[test]
     fn empty_when_no_roster_and_no_goals() {
-        assert!(render_alignment_block("Solo", None, "Team", &[], &[]).is_none());
+        assert!(render_alignment_block("Solo", None, "Team", &[], &[], &[]).is_none());
     }
 
     #[test]
@@ -387,6 +533,7 @@ mod tests {
             "AI Bookkeeper",
             &teammates,
             &goals,
+            &[],
         )
         .expect("should render");
 
@@ -408,7 +555,7 @@ mod tests {
     #[test]
     fn renders_with_goals_but_no_teammates() {
         let goals = vec![goal("open", 10, "Lone goal", false)];
-        let block = render_alignment_block("Solo", None, "Team", &[], &goals).expect("renders");
+        let block = render_alignment_block("Solo", None, "Team", &[], &goals, &[]).expect("renders");
         assert!(block.contains("Lone goal"));
         assert!(!block.contains("Your teammates"));
     }
@@ -416,7 +563,7 @@ mod tests {
     #[test]
     fn renders_no_active_goals_note_when_roster_present() {
         let teammates = vec![tm("Peer", "worker", "Does things")];
-        let block = render_alignment_block("Me", None, "Team", &teammates, &[]).expect("renders");
+        let block = render_alignment_block("Me", None, "Team", &teammates, &[], &[]).expect("renders");
         assert!(block.contains("none set yet"));
         assert!(block.contains("Peer"));
     }
@@ -424,7 +571,7 @@ mod tests {
     #[test]
     fn role_clause_omitted_for_plain_worker() {
         let goals = vec![goal("open", 0, "G", false)];
-        let block = render_alignment_block("W", Some("worker"), "T", &[], &goals).unwrap();
+        let block = render_alignment_block("W", Some("worker"), "T", &[], &goals, &[]).unwrap();
         // The doctrine text says "read the team's active goals", so the role
         // clause is identified by the bolded-role pattern, not the bare phrase.
         assert!(!block.contains("the team's **"));
@@ -433,7 +580,7 @@ mod tests {
     #[test]
     fn role_clause_present_for_named_role() {
         let goals = vec![goal("open", 0, "G", false)];
-        let block = render_alignment_block("O", Some("orchestrator"), "T", &[], &goals).unwrap();
+        let block = render_alignment_block("O", Some("orchestrator"), "T", &[], &goals, &[]).unwrap();
         assert!(block.contains("the team's **orchestrator**"));
     }
 

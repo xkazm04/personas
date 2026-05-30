@@ -123,6 +123,41 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
 
 // -- Read paths ---------------------------------------------------------------
 
+/// Open (non-terminal) incidents for a set of personas, newest-first, capped at
+/// `limit`. Used by the execution-time team-awareness block
+/// (`engine::runner::team_context`) so members avoid repeating known failures.
+///
+/// "Open" here = `status IN ('open','acknowledged')` (the two non-terminal
+/// states; `resolved`/`dismissed` are excluded). Scope is by `persona_id`
+/// because `audit_incidents` has no project/team FK — the persona roster is the
+/// closest available team scope. Ordering is `created_at DESC` (the table has no
+/// `last_seen_at`); the caller applies the severity-rank + high/critical filter
+/// in Rust, so this stays a plain, index-friendly query.
+///
+/// Empty `persona_ids` ⇒ `Ok(vec![])` (no SQL issued).
+pub fn list_open_by_personas(
+    pool: &DbPool,
+    persona_ids: &[String],
+    limit: i64,
+) -> Result<Vec<AuditIncident>, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::list_open_by_personas", {
+        if persona_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut qb = QueryBuilder::new();
+        qb.where_in("status", vec!["open".to_string(), "acknowledged".to_string()]);
+        qb.where_in("persona_id", persona_ids.to_vec());
+        qb.order_by("created_at", "DESC");
+        qb.limit(limit);
+
+        let sql = qb.build_select("SELECT * FROM audit_incidents");
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
+        Ok(collect_rows(rows, "audit_incidents::list_open_by_personas"))
+    })
+}
+
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<AuditIncident, AppError> {
     timed_query!("audit_incidents", "audit_incidents::get_by_id", {
         let conn = pool.get()?;
