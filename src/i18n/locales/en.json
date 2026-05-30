@@ -8656,6 +8656,28 @@
   "settings": {
     "title": "Settings",
     "settings_saved": "Saved",
+    "search": {
+      "placeholder": "Search settings…",
+      "recommended": "Recommended",
+      "section": "Settings",
+      "trigger_hint": "Search settings  ·  Ctrl / ⌘ K",
+      "trigger_aria": "Open settings search",
+      "reduce_motion": "Reduce motion",
+      "dim": "Reduce color intensity",
+      "cvd_safe": "Color-blind safe palette",
+      "high_contrast": "High contrast",
+      "ambient": "Time-of-day header art",
+      "theme": "Theme & colors",
+      "text_size": "Text size",
+      "brightness": "Brightness",
+      "density": "Layout density",
+      "timezone": "Time zone",
+      "tabs": {
+        "limits": "Limits",
+        "api_keys": "API Keys",
+        "history": "History"
+      }
+    },
     "account": {
       "title": "Account",
       "subtitle": "Manage your sign-in and profile",

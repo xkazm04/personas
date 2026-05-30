@@ -34,6 +34,26 @@
   pointer-events: none;
 }
 
+/* -- Interactive cursor baseline --
+   Native <button>/<select>/<summary> render the default arrow cursor, so custom
+   controls (command-palette rows, inline toggles, icon buttons) give no signal
+   that they're clickable. Give every genuinely-interactive control a pointer
+   here in the base layer. Tailwind `cursor-*` utilities (cursor-grab,
+   cursor-not-allowed, cursor-text, …) sit above base and still win where a
+   surface needs a different cursor, and disabled controls are excluded. */
+@layer base {
+  button:not(:disabled):not([aria-disabled="true"]),
+  select:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="menuitem"]:not([aria-disabled="true"]),
+  [role="option"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
 /* -- Custom Title Bar -- */
 .titlebar {
   display: flex;
@@ -169,6 +189,77 @@
 [data-theme="light-ice"] .ambient-deco,
 [data-theme="light-news"] .ambient-deco {
   opacity: 0.45;
+}
+
+/* -- Title-bar settings-search affordance ------------------------------
+   The ambient illustration doubles as the entry point to the command
+   palette (settings scope). The anchor centres it over the title bar; the
+   button gives it a pointer cursor, a hover/focus brighten + glow, and a
+   magnifier hint that fades in. `no-drag` lets clicks land despite the
+   surrounding `-webkit-app-region: drag` title bar. */
+.ambient-search-anchor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  -webkit-app-region: no-drag;
+}
+
+.ambient-search-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 9999px;
+  background: transparent;
+  color: var(--primary);
+  opacity: 0.4;
+  cursor: pointer;
+  -webkit-app-region: no-drag;
+  transition: opacity 0.25s ease, filter 0.25s ease, background-color 0.25s ease, transform 0.15s ease;
+}
+
+.ambient-search-trigger:hover,
+.ambient-search-trigger:focus-visible {
+  opacity: 1;
+  filter: brightness(1.45) drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 55%, transparent));
+  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  outline: none;
+}
+
+.ambient-search-trigger:active {
+  transform: scale(0.97);
+}
+
+/* Inside the trigger the button owns positioning + opacity, so reset the
+   deco's own absolute centring / dimming (placed after the light-theme
+   overrides above so it wins the equal-specificity tie). */
+.ambient-search-trigger .ambient-deco {
+  position: static;
+  transform: none;
+  opacity: 1;
+  z-index: auto;
+}
+
+.ambient-search-icon {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.ambient-search-trigger:hover .ambient-search-icon,
+.ambient-search-trigger:focus-visible .ambient-search-icon {
+  opacity: 0.9;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-search-trigger,
+  .ambient-search-icon {
+    transition: none;
+  }
 }
 
 /* -- Design Tokens --

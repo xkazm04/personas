@@ -11,7 +11,31 @@ const KIND_COLORS: Record<ResultKind, { icon: string; border: string }> = {
   navigation:     { icon: 'text-foreground',   border: 'border-l-muted-foreground/70' },
   action:         { icon: 'text-foreground',   border: 'border-l-muted-foreground/70' },
   'agent-action': { icon: 'text-violet-300',            border: 'border-l-violet-300' },
+  setting:        { icon: 'text-sky-400',               border: 'border-l-sky-400' },
 };
+
+/**
+ * Read-only switch glyph rendered inside a toggle result row. The row itself is
+ * the `<button>` that flips the setting (a real nested `<button>` would be
+ * invalid markup), so this is purely presentational and aria-hidden — the row
+ * announces its state via `aria-pressed`.
+ */
+function ToggleGlyph({ on }: { on: boolean }) {
+  return (
+    <span
+      aria-hidden
+      className={`shrink-0 w-8 h-[18px] rounded-full relative transition-colors duration-200 ${
+        on ? 'bg-emerald-500/80' : 'bg-muted-foreground/25'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-3.5 h-3.5 rounded-full bg-white shadow-elevation-1 transition-transform duration-200 ${
+          on ? 'translate-x-[14px]' : 'translate-x-0'
+        }`}
+      />
+    </span>
+  );
+}
 
 interface PaletteSection {
   kind: ResultKind;
@@ -60,6 +84,7 @@ export function CommandPaletteResults({
                 data-index={item.globalIndex}
                 onClick={() => onExecute(item)}
                 onMouseEnter={() => onHover(item.globalIndex)}
+                aria-pressed={item.toggle ? item.toggle.isOn : undefined}
                 className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors border-l-2 ${
                   isSelected
                     ? `${colors.border} bg-secondary/30 text-foreground`
@@ -75,9 +100,11 @@ export function CommandPaletteResults({
                     {item.description}
                   </span>
                 )}
-                {isSelected && (
+                {item.toggle ? (
+                  <ToggleGlyph on={item.toggle.isOn} />
+                ) : isSelected ? (
                   <ArrowRight className="w-3 h-3 text-primary/50 shrink-0" />
-                )}
+                ) : null}
               </button>
               );
             })}

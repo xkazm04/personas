@@ -27,6 +27,21 @@ Tabs are declared by `getSettingsItems(isDev, activeTier)` in `sidebarData.ts`. 
 | History | Dev-only | Append-only audit log of settings mutations across every sub-module. Each row records category, setting key, action verb, before/after values (sanitized for secrets), actor surface, and a relative timestamp; details disclose inline on click. Stage 1 only wires API-key create/revoke as write sites — coverage of the other sub-modules rolls in across Stages 2-3. Backed by the `settings_audit_log` SQLite table. | `sub_history/components/SettingsHistoryTab.tsx`, `src-tauri/src/db/repos/resources/settings_audit_log.rs`, `src-tauri/src/db/models/settings_audit_log.rs`, `list_settings_audit_entries` IPC |
 | Admin | Dev-only | Administrative diagnostics | `sub_admin/components/AdminSettings.tsx` |
 
+## Settings search (command palette)
+
+Settings are reachable from anywhere via the global command palette (`src/features/shared/components/overlays/CommandPalette.tsx`) without first navigating to the Settings section.
+
+**Entry points**
+
+- **Title-bar illustration** — the time-of-day ambient art in the centre of the title bar (`TitleBarAmbient.tsx`) doubles as the search affordance. Hover/focus brightens it (full opacity + glow), shows a pointer cursor, and reveals a magnifier; clicking opens the palette focused on settings (`scope: 'settings'`). When **Time-of-day header art** is turned off in Appearance the affordance is hidden, but Cmd/Ctrl+K still works.
+- **Cmd/Ctrl+K** — opens the same palette in the global scope (agents, navigation, settings, …).
+
+Scope only biases the empty state and ordering: opening from the illustration surfaces **Recommended** settings first; typing always searches every source, with settings ranked first in the settings scope. Open-state lives in `src/stores/commandPaletteStore.ts` (`open` + `scope`) so any surface can open the single palette in the right scope.
+
+**Inline toggles vs deep links** — boolean settings (reduce motion, reduce color intensity, high contrast, color-blind safe palette, time-of-day art) render an inline switch and flip in place without leaving the palette. Everything else (theme, text size, brightness, density, time zone, and one entry per visible settings tab) deep-links to the relevant tab.
+
+**Adding searchable "setups" from other areas (reuse).** Search entries are built with the reusable `settingEntry()` helper in `commandPaletteUtils.ts` (which also adds `keywords`, an optional `toggle` binding, and `entryScore()` to `PaletteItem`). The Settings domain's entries live in `src/features/settings/search/useSettingsSearchEntries.tsx` — the reference implementation of the provider pattern. To surface another area's setup in search, add a sibling `use<Domain>SearchEntries()` hook that returns `settingEntry(...)` items and merge it in `CommandPalette` alongside `useSettingsSearchEntries()`; togglable entries get a `toggle` binding, navigational ones get `onNavigate`.
+
 ## Density
 
 The Appearance tab's **Density** control (Compact / Comfortable / Cozy) is app-wide, not a per-table affordance. It's persisted in the theme store (`persona-theme`) and applied as `data-density` on `<html>`, which switches a single set of CSS custom properties defined in `globals.css` (`--density-pad`, `--density-pad-sm`, `--density-gap`, `--density-gap-lg`, `--density-row-py`). The shared spacing tokens `CARD_PADDING` and `SECTION_GAP` (in `src/lib/utils/designTokens.ts`) emit arbitrary-value classes bound to those vars (`p-[var(--density-pad)]`, `space-y-[var(--density-gap)]`, …), so any surface built on those tokens reflows coherently when density changes. `comfortable` is the default and resolves to the historical `p-4` / `space-y-4` / `space-y-6` values, so the out-of-the-box appearance is unchanged. Compact also tightens `.typo-body` line-heights; Cozy loosens them. The control also appears in the onboarding Appearance step (`AppearanceStep.tsx`).
