@@ -1821,6 +1821,7 @@ pub fn run() {
             commands::credentials::rotation::update_rotation_policy,
             commands::credentials::rotation::delete_rotation_policy,
             commands::credentials::rotation::get_rotation_history,
+            commands::credentials::rotation::get_rotation_history_bulk,
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::get_all_rotation_statuses,
             commands::credentials::rotation::rotate_credential_now,
@@ -2026,6 +2027,7 @@ pub fn run() {
             commands::communication::observability::metrics::get_anomaly_drilldown,
             // Communication -- Observability: Prompt Lab
             commands::communication::observability::prompt_lab::get_prompt_versions,
+            commands::communication::observability::prompt_lab::get_prompt_versions_bulk,
             commands::communication::observability::prompt_lab::tag_prompt_version,
             commands::communication::observability::prompt_lab::rollback_prompt_version,
             commands::communication::observability::prompt_lab::get_prompt_error_rate,
