@@ -53,19 +53,19 @@ export default function FleetActivityStrip() {
   // reads this single MotionValue for its opacity, so they breathe in unison —
   // a bar that lights up later joins the same phase instead of drifting into
   // its own confusing rhythm. Slow + gentle to read as "work in progress".
-  const pulse = useMotionValue(1);
+  const pulseOpacity = useMotionValue(1);
   useEffect(() => {
     if (prefersReducedMotion) {
-      pulse.set(1);
+      pulseOpacity.set(1);
       return;
     }
-    const controls = animate(pulse, [0.45, 1, 0.45], {
+    const controls = animate(pulseOpacity, [0.45, 1, 0.45], {
       duration: 3.2,
       repeat: Infinity,
       ease: 'easeInOut',
     });
     return () => controls.stop();
-  }, [prefersReducedMotion, pulse]);
+  }, [prefersReducedMotion, pulseOpacity]);
 
   // Subscribe to the whole map but reduce to the pulse with a memo keyed on the
   // map identity — the store replaces `activeProcesses` immutably on change, so
@@ -74,8 +74,8 @@ export default function FleetActivityStrip() {
   const pulse = useMemo(() => computeFleetPulse(activeProcesses), [activeProcesses]);
   const slots = useMemo(() => layoutSlots(pulse, STRIP_SLOTS), [pulse]);
 
-  const running = pulse_.running;
-  const queued = pulse_.queued;
+  const running = pulse.running;
+  const queued = pulse.queued;
   const active = running > 0 || queued > 0;
 
   const [hovered, setHovered] = useState(false);
