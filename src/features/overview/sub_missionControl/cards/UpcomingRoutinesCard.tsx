@@ -65,6 +65,12 @@ export default function UpcomingRoutinesCard() {
         nextAt: tr.next_trigger_at,
         rel: formatRelative(tr.next_trigger_at, now),
       }))
+      // Only genuinely-upcoming runs: a next-run time in the future, or a
+      // schedule still pending its first computed run (null). A next-run time
+      // in the PAST means the scheduler never advanced it (no leader instance
+      // ticking, or a one-shot that already fired) — those aren't "upcoming"
+      // and previously rendered here as misleading overdue rows, so drop them.
+      .filter((row) => row.nextAt === null || new Date(row.nextAt).getTime() >= now)
       .sort((a, b) => {
         const at = a.nextAt ? new Date(a.nextAt).getTime() : Infinity;
         const bt = b.nextAt ? new Date(b.nextAt).getTime() : Infinity;
