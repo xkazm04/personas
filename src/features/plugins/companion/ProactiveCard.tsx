@@ -7,6 +7,7 @@ import {
   type ProactiveMessage,
 } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
 import { triggerKindLabel } from './athenaLabels';
 
 /**
@@ -43,9 +44,10 @@ export function ProactiveCard({
         // inbox (mirrors the compose-cockpit nav pattern). Landing on the
         // inbox is the goal; deep-linking a specific incident is a follow-up.
         if (message.triggerKind === 'incident_blocker') {
-          const sys = useSystemStore.getState();
-          sys.setSidebarSection('overview');
-          sys.setOverviewTab('incidents');
+          // setSidebarSection lives on the system store; setOverviewTab lives
+          // on the overview store (same split other nav call-sites use).
+          useSystemStore.getState().setSidebarSection('overview');
+          useOverviewStore.getState().setOverviewTab('incidents');
         }
         onEngaged(result.message);
       } else {
