@@ -3484,6 +3484,14 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN pr_credential_id TEXT;")
         .ok();
 
+    // -- dev_projects: living test environment (URL + branch the team delivers into)
+    // Both nullable / no default so existing projects are unaffected. Set later
+    // via dev_tools_update_project once the team has a running test env to point at.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_url TEXT;")
+        .ok();
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_branch TEXT;")
+        .ok();
+
     // ── Composition Workflows (persisted DAG definitions) ───────────────
     // Migrates workflows from frontend localStorage to backend SQLite.
     ddl_step(

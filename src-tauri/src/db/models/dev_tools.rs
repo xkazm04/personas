@@ -103,6 +103,11 @@ pub struct DevProject {
     /// when None and `auto_pr_on_success` is true the wiring emits a warning
     /// and skips PR creation.
     pub pr_credential_id: Option<String>,
+    /// URL of the living test environment this team delivers into (e.g. a
+    /// staging/preview deployment). Nullable; set once the env exists.
+    pub test_env_url: Option<String>,
+    /// Branch deployed to the living test environment (e.g. `staging`). Nullable.
+    pub test_env_branch: Option<String>,
     /// Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
     /// project's surface in `ProjectManagerPage` shows the bound team's name
     /// inline so the developer can see at a glance which pipeline owns the
