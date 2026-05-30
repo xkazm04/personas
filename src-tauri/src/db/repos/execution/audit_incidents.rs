@@ -393,6 +393,29 @@ pub fn resolve(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppE
     })
 }
 
+/// Resolved persona-raised incidents whose blocked work has NOT yet been
+/// auto-continued (P2.3b). These are the candidates the incident-continuation
+/// reactive loop re-runs: `status='resolved'` (the human/Athena cleared the
+/// blocker) AND `source_table='persona_blocker'` (it came from a persona's
+/// `raise_incident`, so `source_id` is the blocked execution id) AND
+/// `continued_at IS NULL` (not yet claimed). Oldest-resolved first so the
+/// backlog drains FIFO. The caller still atomically `claim_continuation`s each
+/// one before acting, so this query may safely over-return under races.
+pub fn find_continuation_candidates(pool: &DbPool, limit: i64) -> Result<Vec<AuditIncident>, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::find_continuation_candidates", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM audit_incidents \
+             WHERE status = 'resolved' AND source_table = 'persona_blocker' \
+             AND continued_at IS NULL \
+             ORDER BY resolved_at ASC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map([limit], row_to_incident)?;
+        let out = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(out)
+    })
+}
+
 /// Atomically claim a resolved incident for auto-continuation (P2.3b).
 ///
 /// Stamps `continued_at` to now ONLY if it was NULL. The `WHERE continued_at IS
@@ -604,6 +627,43 @@ mod tests {
         // Second + third claims lose (already continued) — no double re-run.
         assert!(!claim_continuation(&pool, &id).unwrap(), "second claim must lose");
         assert!(!claim_continuation(&pool, &id).unwrap(), "third claim must lose");
+    }
+
+    /// find_continuation_candidates returns only resolved persona_blocker
+    /// incidents with continued_at NULL, and drops them once claimed — the exact
+    /// set the incident-continuation loop should re-run.
+    #[test]
+    fn find_continuation_candidates_filters_correctly() {
+        let pool = init_test_db().unwrap();
+
+        // (a) resolved persona_blocker, unclaimed → candidate.
+        let blocked = promote(&pool, make_input("persona_blocker", "exec-blocked", "high", "Blocked"))
+            .unwrap()
+            .unwrap();
+        resolve(&pool, &blocked, Some("fixed the creds")).unwrap();
+
+        // (b) persona_blocker but still OPEN → not a candidate.
+        promote(&pool, make_input("persona_blocker", "exec-open", "high", "Still blocked"))
+            .unwrap()
+            .unwrap();
+
+        // (c) resolved but NOT persona_blocker (an audit-stream incident) → not a candidate.
+        let alert = promote(&pool, make_input("fired_alerts", "alert-1", "high", "Latency"))
+            .unwrap()
+            .unwrap();
+        resolve(&pool, &alert, None).unwrap();
+
+        let candidates = find_continuation_candidates(&pool, 50).unwrap();
+        assert_eq!(candidates.len(), 1, "only the resolved persona_blocker qualifies");
+        assert_eq!(candidates[0].id, blocked);
+        assert_eq!(candidates[0].source_id, "exec-blocked");
+
+        // Once claimed, it drops out of the candidate set (no re-run on next tick).
+        assert!(claim_continuation(&pool, &blocked).unwrap());
+        assert!(
+            find_continuation_candidates(&pool, 50).unwrap().is_empty(),
+            "a claimed incident must not reappear as a candidate"
+        );
     }
 
     #[test]
