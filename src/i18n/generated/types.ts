@@ -11457,6 +11457,7 @@ export type Translations = {
       footer_listening: string;
       orb_talk_hint: string;
       orb_dismiss: string;
+      forward_ack_speech: string;
       guide_stop: string;
       guide_skip: string;
       guide_take_me_there: string;

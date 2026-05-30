@@ -284,6 +284,21 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     if (wasStreaming && !streaming) setMessageNonce((n) => n + 1);
   }, [streaming]);
 
+  // Forward-ack glow: when a pre-composed message is forwarded to Athena from
+  // an outside surface (dashboard "Ask Athena"), the store bumps `forwardAckPulse`.
+  // We flash a one-shot amber "message received" glow on the orb so the user
+  // gets immediate confirmation while the (often slow) turn spins up.
+  const forwardAckPulse = useCompanionStore((s) => s.forwardAckPulse);
+  const [forwardAck, setForwardAck] = useState(false);
+  const prevForwardAckRef = useRef(forwardAckPulse);
+  useEffect(() => {
+    if (forwardAckPulse === prevForwardAckRef.current) return;
+    prevForwardAckRef.current = forwardAckPulse;
+    setForwardAck(true);
+    const id = setTimeout(() => setForwardAck(false), 2600);
+    return () => clearTimeout(id);
+  }, [forwardAckPulse]);
+
   return (
     <motion.div
       className="group pointer-events-auto absolute select-none touch-none"
@@ -352,9 +367,14 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
         {messageActive && (
           <span aria-hidden className="absolute -inset-1.5 rounded-full bg-primary/55 blur-md animate-pulse" />
         )}
+        {/* Forward-ack glow — one-shot amber "message received" bloom when a
+            message is forwarded to Athena from outside (dashboard Ask Athena). */}
+        {forwardAck && (
+          <span aria-hidden className={`absolute -inset-1.5 rounded-full bg-amber-400/55 blur-md ${reduceMotion ? '' : 'animate-pulse'}`} />
+        )}
         <span
           className={`absolute inset-0 rounded-full overflow-hidden shadow-elevation-3 bg-primary/10 transition-[box-shadow] ${
-            messageActive ? 'ring-2 ring-primary' : 'ring-1 ring-primary/25'
+            forwardAck ? 'ring-2 ring-amber-400' : messageActive ? 'ring-2 ring-primary' : 'ring-1 ring-primary/25'
           }`}
         >
           <AthenaAvatar

@@ -11451,6 +11451,7 @@
       "footer_listening": "Listening… release to send",
       "orb_talk_hint": "Tap to open · hold to talk · drag to move",
       "orb_dismiss": "Hide Athena",
+      "forward_ack_speech": "Understood, processing the message.",
       "guide_stop": "Stop",
       "guide_skip": "Skip",
       "guide_take_me_there": "Take me there",
