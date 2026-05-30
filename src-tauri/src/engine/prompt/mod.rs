@@ -375,7 +375,7 @@ pub fn assemble_prompt(
     // structured protocol message (more reliable than JSON lines in text).
     prompt.push_str("## Protocol Tools (Preferred Output Method)\n\n");
     prompt.push_str("Use these tool calls to communicate structured output. The execution engine intercepts them automatically. Prefer these over raw JSON lines — they are more reliable and validated.\n\n");
-    prompt.push_str("### emit_memory\nStore a business-relevant learning or preference for future executions. Only store insights related to the persona's domain, not technical implementation details.\n");
+    prompt.push_str("### emit_memory\nStore a DURABLE, REUSABLE learning or preference that will help FUTURE runs — a stable fact, a standing preference, or a hard-won lesson in the persona's domain. Do NOT store one-off run results (a single price, a timestamp, a transient status), restate a memory you were already given, or save technical/implementation details. If it won't change a future decision, don't store it. A clean, small memory set is worth more than a large one.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"content\": \"string\", \"category\": \"learned|preference|fact|instruction|context|constraint\", \"importance\": 1-5, \"tags\": [\"string\"]}`\n\n");
     prompt.push_str("### emit_message\nSend your main output/report to the user. This is how users receive your work.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"content\": \"string\", \"content_type\": \"success|info|warning|error\", \"priority\": \"normal|high|low\"}`\n\n");

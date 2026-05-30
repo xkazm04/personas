@@ -68,6 +68,7 @@ pub mod desktop_security;
 pub mod digest;
 pub mod director;
 pub mod director_brain;
+pub mod director_memory;
 pub mod discord_poller;
 pub mod discovery;
 pub mod dispatch;

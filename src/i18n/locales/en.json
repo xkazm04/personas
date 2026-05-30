@@ -3142,7 +3142,13 @@
     "detail_history": "Coaching history",
     "detail_value_rate": "Value delivered",
     "table_title": "Coaching scope",
-    "all_clear": "All agents in scope are healthy"
+    "all_clear": "All agents in scope are healthy",
+    "cleanup_memories": "Clean memories",
+    "cleanup_running": "Cleaning…",
+    "cleanup_hint": "Archive this agent's duplicate or won't-be-reused memories (reversible)",
+    "cleanup_done": "Archived {count} memories ({deduped} duplicates, {llm} low-value)",
+    "cleanup_none": "No memories needed archiving",
+    "cleanup_failed": "Memory cleanup failed"
   },
   "vault": {
     "title": "Vault",
@@ -6154,7 +6160,12 @@
     "memory_filter": {
       "search_placeholder": "Search memories...",
       "all_agents": "All agents",
-      "all_categories": "All categories"
+      "all_categories": "All categories",
+      "tier_all": "Active set",
+      "tier_core": "Core",
+      "tier_active": "Active",
+      "tier_working": "Working",
+      "tier_archived": "Archived"
     },
     "memory_actions": {
       "dismiss_suggestion": "Dismiss suggestion",
@@ -6451,7 +6462,8 @@
     },
     "memory_card": {
       "confirm": "Confirm",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "restore": "Restore to active set"
     },
     "memory_detail": {
       "title_label": "Title",

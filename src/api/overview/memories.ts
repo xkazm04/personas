@@ -73,10 +73,18 @@ export interface MemoriesWithStats {
   stats: MemoryStats;
 }
 
+/**
+ * Tier filter for the Memories list. `"!archive"` is the sentinel for "every
+ * tier except archive" (the default view); a concrete tier shows only that one.
+ * Mirrors `TIER_NON_ARCHIVED` in the Rust repo.
+ */
+export type MemoryTierFilter = "!archive" | "core" | "active" | "working" | "archive";
+
 export const listMemoriesWithStats = (
   personaId?: string,
   category?: string,
   search?: string,
+  tier?: MemoryTierFilter,
   limit?: number,
   offset?: number,
   sortColumn?: string,
@@ -86,6 +94,7 @@ export const listMemoriesWithStats = (
     personaId: personaId,
     category: category,
     search: search,
+    tier: tier,
     limit: limit,
     offset: offset,
     sortColumn: sortColumn,

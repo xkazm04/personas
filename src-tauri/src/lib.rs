@@ -2562,6 +2562,7 @@ pub fn run() {
             // Director -- meta-persona that coaches every other persona
             commands::infrastructure::director::get_director_persona_id,
             commands::infrastructure::director::run_director_on_persona,
+            commands::infrastructure::director::run_director_memory_cleanup,
             commands::infrastructure::director::run_director_batch,
             commands::infrastructure::director::list_director_verdicts,
             commands::infrastructure::director::list_director_score_trends,

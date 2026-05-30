@@ -8,6 +8,7 @@ use std::sync::Arc;
 use tauri::State;
 
 use crate::engine::director::{self, DirectorPortfolio, DirectorReport, DirectorVerdictRow};
+use crate::engine::director_memory::{self, MemoryCleanupReport};
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -34,6 +35,29 @@ pub async fn run_director_on_persona(
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     director::run_director_cycle_for(state.inner(), app, &persona_id).await
+}
+
+/// Curate one persona's memories (dedup sweep + bounded LLM "won't-use" pass).
+/// Archives (reversibly) — never deletes, never touches `core`. `dry_run` reports
+/// the proposed counts without mutating.
+///
+/// Async + long-running: the LLM pass is a real Director persona run (skipped
+/// when there are no candidates). The frontend invoke must use a generous timeout.
+#[tauri::command]
+pub async fn run_director_memory_cleanup(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    persona_id: String,
+    dry_run: Option<bool>,
+) -> Result<MemoryCleanupReport, AppError> {
+    require_auth_sync(&state)?;
+    director_memory::cleanup_persona_memories(
+        state.inner(),
+        app,
+        &persona_id,
+        dry_run.unwrap_or(false),
+    )
+    .await
 }
 
 /// Evaluate every enabled persona (except the Director itself). Returns an

@@ -252,7 +252,7 @@ pub async fn get_export_stats(state: State<'_, Arc<AppState>>) -> Result<ExportS
     let mut memory_count: u32 = 0;
     let mut test_suite_count: u32 = 0;
     for p in &personas {
-        memory_count += memory_repo::get_total_count(pool, Some(&p.id), None, None)? as u32;
+        memory_count += memory_repo::get_total_count(pool, Some(&p.id), None, None, None)? as u32;
         test_suite_count += suite_repo::list_by_persona(pool, &p.id)?.len() as u32;
     }
 

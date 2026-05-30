@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { ChevronDown, ChevronRight, Play } from 'lucide-react';
+import { ChevronDown, ChevronRight, Play, Eraser } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { Button } from '@/features/shared/components/buttons';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
-import { listDirectorVerdicts, type DirectorRosterEntry, type DirectorVerdictRow } from '@/api/director';
+import { listDirectorVerdicts, runDirectorMemoryCleanup, type DirectorRosterEntry, type DirectorVerdictRow, type MemoryCleanupReport } from '@/api/director';
+import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { ScoreSparkline } from '../ScoreSparkline';
 import { scoreTone, toneFill } from '../directorScore';
@@ -46,11 +48,13 @@ export function PersonaDetailModal({
   onClose: () => void;
   onRunReview: (personaId: string) => Promise<void>;
 }) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [verdicts, setVerdicts] = useState<DirectorVerdictRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
 
   useEffect(() => {
     if (!entry) return;
@@ -74,6 +78,28 @@ export function PersonaDetailModal({
       await onRunReview(entry.personaId);
     } finally {
       setRunning(false);
+    }
+  };
+
+  const cleanMemories = async () => {
+    setCleaning(true);
+    try {
+      const r: MemoryCleanupReport = await runDirectorMemoryCleanup(entry.personaId);
+      const archived = r.deduped + r.llmArchived;
+      addToast(
+        archived === 0
+          ? t.director.cleanup_none
+          : tx(t.director.cleanup_done, { count: archived, deduped: r.deduped, llm: r.llmArchived }),
+        'success',
+      );
+      // Refresh the verdict list (the cleanup doesn't change verdicts, but the
+      // scores/last-review may have shifted if a review ran alongside).
+      listDirectorVerdicts(entry.personaId).then(setVerdicts).catch(silentCatch('PersonaDetailModal:verdicts'));
+    } catch (e) {
+      silentCatch('PersonaDetailModal:cleanMemories')(e);
+      addToast(t.director.cleanup_failed, 'error');
+    } finally {
+      setCleaning(false);
     }
   };
 
@@ -101,6 +127,16 @@ export function PersonaDetailModal({
             {entry.latestScore}
           </span>
         )}
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={cleaning}
+          icon={<Eraser className={`w-3.5 h-3.5 ${cleaning ? 'animate-pulse' : ''}`} />}
+          onClick={cleanMemories}
+          title={t.director.cleanup_hint}
+        >
+          {cleaning ? t.director.cleanup_running : t.director.cleanup_memories}
+        </Button>
         <AsyncButton
           variant="accent"
           accentColor="violet"

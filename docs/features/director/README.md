@@ -96,6 +96,39 @@ I/O via the mirror API (`mirror_vault_root` / `mirror_write_note`) — no
 embeddings, so it works in the lite build. Toggle via
 `get_director_brain_enabled` / `set_director_brain_enabled`.
 
+## Memory curation
+
+During each review (single or batch) the Director also **curates the persona's
+memories** so recall context stays clean — and the same pass is available on
+demand. Memories are **archived, never deleted**: archiving sets
+`persona_memories.tier = 'archive'`, which `get_for_injection_v2` already
+excludes from prompts, so an archived memory stops reaching the persona but
+stays in the DB, searchable + restorable. `core` (user-pinned) memories are
+never archived.
+
+Two passes (`src-tauri/src/engine/director_memory.rs::cleanup_persona_memories`):
+
+1. **Dedup sweep** — deterministic, no LLM. Groups the persona's
+   non-core/non-archive memories by normalized content and archives all but the
+   keeper (highest importance, oldest) of each duplicate group. Extends the
+   write-time 24h dedup across all time.
+2. **"Won't-use" pass** — bounded LLM judgment. Runs the Director persona in
+   *MEMORY CLEANUP MODE* (a section of `DIRECTOR_RUBRIC`) over the stalest
+   `active`/`working` candidates and archives the ones it is confident won't
+   inform a future run (emitted as `DIRECTOR_MEMORY_ARCHIVE: {"id","reason"}`
+   lines, parsed like verdicts/wins; only ids it was shown are accepted; capped).
+   Skipped entirely when there are no candidates (cost guard).
+
+Manual trigger: **Clean memories** in the per-agent detail modal
+(`run_director_memory_cleanup` → `MemoryCleanupReport`). Surfacing the archive
+tier + a **Restore** action lives in the Memories tab (tier filter + per-row
+badge).
+
+The write side is tightened too: the `emit_memory` protocol instruction
+(`engine/prompt/mod.rs`) now tells personas to store only **durable, reusable**
+domain knowledge — not one-off run results or restatements — so less junk is
+created in the first place.
+
 ## Where verdicts surface
 
 - **Command center** (`src/features/overview/sub_director/`): the primary
@@ -126,7 +159,8 @@ embeddings, so it works in the lite build. Toggle via
 | Command | Effect |
 | --- | --- |
 | `run_director_on_persona(persona_id)` | Review one persona now (async, minutes; a real LLM run). |
-| `run_director_batch(max_personas?)` | Review all starred personas sequentially. |
+| `run_director_batch(max_personas?)` | Review all starred personas sequentially (each review also curates that persona's memories). |
+| `run_director_memory_cleanup(persona_id, dry_run?)` | Curate one persona's memories — dedup sweep + bounded LLM "won't-use" pass. Archives reversibly (`tier='archive'`), never deletes, never touches `core`. Returns `MemoryCleanupReport`. |
 | `list_director_verdicts(persona_id?)` | Read Director-sourced coaching reviews. |
 | `list_director_score_trends(persona_ids, limit?)` | Batched recent score history per persona (oldest→newest); powers the personas-table sparkline. |
 | `get_director_portfolio(days?)` | Portfolio analytics for the command center: fleet value rollup + in-scope roster + 0–5 score distribution + headline counts. Composes existing aggregates (no new SQL). |
@@ -140,6 +174,10 @@ embeddings, so it works in the lite build. Toggle via
 - Brain bridge: `src-tauri/src/engine/director_brain.rs` (vault read/write
   helpers, split out of `director.rs` so the gating + filesystem code stays
   separate from the evaluator pipeline).
+- Memory curation: `src-tauri/src/engine/director_memory.rs`
+  (`cleanup_persona_memories` + `MemoryCleanupReport`), reusing the
+  `archive_by_ids` / `find_duplicate_groups` / `get_archivable_candidates`
+  helpers in `db/repos/core/memories.rs`. Archive = `tier='archive'`.
 - Commands: `src-tauri/src/commands/infrastructure/director.rs`.
 - Portfolio analytics: `director_portfolio()` in `engine/director.rs` (structs
   `DirectorPortfolio` / `DirectorRosterEntry` / `DirectorScoreBand`), reusing

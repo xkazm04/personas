@@ -33,7 +33,7 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | `sub_observability` | Trace/healing/metrics/alerts dashboards. Includes the `ToolPerformancePanel` (latency + error rate per tool, sourced from `tool_execution_audit_log` via the `get_tool_performance_summary` IPC command). |
 | `sub_sla` | SLA cards and dashboard |
 | `sub_usage` | Usage charts, period comparison, tool usage pivoting |
-| `sub_memories` | Memory list, conflict review, merge actions. The baseline list is a grid table with user-resizable columns. |
+| `sub_memories` | Memory list, conflict review, merge actions. The baseline list is a grid table with user-resizable columns. A **tier filter** (Active set / Core / Active / Working / Archived) gates what's shown — the default "Active set" view excludes archived memories; archived rows render muted with a badge + a **Restore** action (the Director archives duplicate/low-value memories via `tier='archive'`; see `docs/features/director/README.md` → Memory curation). |
 | `sub_cron_agents` | Schedule-focused persona cards |
 | `sub_analytics` | Rotation analytics helpers/panels, plus the GitHub-style 365-day **execution heatmap** (`ExecutionHeatmap.tsx`) embedded on the dashboard (fleet aggregate, respects the persona filter) and on each per-persona Activity tab. Backed by the `get_execution_heatmap` IPC command, which serves a 1-hour server-side cached daily aggregation plus derived insights (longest streak, dormant-since, peak day, week-over-week trend). Hovering a day cell shows its run count/cost in a cell-anchored floating tooltip (it no longer reflows a text line below the grid). |
 

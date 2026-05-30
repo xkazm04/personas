@@ -29,6 +29,7 @@ pub fn list_memories(
     persona_id: Option<String>,
     category: Option<String>,
     search: Option<String>,
+    tier: Option<String>,
     limit: Option<i64>,
     offset: Option<i64>,
     sort_column: Option<String>,
@@ -40,6 +41,7 @@ pub fn list_memories(
         persona_id.as_deref(),
         category.as_deref(),
         search.as_deref(),
+        tier.as_deref(),
         limit,
         offset,
         sort_column.as_deref(),
@@ -63,6 +65,7 @@ pub fn get_memory_count(
     persona_id: Option<String>,
     category: Option<String>,
     search: Option<String>,
+    tier: Option<String>,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_total_count(
@@ -70,6 +73,7 @@ pub fn get_memory_count(
         persona_id.as_deref(),
         category.as_deref(),
         search.as_deref(),
+        tier.as_deref(),
     )
 }
 
@@ -79,6 +83,7 @@ pub fn get_memory_stats(
     persona_id: Option<String>,
     category: Option<String>,
     search: Option<String>,
+    tier: Option<String>,
 ) -> Result<repo::MemoryStats, AppError> {
     require_auth_sync(&state)?;
     repo::get_stats(
@@ -86,6 +91,7 @@ pub fn get_memory_stats(
         persona_id.as_deref(),
         category.as_deref(),
         search.as_deref(),
+        tier.as_deref(),
     )
 }
 
@@ -96,6 +102,7 @@ pub fn list_memories_with_stats(
     persona_id: Option<String>,
     category: Option<String>,
     search: Option<String>,
+    tier: Option<String>,
     limit: Option<i64>,
     offset: Option<i64>,
     sort_column: Option<String>,
@@ -107,6 +114,7 @@ pub fn list_memories_with_stats(
         persona_id.as_deref(),
         category.as_deref(),
         search.as_deref(),
+        tier.as_deref(),
         limit,
         offset,
         sort_column.as_deref(),
@@ -305,7 +313,7 @@ pub(crate) async fn run_memory_review_pipeline(
     } = opts;
 
     // 1. Fetch memories.
-    let memories = repo::get_all(pool, persona_id, None, None, Some(200), Some(0), None, None)?;
+    let memories = repo::get_all(pool, persona_id, None, None, None, Some(200), Some(0), None, None)?;
     if memories.is_empty() {
         return Ok(None);
     }
