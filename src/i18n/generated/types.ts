@@ -589,6 +589,19 @@ export type Translations = {
     };
   };
   agents: {
+    glyph_apps_subtitle_empty: string;
+    glyph_apps_selected_one: string;
+    glyph_apps_selected_other: string;
+    glyph_apps_clear: string;
+    glyph_apps_attach_one: string;
+    glyph_apps_attach_other: string;
+    glyph_apps_empty_none: string;
+    glyph_apps_empty_no_match: string;
+    glyph_apps_selected_label: string;
+    glyph_apps_remove: string;
+    glyph_apps_filter: string;
+    glyph_apps_hide_filters: string;
+    glyph_apps_show_filters: string;
     glyph_sched_title_daily: string;
     glyph_sched_title_weekly: string;
     glyph_sched_title_monthly: string;
