@@ -362,6 +362,8 @@ export type Translations = {
       command_palette: string;
       show_shortcuts: string;
       close_overlay: string;
+      nav_mode: string;
+      nav_mode_back: string;
       toggle_sidebar: string;
       toggle_monitor: string;
       toggle_athena: string;
