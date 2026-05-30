@@ -185,6 +185,15 @@ export interface CompanionPluginSlice {
    */
   companionAutonomousMode: boolean;
   /**
+   * P3 hands-free decision layer: when true, the decision queue
+   * (`decision/useDecisionQueue`) aggregates pending approvals / human
+   * reviews / blocking incidents and auto-surfaces them one-at-a-time in the
+   * orb decision bubble. Off by default so the hands-free surface never
+   * appears unless the user opts in; when off the queue does nothing (the
+   * bubble can still be driven manually / by tests).
+   */
+  companionHandsFreeDecisions: boolean;
+  /**
    * Currently-typed intent in `UnifiedBuildEntry`, mirrored into the
    * slice so the Decisions panel can auto-scope its filter to the
    * persona the user is actively designing. Not persisted (session-
@@ -220,6 +229,7 @@ export interface CompanionPluginSlice {
   setCompanionSttModelId: (id: string | null) => void;
   setCompanionRecallSynthesisEnabled: (v: boolean) => void;
   setCompanionAutonomousMode: (v: boolean) => void;
+  setCompanionHandsFreeDecisions: (v: boolean) => void;
   setActiveBuildIntent: (intent: string | null) => void;
 }
 
@@ -254,6 +264,7 @@ export const createCompanionPluginSlice: StateCreator<
   companionSttModelId: null,
   companionRecallSynthesisEnabled: false,
   companionAutonomousMode: false,
+  companionHandsFreeDecisions: false,
   activeBuildIntent: null,
 
   setCompanionPluginTab: (companionPluginTab) => set({ companionPluginTab }),
@@ -297,5 +308,7 @@ export const createCompanionPluginSlice: StateCreator<
     set({ companionRecallSynthesisEnabled }),
   setCompanionAutonomousMode: (companionAutonomousMode) =>
     set({ companionAutonomousMode }),
+  setCompanionHandsFreeDecisions: (companionHandsFreeDecisions) =>
+    set({ companionHandsFreeDecisions }),
   setActiveBuildIntent: (activeBuildIntent) => set({ activeBuildIntent }),
 });

@@ -4,6 +4,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { ORB_SIZE } from './AthenaOrb';
 
@@ -40,7 +41,7 @@ export function OrbDecisionBubble() {
   const decision = useCompanionStore((s) => s.pendingDecision);
   const explained = useCompanionStore((s) => s.decisionExplained);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
-  const orbPos = useCompanionStore((s) => s.companionOrbPos);
+  const orbPos = useSystemStore((s) => s.companionOrbPos);
   const clearPendingDecision = useCompanionStore((s) => s.clearPendingDecision);
   const markDecisionExplained = useCompanionStore((s) => s.markDecisionExplained);
   const setState = useCompanionStore((s) => s.setState);
