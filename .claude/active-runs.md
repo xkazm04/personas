@@ -32,6 +32,13 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### team-orch-expansion — Multi-phase team-orchestration expansion (P0→P4 + cert)
+- Started: 2026-05-30 (this session)
+- Status: P0 in progress (quick wins: app-level max_parallel_executions setting [replaces hard-coded GLOBAL_MAX_CONCURRENT=4], incident-awareness injection into team_context.rs, test_env_url/branch schema on dev_projects, fleet-analyze new dims). Hybrid orchestration (I integrate + live-validate on :17320; Workflow drafts/reviews in parallel). Foundation-first order: P0 quick wins → P1 Load&Safety (persistent queue + resume-after-review) → P2 Incidents spine (raise_incident + Athena bridge) → P3 Hands-free orb → P4 Goal delivery (worktree+auto-PR+open-in-browser). Cert woven per-feature.
+- Branch: master (live :17320 validation; user keeps app running + will relaunch)
+- Paths (P0): src-tauri/src/engine/queue.rs + db/settings_keys.rs; engine/runner/team_context.rs + db/repos/observability/incidents.rs; db/models/dev_tools.rs + db/migrations/incremental.rs + commands/infrastructure/dev_tools.rs + db/repos/dev_tools.rs + bindings; scripts/test/fleet-analyze.mjs. Later phases expand into engine/parser+dispatch (raise_incident), engine/mod+queue (persistent queue), companion/orb (hands-free), task_executor+workspace (delivery), test_automation.rs (cert).
+- Note: Discovery workflow w029x3a6w mapped 5 areas + synthesis — finding: ~80% WIRING (incidents module, WorkspaceCoordinator, queue.rs ConcurrencyTracker, context-injection seam, protocol-primitive pattern all built-but-unwired; review-accept does NOT resume blocked execs = real correctness gap). Subagent-drafted, integrator-owned. Coordinate on shared engine files with concurrent worktrees.
+
 ### goals-advance — Teams advance their goals (initiator + close-loop + autonomous tick + UI)
 - Started: 2026-05-29 (this session, follows goals-exec-awareness)
 - Status: COMPLETE — 5 commits on master: 9bade8928 (P1-P3 close-loop + initiator) + 5ec15df6c (P4 default-OFF tick) + ee2e37a36 (source CHECK fix) + 02e0a7b3b (UI button) + 01a72d3e6 (docs). cargo check --lib --features desktop + 3 unit tests (apply_resolved_goal_progress) green; tsc clean. Live-validated on :17320: advance_team_goal built a 4-step (one per to-do) goal-linked running assignment on ai-bookkeeper + flipped goal open→in-progress; aborted + reverted to pre-test state. NOT pushed (staying local). Left in Active (ledger concurrently dirty).
