@@ -187,6 +187,13 @@ Athena is wired into the project [Goals](../goals/README.md) surface at the **re
 - **Propose (gated)** — the `update_dev_goal { goal_id, status?, progress?, note? }` op (`ALLOWED_ACTIONS` + `execute_update_dev_goal` in `approvals.rs`, constitution **v27**) lets her propose a status/progress change. It is **approval-gated and deliberately NOT in `AUTOAPPROVE_ALLOWLIST`** — goal writes never auto-resolve, even in autonomous mode. On approval it writes an `athena_update` `dev_goal_signal`.
 - **React (proactive)** — `proactive::triggers::dev_goal_nudges(sys_db)` emits budget+dedupe-gated nudges (`dev_goal_target`, `dev_goal_stalled`) when a project goal is target-approaching/overdue or stalled (in-progress/blocked, untouched ≥ 7 days). Because `dev_goals` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`). On engage, the prompt context lets her reason and propose the gated update.
 
+## Incidents (proactive blocker nudge)
+
+Athena proactively surfaces OPEN high/critical [audit incidents](../overview/README.md) so the user is nudged about them even while away/unattended.
+
+- **React (proactive)** — `proactive::incident_triggers::incident_blocker_nudges(sys_db)` emits a single budget+dedupe-gated nudge (`trigger_kind = incident_blocker`) when there are OPEN incidents at `severity in (high, critical)`. It reuses `audit_incidents::list` (filtered to `status=open`, severity high/critical), is priority-ordered (critical first), count-aware in the message, and anchors `trigger_ref` on the most-severe incident's id. Because `audit_incidents` live in the main app DB, it's passed as `extra` candidates to `evaluate_with_extra_candidates` from both the manual `companion_evaluate_proactive_now` (`state.db`) and the desktop tick (`app.state()`) — exactly like `dev_goal_nudges`.
+- **Engage** — clicking Engage on the `ProactiveCard` (rose accent, "incident needs attention" label) navigates to the **Overview → Incidents** inbox (`setSidebarSection('overview')` + `setOverviewTab('incidents')`). Landing on the inbox is the goal; deep-linking to a specific incident detail is a deliberate follow-up.
+
 ## Fleet analysis (`analyze_fleet`)
 
 The post-certification "are the teams on track?" review. When the user lets all teams run and risks losing the thread, Athena can review the fleet against the certification rubric and propose fixes.
