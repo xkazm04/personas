@@ -20,7 +20,7 @@
 // tall but absolutely positioned so it never pushes content down.
 
 import { useState, useEffect, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, animate } from 'framer-motion';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
@@ -49,6 +49,24 @@ export default function FleetActivityStrip() {
   const prefersReducedMotion = useReducedMotion();
   const setMonitorOpen = useSystemStore((s) => s.setMonitorOpen);
 
+  // One shared, synchronized pulse for ALL running bars. Every running bar
+  // reads this single MotionValue for its opacity, so they breathe in unison —
+  // a bar that lights up later joins the same phase instead of drifting into
+  // its own confusing rhythm. Slow + gentle to read as "work in progress".
+  const pulse = useMotionValue(1);
+  useEffect(() => {
+    if (prefersReducedMotion) {
+      pulse.set(1);
+      return;
+    }
+    const controls = animate(pulse, [0.45, 1, 0.45], {
+      duration: 3.2,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    });
+    return () => controls.stop();
+  }, [prefersReducedMotion, pulse]);
+
   // Subscribe to the whole map but reduce to the pulse with a memo keyed on the
   // map identity — the store replaces `activeProcesses` immutably on change, so
   // this recomputes exactly when the fleet's live state moves.
@@ -56,10 +74,9 @@ export default function FleetActivityStrip() {
   const pulse = useMemo(() => computeFleetPulse(activeProcesses), [activeProcesses]);
   const slots = useMemo(() => layoutSlots(pulse, STRIP_SLOTS), [pulse]);
 
-  const running = pulse.running;
-  const queued = pulse.queued;
+  const running = pulse_.running;
+  const queued = pulse_.queued;
   const active = running > 0 || queued > 0;
-  const runningCells = Math.min(running, STRIP_SLOTS);
 
   const [hovered, setHovered] = useState(false);
 
@@ -95,6 +112,17 @@ export default function FleetActivityStrip() {
         <span className="absolute inset-x-3 top-0 h-[2px] flex items-stretch gap-px">
           {slots.map((kind, i) => {
             const background = kind === 'running' ? rampColor(i) : 'var(--primary)';
+            // Running bars share ONE pulse MotionValue → synchronized breathing.
+            // Queued/empty hold a static opacity (springing on kind change).
+            if (kind === 'running' && !prefersReducedMotion) {
+              return (
+                <motion.span
+                  key={i}
+                  className="flex-1 h-full rounded-[1px]"
+                  style={{ background, opacity: pulseOpacity }}
+                />
+              );
+            }
             const opacity = SLOT_OPACITY[kind];
             if (prefersReducedMotion) {
               return (
@@ -116,28 +144,19 @@ export default function FleetActivityStrip() {
               />
             );
           })}
-
-          {/* Liveness — a centre-origin shimmer that breathes over the lit
-              region. One animated element; gated by reduced motion. */}
-          {!prefersReducedMotion && runningCells > 0 && (
-            <motion.span
-              aria-hidden
-              className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-full bg-gradient-to-r from-transparent via-foreground/45 to-transparent"
-              style={{ width: `${Math.max(12, (runningCells / STRIP_SLOTS) * 100)}%` }}
-              animate={{ opacity: [0, 0.5, 0], scaleX: [0.6, 1, 0.6] }}
-              transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', repeatDelay: 0.5 }}
-            />
-          )}
         </span>
       </button>
 
       {/* Hover readout — floats below the hairline as an overlay (no reflow). */}
       {hovered && (
         <motion.div
-          initial={{ opacity: 0, y: -3 }}
-          animate={{ opacity: 1, y: 0 }}
+          // Centre horizontally via framer's own x:-50% (NOT Tailwind
+          // -translate-x-1/2, which framer's y animation would clobber on the
+          // shared transform). left-1/2 = left:50%.
+          initial={{ opacity: 0, x: '-50%', y: -3 }}
+          animate={{ opacity: 1, x: '-50%', y: 0 }}
           transition={{ duration: 0.12 }}
-          className="absolute left-3 top-2.5 z-50 flex items-center gap-2.5 rounded-card border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3 px-3 py-1.5 pointer-events-none"
+          className="absolute left-1/2 top-2.5 z-50 flex items-center gap-2.5 whitespace-nowrap rounded-card border border-primary/15 bg-background/95 backdrop-blur-md shadow-elevation-3 px-3 py-1.5 pointer-events-none"
           role="status"
           data-testid="fleet-strip-readout"
         >
