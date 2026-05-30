@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_promoted_ready": "আপনার এজেন্ট প্রস্তুত",
     "glyph_build_awaiting": "আপনার উত্তরের অপেক্ষায়",
     "glyph_build_beat_understanding": "আপনার অনুরোধ বোঝা হচ্ছে",
     "glyph_build_beat_designing": "সক্ষমতা ডিজাইন করা হচ্ছে",

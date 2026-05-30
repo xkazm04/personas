@@ -589,6 +589,7 @@ export type Translations = {
     };
   };
   agents: {
+    glyph_promoted_ready: string;
     glyph_build_awaiting: string;
     glyph_build_beat_understanding: string;
     glyph_build_beat_designing: string;

@@ -583,6 +583,7 @@
     }
   },
   "agents": {
+    "glyph_promoted_ready": "Your agent is ready",
     "glyph_build_awaiting": "Awaiting your answer",
     "glyph_build_beat_understanding": "Understanding your request",
     "glyph_build_beat_designing": "Designing the capabilities",

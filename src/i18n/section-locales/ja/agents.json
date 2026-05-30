@@ -1,4 +1,5 @@
 {
+  "glyph_promoted_ready": "エージェントの準備ができました",
   "glyph_build_awaiting": "回答をお待ちしています",
   "glyph_build_beat_understanding": "リクエストを理解しています",
   "glyph_build_beat_designing": "機能を設計しています",

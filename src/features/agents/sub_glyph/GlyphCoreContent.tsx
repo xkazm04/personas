@@ -212,8 +212,26 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center gap-2 pointer-events-auto"
       >
-        <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+        <div className="relative flex items-center justify-center mb-0.5">
+          {/* Radiating success pulse — a brief celebratory beat in the
+              ~1.5s window before the build flow auto-redirects to the new
+              agent, so promoting feels like an arrival, not a page swap. */}
+          <motion.span
+            className="absolute rounded-full border-2 border-emerald-400/60"
+            initial={{ width: 36, height: 36, opacity: 0.7 }}
+            animate={{ width: 88, height: 88, opacity: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+          />
+          <motion.div
+            initial={{ scale: 0.4, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 360, damping: 15 }}
+          >
+            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+          </motion.div>
+        </div>
         <span className="typo-heading-sm text-foreground"><DebtText k="auto_agent_promoted_8df1a174" /></span>
+        <span className="typo-caption text-foreground/70">{t.agents.glyph_promoted_ready}</span>
         <button
           type="button"
           onClick={onViewAgent}

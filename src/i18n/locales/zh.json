@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_promoted_ready": "你的助手已就绪",
     "glyph_build_awaiting": "等待你的回答",
     "glyph_build_beat_understanding": "正在理解你的需求",
     "glyph_build_beat_designing": "正在设计能力",

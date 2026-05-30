@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_promoted_ready": "Ваш агент готов",
     "glyph_build_awaiting": "Ожидание вашего ответа",
     "glyph_build_beat_understanding": "Разбираемся в запросе",
     "glyph_build_beat_designing": "Проектируем возможности",

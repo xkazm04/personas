@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_promoted_ready": "에이전트가 준비되었습니다",
     "glyph_build_awaiting": "답변을 기다리는 중",
     "glyph_build_beat_understanding": "요청을 이해하는 중",
     "glyph_build_beat_designing": "기능을 설계하는 중",

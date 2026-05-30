@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "glyph_promoted_ready": "Tu agente está listo",
     "glyph_build_awaiting": "Esperando tu respuesta",
     "glyph_build_beat_understanding": "Entendiendo tu petición",
     "glyph_build_beat_designing": "Diseñando las capacidades",
