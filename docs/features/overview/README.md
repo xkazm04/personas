@@ -118,6 +118,11 @@ blocking on one large render:
   data to `reveal.count` before feeding `useVirtualList`. Resets on filter/view
   change; chases realtime arrivals and "load more" pages. An `aria-hidden`
   `AnimatedCounter` "n / total" pill shows the fill resolving.
+- **Per-item entrance (`RevealItem` + `useRevealTracker`).** Each row fades in
+  individually with a small staggered delay (`order = index - reveal.newSince`)
+  as it enters, rather than a whole chunk appearing at once. Entry is tracked
+  per row id, so scrolling a virtualized list never replays the fade; the
+  cascade replays on a filter/view change.
 - `prefers-reduced-motion` and off-screen tabs reveal everything instantly.
 
 This complements the **L0/L1/L2 layered fetch** (`useLayeredList`,
