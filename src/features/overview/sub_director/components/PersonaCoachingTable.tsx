@@ -69,7 +69,7 @@ export function PersonaCoachingTable({
   return (
     <div>
       {/* header row */}
-      <div className={`${ROW_GRID} px-2.5 pb-2 typo-label uppercase tracking-wider text-foreground/70 border-b border-primary/10`}>
+      <div className={`${ROW_GRID} px-2.5 pb-2 typo-label uppercase tracking-wider text-foreground border-b border-primary/10`}>
         <span>{t.director.roster_col_agent}</span>
         <span className="text-center">{t.director.roster_col_score}</span>
         <span>{t.director.roster_col_trend}</span>
@@ -81,7 +81,7 @@ export function PersonaCoachingTable({
           onClick={() => setOnlyFlagged((v) => !v)}
           disabled={flaggedCount === 0}
           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:opacity-40 ${
-            onlyFlagged ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground/60 border border-transparent hover:bg-secondary/40'
+            onlyFlagged ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
           }`}
           title={t.director.only_flagged}
         >
@@ -120,7 +120,7 @@ export function PersonaCoachingTable({
                     {r.latestScore}
                   </span>
                 ) : (
-                  <span className="typo-caption text-foreground/40">—</span>
+                  <span className="typo-caption text-foreground">—</span>
                 )}
               </span>
               {/* trend */}
@@ -128,7 +128,7 @@ export function PersonaCoachingTable({
                 {r.scoreTrend.length >= 2 ? (
                   <ScoreSparkline scores={r.scoreTrend} />
                 ) : (
-                  <span className="typo-caption text-foreground/40">—</span>
+                  <span className="typo-caption text-foreground">—</span>
                 )}
               </span>
               {/* value */}
@@ -136,12 +136,12 @@ export function PersonaCoachingTable({
                 <span className="h-1.5 w-10 rounded-pill bg-secondary/60 overflow-hidden hidden lg:block">
                   <span className="block h-full rounded-pill" style={{ width: `${Math.round(r.valueDeliveredRate * 100)}%`, background: 'var(--status-success)' }} />
                 </span>
-                <Numeric value={r.valueDeliveredRate} unit="ratio" precision={0} className="typo-caption text-foreground/80 tabular-nums" />
+                <Numeric value={r.valueDeliveredRate} unit="ratio" precision={0} className="typo-caption text-foreground tabular-nums" />
               </span>
               {/* attention tags */}
               <span className="flex flex-wrap items-center gap-1">
                 {flags.length === 0 ? (
-                  <span className="typo-caption text-foreground/35">—</span>
+                  <span className="typo-caption text-foreground">—</span>
                 ) : (
                   flags.map((f) => (
                     <Tooltip key={f} content={FLAG_HINT[f]}>
@@ -158,9 +158,9 @@ export function PersonaCoachingTable({
               {/* last review */}
               <span className="text-right">
                 {r.lastReviewedAt ? (
-                  <RelativeTime timestamp={r.lastReviewedAt} className="typo-caption text-foreground/60" />
+                  <RelativeTime timestamp={r.lastReviewedAt} className="typo-caption text-foreground" />
                 ) : (
-                  <span className="typo-caption text-foreground/40">{t.director.roster_never}</span>
+                  <span className="typo-caption text-foreground">{t.director.roster_never}</span>
                 )}
               </span>
               {/* actions */}
@@ -169,13 +169,13 @@ export function PersonaCoachingTable({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onRemove(r.personaId); }}
-                    className="p-1 rounded text-foreground/40 hover:text-foreground hover:bg-secondary/50 transition-colors"
+                    className="p-1 rounded text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
                     aria-label={t.director.roster_remove}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                 </Tooltip>
-                <ChevronRight className="w-3.5 h-3.5 text-foreground/30" />
+                <ChevronRight className="w-3.5 h-3.5 text-foreground" />
               </span>
             </div>
           );

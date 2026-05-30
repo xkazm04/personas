@@ -83,7 +83,7 @@ export function DriveEmptyHint({
       <div
         className={`flex items-center justify-center rounded-card bg-cyan-500/10 border border-cyan-500/20 ${s.iconBox}`}
       >
-        <Icon className={`${s.iconCls} text-cyan-300/80`} />
+        <Icon className={`${s.iconCls} text-cyan-300`} />
       </div>
       <div className={`${s.title} italic text-foreground`}>{title}</div>
       {body && (
