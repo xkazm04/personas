@@ -41,7 +41,7 @@ import { ComposerSchedulePickerModal } from "./commandPanel/composer/ComposerSch
 import { ComposerMessagingPickerModal } from "./commandPanel/composer/ComposerMessagingPickerModal";
 import type { ChannelSpecV2 } from "@/lib/bindings/ChannelSpecV2";
 import type { GlyphFullLayoutProps } from "./glyphLayoutTypes";
-import { debtText } from '@/i18n/DebtText';
+import { useTranslation } from "@/i18n/useTranslation";
 
 
 const BUILT_IN_INBOX: ChannelSpecV2 = {
@@ -66,6 +66,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
     onQuickConfigChange, initialNotificationChannels,
   } = props;
 
+  const { t } = useTranslation();
   const buildSessionId = useAgentStore((s) => s.buildSessionId);
   const buildDraft = useAgentStore((s) => s.buildDraft);
   const isCompose = buildSessionId === null && !hasDesignResult;
@@ -468,7 +469,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
               onShowSimulate={() => setShowSimulate(true)}
               buildSessionId={buildSessionId}
               overlay={overlay}
-              onComposeStart={isCompose && !anySigilActive ? () => setScheduleModalOpen(true) : undefined}
+              onComposeStart={isCompose && !anySigilActive ? () => setShowInput(true) : undefined}
               onShowReport={() => setShowReport(true)}
               onRequestSplit={requestSplit}
               refinePrefill={refinePrefill}
@@ -487,8 +488,9 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
                     value={intentText}
                     onChange={(e) => onIntentChange(e.target.value)}
                     onKeyDown={handleLaunchKey}
-                    placeholder={debtText("auto_describe_what_you_want_this_agent_to_do_ae7c256d")}
+                    placeholder={t.agents.glyph_intent_placeholder}
                     rows={3}
+                    autoFocus
                     className="w-full px-3 py-2 rounded-card bg-secondary/30 border border-border/30 typo-body text-foreground placeholder:text-foreground/40 focus:outline-none resize-none"
                     data-testid="agent-intent-input"
                   />
@@ -500,7 +502,7 @@ export function GlyphPrototypeLayout(props: GlyphFullLayoutProps) {
                     data-testid="agent-launch-btn"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    Launch
+                    {t.agents.glyph_launch}
                   </button>
                 </div>
               </div>
