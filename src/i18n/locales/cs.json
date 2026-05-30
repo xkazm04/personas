@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_match_heading": "Šablony odpovídající vašemu popisu",
     "create_heading": "Vytvořit personu",
     "create_describe_label": "Co má tento agent dělat?",
     "create_build_cta": "Vytvořit agenta",

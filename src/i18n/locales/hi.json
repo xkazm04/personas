@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_match_heading": "आपके विवरण से मेल खाते टेम्पलेट",
     "create_heading": "एक पर्सोना बनाएँ",
     "create_describe_label": "यह एजेंट क्या करे?",
     "create_build_cta": "एजेंट बनाएँ",

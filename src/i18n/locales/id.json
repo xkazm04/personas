@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_match_heading": "Templat yang cocok dengan deskripsi Anda",
     "create_heading": "Buat persona",
     "create_describe_label": "Apa yang harus dilakukan agen ini?",
     "create_build_cta": "Bangun agen",

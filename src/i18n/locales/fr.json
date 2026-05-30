@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_match_heading": "Modèles correspondant à votre description",
     "create_heading": "Créer un persona",
     "create_describe_label": "Que doit faire cet agent ?",
     "create_build_cta": "Créer l'agent",

@@ -589,6 +589,7 @@ export type Translations = {
     };
   };
   agents: {
+    create_match_heading: string;
     create_heading: string;
     create_describe_label: string;
     create_build_cta: string;

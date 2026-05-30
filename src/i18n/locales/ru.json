@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_match_heading": "Шаблоны, подходящие под ваше описание",
     "create_heading": "Создать персону",
     "create_describe_label": "Что должен делать этот агент?",
     "create_build_cta": "Создать агента",

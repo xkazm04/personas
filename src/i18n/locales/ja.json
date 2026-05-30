@@ -571,6 +571,7 @@
     "commander": "Commander"
   },
   "agents": {
+    "create_match_heading": "説明に一致するテンプレート",
     "create_heading": "ペルソナを作成",
     "create_describe_label": "このエージェントの役割は？",
     "create_build_cta": "エージェントを作成",

@@ -583,6 +583,7 @@
     }
   },
   "agents": {
+    "create_match_heading": "Templates matching your description",
     "create_heading": "Create a persona",
     "create_describe_label": "What should this agent do?",
     "create_build_cta": "Build agent",

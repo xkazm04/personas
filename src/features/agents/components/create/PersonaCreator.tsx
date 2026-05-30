@@ -1,26 +1,33 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
-import { Sparkles, ArrowRight, LayoutGrid } from "lucide-react";
+import { Sparkles, ArrowRight, LayoutGrid, Wand2 } from "lucide-react";
 import { useSystemStore } from "@/stores/systemStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTemplateGallery } from "@/hooks/design/template/useTemplateGallery";
+import { getDesignReview } from "@/api/overview/reviews";
+import { silentCatchNull } from "@/lib/silentCatch";
 import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
 import AdoptionWizardModal from "@/features/templates/sub_generated/adoption/AdoptionWizardModal";
 import { LoadingSpinner } from "@/features/shared/components/feedback/LoadingSpinner";
+import { useTemplateIntentMatch } from "./useTemplateIntentMatch";
 
 /**
- * PersonaCreator — the unified creation front door (glyph-convergence Phase 1).
+ * PersonaCreator — the unified creation front door (glyph-convergence P1+P2).
  *
  * One describe-first entry that offers both on-ramps:
  *   • a big autofocus describe box → the from-scratch build. It hands off by
  *     seeding `companionPrefill.intent` and asking the parent to dismiss the
  *     launcher, after which UnifiedBuildEntry reads that prefill — the same
  *     proven bridge Athena's "Build it for me" widget uses.
- *   • a row of proven template starters → the existing adoption flow, mounted
- *     locally (no navigation detour); "Browse all" jumps to the full gallery.
+ *   • a template row that LIVE-MATCHES what the user types (P2): once the
+ *     intent is substantial, the row swaps the curated starters for templates
+ *     ranked against the description (via companion_match_templates), turning a
+ *     vague sentence into a one-click proven start. A match carries only a
+ *     reviewId, so clicking fetches the full review before opening the existing
+ *     adoption flow; "Browse all" jumps to the full gallery.
  *
  * Purely additive — both back-half flows are unchanged. Later phases (see
  * docs/concepts/glyph-convergence.md) host adoption in-page, fold in instant
- * adopt, and merge the build surfaces; this just unifies the front door.
+ * adopt, and merge the build surfaces.
  */
 interface PersonaCreatorProps {
   /** Called when the user commits a from-scratch description — the parent
@@ -33,6 +40,38 @@ interface PersonaCreatorProps {
 
 const MAX_STARTERS = 6;
 
+interface StarterCardProps {
+  title: string;
+  /** Optional one-line subtitle — a match rationale or the template's instruction. */
+  subtitle?: string;
+  ariaLabel: string;
+  onClick: () => void;
+}
+
+/** One template card — shared by the curated-starter and live-match rows. */
+function StarterCard({ title, subtitle, ariaLabel, onClick }: StarterCardProps) {
+  const initial = title.trim().charAt(0).toUpperCase() || "?";
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="group flex items-start gap-3 rounded-card border border-border/30 bg-foreground/[0.03] hover:border-primary/40 hover:bg-primary/[0.05] px-3 py-3 text-left transition-colors cursor-pointer"
+      data-testid="persona-creator-starter"
+    >
+      <span className="shrink-0 w-9 h-9 rounded-input flex items-center justify-center typo-body font-semibold bg-primary/15 border border-primary/30 text-primary">
+        {initial}
+      </span>
+      <span className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <span className="typo-body font-medium text-foreground truncate">{title}</span>
+        {subtitle && (
+          <span className="typo-caption text-foreground/65 line-clamp-2 leading-snug">{subtitle}</span>
+        )}
+      </span>
+    </button>
+  );
+}
+
 export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCreatorProps) {
   const { t } = useTranslation();
   const setCompanionPrefill = useSystemStore((s) => s.setCompanionPrefill);
@@ -44,6 +83,10 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
   const [intent, setIntent] = useState("");
   const [adoptReview, setAdoptReview] = useState<PersonaDesignReview | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // P2 — live template matches for the typed intent (debounced, best-effort).
+  const { matches: liveMatches } = useTemplateIntentMatch(intent, MAX_STARTERS);
+  const showMatches = liveMatches.length > 0;
 
   useEffect(() => {
     const id = setTimeout(() => textareaRef.current?.focus(), 60);
@@ -60,7 +103,10 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
   const submitDescribe = useCallback(() => {
     const trimmed = intent.trim();
     if (!trimmed) return;
-    setCompanionPrefill({ intent: trimmed });
+    // Seed the build surface with the intent but do NOT auto-launch — the
+    // user lands on the prefilled compose box and presses Build there, so
+    // they can still tweak quick-config first.
+    setCompanionPrefill({ intent: trimmed, name: null, autoLaunch: false });
     onStartDescribe();
   }, [intent, setCompanionPrefill, onStartDescribe]);
 
@@ -77,6 +123,21 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
   const browseAll = useCallback(() => {
     setSidebarSection("design-reviews");
   }, [setSidebarSection]);
+
+  // A live match only carries the review id — fetch the full review before
+  // handing it to the adoption modal. Best-effort: a failed fetch just
+  // no-ops (the user can retry or browse the gallery).
+  const adoptById = useCallback(async (reviewId: string) => {
+    const review = await getDesignReview(reviewId).catch(
+      silentCatchNull("PersonaCreator.adoptById"),
+    );
+    if (review) setAdoptReview(review);
+  }, []);
+
+  const ariaFor = useCallback(
+    (name: string) => t.agents.create_starter_aria.replace("{name}", name),
+    [t],
+  );
 
   return (
     <div className="flex-1 min-h-0 w-full overflow-y-auto" data-testid="persona-creator">
@@ -118,11 +179,13 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
           </div>
         </div>
 
-        {/* Template starters */}
+        {/* Template row — live matches once the intent is substantial,
+            otherwise the curated starter set. */}
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="typo-label uppercase tracking-[0.18em] text-foreground/70">
-              {t.agents.create_templates_heading}
+            <span className="typo-label uppercase tracking-[0.18em] text-foreground/70 inline-flex items-center gap-1.5">
+              {showMatches && <Wand2 className="w-3.5 h-3.5 text-primary/80" />}
+              {showMatches ? t.agents.create_match_heading : t.agents.create_templates_heading}
             </span>
             <button
               type="button"
@@ -135,7 +198,19 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
             </button>
           </div>
 
-          {gallery.isLoading && starters.length === 0 ? (
+          {showMatches ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" data-testid="persona-creator-matches">
+              {liveMatches.map((m) => (
+                <StarterCard
+                  key={m.id}
+                  title={m.name}
+                  subtitle={m.snippet || undefined}
+                  ariaLabel={ariaFor(m.name)}
+                  onClick={() => void adoptById(m.id)}
+                />
+              ))}
+            </div>
+          ) : gallery.isLoading && starters.length === 0 ? (
             <div className="flex items-center justify-center py-10">
               <LoadingSpinner />
             </div>
@@ -151,30 +226,14 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {starters.map((review) => {
                 const title = review.test_case_name || review.test_case_id;
-                const initial = title.trim().charAt(0).toUpperCase() || "?";
                 return (
-                  <button
+                  <StarterCard
                     key={review.id}
-                    type="button"
+                    title={title}
+                    subtitle={review.instruction || undefined}
+                    ariaLabel={ariaFor(title)}
                     onClick={() => setAdoptReview(review)}
-                    aria-label={tStarter(t.agents.create_starter_aria, title)}
-                    className="group flex items-start gap-3 rounded-card border border-border/30 bg-foreground/[0.03] hover:border-primary/40 hover:bg-primary/[0.05] px-3 py-3 text-left transition-colors cursor-pointer"
-                    data-testid="persona-creator-starter"
-                  >
-                    <span
-                      className="shrink-0 w-9 h-9 rounded-input flex items-center justify-center typo-body font-semibold bg-primary/15 border border-primary/30 text-primary"
-                    >
-                      {initial}
-                    </span>
-                    <span className="flex-1 min-w-0 flex flex-col gap-0.5">
-                      <span className="typo-body font-medium text-foreground truncate">{title}</span>
-                      {review.instruction && (
-                        <span className="typo-caption text-foreground/65 line-clamp-2 leading-snug">
-                          {review.instruction}
-                        </span>
-                      )}
-                    </span>
-                  </button>
+                  />
                 );
               })}
             </div>
@@ -193,10 +252,4 @@ export function PersonaCreator({ onStartDescribe, onPersonaCreated }: PersonaCre
       />
     </div>
   );
-}
-
-/** Tiny interpolation helper for the one starter aria-label that needs the
- *  template name; avoids pulling in tx() for a single string. */
-function tStarter(template: string, name: string): string {
-  return template.replace("{name}", name);
 }
