@@ -23,6 +23,29 @@ in on open and fades out on close (the mount is wrapped in `AnimatePresence`
 so the exit animation plays before it unmounts); reduced-motion users get an
 instant open/close.
 
+### One coordinated header surface
+
+The three titlebar surfaces — **Schedule** (a route), **Notifications** (a
+right-side tray), and the **Persona Monitor** (a full-screen overlay) — are
+coordinated through a single mutually-exclusive controller
+(`uiSlice.headerOverlay`: `'none' | 'monitor' | 'notifications'`):
+
+- **Only one overlay is ever open.** Opening the Monitor closes the
+  Notifications tray and vice-versa — they can no longer stack and fight.
+- **Navigating anywhere closes the open overlay.** Clicking Schedule (or any
+  sidebar destination) dismisses the Monitor/Notifications and shows the route.
+- **Back and `Esc` close the active overlay first.** The titlebar **Back**
+  button closes whichever overlay is open (returning you to exactly the screen
+  it floated over) before it falls back to popping the section history; it is
+  shown whenever an overlay is open even if the history is empty.
+- **Each button carries a clear active state.** While its surface is open, the
+  Schedule / Notifications / Monitor button takes a theme-primary background
+  highlight (`.titlebar-btn-active`) — including the Monitor button, which
+  previously had no open-state indicator.
+
+Athena's "open monitor" pseudo-route and the `Ctrl/⌘+M` shortcut both flow
+through the same controller.
+
 ## The global fleet activity strip
 
 A **2px-tall, 20-bar activity strip** sits directly under the titlebar in
