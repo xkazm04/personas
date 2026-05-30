@@ -35,7 +35,6 @@ import { KpiTile, type KpiTrend } from '@/features/overview/components/shared/Kp
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { StalenessIndicator } from '@/features/shared/components/feedback/StalenessIndicator';
 import { resolveMetricPercent, SUCCESS_RATE_IDENTITIES } from '@/features/overview/libs/metricIdentity';
-import ResumeSetupCard from '@/features/overview/components/dashboard/cards/ResumeSetupCard';
 import FleetOptimizationCard from './cards/FleetOptimizationCard';
 import { MemoryActionsPanel } from '@/features/overview/sub_memories/components/MemoryActionCard';
 import { TrafficErrorsChart } from '@/features/overview/components/dashboard/widgets/TrafficErrorsChart';
@@ -281,9 +280,14 @@ export default function DashboardHomeMissionControl() {
             </motion.div>
           )}
 
-          <motion.div variants={fadeUp}>
-            <ResumeSetupCard />
-          </motion.div>
+          {/* Fleet optimization sits directly under the header — the highest-value
+              "what should I do next" signal, surfaced before the panes. (It
+              replaced the resume-tour panel that used to live here.) */}
+          {!hiddenSections.includes('fleet') && (
+            <motion.div variants={fadeUp}>
+              <FleetOptimizationCard />
+            </motion.div>
+          )}
 
           <motion.div variants={fadeUp}>
             {isEmpty ? (
@@ -354,12 +358,6 @@ export default function DashboardHomeMissionControl() {
                   <div className="p-3">
                     <MemoryActionsPanel actions={memoryActions} onDismiss={dismissMemoryAction} />
                   </div>
-                </motion.div>
-              )}
-
-              {!hiddenSections.includes('fleet') && (
-                <motion.div variants={fadeUp}>
-                  <FleetOptimizationCard />
                 </motion.div>
               )}
 

@@ -6641,6 +6641,16 @@
       "auto_fixed_this_week": "auto-fixed this week",
       "issues_in_7d": "issues in 7d"
     },
+    "fleet_optimization": {
+      "title": "Fleet optimization",
+      "open_lab": "Open Lab",
+      "open_lab_hint": "Test alternative models for {persona} in the Lab",
+      "ask_athena": "Ask Athena",
+      "ask_athena_hint": "Forward this suggestion to Athena to investigate",
+      "ask_athena_prompt": "I'm reviewing a fleet optimization suggestion for my agents: \"{title}\". {description} Suggested action: {action}. {focus}",
+      "ask_athena_focus_persona": "Please look into the agent \"{persona}\" and, if it would help, open its Lab to test alternative models, then report back what you find.",
+      "ask_athena_focus_general": "Please look into this and recommend what to change."
+    },
     "upcoming_routines": {
       "title": "Upcoming Routines",
       "subtitle": "next scheduled runs",

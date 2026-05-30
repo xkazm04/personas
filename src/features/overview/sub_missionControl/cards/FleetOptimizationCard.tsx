@@ -6,7 +6,7 @@
  * Memory Actions and the main content grid.
  */
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Sparkles,
   TrendingDown,
@@ -16,10 +16,16 @@ import {
   Zap,
   DollarSign,
   Search,
+  FlaskConical,
 } from 'lucide-react';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
-import { DebtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
+import { useAgentStore } from '@/stores/agentStore';
+import { useSystemStore } from '@/stores/systemStore';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 import {
   generateFleetRecommendation,
@@ -89,9 +95,41 @@ const SEVERITY_LABEL: Record<string, string> = {
 // -- Component -------------------------------------------------------
 
 function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
+  const { t, tx } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const config = TYPE_CONFIG[rec.type];
   const Icon = config.icon;
+
+  // healthy_fleet is a status, not a problem — no agent to tune, nothing to ask.
+  const showActions = rec.type !== 'healthy_fleet';
+  const personaId = rec.personaIds[0] ?? null;
+  const personaName = rec.personaNames[0] ?? null;
+
+  // Jump straight into the affected agent's Lab in model-comparison mode so the
+  // user can test alternative models against the persona this rec is about.
+  const openLab = useCallback(() => {
+    if (!personaId) return;
+    useSystemStore.getState().setSidebarSection('personas');
+    useAgentStore.getState().selectPersona(personaId);
+    useSystemStore.getState().setEditorTab('lab');
+    useAgentStore.getState().setLabMode('matrix');
+  }, [personaId]);
+
+  // Forward the recommendation to Athena (companion) so she can investigate and,
+  // if useful, drive the Lab herself.
+  const askAthena = useCallback(() => {
+    const focus = personaName
+      ? tx(t.overview.fleet_optimization.ask_athena_focus_persona, { persona: personaName })
+      : t.overview.fleet_optimization.ask_athena_focus_general;
+    const text = tx(t.overview.fleet_optimization.ask_athena_prompt, {
+      title: rec.title,
+      description: rec.description,
+      action: rec.suggestedAction,
+      focus,
+    });
+    useCompanionStore.getState().setPendingPrompt({ text, autoSend: true });
+    useCompanionStore.getState().setState('open');
+  }, [rec.title, rec.description, rec.suggestedAction, personaName, t, tx]);
 
   return (
     <div
@@ -157,11 +195,43 @@ function RecommendationContent({ rec }: { rec: FleetRecommendation }) {
             </div>
           </div>
         )}
+
+      {/* Follow-up actions: tune the affected agent in its Lab, or hand the
+          whole suggestion to Athena. Always visible (no expand needed). */}
+      {showActions && (
+        <div className="flex flex-wrap items-center gap-2 px-4 py-2.5 border-t border-primary/5">
+          {personaId && (
+            <Tooltip content={tx(t.overview.fleet_optimization.open_lab_hint, { persona: personaName ?? '' })}>
+              <Button
+                size="sm"
+                variant="accent"
+                accentColor="cyan"
+                icon={<FlaskConical className="w-3.5 h-3.5" />}
+                onClick={openLab}
+              >
+                {t.overview.fleet_optimization.open_lab}
+              </Button>
+            </Tooltip>
+          )}
+          <Tooltip content={t.overview.fleet_optimization.ask_athena_hint}>
+            <Button
+              size="sm"
+              variant="accent"
+              accentColor="violet"
+              icon={<Sparkles className="w-3.5 h-3.5" />}
+              onClick={askAthena}
+            >
+              {t.overview.fleet_optimization.ask_athena}
+            </Button>
+          </Tooltip>
+        </div>
+      )}
     </div>
   );
 }
 
 export default function FleetOptimizationCard() {
+  const { t } = useTranslation();
   const { executionDashboard, healingIssues } = useOverviewStore(useShallow((s) => ({
     executionDashboard: s.executionDashboard,
     healingIssues: s.healingIssues,
@@ -184,7 +254,7 @@ export default function FleetOptimizationCard() {
     <div className="space-y-1.5">
       <h3 className="typo-label text-foreground px-1 flex items-center gap-1.5">
         <Sparkles className="w-3 h-3" />
-        <DebtText k="auto_fleet_optimization_ca80ba93" />
+        {t.overview.fleet_optimization.title}
       </h3>
       <RecommendationContent rec={recommendation} />
     </div>

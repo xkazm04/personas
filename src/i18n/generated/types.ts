@@ -6647,6 +6647,16 @@ export type Translations = {
       auto_fixed_this_week: string;
       issues_in_7d: string;
     };
+    fleet_optimization: {
+      title: string;
+      open_lab: string;
+      open_lab_hint: string;
+      ask_athena: string;
+      ask_athena_hint: string;
+      ask_athena_prompt: string;
+      ask_athena_focus_persona: string;
+      ask_athena_focus_general: string;
+    };
     upcoming_routines: {
       title: string;
       subtitle: string;
