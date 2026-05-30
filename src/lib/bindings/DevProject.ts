@@ -20,6 +20,15 @@ auto_pr_on_success: boolean,
  */
 pr_credential_id: string | null, 
 /**
+ * URL of the living test environment this team delivers into (e.g. a
+ * staging/preview deployment). Nullable; set once the env exists.
+ */
+test_env_url: string | null, 
+/**
+ * Branch deployed to the living test environment (e.g. `staging`). Nullable.
+ */
+test_env_branch: string | null, 
+/**
  * Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
  * project's surface in `ProjectManagerPage` shows the bound team's name
  * inline so the developer can see at a glance which pipeline owns the
