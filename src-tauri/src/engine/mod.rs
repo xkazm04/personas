@@ -431,12 +431,34 @@ impl ExecutionEngine {
         scheduler: Arc<SchedulerState>,
         pool: Option<Arc<crate::db::DbPool>>,
     ) -> Self {
+        // Resolve the global concurrency cap from the max_parallel_executions
+        // setting ONCE at startup (hot-reload out of scope for P0 — restart to
+        // change). Defensively clamp so a corrupt/out-of-range stored value
+        // falls back to the documented default. No pool (headless/test) keeps
+        // the GLOBAL_MAX_CONCURRENT const fallback.
+        let mut tracker = ConcurrencyTracker::new();
+        if let Some(p) = pool.as_ref() {
+            let configured = crate::db::repos::core::settings::get(
+                p,
+                crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS,
+            )
+            .ok()
+            .flatten()
+            .and_then(|s| s.trim().parse::<usize>().ok())
+            .filter(|&n| {
+                n >= crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MIN
+                    && n <= crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MAX
+            })
+            .unwrap_or(crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_DEFAULT);
+            tracker.set_global_max_concurrent(configured);
+        }
+
         let circuit_breaker = match pool {
             Some(p) => Arc::new(failover::ProviderCircuitBreaker::with_persistence(p)),
             None => Arc::new(failover::ProviderCircuitBreaker::new()),
         };
         Self {
-            tracker: Arc::new(Mutex::new(ConcurrencyTracker::new())),
+            tracker: Arc::new(Mutex::new(tracker)),
             tasks: Arc::new(Mutex::new(HashMap::new())),
             child_pids: Arc::new(Mutex::new(HashMap::new())),
             cancelled_flags: Arc::new(Mutex::new(HashMap::new())),

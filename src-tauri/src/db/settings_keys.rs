@@ -206,6 +206,25 @@ pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
 
+/// Global cap on the number of executions that may run concurrently across ALL
+/// personas. Read ONCE at engine construction (see
+/// `crate::engine::ExecutionEngine::new`) and seeded into the
+/// `ConcurrencyTracker` via `set_global_max_concurrent`. Runtime hot-reload is
+/// intentionally NOT supported for P0 — changing this requires an app restart.
+/// Stored as a positive-integer string; clamped to
+/// [`MAX_PARALLEL_EXECUTIONS_MIN`]..=[`MAX_PARALLEL_EXECUTIONS_MAX`]. (The
+/// `GLOBAL_MAX_CONCURRENT` const in engine/queue.rs is only the no-pool/test
+/// fallback; this setting's default is authoritative at runtime.)
+pub const MAX_PARALLEL_EXECUTIONS: &str = "max_parallel_executions";
+/// Default global concurrency cap when the row is unset (or invalid).
+pub const MAX_PARALLEL_EXECUTIONS_DEFAULT: usize = 5;
+/// Minimum accepted cap. 0 would deadlock the queue (nothing could ever admit),
+/// so the floor is 1 (fully serialized execution).
+pub const MAX_PARALLEL_EXECUTIONS_MIN: usize = 1;
+/// Upper guard rail for the configured global cap. Conservative ceiling; raise
+/// only after auditing DB pool size / provider rate limits / memory headroom.
+pub const MAX_PARALLEL_EXECUTIONS_MAX: usize = 64;
+
 /// Whether desktop → cloud dashboard sync is enabled. Value: `"true"` / `"false"`.
 /// Default off; the user opts in from Settings. Read by the background sync loop.
 pub const CLOUD_SYNC_ENABLED: &str = "cloud_sync_enabled";
@@ -258,6 +277,7 @@ const ALLOWED_KEYS: &[&str] = &[
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
+    MAX_PARALLEL_EXECUTIONS,
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
@@ -338,6 +358,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be a positive integer (executions per hour), got {value:?}"
             )),
         },
+        MAX_PARALLEL_EXECUTIONS => match value.parse::<usize>() {
+            Ok(n) if n >= MAX_PARALLEL_EXECUTIONS_MIN && n <= MAX_PARALLEL_EXECUTIONS_MAX => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be an integer between {MAX_PARALLEL_EXECUTIONS_MIN} and {MAX_PARALLEL_EXECUTIONS_MAX}, got {value:?}"
+            )),
+        },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -407,6 +433,22 @@ mod tests {
         assert!(validate_key("evil_key").is_err());
         assert!(validate_key("").is_err());
         assert!(validate_key("cli_engine_extra").is_err());
+    }
+
+    #[test]
+    fn max_parallel_executions_key_and_value_validation() {
+        assert!(validate_key(MAX_PARALLEL_EXECUTIONS).is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "1").is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "5").is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "64").is_ok());
+        // 0 would deadlock the queue -> rejected; over the ceiling -> rejected.
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "0").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "65").is_err());
+        // Non-integer / negative / blank / padded -> rejected.
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "5x").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, " 5 ").is_err());
     }
 
     #[test]
