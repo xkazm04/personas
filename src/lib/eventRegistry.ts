@@ -74,6 +74,9 @@ export const EventName = {
   REVIEW_DECISION_APPROVED: 'review_decision.approved',
   REVIEW_DECISION_REJECTED: 'review_decision.rejected',
   REVIEW_DECISION_RESOLVED: 'review_decision.resolved',
+  // Published when an incident is resolved (user or Athena); personas subscribe
+  // for event-orchestrated continuation. Backend bus event; mirrored for parity.
+  INCIDENT_RESOLVED: 'incident_resolved',
 
   // Build session
   BUILD_SESSION_EVENT: 'build-session-event',

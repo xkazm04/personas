@@ -87,6 +87,11 @@ event_names! {
     REVIEW_DECISION_APPROVED   => "review_decision.approved",
     REVIEW_DECISION_REJECTED   => "review_decision.rejected",
     REVIEW_DECISION_RESOLVED   => "review_decision.resolved",
+    // Published when an incident is resolved (by the user or Athena). Personas
+    // subscribe to drive event-orchestrated continuation of the blocked work.
+    // Dynamic in code via `format!("incident_resolved")`; registered here for
+    // discoverability + the Rust<->TS parity gate.
+    INCIDENT_RESOLVED          => "incident_resolved",
 
     // Build session
     BUILD_SESSION_EVENT        => "build-session-event",
