@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import { ActivityPulseIcon } from "@/features/shared/components/icons/ActivityPulseIcon";
 import { useOverviewStore } from "@/stores/overviewStore";
@@ -76,7 +76,12 @@ export default function ProcessActivityIndicator() {
           </span>
         )}
       </button>
-      {monitorOpen && <PersonaMonitor onClose={() => setMonitorOpen(false)} />}
+      {/* AnimatePresence so PersonaMonitor's motion.div plays its fade-in on
+          open AND its exit fade-out on close (a bare conditional unmounts
+          instantly, skipping the exit animation). */}
+      <AnimatePresence>
+        {monitorOpen && <PersonaMonitor onClose={() => setMonitorOpen(false)} />}
+      </AnimatePresence>
     </>
   );
 }
