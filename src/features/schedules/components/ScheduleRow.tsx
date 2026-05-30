@@ -91,7 +91,13 @@ export default function ScheduleRow({
 
   return (
     <>
-      <div className={`group border border-l-[3px] transition-all ${healthAccent} ${
+      {/* content-visibility:auto lets the browser skip layout+paint of rows
+          scrolled out of view — the schedules list is unvirtualized and grows
+          with cron-agent count (5000+ DOM nodes at scale). contain-intrinsic-size
+          'auto 64px' gives a placeholder height (remembered once measured) so the
+          scrollbar stays correct. Architect perf follow-up (2026-05-30 perf-walk:
+          L1/schedules DOM ~10×). */}
+      <div className={`group border border-l-[3px] [content-visibility:auto] [contain-intrinsic-size:auto_64px] transition-all ${healthAccent} ${
         showHistory ? 'rounded-modal' : 'rounded-modal'
       } ${
         disabled

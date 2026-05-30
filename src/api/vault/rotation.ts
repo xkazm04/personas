@@ -31,6 +31,14 @@ export const deleteRotationPolicy = (id: string) =>
 export const getRotationHistory = (credentialId: string, limit?: number) =>
   invoke<RotationHistoryEntry[]>("get_rotation_history", { credentialId, limit: limit });
 
+/** Batched: rotation history for many credentials in one IPC round-trip, keyed
+ *  by credential id. Replaces N per-credential getRotationHistory calls. */
+export const getRotationHistoryBulk = (credentialIds: string[], limit?: number) =>
+  invoke<Record<string, RotationHistoryEntry[]>>("get_rotation_history_bulk", {
+    credentialIds,
+    limit: limit,
+  });
+
 export const getRotationStatus = (credentialId: string) =>
   invoke<RotationStatus>("get_rotation_status", { credentialId });
 

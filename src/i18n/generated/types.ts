@@ -371,6 +371,8 @@ export type Translations = {
       command_palette: string;
       show_shortcuts: string;
       close_overlay: string;
+      nav_mode: string;
+      nav_mode_back: string;
       toggle_sidebar: string;
       toggle_monitor: string;
       toggle_athena: string;
@@ -2844,6 +2846,7 @@ export type Translations = {
     };
     persona_list: {
       all_personas: string;
+      render_cap_notice: string;
       star_director_add: string;
       star_director_remove: string;
       delete_drafts_btn: string;
@@ -10422,6 +10425,28 @@ export type Translations = {
       settings_theme_dark: string;
       settings_theme_light: string;
       settings_theme_desc: string;
+      skill_apply: string;
+      skill_apply_title: string;
+      skill_apply_no_sessions: string;
+      skill_source_label: string;
+      skill_source_project: string;
+      skill_source_global: string;
+      skill_install: string;
+      skill_install_title: string;
+      skill_install_desc: string;
+      skill_install_target_label: string;
+      skill_install_overwrite: string;
+      skill_install_confirm: string;
+      skill_install_busy: string;
+      skill_install_no_targets: string;
+      skill_install_success: string;
+      skill_install_exists: string;
+      skill_install_failed: string;
+      athena_ask: string;
+      athena_thinking: string;
+      athena_label: string;
+      athena_approve_send: string;
+      athena_dismiss: string;
     };
     title: string;
     subtitle: string;

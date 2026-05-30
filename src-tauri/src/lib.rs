@@ -1825,6 +1825,7 @@ pub fn run() {
             commands::credentials::rotation::update_rotation_policy,
             commands::credentials::rotation::delete_rotation_policy,
             commands::credentials::rotation::get_rotation_history,
+            commands::credentials::rotation::get_rotation_history_bulk,
             commands::credentials::rotation::get_rotation_status,
             commands::credentials::rotation::get_all_rotation_statuses,
             commands::credentials::rotation::rotate_credential_now,
@@ -2030,6 +2031,7 @@ pub fn run() {
             commands::communication::observability::metrics::get_anomaly_drilldown,
             // Communication -- Observability: Prompt Lab
             commands::communication::observability::prompt_lab::get_prompt_versions,
+            commands::communication::observability::prompt_lab::get_prompt_versions_bulk,
             commands::communication::observability::prompt_lab::tag_prompt_version,
             commands::communication::observability::prompt_lab::rollback_prompt_version,
             commands::communication::observability::prompt_lab::get_prompt_error_rate,
@@ -2242,8 +2244,10 @@ pub fn run() {
             commands::artist::transcribe::artist_load_transcript,
             // Dev Tools -- Skill Files (browser/editor)
             commands::infrastructure::skill_files::skill_files_list,
+            commands::infrastructure::skill_files::skill_files_list_global,
             commands::infrastructure::skill_files::skill_files_read,
             commands::infrastructure::skill_files::skill_files_write,
+            commands::infrastructure::skill_files::skill_files_install,
             // Bridge Manifest -- declarative desktop bridges
             #[cfg(feature = "desktop")]
             commands::infrastructure::bridge_manifest::bridge_manifest_list_all,

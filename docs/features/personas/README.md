@@ -264,3 +264,11 @@ than newly-authored team memory. See `MEMORY CONTRACT (5)` in
    includes a `team` impact ("Member of team(s): … — will be removed from
    them") so removing an agent that belongs to a team warns first. The
    `persona_team_members` rows cascade on delete; the warning is informational.
+8. **The Grid and Constellation list layouts cap at 200 rendered personas.**
+   These two All-Personas layouts are unvirtualized — each card/node is a DOM
+   (Grid) or SVG (Constellation) subtree — so very large fleets are capped at
+   `PERSONA_RENDER_CAP = 200` with a "Showing 200 of N — narrow with search or
+   filters" notice. The default **table** layout (DataGrid) is virtualized and
+   shows all sizes; users with 200+ personas should use it or filter. True
+   windowing for the visual layouts (a responsive grid virtualizer) is a tracked
+   follow-up — see the architect perf scan (Phase E render-cap guardrail).

@@ -110,11 +110,25 @@ export interface VaultTreeNode {
 export const obsidianBrainDetectVaults = () =>
   invoke<DetectedVault[]>("obsidian_brain_detect_vaults");
 
+// obsidian_available is probed by several surfaces on mount (the Director hook on
+// the personas/overview surface + the obsidian-brain setup panel) and only changes
+// when the vault config is saved. Cache the in-flight promise + result briefly so
+// concurrent callers share one IPC and re-navigation skips the re-probe. Surfaced by
+// the 2026-05-30 perf-walk (obsidian_available fired ×2 on the personas-page mount).
+let obsidianAvailCache: { at: number; promise: Promise<ObsidianAvailability> } | null = null;
+const OBSIDIAN_AVAIL_TTL_MS = 30_000;
+
+/** Drop the cached obsidian-availability probe (after the vault config changes). */
+export const invalidateObsidianAvailable = () => { obsidianAvailCache = null; };
+
 export const obsidianBrainTestConnection = (vaultPath: string) =>
   invoke<VaultConnectionResult>("obsidian_brain_test_connection", { vaultPath });
 
 export const obsidianBrainSaveConfig = (config: ObsidianVaultConfig) =>
-  invoke<void>("obsidian_brain_save_config", { config });
+  invoke<void>("obsidian_brain_save_config", { config }).then(() => {
+    // Vault config changed → availability may have flipped; drop the cached probe.
+    invalidateObsidianAvailable();
+  });
 
 export const obsidianBrainGetConfig = () =>
   invoke<ObsidianVaultConfig | null>("obsidian_brain_get_config");
@@ -127,8 +141,15 @@ export const obsidianMirrorGetConfig = () =>
 export const obsidianMirrorSetConfig = (config: ObsidianMirrorConfig) =>
   invoke<void>("obsidian_mirror_set_config", { config });
 
-export const obsidianAvailable = () =>
-  invoke<ObsidianAvailability>("obsidian_available");
+export const obsidianAvailable = (): Promise<ObsidianAvailability> => {
+  const cached = obsidianAvailCache;
+  if (cached && Date.now() - cached.at < OBSIDIAN_AVAIL_TTL_MS) return cached.promise;
+  const promise = invoke<ObsidianAvailability>("obsidian_available");
+  obsidianAvailCache = { at: Date.now(), promise };
+  // A rejected probe must not stick — clear it so the next caller retries.
+  promise.catch(() => { if (obsidianAvailCache?.promise === promise) obsidianAvailCache = null; });
+  return promise;
+};
 
 /** Backfill all existing execution knowledge into the vault. Returns notes written. */
 export const obsidianMirrorBackfillExecutionKnowledge = () =>

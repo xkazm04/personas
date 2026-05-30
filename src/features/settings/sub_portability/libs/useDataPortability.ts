@@ -10,6 +10,7 @@ import {
 } from '@/api/system/dataPortability';
 import { errMsg } from '@/stores/storeTypes';
 import { useTranslation } from '@/i18n/useTranslation';
+import { createTtlValueCache } from '@/lib/async/createTtlValueCache';
 import type {
   ExportStats,
   PortabilityImportResult,
@@ -17,6 +18,12 @@ import type {
 } from '@/api/system/dataPortability';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
+
+/** Export stats change rarely (only on import). Cache the value at module
+ *  scope so re-visiting the Portability tab seeds from cache instead of
+ *  re-issuing the IPC on every mount. Invalidated after a successful import. */
+const STATS_KEY = 'stats';
+const exportStatsCache = createTtlValueCache<ExportStats>(60_000);
 
 export function useDataPortability() {
   const { t } = useTranslation();
@@ -42,9 +49,16 @@ export function useDataPortability() {
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
+    const cached = exportStatsCache.get(STATS_KEY);
+    if (cached) {
+      setStats(cached);
+      setStatsStatus('success');
+      return;
+    }
     setStatsStatus('loading');
     getExportStats()
       .then((s) => {
+        exportStatsCache.set(STATS_KEY, s);
         setStats(s);
         setStatsStatus('success');
       })
@@ -99,7 +113,11 @@ export function useDataPortability() {
       if (result) {
         setImportResult(result);
         setImportStatus('success');
-        getExportStats().then(setStats).catch(silentCatch("useDataPortability:refreshExportStats"));
+        // Import changed the counts — refresh stats and the module cache so a
+        // later remount of this tab seeds from the fresh value, not the stale one.
+        getExportStats()
+          .then((fresh) => { exportStatsCache.set(STATS_KEY, fresh); setStats(fresh); })
+          .catch(silentCatch("useDataPortability:refreshExportStats"));
       } else {
         setImportStatus('idle');
       }

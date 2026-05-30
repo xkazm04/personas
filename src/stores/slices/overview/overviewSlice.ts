@@ -83,7 +83,12 @@ export interface OverviewSlice {
   setOverviewTab: (tab: OverviewTab) => void;
   setPendingExecutionFocus: (executionId: string | null) => void;
   setPipelineError: (source: string, error: string | null) => void;
-  setPipelineFetchedAt: (source: string) => void;
+  /** Apply a whole wave of pipeline fetch outcomes in a single store write —
+   *  one set() per wave instead of 2×N (setPipelineError + setPipelineFetchedAt
+   *  per source). Sequential external-store mutations aren't batched like
+   *  setState, so the per-source pair drove redundant re-renders of the
+   *  dashboard's pipeline subscribers. Architect perf scan, Phase B. */
+  applyPipelineResults: (results: ReadonlyArray<{ source: string; error: string | null }>) => void;
   clearPipelineErrors: () => void;
   fetchGlobalExecutions: (reset?: boolean, status?: string, personaId?: string) => Promise<void>;
   fetchGlobalExecutionCounts: (personaId?: string) => Promise<void>;
@@ -171,9 +176,21 @@ export const createOverviewSlice: StateCreator<OverviewStore, [], [], OverviewSl
     else delete next[source];
     return { pipelineErrors: next };
   }),
-  setPipelineFetchedAt: (source) => set((prev) => ({
-    pipelineFetchedAt: { ...prev.pipelineFetchedAt, [source]: Date.now() },
-  })),
+  applyPipelineResults: (results) => set((prev) => {
+    const errors = { ...prev.pipelineErrors };
+    const fetchedAt = { ...prev.pipelineFetchedAt };
+    const now = Date.now();
+    for (const { source, error } of results) {
+      if (error) {
+        errors[source] = error;
+      } else {
+        // Success: clear any prior error for this source and stamp fetch time.
+        delete errors[source];
+        fetchedAt[source] = now;
+      }
+    }
+    return { pipelineErrors: errors, pipelineFetchedAt: fetchedAt };
+  }),
   clearPipelineErrors: () => set({ pipelineErrors: {} }),
 
   fetchGlobalExecutions: async (reset = false, status?: string, personaId?: string) => {

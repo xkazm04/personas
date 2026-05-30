@@ -165,6 +165,11 @@ interface LaidOut {
 
 /* -- Component -------------------------------------------------------- */
 
+// Same render-cap guardrail as the Grid variant, applied to the spatial fleet
+// map — each node is an SVG subtree (~80-120 DOM nodes), so unbounded data is
+// the heaviest DOM cost of any layout. Architect perf scan, Phase E.
+const PERSONA_RENDER_CAP = 200;
+
 export function PersonaOverviewVariantConstellation({
   data,
   triggerCounts,
@@ -175,18 +180,22 @@ export function PersonaOverviewVariantConstellation({
   isDraft,
   onRowClick,
 }: PersonaOverviewVariantConstellationProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
-  const { size: CANVAS, center: C } = useMemo(() => computeCanvas(data), [data]);
+  // Render-cap: lay out only the first N personas (each is an SVG subtree).
+  const total = data.length;
+  const cappedData = total > PERSONA_RENDER_CAP ? data.slice(0, PERSONA_RENDER_CAP) : data;
+
+  const { size: CANVAS, center: C } = useMemo(() => computeCanvas(cappedData), [cappedData]);
 
   // Group personas by band index, then within each band assign deterministic
   // angles using even angular spacing plus an id-derived phase offset so
   // ordering stays stable across re-renders.
   const laidOut = useMemo<LaidOut[]>(() => {
     const byBand: Persona[][] = Array.from({ length: BAND_COUNT }, () => []);
-    for (const p of data) {
+    for (const p of cappedData) {
       const bi = bandFor(lastRunMap[p.id], isDraft(p), isBuilding(p.id));
       byBand[bi]!.push(p);
     }
@@ -226,7 +235,7 @@ export function PersonaOverviewVariantConstellation({
       }
     }
     return out;
-  }, [data, lastRunMap, healthMap, isDraft, isBuilding, C]);
+  }, [cappedData, lastRunMap, healthMap, isDraft, isBuilding, C]);
 
   // Which bands actually contain personas — drives label opacity.
   const bandActivity = useMemo(() => {
@@ -359,6 +368,11 @@ export function PersonaOverviewVariantConstellation({
           The legend overlay below is positioned on the OUTER container so
           it stays pinned regardless of scroll position. */}
       <div className="flex-1 relative min-w-0">
+        {total > PERSONA_RENDER_CAP && (
+          <p className="absolute top-2 left-1/2 -translate-x-1/2 z-10 px-2.5 py-1 rounded-input bg-secondary/70 typo-caption text-foreground">
+            {tx(t.agents.persona_list.render_cap_notice, { shown: PERSONA_RENDER_CAP, total })}
+          </p>
+        )}
         <div className="absolute inset-0 overflow-auto p-4">
           <svg
             width={CANVAS}

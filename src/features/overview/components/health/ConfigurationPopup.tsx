@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
-import { getAppSetting, setAppSetting } from "@/api/system/settings";
+import { getAppSettingsBulk, setAppSetting } from "@/api/system/settings";
 import { useToastStore } from '@/stores/toastStore';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
@@ -61,11 +61,14 @@ export function ConfigurationPopup({
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    Promise.all(fields.map((f) => getAppSetting(f.key)))
-      .then((results) => {
+    // Single bulk read instead of one IPC per field (fields is small, but the
+    // fan-out is gratuitous when a bulk reader exists). See architect perf scan.
+    getAppSettingsBulk(fields.map((f) => f.key))
+      .then((map) => {
         const updated: Record<string, string> = {};
-        fields.forEach((f, i) => {
-          if (results[i]) updated[f.key] = results[i]!;
+        fields.forEach((f) => {
+          const v = map[f.key];
+          if (v) updated[f.key] = v;
         });
         setValues((prev) => ({ ...prev, ...updated }));
       })

@@ -38,7 +38,9 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 2. **Install hooks:** Fleet → Settings → "Install hooks". Patches `~/.claude/settings.json` to POST every lifecycle event to `http://127.0.0.1:<port>/fleet/hooks/*`. Re-install whenever the local_http port changes (Personas detects mismatch on startup and prompts).
 3. **Spawn a session:** Fleet → Sessions → "Spawn session" → enter a project directory → click Spawn. `claude` boots inside the Fleet-owned PTY.
 4. **Run external sessions:** Run `claude` from any terminal once hooks are installed — it'll register in the grid via hooks alone (no PTY ownership on those rows, but state badges still work).
-5. **Broadcast decisions:** Fleet → Decisions → write your prompt → click "Select waiting (N)" → Send. Each session receives the bytes via its PTY's stdin (or via the hook stdin path for external sessions in a future enhancement).
+5. **Broadcast a prompt:** Fleet → Sessions → "Broadcast" → write your prompt → click "Waiting (N)" / "All" to pick targets → Send. Each session receives the bytes via its PTY's stdin (or via the hook stdin path for external sessions in a future enhancement).
+6. **Apply a skill to a session:** Fleet → "Show skills" → select a skill → "Apply to session". This opens the same target picker as Broadcast, pre-seeded with the skill's slash command (`/skill-name `). Pick one or more live sessions and Send — Fleet writes the command to each session's terminal exactly as if you'd typed it. Add arguments inline before sending. The skill must exist in the target session's project (install it there first — step 7).
+7. **Browse the global library + install into a repo:** In "Show skills", flip the source toggle to **Global library** to browse `~/.claude/skills` (user-level skills available everywhere) instead of the active project's. Select a skill → **Install to repo** → pick a target project → Install. Fleet copies the skill's `SKILL.md` + reference files into that project's `.claude/skills/<name>/`. Enable **Overwrite** to replace an existing copy (otherwise an existing skill is left untouched and you're told it already exists). This is what makes cross-repo "apply" (step 6) actually work — install once, then apply.
 
 ## State machine
 
@@ -95,11 +97,21 @@ Consequences:
 
 Fleet Settings → **Terminal** (`FleetTerminalSettings`) exposes, all persisted in `fleetSlice` and applied live to every open terminal (no remount):
 
-- **Font size** — zoom 9–22px (also from the hover `+`/`−` buttons on each pane; `fleetTerminalFontSize`).
+- **Font size** — zoom 9–22px (`fleetTerminalFontSize`).
 - **Copy on select** — mirror a terminal selection to the clipboard on mouse-up (`fleetTerminalCopyOnSelect`, default on). Right-click still pastes; Ctrl+Shift+V / Cmd+V paste too.
 - **Color theme** — `Auto` (follows the app's `data-theme` light/dark), `Dark`, or `Light` (`fleetTerminalTheme`).
 
 > Pre-bundling note: `@xterm/*` is listed in `vite.config.ts` → `optimizeDeps.include` so Vite optimizes it at server boot. Without that, the first navigation to Fleet (a lazy chunk) triggers an on-the-fly dep re-optimize that 504s the in-flight import.
+
+### Athena copilot on the grid (experimental)
+
+A UI-fusion layer (`fleetAttention.ts`, `FleetTileAthenaBar.tsx`) that surfaces Athena's existing fleet reasoning *on the terminal tiles*, rather than only in the Needs-You banner. Pure frontend over existing backend (`companion_send_message`, the approval pipeline, `fleet_send_input` / `fleet_intervene`).
+
+- **Attention borders.** Tiles (and the single pane) get a pulsing border by state — violet for `awaiting_input`, amber for `stale`, red for a non-zero `exited` — via the `fleet-attn-*` classes in `globals.css`, chosen by `sessionAttention()` / `attentionClass()`. Healthy tiles stay plain.
+- **On-tile suggestions.** When a pending companion approval is a `fleet_send_input` / `fleet_intervene` targeting a tile's session (matched by parsing `paramsJson.session_id`), the tile shows Athena's proposed text with **Approve** (→ `companion_approve_action` → writes it into the PTY) / **Dismiss**. The existing approval pipeline is the write gate — nothing auto-types.
+- **Ask Athena.** A stale tile with nothing pending shows an "Ask Athena" button that fires a session-scoped turn (`companionSendMessage(craftStalePrompt(session))`) asking her to decide the next step and, if there's a clear winner, propose writing it — which returns as an on-tile suggestion. The tile shows a "thinking" affordance until the turn resolves.
+
+Still experimental (lives on the `worktree-fleet-athena` branch): no autopilot/auto-approve yet, and the suggestion strip currently shows on the grid tiles only (the single pane relies on the Needs-You banner).
 
 ## Hook installer details
 
@@ -140,3 +152,13 @@ Each entry is tagged `_fleet: true` so uninstall is surgical:
 - Send-to-external-session (hook-callback path that lets us queue prompts for sessions whose PTY we don't own).
 - ~~Per-session output ring-buffer (re-attaching to a session that's been off-screen should replay scrollback).~~ **Done** — the terminal manager keeps a live xterm (and its scrollback) per session; see [Terminal experience](#terminal-experience).
 - Persisted session memory across Personas restarts (currently registry is in-memory only).
+
+### "Beyond the terminal" program (in progress)
+
+A five-capability arc that exploits Fleet's unique leverage over a bare terminal (PTY ownership, the hook state machine, transcript access, the per-session MCP channel):
+
+- **Skill library (F1).** *P1.1 — apply a skill to live sessions: **done** (Usage step 6). P1.2 — global library + cross-repo install: **done** (Usage step 7).* The "Show skills" browser now has a source toggle (This project / Global library = `~/.claude/skills`) and an "Install to repo" action that copies a skill's files into any registered project's `.claude/skills/`, so a skill applied cross-repo actually exists there. Backend: `skill_files_list_global`, `skill_files_install`.
+- **Transcript intelligence (F2).** Parse `~/.claude/projects/**/*.jsonl` (today only its mtime is read) into a per-session cost / tokens / tools / files-touched timeline + a cross-session searchable activity feed.
+- **Session hibernation (F3).** Auto-checkpoint Idle/Stale sessions, drop the PTY to reclaim the process, and resurrect on demand via `claude --resume <id>` with scrollback rehydrated from the transcript.
+- **Remote attention (F4).** Permission-prompt detection + reply/approve from the "Needs you" surface and (later) a paired mobile client — finishing the inert `FleetPairDevice` handshake.
+- **Fleet recipes (F5).** User-authored multi-session workflows: fan a task out across N repos, or sequence sessions where one's `Stop` hook seeds the next.

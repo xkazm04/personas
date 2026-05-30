@@ -62,8 +62,12 @@ function settleAndReport(
 ): Promise<boolean> {
   return Promise.allSettled(fetches.map((f) => f.fn())).then((results) => {
     if (signal?.cancelled) return false;
-    const store = useOverviewStore.getState();
     let allOk = true;
+    // Collect every source's outcome, then commit the whole wave's pipeline
+    // bookkeeping in ONE store write (applyPipelineResults). Previously this
+    // looped setPipelineError + setPipelineFetchedAt per source — 2×N
+    // sequential set() calls that each drove a dashboard re-render.
+    const pipelineResults: Array<{ source: string; error: string | null }> = [];
     for (let i = 0; i < results.length; i++) {
       const name = fetches[i]!.name;
       const result = results[i]!;
@@ -71,13 +75,12 @@ function settleAndReport(
         allOk = false;
         const msg = result.reason instanceof Error ? result.reason.message : String(result.reason);
         log.error(`[${tag}] ${name} failed:`, result.reason);
-        store.setPipelineError(name, msg);
+        pipelineResults.push({ source: name, error: msg });
       } else {
-        // Clear any previous error for this source on success
-        store.setPipelineError(name, null);
-        store.setPipelineFetchedAt(name);
+        pipelineResults.push({ source: name, error: null });
       }
     }
+    useOverviewStore.getState().applyPipelineResults(pipelineResults);
     return allOk;
   });
 }

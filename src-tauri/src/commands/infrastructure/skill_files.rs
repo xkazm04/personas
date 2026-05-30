@@ -43,6 +43,24 @@ pub struct SkillFileContent {
     pub content: String,
 }
 
+/// Outcome of installing (copying) a skill into a target project's
+/// `.claude/skills`. Returned by [`skill_files_install`].
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillInstallResult {
+    /// Whether files were written. `false` with `reason = "exists"` means the
+    /// skill already exists in the target and `overwrite` was not set.
+    pub installed: bool,
+    /// Absolute path of the installed skill directory (or single-file `.md`).
+    pub target_path: String,
+    /// Number of files copied (0 when `installed == false`).
+    pub file_count: i32,
+    /// Machine reason token when `installed == false` (currently only
+    /// `"exists"`). `None` on success.
+    pub reason: Option<String>,
+}
+
 // ============================================================================
 // Helpers
 // ============================================================================
@@ -95,35 +113,75 @@ fn skills_dir(state: &AppState, project_id: Option<&str>) -> Result<PathBuf, App
     ))
 }
 
-fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
-    let content = std::fs::read_to_string(skill_md_path).ok()?;
-    // Extract the first non-empty, non-heading line as a short description
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
-        }
-        return Some(trimmed.chars().take(200).collect());
-    }
-    None
+/// Resolve `~/.claude/skills` — the user-global Claude Code skills library,
+/// available to every project. `None` if the home dir can't be resolved.
+fn global_skills_dir() -> Option<PathBuf> {
+    dirs::home_dir().map(|h| h.join(".claude").join("skills"))
 }
 
-// ============================================================================
-// Commands
-// ============================================================================
+/// Resolve a registered project's `.claude/skills` directory from its id.
+/// Errors `NotFound` if the project id isn't in `dev_projects`.
+fn project_skills_dir(state: &AppState, project_id: &str) -> Result<PathBuf, AppError> {
+    let conn = state
+        .db
+        .get()
+        .map_err(|e| AppError::Internal(format!("db connection failed: {e}")))?;
+    let root_path = conn
+        .query_row::<String, _, _>(
+            "SELECT root_path FROM dev_projects WHERE id = ?1",
+            [project_id],
+            |row| row.get(0),
+        )
+        .map_err(|_| AppError::NotFound(format!("project not found: {project_id}")))?;
+    Ok(PathBuf::from(&root_path).join(".claude").join("skills"))
+}
 
-#[tauri::command]
-pub fn skill_files_list(
-    state: State<'_, Arc<AppState>>,
-    project_id: Option<String>,
-) -> Result<Vec<SkillEntry>, AppError> {
-    require_auth_sync(&state)?;
+/// Reject skill names that aren't a single safe path segment. Guards the
+/// install path against writing outside the target `.claude/skills`.
+fn validate_skill_name(name: &str) -> Result<(), AppError> {
+    if name.is_empty()
+        || name.contains('/')
+        || name.contains('\\')
+        || name.contains("..")
+        || name.contains(':')
+    {
+        return Err(AppError::Validation(format!("invalid skill name: {name}")));
+    }
+    Ok(())
+}
 
-    let dir = skills_dir(&state, project_id.as_deref())?;
+/// Recursively copy `src` into `dst`, returning the count of files written.
+/// Creates `dst` (and parents) as needed. Used to install a skill directory
+/// (SKILL.md + reference files, possibly nested) into a target repo.
+fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<i32, AppError> {
+    std::fs::create_dir_all(dst)
+        .map_err(|e| AppError::Internal(format!("create target dir failed: {e}")))?;
+    let mut count = 0;
+    let read_dir = std::fs::read_dir(src)
+        .map_err(|e| AppError::Internal(format!("read source dir failed: {e}")))?;
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        let target = dst.join(entry.file_name());
+        if path.is_dir() {
+            count += copy_dir_recursive(&path, &target)?;
+        } else {
+            std::fs::copy(&path, &target)
+                .map_err(|e| AppError::Internal(format!("copy file failed: {e}")))?;
+            count += 1;
+        }
+    }
+    Ok(count)
+}
+
+/// Scan a `.claude/skills` directory into [`SkillEntry`] rows. Returns an
+/// empty vec when the directory is missing or unreadable — callers that need
+/// a hard error (the project-scoped list) resolve + check the dir first via
+/// [`skills_dir`]; the global list tolerates a missing library.
+fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
     let mut entries = Vec::new();
-
-    let read_dir = std::fs::read_dir(&dir)
-        .map_err(|e| AppError::Internal(format!("Failed to read skills directory: {e}")))?;
+    let Ok(read_dir) = std::fs::read_dir(dir) else {
+        return entries;
+    };
 
     for entry in read_dir.flatten() {
         let path = entry.path();
@@ -190,7 +248,124 @@ pub fn skill_files_list(
     }
 
     entries.sort_by(|a, b| a.name.cmp(&b.name));
-    Ok(entries)
+    entries
+}
+
+fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
+    let content = std::fs::read_to_string(skill_md_path).ok()?;
+    // Extract the first non-empty, non-heading line as a short description
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        return Some(trimmed.chars().take(200).collect());
+    }
+    None
+}
+
+// ============================================================================
+// Commands
+// ============================================================================
+
+#[tauri::command]
+pub fn skill_files_list(
+    state: State<'_, Arc<AppState>>,
+    project_id: Option<String>,
+) -> Result<Vec<SkillEntry>, AppError> {
+    require_auth_sync(&state)?;
+
+    let dir = skills_dir(&state, project_id.as_deref())?;
+    Ok(scan_skills_dir(&dir))
+}
+
+/// List skills from the user-global library (`~/.claude/skills`) — the
+/// source for the Fleet skill drawer's "Global library" view. Returns an
+/// empty list (not an error) when the user has no global skills yet.
+#[tauri::command]
+pub fn skill_files_list_global(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<SkillEntry>, AppError> {
+    require_auth_sync(&state)?;
+
+    let Some(dir) = global_skills_dir() else {
+        return Ok(Vec::new());
+    };
+    Ok(scan_skills_dir(&dir))
+}
+
+/// Install (copy) a skill into a target project's `.claude/skills`.
+///
+/// `source_project_id = None` reads from the global library
+/// (`~/.claude/skills`); `Some(id)` reads from that project's skills. The
+/// skill may be a directory (`<name>/SKILL.md` + reference files) or a
+/// single-file `<name>.md`. With `overwrite = false`, an existing target
+/// skill is left untouched and the result carries `reason = "exists"`.
+#[tauri::command]
+pub fn skill_files_install(
+    state: State<'_, Arc<AppState>>,
+    skill_name: String,
+    source_project_id: Option<String>,
+    target_project_id: String,
+    overwrite: bool,
+) -> Result<SkillInstallResult, AppError> {
+    require_auth_sync(&state)?;
+    validate_skill_name(&skill_name)?;
+
+    let source_dir = match source_project_id.as_deref() {
+        Some(pid) => project_skills_dir(&state, pid)?,
+        None => {
+            global_skills_dir().ok_or_else(|| AppError::Internal("no home directory".into()))?
+        }
+    };
+    let target_skills = project_skills_dir(&state, &target_project_id)?;
+
+    // A skill is either a directory or a single `<name>.md` file.
+    let src_dir = source_dir.join(&skill_name);
+    let src_md = source_dir.join(format!("{skill_name}.md"));
+
+    if src_dir.is_dir() {
+        let target_dir = target_skills.join(&skill_name);
+        if target_dir.exists() && !overwrite {
+            return Ok(SkillInstallResult {
+                installed: false,
+                target_path: target_dir.to_string_lossy().into_owned(),
+                file_count: 0,
+                reason: Some("exists".into()),
+            });
+        }
+        let file_count = copy_dir_recursive(&src_dir, &target_dir)?;
+        Ok(SkillInstallResult {
+            installed: true,
+            target_path: target_dir.to_string_lossy().into_owned(),
+            file_count,
+            reason: None,
+        })
+    } else if src_md.is_file() {
+        std::fs::create_dir_all(&target_skills)
+            .map_err(|e| AppError::Internal(format!("create target dir failed: {e}")))?;
+        let target_md = target_skills.join(format!("{skill_name}.md"));
+        if target_md.exists() && !overwrite {
+            return Ok(SkillInstallResult {
+                installed: false,
+                target_path: target_md.to_string_lossy().into_owned(),
+                file_count: 0,
+                reason: Some("exists".into()),
+            });
+        }
+        std::fs::copy(&src_md, &target_md)
+            .map_err(|e| AppError::Internal(format!("copy file failed: {e}")))?;
+        Ok(SkillInstallResult {
+            installed: true,
+            target_path: target_md.to_string_lossy().into_owned(),
+            file_count: 1,
+            reason: None,
+        })
+    } else {
+        Err(AppError::NotFound(format!(
+            "source skill not found: {skill_name}"
+        )))
+    }
 }
 
 #[tauri::command]
@@ -263,4 +438,26 @@ pub fn skill_files_write(
         .map_err(|e| AppError::Internal(format!("Failed to write skill file: {e}")))?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_skill_name_accepts_simple_segments() {
+        assert!(validate_skill_name("research").is_ok());
+        assert!(validate_skill_name("add-template").is_ok());
+        assert!(validate_skill_name("code_review").is_ok());
+    }
+
+    #[test]
+    fn validate_skill_name_rejects_traversal_and_separators() {
+        assert!(validate_skill_name("").is_err());
+        assert!(validate_skill_name("..").is_err());
+        assert!(validate_skill_name("../evil").is_err());
+        assert!(validate_skill_name("a/b").is_err());
+        assert!(validate_skill_name("a\\b").is_err());
+        assert!(validate_skill_name("C:\\windows").is_err());
+    }
 }

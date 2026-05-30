@@ -31,11 +31,12 @@ import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
+import { sessionAttention, attentionClass, craftStalePrompt } from '../fleetAttention';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { companionApproveAction, companionRejectAction } from '@/api/companion';
+import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
 import { actionLabel } from '@/features/plugins/companion/athenaLabels';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { FleetSummaryPills } from '../FleetSummaryPills';
@@ -113,6 +114,9 @@ export default function FleetGridPage() {
   // Fullscreen terminal grid overlay (transient — minimizing returns to the
   // single-pane view showing the last-selected session).
   const [gridOpen, setGridOpen] = useState(false);
+  // Session ids with an in-flight "Ask Athena" proactive turn (drives the
+  // tile's "thinking" affordance until the turn resolves).
+  const [askingAthena, setAskingAthena] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FleetSessionState | null>(null);
   const [query, setQuery] = useState('');
 
@@ -257,6 +261,24 @@ export default function FleetGridPage() {
       toastCatch('FleetGridPage:rejectApproval', 'Failed to reject action')(e);
     }
   }, [removeApproval]);
+
+  // Ask Athena to reason about one stale session and (if there's a clear
+  // winner) propose writing the next step into its terminal. Her proposal
+  // returns as an on-tile approval via the companion approvals event.
+  const handleAskAthena = useCallback(async (session: FleetSession) => {
+    setAskingAthena((prev) => new Set(prev).add(session.id));
+    try {
+      await companionSendMessage(craftStalePrompt(session));
+    } catch (e) {
+      toastCatch('FleetGridPage:askAthena', 'Failed to reach Athena')(e);
+    } finally {
+      setAskingAthena((prev) => {
+        const next = new Set(prev);
+        next.delete(session.id);
+        return next;
+      });
+    }
+  }, []);
 
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
@@ -552,7 +574,11 @@ export default function FleetGridPage() {
                 <p className="typo-caption">{t.plugins.fleet.grid_active_hint}</p>
               </div>
             ) : activeSession ? (
-              <div className="h-full border border-primary/10 rounded-modal overflow-hidden bg-[#0a0a0c]">
+              <div
+                className={`h-full border rounded-modal overflow-hidden bg-[#0a0a0c] ${
+                  attentionClass(sessionAttention(activeSession)) || 'border-primary/10'
+                }`}
+              >
                 {activeSession.state === 'exited' ? (
                   <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
                     <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
@@ -584,6 +610,11 @@ export default function FleetGridPage() {
         activeSessionId={activeSessionId}
         onSelect={setActiveSession}
         onClose={() => setGridOpen(false)}
+        approvals={companionApprovals}
+        askingSessionIds={askingAthena}
+        onApprove={handleApprove}
+        onReject={handleRejectApproval}
+        onAskAthena={handleAskAthena}
       />
     </ContentBox>
   );
