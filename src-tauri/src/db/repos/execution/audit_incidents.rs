@@ -535,6 +535,33 @@ mod tests {
         assert!(after_reopen.acknowledged_at.is_none());
     }
 
+    /// The escalation lifecycle's active-work state: `open → in_progress →
+    /// resolved`. Entering in_progress stamps acknowledged_at; resolving from
+    /// in_progress carries the note. resolved → in_progress is NOT allowed.
+    #[test]
+    fn in_progress_lifecycle() {
+        let pool = init_test_db().unwrap();
+        let id = promote(&pool, make_input("fired_alerts", "ip-1", "critical", "Build broken"))
+            .unwrap()
+            .unwrap();
+
+        // open -> in_progress (stamps acknowledged_at, no resolution yet)
+        assert!(start_progress(&pool, &id).unwrap());
+        let working = get_by_id(&pool, &id).unwrap();
+        assert_eq!(working.status, "in_progress");
+        assert!(working.acknowledged_at.is_some());
+        assert!(working.resolved_at.is_none());
+
+        // in_progress -> resolved (carries the note)
+        assert!(resolve(&pool, &id, Some("fixed the build")).unwrap());
+        let done = get_by_id(&pool, &id).unwrap();
+        assert_eq!(done.status, "resolved");
+        assert_eq!(done.resolution_note.as_deref(), Some("fixed the build"));
+
+        // resolved -> in_progress is NOT a valid transition (only -> open).
+        assert!(apply_transition(&pool, &id, IncidentStatus::InProgress, None).is_err());
+    }
+
     #[test]
     fn invalid_transitions_are_rejected() {
         let pool = init_test_db().unwrap();
