@@ -266,6 +266,15 @@ fn find_transcript(claude_session_id: &str) -> Option<PathBuf> {
     None
 }
 
+/// File size (bytes) of a session's transcript, or `None` if no transcript
+/// exists yet. The staleness ticker polls this to detect *real* log growth
+/// (a more reliable "is it actually working" signal than hook timing or
+/// mtime touches).
+pub fn transcript_size(claude_session_id: &str) -> Option<u64> {
+    let path = find_transcript(claude_session_id)?;
+    std::fs::metadata(&path).ok().map(|m| m.len())
+}
+
 /// Read and summarize a session's transcript. `claude_session_id` is the
 /// id bound from the SessionStart hook (`FleetSession.claudeSessionId`).
 /// Errors if no transcript file exists for the id yet.
