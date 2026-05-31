@@ -173,6 +173,11 @@ pub fn companion_list_recent_messages(
     let episodes = episodic::list_recent(&state.user_db, DEFAULT_SESSION_ID, limit)?;
     Ok(episodes
         .into_iter()
+        // Fleet lifecycle events are written as System episodes here purely so
+        // recall/FTS can find them (`fleet-event session:… cc:… state:…`); they
+        // are machine logs, not chat content, so they must not render in the
+        // transcript. Filtered from display only — still searchable in memory.
+        .filter(|e| !e.content.starts_with("fleet-event "))
         .map(|e| CompanionMessage {
             id: e.id,
             role: e.role,
