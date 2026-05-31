@@ -1979,12 +1979,12 @@ mod tests {
             )
             .unwrap();
         }
-        let all = get_all(&pool, None, None, None, None, None, None, None).unwrap();
+        let all = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
         assert_eq!(all.len(), 3);
 
         let n = delete_all(&pool).unwrap();
         assert_eq!(n, 3);
-        let after = get_all(&pool, None, None, None, None, None, None, None).unwrap();
+        let after = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
         assert_eq!(after.len(), 0);
     }
 }

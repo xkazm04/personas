@@ -29,14 +29,14 @@ assistantMessages: number,
 /**
  * Token totals across all assistant turns.
  */
-tokens: FleetTokenTotals,
+tokens: FleetTokenTotals, 
 /**
  * Approximate current context-window size: the most recent assistant
  * turn's `input_tokens + cache_read_input_tokens` (each turn re-sends the
  * whole conversation, so this ≈ "how big the conversation has grown").
  * Drives the CLI-header efficiency indicator. 0 if no usage was seen.
  */
-lastContextTokens: bigint,
+lastContextTokens: bigint, 
 /**
  * Distinct models seen, in first-seen order.
  */
