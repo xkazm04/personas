@@ -31,14 +31,14 @@ static CHECKSUM_MANIFEST: LazyLock<HashMap<&'static str, &'static str>> = LazyLo
     m.insert("development/code-reviewer.json", "00085cf0937099d2");
     m.insert("development/codebase-health-scanner.json", "000de3375e15adb0");
     m.insert("development/design-handoff-coordinator.json", "00130ece96fe617f");
-    m.insert("development/dev-clone.json", "001aa888edb1a052");
+    m.insert("development/dev-clone.json", "0005ef6acc119bea");
     m.insert("development/dev-lifecycle-manager.json", "0013661c26053f17");
     m.insert("development/docs-steward.json", "0013973577461b89");
     m.insert("development/documentation-freshness-guardian.json", "001f1b26220f53de");
     m.insert("development/feature-flag-experiment-analyst.json", "00161084f0ebe683");
     m.insert("development/feature-flag-governance-use-case.json", "0003e753113b0ecc");
     m.insert("development/lean-codebase-sentinel.json", "000af68557f2d526");
-    m.insert("development/qa-guardian.json", "0018093cccefdaf8");
+    m.insert("development/qa-guardian.json", "000cc64107c00d02");
     m.insert("development/real-time-database-watcher.json", "000a8316306b346b");
     m.insert("development/self-evolving-codebase-memory.json", "0010964654a6eac8");
     m.insert("development/skill-librarian.json", "001715cb96cae02f");
