@@ -13955,6 +13955,11 @@
     "login_timed_out": "Login timed out. Please try again."
   },
   "shared": {
+    "group_today": "Today",
+    "group_yesterday": "Yesterday",
+    "group_this_week": "This week",
+    "group_this_month": "This month",
+    "group_older": "Older",
     "blast_checking_impact": "Checking impact...",
     "blast_safe_to_delete": "No dependent resources found. Safe to delete.",
     "blast_impact": "Impact",

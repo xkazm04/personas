@@ -13961,6 +13961,11 @@ export type Translations = {
     login_timed_out: string;
   };
   shared: {
+    group_today: string;
+    group_yesterday: string;
+    group_this_week: string;
+    group_this_month: string;
+    group_older: string;
     blast_checking_impact: string;
     blast_safe_to_delete: string;
     blast_impact: string;

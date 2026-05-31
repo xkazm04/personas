@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**182 reusable components** live under `src/features/shared/components/`.
+**183 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -45,6 +45,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `EmptyState` | _(add a `@catalog` tag)_ |
 | `FieldHint` | Valid value range, e. |
 | `GlossaryTooltip` | The technical term to look up (case-insensitive). |
+| `GroupedVirtualList` | Virtualized list that buckets ordered items under sticky date/category group headers (Today / Yesterday / …). |
 | `HeroMesh` | _(add a `@catalog` tag)_ |
 | `InlineEditableText` | Click-to-edit inline text field. |
 | `Numeric` | Canonical number/percent/count display — locale + precision + unit. Use instead of raw toFixed/toLocaleString. |
@@ -130,7 +131,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PopupColorPicker` | _(add a `@catalog` tag)_ |
 | `PopupIconSelector` | _(add a `@catalog` tag)_ |
 | `SettingRow` | Label + description + toggle settings row with one consistent type ramp; shared across plugin setup panels. |
-| `Slider` | Accessible name for the slider. |
+| `Slider` | Fires continuously while dragging / on every keyboard step (the live "draft"). |
 | `SortableColumnHeader` | _(add a `@catalog` tag)_ |
 | `SourceDefinitionInput` | _(add a `@catalog` tag)_ |
 | `SuccessCheck` | SVG checkmark whose stroke draws in via the . |
@@ -192,7 +193,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `StationPicker` | _(add a `@catalog` tag)_ |
 | `SystemLoadFooterIcon` | Smoothed CPU %. |
 | `TitleBar` | _(add a `@catalog` tag)_ |
-| `TitleBarAmbient` | focused on settings. |
+| `TitleBarAmbient` | The time-of-day illustration in the centre of the title bar. |
 | `TitleCrossfade` | station switch). |
 | `useMonitorData` | _(add a `@catalog` tag)_ |
 | `useRadioState` | know when to refetch nowPlaying. |
@@ -266,4 +267,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_182 components, 93 without a `@catalog` description._
+_183 components, 93 without a `@catalog` description._
