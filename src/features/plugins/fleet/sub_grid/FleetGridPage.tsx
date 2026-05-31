@@ -242,15 +242,15 @@ export default function FleetGridPage() {
     }
   }, []);
 
-  // Apply a library skill to the focused session — writes `/skill⏎` to its PTY
-  // (the same mechanism as broadcast). Drives the left skill drawer.
-  const handleApplySkill = useCallback(async (skillName: string) => {
-    if (!activeSessionId) return;
+  // Apply a library skill (full slash command, incl. any args) to the focused
+  // session — writes `<command>⏎` to its PTY (same mechanism as broadcast).
+  const handleApplySkill = useCallback(async (command: string) => {
+    if (!activeSessionId || !command.trim()) return;
     try {
-      await writeInput(activeSessionId, `/${skillName}\r`);
+      await writeInput(activeSessionId, `${command}\r`);
       const sess = sessions.find((s) => s.id === activeSessionId);
       addToast(
-        tx(t.plugins.fleet.skill_applied_toast, { skill: skillName, name: sess?.name ?? sess?.projectLabel ?? '' }),
+        tx(t.plugins.fleet.skill_applied_toast, { command, name: sess?.name ?? sess?.projectLabel ?? '' }),
         'success',
       );
     } catch (e) {

@@ -10504,7 +10504,9 @@
       "skills_drawer_no_target": "Select a session to apply skills",
       "skills_drawer_search": "Search skills…",
       "skills_drawer_empty": "No skills found",
-      "skill_applied_toast": "Sent /{skill} to {name}"
+      "skills_drawer_command_placeholder": "Click a skill, then add arguments…",
+      "skills_drawer_apply_btn": "Apply",
+      "skill_applied_toast": "Sent {command} to {name}"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

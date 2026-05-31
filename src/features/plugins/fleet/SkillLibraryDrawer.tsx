@@ -1,16 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { BookOpen, Search, X, Terminal, Download, RefreshCw, AlertCircle } from 'lucide-react';
+import { BookOpen, Search, X, RefreshCw, AlertCircle, Send } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSkillData } from './sub_skills/useSkillData';
 import { SkillInstallModal } from './sub_skills/SkillInstallModal';
+import { SkillLibraryRow } from './SkillLibraryRow';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Apply a skill's slash command to the focused terminal. */
-  onApply: (skillName: string) => void;
+  /** Apply a full slash command (incl. any args, e.g. `/deep-research foo`) to
+   *  the focused terminal. */
+  onApply: (command: string) => void;
   /** Display name of the session the skill applies to; null when none focused. */
   targetLabel: string | null;
 }
@@ -30,6 +32,10 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
   const { filtered, loading, search, setSearch, source, setSource, fetchSkills, installSkill } =
     useSkillData('global');
   const [installName, setInstallName] = useState<string | null>(null);
+  // Editable command composer — clicking a skill loads `/skill ` here so args
+  // can be tweaked before applying.
+  const [command, setCommand] = useState('');
+  const composerRef = useRef<HTMLInputElement>(null);
 
   // Close on Escape.
   useEffect(() => {
@@ -42,6 +48,17 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
   if (!open) return null;
 
   const canApply = targetLabel !== null;
+
+  const loadSkill = (name: string) => {
+    setCommand(`/${name} `);
+    composerRef.current?.focus();
+  };
+  const submitCommand = () => {
+    const cmd = command.trim();
+    if (!canApply || !cmd) return;
+    onApply(cmd);
+    setCommand('');
+  };
   const sources: { id: typeof source; label: string }[] = [
     { id: 'global', label: f.skill_source_global },
     { id: 'project', label: f.skill_source_project },
@@ -115,39 +132,42 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
             </div>
           ) : (
             filtered.map((skill) => (
-              <div
+              <SkillLibraryRow
                 key={skill.name}
-                className="group flex items-center gap-1 rounded-card border border-transparent hover:border-primary/15 hover:bg-secondary/30 transition-colors"
-              >
-                <button
-                  type="button"
-                  data-testid={`fleet-drawer-apply-${skill.name}`}
-                  disabled={!canApply}
-                  onClick={() => onApply(skill.name)}
-                  title={canApply ? `/${skill.name}` : f.skills_drawer_no_target}
-                  className="flex-1 min-w-0 text-left px-2 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <Terminal className="w-3 h-3 text-primary shrink-0" aria-hidden="true" />
-                    <span className="typo-card-label truncate">{skill.name}</span>
-                  </div>
-                  {skill.description && (
-                    <p className="text-[10px] text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  data-testid={`fleet-drawer-install-${skill.name}`}
-                  onClick={() => setInstallName(skill.name)}
-                  title={f.skill_install}
-                  aria-label={f.skill_install}
-                  className="shrink-0 p-1.5 mr-1 rounded text-foreground opacity-0 group-hover:opacity-70 hover:opacity-100 transition-opacity"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                </button>
-              </div>
+                skill={skill}
+                canApply={canApply}
+                onLoad={loadSkill}
+                onInstall={setInstallName}
+              />
             ))
           )}
+        </div>
+
+        {/* Command composer — edit args, then apply to the focused terminal. */}
+        <div className="border-t border-primary/10 p-2 shrink-0">
+          <div className="flex items-center gap-1.5">
+            <input
+              ref={composerRef}
+              type="text"
+              data-testid="fleet-drawer-command"
+              value={command}
+              onChange={(e) => setCommand(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitCommand(); } }}
+              disabled={!canApply}
+              placeholder={f.skills_drawer_command_placeholder}
+              className="flex-1 min-w-0 rounded-input border border-primary/10 bg-secondary/40 py-1.5 px-2 text-[12px] font-mono text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-50"
+            />
+            <Button
+              variant="primary"
+              size="sm"
+              data-testid="fleet-drawer-send"
+              icon={<Send className="w-3.5 h-3.5" />}
+              disabled={!canApply || !command.trim()}
+              onClick={submitCommand}
+            >
+              {f.skills_drawer_apply_btn}
+            </Button>
+          </div>
         </div>
       </div>
 
