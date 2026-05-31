@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Brain, Plus, Search, X, Sparkles, Shield, Layers, Table2, GitFork } from 'lucide-react';
+import { Brain, Plus, Search, X, Sparkles, Shield, Layers, Table2, GitFork, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
@@ -21,6 +21,9 @@ import type { PersonaMemory } from '@/lib/types/types';
 import MemoriesPageDense from './MemoriesPageDense';
 import MemoriesPageGraph from './MemoriesPageGraph';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { deleteAllMemories } from '@/api/overview/memories';
+import { toastCatch } from '@/lib/silentCatch';
 
 
 // -- Prototype tab switcher (throwaway scaffold) -----------------------------
@@ -109,7 +112,7 @@ const MEMORY_COLUMNS: { key: string; width: string }[] = [
 ];
 
 function MemoriesPageBaseline() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
@@ -136,6 +139,7 @@ function MemoriesPageBaseline() {
   const [viewTab, setViewTab] = useState<ViewTab>('memories');
 
   const [selectedMemory, setSelectedMemory] = useState<PersonaMemory | null>(null);
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
 
   useEffect(() => {
     const requestId = ++latestFilterRequestRef.current;
@@ -259,9 +263,38 @@ function MemoriesPageBaseline() {
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add
             </button>
+            {memoriesTotal > 0 && (
+              <button
+                onClick={() => setConfirmingDeleteAll(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25"
+                title={t.overview.memories.delete_all}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         }
       />
+
+      {confirmingDeleteAll && (
+        <ConfirmDialog
+          title={t.overview.memories.delete_all_confirm_title}
+          body={tx(t.overview.memories.delete_all_confirm_body, { count: memoriesTotal })}
+          danger
+          confirmLabel={t.overview.memories.delete_all_confirm_cta}
+          onConfirm={async () => {
+            try {
+              await deleteAllMemories();
+              await fetchMemories();
+            } catch (e) {
+              toastCatch('MemoriesPageBaseline:deleteAll', 'Failed to delete all memories')(e);
+            } finally {
+              setConfirmingDeleteAll(false);
+            }
+          }}
+          onCancel={() => setConfirmingDeleteAll(false)}
+        />
+      )}
 
       {showAddForm && <InlineAddMemoryForm onClose={() => setShowAddForm(false)} />}
 
