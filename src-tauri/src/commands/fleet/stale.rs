@@ -29,6 +29,25 @@ pub const STALE_AFTER_SECS: i64 = 5 * 60;
 /// responsiveness and idle CPU.
 pub const TICK_INTERVAL_SECS: u64 = 30;
 
+// ---------------------------------------------------------------------------
+// Auto-hibernate policy (P3.2) — process-wide, set from the frontend via
+// `fleet_set_auto_hibernate` and read by the always-on ticker, so idle
+// sessions are freed even when the Fleet UI isn't focused. Default OFF
+// (never kill a process without explicit opt-in).
+// ---------------------------------------------------------------------------
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+
+static AUTO_HIBERNATE_ENABLED: AtomicBool = AtomicBool::new(false);
+/// Inactivity threshold before an Idle/Stale session is auto-hibernated.
+/// 30 min default; floored at 60s by `set_auto_hibernate`.
+static AUTO_HIBERNATE_AFTER_SECS: AtomicU64 = AtomicU64::new(30 * 60);
+
+/// Update the auto-hibernate policy. Called by `fleet_set_auto_hibernate`.
+pub fn set_auto_hibernate(enabled: bool, after_secs: u64) {
+    AUTO_HIBERNATE_ENABLED.store(enabled, Ordering::Relaxed);
+    AUTO_HIBERNATE_AFTER_SECS.store(after_secs.max(60), Ordering::Relaxed);
+}
+
 #[derive(Serialize, Clone)]
 struct FleetStatePayload {
     session_id: String,
@@ -95,6 +114,48 @@ fn tick_once(app: &AppHandle) {
                 )),
             },
         );
+    }
+
+    auto_hibernate_pass(app);
+}
+
+/// Auto-hibernate Idle/Stale sessions that have been inactive past the
+/// configured threshold (P3.2). Only fires when enabled; only targets
+/// genuinely-resting sessions with a bound `claude_session_id` (so they can
+/// be resumed) — never `AwaitingInput` (the user may be mid-response).
+fn auto_hibernate_pass(app: &AppHandle) {
+    if !AUTO_HIBERNATE_ENABLED.load(Ordering::Relaxed) {
+        return;
+    }
+    let after_secs = AUTO_HIBERNATE_AFTER_SECS.load(Ordering::Relaxed) as i64;
+    let cutoff = now_ms() - after_secs * 1000;
+
+    // Collect candidates under the lock, then hibernate outside it (hibernate
+    // re-locks the registry).
+    let candidates: Vec<String> = {
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.values()
+            .filter(|s| {
+                matches!(s.state, FleetSessionState::Idle | FleetSessionState::Stale)
+                    && s.claude_session_id.is_some()
+                    && s.last_activity_ms < cutoff
+            })
+            .map(|s| s.id.clone())
+            .collect()
+    };
+
+    for sid in candidates {
+        if registry().hibernate(&sid) {
+            tracing::info!(session_id = %sid, "fleet auto-hibernate: slept idle session");
+            let _ = app.emit(
+                event_name::FLEET_SESSION_STATE,
+                FleetStatePayload {
+                    session_id: sid,
+                    state: "hibernated",
+                    reason: Some(format!("Auto-hibernated after {} min idle", after_secs / 60)),
+                },
+            );
+        }
     }
 }
 

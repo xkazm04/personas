@@ -59,6 +59,8 @@ export const useSystemStore = create<SystemStore>()(
         // on reload, and goals — though safely in SQLite — never re-fetched.
         activeProjectId: state.activeProjectId,
         fleetNotifyAwaiting: state.fleetNotifyAwaiting,
+        fleetAutoHibernate: state.fleetAutoHibernate,
+        fleetAutoHibernateMinutes: state.fleetAutoHibernateMinutes,
         fleetActiveSessionId: state.fleetActiveSessionId,
         fleetTerminalFontSize: state.fleetTerminalFontSize,
         fleetTerminalCopyOnSelect: state.fleetTerminalCopyOnSelect,

@@ -144,6 +144,16 @@ pub async fn fleet_wake_session(
     Ok(new_id)
 }
 
+/// Configure the always-on auto-hibernate policy (P3.2): when `enabled`,
+/// the staleness ticker hibernates Idle/Stale sessions inactive for longer
+/// than `after_minutes` — even when the Fleet UI isn't focused. The frontend
+/// owns the persisted setting and pushes it here on change + on startup.
+#[tauri::command]
+pub async fn fleet_set_auto_hibernate(enabled: bool, after_minutes: u32) -> Result<(), String> {
+    super::stale::set_auto_hibernate(enabled, (after_minutes as u64) * 60);
+    Ok(())
+}
+
 /// Snapshot the registry for the UI's session grid.
 ///
 /// `hook_port` is the resolved local_http port (hosting /fleet/hooks/*).

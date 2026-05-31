@@ -107,6 +107,15 @@ export const wakeSession = (sessionId: string, cols?: number, rows?: number) =>
   invoke<string>('fleet_wake_session', { sessionId, cols, rows });
 
 /**
+ * Configure the always-on auto-hibernate policy (P3.2): the staleness ticker
+ * hibernates Idle/Stale sessions inactive longer than `afterMinutes` when
+ * `enabled`. The frontend owns the persisted setting and pushes it here on
+ * change + on startup.
+ */
+export const setAutoHibernate = (enabled: boolean, afterMinutes: number) =>
+  invoke<null>('fleet_set_auto_hibernate', { enabled, afterMinutes });
+
+/**
  * Read + summarize a session's Claude Code transcript
  * (`~/.claude/projects/**\/<claudeSessionId>.jsonl`) into a structured
  * rollup: token totals, per-tool counts, files touched, message counts,

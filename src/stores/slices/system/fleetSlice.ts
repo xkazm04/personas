@@ -41,6 +41,11 @@ export interface FleetSlice {
   fleetActiveSessionId: string | null;
   /** Fire an OS notification when a session enters awaiting_input. Persisted. */
   fleetNotifyAwaiting: boolean;
+  /** Auto-hibernate Idle/Stale sessions past the threshold (always-on Rust
+   *  ticker). Persisted; pushed to Rust on change + on refresh. */
+  fleetAutoHibernate: boolean;
+  /** Inactivity minutes before auto-hibernate fires. Persisted; floored at 1. */
+  fleetAutoHibernateMinutes: number;
   /** Recent lifecycle transitions per session id — feeds the card sparkline. In-memory. */
   fleetTransitions: Record<string, FleetTransition[]>;
   /** Terminal font size in px (user zoom). Persisted, clamped 9–22. */
@@ -53,6 +58,8 @@ export interface FleetSlice {
   fleetRefresh: () => Promise<void>;
   fleetSetActiveSession: (id: string | null) => void;
   fleetSetNotifyAwaiting: (on: boolean) => void;
+  fleetSetAutoHibernate: (on: boolean) => void;
+  fleetSetAutoHibernateMinutes: (minutes: number) => void;
   /** Set the terminal font size (clamped); pass a delta via fleetNudgeFont. */
   fleetSetTerminalFontSize: (px: number) => void;
   fleetNudgeTerminalFont: (delta: number) => void;
@@ -73,12 +80,18 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSessionsLoading: false,
   fleetActiveSessionId: null,
   fleetNotifyAwaiting: true,
+  fleetAutoHibernate: false,
+  fleetAutoHibernateMinutes: 30,
   fleetTransitions: {},
   fleetTerminalFontSize: FONT_DEFAULT,
   fleetTerminalCopyOnSelect: true,
   fleetTerminalTheme: 'auto',
 
   fleetRefresh: async () => {
+    // Sync the persisted auto-hibernate policy to the always-on Rust ticker.
+    // (Opening Fleet at least once per app session activates an enabled policy;
+    // a startup-side push is a tracked follow-up.)
+    fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(() => {});
     set({ fleetSessionsLoading: true });
     try {
       const snapshot = await fleetApi.listSessions();
@@ -99,6 +112,16 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
 
   fleetSetNotifyAwaiting: (on) => set({ fleetNotifyAwaiting: on }),
+
+  fleetSetAutoHibernate: (on) => {
+    set({ fleetAutoHibernate: on });
+    fleetApi.setAutoHibernate(on, get().fleetAutoHibernateMinutes).catch(() => {});
+  },
+  fleetSetAutoHibernateMinutes: (minutes) => {
+    const m = Math.max(1, Math.round(minutes) || 1);
+    set({ fleetAutoHibernateMinutes: m });
+    fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(() => {});
+  },
 
   fleetSetTerminalFontSize: (px) => set({ fleetTerminalFontSize: clampFont(px) }),
 

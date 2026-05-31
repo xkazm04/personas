@@ -10515,7 +10515,12 @@
       "sleep_unavailable": "Can't hibernate yet — session hasn't bound a Claude session id",
       "wake_session": "Wake",
       "hibernated_panel_title": "Session hibernated",
-      "hibernated_panel_desc": "The process was freed to save resources. Wake to resume the conversation via claude --resume."
+      "hibernated_panel_desc": "The process was freed to save resources. Wake to resume the conversation via claude --resume.",
+      "auto_hibernate_title": "Auto-hibernate idle sessions",
+      "auto_hibernate_desc": "Automatically hibernate sessions that sit idle past the threshold — freeing the process even when Fleet isn't focused. They stay resumable via Wake. Runs while Personas is open.",
+      "auto_hibernate_toggle": "Enable auto-hibernate",
+      "auto_hibernate_after": "After",
+      "auto_hibernate_minutes_unit": "min idle"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",
