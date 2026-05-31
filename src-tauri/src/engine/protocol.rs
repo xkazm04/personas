@@ -186,6 +186,7 @@ impl MockProtocol {
                 ProtocolMessage::EmitEvent { .. } => "EmitEvent",
                 ProtocolMessage::AgentMemory { .. } => "AgentMemory",
                 ProtocolMessage::ManualReview { .. } => "ManualReview",
+                ProtocolMessage::RaiseIncident { .. } => "RaiseIncident",
                 ProtocolMessage::ExecutionFlow { .. } => "ExecutionFlow",
                 ProtocolMessage::KnowledgeAnnotation { .. } => "KnowledgeAnnotation",
                 ProtocolMessage::ProposeImprovement { .. } => "ProposeImprovement",

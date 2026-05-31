@@ -84,6 +84,8 @@ pub fn dev_tools_update_project(
     monitoring_project_slug: Option<Option<String>>,
     team_id: Option<Option<String>>,
     pr_credential_id: Option<Option<String>>,
+    test_env_url: Option<Option<String>>,
+    test_env_branch: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -98,6 +100,8 @@ pub fn dev_tools_update_project(
         monitoring_project_slug.as_ref().map(|o| o.as_deref()),
         team_id.as_ref().map(|o| o.as_deref()),
         pr_credential_id.as_ref().map(|o| o.as_deref()),
+        test_env_url.as_ref().map(|o| o.as_deref()),
+        test_env_branch.as_ref().map(|o| o.as_deref()),
     )
 }
 
@@ -462,6 +466,16 @@ pub fn dev_tools_attention_queue(
 ) -> Result<AttentionQueue, AppError> {
     require_auth_sync(&state)?;
     repo::attention_queue(&state.db)
+}
+
+/// `(goal_id, team_name)` pairs for every goal a team_assignment is advancing —
+/// powers the "advancing team" badge on the goal Map (O4).
+#[tauri::command]
+pub fn dev_tools_goal_advancing_teams(
+    state: State<'_, Arc<AppState>>,
+) -> Result<Vec<(String, String)>, AppError> {
+    require_auth_sync(&state)?;
+    repo::goal_advancing_teams(&state.db)
 }
 
 // ============================================================================

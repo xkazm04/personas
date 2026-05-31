@@ -126,6 +126,8 @@ export function triggerKindLabel(t: T, kind: string): string {
       return c.proactive_kind_fleet_stuck_dispatched;
     case 'fleet_op_completed':
       return c.proactive_kind_fleet_op_completed;
+    case 'incident_blocker':
+      return c.proactive_kind_incident_blocker;
     default:
       return c.proactive_kind_unknown;
   }

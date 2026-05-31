@@ -3,6 +3,7 @@ import type { CompanionState } from './types';
 import type { StreamPhase } from './extractStreamPhase';
 import type { TodoStep } from './operationalSteps';
 import type { GuidanceWalkthrough } from './guidance/types';
+import type { PendingDecision } from './decision/types';
 import { ADHOC_TOPIC } from './guidance/walkthroughs';
 import type {
   BackgroundJob,
@@ -394,6 +395,27 @@ interface CompanionStore {
   flashHighlightTestId: string | null;
   flashHighlightLabel: string | null;
   flashHighlight: (testId: string, opts?: { ms?: number; label?: string }) => void;
+
+  /**
+   * Athena hands-free decision layer (P3, ephemeral — NOT persisted). A
+   * `pendingDecision` is the single numbered-choice the orb bubble
+   * (`orb/OrbDecisionBubble`) surfaces above Athena. The aggregator
+   * (`decision/useDecisionQueue`) feeds approvals / human-reviews / incidents
+   * in one-at-a-time when none is pending; the bubble renders the prompt +
+   * digit-pickable options. `decisionExplained` tracks whether the user picked
+   * `0` ("explain + recommend") so the bubble re-asks with the recommendation
+   * shown above the still-present options.
+   *
+   *  - `setPendingDecision(d)` — show a decision (resets `decisionExplained`).
+   *  - `clearPendingDecision()` — dismiss / resolved (also clears explained).
+   *  - `markDecisionExplained()` — `0` was picked; keep the decision, show the
+   *    recommendation. No-op when nothing is pending.
+   */
+  pendingDecision: PendingDecision | null;
+  decisionExplained: boolean;
+  setPendingDecision: (decision: PendingDecision) => void;
+  clearPendingDecision: () => void;
+  markDecisionExplained: () => void;
 }
 
 /** Compact projection of an assignment + its current status, surfaced as
@@ -773,4 +795,13 @@ export const useCompanionStore = create<CompanionStore>((set, get) => ({
       }
     }, opts?.ms ?? 2400);
   },
+
+  pendingDecision: null,
+  decisionExplained: false,
+  setPendingDecision: (decision) =>
+    set({ pendingDecision: decision, decisionExplained: false }),
+  clearPendingDecision: () =>
+    set({ pendingDecision: null, decisionExplained: false }),
+  markDecisionExplained: () =>
+    set((s) => (s.pendingDecision ? { decisionExplained: true } : s)),
 }));

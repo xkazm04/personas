@@ -5,6 +5,7 @@ import type { DeliveredIncrement } from "./DeliveredIncrement";
 import type { DeterministicDims } from "./DeterministicDims";
 import type { Facts } from "./Facts";
 import type { GroundingEntry } from "./GroundingEntry";
+import type { JsonValue } from "./serde_json/JsonValue";
 import type { Judge } from "./Judge";
 import type { SelfVeto } from "./SelfVeto";
 import type { TrajectoryPoint } from "./TrajectoryPoint";
@@ -14,4 +15,10 @@ import type { TrajectoryPoint } from "./TrajectoryPoint";
  * same-team summaries for `trajectory`); never `executions.json` /
  * `events.json` / `repo.patch`. Ships `heartbeat_len`, not the array.
  */
-export type EvalRunDetail = { runId: string, team: string | null, teamId: string | null, seed: string | null, goal: string | null, startedAt: string | null, endedAt: string | null, windowMin: number | null, rubricVersion: string | null, note: string | null, heldOut: boolean, verdict: string | null, provisional: boolean, teamScore: number | null, deterministicDims: DeterministicDims, codeTrack: CodeTrack | null, deliveredIncrement: DeliveredIncrement | null, selfVeto: SelfVeto | null, judge: Judge | null, facts: Facts | null, grounding: Array<GroundingEntry>, autonomy: Autonomy | null, heartbeatLen: number, repoDiffBytes: number | null, costUsd: number | null, trajectory: Array<TrajectoryPoint>, hasScorecard: boolean, };
+export type EvalRunDetail = { runId: string, team: string | null, teamId: string | null, seed: string | null, goal: string | null, startedAt: string | null, endedAt: string | null, windowMin: number | null, rubricVersion: string | null, note: string | null, heldOut: boolean, verdict: string | null, provisional: boolean, teamScore: number | null, deterministicDims: DeterministicDims, codeTrack: CodeTrack | null, deliveredIncrement: DeliveredIncrement | null, selfVeto: SelfVeto | null, 
+/**
+ * `scorecard.resilience` (§6) — present only on resilience-track runs;
+ * surfaces the incident-escalation + auto-continuation facts to the
+ * in-app Certification dashboard. Tolerant `Value` (additive, optional).
+ */
+resilience: JsonValue | null, judge: Judge | null, facts: Facts | null, grounding: Array<GroundingEntry>, autonomy: Autonomy | null, heartbeatLen: number, repoDiffBytes: number | null, costUsd: number | null, trajectory: Array<TrajectoryPoint>, hasScorecard: boolean, };

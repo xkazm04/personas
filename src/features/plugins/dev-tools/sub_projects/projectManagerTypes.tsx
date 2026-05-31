@@ -16,6 +16,8 @@ export interface Project {
   createdAt: string;
   githubUrl?: string;
   teamId?: string;
+  testEnvUrl?: string;
+  testEnvBranch?: string;
 }
 
 export interface Goal {
@@ -50,6 +52,8 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     createdAt: dp.created_at.slice(0, 10),
     githubUrl: dp.github_url ?? undefined,
     teamId: dp.team_id ?? undefined,
+    testEnvUrl: dp.test_env_url ?? undefined,
+    testEnvBranch: dp.test_env_branch ?? undefined,
   };
 }
 
@@ -135,4 +139,8 @@ export interface EditProjectData {
   teamId: string | null;
   /** Vault GitHub PAT credential id bound for PR / source-control operations. */
   prCredentialId: string | null;
+  /** URL of the living test environment this project/team delivers into. */
+  testEnvUrl: string;
+  /** Branch deployed to the living test environment (e.g. `staging`). */
+  testEnvBranch: string;
 }

@@ -843,6 +843,38 @@ pub fn get_running(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
     })
 }
 
+/// Only executions whose process was mid-RUN at shutdown (`status='running'`).
+/// Used by startup recovery to fail orphaned runs WITHOUT touching durable
+/// `queued` rows (which are re-admitted instead). See
+/// `ExecutionEngine::recover_stale_executions`.
+pub fn get_running_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
+    timed_query!("persona_executions", "persona_executions::get_running_only", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_executions WHERE status = 'running' ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map([], row_to_execution)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
+/// Only executions persisted as `queued` (waiting for a slot, never started).
+/// The `persona_executions` row is the durable queue; these are re-admitted on
+/// startup by `ExecutionEngine::requeue_persisted_executions` so scheduled /
+/// event-triggered work is not lost across a restart.
+pub fn get_queued_only(pool: &DbPool) -> Result<Vec<PersonaExecution>, AppError> {
+    timed_query!("persona_executions", "persona_executions::get_queued_only", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare_cached(
+            "SELECT * FROM persona_executions WHERE status = 'queued' ORDER BY created_at ASC",
+        )?;
+        let rows = stmt.query_map([], row_to_execution)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
+    })
+}
+
 /// Lightweight check: are any executions currently in-flight?
 /// Used by the adaptive polling system to decide between active/idle intervals.
 pub fn has_running_executions(pool: &DbPool) -> Result<bool, AppError> {
@@ -1634,5 +1666,52 @@ mod tests {
         let deleted = delete(&pool, &exec.id).unwrap();
         assert!(deleted);
         assert!(get_by_id(&pool, &exec.id).is_err());
+    }
+
+    /// P1 durability invariant: startup recovery must distinguish mid-RUN rows
+    /// (to fail) from durable `queued` rows (to re-admit). `get_running_only`
+    /// sees only `running`; `get_queued_only` sees only `queued`; the legacy
+    /// `get_running` union still sees both.
+    #[test]
+    fn running_only_and_queued_only_partition_by_status() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Partition Agent");
+
+        // One row left queued, one promoted to running (as at shutdown).
+        let queued = create(&pool, &persona_id, None, None, None, None).unwrap();
+        let running = create(&pool, &persona_id, None, None, None, None).unwrap();
+        update_status(
+            &pool,
+            &running.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Running,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        let running_only = get_running_only(&pool).unwrap();
+        assert_eq!(running_only.len(), 1);
+        assert_eq!(running_only[0].id, running.id);
+
+        let queued_only = get_queued_only(&pool).unwrap();
+        assert_eq!(queued_only.len(), 1);
+        assert_eq!(queued_only[0].id, queued.id);
+
+        // The legacy union still returns both (back-compat).
+        assert_eq!(get_running(&pool).unwrap().len(), 2);
+
+        // A completed row is in neither partition.
+        update_status(
+            &pool,
+            &running.id,
+            UpdateExecutionStatus {
+                status: ExecutionState::Completed,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert_eq!(get_running_only(&pool).unwrap().len(), 0);
+        assert_eq!(get_queued_only(&pool).unwrap().len(), 1);
     }
 }

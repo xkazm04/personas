@@ -8,6 +8,7 @@ mod credentials;
 mod env;
 mod globals;
 mod stages;
+mod team_context;
 
 // Cross-module re-exports. These paths are what external callers (outside
 // `engine::runner`) see — matches the layout before the submodule split so no
@@ -798,6 +799,35 @@ pub async fn run_execution(
         prompt_text
     };
 
+    // Team-alignment "pre-ritual" — wrap every member execution with awareness
+    // of its team: who its teammates are (roster + capabilities), and the team's
+    // active goals. The persona then self-decides — from its own capabilities —
+    // whether and how the work aligns (LLM-driven relevance, no per-execution
+    // match). This is what makes goals actually steer team behavior at runtime,
+    // rather than living only in the Goals UI. Bounded + DB-free rendering — see
+    // `team_context.rs`. Skip on session resume (already in the persona's context).
+    let prompt_text = if !is_session_resume {
+        match persona.home_team_id.as_deref() {
+            Some(team_id) if !team_id.is_empty() => {
+                let team_name = workspace
+                    .as_ref()
+                    .map(|w| w.name.as_str())
+                    .unwrap_or("your team");
+                match team_context::build_team_alignment_block(&pool, &persona, team_name, team_id) {
+                    Some(block) => {
+                        logger
+                            .log("[TEAM-ALIGN] Injected team roster + active-goal alignment block");
+                        format!("{prompt_text}{block}")
+                    }
+                    None => prompt_text,
+                }
+            }
+            _ => prompt_text,
+        }
+    } else {
+        prompt_text
+    };
+
     trace.end_span(&prompt_span, None, None, None, None);
 
     logger.log("=== Persona Execution Started ===");
@@ -813,15 +843,91 @@ pub async fn run_execution(
     ));
     logger.log(&format!("Prompt length: {} characters", prompt_text.len()));
 
-    // Create a stable per-persona working directory (persists across executions).
-    let exec_dir = {
-        let stable_dir = std::env::temp_dir()
-            .join("personas-workspace")
-            .join(&persona.id);
-        if std::fs::create_dir_all(&stable_dir).is_ok() {
-            stable_dir
+    // Per-execution git-worktree isolation (Slice C, DEFAULT-OFF). When the
+    // `execution_worktree_isolation` setting is ON and this persona is pinned
+    // to a dev_project whose root_path is a git work tree, give THIS execution
+    // its own worktree on branch `personas/exec/<id>`. Two concurrent
+    // executions against the same repo then write disjoint working dirs instead
+    // of clobbering the shared per-persona scratch dir. The branch is left for
+    // review on completion (no auto-merge — see finalize). Resolved here (before
+    // exec_dir) so the worktree path can become both the cwd and the
+    // CODEBASE_ROOT_PATH override below. Any failure falls back to the
+    // non-isolated path and never fails the execution.
+    let exec_worktree: Option<crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace> = {
+        let isolation_on = crate::db::repos::core::settings::get(
+            &pool,
+            crate::db::settings_keys::EXECUTION_WORKTREE_ISOLATION,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if isolation_on {
+            // Resolve the pinned dev_project's repo root the same robust way the
+            // CODEBASE_* injection does below: read `devProjectId` from the raw
+            // design_context JSON (the strict struct parse would drop it), then
+            // look up dev_projects.root_path via the repo.
+            let repo_root: Option<std::path::PathBuf> = persona
+                .design_context
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok())
+                .and_then(|v| {
+                    v.get("devProjectId")
+                        .and_then(|x| x.as_str())
+                        .map(|s| s.to_string())
+                })
+                .and_then(|id| {
+                    crate::db::repos::dev_tools::get_project_by_id(&pool, &id).ok()
+                })
+                .map(|p| std::path::PathBuf::from(p.root_path.as_str()))
+                .filter(|p| p.join(".git").exists());
+            match repo_root {
+                Some(root) => {
+                    match crate::commands::infrastructure::dev_tools::workspace::ExecutionWorkspace::new_for_execution(
+                        &root,
+                        &execution_id,
+                    ) {
+                        Ok(ws) => {
+                            logger.log(&format!(
+                                "[WORKTREE] isolated execution in {} on branch personas/exec/{}",
+                                ws.path().display(),
+                                &execution_id
+                            ));
+                            Some(ws)
+                        }
+                        Err(e) => {
+                            logger.log(&format!(
+                                "[WORKTREE] isolation requested but worktree create failed ({e}); falling back to shared per-persona dir"
+                            ));
+                            None
+                        }
+                    }
+                }
+                None => {
+                    logger.log(
+                        "[WORKTREE] isolation requested but persona has no pinned git dev_project; falling back to shared per-persona dir",
+                    );
+                    None
+                }
+            }
         } else {
-            std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
+            None
+        }
+    };
+
+    // Create a stable per-persona working directory (persists across executions).
+    // When isolation is active, use the per-execution worktree instead.
+    let exec_dir = match &exec_worktree {
+        Some(ws) => ws.path().to_path_buf(),
+        None => {
+            let stable_dir = std::env::temp_dir()
+                .join("personas-workspace")
+                .join(&persona.id);
+            if std::fs::create_dir_all(&stable_dir).is_ok() {
+                stable_dir
+            } else {
+                std::env::temp_dir().join(format!("personas-exec-{}", &execution_id))
+            }
         }
     };
     if let Err(e) = std::fs::create_dir_all(&exec_dir) {
@@ -965,6 +1071,22 @@ pub async fn run_execution(
             ]
         })
         .unwrap_or_default();
+    // Worktree-isolation crux: when this execution runs in its own worktree,
+    // redirect ONLY the repo-handle env var (CODEBASE_ROOT_PATH) to the
+    // worktree so the persona reads + writes the worktree, not the real repo.
+    // PROJECT_NAME / TECH_STACK / PROJECT_ID are metadata that stay pointed at
+    // the real project. No-op when isolation is off (exec_worktree is None) or
+    // unpinned (pinned_codebase_env is empty — which can't happen alongside an
+    // active worktree, since worktree creation required the same pin).
+    let mut pinned_codebase_env = pinned_codebase_env;
+    if let Some(ref ws) = exec_worktree {
+        let worktree_path = ws.path().display().to_string();
+        for entry in pinned_codebase_env.iter_mut() {
+            if entry.0 == "CODEBASE_ROOT_PATH" {
+                entry.1 = worktree_path.clone();
+            }
+        }
+    }
     let mcp_installed = match super::cli_mcp_config::install_mcp_sidecar(
         &exec_dir,
         drive_root_for_sync.as_deref(),
@@ -2400,6 +2522,22 @@ pub async fn run_execution(
             cost_usd: Some(metrics.cost_usd),
         },
     );
+
+    // Finalize the per-execution worktree (Slice C). Auto-commits any dirty
+    // work onto branch `personas/exec/<id>` and removes the worktree dir; the
+    // branch is LEFT for review (no auto-merge). Best-effort — a finalize
+    // failure must never affect the already-finalized execution status above.
+    if let Some(ws) = exec_worktree {
+        if let Err(e) = ws.finalize(
+            crate::commands::infrastructure::dev_tools::workspace::ExecutionIntegration::LeaveAsBranch,
+        ) {
+            tracing::warn!(
+                execution_id = %execution_id,
+                error = %e,
+                "[WORKTREE] finalize failed (execution already completed; branch may need manual cleanup)"
+            );
+        }
+    }
 
     // Deliver message to persona_messages if execution produced output but the AI
     // did NOT already send a structured report via the emit_message protocol tool.

@@ -5223,6 +5223,22 @@ export type Translations = {
       action_dismiss: string;
       action_reopen: string;
       action_open_detail: string;
+      action_start_work: string;
+      action_back_to_open: string;
+      filter_status_in_progress: string;
+      detail_title: string;
+      detail_label_status: string;
+      detail_label_kind: string;
+      detail_label_source: string;
+      detail_label_persona: string;
+      detail_label_detail: string;
+      detail_label_resolution_note: string;
+      detail_label_created: string;
+      detail_label_acknowledged: string;
+      detail_label_resolved: string;
+      detail_no_detail: string;
+      detail_note_label: string;
+      detail_no_persona: string;
       action_failed_prefix: string;
       bulk_acknowledge_count: string;
       bulk_resolve_count: string;
@@ -5298,6 +5314,10 @@ export type Translations = {
       curation_schedule_disabled_state: string;
       curation_schedule_disable: string;
       curation_schedule_save: string;
+      delete_all: string;
+      delete_all_confirm_title: string;
+      delete_all_confirm_body: string;
+      delete_all_confirm_cta: string;
     };
     memory_review: {
       all_conflicts_resolved: string;
@@ -5579,6 +5599,10 @@ export type Translations = {
       review_detail: string;
       select_review: string;
       technical_context: string;
+      delete_all: string;
+      delete_all_confirm_title: string;
+      delete_all_confirm_body: string;
+      delete_all_confirm_cta: string;
     };
     messages_view: {
       title: string;
@@ -5647,6 +5671,10 @@ export type Translations = {
       persona_link_title: string;
       pending_decisions_approve_all: string;
       pending_decisions_reject_all: string;
+      delete_all: string;
+      delete_all_confirm_title: string;
+      delete_all_confirm_body: string;
+      delete_all_confirm_cta: string;
     };
     cockpit: {
       title_default: string;
@@ -11579,6 +11607,19 @@ export type Translations = {
       guide_step_label: string;
       guide_goto_step: string;
       guide_click_hint: string;
+      decision_title: string;
+      decision_explain: string;
+      decision_explain_hint: string;
+      decision_recommend_prefix: string;
+      decision_dismiss: string;
+      decision_approve: string;
+      decision_reject: string;
+      decision_resolve: string;
+      decision_open: string;
+      decision_recommend_approve: string;
+      decision_recommend_review: string;
+      decision_recommend_resolve: string;
+      decision_recommend_review_open: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;
@@ -11819,6 +11860,8 @@ export type Translations = {
       setup_memory_desc: string;
       setup_recall_synthesis_label: string;
       setup_recall_synthesis_desc: string;
+      setup_hands_free_decisions_label: string;
+      setup_hands_free_decisions_desc: string;
       setup_desktop_title: string;
       setup_desktop_desc: string;
       setup_desktop_clipboard_label: string;
@@ -11863,6 +11906,7 @@ export type Translations = {
       proactive_kind_fleet_stale: string;
       proactive_kind_fleet_stuck_dispatched: string;
       proactive_kind_fleet_op_completed: string;
+      proactive_kind_incident_blocker: string;
       proactive_kind_unknown: string;
       action_label_run_persona: string;
       action_label_resolve_human_review: string;
@@ -12327,6 +12371,11 @@ export type Translations = {
       goal_detail_team_steps: string;
       goal_detail_linked_teams: string;
       goal_unlink_team: string;
+      goal_advance_label: string;
+      goal_advance_button: string;
+      goal_advance_starting: string;
+      goal_advance_active: string;
+      goal_advance_hint: string;
       goal_detail_activity: string;
       goal_item_add: string;
       goal_item_add_placeholder: string;
@@ -12590,6 +12639,11 @@ export type Translations = {
       invalid_repo_url: string;
       browse: string;
       repos_from_connector: string;
+      test_env_url: string;
+      test_env_url_placeholder: string;
+      test_env_branch: string;
+      test_env_branch_placeholder: string;
+      open_test_env: string;
       modal_section_project: string;
       modal_section_source: string;
       modal_section_workspace: string;

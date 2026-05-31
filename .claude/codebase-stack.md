@@ -150,6 +150,17 @@ When an idea touches **any** Claude Code CLI feature, it's almost certainly rele
 - Session resume → already used; ideas about better session management apply
 - Output styles → currently unused in personas, could be a feature gap
 
+### Workflow + Task tools ARE exposed in personas' headless `claude -p` spawn (verified 2026-05-31)
+
+Empirically probed during `/research` run 2026-05-31 (Claude Code 'workflow' mechanism). Spawning `claude -p - --output-format stream-json --verbose --dangerously-skip-permissions --exclude-dynamic-system-prompt-sections --effort medium` (personas' exact `build_cli_args` flag set, `CLAUDECODE`/`CLAUDE_CODE` stripped) on CLI **2.1.158 / Opus 4.8 / Max account** returns a `system/init` event whose `tools` array (40 tools) includes BOTH **`Task`** (subagents) AND **`Workflow`** (the dynamic-workflow orchestration tool). The `workflows` *slash command* is NOT exposed in headless — but the *tool* is, which is what matters since a persona execution drives tools, not slash commands.
+
+**Implication:** the marketing claim that dynamic workflows are "interactive-only" is wrong for this CLI version + tier. A persona execution CAN, in principle, author and run a dynamic workflow inside its own `claude -p` process today. The operative constraints are therefore NOT availability but:
+- **Tier-gating** — `Workflow` is present on Max/Team (and Enterprise-with-opt-in) but absent on Pro, so behavior is account-dependent across personas' distributed users (same class of problem the `--effort` pin solved for CLI 2.1.94). Personas' parser already reads the `init` event, so a "deep-fanout" persona capability could be gated on `Workflow ∈ tools`.
+- **Token cost** — a workflow can spawn tens-to-hundreds of subagents, blasting through `max_budget_usd`; a shared/aggregate budget ceiling (per-execution `--max-budget-usd` at `prompt/cli_args.rs:137` is NOT aggregate) is a prerequisite before enabling it.
+- **Observability** — subagents run inside the single child `claude` process, invisible to personas' execution inspector. OTEL `agent_id`/`parent_agent_id` spans + TRACEPARENT are already wired (`build_cli_args_with_trace`), but the UI doesn't render sub-agent structure yet.
+
+Also note: the headless `init` `tools` list exposes `Skill`, `Cron*`, `Monitor`, `RemoteTrigger`, **`EnterWorktree`/`ExitWorktree`** (native CLI worktree tools), `AskUserQuestion`, and `Task*` — personas deliberately constrains a persona's effective surface via prompt + bound connectors regardless. Probe recipe for future capability questions: mirror the exact `build_cli_args` flags + env removals, set `--max-turns 1 --max-budget-usd 0.25` as cost backstops, inspect the `system/init` event — never trust marketing prose over the init tool registry.
+
 ---
 
 ## 3. Persona Schema (data shape)

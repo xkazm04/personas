@@ -317,6 +317,37 @@ async fn tick_loop(
                 },
                 Some(&assignment.title),
             );
+            // Close the progress loop: a goal-linked assignment that finished
+            // successfully checks off the to-dos it worked (steps built from
+            // dev_goal_items carry the to-do's title verbatim) and recomputes +
+            // writes the goal's progress — signals alone never move it, so an
+            // unattended team would otherwise stay at 0%. Best-effort.
+            if final_status == "done" {
+                if let Some(gid) = assignment.goal_id.as_deref() {
+                    let done_titles: HashSet<&str> = steps
+                        .iter()
+                        .filter(|s| s.status == "done")
+                        .map(|s| s.title.as_str())
+                        .collect();
+                    if let Ok(items) = crate::db::repos::dev_tools::list_goal_items(pool, gid) {
+                        for it in items.iter().filter(|i| !i.done) {
+                            if done_titles.contains(it.title.as_str()) {
+                                let _ = crate::db::repos::dev_tools::update_goal_item(
+                                    pool,
+                                    &it.id,
+                                    None,
+                                    Some(true),
+                                );
+                            }
+                        }
+                    }
+                    if let Err(e) =
+                        crate::db::repos::dev_tools::apply_resolved_goal_progress(pool, gid)
+                    {
+                        tracing::warn!(goal_id = %gid, error = %e, "auto goal-progress close failed");
+                    }
+                }
+            }
             return Ok(());
         }
 
@@ -437,6 +468,11 @@ async fn run_step(
     assignment_repo::set_step_execution(pool, &step.id, &exec.id)?;
     assignment_repo::update_step_status(pool, &step.id, "running", None, None)?;
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+    // First sign of work on a goal-linked assignment: flip the goal
+    // open→in-progress so it reflects activity before any step finishes.
+    if let Some(gid) = goal_id.as_deref() {
+        let _ = crate::db::repos::dev_tools::mark_goal_in_progress(pool, gid);
+    }
 
     engine
         .start_execution(

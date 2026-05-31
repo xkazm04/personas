@@ -745,6 +745,23 @@ pub fn run() {
 
             let scheduler = Arc::new(engine::background::SchedulerState::new());
             let engine = Arc::new(engine::ExecutionEngine::new(log_dir, scheduler.clone(), Some(Arc::new(pool.clone()))));
+
+            // Re-admit executions persisted as `queued` when the app last exited
+            // (recover_stale_executions above only fails mid-RUN rows now). This
+            // is what makes scheduled / event-triggered work survive a restart
+            // instead of being silently dropped (P1 durable-queue guarantee).
+            // Spawned so it never blocks startup; re-admission is idempotent.
+            {
+                let requeue_engine = engine.clone();
+                let requeue_app = app.handle().clone();
+                let requeue_pool = pool.clone();
+                tauri::async_runtime::spawn(async move {
+                    requeue_engine
+                        .requeue_persisted_executions(requeue_app, requeue_pool)
+                        .await;
+                });
+            }
+
             let auth = Arc::new(tokio::sync::RwLock::new(
                 commands::infrastructure::auth::AuthStateInner::default(),
             ));
@@ -1419,6 +1436,7 @@ pub fn run() {
             commands::core::memories::list_memories_by_execution,
             commands::core::memories::create_memory,
             commands::core::memories::delete_memory,
+            commands::core::memories::delete_all_memories,
             commands::core::memories::merge_memories,
             commands::core::memories::update_memory_importance,
             commands::core::memories::update_memory_content,
@@ -1537,6 +1555,7 @@ pub fn run() {
             commands::execution::audit_incidents::get_audit_incidents_summary,
             commands::execution::audit_incidents::get_audit_incident,
             commands::execution::audit_incidents::acknowledge_audit_incident,
+            commands::execution::audit_incidents::set_incident_in_progress,
             commands::execution::audit_incidents::resolve_audit_incident,
             commands::execution::audit_incidents::dismiss_audit_incident,
             commands::execution::audit_incidents::reopen_audit_incident,
@@ -1727,6 +1746,7 @@ pub fn run() {
             commands::design::reviews::get_manual_review_counts,
             commands::design::reviews::update_manual_review_status,
             commands::design::reviews::gc_stale_manual_reviews,
+            commands::design::reviews::delete_all_manual_reviews,
             commands::design::reviews::get_pending_review_count,
             commands::design::reviews::list_review_messages,
             commands::design::reviews::add_review_message,
@@ -2012,6 +2032,7 @@ pub fn run() {
             commands::communication::messages::mark_message_read,
             commands::communication::messages::mark_all_messages_read,
             commands::communication::messages::delete_message,
+            commands::communication::messages::delete_all_messages,
             commands::communication::messages::get_unread_message_count,
             commands::communication::messages::get_message_count,
             commands::communication::messages::get_message_deliveries,
@@ -2106,6 +2127,7 @@ pub fn run() {
             commands::teams::assignments::list_team_assignments_for_goal,
             commands::teams::assignments::decompose_team_assignment_goal,
             commands::teams::assignments::companion_assign_team,
+            commands::teams::assignments::advance_team_goal,
             commands::teams::assignments::create_assignment_template,
             commands::teams::assignments::list_assignment_templates,
             commands::teams::assignments::delete_assignment_template,
@@ -2614,6 +2636,7 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_list_goal_items_for_project,
             commands::infrastructure::dev_tools::dev_tools_portfolio_summary,
             commands::infrastructure::dev_tools::dev_tools_attention_queue,
+            commands::infrastructure::dev_tools::dev_tools_goal_advancing_teams,
             // Dev Tools -- Context Groups
             commands::infrastructure::dev_tools::dev_tools_list_context_groups,
             commands::infrastructure::dev_tools::dev_tools_create_context_group,

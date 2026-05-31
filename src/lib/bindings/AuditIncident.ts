@@ -58,4 +58,11 @@ status: string, acknowledgedAt: string | null,
  * Currently always `"user"` (single-user app). Reserved for future
  * auto-triage attribution.
  */
-acknowledgedBy: string | null, resolvedAt: string | null, resolutionNote: string | null, createdAt: string, };
+acknowledgedBy: string | null, resolvedAt: string | null, resolutionNote: string | null, 
+/**
+ * P2.3b — stamped when the incident-continuation reactive loop has re-run
+ * the blocked work for this (persona_blocker) incident. NULL = not yet
+ * continued; the consumer claims it atomically so a re-run fires at most
+ * once.
+ */
+continuedAt: string | null, createdAt: string, };

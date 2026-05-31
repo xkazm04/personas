@@ -53,6 +53,15 @@ export interface StoreBusEventMap {
 
   /** Tour requests credential nav to switch view (GuidedTour emits, CredentialNavContext subscribes). */
   'tour:navigate-credential-view': { key: string };
+
+  /** Deep-link request to open a specific incident's detail modal. Emitted by
+   *  the Athena `incident_blocker` proactive engage handler (ProactiveCard)
+   *  AFTER navigating to Overview → Incidents; IncidentsInbox subscribes and
+   *  opens IncidentDetailModal for the given id. Because IncidentsInbox
+   *  lazy-mounts on nav, the emit may fire before the subscriber exists — a
+   *  module-level pending-id latch (`incidentDeepLink.ts`) bridges the gap so
+   *  a late-mounting inbox still consumes the intent on mount. */
+  'incidents:open-detail': { incidentId: string };
 }
 
 // ---------------------------------------------------------------------------

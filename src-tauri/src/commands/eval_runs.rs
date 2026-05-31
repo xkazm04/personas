@@ -334,6 +334,10 @@ pub struct EvalRunDetail {
     pub code_track: Option<CodeTrack>,
     pub delivered_increment: Option<DeliveredIncrement>,
     pub self_veto: Option<SelfVeto>,
+    /// `scorecard.resilience` (§6) — present only on resilience-track runs;
+    /// surfaces the incident-escalation + auto-continuation facts to the
+    /// in-app Certification dashboard. Tolerant `Value` (additive, optional).
+    pub resilience: Option<serde_json::Value>,
     pub judge: Option<Judge>,
     pub facts: Option<Facts>,
     pub grounding: Vec<GroundingEntry>,
@@ -570,6 +574,7 @@ fn build_detail(l: &Loaded, trajectory: Vec<TrajectoryPoint>) -> EvalRunDetail {
         code_track: subtree(sc, "code_track"),
         delivered_increment: subtree(sc, "delivered_increment"),
         self_veto: subtree(sc, "self_veto"),
+        resilience: sc.get("resilience").cloned(),
         judge: subtree(sc, "judge"),
         facts: subtree(sc, "facts"),
         grounding: subtree(sc, "grounding"),

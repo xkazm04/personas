@@ -5,7 +5,7 @@
  * 100+ node graphs navigable, and the level-of-detail nodes (see GoalNode) let
  * the user switch between a high-level overview and reading individual goals.
  */
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap,
   useNodesState, useEdgesState, type Node,
@@ -16,6 +16,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import { silentCatch } from '@/lib/silentCatch';
+import { goalAdvancingTeams } from '@/api/devTools/devTools';
 import { GoalNode } from './GoalNode';
 import { buildGoalGraph, type GoalNodeData } from './goalGraphLayout';
 import { goalStatusLabel, GOAL_STATUSES, goalStatusMeta } from './goalStatus';
@@ -60,13 +61,24 @@ export function GoalGraphMap({
   const dl = t.plugins.dev_lifecycle;
   const dt = t.plugins.dev_tools;
 
+  // O4: which team is advancing each goal (team_assignment.goal_id → team) —
+  // surfaced as a badge on the node. Empty until a team assignment advances a
+  // goal; refreshes when the goal set changes.
+  const [advancingTeams, setAdvancingTeams] = useState<Map<string, string>>(new Map());
+  useEffect(() => {
+    goalAdvancingTeams()
+      .then((rows) => setAdvancingTeams(new Map(rows)))
+      .catch(silentCatch('GoalGraphMap.goalAdvancingTeams'));
+  }, [goals]);
+
   const graph = useMemo(
     () => buildGoalGraph({
       goals,
       dependencies,
       savedPositions: projectId ? loadPositions(projectId) : undefined,
+      advancingTeams,
     }),
-    [goals, dependencies, projectId],
+    [goals, dependencies, projectId, advancingTeams],
   );
 
   const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes);

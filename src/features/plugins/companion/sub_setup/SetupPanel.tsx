@@ -45,6 +45,12 @@ export default function SetupPanel() {
   const setRecallSynthesisEnabled = useSystemStore(
     (s) => s.setCompanionRecallSynthesisEnabled,
   );
+  const handsFreeDecisions = useSystemStore(
+    (s) => s.companionHandsFreeDecisions,
+  );
+  const setHandsFreeDecisions = useSystemStore(
+    (s) => s.setCompanionHandsFreeDecisions,
+  );
 
   const [trackingEnabled, setTrackingEnabled] = useState<boolean | null>(null);
   const [trackingBusy, setTrackingBusy] = useState(false);
@@ -173,6 +179,13 @@ export default function SetupPanel() {
           description={t.plugins.companion.setup_recall_synthesis_desc}
           checked={recallSynthesisEnabled}
           onChange={() => setRecallSynthesisEnabled(!recallSynthesisEnabled)}
+        />
+        <SettingRow
+          icon={<Eye className="w-4 h-4 text-cyan-400" />}
+          label={t.plugins.companion.setup_hands_free_decisions_label}
+          description={t.plugins.companion.setup_hands_free_decisions_desc}
+          checked={handsFreeDecisions}
+          onChange={() => setHandsFreeDecisions(!handsFreeDecisions)}
         />
       </SectionCard>
 

@@ -29,6 +29,7 @@ row_mapper!(row_to_incident -> AuditIncident {
     status,
     acknowledged_at [opt], acknowledged_by [opt],
     resolved_at [opt], resolution_note [opt],
+    continued_at [opt],
     created_at,
 });
 
@@ -122,6 +123,41 @@ pub fn promote(pool: &DbPool, input: CreateAuditIncidentInput) -> Result<Option<
 }
 
 // -- Read paths ---------------------------------------------------------------
+
+/// Open (non-terminal) incidents for a set of personas, newest-first, capped at
+/// `limit`. Used by the execution-time team-awareness block
+/// (`engine::runner::team_context`) so members avoid repeating known failures.
+///
+/// "Open" here = `status IN ('open','acknowledged')` (the two non-terminal
+/// states; `resolved`/`dismissed` are excluded). Scope is by `persona_id`
+/// because `audit_incidents` has no project/team FK — the persona roster is the
+/// closest available team scope. Ordering is `created_at DESC` (the table has no
+/// `last_seen_at`); the caller applies the severity-rank + high/critical filter
+/// in Rust, so this stays a plain, index-friendly query.
+///
+/// Empty `persona_ids` ⇒ `Ok(vec![])` (no SQL issued).
+pub fn list_open_by_personas(
+    pool: &DbPool,
+    persona_ids: &[String],
+    limit: i64,
+) -> Result<Vec<AuditIncident>, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::list_open_by_personas", {
+        if persona_ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let mut qb = QueryBuilder::new();
+        qb.where_in("status", vec!["open".to_string(), "acknowledged".to_string()]);
+        qb.where_in("persona_id", persona_ids.to_vec());
+        qb.order_by("created_at", "DESC");
+        qb.limit(limit);
+
+        let sql = qb.build_select("SELECT * FROM audit_incidents");
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(qb.params_ref().as_slice(), row_to_incident)?;
+        Ok(collect_rows(rows, "audit_incidents::list_open_by_personas"))
+    })
+}
 
 pub fn get_by_id(pool: &DbPool, id: &str) -> Result<AuditIncident, AppError> {
     timed_query!("audit_incidents", "audit_incidents::get_by_id", {
@@ -249,11 +285,19 @@ fn can_transition(from: IncidentStatus, to: IncidentStatus) -> bool {
     matches!(
         (from, to),
         (Open, Acknowledged)
+            | (Open, InProgress)
             | (Open, Resolved)
             | (Open, Dismissed)
+            | (Acknowledged, InProgress)
             | (Acknowledged, Resolved)
             | (Acknowledged, Dismissed)
             | (Acknowledged, Open)
+            // In-progress: the active-work state. Can finish (resolved),
+            // be set aside (dismissed), or revert to open/acknowledged.
+            | (InProgress, Resolved)
+            | (InProgress, Dismissed)
+            | (InProgress, Open)
+            | (InProgress, Acknowledged)
             | (Resolved, Open)
             | (Dismissed, Open)
     )
@@ -294,6 +338,17 @@ fn apply_transition(
              WHERE id = ?2",
             params![now, id],
         )?,
+        IncidentStatus::InProgress => conn.execute(
+            // Stamp acknowledged_at if not already (entering in_progress implies
+            // it's been seen). resolution fields stay clear — work isn't done.
+            "UPDATE audit_incidents
+             SET status = 'in_progress',
+                 acknowledged_at = COALESCE(acknowledged_at, ?1),
+                 acknowledged_by = COALESCE(acknowledged_by, 'user'),
+                 resolved_at = NULL, resolution_note = NULL
+             WHERE id = ?2",
+            params![now, id],
+        )?,
         IncidentStatus::Resolved => conn.execute(
             "UPDATE audit_incidents
              SET status = 'resolved', resolved_at = ?1, resolution_note = ?2
@@ -324,9 +379,61 @@ pub fn acknowledge(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Mark an incident as actively being worked ("In Progress"). The middle state
+/// of the `open → in_progress → resolved` escalation lifecycle.
+pub fn start_progress(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::start_progress", {
+        apply_transition(pool, id, IncidentStatus::InProgress, None)
+    })
+}
+
 pub fn resolve(pool: &DbPool, id: &str, note: Option<&str>) -> Result<bool, AppError> {
     timed_query!("audit_incidents", "audit_incidents::resolve", {
         apply_transition(pool, id, IncidentStatus::Resolved, note)
+    })
+}
+
+/// Resolved persona-raised incidents whose blocked work has NOT yet been
+/// auto-continued (P2.3b). These are the candidates the incident-continuation
+/// reactive loop re-runs: `status='resolved'` (the human/Athena cleared the
+/// blocker) AND `source_table='persona_blocker'` (it came from a persona's
+/// `raise_incident`, so `source_id` is the blocked execution id) AND
+/// `continued_at IS NULL` (not yet claimed). Oldest-resolved first so the
+/// backlog drains FIFO. The caller still atomically `claim_continuation`s each
+/// one before acting, so this query may safely over-return under races.
+pub fn find_continuation_candidates(pool: &DbPool, limit: i64) -> Result<Vec<AuditIncident>, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::find_continuation_candidates", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "SELECT * FROM audit_incidents \
+             WHERE status = 'resolved' AND source_table = 'persona_blocker' \
+             AND continued_at IS NULL \
+             ORDER BY resolved_at ASC LIMIT ?1",
+        )?;
+        let rows = stmt.query_map([limit], row_to_incident)?;
+        let out = rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?;
+        Ok(out)
+    })
+}
+
+/// Atomically claim a resolved incident for auto-continuation (P2.3b).
+///
+/// Stamps `continued_at` to now ONLY if it was NULL. The `WHERE continued_at IS
+/// NULL` clause makes this a race-free claim: when the incident-continuation
+/// reactive loop fires on the same incident across overlapping ticks (or two
+/// engine instances), exactly one call updates a row. Returns `true` when THIS
+/// call claimed it (caller re-runs the blocked work), `false` when it was
+/// already claimed (skip — no double re-run).
+pub fn claim_continuation(pool: &DbPool, id: &str) -> Result<bool, AppError> {
+    timed_query!("audit_incidents", "audit_incidents::claim_continuation", {
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        let rows = conn.execute(
+            "UPDATE audit_incidents SET continued_at = ?1
+             WHERE id = ?2 AND continued_at IS NULL",
+            params![now, id],
+        )?;
+        Ok(rows > 0)
     })
 }
 
@@ -471,6 +578,92 @@ mod tests {
         assert_eq!(after_reopen.status, "open");
         assert!(after_reopen.resolved_at.is_none());
         assert!(after_reopen.acknowledged_at.is_none());
+    }
+
+    /// The escalation lifecycle's active-work state: `open → in_progress →
+    /// resolved`. Entering in_progress stamps acknowledged_at; resolving from
+    /// in_progress carries the note. resolved → in_progress is NOT allowed.
+    #[test]
+    fn in_progress_lifecycle() {
+        let pool = init_test_db().unwrap();
+        let id = promote(&pool, make_input("fired_alerts", "ip-1", "critical", "Build broken"))
+            .unwrap()
+            .unwrap();
+
+        // open -> in_progress (stamps acknowledged_at, no resolution yet)
+        assert!(start_progress(&pool, &id).unwrap());
+        let working = get_by_id(&pool, &id).unwrap();
+        assert_eq!(working.status, "in_progress");
+        assert!(working.acknowledged_at.is_some());
+        assert!(working.resolved_at.is_none());
+
+        // in_progress -> resolved (carries the note)
+        assert!(resolve(&pool, &id, Some("fixed the build")).unwrap());
+        let done = get_by_id(&pool, &id).unwrap();
+        assert_eq!(done.status, "resolved");
+        assert_eq!(done.resolution_note.as_deref(), Some("fixed the build"));
+
+        // resolved -> in_progress is NOT a valid transition (only -> open).
+        assert!(apply_transition(&pool, &id, IncidentStatus::InProgress, None).is_err());
+    }
+
+    /// P2.3b race-free claim: the first claim_continuation wins (true) and
+    /// stamps continued_at; every subsequent claim loses (false). This is the
+    /// idempotency guarantee that stops the reactive loop double-firing a re-run.
+    #[test]
+    fn claim_continuation_fires_at_most_once() {
+        let pool = init_test_db().unwrap();
+        let id = promote(&pool, make_input("persona_blocker", "ex-1", "high", "Blocked"))
+            .unwrap()
+            .unwrap();
+
+        // Not yet claimed.
+        assert!(get_by_id(&pool, &id).unwrap().continued_at.is_none());
+
+        // First claim wins + stamps continued_at.
+        assert!(claim_continuation(&pool, &id).unwrap(), "first claim must win");
+        assert!(get_by_id(&pool, &id).unwrap().continued_at.is_some());
+
+        // Second + third claims lose (already continued) — no double re-run.
+        assert!(!claim_continuation(&pool, &id).unwrap(), "second claim must lose");
+        assert!(!claim_continuation(&pool, &id).unwrap(), "third claim must lose");
+    }
+
+    /// find_continuation_candidates returns only resolved persona_blocker
+    /// incidents with continued_at NULL, and drops them once claimed — the exact
+    /// set the incident-continuation loop should re-run.
+    #[test]
+    fn find_continuation_candidates_filters_correctly() {
+        let pool = init_test_db().unwrap();
+
+        // (a) resolved persona_blocker, unclaimed → candidate.
+        let blocked = promote(&pool, make_input("persona_blocker", "exec-blocked", "high", "Blocked"))
+            .unwrap()
+            .unwrap();
+        resolve(&pool, &blocked, Some("fixed the creds")).unwrap();
+
+        // (b) persona_blocker but still OPEN → not a candidate.
+        promote(&pool, make_input("persona_blocker", "exec-open", "high", "Still blocked"))
+            .unwrap()
+            .unwrap();
+
+        // (c) resolved but NOT persona_blocker (an audit-stream incident) → not a candidate.
+        let alert = promote(&pool, make_input("fired_alerts", "alert-1", "high", "Latency"))
+            .unwrap()
+            .unwrap();
+        resolve(&pool, &alert, None).unwrap();
+
+        let candidates = find_continuation_candidates(&pool, 50).unwrap();
+        assert_eq!(candidates.len(), 1, "only the resolved persona_blocker qualifies");
+        assert_eq!(candidates[0].id, blocked);
+        assert_eq!(candidates[0].source_id, "exec-blocked");
+
+        // Once claimed, it drops out of the candidate set (no re-run on next tick).
+        assert!(claim_continuation(&pool, &blocked).unwrap());
+        assert!(
+            find_continuation_candidates(&pool, 50).unwrap().is_empty(),
+            "a claimed incident must not reappear as a candidate"
+        );
     }
 
     #[test]

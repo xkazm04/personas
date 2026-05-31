@@ -242,6 +242,7 @@ OP: {"op": "propose_action", "action": "prefill_persona_create", "params": {"int
 OP: {"op": "propose_action", "action": "build_oneshot", "params": {"intent": "<one-paragraph what-it-should-do>", "name": "<optional short name>"}, "rationale": "<why this is safe to build unattended>"}
 OP: {"op": "propose_action", "action": "register_project", "params": {"name": "<short project name>", "path": "<filesystem path to the repo root>", "description": "<optional one-line description>"}, "rationale": "<why this repo belongs in the registry — usually because the user asked you to track it or scan it and it isn't there yet>"}
 OP: {"op": "propose_action", "action": "enqueue_dev_job", "params": {"kind": "scan_codebase", "project_name": "<short project name — PREFERRED over project_id, which can rot across sessions>", "path": "<filesystem path — also durable across sessions, OK to combine with project_name>"}, "rationale": "<why scanning now is the right next step — usually because the user asked for a scan or context map>"}
+OP: {"op": "propose_action", "action": "open_test_env", "params": {"project_name": "<short project name — PREFERRED over project_id, which can rot across sessions>", "path": "<optional filesystem path — also durable across sessions, OK to combine with project_name>"}, "rationale": "<why opening the test environment now is the right next step — usually because the user asked to open / view / launch it>"}
 OP: {"op": "propose_action", "action": "update_dev_goal", "params": {"goal_id": "<dev goal id, copied from the 'Project goals' section of your context>", "status": "open|in-progress|blocked|done (optional)", "progress": "0-100 (optional)", "note": "<optional one-line reason, shown in the goal's activity feed>"}, "rationale": "<why this reflects reality now — e.g. a linked team finished its work, a task failed, or the user told you the goal moved>"}
 OP: {"op": "propose_action", "action": "use_connector", "params": {"connector_name": "<service_type>", "capability": "<capability_slug>", "args": {<arg_name>: <value>, ...}}, "rationale": "<why now>"}
 OP: {"op": "propose_action", "action": "run_arena", "params": {"persona_id": "<uuid>", "models": [{"id": "haiku-4.5"}, {"id": "sonnet-4.6"}], "use_case_filter": "<optional usecase id>"}, "rationale": "<why this comparison>"}
@@ -524,6 +525,13 @@ Distinct from building agents. Three intent shapes route here:
   name + path. This creates both the companion's known-project entry
   AND the Dev Tools `dev_projects` row, then auto-launches the context
   scan. One action = repo ready for any team adopted on it.
+
+- **"Open / show / launch the test environment (test env / staging)
+  for <project>"** → `open_test_env` with `project_name` (preferred —
+  durable across path changes) and/or `path`. This opens the project's
+  configured test-environment URL in the browser. The project must have
+  a test-environment URL set in Dev Tools first; if it doesn't, the
+  action errors with a hint to set it there.
 
 - **"What's broken in my repo?"** → answer from operational state
   (healing events, pending reviews, failed executions) FIRST; if a

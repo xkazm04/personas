@@ -800,6 +800,15 @@ pub fn get_archivable_candidates(
 
 crud_delete!("persona_memories");
 
+/// Hard-delete ALL memories. No FK children. Returns the number of rows deleted.
+pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("persona_memories", "persona_memories::delete_all", {
+        let conn = pool.get()?;
+        let n = conn.execute("DELETE FROM persona_memories", [])?;
+        Ok(n)
+    })
+}
+
 /// Atomically merge two memories into one.
 ///
 /// Inserts the merged row and deletes the two originals inside a single SQL
@@ -1947,5 +1956,35 @@ mod tests {
             unscoped_ids.contains(&global.id.as_str()),
             "persona-wide memory must surface in unscoped injection",
         );
+    }
+
+    #[test]
+    fn test_delete_all_memories() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Delete All Agent");
+
+        for i in 0..3 {
+            create(
+                &pool,
+                CreatePersonaMemoryInput {
+                    persona_id: persona_id.clone(),
+                    title: format!("mem {i}"),
+                    content: format!("content {i}"),
+                    category: Some("fact".into()),
+                    source_execution_id: None,
+                    importance: Some(3),
+                    tags: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+        let all = get_all(&pool, None, None, None, None, None, None, None).unwrap();
+        assert_eq!(all.len(), 3);
+
+        let n = delete_all(&pool).unwrap();
+        assert_eq!(n, 3);
+        let after = get_all(&pool, None, None, None, None, None, None, None).unwrap();
+        assert_eq!(after.len(), 0);
     }
 }

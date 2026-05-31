@@ -454,6 +454,276 @@ impl WorkspaceCoordinator {
 }
 
 // =============================================================================
+// Per-execution workspace (single-execution isolation)
+// =============================================================================
+
+/// Branch namespace for per-execution worktree branches. Format:
+/// `personas/exec/{execution_id}`. Easy to find with
+/// `git branch --list 'personas/exec/*'`.
+const EXEC_BRANCH_NAMESPACE: &str = "personas/exec";
+
+/// Filesystem prefix for the per-execution scratch worktree directory under
+/// `std::env::temp_dir()`. Tests and GC sweeps grep for this prefix.
+const EXEC_SCRATCH_PREFIX: &str = "personas-exec-wt-";
+
+/// How a per-execution worktree's branch is reconciled when the execution
+/// finishes.
+///
+/// Only `LeaveAsBranch` exists today: the worktree directory is removed but the
+/// branch survives in the host repo for human review. A future `Merge` variant
+/// is deliberately left out — auto-merging into the user's real base branch
+/// would mutate their repo without consent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ExecutionIntegration {
+    /// Remove the worktree directory; keep the branch in the host repo.
+    LeaveAsBranch,
+}
+
+/// A single git worktree owned by one persona execution.
+///
+/// Unlike [`WorkspaceCoordinator`] (which models a whole pipeline RUN with a
+/// run worktree + N member worktrees), this is the focused single-execution
+/// case: one execution gets one worktree on one branch, forked from the pinned
+/// repo's HEAD. The cascade execution path has no central run-owner to drive
+/// `WorkspaceCoordinator`, so each execution self-manages its isolation.
+///
+/// Lifecycle:
+/// ```text
+///   ExecutionWorkspace::new_for_execution(repo_root, execution_id)
+///     │   creates <temp>/personas-exec-wt-{execution_id}/  (the worktree)
+///     │   on branch personas/exec/{execution_id} forked from repo HEAD
+///     ▼
+///   caller spawns the CLI with cwd = ws.path() and CODEBASE_ROOT_PATH = ws.path()
+///     ▼
+///   ws.finalize(ExecutionIntegration::LeaveAsBranch)
+///       auto-commits any dirty work, removes the worktree dir,
+///       leaves the branch for review. Best-effort: never errors.
+/// ```
+pub struct ExecutionWorkspace {
+    repo_root: PathBuf,
+    /// The worktree directory at `<temp>/personas-exec-wt-{execution_id}/`.
+    worktree: PathBuf,
+    /// Branch name: `personas/exec/{execution_id}`.
+    branch: String,
+}
+
+impl ExecutionWorkspace {
+    /// Create a per-execution worktree forked from `repo_root`'s current HEAD.
+    ///
+    /// Validates that `execution_id` is filesystem/ref-safe and that `repo_root`
+    /// is a git work tree, captures HEAD, then `git worktree add -b
+    /// personas/exec/<execution_id> <scratch> <HEAD>`.
+    ///
+    /// Errors (so the caller can fall back to the non-isolated path) if the id
+    /// is invalid, `repo_root` is not a git work tree, the scratch dir already
+    /// exists (a leaked previous run with the same id), or git fails.
+    pub fn new_for_execution(
+        repo_root: &Path,
+        execution_id: &str,
+    ) -> Result<ExecutionWorkspace, AppError> {
+        validate_id(execution_id, "execution_id")?;
+
+        if !repo_root.exists() {
+            return Err(AppError::Validation(format!(
+                "Repo root does not exist: {}",
+                repo_root.display()
+            )));
+        }
+
+        // Confirm this is a git work tree (not a bare repo, not a non-repo).
+        let check = git_output(repo_root, &["rev-parse", "--is-inside-work-tree"])?;
+        if !check.success || check.stdout.trim() != "true" {
+            return Err(AppError::Validation(format!(
+                "Path is not a git work tree: {}",
+                repo_root.display()
+            )));
+        }
+
+        // Capture current commit as the fork point for the execution branch.
+        let head = git_output(repo_root, &["rev-parse", "HEAD"])?;
+        if !head.success {
+            return Err(AppError::Internal(format!(
+                "Failed to read HEAD of {}: {}",
+                repo_root.display(),
+                head.stderr.trim()
+            )));
+        }
+        let base_commit = head.stdout.trim().to_string();
+        if base_commit.is_empty() {
+            return Err(AppError::Internal(
+                "git rev-parse HEAD returned empty output".into(),
+            ));
+        }
+
+        let worktree = std::env::temp_dir().join(format!("{EXEC_SCRATCH_PREFIX}{execution_id}"));
+        // The worktree leaf MUST NOT already exist (would mean a duplicate
+        // execution_id collision with a leaked previous run).
+        if worktree.exists() {
+            return Err(AppError::Validation(format!(
+                "Worktree dir already exists for execution_id {execution_id}: {}. \
+                 A previous run with this id may have leaked; \
+                 run `git worktree prune` and remove the dir manually.",
+                worktree.display()
+            )));
+        }
+
+        let branch = format!("{EXEC_BRANCH_NAMESPACE}/{execution_id}");
+
+        // `git worktree add -b personas/exec/<id> <worktree> <HEAD>`
+        let add = git_output(
+            repo_root,
+            &[
+                "worktree",
+                "add",
+                "-b",
+                &branch,
+                worktree.to_str().ok_or_else(|| {
+                    AppError::Internal("Execution worktree path is not valid UTF-8".into())
+                })?,
+                &base_commit,
+            ],
+        )?;
+        if !add.success {
+            return Err(AppError::Internal(format!(
+                "git worktree add for execution {execution_id} failed: {}",
+                add.stderr.trim()
+            )));
+        }
+
+        Ok(ExecutionWorkspace {
+            repo_root: repo_root.to_path_buf(),
+            worktree,
+            branch,
+        })
+    }
+
+    /// The worktree directory. Callers set this as both the spawned CLI's cwd
+    /// and its `CODEBASE_ROOT_PATH` so the persona reads + writes the worktree
+    /// instead of the real repo.
+    pub fn path(&self) -> &Path {
+        &self.worktree
+    }
+
+    /// The branch the execution's work lands on (`personas/exec/<id>`).
+    #[allow(dead_code)]
+    pub fn branch(&self) -> &str {
+        &self.branch
+    }
+
+    /// Finish the execution's isolation.
+    ///
+    /// Steps (ALL best-effort — a finalize failure must NEVER fail the
+    /// execution, so every step logs a warning and we return `Ok` regardless):
+    /// 1. **Auto-commit** any dirty state in the worktree so removing it never
+    ///    loses work: `git add -A` then `git commit --no-verify` with gpgsign
+    ///    disabled. If there's nothing to commit, git exits non-zero — that's
+    ///    expected and ignored.
+    /// 2. For [`ExecutionIntegration::LeaveAsBranch`]: `git worktree remove
+    ///    --force <worktree>` from the repo root. The branch survives in the
+    ///    host repo's `.git/refs/heads/` for human review (no auto-merge).
+    ///
+    /// Consumes `self`; call exactly once.
+    pub fn finalize(self, strategy: ExecutionIntegration) -> Result<(), AppError> {
+        // 1. Auto-commit any dirty work so `worktree remove --force` can't
+        //    silently discard uncommitted changes.
+        match git_output(&self.worktree, &["add", "-A"]) {
+            Ok(o) if o.success => {}
+            Ok(o) => tracing::warn!(
+                branch = %self.branch,
+                stderr = %o.stderr.trim(),
+                "exec_workspace finalize: git add -A failed (continuing)"
+            ),
+            Err(e) => tracing::warn!(
+                branch = %self.branch,
+                error = %e,
+                "exec_workspace finalize: git add -A errored (continuing)"
+            ),
+        }
+        // `commit` exits non-zero when there is nothing staged — that is the
+        // common "clean worktree" case, so we don't warn on a plain failure;
+        // we only log success at debug level.
+        match git_output(
+            &self.worktree,
+            &[
+                "-c",
+                "commit.gpgsign=false",
+                "commit",
+                "-m",
+                &format!("personas: execution {} work", self.execution_label()),
+                "--no-verify",
+            ],
+        ) {
+            Ok(o) if o.success => {
+                tracing::debug!(branch = %self.branch, "exec_workspace finalize: committed dirty work")
+            }
+            Ok(_) => {
+                // Nothing to commit (clean tree) — expected, no warning.
+            }
+            Err(e) => tracing::warn!(
+                branch = %self.branch,
+                error = %e,
+                "exec_workspace finalize: git commit errored (continuing)"
+            ),
+        }
+
+        // 2. Remove the worktree directory. Branch survives.
+        match strategy {
+            ExecutionIntegration::LeaveAsBranch => {
+                let path_str = match self.worktree.to_str() {
+                    Some(s) => s,
+                    None => {
+                        tracing::warn!(
+                            branch = %self.branch,
+                            "exec_workspace finalize: non-UTF-8 worktree path; skipping git remove"
+                        );
+                        // Still attempt a filesystem cleanup below.
+                        ""
+                    }
+                };
+                if !path_str.is_empty() {
+                    match git_output(
+                        &self.repo_root,
+                        &["worktree", "remove", "--force", path_str],
+                    ) {
+                        Ok(o) if o.success => {}
+                        Ok(o) => tracing::warn!(
+                            branch = %self.branch,
+                            stderr = %o.stderr.trim(),
+                            "exec_workspace finalize: git worktree remove failed (branch kept)"
+                        ),
+                        Err(e) => tracing::warn!(
+                            branch = %self.branch,
+                            error = %e,
+                            "exec_workspace finalize: git worktree remove errored (branch kept)"
+                        ),
+                    }
+                }
+                // Best-effort filesystem cleanup in case `worktree remove`
+                // failed but the dir lingers.
+                if self.worktree.exists() {
+                    if let Err(e) = std::fs::remove_dir_all(&self.worktree) {
+                        tracing::warn!(
+                            path = %self.worktree.display(),
+                            error = %e,
+                            "exec_workspace finalize: failed to remove worktree dir"
+                        );
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Recover the execution_id from the branch name for log messages.
+    fn execution_label(&self) -> &str {
+        self.branch
+            .strip_prefix(&format!("{EXEC_BRANCH_NAMESPACE}/"))
+            .unwrap_or(&self.branch)
+    }
+}
+
+// =============================================================================
 // Internal helpers
 // =============================================================================
 
@@ -811,5 +1081,113 @@ mod tests {
         // implicitly via the count above.
 
         coord.cleanup().expect("cleanup");
+    }
+
+    // -------------------------------------------------------------------------
+    // ExecutionWorkspace (single-execution isolation)
+    // -------------------------------------------------------------------------
+
+    fn unique_exec_id() -> String {
+        format!("exec-{}", uuid::Uuid::new_v4().simple())
+    }
+
+    #[test]
+    fn execution_workspace_new_creates_worktree_dir_and_branch() {
+        let (repo, _) = init_test_repo();
+        let exec_id = unique_exec_id();
+
+        let ws = ExecutionWorkspace::new_for_execution(repo.path(), &exec_id)
+            .expect("new_for_execution");
+
+        // Worktree dir exists and has the base commit content.
+        assert!(ws.path().exists(), "worktree dir should exist");
+        assert!(
+            ws.path().join("README.md").exists(),
+            "base commit content present in worktree"
+        );
+
+        // Branch exists in the host repo.
+        let expected_branch = format!("{EXEC_BRANCH_NAMESPACE}/{exec_id}");
+        assert_eq!(ws.branch(), expected_branch);
+        let out = Command::new("git")
+            .args(["branch", "--list", &expected_branch])
+            .current_dir(repo.path())
+            .output()
+            .unwrap();
+        let listed = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            listed.contains(&expected_branch),
+            "expected branch {expected_branch} in `git branch` output: {listed:?}"
+        );
+
+        ws.finalize(ExecutionIntegration::LeaveAsBranch)
+            .expect("finalize");
+    }
+
+    #[test]
+    fn execution_workspace_finalize_commits_dirty_and_leaves_branch() {
+        let (repo, _) = init_test_repo();
+        let exec_id = unique_exec_id();
+
+        let ws = ExecutionWorkspace::new_for_execution(repo.path(), &exec_id)
+            .expect("new_for_execution");
+        let worktree_path = ws.path().to_path_buf();
+        let branch = format!("{EXEC_BRANCH_NAMESPACE}/{exec_id}");
+
+        // Persona writes a NEW (untracked) file in the worktree — not committed.
+        std::fs::write(worktree_path.join("work.txt"), "agent output\n").unwrap();
+
+        // finalize: auto-commit + remove worktree, keep branch.
+        ws.finalize(ExecutionIntegration::LeaveAsBranch)
+            .expect("finalize");
+
+        // Worktree dir is gone.
+        assert!(
+            !worktree_path.exists(),
+            "worktree dir should be removed after finalize"
+        );
+
+        // Branch still exists in the host repo.
+        let out = Command::new("git")
+            .args(["branch", "--list", &branch])
+            .current_dir(repo.path())
+            .output()
+            .unwrap();
+        assert!(
+            String::from_utf8_lossy(&out.stdout).contains(&branch),
+            "branch should survive LeaveAsBranch finalize"
+        );
+
+        // The dirty file was auto-committed onto the branch (so removing the
+        // worktree never lost the work). `git show <branch>:work.txt` returns it.
+        let show = Command::new("git")
+            .args(["show", &format!("{branch}:work.txt")])
+            .current_dir(repo.path())
+            .output()
+            .unwrap();
+        assert!(
+            show.status.success(),
+            "work.txt should be committed on {branch}: {}",
+            String::from_utf8_lossy(&show.stderr)
+        );
+        assert_eq!(
+            String::from_utf8_lossy(&show.stdout),
+            "agent output\n",
+            "committed file content should match what the persona wrote"
+        );
+    }
+
+    #[test]
+    fn execution_workspace_rejects_non_repo_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let result = ExecutionWorkspace::new_for_execution(dir.path(), &unique_exec_id());
+        assert!(matches!(result, Err(AppError::Validation(_))));
+    }
+
+    #[test]
+    fn execution_workspace_rejects_invalid_execution_id() {
+        let (repo, _) = init_test_repo();
+        let result = ExecutionWorkspace::new_for_execution(repo.path(), "bad/id with space");
+        assert!(matches!(result, Err(AppError::Validation(_))));
     }
 }

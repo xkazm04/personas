@@ -30,9 +30,11 @@ project-selector banner sits above every tab except **Projects**.
 A **project** is a name + local folder path, with an optional project type
 (visual tag), GitHub URL, and a **bound team** (a PersonaTeam pipeline tied to
 the project). Projects are listed in a table with bulk-archive, open-in-VS-Code,
-open-folder, and GitHub-issue-import row actions. Selecting a row makes it the
-**active project** (a compact summary banner) and the active selection drives
-the project-selector banner on the other tabs.
+open-folder, GitHub-issue-import, and — when a test-environment URL is set —
+**open-test-environment** row actions. The last opens the project's living
+test/staging deployment in your default browser (via the OS, http/https only).
+Selecting a row makes it the **active project** (a compact summary banner) and
+the active selection drives the project-selector banner on the other tabs.
 
 ### Create / edit project (`ProjectModal.tsx`)
 
@@ -54,6 +56,12 @@ layout.
   (owner/name, private badge, description, open ↗); manual URLs are validated
   with an inline error when malformed.
 - **Bound team** — optional; binds the project to a PersonaTeam pipeline.
+- **Test environment** — optional URL + branch of the *living test environment*
+  this project's team delivers into (e.g. a staging/preview deployment such as
+  `https://staging.example.com` on branch `main`). Both fields live in the
+  **Source control** section and are most useful when editing an existing
+  project. The URL is persisted as `test_env_url` and the branch as
+  `test_env_branch`; clearing either field removes that binding.
 - **Create Codebase connector** (create mode only, on by default) — when
   checked, creating the project also creates a `Codebase — <project name>`
   connector (`service_type: codebase`) wired to the project, so agents can read

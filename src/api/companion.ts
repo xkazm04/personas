@@ -687,6 +687,13 @@ export type ClientAction =
   | {
       type: 'open_companion_tab';
       tab: 'setup' | 'memory' | 'voice' | 'dashboard' | string;
+    }
+  | {
+      /** Open an external URL (e.g. a dev project's test-environment) in the
+       * browser via the validated `open_external_url` command. Emitted by the
+       * `open_test_env` action. */
+      type: 'open_external_url';
+      url: string;
     };
 
 export async function companionListPendingApprovals(): Promise<PendingApproval[]> {
@@ -975,6 +982,7 @@ export interface ProactiveMessage {
     | 'backlog_aging'
     | 'cadence_due'
     | 'athena_scheduled'
+    | 'incident_blocker'
     | string;
   triggerRef: string | null;
   message: string;

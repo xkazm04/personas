@@ -26,12 +26,31 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 
 ## Additional overview modules
 
-| Module | Purpose |
-| --- | --- |
-| `sub_incidents` | Incident inbox, taxonomy, filters, actions. **Dev-only** — no data source is wired yet, so the Incidents tab is hidden from production builds and rendered with a golden border in the DEV L2 sidebar. |
-| `sub_realtime` | Live in-memory event-bus visualization |
-| `sub_observability` | Trace/healing/metrics/alerts dashboards. Includes the `ToolPerformancePanel` (latency + error rate per tool, sourced from `tool_execution_audit_log` via the `get_tool_performance_summary` IPC command). |
-| `sub_sla` | SLA cards and dashboard |
+
+The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs are declared in `overviewItems` in `src/features/shared/components/layout/sidebar/sidebarData.ts`; some additional submodules exist for internal cards or development views.
+
+## Visible tabs
+
+| Tab | Behavior | Implementation |
+| --- | --- | --- |
+| Dashboard | Mission-control home (Triage / Vitals / activity Stream panes), summary widgets, knowledge/recent change/routine/fleet cards. The header persona selector scopes the success ring, traffic sparkline, Instruments traffic chart, and activity Stream to that persona — and highlights the persona's row in the Top Performers leaderboard when it ranks; the ring, sparkline and traffic chart use that persona's full-period metrics from `get_overview_bundle`. The KPI tiles and Triage counts stay fleet-wide and carry a **Fleet** tag. The Triage pane is a ranked work queue — open items are ordered by urgency (alerts → pipeline-sync failures → reviews → messages), the top item gets an accent and an "Up next" tag, and a header "Most urgent" button jumps straight to it. The bottom status strip's errors / runs / synced fields are click-through shortcuts to the Health, Executions, and Observability tabs. The activity Stream pane filters by execution status (All / Done / Failed / Running). The Instruments Traffic chart carries an inline 7d/30d/90d range switch (re-queries the dashboard window), and the Vitals "Runs" tile shows a recent-momentum trend arrow. A header **Customize** popover toggles visibility of the below-the-fold sections (Activity heatmap, Instruments, Memory suggestions, Fleet optimization, Routines & vault changes); the choice persists per device. | `components/dashboard/DashboardHomeMissionControl.tsx`, `components/dashboard/HomeCustomizePopover.tsx`, `cards/*`, `widgets/*` |
+| Inbox | Unified triage view that aggregates pending items from four sources (manual-review approvals, unread messages, output artifacts, open healing issues) into Today / This Week / Snoozed / Resolved swimlanes. Keyboard triage (J/K move, Enter open, A approve, R reject/resolve, S snooze, X select, Esc clear), per-row chips, and a floating bulk-action toolbar. Snooze persists in localStorage; resolved is session-local. Reuses `useUnifiedInbox` from simple-mode for the source aggregation. | `sub_inbox/InboxTriagePage.tsx` plus `components/`, `hooks/`, `libs/` |
+| Activity / Executions | Global execution list and metrics. List columns are user-resizable. The metrics dashboard carries a **Business value** section (`ValueRollupSection.tsx`) above the cost-anomaly list: value-delivered rate, cost-per-value-delivered, and the per-window outcome distribution — derived from each run's `business_outcome` self-assessment via the `get_value_rollup` IPC command (simulations excluded). It answers "did these runs earn their cost", which raw execution counts can't. | `sub_activity/components/GlobalExecutionList.tsx`, `ExecutionRow.tsx`, `ExecutionMetricsDashboard.tsx`, `ValueRollupSection.tsx`, `useExecutionMetrics.ts` |
+| Approvals | Manual review inbox, focused decision flow, bulk actions, triage player. A header **Delete all** icon button (shown when there are reviews) hard-deletes every review after a danger confirm dialog (`delete_all_manual_reviews`; review messages cascade) — distinct from **Clear stale**, which only auto-resolves old *pending* reviews. | `sub_manual-review` |
+| Messages | Message list, thread/detail modal, read/delete/count behavior. Flat-view columns are user-resizable. A header **Delete all** icon button (shown only when non-empty) hard-deletes every message after a danger confirm dialog (`delete_all_messages`; deliveries cascade) — for clearing test data. | `sub_messages`, `commands/communication/messages.rs` |
+| Events | Durable event log with search/filter and detail modal. Table columns are user-resizable. | `sub_events`, `commands/communication/events.rs` |
+| Knowledge | Knowledge rows, graph dashboard, annotations | `sub_knowledge` |
+| Health | Persona health cards, heartbeat, predictive alerts, burn-rate/cascade views | `sub_health` |
+| Director | The Director coaching command center (relocated here from a top-level sidebar section). Thin subheader (scope + Brain memory toggle + add-to-scope + review-all), portfolio scorecard (value rate / avg verdict / cost-per-value / score distribution / model efficiency), and one coaching table consolidating Roster + Attention + Reviews — each starred agent row shows score · trend · value · attention tags, clicking opens a per-agent detail modal with full verdict history. See `docs/features/director/README.md`. | `sub_director` |
+| Leaderboard | Persona rankings, podium, radar score details | `sub_leaderboard` |
+
+The module follows three primary navigation modes:
+
+1. **Persona Monitor** (title-bar overlay) — the live fleet grid described above.
+2. **Overview dashboard** (this page) — metrics, charts, and analytics.
+3. **Manual review** — the human-in-the-loop approval queue.
+4. **Memories** — the persona memory inspector described above.
+
 | `sub_usage` | Usage charts, period comparison, tool usage pivoting |
 | `sub_memories` | Memory list, conflict review, merge actions. The baseline list is a grid table with user-resizable columns. A **tier filter** (Active set / Core / Active / Working / Archived) gates what's shown — the default "Active set" view excludes archived memories; archived rows render muted with a badge + a **Restore** action (the Director archives duplicate/low-value memories via `tier='archive'`; see `docs/features/director/README.md` → Memory curation). |
 | `sub_cron_agents` | Schedule-focused persona cards |

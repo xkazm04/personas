@@ -1648,6 +1648,36 @@ function Body(props: BodyProps) {
     void send(req);
   }, [voiceTurnRequest, streaming, send]);
 
+  // Slice 6 — speak the hands-free decision aloud. When a decision becomes
+  // active, Athena reads its `prompt`; when the user picks `0` (explain), she
+  // reads the `recommendation`. Best-effort via the same one-shot progress
+  // channel as acks/heartbeats (`playProgressClip` no-ops when voice is off),
+  // so the bubble stays fully usable text-only. Keyed on the decision id (not
+  // the object) so each prompt speaks exactly once, never on every render.
+  const decisionId = useCompanionStore((s) => s.pendingDecision?.id ?? null);
+  const decisionExplained = useCompanionStore((s) => s.decisionExplained);
+  const spokenDecisionPromptRef = useRef<string | null>(null);
+  const spokenRecommendationForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!decisionId) {
+      spokenDecisionPromptRef.current = null;
+      spokenRecommendationForRef.current = null;
+      return;
+    }
+    if (spokenDecisionPromptRef.current !== decisionId) {
+      spokenDecisionPromptRef.current = decisionId;
+      const prompt = useCompanionStore.getState().pendingDecision?.prompt;
+      if (prompt) playProgressClip(prompt);
+    }
+  }, [decisionId, playProgressClip]);
+  useEffect(() => {
+    if (!decisionId || !decisionExplained) return;
+    if (spokenRecommendationForRef.current === decisionId) return;
+    spokenRecommendationForRef.current = decisionId;
+    const rec = useCompanionStore.getState().pendingDecision?.recommendation;
+    if (rec) playProgressClip(rec);
+  }, [decisionId, decisionExplained, playProgressClip]);
+
   // Wrench-send: pipe the textarea content into the self-improve loop.
   // The improvement runs on a SEPARATE Claude CLI session at repo root
   // (not Athena's main session), writes to disk, and logs the outcome

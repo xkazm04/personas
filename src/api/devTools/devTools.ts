@@ -68,7 +68,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -83,6 +83,11 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // untouched. The Tauri arg shape is `Some(None)` to clear / `Some(Some(v))`
     // to set — represented here as the value or null.
     prCredentialId: updates.prCredentialId,
+    // Option<Option<String>> like prCredentialId above: a string SETS the
+    // living test-environment URL/branch, `null` CLEARS, `undefined` leaves
+    // untouched.
+    testEnvUrl: updates.testEnvUrl,
+    testEnvBranch: updates.testEnvBranch,
   });
 
 export const deleteProject = (id: string) =>
@@ -214,6 +219,10 @@ export const portfolioSummary = () =>
 /** Cross-project "needs you" queue (awaiting-review / overdue / stalled / unstaffed). */
 export const attentionQueue = () =>
   invoke<AttentionQueue>("dev_tools_attention_queue", {});
+
+/** [goalId, teamName] for goals a team_assignment is advancing — the goal Map's "advancing team" badge (O4). Returns [] on failure (viz-only). */
+export const goalAdvancingTeams = () =>
+  safeInvoke<[string, string][]>([], "dev_tools_goal_advancing_teams", {});
 
 // ============================================================================
 // Cross-Project Metadata Map

@@ -359,6 +359,10 @@ async fn run_proactive_tick(
     // live in the main app DB, reachable here via the managed AppState.
     let app_state = app.state::<Arc<AppState>>();
     extra.extend(proactive_engine::triggers::dev_goal_nudges(&app_state.db));
+    // Incidents inbox: surface OPEN high/critical audit incidents (main app DB)
+    // so Athena nudges about them unattended. Mirrors dev_goal_nudges as an
+    // extra-candidate source; engaging lands the user on Overview → Incidents.
+    extra.extend(proactive_engine::incident_triggers::incident_blocker_nudges(&app_state.db));
     let new_msgs = proactive_engine::evaluate_with_extra_candidates(pool, extra)?;
     if new_msgs.is_empty() {
         return Ok(());

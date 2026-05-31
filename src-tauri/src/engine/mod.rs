@@ -131,6 +131,8 @@ pub mod persona_jobs;
 pub mod pipeline;
 pub mod pipeline_executor;
 pub mod platform_rules;
+pub mod goal_advance;
+pub mod incident_continuation;
 pub mod team_assignment_matching;
 pub mod team_assignment_orchestrator;
 pub mod team_handoff;
@@ -433,12 +435,34 @@ impl ExecutionEngine {
         scheduler: Arc<SchedulerState>,
         pool: Option<Arc<crate::db::DbPool>>,
     ) -> Self {
+        // Resolve the global concurrency cap from the max_parallel_executions
+        // setting ONCE at startup (hot-reload out of scope for P0 — restart to
+        // change). Defensively clamp so a corrupt/out-of-range stored value
+        // falls back to the documented default. No pool (headless/test) keeps
+        // the GLOBAL_MAX_CONCURRENT const fallback.
+        let mut tracker = ConcurrencyTracker::new();
+        if let Some(p) = pool.as_ref() {
+            let configured = crate::db::repos::core::settings::get(
+                p,
+                crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS,
+            )
+            .ok()
+            .flatten()
+            .and_then(|s| s.trim().parse::<usize>().ok())
+            .filter(|&n| {
+                n >= crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MIN
+                    && n <= crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_MAX
+            })
+            .unwrap_or(crate::db::settings_keys::MAX_PARALLEL_EXECUTIONS_DEFAULT);
+            tracker.set_global_max_concurrent(configured);
+        }
+
         let circuit_breaker = match pool {
             Some(p) => Arc::new(failover::ProviderCircuitBreaker::with_persistence(p)),
             None => Arc::new(failover::ProviderCircuitBreaker::new()),
         };
         Self {
-            tracker: Arc::new(Mutex::new(ConcurrencyTracker::new())),
+            tracker: Arc::new(Mutex::new(tracker)),
             tasks: Arc::new(Mutex::new(HashMap::new())),
             child_pids: Arc::new(Mutex::new(HashMap::new())),
             cancelled_flags: Arc::new(Mutex::new(HashMap::new())),
@@ -537,15 +561,20 @@ impl ExecutionEngine {
         tracker.running_count(persona_id) == 0 && tracker.queue_depth(persona_id) == 0
     }
 
-    /// Mark any executions left in running/queued state as failed.
+    /// Fail executions that were mid-RUN when the app last exited.
     ///
-    /// After an app restart, any previously running executions are orphaned
-    /// (their processes are dead). This prevents the ConcurrencyTracker from
-    /// being out of sync with DB state and avoids exceeding max_concurrent.
+    /// After a restart, a `running` row's CLI subprocess is dead, so the row is
+    /// orphaned — mark it `failed` so the tracker stays in sync and the slot is
+    /// freed. **`queued` rows are intentionally left untouched** here: they
+    /// never started a process, so they are durable work to be re-admitted by
+    /// [`Self::requeue_persisted_executions`] once the engine is constructed.
+    /// (Previously this failed `queued` rows too, silently dropping any
+    /// scheduled / event-triggered execution that was waiting in the queue at
+    /// shutdown — the P1 "never lose a queued execution" gap.)
     pub fn recover_stale_executions(pool: &DbPool) {
-        match exec_repo::get_running(pool) {
+        match exec_repo::get_running_only(pool) {
             Ok(stale) if stale.is_empty() => {
-                tracing::debug!("No stale executions to recover");
+                tracing::debug!("No mid-run executions to recover");
             }
             Ok(stale) => {
                 let count = stale.len();
@@ -564,14 +593,104 @@ impl ExecutionEngine {
                 }
                 tracing::info!(
                     count = count,
-                    "Recovered stale executions: marked {} as failed",
+                    "Recovered mid-run executions: marked {} as failed",
                     count
                 );
             }
             Err(e) => {
-                tracing::warn!("Failed to query stale executions: {}", e);
+                tracing::warn!("Failed to query mid-run executions: {}", e);
             }
         }
+    }
+
+    /// Re-admit executions that were persisted as `queued` when the app last
+    /// exited, so scheduled / event-triggered work is never lost across a
+    /// restart. The `persona_executions` row IS the durable queue: it persists
+    /// `status='queued'`, `persona_id`, `use_case_id`, and `input_data`, so the
+    /// runnable context is reconstructed from the DB (the in-memory
+    /// `queued_contexts` map does not survive a restart).
+    ///
+    /// Idempotent + crash-safe: re-admission reuses the existing row (the runner
+    /// updates it in place), so a crash mid-recovery just leaves it `queued` for
+    /// the next startup. Best-effort per row — a persona that was deleted, or a
+    /// row whose persona can't be loaded, is failed with a clear reason rather
+    /// than blocking the rest. Runs AFTER [`Self::recover_stale_executions`] and
+    /// AFTER the engine is constructed (needs `app` + the live engine to spawn).
+    pub async fn requeue_persisted_executions(&self, app: AppHandle, pool: DbPool) {
+        let queued = match exec_repo::get_queued_only(&pool) {
+            Ok(q) => q,
+            Err(e) => {
+                tracing::warn!("Failed to query queued executions for re-admit: {}", e);
+                return;
+            }
+        };
+        if queued.is_empty() {
+            tracing::debug!("No queued executions to re-admit");
+            return;
+        }
+
+        let total = queued.len();
+        let mut readmitted = 0usize;
+        for exec in queued {
+            // Load the persona; if it's gone, the queued row can never run.
+            let persona = match persona_repo::get_by_id(&pool, &exec.persona_id) {
+                Ok(p) => p,
+                Err(_) => {
+                    let _ = exec_repo::update_status(
+                        &pool,
+                        &exec.id,
+                        UpdateExecutionStatus {
+                            status: ExecutionState::Failed,
+                            error_message: Some(
+                                "Queued execution's persona no longer exists (dropped on restart)"
+                                    .into(),
+                            ),
+                            ..Default::default()
+                        },
+                    );
+                    continue;
+                }
+            };
+
+            let tools = tool_repo::get_tools_for_persona(&pool, &exec.persona_id)
+                .unwrap_or_default();
+            let input_data = exec
+                .input_data
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok());
+
+            // Re-admit through the normal path. continuation = None: a queued
+            // row had not yet started a CLI session, so there is nothing to
+            // resume — it runs fresh. Errors (e.g. queue full) leave the row
+            // queued for a later attempt.
+            match self
+                .start_execution(
+                    app.clone(),
+                    pool.clone(),
+                    exec.id.clone(),
+                    persona,
+                    tools,
+                    input_data,
+                    None,
+                )
+                .await
+            {
+                Ok(()) => readmitted += 1,
+                Err(e) => {
+                    tracing::warn!(
+                        execution_id = %exec.id,
+                        error = %e,
+                        "Failed to re-admit queued execution; left queued for retry",
+                    );
+                }
+            }
+        }
+
+        tracing::info!(
+            total = total,
+            readmitted = readmitted,
+            "Re-admitted persisted queued executions after restart",
+        );
     }
 
     /// Check if a persona has capacity for another execution.

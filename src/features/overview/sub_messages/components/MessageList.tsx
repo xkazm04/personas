@@ -16,7 +16,10 @@ import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interact
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
-import { seedMockMessage } from '@/api/overview/messages';
+import { seedMockMessage, deleteAllMessages } from '@/api/overview/messages';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { toastCatch } from '@/lib/silentCatch';
+import { Trash2 } from 'lucide-react';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { priorityConfig, MESSAGE_ROW_HEIGHT } from '../libs/messageHelpers';
@@ -110,6 +113,7 @@ export default function MessageList() {
   const [selectedMsg, setSelectedMsg] = useState<PersonaMessage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const fetchUnreadMessageCountRef = useRef(fetchUnreadMessageCount);
   fetchUnreadMessageCountRef.current = fetchUnreadMessageCount;
 
@@ -295,6 +299,15 @@ export default function MessageList() {
             <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
               <CheckCheck className="w-3.5 h-3.5" /> {t.overview.messages_view.mark_all_read}
             </button>
+            {messages.length > 0 && (
+              <button
+                onClick={() => setConfirmingDeleteAll(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading text-red-400 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-all"
+                title={t.overview.messages_view.delete_all}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </>
         }
       />
@@ -562,6 +575,27 @@ export default function MessageList() {
           />
         )}
       </AnimatePresence>
+
+      {confirmingDeleteAll && (
+        <ConfirmDialog
+          danger
+          title={t.overview.messages_view.delete_all_confirm_title}
+          body={tx(t.overview.messages_view.delete_all_confirm_body, { count: messagesTotal })}
+          confirmLabel={t.overview.messages_view.delete_all_confirm_cta}
+          onConfirm={async () => {
+            try {
+              await deleteAllMessages();
+              await fetchMessages(true);
+              await fetchUnreadMessageCount();
+            } catch (e) {
+              toastCatch('MessageList:deleteAll', 'Failed to delete all messages')(e);
+            } finally {
+              setConfirmingDeleteAll(false);
+            }
+          }}
+          onCancel={() => setConfirmingDeleteAll(false)}
+        />
+      )}
     </ContentBox>
   );
 }

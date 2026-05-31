@@ -212,6 +212,10 @@ export const gcStaleManualReviews = (thresholdDays?: number) =>
     thresholdDays: thresholdDays ?? null,
   });
 
+/** Hard-delete ALL manual reviews (confirm-gated in the UI). Returns rows deleted. */
+export const deleteAllManualReviews = () =>
+  invoke<number>("delete_all_manual_reviews", {});
+
 // ============================================================================
 // Review Messages (Conversational Thread)
 // ============================================================================

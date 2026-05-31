@@ -161,6 +161,22 @@ pub enum ProtocolMessage {
         note: String,
         confidence: Option<f64>,
     },
+    /// Persona escalates a real technical/business BLOCKER as an incident
+    /// (distinct from `ManualReview`, which is a quick decision). Routed to the
+    /// Incidents inbox for triage with an In-Progress/Resolved lifecycle, NOT
+    /// the review queue. The persona emits this when it cannot proceed and needs
+    /// a human to unblock it (missing credential, broken upstream, ambiguous
+    /// requirement). On resolution the originating work can be re-run (P2.3).
+    RaiseIncident {
+        title: String,
+        detail: Option<String>,
+        /// low | medium | high | critical (normalized at promote-time). Doubles
+        /// as Athena's priority ordering.
+        severity: Option<String>,
+        /// Short machine token for the incident class (e.g. `missing_credential`,
+        /// `upstream_down`, `ambiguous_requirement`). Defaults to `persona_blocker`.
+        kind: Option<String>,
+    },
     /// Persona proposes a change to its own prompt/strategy, routed to Lab Matrix
     /// for user review. Never applied directly -- always goes through Lab UI.
     ProposeImprovement {

@@ -387,6 +387,16 @@ pub fn delete(pool: &DbPool, id: &str) -> Result<bool, AppError> {
     })
 }
 
+/// Hard-delete ALL messages. FK child `persona_message_deliveries` cascades.
+/// Returns the number of rows deleted.
+pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
+    timed_query!("persona_messages", "persona_messages::delete_all", {
+        let conn = pool.get()?;
+        let n = conn.execute("DELETE FROM persona_messages", [])?;
+        Ok(n)
+    })
+}
+
 // ============================================================================
 // Message Deliveries
 // ============================================================================
@@ -726,5 +736,34 @@ mod tests {
         // Delete non-existent
         let not_deleted = delete(&pool, "nonexistent").unwrap();
         assert!(!not_deleted);
+    }
+
+    #[test]
+    fn test_delete_all_messages() {
+        let pool = init_test_db().unwrap();
+        let persona_id = create_test_persona(&pool);
+
+        for i in 0..3 {
+            create(
+                &pool,
+                CreateMessageInput {
+                    persona_id: persona_id.clone(),
+                    execution_id: None,
+                    title: None,
+                    content: format!("msg {i}"),
+                    content_type: None,
+                    priority: None,
+                    metadata: None,
+                    thread_id: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+        assert_eq!(get_total_count(&pool).unwrap(), 3);
+
+        let n = delete_all(&pool).unwrap();
+        assert_eq!(n, 3);
+        assert_eq!(get_total_count(&pool).unwrap(), 0);
     }
 }

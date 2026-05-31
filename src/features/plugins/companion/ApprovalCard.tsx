@@ -10,6 +10,8 @@ import {
   type PendingApproval,
 } from '@/api/companion';
 import { useSystemStore } from '@/stores/systemStore';
+import { openExternalUrl } from '@/api/system/system';
+import { toastCatch } from '@/lib/silentCatch';
 import type { SidebarSection } from '@/lib/types/types';
 import { actionLabel } from './athenaLabels';
 
@@ -64,6 +66,12 @@ function applyClientAction(action: ClientAction) {
     sys.setSidebarSection('plugins');
     sys.setPluginTab('companion');
     sys.setCompanionPluginTab(action.tab as (typeof VALID_COMPANION_TABS)[number]);
+    return;
+  }
+  if (action.type === 'open_external_url') {
+    // Open a dev project's test-environment URL in the browser via the
+    // validated open_external_url command (http/https only).
+    openExternalUrl(action.url).catch(toastCatch('ApprovalCard:openTestEnv'));
     return;
   }
 }

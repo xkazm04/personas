@@ -18,7 +18,7 @@ import * as bridge from './bridge.mjs';
 import { argStrict as arg } from './lib/cli.mjs';
 const has = (n) => process.argv.includes(n);
 const log = (...a) => console.log(`[${new Date().toLocaleTimeString()}]`, ...a);
-const SEEDS = join('docs', 'test', 'seeds');
+const SEEDS = join('docs', 'tests', 'autonomy-eval', 'seeds');
 const RUNS = join('docs', 'test', 'runs');
 
 function loadSeed(id) {
