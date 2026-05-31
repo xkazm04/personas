@@ -14,7 +14,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  X, Plus, Pencil, Search, CheckCircle2, FolderKanban, GitBranch, ArrowLeft, ArrowRight,
+  X, Plus, Pencil, Search, CheckCircle2, FolderKanban, GitBranch, ShieldCheck, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import {
   type ProjectType, type EditProjectData,
@@ -22,10 +22,13 @@ import {
 import { PipelineRail } from './pipeline/PipelineRail';
 import { ProjectStep } from './pipeline/ProjectStep';
 import { SourceControlStep } from './pipeline/SourceControlStep';
+import { StandardsStep } from './pipeline/StandardsStep';
+import { type StandardsConfig, defaultStandards, parseStandards, serializeStandards } from './pipeline/standardsConfig';
 import type { PipelineStage, SourceMode } from './pipeline/pipelineTypes';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
+import { useSystemStore } from '@/stores/systemStore';
 import { listCredentials } from '@/api/vault/credentials';
 
 type ModalPhase = 'form' | 'created';
@@ -79,6 +82,7 @@ export function ProjectModal({
   const [testEnvUrl, setTestEnvUrl] = useState('');
   const [testEnvBranch, setTestEnvBranch] = useState('');
   const [mainBranch, setMainBranch] = useState('');
+  const [standards, setStandards] = useState<StandardsConfig>(defaultStandards());
   // Vault GitHub PAT credentials offered as the standalone source-control
   // connector (persisted as pr_credential_id — authorises PR / git ops).
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
@@ -116,6 +120,7 @@ export function ProjectModal({
       setTestEnvUrl(editProject.testEnvUrl ?? '');
       setTestEnvBranch(editProject.testEnvBranch ?? '');
       setMainBranch(editProject.mainBranch ?? '');
+      setStandards(parseStandards(editProject.standardsConfig));
       setSourceMode(editProject.teamId ? 'team' : 'standalone');
       setNameEdited(true);
       setStepIndex(0);
@@ -146,10 +151,12 @@ export function ProjectModal({
   const stage1Complete = sourceMode === 'team' ? !!teamId : !!prCredentialId;
   const canSubmit = stage0Complete && stage1Complete;
 
-  const STEP_COUNT = 2;
+  const STEP_COUNT = 3;
   const stages: PipelineStage[] = [
     { id: 'project', label: dp.pipeline_step_project, icon: FolderKanban, status: stepIndex === 0 ? 'active' : stage0Complete ? 'complete' : 'incomplete' },
     { id: 'source', label: dp.pipeline_step_source, icon: GitBranch, status: stepIndex === 1 ? 'active' : stage1Complete ? 'complete' : 'incomplete' },
+    // Standards is optional config (always valid via defaults) — never blocks submit.
+    { id: 'standards', label: dp.pipeline_step_standards, icon: ShieldCheck, status: stepIndex === 2 ? 'active' : 'complete' },
   ];
 
   // Mode is mutually exclusive at the data layer: team mode nulls the
@@ -178,6 +185,7 @@ export function ProjectModal({
       // `data` carries `path` too, but onUpdate's param omits it — the extra
       // key is harmless for a non-literal argument.
       await onUpdate(editProject.id, data);
+      await useSystemStore.getState().setStandardsConfig(editProject.id, serializeStandards(standards));
       handleClose();
       return;
     }
@@ -205,6 +213,8 @@ export function ProjectModal({
         toastCatch('Failed to create Codebase connector')(err);
       }
     }
+    // Persist the standards & branching policy (Pipeline Stage 3).
+    await useSystemStore.getState().setStandardsConfig(result.id, serializeStandards(standards));
     setCreatedProject({ id: result.id, name: data.name, path: data.path });
     setPhase('created');
   };
@@ -222,6 +232,7 @@ export function ProjectModal({
     setTestEnvUrl('');
     setTestEnvBranch('');
     setMainBranch('');
+    setStandards(defaultStandards());
     setNameEdited(false);
     setCreateConnector(true);
     setCreatedProject(null);
@@ -278,7 +289,7 @@ export function ProjectModal({
                   onNameChange={handleNameChange}
                   onTypeChange={setProjectType}
                 />
-              ) : (
+              ) : stepIndex === 1 ? (
                 <SourceControlStep
                   sourceMode={sourceMode}
                   onModeChange={setSourceMode}
@@ -296,6 +307,13 @@ export function ProjectModal({
                   onTestEnvUrlChange={setTestEnvUrl}
                   testEnvBranch={testEnvBranch}
                   onTestEnvBranchChange={setTestEnvBranch}
+                />
+              ) : (
+                <StandardsStep
+                  config={standards}
+                  onChange={setStandards}
+                  mainBranch={mainBranch}
+                  testEnvBranch={testEnvBranch}
                 />
               )}
             </div>

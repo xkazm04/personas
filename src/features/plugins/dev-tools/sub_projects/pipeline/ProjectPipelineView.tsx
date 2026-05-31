@@ -4,10 +4,11 @@
  * the same SDLC pipeline in "view mode": a compact horizontal rail + per-stage
  * summary cards. Presentational — the caller resolves team/connector names.
  */
-import { FolderKanban, GitBranch, Users, Code2, GitFork, FlaskConical, Folder } from 'lucide-react';
+import { FolderKanban, GitBranch, Users, Code2, GitFork, FlaskConical, Folder, ShieldCheck, GitMerge } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PipelineRail } from './PipelineRail';
 import type { PipelineStage, SourceMode } from './pipelineTypes';
+import { parseStandards, resolveBranchName } from './standardsConfig';
 
 interface ProjectPipelineViewProps {
   name: string;
@@ -21,27 +22,41 @@ interface ProjectPipelineViewProps {
   mainBranch?: string;
   testEnvUrl?: string;
   testEnvBranch?: string;
+  /** Standards & branching policy JSON (Pipeline Stage 3). */
+  standardsConfig?: string;
 }
 
 export function ProjectPipelineView({
   name, path, sourceMode, teamName, connectorName,
-  githubUrl, mainBranch, testEnvUrl, testEnvBranch,
+  githubUrl, mainBranch, testEnvUrl, testEnvBranch, standardsConfig,
 }: ProjectPipelineViewProps) {
   const { t } = useTranslation();
   const dp = t.plugins.dev_projects;
 
   const sourceConfigured = sourceMode === 'team' ? !!teamName : !!connectorName;
+  const std = parseStandards(standardsConfig);
+  const gates = [
+    std.precommit.lint && dp.standards_lint,
+    std.precommit.docs_required && dp.standards_docs,
+    std.precommit.code_quality && dp.standards_quality,
+  ].filter(Boolean).join(' · ');
+  const prBaseName = resolveBranchName(std.branching.pr_base, mainBranch ?? '', testEnvBranch ?? '');
+  const automergeText = std.branching.automerge.enabled
+    ? `${dp.standards_automerge_on} ${resolveBranchName(std.branching.automerge.target, mainBranch ?? '', testEnvBranch ?? '')}`
+    : dp.standards_automerge_off;
+
   const stages: PipelineStage[] = [
     { id: 'project', label: dp.pipeline_step_project, icon: FolderKanban, status: name ? 'complete' : 'incomplete' },
     { id: 'source', label: dp.pipeline_step_source, icon: GitBranch, status: sourceConfigured ? 'complete' : 'incomplete' },
+    { id: 'standards', label: dp.pipeline_step_standards, icon: ShieldCheck, status: standardsConfig ? 'complete' : 'incomplete' },
   ];
 
   return (
     <div data-testid="project-pipeline-view">
-      <div className="max-w-xs mx-auto sm:mx-0 sm:max-w-[260px] mb-4">
+      <div className="max-w-xs mx-auto sm:mx-0 sm:max-w-[360px] mb-4">
         <PipelineRail stages={stages} activeIndex={-1} size="sm" />
       </div>
-      <div className="grid md:grid-cols-2 gap-3">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {/* Stage 1 — Project */}
         <StageCard icon={FolderKanban} label={dp.pipeline_step_project}>
           <KvRow icon={Folder} label={dp.project_folder} value={path} mono />
@@ -63,6 +78,13 @@ export function ProjectPipelineView({
             value={testEnvUrl ? `${stripScheme(testEnvUrl)}${testEnvBranch ? ` · ${testEnvBranch}` : ''}` : null}
             mono
           />
+        </StageCard>
+
+        {/* Stage 3 — Standards */}
+        <StageCard icon={ShieldCheck} label={dp.pipeline_step_standards}>
+          <KvRow icon={ShieldCheck} label={dp.standards_precommit_heading} value={gates || null} />
+          <KvRow icon={GitBranch} label={dp.standards_pr_base} value={prBaseName} mono />
+          <KvRow icon={GitMerge} label={dp.standards_automerge} value={automergeText} />
         </StageCard>
       </div>
     </div>

@@ -276,6 +276,7 @@ export default function ProjectOverviewPage() {
               mainBranch={activeProject.main_branch ?? undefined}
               testEnvUrl={activeProject.test_env_url ?? undefined}
               testEnvBranch={activeProject.test_env_branch ?? undefined}
+              standardsConfig={activeProject.standards_config ?? undefined}
             />
           </div>
         </section>
