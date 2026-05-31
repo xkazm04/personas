@@ -27,7 +27,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, writeInput, hibernateSession, wakeSession } from '@/api/fleet/fleet';
+import { spawnSession, writeInput, hibernateSession, wakeSession, killSession } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useToastStore } from '@/stores/toastStore';
@@ -284,6 +284,14 @@ export default function FleetGridPage() {
       toastCatch('FleetGridPage:wake', 'Failed to wake session')(e);
     }
   }, [setActiveSession]);
+  // Kill a session's process from the grid tile (it exits → leaves the grid).
+  const handleKill = useCallback(async (id: string) => {
+    try {
+      await killSession(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:kill', 'Failed to kill session')(e);
+    }
+  }, []);
 
   // Companion approvals folded into the same "Needs you" surface — the
   // idea's "approve/reject companion actions" half. Read-only on the
@@ -745,6 +753,9 @@ export default function FleetGridPage() {
         onReject={handleRejectApproval}
         onAskAthena={handleAskAthena}
         onOpenSkills={() => setSkillsDrawerOpen(true)}
+        onSpawn={handleSpawn}
+        canSpawn={!!activeProject && !spawning}
+        onKill={handleKill}
       />
 
       <SkillLibraryDrawer

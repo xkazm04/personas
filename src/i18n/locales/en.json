@@ -10435,6 +10435,8 @@
       "terminal_font_decrease": "Decrease terminal font size",
       "terminal_font_increase": "Increase terminal font size",
       "view_grid": "Grid",
+      "new_session": "New session",
+      "kill_session": "Kill session",
       "grid_open_aria": "Open the fullscreen terminal grid",
       "grid_back": "Back",
       "grid_overlay_aria": "Fleet terminal grid",
