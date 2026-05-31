@@ -1,11 +1,12 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, BookOpen, BarChart3, Terminal as TerminalIcon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetTerminalPane } from './FleetTerminalPane';
+import { FleetSessionInsights } from './sub_grid/FleetSessionInsights';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetTileAthenaBar } from './FleetTileAthenaBar';
 import { setFleetFontOverride } from './fleetTerminalManager';
@@ -26,6 +27,8 @@ interface Props {
   onApprove: (approvalId: string) => void;
   onReject: (approvalId: string) => void;
   onAskAthena: (session: FleetSession) => void;
+  /** Open the shared skill-library drawer (applies to the focused tile). */
+  onOpenSkills: () => void;
 }
 
 /**
@@ -77,10 +80,22 @@ export function FleetTerminalOverlay({
   onApprove,
   onReject,
   onAskAthena,
+  onOpenSkills,
 }: Props) {
   const { t, tx } = useTranslation();
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
   const dim = useMemo(() => gridDim(sessions.length), [sessions.length]);
+
+  // Per-tile Terminal/Insights view (P2.1 in the grid). Membership = showing
+  // Insights; default (absent) = the live terminal.
+  const [insightTiles, setInsightTiles] = useState<Set<string>>(new Set());
+  const toggleInsight = useCallback((id: string) => {
+    setInsightTiles((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   // Apply the density font override while open; clear it on close/unmount.
   useEffect(() => {
@@ -138,6 +153,16 @@ export function FleetTerminalOverlay({
         </button>
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
+        <button
+          type="button"
+          data-testid="fleet-overlay-skills"
+          onClick={onOpenSkills}
+          title={t.plugins.fleet.skills_drawer_title}
+          className="ml-auto flex items-center gap-1.5 rounded-interactive border border-primary/15 px-2 py-1 text-foreground transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          {t.plugins.fleet.skills_button}
+        </button>
       </div>
 
       {/* Grid — square columns capped at 4; rows auto-fill, scroll past 4×4. */}
@@ -167,9 +192,30 @@ export function FleetTerminalOverlay({
                 <span className="typo-caption truncate flex-1 min-w-0 text-foreground">
                   {s.name ?? s.projectLabel}
                 </span>
+                {(() => {
+                  const showingInsights = insightTiles.has(s.id);
+                  return (
+                    <button
+                      type="button"
+                      data-testid={`fleet-tile-view-${s.id}`}
+                      aria-pressed={showingInsights}
+                      aria-label={showingInsights ? t.plugins.fleet.view_terminal : t.plugins.fleet.view_insights}
+                      title={showingInsights ? t.plugins.fleet.view_terminal : t.plugins.fleet.view_insights}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={() => toggleInsight(s.id)}
+                      className="shrink-0 p-0.5 rounded text-foreground hover:bg-secondary/50 transition-colors"
+                    >
+                      {showingInsights ? <TerminalIcon className="w-3 h-3" /> : <BarChart3 className="w-3 h-3" />}
+                    </button>
+                  );
+                })()}
               </div>
               <div className="flex-1 min-h-0">
-                <FleetTerminalPane sessionId={s.id} autoFocus={false} />
+                {insightTiles.has(s.id) ? (
+                  <FleetSessionInsights claudeSessionId={s.claudeSessionId} />
+                ) : (
+                  <FleetTerminalPane sessionId={s.id} autoFocus={false} />
+                )}
               </div>
               <FleetTileAthenaBar
                 session={s}

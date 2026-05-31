@@ -10468,7 +10468,14 @@
       "activity_error": "Couldn't read transcripts",
       "activity_empty": "No recent sessions found",
       "activity_no_matches": "No sessions match your search",
-      "activity_files_more": "+{count} more"
+      "activity_files_more": "+{count} more",
+      "skills_button": "Skills",
+      "skills_drawer_title": "Skill library",
+      "skills_drawer_apply_to": "Apply to {name}",
+      "skills_drawer_no_target": "Select a session to apply skills",
+      "skills_drawer_search": "Search skills…",
+      "skills_drawer_empty": "No skills found",
+      "skill_applied_toast": "Sent /{skill} to {name}"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

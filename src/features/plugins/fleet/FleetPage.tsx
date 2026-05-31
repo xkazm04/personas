@@ -1,5 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, Settings as SettingsIcon, BookOpen, Activity } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { debtText } from '@/i18n/DebtText';
@@ -8,7 +8,6 @@ import { debtText } from '@/i18n/DebtText';
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
 const FleetActivityPage = lazy(() => import('./sub_activity/FleetActivityPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
-const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 
 type InternalTab = 'grid' | 'activity' | 'settings';
 
@@ -34,23 +33,23 @@ const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
  */
 export default function FleetPage() {
   const [tab, setTab] = useState<InternalTab>('grid');
-  const [showSkills, setShowSkills] = useState(false);
 
   return (
     <div className="h-full w-full flex flex-col" data-testid="fleet-page">
       {/* Internal tab strip — lightweight band above the active sub-page;
-          each sub-page renders its own ContentBox/Header underneath. */}
+          each sub-page renders its own ContentBox/Header underneath. Skills
+          now live in the left drawer (opened from the grid), not a tab. */}
       <div className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-primary/5">
         <Terminal className="w-4 h-4 text-primary mr-2" />
         <span className="typo-caption font-semibold text-foreground mr-3">Fleet</span>
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          const active = !showSkills && tab === t.id;
+        {TABS.map((tabDef) => {
+          const Icon = tabDef.icon;
+          const active = tab === tabDef.id;
           return (
             <button
-              key={t.id}
-              data-testid={`fleet-tab-${t.id}`}
-              onClick={() => { setShowSkills(false); setTab(t.id); }}
+              key={tabDef.id}
+              data-testid={`fleet-tab-${tabDef.id}`}
+              onClick={() => setTab(tabDef.id)}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
                 active
                   ? 'bg-primary/10 text-primary border border-primary/25'
@@ -58,41 +57,23 @@ export default function FleetPage() {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {t.label}
+              {tabDef.label}
             </button>
           );
         })}
-        <button
-          data-testid="fleet-show-skills"
-          onClick={() => setShowSkills((v) => !v)}
-          aria-pressed={showSkills}
-          title={showSkills ? 'Hide skills' : 'Show skills — browse the local skill library'}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
-            showSkills
-              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-              : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          {showSkills ? 'Hide skills' : 'Show skills'}
-        </button>
       </div>
 
       <div
-        data-testid={`fleet-active-${showSkills ? 'skills' : tab}`}
-        key={showSkills ? 'skills' : tab}
+        data-testid={`fleet-active-${tab}`}
+        key={tab}
         className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
       >
         <Suspense fallback={<SuspenseFallback />}>
-          {showSkills ? (
-            <SkillBrowserPage />
-          ) : (
-            <>
-              {tab === 'grid' && <FleetGridPage />}
-              {tab === 'activity' && <FleetActivityPage />}
-              {tab === 'settings' && <FleetSettingsPage />}
-            </>
-          )}
+          <>
+            {tab === 'grid' && <FleetGridPage />}
+            {tab === 'activity' && <FleetActivityPage />}
+            {tab === 'settings' && <FleetSettingsPage />}
+          </>
         </Suspense>
       </div>
     </div>

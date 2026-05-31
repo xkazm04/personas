@@ -39,7 +39,7 @@ function writeStringArray(key: string, values: string[]): void {
  * edit buffer, and the read/save calls. Every variant of the browser
  * consumes this hook so the file-buffer state survives variant switching.
  */
-export function useSkillData() {
+export function useSkillData(initialSource: SkillSource = 'project') {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
   const addToast = useToastStore((s) => s.addToast);
@@ -49,7 +49,8 @@ export function useSkillData() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   // 'project' = active project's .claude/skills; 'global' = ~/.claude/skills.
-  const [source, setSource] = useState<SkillSource>('project');
+  // The drawer opens on 'global' (the shared library); the full browser on 'project'.
+  const [source, setSource] = useState<SkillSource>(initialSource);
 
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set(readStringArray(FAVORITES_STORAGE_KEY)));
   const [recentlyOpened, setRecentlyOpened] = useState<string[]>(() => readStringArray(RECENT_STORAGE_KEY));

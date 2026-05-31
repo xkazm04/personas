@@ -17,6 +17,7 @@ import {
   Search,
   LayoutGrid,
   BarChart3,
+  BookOpen,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -27,9 +28,11 @@ import { EventName } from '@/lib/eventRegistry';
 import { spawnSession, writeInput } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import { useToastStore } from '@/stores/toastStore';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetSessionInsights } from './FleetSessionInsights';
+import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
@@ -124,6 +127,9 @@ export default function FleetGridPage() {
   // Right column shows either the live terminal or the transcript-intelligence
   // panel (P2.1). The terminal stays alive in the manager while hidden.
   const [rightView, setRightView] = useState<'terminal' | 'insights'>('terminal');
+  // Left skill-library drawer (F1 surfacing) — applies a skill to the focused session.
+  const [skillsDrawerOpen, setSkillsDrawerOpen] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
@@ -235,6 +241,22 @@ export default function FleetGridPage() {
       toastCatch('FleetGridPage:reply', 'Failed to send reply to session')(e);
     }
   }, []);
+
+  // Apply a library skill to the focused session — writes `/skill⏎` to its PTY
+  // (the same mechanism as broadcast). Drives the left skill drawer.
+  const handleApplySkill = useCallback(async (skillName: string) => {
+    if (!activeSessionId) return;
+    try {
+      await writeInput(activeSessionId, `/${skillName}\r`);
+      const sess = sessions.find((s) => s.id === activeSessionId);
+      addToast(
+        tx(t.plugins.fleet.skill_applied_toast, { skill: skillName, name: sess?.name ?? sess?.projectLabel ?? '' }),
+        'success',
+      );
+    } catch (e) {
+      toastCatch('FleetGridPage:applySkill', 'Failed to apply skill')(e);
+    }
+  }, [activeSessionId, sessions, addToast, t, tx]);
 
   // Companion approvals folded into the same "Needs you" surface — the
   // idea's "approve/reject companion actions" half. Read-only on the
@@ -608,6 +630,17 @@ export default function FleetGridPage() {
                       {v.label}
                     </button>
                   ))}
+                  {/* Skills drawer trigger — sits above the CLI. */}
+                  <button
+                    type="button"
+                    data-testid="fleet-open-skills"
+                    onClick={() => setSkillsDrawerOpen(true)}
+                    title={t.plugins.fleet.skills_drawer_title}
+                    className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[11px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    {t.plugins.fleet.skills_button}
+                  </button>
                 </div>
                 <div className="flex-1 min-h-0">
                   {rightView === 'insights' ? (
@@ -649,6 +682,14 @@ export default function FleetGridPage() {
         onApprove={handleApprove}
         onReject={handleRejectApproval}
         onAskAthena={handleAskAthena}
+        onOpenSkills={() => setSkillsDrawerOpen(true)}
+      />
+
+      <SkillLibraryDrawer
+        open={skillsDrawerOpen}
+        onClose={() => setSkillsDrawerOpen(false)}
+        onApply={handleApplySkill}
+        targetLabel={activeSession ? (activeSession.name ?? activeSession.projectLabel) : null}
       />
     </ContentBox>
   );
