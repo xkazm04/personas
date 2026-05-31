@@ -106,6 +106,14 @@ export const runStandardsScan = (projectId: string) =>
 export const listStandards = (projectId: string) =>
   invoke<import("@/lib/bindings/DevStandard").DevStandard[]>("dev_tools_list_standards", { projectId });
 
+/** Retrofit the PR-test-merge capability onto existing QA Guardian instances
+ *  (Stage 3d backfill). Idempotent. Returns a summary of what was wired. */
+export const backfillQaPrReview = () =>
+  invoke<{ personas_matched: number; use_cases_added: number; subscriptions_added: number; persona_names: string[]; github_credentials_in_vault: number }>(
+    "dev_tools_backfill_qa_pr_review",
+    {},
+  );
+
 export const deleteProject = (id: string) =>
   invoke<boolean>("dev_tools_delete_project", { id });
 

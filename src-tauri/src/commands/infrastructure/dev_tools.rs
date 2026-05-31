@@ -124,6 +124,116 @@ pub fn dev_tools_set_standards_config(
     repo::update_standards_config(&state.db, &project_id, config.as_deref())
 }
 
+/// PR-test-merge protocol embedded into existing QA Guardian instances'
+/// `design_context.use_cases[]` (the canonical version lives in the template +
+/// recipe for new adoptions). Drives the uc_pr_review behavior at execution.
+const QA_PR_REVIEW_USE_CASE_DESC: &str = "When Dev Clone opens a PR (this use-case fires on dev-clone.pr.created), test it in ISOLATION and decide merge vs return. (a) Read the event payload for the PR branch + number + repo. (b) Create an isolated git worktree off the PR branch (git worktree add a scratch path on that branch) and work ONLY there so you never disturb the team's checkout. (c) Run the project's full test command inside that worktree. (d) Decide from the result + the STANDARDS & BRANCHING POLICY block in your prompt: tests PASS and the policy enables automerge -> enable GitHub native auto-merge on the PR (gh pr merge --auto, or the auto-merge API) targeting the policy's automerge branch so it merges once required checks pass, then emit qa.pr.approved; tests PASS and automerge is off -> approve the PR (gh pr review --approve) and emit qa.pr.approved; tests FAIL -> request changes (gh pr review --request-changes) with the failing output and emit qa.pr.changes_requested so Dev Clone fixes it. (e) ALWAYS clean up the scratch worktree (git worktree remove), leave no orphan branches. Never merge on a failing or un-run suite. Needs the GitHub connector to apply the PR action; without it, run the tests and emit the verdict event but report the action could not be applied.";
+
+/// In-place backfill (Pipeline Stage 3d) — retrofit the PR-test-merge capability
+/// onto EXISTING QA Guardian persona instances in current teams (adopted personas
+/// have no template->instance sync). For each persona named like "QA Guardian":
+///  1. append a `uc_pr_review` use-case to `design_context.use_cases[]` (if absent), and
+///  2. insert a `dev-clone.pr.created` listen subscription (source_filter "*" since QA
+///     doesn't emit it — mirrors `wire_event_subscriptions_from_use_cases`).
+/// Idempotent + additive (never deletes existing use-cases). Returns a summary.
+#[tauri::command]
+pub fn dev_tools_backfill_qa_pr_review(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state.db.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let rows: Vec<(String, String, Option<String>)> = {
+        let mut stmt = conn
+            .prepare("SELECT id, name, design_context FROM personas WHERE name LIKE '%QA Guardian%'")?;
+        let mapped = stmt.query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?))
+        })?;
+        mapped.filter_map(Result::ok).collect()
+    };
+
+    let mut use_cases_added = 0u32;
+    let mut subscriptions_added = 0u32;
+    let mut persona_names: Vec<String> = Vec::new();
+
+    for (pid, name, dc_json) in &rows {
+        persona_names.push(name.clone());
+
+        // 1. Append uc_pr_review to design_context.use_cases[] if absent.
+        let mut dc: serde_json::Value = dc_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or_else(|| serde_json::json!({}));
+        let has_uc = dc
+            .get("use_cases")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .any(|u| u.get("id").and_then(|x| x.as_str()) == Some("uc_pr_review"))
+            })
+            .unwrap_or(false);
+        if !has_uc {
+            let uc = serde_json::json!({
+                "id": "uc_pr_review",
+                "title": "PR Test + Merge",
+                "description": QA_PR_REVIEW_USE_CASE_DESC,
+                "category": "development",
+                "enabled": true,
+                "event_subscriptions": [
+                    { "event_type": "dev-clone.pr.created", "direction": "listen" },
+                    { "event_type": "qa.pr.approved", "direction": "emit" },
+                    { "event_type": "qa.pr.changes_requested", "direction": "emit" }
+                ]
+            });
+            match dc.get_mut("use_cases").and_then(|v| v.as_array_mut()) {
+                Some(arr) => arr.push(uc),
+                None => dc["use_cases"] = serde_json::json!([uc]),
+            }
+            let new_dc = serde_json::to_string(&dc)
+                .map_err(|e| AppError::Internal(format!("serialize design_context: {e}")))?;
+            conn.execute(
+                "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![new_dc, now, pid],
+            )?;
+            use_cases_added += 1;
+        }
+
+        // 2. Insert the cross-persona dev-clone.pr.created subscription if absent.
+        let exists: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_event_subscriptions WHERE persona_id = ?1 AND event_type = 'dev-clone.pr.created'",
+            rusqlite::params![pid],
+            |r| r.get(0),
+        )?;
+        if exists == 0 {
+            let sub_id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO persona_event_subscriptions
+                 (id, persona_id, event_type, source_filter, use_case_id, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'dev-clone.pr.created', '*', 'uc_pr_review', 1, ?3, ?3)",
+                rusqlite::params![sub_id, pid, now],
+            )?;
+            subscriptions_added += 1;
+        }
+    }
+
+    let github_credentials_in_vault: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_credentials WHERE service_type IN ('github','github_actions')",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+
+    Ok(serde_json::json!({
+        "personas_matched": rows.len(),
+        "use_cases_added": use_cases_added,
+        "subscriptions_added": subscriptions_added,
+        "persona_names": persona_names,
+        "github_credentials_in_vault": github_credentials_in_vault,
+    }))
+}
+
 #[tauri::command]
 pub fn dev_tools_delete_project(
     state: State<'_, Arc<AppState>>,
