@@ -64,7 +64,16 @@ export function FleetTerminalOverlay({
 }: Props) {
   const { t, tx } = useTranslation();
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
+  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
   const dim = useMemo(() => gridDim(sessions.length), [sessions.length]);
+
+  // Flag the grid as open so the Athena orb floats above this overlay (it's
+  // otherwise z-50, behind the z-[200] overlay) — she stays visible/reactable
+  // while you orchestrate in the grid.
+  useEffect(() => {
+    setGridOpen(open);
+    return () => setGridOpen(false);
+  }, [open, setGridOpen]);
 
   // Per-tile Terminal/Insights view (P2.1 in the grid). Membership = showing
   // Insights; default (absent) = the live terminal.

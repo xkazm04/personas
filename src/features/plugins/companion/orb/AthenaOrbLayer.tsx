@@ -39,6 +39,9 @@ function isTypingTarget(target: EventTarget | null): boolean {
  */
 export default function AthenaOrbLayer() {
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
+  // While the Fleet grid overlay (z-200) is open, float the orb above it so
+  // Athena stays visible + reactable there; otherwise the normal z-50.
+  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
   const talk = useHoldToTalk();
@@ -156,7 +159,7 @@ export default function AthenaOrbLayer() {
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-0 z-50"
+      className={`pointer-events-none fixed inset-0 ${fleetGridOpen ? 'z-[210]' : 'z-50'}`}
       aria-live="polite"
       data-testid="companion-orb-layer"
     >

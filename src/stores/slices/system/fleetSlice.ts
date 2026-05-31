@@ -39,6 +39,9 @@ export interface FleetSlice {
   fleetSessionsLoading: boolean;
   /** Currently-focused session in the grid — the one whose terminal pane renders. */
   fleetActiveSessionId: string | null;
+  /** True while the fullscreen terminal-grid overlay is open. In-memory; the
+   *  Athena orb reads it to float above the overlay so she's visible there. */
+  fleetGridOpen: boolean;
   /** Fire an OS notification when a session enters awaiting_input. Persisted. */
   fleetNotifyAwaiting: boolean;
   /** Auto-hibernate Idle/Stale sessions past the threshold (always-on Rust
@@ -57,6 +60,7 @@ export interface FleetSlice {
 
   fleetRefresh: () => Promise<void>;
   fleetSetActiveSession: (id: string | null) => void;
+  fleetSetGridOpen: (open: boolean) => void;
   fleetSetNotifyAwaiting: (on: boolean) => void;
   fleetSetAutoHibernate: (on: boolean) => void;
   fleetSetAutoHibernateMinutes: (minutes: number) => void;
@@ -79,6 +83,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetHooksInstalled: false,
   fleetSessionsLoading: false,
   fleetActiveSessionId: null,
+  fleetGridOpen: false,
   fleetNotifyAwaiting: true,
   fleetAutoHibernate: false,
   fleetAutoHibernateMinutes: 30,
@@ -110,6 +115,8 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   },
 
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
+
+  fleetSetGridOpen: (open) => set({ fleetGridOpen: open }),
 
   fleetSetNotifyAwaiting: (on) => set({ fleetNotifyAwaiting: on }),
 

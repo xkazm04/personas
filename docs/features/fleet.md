@@ -121,7 +121,9 @@ A UI-fusion layer (`fleetAttention.ts`, `FleetTileAthenaBar.tsx`) that surfaces 
 - **On-tile suggestions.** When a pending companion approval is a `fleet_send_input` / `fleet_intervene` targeting a tile's session (matched by parsing `paramsJson.session_id`), the tile shows Athena's proposed text with **Approve** (→ `companion_approve_action` → writes it into the PTY) / **Dismiss**. The existing approval pipeline is the write gate — nothing auto-types.
 - **Ask Athena.** A stale tile with nothing pending shows an "Ask Athena" button that fires a session-scoped turn (`companionSendMessage(craftStalePrompt(session))`) asking her to decide the next step and, if there's a clear winner, propose writing it — which returns as an on-tile suggestion. The tile shows a "thinking" affordance until the turn resolves.
 
-Still experimental (lives on the `worktree-fleet-athena` branch): no autopilot/auto-approve yet, and the suggestion strip currently shows on the grid tiles only (the single pane relies on the Needs-You banner).
+- **Athena visible in the grid.** The fullscreen overlay is `z-[200]`, above the orb's normal `z-50` — so while it's open the orb would be hidden. The overlay sets `fleetGridOpen` (fleet slice) on mount and `AthenaOrbLayer` raises itself to `z-[210]` while that's true, so Athena's orb (her thinking/speaking state + decision bubbles) floats above the grid and you can see + react to her there. Ask-Athena → propose → approve-on-tile → `write_input` is wired end-to-end (verified at `approvals.rs::execute_fleet_send_input`).
+
+Experimental: no autopilot/auto-approve yet — the approval gate is the write checkpoint, which matters now that Fleet spawns run with `--dangerously-skip-permissions` (an approved write executes its tools unprompted). Auto-apply under autonomous/hands-free mode is a tracked follow-up. The on-tile suggestion strip shows on the grid tiles; the single pane relies on the Needs-You banner.
 
 ## Hook installer details
 
