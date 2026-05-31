@@ -21,4 +21,11 @@ export type EvalRunDetail = { runId: string, team: string | null, teamId: string
  * surfaces the incident-escalation + auto-continuation facts to the
  * in-app Certification dashboard. Tolerant `Value` (additive, optional).
  */
-resilience: JsonValue | null, judge: Judge | null, facts: Facts | null, grounding: Array<GroundingEntry>, autonomy: Autonomy | null, heartbeatLen: number, repoDiffBytes: number | null, costUsd: number | null, trajectory: Array<TrajectoryPoint>, hasScorecard: boolean, };
+resilience: JsonValue | null,
+/**
+ * `scorecard.standards_compliance` (§7) — present only on code-track runs
+ * whose bound project carries a standards_config policy; surfaces the
+ * per-rule pre-commit + branching compliance breakdown. Tolerant `Value`
+ * (additive, optional) — same treatment as `resilience`.
+ */
+standardsCompliance: JsonValue | null, judge: Judge | null, facts: Facts | null, grounding: Array<GroundingEntry>, autonomy: Autonomy | null, heartbeatLen: number, repoDiffBytes: number | null, costUsd: number | null, trajectory: Array<TrajectoryPoint>, hasScorecard: boolean, };

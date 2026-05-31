@@ -14,6 +14,7 @@ import { teamInfo } from './model.mjs';
 import { band, computeVerdict } from './lib/eval/verdict.mjs';
 import { repoFileIndex, groundingForText, addedDocsFromPatch } from './lib/eval/grounding.mjs';
 import { resilienceFacts } from './lib/eval/resilience.mjs';
+import { standardsCompliance } from './lib/eval/standards.mjs';
 import { RUBRIC } from './lib/rubric.mjs';
 
 /**
@@ -220,6 +221,17 @@ function main() {
   // §6 Resilience & Escalation — computed ONLY for resilience-track seeds, so
   // non-resilience runs are a strict no-op (null) and stay byte-identical.
   const resilience = isResilienceTrack ? resilienceFacts(incidents, executions, events) : null;
+  // §7 Standards & branching compliance — computed ONLY for code-track runs
+  // whose bound project carries a standards_config policy; null otherwise (a
+  // strict no-op → golden-safe, same discipline as §6). Reuses already-computed
+  // signals (codeTrack, docs touched, delivered increment) — no extra repo work.
+  const standards = standardsCompliance({
+    standardsConfig: info.repo?.standardsConfig ?? null,
+    isCodeTrack,
+    codeTrack,
+    docChanged: docFiles.length > 0,
+    increment,
+  });
   // The five rubric caps collapsed into ONE ordered fold (see lib/eval/verdict.mjs).
   // Each lowers the verdict to at most its `to`; the fold is order-independent
   // (cap is min-by-rank) but ordered to mirror the rubric narrative.
@@ -243,6 +255,14 @@ function main() {
     // §6.2 A resilience-track run that raised NO incident at all isn't exercising
     // the path the seed is meant to test → PROMISING (inconclusive, not a pass).
     { when: isResilienceTrack && !!resilience && resilience.raised === 0, to: 'PROMISING' },
+    // §7 Standards & branching compliance: a code-track run whose bound project
+    // declares a standards policy but whose artifacts did NOT fully honor it
+    // (a required pre-commit gate failed, required docs missing, or work didn't
+    // reach the configured base) caps at PROMISING — good work that ignores the
+    // team's own declared standard isn't production. (build/test fails already
+    // cap NOT-READY via §1.A, which outranks this.) Strict pass bar: any scored
+    // rule failing trips the cap; informational 'na' rules never do.
+    { when: !!standards && standards.applicable && standards.pct < 100, to: 'PROMISING' },
   ]);
 
   const scorecard = {
@@ -258,6 +278,9 @@ function main() {
     // §6 subtree added ONLY for resilience-track runs (conditional spread keeps
     // non-resilience scorecard.json byte-identical — the golden-diff invariant).
     ...(isResilienceTrack ? { resilience } : {}),
+    // §7 subtree added ONLY when a standards policy applied (same golden-safe
+    // conditional spread — absent on doc-track runs + policy-less projects).
+    ...(standards ? { standards_compliance: standards } : {}),
     rubric_version: judge ? '1-judged' : '1-deterministic',
     note: judge
       ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'
@@ -348,6 +371,17 @@ function main() {
     L.push(`| **Escalation closed** | ${resilience.escalationClosed} | every blocker resolved + auto-continued + completed |`);
     L.push(`| Recovery score (reported, not folded) | ${resilience.recoveryScore ?? 'n/a'} | 0–100 resolved/continued/completed mix |`);
   }
+  if (standards) {
+    L.push('');
+    L.push('## Standards & branching compliance (§7)');
+    L.push(`> Bound project's declared policy (Dev Tools → Standards stage). Compliance: **${standards.pct ?? 'n/a'}%**${standards.applicable ? '' : ' (no mechanically-verifiable rule applied)'}.`);
+    L.push('');
+    L.push('| Rule | Status | Basis |');
+    L.push('|---|---|---|');
+    for (const r of standards.rules) {
+      L.push(`| \`${r.id}\` | ${r.status === 'pass' ? '✅ pass' : r.status === 'fail' ? '❌ fail' : '— n/a'} | ${r.basis} |`);
+    }
+  }
   if (!judge) {
     L.push('');
     L.push('## Not yet scored (needs agent-judge, §1.B + §2.1)');
@@ -360,7 +394,7 @@ function main() {
   }
   writeFileSync(join(dir, 'scorecard.md'), L.join('\n') + '\n', 'utf8');
 
-  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}${isResilienceTrack && resilience ? ` resilience[raised=${resilience.raised},closed=${resilience.escalationClosed},recovery=${resilience.recoveryScore}]` : ''}`);
+  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}${isResilienceTrack && resilience ? ` resilience[raised=${resilience.raised},closed=${resilience.escalationClosed},recovery=${resilience.recoveryScore}]` : ''}${standards && standards.applicable ? ` standards[pct=${standards.pct}]` : ''}`);
   console.log(`wrote ${join(dir, 'scorecard.md')}`);
 }
 

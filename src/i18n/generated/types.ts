@@ -5821,6 +5821,12 @@ export type Translations = {
       grounding_pct: string;
       grounding_invalid: string;
       grounding_na: string;
+      standards_title: string;
+      standards_subtitle: string;
+      standards_compliance: string;
+      standards_rule: string;
+      standards_basis: string;
+      standards_na: string;
       trajectory_title: string;
       judge_title: string;
       judge_mean: string;

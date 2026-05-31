@@ -338,6 +338,11 @@ pub struct EvalRunDetail {
     /// surfaces the incident-escalation + auto-continuation facts to the
     /// in-app Certification dashboard. Tolerant `Value` (additive, optional).
     pub resilience: Option<serde_json::Value>,
+    /// `scorecard.standards_compliance` (§7) — present only on code-track runs
+    /// whose bound project carries a standards_config policy; surfaces the
+    /// per-rule pre-commit + branching compliance breakdown. Tolerant `Value`
+    /// (additive, optional) — same treatment as `resilience`.
+    pub standards_compliance: Option<serde_json::Value>,
     pub judge: Option<Judge>,
     pub facts: Option<Facts>,
     pub grounding: Vec<GroundingEntry>,
@@ -575,6 +580,7 @@ fn build_detail(l: &Loaded, trajectory: Vec<TrajectoryPoint>) -> EvalRunDetail {
         delivered_increment: subtree(sc, "delivered_increment"),
         self_veto: subtree(sc, "self_veto"),
         resilience: sc.get("resilience").cloned(),
+        standards_compliance: sc.get("standards_compliance").cloned(),
         judge: subtree(sc, "judge"),
         facts: subtree(sc, "facts"),
         grounding: subtree(sc, "grounding"),

@@ -38,6 +38,7 @@ export const VERDICTS = ['BROKEN', 'NOT-READY', 'PROMISING', 'PRODUCTION'];
  * @property {Object|null} [delivered_increment]
  * @property {Object|null} [self_veto]
  * @property {Object|null} [resilience]
+ * @property {Object|null} [standards_compliance]   §7 — present only on code-track runs with a standards policy
  */
 
 /**
@@ -80,6 +81,7 @@ export function validateScorecard(sc) {
   if (sc.code_track != null && typeof sc.code_track !== 'object') errs.push('code_track must be object|null');
   if (sc.judge != null && typeof sc.judge !== 'object') errs.push('judge must be object|null');
   if (sc.resilience != null && typeof sc.resilience !== 'object') errs.push('resilience must be object|null');
+  if (sc.standards_compliance != null && typeof sc.standards_compliance !== 'object') errs.push('standards_compliance must be object|null');
   return errs;
 }
 

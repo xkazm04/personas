@@ -7,6 +7,7 @@ import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { VerdictBadge } from './VerdictBadge';
 import { DimensionBars } from './DimensionBars';
 import { GateBreakdown } from './GateBreakdown';
+import { StandardsCard } from './StandardsCard';
 import { GroundingTable } from './GroundingTable';
 import { TrajectoryChart } from './TrajectoryChart';
 import { JudgePanel } from './JudgePanel';
@@ -101,6 +102,13 @@ export function RunDetailView({ detail, onBack }: RunDetailViewProps) {
       {(detail.codeTrack || detail.deliveredIncrement?.delivered) && (
         <SectionCard title={c.gates_title} size="md">
           <GateBreakdown codeTrack={detail.codeTrack} increment={detail.deliveredIncrement} />
+        </SectionCard>
+      )}
+
+      {/* Standards & branching compliance (§7) — code-track runs with a policy */}
+      {detail.standardsCompliance != null && (
+        <SectionCard title={c.standards_title} size="md">
+          <StandardsCard compliance={detail.standardsCompliance} />
         </SectionCard>
       )}
 
