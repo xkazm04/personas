@@ -259,7 +259,7 @@ export default function ManualReviewList() {
       await deleteAllManualReviews();
       reviewQueue.reload();
     } catch (err) {
-      toastCatch(err);
+      toastCatch(err, 'Failed to delete all reviews');
     } finally {
       setIsDeletingAll(false);
       setConfirmingDeleteAll(false);

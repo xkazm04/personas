@@ -7,10 +7,14 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Brain, Sparkles, Plus, ChevronDown, ChevronUp, Search, Trash2 } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
+import { useTranslation } from '@/i18n/useTranslation';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { deleteAllMemories } from '@/api/overview/memories';
+import { toastCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
@@ -43,6 +47,8 @@ const TIER_TONE: Record<string, string> = {
 };
 
 export default function MemoriesPageDense() {
+  const { t, tx } = useTranslation();
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const personas = useAgentStore((s) => s.personas);
   const {
     memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, reviewMemories,
@@ -152,6 +158,11 @@ export default function MemoriesPageDense() {
               <Plus className={`w-3.5 h-3.5 transition-transform ${showAddForm ? 'rotate-45' : ''}`} />
               Add
             </button>
+            {memories.length > 0 && (
+              <button onClick={() => setConfirmingDeleteAll(true)} className="flex items-center gap-1.5 px-2.5 py-1.5 typo-heading rounded-modal border transition-all bg-red-500/15 text-red-400 border-red-500/30 hover:bg-red-500/25" title={t.overview.memories.delete_all}>
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         }
       />
@@ -263,6 +274,26 @@ export default function MemoriesPageDense() {
           personaColor={personaMap.get(selected.persona_id)?.color ?? '#6B7280'}
           onClose={() => setSelected(null)}
           onDelete={() => { deleteMemory(selected.id); setSelected(null); }}
+        />
+      )}
+
+      {confirmingDeleteAll && (
+        <ConfirmDialog
+          danger
+          title={t.overview.memories.delete_all_confirm_title}
+          body={tx(t.overview.memories.delete_all_confirm_body, { count: memories.length })}
+          confirmLabel={t.overview.memories.delete_all_confirm_cta}
+          onConfirm={async () => {
+            try {
+              await deleteAllMemories();
+              await fetchMemories();
+            } catch (e) {
+              toastCatch(e, 'Failed to delete all memories');
+            } finally {
+              setConfirmingDeleteAll(false);
+            }
+          }}
+          onCancel={() => setConfirmingDeleteAll(false)}
         />
       )}
     </ContentBox>

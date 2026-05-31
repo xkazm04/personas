@@ -546,7 +546,7 @@ export default function MessageList() {
               await fetchMessages(true);
               await fetchUnreadMessageCount();
             } catch (e) {
-              toastCatch(e);
+              toastCatch(e, 'Failed to delete all messages');
             } finally {
               setConfirmingDeleteAll(false);
             }
