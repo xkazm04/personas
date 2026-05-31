@@ -80,10 +80,17 @@ export async function companionSendMessage(
   voiceEnabled: boolean = false,
   recallSynthesisEnabled: boolean = false,
   autonomousMode: boolean = false,
+  /**
+   * Provenance label when the message is a *synthetic* prompt forwarded by a
+   * surface (e.g. `'Fleet'` for the Ask-Athena button) rather than the user's
+   * own words. The turn then persists as a tagged System message instead of
+   * impersonating the user. Omit for normal user input.
+   */
+  systemSource?: string,
 ): Promise<SendTurnResult> {
   return invoke<SendTurnResult>(
     'companion_send_message',
-    { message, voiceEnabled, recallSynthesisEnabled, autonomousMode },
+    { message, voiceEnabled, recallSynthesisEnabled, autonomousMode, systemSource: systemSource ?? null },
     { timeoutMs: COMPANION_TURN_TIMEOUT_MS },
   );
 }

@@ -21,7 +21,7 @@
  * Brain Viewer entry. Skipped during streaming — the partial text would
  * make the chip set flicker as tokens come and go mid-reply.
  */
-import { Infinity as InfinityIcon } from 'lucide-react';
+import { Infinity as InfinityIcon, LayoutGrid } from 'lucide-react';
 import type { BrainKind } from '@/api/companion';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
@@ -55,22 +55,31 @@ export function Bubble({
   const isSystem = role === 'system';
   const isString = typeof children === 'string';
 
+  // System turns that aren't the user talking and aren't Athena's prose —
+  // autonomous continuations and forwarded system requests (e.g. Fleet's
+  // "Ask Athena") — render as a slim labeled divider, never a user/assistant
+  // bubble, so provenance reads at a glance.
   const isAutonomousMarker =
     isSystem &&
     isString &&
     (children as string).startsWith('[autonomous continuation');
-  if (isAutonomousMarker) {
+  const isFleetMarker = isSystem && isString && /^\[fleet\b/i.test((children as string).trim());
+  if (isAutonomousMarker || isFleetMarker) {
+    const raw = (children as string).trim();
+    // Fleet markers are a bare "[Fleet]" tag — strip the brackets for display.
+    const label = isFleetMarker ? raw.replace(/^\[|\]$/g, '') : raw;
+    const MarkerIcon = isFleetMarker ? LayoutGrid : InfinityIcon;
     return (
       <div
         className="flex items-center gap-2 my-2 px-2 text-foreground"
-        data-testid="companion-autonomous-marker"
-        data-companion-bubble-role="system-autonomous"
+        data-testid={isFleetMarker ? 'companion-fleet-marker' : 'companion-autonomous-marker'}
+        data-companion-bubble-role={isFleetMarker ? 'system-fleet' : 'system-autonomous'}
         data-companion-bubble-index={index}
       >
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
         <span className="inline-flex items-center gap-1.5 typo-caption tracking-wide uppercase text-primary/70">
-          <InfinityIcon className="w-3 h-3" aria-hidden />
-          {children as string}
+          <MarkerIcon className="w-3 h-3" aria-hidden />
+          {label}
         </span>
         <div className="flex-1 h-px bg-primary/20" aria-hidden />
       </div>

@@ -332,7 +332,9 @@ export default function FleetGridPage() {
   const handleAskAthena = useCallback(async (session: FleetSession) => {
     setAskingAthena((prev) => new Set(prev).add(session.id));
     try {
-      await companionSendMessage(craftStalePrompt(session));
+      // Tag as a Fleet-originated request so it persists as a System turn
+      // (not an impersonated user message) and Athena/the chat see the source.
+      await companionSendMessage(craftStalePrompt(session), false, false, false, 'Fleet');
     } catch (e) {
       toastCatch('FleetGridPage:askAthena', 'Failed to reach Athena')(e);
     } finally {
