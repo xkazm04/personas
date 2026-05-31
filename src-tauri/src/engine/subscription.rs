@@ -1292,8 +1292,9 @@ pub fn spawn_subscriptions(
 /// **Gated OFF by default** (`settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT`): the
 /// tick is a no-op until the user opts in, so nothing spends tokens
 /// autonomously without consent. Guardrails when ON: one active assignment per
-/// goal (enforced in `advance_goal`), a 30-minute per-goal cooldown after any
-/// assignment (so a failed run isn't retried in a tight loop), eligible-persona
+/// goal (enforced in `advance_goal`), a per-goal cooldown after any assignment
+/// (so a failed run isn't retried in a tight loop; currently 2h, tuned up from
+/// the 30m default for the day-long multi-team soak test), eligible-persona
 /// check, and a hard per-tick cap so a large fleet ramps gradually.
 pub struct GoalAdvanceSubscription {
     pub pool: DbPool,
@@ -1305,8 +1306,8 @@ pub struct GoalAdvanceSubscription {
 const GOAL_ADVANCE_MAX_PER_TICK: usize = 3;
 
 /// Goal-linked teams with an active, unworked goal and no recent assignment.
-/// Returns `(team_id, goal_id)` pairs. The 30-min cooldown via `created_at`
-/// prevents stampede + failure-retry loops.
+/// Returns `(team_id, goal_id)` pairs. The cooldown via `created_at` (2h for the
+/// soak test, default 30m) prevents stampede + failure-retry loops.
 fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, crate::error::AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
@@ -1320,7 +1321,10 @@ fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, 
              SELECT 1 FROM team_assignments ta
              WHERE ta.goal_id = g.id
                AND (ta.status IN ('queued', 'running', 'awaiting_review')
-                    OR ta.created_at > datetime('now', '-30 minutes'))
+                    -- Per-goal cooldown: tuned up 30m -> 2h for the day-long
+                    -- multi-team soak test (2h cadence per team). Revert to
+                    -- '-30 minutes' to restore the default advancement rate.
+                    OR ta.created_at > datetime('now', '-120 minutes'))
            )
          ORDER BY g.updated_at ASC",
     )?;
