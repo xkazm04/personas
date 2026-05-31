@@ -171,6 +171,11 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // Phase G — project registry + background jobs.
     "register_project",
     "enqueue_dev_job",
+    // Open a registered dev project's configured test-environment URL in the
+    // browser. Goes through approval (not auto-fire) so the user confirms the
+    // launch; execute_open_test_env resolves the project and returns an
+    // OpenExternalUrl client_action.
+    "open_test_env",
     // Goals hub — propose a dev-goal progress/status update (approval-gated).
     "update_dev_goal",
     // Athena's future check-in commitments. Goes through approval

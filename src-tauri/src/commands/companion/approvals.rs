@@ -93,6 +93,12 @@ pub enum ClientAction {
     /// match `CompanionPluginTab` on the frontend
     /// (`setup` | `memory` | `voice` | `dashboard`).
     OpenCompanionTab { tab: String },
+    /// Phase G — open an external URL in the user's default browser. Used by
+    /// `open_test_env` to launch a dev project's configured test-environment
+    /// URL. The frontend dispatches this via `openExternalUrl()` (the
+    /// validated `open_external_url` Tauri command, http/https only), keeping
+    /// URL-opening on the same path as the Dev Tools UI button.
+    OpenExternalUrl { url: String },
 }
 
 /// Internal: each `execute_*` returns this so we can build either a
@@ -215,6 +221,7 @@ pub async fn companion_approve_action(
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
+        "open_test_env" => execute_open_test_env(&state, &app, &params),
         "update_dev_goal" => execute_update_dev_goal(&state, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
@@ -1753,6 +1760,101 @@ fn execute_register_project(
          project `{dev_project_id}` so the codebase connector is now available for any team \
          working this repo at `{path}`. {scan_note}"
     )))
+}
+
+/// `open_test_env` — open a registered Dev Tools project's configured
+/// test-environment URL in the browser. Resolves the project the same way
+/// `execute_enqueue_dev_job` does (id / name / slash-normalized path, with a
+/// most-recent fallback), then returns a `ClientAction::OpenExternalUrl` for
+/// the frontend to dispatch through the validated `open_external_url` command
+/// — the same path as the Dev Tools UI "open test env" button. No backend
+/// side effect of its own; if the project has no `test_env_url` set it errors
+/// with a hint to set it in Dev Tools.
+fn execute_open_test_env(
+    state: &State<'_, Arc<AppState>>,
+    _app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    // Mirror enqueue_dev_job's candidate collection (top-level + nested
+    // `params`), so Athena can send any of project_id / project_name / name /
+    // path interchangeably.
+    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let mut candidates: Vec<String> = Vec::new();
+    for v in [
+        params.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_id").and_then(|v| v.as_str()),
+        params.get("project_name").and_then(|v| v.as_str()),
+        p.get("project_name").and_then(|v| v.as_str()),
+        params.get("name").and_then(|v| v.as_str()),
+        p.get("name").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
+        p.get("path").and_then(|v| v.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let v = v.trim();
+        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
+            candidates.push(v.to_string());
+        }
+    }
+
+    let project_id: String = {
+        let conn = state.db.get()?;
+        let mut found: Option<String> = None;
+        for n in &candidates {
+            if let Ok(id) = conn.query_row(
+                "SELECT id FROM dev_projects \
+                 WHERE id = ?1 OR name = ?1 \
+                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+                 ORDER BY (id = ?1) DESC LIMIT 1",
+                rusqlite::params![n],
+                |r| r.get::<_, String>(0),
+            ) {
+                found = Some(id);
+                break;
+            }
+        }
+        // Fall back to the most-recently-registered project when nothing was
+        // specified or nothing matched (e.g. a stale project_id carried over
+        // from a prior session). Mirrors execute_enqueue_dev_job.
+        if found.is_none() {
+            found = conn
+                .query_row(
+                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok();
+        }
+        match found {
+            Some(id) => id,
+            None => {
+                return Err(AppError::Validation(
+                    "No Dev Tools projects registered yet. Register one first with \
+                     register_project (name + filesystem path)."
+                        .into(),
+                ))
+            }
+        }
+    };
+
+    let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+
+    let url = match project.test_env_url.as_deref().map(str::trim) {
+        Some(u) if !u.is_empty() => u.to_string(),
+        _ => {
+            return Err(AppError::Validation(format!(
+                "Project \"{}\" has no test environment URL set. Set it in Dev Tools → the project's settings.",
+                project.name
+            )));
+        }
+    };
+
+    Ok(ExecuteResult {
+        message: format!("Opening the test environment for {}…", project.name),
+        client_action: Some(ClientAction::OpenExternalUrl { url }),
+    })
 }
 
 /// `enqueue_dev_job` — run a real Dev Tools **context scan** on a registered
