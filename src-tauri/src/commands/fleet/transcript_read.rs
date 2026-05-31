@@ -58,6 +58,11 @@ pub struct FleetTranscriptSummary {
     pub assistant_messages: i32,
     /// Token totals across all assistant turns.
     pub tokens: FleetTokenTotals,
+    /// Approximate current context-window size: the most recent assistant
+    /// turn's `input_tokens + cache_read_input_tokens` (each turn re-sends the
+    /// whole conversation, so this ≈ "how big the conversation has grown").
+    /// Drives the CLI-header efficiency indicator. 0 if no usage was seen.
+    pub last_context_tokens: i64,
     /// Distinct models seen, in first-seen order.
     pub models: Vec<String>,
     /// Per-tool invocation counts, sorted by count desc then name.
@@ -93,6 +98,7 @@ pub fn summarize_lines(
     let mut cwd: Option<String> = None;
     let mut first_ts: Option<String> = None;
     let mut last_ts: Option<String> = None;
+    let mut last_context_tokens = 0i64;
     let mut parse_errors = 0;
     let mut total_lines = 0;
 
@@ -149,6 +155,9 @@ pub fn summarize_lines(
                     tokens.output += get("output_tokens");
                     tokens.cache_creation += get("cache_creation_input_tokens");
                     tokens.cache_read += get("cache_read_input_tokens");
+                    // Latest turn wins (chronological file order) → current
+                    // context size ≈ this turn's input + cache-read.
+                    last_context_tokens = get("input_tokens") + get("cache_read_input_tokens");
                 }
 
                 if let Some(content) = message
@@ -199,6 +208,7 @@ pub fn summarize_lines(
         user_messages,
         assistant_messages,
         tokens,
+        last_context_tokens,
         models,
         tools,
         files_touched: files.into_iter().collect(),
@@ -391,6 +401,8 @@ mod tests {
         assert_eq!(s.tokens.input, 150);
         assert_eq!(s.tokens.output, 30);
         assert_eq!(s.tokens.cache_read, 2000);
+        // Latest assistant turn's input(50) + cache_read(0) = current context.
+        assert_eq!(s.last_context_tokens, 50);
         assert_eq!(s.models, vec!["claude-opus-4-8".to_string()]);
         // a.rs appears twice but is deduped; sorted.
         assert_eq!(

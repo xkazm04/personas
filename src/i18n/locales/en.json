@@ -10506,7 +10506,9 @@
       "skills_drawer_empty": "No skills found",
       "skills_drawer_command_placeholder": "Click a skill, then add arguments…",
       "skills_drawer_apply_btn": "Apply",
-      "skill_applied_toast": "Sent {command} to {name}"
+      "skill_applied_toast": "Sent {command} to {name}",
+      "context_size_label": "ctx",
+      "context_size_hint": "Conversation size — the context this session re-sends each turn. Smaller is more efficient; growing toward the model's limit costs more per turn."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

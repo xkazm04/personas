@@ -32,6 +32,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetSessionInsights } from './FleetSessionInsights';
+import { FleetContextPill } from './FleetContextPill';
 import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
@@ -630,6 +631,8 @@ export default function FleetGridPage() {
                       {v.label}
                     </button>
                   ))}
+                  {/* Conversation-size efficiency indicator (F2). */}
+                  <span className="ml-2"><FleetContextPill claudeSessionId={activeSession.claudeSessionId} /></span>
                   {/* Skills drawer trigger — sits above the CLI. */}
                   <button
                     type="button"
