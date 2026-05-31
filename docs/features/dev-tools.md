@@ -40,10 +40,10 @@ the active selection drives the project-selector banner on the other tabs.
 
 The dialog is a **horizontal SDLC pipeline-stepper**: a clickable rail of stages
 across the top, with the active stage's fields below it and `Back` / `Next` /
-`Create` navigation. Phase 1 ships **two stages**; the rail + per-stage
-component pattern (`sub_projects/pipeline/`) is built to grow as the pipeline
-gains build/review/deploy stages. The same stages render read-only in the
-**Overview** tab's Pipeline section.
+`Create` navigation. It ships **three stages** (Project, Source control,
+Standards); the rail + per-stage component pattern (`sub_projects/pipeline/`) is
+built to grow as the pipeline gains build/review/deploy stages. The same stages
+render read-only in the **Overview** tab's Pipeline section.
 
 **Stage 1 — Project**
 - **Folder first:** pick a project folder. The **project name is auto-extracted
@@ -74,6 +74,24 @@ gains build/review/deploy stages. The same stages render read-only in the
   the project, now carrying the repo + main branch (`github_url`, `main_branch`)
   so agents read the codebase immediately. Unchecking skips it; it can still be
   added later from the catalog (Connections → Catalog → Codebase).
+
+**Stage 3 — Standards** (the policy the connected team must respect; persisted as `standards_config` JSON)
+- **Pre-commit gates** — toggle which must pass before a commit: **Lint**, **Docs covered**, **Code quality**.
+- **PR base** — which branch PRs open against: **Main** (`main_branch`) or **Test** (`test_env_branch`).
+- **Automerge** — enable **GitHub native auto-merge** (merges when required checks pass) into Main or Test.
+
+Stage 3 is config-only (always valid via defaults, never blocks Create). It is
+wired to the connected team's personas at runtime: `engine/runner/team_context.rs`
+injects a **STANDARDS & BRANCHING POLICY** block into every team-member
+execution's prompt (resolved from the bound project's `standards_config`), so
+Dev Clone / QA Guardian open PRs against the configured base, run the named
+pre-commit gates, and enable auto-merge per the policy.
+
+**Golden-standard scan** — the Overview's Pipeline section has a **Standards
+compliance** card that runs `dev_tools_run_standards_scan` (`standards_scan.rs`):
+an LLM scan instructed with a shipped golden ruleset (`standards_ruleset.md`)
+that adapts each rule to the repo's character and reports per-rule status
+(`present`/`partial`/`missing`) to the `dev_standards` table, with a compliance %.
 
 After creation the modal offers to **run a context map scan** right away.
 
