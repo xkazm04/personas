@@ -93,6 +93,19 @@ an LLM scan instructed with a shipped golden ruleset (`standards_ruleset.md`)
 that adapts each rule to the repo's character and reports per-rule status
 (`present`/`partial`/`missing`) to the `dev_standards` table, with a compliance %.
 
+**SDLC persona impact** — the connected team's personas honor the policy at runtime
+(the `team_context` block reaches every member execution): **Dev Clone** opens PRs
+against the policy's base branch, runs its pre-commit gates before committing, and
+enables GitHub-native auto-merge when the policy enables it. **QA Guardian** gained a
+PR-test-merge capability (`uc_pr_review`): on `dev-clone.pr.created` it checks out the
+PR in an isolated git worktree, runs the tests, then enables auto-merge (pass +
+automerge) / approves (pass) / requests changes (fail) — emitting `qa.pr.approved` /
+`qa.pr.changes_requested`. Adopted personas have no template→instance sync, so existing
+teams are retrofitted in place by the idempotent **`dev_tools_backfill_qa_pr_review`**
+command (appends the `uc_pr_review` use-case to `design_context` + inserts the
+`dev-clone.pr.created` subscription); new adoptions get it from the updated
+`dev-clone` / `qa-guardian` templates + the `uc_pr_review` recipe.
+
 After creation the modal offers to **run a context map scan** right away.
 
 > **Note:** `create_project` only takes name/path/type/github/team; the modal
