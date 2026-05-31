@@ -13,7 +13,8 @@
 //! on a missing field); unparseable lines are counted, not fatal.
 
 use std::collections::{BTreeSet, HashMap};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -278,6 +279,90 @@ pub async fn fleet_read_transcript(
     })
     .await
     .map_err(|e| format!("transcript read task failed: {e}"))?
+}
+
+/// Collect `(mtime, path)` for every `*.jsonl` directly under `projects` and
+/// one level down (`projects/<encoded-project>/*.jsonl` — the real layout).
+fn collect_transcript_files(projects: &Path) -> Vec<(SystemTime, PathBuf)> {
+    fn push_jsonl(dir: &Path, out: &mut Vec<(SystemTime, PathBuf)>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for e in entries.flatten() {
+            let p = e.path();
+            if p.extension().and_then(|x| x.to_str()) != Some("jsonl") {
+                continue;
+            }
+            if let Ok(mtime) = e.metadata().and_then(|m| m.modified()) {
+                out.push((mtime, p));
+            }
+        }
+    }
+
+    let mut out = Vec::new();
+    push_jsonl(projects, &mut out);
+    if let Ok(entries) = std::fs::read_dir(projects) {
+        for e in entries.flatten() {
+            let p = e.path();
+            if p.is_dir() {
+                push_jsonl(&p, &mut out);
+            }
+        }
+    }
+    out
+}
+
+/// Summarize the most recently-active transcripts across all projects — the
+/// data source for Fleet's cross-session activity feed (F2 / P2.2). Scans
+/// `~/.claude/projects`, keeps `*.jsonl` modified within `within_days`
+/// (default 7), and summarizes the `limit` (default 50) most-recent via the
+/// same parser as [`fleet_read_transcript`]. Newest first.
+#[tauri::command]
+pub async fn fleet_recent_transcripts(
+    within_days: Option<u32>,
+    limit: Option<u32>,
+) -> Result<Vec<FleetTranscriptSummary>, String> {
+    let within = within_days.unwrap_or(7) as u64;
+    let limit = limit.unwrap_or(50) as usize;
+
+    tokio::task::spawn_blocking(move || {
+        let Some(projects) = projects_dir() else {
+            return Ok(Vec::new());
+        };
+        if !projects.is_dir() {
+            return Ok(Vec::new());
+        }
+
+        let cutoff = SystemTime::now().checked_sub(Duration::from_secs(within * 86_400));
+        let mut files = collect_transcript_files(&projects);
+        // Newest first so the cutoff + limit can short-circuit cleanly.
+        files.sort_by(|a, b| b.0.cmp(&a.0));
+
+        let mut summaries = Vec::new();
+        for (mtime, path) in files {
+            if summaries.len() >= limit {
+                break;
+            }
+            // Sorted desc → once we pass the cutoff every remaining file is older.
+            if let Some(c) = cutoff {
+                if mtime < c {
+                    break;
+                }
+            }
+            let id = path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("")
+                .to_string();
+            if let Ok(content) = std::fs::read_to_string(&path) {
+                let lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+                summaries.push(summarize_lines(&id, &path.to_string_lossy(), &lines));
+            }
+        }
+        Ok(summaries)
+    })
+    .await
+    .map_err(|e| format!("recent transcripts task failed: {e}"))?
 }
 
 #[cfg(test)]

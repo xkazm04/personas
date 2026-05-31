@@ -10459,7 +10459,16 @@
       "insights_files": "Files touched ({count})",
       "insights_no_files": "No files modified",
       "insights_span": "{minutes}m span",
-      "insights_parse_errors": "{count} unparsed lines"
+      "insights_parse_errors": "{count} unparsed lines",
+      "activity_title": "Cross-session activity",
+      "activity_subtitle_one": "{count} recent session",
+      "activity_subtitle_other": "{count} recent sessions",
+      "activity_search_placeholder": "Search files, tools, projects…",
+      "activity_loading": "Scanning transcripts…",
+      "activity_error": "Couldn't read transcripts",
+      "activity_empty": "No recent sessions found",
+      "activity_no_matches": "No sessions match your search",
+      "activity_files_more": "+{count} more"
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

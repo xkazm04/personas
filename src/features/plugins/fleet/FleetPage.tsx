@@ -1,21 +1,23 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, Settings as SettingsIcon, BookOpen } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon, BookOpen, Activity } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { debtText } from '@/i18n/DebtText';
 
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
+const FleetActivityPage = lazy(() => import('./sub_activity/FleetActivityPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
 const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 
-type InternalTab = 'grid' | 'settings';
+type InternalTab = 'grid' | 'activity' | 'settings';
 
-// Single Sessions tab is the home for every operation (spawn, kill,
-// broadcast, terminal view). Settings stays for hook uninstall +
-// diagnostics; install lives in the Sessions header pill now.
+// Sessions is the home for every operation (spawn, kill, broadcast, terminal
+// view). Activity is the cross-session transcript feed (F2/P2.2). Settings
+// stays for hook uninstall + diagnostics; install lives in the Sessions pill.
 const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
   { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
+  { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -87,6 +89,7 @@ export default function FleetPage() {
           ) : (
             <>
               {tab === 'grid' && <FleetGridPage />}
+              {tab === 'activity' && <FleetActivityPage />}
               {tab === 'settings' && <FleetSettingsPage />}
             </>
           )}

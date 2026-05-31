@@ -98,3 +98,15 @@ export const renameSession = (sessionId: string, name: string | null) =>
  */
 export const readTranscript = (claudeSessionId: string) =>
   invoke<FleetTranscriptSummary>('fleet_read_transcript', { claudeSessionId });
+
+/**
+ * Summarize the most recently-active transcripts across all projects — the
+ * data source for the cross-session activity feed (F2 / P2.2). Scans
+ * `~/.claude/projects` for `*.jsonl` modified within `withinDays` (default 7)
+ * and returns the `limit` (default 50) most-recent rollups, newest first.
+ */
+export const recentTranscripts = (withinDays?: number, limit?: number) =>
+  invoke<FleetTranscriptSummary[]>('fleet_recent_transcripts', {
+    withinDays: withinDays ?? null,
+    limit: limit ?? null,
+  });
