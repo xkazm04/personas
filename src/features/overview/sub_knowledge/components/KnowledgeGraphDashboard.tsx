@@ -17,10 +17,11 @@ import { KNOWLEDGE_TYPES, SCOPE_TYPES } from '../libs/knowledgeHelpers';
 import { KnowledgeRow } from './KnowledgeRow';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
-import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 
 import { AnnotateModal } from './AnnotateModal';
 import { createLogger } from "@/lib/log";
@@ -108,6 +109,9 @@ export default function KnowledgeGraphDashboard() {
     () => allEntries.slice(0, entryReveal.count),
     [allEntries, entryReveal.count],
   );
+  // Per-item entrance guard for the (virtualized) entry list. Keyed to the
+  // active filters; survives row remount so scrolling never replays the fade.
+  const entryEnter = useRevealTracker(`${selectedPersonaId ?? ''}|${selectedType ?? ''}|${selectedScope ?? ''}|${failureDrilldownDate ?? ''}`);
   const { parentRef: entryListRef, virtualizer: entryVirtualizer } = useVirtualList(revealedEntries, ENTRY_ROW_ESTIMATE);
 
   const recentLearnings = !selectedPersonaId && summary ? summary.recent_learnings : [];
@@ -308,15 +312,19 @@ export default function KnowledgeGraphDashboard() {
                 {entryVirtualizer.getVirtualItems().map((virtualRow) => {
                   const entry = revealedEntries[virtualRow.index]!;
                   return (
-                    <div
+                    <RevealItem
                       key={entry.id}
+                      revealId={entry.id}
+                      order={virtualRow.index - entryReveal.newSince}
+                      hasEntered={entryEnter.hasEntered}
+                      markEntered={entryEnter.markEntered}
                       data-index={virtualRow.index}
                       ref={entryVirtualizer.measureElement}
                       style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }}
                       className="pb-2"
                     >
                       <KnowledgeRow entry={entry} personaName={personaMap.get(entry.persona_id)?.name} onMutated={() => { void fetchData(); }} />
-                    </div>
+                    </RevealItem>
                   );
                 })}
               </div>

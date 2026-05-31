@@ -7,9 +7,10 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
-import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -61,6 +62,7 @@ export function ReviewInboxPanel({
     () => filteredReviews.slice(0, reveal.count),
     [filteredReviews, reveal.count],
   );
+  const reviewEnter = useRevealTracker(revealKey ?? `${filteredReviews.length}`);
 
   const handleResizeStart = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
@@ -109,8 +111,8 @@ export function ReviewInboxPanel({
             </div>
           )}
           <div className="flex-1 overflow-y-auto">
-            {revealedReviews.map((review) => (
-              <div key={review.id} className="flex items-start animate-fade-in">
+            {revealedReviews.map((review, reviewIndex) => (
+              <RevealItem key={review.id} revealId={review.id} order={reviewIndex - reveal.newSince} hasEntered={reviewEnter.hasEntered} markEntered={reviewEnter.markEntered} className="flex items-start">
                 {review.status === 'pending' && (
                   <button
                     onClick={(e) => {
@@ -133,7 +135,7 @@ export function ReviewInboxPanel({
                     onClick={() => onSelectReview(review.id)}
                   />
                 </div>
-              </div>
+              </RevealItem>
             ))}
             {/* L2 — keyset sentinel: scrolling near it pulls the next page.
                 Held until the current page finishes revealing so we don't

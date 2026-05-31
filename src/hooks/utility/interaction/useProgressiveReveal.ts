@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 
 /**
@@ -46,6 +46,12 @@ export interface ProgressiveRevealResult {
   count: number;
   /** True while still revealing (`count < total`). */
   isRevealing: boolean;
+  /**
+   * Index where the most recent reveal wave started — items at indices in
+   * `[newSince, count)` are the ones entering now. Feed `index - newSince` as
+   * `RevealItem`'s `order` to stagger each item's fade within the wave.
+   */
+  newSince: number;
 }
 
 type Schedule = Required<
@@ -90,6 +96,8 @@ export function useProgressiveReveal(
   countRef.current = count;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickingRef = useRef(false);
+  // Count just before the most recent reveal step — the wave's start index.
+  const prevCountRef = useRef(0);
 
   // Latest-closure loop runner — reassigned each render so it reads fresh
   // schedule values, but only ever one timer chain runs at a time.
@@ -99,7 +107,9 @@ export function useProgressiveReveal(
     tickingRef.current = true;
     const sched: Schedule = { initialCount, targetMs, minChunk, intervalMs };
     const tick = () => {
-      const next = nextRevealCount(countRef.current, totalRef.current, sched);
+      const cur = countRef.current;
+      const next = nextRevealCount(cur, totalRef.current, sched);
+      prevCountRef.current = cur;
       countRef.current = next;
       setCount(next);
       if (next < totalRef.current) {
@@ -119,6 +129,7 @@ export function useProgressiveReveal(
       timerRef.current = null;
     }
     tickingRef.current = false;
+    prevCountRef.current = 0;
 
     if (revealAll) {
       countRef.current = totalRef.current;
@@ -155,5 +166,34 @@ export function useProgressiveReveal(
   );
 
   const clamped = Math.min(count, total);
-  return { count: clamped, isRevealing: clamped < total };
+  return {
+    count: clamped,
+    isRevealing: clamped < total,
+    newSince: Math.min(prevCountRef.current, clamped),
+  };
+}
+
+/**
+ * Companion to {@link useProgressiveReveal} for per-item entrance animations.
+ *
+ * Tracks which item ids have already played their entrance in a ref-backed Set
+ * that survives virtualized row unmount/remount (so scrolling never re-triggers
+ * the fade) and clears when `resetKey` changes (a filter/view switch replays
+ * the cascade). Pair with the shared `RevealItem` component.
+ */
+export function useRevealTracker(resetKey?: string | number): {
+  hasEntered: (id: string) => boolean;
+  markEntered: (id: string) => void;
+} {
+  const seenRef = useRef<Set<string>>(new Set());
+  const keyRef = useRef(resetKey);
+  if (keyRef.current !== resetKey) {
+    keyRef.current = resetKey;
+    seenRef.current = new Set();
+  }
+  const hasEntered = useCallback((id: string) => seenRef.current.has(id), []);
+  const markEntered = useCallback((id: string) => {
+    seenRef.current.add(id);
+  }, []);
+  return { hasEntered, markEntered };
 }

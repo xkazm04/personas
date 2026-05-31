@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**180 reusable components** live under `src/features/shared/components/`.
+**182 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -51,6 +51,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PersonaAvatar` | Persona avatar (icon/color) rendering. |
 | `PersonaIcon` | framed" → wrapped in . |
 | `RelativeTime` | Live-updating "2h ago" timestamp with absolute time on hover. Use for all timestamps. |
+| `RevealItem` | RevealItem — plays a one-shot staggered fade-in for a single list/table row as it is progressively revealed; tracks entry by id so |
 | `ScrollShadowContainer` | Classes applied to the inner scrollable div (e. |
 | `SectionLabel` | Small uppercase section label. |
 | `SetupStatusBadge` | _(add a `@catalog` tag)_ |
@@ -189,6 +190,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `SidebarLevel3` | _(add a `@catalog` tag)_ |
 | `SidebarSubNav` | _(add a `@catalog` tag)_ |
 | `StationPicker` | _(add a `@catalog` tag)_ |
+| `SystemLoadFooterIcon` | Smoothed CPU %. |
 | `TitleBar` | _(add a `@catalog` tag)_ |
 | `TitleBarAmbient` | focused on settings. |
 | `TitleCrossfade` | station switch). |
@@ -264,4 +266,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_180 components, 93 without a `@catalog` description._
+_182 components, 93 without a `@catalog` description._
