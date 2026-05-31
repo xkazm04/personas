@@ -35,6 +35,14 @@ test_env_branch: string | null,
  */
 main_branch: string | null,
 /**
+ * Standards & branching policy (Pipeline Stage 3). Opaque JSON envelope
+ * `{ precommit:{lint,docs_required,code_quality}, branching:{pr_base,automerge} }`
+ * the connected team's personas must respect (injected into member
+ * executions via team_context + CODEBASE_* env). Set via
+ * `dev_tools_set_standards_config`. Added 2026-05-31.
+ */
+standards_config: string | null,
+/**
  * Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
  * project's surface in `ProjectManagerPage` shows the bound team's name
  * inline so the developer can see at a glance which pipeline owns the

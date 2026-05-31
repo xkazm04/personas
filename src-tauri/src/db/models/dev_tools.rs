@@ -112,6 +112,12 @@ pub struct DevProject {
     /// source-control pipeline stage's baseline; nullable, auto-prefilled from
     /// the repo's default branch when known. Added 2026-05-31.
     pub main_branch: Option<String>,
+    /// Standards & branching policy (Pipeline Stage 3). Opaque JSON envelope
+    /// `{ precommit:{lint,docs_required,code_quality}, branching:{pr_base,automerge} }`
+    /// the connected team's personas must respect (injected into member
+    /// executions via team_context + CODEBASE_* env). Set via
+    /// `dev_tools_set_standards_config`. Added 2026-05-31.
+    pub standards_config: Option<String>,
     /// Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
     /// project's surface in `ProjectManagerPage` shows the bound team's name
     /// inline so the developer can see at a glance which pipeline owns the

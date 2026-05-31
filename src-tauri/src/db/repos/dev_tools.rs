@@ -37,6 +37,7 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         test_env_url: row.get("test_env_url").unwrap_or(None),
         test_env_branch: row.get("test_env_branch").unwrap_or(None),
         main_branch: row.get("main_branch").unwrap_or(None),
+        standards_config: row.get("standards_config").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -385,6 +386,26 @@ pub fn update_static_scan_config(
         let now = chrono::Utc::now().to_rfc3339();
         conn.execute(
             "UPDATE dev_projects SET static_scan_config = ?1, updated_at = ?2 WHERE id = ?3",
+            params![config_json, now, id],
+        )?;
+        get_project_by_id(pool, id)
+    })
+}
+
+/// Set or clear the standards & branching policy JSON for a project
+/// (Pipeline Stage 3). Shape is opaque to the repo — the frontend owns it
+/// (`{ precommit, branching }`). Pass `None` to clear.
+pub fn update_standards_config(
+    pool: &DbPool,
+    id: &str,
+    config_json: Option<&str>,
+) -> Result<DevProject, AppError> {
+    timed_query!("dev_projects", "dev_projects::update_standards_config", {
+        get_project_by_id(pool, id)?;
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_projects SET standards_config = ?1, updated_at = ?2 WHERE id = ?3",
             params![config_json, now, id],
         )?;
         get_project_by_id(pool, id)

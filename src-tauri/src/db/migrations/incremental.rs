@@ -3544,6 +3544,12 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN main_branch TEXT;")
         .ok();
 
+    // -- dev_projects: standards & branching policy (Pipeline Stage 3). Opaque
+    // JSON envelope { precommit, branching } set via dev_tools_set_standards_config;
+    // the connected team's personas must respect it. Nullable / no default.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN standards_config TEXT;")
+        .ok();
+
     // -- audit_incidents: auto-continuation guard (P2.3b).
     // Nullable timestamp stamped when the incident-continuation reactive loop
     // re-runs the blocked work. NULL = not yet continued. The consumer claims a

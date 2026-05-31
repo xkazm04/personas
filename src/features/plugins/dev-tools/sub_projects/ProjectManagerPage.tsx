@@ -201,6 +201,7 @@ export default function ProjectManagerPage() {
       testEnvUrl: raw.test_env_url ?? '',
       testEnvBranch: raw.test_env_branch ?? '',
       mainBranch: raw.main_branch ?? '',
+      standardsConfig: raw.standards_config ?? '',
     });
     setShowModal(true);
   }, [storeProjects]);

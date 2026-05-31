@@ -107,6 +107,23 @@ pub fn dev_tools_update_project(
     )
 }
 
+/// Set or clear the project's standards & branching policy (Pipeline Stage 3).
+/// `config` is the raw JSON envelope `{ precommit, branching }` (the shape is
+/// owned by the frontend; validated here only to be parseable). `None` clears it.
+#[tauri::command]
+pub fn dev_tools_set_standards_config(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    config: Option<String>,
+) -> Result<DevProject, AppError> {
+    require_auth_sync(&state)?;
+    if let Some(ref json) = config {
+        serde_json::from_str::<serde_json::Value>(json)
+            .map_err(|e| AppError::Validation(format!("Invalid standards_config JSON: {e}")))?;
+    }
+    repo::update_standards_config(&state.db, &project_id, config.as_deref())
+}
+
 #[tauri::command]
 pub fn dev_tools_delete_project(
     state: State<'_, Arc<AppState>>,

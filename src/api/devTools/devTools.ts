@@ -93,6 +93,11 @@ export const updateProject = (id: string, updates: { name?: string; description?
     mainBranch: updates.mainBranch,
   });
 
+/** Set or clear the project's standards & branching policy (Pipeline Stage 3).
+ *  `config` is the JSON envelope `{ precommit, branching }` as a string, or null to clear. */
+export const setStandardsConfig = (projectId: string, config: string | null) =>
+  invoke<DevProject>("dev_tools_set_standards_config", { projectId, config });
+
 export const deleteProject = (id: string) =>
   invoke<boolean>("dev_tools_delete_project", { id });
 

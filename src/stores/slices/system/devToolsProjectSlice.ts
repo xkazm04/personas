@@ -17,6 +17,8 @@ export interface DevToolsProjectSlice {
   fetchProjects: (status?: string) => Promise<void>;
   createProject: (name: string, rootPath: string, description?: string, techStack?: string, githubUrl?: string, teamId?: string) => Promise<DevProject>;
   updateProject: (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null }) => Promise<void>;
+  /** Set or clear the project's standards & branching policy (Pipeline Stage 3). */
+  setStandardsConfig: (id: string, config: string | null) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
   setActiveProject: (id: string | null) => Promise<void>;
   scanDirectory: (path: string) => Promise<DirectoryScanResult>;
@@ -77,6 +79,18 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       }));
     } catch (err) {
       reportError(err, "Failed to update project", set);
+    }
+  },
+
+  setStandardsConfig: async (id, config) => {
+    try {
+      const updated = await devApi.setStandardsConfig(id, config);
+      set((state) => ({
+        projects: state.projects.map((p) => (p.id === id ? updated : p)),
+        error: null,
+      }));
+    } catch (err) {
+      reportError(err, "Failed to set standards config", set);
     }
   },
 
