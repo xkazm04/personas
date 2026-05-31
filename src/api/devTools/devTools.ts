@@ -68,7 +68,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -88,6 +88,9 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // untouched.
     testEnvUrl: updates.testEnvUrl,
     testEnvBranch: updates.testEnvBranch,
+    // Option<Option<String>> like the test-env fields: a string SETS the
+    // project's primary/default branch, `null` CLEARS, `undefined` leaves it.
+    mainBranch: updates.mainBranch,
   });
 
 export const deleteProject = (id: string) =>

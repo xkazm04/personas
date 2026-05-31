@@ -3538,6 +3538,12 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_branch TEXT;")
         .ok();
 
+    // -- dev_projects: primary/default branch (the source-control pipeline stage's
+    // baseline, e.g. `main`/`master`). Nullable / no default; set via
+    // dev_tools_update_project. Existing projects unaffected.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN main_branch TEXT;")
+        .ok();
+
     // -- audit_incidents: auto-continuation guard (P2.3b).
     // Nullable timestamp stamped when the incident-continuation reactive loop
     // re-runs the blocked work. NULL = not yet continued. The consumer claims a

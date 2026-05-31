@@ -36,6 +36,7 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         pr_credential_id: row.get("pr_credential_id").unwrap_or(None),
         test_env_url: row.get("test_env_url").unwrap_or(None),
         test_env_branch: row.get("test_env_branch").unwrap_or(None),
+        main_branch: row.get("main_branch").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -276,6 +277,7 @@ pub fn update_project(
     pr_credential_id: Option<Option<&str>>,
     test_env_url: Option<Option<&str>>,
     test_env_branch: Option<Option<&str>>,
+    main_branch: Option<Option<&str>>,
 ) -> Result<DevProject, AppError> {
     timed_query!("dev_projects", "dev_projects::update_project", {
         get_project_by_id(pool, id)?;
@@ -306,6 +308,7 @@ pub fn update_project(
         push_field!(pr_credential_id, "pr_credential_id", sets, param_idx);
         push_field!(test_env_url, "test_env_url", sets, param_idx);
         push_field!(test_env_branch, "test_env_branch", sets, param_idx);
+        push_field!(main_branch, "main_branch", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_projects SET {} WHERE id = ?{}",
@@ -345,6 +348,9 @@ pub fn update_project(
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         if let Some(v) = test_env_branch {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
+        if let Some(v) = main_branch {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
         param_values.push(Box::new(id.to_string()));
@@ -1321,38 +1327,44 @@ mod apply_progress_tests {
     fn update_project_sets_and_clears_test_env_fields() {
         let pool = init_test_db().unwrap();
         let p = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
-        // Default NULL on create (test env is a post-creation concept).
+        // Default NULL on create (test env + main branch are post-creation concepts).
         assert_eq!(p.test_env_url, None);
         assert_eq!(p.test_env_branch, None);
+        assert_eq!(p.main_branch, None);
 
-        // SET: outer Some, inner Some(value). 9 leading Nones = params through pr_credential_id.
+        // SET: outer Some, inner Some(value). 9 leading Nones = params through pr_credential_id;
+        // the final three are test_env_url / test_env_branch / main_branch.
         let p = update_project(
             &pool, &p.id,
             None, None, None, None, None, None, None, None, None,
             Some(Some("https://staging.example.test")),
             Some(Some("staging")),
+            Some(Some("main")),
         )
         .unwrap();
         assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
         assert_eq!(p.test_env_branch.as_deref(), Some("staging"));
+        assert_eq!(p.main_branch.as_deref(), Some("main"));
 
         // LEAVE UNCHANGED: outer None → value persists.
         let p = update_project(
             &pool, &p.id,
-            None, None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None, None, None,
         )
         .unwrap();
         assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
+        assert_eq!(p.main_branch.as_deref(), Some("main"));
 
         // CLEAR: outer Some, inner None → back to NULL.
         let p = update_project(
             &pool, &p.id,
             None, None, None, None, None, None, None, None, None,
-            Some(None), Some(None),
+            Some(None), Some(None), Some(None),
         )
         .unwrap();
         assert_eq!(p.test_env_url, None);
         assert_eq!(p.test_env_branch, None);
+        assert_eq!(p.main_branch, None);
     }
 }
 

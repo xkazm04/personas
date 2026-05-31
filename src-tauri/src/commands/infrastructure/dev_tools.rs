@@ -86,6 +86,7 @@ pub fn dev_tools_update_project(
     pr_credential_id: Option<Option<String>>,
     test_env_url: Option<Option<String>>,
     test_env_branch: Option<Option<String>>,
+    main_branch: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -102,6 +103,7 @@ pub fn dev_tools_update_project(
         pr_credential_id.as_ref().map(|o| o.as_deref()),
         test_env_url.as_ref().map(|o| o.as_deref()),
         test_env_branch.as_ref().map(|o| o.as_deref()),
+        main_branch.as_ref().map(|o| o.as_deref()),
     )
 }
 
