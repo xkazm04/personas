@@ -11,6 +11,8 @@ import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
+import { buildGroupRows, type GroupSpec } from './grouping';
+import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from './GroupedVirtualList';
 import { createLogger } from '@/lib/log';
 
 const logger = createLogger('unified-table');
@@ -119,6 +121,15 @@ export interface UnifiedTableProps<T> {
    * filters). Omit to keep the default no-restoration behavior.
    */
   scrollRestoreKey?: string;
+  /**
+   * When set (and the table is virtualized via `rowHeight`), rows are bucketed
+   * under sticky group headers — e.g. relative-time groups built with the
+   * `grouping` helpers (`timeGroupKey` + `timeGroupLabels`). Returns each row's
+   * group key + display label. Grouping runs over the already-sorted data as
+   * consecutive runs, so pair it with a time/category sort for clean buckets.
+   * Omit for an ungrouped table (the default path is unchanged).
+   */
+  groupBy?: (row: T) => GroupSpec;
 }
 
 // ---------------------------------------------------------------------------
@@ -272,6 +283,7 @@ export function UnifiedTable<T>({
   defaultSortKey,
   defaultSortDir = 'desc',
   scrollRestoreKey,
+  groupBy,
 }: UnifiedTableProps<T>) {
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
@@ -327,6 +339,10 @@ export function UnifiedTable<T>({
   // Virtual list: enable whenever rowHeight is provided so rows are always in a
   // bounded scroll container (important on small displays).
   const useVirtual = rowHeight > 0;
+  // Sticky-group-header mode is an isolated render path (GroupedTableBody) so
+  // the default virtual/non-virtual branches below stay byte-identical for the
+  // many tables that don't opt in. Only meaningful when virtualized.
+  const grouped = !!groupBy && useVirtual;
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
   // Remember/restore the scroll offset (forwards the node into the virtualizer's
   // parentRef). No-op when scrollRestoreKey is undefined or the table isn't
@@ -404,7 +420,19 @@ export function UnifiedTable<T>({
       ) : null}
 
       {/* Rows */}
-      {sortedData.length > 0 && (useVirtual ? (
+      {sortedData.length > 0 && grouped ? (
+        <GroupedTableBody<T>
+          sortedData={sortedData}
+          columns={columns}
+          gridTemplate={gridTemplate}
+          rowHeight={rowHeight}
+          getRowKey={getRowKey}
+          onRowClick={onRowClick}
+          rowAccent={rowAccent}
+          groupBy={groupBy!}
+          scrollRestoreKey={scrollRestoreKey}
+        />
+      ) : sortedData.length > 0 && (useVirtual ? (
         <div
           ref={setScrollRef}
           className="flex-1 overflow-y-auto min-h-0 focus:outline-none"
@@ -457,6 +485,124 @@ export function UnifiedTable<T>({
           })}
         </div>
       ))}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// GroupedTableBody — virtualized rows bucketed under sticky group headers.
+//
+// Mounted only when UnifiedTable receives `groupBy` (and is virtualized), so it
+// is a fully isolated render path: the default virtual/non-virtual branches
+// above never change. Reuses the shared grouping core (buildGroupRows +
+// useGroupedVirtualizer + GroupHeaderRow) so the sticky-header mechanics and
+// markup match GroupedVirtualList exactly.
+// ---------------------------------------------------------------------------
+
+function GroupedTableBody<T>({
+  sortedData,
+  columns,
+  gridTemplate,
+  rowHeight,
+  getRowKey,
+  onRowClick,
+  rowAccent,
+  groupBy,
+  scrollRestoreKey,
+}: {
+  sortedData: T[];
+  columns: TableColumn<T>[];
+  gridTemplate: string;
+  rowHeight: number;
+  getRowKey: (row: T) => string;
+  onRowClick?: (row: T) => void;
+  rowAccent?: (row: T, index: number) => string | undefined;
+  groupBy: (row: T) => GroupSpec;
+  scrollRestoreKey?: string;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  const setScrollRef = useScrollRestoration(scrollRestoreKey, parentRef);
+
+  const { rows, headerIndexes } = useMemo(() => buildGroupRows(sortedData, groupBy), [sortedData, groupBy]);
+  const { virtualizer, activeStickyRef } = useGroupedVirtualizer({
+    count: rows.length,
+    headerIndexes,
+    getScrollElement: () => parentRef.current,
+    itemSize: rowHeight,
+  });
+
+  // Keyboard row navigation, indexed by the item's position in sortedData.
+  // scrollToIndex needs the flattened-row index, so map data → flat.
+  const navigable = !!onRowClick;
+  const [focusedIndex, setFocusedIndex] = useState(-1);
+  const flatByData = useMemo(() => {
+    const map: number[] = [];
+    rows.forEach((r, i) => { if (r.kind === 'item') map[r.dataIndex] = i; });
+    return map;
+  }, [rows]);
+  const handleKeyNav = useCallback((e: React.KeyboardEvent) => {
+    if (!navigable || sortedData.length === 0) return;
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => {
+        const start = prev < 0 ? (e.key === 'ArrowDown' ? -1 : 0) : prev;
+        const next = e.key === 'ArrowDown'
+          ? Math.min(start + 1, sortedData.length - 1)
+          : Math.max(start - 1, 0);
+        const flat = flatByData[next];
+        if (flat !== undefined) virtualizer.scrollToIndex(flat);
+        return next;
+      });
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      if (focusedIndex >= 0 && focusedIndex < sortedData.length) {
+        e.preventDefault();
+        onRowClick!(sortedData[focusedIndex]!);
+      }
+    }
+  }, [navigable, sortedData, flatByData, virtualizer, focusedIndex, onRowClick]);
+
+  return (
+    <div
+      ref={setScrollRef}
+      className="flex-1 overflow-y-auto min-h-0 focus:outline-none"
+      tabIndex={navigable ? 0 : undefined}
+      onKeyDown={navigable ? handleKeyNav : undefined}
+    >
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+        {virtualizer.getVirtualItems().map((vRow) => {
+          const row = rows[vRow.index];
+          if (!row) return null;
+          if (row.kind === 'header') {
+            return (
+              <GroupHeaderRow
+                key={`group-header:${vRow.index}:${row.key}`}
+                label={row.label}
+                count={row.count}
+                pinned={activeStickyRef.current === vRow.index}
+                start={vRow.start}
+                height={GROUP_HEADER_SIZE}
+              />
+            );
+          }
+          const { item, dataIndex } = row;
+          const accent = rowAccent?.(item, dataIndex);
+          const focused = dataIndex === focusedIndex;
+          return (
+            <div
+              key={getRowKey(item)}
+              onClick={() => onRowClick?.(item)}
+              style={{ position: 'absolute', top: 0, transform: `translateY(${vRow.start}px)`, width: '100%', height: `${rowHeight}px`, gridTemplateColumns: gridTemplate, contain: 'layout paint style' }}
+              className={`row-hover-lift grid items-center border-l-2 ${accent ?? 'border-transparent'} hover:bg-primary/[0.12] ${focused ? 'ring-1 ring-inset ring-primary/40 z-[1]' : ''} ${onRowClick ? 'cursor-pointer' : ''} ${dataIndex > 0 ? 'border-t border-t-primary/10' : ''} ${dataIndex % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
+            >
+              {columns.map((col) => (
+                <div key={col.key} className={`px-4 min-w-0 ${col.align === 'right' ? 'text-right' : ''}`}>
+                  {col.render(item, dataIndex)}
+                </div>
+              ))}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

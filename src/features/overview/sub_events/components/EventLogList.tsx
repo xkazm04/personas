@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { formatRelativeTime, EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
@@ -140,6 +141,18 @@ export default function EventLogList() {
     ...[...availableTypes].sort((a, b) => a.localeCompare(b)).map((t) => ({ value: t, label: t.replace(/_/g, ' ') })),
   ];
 
+
+  // Bucket the event stream under sticky day headers (Today / Yesterday / …)
+  // for temporal wayfinding. Grouping runs over UnifiedTable's already-sorted
+  // rows; events arrive newest-first so the buckets stay contiguous.
+  const groupLabels = useMemo(() => timeGroupLabels(t), [t]);
+  const groupOf = useCallback(
+    (event: PersonaEvent) => {
+      const key = timeGroupKey(event.created_at);
+      return { key, label: groupLabels[key] };
+    },
+    [groupLabels],
+  );
 
   const columns: TableColumn<PersonaEvent>[] = [
     {
@@ -416,6 +429,7 @@ export default function EventLogList() {
               className="flex-1"
               tableId="overview-events"
               scrollRestoreKey={`overview/events|status=${statusFilter}|type=${typeFilter}|persona=${selectedPersonaId ?? 'all'}|trigger=${triggerFilter}`}
+              groupBy={groupOf}
             />
             {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
               <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">

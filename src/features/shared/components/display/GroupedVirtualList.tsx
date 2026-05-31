@@ -78,7 +78,13 @@ export function useGroupedVirtualizer(params: {
 // Group header row
 // ---------------------------------------------------------------------------
 
-function GroupHeaderRow({
+/**
+ * The sticky group-header bar. Exported so column-based virtual lists (e.g.
+ * UnifiedTable) can render the identical header markup instead of duplicating
+ * the spec. `pinned` swaps it between `position: sticky` (pinned at the top of
+ * the viewport) and `position: absolute` (scrolling at its bucket offset).
+ */
+export function GroupHeaderRow({
   label, count, pinned, start, height,
 }: {
   label: string;
