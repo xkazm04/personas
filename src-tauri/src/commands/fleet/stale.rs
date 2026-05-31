@@ -38,6 +38,12 @@ fn growth_map() -> &'static Mutex<HashMap<String, (u64, i64)>> {
 /// user circles back.
 pub const STALE_AFTER_SECS: i64 = 5 * 60;
 
+/// How long a session may sit `Spawning` with no bound `claude_session_id`
+/// and no activity before we conclude `claude` never attached (trust-prompt
+/// hang / crash / failed start). Claude Code binds the SessionStart hook
+/// within seconds when it comes up, so 2 min is a confident verdict.
+pub const NEVER_ATTACHED_SECS: i64 = 2 * 60;
+
 /// How often the ticker runs. 30s is a good balance between
 /// responsiveness and idle CPU.
 pub const TICK_INTERVAL_SECS: u64 = 30;
@@ -119,6 +125,19 @@ fn staleness_transition(
     }
 }
 
+/// True when a session looks like it never attached: still `Spawning`, no
+/// Claude session id bound, and no activity for `idle_ms` past the threshold.
+/// The transcript watcher bumps activity (by cwd, even pre-cc-id) for sessions
+/// that actually run, so a frozen `idle_ms` here means nothing came up.
+fn is_never_attached(
+    state: FleetSessionState,
+    has_cc_id: bool,
+    idle_ms: i64,
+    threshold_ms: i64,
+) -> bool {
+    matches!(state, FleetSessionState::Spawning) && !has_cc_id && idle_ms >= threshold_ms
+}
+
 /// One pass over the registry, hardened with real transcript-growth tracking:
 ///
 /// - **Growth ⇒ active.** A session whose JSONL grew since the last tick is
@@ -180,6 +199,26 @@ fn tick_once(app: &AppHandle) {
         let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
         for session in map.values_mut() {
             if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+                continue;
+            }
+            // Never-attached spawn: still `Spawning`, no Claude session id ever
+            // bound, and no activity since spawn → claude never actually came up
+            // (folder-trust prompt hang, crash, or failed start). Flag it
+            // distinctly instead of mislabeling it generic "stale" 3 min later.
+            // Safe because the transcript watcher bumps `last_activity_ms` (by
+            // cwd, even before a cc id binds) for any session that's really
+            // working — so a frozen `last_activity_ms` means nothing ran.
+            if is_never_attached(
+                session.state,
+                session.claude_session_id.is_some(),
+                now - session.last_activity_ms,
+                NEVER_ATTACHED_SECS * 1000,
+            ) {
+                session.state = FleetSessionState::Stale;
+                session.state_reason = Some(
+                    "Claude never attached — the folder may need trust approval, or claude failed to start. Safe to kill.".into(),
+                );
+                newly_stale.push(session.id.clone());
                 continue;
             }
             let grew = grew_ids.contains(&session.id);
@@ -323,5 +362,25 @@ mod tests {
         assert_eq!(staleness_transition(Stale, false, OLD, NOW, CUTOFF), None);
         assert_eq!(staleness_transition(Exited, false, OLD, NOW, CUTOFF), None);
         assert_eq!(staleness_transition(Hibernated, false, OLD, NOW, CUTOFF), None);
+    }
+
+    const ATTACH_MS: i64 = NEVER_ATTACHED_SECS * 1000;
+
+    #[test]
+    fn never_attached_flags_silent_unbound_spawn() {
+        // Spawning, no cc id, idle past threshold → never attached.
+        assert!(is_never_attached(FleetSessionState::Spawning, false, ATTACH_MS, ATTACH_MS));
+    }
+
+    #[test]
+    fn never_attached_ignores_bound_or_active_or_recent() {
+        use FleetSessionState::*;
+        // Has a cc id → it attached.
+        assert!(!is_never_attached(Spawning, true, ATTACH_MS, ATTACH_MS));
+        // Recent activity (transcript watcher bumped it) → it's running.
+        assert!(!is_never_attached(Spawning, false, 5_000, ATTACH_MS));
+        // Already past Spawning → not our case.
+        assert!(!is_never_attached(Running, false, ATTACH_MS, ATTACH_MS));
+        assert!(!is_never_attached(Idle, false, ATTACH_MS, ATTACH_MS));
     }
 }
