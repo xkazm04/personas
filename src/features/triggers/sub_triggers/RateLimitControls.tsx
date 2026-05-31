@@ -8,6 +8,7 @@ import {
 } from '@/lib/utils/platform/triggerConstants';
 import type { TriggerRateLimitState } from '@/stores/slices/pipeline/triggerSlice';
 import { useTranslation } from '@/i18n/useTranslation';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 interface RateLimitControlsProps {
   rateLimit: TriggerRateLimitConfig;
@@ -62,14 +63,13 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   {t.triggers.max_executions}
                 </label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
+                  <NumberStepper
+                    value={rateLimit.max_per_window}
+                    onChange={(v) => update({ max_per_window: v ?? 0 })}
                     min={0}
                     max={1000}
-                    value={rateLimit.max_per_window}
-                    onChange={(e) => update({ max_per_window: Math.max(0, parseInt(e.target.value) || 0) })}
-                    className="w-20 px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
-                    placeholder="0"
+                    ariaLabel={t.triggers.max_executions}
+                    className="w-28"
                   />
                   <select
                     value={rateLimit.window_seconds}
@@ -90,14 +90,14 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   <Clock className="w-3 h-3" />
                   {t.triggers.cooldown_label}
                 </label>
-                <input
-                  type="number"
+                <NumberStepper
+                  value={rateLimit.cooldown_seconds}
+                  onChange={(v) => update({ cooldown_seconds: v ?? 0 })}
                   min={0}
                   max={86400}
-                  value={rateLimit.cooldown_seconds}
-                  onChange={(e) => update({ cooldown_seconds: Math.max(0, parseInt(e.target.value) || 0) })}
-                  className="w-24 px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
-                  placeholder="0"
+                  step={10}
+                  ariaLabel={t.triggers.cooldown_label}
+                  className="w-32"
                 />
               </div>
 
@@ -107,14 +107,13 @@ export function RateLimitControls({ rateLimit, runtimeState, onChange }: RateLim
                   <Layers className="w-3 h-3" />
                   {t.triggers.max_concurrent_label}
                 </label>
-                <input
-                  type="number"
+                <NumberStepper
+                  value={rateLimit.max_concurrent}
+                  onChange={(v) => update({ max_concurrent: v ?? 0 })}
                   min={0}
                   max={100}
-                  value={rateLimit.max_concurrent}
-                  onChange={(e) => update({ max_concurrent: Math.max(0, parseInt(e.target.value) || 0) })}
-                  className="w-24 px-2 py-1 typo-body bg-background/50 border border-primary/10 rounded-card text-foreground focus-ring"
-                  placeholder="0"
+                  ariaLabel={t.triggers.max_concurrent_label}
+                  className="w-24"
                 />
                 <p className="typo-body text-foreground">{t.triggers.zero_unlimited}</p>
               </div>

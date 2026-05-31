@@ -2,6 +2,7 @@ import { Plus, X } from 'lucide-react';
 import type { CompositeCondition } from '@/lib/utils/platform/triggerConstants';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
 import { useTranslation } from '@/i18n/useTranslation';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 export interface CompositeConfigProps {
   compositeConditions: CompositeCondition[];
@@ -92,13 +93,14 @@ export function CompositeConfig({
         label={t.triggers.composite.window_label}
         helpText={t.triggers.time_window_help}
       >
-        <input
-          type="number"
-          value={windowSeconds}
-          onChange={(e) => { setWindowSeconds(e.target.value); if (validationError) setValidationError(null); }}
-          min="5"
+        <NumberStepper
+          value={windowSeconds.trim() === '' ? null : Number(windowSeconds)}
+          onChange={(v) => { setWindowSeconds(v == null ? '' : String(v)); if (validationError) setValidationError(null); }}
+          min={5}
+          allowEmpty
           placeholder={t.triggers.composite_debounce_placeholder}
-          className="w-32 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code focus-ring transition-all"
+          ariaLabel={t.triggers.composite.window_label}
+          className="w-32"
         />
       </TriggerFieldGroup>
     </div>

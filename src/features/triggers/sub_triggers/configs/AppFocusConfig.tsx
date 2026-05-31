@@ -1,6 +1,7 @@
 import { Plus, X } from 'lucide-react';
 import { TriggerFieldGroup } from './TriggerFieldGroup';
 import { useTranslation } from '@/i18n/useTranslation';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 export interface AppFocusConfigProps {
   appNames: string[];
@@ -59,12 +60,13 @@ export function AppFocusConfig({
         />
       </TriggerFieldGroup>
       <TriggerFieldGroup label={t.triggers.poll_interval_label}>
-        <input
-          type="number"
-          value={appFocusInterval}
-          onChange={(e) => setAppFocusInterval(e.target.value)}
-          min="2"
-          className="w-24 px-3 py-2 bg-background/50 border border-primary/15 rounded-modal text-foreground font-mono typo-code focus-ring transition-all"
+        <NumberStepper
+          value={appFocusInterval.trim() === '' ? null : Number(appFocusInterval)}
+          onChange={(v) => setAppFocusInterval(v == null ? '' : String(v))}
+          min={2}
+          allowEmpty
+          ariaLabel={t.triggers.poll_interval_label}
+          className="w-24"
         />
       </TriggerFieldGroup>
     </div>
