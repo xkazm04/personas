@@ -17,8 +17,9 @@ describe('deriveAxes', () => {
     expect(deriveAxes('running'))       .toEqual({ console: 'alive',    business: 'working' });
     expect(deriveAxes('awaiting_input')).toEqual({ console: 'alive',    business: 'awaiting_input' });
     expect(deriveAxes('idle'))          .toEqual({ console: 'alive',    business: 'idle' });
-    expect(deriveAxes('stale'))         .toEqual({ console: 'alive',    business: 'stale' });
-    expect(deriveAxes('exited'))        .toEqual({ console: 'exited',   business: 'none' });
+    expect(deriveAxes('stale'))         .toEqual({ console: 'alive',      business: 'stale' });
+    expect(deriveAxes('hibernated'))    .toEqual({ console: 'hibernated', business: 'none' });
+    expect(deriveAxes('exited'))        .toEqual({ console: 'exited',     business: 'none' });
   });
 });
 
@@ -57,8 +58,14 @@ describe('FleetStatusDots', () => {
     expect(consoleDot?.getAttribute('title')).toBe('Process alive');
   });
 
+  it('renders only the console dot for hibernated (resumable, no Claude activity)', () => {
+    render(<FleetStatusDots state="hibernated" />);
+    const wrapper = screen.getByTestId('fleet-dots-hibernated');
+    expect(wrapper.querySelectorAll(':scope > span').length).toBe(1);
+  });
+
   it('handles the full lifecycle without throwing', () => {
-    const states: FleetSessionState[] = ['spawning', 'running', 'awaiting_input', 'idle', 'stale', 'exited'];
+    const states: FleetSessionState[] = ['spawning', 'running', 'awaiting_input', 'idle', 'stale', 'hibernated', 'exited'];
     for (const s of states) {
       const { unmount } = render(<FleetStatusDots state={s} />);
       expect(screen.getByTestId(`fleet-dots-${s}`)).toBeInTheDocument();

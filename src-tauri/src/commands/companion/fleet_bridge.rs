@@ -363,6 +363,7 @@ fn parse_state_token(s: &str) -> Option<FleetSessionState> {
         "awaiting_input" => Some(FleetSessionState::AwaitingInput),
         "idle"           => Some(FleetSessionState::Idle),
         "stale"          => Some(FleetSessionState::Stale),
+        "hibernated"     => Some(FleetSessionState::Hibernated),
         "exited"         => Some(FleetSessionState::Exited),
         _ => None,
     }

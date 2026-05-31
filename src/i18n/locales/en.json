@@ -10508,7 +10508,14 @@
       "skills_drawer_apply_btn": "Apply",
       "skill_applied_toast": "Sent {command} to {name}",
       "context_size_label": "ctx",
-      "context_size_hint": "Conversation size — the context this session re-sends each turn. Smaller is more efficient; growing toward the model's limit costs more per turn."
+      "context_size_hint": "Conversation size — the context this session re-sends each turn. Smaller is more efficient; growing toward the model's limit costs more per turn.",
+      "state_hibernated": "Hibernated",
+      "dot_console_hibernated": "Process hibernated — resumable",
+      "sleep_session": "Hibernate",
+      "sleep_unavailable": "Can't hibernate yet — session hasn't bound a Claude session id",
+      "wake_session": "Wake",
+      "hibernated_panel_title": "Session hibernated",
+      "hibernated_panel_desc": "The process was freed to save resources. Wake to resume the conversation via claude --resume."
     },
     "title": "Plugins",
     "subtitle": "Extend your workspace with plugins. Toggle to show or hide from the sidebar.",

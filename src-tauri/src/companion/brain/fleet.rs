@@ -118,6 +118,7 @@ fn state_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput  => "awaiting_input",
         FleetSessionState::Idle           => "idle",
         FleetSessionState::Stale          => "stale",
+        FleetSessionState::Hibernated     => "hibernated",
         FleetSessionState::Exited         => "exited",
     }
 }
@@ -129,6 +130,7 @@ fn state_label(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput  => "awaiting input",
         FleetSessionState::Idle           => "idle",
         FleetSessionState::Stale          => "stale",
+        FleetSessionState::Hibernated     => "hibernated",
         FleetSessionState::Exited         => "exited",
     }
 }
@@ -152,6 +154,7 @@ pub fn current_state_digest() -> String {
     let mut idle = 0usize;
     let mut stale = 0usize;
     let mut spawning = 0usize;
+    let mut hibernated = 0usize;
     for s in &active {
         match s.state {
             FleetSessionState::AwaitingInput => waiting += 1,
@@ -159,16 +162,17 @@ pub fn current_state_digest() -> String {
             FleetSessionState::Idle          => idle += 1,
             FleetSessionState::Stale         => stale += 1,
             FleetSessionState::Spawning      => spawning += 1,
+            FleetSessionState::Hibernated    => hibernated += 1,
             FleetSessionState::Exited        => {}
         }
     }
 
     let mut s = String::from("\n## Active Fleet (Claude Code sessions)\n");
     s.push_str(&format!(
-        "{} session{} live — {} awaiting input · {} working · {} idle · {} stale · {} spawning.\n",
+        "{} session{} live — {} awaiting input · {} working · {} idle · {} stale · {} spawning · {} hibernated.\n",
         active.len(),
         if active.len() == 1 { "" } else { "s" },
-        waiting, working, idle, stale, spawning,
+        waiting, working, idle, stale, spawning, hibernated,
     ));
     s.push_str("Per-session:\n");
     for sess in active.iter().take(10) {

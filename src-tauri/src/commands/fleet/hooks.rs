@@ -269,6 +269,7 @@ fn state_to_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput => "awaiting_input",
         FleetSessionState::Idle => "idle",
         FleetSessionState::Stale => "stale",
+        FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
     }
 }

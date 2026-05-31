@@ -90,6 +90,23 @@ export const renameSession = (sessionId: string, name: string | null) =>
   invoke<boolean>('fleet_rename_session', { sessionId, name });
 
 /**
+ * Hibernate a session: kill the `claude` process to free it, keeping the row
+ * (state → `hibernated`) so it can be resumed. Resolves to `false` if the
+ * session can't be hibernated (already exited/hibernated, or never bound a
+ * claude_session_id).
+ */
+export const hibernateSession = (sessionId: string) =>
+  invoke<boolean>('fleet_hibernate_session', { sessionId });
+
+/**
+ * Wake a hibernated session: spawn a fresh PTY running
+ * `claude --resume <claudeSessionId>` in the original cwd and drop the
+ * hibernated placeholder. Resolves to the new session id.
+ */
+export const wakeSession = (sessionId: string, cols?: number, rows?: number) =>
+  invoke<string>('fleet_wake_session', { sessionId, cols, rows });
+
+/**
  * Read + summarize a session's Claude Code transcript
  * (`~/.claude/projects/**\/<claudeSessionId>.jsonl`) into a structured
  * rollup: token totals, per-tool counts, files touched, message counts,

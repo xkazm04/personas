@@ -67,7 +67,7 @@ fn tick_once(app: &AppHandle) {
         for session in map.values_mut() {
             if matches!(
                 session.state,
-                FleetSessionState::Exited | FleetSessionState::Stale
+                FleetSessionState::Exited | FleetSessionState::Stale | FleetSessionState::Hibernated
             ) {
                 continue;
             }

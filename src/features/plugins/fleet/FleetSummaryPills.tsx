@@ -27,6 +27,7 @@ const STATE_META: ReadonlyArray<{
   { id: 'spawning', dot: 'bg-cyan-400', labelKey: 'state_spawning' },
   { id: 'idle', dot: 'bg-emerald-400', labelKey: 'state_idle' },
   { id: 'stale', dot: 'bg-orange-400', labelKey: 'state_stale' },
+  { id: 'hibernated', dot: 'bg-indigo-400', labelKey: 'state_hibernated' },
   { id: 'exited', dot: 'bg-zinc-500', labelKey: 'state_exited' },
 ];
 

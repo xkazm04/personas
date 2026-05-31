@@ -59,7 +59,8 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
     async (e: React.MouseEvent) => {
       e.stopPropagation();
       try {
-        if (session.state === 'exited') {
+        if (session.state === 'exited' || session.state === 'hibernated') {
+          // No live process — just drop the row (the placeholder).
           await removeSession(session.id);
           onRemovedLocal(session.id);
         } else {
@@ -180,7 +181,7 @@ function FleetSessionCardImpl({ session, isActive, onActivate, onRemovedLocal }:
           <span
             role="button"
             tabIndex={0}
-            aria-label={session.state === 'exited' ? 'Remove from list' : 'Kill session'}
+            aria-label={session.state === 'exited' || session.state === 'hibernated' ? 'Remove from list' : 'Kill session'}
             onClick={handleClose}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {

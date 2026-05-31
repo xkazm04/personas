@@ -31,7 +31,7 @@ export function FleetMobilePreview() {
 
   const { counts, total, waitingItems } = useMemo(() => {
     const c: Record<FleetSessionState, number> = {
-      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, exited: 0,
+      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, hibernated: 0, exited: 0,
     };
     const waiting: { name: string; lastActivityMs: number }[] = [];
     for (const s of sessions) {

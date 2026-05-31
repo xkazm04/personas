@@ -223,6 +223,7 @@ pub fn spawn_session(
         state_reason: Some("PTY spawned".to_string()),
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
+        hibernating: std::sync::atomic::AtomicBool::new(false),
     };
     registry().insert(inner);
 
@@ -410,6 +411,17 @@ fn reaper_loop(
             None
         }
     };
+
+    // Hibernation path: the operator killed the process to free it, not a real
+    // death. `hibernate` already set state = Hibernated; leave it there, don't
+    // emit Exited, and skip exit reconciliation (the conversation lives on and
+    // can be resumed). The MCP/temp-file cleanup in the spawning task still
+    // runs — the process really is gone.
+    if registry().is_hibernating(&session_id) {
+        tracing::debug!(session_id = %session_id, "fleet reaper: child exited for hibernation");
+        emit_registry_changed(&app, "updated", &session_id);
+        return;
+    }
 
     registry().mark_exited(&session_id, exit_code);
     let _ = app.emit(

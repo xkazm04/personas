@@ -2946,6 +2946,8 @@ pub fn run() {
             commands::fleet::commands::fleet_uninstall_hooks,
             commands::fleet::commands::fleet_check_hooks,
             commands::fleet::commands::fleet_rename_session,
+            commands::fleet::commands::fleet_hibernate_session,
+            commands::fleet::commands::fleet_wake_session,
             commands::fleet::transcript_read::fleet_read_transcript,
             commands::fleet::transcript_read::fleet_recent_transcripts,
         ]))

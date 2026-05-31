@@ -18,6 +18,8 @@ import {
   LayoutGrid,
   BarChart3,
   BookOpen,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -25,7 +27,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, writeInput } from '@/api/fleet/fleet';
+import { spawnSession, writeInput, hibernateSession, wakeSession } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { useToastStore } from '@/stores/toastStore';
@@ -67,6 +69,7 @@ const GROUP_ORDER: ReadonlyArray<{
   { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
   { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
   { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
+  { id: 'hibernated',     labelKey: 'state_hibernated',     icon: Moon,         accent: 'text-indigo-400' },
   { id: 'exited',         labelKey: 'state_exited',         icon: Ban,          accent: 'text-foreground' },
 ];
 
@@ -259,6 +262,24 @@ export default function FleetGridPage() {
     }
   }, [activeSessionId, sessions, addToast, t, tx]);
 
+  // Hibernate: free the process, keep the row resumable. Wake: respawn
+  // `claude --resume` and focus the new session. (F3)
+  const handleHibernate = useCallback(async (id: string) => {
+    try {
+      await hibernateSession(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:hibernate', 'Failed to hibernate session')(e);
+    }
+  }, []);
+  const handleWake = useCallback(async (id: string) => {
+    try {
+      const newId = await wakeSession(id);
+      setActiveSession(newId);
+    } catch (e) {
+      toastCatch('FleetGridPage:wake', 'Failed to wake session')(e);
+    }
+  }, [setActiveSession]);
+
   // Companion approvals folded into the same "Needs you" surface — the
   // idea's "approve/reject companion actions" half. Read-only on the
   // companion store except for removing the row once resolved.
@@ -318,7 +339,8 @@ export default function FleetGridPage() {
   const liveSessions = useMemo(
     () =>
       sessions
-        .filter((s) => s.state !== 'exited')
+        // Hibernated sessions have no PTY to tile — exclude alongside exited.
+        .filter((s) => s.state !== 'exited' && s.state !== 'hibernated')
         .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
     [sessions],
   );
@@ -356,7 +378,7 @@ export default function FleetGridPage() {
   // states the subtitle previously ignored (spawning, stale).
   const stateCounts = useMemo(() => {
     const c: Record<FleetSessionState, number> = {
-      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, exited: 0,
+      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, hibernated: 0, exited: 0,
     };
     for (const s of sessions) c[s.state] += 1;
     return c;
@@ -493,7 +515,7 @@ export default function FleetGridPage() {
             variant="secondary"
             size="sm"
             icon={<Send className="w-3.5 h-3.5" />}
-            disabled={sessions.filter((s) => s.state !== 'exited').length === 0}
+            disabled={sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated').length === 0}
             onClick={() => setBroadcastOpen(true)}
           >
             Broadcast
@@ -602,6 +624,25 @@ export default function FleetGridPage() {
                 <p className="typo-caption">{t.plugins.fleet.grid_active_hint}</p>
               </div>
             ) : activeSession ? (
+              activeSession.state === 'hibernated' ? (
+                <div
+                  data-testid="fleet-hibernated-panel"
+                  className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-indigo-400/25 rounded-modal bg-[#0a0a0c]"
+                >
+                  <Moon className="w-10 h-10 mb-3 text-indigo-400" aria-hidden="true" />
+                  <p className="typo-caption mb-1">{t.plugins.fleet.hibernated_panel_title}</p>
+                  <p className="text-[11px] text-center max-w-[340px] mb-3 opacity-70">{t.plugins.fleet.hibernated_panel_desc}</p>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<Sun className="w-3.5 h-3.5" />}
+                    data-testid="fleet-wake"
+                    onClick={() => handleWake(activeSession.id)}
+                  >
+                    {t.plugins.fleet.wake_session}
+                  </Button>
+                </div>
+              ) : (
               <div
                 className={`h-full flex flex-col border rounded-modal overflow-hidden bg-[#0a0a0c] ${
                   attentionClass(sessionAttention(activeSession)) || 'border-primary/10'
@@ -644,6 +685,18 @@ export default function FleetGridPage() {
                     <BookOpen className="w-3.5 h-3.5" />
                     {t.plugins.fleet.skills_button}
                   </button>
+                  {/* Hibernate — free the process, keep it resumable (F3). */}
+                  <button
+                    type="button"
+                    data-testid="fleet-sleep"
+                    disabled={!activeSession.claudeSessionId}
+                    onClick={() => handleHibernate(activeSession.id)}
+                    title={activeSession.claudeSessionId ? t.plugins.fleet.sleep_session : t.plugins.fleet.sleep_unavailable}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[11px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                    {t.plugins.fleet.sleep_session}
+                  </button>
                 </div>
                 <div className="flex-1 min-h-0">
                   {rightView === 'insights' ? (
@@ -662,6 +715,7 @@ export default function FleetGridPage() {
                   )}
                 </div>
               </div>
+              )
             ) : (
               <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
                 <TerminalIcon className="w-10 h-10 mb-3" />
