@@ -54,6 +54,12 @@ layout.
   (owner/name, private badge, description, open ↗); manual URLs are validated
   with an inline error when malformed.
 - **Bound team** — optional; binds the project to a PersonaTeam pipeline.
+- **Test environment** — optional URL + branch of the *living test environment*
+  this project's team delivers into (e.g. a staging/preview deployment such as
+  `https://staging.example.com` on branch `main`). Both fields live in the
+  **Source control** section and are most useful when editing an existing
+  project. The URL is persisted as `test_env_url` and the branch as
+  `test_env_branch`; clearing either field removes that binding.
 - **Create Codebase connector** (create mode only, on by default) — when
   checked, creating the project also creates a `Codebase — <project name>`
   connector (`service_type: codebase`) wired to the project, so agents can read
