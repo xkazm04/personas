@@ -11,28 +11,35 @@ import type { PendingApproval } from '@/api/companion';
 /** Visual attention a session warrants. `none` → use the base border. */
 export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'none';
 
+/** Prefix of the Rust ticker's never-attached `state_reason` (see
+ *  `stale.rs::is_never_attached`). Keep in sync with that string. */
+const NEVER_ATTACHED_REASON = 'Claude never attached';
+
 /**
- * True when a session never attached a Claude agent: no `claude_session_id`
- * ever bound and it's already gone stale. Asking Athena to "unblock" it is
- * futile — there's no live agent on the other end to type into — so the right
- * move is kill + retry (often the folder needs Claude Code's trust approval),
- * not a `fleet_send_input` nudge. Mirrors the Rust `is_never_attached` verdict.
+ * True when a session never attached a Claude agent. The authoritative signal
+ * is the Rust ticker's `state_reason` verdict (its confident 2-min no-activity
+ * check) — NOT a broad "stale without a cc id" guess, which misfires on a
+ * genuinely-working session whose cc id simply hasn't bound yet (that one is
+ * normal `stale` and should still show real state + the Ask-Athena button).
+ * For a real never-attached session, asking Athena to "unblock" it is futile
+ * (no live agent to type into) — kill + retry instead (often the folder needs
+ * Claude Code's trust approval).
  */
-export function isNeverAttached(s: Pick<FleetSession, 'state' | 'claudeSessionId'>): boolean {
-  return s.claudeSessionId == null && s.state === 'stale';
+export function isNeverAttached(s: Pick<FleetSession, 'stateReason'>): boolean {
+  return s.stateReason?.startsWith(NEVER_ATTACHED_REASON) ?? false;
 }
 
 /** Classify a session by how much it wants the operator's (or Athena's) eyes. */
-export function sessionAttention(
-  s: Pick<FleetSession, 'state' | 'exitCode' | 'claudeSessionId'>,
-): FleetAttention {
+export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): FleetAttention {
   switch (s.state) {
     case 'awaiting_input':
       return 'waiting';
     case 'stale':
-      // Never-attached → 'failed' (distinct red), not the amber "stale" that
-      // invites an Athena nudge — there's no agent to nudge.
-      return isNeverAttached(s) ? 'failed' : 'stale';
+      // Stale is stale (amber) — including never-attached. We do NOT paint it
+      // red 'failed': that misreads as a crash and hid the real state. The
+      // never-attached distinction is handled in the Athena strip (note vs
+      // Ask-button), not the border colour.
+      return 'stale';
     case 'exited':
       return s.exitCode != null && s.exitCode !== 0 ? 'failed' : 'none';
     default:
