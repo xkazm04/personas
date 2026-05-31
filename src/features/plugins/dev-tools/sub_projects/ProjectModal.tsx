@@ -1,28 +1,34 @@
 /**
- * ProjectModal — create and edit project dialog.
- * Extracted from ProjectManagerPage to isolate the multi-step modal flow.
+ * ProjectModal — create and edit project dialog, rendered as a horizontal
+ * SDLC pipeline-stepper.
+ *
+ * Stage 1 (Project): folder path + name. Stage 2 (Source control): a
+ * Team / Standalone switch, repo, main branch, and living-test-environment.
+ * The old flat "Workspace" section is folded into stage 2 (team binding).
+ * Phase 1 ships two stages; the rail + stage-component pattern grows by
+ * appending a `PipelineStage` + an editor component.
  */
 import { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/features/shared/components/buttons';
-import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import {
-  FolderOpen, X, Plus, Pencil, Search, CheckCircle2, Users, CheckSquare, Square, Code2, GitBranch,
+  X, Plus, Pencil, Search, CheckCircle2, FolderKanban, GitBranch, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import {
-  type ProjectType, type EditProjectData, PROJECT_TYPES,
+  type ProjectType, type EditProjectData,
 } from './projectManagerTypes';
-import { GitHubRepoSelector } from './GitHubRepoSelector';
+import { PipelineRail } from './pipeline/PipelineRail';
+import { ProjectStep } from './pipeline/ProjectStep';
+import { SourceControlStep } from './pipeline/SourceControlStep';
+import type { PipelineStage, SourceMode } from './pipeline/pipelineTypes';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useVaultStore } from '@/stores/vaultStore';
 import { listCredentials } from '@/api/vault/credentials';
 
-
-type ModalStep = 'form' | 'created';
+type ModalPhase = 'form' | 'created';
 
 interface ProjectFormData {
   name: string;
@@ -36,6 +42,8 @@ interface ProjectFormData {
   testEnvUrl: string;
   /** Branch deployed to the living test environment (e.g. `staging`). */
   testEnvBranch: string;
+  /** Project's primary/default branch (e.g. `main`/`master`). */
+  mainBranch: string;
 }
 
 interface ProjectModalProps {
@@ -47,17 +55,6 @@ interface ProjectModalProps {
   editProject?: EditProjectData | null;
 }
 
-/** Small labelled divider that groups the modal's fields into sections. */
-function SectionHeader({ icon: Icon, label }: { icon: typeof FolderOpen; label: string }) {
-  return (
-    <div className="flex items-center gap-2 pt-1">
-      <Icon className="w-3.5 h-3.5 text-amber-400/70 flex-shrink-0" />
-      <h3 className="typo-label text-primary uppercase tracking-wider whitespace-nowrap">{label}</h3>
-      <div className="flex-1 h-px bg-primary/10" />
-    </div>
-  );
-}
-
 export function ProjectModal({
   open: isOpen,
   onClose,
@@ -67,34 +64,34 @@ export function ProjectModal({
   editProject,
 }: ProjectModalProps) {
   const { t } = useTranslation();
+  const dp = t.plugins.dev_projects;
   const isEdit = !!editProject;
 
-  const [step, setStep] = useState<ModalStep>('form');
+  const [phase, setPhase] = useState<ModalPhase>('form');
+  const [stepIndex, setStepIndex] = useState(0);
   const [name, setName] = useState('');
   const [path, setPath] = useState('');
   const [projectType, setProjectType] = useState<ProjectType>('other');
   const [githubUrl, setGithubUrl] = useState('');
+  const [sourceMode, setSourceMode] = useState<SourceMode>('standalone');
   const [teamId, setTeamId] = useState<string | null>(null);
   const [prCredentialId, setPrCredentialId] = useState<string | null>(null);
   const [testEnvUrl, setTestEnvUrl] = useState('');
   const [testEnvBranch, setTestEnvBranch] = useState('');
-  // Vault GitHub PAT credentials, offered as the project's source-control
+  const [mainBranch, setMainBranch] = useState('');
+  // Vault GitHub PAT credentials offered as the standalone source-control
   // connector (persisted as pr_credential_id — authorises PR / git ops).
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
   const [nameEdited, setNameEdited] = useState(false);
-  // Opt-in: auto-create a Codebase connector for the new project so the user
-  // doesn't have to open the credential catalog and add one manually.
+  // Opt-in: auto-create a Codebase connector for the new project.
   const [createConnector, setCreateConnector] = useState(true);
   const [createdProject, setCreatedProject] = useState<{ id: string; name: string; path: string } | null>(null);
-  const { shouldAnimate: _shouldAnimate } = useMotion();
 
-  // Teams roster for the binding picker (cycle 5).
   const teams = usePipelineStore((s) => s.teams);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   useEffect(() => {
     if (isOpen) {
       fetchTeams();
-      // Load vault GitHub PAT credentials for the connector picker.
       listCredentials()
         .then((creds) =>
           setGithubCreds(
@@ -107,7 +104,7 @@ export function ProjectModal({
     }
   }, [isOpen, fetchTeams]);
 
-  // Pre-fill form when editing
+  // Pre-fill when editing. Source mode is derived from which binding exists.
   useEffect(() => {
     if (editProject) {
       setName(editProject.name);
@@ -118,27 +115,25 @@ export function ProjectModal({
       setPrCredentialId(editProject.prCredentialId);
       setTestEnvUrl(editProject.testEnvUrl ?? '');
       setTestEnvBranch(editProject.testEnvBranch ?? '');
+      setMainBranch(editProject.mainBranch ?? '');
+      setSourceMode(editProject.teamId ? 'team' : 'standalone');
       setNameEdited(true);
+      setStepIndex(0);
     }
   }, [editProject]);
 
   const handleSelectFolder = async () => {
     if (isEdit) return; // path is read-only in edit mode
     try {
-      const selected = await open({
-        directory: true,
-        multiple: false,
-        title: 'Select project folder',
-      });
+      const selected = await open({ directory: true, multiple: false, title: 'Select project folder' });
       if (!selected) return;
       const folderPath = typeof selected === 'string' ? selected : selected;
       setPath(folderPath);
       if (!nameEdited) {
         const segments = folderPath.replace(/[\\/]+$/, '').split(/[\\/]/);
-        const folderName = segments[segments.length - 1] || '';
-        setName(folderName);
+        setName(segments[segments.length - 1] || '');
       }
-    } catch (err) { silentCatch("features/plugins/dev-tools/sub_projects/ProjectModal:catch1")(err); }
+    } catch (err) { silentCatch('features/plugins/dev-tools/sub_projects/ProjectModal:selectFolder')(err); }
   };
 
   const handleNameChange = (val: string) => {
@@ -146,67 +141,87 @@ export function ProjectModal({
     setNameEdited(true);
   };
 
+  // Stage completion drives both the rail tint and submit validation.
+  const stage0Complete = !!name.trim() && !!path.trim();
+  const stage1Complete = sourceMode === 'team' ? !!teamId : !!prCredentialId;
+  const canSubmit = stage0Complete && stage1Complete;
+
+  const STEP_COUNT = 2;
+  const stages: PipelineStage[] = [
+    { id: 'project', label: dp.pipeline_step_project, icon: FolderKanban, status: stepIndex === 0 ? 'active' : stage0Complete ? 'complete' : 'incomplete' },
+    { id: 'source', label: dp.pipeline_step_source, icon: GitBranch, status: stepIndex === 1 ? 'active' : stage1Complete ? 'complete' : 'incomplete' },
+  ];
+
+  // Mode is mutually exclusive at the data layer: team mode nulls the
+  // connector, standalone nulls the team binding.
+  const effectiveTeamId = sourceMode === 'team' ? teamId : null;
+  const effectivePrCredentialId = sourceMode === 'standalone' ? prCredentialId : null;
+
+  const buildFormData = (): ProjectFormData => ({
+    name: name.trim(),
+    path: path.trim(),
+    projectType,
+    githubUrl: githubUrl.trim(),
+    teamId: effectiveTeamId,
+    prCredentialId: effectivePrCredentialId,
+    testEnvUrl: testEnvUrl.trim(),
+    testEnvBranch: testEnvBranch.trim(),
+    mainBranch: mainBranch.trim(),
+  });
+
   const handleSubmit = async () => {
-    if (!name.trim() || !path.trim()) return;
+    if (!stage0Complete) { setStepIndex(0); return; }
+    if (!stage1Complete) { setStepIndex(1); return; }
+    const data = buildFormData();
 
     if (isEdit && editProject) {
-      await onUpdate(editProject.id, {
-        name: name.trim(),
-        projectType,
-        githubUrl: githubUrl.trim(),
-        teamId,
-        prCredentialId,
-        testEnvUrl: testEnvUrl.trim(),
-        testEnvBranch: testEnvBranch.trim(),
-      });
+      // `data` carries `path` too, but onUpdate's param omits it — the extra
+      // key is harmless for a non-literal argument.
+      await onUpdate(editProject.id, data);
       handleClose();
-    } else {
-      const result = await onCreate({
-        name: name.trim(),
-        path: path.trim(),
-        projectType,
-        githubUrl: githubUrl.trim(),
-        teamId,
-        prCredentialId,
-        testEnvUrl: testEnvUrl.trim(),
-        testEnvBranch: testEnvBranch.trim(),
-      });
-      if (result) {
-        // Optionally create a Codebase connector wired to the new project so
-        // agents can read it without a manual trip to the credential catalog.
-        // Mirrors the data shape produced by CodebaseProjectPicker (single mode).
-        if (createConnector) {
-          try {
-            await useVaultStore.getState().createCredential({
-              name: `Codebase — ${name.trim()}`,
-              service_type: 'codebase',
-              data: {
-                project_id: result.id,
-                project_name: name.trim(),
-                root_path: path.trim(),
-                tech_stack: projectType,
-              },
-            });
-          } catch (err) {
-            toastCatch('Failed to create Codebase connector')(err);
-          }
-        }
-        setCreatedProject({ id: result.id, name: name.trim(), path: path.trim() });
-        setStep('created');
+      return;
+    }
+
+    const result = await onCreate(data);
+    if (!result) return;
+    // Auto-create a Codebase connector wired to the new project (incl. repo +
+    // main branch) so agents can read it without a manual catalog trip.
+    if (createConnector) {
+      const codebaseData: Record<string, string> = {
+        project_id: result.id,
+        project_name: data.name,
+        root_path: data.path,
+        tech_stack: data.projectType,
+      };
+      if (data.githubUrl) codebaseData.github_url = data.githubUrl;
+      if (data.mainBranch) codebaseData.main_branch = data.mainBranch;
+      try {
+        await useVaultStore.getState().createCredential({
+          name: `Codebase — ${data.name}`,
+          service_type: 'codebase',
+          data: codebaseData,
+        });
+      } catch (err) {
+        toastCatch('Failed to create Codebase connector')(err);
       }
     }
+    setCreatedProject({ id: result.id, name: data.name, path: data.path });
+    setPhase('created');
   };
 
   const handleClose = () => {
-    setStep('form');
+    setPhase('form');
+    setStepIndex(0);
     setName('');
     setPath('');
     setProjectType('other');
     setGithubUrl('');
+    setSourceMode('standalone');
     setTeamId(null);
     setPrCredentialId(null);
     setTestEnvUrl('');
     setTestEnvBranch('');
+    setMainBranch('');
     setNameEdited(false);
     setCreateConnector(true);
     setCreatedProject(null);
@@ -214,11 +229,11 @@ export function ProjectModal({
   };
 
   const handleScanNow = () => {
-    if (createdProject) {
-      onScanNow(createdProject.id, createdProject.path, createdProject.name);
-    }
+    if (createdProject) onScanNow(createdProject.id, createdProject.path, createdProject.name);
     handleClose();
   };
+
+  const isLastStep = stepIndex === STEP_COUNT - 1;
 
   return (
     <BaseModal
@@ -229,283 +244,148 @@ export function ProjectModal({
       panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
     >
       <div>
-          {step === 'form' ? (
-            <>
-              <div className="flex items-start justify-between mb-6">
-                <div className="min-w-0">
-                  <h2 id="dev-tools-project-modal-title" className="typo-heading-lg font-semibold text-foreground">
-                    {isEdit ? t.plugins.dev_projects.edit_project : t.plugins.dev_projects.new_project}
-                  </h2>
-                  <p className="typo-caption text-foreground mt-1">
-                    {isEdit ? t.plugins.dev_projects.edit_project_subtitle : t.plugins.dev_projects.new_project_subtitle}
-                  </p>
-                </div>
-                <Button variant="ghost" size="icon-sm" onClick={handleClose}>
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-
-              <div className="space-y-5">
-                {/* ============ PROJECT ============ */}
-                <SectionHeader icon={FolderOpen} label={t.plugins.dev_projects.modal_section_project} />
-
-                {/* Folder picker (read-only in edit mode) */}
-                <div>
-                  <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.plugins.dev_projects.project_folder}</label>
-                  <div className="flex gap-2">
-                    <div
-                      onClick={isEdit ? undefined : handleSelectFolder}
-                      className={`flex-1 flex items-center gap-2 px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input min-w-0 ${
-                        isEdit ? 'opacity-60' : 'cursor-pointer hover:bg-secondary/60 hover:border-primary/20 transition-colors'
-                      }`}
-                    >
-                      <FolderOpen className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                      {path ? (
-                        <span className="text-foreground truncate">{path}</span>
-                      ) : (
-                        <span className="text-foreground">{t.plugins.dev_projects.select_folder}</span>
-                      )}
-                    </div>
-                    {!isEdit && (
-                      <Button variant="secondary" size="sm" icon={<FolderOpen className="w-3.5 h-3.5" />} onClick={handleSelectFolder}>
-                        {t.plugins.dev_projects.browse}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Project Name */}
-                <div>
-                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    {t.plugins.dev_projects.project_name}
-                    {!isEdit && path && !nameEdited && (
-                      <span className="typo-caption text-foreground font-normal">({t.plugins.dev_projects.auto_filled_from_folder})</span>
-                    )}
-                  </label>
-                  <div className="relative">
-                    <input
-                      value={name}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                      placeholder={t.plugins.dev_projects.project_name_placeholder}
-                      className="w-full px-3 py-2.5 pr-8 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
-                    />
-                    <Pencil className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
-                  </div>
-                </div>
-
-                {/* Project Type */}
-                <div>
-                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    {t.plugins.dev_projects.project_type}
-                    <span className="typo-caption text-foreground font-normal">({t.plugins.dev_projects.project_type_optional})</span>
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {PROJECT_TYPES.map((pt) => (
-                      <button
-                        key={pt.id}
-                        onClick={() => setProjectType(pt.id)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 typo-caption font-medium rounded-card border transition-all ${
-                          projectType === pt.id
-                            ? `${pt.color} ring-1 ring-current/20`
-                            : 'bg-secondary/30 border-primary/10 text-foreground hover:bg-secondary/50'
-                        }`}
-                      >
-                        <span>{pt.icon}</span>
-                        {pt.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ============ SOURCE CONTROL ============ */}
-                <SectionHeader icon={GitBranch} label={t.plugins.dev_projects.modal_section_source} />
-
-                <div className="grid md:grid-cols-2 gap-3 items-start">
-                  {/* GitHub connector — bind a vault GitHub PAT so the project's
-                      PR / source-control operations (auto-PR, review comments)
-                      can authenticate. Persisted as pr_credential_id, and also
-                      drives which repositories the picker beside it lists. */}
-                  <div data-testid="project-github-connector">
-                    <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                      {t.plugins.dev_projects.github_connector_label}
-                      <span className="typo-caption text-foreground font-normal">
-                        ({t.plugins.dev_projects.team_binding_optional})
-                      </span>
-                    </label>
-                    <ThemedSelect
-                      value={prCredentialId ?? ''}
-                      onValueChange={(v) => setPrCredentialId(v || null)}
-                    >
-                      <option value="">{t.plugins.dev_projects.team_binding_none}</option>
-                      {githubCreds.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </ThemedSelect>
-                  </div>
-
-                  {/* GitHub repository — searchable picker fed by the connector
-                      selected on the left, or a manual URL input as fallback. */}
-                  <GitHubRepoSelector value={githubUrl} onChange={setGithubUrl} credentialId={prCredentialId} />
-                </div>
-                {prCredentialId && (
-                  <p className="typo-caption text-foreground -mt-2 flex items-center gap-1.5">
-                    <Code2 className="w-3 h-3 text-amber-400/70 flex-shrink-0" />
-                    {t.plugins.dev_projects.repos_from_connector}
-                  </p>
-                )}
-
-                {/* Living test environment — the staging/preview deployment this
-                    project's team delivers into. Both optional; surfaced on the
-                    project row as an "Open test environment" affordance. */}
-                <div className="grid md:grid-cols-2 gap-3 items-start">
-                  <div>
-                    <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                      {t.plugins.dev_projects.test_env_url}
-                      <span className="typo-caption text-foreground font-normal">
-                        ({t.plugins.dev_projects.team_binding_optional})
-                      </span>
-                    </label>
-                    <input
-                      value={testEnvUrl}
-                      onChange={(e) => setTestEnvUrl(e.target.value)}
-                      placeholder={t.plugins.dev_projects.test_env_url_placeholder}
-                      className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
-                    />
-                  </div>
-                  <div>
-                    <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                      {t.plugins.dev_projects.test_env_branch}
-                      <span className="typo-caption text-foreground font-normal">
-                        ({t.plugins.dev_projects.team_binding_optional})
-                      </span>
-                    </label>
-                    <input
-                      value={testEnvBranch}
-                      onChange={(e) => setTestEnvBranch(e.target.value)}
-                      placeholder={t.plugins.dev_projects.test_env_branch_placeholder}
-                      className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
-                    />
-                  </div>
-                </div>
-
-                {/* ============ WORKSPACE ============ */}
-                <SectionHeader icon={Users} label={t.plugins.dev_projects.modal_section_workspace} />
-
-                {/* Team binding — optional; ties this project to a PersonaTeam
-                    pipeline so the project surface shows the pipeline inline. */}
-                <div>
-                  <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
-                    {t.plugins.dev_projects.team_binding_label}
-                    <span className="typo-caption text-foreground font-normal">
-                      ({t.plugins.dev_projects.team_binding_optional})
-                    </span>
-                  </label>
-                  <ThemedSelect
-                    value={teamId ?? ''}
-                    onValueChange={(v) => setTeamId(v || null)}
-                  >
-                    <option value="">{t.plugins.dev_projects.team_binding_none}</option>
-                    {teams.map((team) => (
-                      <option key={team.id} value={team.id}>
-                        {team.name}
-                      </option>
-                    ))}
-                  </ThemedSelect>
-                  {teams.length === 0 && (
-                    <p className="typo-caption text-foreground mt-1">
-                      {t.plugins.dev_projects.team_binding_empty}
-                    </p>
-                  )}
-                </div>
-
-                {/* Auto-create a Codebase connector (create mode only) so the
-                    user skips a manual trip to the credential catalog. */}
-                {!isEdit && (
-                  <button
-                    type="button"
-                    onClick={() => setCreateConnector((v) => !v)}
-                    aria-pressed={createConnector}
-                    className={`w-full flex items-start gap-3 px-3 py-3 text-left border rounded-input transition-colors ${
-                      createConnector
-                        ? 'bg-amber-500/5 border-amber-500/25'
-                        : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
-                    }`}
-                  >
-                    {createConnector
-                      ? <CheckSquare className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-                      : <Square className="w-4 h-4 text-foreground flex-shrink-0 mt-0.5" />}
-                    <span className="min-w-0">
-                      <span className="typo-caption font-medium text-foreground flex items-center gap-1.5">
-                        <Code2 className="w-3.5 h-3.5 text-amber-400" />
-                        {t.plugins.dev_projects.create_codebase_connector_label}
-                      </span>
-                      <span className="block typo-caption text-foreground mt-0.5 leading-relaxed">
-                        {t.plugins.dev_projects.create_codebase_connector_desc.replace('{name}', name.trim() || t.plugins.dev_projects.project_name)}
-                      </span>
-                    </span>
-                  </button>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-primary/10">
-                <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
-                <Button
-                  variant="accent"
-                  accentColor="amber"
-                  size="sm"
-                  icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-                  disabled={!name.trim() || !path.trim()}
-                  onClick={handleSubmit}
-                >
-                  {isEdit ? t.common.save : t.plugins.dev_projects.new_project}
-                </Button>
-              </div>
-            </>
-          ) : (
-            /* Post-creation step: offer context scan */
-            <>
-              <div className="text-center py-2">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-7 h-7 text-emerald-400" />
-                </div>
-                <h2 className="typo-section-title mb-1">
-                  {t.plugins.dev_projects.project_created}
+        {phase === 'form' ? (
+          <>
+            <div className="flex items-start justify-between mb-5">
+              <div className="min-w-0">
+                <h2 id="dev-tools-project-modal-title" className="typo-heading-lg font-semibold text-foreground">
+                  {isEdit ? dp.edit_project : dp.new_project}
                 </h2>
-                <p className="typo-caption text-foreground mb-6">
-                  <span className="font-medium text-foreground">{createdProject?.name}</span> {t.plugins.dev_projects.project_ready_desc}
+                <p className="typo-caption text-foreground mt-1">
+                  {isEdit ? dp.edit_project_subtitle : dp.new_project_subtitle}
                 </p>
+              </div>
+              <Button variant="ghost" size="icon-sm" onClick={handleClose}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
 
-                <div className="bg-primary/5 border border-primary/10 rounded-modal p-4 mb-6 text-left">
-                  <div className="flex items-start gap-3">
-                    <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="typo-card-label mb-1">{t.plugins.dev_projects.generate_context_map}</h4>
-                      <p className="typo-caption text-foreground">
-                        {t.plugins.dev_projects.generate_context_map_desc}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+            {/* Pipeline rail */}
+            <div className="px-2 sm:px-8 mb-6">
+              <PipelineRail stages={stages} activeIndex={stepIndex} onSelect={setStepIndex} />
+            </div>
 
-                <div className="flex justify-center gap-2">
-                  <Button variant="ghost" size="sm" onClick={handleClose}>
-                    {t.plugins.dev_projects.skip_for_now}
+            {/* Active stage editor */}
+            <div className="min-h-[18rem]">
+              {stepIndex === 0 ? (
+                <ProjectStep
+                  isEdit={isEdit}
+                  path={path}
+                  name={name}
+                  nameEdited={nameEdited}
+                  projectType={projectType}
+                  onSelectFolder={handleSelectFolder}
+                  onNameChange={handleNameChange}
+                  onTypeChange={setProjectType}
+                />
+              ) : (
+                <SourceControlStep
+                  sourceMode={sourceMode}
+                  onModeChange={setSourceMode}
+                  teams={teams.map((tm) => ({ id: tm.id, name: tm.name }))}
+                  teamId={teamId}
+                  onTeamChange={setTeamId}
+                  githubCreds={githubCreds}
+                  prCredentialId={prCredentialId}
+                  onCredChange={setPrCredentialId}
+                  githubUrl={githubUrl}
+                  onGithubUrlChange={setGithubUrl}
+                  mainBranch={mainBranch}
+                  onMainBranchChange={setMainBranch}
+                  testEnvUrl={testEnvUrl}
+                  onTestEnvUrlChange={setTestEnvUrl}
+                  testEnvBranch={testEnvBranch}
+                  onTestEnvBranchChange={setTestEnvBranch}
+                />
+              )}
+            </div>
+
+            {/* Codebase connector opt-in (create mode, last step only) */}
+            {!isEdit && isLastStep && (
+              <button
+                type="button"
+                onClick={() => setCreateConnector((v) => !v)}
+                aria-pressed={createConnector}
+                className={`mt-4 w-full flex items-start gap-3 px-3 py-3 text-left border rounded-input transition-colors ${
+                  createConnector ? 'bg-amber-500/5 border-amber-500/25' : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                }`}
+              >
+                {createConnector
+                  ? <CheckCircle2 className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                  : <span className="w-4 h-4 rounded border border-primary/30 flex-shrink-0 mt-0.5" />}
+                <span className="min-w-0">
+                  <span className="typo-caption font-medium text-foreground">{dp.create_codebase_connector_label}</span>
+                  <span className="block typo-caption text-foreground mt-0.5 leading-relaxed">
+                    {dp.create_codebase_connector_desc.replace('{name}', name.trim() || dp.project_name)}
+                  </span>
+                </span>
+              </button>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-primary/10">
+              <Button variant="ghost" size="sm" onClick={handleClose}>{t.common.cancel}</Button>
+              <div className="flex items-center gap-2">
+                {stepIndex > 0 && (
+                  <Button variant="secondary" size="sm" icon={<ArrowLeft className="w-3.5 h-3.5" />} onClick={() => setStepIndex(stepIndex - 1)}>
+                    {dp.pipeline_back}
                   </Button>
+                )}
+                {!isLastStep ? (
                   <Button
                     variant="accent"
                     accentColor="amber"
                     size="sm"
-                    icon={<Search className="w-3.5 h-3.5" />}
-                    onClick={handleScanNow}
+                    iconRight={<ArrowRight className="w-3.5 h-3.5" />}
+                    disabled={stepIndex === 0 && !stage0Complete}
+                    onClick={() => setStepIndex(stepIndex + 1)}
                   >
-                    {t.plugins.dev_projects.scan_codebase}
+                    {dp.pipeline_next}
                   </Button>
+                ) : (
+                  <Button
+                    variant="accent"
+                    accentColor="amber"
+                    size="sm"
+                    icon={isEdit ? <Pencil className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                    disabled={!canSubmit}
+                    onClick={handleSubmit}
+                  >
+                    {isEdit ? t.common.save : dp.new_project}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Post-creation step: offer context scan */
+          <div className="text-center py-2">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
+              <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+            </div>
+            <h2 className="typo-section-title mb-1">{dp.project_created}</h2>
+            <p className="typo-caption text-foreground mb-6">
+              <span className="font-medium text-foreground">{createdProject?.name}</span> {dp.project_ready_desc}
+            </p>
+
+            <div className="bg-primary/5 border border-primary/10 rounded-modal p-4 mb-6 text-left">
+              <div className="flex items-start gap-3">
+                <Search className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="typo-card-label mb-1">{dp.generate_context_map}</h4>
+                  <p className="typo-caption text-foreground">{dp.generate_context_map_desc}</p>
                 </div>
               </div>
-            </>
-          )}
+            </div>
+
+            <div className="flex justify-center gap-2">
+              <Button variant="ghost" size="sm" onClick={handleClose}>{dp.skip_for_now}</Button>
+              <Button variant="accent" accentColor="amber" size="sm" icon={<Search className="w-3.5 h-3.5" />} onClick={handleScanNow}>
+                {dp.scan_codebase}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </BaseModal>
   );

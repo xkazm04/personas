@@ -10356,6 +10356,7 @@ export type Translations = {
     retry: string;
     no_project_selected: string;
     select_project_hint: string;
+    pipeline_heading: string;
     monitoring_linked_toast: string;
     monitoring_link_failed_toast: string;
     credential_label: string;
@@ -12618,6 +12619,18 @@ export type Translations = {
       project_name_placeholder: string;
       project_type: string;
       project_type_optional: string;
+      pipeline_step_project: string;
+      pipeline_step_source: string;
+      pipeline_next: string;
+      pipeline_back: string;
+      pipeline_not_set: string;
+      source_mode_team: string;
+      source_mode_standalone: string;
+      source_mode_team_hint: string;
+      source_mode_standalone_hint: string;
+      field_required: string;
+      main_branch_label: string;
+      main_branch_placeholder: string;
       create_codebase_connector_label: string;
       create_codebase_connector_desc: string;
       project_created: string;
@@ -13786,6 +13799,9 @@ export type Translations = {
     team_description_placeholder: string;
     color: string;
     create_team: string;
+    team_codebase_heading: string;
+    team_codebase_hint: string;
+    team_connector_label: string;
     fork_team: string;
     forked_from: string;
     forked_from_deleted: string;

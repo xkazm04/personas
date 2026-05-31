@@ -136,7 +136,7 @@ export default function ProjectManagerPage() {
     }
   }, [activeProjectId, storeActiveProjectId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string; mainBranch: string }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -153,13 +153,24 @@ export default function ProjectManagerPage() {
         data.githubUrl || undefined,
         data.teamId ?? undefined,
       );
+      // create_project doesn't accept pr-credential / test-env / main-branch
+      // (they're post-creation source-control fields). Persist them — and the
+      // mode-exclusive nulls — via a follow-up update so the pipeline's
+      // Source-control stage survives creation.
+      await storeUpdateProject(project.id, {
+        teamId: data.teamId,
+        prCredentialId: data.prCredentialId,
+        testEnvUrl: data.testEnvUrl || null,
+        testEnvBranch: data.testEnvBranch || null,
+        mainBranch: data.mainBranch || null,
+      });
       return { id: project.id };
     } catch {
       return undefined;
     }
-  }, [storeCreateProject, storeProjects, setActiveProject]);
+  }, [storeCreateProject, storeUpdateProject, storeProjects, setActiveProject]);
 
-  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string }) => {
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string; mainBranch: string }) => {
     await storeUpdateProject(id, {
       name: data.name,
       techStack: data.projectType,
@@ -169,6 +180,7 @@ export default function ProjectManagerPage() {
       // Empty string clears the living test-environment binding (Option<Option>).
       testEnvUrl: data.testEnvUrl || null,
       testEnvBranch: data.testEnvBranch || null,
+      mainBranch: data.mainBranch || null,
     });
   }, [storeUpdateProject]);
 
@@ -188,6 +200,7 @@ export default function ProjectManagerPage() {
       prCredentialId: raw.pr_credential_id ?? null,
       testEnvUrl: raw.test_env_url ?? '',
       testEnvBranch: raw.test_env_branch ?? '',
+      mainBranch: raw.main_branch ?? '',
     });
     setShowModal(true);
   }, [storeProjects]);
