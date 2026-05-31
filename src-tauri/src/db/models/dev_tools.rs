@@ -405,6 +405,34 @@ pub struct DevScan {
 }
 
 // ============================================================================
+// Dev Standards (Pipeline Stage 3 — golden-standard scan findings)
+// ============================================================================
+
+/// One per-rule compliance finding from the golden-standard LLM scan
+/// (`standards_scan.rs`). The scan adapts the shipped golden ruleset to the
+/// repo's character and reports each rule's status to this table.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevStandard {
+    pub id: String,
+    pub project_id: String,
+    pub scan_id: Option<String>,
+    /// Stable rule identifier, e.g. `lint.config`, `docs.readme`, `tests.coverage`, `branching.naming`.
+    pub rule_key: String,
+    /// `precommit` | `docs` | `code_quality` | `branching` | `testing`.
+    pub category: String,
+    pub title: String,
+    /// `present` | `partial` | `missing`.
+    pub status: String,
+    /// `info` | `warn` | `critical`.
+    pub severity: String,
+    pub evidence: Option<String>,
+    pub recommendation: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+// ============================================================================
 // Dev Tasks
 // ============================================================================
 

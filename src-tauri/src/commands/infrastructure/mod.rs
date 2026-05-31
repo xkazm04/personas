@@ -15,6 +15,7 @@ pub mod research_lab;
 pub mod settings;
 pub mod setup;
 pub mod skill_files;
+pub mod standards_scan;
 pub mod static_scan;
 pub mod system;
 pub mod system_metrics;

@@ -12648,6 +12648,11 @@ export type Translations = {
       standards_automerge_target: string;
       standards_automerge_on: string;
       standards_automerge_off: string;
+      standards_scan_title: string;
+      standards_scan_run: string;
+      standards_scan_running: string;
+      standards_scan_empty: string;
+      standards_compliance: string;
       create_codebase_connector_label: string;
       create_codebase_connector_desc: string;
       project_created: string;

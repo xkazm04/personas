@@ -20,6 +20,11 @@ export interface DevToolsProjectSlice {
   /** Set or clear the project's standards & branching policy (Pipeline Stage 3). */
   setStandardsConfig: (id: string, config: string | null) => Promise<void>;
   deleteProject: (id: string) => Promise<void>;
+
+  // -- Standards (Stage 3b golden-standard scan findings) --------------
+  standards: import("@/lib/bindings/DevStandard").DevStandard[];
+  fetchStandards: (projectId: string) => Promise<void>;
+  runStandardsScan: (projectId: string) => Promise<void>;
   setActiveProject: (id: string | null) => Promise<void>;
   scanDirectory: (path: string) => Promise<DirectoryScanResult>;
 
@@ -91,6 +96,26 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
       }));
     } catch (err) {
       reportError(err, "Failed to set standards config", set);
+    }
+  },
+
+  // -- Standards (Stage 3b) --------------------------------------------
+  standards: [],
+
+  fetchStandards: async (projectId) => {
+    try {
+      const standards = await devApi.listStandards(projectId);
+      set({ standards, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch standards", set);
+    }
+  },
+
+  runStandardsScan: async (projectId) => {
+    try {
+      await devApi.runStandardsScan(projectId);
+    } catch (err) {
+      reportError(err, "Failed to run standards scan", set);
     }
   },
 

@@ -98,6 +98,14 @@ export const updateProject = (id: string, updates: { name?: string; description?
 export const setStandardsConfig = (projectId: string, config: string | null) =>
   invoke<DevProject>("dev_tools_set_standards_config", { projectId, config });
 
+/** Run the golden-standard LLM scan (Stage 3b). Returns the scan id; findings
+ *  land in dev_standards and a `dev_tools_standards_scan_status` event fires. */
+export const runStandardsScan = (projectId: string) =>
+  invoke<{ scan_id: string }>("dev_tools_run_standards_scan", { projectId });
+
+export const listStandards = (projectId: string) =>
+  invoke<import("@/lib/bindings/DevStandard").DevStandard[]>("dev_tools_list_standards", { projectId });
+
 export const deleteProject = (id: string) =>
   invoke<boolean>("dev_tools_delete_project", { id });
 

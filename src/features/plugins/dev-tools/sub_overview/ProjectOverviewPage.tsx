@@ -20,6 +20,7 @@ import {
 import { useOverviewData } from './useOverviewData';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { ProjectPipelineView } from '../sub_projects/pipeline/ProjectPipelineView';
+import { StandardsScanCard } from './StandardsScanCard';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
@@ -279,6 +280,7 @@ export default function ProjectOverviewPage() {
               standardsConfig={activeProject.standards_config ?? undefined}
             />
           </div>
+          <StandardsScanCard projectId={activeProjectId} />
         </section>
 
         {/* ==================== Vital signs strip ==================== */}
