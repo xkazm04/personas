@@ -3,6 +3,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
@@ -192,6 +193,12 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
 
   const hasMore = globalExecutionsHasMore;
   const { parentRef, virtualizer } = useVirtualList(filteredExecutions, EXEC_ROW_HEIGHT);
+  // Remember the scroll offset across tab/route/persona switches; a new
+  // (status, persona) context starts at the top, returning to one restores it.
+  const setScrollRef = useScrollRestoration(
+    `overview/activity|status=${filter}|persona=${selectedPersonaId ?? 'all'}`,
+    parentRef,
+  );
   const colWidths = useColumnWidths('overview-activity');
   const execGridTemplate = colWidths.template(EXEC_COLUMNS);
 
@@ -272,7 +279,7 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                 />
               </div>
             ) : (
-              <div ref={parentRef} className={`flex-1 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
+              <div ref={setScrollRef} className={`flex-1 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
                 {!IS_MOBILE && (
                   <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
                     <div role="columnheader" className="relative px-4 py-1.5 flex items-center">

@@ -18,6 +18,7 @@ import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import type { PersonaMemory } from '@/lib/types/types';
 import MemoriesPageDense from './MemoriesPageDense';
@@ -171,6 +172,12 @@ function MemoriesPageBaseline() {
   const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); setSelectedTier(null); }, []);
 
   const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
+  // Remember the scroll offset across tab/route/persona switches; a new
+  // (persona, category, tier) context starts at the top, returning restores it.
+  const setMemoryListRef = useScrollRestoration(
+    `overview/memories|persona=${selectedPersonaId ?? 'all'}|cat=${selectedCategory ?? 'all'}|tier=${selectedTier ?? 'all'}`,
+    memoryListRef,
+  );
   const colWidths = useColumnWidths('overview-memories');
   const memGridTemplate = colWidths.template(MEMORY_COLUMNS);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -433,7 +440,7 @@ function MemoriesPageBaseline() {
                   <p className="typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></p>
                 </div>
               ) : (
-                <div ref={memoryListRef} className={`flex-1 overflow-y-auto focus:outline-none ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`} tabIndex={0} role="grid" aria-label={debtText("auto_memory_list_a2a82929")} onKeyDown={handleListKeyDown}>
+                <div ref={setMemoryListRef} className={`flex-1 overflow-y-auto focus:outline-none ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`} tabIndex={0} role="grid" aria-label={debtText("auto_memory_list_a2a82929")} onKeyDown={handleListKeyDown}>
                   <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
                     {virtualizer.getVirtualItems().map((virtualRow) => {
                       const memory = memories[virtualRow.index]!;

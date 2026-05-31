@@ -8,6 +8,7 @@
 import { useState, useMemo, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Filter, Search, X } from 'lucide-react';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useColumnWidths, ColumnResizeHandle } from './ColumnResize';
 import { createLogger } from '@/lib/log';
@@ -110,6 +111,14 @@ export interface UnifiedTableProps<T> {
   defaultSortKey?: string;
   /** Initial sort direction when defaultSortKey is set. Defaults to 'desc'. */
   defaultSortDir?: 'asc' | 'desc';
+  /**
+   * When set (and the table is virtualized via `rowHeight`), the vertical scroll
+   * offset is remembered across remounts / route / tab switches under this key
+   * and restored on return — a genuinely new key jumps to the top. Encode the
+   * navigation context that defines "where you are" (route + persona + active
+   * filters). Omit to keep the default no-restoration behavior.
+   */
+  scrollRestoreKey?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -262,6 +271,7 @@ export function UnifiedTable<T>({
   borderless = false,
   defaultSortKey,
   defaultSortDir = 'desc',
+  scrollRestoreKey,
 }: UnifiedTableProps<T>) {
   const compact = density === 'compact';
   const rowPadY = compact ? 'py-1' : 'py-2';
@@ -318,6 +328,10 @@ export function UnifiedTable<T>({
   // bounded scroll container (important on small displays).
   const useVirtual = rowHeight > 0;
   const { parentRef, virtualizer } = useVirtualList(sortedData, useVirtual ? rowHeight : 44);
+  // Remember/restore the scroll offset (forwards the node into the virtualizer's
+  // parentRef). No-op when scrollRestoreKey is undefined or the table isn't
+  // virtualized, so every existing caller is byte-for-byte unchanged.
+  const setScrollRef = useScrollRestoration(scrollRestoreKey, parentRef);
 
   // Keyboard row navigation — only when rows are interactive (onRowClick set).
   // Arrow keys move a focus ring; Enter/Space activates the focused row. The
@@ -392,7 +406,7 @@ export function UnifiedTable<T>({
       {/* Rows */}
       {sortedData.length > 0 && (useVirtual ? (
         <div
-          ref={parentRef}
+          ref={setScrollRef}
           className="flex-1 overflow-y-auto min-h-0 focus:outline-none"
           tabIndex={navigable ? 0 : undefined}
           onKeyDown={navigable ? handleKeyNav : undefined}

@@ -415,6 +415,7 @@ export default function EventLogList() {
               }
               className="flex-1"
               tableId="overview-events"
+              scrollRestoreKey={`overview/events|status=${statusFilter}|type=${typeFilter}|persona=${selectedPersonaId ?? 'all'}|trigger=${triggerFilter}`}
             />
             {(hasMoreOlder || isLoadingOlder) && displayedEvents.length > 0 && (
               <div ref={loadMoreSentinelRef} className="flex items-center justify-center py-2 border-t border-primary/5">
