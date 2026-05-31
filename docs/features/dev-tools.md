@@ -19,8 +19,8 @@ project-selector banner sits above every tab except **Projects**.
 | Projects | `sub_projects` | Register, edit, archive projects (see below). |
 | Goals | `sub_goals` | Track project goals across **Board** (your-turn / agent's-turn / done kanban, with inline checklist to-dos that drive completeness) and **Map** (pan/zoom React Flow canvas — draggable persisted nodes, minimap, level-of-detail nodes, Now/Next highlighting over dependency edges), with `+ New goal` authoring and a detail drawer (checklist + hybrid progress nudge + team-step intervention + activity feed). **Goals is now also a top-level sidebar section**; this tab is a contextual shortcut to the same surface. Full reference: [`../goals/README.md`](goals/README.md). |
 | Context Map | `sub_context` | Codebase scan results: groups, contexts, entry points, keywords. |
-| Idea Scanner | `sub_scanner` | Generate improvement ideas from the codebase. |
-| Idea Triage | `sub_triage` | Accept / reject scanned ideas into the backlog. |
+| Idea Scanner | `sub_scanner` | Generate improvement ideas from the codebase. The scan prompt now feeds back recently **rejected** ideas ("do NOT re-surface") so it stops repeating triaged-away items. |
+| Idea Triage | `sub_triage` | Accept / reject scanned ideas into the backlog. Decisions **persist** server-side (`dev_tools_accept_idea` / `dev_tools_reject_idea` — previously no-op) and, when the project is team-bound, write a shared team memory (accepted=`decision`, rejected=`constraint`), mirroring the Human-Review learning loop. Pending ideas also surface in the Overview **Approvals** inbox for one-place triage. |
 | Task Runner | `sub_runner` | Execute implementation tasks against a project. |
 | Lifecycle | `sub_lifecycle` | Project lifecycle controls. |
 | Fleet / Skills | `../fleet` | Shared Fleet surface. |
