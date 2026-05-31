@@ -7,11 +7,16 @@
 //! `claude -p` invocations — the returned `cmd` snippet lets the user tell
 //! them apart, and `tracked` flags PIDs that match a live Fleet session.
 
+use std::path::PathBuf;
+
 use serde::{Deserialize, Serialize};
 use sysinfo::{Pid, ProcessRefreshKind, ProcessesToUpdate, RefreshKind, System};
+use tauri::AppHandle;
 use ts_rs::TS;
 
+use super::pty;
 use super::registry::registry;
+use super::transcript_read::latest_session_for_cwd;
 
 /// One detected Claude CLI process.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -30,6 +35,11 @@ pub struct FleetDetectedProcess {
     /// restart the registry is empty, so detected processes read as untracked
     /// (= orphan / external) — exactly the case worth cleaning up.
     pub tracked: bool,
+    /// True if this looks like an interactive session (no `-p` / `--print`) —
+    /// a real "terminal", not one of the app's transient `claude -p`
+    /// companion/build calls. Orphan detection counts interactive + untracked
+    /// so those background `-p` calls don't trip a false alarm.
+    pub interactive: bool,
 }
 
 /// Heuristic: does this name / joined command line look like Claude Code?
@@ -60,15 +70,12 @@ pub async fn fleet_detect_processes() -> Result<Vec<FleetDetectedProcess>, Strin
         let mut out: Vec<FleetDetectedProcess> = Vec::new();
         for (pid, proc_) in sys.processes() {
             let name = proc_.name().to_string_lossy().to_string();
-            let cmd_joined = proc_
-                .cmd()
-                .iter()
-                .map(|s| s.to_string_lossy())
-                .collect::<Vec<_>>()
-                .join(" ");
+            let args: Vec<String> = proc_.cmd().iter().map(|s| s.to_string_lossy().into_owned()).collect();
+            let cmd_joined = args.join(" ");
             if !is_claude_process(&name, &cmd_joined) {
                 continue;
             }
+            let interactive = !args.iter().any(|a| a == "-p" || a == "--print");
             let pid_u32 = pid.as_u32();
             out.push(FleetDetectedProcess {
                 pid: pid_u32,
@@ -77,6 +84,7 @@ pub async fn fleet_detect_processes() -> Result<Vec<FleetDetectedProcess>, Strin
                 cwd: proc_.cwd().map(|p| p.to_string_lossy().into_owned()),
                 memory_bytes: proc_.memory() as i64,
                 tracked: tracked_pids.contains(&pid_u32),
+                interactive,
             });
         }
         // Orphans (untracked) first, then by memory desc — the cleanup targets.
@@ -99,6 +107,34 @@ pub async fn fleet_kill_pid(pid: u32) -> Result<bool, String> {
     })
     .await
     .map_err(|e| format!("kill task failed: {e}"))?
+}
+
+/// Re-adopt an orphaned process: derive the conversation recorded for `cwd`,
+/// kill the orphan (so we don't run two `claude` processes on one
+/// conversation), then spawn a fresh Fleet-tracked session resuming it
+/// (`claude --resume <id>`) in the same cwd. Returns the new internal session
+/// id. Errors if no transcript matches the cwd (nothing to resume).
+#[tauri::command]
+pub async fn fleet_resume_orphan(app: AppHandle, pid: u32, cwd: String) -> Result<String, String> {
+    // Derive the session id BEFORE killing (the kill is irreversible).
+    let lookup_cwd = cwd.clone();
+    let session_id = tokio::task::spawn_blocking(move || latest_session_for_cwd(&lookup_cwd))
+        .await
+        .map_err(|e| format!("transcript lookup task failed: {e}"))?
+        .ok_or_else(|| {
+            "No transcript recorded for that working directory — nothing to resume.".to_string()
+        })?;
+
+    // Free the orphan first (no-op if it already died).
+    let _ = fleet_kill_pid(pid).await;
+
+    pty::spawn_session(
+        app,
+        PathBuf::from(cwd),
+        vec!["--resume".to_string(), session_id],
+        120,
+        32,
+    )
 }
 
 #[cfg(test)]

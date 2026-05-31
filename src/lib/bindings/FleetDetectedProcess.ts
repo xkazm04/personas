@@ -18,4 +18,11 @@ memoryBytes: bigint,
  * restart the registry is empty, so detected processes read as untracked
  * (= orphan / external) — exactly the case worth cleaning up.
  */
-tracked: boolean, };
+tracked: boolean, 
+/**
+ * True if this looks like an interactive session (no `-p` / `--print`) —
+ * a real "terminal", not one of the app's transient `claude -p`
+ * companion/build calls. Orphan detection counts interactive + untracked
+ * so those background `-p` calls don't trip a false alarm.
+ */
+interactive: boolean, };

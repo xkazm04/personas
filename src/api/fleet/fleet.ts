@@ -153,3 +153,12 @@ export const detectProcesses = () =>
  */
 export const killPid = (pid: number) =>
   invoke<boolean>('fleet_kill_pid', { pid });
+
+/**
+ * Re-adopt an orphaned process: derive the conversation recorded for `cwd`,
+ * kill the orphan, then spawn a fresh Fleet-tracked session resuming it
+ * (`claude --resume <id>`) in the same cwd. Resolves to the new session id.
+ * Rejects if no transcript matches the cwd (nothing to resume).
+ */
+export const resumeOrphan = (pid: number, cwd: string) =>
+  invoke<string>('fleet_resume_orphan', { pid, cwd });

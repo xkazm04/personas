@@ -3,6 +3,8 @@ import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity } from 'l
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { debtText } from '@/i18n/DebtText';
+import { useSystemStore } from '@/stores/systemStore';
+import { useFleetOrphanScan } from './useFleetOrphanScan';
 
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
@@ -33,6 +35,10 @@ const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
  */
 export default function FleetPage() {
   const [tab, setTab] = useState<InternalTab>('grid');
+  // Poll for orphaned Claude processes (registry is lost on restart) so the
+  // Settings tab can badge them without the user opening Settings first.
+  useFleetOrphanScan();
+  const orphanCount = useSystemStore((s) => s.fleetOrphanCount);
 
   return (
     <div className="h-full w-full flex flex-col" data-testid="fleet-page">
@@ -45,6 +51,7 @@ export default function FleetPage() {
         {TABS.map((tabDef) => {
           const Icon = tabDef.icon;
           const active = tab === tabDef.id;
+          const badge = tabDef.id === 'settings' ? orphanCount : 0;
           return (
             <button
               key={tabDef.id}
@@ -58,6 +65,15 @@ export default function FleetPage() {
             >
               <Icon className="w-3.5 h-3.5" />
               {tabDef.label}
+              {badge > 0 && (
+                <span
+                  className="ml-0.5 min-w-[16px] px-1 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[10px] leading-none text-center"
+                  title={`${badge} orphaned Claude process${badge === 1 ? '' : 'es'} — open Settings to clean up`}
+                  data-testid="fleet-orphan-badge"
+                >
+                  {badge}
+                </span>
+              )}
             </button>
           );
         })}

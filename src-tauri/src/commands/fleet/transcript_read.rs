@@ -331,6 +331,46 @@ fn collect_transcript_files(projects: &Path) -> Vec<(SystemTime, PathBuf)> {
     out
 }
 
+/// Cheap read of the `cwd` recorded in a transcript — scans the first handful
+/// of JSONL lines for a `"cwd"` field (it's almost always line 1). Avoids
+/// parsing the whole (possibly multi-MB) file.
+fn read_transcript_cwd(path: &Path) -> Option<String> {
+    use std::io::{BufRead, BufReader};
+    let file = std::fs::File::open(path).ok()?;
+    for line in BufReader::new(file).lines().take(30).map_while(Result::ok) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&line) {
+            if let Some(c) = v.get("cwd").and_then(|x| x.as_str()) {
+                return Some(c.to_string());
+            }
+        }
+    }
+    None
+}
+
+/// Normalize a path for tolerant comparison: forward slashes, no trailing
+/// separator, lowercased (Windows cwds are case-insensitive).
+fn normalize_cwd(p: &str) -> String {
+    p.replace('\\', "/").trim_end_matches('/').to_ascii_lowercase()
+}
+
+/// The most-recently-active `claude_session_id` whose transcript records the
+/// given working directory — i.e. the conversation to `--resume` when
+/// re-adopting an orphaned process rooted at `cwd`. Returns the transcript's
+/// file stem (the session id), or `None` if nothing matches. Matches on the
+/// recorded `cwd` (not the encoded dir name) so it's robust to encoding quirks.
+pub fn latest_session_for_cwd(cwd: &str) -> Option<String> {
+    let projects = projects_dir()?;
+    let target = normalize_cwd(cwd);
+    let mut files = collect_transcript_files(&projects);
+    files.sort_by(|a, b| b.0.cmp(&a.0)); // newest first
+    for (_mtime, path) in files {
+        if read_transcript_cwd(&path).map(|c| normalize_cwd(&c)).as_deref() == Some(target.as_str()) {
+            return path.file_stem().map(|s| s.to_string_lossy().into_owned());
+        }
+    }
+    None
+}
+
 /// Summarize the most recently-active transcripts across all projects — the
 /// data source for Fleet's cross-session activity feed (F2 / P2.2). Scans
 /// `~/.claude/projects`, keeps `*.jsonl` modified within `within_days`

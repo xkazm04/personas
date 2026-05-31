@@ -42,6 +42,11 @@ export interface FleetSlice {
   /** True while the fullscreen terminal-grid overlay is open. In-memory; the
    *  Athena orb reads it to float above the overlay so she's visible there. */
   fleetGridOpen: boolean;
+  /** Count of detected interactive Claude processes Fleet doesn't track
+   *  (orphans / external). Drives the Settings-tab badge so a restart's
+   *  orphaned terminals are visible without opening Settings. In-memory,
+   *  refreshed by a FleetPage poll + the process scanner. */
+  fleetOrphanCount: number;
   /** Fire an OS notification when a session enters awaiting_input. Persisted. */
   fleetNotifyAwaiting: boolean;
   /** Auto-hibernate Idle/Stale sessions past the threshold (always-on Rust
@@ -61,6 +66,7 @@ export interface FleetSlice {
   fleetRefresh: () => Promise<void>;
   fleetSetActiveSession: (id: string | null) => void;
   fleetSetGridOpen: (open: boolean) => void;
+  fleetSetOrphanCount: (n: number) => void;
   fleetSetNotifyAwaiting: (on: boolean) => void;
   fleetSetAutoHibernate: (on: boolean) => void;
   fleetSetAutoHibernateMinutes: (minutes: number) => void;
@@ -84,6 +90,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSessionsLoading: false,
   fleetActiveSessionId: null,
   fleetGridOpen: false,
+  fleetOrphanCount: 0,
   fleetNotifyAwaiting: true,
   fleetAutoHibernate: false,
   fleetAutoHibernateMinutes: 30,
@@ -117,6 +124,8 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetSetActiveSession: (id) => set({ fleetActiveSessionId: id }),
 
   fleetSetGridOpen: (open) => set({ fleetGridOpen: open }),
+
+  fleetSetOrphanCount: (n) => set({ fleetOrphanCount: Math.max(0, n) }),
 
   fleetSetNotifyAwaiting: (on) => set({ fleetNotifyAwaiting: on }),
 

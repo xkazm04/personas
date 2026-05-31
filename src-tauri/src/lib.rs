@@ -2953,6 +2953,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_recent_transcripts,
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
+            commands::fleet::process_scan::fleet_resume_orphan,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
