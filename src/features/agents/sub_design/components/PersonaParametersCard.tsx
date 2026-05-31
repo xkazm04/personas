@@ -5,6 +5,8 @@ import { updatePersonaParameters } from '@/api/agents/personaParameters';
 import { toastCatch } from '@/lib/silentCatch';
 import type { PersonaParameter } from '@/lib/bindings/PersonaParameter';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { Slider } from '@/features/shared/components/forms/Slider';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 
 /**
@@ -182,28 +184,29 @@ function ParameterEditor({
   switch (param.type) {
     case 'number': {
       const n = typeof value === 'number' ? value : Number(value) || 0;
+      // onDraft keeps the live preview; onCommit persists (one IPC). Both the
+      // slider's drag-release and the stepper's blur settle through onCommit, so
+      // dragging no longer fires an IPC per tick.
       return (
         <div className="flex items-center gap-3">
-          <input
+          <Slider
             id={inputId}
-            type="range"
             min={param.min ?? 0}
             max={param.max ?? 100}
             step={1}
             value={n}
-            onChange={(e) => onDraft(Number(e.target.value))}
-            onMouseUp={(e) => onCommit(Number((e.target as HTMLInputElement).value))}
-            onTouchEnd={(e) => onCommit(Number((e.target as HTMLInputElement).value))}
-            className="flex-1 accent-primary"
+            onChange={(v) => onDraft(v)}
+            onCommit={(v) => onCommit(v)}
+            ariaLabel={param.label}
+            className="flex-1"
           />
-          <input
-            type="number"
+          <NumberStepper
             value={n}
             min={param.min ?? undefined}
             max={param.max ?? undefined}
-            onChange={(e) => onDraft(Number(e.target.value))}
-            onBlur={(e) => onCommit(Number(e.target.value))}
-            className="w-20 px-2 py-1 rounded-input border border-card-border bg-card-bg typo-body tabular-nums text-foreground focus:outline-none focus:border-primary/40"
+            onChange={(v) => onDraft(v ?? (param.min ?? 0))}
+            onCommit={(v) => onCommit(v ?? (param.min ?? 0))}
+            ariaLabel={param.label}
           />
         </div>
       );

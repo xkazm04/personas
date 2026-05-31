@@ -10,6 +10,7 @@ import {
 const MIN_PERSONA_TIMEOUT_S = MIN_PERSONA_TIMEOUT_MS / 1000;
 const MAX_PERSONA_TIMEOUT_S = MAX_PERSONA_TIMEOUT_MS / 1000;
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { PersonaIconPickerModal } from '@/features/shared/components/forms/PersonaIconPickerModal';
 import { PopupColorPicker } from '@/features/shared/components/forms/PopupColorPicker';
 import { resolvePersonaIcon } from '@/lib/icons/resolvePersonaIcon';
@@ -164,13 +165,13 @@ export function PersonaSettingsTab({
                     example="3"
                   />
                 </label>
-                <input
-                  type="number"
+                <NumberStepper
                   value={draft.maxConcurrent}
-                  onChange={(e) => patch({ maxConcurrent: Math.min(50, Math.max(1, parseInt(e.target.value, 10) || 1)) })}
+                  onChange={(v) => patch({ maxConcurrent: v ?? 1 })}
                   min={1}
                   max={50}
-                  className={INPUT_FIELD}
+                  ariaLabel={t.agents.settings_status.max_concurrent}
+                  className="w-full"
                 />
               </div>
               <div className="flex-1">
@@ -182,23 +183,16 @@ export function PersonaSettingsTab({
                     example="300"
                   />
                 </label>
-                <input
-                  type="number"
+                {/* NumberStepper clamps to [MIN, MAX] internally, so the two-sided
+                    floor/ceiling the raw input had to enforce by hand comes for free. */}
+                <NumberStepper
                   value={Math.round(draft.timeout / 1000)}
-                  onChange={(e) => {
-                    // Two-sided clamp: previously only the upper bound was enforced
-                    // (Math.min(raw, 1800)), which meant a user-typed sub-10s value
-                    // would persist all the way to the backend. The hint and the
-                    // <input min/> both advertise the floor, so the input was lying
-                    // about its accepted range. Floor the parse fallback at MIN too.
-                    const raw = parseInt(e.target.value, 10);
-                    const safe = Number.isFinite(raw) ? raw : MIN_PERSONA_TIMEOUT_S;
-                    patch({ timeout: Math.min(Math.max(safe, MIN_PERSONA_TIMEOUT_S), MAX_PERSONA_TIMEOUT_S) * 1000 });
-                  }}
+                  onChange={(v) => patch({ timeout: (v ?? MIN_PERSONA_TIMEOUT_S) * 1000 })}
                   min={MIN_PERSONA_TIMEOUT_S}
                   max={MAX_PERSONA_TIMEOUT_S}
                   step={10}
-                  className={INPUT_FIELD}
+                  ariaLabel={t.agents.settings_status.timeout_sec}
+                  className="w-full"
                 />
               </div>
             </div>
@@ -215,15 +209,14 @@ export function PersonaSettingsTab({
                 />
               </label>
               <div className="flex items-center gap-2">
-                <input
-                  type="number"
+                <NumberStepper
                   value={retentionMonths}
-                  onChange={(e) => handleRetentionChange(parseInt(e.target.value, 10) || 2)}
+                  onChange={(v) => handleRetentionChange(v ?? 2)}
                   min={1}
                   max={24}
-                  className={`${INPUT_FIELD} w-20`}
+                  suffix={t.agents.settings_status.months}
+                  ariaLabel={t.agents.settings_status.execution_retention}
                 />
-                <span className="typo-body text-foreground">{t.agents.settings_status.months}</span>
               </div>
             </div>
           )}

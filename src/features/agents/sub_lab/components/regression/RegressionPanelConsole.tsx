@@ -24,6 +24,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
 import { compositeScore } from '@/lib/eval/evalFramework';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { Slider } from '@/features/shared/components/forms/Slider';
 
 
 function ThresholdGauge({ value }: { value: number }) {
@@ -164,12 +165,13 @@ export function RegressionPanelConsole() {
           <div className="rounded-card border border-primary/12 bg-background/30 px-3 py-3">
             <p className="typo-label text-foreground mb-2 text-center">threshold</p>
             <ThresholdGauge value={s.threshold} />
-            <input
-              type="range" min={1} max={50}
+            <Slider
+              min={1}
+              max={50}
               value={s.threshold}
-              onChange={(e) => s.setThreshold(Number(e.target.value) || REG_DEFAULT_THRESHOLD)}
-              className="w-full mt-2 h-1 accent-primary"
-              aria-label={debtText("auto_regression_threshold_d8b35da0")}
+              onChange={(v) => s.setThreshold(v || REG_DEFAULT_THRESHOLD)}
+              ariaLabel={debtText('auto_regression_threshold_d8b35da0')}
+              className="mt-2"
             />
           </div>
           <div className="rounded-card border border-primary/12 bg-background/30 px-3 py-2.5">

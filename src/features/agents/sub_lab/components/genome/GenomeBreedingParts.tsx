@@ -10,6 +10,7 @@
  */
 import { useState } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import {
   Dna, Loader2, CheckCircle2,
   Trash2, Plus, Sparkles, Zap, DollarSign, Target,
@@ -116,14 +117,14 @@ export function ObjectiveSliders({
         {icon}
         {label}
       </label>
-      <input
-        type="range"
+      <Slider
         min={0}
         max={100}
         value={Math.round(objective[key] * 100)}
-        onChange={(e) => adjust(key, Number(e.target.value) / 100)}
-        aria-label={`${label} weight`}
-        className="flex-1 h-1.5 accent-violet-500"
+        onChange={(v) => adjust(key, v / 100)}
+        ariaLabel={`${label} weight`}
+        showBubble={false}
+        className="flex-1"
       />
       <span className="typo-caption text-foreground w-10 text-right" aria-live="polite">
         {Math.round(objective[key] * 100)}%

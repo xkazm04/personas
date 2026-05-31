@@ -21,7 +21,8 @@ import { RegressionResultsView } from './RegressionResultsView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
 import { compositeScore } from '@/lib/eval/evalFramework';
-import { DebtText } from '@/i18n/DebtText';
+import { DebtText, debtText } from '@/i18n/DebtText';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 
 type GateState = 'open' | 'verifying' | 'cleared' | 'held';
@@ -156,14 +157,14 @@ export function RegressionPanelGate() {
           </div>
           <div className="rounded-card bg-background/40 border border-primary/12 px-4 py-3">
             <p className="typo-caption text-foreground"><DebtText k="auto_regression_threshold_d8b35da0" /></p>
-            <div className="flex items-baseline gap-2 mt-1">
-              <input
-                type="number"
+            <div className="flex items-center gap-2 mt-1">
+              <NumberStepper
                 value={s.threshold}
-                onChange={(e) => s.setThreshold(Math.max(1, Math.min(50, Number(e.target.value) || REG_DEFAULT_THRESHOLD)))}
-                className="w-20 px-2 py-1 rounded-input bg-background/60 border border-primary/15 text-foreground typo-data-lg text-center focus-ring"
+                onChange={(v) => s.setThreshold(v ?? REG_DEFAULT_THRESHOLD)}
                 min={1}
                 max={50}
+                defaultValue={REG_DEFAULT_THRESHOLD}
+                ariaLabel={debtText('auto_regression_threshold_d8b35da0')}
               />
               <span className="typo-caption text-foreground"><DebtText k="auto_pts_drop_3f43c7c7" /></span>
             </div>
