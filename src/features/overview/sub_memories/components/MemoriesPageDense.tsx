@@ -288,7 +288,7 @@ export default function MemoriesPageDense() {
               await deleteAllMemories();
               await fetchMemories();
             } catch (e) {
-              toastCatch(e, 'Failed to delete all memories');
+              toastCatch('MemoriesPageDense:deleteAll', 'Failed to delete all memories')(e);
             } finally {
               setConfirmingDeleteAll(false);
             }
