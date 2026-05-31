@@ -15,7 +15,7 @@ project-selector banner sits above every tab except **Projects**.
 
 | Tab | Module | Purpose |
 | --- | --- | --- |
-| Overview | `sub_overview` | Per-project metrics rollup. Six vital-sign tiles (issues, PRs, commits, unresolved, events 24h/7d) are drag-reorderable (order persists per project) and clickable: repo tiles deep-link to the connected GitHub/GitLab subpage, monitoring tiles reveal the Sentry connection chain. The header carries a live "updated Nm ago" timestamp and a manual Refresh control. |
+| Overview | `sub_overview` | Per-project metrics rollup. A read-only **Pipeline** section at the top mirrors the onboarding stepper's two stages (Project; Source control — team-or-connector, repo, main branch, test env). Below it, six vital-sign tiles (issues, PRs, commits, unresolved, events 24h/7d) are drag-reorderable (order persists per project) and clickable: repo tiles deep-link to the connected GitHub/GitLab subpage, monitoring tiles reveal the Sentry connection chain. The header carries a live "updated Nm ago" timestamp and a manual Refresh control. |
 | Projects | `sub_projects` | Register, edit, archive projects (see below). |
 | Goals | `sub_goals` | Track project goals across **Board** (your-turn / agent's-turn / done kanban, with inline checklist to-dos that drive completeness) and **Map** (pan/zoom React Flow canvas — draggable persisted nodes, minimap, level-of-detail nodes, Now/Next highlighting over dependency edges), with `+ New goal` authoring and a detail drawer (checklist + hybrid progress nudge + team-step intervention + activity feed). **Goals is now also a top-level sidebar section**; this tab is a contextual shortcut to the same surface. Full reference: [`../goals/README.md`](goals/README.md). |
 | Context Map | `sub_context` | Codebase scan results: groups, contexts, entry points, keywords. |
@@ -36,39 +36,51 @@ test/staging deployment in your default browser (via the OS, http/https only).
 Selecting a row makes it the **active project** (a compact summary banner) and
 the active selection drives the project-selector banner on the other tabs.
 
-### Create / edit project (`ProjectModal.tsx`)
+### Create / edit project — pipeline-stepper (`ProjectModal.tsx`)
 
-The dialog is grouped into three labelled sections — **Project**, **Source
-control**, and **Workspace** — under a title + subtitle, in a roomy two-column
-layout.
+The dialog is a **horizontal SDLC pipeline-stepper**: a clickable rail of stages
+across the top, with the active stage's fields below it and `Back` / `Next` /
+`Create` navigation. Phase 1 ships **two stages**; the rail + per-stage
+component pattern (`sub_projects/pipeline/`) is built to grow as the pipeline
+gains build/review/deploy stages. The same stages render read-only in the
+**Overview** tab's Pipeline section.
 
+**Stage 1 — Project**
 - **Folder first:** pick a project folder. The **project name is auto-extracted
   from the folder name** and pre-filled; the field stays editable (a pencil
   affordance + an "auto-filled from folder" hint), and editing it stops the
   auto-fill from overwriting your choice.
 - **Project type** — optional visual tag (React, NodeJS, Rust, …).
-- **GitHub connector** — bind a vault GitHub PAT (persisted as
-  `pr_credential_id`) that authorises PR / source-control ops **and drives the
-  repository picker beside it**: the searchable repo dropdown lists
-  repositories from the selected connector (re-fetching when you change it),
-  falling back to auto-discovery of the first usable PAT, or to a manual URL
-  input when no healthy credential exists. A picked repo shows an inline preview
-  (owner/name, private badge, description, open ↗); manual URLs are validated
-  with an inline error when malformed.
-- **Bound team** — optional; binds the project to a PersonaTeam pipeline.
+
+**Stage 2 — Source control** (the former *Workspace* section is folded in here)
+- **Team / Standalone switch** — mutually exclusive at the data layer:
+  - **Team** binds the project to a PersonaTeam pipeline (team selector
+    **mandatory**). Sets `team_id`; clears `pr_credential_id`.
+  - **Standalone** binds a vault GitHub PAT (connector **mandatory**, persisted
+    as `pr_credential_id`) that authorises PR / source-control ops **and drives
+    the repository picker**. Sets `pr_credential_id`; clears `team_id`.
+- **Repository** — searchable repo dropdown listing repos from the chosen
+  connector (standalone) or auto-discovering a usable PAT (team), falling back
+  to a validated manual URL when no healthy credential exists. A picked repo
+  shows an inline preview (owner/name, private badge, description, open ↗).
+- **Main branch** — the project's primary/default branch (e.g. `main`/`master`),
+  optional, persisted as `main_branch`. The source-control stage's baseline.
 - **Test environment** — optional URL + branch of the *living test environment*
-  this project's team delivers into (e.g. a staging/preview deployment such as
-  `https://staging.example.com` on branch `main`). Both fields live in the
-  **Source control** section and are most useful when editing an existing
-  project. The URL is persisted as `test_env_url` and the branch as
-  `test_env_branch`; clearing either field removes that binding.
-- **Create Codebase connector** (create mode only, on by default) — when
-  checked, creating the project also creates a `Codebase — <project name>`
-  connector (`service_type: codebase`) wired to the project, so agents can read
-  the codebase immediately without opening the credential catalog and adding one
-  manually. Unchecking skips it; the connector can still be added later from the
-  catalog (Connections → Catalog → Codebase).
-- After creation the modal offers to **run a context map scan** right away.
+  this project's team delivers into (e.g. `https://staging.example.com` on
+  `staging`). Persisted as `test_env_url` / `test_env_branch`; clearing either
+  removes that binding.
+- **Create Codebase connector** (create mode only, on by default) — also creates
+  a `Codebase — <project name>` connector (`service_type: codebase`) wired to
+  the project, now carrying the repo + main branch (`github_url`, `main_branch`)
+  so agents read the codebase immediately. Unchecking skips it; it can still be
+  added later from the catalog (Connections → Catalog → Codebase).
+
+After creation the modal offers to **run a context map scan** right away.
+
+> **Note:** `create_project` only takes name/path/type/github/team; the modal
+> persists the remaining source-control fields (`pr_credential_id`,
+> `test_env_*`, `main_branch`) via a follow-up `dev_tools_update_project`, which
+> also fixes an earlier bug where those fields were dropped on creation.
 
 ## Context Map scan
 
