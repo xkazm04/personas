@@ -2,8 +2,8 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Loader2, RefreshCw, BarChart3, Bot, Plus, BookOpen } from 'lucide-react';
 import { MotionEmptyState } from '@/features/overview/shared/emptyStatePrototype';
-import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
-import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
+import { GroupedVirtualList } from '@/features/shared/components/display/GroupedVirtualList';
+import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useShallow } from 'zustand/react/shallow';
 import { useAgentStore } from "@/stores/agentStore";
@@ -192,15 +192,22 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
   };
 
   const hasMore = globalExecutionsHasMore;
-  const { parentRef, virtualizer } = useVirtualList(filteredExecutions, EXEC_ROW_HEIGHT);
-  // Remember the scroll offset across tab/route/persona switches; a new
-  // (status, persona) context starts at the top, returning to one restores it.
-  const setScrollRef = useScrollRestoration(
-    `overview/activity|status=${filter}|persona=${selectedPersonaId ?? 'all'}`,
-    parentRef,
-  );
   const colWidths = useColumnWidths('overview-activity');
   const execGridTemplate = colWidths.template(EXEC_COLUMNS);
+
+  // Bucket the (already newest-first) stream under sticky day headers so the
+  // user can orient by Today / Yesterday / This week / … instead of scanning
+  // timestamps row-by-row. Restore the scroll offset across tab/route/persona
+  // switches; a new (status, persona) context starts at the top.
+  const groupLabels = useMemo(() => timeGroupLabels(t), [t]);
+  const groupOf = useCallback(
+    (exec: GlobalExecution) => {
+      const key = timeGroupKey(exec.started_at || exec.created_at);
+      return { key, label: groupLabels[key] };
+    },
+    [groupLabels],
+  );
+  const scrollRestoreKey = `overview/activity|status=${filter}|persona=${selectedPersonaId ?? 'all'}`;
 
   return (
     <ContentBox>
@@ -279,9 +286,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                 />
               </div>
             ) : (
-              <div ref={setScrollRef} className={`flex-1 overflow-y-auto ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
+              <div className={`flex-1 flex flex-col min-h-0 ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}>
                 {!IS_MOBILE && (
-                  <div role="row" className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
+                  <div role="row" className="flex-shrink-0 bg-background border-b border-primary/10 grid" style={{ gridTemplateColumns: execGridTemplate }}>
                     <div role="columnheader" className="relative px-4 py-1.5 flex items-center">
                       <PersonaColumnFilter value={selectedPersonaId} onChange={setSelectedPersonaId} personas={personas} />
                       <ColumnResizeHandle
@@ -317,9 +324,14 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                   </div>
                 )}
 
-                <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                  {virtualizer.getVirtualItems().map((virtualRow) => {
-                    const exec = filteredExecutions[virtualRow.index]!;
+                <GroupedVirtualList<GlobalExecution>
+                  items={filteredExecutions}
+                  groupOf={groupOf}
+                  getItemKey={(exec) => exec.id}
+                  estimateItemSize={EXEC_ROW_HEIGHT}
+                  className="flex-1"
+                  scrollRestoreKey={scrollRestoreKey}
+                  renderItem={(exec, index) => {
                     const status = getStatusEntry(exec.status);
                     const borderAccent =
                       exec.status === 'running' || exec.status === 'pending' ? 'border-l-blue-400'
@@ -328,10 +340,9 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                             : 'border-l-amber-400';
                     return IS_MOBILE ? (
                       <div
-                        key={exec.id} role="row" tabIndex={0}
+                        role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}
-                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px` }}
-                        className="px-3 py-2 border-b border-primary/[0.06] active:bg-white/[0.05]"
+                        className="h-full px-3 py-2 border-b border-primary/[0.06] active:bg-white/[0.05]"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -350,11 +361,11 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                       </div>
                     ) : (
                       <div
-                        key={exec.id} role="row" tabIndex={0}
+                        role="row" tabIndex={0}
                         onClick={() => setSelectedExec(exec)}
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedExec(exec); } }}
-                        style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: execGridTemplate }}
-                        className={`grid items-center cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${virtualRow.index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
+                        style={{ gridTemplateColumns: execGridTemplate }}
+                        className={`grid items-center h-full cursor-pointer transition-colors border-b border-primary/[0.06] border-l-2 ${borderAccent} hover:bg-white/[0.05] ${index % 2 === 0 ? 'bg-white/[0.015]' : ''}`}
                       >
                         <div className="flex items-center gap-2 px-4 min-w-0">
                           <PersonaIcon icon={exec.persona_icon ?? null} color={exec.persona_color ?? null} display="framed" frameSize={"lg"} />
@@ -370,11 +381,11 @@ export default function GlobalExecutionList({ headerActions }: GlobalExecutionLi
                         <div className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(exec.started_at || exec.created_at)}</span></div>
                       </div>
                     );
-                  })}
-                </div>
+                  }}
+                />
 
                 {hasMore && (
-                  <div className="pt-3 pb-2 text-center">
+                  <div className="flex-shrink-0 pt-3 pb-2 text-center border-t border-primary/5">
                     <button onClick={handleLoadMore} className="px-4 py-2 typo-heading text-foreground hover:text-muted-foreground bg-secondary/30 hover:bg-secondary/50 rounded-modal border border-primary/15 transition-all">
                       {t.overview.activity.load_more}
                     </button>
