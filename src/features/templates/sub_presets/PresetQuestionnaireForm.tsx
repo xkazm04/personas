@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ChevronRight, Settings2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import type { PresetAdoptionSchema } from '@/lib/bindings/PresetAdoptionSchema';
 import type { PresetMemberAdoptionSchema } from '@/lib/bindings/PresetMemberAdoptionSchema';
 import type { PresetParameterOverrides } from '@/api/templates/teamPresets';
@@ -351,23 +352,15 @@ function NumberControl({
   const num = typeof value === 'number' ? value : Number(value ?? 0);
   return (
     <div className="flex items-center gap-2">
-      <input
-        type="number"
-        className="w-32 rounded-input bg-secondary/30 border border-primary/20 text-foreground/90 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
-        value={Number.isFinite(num) ? num : ''}
+      <NumberStepper
+        value={Number.isFinite(num) ? num : null}
+        onChange={(v) => onChange(v ?? 0)}
         min={min}
         max={max}
-        onChange={(e) => {
-          const v = e.target.value;
-          if (v === '') {
-            onChange(0);
-          } else {
-            const parsed = Number(v);
-            if (Number.isFinite(parsed)) onChange(parsed);
-          }
-        }}
+        allowEmpty
+        suffix={unit}
+        className="w-36"
       />
-      {unit && <span className="typo-caption text-foreground/55">{unit}</span>}
     </div>
   );
 }

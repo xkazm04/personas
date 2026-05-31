@@ -1,4 +1,5 @@
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import type { UseCaseInputField } from './UseCasesList';
 
 interface StructuredFieldProps {
@@ -25,18 +26,22 @@ export function StructuredField({ field, value, onChange }: StructuredFieldProps
           </ThemedSelect>
         </div>
       );
-    case 'number':
+    case 'number': {
+      const raw = value ?? field.default;
+      const num = raw === '' || raw == null ? null : Number(raw);
       return (
         <div className="flex items-center gap-2">
           <label className="typo-heading text-foreground w-24 flex-shrink-0">{field.label}</label>
-          <input
-            type="number"
-            value={String(value ?? field.default ?? '')}
-            onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))}
-            className="flex-1 px-2 py-1 bg-background/50 border border-primary/15 rounded-lg typo-body text-foreground focus-ring"
+          <NumberStepper
+            value={num != null && Number.isFinite(num) ? num : null}
+            onChange={(v) => onChange(v == null ? '' : v)}
+            allowEmpty
+            ariaLabel={field.label}
+            className="flex-1"
           />
         </div>
       );
+    }
     case 'boolean':
       return (
         <div className="flex items-center gap-2">
