@@ -191,75 +191,26 @@
   opacity: 0.45;
 }
 
-/* -- Title-bar settings-search affordance ------------------------------
-   The ambient illustration doubles as the entry point to the command
-   palette (settings scope). The anchor centres it over the title bar; the
-   button gives it a pointer cursor, a hover/focus brighten + glow, and a
-   magnifier hint that fades in. `no-drag` lets clicks land despite the
-   surrounding `-webkit-app-region: drag` title bar. */
-.ambient-search-anchor {
+/* -- Title-bar ambient decoration anchor -------------------------------
+   Centres the time-of-day art over the title bar as a non-interactive,
+   draggable background. `pointer-events: none` keeps the whole strip a
+   window drag region (the search affordance that used to sit here moved to
+   its own title-bar button); the inner deco is reset from its standalone
+   absolute rules so it flows naturally inside this centred anchor while
+   keeping its themed colour + dimming. */
+.ambient-deco-anchor {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 1;
-  -webkit-app-region: no-drag;
+  z-index: 0;
+  pointer-events: none;
 }
 
-.ambient-search-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px 12px;
-  border: 0;
-  border-radius: 9999px;
-  background: transparent;
-  color: var(--primary);
-  opacity: 0.4;
-  cursor: pointer;
-  -webkit-app-region: no-drag;
-  transition: opacity 0.25s ease, filter 0.25s ease, background-color 0.25s ease, transform 0.15s ease;
-}
-
-.ambient-search-trigger:hover,
-.ambient-search-trigger:focus-visible {
-  opacity: 1;
-  filter: brightness(1.45) drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 55%, transparent));
-  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
-  outline: none;
-}
-
-.ambient-search-trigger:active {
-  transform: scale(0.97);
-}
-
-/* Inside the trigger the button owns positioning + opacity, so reset the
-   deco's own absolute centring / dimming (placed after the light-theme
-   overrides above so it wins the equal-specificity tie). */
-.ambient-search-trigger .ambient-deco {
+.ambient-deco-anchor .ambient-deco {
   position: static;
   transform: none;
-  opacity: 1;
   z-index: auto;
-}
-
-.ambient-search-icon {
-  flex-shrink: 0;
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
-.ambient-search-trigger:hover .ambient-search-icon,
-.ambient-search-trigger:focus-visible .ambient-search-icon {
-  opacity: 0.9;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ambient-search-trigger,
-  .ambient-search-icon {
-    transition: none;
-  }
 }
 
 /* -- Design Tokens --
@@ -4401,6 +4352,53 @@ html[data-document-visible='false'] *::after {
     radial-gradient(ellipse 45% 55% at 100% 0%, var(--cell-glow-color) 0%, transparent 65%),
     radial-gradient(ellipse 55% 45% at 0% 100%, var(--cell-glow-color) 0%, transparent 65%),
     radial-gradient(ellipse 50% 50% at 100% 100%, var(--cell-glow-color) 0%, transparent 70%);
+}
+
+/* ===== Keyboard navigation mode glow =====
+ * Full-viewport, non-interactive frame shown while keyboard-nav mode is active
+ * (entered with `;` — see KeyboardNavMode.tsx). Four EDGE-centered radial
+ * gradients give a non-linear glow that is most intense at the middle of each
+ * border and fades to nothing toward the corners and the interior (the inverse
+ * of .cell-glow-highlighted above, which is corner-heavy). Tinted with the
+ * active theme's accent (`--color-primary`) so it adapts per theme, like the
+ * focus-ring and spotlight treatments. */
+.kbd-nav-glow {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 22% at 50% 0%,
+      color-mix(in srgb, var(--color-primary) 30%, transparent) 0%,
+      transparent 72%),
+    radial-gradient(70% 22% at 50% 100%,
+      color-mix(in srgb, var(--color-primary) 30%, transparent) 0%,
+      transparent 72%),
+    radial-gradient(22% 70% at 0% 50%,
+      color-mix(in srgb, var(--color-primary) 30%, transparent) 0%,
+      transparent 72%),
+    radial-gradient(22% 70% at 100% 50%,
+      color-mix(in srgb, var(--color-primary) 30%, transparent) 0%,
+      transparent 72%);
+  animation:
+    kbd-nav-glow-in var(--duration-normal, 200ms) ease-out,
+    kbd-nav-glow-breathe 3.2s ease-in-out var(--duration-normal, 200ms) infinite;
+}
+
+@keyframes kbd-nav-glow-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes kbd-nav-glow-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.62; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kbd-nav-glow {
+    animation: none;
+  }
 }
 
 /* -- Edge shimmer class --------------------------------------------------- */

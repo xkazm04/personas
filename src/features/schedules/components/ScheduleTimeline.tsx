@@ -36,13 +36,15 @@ export default function ScheduleTimeline() {
 
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
   const [schedulerStats, setSchedulerStats] = useState<SchedulerStats | null>(null);
-  const [filterPersonaId, setFilterPersonaId] = useState<string | null>(null);
+  // Sidebar filter is now group-scoped (a team or the "No team" bucket), so it
+  // carries a SET of persona ids plus a display label. `null` = show all.
+  const [filter, setFilter] = useState<{ ids: Set<string>; label: string } | null>(null);
 
-  // Listen for sidebar persona filter
+  // Listen for sidebar group filter
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent<{ personaId: string | null }>).detail;
-      setFilterPersonaId(detail.personaId);
+      const detail = (e as CustomEvent<{ personaIds: string[] | null; label?: string | null }>).detail;
+      setFilter(detail.personaIds ? { ids: new Set(detail.personaIds), label: detail.label ?? '' } : null);
     };
     window.addEventListener('schedules:filter', handler);
     return () => window.removeEventListener('schedules:filter', handler);
@@ -119,12 +121,12 @@ export default function ScheduleTimeline() {
     };
   }, [fetchCronAgents, isVisible]);
 
-  // Parse all agents into schedule entries, applying persona filter
+  // Parse all agents into schedule entries, applying the group filter
   const entries = useMemo(() => {
     const all = cronAgents.map(parseScheduleEntry);
-    if (!filterPersonaId) return all;
-    return all.filter((e) => e.agent.persona_id === filterPersonaId);
-  }, [cronAgents, filterPersonaId]);
+    if (!filter) return all;
+    return all.filter((e) => filter.ids.has(e.agent.persona_id));
+  }, [cronAgents, filter]);
 
   const sorted = useMemo(() => sortByNextRun(entries), [entries]);
   const grouped = useMemo(() => groupByTimeWindow(sorted), [sorted]);
@@ -230,26 +232,23 @@ export default function ScheduleTimeline() {
 
       <ContentBody centered>
         {/* Active filter indicator */}
-        {filterPersonaId && (() => {
-          const agent = cronAgents.find((a) => a.persona_id === filterPersonaId);
-          return agent ? (
-            <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 typo-caption text-blue-400/90">
-              <Filter className="w-3.5 h-3.5 shrink-0" />
-              <span>
-                {t.schedules.showing_for} <span className="font-semibold">{agent.persona_name}</span>
-              </span>
-              <button
-                onClick={() => {
-                  setFilterPersonaId(null);
-                  window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaId: null } }));
-                }}
-                className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-blue-500/15 transition-colors"
-              >
-                Clear
-              </button>
-            </div>
-          ) : null;
-        })()}
+        {filter && (
+          <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-card bg-blue-500/[0.06] border border-blue-500/15 typo-caption text-blue-400/90">
+            <Filter className="w-3.5 h-3.5 shrink-0" />
+            <span>
+              {t.schedules.showing_for} <span className="font-semibold">{filter.label}</span>
+            </span>
+            <button
+              onClick={() => {
+                setFilter(null);
+                window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaIds: null } }));
+              }}
+              className="ml-auto px-1.5 py-0.5 rounded text-[10px] font-medium hover:bg-blue-500/15 transition-colors"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
         {loading && cronAgents.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-foreground">

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Key, Sparkles, CalendarClock, Map as MapIcon, Rocket } from 'lucide-react';
-import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Button } from '@/features/shared/components/buttons';
 import { silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from "@/stores/systemStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
+import { usePipelineStore } from "@/stores/pipelineStore";
 // useBadgeCounts removed — badge counts now passed as props from Sidebar
 import type { HomeTab, GoalsTab, OverviewTab, TemplateTab, SettingsTab, EventBusTab } from '@/lib/types/types';
 import { useCredentialNav, type CredentialNavKey } from '@/features/vault/shared/hooks/CredentialNavContext';
@@ -256,8 +256,12 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 function SchedulesSidebarNav() {
   const { t } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
   const [cronAgents, setCronAgents] = useState<{ persona_id: string; persona_name: string }[]>([]);
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  useEffect(() => { void fetchTeams(); }, [fetchTeams]);
 
   useEffect(() => {
     void import('@/stores/overviewStore').then(({ useOverviewStore }) => {
@@ -269,22 +273,42 @@ function SchedulesSidebarNav() {
     }).then((unsub) => { return () => unsub?.(); });
   }, []);
 
-  // Unique personas participating in schedules, sorted by name asc, with schedule count
-  const scheduledPersonas = useMemo(() => {
-    const countMap = new Map<string, number>();
+  // Group scheduled personas by their home team; everything without a team
+  // collapses into a single "No team" bucket. Counts are schedules (not
+  // personas) so the sidebar numbers line up with the calendar's "X total".
+  const groups = useMemo(() => {
+    const countByPersona = new Map<string, number>();
     for (const a of cronAgents) {
-      countMap.set(a.persona_id, (countMap.get(a.persona_id) ?? 0) + 1);
+      countByPersona.set(a.persona_id, (countByPersona.get(a.persona_id) ?? 0) + 1);
     }
-    return personas
-      .filter((p) => countMap.has(p.id))
-      .map((p) => ({ ...p, scheduleCount: countMap.get(p.id) ?? 0 }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [cronAgents, personas]);
+    const teamById = new Map(teams.map((tm) => [tm.id, tm] as const));
+    const byBucket = new Map<string, string[]>();
+    for (const p of personas) {
+      if (!countByPersona.has(p.id)) continue;
+      const key = p.home_team_id && teamById.has(p.home_team_id) ? p.home_team_id : '__ungrouped__';
+      const bucket = byBucket.get(key) ?? [];
+      bucket.push(p.id);
+      byBucket.set(key, bucket);
+    }
+    const sumSchedules = (ids: string[]) => ids.reduce((sum, id) => sum + (countByPersona.get(id) ?? 0), 0);
+    const out: { id: string; name: string; color: string | null; personaIds: string[]; scheduleCount: number }[] = [];
+    for (const tm of [...teams].sort((a, b) => a.name.localeCompare(b.name))) {
+      const ids = byBucket.get(tm.id);
+      if (!ids || ids.length === 0) continue;
+      out.push({ id: tm.id, name: tm.name, color: tm.color, personaIds: ids, scheduleCount: sumSchedules(ids) });
+    }
+    const ungrouped = byBucket.get('__ungrouped__');
+    if (ungrouped && ungrouped.length > 0) {
+      out.push({ id: '__ungrouped__', name: t.shared.sidebar_extra.no_team, color: null, personaIds: ungrouped, scheduleCount: sumSchedules(ungrouped) });
+    }
+    return out;
+  }, [cronAgents, personas, teams, t]);
 
-  // Broadcast filter to ScheduleTimeline via a custom event
-  const selectFilter = useCallback((personaId: string | null) => {
-    setSelectedPersonaId(personaId);
-    window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaId } }));
+  // Broadcast the group filter to ScheduleTimeline via a custom event. The
+  // detail carries the set of persona ids in the group plus a display label.
+  const selectFilter = useCallback((groupId: string | null, personaIds: string[] | null, label: string) => {
+    setSelectedGroupId(groupId);
+    window.dispatchEvent(new CustomEvent('schedules:filter', { detail: { personaIds, label } }));
   }, []);
 
   return (
@@ -296,46 +320,50 @@ function SchedulesSidebarNav() {
         </div>
       </div>
       <div className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-        {/* All personas */}
+        {/* All schedules */}
         <button
-          onClick={() => selectFilter(null)}
-          aria-current={selectedPersonaId === null ? 'page' : undefined}
+          onClick={() => selectFilter(null, null, '')}
+          aria-current={selectedGroupId === null ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-            selectedPersonaId === null
-              ? 'bg-primary/10 text-foreground/90 font-semibold'
-              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+            selectedGroupId === null
+              ? 'bg-primary/10 text-foreground font-semibold'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
           }`}
         >
           <CalendarClock className="w-4 h-4 flex-shrink-0" />
           {t.shared.sidebar_extra.all_personas}
-          <span className="ml-auto text-[10px] font-mono text-foreground/90">{scheduledPersonas.length}</span>
+          <span className="ml-auto text-[10px] font-mono text-foreground/90">{cronAgents.length}</span>
         </button>
 
         {/* Divider */}
-        {scheduledPersonas.length > 0 && (
+        {groups.length > 0 && (
           <div className="mx-2 my-1.5 border-t border-primary/8" />
         )}
 
-        {/* Individual personas sorted by name */}
-        {scheduledPersonas.map((p) => (
+        {/* Team groups + a "No team" bucket, sorted by team name */}
+        {groups.map((g) => (
           <button
-            key={p.id}
-            onClick={() => selectFilter(p.id)}
-            aria-current={selectedPersonaId === p.id ? 'page' : undefined}
+            key={g.id}
+            onClick={() => selectFilter(g.id, g.personaIds, g.name)}
+            aria-current={selectedGroupId === g.id ? 'page' : undefined}
             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
-              selectedPersonaId === p.id
-                ? 'bg-primary/10 text-foreground/90 font-semibold'
-                : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+              selectedGroupId === g.id
+                ? 'bg-primary/10 text-foreground font-semibold'
+                : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
             }`}
           >
-            <PersonaIcon icon={p.icon} color={p.color} />
-            <span className="truncate text-[13px] min-w-0">{p.name}</span>
-            <span className="ml-auto text-[10px] font-mono text-foreground/90 tabular-nums">{p.scheduleCount}</span>
+            <span
+              className="flex-shrink-0 w-2 h-2 rounded-full"
+              style={{ backgroundColor: g.color ?? '#6b7280' }}
+              aria-hidden
+            />
+            <span className="truncate text-[13px] min-w-0">{g.name}</span>
+            <span className="ml-auto text-[10px] font-mono text-foreground/90 tabular-nums">{g.scheduleCount}</span>
           </button>
         ))}
 
         {/* Empty state */}
-        {scheduledPersonas.length === 0 && (
+        {groups.length === 0 && (
           <div className="text-center py-10 space-y-2">
             <CalendarClock className="w-8 h-8 mx-auto text-foreground/90" />
             <p className="text-[12px] text-foreground/90">{t.shared.sidebar_extra.no_scheduled_agents}</p>

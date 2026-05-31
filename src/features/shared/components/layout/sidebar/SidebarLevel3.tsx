@@ -101,8 +101,8 @@ export default function SidebarLevel3({
               onClick={() => onSelect(item.id)}
               className={`w-full flex ${hasBelowRow ? 'items-start' : 'items-center'} gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                 isActive
-                  ? 'bg-primary/10 text-foreground/90 font-semibold'
-                  : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                  ? 'bg-primary/10 text-foreground font-semibold'
+                  : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
               }`}
             >
               {Icon && (

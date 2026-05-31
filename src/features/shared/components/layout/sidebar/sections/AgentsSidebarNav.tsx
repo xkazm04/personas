@@ -251,8 +251,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
           aria-current={agentTab === 'all' && !isCreatingPersona ? 'page' : undefined}
           className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
             agentTab === 'all' && !isCreatingPersona
-              ? 'bg-primary/10 text-foreground/90 font-semibold'
-              : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+              ? 'bg-primary/10 text-foreground font-semibold'
+              : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
           }`}
         >
           <List className="w-4 h-4 flex-shrink-0" />
@@ -546,8 +546,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                   aria-current={agentTab === 'team' && !selectedTeamId ? 'page' : undefined}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     agentTab === 'team' && !selectedTeamId
-                      ? 'bg-primary/10 text-foreground/90 font-semibold'
-                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                      ? 'bg-primary/10 text-foreground font-semibold'
+                      : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
                   }`}
                 >
                   <Users className="w-4 h-4 flex-shrink-0" />
@@ -591,8 +591,8 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                 aria-current={agentTab === 'cloud' ? 'page' : undefined}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ring-1 ring-amber-500/40 ${
                   agentTab === 'cloud'
-                    ? 'bg-amber-500/10 text-foreground/90 font-semibold'
-                    : 'text-foreground hover:bg-amber-500/5 hover:text-foreground/80 font-normal'
+                    ? 'bg-amber-500/10 text-foreground font-semibold'
+                    : 'text-foreground/70 hover:bg-amber-500/5 hover:text-foreground font-normal'
                 }`}
               >
                 <Cloud className="w-4 h-4 flex-shrink-0" />
@@ -612,7 +612,7 @@ export function AgentsSidebarNav({ onCreatePersona }: { onCreatePersona: () => v
                     className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] transition-colors ${
                       cloudTab === item.id
                         ? 'bg-primary/10 text-foreground'
-                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/70'
+                        : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground'
                     }`}
                   >
                     {item.icon && <item.icon className="w-3.5 h-3.5 flex-shrink-0" />}

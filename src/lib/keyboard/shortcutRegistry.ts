@@ -58,6 +58,8 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     bindings: [
       { combos: [['mod', 'K']], describe: (t) => t.chrome.shortcuts.command_palette },
       { combos: [['?'], ['mod', '/']], describe: (t) => t.chrome.shortcuts.show_shortcuts },
+      { combos: [[';']], describe: (t) => t.chrome.shortcuts.nav_mode },
+      { combos: [['←']], describe: (t) => t.chrome.shortcuts.nav_mode_back },
       { combos: [['Esc']], describe: (t) => t.chrome.shortcuts.close_overlay },
     ],
   },

@@ -97,14 +97,12 @@ export default function SidebarSubNav({
             onClick={() => onSelect(item.id)}
             onPointerEnter={onHoverItem ? () => onHoverItem(item.id) : undefined}
             aria-current={isActive ? 'page' : undefined}
-            className={`relative w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
+            className={`group relative w-full flex items-center ${isOverview ? 'gap-3 px-3 py-2.5' : 'gap-2.5 p-2.5'} mb-1 rounded-xl border transition-all text-left ${
               isActive
                 ? `${activeButtonClass} translate-x-[1px] scale-[1.01]`
                 : isDevItem
                   ? 'bg-amber-500/5 border-amber-500/25 hover:bg-amber-500/10'
-                  : isOverview
-                    ? 'hover:bg-secondary/50 border-transparent'
-                    : 'bg-secondary/30 border-primary/10 hover:bg-secondary/50'
+                  : 'border-transparent hover:bg-secondary/40'
             }`}
           >
             {isActive && (
@@ -118,11 +116,11 @@ export default function SidebarSubNav({
             <div className={`${boxSize} rounded-lg flex items-center justify-center border transition-colors ${
               isActive
                 ? activeIconBoxClass
-                : 'bg-secondary/40 border-primary/15'
+                : 'bg-secondary/40 border-transparent'
             }`}>
-              <Icon className={`${iconSize} ${isActive ? activeIconColor : 'text-foreground'}`} />
+              <Icon className={`${iconSize} transition-colors ${isActive ? activeIconColor : 'text-foreground/70 group-hover:text-foreground'}`} />
             </div>
-            <span className={`typo-heading text-foreground ${isActive ? 'font-semibold' : 'font-normal'}`}>
+            <span className={`typo-heading transition-colors ${isActive ? 'text-foreground font-semibold' : 'text-foreground/70 group-hover:text-foreground font-normal'}`}>
               {labelOverrides?.[item.id] ?? labelOf(item.id, item.label)}
             </span>
             {badge && badge.count > 0 && (

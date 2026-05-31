@@ -7,9 +7,9 @@
 // bottom-right. Reviews and messages get their own badges. The global fleet
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Mail, FolderGit2, Layers, ChevronDown, Wrench } from 'lucide-react';
+import { X, Activity, Mail, FolderGit2, Layers, ChevronDown, Wrench, Check } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -60,13 +60,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // picker, narrow the grid to personas wired to a codebase connector
   // (mirrors the Agents sidebar's active-project section).
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const projects = useSystemStore((s) => s.projects);
   const setActiveProject = useSystemStore((s) => s.setActiveProject);
   const codebasePersonaIds = useCodebasePersonas();
-  const activeProject = useMemo(
-    () => projects.find((p) => p.id === activeProjectId) ?? null,
-    [projects, activeProjectId],
-  );
   const displayCards = useMemo(
     () => (activeProjectId ? cards.filter((c) => codebasePersonaIds.has(c.personaId)) : cards),
     [cards, activeProjectId, codebasePersonaIds],
@@ -164,10 +159,8 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // it reads as premium texture, not a competing foreground.
   const isDark = useIsDarkTheme();
 
-  // Fleet rollup powers the header subtitle + the live-cost chip.
+  // Fleet rollup powers the live-cost chip.
   const fleet = useMemo(() => summarizeFleet(displayCards), [displayCards]);
-  const attentionCards = displayCards.filter((c) => c.attentionCount > 0).length;
-  const runningCount = fleet.running;
 
   return (
     <motion.div
@@ -189,23 +182,20 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         />
       )}
 
-      {/* Header */}
-      <div className="relative z-10 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
+      {/* Header (z-20 so the project-picker dropdown floats above the grid) */}
+      <div className="relative z-20 flex-shrink-0 flex items-center justify-between gap-4 px-6 h-14 border-b border-primary/10 bg-secondary/15">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-modal bg-primary/10 border border-primary/20 flex items-center justify-center">
             <Activity className="w-4 h-4 text-primary" />
           </div>
           <div className="min-w-0">
-            <h2 className="typo-heading font-semibold text-foreground leading-tight">{t.monitor.title}</h2>
-            <p className="typo-caption text-foreground leading-tight">
-              {tx(t.monitor.subtitle, { personas: displayCards.length, attention: attentionCards, running: runningCount })}
-            </p>
+            <h2 className="typo-heading-lg text-foreground leading-tight">{t.monitor.title}</h2>
           </div>
         </div>
         <div className="flex items-center gap-2">
           {fleet.running > 0 && (
             <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary typo-caption tabular-nums"
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary typo-body-lg tabular-nums"
               title={tx(t.monitor.live_chip_title, { tools: fleet.liveToolCalls })}
             >
               <span className="relative flex w-1.5 h-1.5">
@@ -216,27 +206,14 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               {fleet.liveCostUsd > 0 && <span className="text-foreground">· ${fleet.liveCostUsd.toFixed(3)}</span>}
             </span>
           )}
-          {activeProject && (
-            <span className="inline-flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-full border border-indigo-500/30 bg-indigo-500/10 text-indigo-300 typo-caption">
-              <FolderGit2 className="w-3 h-3" />
-              <span className="max-w-[140px] truncate">{activeProject.name}</span>
-              <button
-                onClick={() => void setActiveProject(null)}
-                aria-label={t.monitor.clear_filter}
-                title={t.monitor.clear_filter}
-                className="p-0.5 rounded-full hover:bg-indigo-500/20 transition-colors"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            </span>
-          )}
+          <MonitorProjectPicker />
           {teams.length > 0 && (
             <button
               type="button"
               onClick={() => setGroupBy(groupBy === 'group' ? 'none' : 'group')}
               aria-pressed={groupBy === 'group'}
               title={t.monitor.group_by_toggle_title}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-caption transition-colors ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
                 groupBy === 'group'
                   ? 'border-indigo-500/40 bg-indigo-500/15 text-indigo-300'
                   : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
@@ -250,7 +227,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
             severityCounts[sev] > 0 ? (
               <span
                 key={sev}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border typo-caption ${SEVERITY_META[sev].chip}`}
+                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border typo-body-lg ${SEVERITY_META[sev].chip}`}
               >
                 <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_META[sev].dot}`} />
                 {severityCounts[sev]} {severityLabel(t, sev).toLowerCase()}
@@ -258,7 +235,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
             ) : null,
           )}
           {unreadMessages.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 typo-caption">
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 typo-body-lg">
               <Mail className="w-3 h-3" />
               {unreadMessages.length}
             </span>
@@ -652,6 +629,101 @@ function AttentionBadge({ label, count, className, icon: Icon, onClick }: Attent
       <Icon className="w-3 h-3" />
       {count}
     </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Dev Tools project picker (header) — mirrors the footer picker so the grid
+// can be scoped to a codebase project without leaving the Monitor. Opens
+// downward (header is z-20 so the menu floats over the grid).
+// ---------------------------------------------------------------------------
+
+function MonitorProjectPicker() {
+  const { t } = useTranslation();
+  const projects = useSystemStore((s) => s.projects);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const setActiveProject = useSystemStore((s) => s.setActiveProject);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const [open, setOpen] = useState(false);
+  const loadedRef = useRef(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+    void fetchProjects();
+  }, [fetchProjects]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  const activeProject = useMemo(
+    () => projects.find((p) => p.id === activeProjectId) ?? null,
+    [projects, activeProjectId],
+  );
+
+  if (projects.length === 0) return null;
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        data-testid="monitor-project-picker"
+        aria-label={t.monitor.project_filter}
+        title={activeProject?.root_path ?? t.monitor.project_filter}
+        className={`flex items-center gap-1.5 h-8 px-2.5 rounded-full border typo-body-lg transition-colors max-w-[180px] ${
+          activeProject
+            ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-300'
+            : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+        }`}
+      >
+        <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
+        <span className="truncate min-w-0">{activeProject?.name ?? t.monitor.project_filter}</span>
+        <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="absolute top-full right-0 mt-2 w-64 rounded-modal border border-primary/15 bg-background shadow-elevation-4 p-2 z-30">
+          <div className="max-h-64 overflow-y-auto">
+            <button
+              onClick={() => { void setActiveProject(null); setOpen(false); }}
+              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card typo-caption transition-colors text-left ${
+                activeProjectId === null ? 'bg-indigo-500/10 text-indigo-300' : 'text-foreground hover:bg-secondary/40'
+              }`}
+            >
+              <X className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="flex-1 min-w-0 truncate">{t.chrome.project_picker_none}</span>
+              {activeProjectId === null && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
+            </button>
+            {projects.map((p) => {
+              const isActive = p.id === activeProjectId;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => { void setActiveProject(p.id); setOpen(false); }}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card typo-caption transition-colors text-left ${
+                    isActive ? 'bg-indigo-500/10 text-indigo-300' : 'text-foreground hover:bg-secondary/40'
+                  }`}
+                >
+                  <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="truncate">{p.name}</div>
+                    {p.root_path && <div className="text-[10px] text-foreground truncate">{p.root_path}</div>}
+                  </div>
+                  {isActive && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
