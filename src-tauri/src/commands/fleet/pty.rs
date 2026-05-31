@@ -140,6 +140,10 @@ pub fn spawn_session(
             }
         };
         let mut c = CommandBuilder::new(&claude_cmd);
+        // Fleet sessions run unattended (orchestrated, often Athena-driven), so
+        // permission prompts would just freeze them at AwaitingInput with no one
+        // to answer. Skip them — the user opted into this for the fleet.
+        c.arg("--dangerously-skip-permissions");
         if let Some(p) = mcp.config_path.as_deref() {
             // Same forward-slash conversion as before — avoids
             // `--mcp-config` parsing the path as inline JSON when the
@@ -159,6 +163,7 @@ pub fn spawn_session(
         c
     } else {
         let mut c = CommandBuilder::new("claude");
+        c.arg("--dangerously-skip-permissions");
         if let Some(p) = mcp.config_path.as_deref() {
             c.arg("--mcp-config");
             c.arg(p.as_os_str());
