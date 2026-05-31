@@ -49,6 +49,7 @@ The plugin only shows up in `import.meta.env.DEV` builds. The Rust module always
 9. **Search across sessions (Activity tab):** The **Activity** tab lists the most recently-active Claude Code sessions across *all* projects (transcripts modified in the last 7 days, newest first), each with its token/turn/tool/files rollup. Type in the search box to filter across project name, files touched, tool names, and models — e.g. "which sessions touched `auth.rs`?" surfaces every matching run with the matching files shown.
 10. **Hibernate & wake a session (F3):** Select a session → **Hibernate** (moon, in the CLI header). The `claude` process is killed to free it; the row stays as `Hibernated` (indigo) so it stays resumable. To bring it back, select the hibernated row and click **Wake** — Fleet runs `claude --resume <id>` in the original cwd and the resumed process restores the conversation. Hibernate needs a bound `claude_session_id` (it's how we resume), so a session must have started before it can sleep.
 11. **Auto-hibernate idle sessions (F3/P3.2):** Fleet → Settings → **Auto-hibernate idle sessions** → enable + set the idle threshold (minutes). The always-on staleness ticker then hibernates any Idle/Stale session inactive past the threshold — freeing the process even when Fleet isn't focused (it stays resumable via Wake). `AwaitingInput` sessions are never auto-slept (you may be mid-response).
+12. **Find & kill orphaned processes:** Fleet → Settings → **Running Claude processes**. Fleet's session registry is in-memory, so an app restart loses the session list while the underlying `claude` processes can keep running — orphans otherwise reachable only via Task Manager. The panel scans the OS process table (`fleet_detect_processes`), lists every Claude CLI process with its PID / memory / cwd, marks which are still Fleet-tracked vs. orphaned (orphans sort first), and **Kill** ends one by PID (`fleet_kill_pid`, confirm-gated — targeted, never a blanket kill). It scans on open and on **Scan**.
 
 ## State machine
 
@@ -165,7 +166,7 @@ Each entry is tagged `_fleet: true` so uninstall is surgical:
 - Hard kill (drop the running task's child handle).
 - Send-to-external-session (hook-callback path that lets us queue prompts for sessions whose PTY we don't own).
 - ~~Per-session output ring-buffer (re-attaching to a session that's been off-screen should replay scrollback).~~ **Done** — the terminal manager keeps a live xterm (and its scrollback) per session; see [Terminal experience](#terminal-experience).
-- Persisted session memory across Personas restarts (currently registry is in-memory only).
+- Persisted session memory across Personas restarts (currently registry is in-memory only). *Partial mitigation shipped:* the **Running Claude processes** panel (Usage step 12) detects + kills orphaned `claude` processes a restart leaves behind. Re-adopting a still-running orphan (re-attaching a PTY) is not possible; the next step is resuming its conversation via `claude --resume` from the detected cwd. Full registry persistence (sessions survive restart) remains open.
 
 ### "Beyond the terminal" program (in progress)
 

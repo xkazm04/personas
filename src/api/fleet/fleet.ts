@@ -10,6 +10,7 @@ import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { FleetRegistrySnapshot } from '@/lib/bindings/FleetRegistrySnapshot';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
+import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 
 /**
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
@@ -136,3 +137,19 @@ export const recentTranscripts = (withinDays?: number, limit?: number) =>
     withinDays: withinDays ?? null,
     limit: limit ?? null,
   });
+
+/**
+ * Scan the OS process table for running Claude Code CLI processes — including
+ * orphans the in-memory registry lost across an app restart (otherwise
+ * reachable only via Task Manager). `tracked` flags PIDs that still match a
+ * live Fleet session; untracked ones are orphans/external and sort first.
+ */
+export const detectProcesses = () =>
+  invoke<FleetDetectedProcess[]>('fleet_detect_processes');
+
+/**
+ * Kill a single detected process by PID (targeted — never a blanket kill).
+ * Resolves `true` if the process existed and the signal was sent.
+ */
+export const killPid = (pid: number) =>
+  invoke<boolean>('fleet_kill_pid', { pid });

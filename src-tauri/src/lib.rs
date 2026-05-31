@@ -2951,6 +2951,8 @@ pub fn run() {
             commands::fleet::commands::fleet_set_auto_hibernate,
             commands::fleet::transcript_read::fleet_read_transcript,
             commands::fleet::transcript_read::fleet_recent_transcripts,
+            commands::fleet::process_scan::fleet_detect_processes,
+            commands::fleet::process_scan::fleet_kill_pid,
         ]))
         .run(tauri::generate_context!())
         .unwrap_or_else(|e| {
