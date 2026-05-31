@@ -102,4 +102,32 @@ describe('NumberStepper', () => {
     fireEvent.keyDown(field(), { key: 'ArrowDown' });
     expect(field().value).toBe('10');
   });
+
+  it('fires onCommit on blur only when the value changed, with the clamped value', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={10} min={1} max={50} onCommit={onCommit} />);
+    fireEvent.change(field(), { target: { value: '999' } });
+    fireEvent.blur(field());
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith(50);
+  });
+
+  it('does not fire onCommit on a focus/blur that leaves the value unchanged', () => {
+    const onCommit = vi.fn();
+    render(<Harness initial={10} min={1} max={50} onCommit={onCommit} />);
+    fireEvent.focus(field());
+    fireEvent.blur(field());
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
+  it('fires onCommit once on button release, not per accelerating tick', () => {
+    const onChange = vi.fn();
+    const onCommit = vi.fn();
+    render(<Harness initial={10} step={5} onChange={onChange} onCommit={onCommit} />);
+    fireEvent.pointerDown(inc());
+    fireEvent.pointerUp(inc());
+    expect(onChange).toHaveBeenCalled();           // live draft fired
+    expect(onCommit).toHaveBeenCalledTimes(1);     // settle fired exactly once
+    expect(onCommit).toHaveBeenLastCalledWith(15);
+  });
 });

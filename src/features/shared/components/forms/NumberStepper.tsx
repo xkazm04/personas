@@ -7,7 +7,14 @@ import { useTranslation } from '@/i18n/useTranslation';
 export interface NumberStepperProps {
   /** Current value. `null` renders the placeholder (only meaningful with `allowEmpty`). */
   value: number | null;
+  /** Fires live on every keystroke / step (the "draft"). */
   onChange: (value: number | null) => void;
+  /**
+   * Fires once when an interaction settles (blur, Enter, or button release), and
+   * only when the value actually changed. Use this — not `onChange` — for expensive
+   * side effects (IPC, network) so typing or holding a button doesn't fire one per tick.
+   */
+  onCommit?: (value: number | null) => void;
   min?: number;
   max?: number;
   /** Step applied by the +/- buttons and arrow keys. Drives display precision. */
@@ -44,6 +51,7 @@ function stepDecimals(step: number): number {
 export function NumberStepper({
   value,
   onChange,
+  onCommit,
   min,
   max,
   step = 1,
@@ -81,6 +89,20 @@ export function NumberStepper({
   // Latest value read by the repeat loop without restarting it.
   const valueRef = useRef(value);
   valueRef.current = value;
+
+  // onCommit fires only on a settle (blur / Enter / button release) and only when
+  // the value changed since the interaction began — so an expensive onCommit (IPC)
+  // isn't fired per keystroke or per held step. `onChange` remains the live draft.
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
+  const commitStartRef = useRef(value);
+  const beginInteraction = useCallback(() => {
+    commitStartRef.current = valueRef.current;
+  }, []);
+  const fireCommit = useCallback((v: number | null) => {
+    if (onCommitRef.current && v !== commitStartRef.current) onCommitRef.current(v);
+    commitStartRef.current = v;
+  }, []);
 
   const doStep = useCallback(
     (dir: 1 | -1) => {
@@ -120,12 +142,19 @@ export function NumberStepper({
   );
   useEffect(() => stopRepeat, [stopRepeat]);
 
+  // Releasing (or leaving) a held button ends the step interaction and settles onCommit.
+  const endStep = useCallback(() => {
+    stopRepeat();
+    fireCommit(valueRef.current);
+  }, [stopRepeat, fireCommit]);
+
   const commitDraft = useCallback(
     (raw: string) => {
       const trimmed = raw.trim();
       if (trimmed === '') {
-        if (allowEmpty) onChange(null);
-        else onChange(clamp(defaultValue ?? min ?? 0));
+        const next = allowEmpty ? null : clamp(defaultValue ?? min ?? 0);
+        onChange(next);
+        fireCommit(next);
         return;
       }
       const n = Number(trimmed);
@@ -134,9 +163,11 @@ export function NumberStepper({
         setDraft(value == null ? '' : String(value));
         return;
       }
-      onChange(clamp(n));
+      const next = clamp(n);
+      onChange(next);
+      fireCommit(next);
     },
-    [allowEmpty, clamp, defaultValue, min, onChange, value],
+    [allowEmpty, clamp, defaultValue, min, onChange, value, fireCommit],
   );
 
   const atMin = min != null && value != null && value <= min;
@@ -162,10 +193,13 @@ export function NumberStepper({
         disabled={disabled || atMin}
         onPointerDown={(e) => {
           e.preventDefault();
-          if (!disabled) startRepeat(-1);
+          if (!disabled) {
+            beginInteraction();
+            startRepeat(-1);
+          }
         }}
-        onPointerUp={stopRepeat}
-        onPointerLeave={stopRepeat}
+        onPointerUp={endStep}
+        onPointerLeave={endStep}
         onPointerCancel={stopRepeat}
         className={btnBase + ' border-r border-primary/12 rounded-none'}
       >
@@ -199,7 +233,10 @@ export function NumberStepper({
             const n = Number(trimmed);
             if (!Number.isNaN(n)) onChange(n);
           }}
-          onFocus={() => setFocused(true)}
+          onFocus={() => {
+            setFocused(true);
+            beginInteraction();
+          }}
           onBlur={(e) => {
             setFocused(false);
             commitDraft(e.target.value);
@@ -211,6 +248,8 @@ export function NumberStepper({
             } else if (e.key === 'ArrowDown') {
               e.preventDefault();
               doStep(-1);
+            } else if (e.key === 'Enter') {
+              commitDraft((e.target as HTMLInputElement).value);
             }
           }}
           className="w-full min-w-0 bg-transparent text-center typo-body text-foreground tabular-nums outline-none placeholder:text-muted-foreground/40 px-1 py-1.5"
@@ -226,10 +265,13 @@ export function NumberStepper({
         disabled={disabled || atMax}
         onPointerDown={(e) => {
           e.preventDefault();
-          if (!disabled) startRepeat(1);
+          if (!disabled) {
+            beginInteraction();
+            startRepeat(1);
+          }
         }}
-        onPointerUp={stopRepeat}
-        onPointerLeave={stopRepeat}
+        onPointerUp={endStep}
+        onPointerLeave={endStep}
         onPointerCancel={stopRepeat}
         className={btnBase + ' border-l border-primary/12 rounded-none'}
       >
