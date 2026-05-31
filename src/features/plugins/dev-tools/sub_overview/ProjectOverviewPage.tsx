@@ -18,6 +18,8 @@ import {
   ConnectorChain, MonitoringChain, SentryProjectPicker,
 } from './OverviewParts';
 import { useOverviewData } from './useOverviewData';
+import { usePipelineStore } from '@/stores/pipelineStore';
+import { ProjectPipelineView } from '../sub_projects/pipeline/ProjectPipelineView';
 
 // Re-export shared helpers so existing call sites keep resolving.
 export { formatErr } from './overviewHelpers';
@@ -85,6 +87,12 @@ export default function ProjectOverviewPage() {
   const po = t.project_overview;
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
+
+  // Teams roster — resolves the bound team's display name for the read-only
+  // pipeline section's Source-control stage.
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeamsForPipeline = usePipelineStore((s) => s.fetchTeams);
+  useEffect(() => { void fetchTeamsForPipeline(); }, [fetchTeamsForPipeline]);
 
   const data = useOverviewData();
   const {
@@ -254,6 +262,24 @@ export default function ProjectOverviewPage() {
       />
 
       <ContentBody>
+        {/* ==================== Pipeline (read-only) ==================== */}
+        <section className="mb-6">
+          <h2 className="typo-label text-foreground mb-3">{po.pipeline_heading}</h2>
+          <div className="rounded-card border border-primary/10 bg-card/20 p-4">
+            <ProjectPipelineView
+              name={activeProject.name}
+              path={activeProject.root_path}
+              sourceMode={activeProject.team_id ? 'team' : 'standalone'}
+              teamName={activeProject.team_id ? (teams.find((tm) => tm.id === activeProject.team_id)?.name ?? null) : null}
+              connectorName={activeProject.pr_credential_id ? (credentials.find((c) => c.id === activeProject.pr_credential_id)?.name ?? null) : null}
+              githubUrl={activeProject.github_url ?? undefined}
+              mainBranch={activeProject.main_branch ?? undefined}
+              testEnvUrl={activeProject.test_env_url ?? undefined}
+              testEnvBranch={activeProject.test_env_branch ?? undefined}
+            />
+          </div>
+        </section>
+
         {/* ==================== Vital signs strip ==================== */}
         <section className="mb-6">
           <div className="flex items-center justify-between mb-3">
