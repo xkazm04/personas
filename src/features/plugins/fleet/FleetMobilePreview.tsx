@@ -57,7 +57,7 @@ export function FleetMobilePreview() {
         <Smartphone className="w-4 h-4 text-primary" aria-hidden="true" />
         <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.preview_title}</p>
       </div>
-      <p className="text-[12px] text-foreground leading-relaxed mb-3">{t.plugins.fleet.preview_desc}</p>
+      <p className="text-[14px] text-foreground leading-relaxed mb-3">{t.plugins.fleet.preview_desc}</p>
 
       <div className="flex justify-center">
         {/* Phone frame */}
@@ -66,18 +66,18 @@ export function FleetMobilePreview() {
           {/* Screen */}
           <div className="mt-5 rounded-[1.6rem] bg-background/90 px-4 py-4 min-h-[300px]" aria-hidden="true">
             <p className="typo-label uppercase tracking-wider text-foreground mb-0.5">Personas</p>
-            <p className="text-[15px] font-semibold text-foreground">Fleet</p>
-            <p className="text-[11px] text-foreground mb-3">{sessionCount}</p>
+            <p className="text-[17px] font-semibold text-foreground">Fleet</p>
+            <p className="text-[13px] text-foreground mb-3">{sessionCount}</p>
 
             {total === 0 ? (
-              <p className="text-[12px] text-foreground py-8 text-center">{t.plugins.fleet.preview_no_sessions}</p>
+              <p className="text-[14px] text-foreground py-8 text-center">{t.plugins.fleet.preview_no_sessions}</p>
             ) : (
               <>
                 <div className="flex flex-wrap gap-1.5 mb-4">
                   {GLANCE_STATES.filter((m) => counts[m.id] > 0).map((m) => (
                     <span
                       key={m.id}
-                      className="flex items-center gap-1.5 rounded-interactive border border-primary/10 bg-secondary/40 px-2 py-0.5 text-[11px] text-foreground"
+                      className="flex items-center gap-1.5 rounded-interactive border border-primary/10 bg-secondary/40 px-2 py-0.5 text-[13px] text-foreground"
                     >
                       <span className={`h-2 w-2 rounded-full ${m.dot}`} />
                       <span>{t.plugins.fleet[m.labelKey]}</span>
@@ -95,13 +95,13 @@ export function FleetMobilePreview() {
                   </span>
                 </div>
                 {waitingItems.length === 0 ? (
-                  <p className="text-[12px] text-emerald-300">{t.plugins.fleet.preview_all_clear}</p>
+                  <p className="text-[14px] text-emerald-300">{t.plugins.fleet.preview_all_clear}</p>
                 ) : (
                   <ul className="space-y-1">
                     {waitingItems.map((item, i) => (
                       <li
                         key={`${item.name}-${i}`}
-                        className="flex items-center justify-between gap-2 rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[12px] text-violet-100"
+                        className="flex items-center justify-between gap-2 rounded-interactive border border-violet-400/25 bg-violet-400/10 px-2 py-1 text-[14px] text-violet-100"
                       >
                         <span className="truncate">{item.name}</span>
                         <span className="shrink-0 text-violet-300/80">{formatAgo(t, item.lastActivityMs, now)}</span>

@@ -42,7 +42,7 @@ export function FleetContextPill({ claudeSessionId }: Props) {
   return (
     <span
       data-testid="fleet-context-pill"
-      className={`inline-flex items-center gap-1 text-[11px] tabular-nums ${tone}`}
+      className={`inline-flex items-center gap-1 text-[13px] tabular-nums ${tone}`}
       title={f.context_size_hint}
     >
       <Gauge className="w-3 h-3" aria-hidden="true" />

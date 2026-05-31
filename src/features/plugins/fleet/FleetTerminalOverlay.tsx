@@ -124,7 +124,7 @@ export function FleetTerminalOverlay({
     // stays visible and usable above it. Dismissal: titlebar/overlay Back or
     // Escape.
     <div
-      className="fixed left-0 right-0 bottom-0 top-12 z-[200] flex flex-col bg-background"
+      className="fleet-typescale fixed left-0 right-0 bottom-0 top-12 z-[200] flex flex-col bg-background"
       data-testid="fleet-terminal-overlay"
       role="region"
       aria-label={t.plugins.fleet.grid_overlay_aria}

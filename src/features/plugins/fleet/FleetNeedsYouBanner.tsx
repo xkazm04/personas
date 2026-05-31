@@ -120,7 +120,7 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
             return (
               <span
                 key={s.id}
-                className="flex items-center overflow-hidden rounded-interactive border border-violet-400/30 bg-violet-400/10 text-[11px] text-violet-100"
+                className="flex items-center overflow-hidden rounded-interactive border border-violet-400/30 bg-violet-400/10 text-[13px] text-violet-100"
               >
                 <button
                   type="button"
@@ -167,13 +167,13 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
             onKeyDown={(e) => { if (e.key === 'Escape') { setReplyTo(null); setText(''); } }}
             placeholder={tx(t.plugins.fleet.reply_placeholder, { name: replyTarget.name ?? replyTarget.projectLabel })}
             autoFocus
-            className="min-w-0 flex-1 rounded-input border border-violet-400/30 bg-secondary/40 px-2 py-1 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+            className="min-w-0 flex-1 rounded-input border border-violet-400/30 bg-secondary/40 px-2 py-1 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
           />
           <button
             type="submit"
             data-testid="fleet-reply-send"
             disabled={!text.trim() || sending}
-            className="flex items-center gap-1 rounded-interactive bg-violet-500/80 px-2 py-1 text-[11px] font-medium text-foreground transition-colors hover:bg-violet-500 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+            className="flex items-center gap-1 rounded-interactive bg-violet-500/80 px-2 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-violet-500 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
           >
             <Send className="w-3 h-3" aria-hidden="true" />
             {sending ? t.plugins.fleet.reply_sending : t.plugins.fleet.reply_send}
@@ -209,8 +209,8 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
                   className="flex items-start gap-2 rounded-interactive border border-amber-400/25 bg-amber-400/10 px-2 py-1.5"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="text-[12px] font-medium text-foreground truncate">{a.label}</p>
-                    {a.rationale && <p className="text-[11px] text-foreground truncate">{a.rationale}</p>}
+                    <p className="text-[14px] font-medium text-foreground truncate">{a.label}</p>
+                    {a.rationale && <p className="text-[13px] text-foreground truncate">{a.rationale}</p>}
                   </div>
                   <button
                     type="button"

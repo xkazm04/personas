@@ -25,7 +25,7 @@ export function FleetProcessRow({ proc, killing, resuming, onKill, onResume }: F
   const { pid, cwd, cmd, memoryBytes, tracked } = proc;
   return (
     <li
-      className="flex items-center gap-2 text-[11px] border border-primary/5 rounded-interactive px-2 py-1.5 bg-background/40"
+      className="flex items-center gap-2 text-[13px] border border-primary/5 rounded-interactive px-2 py-1.5 bg-background/40"
       data-testid={`fleet-process-${pid}`}
     >
       {tracked ? (
@@ -38,7 +38,7 @@ export function FleetProcessRow({ proc, killing, resuming, onKill, onResume }: F
       <span className="flex-1 min-w-0">
         <TruncateWithTooltip text={cwd ?? cmd} className="text-foreground/60 font-mono" />
       </span>
-      <span className={`text-[10px] flex-shrink-0 ${tracked ? 'text-emerald-400' : 'text-orange-300'}`}>
+      <span className={`text-[12px] flex-shrink-0 ${tracked ? 'text-emerald-400' : 'text-orange-300'}`}>
         {tracked ? 'Fleet' : 'orphan'}
       </span>
       {!tracked && cwd && (

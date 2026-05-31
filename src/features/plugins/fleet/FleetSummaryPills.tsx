@@ -58,7 +58,7 @@ export function FleetSummaryPills({ counts, activeFilter, onToggle }: FleetSumma
             aria-pressed={active}
             onClick={() => onToggle(m.id)}
             title={active ? t.plugins.fleet.filter_clear : tx(t.plugins.fleet.filter_by, { label })}
-            className={`flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
+            className={`flex items-center gap-1.5 rounded-interactive border px-2 py-0.5 text-[13px] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
               active
                 ? 'border-primary/40 bg-primary/15 text-foreground'
                 : 'border-primary/10 bg-secondary/40 text-foreground hover:bg-secondary/60'

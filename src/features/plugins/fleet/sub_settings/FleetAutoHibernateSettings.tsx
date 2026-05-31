@@ -26,7 +26,7 @@ export function FleetAutoHibernateSettings() {
         <Moon className="w-4 h-4 text-indigo-400" aria-hidden="true" />
         <p className="typo-caption font-medium text-foreground">{f.auto_hibernate_title}</p>
       </div>
-      <p className="text-[12px] text-foreground leading-relaxed mb-3 opacity-80">{f.auto_hibernate_desc}</p>
+      <p className="text-[14px] text-foreground leading-relaxed mb-3 opacity-80">{f.auto_hibernate_desc}</p>
 
       <div className="flex items-center justify-between gap-3">
         <AccessibleToggle
@@ -35,7 +35,7 @@ export function FleetAutoHibernateSettings() {
           label={f.auto_hibernate_toggle}
           data-testid="fleet-auto-hibernate-toggle"
         />
-        <label className="flex items-center gap-2 text-[12px] text-foreground">
+        <label className="flex items-center gap-2 text-[14px] text-foreground">
           {f.auto_hibernate_after}
           <input
             type="number"
@@ -45,7 +45,7 @@ export function FleetAutoHibernateSettings() {
             onChange={(e) => setMinutes(Number(e.target.value))}
             disabled={!enabled}
             data-testid="fleet-auto-hibernate-minutes"
-            className="w-16 rounded-input border border-primary/10 bg-secondary/40 px-2 py-1 text-[12px] text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+            className="w-16 rounded-input border border-primary/10 bg-secondary/40 px-2 py-1 text-[14px] text-foreground disabled:opacity-50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
           />
           {f.auto_hibernate_minutes_unit}
         </label>

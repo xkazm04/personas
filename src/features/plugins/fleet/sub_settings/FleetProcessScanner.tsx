@@ -101,7 +101,7 @@ export function FleetProcessScanner() {
           <p className="typo-caption font-medium text-foreground">Running Claude processes</p>
           {orphans > 0 && (
             <span
-              className="text-[10px] px-1.5 py-0.5 rounded-interactive bg-orange-500/15 text-orange-300"
+              className="text-[12px] px-1.5 py-0.5 rounded-interactive bg-orange-500/15 text-orange-300"
               data-testid="fleet-orphan-count"
             >
               {orphans} orphaned
@@ -119,7 +119,7 @@ export function FleetProcessScanner() {
           Scan
         </Button>
       </div>
-      <p className="text-[11px] text-foreground/60 leading-relaxed mb-3">
+      <p className="text-[13px] text-foreground/60 leading-relaxed mb-3">
         Interactive Claude sessions on this machine. Sessions Fleet still tracks are marked; the rest
         are orphans (e.g. left running after an app restart) or external — <strong>Resume</strong>{' '}
         re-adopts the conversation, <strong>Kill</strong> ends it. No more hunting in Task Manager.
@@ -130,7 +130,7 @@ export function FleetProcessScanner() {
           <LoadingSpinner />
         </div>
       ) : visible.length === 0 ? (
-        <p className="text-[11px] text-foreground/50 py-2 text-center">No Claude sessions running.</p>
+        <p className="text-[13px] text-foreground/50 py-2 text-center">No Claude sessions running.</p>
       ) : (
         <ul className="space-y-1" data-testid="fleet-process-list">
           {visible.map((p) => (

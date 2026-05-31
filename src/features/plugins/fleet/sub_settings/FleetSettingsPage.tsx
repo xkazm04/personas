@@ -98,7 +98,7 @@ export default function FleetSettingsPage() {
                 <AlertCircle className="w-4 h-4 text-orange-400" />
                 <p className="typo-caption font-medium text-orange-300"><DebtText k="auto_port_mismatch_b07961a1" /></p>
               </div>
-              <p className="text-[12px] text-foreground leading-relaxed">
+              <p className="text-[14px] text-foreground leading-relaxed">
                 <DebtText k="auto_hooks_point_to_port_36464ae7" />{' '}
                 <code className="font-mono">{status.installedPort ?? '?'}</code> <DebtText k="auto_but_the_current_in_app_http_server_bound_t_ffe9bca1" />
               </p>
@@ -112,7 +112,7 @@ export default function FleetSettingsPage() {
                 <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                 <p className="typo-caption font-medium text-emerald-400"><DebtText k="auto_hooks_installed_dfe5c9be" /></p>
               </div>
-              <p className="text-[12px] text-foreground leading-relaxed">
+              <p className="text-[14px] text-foreground leading-relaxed">
                 <DebtText k="auto_claude_code_posts_lifecycle_events_to_f1cd7ead" />{' '}
                 <code className="font-mono"><DebtText k="auto_http_127_0_0_1_7c241e82" />{status.installedPort}<DebtText k="auto_fleet_hooks_40b93aeb" /></code><DebtText k="auto_sessions_you_spawn_from_fleet_and_any_exte_cbcbfcc7" />{' '}
                 <code className="font-mono">claude</code> <DebtText k="auto_runs_with_the_same_cwd_report_state_in_rea_26cd9b3d" />
@@ -124,7 +124,7 @@ export default function FleetSettingsPage() {
               data-testid="fleet-hooks-banner-missing"
             >
               <p className="typo-caption font-medium text-foreground mb-1"><DebtText k="auto_hooks_not_installed_772fd030" /></p>
-              <p className="text-[12px] text-foreground leading-relaxed">
+              <p className="text-[14px] text-foreground leading-relaxed">
                 <DebtText k="auto_fleet_needs_six_hook_entries_in_27ce6397" />{' '}
                 <code className="font-mono"><DebtText k="auto_claude_settings_json_3ce7a994" /></code> <DebtText k="auto_sessionstart_notification_stop_pretooluse__9837beb9" />{' '}
                 <code className="font-mono"><DebtText k="auto_fleet_true_cfae4a45" /></code> <DebtText k="auto_marker_so_uninstall_is_surgical_a97c8e30" />
@@ -173,7 +173,7 @@ export default function FleetSettingsPage() {
                 {[...status.presentEvents, ...status.missingEvents].sort().map((event) => {
                   const present = status.presentEvents.includes(event);
                   return (
-                    <li key={event} className="flex items-center gap-2 text-[11px]">
+                    <li key={event} className="flex items-center gap-2 text-[13px]">
                       {present ? (
                         <CheckCircle2 className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                       ) : (

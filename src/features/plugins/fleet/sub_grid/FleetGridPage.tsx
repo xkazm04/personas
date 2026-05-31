@@ -121,8 +121,10 @@ export default function FleetGridPage() {
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   // Fullscreen terminal grid overlay (transient — minimizing returns to the
-  // single-pane view showing the last-selected session).
-  const [gridOpen, setGridOpen] = useState(false);
+  // single-pane view showing the last-selected session). Driven by the store
+  // so the footer Fleet toggle can close it from outside this component.
+  const gridOpen = useSystemStore((s) => s.fleetGridOpen);
+  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
   // Session ids with an in-flight "Ask Athena" proactive turn (drives the
   // tile's "thinking" affordance until the turn resolves).
   const [askingAthena, setAskingAthena] = useState<Set<string>>(new Set());
@@ -563,7 +565,7 @@ export default function FleetGridPage() {
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label={t.plugins.fleet.search_placeholder}
                   placeholder={t.plugins.fleet.search_placeholder}
-                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
                 />
               </div>
             )}
@@ -572,15 +574,15 @@ export default function FleetGridPage() {
                 <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
                   <TerminalIcon className="w-5 h-5 text-foreground" />
                 </div>
-                <p className="text-[11px] text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
-                <p className="text-[10px] text-foreground mt-1 px-3">
+                <p className="text-[13px] text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
+                <p className="text-[12px] text-foreground mt-1 px-3">
                   {activeProject
                     ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
                     : 'Pick a project in Dev Tools → Projects.'}
                 </p>
               </div>
             ) : groups.length === 0 ? (
-              <div className="text-center py-6 text-[11px] text-foreground" data-testid="fleet-no-matches">
+              <div className="text-center py-6 text-[13px] text-foreground" data-testid="fleet-no-matches">
                 {t.plugins.fleet.search_no_matches}
               </div>
             ) : (
@@ -599,7 +601,7 @@ export default function FleetGridPage() {
                         {t.plugins.fleet[g.labelKey]}
                       </span>
                       <span
-                        className={`ml-auto text-[10px] font-semibold ${g.accent}`}
+                        className={`ml-auto text-[12px] font-semibold ${g.accent}`}
                         aria-label={
                           g.sessions.length === 1
                             ? tx(t.plugins.fleet.sessions_one, { count: g.sessions.length })
@@ -644,7 +646,7 @@ export default function FleetGridPage() {
                 >
                   <Moon className="w-10 h-10 mb-3 text-indigo-400" aria-hidden="true" />
                   <p className="typo-caption mb-1">{t.plugins.fleet.hibernated_panel_title}</p>
-                  <p className="text-[11px] text-center max-w-[340px] mb-3 opacity-70">{t.plugins.fleet.hibernated_panel_desc}</p>
+                  <p className="text-[13px] text-center max-w-[340px] mb-3 opacity-70">{t.plugins.fleet.hibernated_panel_desc}</p>
                   <Button
                     variant="primary"
                     size="sm"
@@ -675,7 +677,7 @@ export default function FleetGridPage() {
                       data-testid={`fleet-rightview-${v.id}`}
                       aria-pressed={rightView === v.id}
                       onClick={() => setRightView(v.id)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[11px] transition-colors ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] transition-colors ${
                         rightView === v.id
                           ? 'bg-primary/10 text-primary border border-primary/25'
                           : 'text-foreground hover:bg-secondary/40 border border-transparent'
@@ -693,7 +695,7 @@ export default function FleetGridPage() {
                     data-testid="fleet-open-skills"
                     onClick={() => setSkillsDrawerOpen(true)}
                     title={t.plugins.fleet.skills_drawer_title}
-                    className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[11px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors"
+                    className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors"
                   >
                     <BookOpen className="w-3.5 h-3.5" />
                     {t.plugins.fleet.skills_button}
@@ -705,7 +707,7 @@ export default function FleetGridPage() {
                     disabled={!activeSession.claudeSessionId}
                     onClick={() => handleHibernate(activeSession.id)}
                     title={activeSession.claudeSessionId ? t.plugins.fleet.sleep_session : t.plugins.fleet.sleep_unavailable}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[11px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <Moon className="w-3.5 h-3.5" />
                     {t.plugins.fleet.sleep_session}
@@ -717,7 +719,7 @@ export default function FleetGridPage() {
                   ) : activeSession.state === 'exited' ? (
                     <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
                       <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
-                      <p className="text-[10px]">
+                      <p className="text-[12px]">
                         {activeSession.exitCode !== null
                           ? `Exit code ${activeSession.exitCode}`
                           : 'Process exited unexpectedly'}

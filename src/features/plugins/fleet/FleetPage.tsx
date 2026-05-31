@@ -41,7 +41,7 @@ export default function FleetPage() {
   const orphanCount = useSystemStore((s) => s.fleetOrphanCount);
 
   return (
-    <div className="h-full w-full flex flex-col" data-testid="fleet-page">
+    <div className="fleet-typescale h-full w-full flex flex-col" data-testid="fleet-page">
       {/* Internal tab strip — lightweight band above the active sub-page;
           each sub-page renders its own ContentBox/Header underneath. Skills
           now live in the left drawer (opened from the grid), not a tab. */}
@@ -57,7 +57,7 @@ export default function FleetPage() {
               key={tabDef.id}
               data-testid={`fleet-tab-${tabDef.id}`}
               onClick={() => setTab(tabDef.id)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[14px] transition-colors ${
                 active
                   ? 'bg-primary/10 text-primary border border-primary/25'
                   : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
@@ -67,7 +67,7 @@ export default function FleetPage() {
               {tabDef.label}
               {badge > 0 && (
                 <span
-                  className="ml-0.5 min-w-[16px] px-1 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[10px] leading-none text-center"
+                  className="ml-0.5 min-w-[16px] px-1 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[12px] leading-none text-center"
                   title={`${badge} orphaned Claude process${badge === 1 ? '' : 'es'} — open Settings to clean up`}
                   data-testid="fleet-orphan-badge"
                 >
@@ -110,7 +110,7 @@ export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: s
       <ContentBody>
         <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
           <p className="typo-caption font-medium text-primary mb-1">{phase}</p>
-          <p className="text-[12px] text-foreground leading-relaxed">{summary}</p>
+          <p className="text-[14px] text-foreground leading-relaxed">{summary}</p>
         </div>
       </ContentBody>
     </ContentBox>

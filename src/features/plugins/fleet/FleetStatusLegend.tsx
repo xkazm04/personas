@@ -19,7 +19,7 @@ function LegendRow({ bg, label }: { bg: string; label: string }) {
   return (
     <li className="flex items-center gap-2">
       <span className={`h-2 w-2 shrink-0 rounded-full ${bg}`} aria-hidden="true" />
-      <span className="text-[11px] text-foreground">{label}</span>
+      <span className="text-[13px] text-foreground">{label}</span>
     </li>
   );
 }
@@ -32,7 +32,7 @@ export function FleetStatusLegend() {
         type="button"
         data-testid="fleet-legend-trigger"
         aria-label={t.plugins.fleet.legend_show}
-        className="flex items-center gap-1 rounded-interactive px-1.5 py-0.5 text-[11px] text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+        className="flex items-center gap-1 rounded-interactive px-1.5 py-0.5 text-[13px] text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
       >
         <HelpCircle className="w-3.5 h-3.5" aria-hidden="true" />
         <span>{t.plugins.fleet.legend_show}</span>

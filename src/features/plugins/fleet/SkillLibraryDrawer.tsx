@@ -80,7 +80,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
         </div>
 
         {/* Apply target hint */}
-        <div className={`px-3 py-1.5 text-[11px] border-b border-primary/5 ${canApply ? 'text-foreground' : 'text-amber-300'}`}>
+        <div className={`px-3 py-1.5 text-[13px] border-b border-primary/5 ${canApply ? 'text-foreground' : 'text-amber-300'}`}>
           {canApply ? tx(f.skills_drawer_apply_to, { name: targetLabel }) : f.skills_drawer_no_target}
         </div>
 
@@ -94,7 +94,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
                 data-testid={`fleet-drawer-source-${s.id}`}
                 aria-pressed={source === s.id}
                 onClick={() => setSource(s.id)}
-                className={`px-2 py-0.5 rounded-card text-[10px] font-medium transition-colors ${
+                className={`px-2 py-0.5 rounded-card text-[12px] font-medium transition-colors ${
                   source === s.id
                     ? 'bg-primary/10 text-primary border border-primary/25'
                     : 'text-foreground hover:bg-secondary/40 border border-transparent'
@@ -119,14 +119,14 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
             onChange={(e) => setSearch(e.target.value)}
             aria-label={f.skills_drawer_search}
             placeholder={f.skills_drawer_search}
-            className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1.5 pl-7 pr-2 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+            className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1.5 pl-7 pr-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
           />
         </div>
 
         {/* Skill list */}
         <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5" data-testid="fleet-drawer-list">
           {filtered.length === 0 ? (
-            <div className="text-center py-8 text-[11px] text-foreground opacity-70">
+            <div className="text-center py-8 text-[13px] text-foreground opacity-70">
               <AlertCircle className="w-5 h-5 mx-auto mb-1.5 opacity-60" aria-hidden="true" />
               {f.skills_drawer_empty}
             </div>
@@ -155,7 +155,7 @@ export function SkillLibraryDrawer({ open, onClose, onApply, targetLabel }: Prop
               onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submitCommand(); } }}
               disabled={!canApply}
               placeholder={f.skills_drawer_command_placeholder}
-              className="flex-1 min-w-0 rounded-input border border-primary/10 bg-secondary/40 py-1.5 px-2 text-[12px] font-mono text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-50"
+              className="flex-1 min-w-0 rounded-input border border-primary/10 bg-secondary/40 py-1.5 px-2 text-[14px] font-mono text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40 disabled:opacity-50"
             />
             <Button
               variant="primary"

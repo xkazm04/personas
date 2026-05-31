@@ -32,7 +32,7 @@ export function SkillLibraryRow({ skill, canApply, onLoad, onInstall }: Props) {
           <span className="typo-card-label truncate">{skill.name}</span>
         </div>
         {skill.description && (
-          <p className="text-[10px] text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>
+          <p className="text-[12px] text-foreground opacity-60 truncate mt-0.5 pl-4.5">{skill.description}</p>
         )}
       </button>
       <button
