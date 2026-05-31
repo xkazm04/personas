@@ -165,9 +165,9 @@
         "optional": false,
         "allow_custom": true,
         "default": "codebase",
-        "maps_to": "use_cases[uc_coverage_scan].sample_input.target_codebase",
+        "maps_to": "persona.design_context[dev_project_id]",
         "variable_name": "target_codebase",
-        "context": "Required. QA Guardian scans this codebase on a schedule to raise test coverage and find bugs.",
+        "context": "Required. QA Guardian scans this codebase on a schedule to raise test coverage and find bugs, and checks out PRs from it for the uc_pr_review capability. Pins this persona to the selected Dev Tools project (design_context.dev_project_id) so its codebase tools resolve that repo at runtime; the pin survives team disband, matching the rest of the SDLC team.",
         "dimension": "connector",
         "dynamic_source": {
           "service_type": "development",

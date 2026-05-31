@@ -196,9 +196,9 @@
         "category": "configuration",
         "question": "Which registered codebase should Dev Clone analyze and modify?",
         "type": "devtools_project",
-        "maps_to": "persona.connectors[codebase].credential_fields[codebase_root].value",
+        "maps_to": "persona.design_context[dev_project_id]",
         "variable_name": "target_codebase",
-        "context": "Pick from your registered codebases. If only one is registered, it's auto-selected. This codebase is read + write: Dev Clone creates branches, applies diffs, commits. It should be the same repository as the GitHub repo above.",
+        "context": "Pick from your registered codebases. If only one is registered, it's auto-selected. This codebase is read + write: Dev Clone creates branches, applies diffs, commits. It should be the same repository as the GitHub repo above. Pins this persona to the selected Dev Tools project (design_context.dev_project_id) so its codebase tools resolve that repo at runtime; the pin survives team disband, matching the rest of the SDLC team.",
         "dimension": "connector"
       },
       {
