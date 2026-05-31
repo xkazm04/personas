@@ -12503,6 +12503,11 @@ export type Translations = {
       invalid_repo_url: string;
       browse: string;
       repos_from_connector: string;
+      test_env_url: string;
+      test_env_url_placeholder: string;
+      test_env_branch: string;
+      test_env_branch_placeholder: string;
+      open_test_env: string;
       modal_section_project: string;
       modal_section_source: string;
       modal_section_workspace: string;

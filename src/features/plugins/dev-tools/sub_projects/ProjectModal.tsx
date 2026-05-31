@@ -32,6 +32,10 @@ interface ProjectFormData {
   teamId: string | null;
   /** Vault GitHub PAT credential id bound for PR / source-control ops. */
   prCredentialId: string | null;
+  /** URL of the living test environment this project/team delivers into. */
+  testEnvUrl: string;
+  /** Branch deployed to the living test environment (e.g. `staging`). */
+  testEnvBranch: string;
 }
 
 interface ProjectModalProps {
@@ -72,6 +76,8 @@ export function ProjectModal({
   const [githubUrl, setGithubUrl] = useState('');
   const [teamId, setTeamId] = useState<string | null>(null);
   const [prCredentialId, setPrCredentialId] = useState<string | null>(null);
+  const [testEnvUrl, setTestEnvUrl] = useState('');
+  const [testEnvBranch, setTestEnvBranch] = useState('');
   // Vault GitHub PAT credentials, offered as the project's source-control
   // connector (persisted as pr_credential_id — authorises PR / git ops).
   const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
@@ -110,6 +116,8 @@ export function ProjectModal({
       setGithubUrl(editProject.githubUrl);
       setTeamId(editProject.teamId);
       setPrCredentialId(editProject.prCredentialId);
+      setTestEnvUrl(editProject.testEnvUrl ?? '');
+      setTestEnvBranch(editProject.testEnvBranch ?? '');
       setNameEdited(true);
     }
   }, [editProject]);
@@ -148,6 +156,8 @@ export function ProjectModal({
         githubUrl: githubUrl.trim(),
         teamId,
         prCredentialId,
+        testEnvUrl: testEnvUrl.trim(),
+        testEnvBranch: testEnvBranch.trim(),
       });
       handleClose();
     } else {
@@ -158,6 +168,8 @@ export function ProjectModal({
         githubUrl: githubUrl.trim(),
         teamId,
         prCredentialId,
+        testEnvUrl: testEnvUrl.trim(),
+        testEnvBranch: testEnvBranch.trim(),
       });
       if (result) {
         // Optionally create a Codebase connector wired to the new project so
@@ -193,6 +205,8 @@ export function ProjectModal({
     setGithubUrl('');
     setTeamId(null);
     setPrCredentialId(null);
+    setTestEnvUrl('');
+    setTestEnvBranch('');
     setNameEdited(false);
     setCreateConnector(true);
     setCreatedProject(null);
@@ -341,6 +355,40 @@ export function ProjectModal({
                     {t.plugins.dev_projects.repos_from_connector}
                   </p>
                 )}
+
+                {/* Living test environment — the staging/preview deployment this
+                    project's team delivers into. Both optional; surfaced on the
+                    project row as an "Open test environment" affordance. */}
+                <div className="grid md:grid-cols-2 gap-3 items-start">
+                  <div>
+                    <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                      {t.plugins.dev_projects.test_env_url}
+                      <span className="typo-caption text-foreground font-normal">
+                        ({t.plugins.dev_projects.team_binding_optional})
+                      </span>
+                    </label>
+                    <input
+                      value={testEnvUrl}
+                      onChange={(e) => setTestEnvUrl(e.target.value)}
+                      placeholder={t.plugins.dev_projects.test_env_url_placeholder}
+                      className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                      {t.plugins.dev_projects.test_env_branch}
+                      <span className="typo-caption text-foreground font-normal">
+                        ({t.plugins.dev_projects.team_binding_optional})
+                      </span>
+                    </label>
+                    <input
+                      value={testEnvBranch}
+                      onChange={(e) => setTestEnvBranch(e.target.value)}
+                      placeholder={t.plugins.dev_projects.test_env_branch_placeholder}
+                      className="w-full px-3 py-2.5 text-md bg-secondary/40 border border-primary/10 rounded-input text-foreground placeholder:text-foreground focus-ring"
+                    />
+                  </div>
+                </div>
 
                 {/* ============ WORKSPACE ============ */}
                 <SectionHeader icon={Users} label={t.plugins.dev_projects.modal_section_workspace} />
