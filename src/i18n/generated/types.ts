@@ -5291,6 +5291,10 @@ export type Translations = {
       curation_schedule_disabled_state: string;
       curation_schedule_disable: string;
       curation_schedule_save: string;
+      delete_all: string;
+      delete_all_confirm_title: string;
+      delete_all_confirm_body: string;
+      delete_all_confirm_cta: string;
     };
     memory_review: {
       all_conflicts_resolved: string;
@@ -5572,6 +5576,10 @@ export type Translations = {
       review_detail: string;
       select_review: string;
       technical_context: string;
+      delete_all: string;
+      delete_all_confirm_title: string;
+      delete_all_confirm_body: string;
+      delete_all_confirm_cta: string;
     };
     messages_view: {
       title: string;
@@ -5640,6 +5648,10 @@ export type Translations = {
       persona_link_title: string;
       pending_decisions_approve_all: string;
       pending_decisions_reject_all: string;
+      delete_all: string;
+      delete_all_confirm_title: string;
+      delete_all_confirm_body: string;
+      delete_all_confirm_cta: string;
     };
     cockpit: {
       title_default: string;

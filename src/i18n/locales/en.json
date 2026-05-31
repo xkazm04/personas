@@ -5284,7 +5284,11 @@
       "curation_schedule_last_run_label": "Last run",
       "curation_schedule_disabled_state": "Curation is disabled for this agent",
       "curation_schedule_disable": "Disable schedule",
-      "curation_schedule_save": "Save schedule"
+      "curation_schedule_save": "Save schedule",
+      "delete_all": "Delete all",
+      "delete_all_confirm_title": "Delete all memories?",
+      "delete_all_confirm_body": "This permanently deletes all {count} memories. This cannot be undone.",
+      "delete_all_confirm_cta": "Delete all"
     },
     "memory_review": {
       "all_conflicts_resolved": "All conflicts resolved",
@@ -5565,7 +5569,11 @@
       "select_action_first": "Select a suggested action first",
       "review_detail": "Review Detail",
       "select_review": "Select a review to view",
-      "technical_context": "Technical Context"
+      "technical_context": "Technical Context",
+      "delete_all": "Delete all",
+      "delete_all_confirm_title": "Delete all reviews?",
+      "delete_all_confirm_body": "This permanently deletes all {count} reviews. This cannot be undone.",
+      "delete_all_confirm_cta": "Delete all"
     },
     "messages_view": {
       "title": "Messages",
@@ -5633,7 +5641,11 @@
       "action_play_in_chat": "Play in chat",
       "persona_link_title": "View persona",
       "pending_decisions_approve_all": "Approve all",
-      "pending_decisions_reject_all": "Reject all"
+      "pending_decisions_reject_all": "Reject all",
+      "delete_all": "Delete all",
+      "delete_all_confirm_title": "Delete all messages?",
+      "delete_all_confirm_body": "This permanently deletes all {count} messages. This cannot be undone.",
+      "delete_all_confirm_cta": "Delete all"
     },
     "cockpit": {
       "title_default": "Cockpit",

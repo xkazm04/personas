@@ -98,6 +98,9 @@ export const listMemoriesByExecution = (executionId: string) =>
 export const deleteMemory = (id: string) =>
   invoke<boolean>("delete_memory", { id });
 
+export const deleteAllMemories = () =>
+  invoke<number>("delete_all_memories", {});
+
 /** Atomically create a merged memory and delete the two originals in one SQL transaction. */
 export const mergeMemoriesAtomic = (
   input: CreatePersonaMemoryInput,
