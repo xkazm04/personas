@@ -926,6 +926,118 @@ pub fn dev_tools_update_idea(
     )
 }
 
+/// Accept a backlog idea (triage). Persists `status = accepted` and records the
+/// human decision as a shared team memory when the idea's project is team-bound
+/// (the dev-backlog learning loop — mirrors `manual_reviews::update_status`).
+#[tauri::command]
+pub fn dev_tools_accept_idea(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
+    let idea = repo::update_idea(
+        &state.db, &id, None, None, Some("accepted"), None, None, None, None, None,
+    )?;
+    record_idea_decision(&state.db, &idea, "accepted");
+    Ok(idea)
+}
+
+/// Reject a backlog idea (triage). Persists `status = rejected` (+ reason) and
+/// records the decision as a shared team `constraint` memory when team-bound, so
+/// the team + future scans avoid re-surfacing it.
+#[tauri::command]
+pub fn dev_tools_reject_idea(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    reason: Option<String>,
+) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
+    let idea = repo::update_idea(
+        &state.db, &id, None, None, Some("rejected"), None, None, None, None,
+        Some(reason.as_deref()),
+    )?;
+    record_idea_decision(&state.db, &idea, "rejected");
+    Ok(idea)
+}
+
+/// Pending backlog ideas across ALL projects (bounded) — the source for the
+/// unified Human-Review inbox's "Dev Tools backlog" group. Project names are
+/// resolved client-side from the projects store.
+#[tauri::command]
+pub fn dev_tools_list_pending_ideas(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<DevIdea>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_ideas(&state.db, None, Some("pending"), None, Some(limit.unwrap_or(100)), None)
+}
+
+/// Write a human triage decision to the idea's bound team's shared memory ledger
+/// (best-effort). Team-less projects skip the memory; the Scanner-suppress loop
+/// (idea_scanner) covers re-surfacing for those. Deduped by `(team_id, title)`.
+fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str) {
+    let project_id = match idea.project_id.as_deref() {
+        Some(p) if !p.is_empty() => p,
+        _ => return,
+    };
+    let team_id: Option<String> = pool.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT team_id FROM dev_projects WHERE id = ?1",
+            rusqlite::params![project_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
+    });
+    let team_id = match team_id.filter(|s| !s.is_empty()) {
+        Some(t) => t,
+        None => return,
+    };
+
+    let title = format!("Human {verdict}: {}", idea.title);
+    if let Ok(conn) = pool.get() {
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM team_memories WHERE team_id = ?1 AND title = ?2 LIMIT 1",
+                rusqlite::params![team_id, title],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+        if exists {
+            return;
+        }
+    }
+
+    // approved → settled decision; rejected → guardrail constraint (mirrors reviews).
+    let (category, importance) = if verdict == "rejected" {
+        ("constraint", 8)
+    } else {
+        ("decision", 7)
+    };
+    let content = format!(
+        "Human {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
+        idea.title,
+        idea.description
+            .as_deref()
+            .map(|d| format!(": {d}"))
+            .unwrap_or_default(),
+    );
+    let tm = crate::db::models::CreateTeamMemoryInput {
+        team_id,
+        run_id: None,
+        member_id: None,
+        persona_id: None,
+        title,
+        content,
+        category: Some(category.to_string()),
+        importance: Some(importance),
+        tags: Some(format!("dev-backlog,{verdict}")),
+    };
+    if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
+        tracing::warn!(idea_id = %idea.id, error = %e, "dev-backlog learning loop: failed to write team memory");
+    }
+}
+
 #[tauri::command]
 pub fn dev_tools_delete_idea(
     state: State<'_, Arc<AppState>>,

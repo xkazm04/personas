@@ -634,6 +634,11 @@ export const acceptIdea = (id: string) =>
 export const rejectIdea = (id: string, reason?: string) =>
   safeInvoke<DevIdea>({} as DevIdea, "dev_tools_reject_idea", { id, reason: reason });
 
+/** Pending backlog ideas across all projects — source for the Human-Review
+ *  inbox's "Dev Tools backlog" group. Project names resolved from the store. */
+export const listPendingIdeas = (limit?: number) =>
+  safeInvoke<DevIdea[]>([], "dev_tools_list_pending_ideas", { limit });
+
 export const deleteTriageIdea = (id: string) =>
   safeInvoke<boolean>(false, "dev_tools_delete_triage_idea", { id });
 

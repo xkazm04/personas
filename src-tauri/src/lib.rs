@@ -2666,6 +2666,9 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_idea,
             commands::infrastructure::dev_tools::dev_tools_create_idea,
             commands::infrastructure::dev_tools::dev_tools_update_idea,
+            commands::infrastructure::dev_tools::dev_tools_accept_idea,
+            commands::infrastructure::dev_tools::dev_tools_reject_idea,
+            commands::infrastructure::dev_tools::dev_tools_list_pending_ideas,
             commands::infrastructure::dev_tools::dev_tools_delete_idea,
             commands::infrastructure::dev_tools::dev_tools_bulk_delete_ideas,
             // Dev Tools -- Scans

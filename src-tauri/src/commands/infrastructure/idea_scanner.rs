@@ -97,6 +97,7 @@ fn build_idea_scan_prompt(
     project_id: &str,
     agents: &[&ScanAgentMeta],
     context_summary: Option<&str>,
+    rejected_titles: Option<&str>,
 ) -> String {
     let mut agent_section = String::new();
     for agent in agents {
@@ -110,6 +111,14 @@ fn build_idea_scan_prompt(
         .map(|s| format!("\n## Existing Context Map\n{s}\n"))
         .unwrap_or_default();
 
+    // Triage learning loop: feed back ideas the human already rejected so the
+    // scan stops re-surfacing them (the dev-backlog equivalent of the
+    // human-review learned memory).
+    let rejected_hint = rejected_titles
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Already Rejected — the human triaged these away; do NOT re-surface them or close variants\n{s}\n"))
+        .unwrap_or_default();
+
     // The `category` token list MUST stay in sync with `db::models::IdeaCategory`.
     // That enum is the canonical vocabulary; legacy values from older code
     // paths or LLM hallucinations are remapped at insert time by
@@ -120,7 +129,7 @@ fn build_idea_scan_prompt(
 You are analyzing a codebase to generate actionable improvement ideas. You have been activated with specific scan agent perspectives that determine what to look for.
 
 ## Project ID: {project_id}
-{context_hint}
+{context_hint}{rejected_hint}
 ## Active Scan Agents
 {agent_section}
 
@@ -160,6 +169,7 @@ At the end, output a summary:
 - Focus on actionable improvements, not vague suggestions
 - Each idea should be independently implementable
 - Prioritize high-impact, low-effort improvements
+- Do NOT re-propose anything under "Already Rejected" — the human triaged it away; skip it and its close variants
 
 Begin by exploring the codebase structure."#
     )
@@ -326,8 +336,25 @@ pub async fn dev_tools_run_scan(
         Some(s)
     };
 
-    let prompt_text =
-        build_idea_scan_prompt(&project_id, &selected_agents, context_summary.as_deref());
+    // Triage learning loop: feed rejected ideas back so the scan won't
+    // re-surface items the human already triaged away.
+    let rejected_titles: Option<String> =
+        repo::list_ideas(&state.db, Some(&project_id), Some("rejected"), None, Some(50), None)
+            .ok()
+            .filter(|v| !v.is_empty())
+            .map(|v| {
+                v.iter()
+                    .map(|i| format!("- {}", i.title))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            });
+
+    let prompt_text = build_idea_scan_prompt(
+        &project_id,
+        &selected_agents,
+        context_summary.as_deref(),
+        rejected_titles.as_deref(),
+    );
 
     let app_handle = app.clone();
     let pool = state.db.clone();
