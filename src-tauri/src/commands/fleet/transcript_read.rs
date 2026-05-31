@@ -334,7 +334,7 @@ fn collect_transcript_files(projects: &Path) -> Vec<(SystemTime, PathBuf)> {
 /// Cheap read of the `cwd` recorded in a transcript — scans the first handful
 /// of JSONL lines for a `"cwd"` field (it's almost always line 1). Avoids
 /// parsing the whole (possibly multi-MB) file.
-fn read_transcript_cwd(path: &Path) -> Option<String> {
+pub fn read_transcript_cwd(path: &Path) -> Option<String> {
     use std::io::{BufRead, BufReader};
     let file = std::fs::File::open(path).ok()?;
     for line in BufReader::new(file).lines().take(30).map_while(Result::ok) {
@@ -349,7 +349,7 @@ fn read_transcript_cwd(path: &Path) -> Option<String> {
 
 /// Normalize a path for tolerant comparison: forward slashes, no trailing
 /// separator, lowercased (Windows cwds are case-insensitive).
-fn normalize_cwd(p: &str) -> String {
+pub fn normalize_cwd(p: &str) -> String {
     p.replace('\\', "/").trim_end_matches('/').to_ascii_lowercase()
 }
 
@@ -475,5 +475,16 @@ mod tests {
         assert_eq!(s.tokens.input, 0);
         assert!(s.files_touched.is_empty());
         assert!(s.first_timestamp.is_none());
+    }
+
+    #[test]
+    fn normalize_cwd_is_separator_and_case_insensitive() {
+        // The watcher's cwd-binding (transcript.rs) relies on this so a
+        // transcript cwd ("C:\\Users\\x\\ascent") matches a Fleet session cwd
+        // stored with forward slashes / different case / a trailing slash.
+        let a = normalize_cwd(r"C:\Users\kazda\kiro\ascent");
+        assert_eq!(a, normalize_cwd("C:/Users/kazda/kiro/ascent"));
+        assert_eq!(a, normalize_cwd(r"c:\users\kazda\kiro\ascent\"));
+        assert_ne!(a, normalize_cwd(r"C:\Users\kazda\kiro\personas"));
     }
 }
