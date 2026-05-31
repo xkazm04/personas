@@ -286,3 +286,52 @@ subprocess, rolls back any in-progress DB updates.
   what each persona capability surface means at runtime.
 - [../personas/03-trust-and-governance.md](../personas/03-trust-and-governance.md)
   — how trust level, budget, and turn caps gate execution.
+
+## Per-Execution Worktree Isolation (default OFF)
+
+> **Setting:** `execution_worktree_isolation` (boolean, default `false`).
+
+When two persona executions run concurrently against the **same** repository,
+they collide on a shared working directory and can clobber each other's edits.
+This setting gives each team-member execution its **own git worktree** so
+parallel members don't collide.
+
+**What it does, when ON:**
+
+- Before spawning the CLI, `run_execution` checks the persona's pinned
+  `dev_project` (the `devProjectId` in `design_context`). If that project's
+  `root_path` is a git work tree, the runner creates a fresh worktree at
+  `<temp>/personas-exec-wt-<execution_id>` on branch
+  `personas/exec/<execution_id>`, forked from the repo's current `HEAD`.
+- The spawned CLI's working directory **and** its `CODEBASE_ROOT_PATH` env var
+  are redirected to that worktree, so the persona reads and writes the
+  worktree — not the real repo. (`CODEBASE_PROJECT_NAME` / `TECH_STACK` /
+  `PROJECT_ID` stay pointed at the real project; they are metadata.)
+- On completion (after the final execution-status event), the runner
+  **auto-commits** any dirty work onto the branch, then removes the worktree
+  directory. **The branch is left in the repo for review — there is no
+  auto-merge into the base branch.**
+
+**Why:** parallel team members working on the same repo no longer overwrite
+each other's working tree; each one's output lands on an isolated branch you
+can inspect, diff, and merge by hand.
+
+**Safety model (why this is reversible and lossless):**
+
+- **Default OFF.** Nothing touches your repos until you opt in from settings.
+- **No auto-merge.** The execution leaves a branch (`personas/exec/<id>`); your
+  base branch is never mutated by the engine. Reviewing and merging is a
+  deliberate human action.
+- **No work loss.** Finalize runs `git add -A` + `git commit --no-verify`
+  before removing the worktree, so even uncommitted edits are preserved on the
+  branch.
+- **Best-effort finalize.** A git/worktree failure during finalize is logged
+  (`tracing::warn!`) but never fails the execution or panics.
+- **Graceful fallback.** If the flag is on but the persona isn't pinned to a
+  git repo (or the worktree can't be created), the execution silently falls
+  back to the normal shared per-persona scratch directory and logs why.
+
+See the design note in
+[`worktree-isolation.md`](./worktree-isolation.md) for the architecture
+rationale (why per-execution rather than per-run, and why `CODEBASE_ROOT_PATH`
+is the real repo handle).
