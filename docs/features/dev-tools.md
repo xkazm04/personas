@@ -30,9 +30,11 @@ project-selector banner sits above every tab except **Projects**.
 A **project** is a name + local folder path, with an optional project type
 (visual tag), GitHub URL, and a **bound team** (a PersonaTeam pipeline tied to
 the project). Projects are listed in a table with bulk-archive, open-in-VS-Code,
-open-folder, and GitHub-issue-import row actions. Selecting a row makes it the
-**active project** (a compact summary banner) and the active selection drives
-the project-selector banner on the other tabs.
+open-folder, GitHub-issue-import, and — when a test-environment URL is set —
+**open-test-environment** row actions. The last opens the project's living
+test/staging deployment in your default browser (via the OS, http/https only).
+Selecting a row makes it the **active project** (a compact summary banner) and
+the active selection drives the project-selector banner on the other tabs.
 
 ### Create / edit project (`ProjectModal.tsx`)
 
