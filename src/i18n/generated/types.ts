@@ -5573,6 +5573,9 @@ export type Translations = {
       unknown_persona: string;
       severity_label: string;
       cloud_badge: string;
+      backlog_group_title: string;
+      backlog_accept: string;
+      backlog_reject: string;
       execution_link: string;
       context_label: string;
       you: string;
