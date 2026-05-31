@@ -4,6 +4,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { Button } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -245,13 +246,12 @@ export default function VoiceBaseline() {
                   <span className="typo-caption text-foreground font-medium">{t.voice.stability}</span>
                   <span className="typo-caption text-foreground">{stability.toFixed(2)}</span>
                 </div>
-                <input
-                  type="range"
+                <Slider
                   min={0} max={1} step={0.05}
                   value={stability}
-                  onChange={(e) => { setStability(parseFloat(e.target.value)); markDirty(); }}
-                  className="w-full"
-                  style={{ ['--slider-progress' as string]: stability }}
+                  onChange={(v) => { setStability(v); markDirty(); }}
+                  ariaLabel={t.voice.stability}
+                  showBubble={false}
                 />
                 <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.moreExpressive}</span>
@@ -264,13 +264,12 @@ export default function VoiceBaseline() {
                   <span className="typo-caption text-foreground font-medium">{t.voice.similarityBoost}</span>
                   <span className="typo-caption text-foreground">{similarityBoost.toFixed(2)}</span>
                 </div>
-                <input
-                  type="range"
+                <Slider
                   min={0} max={1} step={0.05}
                   value={similarityBoost}
-                  onChange={(e) => { setSimilarityBoost(parseFloat(e.target.value)); markDirty(); }}
-                  className="w-full"
-                  style={{ ['--slider-progress' as string]: similarityBoost }}
+                  onChange={(v) => { setSimilarityBoost(v); markDirty(); }}
+                  ariaLabel={t.voice.similarityBoost}
+                  showBubble={false}
                 />
                 <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.moreNatural}</span>
@@ -283,13 +282,12 @@ export default function VoiceBaseline() {
                   <span className="typo-caption text-foreground font-medium">{t.voice.style}</span>
                   <span className="typo-caption text-foreground">{style.toFixed(2)}</span>
                 </div>
-                <input
-                  type="range"
+                <Slider
                   min={0} max={1} step={0.05}
                   value={style}
-                  onChange={(e) => { setStyle(parseFloat(e.target.value)); markDirty(); }}
-                  className="w-full"
-                  style={{ ['--slider-progress' as string]: style }}
+                  onChange={(v) => { setStyle(v); markDirty(); }}
+                  ariaLabel={t.voice.style}
+                  showBubble={false}
                 />
                 <div className="flex justify-between typo-caption text-foreground mt-0.5">
                   <span>{t.voice.neutral}</span>

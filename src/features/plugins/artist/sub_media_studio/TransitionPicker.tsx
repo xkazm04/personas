@@ -1,5 +1,6 @@
 import { Scissors, Blend, Moon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import type { TransitionType } from './types';
 
 interface TransitionPickerProps {
@@ -63,14 +64,15 @@ export default function TransitionPicker({
           <label className="text-md text-foreground shrink-0">
             {t.media_studio.transition_duration}
           </label>
-          <input
-            type="range"
+          <Slider
             min={0.1}
             max={3}
             step={0.1}
             value={duration}
-            onChange={(e) => onChange(value, parseFloat(e.target.value))}
-            className="flex-1 h-1 accent-primary"
+            onChange={(v) => onChange(value, v)}
+            ariaLabel={t.media_studio.transition_duration}
+            showBubble={false}
+            className="flex-1"
           />
           <span className="text-md text-foreground w-7 text-right tabular-nums">
             {duration.toFixed(1)}s

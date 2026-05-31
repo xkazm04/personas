@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { useTranslation } from "@/i18n/useTranslation";
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import type { LangfuseStackInfo } from "@/lib/bindings/LangfuseStackInfo";
 import type { LangfuseStackState } from "@/lib/bindings/LangfuseStackState";
 import { StackProgress } from "./StackProgress";
@@ -202,13 +203,13 @@ export function ManagedStackPanel({ stack, preferredPort }: ManagedStackPanelPro
         <div className="flex items-center gap-3 flex-wrap">
           <label className="flex items-center gap-2">
             <span className="typo-body text-foreground">{t.plugins.langfuse.port_label}</span>
-            <input
-              type="number"
+            <NumberStepper
+              value={portInput}
+              onChange={(v) => setPortInput(v ?? 1)}
               min={1}
               max={65535}
-              value={portInput}
-              onChange={(e) => setPortInput(Math.max(1, Math.min(65535, Number(e.target.value) || 0)))}
-              className="w-24 px-3 py-1.5 typo-body rounded-input bg-secondary/30 border border-primary/10 focus:border-indigo-400/40 focus-ring"
+              ariaLabel={t.plugins.langfuse.port_label}
+              className="w-32"
             />
           </label>
           <button

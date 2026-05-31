@@ -7,6 +7,7 @@ import {
 import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { TwinEmptyState } from '../TwinEmptyState';
 import { TwinHeaderBand } from '../shared/TwinHeaderBand';
@@ -478,13 +479,12 @@ function SliderRow({ label, value, onChange, leftLabel, rightLabel }: SliderRowP
         <span className="typo-caption text-foreground font-medium">{label}</span>
         <span className="typo-data-md tabular-nums text-violet-300">{value.toFixed(2)}</span>
       </div>
-      <input
-        type="range"
+      <Slider
         min={0} max={1} step={0.05}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full"
-        style={{ ['--slider-progress' as string]: value }}
+        onChange={(v) => onChange(v)}
+        ariaLabel={label}
+        showBubble={false}
       />
       <div className="flex justify-between typo-caption text-foreground mt-0.5">
         <span>{leftLabel}</span>

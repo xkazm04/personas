@@ -3,6 +3,7 @@ import { Volume2, VolumeX, Volume1, Play, Loader2, Square } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { silentCatch } from '@/lib/silentCatch';
 import { synthesize, play } from './voicePlayback';
 import { useTtsSettings } from './useTtsSettings';
@@ -146,15 +147,14 @@ export function VoiceControlPopover() {
               <label className="typo-caption text-foreground font-medium">{c.voice_volume_label}</label>
               <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
             </div>
-            <input
-              type="range"
+            <Slider
               min={0}
               max={1}
               step={0.05}
               value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
-              className="w-full accent-primary"
-              aria-label={c.voice_volume_label}
+              onChange={(v) => setVolume(v)}
+              ariaLabel={c.voice_volume_label}
+              showBubble={false}
             />
           </div>
 
