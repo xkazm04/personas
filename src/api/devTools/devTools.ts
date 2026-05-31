@@ -67,7 +67,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -82,6 +82,11 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // untouched. The Tauri arg shape is `Some(None)` to clear / `Some(Some(v))`
     // to set — represented here as the value or null.
     prCredentialId: updates.prCredentialId,
+    // Option<Option<String>> like prCredentialId above: a string SETS the
+    // living test-environment URL/branch, `null` CLEARS, `undefined` leaves
+    // untouched.
+    testEnvUrl: updates.testEnvUrl,
+    testEnvBranch: updates.testEnvBranch,
   });
 
 export const deleteProject = (id: string) =>
