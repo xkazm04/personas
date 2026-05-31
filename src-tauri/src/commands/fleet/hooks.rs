@@ -59,6 +59,13 @@ async fn receive_hook(
         .get("cwd")
         .and_then(|v| v.as_str())
         .map(str::to_string);
+    // Notification hooks carry a human message describing what Claude wants
+    // (e.g. "Claude needs your permission to use Bash"). Surface it so the
+    // "Needs you" banner + desktop alert can say what each session needs.
+    let message = body
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
 
     tracing::debug!(
         event = %event,
@@ -97,7 +104,7 @@ async fn receive_hook(
                     );
             }
         } else {
-            apply_hook(sid, &event_kind, claude_session_id.clone(), &app);
+            apply_hook(sid, &event_kind, claude_session_id.clone(), message.as_deref(), &app);
         }
     } else {
         tracing::debug!(
@@ -192,6 +199,7 @@ fn apply_hook(
     session_id: &str,
     event_kind: &str,
     claude_session_id: Option<String>,
+    message: Option<&str>,
     app: &AppHandle,
 ) {
     let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -213,7 +221,12 @@ fn apply_hook(
         ),
         "notification" => (
             FleetSessionState::AwaitingInput,
-            "Notification hook — Claude is waiting".to_string(),
+            // The notification message says *what* Claude wants — surface it
+            // verbatim so the banner/alert is actionable; fall back generically.
+            message
+                .map(|m| m.trim().to_string())
+                .filter(|m| !m.is_empty())
+                .unwrap_or_else(|| "Claude is waiting for input".to_string()),
         ),
         "stop" => (
             FleetSessionState::Idle,

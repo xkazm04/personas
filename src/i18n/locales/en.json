@@ -10400,6 +10400,7 @@
       "reply_cancel": "Cancel",
       "notify_title": "Session needs your input",
       "notify_body": "{name} is waiting for you",
+      "notify_body_detail": "{name}: {detail}",
       "notify_enable": "Enable awaiting-input alerts",
       "notify_disable": "Mute awaiting-input alerts",
       "preview_title": "Mobile companion preview",

@@ -180,9 +180,14 @@ export default function FleetGridPage() {
             if (notifyRef.current) {
               const sess = sessionsRef.current.find((s) => s.id === session_id);
               const name = sess?.name ?? sess?.projectLabel ?? '';
+              // Richer alert: include the Notification message (what Claude
+              // wants) when the hook carried one, so the toast is actionable.
+              const detail = reason?.trim();
               notifyFleetAwaiting(
                 t.plugins.fleet.notify_title,
-                tx(t.plugins.fleet.notify_body, { name }),
+                detail
+                  ? tx(t.plugins.fleet.notify_body_detail, { name, detail })
+                  : tx(t.plugins.fleet.notify_body, { name }),
               );
             }
           }

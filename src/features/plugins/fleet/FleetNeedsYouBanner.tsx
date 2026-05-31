@@ -126,11 +126,17 @@ export function FleetNeedsYouBanner({ waiting, onJump, onReply, approvals, onApp
                   type="button"
                   data-testid={`fleet-needs-you-chip-${s.id}`}
                   onClick={() => onJump(s.id)}
-                  title={t.plugins.fleet.jump_to_session}
-                  className="px-2 py-0.5 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
+                  title={s.stateReason ? `${name} — ${s.stateReason}` : t.plugins.fleet.jump_to_session}
+                  className="flex items-center gap-1 px-2 py-0.5 transition-colors hover:bg-violet-400/20 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-violet-400/60"
                 >
-                  {name}
-                  <span className="ml-1 text-violet-300/80">· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
+                  <span className="truncate max-w-[140px]">{name}</span>
+                  {/* What Claude is waiting for (Notification message), or how
+                      long it's been blocked when no message was supplied. */}
+                  {s.stateReason ? (
+                    <span className="truncate max-w-[220px] text-violet-300/80">· {s.stateReason}</span>
+                  ) : (
+                    <span className="text-violet-300/80">· {formatAgo(t, Number(s.lastActivityMs), now)}</span>
+                  )}
                 </button>
                 <button
                   type="button"
