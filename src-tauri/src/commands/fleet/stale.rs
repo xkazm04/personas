@@ -36,7 +36,7 @@ fn growth_map() -> &'static Mutex<HashMap<String, (u64, i64)>> {
 /// 5 minutes — long enough that a thoughtful user typing slowly doesn't
 /// trip it, short enough that a forgotten window is flagged before the
 /// user circles back.
-pub const STALE_AFTER_SECS: i64 = 5 * 60;
+pub const STALE_AFTER_SECS: i64 = 6 * 60;
 
 /// How long a session may sit `Spawning` with no bound `claude_session_id`
 /// and no activity before we conclude `claude` never attached (trust-prompt
@@ -311,7 +311,8 @@ mod tests {
 
     #[test]
     fn cutoff_is_sane() {
-        // Sanity: 5 minutes is between 1 minute (too jumpy) and 60 minutes (too slow).
+        // Sanity: the cutoff (6 min) sits between 1 minute (too jumpy — fires while
+        // the user is still typing into the console) and 60 minutes (too slow).
         assert!(STALE_AFTER_SECS >= 60);
         assert!(STALE_AFTER_SECS <= 3600);
     }

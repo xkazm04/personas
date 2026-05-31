@@ -11,13 +11,28 @@ import type { PendingApproval } from '@/api/companion';
 /** Visual attention a session warrants. `none` → use the base border. */
 export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'none';
 
+/**
+ * True when a session never attached a Claude agent: no `claude_session_id`
+ * ever bound and it's already gone stale. Asking Athena to "unblock" it is
+ * futile — there's no live agent on the other end to type into — so the right
+ * move is kill + retry (often the folder needs Claude Code's trust approval),
+ * not a `fleet_send_input` nudge. Mirrors the Rust `is_never_attached` verdict.
+ */
+export function isNeverAttached(s: Pick<FleetSession, 'state' | 'claudeSessionId'>): boolean {
+  return s.claudeSessionId == null && s.state === 'stale';
+}
+
 /** Classify a session by how much it wants the operator's (or Athena's) eyes. */
-export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): FleetAttention {
+export function sessionAttention(
+  s: Pick<FleetSession, 'state' | 'exitCode' | 'claudeSessionId'>,
+): FleetAttention {
   switch (s.state) {
     case 'awaiting_input':
       return 'waiting';
     case 'stale':
-      return 'stale';
+      // Never-attached → 'failed' (distinct red), not the amber "stale" that
+      // invites an Athena nudge — there's no agent to nudge.
+      return isNeverAttached(s) ? 'failed' : 'stale';
     case 'exited':
       return s.exitCode != null && s.exitCode !== 0 ? 'failed' : 'none';
     default:
@@ -94,6 +109,17 @@ export function approvalsForSession(
  */
 export function craftStalePrompt(s: FleetSession): string {
   const label = s.name ?? s.projectLabel;
+  // Never-attached sessions have no live agent — don't ask Athena to "unblock"
+  // them (she can only decline). Frame it as the diagnosis it is so she
+  // confirms the kill instead of re-investigating from scratch.
+  if (isNeverAttached(s)) {
+    return (
+      `Fleet session "${label}" (project ${s.projectLabel}) never attached a Claude agent — it spawned but no ` +
+      `Claude Code process ever came up (no session id, no transcript). Do NOT propose fleet_send_input; there's ` +
+      `nothing live to type into. Confirm in one line that it should be killed (the folder likely needs Claude Code ` +
+      `trust approval, or claude failed to start there).`
+    );
+  }
   return (
     `Fleet session "${label}" (project ${s.projectLabel}) has gone stale — no activity for several minutes. ` +
     `Look at what it was doing and decide the single best next step to unblock it. ` +
