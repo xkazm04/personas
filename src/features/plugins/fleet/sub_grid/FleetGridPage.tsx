@@ -16,6 +16,7 @@ import {
   BellOff,
   Search,
   LayoutGrid,
+  BarChart3,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -28,6 +29,7 @@ import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
+import { FleetSessionInsights } from './FleetSessionInsights';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
@@ -119,6 +121,9 @@ export default function FleetGridPage() {
   const [askingAthena, setAskingAthena] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FleetSessionState | null>(null);
   const [query, setQuery] = useState('');
+  // Right column shows either the live terminal or the transcript-intelligence
+  // panel (P2.1). The terminal stays alive in the manager while hidden.
+  const [rightView, setRightView] = useState<'terminal' | 'insights'>('terminal');
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
@@ -575,22 +580,51 @@ export default function FleetGridPage() {
               </div>
             ) : activeSession ? (
               <div
-                className={`h-full border rounded-modal overflow-hidden bg-[#0a0a0c] ${
+                className={`h-full flex flex-col border rounded-modal overflow-hidden bg-[#0a0a0c] ${
                   attentionClass(sessionAttention(activeSession)) || 'border-primary/10'
                 }`}
               >
-                {activeSession.state === 'exited' ? (
-                  <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
-                    <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
-                    <p className="text-[10px]">
-                      {activeSession.exitCode !== null
-                        ? `Exit code ${activeSession.exitCode}`
-                        : 'Process exited unexpectedly'}
-                    </p>
-                  </div>
-                ) : (
-                  <FleetTerminalPane sessionId={activeSession.id} />
-                )}
+                {/* Terminal / Insights view toggle. Terminal stays alive in
+                    the manager while Insights is shown; Insights works for
+                    exited sessions too (transcript outlives the PTY). */}
+                <div className="flex items-center gap-1 px-2 py-1.5 border-b border-primary/10 shrink-0">
+                  {([
+                    { id: 'terminal' as const, label: t.plugins.fleet.view_terminal, Icon: TerminalIcon },
+                    { id: 'insights' as const, label: t.plugins.fleet.view_insights, Icon: BarChart3 },
+                  ]).map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      data-testid={`fleet-rightview-${v.id}`}
+                      aria-pressed={rightView === v.id}
+                      onClick={() => setRightView(v.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[11px] transition-colors ${
+                        rightView === v.id
+                          ? 'bg-primary/10 text-primary border border-primary/25'
+                          : 'text-foreground hover:bg-secondary/40 border border-transparent'
+                      }`}
+                    >
+                      <v.Icon className="w-3.5 h-3.5" />
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex-1 min-h-0">
+                  {rightView === 'insights' ? (
+                    <FleetSessionInsights claudeSessionId={activeSession.claudeSessionId} />
+                  ) : activeSession.state === 'exited' ? (
+                    <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
+                      <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
+                      <p className="text-[10px]">
+                        {activeSession.exitCode !== null
+                          ? `Exit code ${activeSession.exitCode}`
+                          : 'Process exited unexpectedly'}
+                      </p>
+                    </div>
+                  ) : (
+                    <FleetTerminalPane sessionId={activeSession.id} />
+                  )}
+                </div>
               </div>
             ) : (
               <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
