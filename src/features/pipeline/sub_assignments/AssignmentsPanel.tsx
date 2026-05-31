@@ -11,6 +11,7 @@ import { decomposeTeamAssignmentGoal } from '@/api/pipeline/assignments';
 import * as devApi from '@/api/devTools/devTools';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { useAssignmentProgressListener } from './useAssignmentProgressListener';
+import { Slider } from '@/features/shared/components/forms/Slider';
 
 interface AssignmentsPanelProps {
   teamId: string;
@@ -428,13 +429,14 @@ function AssignmentComposer({ teamId, teamPersonas, onCreated, onCancel, createA
       <div className="flex items-center gap-3 pt-1">
         <label className="flex items-center gap-2 typo-caption text-foreground/70">
           {a.max_parallel_label}
-          <input
-            type="range"
+          <Slider
             min={MAX_PARALLEL_MIN}
             max={MAX_PARALLEL_MAX}
             value={maxParallel}
-            onChange={(e) => setMaxParallel(Number(e.target.value))}
-            className="w-20 accent-orange-500"
+            onChange={(v) => setMaxParallel(v)}
+            ariaLabel={a.max_parallel_label}
+            showBubble={false}
+            className="w-20"
           />
           <span className="w-4 text-foreground font-medium">{maxParallel}</span>
         </label>
