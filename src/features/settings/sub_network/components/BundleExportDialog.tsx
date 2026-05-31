@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Package, Check, AlertTriangle, Lock, Shield, Clipboard, Link2 } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { save } from '@tauri-apps/plugin-dialog';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { useSystemStore } from "@/stores/systemStore";
@@ -437,24 +438,26 @@ function EnclaveConfigPanel({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="typo-caption text-foreground mb-1 block">{st.label_max_cost}</label>
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={maxCostUsd}
-            onChange={(e) => onMaxCostChange(e.target.value)}
-            className="w-full px-2.5 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
+          <NumberStepper
+            value={maxCostUsd.trim() === '' ? null : Number(maxCostUsd)}
+            onChange={(v) => onMaxCostChange(v == null ? '' : String(v))}
+            min={0.01}
+            step={0.01}
+            allowEmpty
+            prefix="$"
+            ariaLabel={st.label_max_cost}
+            className="w-full"
           />
         </div>
         <div>
           <label className="typo-caption text-foreground mb-1 block">{st.label_max_turns}</label>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={maxTurns}
-            onChange={(e) => onMaxTurnsChange(e.target.value)}
-            className="w-full px-2.5 py-1.5 typo-body rounded-card border border-border bg-background focus-ring"
+          <NumberStepper
+            value={maxTurns.trim() === '' ? null : Number(maxTurns)}
+            onChange={(v) => onMaxTurnsChange(v == null ? '' : String(v))}
+            min={1}
+            allowEmpty
+            ariaLabel={st.label_max_turns}
+            className="w-full"
           />
         </div>
       </div>

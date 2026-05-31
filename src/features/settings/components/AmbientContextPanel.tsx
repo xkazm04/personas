@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Radio, RefreshCw, Clipboard, FolderOpen, AppWindow, Zap, Plus, Trash2, Activity } from 'lucide-react';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import type { SensoryPolicy } from '@/lib/bindings/SensoryPolicy';
@@ -411,12 +412,12 @@ export function AmbientContextPanel() {
                 </div>
                 <div className="space-y-0.5">
                   <span className="typo-caption text-foreground">{s.cooldown}</span>
-                  <input
-                    type="number"
-                    min={0}
+                  <NumberStepper
                     value={ruleCooldown}
-                    onChange={(e) => setRuleCooldown(Number(e.target.value))}
-                    className="w-full px-2 py-1 bg-secondary/40 border border-primary/15 rounded typo-caption text-foreground"
+                    onChange={(v) => setRuleCooldown(v ?? 0)}
+                    min={0}
+                    ariaLabel={s.cooldown}
+                    className="w-full"
                   />
                 </div>
               </div>
