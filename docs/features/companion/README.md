@@ -99,7 +99,7 @@ Events:
 - `companion://turn-summary`: per-turn rollup of dispatcher side-effects keyed by assistant episode id (approvals / navigations / lab opens / dashboards / cockpits / chat cards / continuation flag).
 - `companion://job`: background-job status transitions (queued → running → terminal). In-flight emits may carry a transient `progressText` so a running job reports what it's doing.
 
-Approval outcomes may include a client-side action such as `{ type: "navigate", route }`.
+Approval outcomes may include a client-side action such as `{ type: "navigate", route }`. One such action, `{ type: "open_external_url", url }`, backs the **open test environment** capability: when you ask Athena to open/launch a dev project's test environment (test env / staging), she proposes an `open_test_env` action; on approval the backend resolves the project and returns its configured test-environment URL, which the frontend opens in the browser via the validated `open_external_url` command. The project must have a test-environment URL set in Dev Tools first, or the action errors with a hint to set it.
 
 ## Recall preview strip
 
