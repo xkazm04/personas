@@ -3,7 +3,7 @@ import { RefreshCw, AlertCircle, FileText, Wrench, Coins, MessagesSquare } from 
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { readTranscript } from '@/api/fleet/fleet';
+import { sessionMetadata, readTranscript } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -32,7 +32,9 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
     setLoading(true);
     setFailed(false);
     try {
-      const s = await readTranscript(claudeSessionId);
+      // Prefer the incremental rollup (delta-only, scale-friendly); fall back
+      // to a full transcript read if the rollup isn't available yet.
+      const s = (await sessionMetadata(claudeSessionId)) ?? (await readTranscript(claudeSessionId));
       setSummary(s);
     } catch (e) {
       setFailed(true);

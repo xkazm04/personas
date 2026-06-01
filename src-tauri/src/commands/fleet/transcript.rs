@@ -118,6 +118,10 @@ fn handle_event(app: &AppHandle, event: Event) {
     for path in &event.paths {
         if path.extension().map(|e| e == "jsonl").unwrap_or(false) {
             if let Some(claude_session_id) = derive_claude_session_id(path) {
+                // Fold the newly-appended bytes into the session's compact
+                // metadata rollup (the (B) abstraction) — cheap, delta-only,
+                // raw output stays on disk.
+                super::transcript_read::ingest_delta(&claude_session_id, path);
                 // Primary: bump activity for the session already bound to this id.
                 // Fallback: if nothing is bound to it yet, try to bind it to an
                 // unbound Fleet session by the transcript's recorded cwd. This

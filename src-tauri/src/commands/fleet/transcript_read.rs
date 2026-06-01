@@ -13,7 +13,9 @@
 //! on a missing field); unparseable lines are counted, not fatal.
 
 use std::collections::{BTreeSet, HashMap};
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, SystemTime};
 
 use serde::{Deserialize, Serialize};
@@ -89,45 +91,61 @@ pub fn summarize_lines(
     path: &str,
     lines: &[String],
 ) -> FleetTranscriptSummary {
-    let mut user_messages = 0;
-    let mut assistant_messages = 0;
-    let mut tokens = FleetTokenTotals::default();
-    let mut models: Vec<String> = Vec::new();
-    let mut tool_counts: HashMap<String, i32> = HashMap::new();
-    let mut files: BTreeSet<String> = BTreeSet::new();
-    let mut cwd: Option<String> = None;
-    let mut first_ts: Option<String> = None;
-    let mut last_ts: Option<String> = None;
-    let mut last_context_tokens = 0i64;
-    let mut parse_errors = 0;
-    let mut total_lines = 0;
-
+    let mut acc = RollupAcc::default();
     for raw in lines {
+        acc.fold_line(raw);
+    }
+    acc.to_summary(claude_session_id, path)
+}
+
+/// Mutable accumulator folded one JSONL line at a time. The same fold powers
+/// the full-file [`summarize_lines`] AND the incremental delta-ingest
+/// ([`ingest_delta`]) — so a long session's metadata is maintained by parsing
+/// only newly-appended bytes, never re-reading the whole (multi-MB) file, and
+/// the raw output is never retained (only these compact counters).
+#[derive(Default, Clone)]
+struct RollupAcc {
+    user_messages: i32,
+    assistant_messages: i32,
+    tokens: FleetTokenTotals,
+    models: Vec<String>,
+    tool_counts: HashMap<String, i32>,
+    files: BTreeSet<String>,
+    cwd: Option<String>,
+    first_ts: Option<String>,
+    last_ts: Option<String>,
+    last_context_tokens: i64,
+    parse_errors: i32,
+    total_lines: i32,
+}
+
+impl RollupAcc {
+    fn fold_line(&mut self, raw: &str) {
         let line = raw.trim();
         if line.is_empty() {
-            continue;
+            return;
         }
-        total_lines += 1;
+        self.total_lines += 1;
 
         let v: serde_json::Value = match serde_json::from_str(line) {
             Ok(v) => v,
             Err(_) => {
-                parse_errors += 1;
-                continue;
+                self.parse_errors += 1;
+                return;
             }
         };
 
-        if cwd.is_none() {
+        if self.cwd.is_none() {
             if let Some(c) = v.get("cwd").and_then(|x| x.as_str()) {
-                cwd = Some(c.to_string());
+                self.cwd = Some(c.to_string());
             }
         }
         if let Some(ts) = v.get("timestamp").and_then(|x| x.as_str()) {
-            if first_ts.as_deref().map_or(true, |f| ts < f) {
-                first_ts = Some(ts.to_string());
+            if self.first_ts.as_deref().map_or(true, |f| ts < f) {
+                self.first_ts = Some(ts.to_string());
             }
-            if last_ts.as_deref().map_or(true, |l| ts > l) {
-                last_ts = Some(ts.to_string());
+            if self.last_ts.as_deref().map_or(true, |l| ts > l) {
+                self.last_ts = Some(ts.to_string());
             }
         }
 
@@ -136,14 +154,11 @@ pub fn summarize_lines(
 
         match entry_type {
             "assistant" => {
-                assistant_messages += 1;
+                self.assistant_messages += 1;
 
-                if let Some(m) = message
-                    .and_then(|m| m.get("model"))
-                    .and_then(|x| x.as_str())
-                {
-                    if !m.is_empty() && !models.iter().any(|x| x == m) {
-                        models.push(m.to_string());
+                if let Some(m) = message.and_then(|m| m.get("model")).and_then(|x| x.as_str()) {
+                    if !m.is_empty() && !self.models.iter().any(|x| x == m) {
+                        self.models.push(m.to_string());
                     }
                 }
 
@@ -151,13 +166,13 @@ pub fn summarize_lines(
                 let usage = message.and_then(|m| m.get("usage")).or_else(|| v.get("usage"));
                 if let Some(u) = usage {
                     let get = |k: &str| u.get(k).and_then(|x| x.as_i64()).unwrap_or(0);
-                    tokens.input += get("input_tokens");
-                    tokens.output += get("output_tokens");
-                    tokens.cache_creation += get("cache_creation_input_tokens");
-                    tokens.cache_read += get("cache_read_input_tokens");
+                    self.tokens.input += get("input_tokens");
+                    self.tokens.output += get("output_tokens");
+                    self.tokens.cache_creation += get("cache_creation_input_tokens");
+                    self.tokens.cache_read += get("cache_read_input_tokens");
                     // Latest turn wins (chronological file order) → current
                     // context size ≈ this turn's input + cache-read.
-                    last_context_tokens = get("input_tokens") + get("cache_read_input_tokens");
+                    self.last_context_tokens = get("input_tokens") + get("cache_read_input_tokens");
                 }
 
                 if let Some(content) = message
@@ -171,13 +186,13 @@ pub fn summarize_lines(
                         let Some(name) = block.get("name").and_then(|x| x.as_str()) else {
                             continue;
                         };
-                        *tool_counts.entry(name.to_string()).or_insert(0) += 1;
+                        *self.tool_counts.entry(name.to_string()).or_insert(0) += 1;
                         if EDIT_TOOLS.contains(&name) {
                             if let Some(input) = block.get("input") {
                                 for key in ["file_path", "notebook_path"] {
                                     if let Some(fp) = input.get(key).and_then(|x| x.as_str()) {
                                         if !fp.is_empty() {
-                                            files.insert(fp.to_string());
+                                            self.files.insert(fp.to_string());
                                         }
                                     }
                                 }
@@ -188,34 +203,37 @@ pub fn summarize_lines(
             }
             "user" => {
                 if is_real_user_prompt(message) {
-                    user_messages += 1;
+                    self.user_messages += 1;
                 }
             }
             _ => {}
         }
     }
 
-    let mut tools: Vec<FleetToolCount> = tool_counts
-        .into_iter()
-        .map(|(name, count)| FleetToolCount { name, count })
-        .collect();
-    tools.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.name.cmp(&b.name)));
+    fn to_summary(&self, claude_session_id: &str, path: &str) -> FleetTranscriptSummary {
+        let mut tools: Vec<FleetToolCount> = self
+            .tool_counts
+            .iter()
+            .map(|(name, count)| FleetToolCount { name: name.clone(), count: *count })
+            .collect();
+        tools.sort_by(|a, b| b.count.cmp(&a.count).then_with(|| a.name.cmp(&b.name)));
 
-    FleetTranscriptSummary {
-        claude_session_id: claude_session_id.to_string(),
-        path: path.to_string(),
-        cwd,
-        user_messages,
-        assistant_messages,
-        tokens,
-        last_context_tokens,
-        models,
-        tools,
-        files_touched: files.into_iter().collect(),
-        first_timestamp: first_ts,
-        last_timestamp: last_ts,
-        parse_errors,
-        total_lines,
+        FleetTranscriptSummary {
+            claude_session_id: claude_session_id.to_string(),
+            path: path.to_string(),
+            cwd: self.cwd.clone(),
+            user_messages: self.user_messages,
+            assistant_messages: self.assistant_messages,
+            tokens: self.tokens.clone(),
+            last_context_tokens: self.last_context_tokens,
+            models: self.models.clone(),
+            tools,
+            files_touched: self.files.iter().cloned().collect(),
+            first_timestamp: self.first_ts.clone(),
+            last_timestamp: self.last_ts.clone(),
+            parse_errors: self.parse_errors,
+            total_lines: self.total_lines,
+        }
     }
 }
 
@@ -298,6 +316,84 @@ pub async fn fleet_read_transcript(
     })
     .await
     .map_err(|e| format!("transcript read task failed: {e}"))?
+}
+
+// ── Incremental per-session metadata rollup — the (B) abstraction ──────────
+// Maintain a compact rollup per `claude_session_id` by folding ONLY the bytes
+// appended since the last ingest. Driven by the transcript watcher on each
+// append and caught up on demand by `fleet_session_metadata`. The raw output
+// stays on disk; only the rollup (tokens / tool counts / message counts) lives
+// in memory — so 10+ parallel sessions never each re-parse a multi-MB file.
+
+struct IngestState {
+    /// Byte offset through the last *complete* line already folded.
+    offset: u64,
+    acc: RollupAcc,
+}
+
+fn ingest_map() -> &'static Mutex<HashMap<String, IngestState>> {
+    static M: OnceLock<Mutex<HashMap<String, IngestState>>> = OnceLock::new();
+    M.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+/// Fold any newly-appended bytes of `path` into the session's running rollup.
+/// Reads only `[offset, EOF)`, folds complete lines (a half-written trailing
+/// line is left for next time), and discards the raw text. Cheap + idempotent
+/// — safe to call on every transcript append. Seeking always lands on a
+/// newline boundary, so the delta is valid UTF-8.
+pub fn ingest_delta(claude_session_id: &str, path: &Path) {
+    let Ok(size) = std::fs::metadata(path).map(|m| m.len()) else {
+        return;
+    };
+    let mut map = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
+    let st = map
+        .entry(claude_session_id.to_string())
+        .or_insert_with(|| IngestState { offset: 0, acc: RollupAcc::default() });
+    if size <= st.offset {
+        return; // no growth (or truncated/rotated — leave the rollup as-is)
+    }
+    let Ok(mut f) = std::fs::File::open(path) else {
+        return;
+    };
+    if f.seek(SeekFrom::Start(st.offset)).is_err() {
+        return;
+    }
+    let mut buf = String::new();
+    if f.take(size - st.offset).read_to_string(&mut buf).is_err() {
+        return;
+    }
+    // Fold only through the last newline; keep a partial trailing line for next time.
+    let consumed = buf.rfind('\n').map(|i| i + 1).unwrap_or(0);
+    for line in buf[..consumed].lines() {
+        st.acc.fold_line(line);
+    }
+    st.offset += consumed as u64;
+}
+
+/// Current rollup for a session, if any bytes have been ingested.
+pub fn metadata_for(claude_session_id: &str, path: &str) -> Option<FleetTranscriptSummary> {
+    let map = ingest_map().lock().unwrap_or_else(|e| e.into_inner());
+    map.get(claude_session_id)
+        .map(|st| st.acc.to_summary(claude_session_id, path))
+}
+
+/// Live per-session metadata rollup — the (B) abstraction. Catches up on any
+/// appended bytes (a cheap delta read; full only on the first call for a
+/// session) and returns the compact summary WITHOUT re-reading the whole
+/// transcript or holding raw output. `None` if no transcript exists yet.
+#[tauri::command]
+pub async fn fleet_session_metadata(
+    claude_session_id: String,
+) -> Result<Option<FleetTranscriptSummary>, String> {
+    tokio::task::spawn_blocking(move || {
+        let Some(path) = find_transcript(&claude_session_id) else {
+            return Ok(None);
+        };
+        ingest_delta(&claude_session_id, &path);
+        Ok(metadata_for(&claude_session_id, &path.to_string_lossy()))
+    })
+    .await
+    .map_err(|e| format!("metadata task failed: {e}"))?
 }
 
 /// Collect `(mtime, path)` for every `*.jsonl` directly under `projects` and

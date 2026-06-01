@@ -127,6 +127,17 @@ export const readTranscript = (claudeSessionId: string) =>
   invoke<FleetTranscriptSummary>('fleet_read_transcript', { claudeSessionId });
 
 /**
+ * Live per-session metadata rollup — the cheap, scale-friendly path. The
+ * backend maintains the rollup by folding only newly-appended transcript bytes
+ * (never re-reading the whole file) and never retains raw output. Returns
+ * `null` if no transcript exists for the id yet. Prefer this over
+ * `readTranscript` for repeated/at-scale reads; fall back to `readTranscript`
+ * on `null`.
+ */
+export const sessionMetadata = (claudeSessionId: string) =>
+  invoke<FleetTranscriptSummary | null>('fleet_session_metadata', { claudeSessionId });
+
+/**
  * Summarize the most recently-active transcripts across all projects — the
  * data source for the cross-session activity feed (F2 / P2.2). Scans
  * `~/.claude/projects` for `*.jsonl` modified within `withinDays` (default 7)
