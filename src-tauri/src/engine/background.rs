@@ -486,6 +486,15 @@ pub fn start_loops(
         Box::new(subscription::BacklogToGoalSubscription {
             pool: pool.clone(),
         }),
+        // Queue drain watchdog — re-drains the execution queue after a
+        // quota-aware admission cooldown lifts (the normal completion-driven
+        // drain can't restart itself once all in-flight work has finished).
+        // Always-on; cheap no-op when the queue is empty / at capacity.
+        Box::new(subscription::QueueDrainWatchdog {
+            pool: pool.clone(),
+            app: app.clone(),
+            engine: engine.clone(),
+        }),
         // Incident auto-continuation (P2.3b): re-run blocked work when its
         // persona-raised incident is resolved. Idempotent via claim_continuation.
         Box::new(crate::engine::incident_continuation::IncidentContinuationSubscription {
