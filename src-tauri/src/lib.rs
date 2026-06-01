@@ -821,7 +821,31 @@ pub fn run() {
             #[cfg(feature = "desktop")]
             commands::fleet::transcript::spawn_watcher(app.handle().clone());
             match local_http::start() {
-                Ok(port) => tracing::info!(port, "local_http server started"),
+                Ok(port) => {
+                    tracing::info!(port, "local_http server started");
+                    // Self-heal Fleet hooks on port drift. local_http picks the
+                    // first free port in its range, so a restart can bind a
+                    // DIFFERENT port than the installed Claude Code hooks target
+                    // — and every hook (SessionStart/Stop/Notification/…) then
+                    // POSTs into the void, silently stripping spawned sessions of
+                    // hook-driven state (they fall back to transcript-growth only,
+                    // which reads "stale" where they should read idle/awaiting).
+                    // Re-point them to the live port so the fleet stays observable.
+                    match commands::fleet::hook_install::check_hooks(port) {
+                        Ok(s) if s.installed && !s.port_matches => {
+                            match commands::fleet::hook_install::install_hooks(port) {
+                                Ok(_) => tracing::info!(
+                                    port,
+                                    "fleet hooks re-pointed to live local_http port (drift self-heal)"
+                                ),
+                                Err(e) => {
+                                    tracing::warn!(error = %e, "fleet hook self-heal failed")
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
                 Err(e) => tracing::warn!(error = %e, "local_http server failed to start"),
             }
             st.checkpoint("local_http");
