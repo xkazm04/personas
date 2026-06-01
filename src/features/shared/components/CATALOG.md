@@ -192,7 +192,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `StationPicker` | _(add a `@catalog` tag)_ |
 | `SystemLoadFooterIcon` | Smoothed CPU %. |
 | `TitleBar` | _(add a `@catalog` tag)_ |
-| `TitleBarAmbient` | focused on settings. |
+| `TitleBarAmbient` | The time-of-day illustration in the centre of the title bar. |
 | `TitleCrossfade` | station switch). |
 | `useMonitorData` | _(add a `@catalog` tag)_ |
 | `useRadioState` | know when to refetch nowPlaying. |
