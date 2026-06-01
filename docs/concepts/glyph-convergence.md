@@ -1,8 +1,64 @@
 # Glyph Convergence — unifying from-scratch and from-template persona creation
 
-**Status:** Accepted (design), Phase 1 in progress
-**Date:** 2026-05-30
+**Status:** REDESIGNED 2026-06-01 — front-door launcher REVERTED; template suggestion moves mid-build. See "## Redesign (2026-06-01)" immediately below; the original 2026-05-30 design follows for history.
+**Date:** 2026-05-30 (original) / 2026-06-01 (redesign)
 **Supersedes scope of:** [`glyph-consolidation.md`](./glyph-consolidation.md), [`matrix-retire-glyph-only.md`](./matrix-retire-glyph-only.md) (those retired the *legacy matrix*; this unifies the two *glyph* creation on-ramps)
+
+---
+
+## Redesign (2026-06-01) — mid-build template suggestion, not a front door
+
+**The pivot:** the original design put a unified front-door launcher (`PersonaCreator`)
+*before* building — describe box + template cards. User feedback: that changes
+master's entry, which should stay exactly as it was. The better shape keeps
+master's entry untouched and moves the template intelligence **into the build**.
+
+### Target flow
+1. **Entry = master, unchanged.** Sidebar Create → `UnifiedBuildEntry` → user types a
+   basic intent → Launch → the live LLM build starts. No pre-build screen. (P1
+   `PersonaCreator` launcher is **reverted**; `PersonasPage` restored byte-identical
+   to master.)
+2. **During the build**, at the moment the **first clarifying questions** are ready
+   (`buildPhase === 'awaiting_input'` with `pendingQuestions`), also run a **fast
+   lexical** template-similarity search (`companion_match_templates`) against the
+   user's intent.
+3. **If a strong match exists**, show a dismissible card *alongside the questions*:
+   "This looks like **<Template>** — adopt it instead of answering these questions?"
+   - **Accept** → cancel the running generated build session, `create_adoption_session`
+     for the matched template, and route into the **in-page adoption surface** (P3's
+     `AdoptionWizardModal inline`, already built + DOM-verified).
+   - **Ignore** → the user keeps answering the questionnaire; the generated build
+     proceeds exactly as master.
+
+### Decisions (2026-06-01)
+- **P1 launcher: REVERTED.** Pure master entry — no describe-first front door.
+- **Match engine: fast lexical** (`companion_match_templates`) — sub-second, fires at
+  first-questions with no wait. (Not the slow semantic CLI search, not a build-LLM
+  event.)
+- **Proposal UX: offer alongside the questions** — dismissible card above the
+  questionnaire; user stays in control (no auto-route).
+
+### What carries over from the original build
+- ✅ **P3 inline adoption** (`AdoptionWizardModal inline`) — KEPT; it's the accept-route target.
+- ♻️ **P2 match hook** (`useTemplateIntentMatch` wrapping `companion_match_templates`) —
+  RELOCATED from the launcher to the mid-build proposal. Kept in `agents/components/create/`.
+- ✅ **P4-step1 shared `cellDimMap`** — KEPT (neutral).
+- ❌ **P1 `PersonaCreator` launcher** — DELETED.
+- ⚠️ **`create_*` i18n keys** — the launcher-only ones become dead; the mid-build card
+  needs its own (`create_match_heading` may be reusable). Pruned/added when the card lands.
+
+### Rollout (redesign)
+- **R1 (done):** revert P1 — `PersonasPage` restored to master; `PersonaCreator.tsx` deleted; `useTemplateIntentMatch.ts` retained.
+- **R2:** mid-build proposal card — detect first-questions, fire the match, render a
+  dismissible "adopt <Template> instead?" card in the build surface's question area.
+- **R3:** accept-route — cancel generated session + `create_adoption_session` + mount inline adoption.
+- **R4:** i18n prune/add + docs + DOM-verify the full mid-build → accept → adoption path.
+
+The original P2 (launcher-time live match) and the P4-step2 "merge 4 wrappers" item are
+no longer on the critical path — the build surface stays master's `GlyphFullLayout`; only
+a proposal card is added to it.
+
+---
 
 ## Context
 
