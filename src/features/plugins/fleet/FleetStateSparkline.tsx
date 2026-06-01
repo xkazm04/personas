@@ -20,6 +20,7 @@ const STATE_BAR: Record<FleetSessionState, { bg: string; labelKey: FleetLabelKey
   awaiting_input: { bg: 'bg-violet-400', labelKey: 'state_awaiting_input' },
   idle: { bg: 'bg-emerald-400', labelKey: 'state_idle' },
   stale: { bg: 'bg-orange-400', labelKey: 'state_stale' },
+  hibernated: { bg: 'bg-indigo-400', labelKey: 'state_hibernated' },
   exited: { bg: 'bg-zinc-500', labelKey: 'state_exited' },
 };
 

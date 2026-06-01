@@ -3,7 +3,7 @@ import { RefreshCw, AlertCircle, FileText, Wrench, Coins, MessagesSquare } from 
 import { Button } from '@/features/shared/components/buttons';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
-import { readTranscript } from '@/api/fleet/fleet';
+import { sessionMetadata, readTranscript } from '@/api/fleet/fleet';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -32,7 +32,9 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
     setLoading(true);
     setFailed(false);
     try {
-      const s = await readTranscript(claudeSessionId);
+      // Prefer the incremental rollup (delta-only, scale-friendly); fall back
+      // to a full transcript read if the rollup isn't available yet.
+      const s = (await sessionMetadata(claudeSessionId)) ?? (await readTranscript(claudeSessionId));
       setSummary(s);
     } catch (e) {
       setFailed(true);
@@ -116,13 +118,13 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       {/* Tools used. */}
       <Section icon={<Wrench className="w-3.5 h-3.5" />} title={f.insights_tools}>
         {summary.tools.length === 0 ? (
-          <p className="text-[11px] opacity-60">{f.insights_no_tools}</p>
+          <p className="text-[13px] opacity-60">{f.insights_no_tools}</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {summary.tools.map((tool) => (
               <span
                 key={tool.name}
-                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 text-[11px]"
+                className="inline-flex items-center gap-1 rounded-card border border-primary/15 bg-secondary/30 px-2 py-0.5 text-[13px]"
               >
                 <span className="font-medium">{tool.name}</span>
                 <span className="opacity-60">×{tool.count}</span>
@@ -135,18 +137,18 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
       {/* Files touched. */}
       <Section icon={<FileText className="w-3.5 h-3.5" />} title={tx(f.insights_files, { count: summary.filesTouched.length })}>
         {summary.filesTouched.length === 0 ? (
-          <p className="text-[11px] opacity-60">{f.insights_no_files}</p>
+          <p className="text-[13px] opacity-60">{f.insights_no_files}</p>
         ) : (
           <div className="max-h-[180px] overflow-y-auto space-y-0.5">
             {summary.filesTouched.map((file) => (
-              <p key={file} className="text-[11px] font-mono truncate" title={file}>{file}</p>
+              <p key={file} className="text-[13px] font-mono truncate" title={file}>{file}</p>
             ))}
           </div>
         )}
       </Section>
 
       {/* Footer: models + span. */}
-      <div className="mt-3 pt-2 border-t border-primary/10 text-[10px] opacity-60 flex flex-wrap gap-x-3 gap-y-1">
+      <div className="mt-3 pt-2 border-t border-primary/10 text-[12px] opacity-60 flex flex-wrap gap-x-3 gap-y-1">
         {summary.models.length > 0 && <span>{summary.models.join(', ')}</span>}
         {spanMin !== null && <span>{tx(f.insights_span, { minutes: spanMin })}</span>}
         {summary.parseErrors > 0 && (
@@ -160,7 +162,7 @@ export function FleetSessionInsights({ claudeSessionId }: Props) {
 function Stat({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div className="rounded-card border border-primary/10 bg-secondary/20 px-2.5 py-2">
-      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider opacity-60 mb-0.5">
+      <div className="flex items-center gap-1 text-[12px] uppercase tracking-wider opacity-60 mb-0.5">
         {icon}{label}
       </div>
       <div className="typo-card-label tabular-nums">{children}</div>
@@ -171,8 +173,8 @@ function Stat({ icon, label, children }: { icon: React.ReactNode; label: string;
 function TokenCell({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-wider opacity-60">{label}</div>
-      <div className="text-[12px] font-medium tabular-nums"><Numeric value={value} unit="count" /></div>
+      <div className="text-[12px] uppercase tracking-wider opacity-60">{label}</div>
+      <div className="text-[14px] font-medium tabular-nums"><Numeric value={value} unit="count" /></div>
     </div>
   );
 }

@@ -279,6 +279,11 @@ export default function CompanionPanel() {
   const setAutonomousMode = useSystemStore((s) => s.setCompanionAutonomousMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  // While the Fleet grid overlay (z-200 portal) is open, the chat must float
+  // ABOVE it — otherwise tapping the orb opens the panel behind the overlay
+  // (reads as "orb disappears, no chat") and its decision/approval UI is
+  // unreachable. Mirrors the orb's own z-[210] lift; panel goes one above.
+  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const orbOpenOrigin = useCompanionStore((s) => s.orbOpenOrigin);
   const reduceMotion = useReducedMotion();
@@ -343,7 +348,7 @@ export default function CompanionPanel() {
           exit={morph.exit}
           transition={morph.transition}
           style={morph.style}
-          className={`fixed bottom-12 left-4 z-[60] ${
+          className={`fixed bottom-12 left-4 ${fleetGridOpen ? 'z-[220]' : 'z-[60]'} ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
           } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
             autonomousMode ? 'companion-autonomous' : ''

@@ -11,12 +11,34 @@ import type { PendingApproval } from '@/api/companion';
 /** Visual attention a session warrants. `none` → use the base border. */
 export type FleetAttention = 'waiting' | 'stale' | 'failed' | 'none';
 
+/** Prefix of the Rust ticker's never-attached `state_reason` (see
+ *  `stale.rs::is_never_attached`). Keep in sync with that string. */
+const NEVER_ATTACHED_REASON = 'Claude never attached';
+
+/**
+ * True when a session never attached a Claude agent. The authoritative signal
+ * is the Rust ticker's `state_reason` verdict (its confident 2-min no-activity
+ * check) — NOT a broad "stale without a cc id" guess, which misfires on a
+ * genuinely-working session whose cc id simply hasn't bound yet (that one is
+ * normal `stale` and should still show real state + the Ask-Athena button).
+ * For a real never-attached session, asking Athena to "unblock" it is futile
+ * (no live agent to type into) — kill + retry instead (often the folder needs
+ * Claude Code's trust approval).
+ */
+export function isNeverAttached(s: Pick<FleetSession, 'stateReason'>): boolean {
+  return s.stateReason?.startsWith(NEVER_ATTACHED_REASON) ?? false;
+}
+
 /** Classify a session by how much it wants the operator's (or Athena's) eyes. */
 export function sessionAttention(s: Pick<FleetSession, 'state' | 'exitCode'>): FleetAttention {
   switch (s.state) {
     case 'awaiting_input':
       return 'waiting';
     case 'stale':
+      // Stale is stale (amber) — including never-attached. We do NOT paint it
+      // red 'failed': that misreads as a crash and hid the real state. The
+      // never-attached distinction is handled in the Athena strip (note vs
+      // Ask-button), not the border colour.
       return 'stale';
     case 'exited':
       return s.exitCode != null && s.exitCode !== 0 ? 'failed' : 'none';
@@ -94,10 +116,21 @@ export function approvalsForSession(
  */
 export function craftStalePrompt(s: FleetSession): string {
   const label = s.name ?? s.projectLabel;
+  // Never-attached sessions have no live agent — don't ask Athena to "unblock"
+  // them (she can only decline). Frame it as the diagnosis it is so she
+  // confirms the kill instead of re-investigating from scratch.
+  if (isNeverAttached(s)) {
+    return (
+      `Fleet session "${label}" (project ${s.projectLabel}) never attached a Claude agent — it spawned but no ` +
+      `Claude Code process ever came up (no session id, no transcript). Do NOT propose fleet_send_input; there's ` +
+      `nothing live to type into. Confirm in one line that it should be killed (the folder likely needs Claude Code ` +
+      `trust approval, or claude failed to start there).`
+    );
+  }
   return (
-    `Fleet session "${label}" (project ${s.projectLabel}) has gone stale — no activity for several minutes. ` +
-    `Look at what it was doing and decide the single best next step to unblock it. ` +
-    `If there's a clear winner, propose a fleet_send_input action with the exact text to type (press_enter true) so I can approve it. ` +
+    `Fleet flagged session "${label}" (project ${s.projectLabel}) as stale — no activity for several minutes. ` +
+    `Assess what it was doing and decide the single best next step to unblock it. ` +
+    `If there's a clear winner, propose a fleet_send_input action with the exact text to type (press_enter true) for the operator to approve. ` +
     `If it needs human judgment or is actually finished, say so instead of proposing an action.`
   );
 }

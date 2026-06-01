@@ -306,6 +306,12 @@ const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     "write_backlog_item",
     "enqueue_dev_job",
     "schedule_proactive",
+    // Deliberate higher-blast-radius exception (opted in via autonomous mode):
+    // Athena driving a Fleet session by typing into its terminal. This is the
+    // "Ask Athena → she writes directly" loop. It only fires under autonomous
+    // mode AND targets Fleet PTYs the user explicitly spawned; still gated by
+    // the toggle, so by default writes remain a manual tile-approval click.
+    "fleet_send_input",
 ];
 
 /// If `approval.action` is on the conservative autoapprove allowlist,
@@ -345,6 +351,7 @@ pub async fn auto_resolve_if_allowed(
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
+        "fleet_send_input" => execute_fleet_send_input(&params),
         _ => unreachable!("allowlist mismatch"),
     };
     let (status_text, embedder_log) = match exec_result {

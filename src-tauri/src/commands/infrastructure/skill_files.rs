@@ -194,11 +194,7 @@ fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
                     .unwrap_or("unknown")
                     .to_string();
                 let content = std::fs::read_to_string(&path).ok();
-                let desc = content.as_ref().and_then(|c| {
-                    c.lines()
-                        .find(|l| !l.trim().is_empty() && !l.trim().starts_with('#'))
-                        .map(|l| l.trim().chars().take(200).collect())
-                });
+                let desc = content.as_deref().and_then(extract_skill_description);
                 entries.push(SkillEntry {
                     name,
                     path: path.to_string_lossy().to_string(),
@@ -253,15 +249,51 @@ fn scan_skills_dir(dir: &Path) -> Vec<SkillEntry> {
 
 fn read_first_line_description(skill_md_path: &Path) -> Option<String> {
     let content = std::fs::read_to_string(skill_md_path).ok()?;
-    // Extract the first non-empty, non-heading line as a short description
-    for line in content.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') {
-            continue;
+    extract_skill_description(&content)
+}
+
+/// Short description for a skill's SKILL.md. Prefers the YAML frontmatter
+/// `description:` field (Claude Code skills are frontmatter-first); falls back
+/// to the first non-empty, non-heading body line. Without this, a frontmatter
+/// skill would surface its `---` delimiter as the description.
+fn extract_skill_description(content: &str) -> Option<String> {
+    let lines: Vec<&str> = content.lines().collect();
+    let has_frontmatter = lines.first().map(|l| l.trim()) == Some("---");
+
+    if has_frontmatter {
+        // Scan the frontmatter block for `description:`.
+        for line in &lines[1..] {
+            let t = line.trim();
+            if t == "---" {
+                break;
+            }
+            if let Some(rest) = t.strip_prefix("description:") {
+                let v = rest.trim().trim_matches(['"', '\'']).trim();
+                if !v.is_empty() {
+                    return Some(v.chars().take(200).collect());
+                }
+            }
         }
-        return Some(trimmed.chars().take(200).collect());
+        // No description key — fall through to the first body line after the
+        // closing `---`.
+        if let Some(close) = lines.iter().skip(1).position(|l| l.trim() == "---") {
+            for line in &lines[close + 2..] {
+                let t = line.trim();
+                if t.is_empty() || t.starts_with('#') {
+                    continue;
+                }
+                return Some(t.chars().take(200).collect());
+            }
+        }
+        return None;
     }
-    None
+
+    // No frontmatter: first non-empty, non-heading line.
+    lines
+        .iter()
+        .map(|l| l.trim())
+        .find(|t| !t.is_empty() && !t.starts_with('#'))
+        .map(|t| t.chars().take(200).collect())
 }
 
 // ============================================================================
@@ -459,5 +491,23 @@ mod tests {
         assert!(validate_skill_name("a/b").is_err());
         assert!(validate_skill_name("a\\b").is_err());
         assert!(validate_skill_name("C:\\windows").is_err());
+    }
+
+    #[test]
+    fn extract_description_prefers_frontmatter() {
+        let md = "---\nname: scan-security-auditor\ndescription: \"Find security holes.\"\n---\n# Security Auditor\nbody text\n";
+        assert_eq!(extract_skill_description(md).as_deref(), Some("Find security holes."));
+    }
+
+    #[test]
+    fn extract_description_frontmatter_without_desc_uses_body() {
+        let md = "---\nname: x\n---\n# Heading\nFirst real line.\n";
+        assert_eq!(extract_skill_description(md).as_deref(), Some("First real line."));
+    }
+
+    #[test]
+    fn extract_description_no_frontmatter_uses_first_line() {
+        let md = "# Title\nDo the thing.\n";
+        assert_eq!(extract_skill_description(md).as_deref(), Some("Do the thing."));
     }
 }

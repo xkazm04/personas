@@ -30,7 +30,7 @@ function Segmented<T extends string>({
           data-testid={`${testid}-${o.id}`}
           aria-pressed={value === o.id}
           onClick={() => onChange(o.id)}
-          className={`rounded-interactive px-2 py-0.5 text-[11px] transition-colors ${
+          className={`rounded-interactive px-2 py-0.5 text-[13px] transition-colors ${
             value === o.id ? 'bg-primary/15 text-primary' : 'text-foreground/70 hover:text-foreground'
           }`}
         >
@@ -71,7 +71,7 @@ export function FleetTerminalSettings() {
         <TerminalIcon className="w-4 h-4 text-primary" />
         <div>
           <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.settings_terminal_title}</p>
-          <p className="text-[11px] text-foreground">{t.plugins.fleet.settings_terminal_desc}</p>
+          <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_terminal_desc}</p>
         </div>
       </div>
 
@@ -89,7 +89,7 @@ export function FleetTerminalSettings() {
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
-          <span className="w-9 text-center tabular-nums text-[12px] text-foreground" data-testid="fleet-settings-font-value">
+          <span className="w-9 text-center tabular-nums text-[14px] text-foreground" data-testid="fleet-settings-font-value">
             {fontSize}px
           </span>
           <button
@@ -109,7 +109,7 @@ export function FleetTerminalSettings() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <span className="typo-caption text-foreground">{t.plugins.fleet.settings_theme}</span>
-          <p className="text-[11px] text-foreground">{t.plugins.fleet.settings_theme_desc}</p>
+          <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_theme_desc}</p>
         </div>
         <Segmented value={theme} options={themeOptions} onChange={setTheme} testid="fleet-settings-theme" />
       </div>
@@ -118,7 +118,7 @@ export function FleetTerminalSettings() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <span className="typo-caption text-foreground">{t.plugins.fleet.settings_copy_on_select}</span>
-          <p className="text-[11px] text-foreground">{t.plugins.fleet.settings_copy_on_select_desc}</p>
+          <p className="text-[13px] text-foreground">{t.plugins.fleet.settings_copy_on_select_desc}</p>
         </div>
         <AccessibleToggle
           checked={copyOnSelect}

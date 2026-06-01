@@ -101,6 +101,23 @@ pub fn spawn_session(
     // entry into the registry.
     let id = uuid::Uuid::new_v4().to_string();
 
+    // Deterministic Claude-session binding: for a FRESH spawn (not a
+    // `--resume`, and the caller didn't pin one) we assign claude's session id
+    // ourselves via `--session-id <uuid>` and pre-bind it on the registry row.
+    // This eliminates the whole cwd-guessing binding race — hooks
+    // (SessionStart/Stop/PreToolUse/Notification) then match by the KNOWN id
+    // so state transitions (incl. Stop→Idle) work, the transcript is
+    // `<uuid>.jsonl`, and N concurrent sessions in one cwd never cross-bind.
+    let assigned_claude_session_id: Option<String> = {
+        let has_resume = args.iter().any(|a| a == "--resume");
+        let has_explicit = args.iter().any(|a| a == "--session-id");
+        if has_resume || has_explicit {
+            None
+        } else {
+            Some(uuid::Uuid::new_v4().to_string())
+        }
+    };
+
     // Wire MCP: mint a per-session token, write a per-session
     // mcp.json, return the path so we can inject `--mcp-config` into
     // the claude argv. Best-effort — a failure here doesn't abort the
@@ -140,6 +157,14 @@ pub fn spawn_session(
             }
         };
         let mut c = CommandBuilder::new(&claude_cmd);
+        // Fleet sessions run unattended (orchestrated, often Athena-driven), so
+        // permission prompts would just freeze them at AwaitingInput with no one
+        // to answer. Skip them — the user opted into this for the fleet.
+        c.arg("--dangerously-skip-permissions");
+        if let Some(sid) = assigned_claude_session_id.as_deref() {
+            c.arg("--session-id");
+            c.arg(sid);
+        }
         if let Some(p) = mcp.config_path.as_deref() {
             // Same forward-slash conversion as before — avoids
             // `--mcp-config` parsing the path as inline JSON when the
@@ -159,6 +184,11 @@ pub fn spawn_session(
         c
     } else {
         let mut c = CommandBuilder::new("claude");
+        c.arg("--dangerously-skip-permissions");
+        if let Some(sid) = assigned_claude_session_id.as_deref() {
+            c.arg("--session-id");
+            c.arg(sid);
+        }
         if let Some(p) = mcp.config_path.as_deref() {
             c.arg("--mcp-config");
             c.arg(p.as_os_str());
@@ -210,7 +240,9 @@ pub fn spawn_session(
 
     let inner = FleetSessionInner {
         id: id.clone(),
-        claude_session_id: None,
+        // Pre-bound for fresh spawns (we passed `--session-id`); `None` for
+        // resume/explicit, which bind via their own path.
+        claude_session_id: assigned_claude_session_id,
         cwd: cwd.clone(),
         project_label,
         name: None,
@@ -223,6 +255,7 @@ pub fn spawn_session(
         state_reason: Some("PTY spawned".to_string()),
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
+        hibernating: std::sync::atomic::AtomicBool::new(false),
     };
     registry().insert(inner);
 
@@ -360,6 +393,13 @@ fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
 /// Reader loop — blocks on `reader.read`, emits chunks, exits on EOF/error.
 fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::Read + Send>) {
     let mut buf = [0u8; 8192];
+    // First byte of PTY output ⇒ claude is up (banner/prompt drawn). Promote
+    // Spawning → Idle once, so the session isn't mislabeled never-attached
+    // while it sits at a fresh prompt with no transcript/hook yet. We do NOT
+    // bump activity on subsequent output — an interactive claude redraws the
+    // PTY (cursor/status) even when idle, so that would defeat staleness; real
+    // work is tracked via transcript growth + hooks.
+    let mut alive_marked = false;
     loop {
         match reader.read(&mut buf) {
             Ok(0) => {
@@ -367,6 +407,12 @@ fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::
                 break;
             }
             Ok(n) => {
+                if !alive_marked {
+                    alive_marked = true;
+                    if registry().mark_alive(&session_id) {
+                        emit_registry_changed(&app, "updated", &session_id);
+                    }
+                }
                 let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
                 let _ = app.emit(
                     event_name::FLEET_SESSION_OUTPUT,
@@ -410,6 +456,17 @@ fn reaper_loop(
             None
         }
     };
+
+    // Hibernation path: the operator killed the process to free it, not a real
+    // death. `hibernate` already set state = Hibernated; leave it there, don't
+    // emit Exited, and skip exit reconciliation (the conversation lives on and
+    // can be resumed). The MCP/temp-file cleanup in the spawning task still
+    // runs — the process really is gone.
+    if registry().is_hibernating(&session_id) {
+        tracing::debug!(session_id = %session_id, "fleet reaper: child exited for hibernation");
+        emit_registry_changed(&app, "updated", &session_id);
+        return;
+    }
 
     registry().mark_exited(&session_id, exit_code);
     let _ = app.emit(

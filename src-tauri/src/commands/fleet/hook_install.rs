@@ -272,11 +272,26 @@ fn check_hooks_inner(settings: &Value, current_port: u16) -> Result<FleetHookSta
     })
 }
 
-/// Does this hook entry (or inner command) carry our Fleet marker?
+/// Does this hook entry belong to Fleet? True if it carries our marker OR (for
+/// older/untagged entries) its command POSTs to a `/fleet/hooks/` URL on ANY
+/// port. The URL check lets a re-install reclaim stale-port stragglers a prior
+/// install left behind, instead of duplicating hooks (which caused real hooks
+/// to be split across a live + a dead port).
 fn is_fleet_tagged(v: &Value) -> bool {
-    v.get(FLEET_MARKER)
-        .and_then(|m| m.as_bool())
-        .unwrap_or(false)
+    if v.get(FLEET_MARKER).and_then(|m| m.as_bool()).unwrap_or(false) {
+        return true;
+    }
+    if let Some(cmd) = v.get("command").and_then(|c| c.as_str()) {
+        if cmd.contains("/fleet/hooks/") {
+            return true;
+        }
+    }
+    if let Some(inner) = v.get("hooks").and_then(|h| h.as_array()) {
+        if inner.iter().any(is_fleet_tagged) {
+            return true;
+        }
+    }
+    false
 }
 
 /// Parse the port out of the curl command we install. Matches

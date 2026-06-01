@@ -43,6 +43,10 @@ export function OrbDecisionBubble() {
   const explained = useCompanionStore((s) => s.decisionExplained);
   const orbTarget = useCompanionStore((s) => s.orbGuideTarget);
   const orbPos = useSystemStore((s) => s.companionOrbPos);
+  // Float above the Fleet grid overlay (z-200) while it's open — a key
+  // orchestration decision must be visible/answerable over the grid, not
+  // buried behind it (same lift as the orb + chat panel).
+  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const setState = useCompanionStore((s) => s.setState);
   const setGuidanceHighlightTestId = useCompanionStore((s) => s.setGuidanceHighlightTestId);
   const flashHighlight = useCompanionStore((s) => s.flashHighlight);
@@ -130,7 +134,7 @@ export function OrbDecisionBubble() {
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className="pointer-events-auto fixed z-[61] w-[280px] max-w-[80vw] rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3"
+      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} w-[280px] max-w-[80vw] rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3`}
       style={pos}
     >
       <span className="pointer-events-none absolute h-0 w-0" style={tail} aria-hidden />

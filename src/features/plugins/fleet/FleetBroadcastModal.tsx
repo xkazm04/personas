@@ -161,7 +161,7 @@ export function FleetBroadcastModal({ open, onClose, initialText, title }: Props
           </div>
           <div className="max-h-[200px] overflow-y-auto border border-primary/10 rounded-modal p-1.5 bg-secondary/20 space-y-0.5">
             {targetable.length === 0 ? (
-              <p className="text-[11px] text-foreground text-center py-3"><DebtText k="auto_no_active_sessions_0dcbde78" /></p>
+              <p className="text-[13px] text-foreground text-center py-3"><DebtText k="auto_no_active_sessions_0dcbde78" /></p>
             ) : (
               targetable.map((s) => {
                 const isSel = selected.has(s.id);

@@ -118,9 +118,108 @@ fn handle_event(app: &AppHandle, event: Event) {
     for path in &event.paths {
         if path.extension().map(|e| e == "jsonl").unwrap_or(false) {
             if let Some(claude_session_id) = derive_claude_session_id(path) {
-                refresh_activity(app, &claude_session_id);
+                // Fold the newly-appended bytes into the session's compact
+                // metadata rollup (the (B) abstraction) — cheap, delta-only,
+                // raw output stays on disk.
+                super::transcript_read::ingest_delta(&claude_session_id, path);
+                // Primary: bump activity for the session already bound to this id.
+                // Fallback: if nothing is bound to it yet, try to bind it to an
+                // unbound Fleet session by the transcript's recorded cwd. This
+                // covers a SessionStart hook that fired but never bound (observed:
+                // claude runs + writes a transcript carrying Fleet's injected MCP,
+                // yet the session stays `cc:-`). Without this, such a session is
+                // mislabeled stale/never-attached and Insights has no id to read.
+                if !refresh_activity(app, &claude_session_id) {
+                    bind_unbound_by_cwd(app, path, &claude_session_id);
+                }
             }
         }
+    }
+}
+
+/// Grace (ms) allowed between a Fleet session spawning and its transcript
+/// file being created. The transcript is created by `claude` shortly AFTER the
+/// PTY spawns, so a legitimate transcript is created at/after `created_at_ms`;
+/// the grace only absorbs clock skew.
+const BIND_FRESHNESS_GRACE_MS: i64 = 5_000;
+
+/// File-creation time in ms since the UNIX epoch, if resolvable.
+fn file_created_ms(path: &Path) -> Option<i64> {
+    let created = std::fs::metadata(path).ok()?.created().ok()?;
+    let dur = created.duration_since(std::time::UNIX_EPOCH).ok()?;
+    Some(dur.as_millis() as i64)
+}
+
+/// Bind `claude_session_id` to an unbound Fleet session matched by the cwd
+/// recorded inside the transcript — the watcher's reconciliation path when the
+/// SessionStart hook didn't bind. Picks the most-recently-created unbound,
+/// non-Exited session for that cwd (mirrors `resolve_session_id`'s bootstrap
+/// preference) **whose spawn is consistent with this transcript's creation
+/// time**, so it never grabs a *pre-existing* or *concurrent* same-cwd
+/// transcript (e.g. the user's own Claude Code session, or a manual `claude`
+/// run, in the same repo). No-op if no transcript cwd, no fresh match, or the
+/// transcript's creation time can't be read (conservative — better unbound
+/// than mis-bound).
+fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
+    let Some(tcwd) = super::transcript_read::read_transcript_cwd(path) else {
+        return;
+    };
+    let target = super::transcript_read::normalize_cwd(&tcwd);
+    // A transcript created *before* a session spawned can't belong to it.
+    let Some(transcript_created_ms) = file_created_ms(path) else {
+        return;
+    };
+
+    let mut bound: Option<String> = None;
+    {
+        let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        // Don't double-bind if some other session already claimed this id.
+        if map.values().any(|s| s.claude_session_id.as_deref() == Some(claude_session_id)) {
+            return;
+        }
+        let mut best_created = i64::MIN;
+        let mut best_id: Option<String> = None;
+        for s in map.values() {
+            if s.claude_session_id.is_some() {
+                continue;
+            }
+            if matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+                continue;
+            }
+            if super::transcript_read::normalize_cwd(&s.cwd.to_string_lossy()) != target {
+                continue;
+            }
+            // The transcript must have been created at/after this session
+            // spawned (minus a small grace) — otherwise it's someone else's.
+            if transcript_created_ms < s.created_at_ms - BIND_FRESHNESS_GRACE_MS {
+                continue;
+            }
+            if s.created_at_ms > best_created {
+                best_created = s.created_at_ms;
+                best_id = Some(s.id.clone());
+            }
+        }
+        if let Some(sid) = best_id {
+            if let Some(s) = map.get_mut(&sid) {
+                s.claude_session_id = Some(claude_session_id.to_string());
+                s.last_activity_ms = now_ms();
+                s.state = FleetSessionState::Running;
+                s.state_reason = Some("Bound to transcript (SessionStart hook missed)".into());
+                bound = Some(sid);
+            }
+        }
+    }
+
+    if let Some(sid) = bound {
+        let _ = app.emit(
+            event_name::FLEET_SESSION_STATE,
+            FleetStatePayload {
+                session_id: sid.clone(),
+                state: "running",
+                reason: Some("Bound to transcript".into()),
+            },
+        );
+        super::pty::emit_registry_changed(app, "updated", &sid);
     }
 }
 
@@ -131,10 +230,11 @@ fn derive_claude_session_id(path: &Path) -> Option<String> {
         .map(|s| s.to_string())
 }
 
-/// If a Fleet session matches this `claude_session_id`, refresh its
-/// `last_activity_ms`. Re-animates Stale sessions back to Idle (or
-/// preserves whatever the hook system has flipped them to since).
-fn refresh_activity(app: &AppHandle, claude_session_id: &str) {
+/// If a Fleet session is already bound to this `claude_session_id`, refresh its
+/// `last_activity_ms` and re-animate it from Stale → Idle. Returns `true` if a
+/// bound session matched (so the caller knows whether to attempt cwd-binding).
+fn refresh_activity(app: &AppHandle, claude_session_id: &str) -> bool {
+    let mut matched = false;
     let mut maybe_emit: Option<(String, FleetSessionState, String)> = None;
     {
         let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -142,6 +242,7 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) {
             if session.claude_session_id.as_deref() != Some(claude_session_id) {
                 continue;
             }
+            matched = true;
             session.last_activity_ms = now_ms();
             // If we'd promoted this to Stale, the JSONL append proves it's
             // not — drop back to Idle (hooks will refine to AwaitingInput /
@@ -169,4 +270,5 @@ fn refresh_activity(app: &AppHandle, claude_session_id: &str) {
             },
         );
     }
+    matched
 }

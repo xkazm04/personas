@@ -99,6 +99,61 @@ pub async fn fleet_rename_session(
     Ok(updated)
 }
 
+/// Hibernate a session: kill the `claude` process to free it, but keep the
+/// row (state → `Hibernated`) so it can be resumed via `fleet_wake_session`.
+/// Returns `false` if the session can't be hibernated (already exited /
+/// hibernated, or never bound a `claude_session_id`). The reaper records the
+/// resulting child exit as a sleep, not a death.
+#[tauri::command]
+pub async fn fleet_hibernate_session(app: AppHandle, session_id: String) -> Result<bool, String> {
+    let ok = registry().hibernate(&session_id);
+    if ok {
+        // "updated" → the frontend re-fetches the snapshot and sees Hibernated.
+        pty::emit_registry_changed(&app, "updated", &session_id);
+    }
+    Ok(ok)
+}
+
+/// Wake a hibernated session: spawn a fresh PTY running
+/// `claude --resume <claude_session_id>` in the original cwd (the resumed
+/// process restores the conversation itself), then drop the hibernated
+/// placeholder. Returns the new session id. Errors if the session isn't
+/// hibernated / resumable.
+#[tauri::command]
+pub async fn fleet_wake_session(
+    app: AppHandle,
+    session_id: String,
+    cols: Option<u16>,
+    rows: Option<u16>,
+) -> Result<String, String> {
+    let (claude_session_id, cwd) = registry()
+        .resume_target(&session_id)
+        .ok_or_else(|| format!("session not resumable: {session_id}"))?;
+    let cols = cols.unwrap_or(120);
+    let rows = rows.unwrap_or(32);
+    let new_id = pty::spawn_session(
+        app.clone(),
+        cwd,
+        vec!["--resume".to_string(), claude_session_id],
+        cols,
+        rows,
+    )?;
+    if registry().remove(&session_id) {
+        pty::emit_registry_changed(&app, "removed", &session_id);
+    }
+    Ok(new_id)
+}
+
+/// Configure the always-on auto-hibernate policy (P3.2): when `enabled`,
+/// the staleness ticker hibernates Idle/Stale sessions inactive for longer
+/// than `after_minutes` — even when the Fleet UI isn't focused. The frontend
+/// owns the persisted setting and pushes it here on change + on startup.
+#[tauri::command]
+pub async fn fleet_set_auto_hibernate(enabled: bool, after_minutes: u32) -> Result<(), String> {
+    super::stale::set_auto_hibernate(enabled, (after_minutes as u64) * 60);
+    Ok(())
+}
+
 /// Snapshot the registry for the UI's session grid.
 ///
 /// `hook_port` is the resolved local_http port (hosting /fleet/hooks/*).

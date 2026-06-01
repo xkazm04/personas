@@ -26,17 +26,18 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 export type FleetLabelKey = keyof Translations['plugins']['fleet'];
 
-export type ConsoleAxis = 'spawning' | 'alive' | 'exited';
+export type ConsoleAxis = 'spawning' | 'alive' | 'hibernated' | 'exited';
 export type BusinessAxis = 'idle' | 'working' | 'awaiting_input' | 'stale' | 'none';
 
 export function deriveAxes(state: FleetSessionState): { console: ConsoleAxis; business: BusinessAxis } {
   switch (state) {
-    case 'spawning':       return { console: 'spawning', business: 'none' };
-    case 'running':        return { console: 'alive',    business: 'working' };
-    case 'awaiting_input': return { console: 'alive',    business: 'awaiting_input' };
-    case 'idle':           return { console: 'alive',    business: 'idle' };
-    case 'stale':          return { console: 'alive',    business: 'stale' };
-    case 'exited':         return { console: 'exited',   business: 'none' };
+    case 'spawning':       return { console: 'spawning',   business: 'none' };
+    case 'running':        return { console: 'alive',      business: 'working' };
+    case 'awaiting_input': return { console: 'alive',      business: 'awaiting_input' };
+    case 'idle':           return { console: 'alive',      business: 'idle' };
+    case 'stale':          return { console: 'alive',      business: 'stale' };
+    case 'hibernated':     return { console: 'hibernated', business: 'none' };
+    case 'exited':         return { console: 'exited',     business: 'none' };
   }
 }
 
@@ -61,9 +62,10 @@ function Dot({ bg, pulse, title }: DotProps) {
 }
 
 export const CONSOLE_DOT: Record<ConsoleAxis, { bg: string; labelKey: FleetLabelKey; pulse?: boolean }> = {
-  spawning: { bg: 'bg-cyan-400',    labelKey: 'dot_console_spawning', pulse: true },
-  alive:    { bg: 'bg-emerald-500', labelKey: 'dot_console_alive' },
-  exited:   { bg: 'bg-zinc-600',    labelKey: 'dot_console_exited' },
+  spawning:   { bg: 'bg-cyan-400',    labelKey: 'dot_console_spawning', pulse: true },
+  alive:      { bg: 'bg-emerald-500', labelKey: 'dot_console_alive' },
+  hibernated: { bg: 'bg-indigo-400',  labelKey: 'dot_console_hibernated' },
+  exited:     { bg: 'bg-zinc-600',    labelKey: 'dot_console_exited' },
 };
 
 export const BUSINESS_DOT: Record<BusinessAxis, { bg: string; labelKey: FleetLabelKey; pulse?: boolean } | null> = {

@@ -10416,6 +10416,7 @@ export type Translations = {
       reply_cancel: string;
       notify_title: string;
       notify_body: string;
+      notify_body_detail: string;
       notify_enable: string;
       notify_disable: string;
       preview_title: string;
@@ -10450,6 +10451,8 @@ export type Translations = {
       terminal_font_decrease: string;
       terminal_font_increase: string;
       view_grid: string;
+      new_session: string;
+      kill_session: string;
       grid_open_aria: string;
       grid_back: string;
       grid_overlay_aria: string;
@@ -10482,6 +10485,8 @@ export type Translations = {
       skill_install_exists: string;
       skill_install_failed: string;
       athena_ask: string;
+      athena_never_attached: string;
+      athena_never_attached_hint: string;
       athena_thinking: string;
       athena_label: string;
       athena_approve_send: string;
@@ -10520,7 +10525,23 @@ export type Translations = {
       skills_drawer_no_target: string;
       skills_drawer_search: string;
       skills_drawer_empty: string;
+      skills_drawer_command_placeholder: string;
+      skills_drawer_apply_btn: string;
       skill_applied_toast: string;
+      context_size_label: string;
+      context_size_hint: string;
+      state_hibernated: string;
+      dot_console_hibernated: string;
+      sleep_session: string;
+      sleep_unavailable: string;
+      wake_session: string;
+      hibernated_panel_title: string;
+      hibernated_panel_desc: string;
+      auto_hibernate_title: string;
+      auto_hibernate_desc: string;
+      auto_hibernate_toggle: string;
+      auto_hibernate_after: string;
+      auto_hibernate_minutes_unit: string;
     };
     title: string;
     subtitle: string;
@@ -11604,6 +11625,7 @@ export type Translations = {
       footer_listening: string;
       orb_talk_hint: string;
       orb_dismiss: string;
+      orb_managing_fleet: string;
       forward_ack_speech: string;
       guide_stop: string;
       guide_skip: string;

@@ -59,6 +59,8 @@ export const useSystemStore = create<SystemStore>()(
         // on reload, and goals — though safely in SQLite — never re-fetched.
         activeProjectId: state.activeProjectId,
         fleetNotifyAwaiting: state.fleetNotifyAwaiting,
+        fleetAutoHibernate: state.fleetAutoHibernate,
+        fleetAutoHibernateMinutes: state.fleetAutoHibernateMinutes,
         fleetActiveSessionId: state.fleetActiveSessionId,
         fleetTerminalFontSize: state.fleetTerminalFontSize,
         fleetTerminalCopyOnSelect: state.fleetTerminalCopyOnSelect,
@@ -77,6 +79,11 @@ export const useSystemStore = create<SystemStore>()(
         setupTool: state.setupTool,
         setupGoal: state.setupGoal,
         setupCompleted: state.setupCompleted,
+        // The active plugin module (Browse / Drive / Twin / Companion / …)
+        // persists like every sibling sub-tab below, so re-entering the
+        // Plugins section after navigating away or restarting restores the
+        // last-viewed plugin instead of snapping back to the Browse grid.
+        pluginTab: state.pluginTab,
         artistTab: state.artistTab,
         artistFolder: state.artistFolder,
         creativeSessions: state.creativeSessions,

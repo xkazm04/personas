@@ -81,7 +81,7 @@ export default function FleetActivityPage() {
             onChange={(e) => setQuery(e.target.value)}
             aria-label={f.activity_search_placeholder}
             placeholder={f.activity_search_placeholder}
-            className="w-full rounded-input border border-primary/10 bg-secondary/40 py-2 pl-9 pr-3 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+            className="w-full rounded-input border border-primary/10 bg-secondary/40 py-2 pl-9 pr-3 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
           />
         </div>
 
@@ -124,12 +124,12 @@ function ActivityRow({ row, query }: { row: FleetTranscriptSummary; query: strin
     <div className="rounded-card border border-primary/10 bg-card/30 px-3 py-2" data-testid="fleet-activity-row">
       <div className="flex items-center gap-2">
         <span className="typo-card-label truncate">{projectLabel(row.cwd)}</span>
-        <span className="ml-auto text-[10px] text-foreground opacity-60">
+        <span className="ml-auto text-[12px] text-foreground opacity-60">
           <RelativeTime timestamp={row.lastTimestamp} />
         </span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[11px] text-foreground opacity-70 tabular-nums">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-[13px] text-foreground opacity-70 tabular-nums">
         <span><Numeric value={tokens} unit="count" /> {f.insights_tokens.toLowerCase()}</span>
         <span><Numeric value={row.assistantMessages} unit="count" /> {f.insights_turns.toLowerCase()}</span>
         {row.models.length > 0 && <span className="text-foreground opacity-50">{row.models[0]}</span>}
@@ -139,7 +139,7 @@ function ActivityRow({ row, query }: { row: FleetTranscriptSummary; query: strin
         <div className="flex flex-wrap items-center gap-1 mt-1.5">
           <Wrench className="w-3 h-3 text-foreground opacity-50" aria-hidden="true" />
           {row.tools.slice(0, 6).map((tool) => (
-            <span key={tool.name} className="inline-flex items-center gap-1 rounded-card border border-primary/10 bg-secondary/30 px-1.5 py-0.5 text-[10px]">
+            <span key={tool.name} className="inline-flex items-center gap-1 rounded-card border border-primary/10 bg-secondary/30 px-1.5 py-0.5 text-[12px]">
               {tool.name}<span className="opacity-60">×{tool.count}</span>
             </span>
           ))}
@@ -147,7 +147,7 @@ function ActivityRow({ row, query }: { row: FleetTranscriptSummary; query: strin
       )}
 
       {shownFiles.length > 0 && (
-        <div className="flex flex-wrap items-center gap-x-2 mt-1.5 text-[10px] font-mono text-foreground opacity-60">
+        <div className="flex flex-wrap items-center gap-x-2 mt-1.5 text-[12px] font-mono text-foreground opacity-60">
           <FileText className="w-3 h-3 text-foreground opacity-50" aria-hidden="true" />
           {shownFiles.map((file) => (
             <span key={file} className="truncate max-w-[220px]" title={file}>{file}</span>

@@ -29,7 +29,7 @@ vi.mock('../sub_skills/SkillInstallModal', () => ({ SkillInstallModal: () => nul
 import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 
 describe('SkillLibraryDrawer', () => {
-  it('lists library skills and applies one to the focused terminal', async () => {
+  it('loads a clicked skill into the composer and applies the full command', async () => {
     const onApply = vi.fn();
     const user = userEvent.setup();
     render(<SkillLibraryDrawer open onClose={() => {}} onApply={onApply} targetLabel="repo-a" />);
@@ -38,8 +38,16 @@ describe('SkillLibraryDrawer', () => {
     expect(screen.getByText('research')).toBeInTheDocument();
     expect(screen.getByText('code-review')).toBeInTheDocument();
 
+    // Click loads `/research ` into the composer (does not apply yet).
     await user.click(screen.getByTestId('fleet-drawer-apply-research'));
-    expect(onApply).toHaveBeenCalledWith('research');
+    const composer = screen.getByTestId('fleet-drawer-command') as HTMLInputElement;
+    expect(composer.value).toBe('/research ');
+    expect(onApply).not.toHaveBeenCalled();
+
+    // Add args, then send → full command applied (trimmed).
+    await user.type(composer, 'deep dive');
+    await user.click(screen.getByTestId('fleet-drawer-send'));
+    expect(onApply).toHaveBeenCalledWith('/research deep dive');
   });
 
   it('disables apply when no session is focused', () => {

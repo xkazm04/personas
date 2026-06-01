@@ -53,11 +53,11 @@ export function FleetPairDevice() {
       <div className="flex items-center gap-2 mb-1">
         <Smartphone className="w-4 h-4 text-primary" aria-hidden="true" />
         <p className="typo-caption font-medium text-foreground">{t.plugins.fleet.pair_title}</p>
-        <span className="ml-1 rounded-interactive border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[10px] uppercase tracking-wider text-amber-300">
+        <span className="ml-1 rounded-interactive border border-amber-400/30 bg-amber-400/10 px-1.5 py-0.5 text-[12px] uppercase tracking-wider text-amber-300">
           {t.plugins.fleet.pair_preview_badge}
         </span>
       </div>
-      <p className="text-[12px] text-foreground leading-relaxed mb-3">{t.plugins.fleet.pair_desc}</p>
+      <p className="text-[14px] text-foreground leading-relaxed mb-3">{t.plugins.fleet.pair_desc}</p>
 
       <div className="flex flex-col sm:flex-row gap-4">
         {/* QR placeholder */}
@@ -66,7 +66,7 @@ export function FleetPairDevice() {
           aria-hidden="true"
         >
           <QrCode className="w-8 h-8 text-foreground opacity-40" />
-          <span className="px-2 text-[10px] text-foreground">{t.plugins.fleet.pair_qr_placeholder}</span>
+          <span className="px-2 text-[12px] text-foreground">{t.plugins.fleet.pair_qr_placeholder}</span>
         </div>
 
         <div className="min-w-0 flex-1 space-y-2">
@@ -75,7 +75,7 @@ export function FleetPairDevice() {
               {t.plugins.fleet.pair_token_label}
             </p>
             <div className="flex items-center gap-2">
-              <code className="rounded-input border border-primary/15 bg-background/60 px-2 py-1 font-mono text-[13px] tracking-widest text-foreground">
+              <code className="rounded-input border border-primary/15 bg-background/60 px-2 py-1 font-mono text-[15px] tracking-widest text-foreground">
                 {token}
               </code>
               <button
@@ -105,17 +105,17 @@ export function FleetPairDevice() {
             <p className="typo-label uppercase tracking-wider text-foreground mb-0.5">
               {t.plugins.fleet.pair_endpoint_label}
             </p>
-            <code className="font-mono text-[12px] text-foreground">{endpoint}</code>
+            <code className="font-mono text-[14px] text-foreground">{endpoint}</code>
           </div>
 
-          <p className="flex items-start gap-1.5 text-[11px] text-foreground">
+          <p className="flex items-start gap-1.5 text-[13px] text-foreground">
             <Lock className="mt-0.5 w-3 h-3 shrink-0 text-emerald-400" aria-hidden="true" />
             <span>{t.plugins.fleet.pair_credentials_note}</span>
           </p>
         </div>
       </div>
 
-      <p className="mt-3 text-[11px] text-foreground leading-relaxed">{t.plugins.fleet.pair_preview_note}</p>
+      <p className="mt-3 text-[13px] text-foreground leading-relaxed">{t.plugins.fleet.pair_preview_note}</p>
     </div>
   );
 }

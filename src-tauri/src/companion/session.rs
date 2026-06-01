@@ -82,6 +82,14 @@ pub enum TurnOrigin {
         trigger_kind: String,
         trigger_ref: Option<String>,
     },
+    /// A frontend surface forwarded a *synthetic* prompt that is NOT the
+    /// user's own words — e.g. Fleet's "Ask Athena" button sends a crafted
+    /// stale-session directive. The user clicked a button, but the text is the
+    /// system's, so it must not impersonate a user turn: it persists as
+    /// `System` with a `[<source>]` marker (the chat renders it as a system
+    /// divider, not a user bubble) and the model is told the provenance.
+    /// `source` is a short human label, e.g. "Fleet".
+    External { source: String },
 }
 
 /// In-flight turn ids that the user has asked to interrupt. `run_cli`
@@ -342,6 +350,7 @@ pub async fn send_turn(
             EpisodeRole::System,
             format!("[proactive: {trigger_kind}]"),
         ),
+        TurnOrigin::External { source } => (EpisodeRole::System, format!("[{source}]")),
     };
     let user_ep_id = {
         #[cfg(feature = "ml")]
@@ -401,6 +410,12 @@ pub async fn send_turn(
         // (it has the execution details / trigger context), so the
         // `user_message` IS the directive — pass it straight through.
         TurnOrigin::Proactive { .. } => user_message.clone(),
+        // External turns: the body is the directive, but prepend an explicit
+        // provenance tag so the model treats it as an automated system request
+        // (not the operator typing) — stdin carries no role of its own.
+        TurnOrigin::External { source } => {
+            format!("[Automated request from {source} — not the user]\n\n{user_message}")
+        }
     };
 
     let (system_prompt, recall_preview) = {
@@ -760,7 +775,7 @@ pub async fn send_turn(
             // continuation is #1. A Proactive turn that emits
             // `continue_autonomously` (e.g. "I found a failed run, let me
             // dig deeper") starts its own chain just like a user ask.
-            TurnOrigin::User | TurnOrigin::Proactive { .. } => 1,
+            TurnOrigin::User | TurnOrigin::Proactive { .. } | TurnOrigin::External { .. } => 1,
             TurnOrigin::Autonomous { chain_index } => chain_index + 1,
         };
         if next_chain > MAX_AUTONOMOUS_CHAIN {

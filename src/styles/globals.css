@@ -5074,3 +5074,17 @@ html[data-motion="reduce"] .companion-typing-dot {
   animation: none;
   opacity: 0.55;
 }
+
+/* ---------------------------------------------------------------------------
+   Fleet typography scale — Fleet runs denser than the rest of the app, so its
+   sub-`text-base` text reads small. The `.fleet-typescale` class on the Fleet
+   roots (page + grid overlay) bumps the semantic tokens it uses by +2px
+   (preserving weight/line-height/letter-spacing). Arbitrary `text-[Npx]`
+   utilities in Fleet are bumped at the source. Global tokens are untouched.
+   Placed after the typography.css @import so it wins source-order ties vs the
+   `[data-text-scale]` rules at equal specificity. `typo-section-title` (18px,
+   already > base) is intentionally left alone.
+--------------------------------------------------------------------------- */
+.fleet-typescale .typo-caption     { font-size: 0.875rem; }  /* 12 → 14px */
+.fleet-typescale .typo-label       { font-size: 0.875rem; }  /* 12 → 14px */
+.fleet-typescale .typo-card-label  { font-size: 1rem; }      /* 14 → 16px */

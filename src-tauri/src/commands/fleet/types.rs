@@ -38,6 +38,11 @@ pub enum FleetSessionState {
     /// No hook activity AND no JSONL writes for `STALE_AFTER_SECS` (see
     /// [`registry`]). Likely user walked away or session hung.
     Stale,
+    /// Operator-initiated sleep: the PTY child was killed to free the process,
+    /// but `claude_session_id` + `cwd` are retained so the conversation can be
+    /// resurrected via `claude --resume`. NOT terminal — distinct from
+    /// `Exited` (which is a real death). Set by `fleet_hibernate_session`.
+    Hibernated,
     /// PTY child exited (clean or crash). Terminal state.
     Exited,
 }
