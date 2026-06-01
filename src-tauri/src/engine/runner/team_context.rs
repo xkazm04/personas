@@ -221,8 +221,8 @@ fn resolve_standards_policy(pool: &DbPool, persona: &Persona, team_id: &str) -> 
     };
 
     Some(format!(
-        "\n\n## STANDARDS & BRANCHING POLICY — project \"{}\"\nThis project's team must respect the following when implementing, committing, and opening/merging PRs:\n- Open pull requests against the branch `{}`.\n- Pre-commit gates that must pass before you commit: {}.\n- Gate scope: run the gates on YOUR increment (the changed files / PR diff), NOT the whole repository. Pre-existing repo-wide lint/test debt that you did not introduce (stray files, baseline errors on untouched code) is a WARN to record, NOT a commit/release blocker — do not HOLD the team's deliverable on baseline debt you didn't create. Only block on gate failures your own change introduced.\n- Automerge: {}.\n",
-        project.name, pr_base, gates_str, automerge_str
+        "\n\n## STANDARDS & BRANCHING POLICY — project \"{}\"\nThis project's team must respect the following when implementing, committing, and opening/merging PRs:\n- Open pull requests against the branch `{}`.\n- Pre-commit gates that must pass before you commit: {}.\n- Gate scope: run the gates on YOUR increment (the changed files / PR diff), NOT the whole repository. Pre-existing repo-wide lint/test debt that you did not introduce (stray files, baseline errors on untouched code) is a WARN to record, NOT a commit/release blocker — do not HOLD the team's deliverable on baseline debt you didn't create. Only block on gate failures your own change introduced.\n- Implementer (Dev Clone) in TEAM MODE: once your increment is green, OPEN A PR against `{}` via `gh pr create` and emit `dev-clone.pr.created` (PR url + branch + repo) so QA Guardian tests it in an isolated worktree and merges-or-returns it — do NOT commit straight to the base branch; the PR + QA test gate is the point of this team's flow. ALSO emit implementation.completed so the Code Reviewer reviews.\n- Automerge: {}.\n",
+        project.name, pr_base, gates_str, pr_base, automerge_str
     ))
 }
 
