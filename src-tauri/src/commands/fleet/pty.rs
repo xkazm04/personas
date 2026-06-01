@@ -101,6 +101,23 @@ pub fn spawn_session(
     // entry into the registry.
     let id = uuid::Uuid::new_v4().to_string();
 
+    // Deterministic Claude-session binding: for a FRESH spawn (not a
+    // `--resume`, and the caller didn't pin one) we assign claude's session id
+    // ourselves via `--session-id <uuid>` and pre-bind it on the registry row.
+    // This eliminates the whole cwd-guessing binding race — hooks
+    // (SessionStart/Stop/PreToolUse/Notification) then match by the KNOWN id
+    // so state transitions (incl. Stop→Idle) work, the transcript is
+    // `<uuid>.jsonl`, and N concurrent sessions in one cwd never cross-bind.
+    let assigned_claude_session_id: Option<String> = {
+        let has_resume = args.iter().any(|a| a == "--resume");
+        let has_explicit = args.iter().any(|a| a == "--session-id");
+        if has_resume || has_explicit {
+            None
+        } else {
+            Some(uuid::Uuid::new_v4().to_string())
+        }
+    };
+
     // Wire MCP: mint a per-session token, write a per-session
     // mcp.json, return the path so we can inject `--mcp-config` into
     // the claude argv. Best-effort — a failure here doesn't abort the
@@ -144,6 +161,10 @@ pub fn spawn_session(
         // permission prompts would just freeze them at AwaitingInput with no one
         // to answer. Skip them — the user opted into this for the fleet.
         c.arg("--dangerously-skip-permissions");
+        if let Some(sid) = assigned_claude_session_id.as_deref() {
+            c.arg("--session-id");
+            c.arg(sid);
+        }
         if let Some(p) = mcp.config_path.as_deref() {
             // Same forward-slash conversion as before — avoids
             // `--mcp-config` parsing the path as inline JSON when the
@@ -164,6 +185,10 @@ pub fn spawn_session(
     } else {
         let mut c = CommandBuilder::new("claude");
         c.arg("--dangerously-skip-permissions");
+        if let Some(sid) = assigned_claude_session_id.as_deref() {
+            c.arg("--session-id");
+            c.arg(sid);
+        }
         if let Some(p) = mcp.config_path.as_deref() {
             c.arg("--mcp-config");
             c.arg(p.as_os_str());
@@ -215,7 +240,9 @@ pub fn spawn_session(
 
     let inner = FleetSessionInner {
         id: id.clone(),
-        claude_session_id: None,
+        // Pre-bound for fresh spawns (we passed `--session-id`); `None` for
+        // resume/explicit, which bind via their own path.
+        claude_session_id: assigned_claude_session_id,
         cwd: cwd.clone(),
         project_label,
         name: None,
