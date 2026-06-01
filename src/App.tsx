@@ -271,7 +271,7 @@ export default function App() {
         <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
           <AriaLiveProvider>
         <div
-          className={`flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
+          className={`app-safe-area flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
         >
           <a
             href="#main-content"
