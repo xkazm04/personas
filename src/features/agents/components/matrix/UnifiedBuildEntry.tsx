@@ -31,8 +31,14 @@ import type { ActiveProcess } from "@/stores/slices/processActivitySlice";
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import AdoptionWizardModal from "@/features/templates/sub_generated/adoption/AdoptionWizardModal";
+import { BuildTemplateSuggestion } from "@/features/agents/components/matrix/BuildTemplateSuggestion";
+import { getDesignReview } from "@/api/overview/reviews";
+import { cancelBuildSession } from "@/api/agents/buildSession";
+import type { PersonaDesignReview } from "@/lib/bindings/PersonaDesignReview";
+import type { CompanionTemplateMatch } from "@/api/companion";
 
 
 
@@ -162,6 +168,15 @@ export function UnifiedBuildEntry() {
     initialNotificationChannels,
     setInitialNotificationChannels,
   ] = useState<ChannelSpecV2[] | null>(null);
+
+  // Glyph-convergence redesign (R2/R3) — mid-build template suggestion.
+  // When the first clarifying questions land, BuildTemplateSuggestion matches
+  // the intent against published templates and offers to route to adoption.
+  // `templateSuggestionDismissed` latches the user's "keep building" choice
+  // (reset per build session below); `adoptionReview` (when set) swaps the
+  // build surface for the inline adoption wizard.
+  const [templateSuggestionDismissed, setTemplateSuggestionDismissed] = useState(false);
+  const [adoptionReview, setAdoptionReview] = useState<PersonaDesignReview | null>(null);
 
   // Phase F: pending auto-launch from Athena's prefill_persona_create.
   // Captured at mount time (so a prefill landing later doesn't surprise
@@ -333,6 +348,58 @@ export function UnifiedBuildEntry() {
       autoTestedRef.current = null;
     }
   }, [build.pendingQuestions]);
+
+  // -- Mid-build template suggestion (glyph-convergence R2/R3) -------------
+  // Re-arm the suggestion whenever a new build session starts so dismissing
+  // it on one build doesn't suppress it forever.
+  useEffect(() => {
+    setTemplateSuggestionDismissed(false);
+  }, [buildSessionId]);
+
+  // Accept route: accepting the suggestion abandons the from-scratch build in
+  // favour of template adoption ("replace the questionnaire process and route
+  // to template adoption"). Fetch the full design review, cancel the running
+  // generated build session, then mount the inline adoption wizard in place of
+  // the build surface. AdoptionWizardModal's open-effect resets the remaining
+  // frontend build state, so the two flows don't fight over the session slot.
+  const handleAcceptTemplate = useCallback(async (match: CompanionTemplateMatch) => {
+    try {
+      const review = await getDesignReview(match.id);
+      const sessionId = useAgentStore.getState().buildSessionId;
+      if (sessionId) {
+        await cancelBuildSession(sessionId).catch(
+          silentCatch("features/agents/components/matrix/UnifiedBuildEntry:cancel-for-adopt"),
+        );
+      }
+      setAdoptionReview(review);
+    } catch (err) {
+      toastCatch("features/agents/components/matrix/UnifiedBuildEntry:accept-template")(err);
+    }
+  }, []);
+
+  // User closed/discarded the inline adoption wizard. The wizard already
+  // cleaned up its own draft + build session; return them to a fresh compose
+  // surface (build session is null → the layout shows compose).
+  const handleAdoptionClose = useCallback(() => {
+    setAdoptionReview(null);
+    setTemplateSuggestionDismissed(true);
+    setIntentText('');
+    setAgentName('');
+  }, [setIntentText]);
+
+  // Adoption completed — navigate to the new persona, mirroring
+  // handleViewPromotedAgent's post-promotion cleanup.
+  const handleAdoptionPersonaCreated = useCallback((personaId: string) => {
+    setAdoptionReview(null);
+    useAgentStore.getState().resetBuildSession();
+    setIntentText('');
+    setAgentName('');
+    useSystemStore.getState().setSetupGoal('');
+    useAgentStore.getState().selectPersona(personaId);
+    void useAgentStore.getState().fetchPersonas();
+    useSystemStore.getState().setIsCreatingPersona(false);
+    useSystemStore.getState().setEditorTab('matrix');
+  }, [setIntentText]);
   useEffect(() => {
     const phase = build.buildPhase;
     if (phase !== 'draft_ready') return;
@@ -646,6 +713,16 @@ export function UnifiedBuildEntry() {
           legacy surface for the now-deleted 8-dimension matrix and ran
           duplicated against the overlay in the prototype. */}
 
+      {adoptionReview ? (
+        <AdoptionWizardModal
+          inline
+          isOpen
+          review={adoptionReview}
+          onClose={handleAdoptionClose}
+          onPersonaCreated={handleAdoptionPersonaCreated}
+        />
+      ) : (
+        <>
       {/* Layout toggle — two modes: glyph-full and composer-prototype. */}
       <div
         className="flex-shrink-0 mb-2 flex justify-end items-center gap-2"
@@ -704,6 +781,16 @@ export function UnifiedBuildEntry() {
           </button>
         </div>
       </div>
+
+      <BuildTemplateSuggestion
+        intent={intentText}
+        active={
+          (build.pendingQuestions?.length ?? 0) > 0 &&
+          !templateSuggestionDismissed
+        }
+        onAccept={handleAcceptTemplate}
+        onDismiss={() => setTemplateSuggestionDismissed(true)}
+      />
 
       {layout === "composer-prototype" ? (
         <GlyphPrototypeLayout
@@ -783,6 +870,8 @@ export function UnifiedBuildEntry() {
             {t.errors.dismiss_error}
           </button>
         </div>
+      )}
+        </>
       )}
 
       </div>
