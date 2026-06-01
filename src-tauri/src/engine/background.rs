@@ -479,6 +479,13 @@ pub fn start_loops(
         Box::new(subscription::ManualReviewAutoTriageSubscription {
             pool: pool.clone(),
         }),
+        // Autonomous backlog -> goal (G7) — default-OFF; gated on the
+        // AUTONOMOUS_BACKLOG_TO_GOAL setting inside its tick. When a goal-linked
+        // project runs out of open goals, promote its best pending backlog idea
+        // to a new goal so the goal-advance loop self-sustains instead of idling.
+        Box::new(subscription::BacklogToGoalSubscription {
+            pool: pool.clone(),
+        }),
         // Incident auto-continuation (P2.3b): re-run blocked work when its
         // persona-raised incident is resolved. Idempotent via claim_continuation.
         Box::new(crate::engine::incident_continuation::IncidentContinuationSubscription {

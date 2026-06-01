@@ -1779,6 +1779,161 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Autonomous backlog → goal (default-OFF) — keep the goal-advance loop fed
+// ---------------------------------------------------------------------------
+
+/// Max goals promoted per tick (one per idling project; this caps the total).
+const BACKLOG_TO_GOAL_MAX_PER_TICK: usize = 5;
+
+/// Keeps the unattended goal-advance loop self-sustaining (analysis §G7): when a
+/// goal-linked project has run out of open goals (the loop would otherwise
+/// idle), promote that project's single BEST pending backlog idea (highest
+/// impact, lowest risk, lowest effort) into a new `dev_goals` row and mark the
+/// idea accepted. ONE goal per idling project per tick — flood-safe; nothing
+/// happens for a project that still has an open goal or no pending ideas.
+/// Default-OFF (`AUTONOMOUS_BACKLOG_TO_GOAL`).
+pub struct BacklogToGoalSubscription {
+    pub pool: DbPool,
+}
+
+/// The best pending idea for an idling goal-linked project.
+struct PromotableIdea {
+    idea_id: String,
+    project_id: String,
+    title: String,
+    description: Option<String>,
+}
+
+fn find_promotable_ideas(pool: &DbPool) -> Result<Vec<PromotableIdea>, crate::error::AppError> {
+    let conn = pool.get()?;
+    // One row per IDLING goal-linked project (no open, non-done, progress<100
+    // goal): that project's single best pending idea, ranked impact desc, risk
+    // asc, effort asc, oldest first as the tiebreak.
+    let mut stmt = conn.prepare(
+        "SELECT i.id, i.project_id, i.title, i.description
+         FROM dev_ideas i
+         JOIN dev_projects dp ON dp.id = i.project_id
+         WHERE dp.team_id IS NOT NULL
+           AND i.status = 'pending'
+           AND NOT EXISTS (
+             SELECT 1 FROM dev_goals g
+             WHERE g.project_id = i.project_id
+               AND g.status NOT IN ('done','completed')
+               AND g.progress < 100
+           )
+           AND i.id = (
+             SELECT i2.id FROM dev_ideas i2
+             WHERE i2.project_id = i.project_id AND i2.status = 'pending'
+             ORDER BY COALESCE(i2.impact,0) DESC, COALESCE(i2.risk,99) ASC, COALESCE(i2.effort,99) ASC, i2.created_at ASC
+             LIMIT 1
+           )
+         ORDER BY i.project_id",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        Ok(PromotableIdea {
+            idea_id: r.get(0)?,
+            project_id: r.get(1)?,
+            title: r.get(2)?,
+            description: r.get(3)?,
+        })
+    })?;
+    Ok(rows.filter_map(Result::ok).collect())
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for BacklogToGoalSubscription {
+    fn name(&self) -> &'static str {
+        "backlog_to_goal"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(150)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_BACKLOG_TO_GOAL,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        // Don't generate new work while inside a quota-limit window (G1).
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("backlog_to_goal: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let pool = self.pool.clone();
+        let promoted = tokio::task::spawn_blocking(move || {
+            let ideas = match find_promotable_ideas(&pool) {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(error = %e, "backlog_to_goal: query failed");
+                    return 0usize;
+                }
+            };
+            let mut n = 0usize;
+            for idea in ideas.into_iter().take(BACKLOG_TO_GOAL_MAX_PER_TICK) {
+                let desc = format!(
+                    "{}\n\n(Promoted from backlog idea {} to keep the team's goal queue fed.)",
+                    idea.description.as_deref().unwrap_or("").trim(),
+                    idea.idea_id,
+                );
+                match crate::db::repos::dev_tools::create_goal(
+                    &pool,
+                    &idea.project_id,
+                    &idea.title,
+                    Some(desc.trim()),
+                    None,
+                    Some("open"),
+                    None,
+                    None,
+                ) {
+                    Ok(_) => {
+                        // Mark the idea consumed so it is never re-promoted.
+                        let _ = crate::db::repos::dev_tools::update_idea(
+                            &pool,
+                            &idea.idea_id,
+                            None,
+                            None,
+                            Some("accepted"),
+                            None,
+                            None,
+                            None,
+                            None,
+                            None,
+                        );
+                        n += 1;
+                        tracing::info!(project_id = %idea.project_id, idea_id = %idea.idea_id, "backlog_to_goal: promoted backlog idea to goal");
+                    }
+                    Err(e) => {
+                        tracing::warn!(idea_id = %idea.idea_id, error = %e, "backlog_to_goal: create_goal failed")
+                    }
+                }
+            }
+            n
+        })
+        .await
+        .unwrap_or(0);
+
+        if promoted > 0 {
+            tracing::info!(count = promoted, "backlog_to_goal: promoted {promoted} backlog idea(s) to goals");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

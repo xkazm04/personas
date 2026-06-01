@@ -229,6 +229,17 @@ pub const AUTONOMOUS_REVIEW_TRIAGE: &str = "autonomous_review_triage";
 /// Default for [`AUTONOMOUS_REVIEW_TRIAGE`] — off (opt-in autonomy).
 pub const AUTONOMOUS_REVIEW_TRIAGE_DEFAULT: bool = false;
 
+/// Whether the autonomous backlog-to-goal tick may, unattended, keep the
+/// goal-advance loop self-sustaining: when a goal-linked project has run out of
+/// open goals (the loop would otherwise idle), promote that project's single
+/// best PENDING backlog idea (highest impact, lowest risk, lowest effort) into a
+/// new `dev_goals` row and mark the idea accepted. One goal per idling project
+/// per tick — flood-safe. Default OFF — opt-in. Read by
+/// `engine::subscription::BacklogToGoalSubscription`. Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_BACKLOG_TO_GOAL: &str = "autonomous_backlog_to_goal";
+/// Default for [`AUTONOMOUS_BACKLOG_TO_GOAL`] — off (opt-in autonomy).
+pub const AUTONOMOUS_BACKLOG_TO_GOAL_DEFAULT: bool = false;
+
 /// Global cap on the number of executions that may run concurrently across ALL
 /// personas. Read ONCE at engine construction (see
 /// `crate::engine::ExecutionEngine::new`) and seeded into the
@@ -315,6 +326,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
+    AUTONOMOUS_BACKLOG_TO_GOAL,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
@@ -417,6 +429,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_GOAL_ADVANCEMENT
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
+        | AUTONOMOUS_BACKLOG_TO_GOAL
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),
