@@ -589,6 +589,12 @@ export type Translations = {
     };
   };
   agents: {
+    build_template_match_label: string;
+    build_template_match_title: string;
+    build_template_match_body: string;
+    build_template_match_adopt: string;
+    build_template_match_dismiss: string;
+    build_template_match_loading: string;
     create_match_heading: string;
     create_heading: string;
     create_describe_label: string;

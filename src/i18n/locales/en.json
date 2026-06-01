@@ -583,6 +583,12 @@
     }
   },
   "agents": {
+    "build_template_match_label": "Faster path",
+    "build_template_match_title": "“{name}” looks like a match",
+    "build_template_match_body": "This ready-made template covers what you described — adopt it to skip these questions. It's already set up and tested.",
+    "build_template_match_adopt": "Use this template",
+    "build_template_match_dismiss": "Keep building",
+    "build_template_match_loading": "Checking for matching templates…",
     "create_match_heading": "Templates matching your description",
     "create_heading": "Create a persona",
     "create_describe_label": "What should this agent do?",
