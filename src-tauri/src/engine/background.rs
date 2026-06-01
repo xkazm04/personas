@@ -877,6 +877,12 @@ pub(crate) async fn event_bus_tick(
     for (idx, matches) in &event_matches {
         let event = &events[*idx];
         let mut any_failed = false;
+        // Breadcrumb: set when a handoff EXPLICITLY targeted at a persona is
+        // dropped because that persona is disabled. The bus marks the event
+        // `delivered` either way, so without this a stalled cascade is invisible
+        // (delivered + no execution, no error). health-lint catches this pre-run;
+        // this carries the reason onto the event at runtime.
+        let mut dropped_disabled_target = false;
 
         for m in matches {
             // Resolve persona from map
@@ -896,12 +902,27 @@ pub(crate) async fn event_bus_tick(
             // on personas.enabled. Skip silently — no DLQ, no retry — the
             // user explicitly turned the agent off.
             if !persona.enabled {
-                tracing::info!(
-                    persona_id = %persona.id,
-                    persona_name = %persona.name,
-                    event_type = %event.event_type,
-                    "Event bus: skipping — persona is disabled"
-                );
+                // A handoff explicitly targeted at this (disabled) persona is a
+                // dropped cascade step — the chain stalls here. Mark it so the
+                // delivered event carries WHY no execution followed. An untargeted
+                // fan-out reaching a disabled persona is an ordinary skip (the user
+                // turned that agent off on purpose) and stays a quiet info log.
+                if event.target_persona_id.as_deref() == Some(persona.id.as_str()) {
+                    dropped_disabled_target = true;
+                    tracing::warn!(
+                        persona_id = %persona.id,
+                        persona_name = %persona.name,
+                        event_type = %event.event_type,
+                        "Event bus: DROPPED handoff — target persona is disabled; cascade stalls here (enable it to resume)"
+                    );
+                } else {
+                    tracing::info!(
+                        persona_id = %persona.id,
+                        persona_name = %persona.name,
+                        event_type = %event.event_type,
+                        "Event bus: skipping — persona is disabled"
+                    );
+                }
                 continue;
             }
 
@@ -1105,7 +1126,15 @@ pub(crate) async fn event_bus_tick(
                 }
             }
         } else {
-            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, None);
+            // Carry the disabled-target breadcrumb onto the delivered event so DB
+            // forensics (and any UI reading error_message) show why a targeted
+            // handoff produced no execution instead of an opaque "delivered".
+            let note = dropped_disabled_target.then(|| {
+                "handoff dropped: target persona disabled — cascade stalled here \
+                 (enable the persona to resume)"
+                    .to_string()
+            });
+            let _ = event_repo::update_status(pool, &event.id, PersonaEventStatus::Delivered, note);
             emit_event_to_frontend(app, event, PersonaEventStatus::Delivered);
         }
         scheduler.events_processed.fetch_add(1, Ordering::Relaxed);
