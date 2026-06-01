@@ -803,4 +803,59 @@ mod tests {
         let queued = tracker.queues.get("p1").unwrap().front().unwrap();
         assert_eq!(queued.persona_max_concurrent, 1);
     }
+
+    // =====================================================================
+    // Configurable global cap (max_parallel_executions setting)
+    // =====================================================================
+
+    /// The tracker honors a cap injected via `set_global_max_concurrent` rather
+    /// than the compile-time const: admit `cap` executions across distinct
+    /// personas (per-persona unlimited so only the global cap can reject), queue
+    /// the next, re-admit after a slot frees.
+    #[test]
+    fn test_injected_global_cap_is_respected() {
+        let mut tracker = ConcurrencyTracker::new();
+        tracker.set_global_max_concurrent(2);
+        assert_eq!(tracker.global_max_concurrent(), 2);
+
+        assert!(matches!(
+            tracker.admit("pa", "e1", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        assert!(matches!(
+            tracker.admit("pb", "e2", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        assert_eq!(tracker.total_running(), 2);
+
+        // At the cap of 2 -> third is queued.
+        assert!(matches!(
+            tracker.admit("pc", "e3", 0, ExecutionPriority::Normal),
+            AdmitResult::Queued { position: 0 }
+        ));
+        assert!(!tracker.has_global_capacity());
+
+        // Free a slot -> capacity returns and a new admit runs.
+        tracker.remove_running("pa", "e1");
+        assert!(tracker.has_global_capacity());
+        assert!(matches!(
+            tracker.admit("pd", "e4", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+    }
+
+    /// A cap of 1 fully serializes execution across all personas.
+    #[test]
+    fn test_injected_global_cap_of_one_serializes() {
+        let mut tracker = ConcurrencyTracker::new();
+        tracker.set_global_max_concurrent(1);
+        assert!(matches!(
+            tracker.admit("pa", "e1", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        assert!(matches!(
+            tracker.admit("pb", "e2", 0, ExecutionPriority::Normal),
+            AdmitResult::Queued { .. }
+        ));
+    }
 }

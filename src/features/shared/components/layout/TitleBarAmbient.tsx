@@ -1,9 +1,6 @@
-import { Sunrise, Sun, Sunset, Moon, Search, type LucideIcon } from 'lucide-react';
+import { Sunrise, Sun, Sunset, Moon, type LucideIcon } from 'lucide-react';
 import { useThemeStore } from '@/stores/themeStore';
 import { useTimeOfDay, type TimeOfDay } from '@/hooks/utility/useTimeOfDay';
-import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
-import { useTranslation } from '@/i18n/useTranslation';
-import { Tooltip } from '@/features/shared/components/display/Tooltip';
 
 const PHASE_ICONS: Record<TimeOfDay, LucideIcon> = {
   dawn: Sunrise,
@@ -17,31 +14,18 @@ interface AmbientProps {
 }
 
 /**
- * The time-of-day illustration in the centre of the title bar, doubling as the
- * settings-search affordance: hovering/focusing it brightens the art and
- * reveals a magnifier; clicking (or Cmd/Ctrl+K) opens the command palette
- * focused on settings. Decorative when ambient art is disabled in Appearance.
+ * The time-of-day illustration in the centre of the title bar. Purely
+ * decorative — the search affordance that used to live on top of it moved to a
+ * dedicated title-bar button (so the art stays draggable as a window-drag
+ * region). Hidden when ambient art is disabled in Appearance.
  */
 export function TitleBarAmbient() {
   const enabled = useThemeStore((s) => s.ambientTimeOfDay);
   const phase = useTimeOfDay();
-  const openPalette = useCommandPaletteStore((s) => s.openPalette);
-  const { t } = useTranslation();
   if (!enabled) return null;
   return (
-    <div className="ambient-search-anchor">
-      <Tooltip content={t.settings.search.trigger_hint} placement="bottom">
-        <button
-          type="button"
-          className="ambient-search-trigger"
-          data-testid="titlebar-settings-search"
-          aria-label={t.settings.search.trigger_aria}
-          onClick={() => openPalette('settings')}
-        >
-          <AmbientDeco phase={phase} />
-          <Search className="ambient-search-icon" size={15} strokeWidth={1.75} aria-hidden />
-        </button>
-      </Tooltip>
+    <div data-tauri-drag-region className="ambient-deco-anchor" aria-hidden>
+      <AmbientDeco phase={phase} />
     </div>
   );
 }

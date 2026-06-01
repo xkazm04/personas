@@ -67,6 +67,7 @@ export function statusLabel(t: Translations, status: string): string {
   switch (status) {
     case 'open': return t.overview.incidents.filter_status_open;
     case 'acknowledged': return t.overview.incidents.filter_status_acknowledged;
+    case 'in_progress': return t.overview.incidents.filter_status_in_progress;
     case 'resolved': return t.overview.incidents.filter_status_resolved;
     case 'dismissed': return t.overview.incidents.filter_status_dismissed;
     default: return status;

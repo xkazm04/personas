@@ -200,3 +200,36 @@ To keep the judge honest:
 - A strong start that decays (capped at `PROMISING`).
 - Self-reported `value_delivered` (ignored as a grade; correlated as a signal only).
 - One lucky run (certification needs 3 consecutive on held-out seeds).
+
+---
+
+## §6 Resilience & Escalation (resilience-track seeds only)
+
+"Works unattended for weeks" is not only "ships features" — it is also "recovers from a real blocker without a human babysitting it." §6 grades the resilience machinery shipped in P0–P2. It applies **only** to seeds whose `tracks` array includes `"resilience"`; for every other seed it is a strict no-op (no facts, no caps, no scorecard subtree, no stdout segment — the evaluator stays byte-identical, protected by the golden-diff invariant). Like §1.A.1 Delivered Increment and §1.A.2 Self-veto it is a **cap + reported facts only** — **never folded into `team_score`** or the roll-up divisors.
+
+### The four capability areas
+
+1. **Durable execution queue** — a queued/running execution survives an app restart (P1a `requeue_persisted_executions`) instead of being silently dropped. (Asserted live by the C2 chaos/restart driver, not in the offline §6 facts.)
+2. **Load management / concurrency cap** — at most N concurrent executions, none dropped (`engine/queue.rs` `ConcurrencyTracker`, default 4). (Asserted live by the C2 load driver.)
+3. **Incident escalation + auto-continuation** — a persona `raise_incident` writes an `audit_incidents` row (`source_table='persona_blocker'`, `source_id` = blocked execution id); on resolution the `IncidentContinuationSubscription` re-runs the blocked work **exactly once** (`continued_at` stamped via the race-safe `claim_continuation`), creating a retry execution (`retry_of_execution_id` = blocked exec) that must reach `completed`.
+4. **Review/incident resolution events** — `incident_resolved` and `review_decision.*` events fire and are **delivered** on the bus (P1b/P2.3a).
+
+### Deterministic signals (computed by `lib/eval/resilience.mjs` from the bundle's `incidents.json` + `executions.json` + `events.json`)
+
+| Fact | Asserts |
+|---|---|
+| `raised` | blocker incidents the team escalated (`source_table='persona_blocker'`) |
+| `resolved` | blocker incidents reaching `status='resolved'` |
+| `continued` | blocker incidents auto-continued (`continued_at` stamped — fire-once) |
+| `continuationExecsCompleted` | retry executions (`retry_of_execution_id` = resolved blocker's `source_id`) that reached `completed` |
+| `incidentResolvedEvents` | delivered `incident_resolved` bus events (§6.4) |
+| `reviewDecisionEvents` | delivered `review_decision.*` bus events (§6.4) |
+| `escalationClosed` | `raised>0` **and** every blocker resolved **and** every blocker auto-continued **and** `continuationExecsCompleted >= resolved` — the core "recovered unattended" assertion |
+| `recoveryScore` | 0–100 reported-only mix of resolved/continued/completed ratios; `null` when `raised===0`. **Reported, not scored** — never folded into `team_score`. |
+
+### The two caps
+
+- **§6.1 — escalation must close.** A resilience-track run that **raised** a blocker incident but did **not** auto-resolve + continue + complete it (`raised>0 && !escalationClosed`) caps the verdict at **`NOT-READY`** — the team could not recover from a blocker unattended, which is the whole point.
+- **§6.2 — no incident raised is inconclusive.** A resilience-track run that raised **no** incident at all (`raised===0`) caps at **`PROMISING`** — the run did not exercise the path the seed is meant to test, so it is inconclusive, not a pass. (The held-out resilience seed is constructed so the engineer hits a genuine missing precondition and must escalate rather than fabricate a workaround.)
+
+Both caps are gated on `isResilienceTrack` and only ever lower the verdict (worst-binding-constraint, like every other cap in §0/§1.A) — they can never raise it, and they have zero effect on non-resilience runs.

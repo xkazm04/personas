@@ -60,6 +60,12 @@ pub fn delete_message(state: State<'_, Arc<AppState>>, id: String) -> Result<boo
 }
 
 #[tauri::command]
+pub fn delete_all_messages(state: State<'_, Arc<AppState>>) -> Result<usize, AppError> {
+    require_auth_sync(&state)?;
+    repo::delete_all(&state.db)
+}
+
+#[tauri::command]
 pub fn get_unread_message_count(state: State<'_, Arc<AppState>>) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
     repo::get_unread_count(&state.db)

@@ -134,14 +134,15 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
       {/* Two-row body */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground/90 truncate">{headerTitle}</span>
+          <span className="typo-body font-medium text-foreground truncate">{headerTitle}</span>
           {!notification.read && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
           <span className="typo-caption text-foreground ml-auto flex-shrink-0">
             {formatTimestamp(notification.timestamp)}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <p className="typo-caption text-foreground truncate flex-1">{bodyText}</p>
+          {/* eslint-disable-next-line custom/no-low-contrast-text-classes -- body intentionally dimmer than the title for hierarchy (per request) */}
+          <p className="typo-caption text-foreground/80 truncate flex-1">{bodyText}</p>
           {redirectSection && (
             <button
               onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
@@ -214,14 +215,15 @@ function NotificationItem({ notification }: { notification: PipelineNotification
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="typo-body font-medium text-foreground/90 truncate">{pipelineTitle}</span>
+          <span className="typo-body font-medium text-foreground truncate">{pipelineTitle}</span>
           {!notification.read && <span className="w-1.5 h-1.5 rounded-full bg-orange-500 flex-shrink-0" />}
           <span className="typo-caption text-foreground ml-auto flex-shrink-0">
             {formatTimestamp(notification.timestamp)}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <p className="typo-caption text-foreground truncate flex-1 font-mono">{bodyText}</p>
+          {/* eslint-disable-next-line custom/no-low-contrast-text-classes -- body intentionally dimmer than the title for hierarchy (per request) */}
+          <p className="typo-caption text-foreground/80 truncate flex-1 font-mono">{bodyText}</p>
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             {notification.webUrl && (
               <button
@@ -297,28 +299,30 @@ export function NotificationCenter() {
     <>
     {isOpen && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — starts below the title bar so the app header (and the
+              bell that toggles this tray) stay visible and clickable. */}
           <div
-            className="animate-fade-slide-in fixed inset-0 z-[90] bg-black/30 backdrop-blur-[2px]"
+            className="animate-fade-slide-in fixed inset-x-0 bottom-0 top-[var(--titlebar-height,40px)] z-[90] bg-black/30 backdrop-blur-[2px]"
             onClick={() => setHeaderOverlay('none')}
           />
 
-          {/* Panel */}
+          {/* Panel — offset from the top by the title-bar height so its own
+              header isn't hidden behind the app title bar. */}
           <div
-            className="animate-fade-in fixed top-0 right-0 bottom-0 z-[91] w-[380px] max-w-[90vw] bg-background border-l border-primary/15 shadow-elevation-4 flex flex-col"
+            className="animate-fade-in fixed top-[var(--titlebar-height,40px)] right-0 bottom-0 z-[91] w-[380px] max-w-[90vw] bg-background border-l border-primary/15 shadow-elevation-4 flex flex-col"
           >
-            {/* Thin header — opening the bell already marks everything read, so
-                the header keeps just the title, a Clear-all action, and close. */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-primary/10">
+            {/* Drawer header — opening the bell already marks everything read,
+                so the header carries the title, a Clear-all action, and close. */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-primary/10">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-orange-400" />
-                <h2 className="typo-body font-semibold text-foreground/90">{t.gitlab.notifications}</h2>
+                <h2 className="typo-body font-semibold text-foreground">{t.gitlab.notifications}</h2>
               </div>
               <div className="flex items-center gap-1">
                 {notifications.length > 0 && (
                   <button
                     onClick={clearAll}
-                    className="inline-flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors typo-caption"
+                    className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card border border-primary/15 bg-secondary/30 hover:bg-secondary/50 text-foreground transition-colors typo-caption"
                     title={t.gitlab.clear_all}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -327,7 +331,7 @@ export function NotificationCenter() {
                 )}
                 <button
                   onClick={() => setHeaderOverlay('none')}
-                  className="p-1 rounded-card hover:bg-secondary/50 text-foreground hover:text-foreground/70 transition-colors"
+                  className="p-1 rounded-card hover:bg-secondary/50 text-foreground transition-colors"
                   aria-label={t.gitlab.close_notification_center}
                 >
                   <X className="w-4 h-4" />

@@ -80,10 +80,17 @@ export async function companionSendMessage(
   voiceEnabled: boolean = false,
   recallSynthesisEnabled: boolean = false,
   autonomousMode: boolean = false,
+  /**
+   * Provenance label when the message is a *synthetic* prompt forwarded by a
+   * surface (e.g. `'Fleet'` for the Ask-Athena button) rather than the user's
+   * own words. The turn then persists as a tagged System message instead of
+   * impersonating the user. Omit for normal user input.
+   */
+  systemSource?: string,
 ): Promise<SendTurnResult> {
   return invoke<SendTurnResult>(
     'companion_send_message',
-    { message, voiceEnabled, recallSynthesisEnabled, autonomousMode },
+    { message, voiceEnabled, recallSynthesisEnabled, autonomousMode, systemSource: systemSource ?? null },
     { timeoutMs: COMPANION_TURN_TIMEOUT_MS },
   );
 }
@@ -687,6 +694,13 @@ export type ClientAction =
   | {
       type: 'open_companion_tab';
       tab: 'setup' | 'memory' | 'voice' | 'dashboard' | string;
+    }
+  | {
+      /** Open an external URL (e.g. a dev project's test-environment) in the
+       * browser via the validated `open_external_url` command. Emitted by the
+       * `open_test_env` action. */
+      type: 'open_external_url';
+      url: string;
     };
 
 export async function companionListPendingApprovals(): Promise<PendingApproval[]> {
@@ -975,6 +989,7 @@ export interface ProactiveMessage {
     | 'backlog_aging'
     | 'cadence_due'
     | 'athena_scheduled'
+    | 'incident_blocker'
     | string;
   triggerRef: string | null;
   message: string;

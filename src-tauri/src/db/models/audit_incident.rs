@@ -20,10 +20,20 @@ use ts_rs::TS;
 /// for typed UI surfaces and for the lifecycle transition guards in the repo.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export)]
-#[serde(rename_all = "lowercase")]
+// snake_case (NOT lowercase): single-word variants are unchanged
+// (open/acknowledged/resolved/dismissed) but the two-word InProgress must
+// serialize to "in_progress" to match the DB strings + the manual
+// as_str/from_str at the repo boundary. With "lowercase" it would become
+// "inprogress" and silently never match stored rows / the frontend type.
+#[serde(rename_all = "snake_case")]
 pub enum IncidentStatus {
     Open,
     Acknowledged,
+    /// Someone is actively working the incident (the "In Progress" state from
+    /// the escalation spec). Distinct from `Acknowledged` (seen-but-not-started):
+    /// the user/Athena has committed to fixing it. `open → in_progress → resolved`
+    /// is the primary escalation lifecycle.
+    InProgress,
     Resolved,
     Dismissed,
 }
@@ -33,6 +43,7 @@ impl IncidentStatus {
         match self {
             IncidentStatus::Open => "open",
             IncidentStatus::Acknowledged => "acknowledged",
+            IncidentStatus::InProgress => "in_progress",
             IncidentStatus::Resolved => "resolved",
             IncidentStatus::Dismissed => "dismissed",
         }
@@ -42,6 +53,7 @@ impl IncidentStatus {
         match s {
             "open" => Some(IncidentStatus::Open),
             "acknowledged" => Some(IncidentStatus::Acknowledged),
+            "in_progress" => Some(IncidentStatus::InProgress),
             "resolved" => Some(IncidentStatus::Resolved),
             "dismissed" => Some(IncidentStatus::Dismissed),
             _ => None,
@@ -121,6 +133,11 @@ pub struct AuditIncident {
     pub acknowledged_by: Option<String>,
     pub resolved_at: Option<String>,
     pub resolution_note: Option<String>,
+    /// P2.3b — stamped when the incident-continuation reactive loop has re-run
+    /// the blocked work for this (persona_blocker) incident. NULL = not yet
+    /// continued; the consumer claims it atomically so a re-run fires at most
+    /// once.
+    pub continued_at: Option<String>,
     pub created_at: String,
 }
 

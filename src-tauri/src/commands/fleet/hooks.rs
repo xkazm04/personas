@@ -59,6 +59,13 @@ async fn receive_hook(
         .get("cwd")
         .and_then(|v| v.as_str())
         .map(str::to_string);
+    // Notification hooks carry a human message describing what Claude wants
+    // (e.g. "Claude needs your permission to use Bash"). Surface it so the
+    // "Needs you" banner + desktop alert can say what each session needs.
+    let message = body
+        .get("message")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
 
     tracing::debug!(
         event = %event,
@@ -97,7 +104,7 @@ async fn receive_hook(
                     );
             }
         } else {
-            apply_hook(sid, &event_kind, claude_session_id.clone(), &app);
+            apply_hook(sid, &event_kind, claude_session_id.clone(), message.as_deref(), &app);
         }
     } else {
         tracing::debug!(
@@ -192,6 +199,7 @@ fn apply_hook(
     session_id: &str,
     event_kind: &str,
     claude_session_id: Option<String>,
+    message: Option<&str>,
     app: &AppHandle,
 ) {
     let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
@@ -213,7 +221,12 @@ fn apply_hook(
         ),
         "notification" => (
             FleetSessionState::AwaitingInput,
-            "Notification hook — Claude is waiting".to_string(),
+            // The notification message says *what* Claude wants — surface it
+            // verbatim so the banner/alert is actionable; fall back generically.
+            message
+                .map(|m| m.trim().to_string())
+                .filter(|m| !m.is_empty())
+                .unwrap_or_else(|| "Claude is waiting for input".to_string()),
         ),
         "stop" => (
             FleetSessionState::Idle,
@@ -247,6 +260,7 @@ fn apply_hook(
     session.state = new_state;
     session.last_activity_ms = now_ms();
     session.state_reason = Some(reason.clone());
+    let project_label = session.project_label.clone();
 
     // Release the registry lock before emitting (events go through Tauri's
     // own bus and we don't want to risk reentry).
@@ -260,6 +274,20 @@ fn apply_hook(
             reason: Some(reason),
         },
     );
+
+    // Active fleet orchestration, fired Rust-direct (no frontend dependency):
+    // when this hook puts a session into AwaitingInput, wake Athena to manage
+    // the fleet. Gated on autonomous mode + throttled per session inside.
+    if matches!(new_state, FleetSessionState::AwaitingInput) {
+        if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+            crate::commands::companion::fleet_bridge::orchestrate_on_awaiting(
+                app,
+                &state,
+                session_id,
+                &project_label,
+            );
+        }
+    }
 }
 
 fn state_to_token(s: FleetSessionState) -> &'static str {
@@ -269,6 +297,7 @@ fn state_to_token(s: FleetSessionState) -> &'static str {
         FleetSessionState::AwaitingInput => "awaiting_input",
         FleetSessionState::Idle => "idle",
         FleetSessionState::Stale => "stale",
+        FleetSessionState::Hibernated => "hibernated",
         FleetSessionState::Exited => "exited",
     }
 }

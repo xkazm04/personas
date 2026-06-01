@@ -33,6 +33,9 @@ export const getAuditIncident = (id: string) =>
 export const acknowledgeAuditIncident = (id: string) =>
   invoke<boolean>("acknowledge_audit_incident", { id });
 
+export const setIncidentInProgress = (id: string) =>
+  invoke<boolean>("set_incident_in_progress", { id });
+
 export const resolveAuditIncident = (id: string, resolutionNote?: string) =>
   invoke<boolean>("resolve_audit_incident", {
     id,

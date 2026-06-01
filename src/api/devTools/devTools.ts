@@ -1,6 +1,7 @@
 import { invokeWithTimeout as invoke } from "@/lib/tauriInvoke";
 
 import type { DevProject } from "@/lib/bindings/DevProject";
+import type { SkillInstallResult } from "@/lib/bindings/SkillInstallResult";
 import type { DirectoryScanResult } from "@/lib/bindings/DirectoryScanResult";
 import type { DevGoal } from "@/lib/bindings/DevGoal";
 import type { DevGoalSignal } from "@/lib/bindings/DevGoalSignal";
@@ -67,7 +68,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -82,6 +83,11 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // untouched. The Tauri arg shape is `Some(None)` to clear / `Some(Some(v))`
     // to set — represented here as the value or null.
     prCredentialId: updates.prCredentialId,
+    // Option<Option<String>> like prCredentialId above: a string SETS the
+    // living test-environment URL/branch, `null` CLEARS, `undefined` leaves
+    // untouched.
+    testEnvUrl: updates.testEnvUrl,
+    testEnvBranch: updates.testEnvBranch,
   });
 
 export const deleteProject = (id: string) =>
@@ -213,6 +219,10 @@ export const portfolioSummary = () =>
 /** Cross-project "needs you" queue (awaiting-review / overdue / stalled / unstaffed). */
 export const attentionQueue = () =>
   invoke<AttentionQueue>("dev_tools_attention_queue", {});
+
+/** [goalId, teamName] for goals a team_assignment is advancing — the goal Map's "advancing team" badge (O4). Returns [] on failure (viz-only). */
+export const goalAdvancingTeams = () =>
+  safeInvoke<[string, string][]>([], "dev_tools_goal_advancing_teams", {});
 
 // ============================================================================
 // Cross-Project Metadata Map
@@ -909,6 +919,29 @@ export interface SkillFileContent {
 
 export const listSkills = (projectId?: string | null) =>
   safeInvoke<SkillEntry[]>([], "skill_files_list", { projectId: projectId ?? null });
+
+/** List skills from the user-global library (`~/.claude/skills`). */
+export const listSkillsGlobal = () =>
+  safeInvoke<SkillEntry[]>([], "skill_files_list_global", {});
+
+/**
+ * Install (copy) a skill into a target project's `.claude/skills`.
+ * `sourceProjectId = null` copies from the global library. With
+ * `overwrite = false`, an existing target skill is left untouched
+ * (result.installed === false, result.reason === "exists").
+ */
+export const installSkill = (
+  skillName: string,
+  sourceProjectId: string | null,
+  targetProjectId: string,
+  overwrite: boolean,
+) =>
+  invoke<SkillInstallResult>("skill_files_install", {
+    skillName,
+    sourceProjectId,
+    targetProjectId,
+    overwrite,
+  });
 
 export const readSkillFile = (skillName: string, fileName: string, projectId?: string | null) =>
   invoke<SkillFileContent>("skill_files_read", { skillName, fileName, projectId: projectId ?? null });

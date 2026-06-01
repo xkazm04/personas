@@ -279,6 +279,11 @@ export default function CompanionPanel() {
   const setAutonomousMode = useSystemStore((s) => s.setCompanionAutonomousMode);
   const panelCompact = useSystemStore((s) => s.companionPanelCompact);
   const setPanelCompact = useSystemStore((s) => s.setCompanionPanelCompact);
+  // While the Fleet grid overlay (z-200 portal) is open, the chat must float
+  // ABOVE it — otherwise tapping the orb opens the panel behind the overlay
+  // (reads as "orb disappears, no chat") and its decision/approval UI is
+  // unreachable. Mirrors the orb's own z-[210] lift; panel goes one above.
+  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const orbEnabled = useSystemStore((s) => s.companionOrbEnabled);
   const orbOpenOrigin = useCompanionStore((s) => s.orbOpenOrigin);
   const reduceMotion = useReducedMotion();
@@ -343,7 +348,7 @@ export default function CompanionPanel() {
           exit={morph.exit}
           transition={morph.transition}
           style={morph.style}
-          className={`fixed bottom-12 left-4 z-[60] ${
+          className={`fixed bottom-12 left-4 ${fleetGridOpen ? 'z-[220]' : 'z-[60]'} ${
             panelCompact ? 'w-[350px]' : 'w-[760px]'
           } h-[900px] max-h-[calc(100vh-5rem)] flex flex-col rounded-card bg-secondary/95 backdrop-blur-md border border-foreground/10 shadow-elevation-4 overflow-hidden transition-[width] duration-200 ease-out ${
             autonomousMode ? 'companion-autonomous' : ''
@@ -1647,6 +1652,36 @@ function Body(props: BodyProps) {
     useCompanionStore.getState().setVoiceTurnRequest(null);
     void send(req);
   }, [voiceTurnRequest, streaming, send]);
+
+  // Slice 6 — speak the hands-free decision aloud. When a decision becomes
+  // active, Athena reads its `prompt`; when the user picks `0` (explain), she
+  // reads the `recommendation`. Best-effort via the same one-shot progress
+  // channel as acks/heartbeats (`playProgressClip` no-ops when voice is off),
+  // so the bubble stays fully usable text-only. Keyed on the decision id (not
+  // the object) so each prompt speaks exactly once, never on every render.
+  const decisionId = useCompanionStore((s) => s.pendingDecision?.id ?? null);
+  const decisionExplained = useCompanionStore((s) => s.decisionExplained);
+  const spokenDecisionPromptRef = useRef<string | null>(null);
+  const spokenRecommendationForRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!decisionId) {
+      spokenDecisionPromptRef.current = null;
+      spokenRecommendationForRef.current = null;
+      return;
+    }
+    if (spokenDecisionPromptRef.current !== decisionId) {
+      spokenDecisionPromptRef.current = decisionId;
+      const prompt = useCompanionStore.getState().pendingDecision?.prompt;
+      if (prompt) playProgressClip(prompt);
+    }
+  }, [decisionId, playProgressClip]);
+  useEffect(() => {
+    if (!decisionId || !decisionExplained) return;
+    if (spokenRecommendationForRef.current === decisionId) return;
+    spokenRecommendationForRef.current = decisionId;
+    const rec = useCompanionStore.getState().pendingDecision?.recommendation;
+    if (rec) playProgressClip(rec);
+  }, [decisionId, decisionExplained, playProgressClip]);
 
   // Wrench-send: pipe the textarea content into the self-improve loop.
   // The improvement runs on a SEPARATE Claude CLI session at repo root

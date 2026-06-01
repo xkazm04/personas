@@ -13,4 +13,4 @@
  * them without an integer enum mapping. Keep names stable; they ship in
  * `FLEET_SESSION_STATE` event payloads and persisted decision logs.
  */
-export type FleetSessionState = "spawning" | "running" | "awaiting_input" | "idle" | "stale" | "exited";
+export type FleetSessionState = "spawning" | "running" | "awaiting_input" | "idle" | "stale" | "hibernated" | "exited";

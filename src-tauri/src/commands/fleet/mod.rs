@@ -19,9 +19,11 @@
 pub mod commands;
 pub mod hook_install;
 pub mod hooks;
+pub mod process_scan;
 pub mod pty;
 pub mod registry;
 pub mod stale;
 #[cfg(feature = "desktop")]
 pub mod transcript;
+pub mod transcript_read;
 pub mod types;

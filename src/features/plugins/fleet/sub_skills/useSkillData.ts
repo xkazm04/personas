@@ -3,8 +3,13 @@ import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import * as devApi from '@/api/devTools/devTools';
 import type { SkillEntry } from '@/api/devTools/devTools';
+import type { SkillInstallResult } from '@/lib/bindings/SkillInstallResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+
+/** Which library the browser is showing — the active project's skills, or
+ *  the user-global `~/.claude/skills` library. */
+export type SkillSource = 'project' | 'global';
 
 
 const FAVORITES_STORAGE_KEY = 'personas.devtools.skill_favorites';
@@ -34,7 +39,7 @@ function writeStringArray(key: string, values: string[]): void {
  * edit buffer, and the read/save calls. Every variant of the browser
  * consumes this hook so the file-buffer state survives variant switching.
  */
-export function useSkillData() {
+export function useSkillData(initialSource: SkillSource = 'project') {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
   const addToast = useToastStore((s) => s.addToast);
@@ -43,6 +48,9 @@ export function useSkillData() {
   const [skills, setSkills] = useState<SkillEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  // 'project' = active project's .claude/skills; 'global' = ~/.claude/skills.
+  // The drawer opens on 'global' (the shared library); the full browser on 'project'.
+  const [source, setSource] = useState<SkillSource>(initialSource);
 
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set(readStringArray(FAVORITES_STORAGE_KEY)));
   const [recentlyOpened, setRecentlyOpened] = useState<string[]>(() => readStringArray(RECENT_STORAGE_KEY));
@@ -78,14 +86,32 @@ export function useSkillData() {
   const fetchSkills = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await devApi.listSkills(activeProjectId);
+      const list = source === 'global'
+        ? await devApi.listSkillsGlobal()
+        : await devApi.listSkills(activeProjectId);
       setSkills(list);
     } catch {
       addToast(dt.skills_load_failed_toast, 'error');
     } finally {
       setLoading(false);
     }
-  }, [addToast, dt, activeProjectId]);
+  }, [addToast, dt, activeProjectId, source]);
+
+  // Install (copy) a skill into a target project's .claude/skills. The source
+  // is the browser's current source (active project or the global library).
+  // Returns the result so the caller can prompt to overwrite on "exists".
+  const installSkill = useCallback(
+    async (skillName: string, targetProjectId: string, overwrite: boolean): Promise<SkillInstallResult | null> => {
+      try {
+        const sourceProjectId = source === 'global' ? null : (activeProjectId ?? null);
+        return await devApi.installSkill(skillName, sourceProjectId, targetProjectId, overwrite);
+      } catch (err) {
+        addToast(err instanceof Error ? err.message : t.plugins.fleet.skill_install_failed, 'error');
+        return null;
+      }
+    },
+    [source, activeProjectId, addToast, t],
+  );
 
   // Reset selection + reload when the active project changes — skills come
   // from the new project's .claude/skills directory, so the previous
@@ -190,11 +216,12 @@ export function useSkillData() {
   return {
     skills, filtered, recentSkills,
     loading, search, setSearch,
+    source, setSource,
     selectedSkill, activeFile, fileContent, editContent, setEditContent,
     editing, setEditing, saving, fileLoading, loadFailed,
     skillFiles,
     fetchSkills, selectSkill, switchFile, save, cancelEdit, clearSelection,
-    toggleFavorite, isFavorite,
+    toggleFavorite, isFavorite, installSkill,
   };
 }
 

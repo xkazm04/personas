@@ -42,6 +42,10 @@ pub struct FleetSessionInner {
     pub master: Mutex<Option<Box<dyn MasterPty + Send>>>,
     /// PTY writer — for write_input. `None` after exit.
     pub writer: Mutex<Option<Box<dyn std::io::Write + Send>>>,
+    /// Set true by `hibernate` before the PTY is closed, so the reaper records
+    /// the child's exit as `Hibernated` (resumable) instead of `Exited` (dead)
+    /// and skips exit reconciliation. Reset on wake/respawn.
+    pub hibernating: std::sync::atomic::AtomicBool,
 }
 
 impl FleetSessionInner {
@@ -158,6 +162,26 @@ impl FleetRegistry {
             .map_err(|e| format!("resize failed: {e}"))
     }
 
+    /// First PTY output proves the child actually came up and reached its
+    /// prompt. Promote a `Spawning` session to `Idle` (alive + ready for its
+    /// first message) so it isn't mislabeled never-attached/stale before it
+    /// writes a transcript — a fresh interactive `claude` sits at the prompt
+    /// with no transcript and no hook until the user submits something.
+    /// One-shot: only transitions out of `Spawning`. Returns `true` if it
+    /// changed state (so the caller emits a refresh once).
+    pub fn mark_alive(&self, session_id: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            if matches!(session.state, FleetSessionState::Spawning) {
+                session.state = FleetSessionState::Idle;
+                session.last_activity_ms = now_ms();
+                session.state_reason = Some("Ready — claude is at the prompt".into());
+                return true;
+            }
+        }
+        false
+    }
+
     /// Records that the child has exited. Updates state and clears the
     /// PTY resource slots. Called from the reaper task.
     pub fn mark_exited(&self, session_id: &str, exit_code: Option<i32>) {
@@ -203,6 +227,54 @@ impl FleetRegistry {
         if let Ok(mut w) = session.writer.lock() { *w = None; }
         if let Ok(mut m) = session.master.lock() { *m = None; }
         true
+    }
+
+    /// Hibernate: mark the session `Hibernated`, flag it so the reaper records
+    /// the imminent child exit as a sleep (not a death), and close the PTY to
+    /// free the process. `claude_session_id` + `cwd` are retained for wake.
+    /// Returns `false` if the id is unknown or the session can't be hibernated
+    /// (already exited / hibernated, or never bound a `claude_session_id`).
+    pub fn hibernate(&self, session_id: &str) -> bool {
+        use std::sync::atomic::Ordering;
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false; };
+        if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            return false;
+        }
+        if session.claude_session_id.is_none() {
+            return false; // can't resume what we can't name
+        }
+        session.hibernating.store(true, Ordering::SeqCst);
+        session.state = FleetSessionState::Hibernated;
+        session.last_activity_ms = now_ms();
+        session.state_reason = Some("Hibernated — process freed; resume with claude --resume".to_string());
+        session.child_pid = None;
+        if let Ok(mut w) = session.writer.lock() { *w = None; }
+        if let Ok(mut m) = session.master.lock() { *m = None; }
+        true
+    }
+
+    /// Whether `hibernate` was called on this session (consumed by the reaper
+    /// to choose Hibernated vs Exited on child exit).
+    pub fn is_hibernating(&self, session_id: &str) -> bool {
+        use std::sync::atomic::Ordering;
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id)
+            .map(|s| s.hibernating.load(Ordering::SeqCst))
+            .unwrap_or(false)
+    }
+
+    /// Resume target `(claude_session_id, cwd)` for a hibernated session, used
+    /// by `fleet_wake_session` to respawn `claude --resume`. `None` if the
+    /// session isn't hibernated or never bound a `claude_session_id`.
+    pub fn resume_target(&self, session_id: &str) -> Option<(String, PathBuf)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let s = map.get(session_id)?;
+        if !matches!(s.state, FleetSessionState::Hibernated) {
+            return None;
+        }
+        let csid = s.claude_session_id.clone()?;
+        Some((csid, s.cwd.clone()))
     }
 
     /// Removes a session entirely. Used by the UI to dismiss exited rows.

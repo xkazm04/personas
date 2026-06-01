@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useVaultStore } from "@/stores/vaultStore";
-import { getPromptVersions } from '@/api/overview/observability';
-import { getRotationHistory } from '@/api/vault/rotation';
+import { getPromptVersionsBulk } from '@/api/overview/observability';
+import { getRotationHistoryBulk } from '@/api/vault/rotation';
 import type { ChartAnnotationRecord } from './chartAnnotations';
 import { toChartDate, useAnnotationComposer } from './chartAnnotations';
 import type { PersonaHealingIssue } from '@/lib/bindings/PersonaHealingIssue';
@@ -35,23 +35,22 @@ export function useAnnotationData({ selectedPersonaId, healingIssues }: Annotati
           return;
         }
         try {
-          const byPersona = await Promise.all(
-            personaIds.map(async (personaId) => {
-              if (signal.aborted) return [];
-              const versions = await getPromptVersions(personaId, 8);
-              if (signal.aborted) return [];
-              return versions.map((version) => {
-                const date = toChartDate(version.created_at);
-                if (!date) return null;
-                return {
-                  timestamp: version.created_at, date,
-                  label: `Prompt v${version.version_number} (${version.tag})`,
-                  type: 'prompt' as const, personaId,
-                };
-              }).filter(isDefined);
-            }),
-          );
-          if (!signal.aborted) setPromptAnnotations(byPersona.flat());
+          // One bulk IPC instead of one per persona (architect perf scan, Phase D).
+          const byPersona = await getPromptVersionsBulk(personaIds, 8);
+          if (signal.aborted) return;
+          const annotations: ChartAnnotationRecord[] = [];
+          for (const [personaId, versions] of Object.entries(byPersona)) {
+            for (const version of versions) {
+              const date = toChartDate(version.created_at);
+              if (!date) continue;
+              annotations.push({
+                timestamp: version.created_at, date,
+                label: `Prompt v${version.version_number} (${version.tag})`,
+                type: 'prompt' as const, personaId,
+              });
+            }
+          }
+          setPromptAnnotations(annotations);
         } catch {
           if (!signal.aborted) setPromptAnnotations([]);
         }
@@ -67,28 +66,29 @@ export function useAnnotationData({ selectedPersonaId, healingIssues }: Annotati
     const { signal } = controller;
     const timeoutId = setTimeout(() => {
       const loadRotationAnnotations = async () => {
-        if (credentials.length === 0) {
+        const creds = credentials.slice(0, 20);
+        if (creds.length === 0) {
           if (!signal.aborted) setRotationAnnotations([]);
           return;
         }
         try {
-          const byCredential = await Promise.all(
-            credentials.slice(0, 20).map(async (credential) => {
-              if (signal.aborted) return [];
-              const history = await getRotationHistory(credential.id, 3);
-              if (signal.aborted) return [];
-              return history.map((entry) => {
-                const date = toChartDate(entry.created_at);
-                if (!date) return null;
-                return {
-                  timestamp: entry.created_at, date,
-                  label: `Rotation ${entry.status}${credential.name ? ` · ${credential.name}` : ''}`,
-                  type: 'rotation' as const, personaId: null,
-                };
-              }).filter(isDefined);
-            }),
-          );
-          if (!signal.aborted) setRotationAnnotations(byCredential.flat());
+          // One bulk IPC instead of one per credential (architect perf scan, Phase D).
+          const byCredential = await getRotationHistoryBulk(creds.map((c) => c.id), 3);
+          if (signal.aborted) return;
+          const annotations: ChartAnnotationRecord[] = [];
+          for (const credential of creds) {
+            const history = byCredential[credential.id] ?? [];
+            for (const entry of history) {
+              const date = toChartDate(entry.created_at);
+              if (!date) continue;
+              annotations.push({
+                timestamp: entry.created_at, date,
+                label: `Rotation ${entry.status}${credential.name ? ` · ${credential.name}` : ''}`,
+                type: 'rotation' as const, personaId: null,
+              });
+            }
+          }
+          setRotationAnnotations(annotations);
         } catch {
           if (!signal.aborted) setRotationAnnotations([]);
         }

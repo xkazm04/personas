@@ -124,6 +124,7 @@ function goalsFor(db, teamId) {
     }
     return null;
   }, null);
+  const advancingGoalIds = goalIds; // goals an assignment is actively advancing
   const byId = new Map();
   if (projectId) {
     safe('project_goals', () =>
@@ -131,14 +132,39 @@ function goalsFor(db, teamId) {
         `SELECT id, title, status, progress, target_date, updated_at FROM dev_goals WHERE project_id = ?`,
       ).all(projectId), []).forEach((g) => byId.set(g.id, g));
   }
-  if (goalIds.size) {
-    const ph = inClause(goalIds.size);
+  if (advancingGoalIds.size) {
+    const ph = inClause(advancingGoalIds.size);
     safe('goals', () =>
       db.prepare(
         `SELECT id, title, status, progress, target_date, updated_at FROM dev_goals WHERE id IN (${ph})`,
-      ).all(...goalIds), []).forEach((g) => byId.set(g.id, g));
+      ).all(...advancingGoalIds), []).forEach((g) => byId.set(g.id, g));
   }
-  return { assignments, goals: [...byId.values()], projectId };
+  // Enrich each goal with its breakdown to-dos, blockers, and advancing flag —
+  // this is the "how is the team working its goal + breakdown items" lens.
+  const goals = [...byId.values()].map((g) => {
+    const items = safe('goal_items', () =>
+      db.prepare(`SELECT done FROM dev_goal_items WHERE goal_id = ?`).all(g.id), []);
+    const blockers = safe('goal_deps', () =>
+      db.prepare(`SELECT COUNT(*) n FROM dev_goal_dependencies WHERE goal_id = ?`).get(g.id), { n: 0 }).n;
+    return {
+      ...g,
+      todosTotal: items.length,
+      todosDone: items.filter((i) => i.done).length,
+      blockers,
+      advancing: advancingGoalIds.has(g.id),
+    };
+  });
+  // Most recent goal signal across the team's goals — team_*/athena_update
+  // signals are the trace of the team (or Athena) actually working the goal.
+  let lastSignal = null;
+  if (goals.length) {
+    const ph = inClause(goals.length);
+    lastSignal = safe('goal_signals', () =>
+      db.prepare(
+        `SELECT signal_type, created_at FROM dev_goal_signals WHERE goal_id IN (${ph}) ORDER BY created_at DESC LIMIT 1`,
+      ).get(...goals.map((g) => g.id)), null);
+  }
+  return { assignments, goals, projectId, advancing: advancingGoalIds.size > 0, lastSignal };
 }
 
 // ── summarization ─────────────────────────────────────────────────────────
@@ -172,11 +198,21 @@ function summarize(execs) {
 function assessOnTrack(sum, goalsInfo, roster, execs) {
   const flags = [];
   const activeGoals = goalsInfo.goals.filter((g) => g.status !== 'done');
-  // A team can be orchestrated two ways: event-chains (the original SDLC flow)
-  // or goal-driven team_assignments. "No goal link" means we can't track it
-  // against an objective — informational, NOT "not orchestrated".
-  if (!goalsInfo.goals.length)
-    flags.push('NO-GOAL-LINK: not tied to any tracked goal (none on its pinned project, no linked assignment)');
+  // Goal engagement — the extended-scope lens: not just "is there a goal" but
+  // "is the team advancing it, and working its breakdown to-dos?".
+  if (!goalsInfo.goals.length) {
+    flags.push("NO-GOAL: no tracked goal on this team's project");
+  } else if (!goalsInfo.advancing) {
+    // The honest O1 signal: a goal exists for the repo, but no team_assignment
+    // is advancing it — the goal sits idle (distinct from truly goal-linked).
+    flags.push('NOT-ADVANCING: has a project goal but no team_assignment is working it (goal sits idle)');
+  }
+  const todosTotal = goalsInfo.goals.reduce((s, g) => s + (g.todosTotal || 0), 0);
+  const todosDone = goalsInfo.goals.reduce((s, g) => s + (g.todosDone || 0), 0);
+  if (todosTotal > 0 && todosDone === 0)
+    flags.push(`GOAL-UNWORKED: ${todosTotal} breakdown to-do(s) defined across goals, 0 done`);
+  const blocked = goalsInfo.goals.filter((g) => g.blockers > 0 && g.status !== 'done');
+  if (blocked.length) flags.push(`BLOCKED-GOAL: ${blocked.length} active goal(s) with unmet dependencies`);
   if (sum.total === 0) flags.push(`IDLE: no executions in the last ${DAYS}d`);
   if (sum.failureRate >= 30) flags.push(`HIGH-FAILURE: ${sum.failureRate}% of runs failed`);
   if (sum.total > 0 && sum.valueDeliveredRate < 30) flags.push(`LOW-VALUE: only ${sum.valueDeliveredRate}% value_delivered`);
@@ -204,8 +240,15 @@ function renderTeam(t, sum, goalsInfo, roster, assessment, verdicts) {
   const outc = Object.entries(sum.outcome).map(([k, v]) => `${k}:${v}`).join('  ');
   if (outc) lines.push(`- outcomes: ${outc}`);
   if (goalsInfo.goals.length) {
-    lines.push(`- goals:`);
-    for (const g of goalsInfo.goals) lines.push(`    • "${g.title}" — ${g.status} ${g.progress || 0}%${g.target_date ? ` (due ${g.target_date})` : ''}`);
+    lines.push(`- goals (${goalsInfo.advancing ? 'ADVANCING via assignment' : 'has goal, NOT advancing'}):`);
+    for (const g of goalsInfo.goals) {
+      const todo = g.todosTotal > 0 ? ` · to-dos ${g.todosDone}/${g.todosTotal}` : ' · no to-dos';
+      const blk = g.blockers > 0 ? ` · ${g.blockers} blocker(s)` : '';
+      lines.push(`    • "${g.title}" — ${g.status} ${g.progress || 0}%${todo}${blk}${g.advancing ? ' · advancing' : ''}${g.target_date ? ` (due ${g.target_date})` : ''}`);
+    }
+    if (goalsInfo.lastSignal) lines.push(`    last goal activity: ${goalsInfo.lastSignal.signal_type} @ ${(goalsInfo.lastSignal.created_at || '').slice(0, 10)}`);
+  } else {
+    lines.push(`- goals: none`);
   }
   const open = verdicts.filter((v) => v.status !== 'resolved' && v.status !== 'accepted' && v.status !== 'rejected');
   if (open.length) {

@@ -1,12 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, LayoutGrid, BookOpen, Play } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
+import type { PendingApproval } from '@/api/companion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
-import { FleetTerminalPane } from './FleetTerminalPane';
-import { FleetStatusDots } from './FleetStatusDots';
+import { FleetOverlayTile } from './FleetOverlayTile';
 import { setFleetFontOverride } from './fleetTerminalManager';
+import { approvalsForSession } from './fleetAttention';
+import { gridDim, densityFont } from './fleetGridLayout';
 
 interface Props {
   open: boolean;
@@ -16,33 +18,21 @@ interface Props {
   onSelect: (id: string) => void;
   /** Minimize — return to the single-pane view. */
   onClose: () => void;
-}
-
-/**
- * Column count for `n` sessions, capped at 4 → square grids 1×1 … 4×4.
- * 1→1, 2-4→2, 5-9→3, 10-16→4 (and 4 thereafter, the grid scrolls).
- */
-function gridDim(n: number): number {
-  if (n <= 1) return 1;
-  return Math.min(4, Math.ceil(Math.sqrt(n)));
-}
-
-/**
- * Density-scaled terminal font (px). Smaller as the grid densifies so more
- * columns/rows fit per tile, with a 12px floor for legibility (VS Code's
- * terminal default is 14px for reference). The page chrome is unaffected.
- */
-function densityFont(dim: number): number {
-  switch (dim) {
-    case 1:
-      return 15;
-    case 2:
-      return 14;
-    case 3:
-      return 13;
-    default:
-      return 12;
-  }
+  /** Athena copilot wiring (suggestions surfaced on each tile). */
+  approvals: PendingApproval[];
+  /** Session ids with an in-flight "Ask Athena" turn. */
+  askingSessionIds: Set<string>;
+  onApprove: (approvalId: string) => void;
+  onReject: (approvalId: string) => void;
+  onAskAthena: (session: FleetSession) => void;
+  /** Open the shared skill-library drawer (applies to the focused tile). */
+  onOpenSkills: () => void;
+  /** Spawn a new session in the active project. */
+  onSpawn: () => void;
+  /** Whether a spawn is currently possible (project selected, not spawning). */
+  canSpawn: boolean;
+  /** Kill a session's process by id. */
+  onKill: (id: string) => void;
 }
 
 /**
@@ -56,10 +46,45 @@ function densityFont(dim: number): number {
  * pane is unmounted by the parent while this is open so the two don't contend
  * for the same terminal's holder element.
  */
-export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect, onClose }: Props) {
+export function FleetTerminalOverlay({
+  open,
+  sessions,
+  activeSessionId,
+  onSelect,
+  onClose,
+  approvals,
+  askingSessionIds,
+  onApprove,
+  onReject,
+  onAskAthena,
+  onOpenSkills,
+  onSpawn,
+  canSpawn,
+  onKill,
+}: Props) {
   const { t, tx } = useTranslation();
   const setBackInterceptor = useSystemStore((s) => s.setBackInterceptor);
+  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
   const dim = useMemo(() => gridDim(sessions.length), [sessions.length]);
+
+  // Flag the grid as open so the Athena orb floats above this overlay (it's
+  // otherwise z-50, behind the z-[200] overlay) — she stays visible/reactable
+  // while you orchestrate in the grid.
+  useEffect(() => {
+    setGridOpen(open);
+    return () => setGridOpen(false);
+  }, [open, setGridOpen]);
+
+  // Per-tile Terminal/Insights view (P2.1 in the grid). Membership = showing
+  // Insights; default (absent) = the live terminal.
+  const [insightTiles, setInsightTiles] = useState<Set<string>>(new Set());
+  const toggleInsight = useCallback((id: string) => {
+    setInsightTiles((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   // Apply the density font override while open; clear it on close/unmount.
   useEffect(() => {
@@ -99,7 +124,7 @@ export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect
     // stays visible and usable above it. Dismissal: titlebar/overlay Back or
     // Escape.
     <div
-      className="fixed left-0 right-0 bottom-0 top-12 z-[200] flex flex-col bg-background"
+      className="fleet-typescale fixed left-0 right-0 bottom-0 top-12 z-[200] flex flex-col bg-background"
       data-testid="fleet-terminal-overlay"
       role="region"
       aria-label={t.plugins.fleet.grid_overlay_aria}
@@ -117,6 +142,27 @@ export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect
         </button>
         <LayoutGrid className="w-4 h-4 text-primary ml-1" aria-hidden="true" />
         <span className="typo-caption text-foreground">{countLabel}</span>
+        <button
+          type="button"
+          data-testid="fleet-overlay-spawn"
+          onClick={onSpawn}
+          disabled={!canSpawn}
+          title={t.plugins.fleet.new_session}
+          className="ml-auto flex items-center gap-1.5 rounded-interactive border border-primary/25 bg-primary/10 px-2 py-1 text-primary transition-colors hover:bg-primary/20 disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+        >
+          <Play className="w-3.5 h-3.5" />
+          {t.plugins.fleet.new_session}
+        </button>
+        <button
+          type="button"
+          data-testid="fleet-overlay-skills"
+          onClick={onOpenSkills}
+          title={t.plugins.fleet.skills_drawer_title}
+          className="flex items-center gap-1.5 rounded-interactive border border-primary/15 px-2 py-1 text-foreground transition-colors hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          {t.plugins.fleet.skills_button}
+        </button>
       </div>
 
       {/* Grid — square columns capped at 4; rows auto-fill, scroll past 4×4. */}
@@ -128,29 +174,22 @@ export function FleetTerminalOverlay({ open, sessions, activeSessionId, onSelect
           gridAutoRows: 'minmax(160px, 1fr)',
         }}
       >
-        {sessions.map((s) => {
-          const isActive = s.id === activeSessionId;
-          return (
-            <div
-              key={s.id}
-              data-testid={`fleet-overlay-tile-${s.id}`}
-              onMouseDown={() => onSelect(s.id)}
-              className={`flex flex-col min-h-0 rounded-modal overflow-hidden border bg-[#0a0a0c] transition-colors ${
-                isActive ? 'border-primary/50' : 'border-primary/10 hover:border-primary/25'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 px-2 py-1 border-b border-primary/10 bg-secondary/20 shrink-0">
-                <FleetStatusDots state={s.state} reason={s.stateReason} />
-                <span className="typo-caption truncate flex-1 min-w-0 text-foreground">
-                  {s.name ?? s.projectLabel}
-                </span>
-              </div>
-              <div className="flex-1 min-h-0">
-                <FleetTerminalPane sessionId={s.id} autoFocus={false} />
-              </div>
-            </div>
-          );
-        })}
+        {sessions.map((s) => (
+          <FleetOverlayTile
+            key={s.id}
+            session={s}
+            isActive={s.id === activeSessionId}
+            showInsights={insightTiles.has(s.id)}
+            onToggleInsight={toggleInsight}
+            onSelect={onSelect}
+            onKill={onKill}
+            approvals={approvalsForSession(approvals, s.id)}
+            asking={askingSessionIds.has(s.id)}
+            onApprove={onApprove}
+            onReject={onReject}
+            onAsk={onAskAthena}
+          />
+        ))}
       </div>
     </div>,
     document.body,

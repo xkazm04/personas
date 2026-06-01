@@ -113,6 +113,24 @@ Fields:
 
 "#;
 
+pub(super) const PROTOCOL_RAISE_INCIDENT: &str = r#"### Raise Incident Protocol
+When you hit a real BLOCKER that stops you from completing the task and needs a human to fix it (missing credential, broken upstream service, ambiguous requirement you cannot safely resolve, a precondition that is not met), raise an incident on its own line:
+```json
+{"raise_incident": {"title": "Short blocker summary", "detail": "What is blocked and what the human must do to unblock it", "severity": "high", "kind": "missing_credential"}}
+```
+Fields:
+- `title` (required): one-line summary of the blocker
+- `detail` (optional): what is blocked + what action unblocks it
+- `severity` (optional): "low" | "medium" | "high" | "critical" (default: "high") — also drives triage priority
+- `kind` (optional): short machine token for the class, e.g. `missing_credential`, `upstream_down`, `ambiguous_requirement` (default: `persona_blocker`)
+
+When to use `raise_incident` vs `manual_review`:
+- `raise_incident` = a TECHNICAL/OPERATIONAL blocker that prevents the work from finishing and requires a human to fix the environment or decision before it can proceed. It goes to the Incidents inbox with an open → in_progress → resolved lifecycle; when the human resolves it your work can be re-run automatically.
+- `manual_review` = your work succeeded and produced an output/decision the user should approve before it ships. Do NOT raise an incident for routine approvals.
+- Raise AT MOST ONE incident per real blocker; repeated raises for the same execution are de-duplicated.
+
+"#;
+
 pub(super) const PROTOCOL_EXECUTION_FLOW: &str = r#"### Execution Flow Protocol
 To declare execution flow metadata, output a JSON object on its own line:
 ```json

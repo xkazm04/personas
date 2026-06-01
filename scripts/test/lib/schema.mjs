@@ -37,6 +37,7 @@ export const VERDICTS = ['BROKEN', 'NOT-READY', 'PROMISING', 'PRODUCTION'];
  * @property {Object|null} [judge]
  * @property {Object|null} [delivered_increment]
  * @property {Object|null} [self_veto]
+ * @property {Object|null} [resilience]
  */
 
 /**
@@ -78,6 +79,7 @@ export function validateScorecard(sc) {
   // Optional subtrees, when present, must be the right shape.
   if (sc.code_track != null && typeof sc.code_track !== 'object') errs.push('code_track must be object|null');
   if (sc.judge != null && typeof sc.judge !== 'object') errs.push('judge must be object|null');
+  if (sc.resilience != null && typeof sc.resilience !== 'object') errs.push('resilience must be object|null');
   return errs;
 }
 

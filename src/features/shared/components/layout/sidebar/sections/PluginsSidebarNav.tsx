@@ -159,7 +159,7 @@ export function PluginsSidebarNav() {
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${
                     isActive
                       ? 'bg-primary/10 text-primary font-semibold'
-                      : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                      : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
                   }`}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0" />
@@ -190,7 +190,7 @@ export function PluginsSidebarNav() {
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg typo-heading transition-colors ${devBorder} ${
                       isActive
                         ? 'bg-primary/10 text-primary font-semibold'
-                        : 'text-foreground hover:bg-secondary/40 hover:text-foreground/80 font-normal'
+                        : 'text-foreground/70 hover:bg-secondary/40 hover:text-foreground font-normal'
                     }`}
                   >
                     <Icon className={`w-4 h-4 flex-shrink-0 ${plugin.devOnly ? 'text-amber-400' : ''}`} />

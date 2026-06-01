@@ -27,7 +27,7 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import * as devApi from '@/api/devTools/devTools';
 import {
   listTeamAssignmentsForGoal, listTeamAssignmentSteps, resolveTeamAssignmentReview,
-  setTeamAssignmentGoal,
+  setTeamAssignmentGoal, advanceTeamGoal,
 } from '@/api/pipeline/assignments';
 import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
@@ -66,6 +66,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   const allGoals = useSystemStore((s) => s.goals);
   const goal = useSystemStore((s) => s.goals.find((g) => g.id === goalId) ?? null);
   const updateGoal = useSystemStore((s) => s.updateGoal);
+  const projects = useSystemStore((s) => s.projects);
 
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<GoalProgressSuggestion | null>(null);
@@ -76,6 +77,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   const [signals, setSignals] = useState<DevGoalSignal[]>([]);
   const [deps, setDeps] = useState<DevGoalDependency[]>([]);
   const [newItem, setNewItem] = useState('');
+  const [advancing, setAdvancing] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!goalId) return;
@@ -120,6 +122,23 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       await refresh();
     } catch (err) {
       toastCatch('Failed to update progress')(err);
+    }
+  };
+
+  const handleAdvance = async () => {
+    if (!goalId) return;
+    const teamId = projects.find((p) => p.id === goal?.project_id)?.team_id;
+    if (!teamId) return;
+    setAdvancing(true);
+    try {
+      // Builds a goal-linked assignment (from open to-dos, else decomposed) and
+      // runs it. Returns null if a team is already advancing this goal.
+      await advanceTeamGoal(teamId, goalId);
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to advance goal')(err);
+    } finally {
+      setAdvancing(false);
     }
   };
 
@@ -341,6 +360,23 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
           />
         </div>
       </Section>
+
+      {/* Advance this goal with its owning team — builds a goal-linked
+          assignment from the open to-dos (else decomposes) and runs it. */}
+      {goal && !isComplete(goal.status) && projects.find((p) => p.id === goal.project_id)?.team_id && (
+        <Section icon={ArrowRight} label={dl.goal_advance_label}>
+          {assignments.some((a) => a.status === 'queued' || a.status === 'running' || a.status === 'awaiting_review') ? (
+            <p className="typo-caption text-foreground/70">{dl.goal_advance_active}</p>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button variant="secondary" size="sm" onClick={handleAdvance} disabled={advancing}>
+                {advancing ? dl.goal_advance_starting : dl.goal_advance_button}
+              </Button>
+              <span className="typo-caption text-foreground/60">{dl.goal_advance_hint}</span>
+            </div>
+          )}
+        </Section>
+      )}
 
       {/* Linked team-assignment steps + intervention */}
       {steps.length > 0 && (

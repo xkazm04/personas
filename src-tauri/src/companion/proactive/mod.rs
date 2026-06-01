@@ -23,6 +23,7 @@
 pub mod budget;
 pub mod execution_review;
 pub mod fleet_triggers;
+pub mod incident_triggers;
 pub mod quiet;
 pub mod triggers;
 

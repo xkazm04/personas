@@ -366,6 +366,7 @@ const PROTOCOL_KEYS: &[(&str, fn(&serde_json::Value) -> Option<ProtocolMessage>)
     ("emit_event", parse_emit_event),
     ("agent_memory", parse_agent_memory),
     ("manual_review", parse_manual_review),
+    ("raise_incident", parse_raise_incident),
     ("execution_flow", parse_execution_flow),
     ("knowledge_annotation", parse_knowledge_annotation),
     ("propose_improvement", parse_propose_improvement),
@@ -417,6 +418,15 @@ fn parse_manual_review(msg: &serde_json::Value) -> Option<ProtocolMessage> {
         context_data: str_field(msg, "context_data"),
         suggested_actions: str_array_field(msg, "suggested_actions"),
         decisions,
+    })
+}
+
+fn parse_raise_incident(msg: &serde_json::Value) -> Option<ProtocolMessage> {
+    Some(ProtocolMessage::RaiseIncident {
+        title: str_field_or(msg, "title", ""),
+        detail: str_field(msg, "detail"),
+        severity: str_field(msg, "severity"),
+        kind: str_field(msg, "kind"),
     })
 }
 
@@ -1003,6 +1013,47 @@ mod tests {
                 assert_eq!(tags, Some(vec!["api".to_string(), "patterns".to_string()]));
             }
             _ => panic!("Expected AgentMemory, got {msg:?}"),
+        }
+    }
+
+    #[test]
+    fn test_extract_raise_incident() {
+        let line = r#"{"raise_incident": {"title": "Stripe key missing", "detail": "STRIPE_API_KEY unset; cannot charge", "severity": "high", "kind": "missing_credential"}}"#;
+        let msg = extract_protocol_message(line).unwrap();
+        match msg {
+            ProtocolMessage::RaiseIncident {
+                title,
+                detail,
+                severity,
+                kind,
+            } => {
+                assert_eq!(title, "Stripe key missing");
+                assert_eq!(detail.as_deref(), Some("STRIPE_API_KEY unset; cannot charge"));
+                assert_eq!(severity.as_deref(), Some("high"));
+                assert_eq!(kind.as_deref(), Some("missing_credential"));
+            }
+            _ => panic!("Expected RaiseIncident, got {msg:?}"),
+        }
+    }
+
+    #[test]
+    fn test_extract_raise_incident_minimal() {
+        // Only title required; optional fields default to None (handler then
+        // applies severity=high / kind=persona_blocker at dispatch time).
+        let line = r#"{"raise_incident": {"title": "Upstream API down"}}"#;
+        match extract_protocol_message(line).unwrap() {
+            ProtocolMessage::RaiseIncident {
+                title,
+                detail,
+                severity,
+                kind,
+            } => {
+                assert_eq!(title, "Upstream API down");
+                assert!(detail.is_none());
+                assert!(severity.is_none());
+                assert!(kind.is_none());
+            }
+            other => panic!("Expected RaiseIncident, got {other:?}"),
         }
     }
 

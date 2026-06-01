@@ -12,11 +12,14 @@ import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/compon
 import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaSelect';
 import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
-import { useProgressiveReveal } from '@/hooks/utility/interaction/useProgressiveReveal';
+import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
-import { seedMockMessage } from '@/api/overview/messages';
+import { seedMockMessage, deleteAllMessages } from '@/api/overview/messages';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { toastCatch } from '@/lib/silentCatch';
+import { Trash2 } from 'lucide-react';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { priorityConfig, MESSAGE_ROW_HEIGHT } from '../libs/messageHelpers';
@@ -43,6 +46,7 @@ import { MessageDetailModal } from './MessageDetailModal';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
+import { RevealItem } from '@/features/shared/components/display/RevealItem';
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("message-list");
@@ -109,6 +113,7 @@ export default function MessageList() {
   const [selectedMsg, setSelectedMsg] = useState<PersonaMessage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
   const fetchUnreadMessageCountRef = useRef(fetchUnreadMessageCount);
   fetchUnreadMessageCountRef.current = fetchUnreadMessageCount;
 
@@ -204,6 +209,9 @@ export default function MessageList() {
     () => threadSummaries.slice(0, reveal.count),
     [threadSummaries, reveal.count],
   );
+  // Per-item entrance guard — keyed to the active view + filters so a switch
+  // replays the cascade; survives virtualized row remount so scrolling doesn't.
+  const msgEnter = useRevealTracker(`${viewMode}|${priorityFilter}|${readFilter}|${selectedPersonaId}`);
 
   const { parentRef, virtualizer } = useVirtualList(revealedMessages, MESSAGE_ROW_HEIGHT);
   const colWidths = useColumnWidths('overview-messages');
@@ -291,6 +299,15 @@ export default function MessageList() {
             <button onClick={() => markAllMessagesAsRead()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-modal typo-heading text-blue-400/80 hover:text-blue-400 bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/15 transition-all">
               <CheckCheck className="w-3.5 h-3.5" /> {t.overview.messages_view.mark_all_read}
             </button>
+            {messages.length > 0 && (
+              <button
+                onClick={() => setConfirmingDeleteAll(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading text-red-400 bg-red-500/15 border border-red-500/30 hover:bg-red-500/25 transition-all"
+                title={t.overview.messages_view.delete_all}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
           </>
         }
       />
@@ -324,7 +341,7 @@ export default function MessageList() {
             </div>
           ) : (
             <div className="flex-1 overflow-y-auto">
-              {revealedThreads.map((thread) => {
+              {revealedThreads.map((thread, threadIndex) => {
                 const isExpanded = expandedThreadId === thread.threadId;
                 const replies = enrichedThreadReplies.get(thread.threadId);
                 const rawParent = thread.parent;
@@ -333,7 +350,14 @@ export default function MessageList() {
                 const parentPriority = priorityConfig[parent.priority] ?? defaultPriority;
 
                 return (
-                  <div key={thread.threadId} className={`border-b ${ROW_SEPARATOR} animate-fade-in`}>
+                  <RevealItem
+                    key={thread.threadId}
+                    revealId={thread.threadId}
+                    order={threadIndex - reveal.newSince}
+                    hasEntered={msgEnter.hasEntered}
+                    markEntered={msgEnter.markEntered}
+                    className={`border-b ${ROW_SEPARATOR}`}
+                  >
                     {/* Thread header row */}
                     <div
                       className="flex items-center gap-3 px-4 py-2.5 hover:bg-primary/[0.05] cursor-pointer transition-colors"
@@ -414,7 +438,7 @@ export default function MessageList() {
                         </motion.div>
                       )}
                     </AnimatePresence>
-                  </div>
+                  </RevealItem>
                 );
               })}
               {threadedRemaining > 0 && (
@@ -511,7 +535,7 @@ export default function MessageList() {
                           ? 'border-l-blue-400/70'
                           : 'border-l-transparent';
                       return (
-                        <div key={message.id} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
+                        <RevealItem key={message.id} revealId={message.id} order={virtualRow.index - reveal.newSince} hasEntered={msgEnter.hasEntered} markEntered={msgEnter.markEntered} role="row" tabIndex={0} data-testid={`message-row-${message.id}`} onClick={() => handleRowClick(message)}
                           onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); handleRowClick(message); } }}
                           style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%', height: `${virtualRow.size}px`, gridTemplateColumns: msgGridTemplate }}
                           className={`grid items-center border-l-2 ${rowAccent} hover:bg-primary/[0.08] cursor-pointer transition-colors border-b ${ROW_SEPARATOR} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40 ${virtualRow.index % 2 === 0 ? 'bg-primary/[0.03]' : ''}`}
@@ -524,7 +548,7 @@ export default function MessageList() {
                           <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-card typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
                           <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
                           <div role="gridcell" className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(message.created_at)}</span></div>
-                        </div>
+                        </RevealItem>
                       );
                     })}
                   </div>
@@ -551,6 +575,27 @@ export default function MessageList() {
           />
         )}
       </AnimatePresence>
+
+      {confirmingDeleteAll && (
+        <ConfirmDialog
+          danger
+          title={t.overview.messages_view.delete_all_confirm_title}
+          body={tx(t.overview.messages_view.delete_all_confirm_body, { count: messagesTotal })}
+          confirmLabel={t.overview.messages_view.delete_all_confirm_cta}
+          onConfirm={async () => {
+            try {
+              await deleteAllMessages();
+              await fetchMessages(true);
+              await fetchUnreadMessageCount();
+            } catch (e) {
+              toastCatch('MessageList:deleteAll', 'Failed to delete all messages')(e);
+            } finally {
+              setConfirmingDeleteAll(false);
+            }
+          }}
+          onCancel={() => setConfirmingDeleteAll(false)}
+        />
+      )}
     </ContentBox>
   );
 }

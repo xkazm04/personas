@@ -294,13 +294,26 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   canvasEdgeFocus: null,
   liveStreamHighlightEventId: null,
 
-  setHeaderOverlay: (overlay) => set({ headerOverlay: overlay }),
+  // Opening a header overlay (Monitor / Notifications) while the Schedules
+  // route is active also leaves Schedules — the overlay fully covers the page,
+  // so keeping the calendar button lit underneath reads as "both open". Drop
+  // back to home so only one surface is ever active. (Set both keys atomically;
+  // routing through setSidebarSection would clobber the overlay we're opening.)
+  setHeaderOverlay: (overlay) => set((state) => (
+    overlay !== 'none' && state.sidebarSection === 'schedules'
+      ? { headerOverlay: overlay, sidebarSection: 'home' as SidebarSection }
+      : { headerOverlay: overlay }
+  )),
   // Back-compat shim for callers that only open/close the Monitor (Athena's
   // open_route 'monitor', the Ctrl+M legacy path, FleetActivityStrip). Opening
   // switches the controller to 'monitor'; closing only clears it when the
-  // Monitor is the one currently shown.
+  // Monitor is the one currently shown. Mirrors the Schedules-close behaviour
+  // above so the Monitor opened via any path also dismisses Schedules.
   setMonitorOpen: (open) => set((state) => ({
     headerOverlay: open ? 'monitor' : (state.headerOverlay === 'monitor' ? 'none' : state.headerOverlay),
+    sidebarSection: open && state.sidebarSection === 'schedules'
+      ? ('home' as SidebarSection)
+      : state.sidebarSection,
   })),
   setMonitorGroupBy: (mode) => set({ monitorGroupBy: mode }),
   toggleHomeSection: (sectionId) =>

@@ -15,7 +15,9 @@ import { FilterBar } from '@/features/shared/components/overlays/FilterBar';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import type { PersonaManualReview } from '@/lib/bindings/PersonaManualReview';
 import type { ManualReviewItem } from '@/lib/types/types';
-import { seedMockManualReview, gcStaleManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { seedMockManualReview, gcStaleManualReviews, updateManualReviewStatus, deleteAllManualReviews } from '@/api/overview/reviews';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { toastCatch } from '@/lib/silentCatch';
 import { FILTER_LABELS, type FilterStatus, type SourceFilter } from '../libs/reviewHelpers';
 import { useManualReviewQueue } from '../hooks/useManualReviewQueue';
 import { useFilteredCollection } from '@/hooks/utility/data/useFilteredCollection';
@@ -57,7 +59,9 @@ function shapeReview(r: PersonaManualReview): ManualReviewItem {
 }
 
 export default function ManualReviewList() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
+  const [confirmingDeleteAll, setConfirmingDeleteAll] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   const {
     cloudReviews, fetchCloudReviews, respondToCloudReview,
   } = useOverviewStore(useShallow((s) => ({
@@ -247,6 +251,22 @@ export default function ManualReviewList() {
     }
   }, [isGcing, reviewQueue.reload]);
 
+  // Hard-delete ALL local manual reviews (confirm-gated). Distinct from the
+  // "Clear stale" sweep above, which only auto-resolves old pending rows.
+  const handleDeleteAll = useCallback(async () => {
+    if (isDeletingAll) return;
+    setIsDeletingAll(true);
+    try {
+      await deleteAllManualReviews();
+      reviewQueue.reload();
+    } catch (err) {
+      toastCatch('ManualReviewList:deleteAll', 'Failed to delete all reviews')(err);
+    } finally {
+      setIsDeletingAll(false);
+      setConfirmingDeleteAll(false);
+    }
+  }, [isDeletingAll, reviewQueue.reload]);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -270,6 +290,15 @@ export default function ManualReviewList() {
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 {isGcing ? 'Clearing…' : 'Clear stale'}
+              </button>
+            )}
+            {(reviewQueue.counts?.total ?? 0) > 0 && (
+              <button
+                onClick={() => setConfirmingDeleteAll(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors"
+                title={t.overview.review.delete_all}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
             {import.meta.env.DEV && (
@@ -379,6 +408,17 @@ export default function ManualReviewList() {
         onBulkAction={handleBulkAction}
         onDeselect={() => setSelectedIds(new Set())}
       />
+
+      {confirmingDeleteAll && (
+        <ConfirmDialog
+          danger
+          title={t.overview.review.delete_all_confirm_title}
+          body={tx(t.overview.review.delete_all_confirm_body, { count: reviewQueue.counts?.total ?? 0 })}
+          confirmLabel={t.overview.review.delete_all_confirm_cta}
+          onConfirm={handleDeleteAll}
+          onCancel={() => setConfirmingDeleteAll(false)}
+        />
+      )}
     </ContentBox>
   );
 }

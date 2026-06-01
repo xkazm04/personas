@@ -2239,6 +2239,7 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
                 acknowledged_by TEXT,
                 resolved_at     TEXT,
                 resolution_note TEXT,
+                continued_at    TEXT,
                 created_at      TEXT NOT NULL DEFAULT (datetime('now'))
             );
             CREATE INDEX IF NOT EXISTS idx_ai_status   ON audit_incidents(status, created_at DESC);
@@ -3527,6 +3528,23 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN auto_pr_on_success INTEGER NOT NULL DEFAULT 0;")
         .ok();
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN pr_credential_id TEXT;")
+        .ok();
+
+    // -- dev_projects: living test environment (URL + branch the team delivers into)
+    // Both nullable / no default so existing projects are unaffected. Set later
+    // via dev_tools_update_project once the team has a running test env to point at.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_url TEXT;")
+        .ok();
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_branch TEXT;")
+        .ok();
+
+    // -- audit_incidents: auto-continuation guard (P2.3b).
+    // Nullable timestamp stamped when the incident-continuation reactive loop
+    // re-runs the blocked work. NULL = not yet continued. The consumer claims a
+    // resolved persona_blocker incident atomically via
+    // `UPDATE ... SET continued_at = ? WHERE id = ? AND continued_at IS NULL`,
+    // so a tick can never double-fire a re-run. Idempotent ALTER (re-run safe).
+    ddl_step(conn, "ALTER TABLE audit_incidents ADD COLUMN continued_at TEXT;")
         .ok();
 
     // ── Composition Workflows (persisted DAG definitions) ───────────────

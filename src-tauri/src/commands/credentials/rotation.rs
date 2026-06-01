@@ -73,6 +73,26 @@ pub fn get_rotation_history(
     rotation_repo::get_history(&state.db, &credential_id, limit)
 }
 
+/// Batched: rotation history for many credentials in one round-trip, keyed by
+/// credential id. Replaces N per-credential `get_rotation_history` calls fired
+/// by the observability chart-annotation loader (`useAnnotationData`). One IPC,
+/// N cache-hot DB reads. Mirrors `get_all_rotation_statuses`. Architect perf
+/// scan, Phase D.
+#[tauri::command]
+#[requires(privileged)]
+pub fn get_rotation_history_bulk(
+    state: State<'_, Arc<AppState>>,
+    credential_ids: Vec<String>,
+    limit: Option<i64>,
+) -> Result<std::collections::HashMap<String, Vec<CredentialRotationEntry>>, AppError> {
+    let mut out = std::collections::HashMap::with_capacity(credential_ids.len());
+    for credential_id in credential_ids {
+        let history = rotation_repo::get_history(&state.db, &credential_id, limit)?;
+        out.insert(credential_id, history);
+    }
+    Ok(out)
+}
+
 // ============================================================================
 // Rotation Status & Manual Trigger
 // ============================================================================

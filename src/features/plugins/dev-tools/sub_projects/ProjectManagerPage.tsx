@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch, Archive, CheckSquare, Square, X as XIcon,
+  FolderKanban, Plus, ChevronRight, Folder, Network, Code2, GitBranch, Archive, CheckSquare, Square, X as XIcon, ExternalLink,
 } from 'lucide-react';
-import { openLocalPath } from '@/api/system/system';
+import { openLocalPath, openExternalUrl } from '@/api/system/system';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { listCredentials } from '@/api/vault/credentials';
@@ -136,7 +136,7 @@ export default function ProjectManagerPage() {
     }
   }, [activeProjectId, storeActiveProjectId]);
 
-  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null }) => {
+  const handleCreateProject = useCallback(async (data: { name: string; path: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string }) => {
     // If a project with this path already exists, activate it instead of creating a duplicate
     const existing = storeProjects.find((p) => p.root_path === data.path);
     if (existing) {
@@ -159,13 +159,16 @@ export default function ProjectManagerPage() {
     }
   }, [storeCreateProject, storeProjects, setActiveProject]);
 
-  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null }) => {
+  const handleUpdateProject = useCallback(async (id: string, data: { name: string; projectType: ProjectType; githubUrl: string; teamId: string | null; prCredentialId: string | null; testEnvUrl: string; testEnvBranch: string }) => {
     await storeUpdateProject(id, {
       name: data.name,
       techStack: data.projectType,
       githubUrl: data.githubUrl || undefined,
       teamId: data.teamId,
       prCredentialId: data.prCredentialId,
+      // Empty string clears the living test-environment binding (Option<Option>).
+      testEnvUrl: data.testEnvUrl || null,
+      testEnvBranch: data.testEnvBranch || null,
     });
   }, [storeUpdateProject]);
 
@@ -183,6 +186,8 @@ export default function ProjectManagerPage() {
       githubUrl: raw.github_url ?? '',
       teamId: raw.team_id ?? null,
       prCredentialId: raw.pr_credential_id ?? null,
+      testEnvUrl: raw.test_env_url ?? '',
+      testEnvBranch: raw.test_env_branch ?? '',
     });
     setShowModal(true);
   }, [storeProjects]);
@@ -393,6 +398,17 @@ export default function ProjectManagerPage() {
                     <span className="self-center"><StatusBadge status={project.status} /></span>
                     <span className="typo-caption text-foreground self-center">{project.createdAt}</span>
                     <div className="self-center flex items-center gap-0.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                      {project.testEnvUrl && (
+                        <button
+                          type="button"
+                          onClick={() => { openExternalUrl(project.testEnvUrl!).catch(toastCatch('ProjectCard:openTestEnv')); }}
+                          title={t.plugins.dev_projects.open_test_env}
+                          aria-label={t.plugins.dev_projects.open_test_env}
+                          className="w-7 h-7 flex items-center justify-center rounded-interactive text-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                       {project.githubUrl && hasGitHubPat && (
                         <button
                           type="button"

@@ -1,21 +1,24 @@
 import { lazy, Suspense, useState } from 'react';
-import { Terminal, LayoutDashboard, Settings as SettingsIcon, BookOpen } from 'lucide-react';
+import { Terminal, LayoutDashboard, Settings as SettingsIcon, Activity } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { debtText } from '@/i18n/DebtText';
+import { useSystemStore } from '@/stores/systemStore';
+import { useFleetOrphanScan } from './useFleetOrphanScan';
 
 
 const FleetGridPage = lazy(() => import('./sub_grid/FleetGridPage'));
+const FleetActivityPage = lazy(() => import('./sub_activity/FleetActivityPage'));
 const FleetSettingsPage = lazy(() => import('./sub_settings/FleetSettingsPage'));
-const SkillBrowserPage = lazy(() => import('./sub_skills/SkillBrowserPage'));
 
-type InternalTab = 'grid' | 'settings';
+type InternalTab = 'grid' | 'activity' | 'settings';
 
-// Single Sessions tab is the home for every operation (spawn, kill,
-// broadcast, terminal view). Settings stays for hook uninstall +
-// diagnostics; install lives in the Sessions header pill now.
+// Sessions is the home for every operation (spawn, kill, broadcast, terminal
+// view). Activity is the cross-session transcript feed (F2/P2.2). Settings
+// stays for hook uninstall + diagnostics; install lives in the Sessions pill.
 const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
   { id: 'grid', label: 'Sessions', icon: LayoutDashboard },
+  { id: 'activity', label: 'Activity', icon: Activity },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
 
@@ -32,64 +35,61 @@ const TABS: { id: InternalTab; label: string; icon: typeof Terminal }[] = [
  */
 export default function FleetPage() {
   const [tab, setTab] = useState<InternalTab>('grid');
-  const [showSkills, setShowSkills] = useState(false);
+  // Poll for orphaned Claude processes (registry is lost on restart) so the
+  // Settings tab can badge them without the user opening Settings first.
+  useFleetOrphanScan();
+  const orphanCount = useSystemStore((s) => s.fleetOrphanCount);
 
   return (
-    <div className="h-full w-full flex flex-col" data-testid="fleet-page">
+    <div className="fleet-typescale h-full w-full flex flex-col" data-testid="fleet-page">
       {/* Internal tab strip — lightweight band above the active sub-page;
-          each sub-page renders its own ContentBox/Header underneath. */}
+          each sub-page renders its own ContentBox/Header underneath. Skills
+          now live in the left drawer (opened from the grid), not a tab. */}
       <div className="flex items-center gap-1 px-4 pt-3 pb-2 border-b border-primary/5">
         <Terminal className="w-4 h-4 text-primary mr-2" />
         <span className="typo-caption font-semibold text-foreground mr-3">Fleet</span>
-        {TABS.map((t) => {
-          const Icon = t.icon;
-          const active = !showSkills && tab === t.id;
+        {TABS.map((tabDef) => {
+          const Icon = tabDef.icon;
+          const active = tab === tabDef.id;
+          const badge = tabDef.id === 'settings' ? orphanCount : 0;
           return (
             <button
-              key={t.id}
-              data-testid={`fleet-tab-${t.id}`}
-              onClick={() => { setShowSkills(false); setTab(t.id); }}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
+              key={tabDef.id}
+              data-testid={`fleet-tab-${tabDef.id}`}
+              onClick={() => setTab(tabDef.id)}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-card text-[14px] transition-colors ${
                 active
                   ? 'bg-primary/10 text-primary border border-primary/25'
                   : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {t.label}
+              {tabDef.label}
+              {badge > 0 && (
+                <span
+                  className="ml-0.5 min-w-[16px] px-1 py-0.5 rounded-full bg-orange-500/20 text-orange-300 text-[12px] leading-none text-center"
+                  title={`${badge} orphaned Claude process${badge === 1 ? '' : 'es'} — open Settings to clean up`}
+                  data-testid="fleet-orphan-badge"
+                >
+                  {badge}
+                </span>
+              )}
             </button>
           );
         })}
-        <button
-          data-testid="fleet-show-skills"
-          onClick={() => setShowSkills((v) => !v)}
-          aria-pressed={showSkills}
-          title={showSkills ? 'Hide skills' : 'Show skills — browse the local skill library'}
-          className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-card text-[12px] transition-colors ${
-            showSkills
-              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-              : 'text-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'
-          }`}
-        >
-          <BookOpen className="w-3.5 h-3.5" />
-          {showSkills ? 'Hide skills' : 'Show skills'}
-        </button>
       </div>
 
       <div
-        data-testid={`fleet-active-${showSkills ? 'skills' : tab}`}
-        key={showSkills ? 'skills' : tab}
+        data-testid={`fleet-active-${tab}`}
+        key={tab}
         className="animate-fade-slide-in flex-1 min-h-0 flex flex-col"
       >
         <Suspense fallback={<SuspenseFallback />}>
-          {showSkills ? (
-            <SkillBrowserPage />
-          ) : (
-            <>
-              {tab === 'grid' && <FleetGridPage />}
-              {tab === 'settings' && <FleetSettingsPage />}
-            </>
-          )}
+          <>
+            {tab === 'grid' && <FleetGridPage />}
+            {tab === 'activity' && <FleetActivityPage />}
+            {tab === 'settings' && <FleetSettingsPage />}
+          </>
         </Suspense>
       </div>
     </div>
@@ -110,7 +110,7 @@ export function FleetPhaseBanner({ phase, summary }: { phase: string; summary: s
       <ContentBody>
         <div className="border border-primary/20 rounded-modal bg-primary/5 px-4 py-3">
           <p className="typo-caption font-medium text-primary mb-1">{phase}</p>
-          <p className="text-[12px] text-foreground leading-relaxed">{summary}</p>
+          <p className="text-[14px] text-foreground leading-relaxed">{summary}</p>
         </div>
       </ContentBody>
     </ContentBox>

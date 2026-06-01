@@ -16,6 +16,10 @@ import {
   BellOff,
   Search,
   LayoutGrid,
+  BarChart3,
+  BookOpen,
+  Moon,
+  Sun,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -23,19 +27,24 @@ import { Button } from '@/features/shared/components/buttons';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { useSystemStore } from '@/stores/systemStore';
 import { EventName } from '@/lib/eventRegistry';
-import { spawnSession, writeInput } from '@/api/fleet/fleet';
+import { spawnSession, writeInput, hibernateSession, wakeSession, killSession } from '@/api/fleet/fleet';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import { useToastStore } from '@/stores/toastStore';
 import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
+import { FleetSessionInsights } from './FleetSessionInsights';
+import { FleetContextPill } from './FleetContextPill';
+import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
 import { useFleetTerminalConfig } from '../useFleetTerminalConfig';
+import { sessionAttention, attentionClass, craftStalePrompt } from '../fleetAttention';
 import { FleetHooksPill } from '../FleetHooksPill';
 import { FleetBroadcastModal } from '../FleetBroadcastModal';
 import { notifyFleetAwaiting } from '@/lib/notifications/notifyFleetAwaiting';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { companionApproveAction, companionRejectAction } from '@/api/companion';
+import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
 import { actionLabel } from '@/features/plugins/companion/athenaLabels';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
 import { FleetSummaryPills } from '../FleetSummaryPills';
@@ -60,6 +69,7 @@ const GROUP_ORDER: ReadonlyArray<{
   { id: 'spawning',       labelKey: 'state_spawning',       icon: Sparkle,      accent: 'text-cyan-400' },
   { id: 'idle',           labelKey: 'state_idle',           icon: CheckCircle2, accent: 'text-emerald-400' },
   { id: 'stale',          labelKey: 'state_stale',          icon: Clock,        accent: 'text-orange-400' },
+  { id: 'hibernated',     labelKey: 'state_hibernated',     icon: Moon,         accent: 'text-indigo-400' },
   { id: 'exited',         labelKey: 'state_exited',         icon: Ban,          accent: 'text-foreground' },
 ];
 
@@ -111,10 +121,21 @@ export default function FleetGridPage() {
   const [spawning, setSpawning] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   // Fullscreen terminal grid overlay (transient — minimizing returns to the
-  // single-pane view showing the last-selected session).
-  const [gridOpen, setGridOpen] = useState(false);
+  // single-pane view showing the last-selected session). Driven by the store
+  // so the footer Fleet toggle can close it from outside this component.
+  const gridOpen = useSystemStore((s) => s.fleetGridOpen);
+  const setGridOpen = useSystemStore((s) => s.fleetSetGridOpen);
+  // Session ids with an in-flight "Ask Athena" proactive turn (drives the
+  // tile's "thinking" affordance until the turn resolves).
+  const [askingAthena, setAskingAthena] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FleetSessionState | null>(null);
   const [query, setQuery] = useState('');
+  // Right column shows either the live terminal or the transcript-intelligence
+  // panel (P2.1). The terminal stays alive in the manager while hidden.
+  const [rightView, setRightView] = useState<'terminal' | 'insights'>('terminal');
+  // Left skill-library drawer (F1 surfacing) — applies a skill to the focused session.
+  const [skillsDrawerOpen, setSkillsDrawerOpen] = useState(false);
+  const addToast = useToastStore((s) => s.addToast);
 
   const activeProject = useMemo(
     () => (activeProjectId ? projects.find((p) => p.id === activeProjectId) : null) ?? null,
@@ -161,9 +182,14 @@ export default function FleetGridPage() {
             if (notifyRef.current) {
               const sess = sessionsRef.current.find((s) => s.id === session_id);
               const name = sess?.name ?? sess?.projectLabel ?? '';
+              // Richer alert: include the Notification message (what Claude
+              // wants) when the hook carried one, so the toast is actionable.
+              const detail = reason?.trim();
               notifyFleetAwaiting(
                 t.plugins.fleet.notify_title,
-                tx(t.plugins.fleet.notify_body, { name }),
+                detail
+                  ? tx(t.plugins.fleet.notify_body_detail, { name, detail })
+                  : tx(t.plugins.fleet.notify_body, { name }),
               );
             }
           }
@@ -227,6 +253,48 @@ export default function FleetGridPage() {
     }
   }, []);
 
+  // Apply a library skill (full slash command, incl. any args) to the focused
+  // session — writes `<command>⏎` to its PTY (same mechanism as broadcast).
+  const handleApplySkill = useCallback(async (command: string) => {
+    if (!activeSessionId || !command.trim()) return;
+    try {
+      await writeInput(activeSessionId, `${command}\r`);
+      const sess = sessions.find((s) => s.id === activeSessionId);
+      addToast(
+        tx(t.plugins.fleet.skill_applied_toast, { command, name: sess?.name ?? sess?.projectLabel ?? '' }),
+        'success',
+      );
+    } catch (e) {
+      toastCatch('FleetGridPage:applySkill', 'Failed to apply skill')(e);
+    }
+  }, [activeSessionId, sessions, addToast, t, tx]);
+
+  // Hibernate: free the process, keep the row resumable. Wake: respawn
+  // `claude --resume` and focus the new session. (F3)
+  const handleHibernate = useCallback(async (id: string) => {
+    try {
+      await hibernateSession(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:hibernate', 'Failed to hibernate session')(e);
+    }
+  }, []);
+  const handleWake = useCallback(async (id: string) => {
+    try {
+      const newId = await wakeSession(id);
+      setActiveSession(newId);
+    } catch (e) {
+      toastCatch('FleetGridPage:wake', 'Failed to wake session')(e);
+    }
+  }, [setActiveSession]);
+  // Kill a session's process from the grid tile (it exits → leaves the grid).
+  const handleKill = useCallback(async (id: string) => {
+    try {
+      await killSession(id);
+    } catch (e) {
+      toastCatch('FleetGridPage:kill', 'Failed to kill session')(e);
+    }
+  }, []);
+
   // Companion approvals folded into the same "Needs you" surface — the
   // idea's "approve/reject companion actions" half. Read-only on the
   // companion store except for removing the row once resolved.
@@ -258,6 +326,26 @@ export default function FleetGridPage() {
     }
   }, [removeApproval]);
 
+  // Ask Athena to reason about one stale session and (if there's a clear
+  // winner) propose writing the next step into its terminal. Her proposal
+  // returns as an on-tile approval via the companion approvals event.
+  const handleAskAthena = useCallback(async (session: FleetSession) => {
+    setAskingAthena((prev) => new Set(prev).add(session.id));
+    try {
+      // Tag as a Fleet-originated request so it persists as a System turn
+      // (not an impersonated user message) and Athena/the chat see the source.
+      await companionSendMessage(craftStalePrompt(session), false, false, false, 'Fleet');
+    } catch (e) {
+      toastCatch('FleetGridPage:askAthena', 'Failed to reach Athena')(e);
+    } finally {
+      setAskingAthena((prev) => {
+        const next = new Set(prev);
+        next.delete(session.id);
+        return next;
+      });
+    }
+  }, []);
+
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
@@ -268,7 +356,8 @@ export default function FleetGridPage() {
   const liveSessions = useMemo(
     () =>
       sessions
-        .filter((s) => s.state !== 'exited')
+        // Hibernated sessions have no PTY to tile — exclude alongside exited.
+        .filter((s) => s.state !== 'exited' && s.state !== 'hibernated')
         .sort((a, b) => Number(b.lastActivityMs) - Number(a.lastActivityMs)),
     [sessions],
   );
@@ -306,7 +395,7 @@ export default function FleetGridPage() {
   // states the subtitle previously ignored (spawning, stale).
   const stateCounts = useMemo(() => {
     const c: Record<FleetSessionState, number> = {
-      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, exited: 0,
+      spawning: 0, running: 0, awaiting_input: 0, idle: 0, stale: 0, hibernated: 0, exited: 0,
     };
     for (const s of sessions) c[s.state] += 1;
     return c;
@@ -443,7 +532,7 @@ export default function FleetGridPage() {
             variant="secondary"
             size="sm"
             icon={<Send className="w-3.5 h-3.5" />}
-            disabled={sessions.filter((s) => s.state !== 'exited').length === 0}
+            disabled={sessions.filter((s) => s.state !== 'exited' && s.state !== 'hibernated').length === 0}
             onClick={() => setBroadcastOpen(true)}
           >
             Broadcast
@@ -478,7 +567,7 @@ export default function FleetGridPage() {
                   onChange={(e) => setQuery(e.target.value)}
                   aria-label={t.plugins.fleet.search_placeholder}
                   placeholder={t.plugins.fleet.search_placeholder}
-                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[12px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
+                  className="w-full rounded-input border border-primary/10 bg-secondary/40 py-1 pl-7 pr-2 text-[14px] text-foreground placeholder:text-foreground/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/40"
                 />
               </div>
             )}
@@ -487,15 +576,15 @@ export default function FleetGridPage() {
                 <div className="w-10 h-10 rounded-modal bg-primary/8 border border-primary/15 flex items-center justify-center mx-auto mb-2">
                   <TerminalIcon className="w-5 h-5 text-foreground" />
                 </div>
-                <p className="text-[11px] text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
-                <p className="text-[10px] text-foreground mt-1 px-3">
+                <p className="text-[13px] text-foreground"><DebtText k="auto_no_sessions_yet_9d7789c9" /></p>
+                <p className="text-[12px] text-foreground mt-1 px-3">
                   {activeProject
                     ? 'Click Spawn to launch claude, or run it externally once hooks are installed.'
                     : 'Pick a project in Dev Tools → Projects.'}
                 </p>
               </div>
             ) : groups.length === 0 ? (
-              <div className="text-center py-6 text-[11px] text-foreground" data-testid="fleet-no-matches">
+              <div className="text-center py-6 text-[13px] text-foreground" data-testid="fleet-no-matches">
                 {t.plugins.fleet.search_no_matches}
               </div>
             ) : (
@@ -514,7 +603,7 @@ export default function FleetGridPage() {
                         {t.plugins.fleet[g.labelKey]}
                       </span>
                       <span
-                        className={`ml-auto text-[10px] font-semibold ${g.accent}`}
+                        className={`ml-auto text-[12px] font-semibold ${g.accent}`}
                         aria-label={
                           g.sessions.length === 1
                             ? tx(t.plugins.fleet.sessions_one, { count: g.sessions.length })
@@ -552,20 +641,98 @@ export default function FleetGridPage() {
                 <p className="typo-caption">{t.plugins.fleet.grid_active_hint}</p>
               </div>
             ) : activeSession ? (
-              <div className="h-full border border-primary/10 rounded-modal overflow-hidden bg-[#0a0a0c]">
-                {activeSession.state === 'exited' ? (
-                  <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
-                    <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
-                    <p className="text-[10px]">
-                      {activeSession.exitCode !== null
-                        ? `Exit code ${activeSession.exitCode}`
-                        : 'Process exited unexpectedly'}
-                    </p>
-                  </div>
-                ) : (
-                  <FleetTerminalPane sessionId={activeSession.id} />
-                )}
+              activeSession.state === 'hibernated' ? (
+                <div
+                  data-testid="fleet-hibernated-panel"
+                  className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-indigo-400/25 rounded-modal bg-[#0a0a0c]"
+                >
+                  <Moon className="w-10 h-10 mb-3 text-indigo-400" aria-hidden="true" />
+                  <p className="typo-caption mb-1">{t.plugins.fleet.hibernated_panel_title}</p>
+                  <p className="text-[13px] text-center max-w-[340px] mb-3 opacity-70">{t.plugins.fleet.hibernated_panel_desc}</p>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={<Sun className="w-3.5 h-3.5" />}
+                    data-testid="fleet-wake"
+                    onClick={() => handleWake(activeSession.id)}
+                  >
+                    {t.plugins.fleet.wake_session}
+                  </Button>
+                </div>
+              ) : (
+              <div
+                className={`h-full flex flex-col border rounded-modal overflow-hidden bg-[#0a0a0c] ${
+                  attentionClass(sessionAttention(activeSession)) || 'border-primary/10'
+                }`}
+              >
+                {/* Terminal / Insights view toggle. Terminal stays alive in
+                    the manager while Insights is shown; Insights works for
+                    exited sessions too (transcript outlives the PTY). */}
+                <div className="flex items-center gap-1 px-2 py-1.5 border-b border-primary/10 shrink-0">
+                  {([
+                    { id: 'terminal' as const, label: t.plugins.fleet.view_terminal, Icon: TerminalIcon },
+                    { id: 'insights' as const, label: t.plugins.fleet.view_insights, Icon: BarChart3 },
+                  ]).map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      data-testid={`fleet-rightview-${v.id}`}
+                      aria-pressed={rightView === v.id}
+                      onClick={() => setRightView(v.id)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] transition-colors ${
+                        rightView === v.id
+                          ? 'bg-primary/10 text-primary border border-primary/25'
+                          : 'text-foreground hover:bg-secondary/40 border border-transparent'
+                      }`}
+                    >
+                      <v.Icon className="w-3.5 h-3.5" />
+                      {v.label}
+                    </button>
+                  ))}
+                  {/* Conversation-size efficiency indicator (F2). */}
+                  <span className="ml-2"><FleetContextPill claudeSessionId={activeSession.claudeSessionId} /></span>
+                  {/* Skills drawer trigger — sits above the CLI. */}
+                  <button
+                    type="button"
+                    data-testid="fleet-open-skills"
+                    onClick={() => setSkillsDrawerOpen(true)}
+                    title={t.plugins.fleet.skills_drawer_title}
+                    className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    {t.plugins.fleet.skills_button}
+                  </button>
+                  {/* Hibernate — free the process, keep it resumable (F3). */}
+                  <button
+                    type="button"
+                    data-testid="fleet-sleep"
+                    disabled={!activeSession.claudeSessionId}
+                    onClick={() => handleHibernate(activeSession.id)}
+                    title={activeSession.claudeSessionId ? t.plugins.fleet.sleep_session : t.plugins.fleet.sleep_unavailable}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-card text-[13px] text-foreground hover:bg-secondary/40 border border-transparent transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <Moon className="w-3.5 h-3.5" />
+                    {t.plugins.fleet.sleep_session}
+                  </button>
+                </div>
+                <div className="flex-1 min-h-0">
+                  {rightView === 'insights' ? (
+                    <FleetSessionInsights claudeSessionId={activeSession.claudeSessionId} />
+                  ) : activeSession.state === 'exited' ? (
+                    <div className="h-full flex flex-col items-center justify-center text-foreground p-6">
+                      <p className="typo-caption mb-2"><DebtText k="auto_session_exited_a34ee64f" /></p>
+                      <p className="text-[12px]">
+                        {activeSession.exitCode !== null
+                          ? `Exit code ${activeSession.exitCode}`
+                          : 'Process exited unexpectedly'}
+                      </p>
+                    </div>
+                  ) : (
+                    <FleetTerminalPane sessionId={activeSession.id} />
+                  )}
+                </div>
               </div>
+              )
             ) : (
               <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-foreground p-6 border border-primary/10 rounded-modal bg-[#0a0a0c]">
                 <TerminalIcon className="w-10 h-10 mb-3" />
@@ -584,6 +751,22 @@ export default function FleetGridPage() {
         activeSessionId={activeSessionId}
         onSelect={setActiveSession}
         onClose={() => setGridOpen(false)}
+        approvals={companionApprovals}
+        askingSessionIds={askingAthena}
+        onApprove={handleApprove}
+        onReject={handleRejectApproval}
+        onAskAthena={handleAskAthena}
+        onOpenSkills={() => setSkillsDrawerOpen(true)}
+        onSpawn={handleSpawn}
+        canSpawn={!!activeProject && !spawning}
+        onKill={handleKill}
+      />
+
+      <SkillLibraryDrawer
+        open={skillsDrawerOpen}
+        onClose={() => setSkillsDrawerOpen(false)}
+        onApply={handleApplySkill}
+        targetLabel={activeSession ? (activeSession.name ?? activeSession.projectLabel) : null}
       />
     </ContentBox>
   );

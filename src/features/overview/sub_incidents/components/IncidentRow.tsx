@@ -17,6 +17,7 @@ interface Props {
   onResolve: () => void;
   onDismiss: () => void;
   onReopen: () => void;
+  onOpenDetail: () => void;
 }
 
 export function IncidentRow({
@@ -27,6 +28,7 @@ export function IncidentRow({
   onResolve,
   onDismiss,
   onReopen,
+  onOpenDetail,
 }: Props) {
   const { t } = useTranslation();
   const SourceIcon = sourceTableIcon(incident.sourceTable);
@@ -93,6 +95,7 @@ export function IncidentRow({
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
+        <ActionButton onClick={onOpenDetail}>{t.overview.incidents.action_open_detail}</ActionButton>
         {isOpen && (
           <>
             <ActionButton onClick={onAcknowledge}>{t.overview.incidents.action_acknowledge}</ActionButton>

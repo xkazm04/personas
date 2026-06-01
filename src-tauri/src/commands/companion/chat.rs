@@ -55,18 +55,28 @@ pub async fn companion_send_message(
     voice_enabled: Option<bool>,
     recall_synthesis_enabled: Option<bool>,
     autonomous_mode: Option<bool>,
+    // When set (non-empty), the message is a *synthetic* prompt forwarded by a
+    // frontend surface (e.g. Fleet's "Ask Athena" button), not the user's own
+    // words. It persists as a `System` turn tagged with this source label
+    // instead of impersonating a user turn. Omitted/empty → a normal user turn.
+    system_source: Option<String>,
 ) -> Result<SendTurnResult, AppError> {
     require_auth(&state).await?;
     let user_db = Arc::new(state.user_db.clone());
     let sys_db = Arc::new(state.db.clone());
     #[cfg(feature = "ml")]
     let embedder = state.embedding_manager.clone();
-    // Any new user input cancels any in-flight autonomous continuation
-    // scheduling. This is the "Stop" semantics from Q3: user types
-    // anything → autonomy yields. (If a continuation is already mid-
-    // stream, the user calls `companion_interrupt_turn` separately;
-    // here we only drop the pending tokio handle.)
-    session::cancel_pending_autonomy();
+    let origin = match system_source.as_deref().map(str::trim) {
+        Some(s) if !s.is_empty() => session::TurnOrigin::External { source: s.to_string() },
+        _ => session::TurnOrigin::User,
+    };
+    // Genuine user input cancels any in-flight autonomous continuation
+    // scheduling ("Stop" semantics: user types anything → autonomy yields).
+    // A forwarded system request is not the user speaking, so it leaves an
+    // autonomous chain alone.
+    if matches!(origin, session::TurnOrigin::User) {
+        session::cancel_pending_autonomy();
+    }
     let turn = session::send_turn(
         &app,
         user_db,
@@ -74,7 +84,7 @@ pub async fn companion_send_message(
         #[cfg(feature = "ml")]
         embedder,
         message,
-        session::TurnOrigin::User,
+        origin,
         voice_enabled.unwrap_or(false),
         recall_synthesis_enabled.unwrap_or(false),
         autonomous_mode.unwrap_or(false),
@@ -163,6 +173,11 @@ pub fn companion_list_recent_messages(
     let episodes = episodic::list_recent(&state.user_db, DEFAULT_SESSION_ID, limit)?;
     Ok(episodes
         .into_iter()
+        // Fleet lifecycle events are written as System episodes here purely so
+        // recall/FTS can find them (`fleet-event session:… cc:… state:…`); they
+        // are machine logs, not chat content, so they must not render in the
+        // transcript. Filtered from display only — still searchable in memory.
+        .filter(|e| !e.content.starts_with("fleet-event "))
         .map(|e| CompanionMessage {
             id: e.id,
             role: e.role,

@@ -437,6 +437,38 @@ pub async fn decompose_team_assignment_goal(
     matching::decompose_goal(goal, &candidates, DECOMPOSE_TIMEOUT_SECS).await
 }
 
+/// Advance a team's linked `dev_goal`: build a **goal-linked** assignment (from
+/// the goal's open to-dos, else LLM-decomposed) and run it on the orchestrator.
+/// This is what flips a goal from "has-goal / NOT-advancing" to actively worked
+/// — the orchestrator's terminal hook then checks off the worked to-dos and
+/// writes the goal's progress. Returns the new assignment id, or `None` when an
+/// assignment already advances this goal (no double-spawn). The Goals UI button
+/// and the default-OFF autonomous tick both funnel through the same
+/// `engine::goal_advance::advance_goal`.
+#[tauri::command]
+pub async fn advance_team_goal(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    team_id: String,
+    goal_id: String,
+) -> Result<Option<String>, AppError> {
+    require_auth(&state).await?;
+    let embedding_manager = embedding_manager_for_state(&state);
+    match crate::engine::goal_advance::advance_goal(
+        &state.db,
+        &app,
+        state.engine.clone(),
+        embedding_manager,
+        &team_id,
+        &goal_id,
+    )
+    .await?
+    {
+        crate::engine::goal_advance::AdvanceResult::Started(id) => Ok(Some(id)),
+        crate::engine::goal_advance::AdvanceResult::AlreadyAdvancing => Ok(None),
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Templates (Phase C4) — save / list / delete / instantiate
 // ----------------------------------------------------------------------------

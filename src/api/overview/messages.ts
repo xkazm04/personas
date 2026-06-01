@@ -29,6 +29,9 @@ export const markAllMessagesRead = (personaId?: string) =>
 export const deleteMessage = (id: string) =>
   invoke<boolean>("delete_message", { id });
 
+export const deleteAllMessages = () =>
+  invoke<number>("delete_all_messages", {});
+
 export const getUnreadMessageCount = () =>
   invoke<number>("get_unread_message_count", {});
 

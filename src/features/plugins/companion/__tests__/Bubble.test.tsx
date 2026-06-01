@@ -66,6 +66,19 @@ describe('Bubble brain-link strip', () => {
     ).toBeInTheDocument();
     expect(screen.queryByTestId('companion-brain-links')).toBeNull();
   });
+
+  it('renders a forwarded system request (Fleet) as a divider, not a user/assistant bubble', () => {
+    render(
+      <Bubble role="system" index={0}>
+        [Fleet]
+      </Bubble>,
+    );
+    const marker = screen.getByTestId('companion-fleet-marker');
+    expect(marker).toBeInTheDocument();
+    // Brackets stripped for display; never a user bubble.
+    expect(marker).toHaveTextContent('Fleet');
+    expect(screen.queryByTestId('companion-bubble-user')).toBeNull();
+  });
 });
 
 describe('Bubble machine-grammar strip (OP-line leak guard)', () => {

@@ -197,6 +197,47 @@ pub const MONTHLY_COST_CEILING_USD: &str = "monthly_cost_ceiling_usd";
 /// Default monthly cost ceiling in USD. `0.0` means no ceiling.
 pub const MONTHLY_COST_CEILING_USD_DEFAULT: f64 = 0.0;
 
+/// Whether the autonomous goal-advancement tick may, unattended, turn a
+/// goal-linked team's active goal into a running `team_assignment`. Default OFF
+/// — nothing spends tokens autonomously until the user opts in from Settings.
+/// Read by `engine::subscription::GoalAdvanceSubscription`. Stored
+/// `"true"` / `"false"`.
+pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
+/// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
+pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
+
+/// Global cap on the number of executions that may run concurrently across ALL
+/// personas. Read ONCE at engine construction (see
+/// `crate::engine::ExecutionEngine::new`) and seeded into the
+/// `ConcurrencyTracker` via `set_global_max_concurrent`. Runtime hot-reload is
+/// intentionally NOT supported for P0 — changing this requires an app restart.
+/// Stored as a positive-integer string; clamped to
+/// [`MAX_PARALLEL_EXECUTIONS_MIN`]..=[`MAX_PARALLEL_EXECUTIONS_MAX`]. (The
+/// `GLOBAL_MAX_CONCURRENT` const in engine/queue.rs is only the no-pool/test
+/// fallback; this setting's default is authoritative at runtime.)
+pub const MAX_PARALLEL_EXECUTIONS: &str = "max_parallel_executions";
+/// Default global concurrency cap when the row is unset (or invalid).
+pub const MAX_PARALLEL_EXECUTIONS_DEFAULT: usize = 5;
+/// Minimum accepted cap. 0 would deadlock the queue (nothing could ever admit),
+/// so the floor is 1 (fully serialized execution).
+pub const MAX_PARALLEL_EXECUTIONS_MIN: usize = 1;
+/// Upper guard rail for the configured global cap. Conservative ceiling; raise
+/// only after auditing DB pool size / provider rate limits / memory headroom.
+pub const MAX_PARALLEL_EXECUTIONS_MAX: usize = 64;
+
+/// Whether each team-member persona execution runs inside its own per-execution
+/// git worktree (on branch `personas/exec/<execution_id>`) instead of the shared
+/// per-persona scratch dir. Default OFF — opt-in only, because it mutates the
+/// pinned repo's `.git` (adds a worktree + a branch) on every isolated run.
+/// When ON, the runner redirects the spawned CLI's cwd AND `CODEBASE_ROOT_PATH`
+/// to the worktree, so two concurrent executions against the SAME repo don't
+/// clobber each other. On completion the worktree is removed but the branch is
+/// LEFT for review (no auto-merge). Read by `engine::runner::run_execution`.
+/// Stored `"true"` / `"false"`.
+pub const EXECUTION_WORKTREE_ISOLATION: &str = "execution_worktree_isolation";
+/// Default for [`EXECUTION_WORKTREE_ISOLATION`] — off (opt-in isolation).
+pub const EXECUTION_WORKTREE_ISOLATION_DEFAULT: bool = false;
+
 /// Whether desktop → cloud dashboard sync is enabled. Value: `"true"` / `"false"`.
 /// Default off; the user opts in from Settings. Read by the background sync loop.
 pub const CLOUD_SYNC_ENABLED: &str = "cloud_sync_enabled";
@@ -248,6 +289,9 @@ const ALLOWED_KEYS: &[&str] = &[
     COMPANION_EXEC_REVIEW_CURSOR,
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
+    AUTONOMOUS_GOAL_ADVANCEMENT,
+    MAX_PARALLEL_EXECUTIONS,
+    EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
     CLOUD_SYNC_DEVICE_ID,
     CLOUD_SYNC_LAST_AT,
@@ -328,6 +372,12 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
                 "value for '{key}' must be a positive integer (executions per hour), got {value:?}"
             )),
         },
+        MAX_PARALLEL_EXECUTIONS => match value.parse::<usize>() {
+            Ok(n) if n >= MAX_PARALLEL_EXECUTIONS_MIN && n <= MAX_PARALLEL_EXECUTIONS_MAX => Ok(()),
+            _ => Err(format!(
+                "value for '{key}' must be an integer between {MAX_PARALLEL_EXECUTIONS_MIN} and {MAX_PARALLEL_EXECUTIONS_MAX}, got {value:?}"
+            )),
+        },
         FILE_WATCHER_DEBOUNCE_MS => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!(
                 "value for '{key}' must be a non-negative integer (milliseconds), got {value:?}"
@@ -336,7 +386,11 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         COMPANION_CONSTITUTION_VERSION => value.parse::<u32>().map(|_| ()).map_err(|_| {
             format!("value for '{key}' must be a non-negative integer (version), got {value:?}")
         }),
-        CLI_SESSION_AWARENESS_ENABLED | COMPANION_AUTONOMOUS_MODE | CLOUD_SYNC_ENABLED => {
+        CLI_SESSION_AWARENESS_ENABLED
+        | COMPANION_AUTONOMOUS_MODE
+        | CLOUD_SYNC_ENABLED
+        | AUTONOMOUS_GOAL_ADVANCEMENT
+        | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),
                 _ => Err(format!(
@@ -394,6 +448,34 @@ mod tests {
         assert!(validate_key("evil_key").is_err());
         assert!(validate_key("").is_err());
         assert!(validate_key("cli_engine_extra").is_err());
+    }
+
+    #[test]
+    fn max_parallel_executions_key_and_value_validation() {
+        assert!(validate_key(MAX_PARALLEL_EXECUTIONS).is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "1").is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "5").is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "64").is_ok());
+        // 0 would deadlock the queue -> rejected; over the ceiling -> rejected.
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "0").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "65").is_err());
+        // Non-integer / negative / blank / padded -> rejected.
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "5x").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, " 5 ").is_err());
+    }
+
+    #[test]
+    fn execution_worktree_isolation_key_and_value_validation() {
+        assert!(validate_key(EXECUTION_WORKTREE_ISOLATION).is_ok());
+        assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "true").is_ok());
+        assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "false").is_ok());
+        // Only the literal bool strings are accepted.
+        assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "1").is_err());
+        assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "yes").is_err());
+        assert!(validate_value(EXECUTION_WORKTREE_ISOLATION, "").is_err());
+        assert!(!EXECUTION_WORKTREE_ISOLATION_DEFAULT);
     }
 
     #[test]

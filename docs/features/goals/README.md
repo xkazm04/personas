@@ -18,7 +18,7 @@ All status handling funnels through `goalStatus.ts` — a `GoalStatus` type (`op
 
 ### Board + Map (active project)
 - **Board** — a `your turn → agent's turn → done` kanban; lane membership derives from `GOAL_STATUS_META.lane`. Each card surfaces its **checklist inline**: the first few to-dos render as checkboxes you toggle in place, and the rest fold into a "+N more" link to the detail drawer. **When a goal has to-dos, they drive its completeness** — `done / total` is written back to the goal's `progress` (so Map and Portfolio agree); a goal with no to-dos keeps the manual ± progress nudge. Items are fetched in one batch query per project (`dev_tools_list_goal_items_for_project`), not per card. Cards also carry an open-details affordance and a date that turns red when an ongoing goal is overdue.
-- **Map** — a pan/zoom **React Flow canvas** (`GoalGraphMap` + `goalGraphLayout.ts`) over parent/child + dependency edges, built to read at 100+ nodes. Nodes are **freely draggable** and positions **persist per project** (localStorage); the force sim (`forceLayout.ts`) only seeds the initial layout. A **minimap + zoom controls** make large graphs navigable, and nodes are **level-of-detail**: zoomed out each goal collapses to a colour-coded progress dot (high-level overview), zoomed in it expands to a titled card with a progress bar. **"Now" / "Next" highlighting** orients the user — *Now* = in-progress goals (amber pulsing ring), *Next* = open goals whose every blocker (dependency source + parent) is done (blue ring). Edges are **type-distinct**: parent (violet, solid), `blocks`/depends-on (red, dashed, animated), `follows` (sky, dashed), with a matching legend. Authored from the detail drawer's Dependencies section.
+- **Map** — a pan/zoom **React Flow canvas** (`GoalGraphMap` + `goalGraphLayout.ts`) over parent/child + dependency edges, built to read at 100+ nodes. Nodes are **freely draggable** and positions **persist per project** (localStorage); the force sim (`forceLayout.ts`) only seeds the initial layout. A **minimap + zoom controls** make large graphs navigable, and nodes are **level-of-detail**: zoomed out each goal collapses to a colour-coded progress dot (high-level overview), zoomed in it expands to a titled card with a progress bar. **"Now" / "Next" highlighting** orients the user — *Now* = in-progress goals (amber pulsing ring), *Next* = open goals whose every blocker (dependency source + parent) is done (blue ring). Edges are **type-distinct**: parent (violet, solid), `blocks`/depends-on (red, dashed, animated), `follows` (sky, dashed), with a matching legend. Authored from the detail drawer's Dependencies section. Each node also shows an **advancing-team badge** (▶ team name) when a `team_assignment` is working that goal — sourced from `dev_tools_goal_advancing_teams` (the canonical team↔goal link), so the graph shows *who owns each goal*.
 
 ### Timeline (active project)
 `GoalsTimeline` — ongoing goals on a vertical target-date rail, bucketed **Overdue → This week → This month → Later → No date**, each row showing the relative due date, status, and progress. Opens the goal on click.
@@ -51,6 +51,21 @@ Clicking a goal in Board / Map / Timeline / the attention drawer opens the **det
 
 Progress is **hybrid**: signals + step/checklist completion compute a suggestion; the user (or Athena, gated) accepts it.
 
+## How goals reach team executions
+
+Goals are not just a planning view — since 2026-05-29 they **steer runtime team behavior**. Every member of a team executes with a compact `## Team Alignment` block in its prompt (`engine/runner/team_context.rs`) that lists the team's **active goals** alongside the teammate roster, and instructs the persona to judge — from its own capabilities — whether and how its work advances them (align where it relates, don't force-fit). See [team-orchestration.md › Shared state](../pipeline/team-orchestration.md#shared-state-reaching-a-running-persona).
+
+The block resolves a team's goals by walking **team → project → goals** via the canonical durable link **`dev_projects.team_id`** ("this team owns this project"; goals belong to the project). This makes `dev_projects.team_id` the team-mission link and `team_assignments.goal_id` the granular per-task "advancing" link — both pointing at the **same `dev_goals` spine**, so a goal authored anywhere (Goals UI, an assignment's *Advance goal* picker) flows into executions. Resolution order: the persona's pinned project (`design_context.dev_project_id`) → `dev_projects.team_id` → goals the team is directly advancing.
+
+## Advancing a goal (teams work it)
+
+Linking a goal to a team makes it *visible* to executions; **advancing** is the team actually working it. An advance turns a goal into a running, goal-linked `team_assignment`:
+
+- **Initiator** — `engine/goal_advance.rs::advance_goal` (command `advance_team_goal`) builds an assignment **with `goal_id` set** and runs it on the orchestrator, behind a one-active-assignment-per-goal guard. **Hybrid step source**: if the goal has open to-dos (`dev_goal_items`), one step per to-do (title verbatim); otherwise the goal is LLM-decomposed.
+- **Triggers** — the **Advance with team** button in the goal detail drawer (shown when the goal's project has an owning team and the goal isn't complete); Athena (team path); and the autonomous tick below.
+- **Progress closes automatically** — when a goal-linked assignment reaches `done`, the orchestrator checks off the to-dos it worked (step title ↔ to-do title) and writes the goal's progress via `apply_resolved_goal_progress`. This is what makes a team that did the work actually *move* the goal — `dev_goal_signals` are observational, and before this progress only moved on a manual accept. Status flips `open → in-progress` the moment the first step runs and `→ done` at 100%; progress never regresses a hand-set value.
+- **Autonomous advancement** — `GoalAdvanceSubscription`, gated by the **default-OFF** `autonomous_goal_advancement` setting, ticks every 5 min and keeps each goal-linked team's active goal moving unattended. Guardrails: one active assignment per goal, a 30-min per-goal cooldown after any assignment (no failure-retry stampede), eligible-persona check, and a per-tick cap. Nothing spends tokens autonomously until you opt in.
+
 ## Athena integration
 
 - **Reads** — active project goals (id, progress, status, latest signal) are injected into Athena's system prompt, so she's aware of project direction and can reference goals by id.
@@ -65,7 +80,8 @@ Progress is **hybrid**: signals + step/checklist completion compute a suggestion
 | `dev_goal_dependencies` | cross-goal blocking edges (Map) |
 | `dev_goal_items` | lightweight ad-hoc checklist items |
 | `dev_goal_signals` | progress/activity log (dev, team, and athena signals) |
-| `team_assignments.goal_id` | the soft link from a team assignment to the goal it advances |
+| `team_assignments.goal_id` | the soft link from a team assignment to the goal it advances (granular "advancing" signal) |
+| `dev_projects.team_id` | the durable team↔project link — a team owns a project, so the project's goals are the team's mission (drives execution-time goal awareness) |
 
 Key commands — per-goal/project: `dev_tools_{list,create,update,delete,reorder}_goal(s)`, `dev_tools_{list,create,update,delete,reorder}_goal_item(s)`, `dev_tools_list_child_goals`, `dev_tools_resolve_goal_progress`, `set_team_assignment_goal`, `list_team_assignments_for_goal`.
 

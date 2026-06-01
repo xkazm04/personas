@@ -281,7 +281,10 @@
     {
       "doc": "docs/features/overview/README.md",
       "sourceGlobs": [
-        "src/features/overview/**"
+        "src/features/overview/**",
+        "src/features/shared/components/layout/SystemLoadFooterIcon.tsx",
+        "src/features/shared/components/layout/systemLoad.ts",
+        "src-tauri/src/commands/infrastructure/system_metrics.rs"
       ],
       "onboardingFlows": ["overview-dashboard", "execution-activity", "health-monitoring"],
       "marketingModule": "overview"

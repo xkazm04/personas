@@ -29,6 +29,8 @@ export interface GoalNodeData extends Record<string, unknown> {
   here: boolean;
   /** Open and unblocked — a sensible next step. */
   next: boolean;
+  /** Name of the team whose assignment is advancing this goal (O4), if any. */
+  advancingTeam?: string | null;
 }
 
 // Force-sim canvas — larger than the viewport so 100+ nodes have room to breathe.
@@ -80,9 +82,11 @@ export interface BuildArgs {
   dependencies: DevGoalDependency[];
   /** Per-project dragged positions (localStorage); win over the force sim. */
   savedPositions?: Record<string, { x: number; y: number }>;
+  /** goalId → advancing team name (O4); a goal an assignment is working. */
+  advancingTeams?: Map<string, string>;
 }
 
-export function buildGoalGraph({ goals, dependencies, savedPositions }: BuildArgs): {
+export function buildGoalGraph({ goals, dependencies, savedPositions, advancingTeams }: BuildArgs): {
   nodes: Node<GoalNodeData>[];
   edges: Edge[];
 } {
@@ -136,6 +140,7 @@ export function buildGoalGraph({ goals, dependencies, savedPositions }: BuildArg
         stroke: meta.map.stroke,
         here: here.has(g.id),
         next: next.has(g.id),
+        advancingTeam: advancingTeams?.get(g.id) ?? null,
       },
     };
   });

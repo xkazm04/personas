@@ -25,6 +25,7 @@ import { idlePrefetch } from "@/lib/idlePrefetch";
 import { AppKeyboardProvider, useAppKeyboard } from "@/lib/keyboard/AppKeyboardProvider";
 import ShortcutCheatSheet from "@/lib/keyboard/ShortcutCheatSheet";
 import WorkspaceShortcuts from "@/lib/keyboard/WorkspaceShortcuts";
+import KeyboardNavMode from "@/lib/keyboard/KeyboardNavMode";
 import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
 
@@ -266,10 +267,11 @@ export default function App() {
         <DevMobilePreviewShortcut />
         <ShortcutCheatSheet />
         <WorkspaceShortcuts />
+        <KeyboardNavMode />
         <MotionConfig reducedMotion={isDocumentVisible ? "user" : "always"}>
           <AriaLiveProvider>
         <div
-          className={`flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
+          className={`app-safe-area flex flex-col h-screen w-screen overflow-hidden bg-background text-foreground transition-opacity duration-150 ease-out ${fontReady ? 'opacity-100' : 'opacity-60'}`}
         >
           <a
             href="#main-content"

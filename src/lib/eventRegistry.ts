@@ -68,6 +68,15 @@ export const EventName = {
   DESIGN_REVIEW_OUTPUT: 'design-review-output',
   MANUAL_REVIEW_RESOLVED: 'manual-review-resolved',
   REVIEW_MESSAGE_ADDED: 'review-message-added',
+  // Persona event-bus signals published when a human review is resolved (by the
+  // user OR by Athena). Backend bus events personas subscribe to for
+  // event-orchestrated continuation; mirrored here for Rust↔TS name parity.
+  REVIEW_DECISION_APPROVED: 'review_decision.approved',
+  REVIEW_DECISION_REJECTED: 'review_decision.rejected',
+  REVIEW_DECISION_RESOLVED: 'review_decision.resolved',
+  // Published when an incident is resolved (user or Athena); personas subscribe
+  // for event-orchestrated continuation. Backend bus event; mirrored for parity.
+  INCIDENT_RESOLVED: 'incident_resolved',
 
   // Build session
   BUILD_SESSION_EVENT: 'build-session-event',
@@ -904,6 +913,40 @@ export interface EventPayloadMap {
   [EventName.FLEET_SESSION_STATE]: { session_id: string; state: string; reason?: string };
   [EventName.FLEET_SESSION_EXITED]: { session_id: string; exit_code: number | null };
   [EventName.FLEET_REGISTRY_CHANGED]: { kind: 'added' | 'removed' | 'updated'; session_id: string };
+
+  // Persona event-bus signals (P1b review decisions + P2.3 incident resolved).
+  // These are backend bus events consumed by persona subscriptions for
+  // event-orchestrated continuation; mirrored here for Rust↔TS name parity.
+  // Payload shapes match the json! emitted by the Rust publish helpers
+  // (commands/design/reviews.rs::publish_review_decision and
+  // commands/execution/audit_incidents.rs::publish_incident_resolved).
+  [EventName.REVIEW_DECISION_APPROVED]: ReviewDecisionEventPayload;
+  [EventName.REVIEW_DECISION_REJECTED]: ReviewDecisionEventPayload;
+  [EventName.REVIEW_DECISION_RESOLVED]: ReviewDecisionEventPayload;
+  [EventName.INCIDENT_RESOLVED]: IncidentResolvedEventPayload;
+}
+
+/** Payload for `review_decision.*` bus events (publish_review_decision). */
+interface ReviewDecisionEventPayload {
+  review_id: string;
+  execution_id: string | null;
+  persona_id: string;
+  title: string;
+  decision: string;
+  reviewer_notes: string | null;
+  context_data: string | null;
+}
+
+/** Payload for the `incident_resolved` bus event (publish_incident_resolved). */
+interface IncidentResolvedEventPayload {
+  incident_id: string;
+  source_table: string;
+  blocked_execution_id: string | null;
+  persona_id: string | null;
+  severity: string;
+  kind: string;
+  title: string;
+  resolution_note: string | null;
 }
 
 // ---------------------------------------------------------------------------

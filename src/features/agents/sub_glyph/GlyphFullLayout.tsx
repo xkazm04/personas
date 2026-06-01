@@ -209,7 +209,7 @@ export function GlyphFullLayout(props: GlyphFullLayoutProps) {
           the inner column stacks topbar, sigil, answer card, etc. */}
       <div className="flex flex-col items-center pb-14 pt-4">
         <div
-          className="min-w-[640px] md:min-w-[800px] lg:min-w-[920px] w-full max-w-[1400px] flex flex-col items-center gap-5 rounded-modal"
+          className="sm:min-w-[640px] md:min-w-[800px] lg:min-w-[920px] w-full max-w-[1400px] flex flex-col items-center gap-5 rounded-modal"
           style={{
             backgroundImage:
               "linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px), " +

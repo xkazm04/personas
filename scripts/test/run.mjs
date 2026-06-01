@@ -19,7 +19,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const nowIso = () => new Date().toISOString();
 const log = (...a) => console.log(`[${new Date().toLocaleTimeString()}]`, ...a);
 
-const SEEDS_DIR = join('docs', 'test', 'seeds');
+const SEEDS_DIR = join('docs', 'tests', 'autonomy-eval', 'seeds');
 
 function loadSeed(idOrFile) {
   const files = readdirSync(SEEDS_DIR).filter((f) => f.endsWith('.json'));

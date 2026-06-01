@@ -93,6 +93,12 @@ pub enum ClientAction {
     /// match `CompanionPluginTab` on the frontend
     /// (`setup` | `memory` | `voice` | `dashboard`).
     OpenCompanionTab { tab: String },
+    /// Phase G — open an external URL in the user's default browser. Used by
+    /// `open_test_env` to launch a dev project's configured test-environment
+    /// URL. The frontend dispatches this via `openExternalUrl()` (the
+    /// validated `open_external_url` Tauri command, http/https only), keeping
+    /// URL-opening on the same path as the Dev Tools UI button.
+    OpenExternalUrl { url: String },
 }
 
 /// Internal: each `execute_*` returns this so we can build either a
@@ -215,6 +221,7 @@ pub async fn companion_approve_action(
         // Phase G — project registry + background jobs.
         "register_project" => execute_register_project(&state, &app, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, &app, &params),
+        "open_test_env" => execute_open_test_env(&state, &app, &params),
         "update_dev_goal" => execute_update_dev_goal(&state, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
         // Phase J — Fleet integration.
@@ -299,6 +306,12 @@ const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     "write_backlog_item",
     "enqueue_dev_job",
     "schedule_proactive",
+    // Deliberate higher-blast-radius exception (opted in via autonomous mode):
+    // Athena driving a Fleet session by typing into its terminal. This is the
+    // "Ask Athena → she writes directly" loop. It only fires under autonomous
+    // mode AND targets Fleet PTYs the user explicitly spawned; still gated by
+    // the toggle, so by default writes remain a manual tile-approval click.
+    "fleet_send_input",
 ];
 
 /// If `approval.action` is on the conservative autoapprove allowlist,
@@ -338,6 +351,7 @@ pub async fn auto_resolve_if_allowed(
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
         "enqueue_dev_job" => execute_enqueue_dev_job(&state, app, &params),
         "schedule_proactive" => execute_schedule_proactive(&state, &params),
+        "fleet_send_input" => execute_fleet_send_input(&params),
         _ => unreachable!("allowlist mismatch"),
     };
     let (status_text, embedder_log) = match exec_result {
@@ -581,9 +595,14 @@ async fn execute_resolve_human_review(
     };
 
     // Mirror the body of `update_manual_review_status` (without re-entering
-    // the Tauri command boundary). The same repo + event emit live here.
+    // the Tauri command boundary): resolve, then publish review_decision.* to
+    // the event bus via the SHARED helper so the signal is symmetric with the
+    // user-driven path (P1b — previously this path emitted nothing, so an
+    // Athena-resolved review was invisible to downstream subscribers).
     manual_repo::update_status(&state.db, &review_id, status, comment.clone())?;
-    let _ = app; // event emit handled by the original command path; we keep this minimal.
+    if let Ok(review) = manual_repo::get_by_id(&state.db, &review_id) {
+        crate::commands::design::reviews::publish_review_decision(&state.db, app, &review);
+    }
 
     Ok(ExecuteResult::message(format!(
         "Human Review `{review_id}` marked `{}`{comment_note}.",
@@ -986,27 +1005,82 @@ fn gather_fleet_digest(db: &crate::db::DbPool, team: Option<&str>, days: i64) ->
             }
             found
         };
-        let project_goals: i64 = project_id
-            .as_deref()
-            .map(|pid| {
-                conn.query_row(
-                    "SELECT COUNT(*) FROM dev_goals WHERE project_id = ?1",
-                    params![pid],
-                    |r| r.get::<_, i64>(0),
-                )
-                .unwrap_or(0)
-            })
-            .unwrap_or(0);
-        let goal_linked = assignment_goals + project_goals;
+        // Goal ENGAGEMENT (extended scope): is a team_assignment actively
+        // advancing a goal, and how are the goal's breakdown to-dos progressing?
+        let advancing = assignment_goals > 0;
+        let mut goal_summ: Vec<String> = Vec::new();
+        if let Some(pid) = project_id.as_deref() {
+            if let Ok(mut stmt) = conn.prepare(
+                "SELECT id, title, status, COALESCE(progress,0) FROM dev_goals WHERE project_id = ?1 ORDER BY created_at DESC LIMIT 5",
+            ) {
+                if let Ok(rows) = stmt.query_map(params![pid], |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, String>(2)?,
+                        r.get::<_, i64>(3)?,
+                    ))
+                }) {
+                    for (gid, title, status, progress) in rows.flatten() {
+                        let (td, tt): (i64, i64) = conn
+                            .query_row(
+                                "SELECT COALESCE(SUM(done),0), COUNT(*) FROM dev_goal_items WHERE goal_id = ?1",
+                                params![gid],
+                                |r| Ok((r.get(0)?, r.get(1)?)),
+                            )
+                            .unwrap_or((0, 0));
+                        let blk: i64 = conn
+                            .query_row(
+                                "SELECT COUNT(*) FROM dev_goal_dependencies WHERE goal_id = ?1",
+                                params![gid],
+                                |r| r.get(0),
+                            )
+                            .unwrap_or(0);
+                        let blk_s = if blk > 0 { format!(", {blk} blocker(s)") } else { String::new() };
+                        let t: String = title.chars().take(40).collect();
+                        goal_summ.push(format!("\"{t}\" {status} {progress}% (to-dos {td}/{tt}{blk_s})"));
+                    }
+                }
+            }
+        }
+        let last_signal: Option<String> = project_id.as_deref().and_then(|pid| {
+            conn.query_row(
+                "SELECT s.signal_type FROM dev_goal_signals s JOIN dev_goals g ON g.id = s.goal_id WHERE g.project_id = ?1 ORDER BY s.created_at DESC LIMIT 1",
+                params![pid],
+                |r| r.get::<_, String>(0),
+            )
+            .ok()
+        });
+        let goal_state = if goal_summ.is_empty() {
+            "goal: NONE".to_string()
+        } else {
+            let mode = if advancing { "ADVANCING" } else { "has-goal/NOT-advancing" };
+            let sig = last_signal.map(|s| format!(" · last-goal-signal {s}")).unwrap_or_default();
+            format!("goal [{mode}]: {}{sig}", goal_summ.join("; "))
+        };
         match agg {
             Ok((total, failed, vd, partial, pf, cost, dir)) => {
-                let dir_s = dir.map(|d| format!("{d:.1}/5")).unwrap_or_else(|| "—".into());
+                // Director score + band (mirrors the Director command-center banding
+                // so the digest carries the same quality semantics, not a bare number).
+                let dir_s = dir
+                    .map(|d| {
+                        let band = if d >= 4.0 {
+                            "excellent"
+                        } else if d >= 3.0 {
+                            "healthy"
+                        } else if d >= 2.0 {
+                            "at-risk"
+                        } else {
+                            "broken"
+                        };
+                        format!("{d:.1}/5 ({band})")
+                    })
+                    .unwrap_or_else(|| "— (unrated)".into());
                 out.push_str(&format!(
-                    "- **{name}** (`{short}`): {total} exec · {failed} failed · value-delivered {vd} · partial {partial} · precond-failed {pf} · ${cost:.2} · director {dir_s} · goal-linked: {}\n",
-                    if goal_linked > 0 { "yes" } else { "NO" }
+                    "- **{name}** (`{short}`): {total} exec · {failed} failed · vd {vd} · partial {partial} · precond {pf} · ${cost:.2} · director {dir_s} · {goal_state}\n",
                 ));
             }
-            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data)\n")),
+            Err(_) => out.push_str(&format!("- **{name}** (`{short}`): (no execution data) · {goal_state}\n")),
         }
     }
     out
@@ -1028,10 +1102,15 @@ fn build_fleet_directive(team: Option<&str>, days: i64, digest: &str) -> String 
          Reason over THIS — do NOT try to fetch it via a connector (your personas_database \
          connector points at the companion-brain DB, not the execution store):\n\n\
          {digest}\n\n\
-         For each team, assess against these certification dimensions: (1) on-track — is it \
-         tied to a tracked goal (goal-linked: NO is a real gap); (2) value delivery — \
-         value-delivered vs partial / precond-failed; (3) health — failures; (4) cost + \
-         outliers; (5) portfolio balance. Then: (a) recall any prior fleet-analysis note \
+         For each team, assess against these certification dimensions: (1) GOAL ENGAGEMENT \
+         (the focus this round) — is a team_assignment ACTIVELY ADVANCING the goal, or does \
+         the goal just sit on the project ('has-goal/NOT-advancing')? How complete are the \
+         goal's breakdown to-dos (the `to-dos X/Y` per goal)? Is it blocked (blocker count)? \
+         When did the team last touch it (`last-goal-signal`)? 'has-goal/NOT-advancing', \
+         '0 to-dos done', or no recent goal signal are real gaps — call them out and propose \
+         a fix. (2) value delivery — value-delivered vs partial / precond-failed; (3) health \
+         — failures; (4) cost + outliers; (5) portfolio balance. Then: (a) recall any prior \
+         fleet-analysis note \
          from your memory for timeline continuity (did last round's gap get fixed?); \
          (b) write a concise per-team timeline note via write_fact (scope the fact to the \
          team) so the next review builds on this one; (c) propose at most a few concrete \
@@ -1688,6 +1767,101 @@ fn execute_register_project(
          project `{dev_project_id}` so the codebase connector is now available for any team \
          working this repo at `{path}`. {scan_note}"
     )))
+}
+
+/// `open_test_env` — open a registered Dev Tools project's configured
+/// test-environment URL in the browser. Resolves the project the same way
+/// `execute_enqueue_dev_job` does (id / name / slash-normalized path, with a
+/// most-recent fallback), then returns a `ClientAction::OpenExternalUrl` for
+/// the frontend to dispatch through the validated `open_external_url` command
+/// — the same path as the Dev Tools UI "open test env" button. No backend
+/// side effect of its own; if the project has no `test_env_url` set it errors
+/// with a hint to set it in Dev Tools.
+fn execute_open_test_env(
+    state: &State<'_, Arc<AppState>>,
+    _app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    // Mirror enqueue_dev_job's candidate collection (top-level + nested
+    // `params`), so Athena can send any of project_id / project_name / name /
+    // path interchangeably.
+    let p = params.get("params").cloned().unwrap_or(serde_json::json!({}));
+    let mut candidates: Vec<String> = Vec::new();
+    for v in [
+        params.get("project_id").and_then(|v| v.as_str()),
+        p.get("project_id").and_then(|v| v.as_str()),
+        params.get("project_name").and_then(|v| v.as_str()),
+        p.get("project_name").and_then(|v| v.as_str()),
+        params.get("name").and_then(|v| v.as_str()),
+        p.get("name").and_then(|v| v.as_str()),
+        params.get("path").and_then(|v| v.as_str()),
+        p.get("path").and_then(|v| v.as_str()),
+    ]
+    .into_iter()
+    .flatten()
+    {
+        let v = v.trim();
+        if !v.is_empty() && !candidates.iter().any(|c| c == v) {
+            candidates.push(v.to_string());
+        }
+    }
+
+    let project_id: String = {
+        let conn = state.db.get()?;
+        let mut found: Option<String> = None;
+        for n in &candidates {
+            if let Ok(id) = conn.query_row(
+                "SELECT id FROM dev_projects \
+                 WHERE id = ?1 OR name = ?1 \
+                    OR replace(root_path, '\\', '/') = replace(?1, '\\', '/') \
+                 ORDER BY (id = ?1) DESC LIMIT 1",
+                rusqlite::params![n],
+                |r| r.get::<_, String>(0),
+            ) {
+                found = Some(id);
+                break;
+            }
+        }
+        // Fall back to the most-recently-registered project when nothing was
+        // specified or nothing matched (e.g. a stale project_id carried over
+        // from a prior session). Mirrors execute_enqueue_dev_job.
+        if found.is_none() {
+            found = conn
+                .query_row(
+                    "SELECT id FROM dev_projects ORDER BY created_at DESC LIMIT 1",
+                    [],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok();
+        }
+        match found {
+            Some(id) => id,
+            None => {
+                return Err(AppError::Validation(
+                    "No Dev Tools projects registered yet. Register one first with \
+                     register_project (name + filesystem path)."
+                        .into(),
+                ))
+            }
+        }
+    };
+
+    let project = crate::db::repos::dev_tools::get_project_by_id(&state.db, &project_id)?;
+
+    let url = match project.test_env_url.as_deref().map(str::trim) {
+        Some(u) if !u.is_empty() => u.to_string(),
+        _ => {
+            return Err(AppError::Validation(format!(
+                "Project \"{}\" has no test environment URL set. Set it in Dev Tools → the project's settings.",
+                project.name
+            )));
+        }
+    };
+
+    Ok(ExecuteResult {
+        message: format!("Opening the test environment for {}…", project.name),
+        client_action: Some(ClientAction::OpenExternalUrl { url }),
+    })
 }
 
 /// `enqueue_dev_job` — run a real Dev Tools **context scan** on a registered

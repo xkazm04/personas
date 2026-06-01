@@ -38,6 +38,13 @@ const STATUS_DOT_COLOR: Record<string, string> = {
 const MAX_CONNECTORS_VISIBLE = 4;
 const EMPTY_CONNECTORS: string[] = [];
 
+// Cap the unvirtualized card grid so a very large fleet can't build thousands of
+// DOM nodes on mount. The default table layout (DataGrid) already handles big
+// lists; this calm-catalogue variant renders the first N and points the user at
+// search/filters. True windowing (a responsive grid virtualizer) is the queued
+// follow-up — architect perf scan, Phase E (render-cap guardrail).
+const PERSONA_RENDER_CAP = 200;
+
 export function PersonaOverviewVariantGrid({
   data,
   selectedIds,
@@ -48,10 +55,13 @@ export function PersonaOverviewVariantGrid({
   isDraft,
   connectorNamesMap,
 }: PersonaOverviewVariantGridProps) {
+  const { t, tx } = useTranslation();
+  const total = data.length;
+  const shown = total > PERSONA_RENDER_CAP ? data.slice(0, PERSONA_RENDER_CAP) : data;
   return (
     <div className="flex-1 overflow-y-auto px-3 py-3">
       <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]">
-        {data.map((p) => (
+        {shown.map((p) => (
           <PersonaGridCard
             key={p.id}
             id={p.id}
@@ -65,6 +75,11 @@ export function PersonaOverviewVariantGrid({
           />
         ))}
       </div>
+      {total > PERSONA_RENDER_CAP && (
+        <p className="mt-3 text-center typo-caption text-foreground">
+          {tx(t.agents.persona_list.render_cap_notice, { shown: PERSONA_RENDER_CAP, total })}
+        </p>
+      )}
     </div>
   );
 }

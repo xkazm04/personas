@@ -51,6 +51,14 @@ export const getPromptVersions = (personaId: string, limit?: number) =>
     limit: limit,
   });
 
+/** Batched: prompt versions for many personas in one IPC round-trip, keyed by
+ *  persona id. Replaces N per-persona getPromptVersions calls. */
+export const getPromptVersionsBulk = (personaIds: string[], limit?: number) =>
+  invoke<Record<string, PersonaPromptVersion[]>>("get_prompt_versions_bulk", {
+    personaIds,
+    limit: limit,
+  });
+
 export const getAllMonthlySpend = () =>
   invoke<import('@/lib/bindings/MonthlySpendResult').MonthlySpendResult>("get_all_monthly_spend", {
     utcOffsetMinutes: -new Date().getTimezoneOffset(),

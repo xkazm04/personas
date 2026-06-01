@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Minus, Square, X, Copy, Bell, CalendarClock, ArrowLeft } from 'lucide-react';
+import { Minus, Square, X, Copy, Bell, CalendarClock, ArrowLeft, Search } from 'lucide-react';
 import { IS_DESKTOP } from '@/lib/utils/platform/platform';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
+import { useCommandPaletteStore } from '@/stores/commandPaletteStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import ProcessActivityIndicator from '@/features/shared/components/layout/ProcessActivityIndicator';
 import { TitleBarAmbient } from '@/features/shared/components/layout/TitleBarAmbient';
@@ -27,6 +28,7 @@ export default function TitleBar() {
   // exclusive, and route nav / Back close the active overlay (see uiSlice).
   const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  const openPalette = useCommandPaletteStore((s) => s.openPalette);
   const notificationsOpen = headerOverlay === 'notifications';
 
   const todayScheduleCount = useMemo(() => {
@@ -107,6 +109,19 @@ export default function TitleBar() {
 
       {/* Quick-action tray */}
       <div className="flex items-center gap-0.5 mr-1">
+        {/* Search — opens the command palette (settings scope). Moved off the
+            ambient illustration so the time-of-day art stays a window-drag
+            region; lives left of the schedule icon. */}
+        <button
+          className="titlebar-btn"
+          data-testid="titlebar-search"
+          onClick={() => openPalette('settings')}
+          aria-label={t.settings.search.trigger_aria}
+          title={t.settings.search.trigger_hint}
+        >
+          <Search size={20} strokeWidth={1.5} />
+        </button>
+
         {/* Schedule calendar */}
         <button
           className={`titlebar-btn relative ${isScheduleActive ? 'titlebar-btn-active' : ''}`}

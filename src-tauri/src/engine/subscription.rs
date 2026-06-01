@@ -1280,6 +1280,133 @@ pub fn spawn_subscriptions(
     handles
 }
 
+// ---------------------------------------------------------------------------
+// Autonomous goal advancement (default-OFF)
+// ---------------------------------------------------------------------------
+
+/// Keeps each goal-linked team's active goal moving **unattended** — turns a
+/// stalled-but-unworked goal into a running `team_assignment` via
+/// [`crate::engine::goal_advance::advance_goal`]. This is the "works for weeks"
+/// layer on top of the manual/Athena initiator.
+///
+/// **Gated OFF by default** (`settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT`): the
+/// tick is a no-op until the user opts in, so nothing spends tokens
+/// autonomously without consent. Guardrails when ON: one active assignment per
+/// goal (enforced in `advance_goal`), a 30-minute per-goal cooldown after any
+/// assignment (so a failed run isn't retried in a tight loop), eligible-persona
+/// check, and a hard per-tick cap so a large fleet ramps gradually.
+pub struct GoalAdvanceSubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
+    pub engine: Arc<ExecutionEngine>,
+}
+
+/// Max goals advanced per tick — bounds the autonomous spend ramp.
+const GOAL_ADVANCE_MAX_PER_TICK: usize = 3;
+
+/// Goal-linked teams with an active, unworked goal and no recent assignment.
+/// Returns `(team_id, goal_id)` pairs. The 30-min cooldown via `created_at`
+/// prevents stampede + failure-retry loops.
+fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT dp.team_id, g.id
+         FROM dev_goals g
+         JOIN dev_projects dp ON dp.id = g.project_id
+         WHERE dp.team_id IS NOT NULL
+           AND g.status NOT IN ('done', 'completed')
+           AND g.progress < 100
+           AND NOT EXISTS (
+             SELECT 1 FROM team_assignments ta
+             WHERE ta.goal_id = g.id
+               AND (ta.status IN ('queued', 'running', 'awaiting_review')
+                    OR ta.created_at > datetime('now', '-30 minutes'))
+           )
+         ORDER BY g.updated_at ASC",
+    )?;
+    let rows = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .filter_map(Result::ok)
+        .collect();
+    Ok(rows)
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for GoalAdvanceSubscription {
+    fn name(&self) -> &'static str {
+        "goal_advance"
+    }
+
+    fn interval(&self) -> Duration {
+        // Advancement is heavy (it spawns persona executions); 5 minutes is
+        // plenty of cadence for an unattended loop.
+        Duration::from_secs(300)
+    }
+
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+
+    fn initial_delay(&self) -> Duration {
+        // Let the app settle before the first autonomous advance.
+        Duration::from_secs(60)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+
+        // Candidate query is sync rusqlite — offload off the async worker.
+        let pool = self.pool.clone();
+        let candidates = match tokio::task::spawn_blocking(move || find_goal_advance_candidates(&pool))
+            .await
+        {
+            Ok(Ok(c)) => c,
+            Ok(Err(e)) => {
+                tracing::warn!(error = %e, "goal_advance: candidate query failed");
+                return;
+            }
+            Err(_) => return,
+        };
+
+        let mut started = 0usize;
+        for (team_id, goal_id) in candidates.into_iter().take(GOAL_ADVANCE_MAX_PER_TICK) {
+            match crate::engine::goal_advance::advance_goal(
+                &self.pool,
+                &self.app,
+                self.engine.clone(),
+                None, // llm_eval match strategy — embedding manager unused
+                &team_id,
+                &goal_id,
+            )
+            .await
+            {
+                Ok(crate::engine::goal_advance::AdvanceResult::Started(id)) => {
+                    started += 1;
+                    tracing::info!(team_id = %team_id, goal_id = %goal_id, assignment_id = %id, "goal_advance: started autonomous assignment");
+                }
+                Ok(crate::engine::goal_advance::AdvanceResult::AlreadyAdvancing) => {}
+                Err(e) => {
+                    tracing::warn!(team_id = %team_id, goal_id = %goal_id, error = %e, "goal_advance: advance failed");
+                }
+            }
+        }
+        if started > 0 {
+            tracing::info!(count = started, "goal_advance: autonomous tick started {started} assignment(s)");
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

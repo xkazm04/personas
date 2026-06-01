@@ -76,6 +76,15 @@ function GoalNodeImpl({ data, selected }: Props) {
             </div>
             <span className="text-[8px] text-foreground/60 tabular-nums">{data.progress}%</span>
           </div>
+          {data.advancingTeam && (
+            <div
+              className="mt-1 inline-flex items-center gap-1 text-[8px] text-emerald-300/90"
+              title={`${data.advancingTeam} is advancing this goal`}
+            >
+              <span aria-hidden>▶</span>
+              <span className="truncate max-w-[150px]">{data.advancingTeam}</span>
+            </div>
+          )}
         </div>
       </div>
       <Handle type="source" position={Position.Right} className="!bg-primary/40" />

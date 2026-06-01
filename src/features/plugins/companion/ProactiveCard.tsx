@@ -6,6 +6,10 @@ import {
   companionEngageProactive,
   type ProactiveMessage,
 } from '@/api/companion';
+import { useSystemStore } from '@/stores/systemStore';
+import { useOverviewStore } from '@/stores/overviewStore';
+import { storeBus } from '@/lib/storeBus';
+import { setPendingIncidentDeepLink } from '@/features/overview/sub_incidents/libs/incidentDeepLink';
 import { triggerKindLabel } from './athenaLabels';
 
 /**
@@ -38,6 +42,22 @@ export function ProactiveCard({
     try {
       if (kind === 'engage') {
         const result = await companionEngageProactive(message.id);
+        // Incident-blocker nudges take the user to the Overview → Incidents
+        // inbox (mirrors the compose-cockpit nav pattern), then deep-link the
+        // specific incident's detail modal when the nudge carries its id.
+        if (message.triggerKind === 'incident_blocker') {
+          // setSidebarSection lives on the system store; setOverviewTab lives
+          // on the overview store (same split other nav call-sites use).
+          useSystemStore.getState().setSidebarSection('overview');
+          useOverviewStore.getState().setOverviewTab('incidents');
+          // triggerRef is the incident id. Latch it for the lazy-mounting inbox
+          // (consumed on mount) AND emit live for an already-mounted inbox.
+          // No triggerRef → fall back to just the navigation above.
+          if (message.triggerRef) {
+            setPendingIncidentDeepLink(message.triggerRef);
+            storeBus.emit('incidents:open-detail', { incidentId: message.triggerRef });
+          }
+        }
         onEngaged(result.message);
       } else {
         await companionDismissProactive(message.id);
@@ -132,6 +152,8 @@ function accentForTrigger(kind: string): string {
       return 'border-amber-500/30 bg-amber-500/[0.06]';
     case 'fleet_op_completed':
       return 'border-emerald-500/30 bg-emerald-500/[0.06]';
+    case 'incident_blocker':
+      return 'border-rose-500/30 bg-rose-500/[0.06]';
     default:
       return 'border-primary/30 bg-primary/[0.06]';
   }
