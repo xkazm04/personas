@@ -366,6 +366,13 @@ fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
 /// Reader loop — blocks on `reader.read`, emits chunks, exits on EOF/error.
 fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::Read + Send>) {
     let mut buf = [0u8; 8192];
+    // First byte of PTY output ⇒ claude is up (banner/prompt drawn). Promote
+    // Spawning → Idle once, so the session isn't mislabeled never-attached
+    // while it sits at a fresh prompt with no transcript/hook yet. We do NOT
+    // bump activity on subsequent output — an interactive claude redraws the
+    // PTY (cursor/status) even when idle, so that would defeat staleness; real
+    // work is tracked via transcript growth + hooks.
+    let mut alive_marked = false;
     loop {
         match reader.read(&mut buf) {
             Ok(0) => {
@@ -373,6 +380,12 @@ fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::
                 break;
             }
             Ok(n) => {
+                if !alive_marked {
+                    alive_marked = true;
+                    if registry().mark_alive(&session_id) {
+                        emit_registry_changed(&app, "updated", &session_id);
+                    }
+                }
                 let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
                 let _ = app.emit(
                     event_name::FLEET_SESSION_OUTPUT,

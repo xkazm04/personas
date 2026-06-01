@@ -162,6 +162,26 @@ impl FleetRegistry {
             .map_err(|e| format!("resize failed: {e}"))
     }
 
+    /// First PTY output proves the child actually came up and reached its
+    /// prompt. Promote a `Spawning` session to `Idle` (alive + ready for its
+    /// first message) so it isn't mislabeled never-attached/stale before it
+    /// writes a transcript — a fresh interactive `claude` sits at the prompt
+    /// with no transcript and no hook until the user submits something.
+    /// One-shot: only transitions out of `Spawning`. Returns `true` if it
+    /// changed state (so the caller emits a refresh once).
+    pub fn mark_alive(&self, session_id: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            if matches!(session.state, FleetSessionState::Spawning) {
+                session.state = FleetSessionState::Idle;
+                session.last_activity_ms = now_ms();
+                session.state_reason = Some("Ready — claude is at the prompt".into());
+                return true;
+            }
+        }
+        false
+    }
+
     /// Records that the child has exited. Updates state and clears the
     /// PTY resource slots. Called from the reaper task.
     pub fn mark_exited(&self, session_id: &str, exit_code: Option<i32>) {
