@@ -48,6 +48,18 @@ pub const NEVER_ATTACHED_SECS: i64 = 2 * 60;
 /// responsiveness and idle CPU.
 pub const TICK_INTERVAL_SECS: u64 = 30;
 
+/// Read a positive-seconds override from the environment, falling back to
+/// `default`. Lets test harnesses shorten the staleness windows for fast
+/// observation (`PERSONAS_FLEET_STALE_SECS` / `PERSONAS_FLEET_NEVER_ATTACHED_SECS`)
+/// without waiting the production 6 min. Production leaves the env unset.
+fn env_secs(key: &str, default: i64) -> i64 {
+    std::env::var(key)
+        .ok()
+        .and_then(|s| s.parse::<i64>().ok())
+        .filter(|&n| n > 0)
+        .unwrap_or(default)
+}
+
 // ---------------------------------------------------------------------------
 // Auto-hibernate policy (P3.2) — process-wide, set from the frontend via
 // `fleet_set_auto_hibernate` and read by the always-on ticker, so idle
@@ -155,7 +167,9 @@ fn is_never_attached(
 /// hook-driven `last_activity_ms` cutoff.
 fn tick_once(app: &AppHandle) {
     let now = now_ms();
-    let cutoff_ms = STALE_AFTER_SECS * 1000;
+    let stale_secs = env_secs("PERSONAS_FLEET_STALE_SECS", STALE_AFTER_SECS);
+    let cutoff_ms = stale_secs * 1000;
+    let never_attached_ms = env_secs("PERSONAS_FLEET_NEVER_ATTACHED_SECS", NEVER_ATTACHED_SECS) * 1000;
 
     // Pass A — snapshot the sessions worth checking (no IO under the lock).
     let snaps: Vec<(String, Option<String>)> = {
@@ -212,7 +226,7 @@ fn tick_once(app: &AppHandle) {
                 session.state,
                 session.claude_session_id.is_some(),
                 now - session.last_activity_ms,
-                NEVER_ATTACHED_SECS * 1000,
+                never_attached_ms,
             ) {
                 session.state = FleetSessionState::Stale;
                 session.state_reason = Some(
@@ -225,9 +239,17 @@ fn tick_once(app: &AppHandle) {
             if grew {
                 session.last_activity_ms = now;
             }
-            // Prefer the last real log-growth time; fall back to hook-driven
-            // last_activity for sessions without a transcript yet.
-            let idle_since = last_grew.get(&session.id).copied().unwrap_or(session.last_activity_ms);
+            // Freshness = the MOST RECENT of (a) real transcript growth and
+            // (b) hook-driven activity. Using growth alone marked a working
+            // session Stale during a long tool op (hooks firing, transcript
+            // not yet flushed); using hooks alone let a hung session look
+            // alive. The max of both keeps active sessions fresh without
+            // reviving genuinely-hung ones (a hung session has neither).
+            let idle_since = last_grew
+                .get(&session.id)
+                .copied()
+                .unwrap_or(0)
+                .max(session.last_activity_ms);
             match staleness_transition(session.state, grew, idle_since, now, cutoff_ms) {
                 Some(FleetSessionState::Running) => {
                     session.state = FleetSessionState::Running;
@@ -236,7 +258,11 @@ fn tick_once(app: &AppHandle) {
                 }
                 Some(FleetSessionState::Stale) => {
                     session.state = FleetSessionState::Stale;
-                    session.state_reason = Some(format!("No log growth for {} min", STALE_AFTER_SECS / 60));
+                    session.state_reason = Some(if stale_secs >= 60 {
+                        format!("No log growth for {} min", stale_secs / 60)
+                    } else {
+                        format!("No log growth for {stale_secs}s")
+                    });
                     newly_stale.push(session.id.clone());
                 }
                 _ => {}
@@ -257,9 +283,38 @@ fn tick_once(app: &AppHandle) {
             FleetStatePayload {
                 session_id: sid,
                 state: "stale",
-                reason: Some(format!("No log growth for {} min", STALE_AFTER_SECS / 60)),
+                reason: Some("No log growth".into()),
             },
         );
+    }
+
+    // Test/debug: log every non-terminal session's decision inputs each tick so
+    // the staleness logic can be observed live in the dev console. Gated on
+    // `PERSONAS_FLEET_DEBUG` so production stays quiet.
+    if std::env::var("PERSONAS_FLEET_DEBUG").is_ok() {
+        let g = growth_map().lock().unwrap_or_else(|e| e.into_inner());
+        let map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let mut lines: Vec<String> = Vec::new();
+        for s in map.values() {
+            if matches!(s.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+                continue;
+            }
+            let grew_at = g.get(&s.id).map(|&(_, t)| (now - t) / 1000).unwrap_or(-1);
+            let size = g.get(&s.id).map(|&(sz, _)| sz).unwrap_or(0);
+            lines.push(format!(
+                "{} {:?} cc={} idle={}s grewAgo={}s size={} proj={}",
+                &s.id[..8.min(s.id.len())],
+                s.state,
+                s.claude_session_id.is_some(),
+                (now - s.last_activity_ms) / 1000,
+                grew_at,
+                size,
+                s.project_label,
+            ));
+        }
+        if !lines.is_empty() {
+            tracing::info!(target: "fleet_stale_debug", "cutoff={}s | {}", stale_secs, lines.join(" || "));
+        }
     }
 
     auto_hibernate_pass(app);

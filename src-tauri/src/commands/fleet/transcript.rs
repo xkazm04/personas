@@ -133,16 +133,38 @@ fn handle_event(app: &AppHandle, event: Event) {
     }
 }
 
+/// Grace (ms) allowed between a Fleet session spawning and its transcript
+/// file being created. The transcript is created by `claude` shortly AFTER the
+/// PTY spawns, so a legitimate transcript is created at/after `created_at_ms`;
+/// the grace only absorbs clock skew.
+const BIND_FRESHNESS_GRACE_MS: i64 = 5_000;
+
+/// File-creation time in ms since the UNIX epoch, if resolvable.
+fn file_created_ms(path: &Path) -> Option<i64> {
+    let created = std::fs::metadata(path).ok()?.created().ok()?;
+    let dur = created.duration_since(std::time::UNIX_EPOCH).ok()?;
+    Some(dur.as_millis() as i64)
+}
+
 /// Bind `claude_session_id` to an unbound Fleet session matched by the cwd
 /// recorded inside the transcript — the watcher's reconciliation path when the
 /// SessionStart hook didn't bind. Picks the most-recently-created unbound,
 /// non-Exited session for that cwd (mirrors `resolve_session_id`'s bootstrap
-/// preference). No-op if no transcript cwd or no matching unbound session.
+/// preference) **whose spawn is consistent with this transcript's creation
+/// time**, so it never grabs a *pre-existing* or *concurrent* same-cwd
+/// transcript (e.g. the user's own Claude Code session, or a manual `claude`
+/// run, in the same repo). No-op if no transcript cwd, no fresh match, or the
+/// transcript's creation time can't be read (conservative — better unbound
+/// than mis-bound).
 fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
     let Some(tcwd) = super::transcript_read::read_transcript_cwd(path) else {
         return;
     };
     let target = super::transcript_read::normalize_cwd(&tcwd);
+    // A transcript created *before* a session spawned can't belong to it.
+    let Some(transcript_created_ms) = file_created_ms(path) else {
+        return;
+    };
 
     let mut bound: Option<String> = None;
     {
@@ -161,6 +183,11 @@ fn bind_unbound_by_cwd(app: &AppHandle, path: &Path, claude_session_id: &str) {
                 continue;
             }
             if super::transcript_read::normalize_cwd(&s.cwd.to_string_lossy()) != target {
+                continue;
+            }
+            // The transcript must have been created at/after this session
+            // spawned (minus a small grace) — otherwise it's someone else's.
+            if transcript_created_ms < s.created_at_ms - BIND_FRESHNESS_GRACE_MS {
                 continue;
             }
             if s.created_at_ms > best_created {
