@@ -1,6 +1,6 @@
 # Glyph Convergence — unifying from-scratch and from-template persona creation
 
-**Status:** REDESIGNED 2026-06-01 — front-door launcher REVERTED; template suggestion moved mid-build. R1–R3 SHIPPED (`a57b36fd2`, `3f3072c9e`, `7ae9289c4`); R4 (i18n prune + live DOM walk) in progress. See "## Redesign (2026-06-01)" immediately below; the original 2026-05-30 design follows for history.
+**Status:** SHIPPED 2026-06-01 — front-door launcher REVERTED; template suggestion moved mid-build. R1–R4 complete (`a57b36fd2`, `3f3072c9e`, `7ae9289c4`, `68b767439`); full mid-build → accept → adoption path live DOM-verified. Only deferred item: pruning 8 dead `create_*` keys (cross-locale cleanup, see R4). See "## Redesign (2026-06-01)" immediately below; the original 2026-05-30 design follows for history.
 **Date:** 2026-05-30 (original) / 2026-06-01 (redesign)
 **Supersedes scope of:** [`glyph-consolidation.md`](./glyph-consolidation.md), [`matrix-retire-glyph-only.md`](./matrix-retire-glyph-only.md) (those retired the *legacy matrix*; this unifies the two *glyph* creation on-ramps)
 
@@ -62,10 +62,19 @@ master's entry untouched and moves the template intelligence **into the build**.
   session on open). Completion navigates to the new persona (mirrors
   `handleViewPromotedAgent`); close returns to a fresh compose surface. No new Rust — the
   adoption wizard owns `create_adoption_session` via `ChronologyAdoptionView`.
-- **R4 (in progress):** i18n prune of dead `create_*` launcher keys; docs (this ADR +
-  `docs/features/personas/README.md`); verification — `BuildTemplateSuggestion` Vitest
-  suite (5 cases, green) covers the card logic deterministically; live mid-build →
-  accept → adoption DOM walk pending an instance with a configured LLM.
+- **R4 (done — `68b767439`):** docs (this ADR + `docs/features/personas/README.md`) and
+  verification. `BuildTemplateSuggestion` Vitest suite (5 cases, green) covers the card
+  logic deterministically. **Live DOM walk complete** on a worktree `tauri:dev:test`
+  instance (shifted ports 1430/17325, template-rich `.devdata`): a from-scratch build
+  ("harvest and triage product ideas from Slack") reached `awaiting_input`; the card
+  rendered with a real lexical match ("Idea Harvester") and stayed visible for the whole
+  input wait; clicking **Use this template** swapped the build surface for the inline
+  adoption flow (`adoption-inline` mounted with the Idea Harvester questionnaire).
+  - **Deferred:** pruning the 8 dead `create_*` launcher keys. They are orphaned in
+    source (0 usages after `PersonaCreator` deletion) but translated across all 14
+    locales, so a clean prune is a 14-file cross-locale edit. Currently consistent across
+    locales → no CI `extras` failure; left for a dedicated i18n-cleanup pass rather than a
+    risky bulk edit inside the redesign.
 
 The original P2 (launcher-time live match) and the P4-step2 "merge 4 wrappers" item are
 no longer on the critical path — the build surface stays master's `GlyphFullLayout`; only
