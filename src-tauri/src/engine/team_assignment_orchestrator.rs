@@ -197,6 +197,36 @@ pub fn resolve_review_abort(
     Ok(())
 }
 
+/// Autonomous, unattended resume of an assignment soft-paused at
+/// `awaiting_review` because one or more steps failed for a RETRYABLE reason
+/// (Claude session/usage limit or rate limit). The caller
+/// (`AssignmentAutoResumeSubscription`) has already classified which failed
+/// steps are retryable, under the per-step retry cap, past the backoff, and
+/// gated by the persona's `repeat_on_failure` setting — this performs the
+/// mechanical reset + resume. For each step: reset `failed` → `pending` (so the
+/// tick loop re-runs it instead of immediately re-pausing) and bump its
+/// `retry_count`, then resume the assignment's tick task exactly once.
+pub fn auto_resume_retryable_steps(
+    pool: Arc<DbPool>,
+    app: AppHandle,
+    engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
+    assignment_id: &str,
+    step_ids: &[String],
+) -> Result<(), AppError> {
+    if step_ids.is_empty() {
+        return Ok(());
+    }
+    for sid in step_ids {
+        // error_message/completed_at are preserved (COALESCE) so the failure
+        // history + last-failure timestamp survive for the next backoff check.
+        assignment_repo::update_step_status(&pool, sid, "pending", None, None)?;
+        assignment_repo::increment_step_retry(&pool, sid)?;
+    }
+    resume_assignment(pool, app, engine, embedding_manager, assignment_id.to_string());
+    Ok(())
+}
+
 /// Resume an assignment from `awaiting_review`. Restarts the tick task.
 fn resume_assignment(
     pool: Arc<DbPool>,

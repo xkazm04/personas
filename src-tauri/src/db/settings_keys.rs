@@ -206,6 +206,29 @@ pub const AUTONOMOUS_GOAL_ADVANCEMENT: &str = "autonomous_goal_advancement";
 /// Default for [`AUTONOMOUS_GOAL_ADVANCEMENT`] — off (opt-in autonomy).
 pub const AUTONOMOUS_GOAL_ADVANCEMENT_DEFAULT: bool = false;
 
+/// Whether the autonomous assignment-retry tick may, unattended, resume a team
+/// assignment that soft-paused at `awaiting_review` because a step failed for a
+/// RETRYABLE reason (Claude session/usage limit or rate limit) — resetting the
+/// failed steps and re-running them once the quota window has likely recovered.
+/// Bounded by a per-step retry cap + backoff and gated per-persona by
+/// `design_context.repeat_on_failure` (default ON). Default OFF — opt-in. Read
+/// by `engine::subscription::AssignmentAutoResumeSubscription`. Stored
+/// `"true"` / `"false"`.
+pub const AUTONOMOUS_ASSIGNMENT_RETRY: &str = "autonomous_assignment_retry";
+/// Default for [`AUTONOMOUS_ASSIGNMENT_RETRY`] — off (opt-in autonomy).
+pub const AUTONOMOUS_ASSIGNMENT_RETRY_DEFAULT: bool = false;
+
+/// Whether the autonomous review-triage tick may, unattended, resolve
+/// `persona_manual_reviews` pending past a grace window — so the accept/reject
+/// learning loop (which writes team/persona memory) keeps turning without a
+/// human in the seat. Conservative policy (auto-approves only below a severity
+/// threshold; leaves critical findings for a human). Default OFF — opt-in. Read
+/// by `engine::subscription::ManualReviewAutoTriageSubscription`. Stored
+/// `"true"` / `"false"`.
+pub const AUTONOMOUS_REVIEW_TRIAGE: &str = "autonomous_review_triage";
+/// Default for [`AUTONOMOUS_REVIEW_TRIAGE`] — off (opt-in autonomy).
+pub const AUTONOMOUS_REVIEW_TRIAGE_DEFAULT: bool = false;
+
 /// Global cap on the number of executions that may run concurrently across ALL
 /// personas. Read ONCE at engine construction (see
 /// `crate::engine::ExecutionEngine::new`) and seeded into the
@@ -290,6 +313,8 @@ const ALLOWED_KEYS: &[&str] = &[
     DIRECTOR_BRAIN_ENABLED,
     MONTHLY_COST_CEILING_USD,
     AUTONOMOUS_GOAL_ADVANCEMENT,
+    AUTONOMOUS_ASSIGNMENT_RETRY,
+    AUTONOMOUS_REVIEW_TRIAGE,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
@@ -390,6 +415,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | COMPANION_AUTONOMOUS_MODE
         | CLOUD_SYNC_ENABLED
         | AUTONOMOUS_GOAL_ADVANCEMENT
+        | AUTONOMOUS_ASSIGNMENT_RETRY
+        | AUTONOMOUS_REVIEW_TRIAGE
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),

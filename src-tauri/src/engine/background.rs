@@ -462,6 +462,23 @@ pub fn start_loops(
             app: app.clone(),
             engine: engine.clone(),
         }),
+        // Autonomous assignment retry — default-OFF; gated on the
+        // AUTONOMOUS_ASSIGNMENT_RETRY setting inside its tick. Resumes an
+        // assignment soft-paused at awaiting_review after a retryable
+        // (quota/session/rate-limit) step failure so the goal-advance loop
+        // self-heals instead of deadlocking.
+        Box::new(subscription::AssignmentAutoResumeSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+            engine: engine.clone(),
+        }),
+        // Autonomous manual-review triage — default-OFF; gated on the
+        // AUTONOMOUS_REVIEW_TRIAGE setting inside its tick. Auto-approves routine
+        // (low/medium) pending reviews past a grace window so the accept→memory
+        // learning loop keeps turning unattended; high severity stays for a human.
+        Box::new(subscription::ManualReviewAutoTriageSubscription {
+            pool: pool.clone(),
+        }),
         // Incident auto-continuation (P2.3b): re-run blocked work when its
         // persona-raised incident is resolved. Idempotent via claim_continuation.
         Box::new(crate::engine::incident_continuation::IncidentContinuationSubscription {

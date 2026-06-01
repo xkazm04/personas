@@ -464,6 +464,18 @@ pub fn update_step_status(
     Ok(())
 }
 
+/// Bump a step's `retry_count` by one. Used by the autonomous assignment-retry
+/// path (`AssignmentAutoResumeSubscription`) to enforce the per-step retry cap
+/// when it resets a retryable-failed step back to `pending` for another run.
+pub fn increment_step_retry(pool: &DbPool, step_id: &str) -> Result<(), AppError> {
+    let conn = pool.get()?;
+    conn.execute(
+        "UPDATE team_assignment_steps SET retry_count = COALESCE(retry_count, 0) + 1 WHERE id = ?1",
+        params![step_id],
+    )?;
+    Ok(())
+}
+
 pub fn set_step_execution(
     pool: &DbPool,
     step_id: &str,
