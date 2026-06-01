@@ -1305,6 +1305,33 @@ pub struct GoalAdvanceSubscription {
 /// Max goals advanced per tick — bounds the autonomous spend ramp.
 const GOAL_ADVANCE_MAX_PER_TICK: usize = 3;
 
+/// G1 — quota-aware backpressure for the autonomous-spend loops. Returns true
+/// when the Claude account hit a session/usage/rate limit in the recent window,
+/// i.e. we're inside a limit window. While active, the goal-advance and
+/// assignment-retry ticks SKIP — so a burst doesn't keep slamming an exhausted
+/// quota (the dominant failure mode in the soak: 94% of failures were session
+/// limit). Cheap recency probe over recent failed executions; the self-heal
+/// still retries the work once the window clears.
+const QUOTA_COOLDOWN_LOOKBACK_MINUTES: i64 = 15;
+fn quota_cooldown_active(pool: &DbPool) -> bool {
+    let Ok(conn) = pool.get() else { return false };
+    let n: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_executions
+             WHERE status = 'failed'
+               AND created_at > datetime('now', ?1)
+               AND (LOWER(COALESCE(output_data,'')) LIKE '%session limit%'
+                    OR LOWER(COALESCE(output_data,'')) LIKE '%usage limit%'
+                    OR LOWER(COALESCE(output_data,'')) LIKE '%hit your%limit%'
+                    OR LOWER(COALESCE(error_message,'')) LIKE '%rate limit%'
+                    OR LOWER(COALESCE(error_message,'')) LIKE '%429%')",
+            rusqlite::params![format!("-{QUOTA_COOLDOWN_LOOKBACK_MINUTES} minutes")],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    n > 0
+}
+
 /// Goal-linked teams with an active, unworked goal and no recent assignment.
 /// Returns `(team_id, goal_id)` pairs. The cooldown via `created_at` (2h for the
 /// soak test, default 30m) prevents stampede + failure-retry loops.
@@ -1367,6 +1394,12 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
         .as_deref()
             == Some("true");
         if !enabled {
+            return;
+        }
+        // G1: quota-aware backpressure — don't start NEW team work while the
+        // account is inside a session/usage-limit window.
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("goal_advance: quota cooldown active — skipping tick");
             return;
         }
 
@@ -1562,6 +1595,12 @@ impl ReactiveSubscription for AssignmentAutoResumeSubscription {
         .as_deref()
             == Some("true");
         if !enabled {
+            return;
+        }
+        // G1: don't retry into an active limit window — wait for it to clear so
+        // the retry actually has a chance to succeed instead of re-failing.
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("assignment_auto_resume: quota cooldown active — skipping tick");
             return;
         }
 
