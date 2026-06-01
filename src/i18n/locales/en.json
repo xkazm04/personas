@@ -11609,6 +11609,7 @@
       "footer_listening": "Listening… release to send",
       "orb_talk_hint": "Tap to open · hold to talk · drag to move",
       "orb_dismiss": "Hide Athena",
+      "orb_managing_fleet": "Managing the fleet…",
       "forward_ack_speech": "Understood, processing the message.",
       "guide_stop": "Stop",
       "guide_skip": "Skip",

@@ -71,6 +71,9 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
   });
   const orbPos = useSystemStore((s) => s.companionOrbPos);
   const setOrbPos = useSystemStore((s) => s.setCompanionOrbPos);
+  // While the Fleet grid is open, a working orb is most likely orchestrating
+  // the fleet — surface that as a glanceable caption.
+  const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
 
   const { talking, interimText, start: startTalk, stop: stopTalk, abort: abortTalk } = talk;
   const reduceMotion = useReducedMotion();
@@ -252,7 +255,14 @@ export function AthenaOrb({ talk }: { talk: HoldToTalk }) {
     };
   });
 
-  const caption = talking && interimText ? interimText : null;
+  // Caption priority: live dictation transcript > a fleet-orchestration cue
+  // (Athena working while the grid is open) > nothing.
+  const caption =
+    talking && interimText
+      ? interimText
+      : working && fleetGridOpen
+        ? t.plugins.companion.orb_managing_fleet
+        : null;
 
   // Audio-reactive glow: while a spoken reply plays, drive the bloom's
   // opacity + scale from the live TTS level (tapped via the shared
