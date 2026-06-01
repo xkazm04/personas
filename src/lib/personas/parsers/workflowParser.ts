@@ -7,6 +7,7 @@
  */
 
 import yaml from 'js-yaml';
+import type { LoadOptions } from 'js-yaml';
 import type { AgentIR } from '@/lib/types/designTypes';
 import {
   detectWorkflowPlatform,
@@ -18,6 +19,25 @@ import { parseN8nWorkflow } from './n8nParser';
 import { parseZapierWorkflow } from './zapierParser';
 import { parseMakeWorkflow } from './makeParser';
 import { parseGithubActionsWorkflow } from './githubActionsParser';
+
+/**
+ * js-yaml 4.2 added `maxDepth` (default 100) and `maxMergeSeqLength` (default 20)
+ * loader limits that abort parsing with a `YAMLException` rather than degrading
+ * into the quadratic-merge / deep-nesting DoS class. Workflow files arrive from
+ * external tools (n8n / Zapier / Make / GitHub Actions exports) and are only
+ * semi-trusted, so we bound them well below the library defaults — no legitimate
+ * exported workflow nests anywhere near this deep. `@types/js-yaml@4.0.9` predates
+ * these options, so we widen `LoadOptions` locally until DefinitelyTyped catches up.
+ */
+type BoundedLoadOptions = LoadOptions & {
+  maxDepth?: number;
+  maxMergeSeqLength?: number;
+};
+
+const WORKFLOW_YAML_LOAD_LIMITS: BoundedLoadOptions = {
+  maxDepth: 50,
+  maxMergeSeqLength: 20,
+};
 
 export interface WorkflowParseResult {
   /** The detected platform */
@@ -50,7 +70,7 @@ export function parseWorkflowFile(content: string, fileName: string): WorkflowPa
   // Parse the content based on file extension
   if (ext === '.yml' || ext === '.yaml') {
     try {
-      const loaded = yaml.load(content);
+      const loaded = yaml.load(content, WORKFLOW_YAML_LOAD_LIMITS);
       if (!loaded || typeof loaded !== 'object') {
         throw new Error('YAML file does not contain a valid object.');
       }
