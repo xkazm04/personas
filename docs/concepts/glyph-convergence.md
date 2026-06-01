@@ -1,6 +1,6 @@
 # Glyph Convergence — unifying from-scratch and from-template persona creation
 
-**Status:** REDESIGNED 2026-06-01 — front-door launcher REVERTED; template suggestion moves mid-build. See "## Redesign (2026-06-01)" immediately below; the original 2026-05-30 design follows for history.
+**Status:** REDESIGNED 2026-06-01 — front-door launcher REVERTED; template suggestion moved mid-build. R1–R3 SHIPPED (`a57b36fd2`, `3f3072c9e`, `7ae9289c4`); R4 (i18n prune + live DOM walk) in progress. See "## Redesign (2026-06-01)" immediately below; the original 2026-05-30 design follows for history.
 **Date:** 2026-05-30 (original) / 2026-06-01 (redesign)
 **Supersedes scope of:** [`glyph-consolidation.md`](./glyph-consolidation.md), [`matrix-retire-glyph-only.md`](./matrix-retire-glyph-only.md) (those retired the *legacy matrix*; this unifies the two *glyph* creation on-ramps)
 
@@ -48,11 +48,24 @@ master's entry untouched and moves the template intelligence **into the build**.
   needs its own (`create_match_heading` may be reusable). Pruned/added when the card lands.
 
 ### Rollout (redesign)
-- **R1 (done):** revert P1 — `PersonasPage` restored to master; `PersonaCreator.tsx` deleted; `useTemplateIntentMatch.ts` retained.
-- **R2:** mid-build proposal card — detect first-questions, fire the match, render a
-  dismissible "adopt <Template> instead?" card in the build surface's question area.
-- **R3:** accept-route — cancel generated session + `create_adoption_session` + mount inline adoption.
-- **R4:** i18n prune/add + docs + DOM-verify the full mid-build → accept → adoption path.
+- **R1 (done — `a57b36fd2`):** revert P1 — `PersonasPage` restored to master; `PersonaCreator.tsx` deleted; `useTemplateIntentMatch.ts` retained.
+- **R2 (done — `3f3072c9e`):** mid-build proposal card. New self-contained
+  `BuildTemplateSuggestion` (`src/features/agents/components/matrix/`) reuses
+  `useTemplateIntentMatch` + shared `Button`/`AsyncButton`; renders a single dismissible
+  card above the questionnaire. i18n under `agents.build_template_match_*`. Mounted at the
+  `UnifiedBuildEntry` container level so it serves both `GlyphFullLayout` and
+  `GlyphPrototypeLayout` without prop-threading.
+- **R3 (done — `7ae9289c4`):** accept-route. `UnifiedBuildEntry` gates the card on
+  `pendingQuestions.length > 0 && !dismissed` (re-armed per build session). Accept →
+  `getDesignReview(match.id)` → `cancelBuildSession(running)` → swap the build surface for
+  the inline `AdoptionWizardModal` (P3's `inline` mode, which self-resets the build
+  session on open). Completion navigates to the new persona (mirrors
+  `handleViewPromotedAgent`); close returns to a fresh compose surface. No new Rust — the
+  adoption wizard owns `create_adoption_session` via `ChronologyAdoptionView`.
+- **R4 (in progress):** i18n prune of dead `create_*` launcher keys; docs (this ADR +
+  `docs/features/personas/README.md`); verification — `BuildTemplateSuggestion` Vitest
+  suite (5 cases, green) covers the card logic deterministically; live mid-build →
+  accept → adoption DOM walk pending an instance with a configured LLM.
 
 The original P2 (launcher-time live match) and the P4-step2 "merge 4 wrappers" item are
 no longer on the critical path — the build surface stays master's `GlyphFullLayout`; only
