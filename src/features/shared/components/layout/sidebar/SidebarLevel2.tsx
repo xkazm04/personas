@@ -26,6 +26,8 @@ import { filterByTier } from './sidebarData';
 import { AgentsSidebarNav } from './sections/AgentsSidebarNav';
 import { PluginsSidebarNav } from './sections/PluginsSidebarNav';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useSidebarLabels } from '@/i18n/useSidebarTranslation';
+import type { SubNavItem } from './SidebarSubNav';
 
 interface SidebarLevel2Props {
   onCreatePersona: () => void;
@@ -36,6 +38,7 @@ interface SidebarLevel2Props {
 
 export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0, unreadMessageCount = 0, pendingEventCount = 0 }: SidebarLevel2Props) {
   const { t } = useTranslation();
+  const labelOf = useSidebarLabels();
   const sidebarSection = useSystemStore((s) => s.sidebarSection);
   const { currentKey: credentialView, navigate } = useCredentialNav();
   // Vault and pipeline stores loaded lazily to keep them out of the main bundle.
@@ -109,6 +112,27 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
 
   const settingsItems = getSettingsItems(isDev, tier.current);
 
+  // L2 lists for Overview / Goals / Events / Connections / Templates / Settings
+  // are presented alphabetically by the label the user actually sees. We sort
+  // on the resolved label (respecting any labelOverrides + locale ordering)
+  // rather than the raw English `label`, so translated sidebars stay sorted.
+  const sortByLabel = <T extends { id: string; label: string }>(
+    list: T[],
+    overrides?: Record<string, string>,
+  ): T[] =>
+    [...list].sort((a, b) =>
+      (overrides?.[a.id] ?? labelOf(a.id, a.label)).localeCompare(
+        overrides?.[b.id] ?? labelOf(b.id, b.label),
+      ),
+    );
+  // Connections is alphabetical too, but the "Add new" action is pinned to the
+  // bottom regardless of its label.
+  const sortCredentialItems = (list: SubNavItem[]): SubNavItem[] => {
+    const pinned = list.filter((i) => i.id === 'add-new');
+    const rest = list.filter((i) => i.id !== 'add-new');
+    return [...sortByLabel(rest), ...pinned];
+  };
+
   switch (sidebarSection) {
     case 'home':
       return (
@@ -150,7 +174,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
         : undefined;
       return (
         <SidebarSubNav
-          items={filterSimple(visibleOverviewItems)}
+          items={sortByLabel(filterSimple(visibleOverviewItems), { home: t.sidebar.mission_control })}
           activeId={overviewTab}
           onSelect={(id) => setOverviewTab(id as OverviewTab)}
           badges={overviewBadges}
@@ -168,7 +192,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
     case 'goals':
       return (
         <SidebarSubNav
-          items={goalItems}
+          items={sortByLabel(goalItems)}
           activeId={goalsTab}
           onSelect={(id) => setGoalsTab(id as GoalsTab)}
           variant="overview"
@@ -183,7 +207,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
       const eventDevSet = isDev ? new Set(eventBusItems.filter(i => i.devOnly).map(i => i.id)) : undefined;
       return (
         <SidebarSubNav
-          items={visibleEventItems}
+          items={sortByLabel(visibleEventItems)}
           activeId={eventBusTab}
           onSelect={(id) => setEventBusTab(id as EventBusTab)}
           devItems={eventDevSet}
@@ -194,7 +218,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
     case 'credentials':
       return (
         <SidebarSubNav
-          items={filterSimple(credentialItems)}
+          items={sortCredentialItems(filterSimple(credentialItems))}
           activeId={credentialView}
           onSelect={(id) => navigate(id as CredentialNavKey)}
           badges={credentialBadges}
@@ -222,7 +246,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
     case 'design-reviews':
       return (
         <SidebarSubNav
-          items={filterSimple(templateItems)}
+          items={sortByLabel(filterSimple(templateItems))}
           activeId={templateTab}
           onSelect={(id) => setTemplateTab(id as TemplateTab)}
         />
@@ -238,7 +262,7 @@ export default function SidebarLevel2({ onCreatePersona, pendingReviewCount = 0,
     case 'settings':
       return (
         <SidebarSubNav
-          items={settingsItems}
+          items={sortByLabel(settingsItems)}
           activeId={settingsTab}
           onSelect={(id) => setSettingsTab(id as SettingsTab)}
           devItems={isDev ? new Set(['engine', 'byom', 'network', 'config', 'history', 'admin']) : undefined}
