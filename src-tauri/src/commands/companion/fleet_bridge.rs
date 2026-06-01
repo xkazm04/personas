@@ -108,7 +108,11 @@ pub async fn companion_record_fleet_event(
             );
             // Active fleet orchestration: when a session pauses for input,
             // wake Athena (autonomous mode only) to decide its next step.
-            maybe_orchestrate(&state, &app, &input, *fs_state);
+            // (Also fired Rust-direct from apply_hook for headless reliability;
+            // the per-session throttle dedups the two paths.)
+            if matches!(*fs_state, FleetSessionState::AwaitingInput) {
+                orchestrate_on_awaiting(&app, &state, &input.session_id, &input.project_label);
+            }
         }
         FleetEventKind::Spawned { .. } => {
             mem.record_session_event(
@@ -176,30 +180,32 @@ const ATTENTION_MIN_INTERVAL_MS: i64 = 60_000;
 /// next step. She either proposes a `fleet_send_input` (auto-applied via the
 /// autonomous allowlist) or surfaces a decision to the user via the orb. Gated
 /// on autonomous mode + throttled per session so it can't spam or loop.
-fn maybe_orchestrate(state: &AppState, app: &tauri::AppHandle, input: &CompanionRecordFleetEventInput, fs_state: FleetSessionState) {
-    if !matches!(fs_state, FleetSessionState::AwaitingInput) {
-        return;
-    }
+pub fn orchestrate_on_awaiting(
+    app: &tauri::AppHandle,
+    state: &AppState,
+    session_id: &str,
+    project_label: &str,
+) {
     if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
         return;
     }
     let now = crate::commands::fleet::registry::now_ms();
     {
         let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(&last) = t.get(&input.session_id) {
+        if let Some(&last) = t.get(session_id) {
             if now - last < ATTENTION_MIN_INTERVAL_MS {
                 return;
             }
         }
-        t.insert(input.session_id.clone(), now);
+        t.insert(session_id.to_string(), now);
         // Light GC so the map doesn't grow unbounded across many sessions.
         t.retain(|_, &mut last| now - last < 10 * ATTENTION_MIN_INTERVAL_MS);
     }
 
     tracing::info!(
         target: "fleet_orchestration",
-        session_id = %input.session_id,
-        project = %input.project_label,
+        session_id = %session_id,
+        project = %project_label,
         "waking Athena to assess the fleet (session entered AwaitingInput)"
     );
     let digest = crate::companion::orchestration::operative_memory::memory().digest_for_prompt();
@@ -212,8 +218,8 @@ fn maybe_orchestrate(state: &AppState, app: &tauri::AppHandle, input: &Companion
          text to type (press_enter true) so it can be auto-applied. If the work looks finished, or a \
          step is risky/ambiguous/needs a real judgment call, do NOT act — instead surface a concise \
          decision to the user. Leave sessions that are progressing fine alone. Be brief.",
-        label = input.project_label,
-        proj = input.project_label,
+        label = project_label,
+        proj = project_label,
     );
 
     crate::companion::session::spawn_proactive_turn(
@@ -223,7 +229,7 @@ fn maybe_orchestrate(state: &AppState, app: &tauri::AppHandle, input: &Companion
         #[cfg(feature = "ml")]
         state.embedding_manager.clone(),
         "fleet_orchestration".to_string(),
-        Some(input.session_id.clone()),
+        Some(session_id.to_string()),
         directive,
     );
 }

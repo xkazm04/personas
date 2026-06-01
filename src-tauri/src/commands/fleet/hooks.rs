@@ -260,6 +260,7 @@ fn apply_hook(
     session.state = new_state;
     session.last_activity_ms = now_ms();
     session.state_reason = Some(reason.clone());
+    let project_label = session.project_label.clone();
 
     // Release the registry lock before emitting (events go through Tauri's
     // own bus and we don't want to risk reentry).
@@ -273,6 +274,20 @@ fn apply_hook(
             reason: Some(reason),
         },
     );
+
+    // Active fleet orchestration, fired Rust-direct (no frontend dependency):
+    // when this hook puts a session into AwaitingInput, wake Athena to manage
+    // the fleet. Gated on autonomous mode + throttled per session inside.
+    if matches!(new_state, FleetSessionState::AwaitingInput) {
+        if let Some(state) = app.try_state::<std::sync::Arc<crate::AppState>>() {
+            crate::commands::companion::fleet_bridge::orchestrate_on_awaiting(
+                app,
+                &state,
+                session_id,
+                &project_label,
+            );
+        }
+    }
 }
 
 fn state_to_token(s: FleetSessionState) -> &'static str {
