@@ -21,7 +21,8 @@
 //! is low (state transitions happen on hook events, capped by Claude
 //! Code's hook firing rate).
 
-use std::sync::Arc;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, OnceLock};
 
 use tauri::{Emitter, State};
 
@@ -105,6 +106,9 @@ pub async fn companion_record_fleet_event(
                 &input.cwd,
                 *fs_state,
             );
+            // Active fleet orchestration: when a session pauses for input,
+            // wake Athena (autonomous mode only) to decide its next step.
+            maybe_orchestrate(&state, &app, &input, *fs_state);
         }
         FleetEventKind::Spawned { .. } => {
             mem.record_session_event(
@@ -154,6 +158,74 @@ pub async fn companion_record_fleet_event(
     // `companion_get_operative_memory_digest`.
     crate::companion::orchestration::emit_digest_changed(&app);
     result
+}
+
+/// Per-session throttle for fleet-attention wakeups — don't re-wake Athena
+/// about the same session more than once per window (a session can bounce
+/// AwaitingInput↔Running, and Athena's own writes change state, so without
+/// this an orchestration turn could loop).
+fn attention_throttle() -> &'static Mutex<HashMap<String, i64>> {
+    static T: OnceLock<Mutex<HashMap<String, i64>>> = OnceLock::new();
+    T.get_or_init(|| Mutex::new(HashMap::new()))
+}
+const ATTENTION_MIN_INTERVAL_MS: i64 = 60_000;
+
+/// Active fleet orchestration (autonomous mode only): when a session enters
+/// `AwaitingInput` — it finished its turn / is paused waiting for the next
+/// instruction — wake Athena with the live fleet digest so she decides the
+/// next step. She either proposes a `fleet_send_input` (auto-applied via the
+/// autonomous allowlist) or surfaces a decision to the user via the orb. Gated
+/// on autonomous mode + throttled per session so it can't spam or loop.
+fn maybe_orchestrate(state: &AppState, app: &tauri::AppHandle, input: &CompanionRecordFleetEventInput, fs_state: FleetSessionState) {
+    if !matches!(fs_state, FleetSessionState::AwaitingInput) {
+        return;
+    }
+    if !crate::commands::companion::chat::autonomous_mode_enabled(&state.db) {
+        return;
+    }
+    let now = crate::commands::fleet::registry::now_ms();
+    {
+        let mut t = attention_throttle().lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(&last) = t.get(&input.session_id) {
+            if now - last < ATTENTION_MIN_INTERVAL_MS {
+                return;
+            }
+        }
+        t.insert(input.session_id.clone(), now);
+        // Light GC so the map doesn't grow unbounded across many sessions.
+        t.retain(|_, &mut last| now - last < 10 * ATTENTION_MIN_INTERVAL_MS);
+    }
+
+    tracing::info!(
+        target: "fleet_orchestration",
+        session_id = %input.session_id,
+        project = %input.project_label,
+        "waking Athena to assess the fleet (session entered AwaitingInput)"
+    );
+    let digest = crate::companion::orchestration::operative_memory::memory().digest_for_prompt();
+    let directive = format!(
+        "Fleet orchestration check. Session \"{label}\" (project {proj}) just entered AwaitingInput \
+         — it finished its turn or is paused waiting for the next instruction. Live fleet status:\n\n\
+         {digest}\n\n\
+         Decide the single best next step for the session(s) that actually need one. If there's a \
+         clear next instruction, propose a fleet_send_input action for that session with the exact \
+         text to type (press_enter true) so it can be auto-applied. If the work looks finished, or a \
+         step is risky/ambiguous/needs a real judgment call, do NOT act — instead surface a concise \
+         decision to the user. Leave sessions that are progressing fine alone. Be brief.",
+        label = input.project_label,
+        proj = input.project_label,
+    );
+
+    crate::companion::session::spawn_proactive_turn(
+        app.clone(),
+        Arc::new(state.user_db.clone()),
+        Arc::new(state.db.clone()),
+        #[cfg(feature = "ml")]
+        state.embedding_manager.clone(),
+        "fleet_orchestration".to_string(),
+        Some(input.session_id.clone()),
+        directive,
+    );
 }
 
 /// Public re-export so the PTY reaper (`commands::fleet::pty`) can fire
