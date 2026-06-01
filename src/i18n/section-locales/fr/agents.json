@@ -1,12 +1,4 @@
 {
-  "create_match_heading": "Modèles correspondant à votre description",
-  "create_heading": "Créer un persona",
-  "create_describe_label": "Que doit faire cet agent ?",
-  "create_build_cta": "Créer l'agent",
-  "create_templates_heading": "Ou partez d'un modèle éprouvé",
-  "create_browse_all": "Parcourir tous les modèles",
-  "create_templates_empty": "Aucun modèle pour l'instant — ouvrez la galerie",
-  "create_starter_aria": "Partir de {name}",
   "glyph_apps_subtitle_empty": "Recherchez ou filtrez pour choisir des applis de votre coffre",
   "glyph_apps_selected_one": "{count} appli sélectionnée",
   "glyph_apps_selected_other": "{count} applis sélectionnées",

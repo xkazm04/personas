@@ -82,6 +82,73 @@ describe('BuildTemplateSuggestion', () => {
     );
   });
 
+  it('suppresses a weak match that fails the confidence gate', async () => {
+    // The matcher returns a row sharing zero keywords with the intent (the
+    // backend LIKE-matched on something incidental); the client gate drops it.
+    companionMatchTemplates.mockResolvedValue([
+      {
+        id: 'weak',
+        name: 'Weather Forecaster',
+        snippet: 'Posts the daily forecast to a channel.',
+        category: 'utility',
+        connectors: ['openweather'],
+      },
+    ]);
+    const { container } = render(
+      <BuildTemplateSuggestion
+        intent="harvest and triage product ideas from slack weekly"
+        active
+        onAccept={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    await waitFor(() => expect(companionMatchTemplates).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(
+        container.querySelector('[data-testid="build-template-suggestion"]'),
+      ).toBeNull(),
+    );
+  });
+
+  it('shows secondary chips for additional strong matches', async () => {
+    companionMatchTemplates.mockResolvedValue([
+      MATCH,
+      { id: 'r2', name: 'Idea Triage Bot', snippet: 'Triage product ideas in slack', category: 'productivity', connectors: ['slack'] },
+      { id: 'r3', name: 'Product Slack Digest', snippet: 'Summarize product ideas from slack', category: 'productivity', connectors: ['slack'] },
+    ]);
+    render(
+      <BuildTemplateSuggestion
+        intent="harvest and triage product ideas from slack"
+        active
+        onAccept={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+    await screen.findByTestId('build-template-suggestion');
+    expect(screen.getByTestId('build-template-suggestion-more')).toBeTruthy();
+    expect(screen.getByTestId('build-template-suggestion-alt-r2')).toBeTruthy();
+    expect(screen.getByTestId('build-template-suggestion-alt-r3')).toBeTruthy();
+  });
+
+  it('routes a secondary chip to onAccept', async () => {
+    const onAccept = vi.fn();
+    companionMatchTemplates.mockResolvedValue([
+      MATCH,
+      { id: 'r2', name: 'Idea Triage Bot', snippet: 'Triage product ideas in slack', category: 'productivity', connectors: ['slack'] },
+    ]);
+    render(
+      <BuildTemplateSuggestion
+        intent="harvest and triage product ideas from slack"
+        active
+        onAccept={onAccept}
+        onDismiss={vi.fn()}
+      />,
+    );
+    const alt = await screen.findByTestId('build-template-suggestion-alt-r2');
+    fireEvent.click(alt);
+    await waitFor(() => expect(onAccept).toHaveBeenCalledWith(expect.objectContaining({ id: 'r2' })));
+  });
+
   it('routes the top match to onAccept', async () => {
     companionMatchTemplates.mockResolvedValue([MATCH]);
     const onAccept = vi.fn();

@@ -20,12 +20,13 @@
  */
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import Button from '@/features/shared/components/buttons/Button';
 import AsyncButton from '@/features/shared/components/buttons/AsyncButton';
 import type { CompanionTemplateMatch } from '@/api/companion';
 import { useTemplateIntentMatch } from '@/features/agents/components/create/useTemplateIntentMatch';
+import { strongMatches } from './buildTemplateMatchConfidence';
 
 interface BuildTemplateSuggestionProps {
   /** The build intent to match against the published-template corpus. */
@@ -53,18 +54,26 @@ export function BuildTemplateSuggestion({
   // MIN_CHARS gate inside the hook treats "" as "no query") — no request fires
   // during compose or after dismissal.
   const { matches } = useTemplateIntentMatch(active ? intent : '');
-  const [accepting, setAccepting] = useState(false);
+  // `acceptingId` doubles as the in-flight flag (non-null) and the spinner
+  // target, so the right primary/secondary control animates while its review
+  // is fetched and the build is cancelled.
+  const [acceptingId, setAcceptingId] = useState<string | null>(null);
 
-  const top = matches[0];
+  // Confidence gate: drop weak single-keyword coincidences before surfacing.
+  // The matcher returns relevance-ordered rows; we keep the order and show the
+  // strongest as primary plus up to two more as compact "or start from" chips.
+  const strong = strongMatches(intent, matches);
+  const top = strong[0];
+  const secondary = strong.slice(1, 3);
   const show = active && !!top;
 
-  const handleAccept = async () => {
-    if (!top || accepting) return;
-    setAccepting(true);
+  const accept = async (match: CompanionTemplateMatch) => {
+    if (acceptingId) return;
+    setAcceptingId(match.id);
     try {
-      await onAccept(top);
+      await onAccept(match);
     } finally {
-      setAccepting(false);
+      setAcceptingId(null);
     }
   };
 
@@ -103,8 +112,8 @@ export function BuildTemplateSuggestion({
                 <AsyncButton
                   variant="primary"
                   size="sm"
-                  isLoading={accepting}
-                  onClick={handleAccept}
+                  isLoading={acceptingId === top.id}
+                  onClick={() => { void accept(top); }}
                   data-testid="build-template-suggestion-adopt"
                 >
                   {t.agents.build_template_match_adopt}
@@ -113,12 +122,37 @@ export function BuildTemplateSuggestion({
                   variant="ghost"
                   size="sm"
                   onClick={onDismiss}
-                  disabled={accepting}
+                  disabled={acceptingId !== null}
                   data-testid="build-template-suggestion-dismiss"
                 >
                   {t.agents.build_template_match_dismiss}
                 </Button>
               </div>
+              {secondary.length > 0 && (
+                <div
+                  className="mt-2 flex flex-wrap items-center gap-1.5"
+                  data-testid="build-template-suggestion-more"
+                >
+                  <span className="typo-caption text-foreground/85">
+                    {t.agents.build_template_match_more}
+                  </span>
+                  {secondary.map((m) => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => { void accept(m); }}
+                      disabled={acceptingId !== null}
+                      className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/[0.06] px-2.5 py-1 typo-caption text-foreground/85 transition hover:bg-primary/15 hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                      data-testid={`build-template-suggestion-alt-${m.id}`}
+                    >
+                      {acceptingId === m.id && (
+                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+                      )}
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

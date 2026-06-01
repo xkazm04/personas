@@ -1,12 +1,4 @@
 {
-  "create_match_heading": "Vorlagen, die zu deiner Beschreibung passen",
-  "create_heading": "Eine Persona erstellen",
-  "create_describe_label": "Was soll dieser Agent tun?",
-  "create_build_cta": "Agent erstellen",
-  "create_templates_heading": "Oder mit einer bewährten Vorlage starten",
-  "create_browse_all": "Alle Vorlagen ansehen",
-  "create_templates_empty": "Noch keine Vorlagen — Galerie öffnen",
-  "create_starter_aria": "Mit {name} starten",
   "glyph_apps_subtitle_empty": "Suchen oder filtern, um Apps aus dem Tresor zu wählen",
   "glyph_apps_selected_one": "{count} App ausgewählt",
   "glyph_apps_selected_other": "{count} Apps ausgewählt",

@@ -1,12 +1,4 @@
 {
-  "create_match_heading": "Plantillas que coinciden con tu descripción",
-  "create_heading": "Crear una persona",
-  "create_describe_label": "¿Qué debe hacer este agente?",
-  "create_build_cta": "Crear agente",
-  "create_templates_heading": "O empieza con una plantilla probada",
-  "create_browse_all": "Ver todas las plantillas",
-  "create_templates_empty": "Aún no hay plantillas — explora la galería",
-  "create_starter_aria": "Empezar desde {name}",
   "glyph_apps_subtitle_empty": "Busca o filtra para elegir apps de tu bóveda",
   "glyph_apps_selected_one": "{count} app seleccionada",
   "glyph_apps_selected_other": "{count} apps seleccionadas",

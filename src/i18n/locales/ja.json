@@ -571,14 +571,6 @@
     "commander": "Commander"
   },
   "agents": {
-    "create_match_heading": "説明に一致するテンプレート",
-    "create_heading": "ペルソナを作成",
-    "create_describe_label": "このエージェントの役割は？",
-    "create_build_cta": "エージェントを作成",
-    "create_templates_heading": "または実績あるテンプレートから始める",
-    "create_browse_all": "すべてのテンプレートを見る",
-    "create_templates_empty": "テンプレートはまだありません — ギャラリーを見る",
-    "create_starter_aria": "{name} から始める",
     "glyph_apps_subtitle_empty": "保管庫からアプリを検索・絞り込んで選択",
     "glyph_apps_selected_one": "{count} 個のアプリを選択中",
     "glyph_apps_selected_other": "{count} 個のアプリを選択中",

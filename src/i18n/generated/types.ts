@@ -595,14 +595,7 @@ export type Translations = {
     build_template_match_adopt: string;
     build_template_match_dismiss: string;
     build_template_match_loading: string;
-    create_match_heading: string;
-    create_heading: string;
-    create_describe_label: string;
-    create_build_cta: string;
-    create_templates_heading: string;
-    create_browse_all: string;
-    create_templates_empty: string;
-    create_starter_aria: string;
+    build_template_match_more: string;
     glyph_apps_subtitle_empty: string;
     glyph_apps_selected_one: string;
     glyph_apps_selected_other: string;

@@ -1,12 +1,4 @@
 {
-  "create_match_heading": "Šablony odpovídající vašemu popisu",
-  "create_heading": "Vytvořit personu",
-  "create_describe_label": "Co má tento agent dělat?",
-  "create_build_cta": "Vytvořit agenta",
-  "create_templates_heading": "Nebo začněte z osvědčené šablony",
-  "create_browse_all": "Procházet všechny šablony",
-  "create_templates_empty": "Zatím žádné šablony — otevřete galerii",
-  "create_starter_aria": "Začít z {name}",
   "glyph_apps_subtitle_empty": "Hledejte nebo filtrujte aplikace z trezoru",
   "glyph_apps_selected_one": "Vybrána {count} aplikace",
   "glyph_apps_selected_other": "Vybráno aplikací: {count}",
