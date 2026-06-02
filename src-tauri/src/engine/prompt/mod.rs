@@ -383,8 +383,10 @@ pub fn assemble_prompt(
         "### emit_event\nSignal completion or broadcast a custom event for other agents/systems.\n",
     );
     prompt.push_str("**Input**: `{\"event_type\": \"string\", \"data\": {}}`\n\n");
-    prompt.push_str("### request_review\nRequest human review for a business decision.\n");
+    prompt.push_str("### request_review\nRequest human review for a BUSINESS/POLICY decision (pricing, compliance, prod config, an irreversible change). NOT for technical status — a red build, a missing dependency, or a code-review change-request is not a review item.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"severity\": \"low|medium|high|critical\", \"context_data\": \"string\", \"suggested_actions\": [\"string\"]}`\n\n");
+    prompt.push_str("### raise_incident\nEscalate a TECHNICAL BLOCKER you cannot resolve and the user must act on — a missing credential/dependency, a broken upstream service, work blocked on something un-merged, an ambiguous requirement. Goes to the Incidents inbox (open→in_progress→resolved); when the user resolves it, the blocked work is re-run. Use this — NOT request_review — for anything technical the user must unblock.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"detail\": \"string\", \"severity\": \"low|medium|high|critical\", \"kind\": \"missing_credential|upstream_down|ambiguous_requirement|blocked_dependency\"}`\n\n");
 
     // Platform and execution environment guidance
     prompt.push_str("## Execution Environment\n");
