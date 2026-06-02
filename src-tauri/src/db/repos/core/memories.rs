@@ -96,6 +96,18 @@ fn build_memory_filters(
         }
         _ => {}
     }
+    // Hide the raw Stop-hook "Session capture" rows (category=context, working
+    // tier) from general listings — they're raw transcript/cwd telemetry, not
+    // curated memories, and were flooding the user's Memories surface (~half of
+    // all rows). They stay in the table for the lifecycle/compile pass; a caller
+    // that explicitly asks for category='context' (a raw/debug view) still sees
+    // them.
+    if category != Some("context") {
+        qb.where_raw(
+            |i| format!("NOT (category = ?{i} AND tier = 'working')"),
+            vec![Box::new("context".to_string())],
+        );
+    }
     if let Some(q) = search {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
@@ -187,6 +199,12 @@ pub fn get_all_by_persona_ids(
             qb.where_in(
                 "persona_id",
                 persona_ids.iter().map(|s| s.to_string()).collect(),
+            );
+            // Exclude raw Stop-hook session-captures from the bulk surface view
+            // (see build_memory_filters) — telemetry, not curated memory.
+            qb.where_raw(
+                |i| format!("NOT (category = ?{i} AND tier = 'working')"),
+                vec![Box::new("context".to_string())],
             );
             qb.order_by("created_at", "DESC");
             let sql = qb.build_select("SELECT * FROM persona_memories");
