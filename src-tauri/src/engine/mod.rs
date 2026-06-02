@@ -147,6 +147,7 @@ pub mod protocol;
 pub mod provider;
 pub mod quality_gate;
 pub mod queue;
+pub mod resource_governor;
 pub mod rate_limiter;
 pub mod recipe_eligibility;
 pub mod recipe_matcher;
@@ -440,6 +441,7 @@ impl ExecutionEngine {
         // change). Defensively clamp so a corrupt/out-of-range stored value
         // falls back to the documented default. No pool (headless/test) keeps
         // the GLOBAL_MAX_CONCURRENT const fallback.
+        let spawn_governor = pool.is_some();
         let mut tracker = ConcurrencyTracker::new();
         if let Some(p) = pool.as_ref() {
             let configured = crate::db::repos::core::settings::get(
@@ -461,8 +463,18 @@ impl ExecutionEngine {
             Some(p) => Arc::new(failover::ProviderCircuitBreaker::with_persistence(p)),
             None => Arc::new(failover::ProviderCircuitBreaker::new()),
         };
+        let tracker = Arc::new(Mutex::new(tracker));
+        // Resource-aware admission governor: pause new admissions under high host
+        // load so we don't pile executions onto a stressed machine and risk an
+        // OOM kill. Real-app context only (a pool exists); headless/test skips it.
+        if spawn_governor {
+            let governor_tracker = tracker.clone();
+            tauri::async_runtime::spawn(async move {
+                resource_governor::run(governor_tracker).await;
+            });
+        }
         Self {
-            tracker: Arc::new(Mutex::new(tracker)),
+            tracker,
             tasks: Arc::new(Mutex::new(HashMap::new())),
             child_pids: Arc::new(Mutex::new(HashMap::new())),
             cancelled_flags: Arc::new(Mutex::new(HashMap::new())),
