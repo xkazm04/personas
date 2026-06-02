@@ -7,6 +7,7 @@ import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
+import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
@@ -23,6 +24,8 @@ interface Props {
   runId?: string;
   userRatings?: Record<string, UserRatingEntry>;
   onRate?: (scenarioName: string, key: string, rating: number, feedback?: string) => void;
+  /** Results fetch is still in flight — show the shape-matched skeleton instead of the empty line. */
+  loading?: boolean;
 }
 
 function parseVerdict(raw: string): string {
@@ -80,7 +83,7 @@ function collectSuggestions(results: LabEvalResult[], limit = 3): string[] {
   return out.slice(0, limit);
 }
 
-export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }: Props) {
+export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate, loading }: Props) {
   const { t } = useTranslation();
   const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; versionId: string; modelId: string } | null>(null);
@@ -122,6 +125,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   }, [winnerId, shouldAnimate]);
 
   if (results.length === 0) {
+    if (loading) return <LabResultsSkeleton />;
     return (
       <div className="text-center py-12 text-foreground typo-body" data-testid="eval-results-empty">
         {t.agents.lab.no_results}

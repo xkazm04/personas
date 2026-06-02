@@ -5,9 +5,9 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from '@/stores/systemStore';
 import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
-import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 import { DebtText } from '@/i18n/DebtText';
+import { LabResultsSkeleton } from './LabResultsSkeleton';
 
 
 
@@ -34,7 +34,6 @@ const modeTabs: Array<{ id: LabMode; label: string; icon: typeof FlaskConical }>
 const validModes = new Set<string>(modeTabs.map((t) => t.id));
 
 export function LabTab() {
-  const { t } = useTranslation();
   const labMode = useAgentStore((s) => s.labMode);
   const setLabMode = useAgentStore((s) => s.setLabMode);
   const personaId = useAgentStore((s) => s.selectedPersona?.id);
@@ -105,7 +104,7 @@ export function LabTab() {
       </div>
 
       {/* Mode content */}
-      <Suspense fallback={<div className="py-8 text-center typo-caption text-foreground">{t.agents.lab.loading}</div>}>
+      <Suspense fallback={<div className="pt-4"><LabResultsSkeleton /></div>}>
         {labMode === 'arena' && <ArenaPanel />}
         {labMode === 'ab' && <AbPanel />}
         {(labMode === 'matrix' || labMode === 'eval') && <MatrixPanel />}

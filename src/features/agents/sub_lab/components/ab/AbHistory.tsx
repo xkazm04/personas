@@ -77,7 +77,7 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
             ) : undefined
           }
         >
-          <AbResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} />
+          <AbResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} loading={resultsMap[activeRun.id] === undefined} />
         </LabResultModal>
       )}
     </>
