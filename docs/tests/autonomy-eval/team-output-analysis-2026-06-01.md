@@ -130,6 +130,21 @@ ADR-0009 + `src/lib/money/{round-to-cents.ts,round-to-cents.test.ts,index.ts}`):
   `qa.pr.approved`. A real GitHub approval needs a **distinct QA identity** (separate
   bot account / reviewer PAT).
 
+**Full-cascade side-results (same proof run, first complete 8-member cycle):** all
+**8/8 personas completed, 0 failures**, 23 events all delivered, 15 team-memories
+written, $8.64, clean quiescence. architect → Dev Clone (PR #3, merged) → QA
+(approved) → Code Reviewer → Security Sentinel → Release Manager → Docs Steward all
+ran. Two notable positives: (1) **G5 did NOT reproduce** — Release Manager shipped a
+real **release PR #4** (`v0.11.0`, version bump + CHANGELOG + notes), holding only the
+annotated tag for human approval per policy (a deliberate gate, not a debt-loop). It
+did NOT loop on pre-existing lint — though this was a clean increment that touched no
+debt files, so G5 may still bite on larger/debt-adjacent tasks (not disproven, just
+not exercised). (2) The single human review created was legitimate and correctly
+scoped: *"Approve release v0.11.0 + confirm v0.10.0/v0.11.0 merge order."* The
+run bundle is at `docs/test/runs/run-2026-06-02T12-39-36-g3_pr_qa_handshake` (scorable
+by the cert harness — this run also serves as the plan's "one instrumented validation
+run" on the re-composed 8-member team).
+
 ### G4 — Named domain events are dead (no subscribers)  ·  **P1**
 `code_review.completed`, `security.scan.completed`, etc. are emitted and logged
 as **"no subscriber matches — marking delivered (no consumers)"**. The real
