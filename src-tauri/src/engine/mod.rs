@@ -2156,6 +2156,23 @@ fn check_and_apply_circuit_breaker(pool: &DbPool, app: &AppHandle, persona_id: &
         return;
     }
 
+    // Team-cascade members idle/no-op as part of NORMAL flow — a release with
+    // nothing new to ship, a reviewer waiting on an implementation. That's a
+    // legitimate idle, not a wastefully-spinning standalone persona, and
+    // DISABLING one silently breaks the whole team's handoff chain (observed:
+    // Medical Bill's release auto-disabled after consecutive no-op releases,
+    // stalling the team and aborting the next run at the health-lint gate). The
+    // breaker exists for self-scheduled standalone personas, so skip it for
+    // anything bound to a team.
+    if persona.home_team_id.is_some() {
+        tracing::debug!(
+            persona_id = %persona.id,
+            persona_name = %persona.name,
+            "circuit breaker: skipped for team member (no-ops are normal cascade flow)"
+        );
+        return;
+    }
+
     // Disable the persona. Use a direct UPDATE so we don't go through
     // the full update_persona pipeline (which would touch design_context,
     // structured_prompt, etc.). Best-effort.
