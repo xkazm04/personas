@@ -800,11 +800,17 @@ pub fn get_archivable_candidates(
 
 crud_delete!("persona_memories");
 
-/// Hard-delete ALL memories. No FK children. Returns the number of rows deleted.
+/// Clear all NON-`core` memories (hard delete). **Preserves the user-pinned
+/// `core` tier**, which the MEMORY CONTRACT treats as authoritative and which
+/// every other batch path (`archive_by_ids`, run-lifecycle GC) deliberately
+/// keeps — only the user may remove a core memory, one at a time. Without the
+/// `tier != 'core'` guard this single, unscoped, workspace-wide call would
+/// irreversibly nuke every persona's pinned identity memories on one click.
+/// No FK children. Returns the number of rows deleted.
 pub fn delete_all(pool: &DbPool) -> Result<usize, AppError> {
     timed_query!("persona_memories", "persona_memories::delete_all", {
         let conn = pool.get()?;
-        let n = conn.execute("DELETE FROM persona_memories", [])?;
+        let n = conn.execute("DELETE FROM persona_memories WHERE tier != 'core'", [])?;
         Ok(n)
     })
 }
@@ -1986,5 +1992,42 @@ mod tests {
         assert_eq!(n, 3);
         let after = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
         assert_eq!(after.len(), 0);
+    }
+
+    #[test]
+    fn test_delete_all_preserves_core_tier() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "Core Keeper Agent");
+
+        for i in 0..3 {
+            create(
+                &pool,
+                CreatePersonaMemoryInput {
+                    persona_id: persona_id.clone(),
+                    title: format!("mem {i}"),
+                    content: format!("content {i}"),
+                    category: Some("fact".into()),
+                    source_execution_id: None,
+                    importance: Some(3),
+                    tags: None,
+                    use_case_id: None,
+                },
+            )
+            .unwrap();
+        }
+        let all = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
+        assert_eq!(all.len(), 3);
+
+        // Pin one as the user-pinned, authoritative `core` tier.
+        update_tier(&pool, &all[0].id, "core").unwrap();
+
+        // delete_all must clear only the two non-core memories.
+        let n = delete_all(&pool).unwrap();
+        assert_eq!(n, 2, "delete_all must hard-delete non-core memories only");
+
+        let after = get_all(&pool, None, None, None, None, None, None, None, None).unwrap();
+        assert_eq!(after.len(), 1, "the pinned core memory must survive a clear-all");
+        assert_eq!(after[0].id, all[0].id);
+        assert_eq!(after[0].tier, "core");
     }
 }
