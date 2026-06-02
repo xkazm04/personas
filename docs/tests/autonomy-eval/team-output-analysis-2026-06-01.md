@@ -150,14 +150,23 @@ run bundle is at `docs/test/runs/run-2026-06-02T12-39-36-g3_pr_qa_handshake` (sc
 by the cert harness — this run also serves as the plan's "one instrumented validation
 run" on the re-composed 8-member team).
 
-### G4 — Named domain events are dead (no subscribers)  ·  **P1**
-`code_review.completed`, `security.scan.completed`, etc. are emitted and logged
-as **"no subscriber matches — marking delivered (no consumers)"**. The real
-handoff is `team_handoff.<uuid>` chains; the named events are vestigial. This is
-duplicated/inconsistent wiring — wasteful and confusing, and it means anything
-that *should* subscribe to a named domain event silently never fires.
-**Direction:** either retire the named-event emissions or wire real subscribers;
-pick one handoff mechanism (team_handoff chains) and make it authoritative.
+### G4 — Named domain events are dead (no subscribers)  ·  ~~P1~~ **ADDRESSED 2026-06-02**
+`code_review.completed`, `security.scan.completed`, etc. were emitted and logged
+as **"no subscriber matches — marking delivered (no consumers)"**. Investigation
+confirmed the cascade runs **100% on `team_handoff.<uuid>` chains** (every cascaded
+execution carries `_chain_*` payload); the named events are advisory telemetry with
+no real subscribers (self-loops, killed by the bus self-scoping rule).
+**Done:** (1) **team_handoff chains documented as the AUTHORITATIVE handoff mechanism**
+(`docs/features/execution/README.md` chain.rs entry); named domain events are advisory
+telemetry, not triggers. (2) **Retired the 3 cleanest terminal-leaf dead emits** from
+their templates — `code_review.completed` (code-reviewer), `security.scan.completed`
+(security-sentinel), `docs.sync.completed` (docs-steward) — affects future adoptions.
+**Deliberately KEPT** (not purely dead / entangled with load-bearing wiring):
+`dev-clone.pr.created` + `qa.pr.approved` (the verified G3 handshake), `implementation.completed`
++ `architecture.analysis.completed` (referenced by the team_context policy block + Dev
+Clone's trigger description), and `release.version.bumped` (paired with `release.published`,
+which has cross-persona subscribers). Live teams unchanged (template edits are future-only);
+existing dead self-loop subscriptions are harmless.
 
 ### G5 — Release gate blocked by PRE-EXISTING repo debt, not the deliverable  ·  **P1**
 Every release attempt HOLDs on red lint from stray/pre-existing files
@@ -168,13 +177,24 @@ blocker it isn't tasked to fix, and **nothing ships**.
 add a one-time "clean the baseline" task per repo before the soak, or let the
 standards policy treat pre-existing debt as a warn not a hard block.
 
-### G6 — High-severity reviews strand value behind a human  ·  **P1**
-18 high reviews accumulate (release-push approvals, security findings). The new
-auto-triage correctly leaves these for a human (low/medium only), but unattended
-they pile up faster than they clear and the work behind them never lands.
-**Direction:** a policy-bounded auto-approval for *defined-safe* classes (e.g.
-"approve origin push when gate is green + no open HIGH security finding"), and a
-digest so the human triages a batch, not 18 singletons.
+### G6 — High-severity reviews strand value behind a human  ·  ~~P1~~ **IMPLEMENTED 2026-06-02**
+High/critical reviews accumulated (27 stranded in the live DB): ~12 were technical-status
+noise (red build, lint, REQUEST_CHANGES) that policy says should NOT be human-review items;
+~15 were genuine PHI/HIPAA/production/origin-push decisions. The old auto-triage skipped ALL
+high/critical by severity alone.
+**Done** (`subscription.rs` + `settings_keys.rs`): added an opt-in high tier
+(`autonomous_review_triage_high`, default-OFF, requires `autonomous_review_triage` too) that
+auto-approves a high/critical review ONLY when a deterministic classifier says it's safe:
+`high_severity_auto_approvable()` = matches a **safe technical-status allowlist** (lint, red
+build, request-changes, missing dependency/migration, mis-sequenced handoff, findings-to-triage)
+AND matches **NO business/policy denylist** marker (PHI/HIPAA/PII, production, pricing/payment,
+origin-push/force, irreversible/destructive, secrets/credentials, egress). The **denylist wins
+on any overlap**, and anything unrecognised stays pending for a human (conservative). Unit-tested
+against the real stranded examples (`test_high_severity_auto_approvable_classifier`). Each
+high-tier approval records an explicit reviewer-note audit trail.
+**Net on live data:** the ~12 technical-status items become auto-approvable; the ~15 genuine
+business/policy decisions stay human-gated. (A future enhancement could swap the deterministic
+classifier for the existing LLM judge in `auto_triage.rs` for novel-item nuance.)
 
 ### G7 — One-shot goals → the loop idles after one pass  ·  **P2**
 Goals are "ship X" — each advances once, completes, marks done; when all 7 are
@@ -184,14 +204,21 @@ don't self-sustain.
 **Direction:** feed accepted backlog ideas / open sub-goals into the
 goal-advance candidate pool so a team with capacity always has a next step.
 
-### G8 — Duplicate team sets; the re-composed pipeline isn't what ran  ·  **P2**
-The linked teams are the **`SDLC2 — X`** set (6 members: no QA Guardian, no
-artist) plus 2 older `SDLC — X` (5 members). The **8-member re-composed
-`SDLC — ai-bookkeeper`** (Dev Clone + QA Guardian, this session's work) is **not**
-project-linked, so the soak never exercised it. Two parallel SDLC team sets is a
-real data-quality issue.
-**Direction:** decide the canonical set, re-point project→team links to it (or
-re-sync the SDLC set to 8 members), and de-dup the other.
+### G8 — Duplicate team sets; the re-composed pipeline isn't what ran  ·  ~~P2~~ **CLOSED 2026-06-02**
+There were **16 teams** — 7 canonical (linked via `dev_projects.team_id`, a mix of 4
+`SDLC2 — X` + 3 `SDLC — X`) + 9 orphans (8 SDLC duplicates + 1 unrelated workspace team).
+The canonical `SDLC — ai-bookkeeper` (f8a981a8, this session's 8-member G3 work) was
+team-disabled while an orphan duplicate `SDLC2 — ai-bookkeeper` (b0414f59, enabled, a
+stale awaiting_review assignment) shadowed it.
+**Done (full purge, live DB via bridge):** (1) enabled the canonical `SDLC — ai-bookkeeper`
+(f8a981a8) so the autonomous loop uses the team carrying all G3 work; (2) deleted the **8
+orphan SDLC teams** (`delete_team`, cascading members/connections/memories/assignments) incl.
+the shadow b0414f59; (3) purged the **43 orphaned duplicate personas** (`delete_persona`,
+which cancels running execs + cleans subscriptions). Verified: **7 canonical teams remain
+(all enabled), 112→69 personas, ZERO dangling executions/subscriptions/memberships.** Zero
+persona overlap with canonical confirmed before deletion. The unrelated "Product & Engineering"
+team was left (out of scope). Note: `dev_projects.team_id` has no FK to `persona_teams` — a
+future hardening could add `ON DELETE SET NULL` to prevent dangling project→team pointers.
 
 ---
 
