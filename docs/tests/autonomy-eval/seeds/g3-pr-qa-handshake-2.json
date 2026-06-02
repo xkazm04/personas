@@ -1,0 +1,12 @@
+{
+  "id": "g3/pr-qa-handshake-2",
+  "team": "SDLC — ai-bookkeeper",
+  "repo": "ai-bookkeeper",
+  "tracks": ["code"],
+  "exercises_roles": ["architect", "engineer", "qa"],
+  "held_out": false,
+  "goal": "Add a small, well-tested pure utility parseMoney(input: string): number | null to the money module (src/lib/money) — parse a user-entered monetary string into a number of dollars: accept forms like '$1,234.56', '1234.56', '-12.00', ' 7 '; strip a leading currency symbol, thousands separators, and surrounding whitespace; return null for empty/non-numeric/ambiguous input. Add it to the module barrel and write a focused unit test covering valid forms, the currency-symbol/comma cases, negatives, and the null/invalid cases. Keep it tiny and self-contained — a clean, NEW increment distinct from the existing roundToCents.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm test" },
+  "acceptance_hint": "A tiny NEW pure utility (parseMoney) + unit test, implemented end-to-end. The objective is to RE-TEST THE MERGE-AUTHORITY FIX (G3a): Dev Clone must open a PR and HAND OFF without merging; QA Guardian tests the PR in an isolated worktree and is the one that MERGES it. Success = the PR is merged AFTER QA's uc_pr_review runs (QA owns the merge), not self-merged by Dev Clone on creation.",
+  "notes": "G3a/G3b verification seed (2026-06-02). Distinct task from g3/pr-qa-handshake (roundToCents, already shipped as PR #3) to avoid a no-op. Verifies the team_context.rs merge-authority fix (Dev Clone hands off; QA merges) + QA's pinned github credentialLink. Targets the 8-member SDLC — ai-bookkeeper."
+}
