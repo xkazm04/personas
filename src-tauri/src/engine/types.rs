@@ -177,6 +177,20 @@ pub enum ProtocolMessage {
         /// `upstream_down`, `ambiguous_requirement`). Defaults to `persona_blocker`.
         kind: Option<String>,
     },
+    /// Persona surfaces a concrete FUTURE-WORK item into the project's backlog
+    /// (`dev_ideas`) — a follow-up, refactor, test gap, or hardening that is worth
+    /// doing but is NOT part of the current increment. Scoped to the persona's
+    /// pinned repo so it shows in that project's backlog inbox; the user (or a
+    /// later parallel run) can pick it up. Keeps runs feeding the backlog instead
+    /// of leaving it stale.
+    ProposeBacklog {
+        title: String,
+        description: Option<String>,
+        category: Option<String>,
+        impact: Option<i32>,
+        effort: Option<i32>,
+        risk: Option<i32>,
+    },
     /// Persona proposes a change to its own prompt/strategy, routed to Lab Matrix
     /// for user review. Never applied directly -- always goes through Lab UI.
     ProposeImprovement {

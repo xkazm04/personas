@@ -387,6 +387,8 @@ pub fn assemble_prompt(
     prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"severity\": \"low|medium|high|critical\", \"context_data\": \"string\", \"suggested_actions\": [\"string\"]}`\n\n");
     prompt.push_str("### raise_incident\nEscalate a TECHNICAL BLOCKER you cannot resolve and the user must act on — a missing credential/dependency, a broken upstream service, work blocked on something un-merged, an ambiguous requirement. Goes to the Incidents inbox (open→in_progress→resolved); when the user resolves it, the blocked work is re-run. Use this — NOT request_review — for anything technical the user must unblock.\n");
     prompt.push_str("**Input**: `{\"title\": \"string\", \"detail\": \"string\", \"severity\": \"low|medium|high|critical\", \"kind\": \"missing_credential|upstream_down|ambiguous_requirement|blocked_dependency\"}`\n\n");
+    prompt.push_str("### propose_backlog\nSurface a concrete, SMALL, independently-shippable FUTURE-WORK item into this project's backlog — a follow-up, refactor, test gap, or hardening worth doing but NOT part of the current increment. Each lands in the project's backlog for a human or a later PARALLEL run to pick up. Do NOT use it for the work you're doing now (do that), for vague wishes, or for one big unsplittable task.\n");
+    prompt.push_str("**Input**: `{\"title\": \"string\", \"description\": \"string\", \"category\": \"refactor|test|perf|hardening|feature|docs\", \"impact\": 1-5, \"effort\": 1-5, \"risk\": 1-5}`\n\n");
 
     // Platform and execution environment guidance
     prompt.push_str("## Execution Environment\n");

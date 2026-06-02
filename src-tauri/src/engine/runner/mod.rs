@@ -1922,7 +1922,7 @@ pub async fn run_execution(
                                 // Protocol tool interception: if the LLM called one of our
                                 // virtual protocol tools, parse the input and dispatch as a
                                 // structured protocol message (more reliable than JSON lines).
-                                static PROTOCOL_TOOLS: &[&str] = &["emit_memory", "emit_message", "emit_event", "request_review", "raise_incident"];
+                                static PROTOCOL_TOOLS: &[&str] = &["emit_memory", "emit_message", "emit_event", "request_review", "raise_incident", "propose_backlog"];
                                 if PROTOCOL_TOOLS.contains(&tool_name.as_str()) {
                                     if let Ok(input_val) = serde_json::from_str::<serde_json::Value>(input_preview) {
                                         let protocol_msg = match tool_name.as_str() {
@@ -1956,6 +1956,14 @@ pub async fn run_execution(
                                                 detail: input_val.get("detail").and_then(|v| v.as_str()).map(String::from),
                                                 severity: input_val.get("severity").and_then(|v| v.as_str()).map(String::from),
                                                 kind: input_val.get("kind").and_then(|v| v.as_str()).map(String::from),
+                                            }),
+                                            "propose_backlog" => Some(ProtocolMessage::ProposeBacklog {
+                                                title: input_val.get("title").and_then(|v| v.as_str()).unwrap_or("Backlog item").to_string(),
+                                                description: input_val.get("description").and_then(|v| v.as_str()).map(String::from),
+                                                category: input_val.get("category").and_then(|v| v.as_str()).map(String::from),
+                                                impact: input_val.get("impact").and_then(|v| v.as_i64()).map(|v| v as i32),
+                                                effort: input_val.get("effort").and_then(|v| v.as_i64()).map(|v| v as i32),
+                                                risk: input_val.get("risk").and_then(|v| v.as_i64()).map(|v| v as i32),
                                             }),
                                             _ => None,
                                         };
