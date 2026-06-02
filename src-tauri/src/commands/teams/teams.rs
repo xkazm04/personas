@@ -73,6 +73,14 @@ pub fn delete_team(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, 
             "Cannot delete team while a pipeline is running. Please wait for the pipeline to finish or cancel it first.".into(),
         ));
     }
+    // G8 hardening: dev_projects.team_id has no FK to persona_teams, so deleting a
+    // project's canonical team would leave a dangling project→team pointer. Refuse
+    // it — re-point or unlink the project first.
+    if repo::is_linked_to_dev_project(&state.db, &id)? {
+        return Err(AppError::Validation(
+            "Cannot delete this team — it is a dev project's canonical team (dev_projects.team_id). Re-point the project to another team or unlink it first.".into(),
+        ));
+    }
     repo::delete(&state.db, &id)
 }
 

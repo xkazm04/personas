@@ -195,6 +195,12 @@ high-tier approval records an explicit reviewer-note audit trail.
 **Net on live data:** the ~12 technical-status items become auto-approvable; the ~15 genuine
 business/policy decisions stay human-gated. (A future enhancement could swap the deterministic
 classifier for the existing LLM judge in `auto_triage.rs` for novel-item nuance.)
+**LIVE-VERIFIED 2026-06-02:** a read-only dry-run over the 24 pending high/critical reviews
+classified 6 → approve / 18 → keep (zero business items approved). Then enabled
+`autonomous_review_triage_high`; the first tick auto-approved **4 safe high-severity reviews**
+(Bill-Diff E2E ×2, Citation gate REQUEST_CHANGES, Eligibility findings-to-triage) and held all
+**20** remaining high/critical (PHI/production/origin-push) pending for a human — matching the
+dry-run. (10/tick oldest-first, so the other safe items land on subsequent ticks.)
 
 ### G7 — One-shot goals → the loop idles after one pass  ·  **P2**
 Goals are "ship X" — each advances once, completes, marks done; when all 7 are
@@ -217,8 +223,13 @@ the shadow b0414f59; (3) purged the **43 orphaned duplicate personas** (`delete_
 which cancels running execs + cleans subscriptions). Verified: **7 canonical teams remain
 (all enabled), 112→69 personas, ZERO dangling executions/subscriptions/memberships.** Zero
 persona overlap with canonical confirmed before deletion. The unrelated "Product & Engineering"
-team was left (out of scope). Note: `dev_projects.team_id` has no FK to `persona_teams` — a
-future hardening could add `ON DELETE SET NULL` to prevent dangling project→team pointers.
+team was left (out of scope).
+**Hardened (commit pending):** `dev_projects.team_id` has no FK to `persona_teams`, so deleting a
+canonical team would leave a dangling project→team pointer. Rather than the riskier FK migration
+(recreating the core `dev_projects` table), `delete_team` now **refuses to delete a team that is a
+project's canonical team** (repo helper `is_linked_to_dev_project` + command guard in
+`commands/teams/teams.rs`) — re-point or unlink the project first. Orphan-team deletion (the dedup
+path) is unaffected since orphans aren't `dev_projects.team_id`-linked.
 
 ---
 
