@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CloudDownload, Play, ShieldCheck } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import Button from '@/features/shared/components/buttons/Button';
@@ -8,6 +8,15 @@ import { useRemoteCommandStore } from '@/stores/remoteCommandStore';
 import { useTauriEvent } from '@/hooks/useTauriEvent';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
 import type { RemoteCommand } from '@/lib/bindings/RemoteCommand';
+
+/**
+ * Arm-delay (ms) before the primary Approve button becomes clickable for a newly
+ * surfaced request. Long enough to absorb a click that was already queued against
+ * the previous item (or a fast double-tap), short enough to feel instant to a
+ * deliberate user. Approving runs remote code locally, so this is the one action
+ * worth guarding against an accidental one-click fire.
+ */
+const APPROVE_ARM_DELAY_MS = 450;
 
 /** First letter of the persona label, for the glyph. */
 function initial(label: string): string {
@@ -45,6 +54,18 @@ export default function RemoteApprovalPrompt() {
   useTauriEvent<RemoteCommand>('remote-command-pending', onPending);
 
   const current = queue[0];
+
+  // Error-prevention guard: disarm Approve for a beat whenever a new request
+  // surfaces, so a click already queued against the previous queue item (or a
+  // fast double-tap) can't auto-fire a remote run on the one that replaced it.
+  const currentId = current?.id;
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    setArmed(false);
+    const tid = setTimeout(() => setArmed(true), APPROVE_ARM_DELAY_MS);
+    return () => clearTimeout(tid);
+  }, [currentId]);
+
   if (!isAuthenticated || !current) return null;
 
   const busy = busyId === current.id;
@@ -114,16 +135,23 @@ export default function RemoteApprovalPrompt() {
           <Button variant="ghost" onClick={() => dismiss(current.id)} disabled={busy}>
             {s.later}
           </Button>
-          <Button variant="secondary" onClick={() => { void reject(current.id); }} disabled={busy}>
+          <Button
+            variant="ghost"
+            className="text-red-300 hover:bg-red-500/10"
+            onClick={() => { void reject(current.id); }}
+            disabled={busy}
+          >
             {s.reject}
           </Button>
           <Button
             variant="primary"
             icon={<Play className="w-4 h-4" />}
             onClick={() => { void approve(current.id); }}
-            disabled={busy}
+            loading={busy}
+            loadingLabel={s.approving}
+            disabled={!armed}
           >
-            {busy ? s.approving : s.approve}
+            {s.approve}
           </Button>
         </div>
       </div>
