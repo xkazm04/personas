@@ -170,7 +170,7 @@ function FileUploadTab({
       {preview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
           <button onClick={handleManualProceed} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
-            Continue
+            {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
         </div>
@@ -220,7 +220,7 @@ function PasteTab({
             }`}
           >
             <ChevronRight className="w-3.5 h-3.5" />
-            Import
+            {t.templates.n8n.import_btn}
           </button>
         </div>
       </div>
@@ -273,7 +273,7 @@ function UrlTab({
             }`}
           >
             {urlFetching ? (
-              <><LoadingSpinner size="sm" /> Fetching</>
+              <><LoadingSpinner size="sm" /> {t.templates.n8n.fetching}</>
             ) : (
               <><ChevronRight className="w-3.5 h-3.5" /> {t.templates.n8n.fetch}</>
             )}
@@ -292,7 +292,7 @@ function UrlTab({
       {urlPreview?.kind === 'valid' && (
         <div className="animate-fade-slide-in mt-4 flex flex-col items-start gap-1.5">
           <button onClick={handleUrlImport} className="px-4 py-2.5 typo-heading font-semibold rounded-modal bg-violet-500 text-foreground hover:bg-violet-400 transition-colors">
-            Continue
+            {t.templates.n8n.continue_btn}
           </button>
           <p className="typo-body text-foreground">{t.templates.n8n.press_enter_or_click}</p>
         </div>

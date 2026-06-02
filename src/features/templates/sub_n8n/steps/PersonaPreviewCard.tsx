@@ -1,7 +1,8 @@
-import { Wrench, Zap, Link, ChevronDown, ChevronRight, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useState } from 'react';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { PersonaEntitySummary } from './PersonaEntitySummary';
 import { ConnectorHealthRail } from './confirm/ConnectorHealthRail';
 import type { ConnectorRailItem } from '../edit/connectorHealth';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -84,23 +85,24 @@ export function PersonaPreviewCard({
         </div>
         <div>
           <p className="typo-body-lg font-semibold text-foreground/90">
-            {name ?? 'Unnamed Persona'}
+            {name ?? t.templates.n8n.unnamed_persona}
           </p>
           <p className="typo-body text-foreground mt-0.5">
-            {description ?? 'No description provided'}
+            {description ?? t.templates.n8n.no_description}
           </p>
         </div>
       </div>
 
       {/* Entity summary grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 md:gap-2 mb-4">
-        <EntityCard icon={Wrench} count={toolCount} label="Tools" color="blue" />
-        <EntityCard icon={Zap} count={triggerCount} label="Triggers" color="amber" />
-        <EntityCard icon={Link} count={connectorCount} label="Connectors" color="emerald" />
-        <EntityCard icon={ShieldCheck} count={reviewCount} label="Reviews" color="rose" />
-        <EntityCard icon={Brain} count={memoryCount} label="Memory" color="cyan" />
-        <EntityCard icon={Activity} count={eventCount} label="Events" color="orange" />
-      </div>
+      <PersonaEntitySummary
+        toolCount={toolCount}
+        triggerCount={triggerCount}
+        connectorCount={connectorCount}
+        reviewCount={reviewCount}
+        memoryCount={memoryCount}
+        eventCount={eventCount}
+        className="mb-4"
+      />
 
       {/* Items breakdown */}
       {toolTags.length > 0 && <TagList items={toolTags} color="blue" />}
@@ -178,32 +180,6 @@ export function PersonaPreviewCard({
 }
 
 /* ---- Local helper components ---- */
-
-type ColorKey = 'blue' | 'amber' | 'emerald' | 'rose' | 'cyan' | 'orange';
-
-const colorMap: Record<ColorKey, string> = {
-  blue: 'bg-blue-500/5 border-blue-500/10 text-blue-400/60',
-  amber: 'bg-amber-500/5 border-amber-500/10 text-amber-400/60',
-  emerald: 'bg-emerald-500/5 border-emerald-500/10 text-emerald-400/60',
-  rose: 'bg-rose-500/5 border-rose-500/10 text-rose-400/60',
-  cyan: 'bg-cyan-500/5 border-cyan-500/10 text-cyan-400/60',
-  orange: 'bg-orange-500/5 border-orange-500/10 text-orange-400/60',
-};
-
-function EntityCard({ icon: Icon, count, label, color }: {
-  icon: React.ComponentType<{ className?: string }>;
-  count: number;
-  label: string;
-  color: ColorKey;
-}) {
-  return (
-    <div className={`px-2 py-3 rounded-modal border text-center ${colorMap[color]}`}>
-      <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
-      <p className="typo-body-lg font-semibold text-foreground tabular-nums">{count}</p>
-      <p className="typo-body text-foreground uppercase tracking-wider">{label}</p>
-    </div>
-  );
-}
 
 const tagColorMap: Record<string, string> = {
   blue: 'bg-blue-500/10 text-blue-400/60 border-blue-500/15',
