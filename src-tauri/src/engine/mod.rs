@@ -347,6 +347,18 @@ async fn run_execution_with_ceiling(
     // works through the abstracted ExecutionEventEmitter trait.
     let emitter: Arc<dyn events::ExecutionEventEmitter> = Arc::new(events::TauriEmitter::new(app));
 
+    // Derive the log path before `log_dir` is moved into the runner. The runner
+    // streams to this exact file from its first line, so if the ceiling fires we
+    // can still point the persisted result at the partial log instead of
+    // recording `None` and losing all trace of the most expensive runs.
+    let log_file_path = logger::ExecutionLogger::log_path(&log_dir, &execution_id)
+        .to_string_lossy()
+        .to_string();
+
+    // Keep a handle to the PID map so the ceiling arm can reap an orphaned
+    // child; the runner takes its own clone for normal registration/cleanup.
+    let child_pids_for_ceiling = child_pids.clone();
+
     match tokio::time::timeout(
         ceiling,
         runner::run_execution(
@@ -368,11 +380,30 @@ async fn run_execution_with_ceiling(
     {
         Ok(result) => result,
         Err(_elapsed) => {
-            tracing::error!(
-                execution_id = %execution_id,
-                ceiling_secs = ENGINE_MAX_EXECUTION_SECS,
-                "Engine safety ceiling reached — execution forcibly terminated",
-            );
+            // The runner future has already been dropped by `timeout`, so its
+            // CliProcessDriver is gone and `kill_on_drop(true)` has signalled
+            // the direct child. But (a) the PID was never removed from the
+            // shared map — the runner's `unregister_pid` only runs on the
+            // normal completion path — and (b) kill_on_drop terminates only the
+            // immediate process, not the descendant tree the CLI may have
+            // spawned. Reap both here: remove the stale entry and kill the whole
+            // tree by PID so no orphan keeps billing the user's API account.
+            if let Some(pid) = child_pids_for_ceiling.lock().await.remove(&execution_id) {
+                tracing::error!(
+                    execution_id = %execution_id,
+                    pid,
+                    ceiling_secs = ENGINE_MAX_EXECUTION_SECS,
+                    "Engine safety ceiling reached — killing orphaned CLI process tree",
+                );
+                kill_process(pid);
+            } else {
+                tracing::error!(
+                    execution_id = %execution_id,
+                    ceiling_secs = ENGINE_MAX_EXECUTION_SECS,
+                    "Engine safety ceiling reached — execution forcibly terminated (no live PID registered)",
+                );
+            }
+
             ExecutionResult {
                 success: false,
                 error: Some(format!(
@@ -380,6 +411,12 @@ async fn run_execution_with_ceiling(
                     ENGINE_MAX_EXECUTION_SECS / 60,
                 )),
                 duration_ms: ENGINE_MAX_EXECUTION_SECS * 1000,
+                // Point at the partial log so the run stays auditable. cost_usd /
+                // input_tokens / output_tokens stay 0: the Claude CLI only emits
+                // its cost summary on the final `result` line, which by
+                // definition never arrived for a ceiling-terminated run, so there
+                // is no captured figure to report here.
+                log_file_path: Some(log_file_path),
                 ..Default::default()
             }
         }

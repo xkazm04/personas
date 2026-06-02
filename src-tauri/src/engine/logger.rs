@@ -10,9 +10,18 @@ pub struct ExecutionLogger {
 }
 
 impl ExecutionLogger {
+    /// Deterministic on-disk path for an execution's log file.
+    ///
+    /// Exposed so callers that need the path *without* opening the file (e.g.
+    /// the engine ceiling synthesizing a result after the runner future was
+    /// dropped) derive it from the same single source of truth as `new`.
+    pub fn log_path(log_dir: &std::path::Path, execution_id: &str) -> PathBuf {
+        log_dir.join(format!("{execution_id}.log"))
+    }
+
     pub fn new(log_dir: &std::path::Path, execution_id: &str) -> std::io::Result<Self> {
         fs::create_dir_all(log_dir)?;
-        let path = log_dir.join(format!("{execution_id}.log"));
+        let path = Self::log_path(log_dir, execution_id);
         let file = OpenOptions::new().create(true).append(true).open(&path)?;
         Ok(Self {
             writer: Some(BufWriter::new(file)),
