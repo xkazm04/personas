@@ -1,0 +1,12 @@
+{
+  "id": "g3/pr-qa-handshake",
+  "team": "SDLC — ai-bookkeeper",
+  "repo": "ai-bookkeeper",
+  "tracks": ["code"],
+  "exercises_roles": ["architect", "engineer", "qa"],
+  "held_out": false,
+  "goal": "Add a small, well-tested pure utility roundToCents(amount: number): number that rounds a monetary amount to 2 decimal places (half-up), in a new focused file under the ledger/money-utilities area of this codebase (follow the repo's existing structure + test conventions), with a unit test covering normal, rounding-boundary, and negative cases. Keep it tiny and self-contained — the point is a clean, minimal end-to-end increment, not a large feature.",
+  "repo_cmds": { "build": "npm run build", "lint": "npm run lint", "test": "npm test" },
+  "acceptance_hint": "A tiny pure utility + unit test, implemented end-to-end. The objective is to EXERCISE THE PR->QA HANDSHAKE: Dev Clone implements, opens a PR (dev-clone.pr.created), QA Guardian tests it in an isolated worktree and merges-or-returns it. Feature value is secondary; the handshake firing is the success criterion.",
+  "notes": "G3 proof seed (2026-06-02). Minimal task to prove the dev-clone.pr.created -> QA Guardian uc_pr_review handshake end-to-end on the real xprize-ai-bookkeeper repo, via the 8-member re-composed SDLC — ai-bookkeeper team (Dev Clone + QA Guardian, standards_config pr_base=main + automerge on). NOT held-out — proof, not certification."
+}

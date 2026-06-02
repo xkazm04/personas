@@ -99,16 +99,36 @@ the architect also **dominates** (38 execs), suggesting re-scoping churn.
 **Direction:** re-measure the funnel *after* the self-heal soak; if the architect
 still churns, add a "one scope per goal-step, then delegate and stop" guard.
 
-### G3 — Dev Clone commits directly; the PR→QA handshake never fires  ·  **P1**
-Dev Clone output: "I'll implement the ADR-002 handoff **directly** … no parallel
-worktrees needed." It commits straight to the branch and emits
-`implementation.completed`, **never** `dev-clone.pr.created`. So the headline
-re-compose capability — `dev-clone.pr.created → QA Guardian uc_pr_review (test in
-isolated worktree → merge/return)` — is **completely unexercised**. (Compounded
-by G8: QA isn't on these teams at all.)
-**Direction:** make Dev Clone open a PR for team runs (operating-instruction or
-policy nudge so the standards `pr_base` flow actually triggers), then verify QA
-reacts. This is the single biggest "built but unproven" capability.
+### G3 — Dev Clone commits directly; the PR→QA handshake never fires  ·  ~~P1~~ **PROVEN 2026-06-02**
+**RESOLVED — the handshake fires end-to-end on the real repo.** Proof run
+(`seed g3/pr-qa-handshake`, pilot team `SDLC — ai-bookkeeper`, 8 members) opened
+**real PR #3** on `xkazm04/xprize-ai-bookkeeper` (commit `924637349`, +147/4 files:
+ADR-0009 + `src/lib/money/{round-to-cents.ts,round-to-cents.test.ts,index.ts}`):
+- Architect `architecture.analysis.completed` (12:43:26) → Dev Clone implemented in
+  an **isolated worktree** (8/8 + 206/206 + tsc + lint green), pushed, opened PR #3,
+  **emitted `dev-clone.pr.created`** (12:48:17) — the PR path fired (it perceived the
+  GitHub connector available despite the `needs_credentials` advisory; the runtime
+  resolves a PAT by service-type).
+- `dev-clone.pr.created → QA Guardian uc_pr_review` (dispatched 12:48:21) → QA tested
+  the PR head in its **own isolated worktree** (194/194, tsc, eslint clean) → **emitted
+  `qa.pr.approved`** (12:52:29). Both personas cleaned up their worktrees. The
+  worktree-isolation model (the design we discussed) works in practice.
+
+**But the run surfaced two follow-on gaps (QA self-diagnosed the first):**
+- **G3a — QA gate is advisory, not blocking (sequencing).** Dev Clone *enables GitHub
+  auto-merge*, which merges the PR as soon as its **own** local gates pass + GitHub's
+  mergeable conditions are met — PR #3 merged at 12:47:18, **~1 min before QA even
+  started**. So QA tests an already-merged PR; its approval can't gate anything.
+  QA's own recommendation: **add a required status check** so the merge blocks until
+  QA's check is green. Alternatively, Dev Clone should NOT enable auto-merge when a QA
+  member exists downstream — open the PR and hand off, let QA own the merge.
+  (Also: a red GitHub check `undefined:FAILURE` did not block the merge — same root: no
+  required check enforced.)
+- **G3b — shared-PAT blocks a formal GitHub APPROVE.** Dev Clone + QA both authenticate
+  as the same `xkazm04` PAT, so QA cannot formally *approve* a PR authored by the same
+  account (GitHub forbids self-approval) — it fell back to a PASS **PR comment** +
+  `qa.pr.approved`. A real GitHub approval needs a **distinct QA identity** (separate
+  bot account / reviewer PAT).
 
 ### G4 — Named domain events are dead (no subscribers)  ·  **P1**
 `code_review.completed`, `security.scan.completed`, etc. are emitted and logged
