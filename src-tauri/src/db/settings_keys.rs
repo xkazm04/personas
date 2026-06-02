@@ -229,6 +229,20 @@ pub const AUTONOMOUS_REVIEW_TRIAGE: &str = "autonomous_review_triage";
 /// Default for [`AUTONOMOUS_REVIEW_TRIAGE`] — off (opt-in autonomy).
 pub const AUTONOMOUS_REVIEW_TRIAGE_DEFAULT: bool = false;
 
+/// Whether the autonomous review triager may ALSO auto-approve HIGH/critical
+/// severity reviews — but ONLY ones that match a safe technical-status allowlist
+/// (red build / lint / code-review change-request / missing dependency /
+/// mis-sequenced handoff) AND match NO business/policy denylist marker (PHI,
+/// production, pricing, irreversible/destructive, secrets). Genuine
+/// business/policy decisions are NEVER auto-approved; any unrecognised
+/// high-severity item stays pending for a human. Requires
+/// [`AUTONOMOUS_REVIEW_TRIAGE`] to also be on — a distinct, riskier opt-in beyond
+/// low/medium triage. Read by `ManualReviewAutoTriageSubscription`. Default OFF.
+/// Stored `"true"` / `"false"`.
+pub const AUTONOMOUS_REVIEW_TRIAGE_HIGH: &str = "autonomous_review_triage_high";
+/// Default for [`AUTONOMOUS_REVIEW_TRIAGE_HIGH`] — off (opt-in autonomy).
+pub const AUTONOMOUS_REVIEW_TRIAGE_HIGH_DEFAULT: bool = false;
+
 /// Whether the autonomous backlog-to-goal tick may, unattended, keep the
 /// goal-advance loop self-sustaining: when a goal-linked project has run out of
 /// open goals (the loop would otherwise idle), promote that project's single
@@ -326,6 +340,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_GOAL_ADVANCEMENT,
     AUTONOMOUS_ASSIGNMENT_RETRY,
     AUTONOMOUS_REVIEW_TRIAGE,
+    AUTONOMOUS_REVIEW_TRIAGE_HIGH,
     AUTONOMOUS_BACKLOG_TO_GOAL,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
