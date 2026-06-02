@@ -19,6 +19,7 @@ import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
+import { categoryColor, importanceColor } from '../libs/memoryVisualTokens';
 import type { PersonaMemory } from '@/lib/types/types';
 import MemoriesPageDense from './MemoriesPageDense';
 import MemoriesPageGraph from './MemoriesPageGraph';
@@ -85,15 +86,6 @@ function PrototypeTabStrip({ variant, setVariant }: { variant: PrototypeVariant;
     </div>
   );
 }
-
-const CATEGORY_HEX_COLORS: Record<string, string> = {
-  fact: '#3b82f6',
-  preference: '#f59e0b',
-  instruction: '#8b5cf6',
-  context: '#10b981',
-  learned: '#06b6d4',
-  constraint: '#ef4444',
-};
 
 type SortColumn = 'importance' | 'created_at';
 type SortDirection = 'asc' | 'desc';
@@ -344,7 +336,7 @@ function MemoriesPageBaseline() {
                 <div className="flex items-center gap-1.5 flex-shrink-0" title={`Avg importance: ${memoryStats.avg_importance.toFixed(1)}/5`}>
                   <svg width="18" height="18" viewBox="0 0 18 18" className="flex-shrink-0">
                     <circle cx="9" cy="9" r="7" fill="none" stroke="currentColor" strokeWidth="2" className="text-foreground" />
-                    <circle cx="9" cy="9" r="7" fill="none" stroke={(() => { const p = (memoryStats.avg_importance / 5) * 100; return p <= 40 ? '#34d399' : p <= 60 ? '#fbbf24' : '#fb7185'; })()}
+                    <circle cx="9" cy="9" r="7" fill="none" stroke={importanceColor(memoryStats.avg_importance)}
                       strokeWidth="2" strokeDasharray={`${((memoryStats.avg_importance / 5) * 100 / 100) * 44} 44`} strokeLinecap="round" transform="rotate(-90 9 9)" style={{ transition: 'stroke-dasharray 300ms' }} />
                   </svg>
                   <span className="typo-caption text-foreground tabular-nums">{memoryStats.avg_importance.toFixed(1)}</span>
@@ -353,7 +345,7 @@ function MemoriesPageBaseline() {
                   <div className="flex h-2 rounded-full overflow-hidden flex-1 bg-muted-foreground/10">
                     {memoryStats.category_counts.map(([cat, count]) => (
                       <div key={cat} title={`${MEMORY_CATEGORY_COLORS[cat]?.label ?? cat}: ${count}`} className="h-full"
-                        style={{ width: `${(count / (memoryStats.total || 1)) * 100}%`, backgroundColor: CATEGORY_HEX_COLORS[cat] ?? '#6b7280', transition: 'width 300ms', minWidth: count > 0 ? '2px' : 0 }} />
+                        style={{ width: `${(count / (memoryStats.total || 1)) * 100}%`, backgroundColor: categoryColor(cat).hex, transition: 'width 300ms', minWidth: count > 0 ? '2px' : 0 }} />
                     ))}
                   </div>
                 )}

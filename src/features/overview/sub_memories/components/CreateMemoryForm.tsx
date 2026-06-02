@@ -7,7 +7,7 @@ import type { PersonaMemoryCategory } from '@/lib/types/frontendTypes';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { getImportanceGradient } from './MemoryCard';
+import { importanceGradient } from '../libs/memoryVisualTokens';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -44,7 +44,7 @@ function InteractiveImportanceBar({ value, onChange }: { value: number; onChange
       >
         <div
           className="absolute inset-y-0 left-0 rounded-full transition-all duration-200"
-          style={{ width: `${pct}%`, background: getImportanceGradient(value) }}
+          style={{ width: `${pct}%`, background: importanceGradient(value) }}
         />
       </div>
       <span className="typo-data text-foreground tabular-nums min-w-[24px]">({value}/{maxScale})</span>
