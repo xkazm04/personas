@@ -7,6 +7,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab/shared';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { ScoreTrendCard } from './ScoreTrendCard';
+import { RunCompareCard } from './RunCompareCard';
 import { PromptTimeline } from './PromptTimeline';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -208,6 +209,9 @@ export function VersionsPanel() {
 
         {/* Score trend */}
         <ScoreTrendCard personaId={personaId} />
+
+        {/* Cross-run comparison */}
+        <RunCompareCard personaId={personaId} />
 
         {/* Error rate monitor */}
         <div className="rounded-modal border border-primary/10 bg-secondary/20 p-4 space-y-3">

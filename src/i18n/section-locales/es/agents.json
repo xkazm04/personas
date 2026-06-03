@@ -778,6 +778,8 @@
     "no_versions": "Sin versiones aún",
     "versions_auto_edit": "Las versiones se crean automáticamente cuando editas el prompt",
     "select_two_compare": "Selecciona dos versiones para comparar",
+    "compare_runs": "Comparar ejecuciones",
+    "composite": "Compuesta",
     "click_a_b_hint": "Haz clic en los botones A y B de cualquier versión",
     "run_ab_versions": "Ejecutar estas versiones en prueba A/B",
     "run_check": "Ejecutar verificación",

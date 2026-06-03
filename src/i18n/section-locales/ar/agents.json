@@ -778,6 +778,8 @@
     "no_versions": "لا إصدارات بعد",
     "versions_auto_edit": "تُنشأ الإصدارات تلقائياً عند تعديل التعليمات",
     "select_two_compare": "اختر إصدارين للمقارنة",
+    "compare_runs": "مقارنة عمليات التشغيل",
+    "composite": "مركّب",
     "click_a_b_hint": "انقر زري A وB على أي إصدار",
     "run_ab_versions": "تشغيل هذين الإصدارين في اختبار A/B",
     "run_check": "تشغيل الفحص",

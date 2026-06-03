@@ -1404,6 +1404,8 @@ export type Translations = {
       no_versions: string;
       versions_auto_edit: string;
       select_two_compare: string;
+      compare_runs: string;
+      composite: string;
       click_a_b_hint: string;
       run_ab_versions: string;
       run_check: string;

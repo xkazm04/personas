@@ -778,6 +778,8 @@
     "no_versions": "Zatím žádné verze",
     "versions_auto_edit": "Verze jsou vytvářeny automaticky při úpravě promptu",
     "select_two_compare": "Vyberte dvě verze k porovnání",
+    "compare_runs": "Porovnat běhy",
+    "composite": "Souhrnné skóre",
     "click_a_b_hint": "Klikněte na tlačítka A a B u libovolné verze",
     "run_ab_versions": "Spustit tyto verze v A/B testu",
     "run_check": "Spustit kontrolu",

@@ -1350,6 +1350,8 @@
       "no_versions": "아직 버전 없음",
       "versions_auto_edit": "프롬프트를 편집하면 자동으로 버전이 생성됩니다",
       "select_two_compare": "비교할 두 버전 선택",
+      "compare_runs": "실행 비교",
+      "composite": "종합 점수",
       "click_a_b_hint": "임의 버전의 A 및 B 버튼 클릭",
       "run_ab_versions": "이 버전들로 A/B 테스트 실행",
       "run_check": "검사 실행",

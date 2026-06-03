@@ -778,6 +778,8 @@
     "no_versions": "Belum ada versi",
     "versions_auto_edit": "Versi dibuat otomatis saat Anda mengedit prompt",
     "select_two_compare": "Pilih dua versi untuk dibandingkan",
+    "compare_runs": "Bandingkan proses",
+    "composite": "Komposit",
     "click_a_b_hint": "Klik tombol A dan B pada versi mana pun",
     "run_ab_versions": "Jalankan versi ini dalam uji A/B",
     "run_check": "Jalankan Pemeriksaan",

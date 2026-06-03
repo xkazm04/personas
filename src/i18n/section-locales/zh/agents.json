@@ -778,6 +778,8 @@
     "no_versions": "暂无版本",
     "versions_auto_edit": "编辑提示词时自动创建版本",
     "select_two_compare": "选择两个版本进行比较",
+    "compare_runs": "对比运行",
+    "composite": "综合",
     "click_a_b_hint": "点击任意版本上的 A 和 B 按钮",
     "run_ab_versions": "对这些版本运行 A/B 测试",
     "run_check": "运行检查",

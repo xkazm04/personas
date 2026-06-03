@@ -1350,6 +1350,8 @@
       "no_versions": "Noch keine Versionen",
       "versions_auto_edit": "Versionen werden automatisch erstellt, wenn Sie den Prompt bearbeiten",
       "select_two_compare": "Zwei Versionen zum Vergleich auswählen",
+      "compare_runs": "Durchläufe vergleichen",
+      "composite": "Gesamtwert",
       "click_a_b_hint": "A- und B-Schaltflächen an beliebiger Version anklicken",
       "run_ab_versions": "Diese Versionen im A/B-Test ausführen",
       "run_check": "Check ausführen",

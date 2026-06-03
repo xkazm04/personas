@@ -778,6 +778,8 @@
     "no_versions": "Chưa có phiên bản",
     "versions_auto_edit": "Phiên bản được tạo tự động khi bạn chỉnh sửa prompt",
     "select_two_compare": "Chọn hai phiên bản để so sánh",
+    "compare_runs": "So sánh các lần chạy",
+    "composite": "Tổng hợp",
     "click_a_b_hint": "Nhấp vào nút A và B trên bất kỳ phiên bản nào",
     "run_ab_versions": "Chạy các phiên bản này trong kiểm tra A/B",
     "run_check": "Chạy kiểm tra",

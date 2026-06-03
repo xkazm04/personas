@@ -778,6 +778,8 @@
     "no_versions": "バージョンなし",
     "versions_auto_edit": "プロンプトを編集すると自動でバージョンが作成されます",
     "select_two_compare": "比較する2つのバージョンを選択",
+    "compare_runs": "実行を比較",
+    "composite": "総合スコア",
     "click_a_b_hint": "バージョンのAとBボタンをクリック",
     "run_ab_versions": "これらのバージョンをA/Bテストで実行",
     "run_check": "チェックを実行",

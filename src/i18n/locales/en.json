@@ -1398,6 +1398,8 @@
       "no_versions": "No versions yet",
       "versions_auto_edit": "Versions are created automatically when you edit the prompt",
       "select_two_compare": "Select two versions to compare",
+      "compare_runs": "Compare runs",
+      "composite": "Composite",
       "click_a_b_hint": "Click the A and B buttons on any version",
       "run_ab_versions": "Run these versions in A/B test",
       "run_check": "Run Check",
