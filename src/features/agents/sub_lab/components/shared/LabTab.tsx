@@ -1,13 +1,11 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
-import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap, ShieldCheck, Scale } from 'lucide-react';
+import { lazy, Suspense, useEffect } from 'react';
+import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, ShieldCheck, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from '@/stores/systemStore';
-import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
-import { silentCatch } from '@/lib/silentCatch';
-import { DebtText } from '@/i18n/DebtText';
 import { LabResultsSkeleton } from './LabResultsSkeleton';
+import { AutoOptimizeConfig } from './AutoOptimizeConfig';
 
 
 
@@ -99,7 +97,7 @@ export function LabTab() {
           })}
         </div>
         <div className="pl-2 flex-shrink-0">
-          <AutoOptimizeToggle />
+          <AutoOptimizeConfig />
         </div>
       </div>
 
@@ -114,61 +112,5 @@ export function LabTab() {
         {labMode === 'regression' && <RegressionPanel />}
       </Suspense>
     </div>
-  );
-}
-
-function AutoOptimizeToggle() {
-  const persona = useAgentStore((s) => s.selectedPersona);
-  const [enabled, setEnabled] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const fetchConfig = useCallback(async () => {
-    if (!persona) return;
-    try {
-      const resp = await managementFetch(`/api/settings/auto-optimize/${persona.id}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        setEnabled(data?.data?.enabled || false);
-      }
-    } catch (err) { silentCatch("features/agents/sub_lab/components/shared/LabTab:catch1")(err); }
-  }, [persona]);
-
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
-
-  const toggle = async () => {
-    if (!persona) return;
-    setLoading(true);
-    try {
-      await managementFetch(`/api/settings/auto-optimize/${persona.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          enabled: !enabled,
-          cron: "0 2 * * 0",
-          min_score: 80,
-          models: ["sonnet"],
-        }),
-      });
-      setEnabled(!enabled);
-    } catch (err) { silentCatch("features/agents/sub_lab/components/shared/LabTab:catch2")(err); }
-    setLoading(false);
-  };
-
-  return (
-    <button
-      data-testid="auto-optimize-toggle"
-      onClick={toggle}
-      disabled={loading || !persona}
-      className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border transition-colors ${
-        enabled
-          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-          : 'text-foreground hover:bg-secondary/30 border-primary/10 hover:border-primary/20'
-      }`}
-      title={enabled ? "Auto-optimization enabled (weekly arena + improve)" : "Enable automatic prompt optimization"}
-    >
-      <Zap className={`w-3 h-3 ${enabled ? 'text-emerald-400' : ''}`} />
-      <DebtText k="auto_auto_optimize_14b37f99" />
-      <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
-    </button>
   );
 }

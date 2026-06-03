@@ -1182,6 +1182,11 @@ export type Translations = {
       auto_optimize: string;
       auto_optimize_enabled: string;
       auto_optimize_disabled: string;
+      auto_optimize_schedule: string;
+      auto_optimize_daily: string;
+      auto_optimize_weekly: string;
+      auto_optimize_min_score_label: string;
+      auto_optimize_hint: string;
       phase_drafting: string;
       phase_generating: string;
       phase_executing: string;
