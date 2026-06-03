@@ -29,7 +29,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'development/feature-flag-experiment-analyst.json': '00161084f0ebe683',
   'development/feature-flag-governance-use-case.json': '0003e753113b0ecc',
   'development/lean-codebase-sentinel.json': '000af68557f2d526',
-  'development/qa-guardian.json': '0016c73157fde435',
+  'development/qa-guardian.json': '001a43b97bda94a2',
   'development/real-time-database-watcher.json': '000a8316306b346b',
   'development/self-evolving-codebase-memory.json': '0010964654a6eac8',
   'development/skill-librarian.json': '001715cb96cae02f',
