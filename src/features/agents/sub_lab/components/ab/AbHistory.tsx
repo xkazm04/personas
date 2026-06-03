@@ -1,11 +1,12 @@
 import { useMemo } from 'react';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, Trophy } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LabHistoryTable, type LabHistoryColumn } from '../shared/LabHistoryTable';
 import { LabResultModal } from '../shared/LabResultModal';
 import { ImprovePromptButton } from '../shared/ImprovePromptButton';
 import { ExportReportButton } from '../shared/ExportReportButton';
 import { AbResultsView } from './AbResultsView';
+import { aggregateAbResults } from '../../libs/labAggregation';
 import type { LabAbRun } from '@/lib/bindings/LabAbRun';
 import type { LabAbResult } from '@/lib/bindings/LabAbResult';
 
@@ -20,6 +21,18 @@ interface AbHistoryProps {
 export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onDelete }: AbHistoryProps) {
   const { t } = useTranslation();
   const activeRun = useMemo(() => runs.find((r) => r.id === expandedRunId), [runs, expandedRunId]);
+
+  // Winning version per completed run, so the leader is scannable without expanding.
+  const winnerByRun = useMemo(() => {
+    const m: Record<string, number | null> = {};
+    for (const run of runs) {
+      const res = run.status === 'completed' ? resultsMap[run.id] : undefined;
+      if (!res?.length) { m[run.id] = null; continue; }
+      const { versionAggs, winnerId } = aggregateAbResults(res);
+      m[run.id] = versionAggs.find((a) => a.versionId === winnerId)?.versionNumber ?? null;
+    }
+    return m;
+  }, [runs, resultsMap]);
 
   const columns: LabHistoryColumn<LabAbRun>[] = useMemo(() => [
     {
@@ -39,7 +52,18 @@ export function AbHistory({ runs, resultsMap, expandedRunId, onToggleExpand, onD
       className: 'w-[90px]',
       render: (run) => <span className="typo-body text-foreground">{run.scenariosCount || '--'}</span>,
     },
-  ], [t]);
+    {
+      key: 'winner',
+      label: t.agents.lab.winner,
+      className: 'w-[80px]',
+      render: (run) => {
+        const v = winnerByRun[run.id];
+        return v != null
+          ? <span className="inline-flex items-center gap-1 typo-caption font-mono text-primary"><Trophy className="w-3 h-3" />v{v}</span>
+          : <span className="text-foreground">&mdash;</span>;
+      },
+    },
+  ], [t, winnerByRun]);
 
   return (
     <>
