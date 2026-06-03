@@ -1,17 +1,25 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
+  isStaleIncident,
   severityBadgeClass,
   severityRank,
+  severityShapeStatus,
+  severityUrgencyLabel,
   sourceTableIcon,
   sourceTableLabel,
   relativeTime,
   statusLabel,
 } from '../libs/incidentTaxonomy';
+import { incidentRowSubtext } from '../libs/incidentDetail';
 
 interface Props {
   incident: AuditIncident;
   selected: boolean;
+  /** Keyboard-triage focus — renders a focus ring and is the j/k cursor. */
+  focused?: boolean;
   onSelectChange: (selected: boolean) => void;
   onAcknowledge: () => void;
   onResolve: () => void;
@@ -23,6 +31,7 @@ interface Props {
 export function IncidentRow({
   incident,
   selected,
+  focused = false,
   onSelectChange,
   onAcknowledge,
   onResolve,
@@ -40,6 +49,10 @@ export function IncidentRow({
   // red, medium reads amber, and closed incidents are muted to neutral so the
   // open work stands out.
   const rank = severityRank(incident.severity);
+  // Human-readable inline subtext: prose detail shows, structured (JSON /
+  // key=value) payloads are suppressed here and broken down in the detail modal.
+  const subtext = incidentRowSubtext(incident.detail);
+  const stale = isStaleIncident(incident);
   const accent = isClosed
     ? 'border-l-transparent'
     : rank >= 3
@@ -49,7 +62,12 @@ export function IncidentRow({
         : 'border-l-transparent';
 
   return (
-    <div className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 hover:bg-secondary/20 transition-colors`}>
+    <div
+      id={`incident-row-${incident.id}`}
+      className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 transition-colors ${
+        focused ? 'bg-secondary/30 ring-1 ring-inset ring-primary/40' : 'hover:bg-secondary/20'
+      }`}
+    >
       <input
         type="checkbox"
         checked={selected}
@@ -64,12 +82,25 @@ export function IncidentRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${severityBadgeClass(incident.severity)}`}>
-            {incident.severity}
+          <span className="inline-flex items-center gap-1">
+            <StatusShape
+              status={severityShapeStatus(incident.severity)}
+              size="sm"
+              title={severityUrgencyLabel(t, incident.severity)}
+              aria-label={severityUrgencyLabel(t, incident.severity)}
+            />
+            <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${severityBadgeClass(incident.severity)}`}>
+              {tokenLabel(t, 'severity', incident.severity)}
+            </span>
           </span>
           <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
           {!isOpen && (
             <span className="typo-caption text-foreground">· {statusLabel(t, incident.status)}</span>
+          )}
+          {stale && (
+            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-amber-400/40 text-amber-400">
+              {t.overview.incidents.stale_label}
+            </span>
           )}
         </div>
 
@@ -78,7 +109,7 @@ export function IncidentRow({
           <span>·</span>
           <span>{sourceTableLabel(t, incident.sourceTable)}</span>
           <span>·</span>
-          <span>{relativeTime(t, incident.createdAt)}</span>
+          <span className={stale ? 'text-amber-400' : undefined}>{relativeTime(t, incident.createdAt)}</span>
           {incident.resolvedAt && (
             <>
               <span>·</span>
@@ -89,8 +120,14 @@ export function IncidentRow({
           )}
         </div>
 
-        {incident.detail && (
-          <p className="mt-1 typo-caption text-foreground line-clamp-2">{incident.detail}</p>
+        {subtext && (
+          <p className="mt-1 typo-caption text-foreground line-clamp-1">{subtext}</p>
+        )}
+
+        {isClosed && incident.resolutionNote && (
+          <p className="mt-1 typo-caption text-foreground line-clamp-1">
+            {t.overview.incidents.detail_label_resolution_note}: {incident.resolutionNote}
+          </p>
         )}
       </div>
 

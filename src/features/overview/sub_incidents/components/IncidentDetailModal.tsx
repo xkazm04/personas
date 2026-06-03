@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';
 import { toastCatch } from '@/lib/silentCatch';
@@ -12,10 +15,14 @@ import {
   reopenAuditIncident,
 } from '@/api/overview/incidents';
 import {
+  incidentGuidance,
   severityRank,
+  severityShapeStatus,
+  severityUrgencyLabel,
   sourceTableLabel,
   statusLabel,
 } from '../libs/incidentTaxonomy';
+import { IncidentDetailBreakdown } from './IncidentDetailBreakdown';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
 interface IncidentDetailModalProps {
@@ -26,6 +33,13 @@ interface IncidentDetailModalProps {
 }
 
 type Action = 'start' | 'resolve' | 'dismiss' | 'reopen';
+
+const RESOLUTION_PRESETS = [
+  'preset_fixed',
+  'preset_transient',
+  'preset_known_issue',
+  'preset_not_an_issue',
+] as const;
 
 /**
  * Detail modal for a single audit incident with the full lifecycle
@@ -132,9 +146,25 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
       actions={footer}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <StatusBadge variant={severityVariant}>{incident.severity}</StatusBadge>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge variant={severityVariant}>
+            <span className="inline-flex items-center gap-1.5">
+              <StatusShape status={severityShapeStatus(incident.severity)} size="sm" colorClass="" />
+              {tokenLabel(t, 'severity', incident.severity)}
+            </span>
+          </StatusBadge>
           <StatusBadge variant="neutral">{statusLabel(t, incident.status)}</StatusBadge>
+          <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-card border border-primary/15 bg-primary/5 px-3 py-2">
+          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+          <div className="min-w-0">
+            <span className="typo-overline text-foreground block">
+              {t.overview.incidents.guidance_label}
+            </span>
+            <p className="typo-body text-foreground">{incidentGuidance(t, incident.sourceTable)}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">
@@ -164,17 +194,15 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
         </div>
 
         <div>
-          <h3 className="typo-overline text-foreground/60 mb-1">
+          <h3 className="typo-overline text-foreground mb-1">
             {t.overview.incidents.detail_label_detail}
           </h3>
-          <p className="typo-body text-foreground whitespace-pre-wrap break-words">
-            {incident.detail ?? t.overview.incidents.detail_no_detail}
-          </p>
+          <IncidentDetailBreakdown detail={incident.detail} />
         </div>
 
         {incident.resolutionNote && (
           <div>
-            <h3 className="typo-overline text-foreground/60 mb-1">
+            <h3 className="typo-overline text-foreground mb-1">
               {t.overview.incidents.detail_label_resolution_note}
             </h3>
             <p className="typo-body text-foreground whitespace-pre-wrap break-words">
@@ -187,10 +215,22 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
           <div>
             <label
               htmlFor="incident-resolution-note"
-              className="typo-overline text-foreground/60 mb-1 block"
+              className="typo-overline text-foreground mb-1 block"
             >
               {t.overview.incidents.detail_note_label}
             </label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {RESOLUTION_PRESETS.map((presetKey) => (
+                <button
+                  key={presetKey}
+                  type="button"
+                  onClick={() => setNote(t.overview.incidents[presetKey])}
+                  className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+                >
+                  {t.overview.incidents[presetKey]}
+                </button>
+              ))}
+            </div>
             <textarea
               id="incident-resolution-note"
               value={note}
@@ -209,7 +249,7 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground/60 mb-1">{label}</h3>
+      <h3 className="typo-overline text-foreground mb-1">{label}</h3>
       <span className="typo-body text-foreground">{children}</span>
     </div>
   );
