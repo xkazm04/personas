@@ -1,4 +1,6 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import { sourceTableLabel } from '../libs/incidentTaxonomy';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 
 interface Props {
@@ -72,6 +74,7 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
         options={SEVERITY_OPTIONS as readonly string[]}
         selected={filters.severities ?? []}
         onChange={setSeverities}
+        labelFor={(option) => tokenLabel(t, 'severity', option)}
       />
 
       <div className="h-5 w-px bg-primary/10" />
@@ -83,6 +86,7 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
         options={SOURCE_OPTIONS as readonly string[]}
         selected={filters.source_tables ?? []}
         onChange={setSourceTables}
+        labelFor={(option) => sourceTableLabel(t, option)}
       />
     </div>
   );
@@ -94,9 +98,11 @@ interface MultiSelectChipsProps {
   options: readonly string[];
   selected: string[];
   onChange: (next: string[]) => void;
+  /** Resolve an option token to its friendly, user-facing label. */
+  labelFor: (option: string) => string;
 }
 
-function MultiSelectChips({ label, allLabel, options, selected, onChange }: MultiSelectChipsProps) {
+function MultiSelectChips({ label, allLabel, options, selected, onChange, labelFor }: MultiSelectChipsProps) {
   const toggle = (value: string) => {
     if (selected.includes(value)) {
       onChange(selected.filter((v) => v !== value));
@@ -131,7 +137,7 @@ function MultiSelectChips({ label, allLabel, options, selected, onChange }: Mult
                 : 'text-foreground border-transparent hover:bg-secondary/40'
             }`}
           >
-            {option}
+            {labelFor(option)}
           </button>
         );
       })}
