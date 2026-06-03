@@ -18,6 +18,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
 
+use futures_util::StreamExt;
 use serde::Serialize;
 use serde_json::Value;
 use tauri::{AppHandle, State};
@@ -27,7 +28,7 @@ use crate::db::repos::resources::credentials as cred_repo;
 use crate::error::AppError;
 use crate::AppState;
 
-use super::persona_icons::store_icon_bytes;
+use super::persona_icons::{store_icon_bytes, MAX_SOURCE_BYTES};
 
 /// Vault connector `service_type`s that can generate images. The `ai`
 /// connector category is too broad (it includes vision/analysis connectors),
@@ -277,7 +278,16 @@ async fn poll_for_image(
     )))
 }
 
-/// Download an image URL into bytes. `store_icon_bytes` enforces the size cap.
+/// Download an image URL into bytes, enforcing `MAX_SOURCE_BYTES` *during* the
+/// read.
+///
+/// The URL comes from `find_image_url` walking an external provider's JSON, so a
+/// buggy or compromised provider, a CDN redirect, or an oversized original could
+/// otherwise stream unbounded bytes into RAM and OOM the desktop app — the
+/// post-download cap in `store_icon_bytes` only fires *after* the whole body is
+/// already buffered. We reject early on an oversized `Content-Length`, then
+/// guard the streamed body chunk-by-chunk because the header may be absent or
+/// untruthful.
 async fn download_image(client: &reqwest::Client, url: &str) -> Result<Vec<u8>, AppError> {
     let resp = client
         .get(url)
@@ -290,11 +300,45 @@ async fn download_image(client: &reqwest::Client, url: &str) -> Result<Vec<u8>, 
             resp.status()
         )));
     }
-    let bytes = resp
-        .bytes()
-        .await
-        .map_err(|e| AppError::Internal(format!("Image download read failed: {e}")))?;
-    Ok(bytes.to_vec())
+
+    // Refuse before reading a single byte when the provider advertises an
+    // oversized body.
+    if let Some(len) = resp.content_length() {
+        if len > MAX_SOURCE_BYTES {
+            return Err(image_too_large());
+        }
+    }
+
+    // Stream the body, capping as bytes arrive — this is the real guard, since
+    // the Content-Length header can lie or be omitted entirely.
+    let mut buf: Vec<u8> = Vec::new();
+    let mut stream = resp.bytes_stream();
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk
+            .map_err(|e| AppError::Internal(format!("Image download read failed: {e}")))?;
+        push_capped(&mut buf, &chunk)?;
+    }
+    Ok(buf)
+}
+
+/// Append `chunk` to `buf`, erroring out the moment the running total would
+/// exceed `MAX_SOURCE_BYTES`. Pulled out of the stream loop so the cap logic is
+/// unit-testable without a live HTTP server.
+fn push_capped(buf: &mut Vec<u8>, chunk: &[u8]) -> Result<(), AppError> {
+    if buf.len() as u64 + chunk.len() as u64 > MAX_SOURCE_BYTES {
+        return Err(image_too_large());
+    }
+    buf.extend_from_slice(chunk);
+    Ok(())
+}
+
+/// The "image exceeds the cap" error, phrased the same way for both the
+/// early `Content-Length` rejection and the mid-stream abort.
+fn image_too_large() -> AppError {
+    AppError::Validation(format!(
+        "Generated image exceeds the {} MB limit.",
+        MAX_SOURCE_BYTES / (1024 * 1024),
+    ))
 }
 
 /// Recursively search a JSON value for the first non-empty string stored under
@@ -378,5 +422,29 @@ mod tests {
             "generations_by_pk": { "status": "PENDING", "generated_images": [] }
         });
         assert_eq!(find_image_url(&v), None);
+    }
+
+    #[test]
+    fn push_capped_accumulates_under_the_limit() {
+        let mut buf = Vec::new();
+        let chunk = vec![0u8; 1024 * 1024]; // 1 MB
+        for _ in 0..9 {
+            push_capped(&mut buf, &chunk).expect("under cap");
+        }
+        assert_eq!(buf.len(), 9 * 1024 * 1024);
+    }
+
+    #[test]
+    fn push_capped_rejects_when_crossing_the_limit() {
+        let mut buf = Vec::new();
+        let chunk = vec![0u8; 1024 * 1024]; // 1 MB
+        for _ in 0..10 {
+            push_capped(&mut buf, &chunk).expect("first 10 MB allowed");
+        }
+        // The 11th chunk pushes past MAX_SOURCE_BYTES (10 MB) and must error
+        // without growing the buffer further.
+        let err = push_capped(&mut buf, &chunk).expect_err("should exceed cap");
+        assert!(matches!(err, AppError::Validation(_)));
+        assert_eq!(buf.len(), 10 * 1024 * 1024);
     }
 }
