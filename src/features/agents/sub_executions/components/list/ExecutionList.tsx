@@ -14,7 +14,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useExecutionList, getSampleInput } from '../../libs/useExecutionList';
 import { ExecutionListFilters } from './ExecutionListFilters';
 import { ExecutionListRow } from './ExecutionListRow';
-import ContentLoader from '@/features/shared/components/progress/ContentLoader';
+import { TableSkeleton, type TableSkeletonColumn } from '@/features/shared/components/layout/TableSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSelectedUseCases } from '@/stores/selectors/personaSelectors';
 import { createLogger } from '@/lib/log';
@@ -25,6 +25,18 @@ import { useExecutionAnnotations } from '@/hooks/agents/useExecutionAnnotations'
 import { Star } from 'lucide-react';
 
 const logger = createLogger('execution-list');
+
+// Mirrors the default (non-compare / non-bulk) execution table grid below so the
+// loading skeleton lands in the same geometry as the real rows — status pill,
+// capability, duration, started, tokens, cost (each col-span-2 → 12 cols).
+const EXECUTION_TABLE_SKELETON_COLUMNS: TableSkeletonColumn[] = [
+  { span: 'col-span-2', width: 'w-16' },                 // status pill
+  { span: 'col-span-2', width: 'w-full max-w-[120px]' }, // capability
+  { span: 'col-span-2', width: 'w-12' },                 // duration
+  { span: 'col-span-2', width: 'w-20' },                 // started
+  { span: 'col-span-2', width: 'w-16' },                 // tokens
+  { span: 'col-span-2', width: 'w-14' },                 // cost
+];
 
 export function ExecutionList() {
   const { t } = useTranslation();
@@ -263,7 +275,20 @@ export function ExecutionList() {
   }
 
   if (loading) {
-    return <ContentLoader variant="panel" hint="executions" />;
+    // Shape-matched skeleton: same card chrome + 12-col grid as the real table
+    // below, so loaded rows swap in without a layout shift (no spinner-then-pop).
+    return (
+      <div className="space-y-3">
+        <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
+          <TableSkeleton
+            columns={EXECUTION_TABLE_SKELETON_COLUMNS}
+            rows={6}
+            rowPaddingY={densityTokens.rowPaddingY}
+            headerPaddingY={densityTokens.headerPaddingY}
+          />
+        </div>
+      </div>
+    );
   }
 
   if (showComparison && leftExec && rightExec) {
