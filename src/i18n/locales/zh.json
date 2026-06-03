@@ -1356,6 +1356,8 @@
       "error_rate_rollback_hint": "若提示词变更后错误率超过 50%，请使用版本列表回滚到生产版本。",
       "actions_label": "操作",
       "promote_to_production": "推广至生产环境",
+      "set_as_baseline": "设为基线",
+      "in_production": "已在生产环境",
       "unarchive_action": "取消归档",
       "rollback_to_this": "回滚至此版本",
       "pin_as_baseline": "设为基线",

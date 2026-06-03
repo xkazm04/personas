@@ -1356,6 +1356,8 @@
       "error_rate_rollback_hint": "プロンプト変更後にエラーレートが50%を超えた場合、バージョンリストから本番バージョンにロールバックしてください。",
       "actions_label": "アクション",
       "promote_to_production": "本番にプロモート",
+      "set_as_baseline": "ベースラインに設定",
+      "in_production": "本番稼働中",
       "unarchive_action": "アーカイブ解除",
       "rollback_to_this": "このバージョンにロールバック",
       "pin_as_baseline": "ベースラインとしてピン留め",

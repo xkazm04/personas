@@ -1356,6 +1356,8 @@
       "error_rate_rollback_hint": "Wenn die Fehlerrate nach einer Prompt-Änderung 50% überschreitet, zur Produktionsversion zurücksetzen.",
       "actions_label": "Aktionen",
       "promote_to_production": "Zur Produktion befördern",
+      "set_as_baseline": "Als Baseline festlegen",
+      "in_production": "In Produktion",
       "unarchive_action": "Dearchivieren",
       "rollback_to_this": "Auf diese Version zurücksetzen",
       "pin_as_baseline": "Als Baseline markieren",

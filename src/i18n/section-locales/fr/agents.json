@@ -784,6 +784,8 @@
     "error_rate_rollback_hint": "Si le taux d'erreur dépasse 50% après un changement de prompt, restaurez la version de production via la liste des versions.",
     "actions_label": "Actions",
     "promote_to_production": "Promouvoir en production",
+    "set_as_baseline": "Définir comme référence",
+    "in_production": "En production",
     "unarchive_action": "Désarchiver",
     "rollback_to_this": "Restaurer cette version",
     "pin_as_baseline": "Épingler comme référence",

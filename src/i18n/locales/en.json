@@ -1404,6 +1404,8 @@
       "error_rate_rollback_hint": "If error rate exceeds 50% after a prompt change, rollback to the production version using the version list.",
       "actions_label": "Actions",
       "promote_to_production": "Promote to Production",
+      "set_as_baseline": "Set as baseline",
+      "in_production": "In production",
       "unarchive_action": "Unarchive",
       "rollback_to_this": "Rollback to this",
       "pin_as_baseline": "Pin as Baseline",

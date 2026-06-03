@@ -784,6 +784,8 @@
     "error_rate_rollback_hint": "إذا تجاوز معدل الخطأ 50% بعد تغيير التعليمات، استرجع إلى إصدار الإنتاج.",
     "actions_label": "الإجراءات",
     "promote_to_production": "ترقية للإنتاج",
+    "set_as_baseline": "تعيين كخط أساس",
+    "in_production": "في الإنتاج",
     "unarchive_action": "إلغاء الأرشفة",
     "rollback_to_this": "استرجاع لهذا",
     "pin_as_baseline": "تثبيت كخط أساسي",

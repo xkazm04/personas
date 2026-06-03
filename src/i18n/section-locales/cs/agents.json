@@ -784,6 +784,8 @@
     "error_rate_rollback_hint": "Pokud chybovost po změně promptu překročí 50 %, vraťte se k produkční verzi pomocí seznamu verzí.",
     "actions_label": "Akce",
     "promote_to_production": "Povýšit do produkce",
+    "set_as_baseline": "Nastavit jako základní verzi",
+    "in_production": "V produkci",
     "unarchive_action": "Obnovit z archivu",
     "rollback_to_this": "Vrátit na tuto verzi",
     "pin_as_baseline": "Připnout jako základ",

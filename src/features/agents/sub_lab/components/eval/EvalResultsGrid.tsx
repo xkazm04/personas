@@ -8,6 +8,7 @@ import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
 import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
+import { WinnerCallout } from '../shared/WinnerCallout';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
@@ -83,7 +84,7 @@ function collectSuggestions(results: LabEvalResult[], limit = 3): string[] {
   return out.slice(0, limit);
 }
 
-export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate, loading }: Props) {
+export function EvalResultsGrid({ results, runId, userRatings, onRate, loading }: Props) {
   const { t } = useTranslation();
   const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; versionId: string; modelId: string } | null>(null);
@@ -109,6 +110,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate, l
   const summary = useMemo(() => buildSummary(versionAggs, winnerId, scenarios.length), [versionAggs, winnerId, scenarios.length]);
   const insights = useMemo(() => collectTopInsights(results), [results]);
   const suggestions = useMemo(() => collectSuggestions(results), [results]);
+  const winnerAgg = versionAggs.find((a) => a.versionId === winnerId) ?? null;
 
   const selectedResult = selectedCell
     ? scenarioMatrix[selectedCell.scenario]?.[selectedCell.versionId]?.[selectedCell.modelId]
@@ -154,6 +156,13 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate, l
           )}
         </div>
       </div>
+
+      <WinnerCallout
+        versionId={winnerId}
+        versionNumber={winnerAgg?.versionNumber ?? null}
+        score={winnerAgg?.compositeScore ?? null}
+        runId={runId}
+      />
 
       <EvalVersionCards versionAggs={versionAggs} winnerId={winnerId} celebrateWinnerId={celebrateWinnerId} />
       <EvalRadarChart versionAggs={versionAggs} />

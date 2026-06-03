@@ -1410,6 +1410,8 @@ export type Translations = {
       error_rate_rollback_hint: string;
       actions_label: string;
       promote_to_production: string;
+      set_as_baseline: string;
+      in_production: string;
       unarchive_action: string;
       rollback_to_this: string;
       pin_as_baseline: string;

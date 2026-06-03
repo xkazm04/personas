@@ -1356,6 +1356,8 @@
       "error_rate_rollback_hint": "Nếu tỷ lệ lỗi vượt 50% sau khi thay đổi prompt, hãy khôi phục về phiên bản production.",
       "actions_label": "Hành động",
       "promote_to_production": "Thăng cấp lên production",
+      "set_as_baseline": "Đặt làm chuẩn",
+      "in_production": "Đang ở production",
       "unarchive_action": "Bỏ lưu trữ",
       "rollback_to_this": "Khôi phục về phiên bản này",
       "pin_as_baseline": "Ghim làm baseline",

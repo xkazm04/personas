@@ -784,6 +784,8 @@
     "error_rate_rollback_hint": "Jika tingkat kesalahan melebihi 50% setelah perubahan prompt, kembalikan ke versi produksi menggunakan daftar versi.",
     "actions_label": "Tindakan",
     "promote_to_production": "Promosikan ke Produksi",
+    "set_as_baseline": "Tetapkan sebagai dasar",
+    "in_production": "Di produksi",
     "unarchive_action": "Batalkan Arsip",
     "rollback_to_this": "Kembalikan ke ini",
     "pin_as_baseline": "Sematkan sebagai Baseline",

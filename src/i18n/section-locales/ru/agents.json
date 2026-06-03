@@ -784,6 +784,8 @@
     "error_rate_rollback_hint": "Если частота ошибок превышает 50% после изменения промпта, откатитесь к продуктивной версии.",
     "actions_label": "Действия",
     "promote_to_production": "Продвинуть в продуктив",
+    "set_as_baseline": "Сделать эталоном",
+    "in_production": "В продуктиве",
     "unarchive_action": "Разархивировать",
     "rollback_to_this": "Откатить к этой",
     "pin_as_baseline": "Закрепить как базовую",

@@ -784,6 +784,8 @@
     "error_rate_rollback_hint": "프롬프트 변경 후 오류율이 50%를 초과하면 버전 목록에서 프로덕션 버전으로 롤백하세요.",
     "actions_label": "작업",
     "promote_to_production": "프로덕션으로 승격",
+    "set_as_baseline": "기준선으로 설정",
+    "in_production": "프로덕션 중",
     "unarchive_action": "보관 해제",
     "rollback_to_this": "이 버전으로 롤백",
     "pin_as_baseline": "기준선으로 고정",
