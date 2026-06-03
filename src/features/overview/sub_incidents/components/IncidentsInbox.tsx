@@ -11,6 +11,7 @@ import { useIncidentsData } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
+import { IncidentSeverityLegend } from './IncidentSeverityLegend';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
 import { IncidentAgentGroup } from './IncidentAgentGroup';
@@ -159,9 +160,11 @@ export default function IncidentsInbox() {
       />
 
       <ContentBody>
-        <div className="px-4 py-3">
+        <div className="px-4 pt-3 pb-2">
           <IncidentsInboxKpiHeader summary={summary} />
         </div>
+
+        <IncidentSeverityLegend />
 
         <IncidentsFilterBar filters={filters} onChange={setFilters} />
 
