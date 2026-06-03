@@ -3,6 +3,7 @@ import { tokenLabel } from '@/i18n/tokenMaps';
 import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
+  isStaleIncident,
   severityBadgeClass,
   severityRank,
   severityShapeStatus,
@@ -51,6 +52,7 @@ export function IncidentRow({
   // Human-readable inline subtext: prose detail shows, structured (JSON /
   // key=value) payloads are suppressed here and broken down in the detail modal.
   const subtext = incidentRowSubtext(incident.detail);
+  const stale = isStaleIncident(incident);
   const accent = isClosed
     ? 'border-l-transparent'
     : rank >= 3
@@ -95,6 +97,11 @@ export function IncidentRow({
           {!isOpen && (
             <span className="typo-caption text-foreground">· {statusLabel(t, incident.status)}</span>
           )}
+          {stale && (
+            <span className="typo-caption px-1.5 py-0.5 rounded-card border border-amber-400/40 text-amber-400">
+              {t.overview.incidents.stale_label}
+            </span>
+          )}
         </div>
 
         <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 typo-caption text-foreground">
@@ -102,7 +109,7 @@ export function IncidentRow({
           <span>·</span>
           <span>{sourceTableLabel(t, incident.sourceTable)}</span>
           <span>·</span>
-          <span>{relativeTime(t, incident.createdAt)}</span>
+          <span className={stale ? 'text-amber-400' : undefined}>{relativeTime(t, incident.createdAt)}</span>
           {incident.resolvedAt && (
             <>
               <span>·</span>

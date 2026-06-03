@@ -5135,6 +5135,9 @@
       "in_window": "في النافذة"
     },
     "incidents": {
+      "stale_label": "متأخر",
+      "sort_newest": "الأحدث",
+      "sort_oldest": "الأقدم",
       "a11y_position": "{current} من {total}",
       "a11y_acknowledged": "تم الإقرار",
       "a11y_resolved": "تم الحل",

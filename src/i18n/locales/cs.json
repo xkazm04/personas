@@ -5135,6 +5135,9 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "stale_label": "Zaseknuté",
+      "sort_newest": "Nejnovější",
+      "sort_oldest": "Nejstarší",
       "a11y_position": "{current} z {total}",
       "a11y_acknowledged": "Potvrzeno",
       "a11y_resolved": "Vyřešeno",

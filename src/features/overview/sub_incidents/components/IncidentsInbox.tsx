@@ -38,6 +38,7 @@ export default function IncidentsInbox() {
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [announcement, setAnnouncement] = useState('');
+  const [oldestFirst, setOldestFirst] = useState(false);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
@@ -124,7 +125,10 @@ export default function IncidentsInbox() {
 
   // Group open incidents by the agent they belong to so the inbox answers
   // "which of my agents needs me?" — worst-severity agents float to the top.
-  const groups = useMemo(() => groupIncidentsByAgent(incidents), [incidents]);
+  const groups = useMemo(
+    () => groupIncidentsByAgent(incidents, oldestFirst),
+    [incidents, oldestFirst],
+  );
 
   // Persist collapsed groups so a tidied inbox stays tidy across refresh/reopen.
   useEffect(() => {
@@ -336,8 +340,32 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div>
-            {groups.length > 1 && (
-              <div className="flex justify-end px-4 py-1.5">
+            <div className="flex items-center justify-between px-4 py-1.5">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setOldestFirst(false)}
+                  className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                    !oldestFirst
+                      ? 'bg-primary/15 text-primary border-primary/25'
+                      : 'text-foreground border-transparent hover:bg-secondary/40'
+                  }`}
+                >
+                  {t.overview.incidents.sort_newest}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOldestFirst(true)}
+                  className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                    oldestFirst
+                      ? 'bg-primary/15 text-primary border-primary/25'
+                      : 'text-foreground border-transparent hover:bg-secondary/40'
+                  }`}
+                >
+                  {t.overview.incidents.sort_oldest}
+                </button>
+              </div>
+              {groups.length > 1 && (
                 <button
                   type="button"
                   onClick={toggleAllGroups}
@@ -347,8 +375,8 @@ export default function IncidentsInbox() {
                     ? t.overview.incidents.groups_expand_all
                     : t.overview.incidents.groups_collapse_all}
                 </button>
-              </div>
-            )}
+              )}
+            </div>
             {groups.map((group) => (
               <IncidentAgentGroup
                 key={group.key}

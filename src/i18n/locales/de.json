@@ -5135,6 +5135,9 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "stale_label": "Überfällig",
+      "sort_newest": "Neueste",
+      "sort_oldest": "Älteste",
       "a11y_position": "{current} von {total}",
       "a11y_acknowledged": "Bestätigt",
       "a11y_resolved": "Gelöst",

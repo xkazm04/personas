@@ -20,7 +20,10 @@ const NO_AGENT_KEY = '__none__';
  * by volume, then name; the agent-less bucket always sorts last. Incident order
  * within a group is preserved (the backend already returns newest-first).
  */
-export function groupIncidentsByAgent(incidents: AuditIncident[]): IncidentGroup[] {
+export function groupIncidentsByAgent(
+  incidents: AuditIncident[],
+  oldestFirst = false,
+): IncidentGroup[] {
   const map = new Map<string, IncidentGroup>();
   for (const inc of incidents) {
     const key = inc.personaId ?? NO_AGENT_KEY;
@@ -40,6 +43,16 @@ export function groupIncidentsByAgent(incidents: AuditIncident[]): IncidentGroup
     if (severityRank(inc.severity) > severityRank(group.worstSeverity)) {
       group.worstSeverity = inc.severity;
     }
+  }
+
+  // Order incidents within each group by recency (or oldest-first, to surface
+  // incidents that have been waiting the longest).
+  for (const group of map.values()) {
+    group.incidents.sort((a, b) => {
+      const da = new Date(a.createdAt).getTime();
+      const db = new Date(b.createdAt).getTime();
+      return oldestFirst ? da - db : db - da;
+    });
   }
 
   return Array.from(map.values()).sort((a, b) => {

@@ -5135,6 +5135,9 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "stale_label": "Tồn đọng",
+      "sort_newest": "Mới nhất",
+      "sort_oldest": "Cũ nhất",
       "a11y_position": "{current} trên {total}",
       "a11y_acknowledged": "Đã ghi nhận",
       "a11y_resolved": "Đã giải quyết",

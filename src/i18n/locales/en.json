@@ -5269,6 +5269,9 @@
       "in_window": "in window"
     },
     "incidents": {
+      "stale_label": "Stale",
+      "sort_newest": "Newest",
+      "sort_oldest": "Oldest",
       "a11y_position": "{current} of {total}",
       "a11y_acknowledged": "Acknowledged",
       "a11y_resolved": "Resolved",

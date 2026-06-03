@@ -5135,6 +5135,9 @@
       "in_window": "উইন্ডোতে"
     },
     "incidents": {
+      "stale_label": "পুরোনো",
+      "sort_newest": "সর্বনবীন",
+      "sort_oldest": "সবচেয়ে পুরোনো",
       "a11y_position": "{total} এর {current}",
       "a11y_acknowledged": "স্বীকৃত",
       "a11y_resolved": "সমাধান করা হয়েছে",

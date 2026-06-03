@@ -5135,6 +5135,9 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "stale_label": "Tertunda",
+      "sort_newest": "Terbaru",
+      "sort_oldest": "Terlama",
       "a11y_position": "{current} dari {total}",
       "a11y_acknowledged": "Dikonfirmasi",
       "a11y_resolved": "Diselesaikan",

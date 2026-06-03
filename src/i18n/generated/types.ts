@@ -5275,6 +5275,9 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      stale_label: string;
+      sort_newest: string;
+      sort_oldest: string;
       a11y_position: string;
       a11y_acknowledged: string;
       a11y_resolved: string;

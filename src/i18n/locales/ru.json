@@ -5135,6 +5135,9 @@
       "in_window": "в окне"
     },
     "incidents": {
+      "stale_label": "Залежалось",
+      "sort_newest": "Новые",
+      "sort_oldest": "Старые",
       "a11y_position": "{current} из {total}",
       "a11y_acknowledged": "Подтверждено",
       "a11y_resolved": "Решено",

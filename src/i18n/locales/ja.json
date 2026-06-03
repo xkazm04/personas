@@ -5135,6 +5135,9 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "stale_label": "滞留",
+      "sort_newest": "新しい順",
+      "sort_oldest": "古い順",
       "a11y_position": "{total} 件中 {current} 件目",
       "a11y_acknowledged": "確認済み",
       "a11y_resolved": "解決済み",

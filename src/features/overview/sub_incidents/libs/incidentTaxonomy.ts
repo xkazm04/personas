@@ -125,6 +125,20 @@ export function statusLabel(t: Translations, status: string): string {
   }
 }
 
+/** Active incidents open longer than this read as "stale" and get an age cue. */
+export const STALE_THRESHOLD_MS = 3 * 24 * 3_600_000;
+
+/**
+ * True when an incident is still active and has been open past the stale
+ * threshold — surfaced so long-waiting work doesn't rot unseen.
+ */
+export function isStaleIncident(incident: { status: string; createdAt: string }): boolean {
+  if (incident.status === 'resolved' || incident.status === 'dismissed') return false;
+  const ts = new Date(incident.createdAt).getTime();
+  if (Number.isNaN(ts)) return false;
+  return Date.now() - ts >= STALE_THRESHOLD_MS;
+}
+
 export function relativeTime(t: Translations, isoTimestamp: string): string {
   const ts = new Date(isoTimestamp).getTime();
   if (Number.isNaN(ts)) return isoTimestamp;
