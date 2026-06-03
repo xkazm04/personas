@@ -5135,6 +5135,7 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "detail_raw_toggle": "Data mentah",
       "title": "Insiden",
       "subtitle": "Kotak triase lintas sumber untuk peringatan, kesalahan alat, kegagalan kredensial, kegagalan pemulihan, dan pelanggaran kebijakan",
       "kpi_open": "Terbuka",

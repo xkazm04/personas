@@ -16,6 +16,7 @@ import {
   sourceTableLabel,
   statusLabel,
 } from '../libs/incidentTaxonomy';
+import { IncidentDetailBreakdown } from './IncidentDetailBreakdown';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
 interface IncidentDetailModalProps {
@@ -164,17 +165,15 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
         </div>
 
         <div>
-          <h3 className="typo-overline text-foreground/60 mb-1">
+          <h3 className="typo-overline text-foreground mb-1">
             {t.overview.incidents.detail_label_detail}
           </h3>
-          <p className="typo-body text-foreground whitespace-pre-wrap break-words">
-            {incident.detail ?? t.overview.incidents.detail_no_detail}
-          </p>
+          <IncidentDetailBreakdown detail={incident.detail} />
         </div>
 
         {incident.resolutionNote && (
           <div>
-            <h3 className="typo-overline text-foreground/60 mb-1">
+            <h3 className="typo-overline text-foreground mb-1">
               {t.overview.incidents.detail_label_resolution_note}
             </h3>
             <p className="typo-body text-foreground whitespace-pre-wrap break-words">
@@ -187,7 +186,7 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
           <div>
             <label
               htmlFor="incident-resolution-note"
-              className="typo-overline text-foreground/60 mb-1 block"
+              className="typo-overline text-foreground mb-1 block"
             >
               {t.overview.incidents.detail_note_label}
             </label>
@@ -209,7 +208,7 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground/60 mb-1">{label}</h3>
+      <h3 className="typo-overline text-foreground mb-1">{label}</h3>
       <span className="typo-body text-foreground">{children}</span>
     </div>
   );

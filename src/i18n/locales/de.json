@@ -5135,6 +5135,7 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "detail_raw_toggle": "Rohdaten",
       "title": "Vorfälle",
       "subtitle": "Quellenübergreifender Triage-Posteingang für Warnungen, Toolfehler, fehlgeschlagene Zugangsdaten, Healing-Ausfälle und Richtlinien-Drops",
       "kpi_open": "Offen",

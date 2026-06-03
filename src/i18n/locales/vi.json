@@ -5135,6 +5135,7 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "detail_raw_toggle": "Dữ liệu thô",
       "title": "Sự cố",
       "subtitle": "Hộp phân loại liên nguồn cho cảnh báo, lỗi công cụ, lỗi thông tin xác thực, lần tự sửa bị bỏ lỡ và chặn bởi chính sách",
       "kpi_open": "Đang mở",

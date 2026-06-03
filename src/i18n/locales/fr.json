@@ -5135,6 +5135,7 @@
       "in_window": "dans la fenêtre"
     },
     "incidents": {
+      "detail_raw_toggle": "Données brutes",
       "title": "Incidents",
       "subtitle": "Boîte de tri intersources pour alertes, erreurs d'outils, échecs d'identifiants, échecs de correction et rejets de politiques",
       "kpi_open": "Ouverts",

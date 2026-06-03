@@ -5275,6 +5275,7 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      detail_raw_toggle: string;
       title: string;
       subtitle: string;
       kpi_open: string;

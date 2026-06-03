@@ -5135,6 +5135,7 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "detail_raw_toggle": "Nezpracovaná data",
       "title": "Incidenty",
       "subtitle": "Třídicí schránka pro upozornění, chyby nástrojů, selhání přihlašovacích údajů, nezdařená léčení a zásahy zásad",
       "kpi_open": "Otevřené",

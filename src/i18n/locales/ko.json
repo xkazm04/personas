@@ -5135,6 +5135,7 @@
       "in_window": "기간 내"
     },
     "incidents": {
+      "detail_raw_toggle": "원시 데이터",
       "title": "인시던트",
       "subtitle": "알림, 도구 오류, 자격 증명 실패, 복구 누락, 정책 차단을 한곳에서 분류하는 수신함",
       "kpi_open": "열림",
