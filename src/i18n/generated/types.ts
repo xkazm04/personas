@@ -468,6 +468,11 @@ export type Translations = {
     summary_stats: string;
     quick_navigation: string;
     platform_label: string;
+    resume: {
+      failure: string;
+      tour: string;
+      edit: string;
+    };
     roadmap: {
       title: string;
       subtitle: string;
@@ -601,6 +606,106 @@ export type Translations = {
     };
   };
   agents: {
+    design_subtabs: {
+      use_cases: string;
+      prompt: string;
+      connectors: string;
+      triggers: string;
+      messaging: string;
+      automations: string;
+      triggers_desc: string;
+      messaging_desc: string;
+      automations_desc: string;
+    };
+    parameters_card: {
+      title: string;
+      saved: string;
+      apply: string;
+      on: string;
+      off: string;
+      reset: string;
+    };
+    editor_empty: {
+      title: string;
+      subtitle: string;
+      create: string;
+      resume_label: string;
+    };
+    build_template_match_label: string;
+    build_template_match_title: string;
+    build_template_match_body: string;
+    build_template_match_adopt: string;
+    build_template_match_dismiss: string;
+    build_template_match_loading: string;
+    build_template_match_more: string;
+    glyph_apps_subtitle_empty: string;
+    glyph_apps_selected_one: string;
+    glyph_apps_selected_other: string;
+    glyph_apps_clear: string;
+    glyph_apps_attach_one: string;
+    glyph_apps_attach_other: string;
+    glyph_apps_empty_none: string;
+    glyph_apps_empty_no_match: string;
+    glyph_apps_selected_label: string;
+    glyph_apps_remove: string;
+    glyph_apps_filter: string;
+    glyph_apps_hide_filters: string;
+    glyph_apps_show_filters: string;
+    glyph_sched_title_daily: string;
+    glyph_sched_title_weekly: string;
+    glyph_sched_title_monthly: string;
+    glyph_sched_cap_once: string;
+    glyph_sched_cap_daily: string;
+    glyph_sched_cap_weekly: string;
+    glyph_sched_cap_monthly: string;
+    glyph_sched_preview_manual: string;
+    glyph_sched_preview_daily: string;
+    glyph_sched_preview_weekly: string;
+    glyph_sched_preview_weekly_empty: string;
+    glyph_sched_preview_monthly: string;
+    glyph_promoted_ready: string;
+    glyph_build_awaiting: string;
+    glyph_build_beat_understanding: string;
+    glyph_build_beat_designing: string;
+    glyph_build_beat_wiring: string;
+    glyph_build_beat_assembling: string;
+    glyph_open: string;
+    glyph_refine: string;
+    glyph_cap_remembers: string;
+    glyph_cap_restore: string;
+    glyph_cap_split: string;
+    glyph_cap_remove: string;
+    glyph_cap_count_one: string;
+    glyph_cap_count_other: string;
+    glyph_cap_events_other: string;
+    glyph_cap_review_always: string;
+    glyph_cap_review_auto_triage: string;
+    glyph_cap_review_low_confidence: string;
+    glyph_cap_review_auto_publish: string;
+    glyph_cap_trigger_manual: string;
+    glyph_cap_trigger_polling: string;
+    glyph_launch: string;
+    glyph_intent_placeholder: string;
+    glyph_dim_label: {
+      trigger: string;
+      task: string;
+      connector: string;
+      message: string;
+      review: string;
+      memory: string;
+      event: string;
+      error: string;
+    };
+    glyph_dim_desc: {
+      trigger: string;
+      task: string;
+      connector: string;
+      message: string;
+      review: string;
+      memory: string;
+      event: string;
+      error: string;
+    };
     title: string;
     loading: string;
     persona_decisions_footer_one: string;
@@ -1107,6 +1212,11 @@ export type Translations = {
       auto_optimize: string;
       auto_optimize_enabled: string;
       auto_optimize_disabled: string;
+      auto_optimize_schedule: string;
+      auto_optimize_daily: string;
+      auto_optimize_weekly: string;
+      auto_optimize_min_score_label: string;
+      auto_optimize_hint: string;
       phase_drafting: string;
       phase_generating: string;
       phase_executing: string;
@@ -1192,6 +1302,7 @@ export type Translations = {
       cancel_eval: string;
       min_2_versions_warning: string;
       radar_title: string;
+      radar_solo_hint: string;
       eval_summary: string;
       version_model_matrix: string;
       avg_column: string;
@@ -1267,6 +1378,8 @@ export type Translations = {
       draft_changes: string;
       current_column: string;
       accept_draft: string;
+      improve_ready_title: string;
+      improve_ready_review: string;
       accept_applies_desc: string;
       draft_accepted: string;
       score_comparison: string;
@@ -1322,6 +1435,8 @@ export type Translations = {
       no_versions: string;
       versions_auto_edit: string;
       select_two_compare: string;
+      compare_runs: string;
+      composite: string;
       click_a_b_hint: string;
       run_ab_versions: string;
       run_check: string;
@@ -1330,6 +1445,8 @@ export type Translations = {
       error_rate_rollback_hint: string;
       actions_label: string;
       promote_to_production: string;
+      set_as_baseline: string;
+      in_production: string;
       unarchive_action: string;
       rollback_to_this: string;
       pin_as_baseline: string;
@@ -1420,6 +1537,8 @@ export type Translations = {
       msg_count_one: string;
       msg_count_other: string;
       resume: string;
+      role_user: string;
+      role_ai: string;
       conv_controls_aria: string;
       design_drift: string;
       design_sessions: string;
@@ -1813,6 +1932,12 @@ export type Translations = {
       testing: string;
       save_failed: string;
       no_inputs: string;
+      _comment_manual_run_in_progress: string;
+      manual_run_in_progress: string;
+      _comment_run_now_tooltip: string;
+      run_now_tooltip: string;
+      _comment_run_now: string;
+      run_now: string;
       override: string;
       inherited_label: string;
       persona_default: string;
@@ -1849,6 +1974,13 @@ export type Translations = {
       activate: string;
       event_type: string;
       select_event_type: string;
+      _comment_event_type_options: string;
+      event_type_webhook_received: string;
+      event_type_execution_completed: string;
+      event_type_execution_failed: string;
+      event_type_persona_action: string;
+      event_type_file_changed: string;
+      event_type_schedule_triggered: string;
       source_filter: string;
       source_filter_optional: string;
       source_filter_placeholder: string;
@@ -1971,6 +2103,16 @@ export type Translations = {
       review_off_body_dropped: string;
       _comment_review_cycle_tooltip: string;
       review_cycle_tooltip: string;
+      _comment_dim_review_title: string;
+      dim_review_title: string;
+      _comment_pill_on: string;
+      pill_on: string;
+      _comment_pill_off: string;
+      pill_off: string;
+      _comment_review_pill_queue: string;
+      review_pill_queue: string;
+      _comment_review_pill_trust: string;
+      review_pill_trust: string;
       _comment_tab_history: string;
       tab_history: string;
       _comment_tab_config: string;
@@ -2044,6 +2186,8 @@ export type Translations = {
       layout_tab_prototype_badge: string;
       _comment_persona_layout_capabilities_heading: string;
       persona_layout_capabilities_heading: string;
+      _comment_dim_status_activated: string;
+      dim_status_activated: string;
       _comment_section_ConnectorDimCard: string;
       _comment_connector_rebind_aria: string;
       connector_rebind_aria: string;
@@ -3868,6 +4012,9 @@ export type Translations = {
       mcp_tools_label: string;
       discovering: string;
       discover_tools: string;
+      refresh: string;
+      tool_count_one: string;
+      tool_count_other: string;
       discover_mcp: string;
       discover_mcp_hint: string;
       input_schema: string;
@@ -3890,6 +4037,9 @@ export type Translations = {
       scope_broad: string;
       scope_required_missing: string;
       vector_kb: string;
+      tab_documents: string;
+      tab_search: string;
+      tab_settings: string;
       kb_not_found: string;
       scan_directory: string;
       directory_path: string;
@@ -4110,6 +4260,9 @@ export type Translations = {
       oauth_refresh_active_auto: string;
       auto_rotation_active: string;
       rotation_paused: string;
+      ring_aria_label: string;
+      history_empty_title: string;
+      history_empty_subtitle: string;
       rotate_now: string;
       rotation_failed: string;
       remove_policy_failed: string;
@@ -4222,6 +4375,7 @@ export type Translations = {
     empty_state: {
       heading: string;
       description: string;
+      recommended: string;
       catalog_heading: string;
       catalog_description: string;
       ai_heading: string;
@@ -4231,6 +4385,18 @@ export type Translations = {
     credential_list: {
       no_match: string;
       no_match_hint: string;
+      col_name: string;
+      col_status: string;
+      col_type: string;
+      col_category: string;
+      col_health: string;
+      col_last_used: string;
+      col_created: string;
+      filter_all: string;
+      filter_all_health: string;
+      health_healthy: string;
+      health_failing: string;
+      health_untested: string;
     };
     wizard_detect: {
       no_services: string;
@@ -4924,6 +5090,8 @@ export type Translations = {
       col_actions: string;
       no_targets_title: string;
       no_targets_hint: string;
+      connect_cloud_cta: string;
+      connect_gitlab_cta: string;
       no_match_filters: string;
       no_deployments: string;
       adjust_filters: string;
@@ -5128,6 +5296,8 @@ export type Translations = {
     lan_hint: string;
     peer_list_stale: string;
     network_data_stale: string;
+    identity_degraded_title: string;
+    identity_degraded_hint: string;
     peer_id_footer: string;
     remove_exposure: string;
     revoke_trust: string;
@@ -5200,6 +5370,36 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      stale_label: string;
+      sort_newest: string;
+      sort_oldest: string;
+      a11y_position: string;
+      a11y_acknowledged: string;
+      a11y_resolved: string;
+      range_all_time: string;
+      range_24h: string;
+      range_7d: string;
+      preset_fixed: string;
+      preset_transient: string;
+      preset_known_issue: string;
+      preset_not_an_issue: string;
+      guidance_label: string;
+      guidance_tool: string;
+      guidance_credential: string;
+      guidance_healing: string;
+      guidance_provider: string;
+      guidance_policy: string;
+      guidance_alert: string;
+      guidance_execution: string;
+      guidance_default: string;
+      groups_collapse_all: string;
+      groups_expand_all: string;
+      group_no_persona: string;
+      urgency_critical: string;
+      urgency_high: string;
+      urgency_medium: string;
+      urgency_low: string;
+      detail_raw_toggle: string;
       title: string;
       subtitle: string;
       kpi_open: string;
@@ -5243,6 +5443,8 @@ export type Translations = {
       bulk_acknowledge_count: string;
       bulk_resolve_count: string;
       bulk_clear_selection: string;
+      empty_open_title: string;
+      empty_filtered_title: string;
       empty_state_open: string;
       empty_state_filtered: string;
       loading: string;
@@ -6091,6 +6293,9 @@ export type Translations = {
       rotation_open_in_connections: string;
       rotation_started_for: string;
       rotation_failed_for: string;
+      rotation_due_now: string;
+      rotation_countdown_days_hours: string;
+      rotation_countdown_hours: string;
     };
     saved_views: {
       errors: {
@@ -8450,8 +8655,13 @@ export type Translations = {
     no_rate_limits_desc: string;
     rate_limits_heading: string;
     triggers_configured: string;
+    trigger_configured: string;
     running_stat: string;
     throttled_stat: string;
+    secret_label: string;
+    copy_channel_url_title: string;
+    pause_relay: string;
+    resume_relay: string;
     browse_label: string;
     my_subscriptions: string;
     search_feeds: string;
@@ -10170,6 +10380,11 @@ export type Translations = {
     loading_linked: string;
     no_linked: string;
     run: string;
+    discard: string;
+    yes: string;
+    no: string;
+    delete_confirm_question: string;
+    tag_input_placeholder: string;
     editor: {
       categories: {
         analysis: string;
@@ -10329,6 +10544,28 @@ export type Translations = {
       provider_claude_code: string;
       provider_codex_cli: string;
       provider_global: string;
+    };
+    deployment: {
+      active: string;
+      paused: string;
+      failed: string;
+      unknown: string;
+    };
+    delivery: {
+      delivered: string;
+      failed: string;
+      pending: string;
+      queued: string;
+    };
+    rotation: {
+      anomaly: string;
+      paused: string;
+      disabled: string;
+      perm_errors: string;
+      degrading: string;
+      backoff: string;
+      fresh: string;
+      active: string;
     };
   };
   project_overview: {
@@ -11610,6 +11847,15 @@ export type Translations = {
       meeting_body_placeholder: string;
       save_meeting_note: string;
       files_synced_to_drive: string;
+      loading: string;
+      no_vaults_detected: string;
+      all_vaults_saved: string;
+      detection_failed: string;
+      select_vault_dialog_title: string;
+      connection_test_failed: string;
+      select_and_test_first: string;
+      config_saved: string;
+      save_failed: string;
     };
     companion: {
       name: string;
@@ -11828,6 +12074,11 @@ export type Translations = {
       brain_title: string;
       brain_loading: string;
       brain_empty: string;
+      brain_empty_hint: string;
+      brain_empty_ask_cta: string;
+      brain_empty_ask_prompt: string;
+      brain_empty_consolidation_started: string;
+      brain_empty_placeholder: string;
       brain_one_item: string;
       brain_items: string;
       brain_desc_identity: string;
@@ -12140,6 +12391,9 @@ export type Translations = {
       decisions_panel_filter_placeholder: string;
       decisions_panel_loading: string;
       decisions_panel_empty: string;
+      decisions_panel_empty_title: string;
+      decisions_panel_empty_cta: string;
+      decisions_panel_empty_prompt: string;
       decisions_panel_empty_filtered: string;
       decisions_panel_unscoped: string;
       decisions_panel_currently_designing: string;
@@ -13281,6 +13535,14 @@ export type Translations = {
     results_count_other: string;
     anon_author: string;
     arxiv_search_hint: string;
+    arxiv_no_results_hint: string;
+    arxiv_error_title: string;
+    arxiv_error_timeout: string;
+    arxiv_error_rate_limited: string;
+    arxiv_error_http: string;
+    arxiv_error_network: string;
+    arxiv_error_feed: string;
+    arxiv_error_generic: string;
     preview_action: string;
     recent: string;
   };
@@ -13793,6 +14055,8 @@ export type Translations = {
       step_status_skipped: string;
       step_status_failed: string;
       step_status_awaiting_review: string;
+      section_workspace: string;
+      section_members: string;
       board_label: string;
       board_col_queued: string;
       board_col_running: string;
@@ -13807,6 +14071,11 @@ export type Translations = {
       orchestrate_placeholder: string;
       preview_routing: string;
       assign_and_run: string;
+      examples_helper: string;
+      example_goal_1: string;
+      example_goal_2: string;
+      example_goal_3: string;
+      example_goal_4: string;
       assignment_dispatched: string;
       no_routing: string;
       step_unrouted: string;
@@ -14926,6 +15195,14 @@ export type Translations = {
       nextStep: string;
       scoreDelta: string;
       checklistHeading: string;
+      ready: string;
+      satellites: string;
+      rosterSpread: string;
+      twinsConfigured: string;
+      avgReadiness: string;
+      activeChannels: string;
+      memoriesApproved: string;
+      channelsInUse: string;
     };
     hero: {
       eyebrow: string;
@@ -15186,7 +15463,6 @@ export type Translations = {
     auto_category_yet_58439dd0: string;
     auto_chain_47f97758: string;
     auto_change_rhythm_2697a991: string;
-    auto_channels_in_use_3c2a5957: string;
     auto_child_of_d45f31cf: string;
     auto_chosen_ground_79f67ac1: string;
     auto_circuit_breaker_e76dce35: string;
@@ -15522,11 +15798,9 @@ export type Translations = {
     auto_results_will_appear_when_the_run_completes_eefff30c: string;
     auto_retry_in_progress_status_will_update_when__0f8bc7c7: string;
     auto_rewrite_consumers_to_listen_for_the_new_na_7f7ba29f: string;
-    auto_roster_spread_14623828: string;
     auto_round_card_055138e8: string;
     auto_run_a_regression_check_to_verify_the_new_p_34c1a639: string;
     auto_run_avg_6a041757: string;
-    auto_run_now_2af00e23: string;
     auto_run_on_demand_548e874e: string;
     auto_run_some_agents_to_see_performance_ranking_2ccc0d58: string;
     auto_run_test_e90380fe: string;

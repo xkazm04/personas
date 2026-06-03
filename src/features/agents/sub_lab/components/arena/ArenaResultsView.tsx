@@ -5,6 +5,7 @@ import { compositeScoreFromRow, scoreColor } from '@/lib/eval/evalFramework';
 import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { aggregateArenaResults, type ArenaModelAggregate } from '../../libs/labAggregation';
+import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { DebtText } from '@/i18n/DebtText';
@@ -21,6 +22,8 @@ interface Props {
   llmSummary?: string;
   userRatings?: Record<string, UserRatingEntry>;
   onRate?: (scenarioName: string, modelId: string, rating: number, feedback?: string) => void;
+  /** Results fetch is still in flight — show the shape-matched skeleton instead of the empty line. */
+  loading?: boolean;
 }
 
 function scoreLabel(score: number): string {
@@ -113,7 +116,7 @@ function collectTopSuggestions(results: LabArenaResult[], limit = 3): string[] {
   return suggestions.slice(0, limit);
 }
 
-export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatings, onRate }: Props) {
+export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatings, onRate, loading }: Props) {
   const { t } = useTranslation();
   const { models, scenarios, matrix, aggregates, bestModelId } = useMemo(
     () => aggregateArenaResults(results),
@@ -126,6 +129,7 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
   const topSuggestions = useMemo(() => collectTopSuggestions(results), [results]);
 
   if (results.length === 0) {
+    if (loading) return <LabResultsSkeleton />;
     return (
       <div className="text-center py-12 text-foreground typo-body">
         {t.agents.lab.no_results}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import {
   Sparkles, Plus, Trash2, Check, Pencil, FolderTree, Mic, Brain, Volume2, Radio,
   BookOpen, Globe, FileText, ArrowUpRight, ArrowRight,
@@ -21,7 +22,6 @@ import type { TwinProfile } from '@/lib/bindings/TwinProfile';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinTab } from '@/lib/types/types';
 import type { MilestoneStatus, TwinReadiness } from '../useTwinReadiness';
-import { DebtText } from '@/i18n/DebtText';
 
 /** Which sub-tab each readiness milestone deep-links into. Memories live in
  *  the Knowledge tab; the rest are 1:1. Mirrors ReadinessGapPopover's mapping. */
@@ -67,6 +67,9 @@ function MilestoneArc({ score, label, size = 72 }: MilestoneArcProps) {
   const c = 2 * Math.PI * r;
   const offset = c * (1 - Math.min(100, Math.max(0, score)) / 100);
   const stroke = score >= 80 ? '#34d399' : score >= 40 ? '#fbbf24' : '#a78bfa';
+  // Under prefers-reduced-motion the ring snaps straight to its value rather than
+  // sweeping on every readiness change (WCAG 2.3.3) — the score is still conveyed.
+  const reduceMotion = useReducedMotion();
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
@@ -75,9 +78,9 @@ function MilestoneArc({ score, label, size = 72 }: MilestoneArcProps) {
           cx={size / 2} cy={size / 2} r={r}
           fill="none" stroke={stroke} strokeWidth={4} strokeLinecap="round"
           strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
+          initial={{ strokeDashoffset: reduceMotion ? offset : c }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          transition={reduceMotion ? { duration: 0 } : { duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -250,7 +253,7 @@ export default function ProfilesAtelier() {
             {satellites.length > 0 && (
               <>
                 <div className="flex items-center gap-2 pt-2">
-                  <span className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">satellites</span>
+                  <span className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.profiles.satellites}</span>
                   <div className="h-px flex-1 bg-primary/10" />
                   <span className="typo-caption text-foreground">{satellites.length}</span>
                 </div>
@@ -282,17 +285,17 @@ export default function ProfilesAtelier() {
             <div className="sticky top-4 space-y-4">
               {heroReadiness && <CompleteTwinChecklist readiness={heroReadiness} onJump={setTwinTab} />}
               <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-3"><DebtText k="auto_roster_spread_14623828" /></p>
+                <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-3">{t.profiles.rosterSpread}</p>
                 <dl className="space-y-3">
-                  <KpiRow label="twins configured" value={agg.twins} />
-                  <KpiRow label="avg readiness" value={`${agg.avgReadiness}%`} hi={agg.avgReadiness >= 80} />
-                  <KpiRow label="active channels" value={agg.channelsActive} />
-                  <KpiRow label="memories approved" value={agg.memoriesApproved} />
+                  <KpiRow label={t.profiles.twinsConfigured} value={agg.twins} />
+                  <KpiRow label={t.profiles.avgReadiness} value={`${agg.avgReadiness}%`} hi={agg.avgReadiness >= 80} />
+                  <KpiRow label={t.profiles.activeChannels} value={agg.channelsActive} />
+                  <KpiRow label={t.profiles.memoriesApproved} value={agg.memoriesApproved} />
                 </dl>
               </div>
               {agg.channelTypes.length > 0 && (
                 <div className="rounded-card border border-primary/10 bg-card/40 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-2"><DebtText k="auto_channels_in_use_3c2a5957" /></p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium mb-2">{t.profiles.channelsInUse}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {agg.channelTypes.map((ct) => (
                       <span key={ct} className="px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/25">{ct}</span>
@@ -304,7 +307,7 @@ export default function ProfilesAtelier() {
                 <div className="rounded-card border border-primary/10 bg-card/40 p-4">
                   <div className="flex items-center gap-1.5 mb-2">
                     <Globe className="w-3 h-3 text-foreground" />
-                    <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">languages</p>
+                    <p className="text-[10px] uppercase tracking-[0.2em] text-foreground font-medium">{t.profiles.languages}</p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {agg.languages.map((l) => (
@@ -351,7 +354,7 @@ function KpiCell({ label, value, accent = 'violet' }: { label: string; value: nu
 function KpiRow({ label, value, hi }: { label: string; value: number | string; hi?: boolean }) {
   return (
     <div className="flex items-center justify-between">
-      <dt className="typo-caption text-foreground">{label}</dt>
+      <dt className="text-[10px] uppercase tracking-[0.18em] text-foreground font-medium">{label}</dt>
       <dd className={`typo-data-lg tabular-nums ${hi ? 'text-emerald-300' : 'text-foreground'}`}>{value}</dd>
     </div>
   );
@@ -442,7 +445,7 @@ function HeroCard(props: HeroCardProps) {
           <div className={`w-16 h-16 rounded-card bg-gradient-to-br ${sigil.tint} border border-violet-500/30 flex items-center justify-center`}>
             <span className="typo-body-lg text-foreground/90 leading-none" aria-hidden>{sigil.glyph}</span>
           </div>
-          {r && <MilestoneArc score={r.score} label="ready" size={84} />}
+          {r && <MilestoneArc score={r.score} label={t.profiles.ready} size={84} />}
         </div>
 
         {/* Header + milestones */}
@@ -560,7 +563,7 @@ function SatelliteCard(props: SatelliteCardProps) {
           <h3 className="typo-card-label truncate">{profile.name}</h3>
           {profile.role && <p className="typo-caption text-foreground truncate">{profile.role}</p>}
         </div>
-        {r && <MilestoneArc score={r.score} label="ready" size={48} />}
+        {r && <MilestoneArc score={r.score} label={t.profiles.ready} size={48} />}
       </div>
 
       {r && (

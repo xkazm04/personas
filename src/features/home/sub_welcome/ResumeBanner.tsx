@@ -2,6 +2,7 @@ import { AlertCircle, Compass, PenLine, ChevronRight, X } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { useResumeContext, clearLastEdited } from './useResumeContext';
+import { useTranslation } from '@/i18n/useTranslation';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -21,6 +22,7 @@ import { debtText } from '@/i18n/DebtText';
  */
 export default function ResumeBanner() {
   const ctx = useResumeContext();
+  const { t, tx } = useTranslation();
   const setSidebarSection = useSystemStore((s) => s.setSidebarSection);
   const setEditorTab = useSystemStore((s) => s.setEditorTab);
   const startTour = useSystemStore((s) => s.startTour);
@@ -41,58 +43,72 @@ export default function ResumeBanner() {
     }
   };
 
-  const handleDismiss = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDismiss = () => {
     if (ctx.kind === 'edit') clearLastEdited();
     if (ctx.kind === 'tour') dismissTour();
     // failures dismiss themselves once acknowledged via the activity tab;
     // there's no per-execution "ack" today, so dismiss() is a no-op.
   };
 
-  const { Icon, label, accent } = bannerStyle(ctx);
+  const { Icon, label, accent } = bannerStyle(ctx, t, tx);
 
+  // Resume and dismiss are two independent, separately-focusable controls in a
+  // flex row — not a button nested inside a button. The previous markup put a
+  // `role="button"` span inside the outer <button> (invalid nesting that leaned
+  // on stopPropagation); keyboard/AT users now get two real buttons.
   return (
-    <button
-      type="button"
-      onClick={handleResume}
-      data-testid="resume-banner"
-      className={`animate-fade-slide-in motion-reduce:animate-none w-full flex items-center gap-3 px-4 py-2.5 rounded-modal border ${accent} bg-secondary/30 backdrop-blur-sm hover:bg-secondary/50 transition-colors group`}
+    <div
+      className={`animate-fade-slide-in motion-reduce:animate-none w-full flex items-center gap-2 px-4 py-2.5 rounded-modal border ${accent} bg-secondary/30 backdrop-blur-sm transition-colors`}
     >
-      <Icon className="w-4 h-4 flex-shrink-0" />
-      <span className="flex-1 text-left typo-body text-foreground truncate">{label}</span>
-      <ChevronRight className="w-4 h-4 text-foreground opacity-60 group-hover:translate-x-0.5 transition-transform" />
-      <span
-        role="button"
-        tabIndex={0}
+      <button
+        type="button"
+        onClick={handleResume}
+        data-testid="resume-banner"
+        className="group flex flex-1 min-w-0 items-center gap-3 rounded-input outline-none hover:bg-secondary/40 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-colors"
+      >
+        <Icon className="w-4 h-4 flex-shrink-0" />
+        <span className="flex-1 text-left typo-body text-foreground truncate">{label}</span>
+        <ChevronRight className="w-4 h-4 text-foreground opacity-60 group-hover:translate-x-0.5 transition-transform" />
+      </button>
+      <button
+        type="button"
         onClick={handleDismiss}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleDismiss(e as unknown as React.MouseEvent); } }}
-        className="p-1 rounded-input text-foreground opacity-50 hover:opacity-100 hover:bg-secondary/40"
+        className="flex-shrink-0 p-1 rounded-input text-foreground opacity-50 outline-none hover:opacity-100 hover:bg-secondary/40 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-current transition-opacity"
         aria-label={debtText("auto_dismiss_resume_banner_ccff3f60")}
       >
         <X className="w-3.5 h-3.5" />
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
-function bannerStyle(ctx: NonNullable<ReturnType<typeof useResumeContext>>) {
+function bannerStyle(
+  ctx: NonNullable<ReturnType<typeof useResumeContext>>,
+  t: ReturnType<typeof useTranslation>['t'],
+  tx: ReturnType<typeof useTranslation>['tx'],
+) {
   if (ctx.kind === 'failure') {
     return {
       Icon: AlertCircle,
-      label: `Unread failure in ${ctx.personaName} — investigate`,
+      label: tx(t.home.resume.failure, { personaName: ctx.personaName }),
       accent: 'border-red-500/30 text-red-400',
     };
   }
   if (ctx.kind === 'tour') {
     return {
       Icon: Compass,
-      label: `Resume ${ctx.tourTitle} (${ctx.stepIndex}/${ctx.totalSteps}) — ${ctx.stepTitle}`,
+      label: tx(t.home.resume.tour, {
+        tourTitle: ctx.tourTitle,
+        stepIndex: ctx.stepIndex,
+        totalSteps: ctx.totalSteps,
+        stepTitle: ctx.stepTitle,
+      }),
       accent: 'border-violet-500/30 text-violet-300',
     };
   }
   return {
     Icon: PenLine,
-    label: `Continue editing ${ctx.personaName}`,
+    label: tx(t.home.resume.edit, { personaName: ctx.personaName }),
     accent: 'border-primary/25 text-primary',
   };
 }

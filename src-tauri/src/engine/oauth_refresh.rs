@@ -707,19 +707,41 @@ fn emit_reauth_required(
     );
 }
 
-/// Cached connector metadata lookups within a refresh cycle.
-/// The cache is populated lazily and never grows beyond the number of distinct service types.
+/// Time-to-live for a cached connector-metadata entry.
+///
+/// The cache exists only to de-duplicate repeated `connector_definitions` reads
+/// for credentials that share a `service_type` within a single refresh sweep —
+/// it must NOT outlive a user editing a connector definition at runtime
+/// (`token_url`, healthcheck config, OAuth strategy hints). A short TTL bounds
+/// the stale-config window to at most this duration, instead of the previous
+/// process-lifetime cache that only refreshed on app restart. Because the
+/// refresh tick runs every 5 minutes, cross-sweep caching has no benefit, so a
+/// sub-tick TTL costs nothing while removing the silent divergence window.
+const CONNECTOR_METADATA_CACHE_TTL: std::time::Duration = std::time::Duration::from_secs(60);
+
+/// Cached connector metadata lookups, scoped by a short TTL (see
+/// [`CONNECTOR_METADATA_CACHE_TTL`]) so runtime edits to a connector definition
+/// are picked up within the TTL rather than persisting until the app restarts.
+/// The cache never grows beyond the number of distinct service types.
 fn get_connector_metadata_cached(pool: &DbPool, service_type: &str) -> Option<String> {
     use std::sync::Mutex;
-    static CACHE: std::sync::LazyLock<Mutex<std::collections::HashMap<String, Option<String>>>> =
-        std::sync::LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
+    use std::time::Instant;
+    // (metadata, fetched_at) keyed by service_type.
+    #[allow(clippy::type_complexity)]
+    static CACHE: std::sync::LazyLock<
+        Mutex<std::collections::HashMap<String, (Option<String>, Instant)>>,
+    > = std::sync::LazyLock::new(|| Mutex::new(std::collections::HashMap::new()));
 
-    let mut cache = CACHE.lock().unwrap();
-    if let Some(cached) = cache.get(service_type) {
-        return cached.clone();
+    // Poison-safe: a panic in another refresh task must not take down the entire
+    // background refresh loop via `unwrap()` on a poisoned mutex.
+    let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
+    if let Some((value, fetched_at)) = cache.get(service_type) {
+        if fetched_at.elapsed() < CONNECTOR_METADATA_CACHE_TTL {
+            return value.clone();
+        }
     }
     let result = get_connector_metadata(pool, service_type);
-    cache.insert(service_type.to_string(), result.clone());
+    cache.insert(service_type.to_string(), (result.clone(), Instant::now()));
     result
 }
 

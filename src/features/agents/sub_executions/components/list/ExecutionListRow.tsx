@@ -47,6 +47,11 @@ function ExecutionListRowImpl({
   const e = t.agents.executions;
   const isCompareSelected = compareLeft === execution.id || compareRight === execution.id;
   const compareLabel = compareLeft === execution.id ? 'A' : compareRight === execution.id ? 'B' : null;
+  // Cool (A) / warm (B) split on semantic status tokens — distinct without
+  // leaning on raw indigo/pink literals that drift from the design system.
+  const compareLabelClass = compareLabel === 'A'
+    ? 'bg-status-info/20 text-status-info border border-status-info/30'
+    : 'bg-status-error/20 text-status-error border border-status-error/30';
   const chevron = compareMode ? null : isExpanded
     ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />
     : <ChevronRight className="w-3.5 h-3.5 text-foreground flex-shrink-0" />;
@@ -54,14 +59,14 @@ function ExecutionListRowImpl({
   const statusBadge = <span className={`px-2 py-0.5 rounded-card typo-heading ${badgeClass(statusEntry)}`}>{statusEntry.label}</span>;
   const retryBadge = execution.retry_count > 0 ? (
     <Tooltip content={tx(e.healing_retry, { count: execution.retry_count })}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-status-info/10 text-status-info border border-status-info/20">
         <RefreshCw className="w-2.5 h-2.5" />#{execution.retry_count}
       </span>
     </Tooltip>
   ) : null;
   const simulatedBadge = execution.is_simulation ? (
     <Tooltip content={e.simulated_badge_tooltip}>
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-brand-purple/10 text-brand-purple border border-brand-purple/20">
+      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code rounded-card bg-status-neutral/10 text-status-neutral border border-status-neutral/20">
         <FlaskConical className="w-2.5 h-2.5" />{e.simulated_badge}
       </span>
     </Tooltip>
@@ -104,9 +109,7 @@ function ExecutionListRowImpl({
         {!bulkMode && compareMode && (
           <div className="col-span-1 flex items-center">
             {compareLabel ? (
-              <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
-                compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
-              }`}>{compareLabel}</span>
+              <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${compareLabelClass}`}>{compareLabel}</span>
             ) : <span className="w-5 h-5 rounded-card border border-primary/20 bg-background/30" />}
           </div>
         )}
@@ -146,9 +149,7 @@ function ExecutionListRowImpl({
             />
           )}
           {!bulkMode && compareMode && compareLabel && (
-            <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${
-              compareLabel === 'A' ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' : 'bg-pink-500/20 text-pink-400 border border-pink-500/30'
-            }`}>{compareLabel}</span>
+            <span className={`w-5 h-5 rounded-card flex items-center justify-center typo-heading ${compareLabelClass}`}>{compareLabel}</span>
           )}
           {chevron}{statusBadge}{retryBadge}{simulatedBadge}{duration}
           <RelativeTime timestamp={execution.started_at} fallback="-" showTooltip={false} className="typo-body text-foreground ml-auto" />
@@ -200,7 +201,7 @@ function ExecutionListRowImpl({
                   <RotateCw className="w-3 h-3" />{e.rerun_with_same_input}
                 </button>
                 {execution.retry_count > 0 && (
-                  <button onClick={(e) => { e.stopPropagation(); void onAutoCompareRetry(execution.id); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-cyan-500/10 text-cyan-400/80 border border-cyan-500/15 hover:bg-cyan-500/20 hover:text-cyan-400 transition-colors">
+                  <button onClick={(e) => { e.stopPropagation(); void onAutoCompareRetry(execution.id); }} className="flex items-center gap-1.5 px-3 py-1.5 typo-heading rounded-modal bg-accent/10 text-accent/80 border border-accent/15 hover:bg-accent/20 hover:text-accent transition-colors">
                     <ArrowLeftRight className="w-3 h-3" />{e.compare_with_original}
                   </button>
                 )}

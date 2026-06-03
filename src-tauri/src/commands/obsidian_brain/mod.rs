@@ -779,7 +779,18 @@ pub fn obsidian_brain_pull_sync(
             ThreeWayResult::AppChanged => {
                 // App changed, vault didn't — push update
                 let new_hash = compute_content_hash(&app_md);
-                let _ = atomic_write(&file_path, app_md.as_bytes());
+                // Only advance sync state on a confirmed write. Swallowing the
+                // error here would record the NEW content_hash while the vault
+                // file still holds the OLD bytes, so the next three-way compare
+                // sees "no change" and app/vault diverge permanently while the
+                // run reports success. Mirror the push path: record the error
+                // and skip the state advance.
+                if let Err(e) = atomic_write(&file_path, app_md.as_bytes()) {
+                    result
+                        .errors
+                        .push(format!("Failed to write {}: {e}", file_path.display()));
+                    continue;
+                }
                 let ss = SyncState {
                     id: tracked.id.clone(),
                     entity_type: "memory".into(),

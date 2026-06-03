@@ -54,7 +54,7 @@ export function HighlightedJson({ raw }: { raw: string }) {
   }, [raw]);
 
   return (
-    <div className="group/json relative">
+    <div className="group/json relative flex-1 min-h-0 flex flex-col">
       {/* Copy button — visible on hover */}
       <div className="absolute top-2 right-2 z-10 opacity-0 group-hover/json:opacity-100 transition-opacity duration-200">
         <CopyButton text={pretty} iconSize="w-3.5 h-3.5" />

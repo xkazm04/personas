@@ -106,7 +106,9 @@ pub async fn fleet_rename_session(
 /// resulting child exit as a sleep, not a death.
 #[tauri::command]
 pub async fn fleet_hibernate_session(app: AppHandle, session_id: String) -> Result<bool, String> {
-    let ok = registry().hibernate(&session_id);
+    // `require_resting = false`: the user explicitly chose to sleep this
+    // session, whatever state it's in (Running / AwaitingInput included).
+    let ok = registry().hibernate(&session_id, false);
     if ok {
         // "updated" → the frontend re-fetches the snapshot and sees Hibernated.
         pty::emit_registry_changed(&app, "updated", &session_id);

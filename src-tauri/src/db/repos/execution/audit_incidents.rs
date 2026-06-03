@@ -457,24 +457,44 @@ pub fn bulk_acknowledge(pool: &DbPool, ids: &[String]) -> Result<i64, AppError> 
     }
     let mut count = 0i64;
     for id in ids {
-        if acknowledge(pool, id).unwrap_or(false) {
+        // Propagate a real DB error (lock/busy/corrupt) instead of collapsing
+        // it to `false`: swallowing it under-reports the count and the caller
+        // shows "N acknowledged" while some rows silently stayed open, with no
+        // toast and no Sentry breadcrumb. A genuine no-change (`Ok(false)`)
+        // still correctly counts as "not flipped".
+        if acknowledge(pool, id)? {
             count += 1;
         }
     }
     Ok(count)
 }
 
-pub fn bulk_resolve(pool: &DbPool, ids: &[String], note: Option<&str>) -> Result<i64, AppError> {
+/// Bulk-resolve incidents, returning the ids that THIS call actually
+/// transitioned to `resolved` (i.e. `resolve()` returned `true`). Ids that
+/// were already resolved — or otherwise unchanged — are omitted, so callers
+/// can publish `incident_resolved` only for the rows they genuinely flipped
+/// (mirroring `resolve()`'s `changed` contract) and avoid re-firing spurious
+/// events on duplicate or overlapping selections.
+pub fn bulk_resolve(
+    pool: &DbPool,
+    ids: &[String],
+    note: Option<&str>,
+) -> Result<Vec<String>, AppError> {
     if ids.is_empty() {
-        return Ok(0);
+        return Ok(Vec::new());
     }
-    let mut count = 0i64;
+    let mut flipped = Vec::new();
     for id in ids {
-        if resolve(pool, id, note).unwrap_or(false) {
-            count += 1;
+        // Propagate a real DB error (lock/busy/corrupt) instead of collapsing
+        // it to `false`: swallowing it under-reports which rows resolved and
+        // leaves the operator believing incidents are cleared when they remain
+        // open. A genuine no-change (`Ok(false)` — already resolved) is still
+        // correctly omitted from the freshly-flipped list.
+        if resolve(pool, id, note)? {
+            flipped.push(id.clone());
         }
     }
-    Ok(count)
+    Ok(flipped)
 }
 
 #[cfg(test)]
@@ -770,11 +790,42 @@ mod tests {
             ids.push(id);
         }
 
-        let n = bulk_resolve(&pool, &ids, Some("batch close")).unwrap();
-        assert_eq!(n, 5);
+        let flipped = bulk_resolve(&pool, &ids, Some("batch close")).unwrap();
+        assert_eq!(flipped.len(), 5);
 
         let s = summary(&pool).unwrap();
         assert_eq!(s.resolved, 5);
         assert_eq!(s.open, 0);
+    }
+
+    /// Regression: `bulk_resolve` must return ONLY the ids it actually flipped
+    /// to resolved, never ids that were already resolved coming in. This is the
+    /// guard that stops `bulk_resolve_audit_incidents` from re-emitting
+    /// `incident_resolved` (and persisting duplicate persona_events) for rows a
+    /// previous call — or an overlapping selection in another window — already
+    /// closed.
+    #[test]
+    fn bulk_resolve_returns_only_freshly_flipped_ids() {
+        let pool = init_test_db().unwrap();
+        let a = promote(&pool, make_input("fired_alerts", "a-1", "medium", "A"))
+            .unwrap()
+            .unwrap();
+        let b = promote(&pool, make_input("fired_alerts", "a-2", "medium", "B"))
+            .unwrap()
+            .unwrap();
+
+        // Pre-resolve `a`, so the bulk call below does NOT change it.
+        assert!(resolve(&pool, &a, None).unwrap());
+
+        // Selection includes the already-resolved `a` and the still-open `b`.
+        let flipped = bulk_resolve(&pool, &[a.clone(), b.clone()], Some("batch")).unwrap();
+        assert_eq!(flipped, vec![b.clone()], "only the still-open `b` flips");
+
+        // Re-running over an all-resolved set flips nothing — no spurious republish.
+        let flipped_again = bulk_resolve(&pool, &[a, b], Some("batch")).unwrap();
+        assert!(
+            flipped_again.is_empty(),
+            "re-resolving an all-resolved selection must flip nothing"
+        );
     }
 }

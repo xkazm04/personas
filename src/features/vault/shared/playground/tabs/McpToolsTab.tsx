@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Button } from '@/features/shared/components/buttons';
 import { listMcpTools, executeMcpTool } from '@/api/agents/mcpTools';
 import type { McpTool, McpToolResult } from '@/api/agents/mcpTools';
@@ -13,6 +15,8 @@ interface McpToolsTabProps {
 }
 
 export function McpToolsTab({ credentialId }: McpToolsTabProps) {
+  const { t, tx } = useTranslation();
+  const sh = t.vault.shared;
   const [tools, setTools] = useState<McpTool[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -79,7 +83,9 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-primary/5 shrink-0">
         <span className="typo-body font-medium text-foreground">
-          {hasLoaded ? `${tools.length} tool${tools.length !== 1 ? 's' : ''}` : 'MCP Tools'}
+          {hasLoaded
+            ? tx(tools.length === 1 ? sh.tool_count_one : sh.tool_count_other, { count: tools.length })
+            : sh.mcp_tools_label}
         </span>
         <div className="flex-1" />
         <Button
@@ -87,17 +93,12 @@ export function McpToolsTab({ credentialId }: McpToolsTabProps) {
           icon={loading ? <LoadingSpinner size="xs" /> : <RefreshCw className="w-3 h-3" />}
           onClick={handleRefresh} disabled={loading} loading={loading}
         >
-          {loading ? 'Discovering...' : hasLoaded ? 'Refresh' : 'Discover Tools'}
+          {loading ? sh.discovering : hasLoaded ? sh.refresh : sh.discover_tools}
         </Button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
-        {loadError && (
-          <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-body text-red-400 flex items-start gap-2">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-            <span>{loadError}</span>
-          </div>
-        )}
+        {loadError && <InlineErrorBanner message={loadError} />}
 
         {!hasLoaded && !loading && !loadError && <EmptyState onDiscover={handleRefresh} />}
 

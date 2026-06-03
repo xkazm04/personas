@@ -178,7 +178,7 @@ export default function IpcPerformancePanel() {
 
   return (
     <div className={`${CARD_CONTAINER} overflow-hidden`}>
-      <button onClick={toggleExpanded} className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none transition-colors">
+      <button onClick={toggleExpanded} className="w-full flex items-center justify-between px-4 py-3 hover:bg-foreground/[0.02] focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none transition-colors">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-modal bg-indigo-500/10 border border-indigo-500/20 shadow-inner flex items-center justify-center">
             <Gauge className="w-4 h-4 text-indigo-400" />

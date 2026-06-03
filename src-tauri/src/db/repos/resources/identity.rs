@@ -232,6 +232,15 @@ pub fn revoke_peer_trust(pool: &DbPool, peer_id: &str) -> Result<(), AppError> {
         if changed == 0 {
             return Err(AppError::NotFound(format!("Trusted peer {peer_id}")));
         }
+        // Demote the cached discovery row immediately. `discovered_peers.trust_status`
+        // is otherwise only recomputed by `validate_mdns_peer` on the peer's NEXT
+        // mDNS resolve — so an offline / non-re-announcing peer would keep showing
+        // as `trusted` in the discovery UI after the user revoked it. Affecting 0
+        // rows (peer not currently discovered) is fine.
+        conn.execute(
+            "UPDATE discovered_peers SET trust_status = 'unverified' WHERE peer_id = ?1",
+            params![peer_id],
+        )?;
         Ok(())
     })
 }
@@ -247,6 +256,13 @@ pub fn delete_trusted_peer(pool: &DbPool, peer_id: &str) -> Result<(), AppError>
         if changed == 0 {
             return Err(AppError::NotFound(format!("Trusted peer {peer_id}")));
         }
+        // Demote the cached discovery row immediately (same rationale as
+        // `revoke_peer_trust`): without this, a peer that isn't re-announcing
+        // keeps its stored `trusted` status in the discovery UI after deletion.
+        conn.execute(
+            "UPDATE discovered_peers SET trust_status = 'unverified' WHERE peer_id = ?1",
+            params![peer_id],
+        )?;
         Ok(())
     })
 }

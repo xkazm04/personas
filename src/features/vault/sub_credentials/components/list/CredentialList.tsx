@@ -59,20 +59,20 @@ export function CredentialList({
       cats.add(getConnectorForType(c.service_type)?.category || 'other');
     }
     return [
-      { value: '', label: 'All' },
+      { value: '', label: t.vault.credential_list.filter_all },
       ...Array.from(cats).sort().map((c) => ({
         value: c,
         label: capitalize(c),
       })),
     ];
-  }, [credentials, getConnectorForType]);
+  }, [credentials, getConnectorForType, t.vault.credential_list.filter_all]);
 
   const healthOptions = useMemo(() => [
-    { value: '', label: 'All Health' },
-    { value: 'healthy', label: 'Healthy' },
-    { value: 'failing', label: 'Failing' },
-    { value: 'untested', label: 'Untested' },
-  ], []);
+    { value: '', label: t.vault.credential_list.filter_all_health },
+    { value: 'healthy', label: t.vault.credential_list.health_healthy },
+    { value: 'failing', label: t.vault.credential_list.health_failing },
+    { value: 'untested', label: t.vault.credential_list.health_untested },
+  ], [t.vault.credential_list.filter_all_health, t.vault.credential_list.health_healthy, t.vault.credential_list.health_failing, t.vault.credential_list.health_untested]);
 
   // The DataGrid's column-filter controls expose plain string state. Convert
   // the empty-string "all" sentinel to/from the hook's HealthFilter union.

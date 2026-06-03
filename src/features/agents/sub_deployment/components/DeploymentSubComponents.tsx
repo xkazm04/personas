@@ -107,7 +107,7 @@ export function ActionButton({
       title={title}
       onClick={onClick}
       disabled={busy}
-      className={`p-1.5 rounded-card text-foreground ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer`}
+      className={`p-1.5 rounded-card text-foreground ${hoverColor} disabled:opacity-40 transition-colors cursor-pointer focus-ring`}
     >
       {busy ? <LoadingSpinner size="sm" /> : <Icon className="w-3.5 h-3.5" />}
     </button>

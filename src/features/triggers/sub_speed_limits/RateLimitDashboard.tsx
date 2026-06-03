@@ -72,7 +72,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
           {/* Rate-limited triggers count */}
           <div className="flex items-center gap-1.5 text-foreground">
             <span className="font-mono">{stats.rateLimitedCount}</span>
-            <span>{stats.rateLimitedCount === 1 ? 'trigger' : 'triggers'} configured</span>
+            <span>{stats.rateLimitedCount === 1 ? t.triggers.trigger_configured : t.triggers.triggers_configured}</span>
           </div>
 
           {/* Concurrent */}
@@ -80,7 +80,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
             <div className="flex items-center gap-1.5 text-blue-400/80">
               <Layers className="w-3 h-3" />
               <span className="font-mono">{stats.totalConcurrent}</span>
-              <span>running</span>
+              <span>{t.triggers.running_stat}</span>
             </div>
           )}
 
@@ -89,7 +89,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
             <div className="flex items-center gap-1.5 text-amber-400/80">
               <AlertTriangle className="w-3 h-3" />
               <span className="font-mono">{stats.totalQueued}</span>
-              <span>queued</span>
+              <span>{t.triggers.queued_bare}</span>
             </div>
           )}
 
@@ -98,7 +98,7 @@ export function RateLimitDashboard({ triggers }: RateLimitDashboardProps) {
             <div className="flex items-center gap-1.5 text-red-400/80">
               <Shield className="w-3 h-3" />
               <span className="font-mono">{stats.throttledCount}</span>
-              <span>throttled</span>
+              <span>{t.triggers.throttled_stat}</span>
             </div>
           )}
         </div>

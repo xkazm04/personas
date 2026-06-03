@@ -14,6 +14,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
 import { BaseModal } from "@/features/shared/components/modals";
+import EmptyState from "@/features/shared/components/feedback/EmptyState";
 
 import type { useSigning } from "./useSigning";
 
@@ -100,17 +101,13 @@ export function DriveSignaturesPanel({
           )}
 
           {!signing.loadingSignatures && signing.signatures.length === 0 && (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500/15 to-fuchsia-500/5 border border-rose-500/25 flex items-center justify-center">
-                <FileSignature className="w-7 h-7 text-rose-300" />
-              </div>
-              <div className="typo-body text-foreground font-medium">
-                {t.plugins.doc_signing.no_signatures}
-              </div>
-              <div className="typo-caption text-foreground max-w-[260px]">
-                {t.plugins.doc_signing.no_signatures_hint}
-              </div>
-            </div>
+            <EmptyState
+              icon={FileSignature}
+              iconColor="text-rose-300"
+              iconContainerClassName="bg-rose-500/10 border-rose-500/25"
+              title={t.plugins.doc_signing.no_signatures}
+              subtitle={t.plugins.doc_signing.no_signatures_hint}
+            />
           )}
 
           {signing.signatures.map((sig) => (

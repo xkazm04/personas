@@ -10,11 +10,16 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import EmptyState, {
+  NoResults,
+} from '@/features/shared/components/feedback/EmptyState';
 import { useSystemStore } from '@/stores/systemStore';
 import {
   companionListDesignDecisions,
   type CompanionDesignDecision,
 } from '@/api/companion';
+import { useCompanionStore } from '../companionStore';
 
 /**
  * Retrospective view of every design decision Athena has logged across
@@ -109,6 +114,26 @@ export default function DecisionsPanel() {
     setActiveBuildIntent(null);
   };
 
+  // Filtered-empty recovery: drop the filter (and pin show-all so the
+  // auto-scope doesn't snap it back on the next render).
+  const handleClearFilter = () => {
+    setShowAllOverride(true);
+    setFilter('');
+  };
+
+  // Empty-state launchpad: open Athena's chat with a first-person opener
+  // that asks her to walk the user through logging a design decision, then
+  // record it. Mirrors the WelcomeHero / CockpitPanel preset+open pattern so
+  // the empty Decisions view becomes the next obvious step instead of a dead
+  // end.
+  const askAthenaToLogDecision = () => {
+    useCompanionStore.getState().setPendingPrompt({
+      text: t.plugins.companion.decisions_panel_empty_prompt,
+      autoSend: true,
+    });
+    useCompanionStore.getState().setState('open');
+  };
+
   return (
     <div className="flex flex-col gap-4 p-6 max-w-4xl mx-auto w-full">
       <header className="space-y-2">
@@ -168,11 +193,25 @@ export default function DecisionsPanel() {
         </div>
       )}
       {!loading && !error && rows.length === 0 && (
-        <div className="rounded-card border border-foreground/10 bg-secondary/40 p-4 typo-caption text-foreground">
-          {filter.trim().length > 0
-            ? t.plugins.companion.decisions_panel_empty_filtered
-            : t.plugins.companion.decisions_panel_empty}
-        </div>
+        filter.trim().length > 0 ? (
+          <NoResults
+            onReset={handleClearFilter}
+            subtitle={t.plugins.companion.decisions_panel_empty_filtered}
+          />
+        ) : (
+          <EmptyState
+            icon={ScrollText}
+            iconColor="text-fuchsia-400/80"
+            iconContainerClassName="bg-fuchsia-500/10 border-fuchsia-500/20"
+            title={t.plugins.companion.decisions_panel_empty_title}
+            subtitle={t.plugins.companion.decisions_panel_empty}
+            action={{
+              label: t.plugins.companion.decisions_panel_empty_cta,
+              onClick: askAthenaToLogDecision,
+              icon: Sparkles,
+            }}
+          />
+        )
       )}
       {!loading && rows.length > 0 && (
         <div className="space-y-5">
@@ -203,9 +242,10 @@ export default function DecisionsPanel() {
                       <span className="font-medium">{row.label}</span>
                       <ChevronRight className="w-3 h-3 text-foreground shrink-0" />
                       <span>{row.choice}</span>
-                      <span className="text-foreground typo-caption ml-auto">
-                        {prettyDate(row.decisionTimestamp ?? row.createdAt)}
-                      </span>
+                      <RelativeTime
+                        timestamp={row.decisionTimestamp ?? row.createdAt}
+                        className="text-foreground typo-caption ml-auto"
+                      />
                     </div>
                     <div className="flex items-baseline gap-1.5 typo-caption text-foreground">
                       <GitBranch className="w-3 h-3 text-foreground shrink-0" />
@@ -220,29 +260,4 @@ export default function DecisionsPanel() {
       )}
     </div>
   );
-}
-
-function prettyDate(iso: string): string {
-  try {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    const now = new Date();
-    const sameDay =
-      d.getFullYear() === now.getFullYear() &&
-      d.getMonth() === now.getMonth() &&
-      d.getDate() === now.getDate();
-    if (sameDay) {
-      return d.toLocaleTimeString(undefined, {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-    return d.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric',
-    });
-  } catch {
-    return iso;
-  }
 }

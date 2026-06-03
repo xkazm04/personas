@@ -24,6 +24,20 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | Leaderboard | Persona rankings, podium, radar score details | `sub_leaderboard` |
 | Certification | **Dev-only.** Read-only viewer over the team-autonomy eval/certification bundles in `docs/test/runs/` — per-team certification status, sortable run history, and per-run detail (dimensions, gates, standards compliance, grounding, trajectory, judge panel). Hidden from production builds. | `sub_certification`, `commands/eval_runs.rs` |
 
+### Incidents inbox (`sub_incidents`)
+
+The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven audit streams (alerts, tool errors, credential failures, healing misses, provider failovers, policy drops, healing issues) are promoted into one `open → acknowledged → in_progress → resolved/dismissed` list. It is written to read for **non-technical users**:
+
+- **Rows show plain content, not payloads.** The promoter's `detail` field (a mix of prose, `key=value` fragments, and JSON) is normalized by `libs/incidentDetail.ts` — human prose shows inline, structured payloads are suppressed on the row and broken down in the detail modal. Severity renders as a friendly token label ("Critical"), never the raw machine token.
+- **The detail modal breaks JSON down** into a labelled fact grid (`IncidentDetailBreakdown.tsx`), with the original JSON behind a collapsed "raw data" toggle for power users (reuses `sub_events/HighlightedJson`).
+- **Severity carries a colour-blind-safe shape** (`StatusShape`) plus a plain-language urgency framing ("Needs attention now / Important / Worth a look / Minor"), so priority survives without colour. An always-visible legend (`IncidentSeverityLegend`) decodes the shapes into urgency under the KPI tiles, and the Critical KPI tile leads with the same framing when any critical incident is open.
+- **Incidents group by agent** (`libs/groupIncidents.ts`, `IncidentAgentGroup.tsx`) into collapsible per-agent sections ordered worst-severity-first, answering "which of my agents needs me?" — agent-less incidents fall into a "No agent" bucket that sorts last. Each group header offers one-click acknowledge / resolve-all for that agent.
+- **Filters speak plain language too** — the severity and source filter chips resolve through `tokenLabel` / `sourceTableLabel`, so a user filters by "Tool" or "Credential", not `tool_execution_audit_log`.
+- **Each incident says what to do** — the detail modal leads with a guidance callout keyed off the source stream (`incidentGuidance` → `tool` / `credential` / `provider` / …). Resolving offers one-tap note presets ("Fixed", "Transient — ignored", …), and closed rows show their resolution note inline as a recap. Fact values render smartly (timestamps → relative time, URLs as links, per-fact copy).
+- **The grouped inbox remembers its shape** — a collapse-all / expand-all control plus per-agent collapse state persisted to `localStorage` (`incidents:collapsed-groups`). Per-agent headers stay sticky while scrolling.
+- **Navigable by keyboard and time** — keyboard triage (j/k move, Enter open, A acknowledge, R resolve, Esc clear) over the visible rows, announced to screen readers via a polite aria-live region, and "All time / Last 24 hours / Last 7 days" range chips wired to the `since` filter.
+- **Nothing rots unseen** — active incidents open past three days carry a "Stale" tag and amber age, and a newest/oldest sort toggle reorders incidents within each agent group so the longest-waiting work can be pulled to the top.
+
 ## Additional overview modules
 
 
@@ -52,7 +66,7 @@ The module follows three primary navigation modes:
 4. **Memories** — the persona memory inspector described above.
 
 | `sub_usage` | Usage charts, period comparison, tool usage pivoting |
-| `sub_memories` | Memory list, conflict review, merge actions. The baseline list is a grid table with user-resizable columns. A **tier filter** (Active set / Core / Active / Working / Archived) gates what's shown — the default "Active set" view excludes archived memories; archived rows render muted with a badge + a **Restore** action (the Director archives duplicate/low-value memories via `tier='archive'`; see `docs/features/director/README.md` → Memory curation). |
+| `sub_memories` | Memory list, conflict review, merge actions. The baseline list is a grid table with user-resizable columns. A **tier filter** (Active set / Core / Active / Working / Archived) gates what's shown — the default "Active set" view excludes archived memories; archived rows render muted with a badge + a **Restore** action (the Director archives duplicate/low-value memories via `tier='archive'`; see `docs/features/director/README.md` → Memory curation). A header **Delete all** icon button (shown only when non-empty) clears memories after a danger confirm dialog (`delete_all_memories`) — for clearing test data. **It deliberately preserves the user-pinned `core` tier**: `delete_all` runs `DELETE … WHERE tier != 'core'`, so a single click can never wipe the authoritative identity memories the MEMORY CONTRACT says only the user may remove one at a time (mirrors how `archive_by_ids` and run-lifecycle GC keep core). |
 | `sub_cron_agents` | Schedule-focused persona cards |
 | `sub_analytics` | Rotation analytics helpers/panels, plus the GitHub-style 365-day **execution heatmap** (`ExecutionHeatmap.tsx`) embedded on the dashboard (fleet aggregate, respects the persona filter) and on each per-persona Activity tab. Backed by the `get_execution_heatmap` IPC command, which serves a 1-hour server-side cached daily aggregation plus derived insights (longest streak, dormant-since, peak day, week-over-week trend). Hovering a day cell shows its run count/cost in a cell-anchored floating tooltip (it no longer reflows a text line below the grid). |
 

@@ -18,6 +18,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { CategoryChip } from '@/features/shared/components/display/CategoryChip';
+import { importanceColor } from '../libs/memoryVisualTokens';
 import MemoryDetailModal from './MemoryDetailModal';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
@@ -309,7 +310,7 @@ function DenseRow({
 }) {
   const lastSeen = memory.last_accessed_at ?? memory.updated_at;
   const importancePct = (memory.importance / 5) * 100;
-  const importanceColor = memory.importance >= 4 ? '#fb7185' : memory.importance >= 3 ? '#fbbf24' : '#34d399';
+  const importanceHex = importanceColor(memory.importance);
   const tierClass = TIER_TONE[memory.tier] ?? TIER_TONE.archive!;
 
   return (
@@ -337,7 +338,7 @@ function DenseRow({
       <div className={`${COL_WIDTHS.importance} px-2 py-2`}>
         <div className="flex items-center gap-2">
           <div className="flex-1 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${importancePct}%`, backgroundColor: importanceColor }} />
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${importancePct}%`, backgroundColor: importanceHex }} />
           </div>
           <span className="typo-code font-mono tabular-nums text-foreground w-7 text-right">{memory.importance}/5</span>
         </div>

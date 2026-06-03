@@ -183,14 +183,17 @@ pub fn bulk_resolve_audit_incidents(
     resolution_note: Option<String>,
 ) -> Result<i64, AppError> {
     require_auth_sync(&state)?;
-    let count = repo::bulk_resolve(&state.db, &ids, resolution_note.as_deref())?;
-    // Publish incident_resolved per id so each blocked work can continue (P2.3).
-    for id in &ids {
+    // `bulk_resolve` returns only the ids THIS call actually flipped to
+    // resolved. Publishing per flipped id (rather than per passed id whose
+    // current status happens to be `resolved`) mirrors `resolve_audit_incident`'s
+    // `if changed` guard: an already-resolved row in the selection, or two
+    // windows resolving an overlapping set, can no longer re-emit
+    // incident_resolved on the bus or persist a duplicate persona_event. (P2.3)
+    let resolved_ids = repo::bulk_resolve(&state.db, &ids, resolution_note.as_deref())?;
+    for id in &resolved_ids {
         if let Ok(incident) = repo::get_by_id(&state.db, id) {
-            if incident.status == "resolved" {
-                publish_incident_resolved(&state.db, &app, &incident);
-            }
+            publish_incident_resolved(&state.db, &app, &incident);
         }
     }
-    Ok(count)
+    Ok(resolved_ids.len() as i64)
 }

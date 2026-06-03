@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import EmptyState, { InboxZero } from '@/features/shared/components/feedback/EmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { storeBus } from '@/lib/storeBus';
@@ -11,9 +13,12 @@ import { useIncidentsData } from '../libs/useIncidentsData';
 import { useIncidentActions } from '../libs/useIncidentActions';
 import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
+import { IncidentSeverityLegend } from './IncidentSeverityLegend';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
+import { IncidentAgentGroup } from './IncidentAgentGroup';
 import { IncidentDetailModal } from './IncidentDetailModal';
+import { groupIncidentsByAgent } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
@@ -25,15 +30,34 @@ const DEFAULT_FILTERS: IncidentFilters = {
   since: null,
 };
 
+const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
+
 export default function IncidentsInbox() {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
+  const [justCleared, setJustCleared] = useState(false);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
+  const [oldestFirst, setOldestFirst] = useState(false);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
+      return raw ? new Set<string>(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+  // Armed by an actual incident action (ack / resolve / dismiss) so a filter
+  // change that yields zero never triggers the celebration — only clearing the
+  // open inbox does.
+  const clearedByActionRef = useRef(false);
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
   const actions = useIncidentActions({
     onAfterChange: async () => {
+      clearedByActionRef.current = true;
       setSelectedIds(new Set());
       await refresh();
     },
@@ -94,11 +118,172 @@ export default function IncidentsInbox() {
     });
   }, []);
 
-  const isFiltered =
-    (filters.statuses?.length ?? 0) > 0 ||
+  const toggleGroup = useCallback((key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  // Group open incidents by the agent they belong to so the inbox answers
+  // "which of my agents needs me?" — worst-severity agents float to the top.
+  const groups = useMemo(
+    () => groupIncidentsByAgent(incidents, oldestFirst),
+    [incidents, oldestFirst],
+  );
+
+  // Persist collapsed groups so a tidied inbox stays tidy across refresh/reopen.
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(Array.from(collapsedGroups)));
+    } catch (e) {
+      silentCatch('incidents.collapsed-groups.persist')(e);
+    }
+  }, [collapsedGroups]);
+
+  const allCollapsed = groups.length > 0 && groups.every((g) => collapsedGroups.has(g.key));
+  const toggleAllGroups = useCallback(() => {
+    setCollapsedGroups(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)));
+  }, [allCollapsed, groups]);
+
+  // Flatten the rows the user can actually see (skipping collapsed groups) so
+  // keyboard navigation moves through exactly what's on screen.
+  const visibleIncidents = useMemo(
+    () => groups.filter((g) => !collapsedGroups.has(g.key)).flatMap((g) => g.incidents),
+    [groups, collapsedGroups],
+  );
+
+  // Latest-value refs so the global keydown listener can stay mounted once
+  // without re-binding on every focus change or refresh.
+  const visibleRef = useRef(visibleIncidents);
+  visibleRef.current = visibleIncidents;
+  const focusedIdRef = useRef(focusedId);
+  focusedIdRef.current = focusedId;
+  const modalOpenRef = useRef(false);
+  modalOpenRef.current = detailIncident !== null;
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
+  const tRef = useRef(t);
+  tRef.current = t;
+
+  // Keyboard triage: j/k (or arrows) move the cursor, Enter opens, A/R act on
+  // the focused incident, Esc clears. Ignored while typing or with the modal up.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (modalOpenRef.current) return;
+      const tgt = e.target as HTMLElement | null;
+      if (
+        tgt &&
+        (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT' || tgt.isContentEditable)
+      ) {
+        return;
+      }
+      const list = visibleRef.current;
+      if (list.length === 0) return;
+      const curIdx = list.findIndex((i) => i.id === focusedIdRef.current);
+      const focusAt = (idx: number) => {
+        const inc = list[idx];
+        if (!inc) return;
+        setFocusedId(inc.id);
+        document.getElementById(`incident-row-${inc.id}`)?.scrollIntoView({ block: 'nearest' });
+        const tt = tRef.current;
+        const sev = tokenLabel(tt, 'severity', inc.severity);
+        const pos = tt.overview.incidents.a11y_position
+          .replace('{current}', String(idx + 1))
+          .replace('{total}', String(list.length));
+        const persona = inc.personaName ? `, ${inc.personaName}` : '';
+        setAnnouncement(`${sev}, ${inc.title}${persona}. ${pos}`);
+      };
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          e.preventDefault();
+          focusAt(curIdx < 0 ? 0 : Math.min(list.length - 1, curIdx + 1));
+          break;
+        case 'k':
+        case 'ArrowUp':
+          e.preventDefault();
+          focusAt(curIdx < 0 ? list.length - 1 : Math.max(0, curIdx - 1));
+          break;
+        case 'Enter':
+          if (curIdx >= 0) {
+            e.preventDefault();
+            setDetailIncident(list[curIdx]!);
+          }
+          break;
+        case 'a':
+          if (curIdx >= 0 && list[curIdx]!.status === 'open') {
+            e.preventDefault();
+            const inc = list[curIdx]!;
+            void actionsRef.current.acknowledge(inc.id);
+            setAnnouncement(`${tRef.current.overview.incidents.a11y_acknowledged}: ${inc.title}`);
+          }
+          break;
+        case 'r':
+          if (curIdx >= 0) {
+            e.preventDefault();
+            const inc = list[curIdx]!;
+            void actionsRef.current.resolve(inc.id);
+            setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
+          }
+          break;
+        case 'Escape':
+          setFocusedId(null);
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const renderRow = useCallback(
+    (incident: AuditIncident) => (
+      <IncidentRow
+        key={incident.id}
+        incident={incident}
+        selected={selectedIds.has(incident.id)}
+        focused={focusedId === incident.id}
+        onSelectChange={(sel) => toggleSelect(incident.id, sel)}
+        onAcknowledge={() => void actions.acknowledge(incident.id)}
+        onResolve={() => void actions.resolve(incident.id)}
+        onDismiss={() => void actions.dismiss(incident.id)}
+        onReopen={() => void actions.reopen(incident.id)}
+        onOpenDetail={() => setDetailIncident(incident)}
+      />
+    ),
+    [selectedIds, focusedId, toggleSelect, actions],
+  );
+
+  // "Narrowed" = the user moved beyond the default open-only inbox view. The
+  // default (statuses: ['open'], nothing else) is NOT narrowed, so reaching
+  // zero there reads as a healthy "all clear" rather than a no-match result —
+  // and only that path earns the inbox-zero celebration.
+  const statusesAreDefaultOpen =
+    !filters.statuses || (filters.statuses.length === 1 && filters.statuses[0] === 'open');
+  const isNarrowed =
+    !statusesAreDefaultOpen ||
     (filters.severities?.length ?? 0) > 0 ||
     (filters.source_tables?.length ?? 0) > 0 ||
-    !!filters.persona_id;
+    !!filters.persona_id ||
+    !!filters.since;
+
+  // Detect an action-driven drain to zero. Evaluated once the refresh settles;
+  // a non-action path (filter change) leaves the ref unarmed, so no pop fires.
+  useEffect(() => {
+    if (loading) return;
+    if (incidents.length > 0) {
+      setJustCleared(false);
+      clearedByActionRef.current = false;
+      return;
+    }
+    if (clearedByActionRef.current && !isNarrowed) setJustCleared(true);
+    clearedByActionRef.current = false;
+  }, [loading, incidents.length, isNarrowed]);
 
   const selectedArray = Array.from(selectedIds);
   const hasSelection = selectedArray.length > 0;
@@ -123,9 +308,15 @@ export default function IncidentsInbox() {
       />
 
       <ContentBody>
-        <div className="px-4 py-3">
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcement}
+        </div>
+
+        <div className="px-4 pt-3 pb-2">
           <IncidentsInboxKpiHeader summary={summary} />
         </div>
+
+        <IncidentSeverityLegend />
 
         <IncidentsFilterBar filters={filters} onChange={setFilters} />
 
@@ -169,24 +360,69 @@ export default function IncidentsInbox() {
             <LoadingSpinner size="lg" label={t.overview.incidents.loading} />
           </div>
         ) : incidents.length === 0 ? (
-          <div className="flex items-center justify-center py-16 typo-body text-foreground">
-            {isFiltered
-              ? t.overview.incidents.empty_state_filtered
-              : t.overview.incidents.empty_state_open}
+          <div className="flex items-center justify-center py-16">
+            {isNarrowed ? (
+              <EmptyState
+                icon={Inbox}
+                title={t.overview.incidents.empty_filtered_title}
+                subtitle={t.overview.incidents.empty_state_filtered}
+              />
+            ) : (
+              <InboxZero
+                title={t.overview.incidents.empty_open_title}
+                subtitle={t.overview.incidents.empty_state_open}
+                celebrate={justCleared}
+              />
+            )}
           </div>
         ) : (
-          <div className="divide-y divide-primary/5">
-            {incidents.map((incident) => (
-              <IncidentRow
-                key={incident.id}
-                incident={incident}
-                selected={selectedIds.has(incident.id)}
-                onSelectChange={(sel) => toggleSelect(incident.id, sel)}
-                onAcknowledge={() => void actions.acknowledge(incident.id)}
-                onResolve={() => void actions.resolve(incident.id)}
-                onDismiss={() => void actions.dismiss(incident.id)}
-                onReopen={() => void actions.reopen(incident.id)}
-                onOpenDetail={() => setDetailIncident(incident)}
+          <div>
+            <div className="flex items-center justify-between px-4 py-1.5">
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setOldestFirst(false)}
+                  className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                    !oldestFirst
+                      ? 'bg-primary/15 text-primary border-primary/25'
+                      : 'text-foreground border-transparent hover:bg-secondary/40'
+                  }`}
+                >
+                  {t.overview.incidents.sort_newest}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOldestFirst(true)}
+                  className={`px-2 py-0.5 typo-caption rounded-card border transition-colors focus-ring ${
+                    oldestFirst
+                      ? 'bg-primary/15 text-primary border-primary/25'
+                      : 'text-foreground border-transparent hover:bg-secondary/40'
+                  }`}
+                >
+                  {t.overview.incidents.sort_oldest}
+                </button>
+              </div>
+              {groups.length > 1 && (
+                <button
+                  type="button"
+                  onClick={toggleAllGroups}
+                  className="typo-caption text-foreground rounded-card px-2 py-0.5 hover:bg-secondary/40 transition-colors focus-ring"
+                >
+                  {allCollapsed
+                    ? t.overview.incidents.groups_expand_all
+                    : t.overview.incidents.groups_collapse_all}
+                </button>
+              )}
+            </div>
+            {groups.map((group) => (
+              <IncidentAgentGroup
+                key={group.key}
+                group={group}
+                collapsed={collapsedGroups.has(group.key)}
+                onToggle={() => toggleGroup(group.key)}
+                onAckAll={(ids) => void actions.bulkAck(ids)}
+                onResolveAll={(ids) => void actions.bulkResolve(ids)}
+                renderRow={renderRow}
               />
             ))}
           </div>

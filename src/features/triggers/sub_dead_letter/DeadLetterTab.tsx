@@ -27,6 +27,8 @@ import type { PersonaEvent } from '@/lib/types/types';
 import type { BulkDeadLetterOutcome } from '@/lib/bindings/BulkDeadLetterOutcome';
 import type { BulkDeadLetterFailure } from '@/lib/bindings/BulkDeadLetterFailure';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState, { NoResults } from '@/features/shared/components/feedback/EmptyState';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 
 /**
  * First-paint default while `getDeadLetterConfig` is in flight. Matches the
@@ -571,25 +573,23 @@ export function DeadLetterTab() {
         )}
 
         {loading && events.length === 0 && (
-          <div className="flex items-center justify-center py-12 text-foreground typo-body">
-            {t.triggers.dead_letter_loading}
-          </div>
+          <ListSkeleton rows={4} rowHeight={64} className="rounded-card overflow-hidden" />
         )}
 
         {!loading && totalEvents === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
-            <Archive className="w-8 h-8 opacity-30" />
-            <p className="typo-body">{t.triggers.no_dead_letters}</p>
-            <p className="typo-caption opacity-70">{t.triggers.all_events_processed}</p>
-          </div>
+          <EmptyState
+            icon={Archive}
+            title={t.triggers.no_dead_letters}
+            subtitle={t.triggers.all_events_processed}
+          />
         )}
 
         {!loading && totalEvents > 0 && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-foreground gap-2">
-            <Filter className="w-8 h-8 opacity-30" />
-            <p className="typo-body">{t.triggers.dead_letter_no_matches}</p>
-            <p className="typo-caption opacity-70">{t.triggers.dead_letter_clear_filters_to_see}</p>
-          </div>
+          <NoResults
+            onReset={() => setFilters(EMPTY_FILTERS)}
+            title={t.triggers.dead_letter_no_matches}
+            subtitle={t.triggers.dead_letter_clear_filters_to_see}
+          />
         )}
 
         {filtered.length > 0 && viewMode === 'list' && (

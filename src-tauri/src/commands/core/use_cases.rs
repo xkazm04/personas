@@ -204,8 +204,11 @@ pub(crate) mod testable {
     ///   2. `use_case.sample_input`
     ///   3. empty object
     ///
-    /// Always injects `_simulation: true` so dispatch can short-circuit real
-    /// notification delivery.
+    /// A valid-but-non-object value (a JSON array or scalar, from either the
+    /// override or `sample_input`) is preserved by wrapping it as
+    /// `{user_input: value}` — never silently dropped. Always injects
+    /// `_simulation: true` so dispatch can short-circuit real notification
+    /// delivery.
     pub fn build_simulation_input(
         use_case: &serde_json::Value,
         input_override: Option<&str>,
@@ -223,10 +226,19 @@ pub(crate) mod testable {
             serde_json::json!({})
         };
 
-        let mut obj = input_json
-            .as_object()
-            .cloned()
-            .unwrap_or_else(serde_json::Map::new);
+        // Preserve valid-but-non-object input by wrapping it as
+        // `{user_input: value}`. A JSON array (`[1,2,3]`) or scalar (`42`)
+        // override would otherwise be discarded by an `as_object()`-then-empty
+        // fallback, running with only `_simulation:true` — treated WORSE than
+        // invalid JSON, which is already preserved above as `{user_input: raw}`.
+        let mut obj = match input_json {
+            serde_json::Value::Object(map) => map,
+            other => {
+                let mut map = serde_json::Map::new();
+                map.insert("user_input".to_string(), other);
+                map
+            }
+        };
         obj.insert("_simulation".to_string(), serde_json::Value::Bool(true));
         serde_json::to_string(&serde_json::Value::Object(obj))
             .map_err(|e| AppError::Validation(format!("failed to build simulate input: {}", e)))
@@ -480,14 +492,21 @@ pub async fn rename_event_listeners(
         ));
     }
 
-    let conn = state.db.get()?;
+    let mut conn = state.db.get()?;
     let exclude = exclude_persona_id.as_deref().unwrap_or("");
     let now = chrono::Utc::now().to_rfc3339();
     let needle = format!("%\"event_type\":\"{}\"%", from_event.replace('"', "\\\""));
 
+    // Atomic: the subscription write and the trigger write must both land or
+    // neither. Run as two independent statements, a mid-way failure (DB locked,
+    // constraint, panic) would commit the first and leave consumers
+    // half-migrated — some listening on the old name, some on the new, with no
+    // error surfaced. Mirrors the `cascade_use_case_toggle` transaction above.
+    let tx = conn.transaction().map_err(AppError::Database)?;
+
     let (subscriptions_touched, triggers_touched) = match action {
         RenameConsumerAction::Update => {
-            let subs = conn.execute(
+            let subs = tx.execute(
                 "UPDATE persona_event_subscriptions
                  SET event_type = ?1, updated_at = ?2
                  WHERE event_type = ?3 AND (?4 = '' OR persona_id <> ?4)",
@@ -498,7 +517,7 @@ pub async fn rename_event_listeners(
             // the operation transparent without parsing each row.
             let from_token = format!("\"event_type\":\"{}\"", from_event.replace('"', "\\\""));
             let to_token = format!("\"event_type\":\"{}\"", to_event.replace('"', "\\\""));
-            let trigs = conn.execute(
+            let trigs = tx.execute(
                 "UPDATE persona_triggers
                  SET config = REPLACE(config, ?1, ?2), updated_at = ?3
                  WHERE trigger_type = 'event_listener'
@@ -509,12 +528,12 @@ pub async fn rename_event_listeners(
             (subs, trigs)
         }
         RenameConsumerAction::Delete => {
-            let subs = conn.execute(
+            let subs = tx.execute(
                 "DELETE FROM persona_event_subscriptions
                  WHERE event_type = ?1 AND (?2 = '' OR persona_id <> ?2)",
                 rusqlite::params![from_event, exclude],
             )? as usize;
-            let trigs = conn.execute(
+            let trigs = tx.execute(
                 "DELETE FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
                    AND (?1 = '' OR persona_id <> ?1)
@@ -525,6 +544,8 @@ pub async fn rename_event_listeners(
         }
         RenameConsumerAction::Leave => (0, 0),
     };
+
+    tx.commit().map_err(AppError::Database)?;
 
     tracing::info!(
         from = %from_event,
@@ -896,6 +917,39 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
         assert_eq!(v["_simulation"], serde_json::json!(true));
         assert_eq!(v["user_input"], serde_json::json!("hello there"));
+    }
+
+    /// A valid JSON array override must be preserved (wrapped as `user_input`),
+    /// not silently dropped to an empty map. Regression for the bug where
+    /// invalid JSON survived but valid-but-non-object JSON did not.
+    #[test]
+    fn build_simulation_input_with_json_array_override_wraps_as_user_input() {
+        let uc = serde_json::json!({"id": "uc"});
+        let raw = build_simulation_input(&uc, Some("[1, 2, 3]")).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(v["_simulation"], serde_json::json!(true));
+        assert_eq!(v["user_input"], serde_json::json!([1, 2, 3]));
+    }
+
+    /// A valid JSON scalar override (number/bool) is likewise preserved.
+    #[test]
+    fn build_simulation_input_with_json_scalar_override_wraps_as_user_input() {
+        let uc = serde_json::json!({"id": "uc"});
+        let raw = build_simulation_input(&uc, Some("42")).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(v["_simulation"], serde_json::json!(true));
+        assert_eq!(v["user_input"], serde_json::json!(42));
+    }
+
+    /// The same wrap-don't-drop guard applies to a non-object `sample_input`
+    /// fallback (no override provided).
+    #[test]
+    fn build_simulation_input_with_non_object_sample_wraps_as_user_input() {
+        let uc = serde_json::json!({"id": "uc", "sample_input": ["a", "b"]});
+        let raw = build_simulation_input(&uc, None).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        assert_eq!(v["_simulation"], serde_json::json!(true));
+        assert_eq!(v["user_input"], serde_json::json!(["a", "b"]));
     }
 
     /// Static guarantee: the dispatch layer's [SIM] short-circuit branch is

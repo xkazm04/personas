@@ -39,6 +39,7 @@ const AUDIT_EVENT_LABELS: Record<string, string> = {
   ai_heal_section_missing: 'Section missing',
   ai_heal_unknown_target: 'Unknown target',
   ai_heal_unknown_fix_type: 'Unknown fix type',
+  ai_heal_parse_failed: 'Fix parse failed',
   dedup_skipped: 'Duplicate skipped',
 };
 

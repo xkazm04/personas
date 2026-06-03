@@ -114,9 +114,16 @@ pub async fn dev_tools_run_static_scan(
     let scan_type = format!("static:{}", tool_slug(config.tool));
     let scan = repo::create_scan(&state.db, Some(&project_id), &scan_type, Some("running"))?;
 
+    // Insert findings one at a time, mirroring `idea_scanner`'s log-and-continue
+    // discipline: a single failed insert (constraint violation, busy lock) must
+    // NOT abort the whole command via `?`. The trailing `?` here used to strand
+    // the scan row in 'running' forever, next to a half-written idea set that is
+    // impossible to reconcile by hand. We persist what we can, count failures,
+    // and always drive the scan to a terminal status below.
     let mut ideas_created: i32 = 0;
+    let mut insert_failures: u32 = 0;
     for f in &findings {
-        repo::create_idea(
+        match repo::create_idea(
             &state.db,
             Some(&project_id),
             None,
@@ -131,19 +138,39 @@ pub async fn dev_tools_run_static_scan(
             f.risk,
             None,
             None,
-        )?;
-        ideas_created += 1;
+        ) {
+            Ok(_) => ideas_created += 1,
+            Err(e) => {
+                insert_failures += 1;
+                tracing::warn!(error = %e, title = %f.title, "static scan: failed to persist finding");
+            }
+        }
     }
 
+    // Guarantee a terminal status so the UI never polls a stuck 'running' scan.
+    // A partial write (some findings failed to persist) is surfaced as 'error'
+    // with detail rather than silently reported as 'complete' — that partial,
+    // un-reconcilable state is exactly what this guard exists to expose.
+    let (scan_status, error_detail) = if insert_failures == 0 {
+        ("complete", None)
+    } else {
+        (
+            "error",
+            Some(format!(
+                "{insert_failures} of {} findings failed to persist; {ideas_created} saved",
+                findings.len()
+            )),
+        )
+    };
     let _ = repo::update_scan(
         &state.db,
         &scan.id,
-        Some("complete"),
+        Some(scan_status),
         Some(ideas_created),
         None,
         None,
         None,
-        None,
+        Some(error_detail.as_deref()),
     );
 
     let raw_output_excerpt = if stdout.is_empty() {

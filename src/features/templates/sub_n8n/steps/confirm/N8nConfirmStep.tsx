@@ -1,4 +1,4 @@
-import { Wrench, Zap, Link, ChevronDown, ChevronRight, AlertTriangle, Brain, Activity, ShieldCheck } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import type { N8nPersonaDraft } from '@/api/templates/n8nTransform';
 import type { AgentIR } from '@/lib/types/designTypes';
@@ -9,8 +9,9 @@ import { countByType } from '../../edit/protocolParser';
 import { matchCredentialToConnector } from '../../edit/connectorMatching';
 import { buildConnectorRailItems } from '../../edit/connectorHealth';
 import { useVaultStore } from "@/stores/vaultStore";
-import { ENTITY_CARD_COLORS, TAG_COLORS, CAPABILITY_SPLIT_STYLES } from '../../colorTokens';
+import { TAG_COLORS, CAPABILITY_SPLIT_STYLES } from '../../colorTokens';
 import type { ColorKey } from '../../colorTokens';
+import { PersonaEntitySummary } from '../PersonaEntitySummary';
 import { SuccessBanner } from './SuccessBanner';
 import { ConnectorHealthRail } from './ConnectorHealthRail';
 import type { ConfirmResult } from './n8nConfirmTypes';
@@ -108,23 +109,24 @@ export function N8nConfirmStep({
             </div>
             <div>
               <p className="typo-body-lg font-semibold text-foreground/90">
-                {draft.name ?? 'Unnamed Persona'}
+                {draft.name ?? t.templates.n8n.unnamed_persona}
               </p>
               <p className="typo-body text-foreground mt-0.5">
-                {draft.description ?? 'No description provided'}
+                {draft.description ?? t.templates.n8n.no_description}
               </p>
             </div>
           </div>
 
           {/* Entity summary grid */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-6 md:gap-3 mb-3">
-            <EntityCard icon={Wrench} count={toolCount} label="Tools" color="blue" />
-            <EntityCard icon={Zap} count={triggerCount} label="Triggers" color="amber" />
-            <EntityCard icon={Link} count={connectorCount} label="Connectors" color="emerald" />
-            <EntityCard icon={ShieldCheck} count={reviewCount} label="Reviews" color="rose" />
-            <EntityCard icon={Brain} count={memoryCount} label="Memory" color="cyan" />
-            <EntityCard icon={Activity} count={eventCount} label="Events" color="orange" />
-          </div>
+          <PersonaEntitySummary
+            toolCount={toolCount}
+            triggerCount={triggerCount}
+            connectorCount={connectorCount}
+            reviewCount={reviewCount}
+            memoryCount={memoryCount}
+            eventCount={eventCount}
+            className="mb-3"
+          />
 
           {/* Items breakdown */}
           {resolved.tools.length > 0 && (
@@ -217,22 +219,6 @@ export function N8nConfirmStep({
 }
 
 /* ---- Local helper components ---- */
-
-function EntityCard({ icon: Icon, count, label, color }: {
-  icon: React.ComponentType<{ className?: string }>;
-  count: number;
-  label: string;
-  color: ColorKey;
-}) {
-  return (
-    <div className={`px-2 py-3 rounded-modal border text-center ${ENTITY_CARD_COLORS[color]}`}>
-      <Icon className="w-3.5 h-3.5 mx-auto mb-1" />
-      <p className="typo-body-lg font-semibold text-foreground tabular-nums">{count}</p>
-      <p className="typo-body text-foreground uppercase tracking-wider">{label}</p>
-    </div>
-  );
-}
-
 
 function TagList({ items, color }: {
   items: { key: string; label: string; title?: string }[];

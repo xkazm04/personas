@@ -21,7 +21,7 @@ import { PersonaOverviewVariantConstellation } from './PersonaOverviewVariantCon
 import { usePersonaColumns } from './PersonaOverviewColumns';
 import { usePersonaListFilters } from './PersonaOverviewFilters';
 import { usePersonaActions } from './PersonaOverviewActions';
-import { useIsMobile } from './PersonaOverviewResponsive';
+import { useIsCompact } from '@/hooks/utility/interaction/useIsCompact';
 import type { Persona } from '@/lib/bindings/Persona';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
@@ -74,7 +74,7 @@ export default function PersonaOverviewPage() {
   // owns the toggle UX and it doesn't belong in the saved view preset.
   const [groupFilter, setGroupFilter] = useState<string | null>(null);
   const [scoreTrendsMap, setScoreTrendsMap] = useState<Record<string, number[]>>({});
-  const isMobile = useIsMobile();
+  const isMobile = useIsCompact();
 
   // Batched fetch of Director score trends keyed by persona id. Sample is
   // every visible persona — one round-trip, refreshes when the id set

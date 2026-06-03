@@ -53,7 +53,7 @@ function ChainCard({ group, onSelectIssue }: { group: ChainGroup; onSelectIssue?
       {/* Chain Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/[0.02] transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-foreground/[0.02] transition-colors text-left"
       >
         {expanded
           ? <ChevronDown className="w-3.5 h-3.5 text-foreground flex-shrink-0" />

@@ -1766,8 +1766,52 @@ pub async fn run_execution(
     // Process stdout lines with timeout
     let mut last_activity = std::time::Instant::now();
     let stream_result = tokio::time::timeout(timeout_duration, async {
-        let mut heartbeat_interval = tokio::time::interval(std::time::Duration::from_secs(30));
+        const HEARTBEAT_INTERVAL: std::time::Duration = std::time::Duration::from_secs(30);
+        let mut heartbeat_interval = tokio::time::interval(HEARTBEAT_INTERVAL);
+        // If the tick branch is starved while output streams continuously, a burst
+        // of catch-up ticks would otherwise fire the moment the stream goes idle;
+        // Skip collapses them to a single tick on the normal cadence.
+        heartbeat_interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
         heartbeat_interval.tick().await; // consume immediate first tick
+
+        // Tracks when the last liveness heartbeat was emitted. The `biased` select
+        // below prefers the line-read branch, so during a continuously-streaming run
+        // (output arriving faster than each line is processed) the read branch is
+        // always ready and `heartbeat_interval.tick()` is never scheduled. We emit
+        // the heartbeat from the read path too, gated on this — otherwise a healthy,
+        // output-heavy run looks silent: the UI silence indicator freezes and the
+        // supervisor watchdog (keyed on last_heartbeat_at) can misclassify it as
+        // stalled. See idea-974b2931.
+        let mut last_heartbeat = std::time::Instant::now();
+
+        // Emits the liveness heartbeat (frontend event + structured event) and
+        // stamps last_heartbeat_at for the watchdog scan. Best-effort; a failed DB
+        // stamp must not interrupt the stream loop. Called from both select branches.
+        let emit_heartbeat = |elapsed_ms: u64, silence_ms: u64| {
+            emit_to(
+                &*emitter,
+                event_name::EXECUTION_HEARTBEAT,
+                &HeartbeatEvent {
+                    execution_id: exec_id_for_stream.clone(),
+                    elapsed_ms,
+                    silence_ms,
+                },
+            );
+            // Also emit on structured channel
+            emit_to(
+                &*emitter,
+                event_name::EXECUTION_EVENT,
+                &StructuredExecutionEvent::Heartbeat {
+                    execution_id: exec_id_for_stream.clone(),
+                    elapsed_ms,
+                    silence_ms,
+                },
+            );
+            let _ = crate::db::repos::execution::executions::touch_last_heartbeat(
+                &pool_for_stream,
+                &exec_id_for_stream,
+            );
+        };
 
         loop {
             tokio::select! {
@@ -1777,6 +1821,17 @@ pub async fn run_execution(
                     match line_result {
                         Ok(Some(raw_line)) => {
                             last_activity = std::time::Instant::now();
+
+                            // Heartbeat off the biased read path. The tick branch
+                            // below is starved while output streams continuously, so
+                            // emit here once the interval has elapsed. Checked before
+                            // the empty-line `continue` so it runs on every line read.
+                            // silence_ms is ~0 here — we just observed a line.
+                            if last_heartbeat.elapsed() >= HEARTBEAT_INTERVAL {
+                                let elapsed_ms = start_time.elapsed().as_millis() as u64;
+                                emit_heartbeat(elapsed_ms, 0);
+                                last_heartbeat = std::time::Instant::now();
+                            }
 
                             if raw_line.trim().is_empty() {
                                 continue;
@@ -2160,34 +2215,16 @@ pub async fn run_execution(
                 }
 
                 _ = heartbeat_interval.tick() => {
-                    let elapsed_ms = start_time.elapsed().as_millis() as u64;
-                    let silence_ms = last_activity.elapsed().as_millis() as u64;
-                    emit_to(
-                        &*emitter,
-                        event_name::EXECUTION_HEARTBEAT,
-                        &HeartbeatEvent {
-                            execution_id: exec_id_for_stream.clone(),
-                            elapsed_ms,
-                            silence_ms,
-                        },
-                    );
-                    // Also emit on structured channel
-                    emit_to(
-                        &*emitter,
-                        event_name::EXECUTION_EVENT,
-                        &StructuredExecutionEvent::Heartbeat {
-                            execution_id: exec_id_for_stream.clone(),
-                            elapsed_ms,
-                            silence_ms,
-                        },
-                    );
-                    // Stamp last_heartbeat_at so the supervisor watchdog scan
-                    // can detect long-silent runs. Best-effort; failure here
-                    // must not interrupt the stream loop.
-                    let _ = crate::db::repos::execution::executions::touch_last_heartbeat(
-                        &pool_for_stream,
-                        &exec_id_for_stream,
-                    );
+                    // Idle-path heartbeat. Skip only if a read-path heartbeat fired
+                    // recently (busy→idle transition) to avoid a duplicate; the
+                    // half-interval margin keeps the steady idle cadence robust
+                    // against the sub-tick skew of the DB stamp inside emit_heartbeat.
+                    if last_heartbeat.elapsed() >= HEARTBEAT_INTERVAL / 2 {
+                        let elapsed_ms = start_time.elapsed().as_millis() as u64;
+                        let silence_ms = last_activity.elapsed().as_millis() as u64;
+                        emit_heartbeat(elapsed_ms, silence_ms);
+                        last_heartbeat = std::time::Instant::now();
+                    }
                 }
             }
         }

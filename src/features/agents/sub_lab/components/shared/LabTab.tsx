@@ -1,13 +1,11 @@
-import { lazy, Suspense, useEffect, useState, useCallback } from 'react';
-import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, Zap, ShieldCheck, Scale } from 'lucide-react';
+import { lazy, Suspense, useEffect } from 'react';
+import { FlaskConical, GitBranch, Wand2, Dna, Sparkles, ShieldCheck, Scale } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from '@/stores/systemStore';
-import { managementFetch } from '@/api/system/managementApiAuth';
 import type { LabMode } from '@/stores/slices/agents/labSlice';
-import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
-import { DebtText } from '@/i18n/DebtText';
+import { LabResultsSkeleton } from './LabResultsSkeleton';
+import { AutoOptimizeConfig } from './AutoOptimizeConfig';
 
 
 
@@ -34,11 +32,13 @@ const modeTabs: Array<{ id: LabMode; label: string; icon: typeof FlaskConical }>
 const validModes = new Set<string>(modeTabs.map((t) => t.id));
 
 export function LabTab() {
-  const { t } = useTranslation();
   const labMode = useAgentStore((s) => s.labMode);
   const setLabMode = useAgentStore((s) => s.setLabMode);
   const personaId = useAgentStore((s) => s.selectedPersona?.id);
   const hydrateActiveProgress = useAgentStore((s) => s.hydrateActiveProgress);
+  const runningMode = useAgentStore((s) => s.labProgress?.mode ?? null);
+  const isArenaRunning = useAgentStore((s) => s.isArenaRunning);
+  const isMatrixRunning = useAgentStore((s) => s.isMatrixRunning);
 
   // Restore persisted tab on mount.
   // Phase F: a pending Athena `companion://open-lab` jump beats the
@@ -76,6 +76,7 @@ export function LabTab() {
           {modeTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = labMode === tab.id;
+            const running = tab.id === runningMode || (tab.id === 'arena' && isArenaRunning) || (tab.id === 'matrix' && isMatrixRunning);
             return (
               <button
                 key={tab.id}
@@ -88,6 +89,7 @@ export function LabTab() {
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {tab.label}
+                {running && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-pulse" />}
                 {isActive && (
                   <motion.div
                     layoutId="labModeTab"
@@ -100,12 +102,12 @@ export function LabTab() {
           })}
         </div>
         <div className="pl-2 flex-shrink-0">
-          <AutoOptimizeToggle />
+          <AutoOptimizeConfig />
         </div>
       </div>
 
       {/* Mode content */}
-      <Suspense fallback={<div className="py-8 text-center typo-caption text-foreground">{t.agents.lab.loading}</div>}>
+      <Suspense fallback={<div className="pt-4"><LabResultsSkeleton /></div>}>
         {labMode === 'arena' && <ArenaPanel />}
         {labMode === 'ab' && <AbPanel />}
         {(labMode === 'matrix' || labMode === 'eval') && <MatrixPanel />}
@@ -115,61 +117,5 @@ export function LabTab() {
         {labMode === 'regression' && <RegressionPanel />}
       </Suspense>
     </div>
-  );
-}
-
-function AutoOptimizeToggle() {
-  const persona = useAgentStore((s) => s.selectedPersona);
-  const [enabled, setEnabled] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const fetchConfig = useCallback(async () => {
-    if (!persona) return;
-    try {
-      const resp = await managementFetch(`/api/settings/auto-optimize/${persona.id}`);
-      if (resp.ok) {
-        const data = await resp.json();
-        setEnabled(data?.data?.enabled || false);
-      }
-    } catch (err) { silentCatch("features/agents/sub_lab/components/shared/LabTab:catch1")(err); }
-  }, [persona]);
-
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
-
-  const toggle = async () => {
-    if (!persona) return;
-    setLoading(true);
-    try {
-      await managementFetch(`/api/settings/auto-optimize/${persona.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          enabled: !enabled,
-          cron: "0 2 * * 0",
-          min_score: 80,
-          models: ["sonnet"],
-        }),
-      });
-      setEnabled(!enabled);
-    } catch (err) { silentCatch("features/agents/sub_lab/components/shared/LabTab:catch2")(err); }
-    setLoading(false);
-  };
-
-  return (
-    <button
-      data-testid="auto-optimize-toggle"
-      onClick={toggle}
-      disabled={loading || !persona}
-      className={`flex items-center gap-1.5 px-2.5 py-1 typo-caption font-medium rounded-card border transition-colors ${
-        enabled
-          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-          : 'text-foreground hover:bg-secondary/30 border-primary/10 hover:border-primary/20'
-      }`}
-      title={enabled ? "Auto-optimization enabled (weekly arena + improve)" : "Enable automatic prompt optimization"}
-    >
-      <Zap className={`w-3 h-3 ${enabled ? 'text-emerald-400' : ''}`} />
-      <DebtText k="auto_auto_optimize_14b37f99" />
-      <span className={`w-1.5 h-1.5 rounded-full ${enabled ? 'bg-emerald-400' : 'bg-muted-foreground/30'}`} />
-    </button>
   );
 }

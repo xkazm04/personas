@@ -1,5 +1,24 @@
 import type { Translations } from '@/i18n/en';
 
+/**
+ * Text-tone convention for Research Lab surfaces.
+ *
+ * Body content the user is meant to READ — titles, descriptions, captions,
+ * metadata — stays at full-strength `text-foreground` (theme-aware: white in
+ * dark themes, black in light). Opacity-dimmed body text (`text-foreground/70`,
+ * `/50`, …) is an antipattern here: it fades into the background on every theme
+ * except the high-contrast one and is rejected by the `custom/no-low-contrast-
+ * text-classes` ESLint rule (see CLAUDE.md → UI Conventions → Typography
+ * contrast).
+ *
+ * Hierarchy comes from the typographic scale and accent color, NOT opacity:
+ *  - SIZE / WEIGHT  `typo-section-title` › `typo-card-label` › `typo-body`
+ *                   › `typo-caption` › `typo-micro` / `typo-label`
+ *  - EMPHASIS       `text-primary` for the value/heading that should pop
+ *  - STATE          de-emphasis of inactive elements is carried structurally
+ *                   (border, badge, accent-vs-plain icon color), not by fading text
+ */
+
 export type ProjectStatus =
   | 'scoping'
   | 'literature_review'

@@ -54,6 +54,66 @@
   }
 }
 
+/* -- Mobile / touch ergonomics -----------------------------------------------
+   The app ships an Android target (see docs/development/android-build.md), so
+   the React tree renders on touch hardware where hover doesn't exist and the
+   pointer is a fingertip. These rules are gated on `pointer: coarse` /
+   `env(safe-area-inset-*)`, so they are no-ops on desktop (pointer: fine, zero
+   insets) and only shape the touch build. */
+
+/* #3 — Respect the device safe area (status bar, notch, gesture bar). Apply to
+   the root shell; env() insets are 0 on desktop so this is inert there. Pairs
+   with `viewport-fit=cover` in index.html. */
+@utility app-safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+}
+
+@layer base {
+  /* #6 — Touch-interaction baseline. Kill the grey tap-flash, stop scroll
+     chaining / pull-to-refresh, and drop the 300ms double-tap-zoom delay so
+     taps feel native rather than web-in-a-webview. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    overscroll-behavior: none;
+  }
+  button,
+  [role="button"],
+  a {
+    touch-action: manipulation;
+  }
+}
+
+@media (pointer: coarse) {
+  /* #1 — Tap-target floor. WCAG 2.5.5 / HIG (44pt) / Material (48dp) want
+     >=44px. Height only here so horizontal flex/inline rows don't break; square
+     icon buttons get their width from the Button component's coarse sizing. */
+  button:not(:disabled):not([aria-disabled="true"]),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="option"],
+  a[href],
+  summary,
+  select {
+    min-height: 44px;
+  }
+
+  /* #2 — Reveal-on-hover affordances (opacity-0 + group-hover:opacity-100) are
+     permanently invisible on touch because there is no hover state, which hides
+     real controls (row actions, dismiss buttons). Force the pattern visible. */
+  [class~="opacity-0"][class*="group-hover:opacity-100"],
+  [class~="opacity-0"][class*="peer-hover:opacity-100"],
+  [class~="opacity-0"][class*="focus-within:opacity-100"] {
+    opacity: 1 !important;
+  }
+}
+
 /* -- Custom Title Bar -- */
 .titlebar {
   display: flex;
@@ -1712,6 +1772,26 @@ body[data-drag-active="true"] * {
   animation: stage-shimmer 1.4s ease-in-out infinite;
 }
 
+/* Runner phase shimmer — a soft light streak sweeps the active phase segment of
+   the run timeline (RunnerStreamView), giving the live segment a gentle continuous
+   pulse so a long-running phase never looks frozen (and quietly reassures that the
+   run isn't stuck). The transparent gradient ends keep the loop reset invisible.
+   Neutralised by the reduced-motion gate (iteration-count: 1 + 0.01ms duration →
+   settles at translateX(0), i.e. the original static left-pinned primary tint). */
+@keyframes phase-shimmer {
+  0% {
+    transform: translateX(-60%);
+  }
+
+  100% {
+    transform: translateX(160%);
+  }
+}
+
+.animate-phase-shimmer {
+  animation: phase-shimmer 2s ease-in-out infinite;
+}
+
 /* Sidebar icon animations — hoisted from inline <style> in SidebarIconStyles.
    Inline <style> tags triggered full document style recalculation on every React render. */
 .pi-pulse { animation: pi-pulse 2.5s ease-in-out infinite; }
@@ -1834,6 +1914,23 @@ body[data-drag-active="true"] * {
 
 .animate-success-pop {
   animation: success-pop 160ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transform-origin: center;
+}
+
+/* Inbox-zero celebration — a one-shot scale+fade pop on the check badge when
+   the LAST item in a review / incident queue is cleared, so reaching zero
+   feels earned rather than abrupt. ~400ms with a soft back-ease overshoot.
+   Gated behind prefers-reduced-motion in JS (useReducedMotion + the app-level
+   reduceMotion toggle); the universal reduced-motion CSS blocks above/below
+   collapse it to an instant 0.01ms as a backstop. */
+@keyframes inbox-zero-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  55% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-inbox-zero-pop {
+  animation: inbox-zero-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
   transform-origin: center;
 }
 

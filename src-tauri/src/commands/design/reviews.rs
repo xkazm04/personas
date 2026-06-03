@@ -742,7 +742,13 @@ pub async fn rebuild_design_review(
                             "failed"
                         };
 
-                        let _ = repo::update_review_result(
+                        // Branch on the persistence Result. The rebuild-{id} job
+                        // key is deterministic, so a concurrent delete (or any DB
+                        // error) can make this write fail — reporting "completed"
+                        // anyway would show a stale review as freshly rebuilt and
+                        // silently drop the new design. Only mark completed once the
+                        // write actually persisted; otherwise surface the failure.
+                        match repo::update_review_result(
                             &pool,
                             &review.id,
                             status,
@@ -754,19 +760,36 @@ pub async fn rebuild_design_review(
                             use_case_flows.as_deref(),
                             None,
                             &now,
-                        );
-
-                        n8n_job_state::emit_n8n_transform_line(
-                            &app,
-                            &rebuild_id,
-                            format!("[Milestone] Rebuild complete -- quality: {structural_score}%"),
-                        );
-                        n8n_job_state::set_n8n_transform_status(
-                            &app,
-                            &rebuild_id,
-                            "completed",
-                            None,
-                        );
+                        ) {
+                            Ok(_) => {
+                                n8n_job_state::emit_n8n_transform_line(
+                                    &app,
+                                    &rebuild_id,
+                                    format!(
+                                        "[Milestone] Rebuild complete -- quality: {structural_score}%"
+                                    ),
+                                );
+                                n8n_job_state::set_n8n_transform_status(
+                                    &app,
+                                    &rebuild_id,
+                                    "completed",
+                                    None,
+                                );
+                            }
+                            Err(e) => {
+                                tracing::error!(
+                                    review_id = %review.id,
+                                    error = %e,
+                                    "Failed to persist rebuilt design review result"
+                                );
+                                n8n_job_state::set_n8n_transform_status(
+                                    &app,
+                                    &rebuild_id,
+                                    "failed",
+                                    Some(format!("Failed to save rebuilt design: {e}")),
+                                );
+                            }
+                        }
                     }
                     None => {
                         let _ = repo::update_review_result(

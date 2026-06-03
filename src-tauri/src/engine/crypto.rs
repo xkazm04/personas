@@ -95,6 +95,18 @@ impl SessionKeyPair {
                     CryptoError::Decrypt(format!("RSA decryption of AES key failed: {e}"))
                 })?;
 
+            // The wrapped-key length is frontend/attacker-controllable, so a
+            // malformed payload can RSA-decrypt to a non-32-byte slice.
+            // `Key::<Aes256Gcm>::from_slice` PANICS on the wrong length, so guard
+            // here and return a clean error (mirrors the nonce-length guard below
+            // and in `decrypt_from_db`) rather than crashing the command handler.
+            if raw_aes_key.len() != 32 {
+                return Err(CryptoError::Decrypt(format!(
+                    "Invalid AES key length: {} (expected 32)",
+                    raw_aes_key.len()
+                )));
+            }
+
             // 2. Split IV (12 bytes) from AES ciphertext
             let iv_and_ciphertext = B64.decode(aes_part).map_err(|e| {
                 CryptoError::Decrypt(format!("Base64 decode (AES part) failed: {e}"))
@@ -1779,6 +1791,64 @@ mod tests {
         let (ciphertext, nonce) = encrypt_for_db("").unwrap();
         let decrypted = decrypt_from_db(&ciphertext, &nonce).unwrap();
         assert_eq!(decrypted, "");
+    }
+
+    #[test]
+    fn test_hybrid_decrypt_roundtrip() {
+        use rsa::pkcs8::DecodePublicKey;
+
+        let kp = SessionKeyPair::generate().unwrap();
+        let public_key = RsaPublicKey::from_public_key_pem(kp.public_key_pem()).unwrap();
+        let mut rng = OsRng;
+
+        let plaintext = "hybrid secret payload";
+
+        // 32-byte AES key, RSA-OAEP wrapped (the well-formed case)
+        let mut aes_key_bytes = [0u8; 32];
+        rng.fill_bytes(&mut aes_key_bytes);
+        let wrapped = public_key
+            .encrypt(&mut rng, Oaep::new::<sha2::Sha256>(), &aes_key_bytes)
+            .unwrap();
+
+        // AES-256-GCM encrypt with a random 12-byte IV: payload is iv || ciphertext
+        let cipher = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&aes_key_bytes));
+        let mut iv = [0u8; 12];
+        rng.fill_bytes(&mut iv);
+        let ct = cipher
+            .encrypt(Nonce::from_slice(&iv), plaintext.as_bytes())
+            .unwrap();
+        let mut iv_and_ct = Vec::with_capacity(12 + ct.len());
+        iv_and_ct.extend_from_slice(&iv);
+        iv_and_ct.extend_from_slice(&ct);
+
+        let payload = format!("{}.{}", B64.encode(&wrapped), B64.encode(&iv_and_ct));
+        // A valid 32-byte key must pass the length guard and round-trip.
+        let decrypted = kp.decrypt(&payload).unwrap();
+        assert_eq!(decrypted, plaintext);
+    }
+
+    #[test]
+    fn test_hybrid_decrypt_rejects_non_32_byte_aes_key() {
+        use rsa::pkcs8::DecodePublicKey;
+
+        let kp = SessionKeyPair::generate().unwrap();
+        let public_key = RsaPublicKey::from_public_key_pem(kp.public_key_pem()).unwrap();
+        let mut rng = OsRng;
+
+        // Wrap a deliberately wrong-length "AES key" (16 bytes, not 32). The
+        // wrapped-key length is frontend/attacker-controllable, so a malformed
+        // IPC payload can RSA-decrypt to this. The aes_part is irrelevant — the
+        // length guard fires before it is used.
+        let bogus_key = [7u8; 16];
+        let wrapped = public_key
+            .encrypt(&mut rng, Oaep::new::<sha2::Sha256>(), &bogus_key)
+            .unwrap();
+        let payload = format!("{}.{}", B64.encode(&wrapped), B64.encode([0u8; 16]));
+
+        // Must return a clean CryptoError::Decrypt rather than panicking the
+        // command handler (the bug this guard fixes).
+        let result = kp.decrypt(&payload);
+        assert!(matches!(result, Err(CryptoError::Decrypt(_))));
     }
 
     #[test]

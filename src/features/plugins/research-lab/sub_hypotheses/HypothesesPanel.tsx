@@ -6,26 +6,11 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
+import { SignalMeter } from '../shared/SignalMeter';
 import type { ResearchHypothesis } from '@/api/researchLab/researchLab';
 
 const AddHypothesisForm = lazy(() => import('./AddHypothesisForm'));
 const GenerateHypothesesModal = lazy(() => import('./GenerateHypothesesModal'));
-
-function ConfidenceBar({ value }: { value: number }) {
-  const pct = Math.max(0, Math.min(1, value));
-  const color =
-    pct >= 0.7 ? 'bg-emerald-500/80' :
-    pct >= 0.4 ? 'bg-amber-500/80' :
-    'bg-red-500/60';
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1 w-20 rounded-full bg-foreground/10 overflow-hidden">
-        <div className={`h-full ${color}`} style={{ width: `${pct * 100}%` }} />
-      </div>
-      <span className="typo-micro text-foreground">{Math.round(pct * 100)}%</span>
-    </div>
-  );
-}
 
 export default function HypothesesPanel() {
   const { t } = useTranslation();
@@ -145,7 +130,7 @@ export default function HypothesesPanel() {
                     <div className="flex items-center gap-4 mt-3 flex-wrap">
                       <div className="flex items-center gap-2">
                         <span className="typo-caption text-foreground">{t.research_lab.confidence}</span>
-                        <ConfidenceBar value={h.confidence} />
+                        <SignalMeter value={h.confidence} ariaLabel={t.research_lab.confidence} />
                       </div>
                       {supporting > 0 && (
                         <span className="flex items-center gap-1 typo-caption text-emerald-400/80">
@@ -164,7 +149,7 @@ export default function HypothesesPanel() {
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, h.id)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all flex-shrink-0"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background flex-shrink-0"
                     title={t.common.delete}
                     aria-label={t.common.delete}
                   >

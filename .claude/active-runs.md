@@ -109,6 +109,21 @@ timestamp — the next session can recognize it as abandoned.
 - Paths: FRONTEND (disjoint): src/features/plugins/dev-tools/sub_projects/{ProjectModal.tsx,ProjectManagerPage.tsx,projectManagerTypes.tsx,pipeline/[NEW]}, src/features/plugins/dev-tools/sub_overview/ProjectOverviewPage.tsx, src/features/pipeline/components/{CreateTeamForm.tsx,TeamList.tsx}, src/i18n/locales/en.json. BACKEND (additive, overlaps team-orch P0 COMPLETE files): src-tauri/src/db/migrations/incremental.rs (ALTER dev_projects ADD main_branch, beside test_env_* block), src-tauri/src/db/models/dev_tools.rs (+main_branch field), src-tauri/src/db/repos/dev_tools.rs (update_project param), src-tauri/src/commands/infrastructure/dev_tools.rs (update_project param), src/lib/bindings/DevProject.ts (regen), src/api/devTools/devTools.ts, src/stores/slices/system/devToolsProjectSlice.ts. DOCS: docs/features/dev-tools.md.
 - Note: main_branch overlap is on team-orch-expansion's COMPLETED P0 dev_projects files (test_env cols already shipped) — additions are append-only, conflict would be a clean additive merge. Per-file staging only (verify git diff --cached --stat); never git add -A; never stash other sessions' work (Leonardo + docs/test/ files in tree are other sessions').
 
+### friend-goals — /friend loop: humanize sub_goals (Goals module) for non-technical users
+- Started: 2026-06-03 09:52
+- Status: started
+- Branch: worktree-friend-goals-095226
+- Worktree: .claude/worktrees/friend-goals-095226/
+- Paths: src/features/plugins/dev-tools/sub_goals/ (frontend only; may touch src/i18n/locales/*.json + src/features/shared/components/layout/sidebar/sidebarData.ts). Worktree-isolated; no Rust planned.
+- Note: /friend endless development loop, redesign/upgrade UI/UX so the Goals module (Board/Map/Timeline/Portfolio + editor/detail drawer) reads for non-technical users (plain-language copy, starter goals, view explainers, simpler detail drawer).
+
+### friend-incidents — /friend loop: humanize sub_incidents for non-technical users
+- Started: 2026-06-03 09:50
+- Status: completed — 16 cycles, merged to master (b5505d847); worktree removed + branch deleted. (Required a user-authorized checkpoint commit 1adee979e of 235 in-flight files to clean the tree first.)
+- Branch: worktree-friend-incidents-094958
+- Worktree: .claude/worktrees/friend-incidents-094958/
+- Paths: src/features/overview/sub_incidents/ (frontend only; may touch src/i18n/locales/*.json). Worktree-isolated; no Rust planned.
+- Note: /friend endless development loop, redesign/upgrade UI/UX so the incidents inbox reads for non-technical users (humanize tokens, plain-language guidance, urgency framing).
 ### research-claude-workflow-engine — Evaluate Claude Code 'workflow' mechanism vs personas execution engine
 - Started: 2026-05-31 (this session)
 - Status: COMPLETE (record-only + D1 probe) — read-only analysis; NO engine code touched (correctly deferred — findings [1]/[2] overlap active team-orch-expansion + exec-worktree-isolation). User chose "run the D1 probe now". PROBE RESULT (decisive): the `Workflow` + `Task` tools ARE exposed in personas' headless `claude -p` spawn (CLI 2.1.158 / Max), contradicting the "interactive-only" docs → D1 flips from blocked to available-but-design-gated (tier-detect + budget ceiling + sub-agent observability). Outputs: Obsidian Research/Lessons notes + durable fact added to .claude/codebase-stack.md Section 2. Commit = codebase-stack.md only (research:); ledger rides uncommitted per Phase 13h. Left in Active (ledger concurrently dirty); relocate later.
@@ -504,6 +519,10 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-06-03 — completed] friend-sublab — /friend loop over the agent Lab (12 cycles)**
+  - **What:** 12 atomic commits on `worktree-friend-sublab-092849` (1c3ffac33..ec215b1e3), all frontend deepen-existing on the Lab. Shipped: localized history status tokens + RelativeTime; Auto-Optimize config popover (schedule/threshold/models, mgmt API already accepted them); promote-the-winner callout in A/B+Eval results (Arena excluded — ranks models not versions); Eval matrix score heatmap; ScoreTrend cross-run insight (mode-filter chips + click-to-jump + avg line); winner column in A/B+Eval history; "draft ready" callout on the Improve panel (surfaces existing acceptDraft); cross-run compare card; trend+compare surfaced in the Versions timeline view; run-in-progress pulse on mode tabs; Eval radar version toggle + double-click solo. ~14 new agents.lab i18n keys, all translated across 14 locales each cycle. tsc + lint clean every cycle. NOT live-verified (tsc/lint only) — branch left for user review/merge. NOT pushed.
+  - **Paths:** src/features/agents/sub_lab/** + src/i18n/locales/*.json + generated i18n (types/enSectionStrings/section-locales).
 
 - **[2026-05-30 — completed] cert-c1-resilience-offline — Resilience & Escalation cert framework (C1 offline, except C1.6 Rust)**
   - **What:** Added rubric §6 "Resilience & Escalation" to the autonomy-eval harness — offline measurement of the P2 incident escalation + auto-continuation loop. C1.0 fixed the eval-harness seed-path skew (run.mjs + longitudinal.mjs: `docs/test/seeds` → `docs/tests/autonomy-eval/seeds`). C1.1 gather.mjs now reads `audit_incidents` → `incidents.json` + `summary.counts.incidents`. C1.2 new pure scorer `scripts/test/lib/eval/resilience.mjs` (`resilienceFacts(incidents, executions, events)` — raised/resolved/continued/continuationExecsCompleted/incidentResolvedEvents/reviewDecisionEvents/escalationClosed/recoveryScore). C1.3 wired into evaluate.mjs GATED behind `isResilienceTrack` (existsSync-guarded incidents read, conditional-spread `...(isResilienceTrack ? { resilience } : {})` subtree, two caps §6.1 escalation-must-close→NOT-READY / §6.2 no-incident→PROMISING, gated md section + stdout segment; NOT folded into team_score or rubric.mjs divisors). C1.4 schema.mjs optional `resilience` subtree. C1.5 `tests/cli/resilience.test.mjs` (10 vitest cases, all pass). C1.7 rubric doc §6 section. C1.8 held-out seed `sdlc2-ai-bookkeeper-resilience-1.json` (team b0414f59-1113-4325-b0c7-279c2fcb0e4a, repo ai-bookkeeper, same repo_cmds/roles as cert seeds, tracks `["code","resilience"]`, held_out true; goal depends on a deliberately-missing FX-rate connector so the engineer MUST raise_incident). DID NOT do C1.6 (Rust eval_runs.rs Scorecard.resilience + binding regen) — out of this task's scope. NOT pushed (local).

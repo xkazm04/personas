@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { X } from "lucide-react";
 import { DIM_META } from "@/features/shared/glyph";
 import type { GlyphDimension } from "@/features/shared/glyph";
-import { DIM_LABEL } from "./glyphLayoutHelpers";
+import { useGlyphDimText } from "@/features/shared/glyph/persona-sigil";
 
 interface GlyphDimensionSummaryCardProps {
   activeDim: GlyphDimension;
@@ -17,6 +17,7 @@ interface GlyphDimensionSummaryCardProps {
 export function GlyphDimensionSummaryCard({
   activeDim, summary, isPreBuild, onClose,
 }: GlyphDimensionSummaryCardProps) {
+  const { label } = useGlyphDimText();
   const meta = DIM_META[activeDim];
   const Icon = meta.icon;
   return (
@@ -43,7 +44,7 @@ export function GlyphDimensionSummaryCard({
           <Icon className="w-3.5 h-3.5" style={{ color: "#fff" }} />
         </span>
         <span className="typo-label font-bold uppercase tracking-[0.18em] text-foreground flex-1">
-          {DIM_LABEL[activeDim]}
+          {label[activeDim]}
         </span>
         <button
           type="button"

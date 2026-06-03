@@ -47,12 +47,19 @@ fn validate_peer_id(raw: &str) -> bool {
 }
 
 /// Sanitise a display_name: trim whitespace and truncate to MAX_DISPLAY_NAME_LEN.
+///
+/// The name arrives verbatim from a remote peer's mDNS TXT record, so it can be
+/// arbitrary untrusted UTF-8. Truncate on a character boundary (not a byte
+/// boundary) — a raw `trimmed[..N]` byte slice panics with "not a char boundary"
+/// whenever byte `N` lands inside a multibyte codepoint (emoji/CJK/accented),
+/// which would crash the inline `buffer_mdns_event` and abort the whole
+/// `browse_loop` discovery task.
 fn sanitise_display_name(raw: &str) -> String {
     let trimmed = raw.trim();
-    if trimmed.len() > MAX_DISPLAY_NAME_LEN {
-        trimmed[..MAX_DISPLAY_NAME_LEN].to_string()
-    } else if trimmed.is_empty() {
+    if trimmed.is_empty() {
         "Unknown Peer".to_string()
+    } else if trimmed.chars().count() > MAX_DISPLAY_NAME_LEN {
+        trimmed.chars().take(MAX_DISPLAY_NAME_LEN).collect()
     } else {
         trimmed.to_string()
     }
@@ -545,7 +552,36 @@ mod tests {
     fn display_name_truncated() {
         let long = "A".repeat(300);
         let result = sanitise_display_name(&long);
+        assert_eq!(result.chars().count(), MAX_DISPLAY_NAME_LEN);
+        // ASCII: one char == one byte.
         assert_eq!(result.len(), MAX_DISPLAY_NAME_LEN);
+    }
+
+    #[test]
+    fn display_name_multibyte_truncation_does_not_panic() {
+        // Each emoji is 4 bytes, so byte index 128 lands mid-codepoint —
+        // a raw byte slice `trimmed[..128]` would panic here. A name like this
+        // comes straight from an untrusted remote peer's mDNS TXT record.
+        let emoji = "🚀".repeat(300);
+        let result = sanitise_display_name(&emoji);
+        assert_eq!(result.chars().count(), MAX_DISPLAY_NAME_LEN);
+        // Result must be valid UTF-8 with no broken trailing codepoint.
+        assert!(result.chars().all(|c| c == '🚀'));
+
+        // CJK (3-byte) and accented (2-byte) names exercise other boundaries.
+        let cjk = "字".repeat(300);
+        assert_eq!(
+            sanitise_display_name(&cjk).chars().count(),
+            MAX_DISPLAY_NAME_LEN
+        );
+        let accented = "é".repeat(300);
+        assert_eq!(
+            sanitise_display_name(&accented).chars().count(),
+            MAX_DISPLAY_NAME_LEN
+        );
+
+        // A multibyte name shorter than the cap is preserved verbatim.
+        assert_eq!(sanitise_display_name("café 🚀 字"), "café 🚀 字");
     }
 
     #[test]

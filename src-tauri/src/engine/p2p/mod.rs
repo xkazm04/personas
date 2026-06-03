@@ -395,9 +395,8 @@ async fn build_snapshot(
     let peers = mdns.get_discovered_peers().unwrap_or_default();
     let discovered_peer_count = peers.len() as u32;
 
-    let local_peer_id = crate::engine::identity::get_or_create_identity(pool)
-        .map(|id| id.peer_id)
-        .unwrap_or_default();
+    let (local_peer_id, identity_degraded) =
+        crate::engine::identity::local_peer_id_for_status(pool);
 
     let status = NetworkStatusInfo {
         is_running,
@@ -405,6 +404,7 @@ async fn build_snapshot(
         discovered_peer_count,
         connected_peer_count,
         local_peer_id,
+        identity_degraded,
     };
 
     let health = connections.get_connection_health().await;

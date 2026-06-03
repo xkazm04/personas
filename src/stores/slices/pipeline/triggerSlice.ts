@@ -41,18 +41,34 @@ export interface TriggerError {
   message: string;
 }
 
+/** Snapshot of a trigger's configured limits, stored on the runtime state so
+ *  `recordTriggerComplete` and `getRateLimitSummary` can recompute throttle
+ *  status from live signals without the config being threaded through every
+ *  call site. `null` until the first firing is recorded. */
+export interface StoredRateLimits {
+  windowSeconds: number;
+  maxPerWindow: number;
+  maxConcurrent: number;
+  cooldownSeconds: number;
+}
+
 /** Per-trigger rate limit runtime state. */
 export interface TriggerRateLimitState {
   /** Timestamps (epoch ms) of recent firings within the current window. */
   firingTimestamps: number[];
   /** Number of currently executing (in-flight) runs for this trigger. */
   concurrentCount: number;
-  /** Number of queued triggers waiting to fire. */
+  /** Number of throttled firings backed up in the current throttle episode.
+   *  Drains to 0 the moment capacity frees (an allowed firing, or a completion
+   *  that clears the limit) — it is NOT an unbounded tally of every rejection. */
   queueDepth: number;
-  /** Whether this trigger is currently throttled. */
+  /** Whether this trigger is currently throttled. Always recomputed from live
+   *  signals (recent firings, in-flight count, cooldown) — never a sticky flag. */
   isThrottled: boolean;
   /** Timestamp (epoch ms) when cooldown expires, or 0 if not in cooldown. */
   cooldownUntil: number;
+  /** Limits from the most recent firing, for live recompute. */
+  limits: StoredRateLimits | null;
 }
 
 const EMPTY_RATE_LIMIT_STATE: TriggerRateLimitState = {
@@ -61,7 +77,32 @@ const EMPTY_RATE_LIMIT_STATE: TriggerRateLimitState = {
   queueDepth: 0,
   isThrottled: false,
   cooldownUntil: 0,
+  limits: null,
 };
+
+/**
+ * Would a trigger in state `s` be throttled right now? Pure function of LIVE
+ * signals — recent firings still inside the window, in-flight run count, and
+ * cooldown — plus the configured `limits`. This is the single source of truth
+ * for throttle status, replacing the old sticky `queueDepth > 0 || prev.isThrottled`
+ * recompute that could never clear back to "ready" after a burst.
+ */
+function computeThrottled(
+  s: Pick<TriggerRateLimitState, 'firingTimestamps' | 'concurrentCount' | 'cooldownUntil'>,
+  limits: StoredRateLimits | null,
+  now: number,
+): boolean {
+  // Without stored limits (e.g. state rehydrated before any firing) the only
+  // signal we can trust is cooldown.
+  if (!limits) return s.cooldownUntil > now;
+  const windowStart = now - limits.windowSeconds * 1000;
+  const recent = s.firingTimestamps.reduce((n, t) => (t > windowStart ? n + 1 : n), 0);
+  return (
+    (limits.cooldownSeconds > 0 && s.cooldownUntil > now) ||
+    (limits.maxPerWindow > 0 && recent >= limits.maxPerWindow) ||
+    (limits.maxConcurrent > 0 && s.concurrentCount >= limits.maxConcurrent)
+  );
+}
 
 export interface TriggerSlice {
   // State
@@ -149,21 +190,48 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
     const windowStart = now - rl.window_seconds * 1000;
     const recentTimestamps = prev.firingTimestamps.filter((t) => t > windowStart);
 
-    // Determine whether firing is allowed
+    const limits: StoredRateLimits = {
+      windowSeconds: rl.window_seconds,
+      maxPerWindow: rl.max_per_window,
+      maxConcurrent: rl.max_concurrent,
+      cooldownSeconds: rl.cooldown_seconds,
+    };
+
+    // Determine whether THIS firing is allowed (trigger already at a limit?)
     const throttled =
       (rl.cooldown_seconds > 0 && prev.cooldownUntil > now) ||
       (rl.max_per_window > 0 && recentTimestamps.length >= rl.max_per_window) ||
       (rl.max_concurrent > 0 && prev.concurrentCount >= rl.max_concurrent);
 
-    const newState: TriggerRateLimitState = throttled
-      ? { ...prev, firingTimestamps: recentTimestamps, queueDepth: prev.queueDepth + 1, isThrottled: true }
-      : {
-          firingTimestamps: [...recentTimestamps, now],
-          concurrentCount: prev.concurrentCount + 1,
-          queueDepth: prev.queueDepth,
-          isThrottled: false,
-          cooldownUntil: rl.cooldown_seconds > 0 ? now + rl.cooldown_seconds * 1000 : 0,
-        };
+    let newState: TriggerRateLimitState;
+    if (throttled) {
+      // Rejected → it backs up. queueDepth can no longer leak: it drains on the
+      // next allowed firing (below) or when a completion clears the limit.
+      newState = {
+        ...prev,
+        firingTimestamps: recentTimestamps,
+        queueDepth: prev.queueDepth + 1,
+        isThrottled: true,
+        limits,
+      };
+    } else {
+      // Allowed → capacity was available, so nothing is backed up: the backlog
+      // is cleared (these firings are rejected, not replayed, so a successful
+      // fire means prior pressure is gone). Recompute isThrottled for the
+      // POST-firing state so the dashboard reflects whether the NEXT firing
+      // would now be limited.
+      const post = {
+        firingTimestamps: [...recentTimestamps, now],
+        concurrentCount: prev.concurrentCount + 1,
+        cooldownUntil: rl.cooldown_seconds > 0 ? now + rl.cooldown_seconds * 1000 : 0,
+      };
+      newState = {
+        ...post,
+        queueDepth: 0,
+        isThrottled: computeThrottled(post, limits, now),
+        limits,
+      };
+    }
 
     // Single O(1) structural-sharing update via immer — avoids spreading the entire map
     set(produce((draft: PipelineStore) => {
@@ -176,33 +244,45 @@ export const createTriggerSlice: StateCreator<PipelineStore, [], [], TriggerSlic
   recordTriggerComplete: (triggerId) => {
     const prev = get().triggerRateLimits[triggerId];
     if (!prev) return;
+    const now = Date.now();
 
     set(produce((draft: PipelineStore) => {
       const entry = draft.triggerRateLimits[triggerId];
       if (!entry) return;
+      // A real in-flight run finished — free its concurrency slot.
       entry.concurrentCount = Math.max(0, entry.concurrentCount - 1);
-      entry.queueDepth = Math.max(0, entry.queueDepth - 1);
-      // Recompute throttle from real signals (queue + cooldown). The previous
-      // formula `queueDepth > 0 || prev.isThrottled` was sticky: once true it
-      // stayed true forever via the snapshot OR, so a trigger that briefly
-      // throttled then drained its queue would never clear back to "ready",
-      // permanently displaying "throttled" in the UI and (in some upstream
-      // call sites) refusing to fire again.
-      entry.isThrottled = entry.queueDepth > 0 || entry.cooldownUntil > Date.now();
+      // Recompute throttle PURELY from live signals (recent firings, the now-lower
+      // concurrent count, cooldown) + the stored limits — not the old sticky
+      // `queueDepth > 0 || prev.isThrottled`. Crucially, do NOT decrement
+      // queueDepth in lockstep with concurrentCount: completions correspond to
+      // ALLOWED firings, which never incremented queueDepth, so the old `-1`
+      // drained a queue that only THROTTLED firings filled, leaving it positive
+      // forever after a burst. Instead, when the freed capacity clears the
+      // limit, the backlog has drained → reset queueDepth to 0.
+      const throttled = computeThrottled(entry, entry.limits, now);
+      entry.isThrottled = throttled;
+      if (!throttled) {
+        entry.queueDepth = 0;
+      }
     }));
   },
 
   getRateLimitSummary: () => {
     const limits = get().triggerRateLimits;
+    const now = Date.now();
     let totalQueued = 0;
     let totalThrottled = 0;
     const throttledTriggerIds: string[] = [];
 
     for (const [id, state] of Object.entries(limits)) {
-      totalQueued += state.queueDepth;
-      if (state.isThrottled) {
+      // Recompute live so a trigger whose window has since slid (or cooldown
+      // expired) reports as ready even if no firing/completion has refreshed its
+      // stored flag — and so a drained queue is never over-reported.
+      const throttled = computeThrottled(state, state.limits, now);
+      if (throttled) {
         totalThrottled++;
         throttledTriggerIds.push(id);
+        totalQueued += state.queueDepth;
       }
     }
 

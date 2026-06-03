@@ -841,7 +841,8 @@ async fn run_task_execution(
                         tool_name,
                         input_preview,
                     } => {
-                        let preview = &input_preview[..input_preview.len().min(100)];
+                        let preview =
+                            crate::utils::text::truncate_on_char_boundary(&input_preview, 100);
                         TASK_EXEC_JOBS.emit_line(
                             app,
                             task_id,

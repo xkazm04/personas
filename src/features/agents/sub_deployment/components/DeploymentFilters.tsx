@@ -34,7 +34,7 @@ export function DeploymentFilters({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           className="w-full pl-9 pr-3 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15
-                     text-foreground placeholder:text-foreground
+                     text-foreground placeholder:text-muted-foreground
                      focus-visible:outline-none focus-visible:border-primary/30 transition-colors"
         />
       </div>

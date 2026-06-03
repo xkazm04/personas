@@ -154,7 +154,7 @@ export function RotationActivePolicy({
               data-testid="rotation-save-period-btn"
               className={`hover:opacity-90 ${ROTATION_STATUS.bg} ${ROTATION_STATUS.border} ${ROTATION_STATUS.text}`}
             >
-              Save
+              {t.common.save}
             </Button>
             <Button
               variant="ghost"
@@ -166,7 +166,7 @@ export function RotationActivePolicy({
               data-testid="rotation-cancel-period-btn"
               className="text-foreground hover:text-foreground/90"
             >
-              Cancel
+              {t.common.cancel}
             </Button>
           </div>
         ) : (
@@ -179,7 +179,7 @@ export function RotationActivePolicy({
             className="bg-secondary/40 hover:bg-secondary/60 border border-primary/15 text-foreground"
           >
             <span className="font-mono">{rotationStatus.rotation_interval_days ?? 90}</span>
-            <span>days</span>
+            <span>{t.vault.rotation_section.days}</span>
           </Button>
         )}
       </div>

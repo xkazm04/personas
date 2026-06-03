@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { X, ChevronRight, ListFilter } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { Numeric } from '@/features/shared/components/display/Numeric';
@@ -31,6 +32,7 @@ export function PersonaCoachingTable({
 }) {
   const { t } = useTranslation();
   const [onlyFlagged, setOnlyFlagged] = useState(false);
+  const reduceMotion = useReducedMotion();
   const now = Date.now();
 
   const FLAG_LABEL: Record<AttentionFlag, string> = {
@@ -80,7 +82,7 @@ export function PersonaCoachingTable({
           type="button"
           onClick={() => setOnlyFlagged((v) => !v)}
           disabled={flaggedCount === 0}
-          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:opacity-40 ${
+          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-pill normal-case tracking-normal transition-colors disabled:opacity-40 focus-ring ${
             onlyFlagged ? 'bg-violet-500/15 text-violet-200 border border-violet-500/30' : 'text-foreground border border-transparent hover:bg-secondary/40'
           }`}
           title={t.director.only_flagged}
@@ -102,8 +104,12 @@ export function PersonaCoachingTable({
               tabIndex={0}
               onClick={() => onSelect(r)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(r); } }}
-              className={`${ROW_GRID} row-hover-lift animate-fade-slide-in pl-2.5 pr-1.5 py-2 rounded cursor-pointer`}
-              style={{ ['--row-accent' as string]: accent, animationDelay: `${Math.min(i, 12) * 25}ms` }}
+              // Reduced-motion: skip the staggered fade-slide entrance (and its
+              // per-row delay) so rows render at their final state instantly.
+              // `focus-ring` gives keyboard focus a visible, themed outline —
+              // the role=button row was previously focus-invisible (WCAG 2.4.7).
+              className={`${ROW_GRID} row-hover-lift ${reduceMotion ? '' : 'animate-fade-slide-in'} pl-2.5 pr-1.5 py-2 rounded cursor-pointer focus-ring`}
+              style={{ ['--row-accent' as string]: accent, ...(reduceMotion ? {} : { animationDelay: `${Math.min(i, 12) * 25}ms` }) }}
             >
               {/* agent */}
               <span className="flex items-center gap-2 min-w-0">
@@ -169,7 +175,7 @@ export function PersonaCoachingTable({
                   <button
                     type="button"
                     onClick={(e) => { e.stopPropagation(); onRemove(r.personaId); }}
-                    className="p-1 rounded text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
+                    className="p-1 rounded text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors focus-ring"
                     aria-label={t.director.roster_remove}
                   >
                     <X className="w-3.5 h-3.5" />

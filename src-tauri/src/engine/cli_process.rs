@@ -203,7 +203,14 @@ impl CliProcessDriver {
         cmd.args(&cli_args.args)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null());
+            .stderr(std::process::Stdio::null())
+            // kill_on_drop is the safety net for every path that drops the
+            // `Child` without an explicit kill: cancellation, panics, and most
+            // importantly the engine ceiling (`run_execution_with_ceiling`)
+            // dropping the runner future when `tokio::time::timeout` fires.
+            // Without it the underlying `claude` CLI keeps streaming — and
+            // billing the user's API account — until the desktop app restarts.
+            .kill_on_drop(true);
 
         if let Some(dir) = exec_dir {
             cmd.current_dir(dir);
@@ -239,7 +246,11 @@ impl CliProcessDriver {
             .current_dir(&exec_dir)
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null());
+            .stderr(std::process::Stdio::null())
+            // Same orphan-prevention guarantee as build_and_spawn_core: if the
+            // owning future is dropped (cancel/panic/timeout) the CLI dies with
+            // it instead of running on and consuming API credits.
+            .kill_on_drop(true);
 
         #[cfg(windows)]
         {

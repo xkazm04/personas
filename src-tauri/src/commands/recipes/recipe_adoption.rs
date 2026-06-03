@@ -358,4 +358,53 @@ mod tests {
         // the link id is stable across re-runs.
         assert_eq!(r1.link.id, r2.link.id);
     }
+
+    #[test]
+    fn corrupt_tool_requirements_recipe_is_refused_not_silently_adopted() {
+        let pool = init_test_db().unwrap();
+        let persona_id = make_persona(&pool, "P-F");
+        // prompt_template is a plain prompt (no tool_hints); tool_requirements is
+        // declared but not valid JSON. Before the fix this scored Eligible and
+        // auto-linked with no tools wired — now it must hard-stop.
+        let recipe = recipe_repo::create_with_id(
+            &pool,
+            "rec-corrupt-reqs",
+            CreateRecipeInput {
+                credential_id: None,
+                use_case_id: None,
+                name: "Corrupt Recipe".to_string(),
+                description: Some("test".to_string()),
+                category: None,
+                prompt_template: "do the thing with {{x}}".to_string(),
+                input_schema: None,
+                output_contract: None,
+                tool_requirements: Some(r#"["file_read""#.to_string()),
+                credential_requirements: None,
+                model_preference: None,
+                sample_inputs: None,
+                tags: None,
+                icon: None,
+                color: None,
+                source_template_id: None,
+                source_use_case_id: None,
+                source_use_case_name: None,
+                source_version: None,
+            },
+        )
+        .unwrap();
+
+        let err = adopt_recipe_for_persona_inner(&pool, &persona_id, &recipe.id, true)
+            .expect_err("recipe with unreadable tool requirements must be refused");
+        assert!(
+            err.to_string().contains("incompatible"),
+            "error must mark the recipe incompatible; got: {err}"
+        );
+
+        // And no link was created — the recipe did not silently adopt.
+        let linked = recipe_repo::get_for_persona(&pool, &persona_id).unwrap();
+        assert!(
+            !linked.iter().any(|r| r.id == recipe.id),
+            "corrupt recipe must not be linked to the persona"
+        );
+    }
 }

@@ -19,6 +19,7 @@ const roleButtonRequiresKeydown = require("./eslint-rules/role-button-requires-k
 const noWholeStoreSubscription = require("./eslint-rules/no-whole-store-subscription.cjs");
 const enforceReducedMotionFallback = require("./eslint-rules/enforce-reduced-motion-fallback.cjs");
 const preferSharedClipboard = require("./eslint-rules/prefer-shared-clipboard.cjs");
+const noUnprefixedWideMinWidth = require("./eslint-rules/no-unprefixed-wide-min-width.cjs");
 
 export default tseslint.config(
   { ignores: ["dist", "src-tauri"] },
@@ -48,6 +49,7 @@ export default tseslint.config(
           "no-whole-store-subscription": noWholeStoreSubscription,
           "enforce-reduced-motion-fallback": enforceReducedMotionFallback,
           "prefer-shared-clipboard": preferSharedClipboard,
+          "no-unprefixed-wide-min-width": noUnprefixedWideMinWidth,
         },
       },
     },
@@ -95,6 +97,7 @@ export default tseslint.config(
       "custom/no-whole-store-subscription": "warn",
       "custom/enforce-reduced-motion-fallback": "warn",
       "custom/prefer-shared-clipboard": "warn",
+      "custom/no-unprefixed-wide-min-width": "warn",
     },
   },
   // Shared design-system primitives may import Tauri IPC for nothing —

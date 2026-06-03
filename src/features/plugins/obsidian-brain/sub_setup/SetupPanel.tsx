@@ -116,25 +116,25 @@ export default function SetupPanel() {
       if (filteredCount === 0) {
         addToast(
           vaults.length === 0
-            ? 'No Obsidian vaults detected. Try browsing manually.'
-            : 'All detected vaults are already saved. Add a new one via Browse.',
+            ? t.plugins.obsidian_brain.no_vaults_detected
+            : t.plugins.obsidian_brain.all_vaults_saved,
           'success',
         );
       }
     } catch (e) {
-      addToast(`Detection failed: ${e}`, 'error');
+      addToast(tx(t.plugins.obsidian_brain.detection_failed, { error: String(e) }), 'error');
     } finally {
       setDetecting(false);
     }
-  }, [addToast, savedPaths]);
+  }, [addToast, savedPaths, t, tx]);
 
   const browseFolder = useCallback(async () => {
-    const selected = await open({ directory: true, title: 'Select Obsidian Vault' });
+    const selected = await open({ directory: true, title: t.plugins.obsidian_brain.select_vault_dialog_title });
     if (selected && typeof selected === 'string') {
       setVaultPath(selected);
       setConnectionResult(null);
     }
-  }, []);
+  }, [t]);
 
   const testConnection = useCallback(async () => {
     if (!vaultPath) return;
@@ -147,15 +147,15 @@ export default function SetupPanel() {
       // test (without Save) made every consumer believe the vault was active.
       setConnectionResult(result);
     } catch (e) {
-      addToast(`Connection test failed: ${e}`, 'error');
+      addToast(tx(t.plugins.obsidian_brain.connection_test_failed, { error: String(e) }), 'error');
     } finally {
       setTesting(false);
     }
-  }, [vaultPath, addToast]);
+  }, [vaultPath, addToast, t, tx]);
 
   const saveConfig = useCallback(async () => {
     if (!vaultPath || !connectionResult?.valid) {
-      addToast('Please select and test a valid vault first', 'error');
+      addToast(t.plugins.obsidian_brain.select_and_test_first, 'error');
       return;
     }
     setSaving(true);
@@ -178,13 +178,13 @@ export default function SetupPanel() {
       void fetchConnectorDefinitions();
       // A freshly-configured vault flips Obsidian availability → surface the mirror group.
       void refreshMirrorState();
-      addToast('Obsidian Brain configuration saved', 'success');
+      addToast(t.plugins.obsidian_brain.config_saved, 'success');
     } catch (e) {
-      addToast(`Save failed: ${e}`, 'error');
+      addToast(tx(t.plugins.obsidian_brain.save_failed, { error: String(e) }), 'error');
     } finally {
       setSaving(false);
     }
-  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, setObsidianConnected, fetchConnectorDefinitions, refreshMirrorState]);
+  }, [vaultPath, connectionResult, syncMemories, syncPersonas, syncConnectors, autoSync, memoriesFolder, personasFolder, connectorsFolder, addToast, saveConfigToList, setObsidianVaultPath, setObsidianVaultName, setObsidianConnected, fetchConnectorDefinitions, refreshMirrorState, t, tx]);
 
   return (
     <div className="flex gap-4 py-2">

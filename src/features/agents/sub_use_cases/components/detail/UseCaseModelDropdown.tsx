@@ -28,7 +28,7 @@ export function UseCaseModelDropdown({
   const uc = t.agents.use_cases;
   return (
     <Listbox
-      ariaLabel="Select model"
+      ariaLabel={uc.model_select_aria}
       itemCount={MODEL_OPTIONS.length}
       onSelectFocused={(index) => onSelectModel(MODEL_OPTIONS[index]!)}
       className="min-w-[180px]"

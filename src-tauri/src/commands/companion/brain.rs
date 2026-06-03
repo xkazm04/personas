@@ -280,17 +280,44 @@ fn delete_episode(state: &State<'_, Arc<AppState>>, id: &str) -> Result<(), AppE
             |r| r.get::<_, String>(0),
         )
         .ok();
+
+    // Remove the on-disk markdown FIRST. That file holds the full episode body —
+    // potentially sensitive conversation content — and erasing it is the entire
+    // reason a user deletes an episode. If the file is locked or unwritable we
+    // bail *before* touching the DB, so the episode stays fully intact and
+    // retryable rather than vanishing from the viewer while an orphaned copy
+    // lingers on disk (silently breaking the "delete means delete" contract).
+    if let Some(rel) = &file_path {
+        let root = disk::brain_root()?;
+        match std::fs::remove_file(root.join(rel)) {
+            Ok(()) => {}
+            // Already gone — the user's goal (no on-disk copy) is satisfied, so
+            // treat a missing file as success and continue to drop the DB rows.
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => {
+                // Sentry/log breadcrumb so a surviving copy is debuggable. The
+                // returned error surfaces to the Brain Viewer so the user learns
+                // the episode was NOT deleted (instead of a false success).
+                tracing::error!(
+                    episode = %id,
+                    file = %rel,
+                    error = %e,
+                    "delete_episode: on-disk markdown could not be removed; aborting delete to avoid orphaning sensitive content"
+                );
+                return Err(AppError::Internal(format!(
+                    "Couldn't delete this episode — its saved file is locked or unwritable ({e}). \
+                     Nothing was removed; close anything using it and try again."
+                )));
+            }
+        }
+    }
+
     let _ = conn.execute("DELETE FROM companion_fts WHERE node_id = ?1", params![id]);
     let _ = conn.execute(
         "DELETE FROM companion_embedding WHERE node_id = ?1",
         params![id],
     );
     conn.execute("DELETE FROM companion_node WHERE id = ?1", params![id])?;
-    if let Some(rel) = file_path {
-        if let Ok(root) = disk::brain_root() {
-            let _ = std::fs::remove_file(root.join(rel));
-        }
-    }
     Ok(())
 }
 

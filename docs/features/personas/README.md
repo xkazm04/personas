@@ -89,6 +89,48 @@ This doc set covers pillar 2. For pillar 1 see
 [templates/](../templates/README.md). For pillar 3 see
 [execution/](../execution/README.md).
 
+## Creating a persona — master entry + mid-build template suggestion
+
+A persona is created from one surface, the from-scratch **build entry**
+(`UnifiedBuildEntry`, rendered by `PersonasPage` on the empty state or when you
+click "Create"). You start with a basic description and the build runs as it
+always has: `start_build_session` kicks off the live LLM build (rendered by
+`GlyphFullLayout` / `GlyphPrototypeLayout`), which fills the 8 dimensions and
+asks **clarifying questions** when it needs input.
+
+**Mid-build template suggestion** (glyph-convergence redesign, 2026-06-01). The
+first time the build surfaces clarifying questions, a single dismissible card
+appears above them (`BuildTemplateSuggestion`,
+`src/features/agents/components/matrix/`). It runs the fast lexical matcher
+(`companion_match_templates`, sub-second, no LLM) over your description and, if
+a published template looks like a strong match, offers: *"<Template> looks like
+a match — use it to skip these questions?"*
+
+- **Use this template** → fetches the full design review (`get_design_review`),
+  cancels the running generated build session (`cancel_build_session`), and
+  swaps the build surface for the **inline** template-adoption flow (faster,
+  pre-configured, tested). Nothing auto-routes — the user opts in.
+- **Keep building** → dismisses the card and stays in the from-scratch
+  questionnaire. The card re-arms when the next build session starts.
+
+This replaced an earlier describe-first front-door launcher (the deleted
+`PersonaCreator`): the suggestion now lives *mid-build* instead of gating the
+entry, so the master "type a description and start building" flow is unchanged.
+
+Adoption reached this way renders **in-page**, not as a floating modal:
+`AdoptionWizardModal` has an `inline` presentation mode that swaps only its
+outer wrapper while keeping all lifecycle logic (reset, discard-confirm,
+orphaned-draft cleanup) shared with the modal path. Adoption opened from the
+**gallery** or **onboarding** still uses the floating modal — only the
+mid-build accept path is in-page.
+
+Both on-ramps converge at `buildPhase === "draft_ready"` and share the entire
+back half (test → promote) and the same `matrixBuildSlice` state machine; the
+only difference is the front: a *generated* build (the LLM fills the 8
+dimensions via clarifying questions) vs a *seeded* build (the template's
+`agent_ir` arrives pre-populated and the questionnaire only binds parameters).
+Design + the full rollout plan: `docs/concepts/glyph-convergence.md`.
+
 ## Goal planning is a team concern, not a persona one
 
 Defining a plain-language goal and decomposing it into work belongs to the

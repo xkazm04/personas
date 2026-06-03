@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { TwinReadinessRibbon } from './TwinReadinessRibbon';
 import type { TwinTab } from '@/lib/types/types';
 import type { TwinReadiness } from '../useTwinReadiness';
@@ -102,6 +103,7 @@ export function TwinHeaderBand({
   readiness, onJumpReadiness,
 }: TwinHeaderBandProps) {
   const a = ACCENTS[accent];
+  const reduceMotion = useReducedMotion();
   return (
     <div className="flex-shrink-0 relative overflow-hidden border-b border-primary/10 min-w-[80vw]">
       <div className={`absolute inset-0 bg-gradient-to-r ${a.fromBg} ${a.toBg} to-transparent`} />
@@ -109,12 +111,14 @@ export function TwinHeaderBand({
       <div className="relative px-4 md:px-6 xl:px-8 py-5 flex items-center gap-4">
         <div className={`relative w-11 h-11 rounded-full ${a.iconBg} border ${a.iconBorder} flex items-center justify-center flex-shrink-0`}>
           {icon}
+          {/* Ambient halo pulse — suppressed under prefers-reduced-motion so it
+              settles to a steady ring for vestibular-sensitive users (WCAG 2.3.3). */}
           <motion.span
             aria-hidden
             className={`absolute inset-0 rounded-full border ${a.iconBorder}`}
             initial={{ scale: 1, opacity: 0.5 }}
-            animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeOut' }}
+            animate={reduceMotion ? { scale: 1, opacity: 0.5 } : { scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 3, repeat: Infinity, ease: 'easeOut' }}
           />
         </div>
         <div className="flex-1 min-w-0">

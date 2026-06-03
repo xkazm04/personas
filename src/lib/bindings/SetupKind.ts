@@ -4,4 +4,4 @@
  * What kind of setup a not-ready connector needs — drives the remediation
  * the UI routes the user to (which is NOT always "Settings → Vault").
  */
-export type SetupKind = "vault_credential" | "dev_project" | "obsidian_vault" | "twin_profile";
+export type SetupKind = "vault_credential" | "dev_project" | "obsidian_vault" | "twin_profile" | "misconfigured";

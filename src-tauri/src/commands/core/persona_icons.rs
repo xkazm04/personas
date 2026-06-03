@@ -27,7 +27,11 @@ use crate::error::AppError;
 
 /// Hard cap on the source file we'll even read (10 MB). A persona icon is a
 /// small image; anything larger is a mistake or an attack.
-const MAX_SOURCE_BYTES: u64 = 10 * 1024 * 1024;
+///
+/// `pub(crate)` so the AI-generation path (`persona_icon_gen::download_image`)
+/// enforces the *same* cap while streaming a provider's image, rather than
+/// buffering an unbounded body and only checking the size here, after the fact.
+pub(crate) const MAX_SOURCE_BYTES: u64 = 10 * 1024 * 1024;
 
 /// Largest edge of the stored icon. Uploads are downscaled to fit; smaller
 /// images are left as-is (never upscaled).

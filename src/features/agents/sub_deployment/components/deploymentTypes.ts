@@ -1,5 +1,6 @@
 import type { CloudDeployment } from '@/api/system/cloud';
 import type { GitLabAgent } from '@/api/system/gitlab';
+import { DEPLOYMENT_ACCENTS } from './deploymentTokens';
 
 // ---------------------------------------------------------------------------
 // Unified row type
@@ -102,8 +103,8 @@ export function statusBadge(s: DeployStatus): string {
 }
 
 export function targetBadge(t: DeployTarget) {
-  if (t === 'cloud') return { label: 'Cloud', cls: 'bg-blue-500/10 border-blue-500/20 text-blue-400', target: 'cloud' as const };
-  return { label: 'GitLab', cls: 'bg-orange-500/10 border-orange-500/20 text-orange-400', target: 'gitlab' as const };
+  if (t === 'cloud') return { label: 'Cloud', cls: DEPLOYMENT_ACCENTS.cloud.badge, target: 'cloud' as const };
+  return { label: 'GitLab', cls: DEPLOYMENT_ACCENTS.gitlab.badge, target: 'gitlab' as const };
 }
 
 // `timeAgo` hoisted to `@/lib/utils/formatters` (Wave 5 consolidation).

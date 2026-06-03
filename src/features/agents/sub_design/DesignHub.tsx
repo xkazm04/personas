@@ -10,7 +10,7 @@ import { useVaultStore } from '@/stores/vaultStore';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { PersonaDraft } from '@/features/agents/sub_editor';
 import type { DesignSubTab } from '@/lib/types/types';
-import { debtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 const PersonaConnectorsTab = lazy(() =>
@@ -29,20 +29,23 @@ interface DesignHubProps {
 
 interface SubTabDef {
   id: DesignSubTab;
-  label: string;
+  /** Key into `t.agents.design_subtabs` — resolved at render so all 14 locales apply. */
+  labelKey: string;
   icon: typeof ListChecks;
 }
 
 const SUB_TABS: SubTabDef[] = [
-  { id: 'use-cases', label: 'Use Cases', icon: ListChecks },
-  { id: 'prompt', label: 'Prompt', icon: FileText },
-  { id: 'connectors', label: 'Connectors & Tools', icon: Cable },
-  { id: 'triggers', label: 'Events & Triggers', icon: Zap },
-  { id: 'messaging', label: 'Messaging', icon: MessageSquare },
-  { id: 'automations', label: 'Automations', icon: Workflow },
+  { id: 'use-cases', labelKey: 'use_cases', icon: ListChecks },
+  { id: 'prompt', labelKey: 'prompt', icon: FileText },
+  { id: 'connectors', labelKey: 'connectors', icon: Cable },
+  { id: 'triggers', labelKey: 'triggers', icon: Zap },
+  { id: 'messaging', labelKey: 'messaging', icon: MessageSquare },
+  { id: 'automations', labelKey: 'automations', icon: Workflow },
 ];
 
 export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange }: DesignHubProps) {
+  const { t } = useTranslation();
+  const subtabLabels = t.agents.design_subtabs as Record<string, string>;
   const { designSubTab, setDesignSubTab } = useSystemStore(
     useShallow((s) => ({ designSubTab: s.designSubTab, setDesignSubTab: s.setDesignSubTab })),
   );
@@ -60,18 +63,19 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
           {SUB_TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
+            const label = subtabLabels[tab.labelKey] ?? tab.labelKey;
             return (
               <button
                 key={tab.id}
                 data-testid={`design-subtab-${tab.id}`}
                 onClick={() => setDesignSubTab(tab.id)}
-                title={tab.label}
+                title={label}
                 className={`relative flex items-center gap-1.5 px-3 py-2 typo-body font-medium transition-colors whitespace-nowrap ${
                   isActive ? 'text-primary' : 'text-foreground hover:text-foreground/95'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                {tab.label}
+                {label}
                 {isActive && (
                   <motion.div
                     layoutId="designSubTab"
@@ -105,8 +109,8 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
             <div className="py-12">
               <EmptyState
                 icon={Zap}
-                title={debtText("auto_events_triggers_6c0403bc")}
-                description="Per-persona event subscriptions and trigger configuration will land in this tab."
+                title={subtabLabels.triggers}
+                description={subtabLabels.triggers_desc}
               />
             </div>
           )}
@@ -114,8 +118,8 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
             <div className="py-12">
               <EmptyState
                 icon={MessageSquare}
-                title="Messaging"
-                description="Notification channels and inbox routing for this agent will live here."
+                title={subtabLabels.messaging}
+                description={subtabLabels.messaging_desc}
               />
             </div>
           )}
@@ -123,8 +127,8 @@ export function DesignHub({ draft, patch, modelDirty, onConnectorsMissingChange 
             <div className="py-12">
               <EmptyState
                 icon={Workflow}
-                title="Automations"
-                description="Standalone automation rules for this agent will live here."
+                title={subtabLabels.automations}
+                description={subtabLabels.automations_desc}
               />
             </div>
           )}

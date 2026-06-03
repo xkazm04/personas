@@ -51,10 +51,19 @@ error, omit the key from `input_data` entirely.
 ## 3. Missing keys
 
 If a key is absent from `input_data`, the placeholder is left **as-is** in the
-rendered output (`{{name}}`). After rendering, every recipe-execution path
-calls `validate_no_unreplaced_placeholders`, which fails with a `Validation`
-error listing the missing keys (deduped, in first-seen order). Recipe authors
-will see the error message; the rendered prompt is never shipped to the LLM.
+rendered output (`{{name}}`). Before rendering, every recipe-execution path
+calls `validate_required_inputs_present`, which derives the required-key set from
+the **raw template** and diffs it against the supplied `input_data`, failing with
+a `Validation` error listing the missing keys (deduped, in first-seen order).
+Recipe authors will see the error message; the rendered prompt is never shipped
+to the LLM.
+
+Validation deliberately inspects the **template**, not the rendered output. A
+re-scan of the output would be unsound because substitution is single-pass: a
+supplied value that legitimately contains literal `{{x}}` text (a code snippet, a
+mustache example, a quoted template) would survive into the rendered string and be
+mistaken for an unreplaced placeholder, aborting an execution where every real
+variable was actually provided.
 
 ## 4. Duplicate keys
 
@@ -87,4 +96,4 @@ is safe.
 ## 7. Tests
 
 Behavior is pinned by `crud::tests::render_template_*` and
-`validate_no_unreplaced_placeholders_*` in `src-tauri/src/commands/recipes/crud.rs`.
+`validate_required_inputs_present_*` in `src-tauri/src/commands/recipes/crud.rs`.

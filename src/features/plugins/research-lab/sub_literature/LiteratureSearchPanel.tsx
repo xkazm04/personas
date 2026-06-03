@@ -6,6 +6,7 @@ import { toastCatch } from '@/lib/silentCatch';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
 import { PrototypeTabs } from '../shared/PrototypeTabs';
+import { SignalMeter } from '../shared/SignalMeter';
 import { sourceStatusColor, sourceStatusLabel, sourceTypeLabel } from '../shared/tokens';
 import { useIngestSource } from '../shared/useIngestSource';
 import LiteratureSearchPanelAtelier from './LiteratureSearchPanelAtelier';
@@ -167,9 +168,9 @@ function LiteratureSearchPanelBaseline() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {source.relevanceScore != null && (
-                    <div className="text-right">
-                      <span className="typo-caption text-foreground">{t.research_lab.relevance}</span>
-                      <p className="typo-data text-primary">{Math.round(source.relevanceScore * 100)}%</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="typo-micro uppercase tracking-wide text-foreground">{t.research_lab.relevance}</span>
+                      <SignalMeter value={source.relevanceScore} ariaLabel={t.research_lab.relevance} widthClass="w-16" />
                     </div>
                   )}
                   {source.status === 'pending' && (
@@ -185,7 +186,7 @@ function LiteratureSearchPanelBaseline() {
                   )}
                   <button
                     onClick={(e) => handleDelete(e, source.id)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     title={t.common.delete}
                     aria-label={t.common.delete}
                   >

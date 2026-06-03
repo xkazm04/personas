@@ -144,6 +144,30 @@ pub fn get_or_create_identity(pool: &DbPool) -> Result<PeerIdentity, AppError> {
     Ok(identity)
 }
 
+/// Resolve the local peer_id for status/snapshot surfaces *without* masking a
+/// lost keyring. Returns `(peer_id, degraded)`:
+/// - `Ok` identity  → `(real_peer_id, false)`
+/// - any error (notably [`AppError::KeyringLost`], i.e. the OS credential store
+///   was reset) → `(String::new(), true)` plus a `warn` log.
+///
+/// This replaces the old `get_or_create_identity(..).map(..).unwrap_or_default()`
+/// pattern, which swallowed the error and returned an empty `local_peer_id` —
+/// success-theatre that left the dashboard looking healthy while signing was
+/// silently broken. Callers must propagate `degraded` so the UI can flag the
+/// failure and prompt re-initialization instead of rendering a blank identity.
+pub fn local_peer_id_for_status(pool: &DbPool) -> (String, bool) {
+    match get_or_create_identity(pool) {
+        Ok(identity) => (identity.peer_id, false),
+        Err(e) => {
+            tracing::warn!(
+                error = %e,
+                "Local identity unavailable (keyring lost?); reporting degraded network identity"
+            );
+            (String::new(), true)
+        }
+    }
+}
+
 /// Store the Ed25519 private key in the OS keyring.
 fn store_private_key(signing_key: &SigningKey) -> Result<(), AppError> {
     let mut key_bytes = signing_key.to_bytes();

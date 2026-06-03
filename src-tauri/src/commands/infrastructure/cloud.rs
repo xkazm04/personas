@@ -585,9 +585,35 @@ pub async fn cloud_execute_persona(
         600_000
     };
 
-    let cloud_resp = client
+    let cloud_resp = match client
         .submit_execution(&prompt, &persona_id, Some(timeout_ms))
-        .await?;
+        .await
+    {
+        Ok(resp) => resp,
+        Err(e) => {
+            // The local execution row was already created above. If we let the
+            // error propagate now, the row would linger in its non-terminal
+            // `queued` state — never registered for cancellation, never added to
+            // `cloud_exec_ids` — appearing as a phantom running execution in the
+            // UI and skewing metrics/concurrency accounting until the periodic
+            // zombie sweep reaps it (up to 30 min away). Mark it Failed up-front
+            // so the failure is immediate and accounting stays correct.
+            let update = UpdateExecutionStatus {
+                status: crate::engine::types::ExecutionState::Failed,
+                error_message: Some(format!("Cloud submission failed: {e}")),
+                ..Default::default()
+            };
+            if let Err(db_err) = executions::update_status(&state.db, &exec.id, update) {
+                tracing::error!(
+                    execution_id = %exec.id,
+                    error = %db_err,
+                    "Failed to mark execution Failed after cloud submission error \
+                     — zombie sweep will recover it",
+                );
+            }
+            return Err(e);
+        }
+    };
 
     state
         .cloud_exec_ids
@@ -836,7 +862,7 @@ pub async fn cloud_deploy_persona(
         "structuredPrompt": persona.structured_prompt,
         "icon": persona.icon,
         "color": persona.color,
-        "enabled": true,
+        "enabled": persona.enabled,
         "maxConcurrent": persona.max_concurrent,
         "timeoutMs": persona.timeout_ms,
         "modelProfile": persona.model_profile,
@@ -895,7 +921,7 @@ pub async fn cloud_sync_persona(
         "structuredPrompt": persona.structured_prompt,
         "icon": persona.icon,
         "color": persona.color,
-        "enabled": true,
+        "enabled": persona.enabled,
         "maxConcurrent": persona.max_concurrent,
         "timeoutMs": persona.timeout_ms,
         "modelProfile": persona.model_profile,

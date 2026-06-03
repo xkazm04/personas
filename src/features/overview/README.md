@@ -37,7 +37,7 @@ Data flows left-to-right: the event bus emits `RealtimeEvent`s that are persiste
 - **Data source**: `searchEvents` over `EventFilterInput` (SQLite-backed); saved views via `listSavedViewsByType`.
 - **Model**: `PersonaEvent` binding. Grouping key is the user's filter (type, persona, time range).
 - **Visual style**: paginated list, JSON drill-down modal, saved filter chips.
-- **Panels**: `EventLogList`, `EventLogItem`, `EventDetailModal`.
+- **Panels**: `EventLogList`, `EventDetailContent`, `EventDetailModal`.
 - **User question**: "Find me the event where X happened yesterday."
 
 ### `sub_observability/` — trace engine + healing + metrics
@@ -55,7 +55,7 @@ Walk the questions top-down. Stop at the first **yes**.
    → `sub_realtime/`. Reuse `visualizationHelpers`, `useAnimatedEvents`, `EventLogSidebar`.
 
 2. **Does it query historical `PersonaEvent` rows through `searchEvents` with filters or saved views?**
-   → `sub_events/`. Reuse `useEventLog`, `EventLogItem`.
+   → `sub_events/`. Reuse `useEventLog`, `EventDetailContent`.
 
 3. **Does it render `UnifiedSpan` trees, `SystemTrace`s, `HealingTimelineEvent`s, alerts, or aggregated metrics?**
    → `sub_observability/`. Reuse `buildSpanTree` / `flattenTree` from `features/agents/sub_executions/libs/traceHelpers` — **do not re-implement tree flattening**.

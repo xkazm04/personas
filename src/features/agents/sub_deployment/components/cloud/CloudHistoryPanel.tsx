@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useCallback, useRef, useState, useEffect } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
+import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { CloudExecutionRow } from './CloudExecutionRow';
 import { useAgentStore } from "@/stores/agentStore";
 import { usePersonaNameMap } from "@/hooks/usePersonaNameMap";
@@ -179,10 +180,7 @@ export function CloudHistoryPanel() {
 
         {historyLastPolled != null && (
           <div className="flex items-center gap-2 typo-caption text-foreground ml-auto mr-2">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
+            <LiveStatusDot tone="active" ping size="sm" />
             Live
           </div>
         )}

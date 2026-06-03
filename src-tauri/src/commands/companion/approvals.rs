@@ -308,9 +308,15 @@ const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     "schedule_proactive",
     // Deliberate higher-blast-radius exception (opted in via autonomous mode):
     // Athena driving a Fleet session by typing into its terminal. This is the
-    // "Ask Athena → she writes directly" loop. It only fires under autonomous
-    // mode AND targets Fleet PTYs the user explicitly spawned; still gated by
-    // the toggle, so by default writes remain a manual tile-approval click.
+    // "Ask Athena → she writes directly" loop. Under autonomous mode it only
+    // auto-fires for sessions Athena spawned HERSELF — enforced below in
+    // `auto_resolve_if_allowed` via the `ATHENA_SESSION_NAME_SENTINEL`
+    // visible-name guard, so a hallucinated or stale `session_id` (or a
+    // user-owned session that drifted into AwaitingInput) can't make
+    // autonomous Athena type `{text}\r` into the user's OWN live terminal.
+    // A target that fails the guard is left pending for a deliberate user
+    // click instead of auto-firing; writes are also gated by the autonomous-
+    // mode toggle in the first place.
     "fleet_send_input",
 ];
 
@@ -332,6 +338,26 @@ pub async fn auto_resolve_if_allowed(
     approval: &crate::companion::dispatcher::CreatedApproval,
 ) -> Result<bool, AppError> {
     if !AUTOAPPROVE_ALLOWLIST.contains(&approval.action.as_str()) {
+        return Ok(false);
+    }
+    // Athena-owned PTY guard: `fleet_send_input` is the one high-blast-radius
+    // entry on the allowlist. Under autonomous mode it would otherwise write
+    // `{text}\r` into ANY `session_id` Athena emits — including the user's OWN
+    // live terminal (a hallucinated or stale id, or a user-spawned session that
+    // drifted into AwaitingInput and woke the orchestrator). Only let it
+    // auto-fire when the target's visible-name sentinel proves Athena spawned
+    // the session herself; otherwise decline the autoapprove and leave the card
+    // PENDING (`Ok(false)`) so the user makes the call with a human in the loop.
+    // Checked BEFORE `load_pending` so the row stays `pending` rather than being
+    // transitioned to `running`. The manual approve path is intentionally NOT
+    // gated here — an explicit user click can still drive a non-Athena session.
+    if approval.action == "fleet_send_input"
+        && !fleet_send_input_targets_athena_session(&approval.params_json)
+    {
+        tracing::warn!(
+            approval_id = %approval.id,
+            "autonomous autoapprove declined for fleet_send_input: target session is not Athena-owned — left pending for an explicit user approval"
+        );
         return Ok(false);
     }
     let state = app.state::<Arc<AppState>>();
@@ -1470,7 +1496,7 @@ async fn execute_build_oneshot(
     let session_id = uuid::Uuid::new_v4().to_string();
     let dummy_channel: tauri::ipc::Channel<serde_json::Value> =
         tauri::ipc::Channel::new(|_response| Ok(()));
-    state.build_session_manager.start_session(
+    if let Err(spawn_err) = state.build_session_manager.start_session(
         session_id,
         persona.id.clone(),
         intent,
@@ -1483,7 +1509,22 @@ async fn execute_build_oneshot(
         None,
         Some("one_shot".to_string()),
         companion_session_id,
-    )?;
+    ) {
+        // Roll back the orphan draft persona. The build never started, so the
+        // just-committed stub ('New Persona' / "You are a helpful AI assistant.")
+        // would otherwise linger in the user's persona list — polluting team
+        // rosters, dashboards, and Director rollups with identical empty
+        // duplicates on every failed one-shot. Best-effort cleanup: log a
+        // delete failure but still surface the original spawn error.
+        if let Err(cleanup_err) = crate::db::repos::core::personas::delete(&state.db, &persona.id) {
+            tracing::error!(
+                persona_id = %persona.id,
+                error = %cleanup_err,
+                "Failed to roll back orphan draft persona after build_oneshot spawn failure"
+            );
+        }
+        return Err(spawn_err);
+    }
 
     Ok(ExecuteResult {
         message:
@@ -2043,6 +2084,25 @@ fn execute_schedule_proactive(
 // roundtrip. Each returns a human-readable message that lands as a
 // system episode so Athena can quote it on the next turn.
 
+/// Athena-owned PTY guard for the autonomous `fleet_send_input` autoapprove
+/// path (see `auto_resolve_if_allowed`). `params_json` is the bare params
+/// object the dispatcher persisted on the approval
+/// (`{ "session_id": "...", "text": "...", ... }`). Returns `true` only when it
+/// names a live Fleet session whose visible-name sentinel marks it as
+/// Athena-spawned. A missing / unparseable `session_id`, an unknown session, or
+/// a user-owned session all return `false` (fail-closed) — autonomous mode must
+/// never type into a PTY Athena didn't create. The manual approve path does not
+/// call this: an explicit human click can still drive any session.
+fn fleet_send_input_targets_athena_session(params_json: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(params_json)
+        .ok()
+        .as_ref()
+        .and_then(|v| v.get("session_id"))
+        .and_then(|s| s.as_str())
+        .map(|sid| crate::commands::fleet::registry::registry().is_athena_owned(sid))
+        .unwrap_or(false)
+}
+
 fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {
     let session_id = params
         .get("session_id")
@@ -2186,10 +2246,15 @@ fn execute_fleet_spawn(
 
     // Recursion guard sentinel: tag this session with the user-visible
     // name "athena" so it's obvious in the fleet UI which sessions are
-    // Athena-spawned. The proactive evaluator can grow a "skip if name
-    // == 'athena'" branch in Phase E without changing the FleetSession
-    // schema. Public rename() preserves the optimistic-update path.
-    let _ = crate::commands::fleet::registry::registry().rename(&id, Some("athena".to_string()));
+    // Athena-spawned. This same sentinel gates the autonomous
+    // `fleet_send_input` autoapprove path (see `is_athena_owned` /
+    // `fleet_send_input_targets_athena_session`), so it's sourced from the
+    // shared `ATHENA_SESSION_NAME_SENTINEL` constant to keep tag + guard in
+    // lockstep. Public rename() preserves the optimistic-update path.
+    let _ = crate::commands::fleet::registry::registry().rename(
+        &id,
+        Some(crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL.to_string()),
+    );
 
     Ok(ExecuteResult::message(format!(
         "Spawned fleet session `{}` in `{}`. Tagged \"athena\" for visibility.",
@@ -2310,9 +2375,17 @@ fn execute_fleet_dispatch(
             .attach_session_to_operation(&op_id, &id, &role, cwd);
 
         // Visible-name = "athena-<role>" so the user sees both the
-        // recursion-guard sentinel AND the role in the Fleet UI.
-        let _ = crate::commands::fleet::registry::registry()
-            .rename(&id, Some(format!("athena-{role}")));
+        // recursion-guard sentinel AND the role in the Fleet UI. Sourced from
+        // the shared `ATHENA_SESSION_NAME_SENTINEL` so the autonomous
+        // `fleet_send_input` guard (`is_athena_owned`) recognizes these
+        // dispatched sessions as Athena-owned.
+        let _ = crate::commands::fleet::registry::registry().rename(
+            &id,
+            Some(format!(
+                "{}-{role}",
+                crate::commands::fleet::registry::ATHENA_SESSION_NAME_SENTINEL
+            )),
+        );
 
         spawned.push((id[..id.len().min(8)].to_string(), role));
     }

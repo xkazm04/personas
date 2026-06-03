@@ -133,7 +133,7 @@ export function CommandPanelComposer({
   }, [t, tx]);
 
   return (
-    <div className="w-full min-w-[640px] md:min-w-[800px] lg:min-w-[912px] 2xl:min-w-[1296px] 3xl:min-w-[1608px] max-w-[1800px] relative">
+    <div className="w-full sm:min-w-[640px] md:min-w-[800px] lg:min-w-[912px] 2xl:min-w-[1296px] 3xl:min-w-[1608px] max-w-[1800px] relative">
       <div
         aria-hidden
         className="absolute -inset-6 rounded-modal pointer-events-none opacity-60"

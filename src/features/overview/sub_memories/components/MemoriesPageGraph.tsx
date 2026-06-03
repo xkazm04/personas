@@ -16,21 +16,10 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES, formatRelativeTime } from '@/lib/utils/formatters';
+import { categoryColor } from '../libs/memoryVisualTokens';
 import { stripHtml } from '@/lib/utils/sanitizers/sanitizeHtml';
 import type { PersonaMemory } from '@/lib/types/types';
 import { DebtText } from '@/i18n/DebtText';
-
-
-// Hex colors per category — matches the chip palette but produces real
-// hex values usable in SVG stroke/fill, not Tailwind classes.
-const CATEGORY_HEX: Record<string, string> = {
-  fact: '#3b82f6',
-  preference: '#f59e0b',
-  instruction: '#8b5cf6',
-  context: '#10b981',
-  learned: '#06b6d4',
-  constraint: '#ef4444',
-};
 
 interface NodePosition { x: number; y: number; }
 
@@ -312,7 +301,7 @@ function GraphNode({
   memory: PersonaMemory; position: NodePosition; isSelected: boolean; isHighlighted: boolean; isDimmed: boolean;
   onSelect: (m: PersonaMemory) => void; onHover: (m: PersonaMemory) => void;
 }) {
-  const color = CATEGORY_HEX[memory.category] ?? '#64748b';
+  const color = categoryColor(memory.category).hex;
   const size = 12 + (memory.importance / 5) * 16;
 
   return (
@@ -403,7 +392,7 @@ function DetailPanel({
 }: {
   memory: PersonaMemory; personaName: string; onClose: () => void; onDelete: () => void;
 }) {
-  const color = CATEGORY_HEX[memory.category] ?? '#64748b';
+  const color = categoryColor(memory.category).hex;
   const lastSeen = memory.last_accessed_at ?? memory.updated_at;
   const colors = MEMORY_CATEGORY_COLORS[memory.category];
 

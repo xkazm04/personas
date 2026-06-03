@@ -62,6 +62,15 @@ export let IS_DESKTOP: boolean = !IS_MOBILE;
 export const IS_ANDROID: boolean = import.meta.env.VITE_PLATFORM === 'android';
 export const IS_IOS: boolean = import.meta.env.VITE_PLATFORM === 'ios';
 
+/**
+ * Single breakpoint authority for the runtime viewport-width "is compact"
+ * signal. The build-time IS_MOBILE flag above answers "is this a phone build";
+ * this answers "is the window narrow right now". The reactive hook that joins
+ * the two lives at hooks/utility/interaction/useIsCompact.ts — use that in
+ * components rather than re-deriving a width query inline.
+ */
+export const MOBILE_VIEWPORT_BREAKPOINT_PX = 768;
+
 // When the toggle fires in dev mode, update the module-level exports.
 if (import.meta.env.DEV) {
   onMobilePreviewChange(() => {

@@ -14,6 +14,15 @@ pub const VALID_TRIGGER_TYPES: &[&str] = &[
 ];
 pub const MIN_INTERVAL_SECONDS: i64 = 60;
 
+/// Bounds for a composite trigger's look-back `window_seconds`. The composite
+/// engine loads every event inside this window on every tick, so an unbounded
+/// value degrades into a per-tick full-table scan plus a large allocation under
+/// real event volume (starving the shared SQLite pool). Clamp to a sane range
+/// at create/update so the misconfiguration is rejected up front; the engine
+/// also clamps defensively for rows that predate this guard.
+pub const MIN_COMPOSITE_WINDOW_SECONDS: i64 = 1;
+pub const MAX_COMPOSITE_WINDOW_SECONDS: i64 = 86_400; // 24h
+
 /// Normalize common LLM/template trigger type aliases to valid enum values.
 /// Templates and LLMs sometimes produce shortened or alternative names
 /// (e.g., "event" instead of "event_listener", "cron" instead of "schedule").
@@ -79,6 +88,35 @@ pub fn validate_config(trigger_type: &str, config: Option<&str>) -> Vec<Validati
                             "config.interval_seconds",
                             "type",
                             "interval_seconds must be a valid integer",
+                        ));
+                    }
+                }
+            }
+
+            // Composite triggers look back over `window_seconds`; the engine
+            // pulls every event in that window into memory each tick, so an
+            // unbounded value is a latent per-tick full-table scan. Reject
+            // out-of-range / non-integer values up front.
+            if let Some(window) = parsed.get("window_seconds") {
+                match window.as_i64() {
+                    Some(n)
+                        if !(MIN_COMPOSITE_WINDOW_SECONDS..=MAX_COMPOSITE_WINDOW_SECONDS)
+                            .contains(&n) =>
+                    {
+                        errors.push(ValidationError::new(
+                            "config.window_seconds",
+                            "range",
+                            format!(
+                                "window_seconds must be between {MIN_COMPOSITE_WINDOW_SECONDS} and {MAX_COMPOSITE_WINDOW_SECONDS} (24h)"
+                            ),
+                        ));
+                    }
+                    Some(_) => {}
+                    None => {
+                        errors.push(ValidationError::new(
+                            "config.window_seconds",
+                            "type",
+                            "window_seconds must be a valid integer",
                         ));
                     }
                 }
@@ -307,6 +345,33 @@ mod tests {
             Some(r#"{"interval_seconds": 60}"#)
         )
         .is_empty());
+    }
+
+    #[test]
+    fn composite_window_seconds_within_range_ok() {
+        assert!(validate_config("composite", Some(r#"{"window_seconds": 300}"#)).is_empty());
+        assert!(validate_config("composite", Some(r#"{"window_seconds": 1}"#)).is_empty());
+        assert!(validate_config("composite", Some(r#"{"window_seconds": 86400}"#)).is_empty());
+    }
+
+    #[test]
+    fn composite_window_seconds_out_of_range_rejected() {
+        let too_big = validate_config("composite", Some(r#"{"window_seconds": 86401}"#));
+        assert_eq!(too_big.len(), 1);
+        assert_eq!(too_big[0].field, "config.window_seconds");
+        assert_eq!(too_big[0].rule, "range");
+
+        let zero = validate_config("composite", Some(r#"{"window_seconds": 0}"#));
+        assert_eq!(zero.len(), 1);
+        assert_eq!(zero[0].field, "config.window_seconds");
+    }
+
+    #[test]
+    fn composite_window_seconds_non_integer_rejected() {
+        let errs = validate_config("composite", Some(r#"{"window_seconds": "300"}"#));
+        assert_eq!(errs.len(), 1);
+        assert_eq!(errs[0].field, "config.window_seconds");
+        assert_eq!(errs[0].rule, "type");
     }
 
     #[test]

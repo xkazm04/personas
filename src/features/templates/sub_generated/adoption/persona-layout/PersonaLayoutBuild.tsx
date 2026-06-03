@@ -5,7 +5,7 @@ import { useAgentStore } from '@/stores/agentStore';
 import { PersonaLayout } from '@/features/shared/glyph/persona-layout';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension, GlyphRow } from '@/features/shared/glyph';
-import type { PetalState } from '@/features/shared/glyph/persona-sigil';
+import { CELL_KEY_TO_DIM, DIM_TO_CELL_KEY, type PetalState } from '@/features/shared/glyph/persona-sigil';
 import type {
   BuildPhase,
   BuildQuestion,
@@ -42,24 +42,10 @@ interface PersonaLayoutBuildProps {
   testSummary?: string | null;
 }
 
-// Map cellState keys (the build-engine vocabulary) onto persona-sigil
-// dimensions. Mirrors `agents/sub_glyph/glyphLayoutHelpers.ts`
-// CELL_KEY_TO_DIM but kept local so this surface doesn't reach into the
-// scratch flow's helpers.
-const CELL_KEY_TO_DIM: Record<string, GlyphDimension> = {
-  'sample-output': 'task',
-  'use-cases': 'task',
-  connectors: 'connector',
-  triggers: 'trigger',
-  'human-review': 'review',
-  messages: 'message',
-  memory: 'memory',
-  'error-handling': 'error',
-  events: 'event',
-};
-const DIM_TO_CELL_KEY: Record<GlyphDimension, string> = Object.fromEntries(
-  Object.entries(CELL_KEY_TO_DIM).map(([k, v]) => [v, k]),
-) as Record<GlyphDimension, string>;
+// Glyph-convergence P4: the cell↔dim map (formerly duplicated here) now comes
+// from the shared persona-sigil module — single source of truth across the
+// scratch and seeded flows. Petal-state derivation stays local because the
+// seeded surface has no `activeRow` concept the scratch helper depends on.
 
 /**
  * Bridge a `GlyphRow` (the canonical build-time row shape from

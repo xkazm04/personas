@@ -346,7 +346,10 @@ fn auto_hibernate_pass(app: &AppHandle) {
     };
 
     for sid in candidates {
-        if registry().hibernate(&sid) {
+        // `require_resting = true`: re-validate Idle/Stale inside hibernate()'s
+        // lock. A hook may have flipped the session to Running/AwaitingInput
+        // between our snapshot above and now — never sleep a live turn.
+        if registry().hibernate(&sid, true) {
             tracing::info!(session_id = %sid, "fleet auto-hibernate: slept idle session");
             let _ = app.emit(
                 event_name::FLEET_SESSION_STATE,

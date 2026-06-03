@@ -143,7 +143,7 @@ export function ArenaHistory({ runs, resultsMap, expandedRunId, onToggleExpand, 
             ) : undefined
           }
         >
-          <ArenaResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} llmSummary={activeRun.llmSummary ?? undefined} />
+          <ArenaResultsView results={resultsMap[activeRun.id] ?? []} runId={activeRun.id} llmSummary={activeRun.llmSummary ?? undefined} loading={resultsMap[activeRun.id] === undefined} />
         </LabResultModal>
       )}
     </>

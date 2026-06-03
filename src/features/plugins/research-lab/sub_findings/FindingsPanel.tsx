@@ -5,6 +5,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { SectionHeader } from '../shared/SectionHeader';
 import { EmptyState, NoActiveProject } from '../shared/EmptyState';
+import { SignalMeter } from '../shared/SignalMeter';
 import type { ResearchFinding } from '@/api/researchLab/researchLab';
 
 const AddFindingForm = lazy(() => import('./AddFindingForm'));
@@ -87,8 +88,9 @@ export default function FindingsPanel() {
                     <span className="px-2 py-0.5 rounded-full text-[10px] bg-primary/10 text-primary">
                       {f.status.replace(/_/g, ' ')}
                     </span>
-                    <span className="typo-caption text-foreground">
-                      {t.research_lab.confidence} {Math.round(f.confidence * 100)}%
+                    <span className="flex items-center gap-1.5 typo-caption text-foreground">
+                      {t.research_lab.confidence}
+                      <SignalMeter value={f.confidence} ariaLabel={t.research_lab.confidence} widthClass="w-12" />
                     </span>
                     {f.generatedBy && (
                       <span className="typo-caption text-foreground">· {f.generatedBy}</span>
@@ -97,7 +99,7 @@ export default function FindingsPanel() {
                 </div>
                 <button
                   onClick={(e) => handleDelete(e, f.id)}
-                  className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all flex-shrink-0"
+                  className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background flex-shrink-0"
                   title={t.common.delete}
                   aria-label={t.common.delete}
                 >

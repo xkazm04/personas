@@ -4,15 +4,6 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import type { UseCaseEventSubscription } from '@/features/shared/components/use-cases/UseCasesList';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const EVENT_TYPES = [
-  { value: 'webhook_received', label: 'Webhook Received' },
-  { value: 'execution_completed', label: 'Execution Completed' },
-  { value: 'execution_failed', label: 'Execution Failed' },
-  { value: 'persona_action', label: 'Persona Action' },
-  { value: 'file_changed', label: 'File Changed' },
-  { value: 'schedule_triggered', label: 'Schedule Triggered' },
-];
-
 interface UseCaseSubscriptionFormProps {
   onAdd: (sub: UseCaseEventSubscription) => void;
   onCancel: () => void;
@@ -21,6 +12,14 @@ interface UseCaseSubscriptionFormProps {
 export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscriptionFormProps) {
   const { t } = useTranslation();
   const uc = t.agents.use_cases;
+  const eventTypes = [
+    { value: 'webhook_received', label: uc.event_type_webhook_received },
+    { value: 'execution_completed', label: uc.event_type_execution_completed },
+    { value: 'execution_failed', label: uc.event_type_execution_failed },
+    { value: 'persona_action', label: uc.event_type_persona_action },
+    { value: 'file_changed', label: uc.event_type_file_changed },
+    { value: 'schedule_triggered', label: uc.event_type_schedule_triggered },
+  ];
   const [newEventType, setNewEventType] = useState('');
   const [newSourceFilter, setNewSourceFilter] = useState('');
 
@@ -47,8 +46,8 @@ export function UseCaseSubscriptionForm({ onAdd, onCancel }: UseCaseSubscription
           className="py-1.5"
         >
           <option value="">{uc.select_event_type}</option>
-          {EVENT_TYPES.map((t) => (
-            <option key={t.value} value={t.value}>{t.label}</option>
+          {eventTypes.map((evt) => (
+            <option key={evt.value} value={evt.value}>{evt.label}</option>
           ))}
         </ThemedSelect>
       </div>

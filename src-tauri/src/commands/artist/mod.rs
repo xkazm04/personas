@@ -618,7 +618,8 @@ async fn run_creative_cli(
                         tool_name,
                         input_preview,
                     } => {
-                        let preview = &input_preview[..input_preview.len().min(120)];
+                        let preview =
+                            crate::utils::text::truncate_on_char_boundary(&input_preview, 120);
                         CREATIVE_JOBS.emit_line(
                             app,
                             session_id,

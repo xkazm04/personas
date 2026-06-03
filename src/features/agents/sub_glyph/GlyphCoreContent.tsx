@@ -1,8 +1,10 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles, Play, CheckCircle2, Loader2, ArrowRight, RefreshCw,
 } from "lucide-react";
 import type { BuildPhase, BuildQuestion } from "@/lib/types/buildTypes";
+import { useTranslation } from "@/i18n/useTranslation";
 import { GlyphRefineComposer } from "./GlyphRefineComposer";
 import { GlyphTestCompleteCore } from "./GlyphTestCompleteCore";
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -45,6 +47,61 @@ interface GlyphCoreContentProps {
   onClearRefinePrefill?: () => void;
 }
 
+/** Building-phase center status. While the LLM works (and the user can't
+ *  help) the label gently advances through a few reassuring beats so the
+ *  ~60s wait reads as deliberate progress rather than a hang; once a
+ *  question is pending the label switches to "awaiting your answer" and
+ *  stops advancing (the user is now the bottleneck). The real CLI output
+ *  still streams in GlyphActivityStrip below the sigil. */
+function GlyphBuildingStatus({ hasPending }: { hasPending: boolean }) {
+  const { t } = useTranslation();
+  const [beat, setBeat] = useState(0);
+  useEffect(() => {
+    if (hasPending) {
+      setBeat(0);
+      return;
+    }
+    const id = setInterval(() => setBeat((b) => Math.min(b + 1, 3)), 3600);
+    return () => clearInterval(id);
+  }, [hasPending]);
+
+  const beats = [
+    t.agents.glyph_build_beat_understanding,
+    t.agents.glyph_build_beat_designing,
+    t.agents.glyph_build_beat_wiring,
+    t.agents.glyph_build_beat_assembling,
+  ];
+  const label = hasPending ? t.agents.glyph_build_awaiting : beats[beat];
+
+  return (
+    <motion.div
+      key="building"
+      initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+      className="flex flex-col items-center gap-2 pointer-events-auto"
+    >
+      <div className="flex items-center gap-1.5 typo-caption text-foreground uppercase tracking-[0.18em]">
+        <Loader2 className="w-3 h-3 animate-spin" />
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={label}
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.3 }}
+          >
+            {label}
+          </motion.span>
+        </AnimatePresence>
+      </div>
+      {/* Backgroundability hint — surfaces only when the LLM is doing work
+          the user can't help with. Stays subtle: muted, capped width. */}
+      {!hasPending && (
+        <span className="mt-2 typo-caption text-foreground text-center max-w-[220px] leading-snug">
+          <DebtText k="auto_you_can_use_the_app_freely_while_this_buil_c0d5f08b" />
+        </span>
+      )}
+    </motion.div>
+  );
+}
+
 export function GlyphCoreContent(props: GlyphCoreContentProps) {
   const {
     isPreBuild, isBuilding, buildPhase, hasDesignResult,
@@ -52,6 +109,8 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
     testOutputLines, onStartTest, onRefine, onViewAgent,
     onComposeStart, refinePrefill, onClearRefinePrefill,
   } = props;
+
+  const { t } = useTranslation();
 
   if (isPreBuild) {
     // 2026-05-05 — when the parent doesn't supply onComposeStart, render
@@ -119,32 +178,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
 
   if (isBuilding) {
     const hasPending = !!pendingQuestions && pendingQuestions.length > 0;
-    return (
-      <motion.div
-        key="building"
-        initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-        className="flex flex-col items-center gap-2 pointer-events-auto"
-      >
-        {/* 2026-05-06 — completeness percentage removed. The build can
-            propose new rounds at any phase (gate-driven re-asks, agent_ir
-            recovery loops), so a "70% done" number was misleading. The
-            spinner + status label carries the right signal: "we're
-            working" without a false ETA. */}
-        <div className="flex items-center gap-1.5 typo-caption text-foreground uppercase tracking-[0.18em]">
-          <Loader2 className="w-3 h-3 animate-spin" />
-          {hasPending ? "Awaiting your answer" : "Weaving intent"}
-        </div>
-        {/* Backgroundability hint — surfaces only when the LLM is doing
-            work the user can't help with. We don't show this while
-            answers are pending (the user IS the bottleneck) or in any
-            other phase. Stays subtle: muted text, max-w cap, no chrome. */}
-        {!hasPending && (
-          <span className="mt-2 typo-caption text-foreground text-center max-w-[220px] leading-snug">
-            <DebtText k="auto_you_can_use_the_app_freely_while_this_buil_c0d5f08b" />
-          </span>
-        )}
-      </motion.div>
-    );
+    return <GlyphBuildingStatus hasPending={hasPending} />;
   }
 
   if (buildPhase === "testing") {
@@ -178,14 +212,32 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
         initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
         className="flex flex-col items-center gap-2 pointer-events-auto"
       >
-        <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+        <div className="relative flex items-center justify-center mb-0.5">
+          {/* Radiating success pulse — a brief celebratory beat in the
+              ~1.5s window before the build flow auto-redirects to the new
+              agent, so promoting feels like an arrival, not a page swap. */}
+          <motion.span
+            className="absolute rounded-full border-2 border-emerald-400/60"
+            initial={{ width: 36, height: 36, opacity: 0.7 }}
+            animate={{ width: 88, height: 88, opacity: 0 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+          />
+          <motion.div
+            initial={{ scale: 0.4, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 360, damping: 15 }}
+          >
+            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
+          </motion.div>
+        </div>
         <span className="typo-heading-sm text-foreground"><DebtText k="auto_agent_promoted_8df1a174" /></span>
+        <span className="typo-caption text-foreground/70">{t.agents.glyph_promoted_ready}</span>
         <button
           type="button"
           onClick={onViewAgent}
           className="px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 typo-body text-foreground cursor-pointer flex items-center gap-1.5"
         >
-          Open <ArrowRight className="w-3.5 h-3.5" />
+          {t.agents.glyph_open} <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </motion.div>
     );
@@ -216,7 +268,7 @@ export function GlyphCoreContent(props: GlyphCoreContentProps) {
               className="px-2.5 py-1.5 rounded-full bg-foreground/5 hover:bg-foreground/10 border border-border/30 typo-caption text-foreground cursor-pointer flex items-center gap-1"
             >
               <RefreshCw className="w-3 h-3" />
-              Refine
+              {t.agents.glyph_refine}
             </button>
           )}
         </div>

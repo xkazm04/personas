@@ -23,6 +23,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
+import { AnimatedList } from '@/features/shared/components/display/AnimatedList';
 import { useGallerySelection } from '../hooks/useGallerySelection';
 import { useLocalImage } from '../hooks/useLocalImage';
 import { mergeTagAcross } from './tagOps';
@@ -95,8 +96,13 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: 
         />
       )}
 
-      {/* Masonry-like grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+      {/* Masonry-like grid. Assets fade-and-rise in sequenced by index (capped
+          so large galleries stay snappy) instead of snapping in all at once;
+          AnimatedList degrades to an instant render under prefers-reduced-motion. */}
+      <AnimatedList
+        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+        keys={assets.map((a) => a.id)}
+      >
         {assets.map((asset, i) => (
           <AssetCard
             key={asset.id}
@@ -110,7 +116,7 @@ export default function Gallery2D({ assets, onDelete, onUpdateTags, onRename }: 
             onToggleSelect={handleToggle(asset.id, i)}
           />
         ))}
-      </div>
+      </AnimatedList>
 
       {currentAsset && lightboxIndex !== null && !inSelectMode && (
         <LightboxOverlay

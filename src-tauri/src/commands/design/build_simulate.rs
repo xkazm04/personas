@@ -411,8 +411,14 @@ pub async fn get_simulation_artefacts(
     execution_id: String,
 ) -> Result<SimulationArtefacts, AppError> {
 
-    let reviews = review_repo::get_by_execution(&state.db, &execution_id).unwrap_or_default();
-    let memories = mem_repo::get_by_execution(&state.db, &execution_id).unwrap_or_default();
+    // Propagate read failures instead of masking them as an empty bundle. A
+    // locked DB / pool exhaustion / malformed row must NOT render as a clean
+    // dry-run: this panel is exactly where a user decides a capability is safe
+    // to promote, so "could not read" has to be distinguishable from "genuinely
+    // produced nothing" (the frontend surfaces the error rather than showing an
+    // all-clear preview).
+    let reviews = review_repo::get_by_execution(&state.db, &execution_id)?;
+    let memories = mem_repo::get_by_execution(&state.db, &execution_id)?;
 
     Ok(SimulationArtefacts {
         execution_id,

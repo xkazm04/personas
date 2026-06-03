@@ -17,6 +17,15 @@ interface AdoptionWizardModalProps {
   review: PersonaDesignReview | null;
   /** Called with the new persona's ID when adoption completes. */
   onPersonaCreated: (personaId: string) => void;
+  /**
+   * Glyph-convergence P3: render the adoption flow IN the page surface (filling
+   * its parent) instead of as a floating BaseModal. Only the outer wrapper
+   * changes — every lifecycle handler (reset-on-open, discard-confirm,
+   * orphaned-draft cleanup) is identical across both modes. The unified
+   * PersonaCreator passes this so a template starter opens in-page; all other
+   * consumers (gallery, onboarding, trust-badge) omit it and keep the modal.
+   */
+  inline?: boolean;
 }
 
 /** Phases where the user has not yet done meaningful work. */
@@ -27,6 +36,7 @@ export default function AdoptionWizardModal({
   onClose,
   review,
   onPersonaCreated,
+  inline = false,
 }: AdoptionWizardModalProps) {
   const { t } = useTranslation();
   const [confirmConfig, setConfirmConfig] = useState<ConfirmDestructiveConfig | null>(null);
@@ -82,25 +92,11 @@ export default function AdoptionWizardModal({
 
   if (!isOpen || !review) return null;
 
-  return (
-    <BaseModal
-      isOpen
-      onClose={handleCloseAttempt}
-      titleId="adoption-matrix-title"
-      maxWidthClass="max-w-[1750px]"
-      panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
-      // Required for the flex-column header + scrollable body layout below:
-      // BaseModal's default `staggerChildren=true` wraps each child in a
-      // block-level `motion.div`, which breaks the parent `flex flex-col`
-      // chain so the body's `flex-1 + overflow-y-auto` silently no-ops.
-      // Symptom before this opt-out: ChronologyAdoptionView's main scroll
-      // area had `scrollHeight === clientHeight === parentHeight`, content
-      // overflowed the modal panel through `overflow-hidden`, and the user
-      // could see — but not reach — the rows / Continue button below the
-      // sigil. See BaseModal.tsx:38-43.
-      staggerChildren={false}
-      portal
-    >
+  // Shared inner content — identical in modal and inline presentation. Only the
+  // wrapper around this differs (BaseModal vs in-page container), so the header,
+  // the adoption view, and the discard-confirm dialog can't drift between modes.
+  const content = (
+    <>
       <div className="relative h-full overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-primary/10 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -131,6 +127,41 @@ export default function AdoptionWizardModal({
         open={!!confirmConfig}
         config={confirmConfig}
       />
+    </>
+  );
+
+  // Glyph-convergence P3: in-page presentation for the unified creator. Fills
+  // the parent surface instead of floating over a scrim; the ConfirmDestructive
+  // dialog inside `content` still portals itself, so discard-confirm works the
+  // same. The default path (every other consumer) is the unchanged BaseModal.
+  if (inline) {
+    return (
+      <div className="flex-1 min-h-0 w-full overflow-hidden flex flex-col" data-testid="adoption-inline">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <BaseModal
+      isOpen
+      onClose={handleCloseAttempt}
+      titleId="adoption-matrix-title"
+      maxWidthClass="max-w-[1750px]"
+      panelClassName="h-[92vh] bg-background border border-primary/15 rounded-2xl shadow-elevation-4 overflow-hidden flex flex-col"
+      // Required for the flex-column header + scrollable body layout below:
+      // BaseModal's default `staggerChildren=true` wraps each child in a
+      // block-level `motion.div`, which breaks the parent `flex flex-col`
+      // chain so the body's `flex-1 + overflow-y-auto` silently no-ops.
+      // Symptom before this opt-out: ChronologyAdoptionView's main scroll
+      // area had `scrollHeight === clientHeight === parentHeight`, content
+      // overflowed the modal panel through `overflow-hidden`, and the user
+      // could see — but not reach — the rows / Continue button below the
+      // sigil. See BaseModal.tsx:38-43.
+      staggerChildren={false}
+      portal
+    >
+      {content}
     </BaseModal>
   );
 }

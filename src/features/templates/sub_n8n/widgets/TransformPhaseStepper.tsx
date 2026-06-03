@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Check, MessageSquare, Pencil, Sparkles } from 'lucide-react';
 import type { TransformSubPhase } from '../hooks/useN8nImportReducer';
+import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface StepDef {
@@ -15,6 +16,11 @@ interface TransformPhaseStepperProps {
 
 export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperProps) {
   const { t } = useTranslation();
+  // The active-node halo loops on scale + opacity. The global
+  // <MotionConfig reducedMotion="user"> only stops one-shot transforms, so the
+  // opacity keyframes keep pulsing forever — a vestibular-discomfort trigger.
+  // Gate it explicitly and fall back to a steady highlighted ring.
+  const prefersReducedMotion = useReducedMotion();
   if (currentPhase === 'idle') return null;
 
   const TRANSFORM_STEPS: StepDef[] = [
@@ -49,11 +55,20 @@ export function TransformPhaseStepper({ currentPhase }: TransformPhaseStepperPro
               {/* Dot / check */}
               <div className="relative flex items-center justify-center">
                 {isActive && (
-                  <motion.div
-                    className="absolute w-6 h-6 rounded-full bg-violet-500/20"
-                    animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                  />
+                  prefersReducedMotion ? (
+                    // Steady highlighted ring — same glow, no looping pulse.
+                    <div
+                      aria-hidden
+                      className="absolute w-6 h-6 rounded-full bg-violet-500/20"
+                    />
+                  ) : (
+                    <motion.div
+                      aria-hidden
+                      className="absolute w-6 h-6 rounded-full bg-violet-500/20"
+                      animate={{ scale: [1, 1.4, 1], opacity: [0.4, 0, 0.4] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )
                 )}
                 <motion.div
                   layoutId={`transform-step-dot-${step.id}`}

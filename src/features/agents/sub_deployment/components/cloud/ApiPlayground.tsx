@@ -153,7 +153,7 @@ export function ApiPlayground({ slug: _slug, personaId, endpointUrl }: ApiPlaygr
           spellCheck={false}
           className="w-full px-2.5 py-2 text-xs font-mono rounded-card
                      bg-secondary/50 border border-primary/10
-                     text-foreground/90 placeholder:text-foreground
+                     text-foreground/90 placeholder:text-muted-foreground
                      focus-visible:outline-none focus-visible:border-indigo-500/40
                      resize-y transition-colors"
           placeholder={dt.request_body_placeholder}

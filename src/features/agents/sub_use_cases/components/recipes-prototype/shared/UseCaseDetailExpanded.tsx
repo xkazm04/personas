@@ -372,6 +372,7 @@ interface ToggleDimCardProps {
  * Events; Review uses `ReviewDimCard` (3-state cycle).
  */
 function ToggleDimCard({ dim, title, icon: Icon, state, loading, onClick, bodyOn, bodyOff }: ToggleDimCardProps) {
+  const { t } = useTranslation();
   const color = DIM_META[dim].color;
   const on = state === 'on';
   return (
@@ -403,7 +404,7 @@ function ToggleDimCard({ dim, title, icon: Icon, state, loading, onClick, bodyOn
           } ${loading ? 'opacity-50' : ''}`}
           aria-pressed={on}
         >
-          {on ? 'ON' : 'OFF'}
+          {on ? t.agents.use_cases.pill_on : t.agents.use_cases.pill_off}
         </span>
       </div>
       <div className="typo-caption text-foreground/85 leading-snug">
@@ -425,19 +426,19 @@ function ReviewDimCard({ state, loading, onClick, reviewsDefault }: ReviewDimCar
   const color = DIM_META.review.color;
   const config: Record<ReviewMode, { label: string; pill: string; icon: React.ReactNode; body: string }> = {
     on: {
-      label: 'QUEUE',
+      label: t.agents.use_cases.review_pill_queue,
       pill: 'bg-status-error/15 border-status-error/35 text-status-error/95',
       icon: <AlertTriangle className="w-2.5 h-2.5" />,
       body: t.agents.use_cases.review_queue_body,
     },
     trust_llm: {
-      label: 'TRUST',
+      label: t.agents.use_cases.review_pill_trust,
       pill: 'bg-status-warning/15 border-status-warning/35 text-status-warning/95',
       icon: <ShieldCheck className="w-2.5 h-2.5" />,
       body: t.agents.use_cases.review_trust_body,
     },
     off: {
-      label: 'OFF',
+      label: t.agents.use_cases.pill_off,
       pill: 'bg-secondary/60 border-card-border text-foreground',
       icon: <ShieldOff className="w-2.5 h-2.5" />,
       body: reviewsDefault ? t.agents.use_cases.review_off_body_inherited : t.agents.use_cases.review_off_body_dropped,
@@ -466,7 +467,7 @@ function ReviewDimCard({ state, loading, onClick, reviewsDefault }: ReviewDimCar
         >
           <UserCheck className="w-3 h-3" style={{ color: isOn ? color : '#94a3b8' }} />
         </span>
-        <span className="typo-label uppercase tracking-wider text-foreground">Review</span>
+        <span className="typo-label uppercase tracking-wider text-foreground">{t.agents.use_cases.dim_review_title}</span>
         <span
           className={`ml-auto inline-flex items-center gap-1 typo-label uppercase tracking-wider px-1.5 py-0.5 rounded border ${s.pill} ${
             loading ? 'opacity-50' : ''

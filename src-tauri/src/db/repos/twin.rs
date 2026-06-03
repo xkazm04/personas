@@ -1121,7 +1121,7 @@ pub fn get_tone_optional(
 ) -> Result<Option<TwinTone>, AppError> {
     let conn = pool.get()?;
     let result = conn.query_row(
-        "SELECT * FROM twin_tone_profiles WHERE twin_id = ?1 AND channel = ?2",
+        "SELECT * FROM twin_tones WHERE twin_id = ?1 AND channel = ?2",
         params![twin_id, channel],
         row_to_tone,
     );
@@ -1143,5 +1143,42 @@ mod tests {
         assert_eq!(slugify("---"), "twin");
         assert_eq!(slugify(""), "twin");
         assert_eq!(slugify("Michal's Twin"), "michal-s-twin");
+    }
+
+    /// Regression guard for a table-name typo. `get_tone_optional` once queried
+    /// a non-existent `twin_tone_profiles` table; on a fresh twin that surfaced
+    /// as a SqliteFailure ("no such table") which is NOT
+    /// `QueryReturnedNoRows`, so it bypassed the `Ok(None)` arm and propagated
+    /// as `AppError::Database` — hard-failing twin_recall, twin_simulate_answer,
+    /// and twin_studio_generate_answers. This locks the table name to
+    /// `twin_tones` so that class of silent drift can't reship.
+    #[test]
+    fn get_tone_optional_recalls_from_twin_tones_table() {
+        let pool = crate::db::init_test_db().expect("init test db");
+        let twin = create_profile(&pool, "Tone Test Twin", None, None, None, None)
+            .expect("create twin profile");
+
+        // A channel with no tone row must resolve to Ok(None), not a Database error.
+        let missing = get_tone_optional(&pool, &twin.id, "slack")
+            .expect("missing tone must be Ok(None), not a Database error");
+        assert!(missing.is_none(), "expected None for a channel with no tone row");
+
+        // After upserting a tone, the same optional lookup must recall it.
+        upsert_tone(
+            &pool,
+            &twin.id,
+            "slack",
+            "Friendly and concise.",
+            None,
+            None,
+            None,
+        )
+        .expect("upsert tone");
+
+        let found = get_tone_optional(&pool, &twin.id, "slack")
+            .expect("tone lookup must not error")
+            .expect("tone row must be recalled");
+        assert_eq!(found.channel, "slack");
+        assert_eq!(found.voice_directives, "Friendly and concise.");
     }
 }

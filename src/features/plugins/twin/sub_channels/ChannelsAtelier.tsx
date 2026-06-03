@@ -328,7 +328,7 @@ export default function ChannelsAtelier() {
                             <span className="relative flex-shrink-0 inline-flex">
                               <Activity className={`w-3 h-3 ${isStale ? 'text-amber-300' : hasLast ? meta.text : 'text-foreground'}`} />
                               {isStale && (
-                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse motion-reduce:animate-none" />
                               )}
                             </span>
                             <span className="truncate">{formatLastBridged(lastByChannel.get(ch.channel_type))}</span>

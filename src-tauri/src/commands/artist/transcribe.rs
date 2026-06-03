@@ -242,9 +242,18 @@ async fn local_whisper_transcribe(source: &Path) -> Result<TranscribeResult, App
         .and_then(|s| s.to_str())
         .ok_or_else(|| AppError::Internal("Clip path has no file stem".into()))?;
 
-    // Whisper writes its JSON output as `{stem}.json` into the output
-    // directory. We keep that location so a re-run overwrites cleanly.
-    let whisper_json_path = parent.join(format!("{stem}.json"));
+    // Whisper derives its output filename from the input stem and writes
+    // `{output_dir}/{stem}.json`. Point `--output_dir` at a fresh, private
+    // scratch dir — NOT at `parent` — so whisper never touches (let alone
+    // overwrites or, after parsing, deletes) a user file named `{stem}.json`
+    // that happens to sit next to the clip (notes, subtitle config, or a
+    // same-stem sibling like `a.mp3` alongside `a.mp4`). The scratch dir and
+    // everything in it is removed when `scratch` drops at function exit.
+    let scratch = tempfile::Builder::new()
+        .prefix("personas-whisper-")
+        .tempdir()
+        .map_err(|e| AppError::Internal(format!("Create whisper scratch dir: {e}")))?;
+    let whisper_json_path = scratch.path().join(format!("{stem}.json"));
 
     let mut cmd = TokioCommand::new(whisper_binary_name());
     cmd.arg(source)
@@ -253,7 +262,7 @@ async fn local_whisper_transcribe(source: &Path) -> Result<TranscribeResult, App
         .arg("--word_timestamps")
         .arg("True")
         .arg("--output_dir")
-        .arg(parent)
+        .arg(scratch.path())
         // Default to the smallest multilingual model so a fresh install
         // doesn't download gigabytes on first run. Users can set
         // WHISPER_MODEL to override.
@@ -332,16 +341,16 @@ async fn local_whisper_transcribe(source: &Path) -> Result<TranscribeResult, App
         words,
     };
 
-    // Overwrite whisper's raw JSON with our canonical sidecar, renamed to
-    // `{stem}.transcript.json`. Remove whisper's original so we don't leak
-    // two files per clip.
+    // Write our canonical sidecar next to the source clip. Whisper's raw
+    // JSON lives in `scratch` (auto-removed on drop), so `{stem}.transcript.json`
+    // is the only file we ever add beside the user's media — no cleanup of a
+    // parent-dir scratch file, and nothing of the user's is at risk.
     let sidecar_path = parent.join(format!("{stem}.transcript.json"));
     let serialized = serde_json::to_vec_pretty(&sidecar)
         .map_err(|e| AppError::Internal(format!("Serialize sidecar: {e}")))?;
     tokio::fs::write(&sidecar_path, &serialized)
         .await
         .map_err(|e| AppError::Internal(format!("Write sidecar: {e}")))?;
-    let _ = tokio::fs::remove_file(&whisper_json_path).await;
 
     Ok(TranscribeResult {
         transcript_path: sidecar_path.to_string_lossy().to_string(),

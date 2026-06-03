@@ -237,6 +237,12 @@ export function ChatMessageContent({
       >
         {safeContent}
       </ReactMarkdown>
+      {streaming && (
+        <span
+          aria-hidden="true"
+          className="inline-block w-[2px] h-[1.05em] align-text-bottom ml-0.5 bg-primary/70 animate-[blink-caret_1s_step-end_infinite]"
+        />
+      )}
     </div>
   );
 }

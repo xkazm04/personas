@@ -295,7 +295,7 @@ pub fn research_lab_sync_to_obsidian(
             status = exp.status,
             proj = project.name,
             hyp = hypothesis_stmt.replace('"', "'"),
-            created = &exp.created_at[..10],
+            created = exp.created_at.get(..10).unwrap_or(exp.created_at.as_str()),
             name = exp.name,
         );
 
@@ -314,7 +314,7 @@ pub fn research_lab_sync_to_obsidian(
                 md.push_str(&format!(
                     "### Run {n} — {date}\n- **Passed:** {passed}\n",
                     n = run.run_number,
-                    date = &run.created_at[..10],
+                    date = run.created_at.get(..10).unwrap_or(run.created_at.as_str()),
                     passed = if run.passed != 0 { "yes" } else { "no" },
                 ));
                 if let Some(o) = &run.outputs {

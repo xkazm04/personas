@@ -65,6 +65,14 @@ pub async fn lab_start_arena(
     use_case_filter: Option<String>,
 ) -> Result<LabArenaRun, AppError> {
     require_auth(&state).await?;
+    // Validate at the trust boundary before any DB read or run row is created.
+    // `parse_model_configs` also rejects an empty list, but doing it here yields
+    // an actionable message and avoids persisting a zero-model phantom run.
+    if models.is_empty() {
+        return Err(AppError::Validation(
+            "Select at least one model to run the arena comparison".into(),
+        ));
+    }
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
@@ -186,6 +194,13 @@ pub async fn lab_start_ab(
     test_input: Option<String>,
 ) -> Result<LabAbRun, AppError> {
     require_auth(&state).await?;
+
+    // Validate at the trust boundary before the snapshot transaction or run row.
+    if models.is_empty() {
+        return Err(AppError::Validation(
+            "Select at least one model to run the A/B comparison".into(),
+        ));
+    }
 
     // Snapshot persona, versions, and tools in a single read transaction to prevent
     // a concurrent persona update from creating a hybrid base+version state.
@@ -385,6 +400,12 @@ pub async fn lab_start_matrix(
     use_case_filter: Option<String>,
 ) -> Result<LabMatrixRun, AppError> {
     require_auth(&state).await?;
+    // Validate at the trust boundary before any DB read or run row is created.
+    if models.is_empty() {
+        return Err(AppError::Validation(
+            "Select at least one model to run the matrix comparison".into(),
+        ));
+    }
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
@@ -590,6 +611,13 @@ pub async fn lab_start_eval(
     test_input: Option<String>,
 ) -> Result<LabEvalRun, AppError> {
     require_auth(&state).await?;
+    // Validate at the trust boundary before any DB read or run row is created,
+    // mirroring the `version_ids.len() < 2` check below.
+    if models.is_empty() {
+        return Err(AppError::Validation(
+            "Select at least one model for evaluation".into(),
+        ));
+    }
     let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
 
@@ -1068,6 +1096,38 @@ fn build_results_summary_eval(results: &[LabEvalResult]) -> String {
 // Progress -- Active run progress hydration
 // ============================================================================
 
+/// Build the active-progress entry array from raw `(mode, run_id, progress_json)`
+/// rows returned by `lab::get_all_active_progress`.
+///
+/// A row whose `progress_json` fails to parse (interrupted write, schema drift,
+/// partial update) is **never silently dropped** — doing so would make a
+/// genuinely-active run vanish from hydration, the same orphaned-run failure as
+/// the consensus gap but triggered by data corruption. Instead we log a
+/// `tracing::warn!` breadcrumb for the next debugger and emit a minimal degraded
+/// entry (`{ "phase": "running" }`) so the UI still shows *something* running.
+/// The frontend (`labSlice.hydrateActiveProgress`) already defaults `phase` to
+/// `"running"` and treats every other progress field as optional, so the degraded
+/// entry hydrates cleanly.
+fn build_active_progress_entries(active: Vec<(String, String, String)>) -> Vec<serde_json::Value> {
+    active
+        .into_iter()
+        .map(|(mode, run_id, progress_json)| {
+            let progress = serde_json::from_str::<serde_json::Value>(&progress_json)
+                .unwrap_or_else(|err| {
+                    tracing::warn!(
+                        mode = %mode,
+                        run_id = %run_id,
+                        error = %err,
+                        "lab_get_active_progress: malformed progress_json for active run; \
+                         returning minimal degraded entry instead of dropping it"
+                    );
+                    serde_json::json!({ "phase": "running" })
+                });
+            serde_json::json!({ "mode": mode, "runId": run_id, "progress": progress })
+        })
+        .collect()
+}
+
 #[tauri::command]
 pub fn lab_get_active_progress(
     state: State<'_, Arc<AppState>>,
@@ -1077,15 +1137,9 @@ pub fn lab_get_active_progress(
 
     // Single UNION ALL query across all 4 lab run tables — returns ALL active runs
     let active = lab::get_all_active_progress(&state.db, &persona_id)?;
-    let entries: Vec<serde_json::Value> = active
-        .into_iter()
-        .filter_map(|(mode, run_id, progress_json)| {
-            serde_json::from_str::<serde_json::Value>(&progress_json)
-                .ok()
-                .map(|val| serde_json::json!({ "mode": mode, "runId": run_id, "progress": val }))
-        })
-        .collect();
-    Ok(serde_json::Value::Array(entries))
+    Ok(serde_json::Value::Array(build_active_progress_entries(
+        active,
+    )))
 }
 
 // ============================================================================
@@ -1166,4 +1220,49 @@ pub fn lab_get_tool_calls(
     let kind = LabResultKind::from_db(&result_kind)
         .ok_or_else(|| AppError::Validation(format!("Unknown lab result_kind: {result_kind}")))?;
     lab::list_tool_calls_for_result(&state.db, &result_id, kind)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn malformed_progress_json_yields_degraded_entry_not_dropped() {
+        let active = vec![
+            (
+                "arena".to_string(),
+                "run-ok".to_string(),
+                r#"{"phase":"scoring","current":2,"total":5}"#.to_string(),
+            ),
+            // Corrupt row: truncated/interrupted write produces invalid JSON.
+            (
+                "eval".to_string(),
+                "run-corrupt".to_string(),
+                "{not valid json".to_string(),
+            ),
+        ];
+
+        let entries = build_active_progress_entries(active);
+
+        // Never-lose-a-run invariant: BOTH runs survive — the corrupt one is not
+        // silently dropped from hydration.
+        assert_eq!(entries.len(), 2);
+
+        let ok = &entries[0];
+        assert_eq!(ok["mode"], "arena");
+        assert_eq!(ok["runId"], "run-ok");
+        assert_eq!(ok["progress"]["phase"], "scoring");
+        assert_eq!(ok["progress"]["current"], 2);
+
+        let corrupt = &entries[1];
+        assert_eq!(corrupt["mode"], "eval");
+        assert_eq!(corrupt["runId"], "run-corrupt");
+        // Degraded-but-present fallback keeps the run visible as "running".
+        assert_eq!(corrupt["progress"]["phase"], "running");
+    }
+
+    #[test]
+    fn empty_input_yields_empty_entries() {
+        assert!(build_active_progress_entries(Vec::new()).is_empty());
+    }
 }

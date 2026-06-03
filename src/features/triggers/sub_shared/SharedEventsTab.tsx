@@ -9,6 +9,7 @@ import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogE
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import { CatalogCard } from './CatalogCard';
 import { SubscriptionList } from './SubscriptionList';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -175,16 +176,14 @@ export function SharedEventsTab() {
                 ))}
               </div>
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <div className="w-12 h-12 rounded-modal bg-sky-500/10 flex items-center justify-center">
-                  <RssIcon className="w-6 h-6 text-sky-400" />
-                </div>
-                <p className="typo-body text-foreground">
-                  {loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
-                </p>
-                <p className="typo-caption text-foreground">
-                  {t.triggers.no_feeds_hint}
-                </p>
+              <div className="flex-1 flex items-center justify-center">
+                <EmptyState
+                  icon={RssIcon}
+                  iconColor="text-sky-400"
+                  iconContainerClassName="bg-sky-500/10 border-sky-500/20"
+                  title={loading ? t.triggers.loading_catalog : t.triggers.no_feeds}
+                  subtitle={t.triggers.no_feeds_hint}
+                />
               </div>
             )}
           </div>

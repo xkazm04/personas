@@ -449,6 +449,28 @@ pub fn create_version(
     })
 }
 
+/// Map a UNIQUE-constraint violation on `recipe_versions(recipe_id,
+/// version_number)` to a friendly, retryable message instead of leaking the raw
+/// SQLite error to the user.
+///
+/// The version-mutating ops below run inside BEGIN IMMEDIATE transactions, which
+/// serialize version-number allocation at the SQLite level (the second writer
+/// blocks on the write lock, then reads the post-commit MAX). This mapping is
+/// defense-in-depth for any residual race — e.g. a double-clicked Accept, or an
+/// Accept landing while a Revert is mid-flight — so the loser sees a clear
+/// "try again" message rather than `UNIQUE constraint failed: ...`.
+fn map_version_conflict(err: rusqlite::Error) -> AppError {
+    let msg = err.to_string();
+    if msg.contains("UNIQUE") && msg.contains("version_number") {
+        AppError::Validation(
+            "Another version change is already in progress for this recipe. Please try again."
+                .into(),
+        )
+    } else {
+        AppError::Database(err)
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn accept_version(
     pool: &DbPool,
@@ -460,8 +482,15 @@ pub fn accept_version(
     changes_summary: Option<&str>,
 ) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::accept_version", {
-        let conn = pool.get()?;
-        let tx = conn.unchecked_transaction()?;
+        // BEGIN IMMEDIATE: take the write lock up front so two concurrent
+        // accept/revert calls serialize instead of both reading the same stale
+        // MAX(version_number) snapshot and colliding on UNIQUE(recipe_id,
+        // version_number). busy_timeout (5s) makes the loser wait for the winner
+        // to commit, then it reads the updated max.
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
 
         // 1. Get latest version number
         let latest: i64 = tx.query_row(
@@ -491,7 +520,8 @@ pub fn accept_version(
                     current.sample_inputs, current.description,
                     "Initial version (snapshot before first edit)", now,
                 ],
-            )?;
+            )
+            .map_err(map_version_conflict)?;
         }
 
         let new_version_number = if latest == 0 { 2 } else { latest + 1 };
@@ -503,7 +533,8 @@ pub fn accept_version(
             "INSERT INTO recipe_versions (id, recipe_id, version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, created_at)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             rusqlite::params![version_id, recipe_id, new_version_number, prompt_template, input_schema, sample_inputs, description, changes_summary, now],
-        )?;
+        )
+        .map_err(map_version_conflict)?;
 
         // 4. Update the recipe definition with the new data
         let now = chrono::Utc::now().to_rfc3339();
@@ -538,8 +569,13 @@ pub fn revert_to_version(
     version_id: &str,
 ) -> Result<RecipeDefinition, AppError> {
     timed_query!("recipes", "recipes::revert_to_version", {
-        let conn = pool.get()?;
-        let tx = conn.unchecked_transaction()?;
+        // BEGIN IMMEDIATE for the same reason as accept_version: serialize the
+        // MAX(version_number)+1 allocation so a revert racing an accept (or
+        // another revert) can't compute a duplicate version number.
+        let mut conn = pool.get()?;
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
 
         // 1. Read the target version
         let version = tx
@@ -584,7 +620,8 @@ pub fn revert_to_version(
                 format!("Snapshot before revert to v{}", version.version_number),
                 now,
             ],
-        )?;
+        )
+        .map_err(map_version_conflict)?;
 
         // 5. Update the recipe definition to the target version
         let now = chrono::Utc::now().to_rfc3339();
@@ -611,4 +648,42 @@ pub fn revert_to_version(
 
         Ok(recipe)
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn map_version_conflict_translates_unique_violation() {
+        // The raw SQLite UNIQUE error must become a friendly, retryable message
+        // rather than leaking to the user.
+        let err = rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_CONSTRAINT),
+            Some(
+                "UNIQUE constraint failed: recipe_versions.recipe_id, recipe_versions.version_number"
+                    .to_string(),
+            ),
+        );
+        match map_version_conflict(err) {
+            AppError::Validation(msg) => {
+                assert!(msg.contains("in progress"), "unexpected message: {msg}");
+            }
+            other => panic!("expected Validation, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn map_version_conflict_passes_through_unrelated_errors() {
+        // A non-UNIQUE failure stays a Database error — we only special-case the
+        // version-number collision.
+        let err = rusqlite::Error::SqliteFailure(
+            rusqlite::ffi::Error::new(rusqlite::ffi::SQLITE_BUSY),
+            Some("database is locked".to_string()),
+        );
+        match map_version_conflict(err) {
+            AppError::Database(_) => {}
+            other => panic!("expected Database, got {other:?}"),
+        }
+    }
 }

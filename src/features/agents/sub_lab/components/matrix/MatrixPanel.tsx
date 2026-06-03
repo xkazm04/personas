@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Wand2, AlertCircle } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { MatrixHistory } from './MatrixHistory';
+import { ImproveReadyCallout } from './ImproveReadyCallout';
 import { selectedModelsToConfigs } from '@/lib/models/modelCatalog';
 import { usePanelRunState } from '../../libs/usePanelRunState';
 import { ModelToggleGrid, UseCaseFilterPicker, LabPanelShell } from '../../shared';
@@ -79,6 +80,8 @@ export function MatrixPanel() {
         <ModelToggleGrid selectedModels={selectedModels} toggleModel={toggleModel} />
         <UseCaseFilterPicker selectedUseCaseId={selectedUseCaseId} setSelectedUseCaseId={setSelectedUseCaseId} />
       </LabPanelShell>
+
+      <ImproveReadyCallout onReview={setExpandedRunId} />
 
       <MatrixHistory runs={matrixRuns} resultsMap={matrixResultsMap} expandedRunId={expandedRunId} onToggleExpand={setExpandedRunId} onDelete={(id) => void deleteMatrixRun(id)} />
     </div>

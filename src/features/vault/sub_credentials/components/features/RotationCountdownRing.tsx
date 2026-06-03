@@ -1,3 +1,5 @@
+import { useTranslation } from '@/i18n/useTranslation';
+
 const RING_SIZE = 36;
 const RING_STROKE = 2.5;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
@@ -12,6 +14,7 @@ export function RotationCountdownRing({
   nextRotationAt: string;
   intervalDays: number;
 }) {
+  const { t, tx } = useTranslation();
   const totalSeconds = intervalDays * 86400;
   const remainingSeconds = Math.max(0, (new Date(nextRotationAt).getTime() - Date.now()) / 1000);
   const fraction = Math.min(1, remainingSeconds / totalSeconds);
@@ -25,7 +28,7 @@ export function RotationCountdownRing({
       height={RING_SIZE}
       className="shrink-0"
       role="img"
-      aria-label={`Rotation in ${countdown}`}
+      aria-label={tx(t.vault.rotation_section.ring_aria_label, { countdown })}
     >
       {/* Track */}
       <circle

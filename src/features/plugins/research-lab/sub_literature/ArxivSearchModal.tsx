@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { Search, ExternalLink, Check, Loader2 } from 'lucide-react';
+import { Search, ExternalLink, Check, Loader2, AlertTriangle, SearchX } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { toastCatch } from '@/lib/silentCatch';
 import { useToastStore } from '@/stores/toastStore';
 import { ResearchLabFormModal } from '../shared/ResearchLabFormModal';
-import { searchArxiv, type ArxivResult } from './arxivClient';
+import { searchArxiv, ArxivSearchError, type ArxivResult } from './arxivClient';
 
 interface Props {
   projectId: string;
@@ -23,9 +23,29 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => () => abortRef.current?.abort(), []);
+
+  // Map a failed search to an actionable message, keeping timeout / rate-limit
+  // / network / malformed-feed distinct from a genuinely-empty result set.
+  const describeError = (err: unknown): string => {
+    if (err instanceof ArxivSearchError) {
+      switch (err.kind) {
+        case 'timeout': return t.research_lab.arxiv_error_timeout;
+        case 'http':
+          return err.status === 429
+            ? t.research_lab.arxiv_error_rate_limited
+            : tx(t.research_lab.arxiv_error_http, { status: err.status ?? 0 });
+        case 'network': return t.research_lab.arxiv_error_network;
+        case 'feed': return t.research_lab.arxiv_error_feed;
+        case 'parse': return t.research_lab.arxiv_error_generic;
+      }
+    }
+    return t.research_lab.arxiv_error_generic;
+  };
 
   const runSearch = async () => {
     if (!query.trim()) return;
@@ -33,14 +53,16 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     setLoading(true);
+    setError(null);
     setSelected(new Set());
+    setHasSearched(true);
     try {
       const rows = await searchArxiv({ query: query.trim(), maxResults: 20, signal: ctrl.signal });
       setResults(rows);
-      if (rows.length === 0) addToast(t.research_lab.no_results, 'success');
     } catch (err) {
-      if ((err as Error).name === 'AbortError') return;
-      toastCatch("ArxivSearchModal:search")(err);
+      if ((err as Error)?.name === 'AbortError') return;
+      setResults([]);
+      setError(describeError(err));
     } finally {
       setLoading(false);
     }
@@ -203,11 +225,34 @@ export default function ArxivSearchModal({ projectId, onClose }: Props) {
           );
         })}
 
-        {!loading && results.length === 0 && query === '' && (
+        {error ? (
+          <div className="flex flex-col items-center gap-3 text-center py-10">
+            <AlertTriangle className="w-8 h-8 text-status-error" />
+            <div className="space-y-1">
+              <p className="typo-card-label text-foreground">{t.research_lab.arxiv_error_title}</p>
+              <p className="typo-body text-foreground max-w-sm">{error}</p>
+            </div>
+            <button
+              type="button"
+              onClick={runSearch}
+              disabled={loading || !query.trim()}
+              className="px-4 py-2 rounded-card typo-body bg-primary/20 text-primary hover:bg-primary/30 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+              {t.common.retry}
+            </button>
+          </div>
+        ) : !loading && hasSearched && results.length === 0 ? (
+          <div className="flex flex-col items-center gap-2 text-center py-10">
+            <SearchX className="w-8 h-8 text-foreground" />
+            <p className="typo-card-label text-foreground">{t.research_lab.no_results}</p>
+            <p className="typo-body text-foreground max-w-sm">{t.research_lab.arxiv_no_results_hint}</p>
+          </div>
+        ) : !loading && !hasSearched ? (
           <p className="typo-caption text-foreground text-center py-8">
             {t.research_lab.arxiv_search_hint}
           </p>
-        )}
+        ) : null}
       </div>
     </ResearchLabFormModal>
   );

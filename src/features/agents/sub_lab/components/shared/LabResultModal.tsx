@@ -3,6 +3,7 @@ import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime'
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { debtText } from '@/i18n/DebtText';
 
 
@@ -37,7 +38,7 @@ export function LabResultModal({
         <div className="flex items-center justify-between px-5 py-3 border-b border-primary/10 bg-gradient-to-r from-secondary/50 via-background/95 to-secondary/50 backdrop-blur-sm flex-shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <h2 id="lab-result-modal" className="typo-heading font-semibold text-foreground/90 tracking-wide">{modeLabel} {t.agents.lab.results_suffix}</h2>
-            <span className={statusBadge(run.status)}>{run.status}</span>
+            <span className={statusBadge(run.status)}>{tokenLabel(t, 'execution', run.status)}</span>
             {headerChips}
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">

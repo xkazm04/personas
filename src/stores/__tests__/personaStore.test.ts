@@ -155,7 +155,7 @@ describe("personaStore", () => {
       expect(useAgentStore.getState().executionOutput).toEqual(["Line 1", "Line 2"]);
     });
 
-    it("clearExecutionOutput resets state", () => {
+    it("clearExecutionOutput resets state and clears isExecuting", () => {
       useAgentStore.setState({
         executionOutput: ["Line 1"],
         activeExecutionId: "exec-1",
@@ -167,21 +167,26 @@ describe("personaStore", () => {
       const state = useAgentStore.getState();
       expect(state.executionOutput).toEqual([]);
       expect(state.activeExecutionId).toBeNull();
-      // Note: isExecuting is managed by the RunLifecycle FSM. Since the FSM
-      // was never transitioned to 'running' (setState bypasses the FSM),
-      // markCancelled is a no-op and isExecuting stays true.
+      // isExecuting must clear even though the RunLifecycle FSM was never
+      // transitioned to 'running' (setState bypasses the FSM, so markCancelled's
+      // transition is rejected). The defensive set in clearExecutionOutput
+      // guarantees the flag is cleared regardless — otherwise a phantom run
+      // would force every subsequent run into background mode.
+      expect(state.isExecuting).toBe(false);
     });
 
-    it("finishExecution is guarded by RunLifecycle FSM", () => {
-      // Setting isExecuting via setState bypasses the RunLifecycle FSM,
-      // so the FSM's internal state remains 'idle'. finishExecution calls
-      // markFinished which requires 'running' → 'finished', so the
-      // transition is rejected and isExecuting stays unchanged.
+    it("finishExecution always clears isExecuting, even when the FSM rejects the transition", () => {
+      // Regression test for the phantom-isExecuting lock after a page refresh.
+      // Setting isExecuting via setState bypasses the RunLifecycle FSM, so its
+      // internal state stays 'idle' and markFinished's 'running' → 'finished'
+      // transition is rejected — exactly the situation a recovered run hits when
+      // the lifecycle's module closure resets but isExecuting was seeded true.
+      // finishExecution must defensively set isExecuting:false anyway.
       useAgentStore.setState({ isExecuting: true });
 
       useAgentStore.getState().finishExecution();
 
-      expect(useAgentStore.getState().isExecuting).toBe(true);
+      expect(useAgentStore.getState().isExecuting).toBe(false);
     });
   });
 

@@ -13,7 +13,7 @@ import { PersonaSelect } from '@/features/overview/sub_usage/components/PersonaS
 import { useMessageCreatedListener } from '@/hooks/realtime/useMessageCreatedListener';
 import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
-import { formatRelativeTime } from '@/lib/utils/formatters';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { PersonaMessage } from '@/lib/types/types';
 import type { PersonaMessage as RawPersonaMessage } from '@/lib/bindings/PersonaMessage';
 import { seedMockMessage, deleteAllMessages } from '@/api/overview/messages';
@@ -22,7 +22,8 @@ import { toastCatch } from '@/lib/silentCatch';
 import { Trash2 } from 'lucide-react';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { priorityConfig, MESSAGE_ROW_HEIGHT } from '../libs/messageHelpers';
+import { priorityConfig, MESSAGE_ROW_HEIGHT, type PriorityStyle } from '../libs/messageHelpers';
+import { PriorityChip } from './PriorityChip';
 import { useColumnWidths, ColumnResizeHandle } from '@/features/shared/components/display/ColumnResize';
 
 // Ordered columns for the flat message grid. Widths are defaults — users can
@@ -233,7 +234,10 @@ export default function MessageList() {
     });
   }, [filteredMessages, markMessageAsRead]);
 
-  const defaultPriority = { color: 'text-foreground', bgColor: 'bg-secondary/30', borderColor: 'border-primary/15', label: 'Normal' };
+  // Concrete (never-undefined) fallback that mirrors the quiet-solid Normal tier;
+  // priorityConfig is a string-indexed record, so a literal is needed to satisfy
+  // the non-optional PriorityChip prop under noUncheckedIndexedAccess.
+  const defaultPriority: PriorityStyle = { color: 'text-foreground/90', bgColor: 'bg-secondary/40', borderColor: 'border-primary/20', label: 'Normal' };
 
   const handleToggleThread = useCallback((threadId: string) => {
     if (expandedThreadId === threadId) {
@@ -375,18 +379,17 @@ export default function MessageList() {
                           {parent.title || (parent.content ?? '').slice(0, 80)}
                         </span>
                       </div>
-                      <span className={`inline-flex px-2 py-0.5 rounded-card typo-heading text-xs border ${parentPriority.bgColor} ${parentPriority.color} ${parentPriority.borderColor}`}>
-                        {parentPriority.label}
-                      </span>
+                      <PriorityChip priority={parentPriority} />
                       {thread.replyCount > 0 && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
                           <MessageCircle className="w-3 h-3" />
                           {thread.replyCount}
                         </span>
                       )}
-                      <span className="typo-body text-foreground flex-shrink-0 w-24 text-right">
-                        {formatRelativeTime(thread.latestReplyAt ?? parent.created_at)}
-                      </span>
+                      <RelativeTime
+                        timestamp={thread.latestReplyAt ?? parent.created_at}
+                        className="typo-body text-foreground flex-shrink-0 w-24 text-right"
+                      />
                     </div>
 
                     {/* Expanded replies */}
@@ -417,18 +420,17 @@ export default function MessageList() {
                                       {msg.title || (msg.content ?? '').slice(0, 80)}
                                     </span>
                                   </div>
-                                  <span className={`inline-flex px-1.5 py-0.5 rounded typo-caption border ${mp.bgColor} ${mp.color} ${mp.borderColor}`}>
-                                    {mp.label}
-                                  </span>
+                                  <PriorityChip priority={mp} size="sm" />
                                   {!msg.is_read && (
                                     <span className="inline-flex items-center gap-1 flex-shrink-0">
                                       <span className="w-2 h-2 rounded-full bg-blue-500" aria-hidden="true" />
                                       <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">{t.overview.messages_view.new_badge}</span>
                                     </span>
                                   )}
-                                  <span className="typo-caption text-foreground flex-shrink-0 w-20 text-right">
-                                    {formatRelativeTime(msg.created_at)}
-                                  </span>
+                                  <RelativeTime
+                                    timestamp={msg.created_at}
+                                    className="typo-caption text-foreground flex-shrink-0 w-20 text-right"
+                                  />
                                 </div>
                               );
                             }) : (
@@ -545,9 +547,9 @@ export default function MessageList() {
                             <span className="typo-body text-foreground truncate">{message.persona_name || t.overview.messages_view.unknown_persona}</span>
                           </div>
                           <div role="gridcell" className="px-4 min-w-0"><span className={`typo-body truncate block ${message.is_read ? 'text-foreground' : 'text-foreground/90 font-medium'}`}>{message.title || (message.content ?? '').slice(0, 80)}</span></div>
-                          <div role="gridcell" className="px-4"><span className={`inline-flex px-2 py-0.5 rounded-card typo-heading border ${priority.bgColor} ${priority.color} ${priority.borderColor}`}>{priority.label}</span></div>
+                          <div role="gridcell" className="px-4"><PriorityChip priority={priority} /></div>
                           <div role="gridcell" className="px-4 flex justify-center">{!message.is_read ? <span className="inline-flex items-center gap-1" title={t.overview.messages_view.unread} aria-label={t.overview.messages_view.unread}><span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" /><span className="text-[10px] font-semibold uppercase tracking-wide text-blue-400">New</span></span> : <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/20" title={t.overview.messages_view.read} aria-hidden="true" />}</div>
-                          <div role="gridcell" className="px-4 text-right"><span className="typo-body text-foreground">{formatRelativeTime(message.created_at)}</span></div>
+                          <div role="gridcell" className="px-4 text-right"><RelativeTime timestamp={message.created_at} className="typo-body text-foreground" /></div>
                         </RevealItem>
                       );
                     })}

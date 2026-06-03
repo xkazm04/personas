@@ -7,6 +7,9 @@ import { VirtualizedTableBody } from '../shared/VirtualizedTableBody';
 import { ScenarioDetailPanel } from '../shared/ScenarioDetailPanel';
 import { EvalVersionCards } from './EvalVersionCards';
 import { EvalRadarChart } from './EvalRadarChart';
+import { EvalHeatCell } from './EvalHeatCell';
+import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
+import { WinnerCallout } from '../shared/WinnerCallout';
 import type { LabEvalResult } from '@/lib/bindings/LabEvalResult';
 import { useTranslation } from '@/i18n/useTranslation';
 import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
@@ -23,6 +26,8 @@ interface Props {
   runId?: string;
   userRatings?: Record<string, UserRatingEntry>;
   onRate?: (scenarioName: string, key: string, rating: number, feedback?: string) => void;
+  /** Results fetch is still in flight — show the shape-matched skeleton instead of the empty line. */
+  loading?: boolean;
 }
 
 function parseVerdict(raw: string): string {
@@ -80,7 +85,7 @@ function collectSuggestions(results: LabEvalResult[], limit = 3): string[] {
   return out.slice(0, limit);
 }
 
-export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }: Props) {
+export function EvalResultsGrid({ results, runId, userRatings, onRate, loading }: Props) {
   const { t } = useTranslation();
   const [celebrateWinnerId, setCelebrateWinnerId] = useState<string | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ scenario: string; versionId: string; modelId: string } | null>(null);
@@ -106,6 +111,18 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   const summary = useMemo(() => buildSummary(versionAggs, winnerId, scenarios.length), [versionAggs, winnerId, scenarios.length]);
   const insights = useMemo(() => collectTopInsights(results), [results]);
   const suggestions = useMemo(() => collectSuggestions(results), [results]);
+  const winnerAgg = versionAggs.find((a) => a.versionId === winnerId) ?? null;
+  // Highest composite across every populated version×model cell — drives the heatmap's best-cell marker.
+  const bestCellScore = useMemo(() => {
+    let max = 0;
+    for (const vId of Object.keys(grid)) {
+      for (const mId of Object.keys(grid[vId]!)) {
+        const c = grid[vId]![mId]!;
+        if (c.count > 0 && c.compositeScore > max) max = c.compositeScore;
+      }
+    }
+    return max;
+  }, [grid]);
 
   const selectedResult = selectedCell
     ? scenarioMatrix[selectedCell.scenario]?.[selectedCell.versionId]?.[selectedCell.modelId]
@@ -122,6 +139,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
   }, [winnerId, shouldAnimate]);
 
   if (results.length === 0) {
+    if (loading) return <LabResultsSkeleton />;
     return (
       <div className="text-center py-12 text-foreground typo-body" data-testid="eval-results-empty">
         {t.agents.lab.no_results}
@@ -150,6 +168,13 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
           )}
         </div>
       </div>
+
+      <WinnerCallout
+        versionId={winnerId}
+        versionNumber={winnerAgg?.versionNumber ?? null}
+        score={winnerAgg?.compositeScore ?? null}
+        runId={runId}
+      />
 
       <EvalVersionCards versionAggs={versionAggs} winnerId={winnerId} celebrateWinnerId={celebrateWinnerId} />
       <EvalRadarChart versionAggs={versionAggs} />
@@ -227,10 +252,7 @@ export function EvalResultsGrid({ results, runId: _runId, userRatings, onRate }:
                       }
                       return (
                         <td key={mId} className="px-3 py-2.5 text-center">
-                          <div className="inline-flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-full ${cell.compositeScore >= 60 ? 'bg-emerald-500/60' : cell.compositeScore >= 30 ? 'bg-amber-500/60' : 'bg-red-500/40'}`} />
-                            <span className={`typo-heading font-bold ${scoreColor(cell.compositeScore)}`}>{cell.compositeScore}</span>
-                          </div>
+                          <EvalHeatCell cell={cell} isBest={bestCellScore > 0 && cell.compositeScore === bestCellScore} />
                         </td>
                       );
                     })}

@@ -14,11 +14,12 @@ export interface CredRow {
 }
 
 export function HealthBadge({ success }: { success: boolean | null }) {
+  const { t } = useTranslation();
   if (success === null) {
     return (
       <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium bg-secondary/60 text-foreground border border-primary/15">
         <HelpCircle className="w-3 h-3" />
-        untested
+        {t.vault.credential_list.health_untested}
       </span>
     );
   }
@@ -26,14 +27,14 @@ export function HealthBadge({ success }: { success: boolean | null }) {
     return (
       <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium bg-emerald-600/15 text-emerald-700 dark:text-emerald-400 border border-emerald-600/25 dark:border-emerald-500/20">
         <CheckCircle2 className="w-3 h-3" />
-        healthy
+        {t.vault.credential_list.health_healthy}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 typo-caption px-2 py-0.5 rounded-card font-medium bg-red-600/15 text-red-700 dark:text-red-400 border border-red-600/25 dark:border-red-500/20">
       <XCircle className="w-3 h-3" />
-      failing
+      {t.vault.credential_list.health_failing}
     </span>
   );
 }
@@ -62,7 +63,7 @@ export function useCredentialColumns({
   const { t } = useTranslation();
   const nameColumn: DataGridColumn<CredRow> = useMemo(() => ({
     key: 'name',
-    label: 'Name',
+    label: t.vault.credential_list.col_name,
     width: isSimple ? '1fr' : '1.4fr',
     sortable: true,
     render: (row) => {
@@ -95,7 +96,7 @@ export function useCredentialColumns({
         </div>
       );
     },
-  }), [isSimple, pendingDeleteIds, t.common.deleting]);
+  }), [isSimple, pendingDeleteIds, t.common.deleting, t.vault.credential_list.col_name]);
 
   return useMemo(() => {
     if (isSimple) {
@@ -103,7 +104,7 @@ export function useCredentialColumns({
         nameColumn,
         {
           key: 'health',
-          label: 'Status',
+          label: t.vault.credential_list.col_status,
           width: '100px',
           render: (row: CredRow) => <HealthBadge success={row.credential.healthcheck_last_success} />,
         },
@@ -113,7 +114,7 @@ export function useCredentialColumns({
       nameColumn,
       {
         key: 'type',
-        label: 'Type',
+        label: t.vault.credential_list.col_type,
         width: '0.8fr',
         sortable: true,
         render: (row: CredRow) => (
@@ -122,7 +123,7 @@ export function useCredentialColumns({
       },
       {
         key: 'category',
-        label: 'Category',
+        label: t.vault.credential_list.col_category,
         width: '0.7fr',
         filterOptions: categoryOptions,
         filterValue: categoryFilter,
@@ -133,7 +134,7 @@ export function useCredentialColumns({
       },
       {
         key: 'health',
-        label: 'Health',
+        label: t.vault.credential_list.col_health,
         width: '0.6fr',
         filterOptions: healthOptions,
         filterValue: healthFilter,
@@ -142,7 +143,7 @@ export function useCredentialColumns({
       },
       {
         key: 'last-used',
-        label: 'Last Used',
+        label: t.vault.credential_list.col_last_used,
         width: '0.7fr',
         sortable: true,
         align: 'right' as const,
@@ -152,7 +153,7 @@ export function useCredentialColumns({
       },
       {
         key: 'created',
-        label: 'Created',
+        label: t.vault.credential_list.col_created,
         width: '0.7fr',
         sortable: true,
         align: 'right' as const,
@@ -182,5 +183,5 @@ export function useCredentialColumns({
         },
       },
     ];
-  }, [isSimple, nameColumn, categoryOptions, categoryFilter, setCategoryFilter, healthOptions, healthFilter, setHealthFilter, pendingDeleteIds, t.vault.credential_card.delete_credential, onDelete]);
+  }, [isSimple, nameColumn, categoryOptions, categoryFilter, setCategoryFilter, healthOptions, healthFilter, setHealthFilter, pendingDeleteIds, t.vault.credential_card.delete_credential, t.vault.credential_list.col_status, t.vault.credential_list.col_type, t.vault.credential_list.col_category, t.vault.credential_list.col_health, t.vault.credential_list.col_last_used, t.vault.credential_list.col_created, onDelete]);
 }

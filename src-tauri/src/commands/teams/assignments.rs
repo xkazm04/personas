@@ -209,12 +209,37 @@ fn embedding_manager_for_state(
     None
 }
 
+/// Assignment statuses where the orchestrator may still be live: queued to
+/// start, actively ticking, or paused awaiting review (resumable back into
+/// `running`). Deleting in any of these states orphans the in-flight persona
+/// execution and makes the next orchestrator tick's `get_by_id` return
+/// `NotFound`, crashing the loop. Terminal states (`done`/`failed`/`aborted`)
+/// are safe to delete; their step + event rows cascade away via FK.
+fn assignment_is_active(status: &str) -> bool {
+    matches!(status, "queued" | "running" | "awaiting_review")
+}
+
 #[tauri::command]
 pub fn delete_team_assignment(
     state: State<'_, Arc<AppState>>,
     id: String,
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
+    // Guard against deleting a live assignment — mirrors `delete_team`'s
+    // `has_running_pipeline` check. Without it, a delete mid-run silently
+    // orphans the underlying LLM execution and can crash the orchestrator.
+    match repo::get_by_id(&state.db, &id) {
+        Ok(assignment) if assignment_is_active(&assignment.status) => {
+            return Err(AppError::Validation(
+                "Cannot delete an assignment while it is running. Wait for it to finish, or abort it from the review panel first.".into(),
+            ));
+        }
+        Ok(_) => {}
+        // Already gone — treat the delete as an idempotent no-op rather than
+        // surfacing a NotFound error to the caller.
+        Err(AppError::NotFound(_)) => return Ok(false),
+        Err(e) => return Err(e),
+    }
     repo::delete(&state.db, &id)
 }
 

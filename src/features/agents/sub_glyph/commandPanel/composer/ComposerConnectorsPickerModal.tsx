@@ -18,6 +18,7 @@ import { useHealthyConnectors } from "@/features/agents/shared/quickConfig/useHe
 import { ComposerPickerShell } from "./ComposerPickerShell";
 import { ComposerConnectorCard } from "./ComposerConnectorCard";
 import { ComposerConnectorsSearchBar } from "./ComposerConnectorsSearchBar";
+import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -34,6 +35,7 @@ export function ComposerConnectorsPickerModal({
   open, onClose, selected, onApply, solid = false,
 }: ComposerConnectorsPickerModalProps) {
   const healthy = useHealthyConnectors();
+  const { t, tx } = useTranslation();
   const [draft, setDraft] = useState<string[]>(selected);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("__all__");
@@ -92,8 +94,8 @@ export function ComposerConnectorsPickerModal({
       onApply={applyNow}
       title={debtText("auto_connect_your_tools_1e2c90e0")}
       subtitle={draft.length === 0
-        ? "Search or filter to pick apps from your vault"
-        : `${draft.length} app${draft.length === 1 ? "" : "s"} selected`}
+        ? t.agents.glyph_apps_subtitle_empty
+        : tx(draft.length === 1 ? t.agents.glyph_apps_selected_one : t.agents.glyph_apps_selected_other, { count: draft.length })}
       icon={<Plug className="w-5 h-5" />}
       size="lg"
       solid={solid}
@@ -107,7 +109,7 @@ export function ComposerConnectorsPickerModal({
             className="px-4 py-1.5 rounded-interactive bg-primary/30 hover:bg-primary/50 border border-primary/50 text-foreground typo-body font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ boxShadow: "0 0 20px rgba(96,165,250,0.25)" }}
           >
-            {draft.length === 0 ? "Clear selection" : `Attach ${draft.length} app${draft.length === 1 ? "" : "s"}`}
+            {draft.length === 0 ? t.agents.glyph_apps_clear : tx(draft.length === 1 ? t.agents.glyph_apps_attach_one : t.agents.glyph_apps_attach_other, { count: draft.length })}
           </button>
         </>
       }
@@ -132,8 +134,8 @@ export function ComposerConnectorsPickerModal({
             </div>
             <div className="typo-body text-foreground/85">
               {healthy.length === 0
-                ? "No connected apps in the vault yet."
-                : "No matches — try a different search."}
+                ? t.agents.glyph_apps_empty_none
+                : t.agents.glyph_apps_empty_no_match}
             </div>
             {healthy.length === 0 && (
               <p className="typo-caption text-foreground max-w-xs">
@@ -158,7 +160,7 @@ export function ComposerConnectorsPickerModal({
       {selectedChips.length > 0 && (
         <div className="sticky bottom-0 border-t border-border/20 bg-card-bg px-5 py-3">
           <div className="flex items-center gap-2 typo-label text-foreground mb-2">
-            Selected
+            {t.agents.glyph_apps_selected_label}
           </div>
           <div className="flex items-center gap-1.5 flex-wrap">
             {selectedChips.map((c) => (
@@ -175,7 +177,7 @@ export function ComposerConnectorsPickerModal({
                   type="button"
                   onClick={() => toggleDraft(c.name)}
                   className="text-foreground hover:text-foreground -mr-0.5"
-                  aria-label={`Remove ${c.label}`}
+                  aria-label={tx(t.agents.glyph_apps_remove, { label: c.label })}
                 >
                   ×
                 </button>

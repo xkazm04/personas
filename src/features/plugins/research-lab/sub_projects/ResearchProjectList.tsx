@@ -147,7 +147,7 @@ function ResearchProjectListBaseline() {
                   </span>
                   <button
                     onClick={(e) => handleEdit(e, project)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-secondary/80 text-foreground hover:text-foreground transition-all"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-secondary/80 text-foreground hover:text-foreground transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     title={t.research_lab.edit_project}
                     aria-label={t.research_lab.edit_project}
                   >
@@ -155,8 +155,9 @@ function ResearchProjectListBaseline() {
                   </button>
                   <button
                     onClick={(e) => handleDelete(e, project.id)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
                     title={t.common.delete}
+                    aria-label={t.common.delete}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

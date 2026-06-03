@@ -484,7 +484,16 @@ export default function TaskRunnerPage() {
       useSystemStore.getState().appendTaskOutput(job_id, line);
     });
 
-    const statusUn = listen<{ job_id: string; status: string; error?: string }>(EventName.TASK_EXEC_STATUS, () => {
+    const statusUn = listen<{ job_id: string; status: string; error?: string }>(EventName.TASK_EXEC_STATUS, (event) => {
+      const { job_id, status } = event.payload;
+      // Free the task's streamed output ring once it reaches a terminal state.
+      // The bounded ring (devToolsTaskSlice) caps each buffer; this clear stops
+      // dozens of completed/failed/cancelled buffers from accumulating across a
+      // long auto-run. The failed/cancelled paths only emit TASK_EXEC_STATUS
+      // (not TASK_EXEC_COMPLETE), so this listener is the one terminal hook.
+      if (status === 'completed' || status === 'failed' || status === 'cancelled') {
+        useSystemStore.getState().clearTaskOutput(job_id);
+      }
       const pid = activeProjectIdRef.current;
       if (pid) useSystemStore.getState().fetchTasks(pid);
     });

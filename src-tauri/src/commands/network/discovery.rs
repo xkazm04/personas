@@ -126,10 +126,10 @@ pub async fn get_network_status(
         .map(|p| p.len() as u32)
         .unwrap_or(0);
 
-    // Get local peer_id from identity
-    let local_peer_id = crate::engine::identity::get_or_create_identity(&state.db)
-        .map(|id| id.peer_id)
-        .unwrap_or_default();
+    // Get local peer_id from identity. Never mask a lost keyring with an empty
+    // default — surface it via `identity_degraded` so the UI can prompt re-init.
+    let (local_peer_id, identity_degraded) =
+        crate::engine::identity::local_peer_id_for_status(&state.db);
 
     Ok(NetworkStatusInfo {
         is_running,
@@ -137,6 +137,7 @@ pub async fn get_network_status(
         discovered_peer_count,
         connected_peer_count,
         local_peer_id,
+        identity_degraded,
     })
 }
 
@@ -173,9 +174,8 @@ pub async fn get_network_snapshot(
     let peers = net.mdns.get_discovered_peers()?;
     let discovered_peer_count = peers.len() as u32;
 
-    let local_peer_id = crate::engine::identity::get_or_create_identity(&state.db)
-        .map(|id| id.peer_id)
-        .unwrap_or_default();
+    let (local_peer_id, identity_degraded) =
+        crate::engine::identity::local_peer_id_for_status(&state.db);
 
     let status = NetworkStatusInfo {
         is_running,
@@ -183,6 +183,7 @@ pub async fn get_network_snapshot(
         discovered_peer_count,
         connected_peer_count,
         local_peer_id,
+        identity_degraded,
     };
 
     let health = net.connections.get_connection_health().await;

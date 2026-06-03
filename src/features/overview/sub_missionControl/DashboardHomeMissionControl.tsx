@@ -466,7 +466,7 @@ export const TriagePane = memo(function TriagePane({
           {topItem && (
             <button
               onClick={topItem.onClick}
-              className="typo-caption font-mono uppercase tracking-widest text-primary/80 hover:text-primary transition-colors flex items-center gap-1"
+              className="typo-caption font-mono uppercase tracking-widest text-primary/80 hover:text-primary transition-colors flex items-center gap-1 focus-ring rounded-interactive"
             >
               {t.overview.dashboard.triage_jump} <ArrowRight className="w-3 h-3" />
             </button>
@@ -485,7 +485,7 @@ export const TriagePane = memo(function TriagePane({
               <button
                 key={item.id}
                 onClick={item.onClick}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors group focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
+                className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-l-2 transition-colors group focus-ring ${
                   isTop
                     ? `${meta.border} bg-primary/[0.04] hover:bg-primary/[0.07]`
                     : 'border-transparent hover:bg-primary/[0.04]'
@@ -620,6 +620,11 @@ export const VitalsConsole = memo(function VitalsConsole({
 });
 
 function SuccessRing({ rate }: { rate: number }) {
+  // Honour reduced-motion: collapse the 600ms ring sweep to its final state
+  // rather than animating the stroke. The global reduced-motion CSS already
+  // clamps transition-duration, but gating here makes the intent explicit and
+  // covers the case where this inline transition is read by JS tooling.
+  const reduceMotion = useReducedMotion();
   const size = 164;
   const stroke = 10;
   const r = (size - stroke) / 2;
@@ -636,7 +641,7 @@ function SuccessRing({ rate }: { rate: number }) {
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 600ms ease' }}
+          style={{ transition: reduceMotion ? 'none' : 'stroke-dashoffset 600ms ease' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -687,7 +692,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
       >
         <button
           onClick={onViewAll}
-          className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest"
+          className="typo-caption text-primary/80 hover:text-primary transition-colors flex items-center gap-1 font-mono uppercase tracking-widest focus-ring rounded-interactive"
         >
           {t.overview.widgets.view_all} <ArrowRight className="w-3 h-3" />
         </button>
@@ -697,7 +702,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30 ${
+            className={`typo-caption font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-interactive transition-colors focus-ring ${
               filter === f ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-primary/[0.06]'
             }`}
           >
@@ -723,7 +728,7 @@ export const ActivityStreamLog = memo(function ActivityStreamLog({
               <button
                 key={exec.id}
                 onClick={onViewAll}
-                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-primary/[0.04] transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-primary/[0.04] transition-colors focus-ring"
               >
                 <span className="text-foreground tabular-nums flex-shrink-0">{time}</span>
                 <Icon className={`w-3 h-3 flex-shrink-0 ${color}`} />
@@ -756,7 +761,7 @@ export const StatusTicker = memo(function StatusTicker({
   const fieldCls = 'flex items-center gap-1.5 typo-caption font-mono uppercase tracking-widest';
   // errors / runs / synced are shortcuts into the tab that owns each metric;
   // "sources" stays inert — it has no single dedicated destination.
-  const linkCls = `${fieldCls} text-foreground rounded-interactive px-1 -mx-1 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30`;
+  const linkCls = `${fieldCls} text-foreground rounded-interactive px-1 -mx-1 hover:text-primary transition-colors focus-ring`;
   return (
     <div className="rounded-card border border-primary/10 bg-primary/[0.03] px-4 py-2 flex items-center gap-5 overflow-x-auto">
       <span className="typo-caption font-mono uppercase tracking-[0.3em] text-foreground flex-shrink-0">status</span>

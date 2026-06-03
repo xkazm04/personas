@@ -177,7 +177,6 @@ export default defineConfig(async () => ({
       "@xterm/addon-fit",
       "@xterm/addon-webgl",
       "@xterm/addon-unicode11",
-      "@xterm/addon-search",
       "@xterm/addon-web-links",
     ],
     rolldownOptions: {

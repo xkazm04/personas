@@ -47,8 +47,11 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
   sm:       'px-2.5 py-1 text-md rounded-lg gap-1.5',
   md:       'px-3.5 py-1.5 text-md rounded-xl gap-2',
   lg:       'px-5 py-2.5 text-md rounded-xl gap-2.5',
-  'icon-sm': 'w-7 h-7 rounded-lg p-0 justify-center',
-  'icon-md': 'w-9 h-9 rounded-xl p-0 justify-center',
+  // Coarse-pointer (touch) bump to 44x44 — WCAG 2.5.5 / HIG 44pt / Material 48dp.
+  // icon-lg is already 44px; the global `pointer: coarse` rule in globals.css
+  // supplies min-height, these add the matching width so icon buttons stay square.
+  'icon-sm': 'w-7 h-7 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-lg p-0 justify-center',
+  'icon-md': 'w-9 h-9 [@media(pointer:coarse)]:w-11 [@media(pointer:coarse)]:h-11 rounded-xl p-0 justify-center',
   'icon-lg': 'w-11 h-11 rounded-xl p-0 justify-center',
 };
 

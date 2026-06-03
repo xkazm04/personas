@@ -2,6 +2,7 @@ pub mod auth;
 #[cfg(feature = "desktop")]
 pub mod bridge_manifest;
 pub mod byom;
+pub mod cli_stderr;
 pub mod cloud;
 pub mod cloud_sync;
 pub mod context_generation;

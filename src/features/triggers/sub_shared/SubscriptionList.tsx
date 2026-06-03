@@ -1,5 +1,6 @@
 import { Rss, Trash2, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import type { SharedEventSubscription } from '@/lib/bindings/SharedEventSubscription';
 import type { SharedEventCatalogEntry } from '@/lib/bindings/SharedEventCatalogEntry';
 import { DebtText } from '@/i18n/DebtText';
@@ -18,12 +19,12 @@ export function SubscriptionList({ subscriptions, catalog, onUnsubscribe }: Prop
 
   if (subscriptions.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 py-16 text-center">
-        <Rss className="w-8 h-8 text-foreground" />
-        <p className="typo-body text-foreground">{t.triggers.subscription_list.no_active_subs}</p>
-        <p className="typo-caption text-foreground">
-          {t.triggers.subscription_list.browse_marketplace}
-        </p>
+      <div className="flex-1 flex items-center justify-center">
+        <EmptyState
+          icon={Rss}
+          title={t.triggers.subscription_list.no_active_subs}
+          subtitle={t.triggers.subscription_list.browse_marketplace}
+        />
       </div>
     );
   }

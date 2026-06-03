@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Rocket } from 'lucide-react';
 import { updatePersona, buildUpdateInput } from '@/api/agents/personas';
 import { executePersona } from '@/api/agents/executions';
-import { DebtText } from '@/i18n/DebtText';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -300,12 +299,7 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
     // this capability). The dim sigil's lit state already conveys the
     // same signal visually; the sidebar word lets users read the state
     // without parsing the petal colour.
-    // TODO i18n: the `dim_status_activated` key landed in a parallel
-    // session's en.json edit (in flight at commit time); fall back to a
-    // local literal so this works regardless of which session merges
-    // first. Replace with `t.agents.use_cases.dim_status_activated`
-    // once the key is in the generated types.
-    const activatedLabel = 'Activated';
+    const activatedLabel = t.agents.use_cases.dim_status_activated;
     if (touches.has('review')) out.review = { label: dimLabels.review, value: activatedLabel };
     if (touches.has('memory')) out.memory = { label: dimLabels.memory, value: activatedLabel };
     if (touches.has('event')) out.event = { label: dimLabels.event, value: activatedLabel };
@@ -367,7 +361,7 @@ export function PersonaLayoutView({ credentials }: PersonaLayoutViewProps) {
           disabled={!personaId || !activeCapability || isManualRunning || isExecuting}
           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-body font-medium bg-accent/15 border border-accent/30 text-accent hover:bg-accent/25 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          <Rocket className="w-3.5 h-3.5" /> <DebtText k="auto_run_now_2af00e23" />
+          <Rocket className="w-3.5 h-3.5" /> {t.agents.use_cases.run_now}
         </button>
         <AddCapabilityRow onClick={openRecipeCatalog} />
       </div>

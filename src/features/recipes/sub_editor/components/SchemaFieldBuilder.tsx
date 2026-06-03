@@ -81,7 +81,7 @@ export function SchemaFieldBuilder({ fields, onChange }: SchemaFieldBuilderProps
               )}
               <DragHandle reveal="always" className="hover:text-muted-foreground" />
 
-              <div className="flex-1 grid grid-cols-[1fr_100px_1fr] gap-2">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-[1fr_100px_1fr] gap-2">
                 <input
                   type="text"
                   value={field.key}

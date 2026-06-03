@@ -3,6 +3,8 @@ import { useAgentStore } from "@/stores/agentStore";
 import { useShallow } from "zustand/react/shallow";
 import { humanizeCron } from "@/features/shared/glyph/cron";
 import { getConnectorMeta, ConnectorIcon } from "@/features/shared/components/display/ConnectorMeta";
+import { Tooltip } from "@/features/shared/components/display/Tooltip";
+import { useTranslation } from "@/i18n/useTranslation";
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -46,32 +48,17 @@ const TRIGGER_ICONS: Record<string, typeof Clock> = {
   manual: MousePointer,
 };
 
-function shortReviewLabel(mode: string | undefined): { label: string; tone: "muted" | "warn" } {
+type TriggerLike = { trigger_type?: string; config?: Record<string, unknown>; description?: string } | undefined | null;
+
+function reviewTone(mode: string | undefined): "muted" | "warn" {
   switch ((mode || "").toLowerCase()) {
     case "always":
-      return { label: "Always review", tone: "warn" };
     case "auto_triage":
-      return { label: "Auto-triage", tone: "warn" };
     case "on_low_confidence":
-      return { label: "Review if unsure", tone: "warn" };
-    case "never":
-    case "":
-      return { label: "Auto-publish", tone: "muted" };
+      return "warn";
     default:
-      return { label: mode || "—", tone: "muted" };
+      return "muted";
   }
-}
-
-function formatTriggerSummary(trig: { trigger_type?: string; config?: Record<string, unknown>; description?: string } | undefined | null): string {
-  const triggerType = trig?.trigger_type;
-  if (!triggerType) return "Manual";
-  const cron = (trig?.config?.cron as string | undefined) || undefined;
-  const interval = (trig?.config?.interval_seconds as number | undefined) || undefined;
-  if (triggerType === "schedule" && cron) return humanizeCron(cron);
-  if (triggerType === "polling" && interval) return `Polling every ${interval}s`;
-  const capitalised = `${triggerType.charAt(0).toUpperCase()}${triggerType.slice(1)}`;
-  if (trig?.description && trig.description.length < 60) return `${capitalised} — ${trig.description}`;
-  return capitalised;
 }
 
 function buildSplitPrompt(title: string, connectors: string[]): string {
@@ -82,6 +69,7 @@ function buildSplitPrompt(title: string, connectors: string[]): string {
 }
 
 export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPreviewProps = {}) {
+  const { t, tx } = useTranslation();
   const { capabilities, capabilityOrder, excludedIds, toggleCapabilityExcluded, behaviorCore } = useAgentStore(
     useShallow((s) => {
       const sess = s.activeBuildSessionId
@@ -102,12 +90,42 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
   const excludedSet = new Set(excludedIds);
   const activeCount = capabilityOrder.length - excludedSet.size;
 
+  // Localized review-policy label. Falls back to the raw mode token for an
+  // unrecognised policy so we never render an empty chip.
+  const reviewLabel = (mode: string | undefined): string => {
+    switch ((mode || "").toLowerCase()) {
+      case "always": return t.agents.glyph_cap_review_always;
+      case "auto_triage": return t.agents.glyph_cap_review_auto_triage;
+      case "on_low_confidence": return t.agents.glyph_cap_review_low_confidence;
+      case "never":
+      case "": return t.agents.glyph_cap_review_auto_publish;
+      default: return mode || "—";
+    }
+  };
+
+  // Localized one-line trigger summary. Schedule rows defer to humanizeCron
+  // (locale-agnostic), polling interpolates the interval, and everything
+  // else falls back to the capitalised type + its (user-authored) blurb.
+  const triggerSummary = (trig: TriggerLike): string => {
+    const triggerType = trig?.trigger_type;
+    if (!triggerType) return t.agents.glyph_cap_trigger_manual;
+    const cron = (trig?.config?.cron as string | undefined) || undefined;
+    const interval = (trig?.config?.interval_seconds as number | undefined) || undefined;
+    if (triggerType === "schedule" && cron) return humanizeCron(cron);
+    if (triggerType === "polling" && interval) return tx(t.agents.glyph_cap_trigger_polling, { seconds: interval });
+    const capitalised = `${triggerType.charAt(0).toUpperCase()}${triggerType.slice(1)}`;
+    if (trig?.description && trig.description.length < 60) return `${capitalised} — ${trig.description}`;
+    return capitalised;
+  };
+
   return (
     <div className="w-full max-w-[420px] flex flex-col gap-1.5 mt-2">
       <div className="flex items-center gap-1.5 px-1">
         <Layers className="w-3.5 h-3.5 text-foreground" />
         <span className="typo-label uppercase tracking-[0.18em] text-foreground">
-          {activeCount === 1 ? "1 capability" : `${activeCount} capabilities`}
+          {activeCount === 1
+            ? t.agents.glyph_cap_count_one
+            : tx(t.agents.glyph_cap_count_other, { count: activeCount })}
           {excludedSet.size > 0 && (
             <span className="ml-1 text-foreground normal-case tracking-normal">
               ({excludedSet.size} <DebtText k="auto_removed_7a8146f4" />
@@ -134,17 +152,18 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
           const isExcluded = excludedSet.has(id);
           const triggerType = cap.suggested_trigger?.trigger_type ?? "manual";
           const TriggerIcon = TRIGGER_ICONS[triggerType] ?? MousePointer;
-          const review = shortReviewLabel(cap.review_policy?.mode);
+          const reviewMode = cap.review_policy?.mode;
+          const tone = reviewTone(reviewMode);
           const memoryEnabled = !!cap.memory_policy?.enabled;
           const connectorList = cap.connectors ?? [];
           const events = cap.event_subscriptions ?? [];
           return (
             <div
               key={id}
-              className={`rounded-modal border px-3 py-2 text-left transition-opacity ${
+              className={`rounded-modal border px-3 py-2 text-left transition ${
                 isExcluded
                   ? "bg-foreground/0 border-border/20 opacity-50"
-                  : "bg-foreground/5 border-border/30"
+                  : "bg-foreground/5 border-border/30 hover:border-border/50 hover:bg-foreground/[0.08]"
               }`}
             >
               <div className="flex items-start gap-2">
@@ -160,42 +179,47 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                     <div className="mt-1 flex items-center gap-2 flex-wrap typo-caption text-foreground">
                       <span className="inline-flex items-center gap-1">
                         <TriggerIcon className="w-3 h-3" />
-                        {formatTriggerSummary(cap.suggested_trigger)}
+                        {triggerSummary(cap.suggested_trigger)}
                       </span>
                       {connectorList.length > 0 && (
-                        <span className="inline-flex items-center gap-1" title={connectorList.join(", ")}>
-                          {connectorList.slice(0, 4).map((slug) => (
-                            <ConnectorIcon key={slug} meta={getConnectorMeta(slug)} size="w-3.5 h-3.5" />
-                          ))}
-                          {connectorList.length > 4 ? (
-                            <span className="text-foreground">+{connectorList.length - 4}</span>
-                          ) : null}
-                        </span>
+                        <Tooltip content={connectorList.join(", ")}>
+                          <span className="inline-flex items-center gap-1">
+                            {connectorList.slice(0, 4).map((slug) => (
+                              <ConnectorIcon key={slug} meta={getConnectorMeta(slug)} size="w-3.5 h-3.5" />
+                            ))}
+                            {connectorList.length > 4 ? (
+                              <span className="text-foreground">+{connectorList.length - 4}</span>
+                            ) : null}
+                          </span>
+                        </Tooltip>
                       )}
                       <span
                         className={`inline-flex items-center gap-1 ${
-                          review.tone === "warn" ? "text-amber-400/80" : "text-foreground"
+                          tone === "warn" ? "text-amber-400/80" : "text-foreground"
                         }`}
                       >
                         <Shield className="w-3 h-3" />
-                        {review.label}
+                        {reviewLabel(reviewMode)}
                       </span>
                       {memoryEnabled && (
                         <span className="inline-flex items-center gap-1 text-foreground">
                           <Brain className="w-3 h-3" />
-                          Remembers
+                          {t.agents.glyph_cap_remembers}
                         </span>
                       )}
                       {events.length > 0 && (
-                        <span
-                          className="inline-flex items-center gap-1 text-foreground"
-                          title={events.map((e) => `${e.direction === "emit" ? "→ emits " : "← listens "}${e.event_type}`).join("\n")}
+                        <Tooltip
+                          content={events
+                            .map((e) => `${e.direction === "emit" ? "→ " : "← "}${e.event_type}`)
+                            .join("\n")}
                         >
-                          <Radio className="w-3 h-3" />
-                          {events.length === 1
-                            ? (events[0]?.event_type ?? "").split(".").slice(-2).join(".")
-                            : `${events.length} events`}
-                        </span>
+                          <span className="inline-flex items-center gap-1 text-foreground">
+                            <Radio className="w-3 h-3" />
+                            {events.length === 1
+                              ? (events[0]?.event_type ?? "").split(".").slice(-2).join(".")
+                              : tx(t.agents.glyph_cap_events_other, { count: events.length })}
+                          </span>
+                        </Tooltip>
                       )}
                     </div>
                   )}
@@ -210,7 +234,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                       title={debtText("auto_restore_include_this_capability_when_promo_e8f43ec9")}
                     >
                       <Undo2 className="w-3 h-3" />
-                      Restore
+                      {t.agents.glyph_cap_restore}
                     </button>
                   ) : (
                     <>
@@ -223,7 +247,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                           title={debtText("auto_open_refine_with_a_prompt_that_asks_the_ag_c0e3037e")}
                         >
                           <Split className="w-3 h-3" />
-                          Split
+                          {t.agents.glyph_cap_split}
                         </button>
                       )}
                       <button
@@ -234,7 +258,7 @@ export function GlyphCapabilityPreview({ onRequestSplit }: GlyphCapabilityPrevie
                         title={debtText("auto_remove_exclude_this_capability_when_promot_dbf501b9")}
                       >
                         <X className="w-3 h-3" />
-                        Remove
+                        {t.agents.glyph_cap_remove}
                       </button>
                     </>
                   )}
