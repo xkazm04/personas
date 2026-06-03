@@ -577,7 +577,12 @@ fn check_persona_eligible(persona: &Persona) -> Result<(), String> {
     if !persona.enabled {
         return Err("disabled".into());
     }
-    if persona.setup_status != "ready" {
+    // `needs_credentials` is ADVISORY, not a hard block: the runtime resolves a
+    // credential by service-type at execution (G3 proved Dev Clone opens real PRs
+    // despite the badge). Rejecting it here failed every assignment-driven Dev
+    // Clone / QA / Release step pre-flight (cascade-skipping the rest) — mirror of
+    // the goal_advance candidate filter. Treat ready + needs_credentials as usable.
+    if !matches!(persona.setup_status.as_str(), "ready" | "needs_credentials") {
         return Err(format!("setup_status={}", persona.setup_status));
     }
     if matches!(persona.trust_level, PersonaTrustLevel::Revoked) {
