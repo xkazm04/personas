@@ -10773,6 +10773,10 @@ export type Translations = {
       fleet_cache_hit_hint: string;
       fleet_heavy_sessions: string;
       fleet_heavy_hint: string;
+      compact_button: string;
+      compact_hint: string;
+      compact_unavailable_hint: string;
+      compact_toast: string;
       state_hibernated: string;
       dot_console_hibernated: string;
       sleep_session: string;
