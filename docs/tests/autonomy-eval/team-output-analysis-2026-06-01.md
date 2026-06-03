@@ -243,10 +243,23 @@ NEW gaps beyond G1–G8, all now fixed:
   passed `depends_on_indices: None` for every step → the orchestrator launched all steps at
   once, out of order → reviewers/security/docs ran against work that didn't exist
   (`precondition_failed` / `blocked_dependency`); budget burned reviewing nothing.
-  **Fixed** (`1d339f383`): steps now chain LINEARLY (`depends_on` the previous) in both the
-  to-dos and decompose paths, and the `decompose_goal` prompt MANDATES an implementation step
-  (engineer/Dev Clone) before any review/security/docs. Also resolves the release-before-
-  increment symptom (was G5-adjacent).
+  **Fixed in a 4-part stack** — and the live verification revealed each layer:
+  1. `1d339f383` — steps chain LINEARLY (`depends_on` the previous) in both the to-dos and
+     decompose paths, and the `decompose_goal` prompt MANDATES an implementation step before
+     any review/security/docs.
+  2. `8bb903e7b` — pin the implement step to the engineer (Dev Clone), because the decompose
+     LLM still sometimes suggested the architect and the orchestrator honors a pre-assigned
+     persona verbatim.
+  3. `4425a9fdb` — **the root**: the eligibility filter hard-required `setup_status == "ready"`,
+     which EXCLUDED the implementer (Dev Clone), QA, and Release from the candidate pool — they
+     sit at `needs_credentials`, an *advisory* badge (runtime resolves creds by service-type;
+     G3 proved Dev Clone opens real PRs despite it). With no implementer among the candidates,
+     decompose *had* to build implementer-less pipelines. Now `ready` + `needs_credentials` are
+     both usable.
+  **VERIFIED LIVE** (manual `advance_team_goal` on ai-bookkeeper after the full stack): the goal
+  decomposed into `Dev Clone: write tests → Code Reviewer: review → QA Guardian: test+merge`,
+  chained `depends_on`, implement step on Dev Clone (not the architect), QA now in the pipeline.
+  Resolves the release-before-increment symptom too.
 - **GAP-B — QA Guardian timeout backwards.** QA's `uc_pr_review` does the heaviest op (fresh
   `npm install` + full suite in an isolated worktree) but adoption gave it the LOWEST
   `timeout_ms` (300000/600000) while Dev Clone had 1200000; QA execs timed out at 300s.
