@@ -5135,6 +5135,9 @@
       "in_window": "উইন্ডোতে"
     },
     "incidents": {
+      "a11y_position": "{total} এর {current}",
+      "a11y_acknowledged": "স্বীকৃত",
+      "a11y_resolved": "সমাধান করা হয়েছে",
       "range_all_time": "সব সময়",
       "range_24h": "গত ২৪ ঘণ্টা",
       "range_7d": "গত ৭ দিন",

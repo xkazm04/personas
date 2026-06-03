@@ -5135,6 +5135,9 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "a11y_position": "第 {current} / {total} 个",
+      "a11y_acknowledged": "已确认",
+      "a11y_resolved": "已解决",
       "range_all_time": "全部时间",
       "range_24h": "最近 24 小时",
       "range_7d": "最近 7 天",

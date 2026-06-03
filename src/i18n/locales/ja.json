@@ -5135,6 +5135,9 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "a11y_position": "{total} 件中 {current} 件目",
+      "a11y_acknowledged": "確認済み",
+      "a11y_resolved": "解決済み",
       "range_all_time": "全期間",
       "range_24h": "過去24時間",
       "range_7d": "過去7日間",

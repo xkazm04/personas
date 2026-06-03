@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
@@ -36,6 +37,7 @@ export default function IncidentsInbox() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
@@ -155,6 +157,8 @@ export default function IncidentsInbox() {
   modalOpenRef.current = detailIncident !== null;
   const actionsRef = useRef(actions);
   actionsRef.current = actions;
+  const tRef = useRef(t);
+  tRef.current = t;
 
   // Keyboard triage: j/k (or arrows) move the cursor, Enter opens, A/R act on
   // the focused incident, Esc clears. Ignored while typing or with the modal up.
@@ -172,10 +176,17 @@ export default function IncidentsInbox() {
       if (list.length === 0) return;
       const curIdx = list.findIndex((i) => i.id === focusedIdRef.current);
       const focusAt = (idx: number) => {
-        const id = list[idx]?.id;
-        if (!id) return;
-        setFocusedId(id);
-        document.getElementById(`incident-row-${id}`)?.scrollIntoView({ block: 'nearest' });
+        const inc = list[idx];
+        if (!inc) return;
+        setFocusedId(inc.id);
+        document.getElementById(`incident-row-${inc.id}`)?.scrollIntoView({ block: 'nearest' });
+        const tt = tRef.current;
+        const sev = tokenLabel(tt, 'severity', inc.severity);
+        const pos = tt.overview.incidents.a11y_position
+          .replace('{current}', String(idx + 1))
+          .replace('{total}', String(list.length));
+        const persona = inc.personaName ? `, ${inc.personaName}` : '';
+        setAnnouncement(`${sev}, ${inc.title}${persona}. ${pos}`);
       };
       switch (e.key) {
         case 'j':
@@ -197,13 +208,17 @@ export default function IncidentsInbox() {
         case 'a':
           if (curIdx >= 0 && list[curIdx]!.status === 'open') {
             e.preventDefault();
-            void actionsRef.current.acknowledge(list[curIdx]!.id);
+            const inc = list[curIdx]!;
+            void actionsRef.current.acknowledge(inc.id);
+            setAnnouncement(`${tRef.current.overview.incidents.a11y_acknowledged}: ${inc.title}`);
           }
           break;
         case 'r':
           if (curIdx >= 0) {
             e.preventDefault();
-            void actionsRef.current.resolve(list[curIdx]!.id);
+            const inc = list[curIdx]!;
+            void actionsRef.current.resolve(inc.id);
+            setAnnouncement(`${tRef.current.overview.incidents.a11y_resolved}: ${inc.title}`);
           }
           break;
         case 'Escape':
@@ -262,6 +277,10 @@ export default function IncidentsInbox() {
       />
 
       <ContentBody>
+        <div aria-live="polite" aria-atomic="true" className="sr-only">
+          {announcement}
+        </div>
+
         <div className="px-4 pt-3 pb-2">
           <IncidentsInboxKpiHeader summary={summary} />
         </div>

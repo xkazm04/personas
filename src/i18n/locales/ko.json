@@ -5135,6 +5135,9 @@
       "in_window": "기간 내"
     },
     "incidents": {
+      "a11y_position": "{total}개 중 {current}개",
+      "a11y_acknowledged": "확인됨",
+      "a11y_resolved": "해결됨",
       "range_all_time": "전체 기간",
       "range_24h": "지난 24시간",
       "range_7d": "지난 7일",

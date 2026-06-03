@@ -5135,6 +5135,9 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "a11y_position": "{current} z {total}",
+      "a11y_acknowledged": "Potvrzeno",
+      "a11y_resolved": "Vyřešeno",
       "range_all_time": "Vše",
       "range_24h": "Posledních 24 hodin",
       "range_7d": "Posledních 7 dní",

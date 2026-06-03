@@ -5135,6 +5135,9 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "a11y_position": "{current} trên {total}",
+      "a11y_acknowledged": "Đã ghi nhận",
+      "a11y_resolved": "Đã giải quyết",
       "range_all_time": "Mọi lúc",
       "range_24h": "24 giờ qua",
       "range_7d": "7 ngày qua",

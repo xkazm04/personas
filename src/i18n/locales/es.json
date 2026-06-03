@@ -5135,6 +5135,9 @@
       "in_window": "en ventana"
     },
     "incidents": {
+      "a11y_position": "{current} de {total}",
+      "a11y_acknowledged": "Confirmado",
+      "a11y_resolved": "Resuelto",
       "range_all_time": "Todo el tiempo",
       "range_24h": "Últimas 24 horas",
       "range_7d": "Últimos 7 días",

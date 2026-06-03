@@ -5135,6 +5135,9 @@
       "in_window": "в окне"
     },
     "incidents": {
+      "a11y_position": "{current} из {total}",
+      "a11y_acknowledged": "Подтверждено",
+      "a11y_resolved": "Решено",
       "range_all_time": "Всё время",
       "range_24h": "Последние 24 часа",
       "range_7d": "Последние 7 дней",

@@ -5135,6 +5135,9 @@
       "in_window": "विंडो में"
     },
     "incidents": {
+      "a11y_position": "{total} में से {current}",
+      "a11y_acknowledged": "स्वीकृत",
+      "a11y_resolved": "हल किया गया",
       "range_all_time": "पूरा समय",
       "range_24h": "पिछले 24 घंटे",
       "range_7d": "पिछले 7 दिन",

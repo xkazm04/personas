@@ -5135,6 +5135,9 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "a11y_position": "{current} dari {total}",
+      "a11y_acknowledged": "Dikonfirmasi",
+      "a11y_resolved": "Diselesaikan",
       "range_all_time": "Sepanjang waktu",
       "range_24h": "24 jam terakhir",
       "range_7d": "7 hari terakhir",
