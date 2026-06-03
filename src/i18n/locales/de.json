@@ -5135,6 +5135,9 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "range_all_time": "Gesamt",
+      "range_24h": "Letzte 24 Stunden",
+      "range_7d": "Letzte 7 Tage",
       "preset_fixed": "Behoben",
       "preset_transient": "Vorübergehend — ignoriert",
       "preset_known_issue": "Bekanntes Problem",

@@ -5275,6 +5275,9 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      range_all_time: string;
+      range_24h: string;
+      range_7d: string;
       preset_fixed: string;
       preset_transient: string;
       preset_known_issue: string;

@@ -5135,6 +5135,9 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "range_all_time": "全部时间",
+      "range_24h": "最近 24 小时",
+      "range_7d": "最近 7 天",
       "preset_fixed": "已修复",
       "preset_transient": "暂时性 — 已忽略",
       "preset_known_issue": "已知问题",

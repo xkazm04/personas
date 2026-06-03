@@ -5135,6 +5135,9 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "range_all_time": "全期間",
+      "range_24h": "過去24時間",
+      "range_7d": "過去7日間",
       "preset_fixed": "修正済み",
       "preset_transient": "一時的 — 無視",
       "preset_known_issue": "既知の問題",

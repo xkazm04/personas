@@ -5135,6 +5135,9 @@
       "in_window": "в окне"
     },
     "incidents": {
+      "range_all_time": "Всё время",
+      "range_24h": "Последние 24 часа",
+      "range_7d": "Последние 7 дней",
       "preset_fixed": "Исправлено",
       "preset_transient": "Временное — пропущено",
       "preset_known_issue": "Известная проблема",

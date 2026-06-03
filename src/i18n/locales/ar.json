@@ -5135,6 +5135,9 @@
       "in_window": "في النافذة"
     },
     "incidents": {
+      "range_all_time": "كل الوقت",
+      "range_24h": "آخر 24 ساعة",
+      "range_7d": "آخر 7 أيام",
       "preset_fixed": "تم الإصلاح",
       "preset_transient": "عابر — تم تجاهله",
       "preset_known_issue": "مشكلة معروفة",

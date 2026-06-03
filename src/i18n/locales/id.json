@@ -5135,6 +5135,9 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "range_all_time": "Sepanjang waktu",
+      "range_24h": "24 jam terakhir",
+      "range_7d": "7 hari terakhir",
       "preset_fixed": "Diperbaiki",
       "preset_transient": "Sementara — diabaikan",
       "preset_known_issue": "Masalah yang diketahui",

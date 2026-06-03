@@ -5135,6 +5135,9 @@
       "in_window": "উইন্ডোতে"
     },
     "incidents": {
+      "range_all_time": "সব সময়",
+      "range_24h": "গত ২৪ ঘণ্টা",
+      "range_7d": "গত ৭ দিন",
       "preset_fixed": "ঠিক করা হয়েছে",
       "preset_transient": "সাময়িক — উপেক্ষিত",
       "preset_known_issue": "পরিচিত সমস্যা",

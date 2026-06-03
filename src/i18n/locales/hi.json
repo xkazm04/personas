@@ -5135,6 +5135,9 @@
       "in_window": "विंडो में"
     },
     "incidents": {
+      "range_all_time": "पूरा समय",
+      "range_24h": "पिछले 24 घंटे",
+      "range_7d": "पिछले 7 दिन",
       "preset_fixed": "ठीक किया",
       "preset_transient": "अस्थायी — अनदेखा किया",
       "preset_known_issue": "ज्ञात समस्या",

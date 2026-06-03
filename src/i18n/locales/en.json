@@ -5269,6 +5269,9 @@
       "in_window": "in window"
     },
     "incidents": {
+      "range_all_time": "All time",
+      "range_24h": "Last 24 hours",
+      "range_7d": "Last 7 days",
       "preset_fixed": "Fixed",
       "preset_transient": "Transient — ignored",
       "preset_known_issue": "Known issue",

@@ -5135,6 +5135,9 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "range_all_time": "Mọi lúc",
+      "range_24h": "24 giờ qua",
+      "range_7d": "7 ngày qua",
       "preset_fixed": "Đã sửa",
       "preset_transient": "Tạm thời — đã bỏ qua",
       "preset_known_issue": "Sự cố đã biết",
