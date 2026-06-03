@@ -23,7 +23,12 @@ import { createCachedFetch } from "@/lib/async/createCachedFetch";
 // outside-vault consumers (matrix, connectors, home cockpit) all reach for
 // fetchCredentials on mount. Optimistic mutations update state directly, so
 // the cache (which IS the slice state) stays consistent without an explicit
-// bust path — the TTL window simply re-confirms against the backend.
+// bust path — the TTL window simply re-confirms against the backend. The one
+// race the TTL can't paper over is delete vs. an already-in-flight fetch: that
+// fetch's pre-delete snapshot would overwrite the optimistic removal wholesale
+// and resurrect the just-deleted row (no longer greyed out, since it's left
+// pendingDeleteCredentialIds). recentlyDeletedCredentialIds tombstones close
+// that seam — see deleteCredential / fetchCredentials below.
 const CREDENTIALS_CACHE_TTL_MS = 30_000;
 const credentialsFetch = createCachedFetch({ ttlMs: CREDENTIALS_CACHE_TTL_MS, rethrow: true });
 
@@ -34,6 +39,16 @@ export interface CredentialSlice {
   connectorDefinitions: ConnectorDefinition[];
   pendingDeleteCredentialIds: Set<string>;
   pendingDeleteEventIds: Set<string>;
+  /**
+   * Short-lived tombstones for credentials removed via deleteCredential. A
+   * fetchCredentials already in flight when the delete commits resolves with a
+   * pre-delete snapshot that still lists the row; fetchCredentials filters any
+   * tombstoned id out of that snapshot so the deleted credential can't flicker
+   * back into the vault, and retires each tombstone once a fetch confirms the
+   * backend no longer returns it (keeping the set bounded, not growing per
+   * delete).
+   */
+  recentlyDeletedCredentialIds: Set<string>;
 
   // Actions
   fetchCredentials: () => Promise<void>;
@@ -69,13 +84,37 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
   connectorDefinitions: [],
   pendingDeleteCredentialIds: new Set<string>(),
   pendingDeleteEventIds: new Set<string>(),
+  recentlyDeletedCredentialIds: new Set<string>(),
 
   fetchCredentials: async () =>
     credentialsFetch.run("credentials", async () => {
       try {
         const raw = await listCredentials();
-        const credentials = raw.map(toCredMeta);
-        set({ credentials, error: null });
+        const fetched = raw.map(toCredMeta);
+        set((state) => {
+          const tombstones = state.recentlyDeletedCredentialIds;
+          if (tombstones.size === 0) {
+            return { credentials: fetched, error: null };
+          }
+          // A delete that committed after this fetch started left the row in
+          // the snapshot we just received. Filter tombstoned ids out so the
+          // wholesale overwrite can't resurrect a credential the user deleted.
+          const credentials = fetched.filter((c) => !tombstones.has(c.id));
+          // Retire tombstones the backend has caught up on — an id no longer
+          // present in a fresh snapshot can never be resurrected again, so it
+          // need not be tracked. Allocate a new set only if something changes.
+          const presentIds = new Set(fetched.map((c) => c.id));
+          let nextTombstones: Set<string> | null = null;
+          for (const id of tombstones) {
+            if (!presentIds.has(id)) {
+              if (!nextTombstones) nextTombstones = new Set(tombstones);
+              nextTombstones.delete(id);
+            }
+          }
+          return nextTombstones
+            ? { credentials, error: null, recentlyDeletedCredentialIds: nextTombstones }
+            : { credentials, error: null };
+        });
       } catch (err) {
         reportError(err, "Failed to fetch credentials", set);
         throw err;
@@ -131,7 +170,11 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         error: null,
       }));
     } catch (err) {
+      // Rethrow to match createCredential's contract: callers that gate UI
+      // transitions (close modal, navigate, toast "Saved") on `await` must see
+      // a rejected backend write as failure, not silently succeed.
       reportError(err, "Failed to update credential", set);
+      throw err;
     }
   },
 
@@ -149,6 +192,11 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
           credentials: state.credentials.filter((c) => c.id !== id),
           credentialEvents: state.credentialEvents.filter((e) => e.credential_id !== id),
           pendingDeleteCredentialIds: next,
+          // Tombstone the id so a fetchCredentials already in flight (its
+          // pre-delete snapshot still lists this row) can't resurrect it when
+          // it resolves after us. fetchCredentials retires the tombstone once a
+          // fresh snapshot confirms the backend no longer returns the row.
+          recentlyDeletedCredentialIds: new Set(state.recentlyDeletedCredentialIds).add(id),
           error: null,
         };
       });
@@ -177,7 +225,11 @@ export const createCredentialSlice: StateCreator<VaultStore, [], [], CredentialS
         error: null,
       }));
     } catch (err) {
+      // Rethrow to match createCredential's contract: a rejected field write
+      // (decryption failure, validation error, DB lock) must not resolve as
+      // success — otherwise an edited secret silently never persists.
       reportError(err, "Failed to update credential field", set);
+      throw err;
     }
   },
 

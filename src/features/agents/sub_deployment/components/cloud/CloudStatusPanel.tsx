@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { LiveStatusDot } from '@/features/shared/components/display/LiveStatusDot';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { motion, useMotionValueEvent, useSpring, useTransform } from 'framer-motion';
 import { useMemo, useState } from 'react';
@@ -49,10 +50,7 @@ export function CloudStatusPanel({ status, isLoading, onRefresh, activeExecution
       <div className="flex items-center justify-between">
         {lastPolled != null ? (
           <div className="flex items-center gap-2 typo-caption text-foreground">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
+            <LiveStatusDot tone="active" ping size="sm" />
             Live
           </div>
         ) : <div />}

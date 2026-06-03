@@ -2,12 +2,13 @@ import { useEffect, useCallback, Suspense, useState } from 'react';
 import { TabSaveError } from '../libs/EditorDocument';
 import { useShallow } from 'zustand/react/shallow';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
-import { Bot, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { useAgentStore } from "@/stores/agentStore";
 import { useSystemStore } from "@/stores/systemStore";
 import { ContentBox } from '@/features/shared/components/layout/ContentLayout';
 import { UnsavedChangesBanner, CloudNudgeBanner, PartialLoadBanner } from './EditorBanners';
 import { EditorTabBar } from './EditorTabBar';
+import { EditorEmptyState } from './EditorEmptyState';
 import { PersonaDecisionsFooter } from './PersonaDecisionsFooter';
 import { PersonaEditorHeader } from './PersonaEditorHeader';
 import {
@@ -126,15 +127,7 @@ export function EditorBody() {
   }, [selectedPersona, deletePersona, setShowDeleteConfirm, t]);
 
   if (!selectedPersona) {
-    return (
-      <ContentBox>
-        <div className="flex-1 flex flex-col items-center justify-center gap-3 animate-fade-slide-in">
-          <Bot className="w-12 h-12 text-foreground" />
-          <p className="typo-heading text-foreground">{t.agents.editor_ui.select_agent}</p>
-          <p className="typo-body text-foreground">{t.agents.editor_ui.choose_from_sidebar}</p>
-        </div>
-      </ContentBox>
-    );
+    return <EditorEmptyState />;
   }
 
   const changedSections = allDirtyTabs.map((t) => t.charAt(0).toUpperCase() + t.slice(1));

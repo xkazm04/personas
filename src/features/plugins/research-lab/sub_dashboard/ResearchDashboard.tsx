@@ -253,8 +253,10 @@ function PhaseStation({
         )}
       </div>
 
-      {/* Phase label */}
-      <span className={`typo-card-label text-center mb-2 ${populated ? 'text-foreground' : 'text-foreground'}`}>
+      {/* Phase label — high-contrast on every theme; populated vs empty is
+          carried by the station node (icon color, count badge, border), per the
+          project's no-low-contrast-text convention (no opacity dimming). */}
+      <span className="typo-card-label text-center mb-2 text-foreground">
         {phase.shortLabel}
       </span>
 

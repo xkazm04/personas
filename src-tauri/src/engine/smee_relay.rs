@@ -503,13 +503,55 @@ pub async fn run_smee_relay(
             let relay_id2 = relay_id.clone();
             let url2 = channel_url.clone();
             let target_persona_id2 = target_persona_id.clone();
-            let event_filter2: Option<Vec<String>> = event_filter
-                .as_deref()
-                .and_then(|filter| serde_json::from_str(filter).ok());
-            let allowed_repos2: Option<Vec<String>> = allowed_repos
-                .as_deref()
-                .and_then(|raw| serde_json::from_str::<Vec<String>>(raw).ok())
-                .filter(|list| !list.is_empty());
+            // Parse the stored routing config. CRITICAL: a present-but-malformed
+            // filter/allowlist must FAIL CLOSED. Collapsing invalid JSON to `None`
+            // (the old `.ok()`) turned a restrictive relay into allow-all — a
+            // relay scoped to `["deploy_complete"]` would then fire on every
+            // webhook from every repo, an unbounded fan-out / execution storm.
+            // A *missing* column (None raw) legitimately means "no filter
+            // configured" and stays permissive; only invalid JSON disables the
+            // relay (record the error so it surfaces in the UI, then skip).
+            let event_filter2: Option<Vec<String>> = match event_filter.as_deref() {
+                None => None,
+                Some(raw) => match serde_json::from_str::<Vec<String>>(raw) {
+                    Ok(list) => Some(list),
+                    Err(e) => {
+                        tracing::warn!(
+                            relay_id = %relay_id,
+                            error = %e,
+                            "Smee relay event_filter is not valid JSON; refusing to start the relay (fail-closed) rather than fanning out to every event. Fix or clear the filter."
+                        );
+                        let _ = smee_relay_repo::record_error(
+                            &pool,
+                            relay_id,
+                            "event_filter is not valid JSON (relay disabled — fix or clear the filter)",
+                        );
+                        continue;
+                    }
+                },
+            };
+            let allowed_repos2: Option<Vec<String>> = match allowed_repos.as_deref() {
+                None => None,
+                Some(raw) => match serde_json::from_str::<Vec<String>>(raw) {
+                    // An explicitly empty allowlist (`[]`) is valid JSON meaning
+                    // "no origin restriction" — preserve the prior permissive
+                    // (warn-only) behavior for that case.
+                    Ok(list) => Some(list).filter(|l| !l.is_empty()),
+                    Err(e) => {
+                        tracing::warn!(
+                            relay_id = %relay_id,
+                            error = %e,
+                            "Smee relay allowed_repos is not valid JSON; refusing to start the relay (fail-closed) rather than accepting events from any repo. Fix or clear the allowlist."
+                        );
+                        let _ = smee_relay_repo::record_error(
+                            &pool,
+                            relay_id,
+                            "allowed_repos is not valid JSON (relay disabled — fix or clear the allowlist)",
+                        );
+                        continue;
+                    }
+                },
+            };
             let cancel = CancellationToken::new();
             let cancel_for_task = cancel.clone();
 

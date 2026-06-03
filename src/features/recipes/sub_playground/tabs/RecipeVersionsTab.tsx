@@ -202,13 +202,13 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                 disabled={!requirements.trim()}
                 className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 disabled:opacity-40 disabled:pointer-events-none transition-colors"
               >
-                Regenerate
+                {t.recipes.regenerate}
               </button>
               <button
                 onClick={() => versioning.reset()}
                 className="rounded-modal px-3 py-1.5 typo-body text-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
               >
-                Discard
+                {t.recipes.discard}
               </button>
             </div>
           </div>
@@ -268,7 +268,7 @@ export function RecipeVersionsTab({ recipe, onRecipeUpdated }: RecipeVersionsTab
                           </span>
                           {isLatest && (
                             <span className="rounded-card bg-primary/10 border border-primary/20 px-1.5 py-0.5 typo-body text-primary font-medium">
-                              Latest
+                              {t.recipes.latest}
                             </span>
                           )}
                         </div>

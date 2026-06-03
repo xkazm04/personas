@@ -10,6 +10,7 @@ import type { HealthDataPoint } from './DeploymentHealthSparkline';
 import { AsyncButton } from '@/features/shared/components/buttons';
 import type { TestResult } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 
 interface TestStateMap {
   [deploymentId: string]: { running: boolean; result: TestResult | null };
@@ -90,7 +91,7 @@ export function DeploymentTable({
           const testResult = testState?.result;
 
           return (
-            <tr key={row.id} className={`hover:bg-primary/3 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}>
+            <tr key={row.id} className={`hover:bg-primary/5 transition-colors ${selectedIds.has(row.id) ? 'bg-primary/5' : ''}`}>
               <td className="px-4 py-3">
                 <input
                   type="checkbox"
@@ -111,10 +112,10 @@ export function DeploymentTable({
               <td className="px-4 py-3">
                 <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 typo-caption font-medium rounded-card border ${statusBadge(row.status)}`}>
                   {statusIcon(row.status)}
-                  {row.status}
+                  {tokenLabel(t, 'deployment', row.status)}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right typo-data text-foreground">
+              <td className="px-4 py-3 text-right typo-data text-foreground tabular-nums">
                 {row.invocations > 0 ? row.invocations.toLocaleString() : '-'}
               </td>
               <td className="px-4 py-3">
@@ -127,10 +128,10 @@ export function DeploymentTable({
                   );
                 })()}
               </td>
-              <td className="px-4 py-3 text-foreground">
+              <td className="px-4 py-3 text-foreground tabular-nums">
                 {timeAgo(row.lastActivity)}
               </td>
-              <td className="px-4 py-3 text-foreground">
+              <td className="px-4 py-3 text-foreground tabular-nums">
                 {timeAgo(row.createdAt)}
               </td>
               <td className="px-4 py-3">

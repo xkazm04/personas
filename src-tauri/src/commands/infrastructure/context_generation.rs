@@ -5,7 +5,7 @@
 //! and creates DevContextGroup + DevContext entries via protocol messages.
 //! Progress is streamed to the frontend via Tauri events.
 
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use serde::Serialize;
 use serde_json::json;
@@ -14,6 +14,7 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 
+use super::cli_stderr::{push_stderr_line, snapshot_stderr};
 use crate::background_job::BackgroundJobManager;
 use crate::commands::design::analysis::extract_display_text;
 use crate::db::repos::dev_tools as repo;
@@ -784,12 +785,24 @@ async fn run_context_generation(
         });
     }
 
-    // Capture stderr in background
+    // Capture stderr into a bounded ring buffer AND tee it to the live log
+    // panel so the user can see auth errors / rate-limit notices / missing
+    // config in real time. The buffer is also attached to any Err this scan
+    // returns, turning an opaque "generation timed out" into actionable detail.
+    let stderr_ring: Arc<Mutex<String>> = Arc::new(Mutex::new(String::new()));
     if let Some(stderr) = child.stderr.take() {
+        let ring = stderr_ring.clone();
+        let app_clone = app.clone();
+        let scan_id_clone = scan_id.to_string();
         tokio::spawn(async move {
-            let mut reader = BufReader::new(stderr);
-            let mut buf = String::new();
-            let _ = tokio::io::AsyncReadExt::read_to_string(&mut reader, &mut buf).await;
+            let mut reader = BufReader::new(stderr).lines();
+            while let Ok(Some(line)) = reader.next_line().await {
+                if line.trim().is_empty() {
+                    continue;
+                }
+                push_stderr_line(&ring, &line);
+                CONTEXT_GEN_JOBS.emit_line(&app_clone, &scan_id_clone, format!("[stderr] {line}"));
+            }
         });
     }
 
@@ -903,7 +916,8 @@ async fn run_context_generation(
                 let (line_type, _) = parse_stream_line(&line);
                 match line_type {
                     StreamLineType::AssistantToolUse { tool_name, input_preview } => {
-                        let preview = &input_preview[..input_preview.len().min(100)];
+                        let preview =
+                            crate::utils::text::truncate_on_char_boundary(&input_preview, 100);
                         CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Tool] {tool_name}: {preview}"));
                     }
                     StreamLineType::Result { .. } => {
@@ -920,7 +934,7 @@ async fn run_context_generation(
     if stream_result.is_err() {
         let _ = child.kill().await;
     }
-    let _ = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
+    let wait_result = tokio::time::timeout(std::time::Duration::from_secs(5), child.wait()).await;
 
     let timed_out = stream_result.is_err();
 
@@ -950,9 +964,45 @@ async fn run_context_generation(
                 ),
             });
         }
-        return Err(AppError::Internal(
-            "Context generation timed out after 30 minutes with no contexts created".into(),
-        ));
+        // Attach captured stderr so the user can attribute the timeout — an
+        // auth error / rate limit / CLI crash produces stderr long before the
+        // 30-minute timeout fires, and we now surface it instead of dropping it.
+        let stderr_tail = snapshot_stderr(&stderr_ring);
+        let detail = if stderr_tail.is_empty() {
+            String::from("Context generation timed out after 30 minutes with no contexts created (no Claude CLI stderr captured)")
+        } else {
+            format!(
+                "Context generation timed out after 30 minutes with no contexts created. Claude CLI stderr (last {} bytes):\n{stderr_tail}",
+                stderr_tail.len()
+            )
+        };
+        CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Error] {detail}"));
+        return Err(AppError::Internal(detail));
+    }
+
+    // Fast-failure path: if the CLI exited non-zero AND we have nothing to show
+    // for it, treat it as a failure even though stdout closed normally before
+    // the timeout — and attach the captured stderr so the user can see the
+    // cause (expired credentials, rate limit, crash) instead of a silent
+    // "completed with 0 contexts" success.
+    if let Ok(Ok(status)) = wait_result {
+        if !status.success() && groups_created == 0 && contexts_created == 0 {
+            let stderr_tail = snapshot_stderr(&stderr_ring);
+            let detail = if stderr_tail.is_empty() {
+                format!(
+                    "Claude CLI exited with status {} and produced no contexts (no stderr captured)",
+                    status.code().unwrap_or(-1)
+                )
+            } else {
+                format!(
+                    "Claude CLI exited with status {} and produced no contexts. stderr (last {} bytes):\n{stderr_tail}",
+                    status.code().unwrap_or(-1),
+                    stderr_tail.len()
+                )
+            };
+            CONTEXT_GEN_JOBS.emit_line(app, scan_id, format!("[Error] {detail}"));
+            return Err(AppError::Internal(detail));
+        }
     }
 
     CONTEXT_GEN_JOBS.emit_line(

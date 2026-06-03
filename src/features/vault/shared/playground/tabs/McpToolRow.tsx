@@ -23,7 +23,7 @@ export function ToolRow({
   const sh = t.vault.shared;
   return (
     <div className={`border rounded-card overflow-hidden transition-colors ${
-      isSelected ? 'border-emerald-500/25 bg-emerald-500/5' : 'border-primary/8 hover:border-primary/15'
+      isSelected ? 'border-status-success/25 bg-status-success/5' : 'border-primary/8 hover:border-primary/15'
     }`}>
       <button
         onClick={onToggle}
@@ -47,7 +47,7 @@ export function ToolRow({
 
         <button
           onClick={(e) => { e.stopPropagation(); onRun(); }}
-          className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 transition-colors shrink-0"
+          className="flex items-center gap-1 px-2 py-1 rounded typo-body font-medium bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20 transition-colors shrink-0"
         >
           <Play className="w-2.5 h-2.5" />
           {t.vault.playground.mcp_run}

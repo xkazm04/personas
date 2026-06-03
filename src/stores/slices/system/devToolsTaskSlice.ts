@@ -4,6 +4,21 @@ import { reportError } from "../../storeTypes";
 import type { DevTask } from "@/lib/bindings/DevTask";
 import * as devApi from "@/api/devTools/devTools";
 
+/**
+ * Bounded ring size for a task's streamed output buffer.
+ *
+ * The runner allows up to ~10 minutes of streamed output per task, and an
+ * auto-run can churn through dozens of tasks back-to-back. Without a cap,
+ * `appendTaskOutput` grows `taskOutputBuffers[taskId]` without bound and each
+ * append becomes an O(n) array copy (O(n^2) overall), eventually janking then
+ * freezing the renderer. Keeping only the most recent lines makes append
+ * O(cap) (effectively O(1) amortized) and per-task memory flat regardless of
+ * how chatty a task is. This mirrors the Rust-side stderr ring (200 lines /
+ * 32 KB) with extra headroom for on-screen review. Completed/failed buffers are
+ * additionally freed wholesale on terminal status by TaskRunnerPage.
+ */
+const MAX_TASK_OUTPUT_LINES = 1000;
+
 export interface DevToolsTaskSlice {
   // -- Tasks -----------------------------------------------------------
   tasks: DevTask[];
@@ -112,12 +127,22 @@ export const createDevToolsTaskSlice: StateCreator<SystemStore, [], [], DevTools
   },
 
   appendTaskOutput: (taskId, line) => {
-    set((state) => ({
-      taskOutputBuffers: {
-        ...state.taskOutputBuffers,
-        [taskId]: [...(state.taskOutputBuffers[taskId] ?? []), line],
-      },
-    }));
+    set((state) => {
+      const prev = state.taskOutputBuffers[taskId] ?? [];
+      // Bounded ring: once at capacity, drop the oldest line(s) so the buffer
+      // holds at most MAX_TASK_OUTPUT_LINES. slice() keeps the copy bounded to
+      // the cap, so append stays O(cap) instead of O(total lines streamed).
+      const next =
+        prev.length >= MAX_TASK_OUTPUT_LINES
+          ? [...prev.slice(prev.length - MAX_TASK_OUTPUT_LINES + 1), line]
+          : [...prev, line];
+      return {
+        taskOutputBuffers: {
+          ...state.taskOutputBuffers,
+          [taskId]: next,
+        },
+      };
+    });
   },
 
   clearTaskOutput: (taskId) => {

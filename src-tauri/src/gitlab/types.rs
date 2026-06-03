@@ -94,6 +94,15 @@ pub struct GitLabDeployResult {
     pub method: String,
     /// Number of credentials provisioned as CI/CD variables (0 if not requested)
     pub credentials_provisioned: u32,
+    /// For versioned deploys: whether the version tag was successfully created.
+    /// `false` here while `agent_id`/`web_url` are populated means the deploy
+    /// landed but tagging failed — the version trail has a gap and a later
+    /// rollback has no tag to target, so the UI must surface this. Always
+    /// `false` for non-versioned deploys and rollbacks (which track their own
+    /// tag via `GitLabRollbackResult.new_tag`).
+    pub tag_created: bool,
+    /// The version number the tag was created with, when `tag_created` is true.
+    pub version: Option<u32>,
 }
 
 // ============================================================================

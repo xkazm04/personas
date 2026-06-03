@@ -1,5 +1,7 @@
 import { memo, useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import type { Translations } from '@/i18n/en';
 import {
   RotateCw, Shield, ShieldOff, AlertTriangle,
   CheckCircle2, Clock, TrendingDown, Timer,
@@ -11,50 +13,58 @@ import { useToastStore } from "@/stores/toastStore";
 import type { RotationOverviewItem } from '@/stores/slices/vault/rotationSlice';
 import { useRotationOverviewList } from "@/stores/selectors/rotationOverview";
 
-function rotationBadge(item: RotationOverviewItem) {
+function rotationBadge(item: RotationOverviewItem, t: Translations) {
   const { status } = item;
 
   if (!status.has_policy) {
     if (status.anomaly_detected) {
-      return { label: 'Anomaly', classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: AlertTriangle };
+      return { label: tokenLabel(t, 'rotation', 'anomaly'), classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: AlertTriangle };
     }
     return null;
   }
 
   if (!status.policy_enabled) {
-    return { label: 'Paused', classes: 'bg-zinc-500/15 border-zinc-500/25 text-zinc-400', Icon: ShieldOff };
+    return { label: tokenLabel(t, 'rotation', 'paused'), classes: 'bg-zinc-500/15 border-zinc-500/25 text-zinc-400', Icon: ShieldOff };
   }
 
   const rem = status.anomaly_score?.remediation;
   if (rem === 'Disable') {
-    return { label: 'Disabled', classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: ShieldOff };
+    return { label: tokenLabel(t, 'rotation', 'disabled'), classes: 'bg-red-500/15 border-red-500/25 text-red-400', Icon: ShieldOff };
   }
   if (rem === 'RotateThenAlert') {
-    return { label: 'Perm Errors', classes: 'bg-red-500/10 border-red-500/20 text-red-400', Icon: AlertTriangle };
+    return { label: tokenLabel(t, 'rotation', 'perm_errors'), classes: 'bg-red-500/10 border-red-500/20 text-red-400', Icon: AlertTriangle };
   }
   if (rem === 'PreemptiveRotation') {
-    return { label: 'Degrading', classes: 'bg-orange-500/10 border-orange-500/20 text-orange-400', Icon: TrendingDown };
+    return { label: tokenLabel(t, 'rotation', 'degrading'), classes: 'bg-orange-500/10 border-orange-500/20 text-orange-400', Icon: TrendingDown };
   }
   if (rem === 'BackoffRetry') {
-    return { label: 'Backoff', classes: 'bg-amber-500/10 border-amber-500/20 text-amber-400', Icon: Timer };
+    return { label: tokenLabel(t, 'rotation', 'backoff'), classes: 'bg-amber-500/10 border-amber-500/20 text-amber-400', Icon: Timer };
   }
 
   // Fresh / healthy
   if (status.last_status === 'success') {
-    return { label: 'Fresh', classes: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', Icon: CheckCircle2 };
+    return { label: tokenLabel(t, 'rotation', 'fresh'), classes: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', Icon: CheckCircle2 };
   }
 
-  return { label: 'Active', classes: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400', Icon: Shield };
+  return { label: tokenLabel(t, 'rotation', 'active'), classes: 'bg-cyan-500/10 border-cyan-500/20 text-cyan-400', Icon: Shield };
 }
 
-function countdownLabel(nextRotation: string | null): string {
-  if (!nextRotation) return '';
+/**
+ * Structured time-to-rotation. Returns `null` when no rotation is scheduled,
+ * `{ isDue: true }` when it is due now, otherwise the remaining days/hours. The
+ * component localizes these via `tx()`. Keeping this structured (rather than a
+ * pre-formatted string) means the "due now" decision is data-driven and never
+ * relies on comparing a localized string — so localization can't break logic.
+ */
+function countdownParts(
+  nextRotation: string | null,
+): { isDue: boolean; days: number; hours: number } | null {
+  if (!nextRotation) return null;
   const diff = new Date(nextRotation).getTime() - Date.now();
-  if (diff <= 0) return 'due now';
+  if (diff <= 0) return { isDue: true, days: 0, hours: 0 };
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  if (days > 0) return `${days}d ${hours}h`;
-  return `${hours}h`;
+  return { isDue: false, days, hours };
 }
 
 function summaryStats(items: RotationOverviewItem[]) {
@@ -173,9 +183,16 @@ export const RotationOverviewPanel = memo(function RotationOverviewPanel() {
       ) : (
         <div className="divide-y divide-primary/5">
           {rotationOverviewList.map((item) => {
-            const badge = rotationBadge(item);
-            const countdown = countdownLabel(item.status.next_rotation_at);
-            const isDue = countdown === 'due now';
+            const badge = rotationBadge(item, t);
+            const cd = countdownParts(item.status.next_rotation_at);
+            const isDue = cd?.isDue ?? false;
+            const countdown = !cd
+              ? ''
+              : cd.isDue
+                ? t.overview.analytics_dashboard.rotation_due_now
+                : cd.days > 0
+                  ? tx(t.overview.analytics_dashboard.rotation_countdown_days_hours, { days: cd.days, hours: cd.hours })
+                  : tx(t.overview.analytics_dashboard.rotation_countdown_hours, { hours: cd.hours });
             const isRotating = rotatingId === item.credentialId;
             const rotateDisabled = !!rotatingId; // Lock all rotate buttons while one is in flight
 

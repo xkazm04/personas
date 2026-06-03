@@ -173,32 +173,105 @@ Valid targets for update_config: timeout_ms (1000-1800000), max_turns (1-100), e
 /// Parse structured fix actions from the healing execution's output.
 ///
 /// Scans the full output text for `{"healing_fix": ...}` and
-/// `{"healing_complete": ...}` JSON blocks on their own lines.
+/// `{"healing_complete": ...}` JSON blocks. The blocks do **not** have to sit
+/// on a single line: LLM healers routinely pretty-print the JSON across several
+/// lines or wrap it in Markdown code fences. Earlier this function parsed each
+/// trimmed line independently with `serde_json::from_str`, so any multi-line or
+/// fenced block failed on every line and *every proposed fix was silently
+/// dropped* while the run still reported "completed" — success theater. We now
+/// pull balanced `{...}` objects out of the raw text (brace-balanced,
+/// string-aware) so the layout no longer matters. See [[idea-2561d623]].
 pub fn parse_healing_output(output: &str) -> (Vec<HealingFix>, Option<String>, bool) {
     let mut fixes = Vec::new();
     let mut diagnosis = None;
     let mut should_retry = false;
 
-    for line in output.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-
+    for candidate in extract_json_objects(output) {
         // Try parsing as a healing fix
-        if let Ok(envelope) = serde_json::from_str::<HealingFixEnvelope>(trimmed) {
+        if let Ok(envelope) = serde_json::from_str::<HealingFixEnvelope>(candidate) {
             fixes.push(envelope.healing_fix);
             continue;
         }
 
         // Try parsing as healing complete signal
-        if let Ok(envelope) = serde_json::from_str::<HealingCompleteEnvelope>(trimmed) {
+        if let Ok(envelope) = serde_json::from_str::<HealingCompleteEnvelope>(candidate) {
             diagnosis = Some(envelope.healing_complete.diagnosis);
             should_retry = envelope.healing_complete.should_retry;
         }
     }
 
     (fixes, diagnosis, should_retry)
+}
+
+/// Extract balanced top-level `{...}` JSON objects from arbitrary text.
+///
+/// Walks the text tracking brace depth so a `{ ... }` block that spans multiple
+/// lines (pretty-printed) or sits inside ```` ```json ```` code fences is
+/// captured whole — fence backticks and prose outside of braces are simply not
+/// `{`, so they are ignored. Once inside an object the scan is string- and
+/// escape-aware, so braces or quotes embedded in a payload string (e.g. a file
+/// diff or a JSON-encoded `payload`) never prematurely close the object. Each
+/// returned slice is a balanced candidate the caller can attempt to deserialize.
+fn extract_json_objects(text: &str) -> Vec<&str> {
+    let bytes = text.as_bytes();
+    let mut objects = Vec::new();
+    let mut depth: u32 = 0;
+    let mut start: Option<usize> = None;
+    let mut in_string = false;
+    let mut escaped = false;
+
+    for (i, &c) in bytes.iter().enumerate() {
+        if depth == 0 {
+            // Outside any object: only an opening brace is meaningful.
+            if c == b'{' {
+                start = Some(i);
+                depth = 1;
+            }
+            continue;
+        }
+
+        // Inside an object: respect string literals and escape sequences.
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if c == b'\\' {
+                escaped = true;
+            } else if c == b'"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        match c {
+            b'"' => in_string = true,
+            b'{' => depth += 1,
+            b'}' => {
+                depth -= 1;
+                if depth == 0 {
+                    if let Some(s) = start.take() {
+                        // `{` and `}` are ASCII, so `s` and `i` always land on
+                        // char boundaries even within multi-byte UTF-8 text.
+                        objects.push(&text[s..=i]);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+
+    objects
+}
+
+/// Returns `true` when the healer output referenced a `healing_fix` block but
+/// the parser recovered zero structured fixes — the silent-drop failure mode.
+///
+/// When the robust extractor above still fails (genuinely malformed JSON,
+/// truncated output, single-quoted keys, …) the run would otherwise report
+/// "completed" with no fixes, leaving the user to believe the persona was
+/// repaired. Callers use this to emit a `healing_audit_log` entry so the drop
+/// is visible instead of invisible.
+fn fix_text_was_dropped(output: &str, parsed_fix_count: usize) -> bool {
+    parsed_fix_count == 0 && output.contains("healing_fix")
 }
 
 /// Process the result of a healing execution: parse fixes and apply them.
@@ -209,6 +282,26 @@ pub async fn process_healing_result(
 ) -> Result<AiHealingResult, AppError> {
     let output = result.output.as_deref().unwrap_or("");
     let (fixes, diagnosis, should_retry) = parse_healing_output(output);
+
+    // Surface the silent-drop failure mode: the healer emitted `healing_fix`
+    // text the parser still could not recover. Without this audit entry the run
+    // reports "completed" with zero fixes and the user believes the persona was
+    // repaired when every proposed fix was discarded. See [[idea-2561d623]].
+    if fix_text_was_dropped(output, fixes.len()) {
+        tracing::warn!(
+            persona_id = %persona_id,
+            "AI healing: output referenced healing_fix but no structured fix parsed -- fixes dropped",
+        );
+        crate::db::repos::execution::healing::create_audit_entry(
+            pool,
+            Some(persona_id),
+            None,
+            "ai_heal_parse_failed",
+            "ai_healing",
+            "Healer output referenced healing_fix but no structured fix could be parsed",
+            Some(&truncate_str(output, 2000)),
+        );
+    }
 
     let diagnosis = diagnosis
         .unwrap_or_else(|| "AI healing completed without structured diagnosis".to_string());
@@ -710,6 +803,146 @@ mod tests {
         assert_eq!(
             count, 3,
             "instrument payload must be a JSON array of log points"
+        );
+    }
+
+    #[test]
+    fn test_parse_healing_output_pretty_printed() {
+        // Real LLM output: the fix JSON is pretty-printed across many lines.
+        // The old per-line parser dropped every fix here.
+        let output = r#"Here is my diagnosis and the fix:
+
+{
+  "healing_fix": {
+    "type": "modify_prompt",
+    "target": "instructions",
+    "description": "Add missing tool guidance",
+    "payload": "Always read the file before editing."
+  }
+}
+
+{
+  "healing_complete": {
+    "should_retry": true,
+    "diagnosis": "Instructions omitted the read-before-edit rule"
+  }
+}
+"#;
+        let (fixes, diagnosis, should_retry) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 1, "pretty-printed fix must be parsed");
+        assert_eq!(fixes[0].fix_type, "modify_prompt");
+        assert_eq!(fixes[0].target, "instructions");
+        assert_eq!(fixes[0].payload, "Always read the file before editing.");
+        assert_eq!(
+            diagnosis.unwrap(),
+            "Instructions omitted the read-before-edit rule"
+        );
+        assert!(should_retry);
+    }
+
+    #[test]
+    fn test_parse_healing_output_code_fenced() {
+        // LLMs frequently wrap structured output in Markdown code fences.
+        let output = "I will fix the timeout.\n\n```json\n{\"healing_fix\": {\"type\": \"update_config\", \"target\": \"timeout_ms\", \"description\": \"bump timeout\", \"payload\": \"900000\"}}\n```\n\n```json\n{\"healing_complete\": {\"should_retry\": false, \"diagnosis\": \"timeout too low\"}}\n```\n";
+        let (fixes, diagnosis, should_retry) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 1, "fenced fix must be parsed");
+        assert_eq!(fixes[0].fix_type, "update_config");
+        assert_eq!(fixes[0].target, "timeout_ms");
+        assert_eq!(fixes[0].payload, "900000");
+        assert_eq!(diagnosis.unwrap(), "timeout too low");
+        assert!(!should_retry);
+    }
+
+    #[test]
+    fn test_parse_healing_output_fenced_and_pretty_printed() {
+        // The hostile combination: fenced AND pretty-printed across lines.
+        let output = "```json\n{\n  \"healing_fix\": {\n    \"type\": \"update_config\",\n    \"target\": \"max_turns\",\n    \"description\": \"more turns\",\n    \"payload\": \"50\"\n  }\n}\n```\n";
+        let (fixes, _diagnosis, _should_retry) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 1, "fenced + pretty-printed fix must be parsed");
+        assert_eq!(fixes[0].target, "max_turns");
+        assert_eq!(fixes[0].payload, "50");
+    }
+
+    #[test]
+    fn test_parse_healing_output_payload_with_braces_and_quotes() {
+        // A payload string containing braces and escaped quotes must not
+        // confuse the brace-balanced extractor.
+        let output = r#"{
+  "healing_fix": {
+    "type": "modify_file",
+    "target": "src/config.json",
+    "description": "rewrite config object",
+    "payload": "{\"retries\": 3, \"label\": \"a }nasty{ value\"}"
+  }
+}"#;
+        let (fixes, _diagnosis, _should_retry) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 1, "payload braces must not truncate the object");
+        assert_eq!(fixes[0].target, "src/config.json");
+        assert!(
+            fixes[0].payload.contains("\"retries\": 3"),
+            "payload JSON must survive intact: {}",
+            fixes[0].payload
+        );
+        assert!(fixes[0].payload.contains("a }nasty{ value"));
+    }
+
+    #[test]
+    fn test_parse_healing_output_multiple_pretty_printed() {
+        // Two pretty-printed fixes followed by a completion signal.
+        let output = r#"{
+  "healing_fix": { "type": "modify_prompt", "target": "instructions", "description": "fix 1", "payload": "a" }
+}
+{
+  "healing_fix": { "type": "update_config", "target": "timeout_ms", "description": "fix 2", "payload": "900000" }
+}
+{ "healing_complete": { "should_retry": false, "diagnosis": "Two issues found" } }
+"#;
+        let (fixes, diagnosis, should_retry) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 2);
+        assert_eq!(fixes[0].fix_type, "modify_prompt");
+        assert_eq!(fixes[1].fix_type, "update_config");
+        assert_eq!(diagnosis.unwrap(), "Two issues found");
+        assert!(!should_retry);
+    }
+
+    #[test]
+    fn test_extract_json_objects_ignores_unbalanced_and_prose() {
+        let text = "prose with a stray } brace\n{\"a\": 1}\nmore prose {not closed";
+        let objs = extract_json_objects(text);
+        assert_eq!(objs.len(), 1, "only the one balanced object is captured");
+        assert_eq!(objs[0], "{\"a\": 1}");
+    }
+
+    #[test]
+    fn test_fix_text_was_dropped_detects_unparsed_fix() {
+        // Truncated / malformed fix JSON that even the robust extractor can't
+        // recover: the word is present but zero fixes parsed.
+        let truncated = "{\"healing_fix\": {\"type\": \"modify_prompt\", \"target\": \"instru";
+        let (fixes, _d, _r) = parse_healing_output(truncated);
+        assert!(fixes.is_empty(), "truncated fix must not parse");
+        assert!(
+            fix_text_was_dropped(truncated, fixes.len()),
+            "a referenced-but-unparsed fix must be flagged as dropped"
+        );
+    }
+
+    #[test]
+    fn test_fix_text_was_dropped_quiet_when_parsed() {
+        let output = r#"{"healing_fix": {"type": "modify_prompt", "target": "instructions", "description": "x", "payload": "y"}}"#;
+        let (fixes, _d, _r) = parse_healing_output(output);
+        assert_eq!(fixes.len(), 1);
+        assert!(
+            !fix_text_was_dropped(output, fixes.len()),
+            "a successfully parsed fix must not be flagged as dropped"
+        );
+    }
+
+    #[test]
+    fn test_fix_text_was_dropped_quiet_when_no_fix_mentioned() {
+        let output = "AI healing ran but found nothing actionable.";
+        assert!(
+            !fix_text_was_dropped(output, 0),
+            "output without any healing_fix text must not be flagged"
         );
     }
 }

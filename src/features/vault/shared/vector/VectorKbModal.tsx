@@ -20,10 +20,10 @@ import { silentCatch } from '@/lib/silentCatch';
 
 type VectorTab = 'documents' | 'search' | 'settings';
 
-const TABS: { id: VectorTab; label: string; icon: typeof FileText }[] = [
-  { id: 'documents', label: 'Documents', icon: FileText },
-  { id: 'search', label: 'Search', icon: Search },
-  { id: 'settings', label: 'Settings', icon: Settings },
+const TABS: { id: VectorTab; labelKey: 'tab_documents' | 'tab_search' | 'tab_settings'; icon: typeof FileText }[] = [
+  { id: 'documents', labelKey: 'tab_documents', icon: FileText },
+  { id: 'search', labelKey: 'tab_search', icon: Search },
+  { id: 'settings', labelKey: 'tab_settings', icon: Settings },
 ];
 
 interface VectorKbModalProps {
@@ -183,7 +183,7 @@ export function VectorKbModal({ credential, connector, onClose }: VectorKbModalP
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {tab.label}
+              {sh[tab.labelKey]}
               {isActive && (
                 <motion.div
                   layoutId="vectorKbTab"

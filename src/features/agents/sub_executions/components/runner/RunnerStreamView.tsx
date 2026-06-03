@@ -67,7 +67,7 @@ export function RunnerPhaseTimeline({
                           >
                             {isActive && (
                               <div
-                                className="animate-fade-in absolute inset-0 pointer-events-none"
+                                className="animate-phase-shimmer absolute inset-0 pointer-events-none"
                                 style={{
                                   background: 'linear-gradient(90deg, transparent, hsl(var(--primary) / 0.12), transparent)',
                                   width: '60%',

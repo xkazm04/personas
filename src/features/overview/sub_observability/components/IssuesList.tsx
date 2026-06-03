@@ -60,7 +60,7 @@ export function IssuesList({ issues, onSelectIssue, onResolve }: IssuesListProps
             tabIndex={focusedIndex === index ? 0 : -1}
             onClick={() => onSelectIssue(issue)}
             onFocus={() => setFocusedIndex(index)}
-            className={`flex items-center gap-4 px-4 py-4 hover:bg-white/[0.03] transition-colors group cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:outline-none ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}
+            className={`flex items-center gap-4 px-4 py-4 hover:bg-foreground/[0.03] transition-colors group cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-500/40 focus-visible:outline-none ${isAutoFixed ? 'opacity-70' : ''} ${isCircuitBreaker ? 'bg-red-500/5' : ''}`}
           >
             {isCircuitBreaker ? (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 typo-code uppercase rounded-card border bg-red-500/15 text-red-400 border-red-500/25">

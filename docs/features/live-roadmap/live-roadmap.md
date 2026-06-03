@@ -127,7 +127,7 @@ One file, all locales inline. Roadmap is small (4 items today, won't exceed ~30)
 - `release.items[].id` MUST be a string. Numeric ids (`"2"`, `"3"`) are fine — they match the existing convention in `releases.json`.
 - `i18n.en` is the single required locale block. All others are optional; missing locales fall back to `en` via the existing deep-merge loader behavior.
 - Unknown top-level keys are ignored (forward-compatible).
-- Items missing from `i18n.en` get rendered with the placeholder string `[roadmap.<id>]` — same fallback the current bundled view uses.
+- `release.items` MUST contain **at least one item**, and **every** item MUST have a matching non-empty `i18n.en` title. The validator rejects payloads that violate either rule (empty list, or an item with no/blank `en` content) and the app falls back to bundled content. This closes the "schema-valid but empty/contentless payload blanks the whole roadmap" hole: because the live payload always wins over bundled content, a single content-author mistake (empty array, missing locale block) would otherwise silently blank the roadmap — status pill included — for every desktop client, with the shipped fallback unreachable. `HomeRoadmapView.buildDisplayItems` carries the same guard as belt-and-suspenders against a *stale cache* written before this rule shipped: if the live payload yields zero displayable items it renders bundled content instead of `[roadmap.<id>]` placeholders.
 
 ### Transport: Tauri Rust command
 

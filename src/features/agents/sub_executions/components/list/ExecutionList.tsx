@@ -71,6 +71,22 @@ export function ExecutionList() {
   const [showBulkReport, setShowBulkReport] = useState(false);
   const bulkRerun = useBulkRerun();
 
+  // Sticky-header scroll state. The table body is a bounded scroll container
+  // (max-h + overflow-y-auto) nested inside the rounded-modal overflow-hidden
+  // frame, so the 12-col header can stick to its top. `scrollEl` is set via a
+  // callback ref (not useRef) so the listener re-binds when the table remounts
+  // after a compare/bulk view switch. We fade in shadow + a stronger underline
+  // once the body is scrolled off the top.
+  const [scrollEl, setScrollEl] = useState<HTMLDivElement | null>(null);
+  const [headerStuck, setHeaderStuck] = useState(false);
+  useEffect(() => {
+    if (!scrollEl) { setHeaderStuck(false); return; }
+    const onScroll = () => setHeaderStuck(scrollEl.scrollTop > 0);
+    onScroll(); // sync initial state (e.g. restored scroll position)
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', onScroll);
+  }, [scrollEl]);
+
   // Two most recently starred executions among the currently-loaded rows,
   // ordered by annotation updated_at DESC. Powers the "compare starred pair"
   // shortcut in compare mode.
@@ -342,7 +358,7 @@ export function ExecutionList() {
         {starredPair && (
           <button
             onClick={() => { void handleAutoCompareStarred(); }}
-            className="flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors text-amber-400 hover:bg-amber-500/10 border border-amber-400/20"
+            className="flex items-center gap-1 px-2 py-1 typo-body rounded-card transition-colors text-status-warning hover:bg-status-warning/10 border border-status-warning/20"
             title={e.compare_starred_pair_tooltip}
           >
             <Star className="w-3 h-3" fill="currentColor" />
@@ -378,40 +394,42 @@ export function ExecutionList() {
         </div>
       ) : (
         <div className="overflow-hidden border border-primary/20 rounded-modal backdrop-blur-sm bg-secondary/40">
-          <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.headerPaddingY} bg-primary/8 border-b border-primary/10 typo-code text-foreground uppercase tracking-wider`}>
-            {(compareMode || bulkMode) && <div className="col-span-1">{bulkMode ? e.bulk_rerun_col_header : ''}</div>}
-            <div className="col-span-2">{e.col_status}</div>
-            <div className="col-span-2">{e.col_capability}</div>
-            <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_duration}</div>
-            <div className="col-span-2">{e.col_started}</div>
-            <div className="col-span-2">{e.col_tokens}</div>
-            <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_cost}</div>
-          </div>
+          <div ref={setScrollEl} className="max-h-[70vh] overflow-y-auto overflow-x-hidden">
+            <div className={`hidden md:grid grid-cols-12 gap-4 px-4 ${densityTokens.headerPaddingY} bg-primary/8 backdrop-blur-sm typo-code text-foreground uppercase tracking-wider sticky top-0 z-10 border-b transition-[box-shadow,border-color] duration-200 ${headerStuck ? 'border-primary/20 shadow-elevation-1' : 'border-primary/10'}`}>
+              {(compareMode || bulkMode) && <div className="col-span-1">{bulkMode ? e.bulk_rerun_col_header : ''}</div>}
+              <div className="col-span-2">{e.col_status}</div>
+              <div className="col-span-2">{e.col_capability}</div>
+              <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_duration}</div>
+              <div className="col-span-2">{e.col_started}</div>
+              <div className="col-span-2">{e.col_tokens}</div>
+              <div className={compareMode || bulkMode ? 'col-span-1' : 'col-span-2'}>{e.col_cost}</div>
+            </div>
 
-          {executions.map((execution, execIdx) => (
-            <ExecutionListRow
-              key={execution.id}
-              execution={executionDetails[execution.id] ?? execution}
-              execIdx={execIdx}
-              executions={executions}
-              compareMode={compareMode}
-              compareLeft={compareLeft}
-              compareRight={compareRight}
-              bulkMode={bulkMode}
-              bulkSelected={bulkSelected.has(execution.id)}
-              bulkDisabled={bulkMode && bulkRerun.phase === 'running'}
-              isExpanded={expandedId === execution.id && !compareMode && !bulkMode}
-              showRaw={showRaw}
-              hasCopied={hasCopied}
-              copiedId={copiedId}
-              capabilityTitle={execution.use_case_id ? useCaseTitleById.get(execution.use_case_id) ?? null : null}
-              onRowClick={handleRowClick}
-              onCopyId={handleCopyId}
-              onRerun={handleRerun}
-              onAutoCompareRetry={handleAutoCompareRetry}
-              densityTokens={densityTokens}
-            />
-          ))}
+            {executions.map((execution, execIdx) => (
+              <ExecutionListRow
+                key={execution.id}
+                execution={executionDetails[execution.id] ?? execution}
+                execIdx={execIdx}
+                executions={executions}
+                compareMode={compareMode}
+                compareLeft={compareLeft}
+                compareRight={compareRight}
+                bulkMode={bulkMode}
+                bulkSelected={bulkSelected.has(execution.id)}
+                bulkDisabled={bulkMode && bulkRerun.phase === 'running'}
+                isExpanded={expandedId === execution.id && !compareMode && !bulkMode}
+                showRaw={showRaw}
+                hasCopied={hasCopied}
+                copiedId={copiedId}
+                capabilityTitle={execution.use_case_id ? useCaseTitleById.get(execution.use_case_id) ?? null : null}
+                onRowClick={handleRowClick}
+                onCopyId={handleCopyId}
+                onRerun={handleRerun}
+                onAutoCompareRetry={handleAutoCompareRetry}
+                densityTokens={densityTokens}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>

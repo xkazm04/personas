@@ -66,7 +66,7 @@ export function RecipeInputSection({
     <div className="p-4 border-b border-border/40 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="typo-heading font-semibold text-foreground uppercase tracking-wide">
-          Input
+          {t.recipes.input}
         </h3>
         <div className="flex items-center gap-2">
           {recipe.sample_inputs && fields.length > 0 && (
@@ -106,7 +106,7 @@ export function RecipeInputSection({
 
       {schemaParseError && <SchemaParseErrorBanner parseError={schemaParseError} />}
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Test Input */}
         <div>
           <p className="typo-body font-medium text-foreground mb-2">{t.recipes.test_input}</p>
@@ -140,7 +140,7 @@ export function RecipeInputSection({
                               : 'border-border/60 text-foreground hover:border-border'
                           }`}
                         >
-                          {v === 'true' ? 'Yes' : 'No'}
+                          {v === 'true' ? t.recipes.yes : t.recipes.no}
                         </button>
                       ))}
                     </div>

@@ -55,7 +55,7 @@ function getCategoryStyle(category: string | null): string {
 }
 
 export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest }: RecipeCardProps) {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const tags = parseTags(recipe.tags);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deleteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -140,7 +140,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           {showDeleteConfirm && (
             <div className="absolute bottom-full right-0 mb-2 z-50 w-56 rounded-modal border border-border/60 bg-card p-3 shadow-elevation-3 transition-all duration-150">
               <p className="typo-body text-foreground mb-1">
-                Delete <span className="font-semibold">{recipe.name}</span>?
+                {tx(t.recipes.delete_confirm_question, { name: recipe.name })}
               </p>
               <p className="typo-body text-foreground mb-3">{t.common.confirm_destructive_cannot_undo}</p>
               <div className="flex items-center gap-2 justify-end">
@@ -148,7 +148,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
                   onClick={() => setShowDeleteConfirm(false)}
                   className="rounded-card px-2.5 py-1 typo-body text-foreground hover:bg-muted/50 transition-colors"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   onClick={() => { setShowDeleteConfirm(false); onDelete(recipe.id); }}

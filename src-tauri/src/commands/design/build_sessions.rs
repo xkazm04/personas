@@ -285,6 +285,15 @@ pub async fn save_adoption_answers(
 ) -> Result<(), AppError> {
     require_auth(&state).await?;
 
+    // Reject malformed / oversized answers at the trust boundary — mirrors
+    // `instant_adopt_template`'s validation of `design_result_json`. Without it,
+    // a truncated IPC payload, a frontend serialization bug, or an oversized
+    // blob is persisted silently and only detonates later as an unrecoverable
+    // hard wall at test/promote (where `test_build_draft` now fails loudly),
+    // stranding the adoption. Validating here keeps the in-memory answers
+    // recoverable and the failure immediate and retryable.
+    super::template_adopt::validate_json_field("adoption_answers_json", &adoption_answers_json)?;
+
     build_session_repo::update(
         &state.db,
         &session_id,

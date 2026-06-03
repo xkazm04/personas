@@ -23,6 +23,7 @@ interface PlaygroundTabContentProps {
   health: { checkStored: () => void; checkPreview: (serviceType: string, values: Record<string, string>) => void; result: { success: boolean; message: string } | null; isHealthchecking: boolean };
   rotationStatus: RotationStatus | null;
   rotationCountdown: string;
+  isLoadingHistory: boolean;
   fetchRotationStatus: () => Promise<void>;
   editError: string | null;
   setEditError: (err: string | null) => void;
@@ -41,6 +42,7 @@ export function PlaygroundTabContent({
   health,
   rotationStatus,
   rotationCountdown,
+  isLoadingHistory,
   fetchRotationStatus,
   editError,
   setEditError,
@@ -92,6 +94,7 @@ export function PlaygroundTabContent({
               credentialId={credential.id}
               rotationStatus={rotationStatus}
               rotationCountdown={rotationCountdown}
+              isLoadingHistory={isLoadingHistory}
               onRefresh={fetchRotationStatus}
               onHealthcheck={() => health.checkStored()}
             />

@@ -40,6 +40,12 @@ pub enum SetupKind {
     ObsidianVault,
     /// A Twin profile created in the Twin plugin.
     TwinProfile,
+    /// The connector declaration is invalid or unrecognized — a blank/corrupted
+    /// connector name, or a `GLOBAL_PROBE_CONNECTORS` entry whose probe arm was
+    /// never wired in `connector_readiness`. No normal user-facing setup fixes
+    /// it; it is the fail-closed sentinel that keeps a broken declaration from
+    /// silently promoting a persona as ready.
+    Misconfigured,
 }
 
 impl SetupKind {
@@ -51,6 +57,7 @@ impl SetupKind {
             SetupKind::DevProject => "dev_project",
             SetupKind::ObsidianVault => "obsidian_vault",
             SetupKind::TwinProfile => "twin_profile",
+            SetupKind::Misconfigured => "misconfigured",
         }
     }
 
@@ -63,6 +70,9 @@ impl SetupKind {
                 "configure your vault in the Obsidian Brain plugin"
             }
             SetupKind::TwinProfile => "create a Twin profile in the Twin plugin",
+            SetupKind::Misconfigured => {
+                "this connector is unrecognized or misconfigured — remove it or update the app"
+            }
         }
     }
 }
@@ -241,7 +251,13 @@ fn has_obsidian_vault(conn: &Connection) -> bool {
 pub fn connector_readiness(conn: &Connection, connector_name: &str) -> Readiness {
     let name = connector_name.trim();
     if name.is_empty() {
-        return Readiness::Ready;
+        // A blank/whitespace connector name is a corrupted template
+        // declaration, not a ready connector. Fail closed so it surfaces as a
+        // blocker rather than silently promoting the persona as ready.
+        return Readiness::NeedsSetup {
+            connector: name.to_string(),
+            kind: SetupKind::Misconfigured,
+        };
     }
     // Native runtime capabilities are never connectors needing setup.
     if is_native_cli_capability(name) {
@@ -292,9 +308,13 @@ pub fn connector_readiness(conn: &Connection, connector_name: &str) -> Readiness
                     needs(SetupKind::ObsidianVault)
                 }
             }
-            // A connector in GLOBAL_PROBE_CONNECTORS with no probe wired
-            // here yet — be lenient rather than hard-fail.
-            _ => Readiness::Ready,
+            // A connector in GLOBAL_PROBE_CONNECTORS with no probe wired here
+            // is a maintenance slip — the const array (connector.rs) and these
+            // arms are hand-synced. Fail closed: a persona must not be promoted
+            // ready off a probe we cannot run. The
+            // `every_global_probe_connector_has_a_probe_arm` test makes this
+            // arm unreachable for shipped connectors.
+            _ => needs(SetupKind::Misconfigured),
         },
     }
 }
@@ -690,5 +710,51 @@ mod tests {
         cred(&conn, "c1", "gmail");
         cred(&conn, "c2", "outlook");
         assert!(!connector_readiness(&conn, "email").is_ready());
+    }
+
+    // --- Fail-closed defaults (this requirement) ---
+
+    #[test]
+    fn blank_connector_name_is_not_ready() {
+        // A blank/whitespace connector name is a corrupted declaration, not a
+        // ready connector — it must fail closed instead of promoting blind.
+        let conn = test_db();
+        for blank in ["", "   ", "\t", "\n "] {
+            match connector_readiness(&conn, blank) {
+                Readiness::NeedsSetup { kind, .. } => {
+                    assert_eq!(kind, SetupKind::Misconfigured)
+                }
+                other => panic!("expected NeedsSetup(Misconfigured) for blank name, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn every_global_probe_connector_has_a_probe_arm() {
+        // GLOBAL_PROBE_CONNECTORS (connector.rs) and the GlobalProbe match arms
+        // in `connector_readiness` are kept in sync BY HAND. If someone adds a
+        // probe connector to the const array without wiring its arm here, the
+        // `_ => Misconfigured` fallthrough fires. Against an empty DB — where no
+        // backing entity exists — every *wired* probe reports its own specific
+        // SetupKind (DevProject / TwinProfile / ObsidianVault), while an
+        // *unwired* one reports Misconfigured. Asserting none is Misconfigured
+        // makes the const-array / match-arm desync a test failure, not a
+        // silently-broken persona.
+        use crate::db::models::GLOBAL_PROBE_CONNECTORS;
+        let conn = test_db();
+        for connector in GLOBAL_PROBE_CONNECTORS {
+            match connector_readiness(&conn, connector) {
+                Readiness::NeedsSetup { kind, .. } => assert_ne!(
+                    kind,
+                    SetupKind::Misconfigured,
+                    "GLOBAL_PROBE_CONNECTORS entry `{connector}` has no probe arm in \
+                     connector_readiness — add a match arm resolving its backing entity",
+                ),
+                Readiness::Ready => panic!(
+                    "probe connector `{connector}` resolved Ready against an empty DB — its \
+                     probe should report NeedsSetup while its backing entity is absent",
+                ),
+            }
+        }
     }
 }

@@ -20,7 +20,7 @@
 
 export interface StoreBusEventMap {
   /** Display a toast notification (toastStore subscribes). */
-  'toast': { message: string; type: 'success' | 'error'; duration?: number };
+  'toast': { message: string; type: 'success' | 'error' | 'warning'; duration?: number };
 
   /** An execution finished (systemStore subscribes for tour events). */
   'execution:completed': { personaId: string };

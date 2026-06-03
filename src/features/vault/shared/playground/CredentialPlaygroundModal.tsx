@@ -42,6 +42,9 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   const [activeTab, setActiveTab] = useState<PlaygroundTab>('overview');
   const [editError, setEditError] = useState<string | null>(null);
   const [rotationStatus, setRotationStatus] = useState<RotationStatus | null>(null);
+  // False until the first status fetch resolves, so the rotation history can show
+  // a skeleton on initial load without flashing on subsequent refreshes.
+  const [rotationLoaded, setRotationLoaded] = useState(false);
 
   const health = useCredentialHealth(credential.id);
   const { result: healthcheckResult, isHealthchecking } = health;
@@ -51,7 +54,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
   const googleOAuth = useGoogleOAuth({ onSuccess: () => setEditError(null), onError: (msg) => setEditError(msg) });
 
   const fetchRotationStatus = useCallback(async () => {
-    try { const status = await getRotationStatus(credential.id); setRotationStatus(status); } catch (err) { silentCatch("features/vault/shared/playground/CredentialPlaygroundModal:catch1")(err); }
+    try { const status = await getRotationStatus(credential.id); setRotationStatus(status); } catch (err) { silentCatch("features/vault/shared/playground/CredentialPlaygroundModal:catch1")(err); } finally { setRotationLoaded(true); }
   }, [credential.id]);
 
   useEffect(() => { fetchRotationStatus(); }, [fetchRotationStatus]);
@@ -92,6 +95,7 @@ export function CredentialPlaygroundModal({ credential, connector, onClose, onDe
         isGoogleOAuthFlow={isGoogleOAuthFlow} googleOAuth={googleOAuth}
         effectiveHealthcheckResult={effectiveHealthcheckResult} isHealthchecking={isHealthchecking}
         health={health} rotationStatus={rotationStatus} rotationCountdown={rotationCountdown}
+        isLoadingHistory={!rotationLoaded}
         fetchRotationStatus={fetchRotationStatus} editError={editError} setEditError={setEditError}
         onOAuthConsent={handleOAuthConsent} onDelete={onDelete}
       />

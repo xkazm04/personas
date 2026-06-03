@@ -470,6 +470,17 @@ export const createGitLabSlice: StateCreator<SystemStore, [], [], GitLabSlice> =
       set({ gitlabError: null, gitlabDeploymentMeta: meta });
       emitDeploymentEvent({ eventType: 'deploy_succeeded', target: 'gitlab', personaId, detail: `project:${projectId}` });
 
+      // The deploy landed, but if the version tag could not be created the
+      // version trail has a gap and a later rollback has no tag to target.
+      // Surface the partial outcome so the user can retry tagging now instead
+      // of discovering the missing version during an incident.
+      if (!result.tagCreated) {
+        storeBus.emit('toast', {
+          message: `Deployed ${persona?.name ?? 'persona'}, but the version tag could not be created — this version won't appear in history and can't be rolled back to. Try deploying again.`,
+          type: 'warning',
+        });
+      }
+
       // Refresh version list
       if (persona?.name) {
         const versions = await gitlabListPersonaVersions(projectId, persona.name).catch(() => []);

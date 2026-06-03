@@ -202,26 +202,40 @@ where
                         .query_pairs()
                         .find_map(|(k, v)| (k == "state").then(|| v.into_owned()));
 
-                    // Validate state: must match expected value AND pass HMAC verification
-                    // to prevent both CSRF and cross-instance replay attacks.
+                    // Validate the *callback* state — this is the untrusted value
+                    // the browser echoed back, so it (not the server-generated
+                    // value) is what must be checked:
+                    //   1. It must equal the per-session value we generated
+                    //      (anti-CSRF state echo, RFC 6749 §10.12).
+                    //   2. Its HMAC must verify against this instance's secret
+                    //      (anti cross-instance replay / forgery).
+                    // A genuine-but-stale state is reported as an expired session
+                    // rather than a CSRF attack, so a slow enterprise SSO + MFA
+                    // login does not surface an alarming, misleading error.
                     let strings_match = callback_state.as_deref() == Some(&expected_state);
-                    let hmac_valid = verify_oauth_state(&expected_state);
-                    if !strings_match {
+                    let state_check = verify_oauth_state(callback_state.as_deref().unwrap_or(""));
+                    let csrf_failure =
+                        !strings_match || matches!(state_check, OAuthStateVerification::Invalid);
+
+                    if csrf_failure {
                         tracing::warn!(
-                            callback_state = ?callback_state,
+                            strings_match,
+                            state_check = ?state_check,
                             expected_state_len = expected_state.len(),
                             callback_state_len = callback_state.as_ref().map(|s| s.len()),
-                            "OAuth state string mismatch — callback state differs from expected"
+                            "OAuth state validation failed — rejecting callback as possible CSRF/forgery"
                         );
-                    }
-                    if !hmac_valid {
-                        tracing::warn!(
-                            "OAuth state HMAC/timestamp verification failed for expected_state"
-                        );
-                    }
-                    if !strings_match || !hmac_valid {
                         OAuthCallbackOutcome::Error(
                             "OAuth state mismatch -- possible CSRF attack. Please retry the authorization.".into(),
+                        )
+                    } else if let OAuthStateVerification::Expired { age_secs } = state_check {
+                        tracing::warn!(
+                            age_secs,
+                            max_age_secs = OAUTH_STATE_MAX_AGE_SECS,
+                            "OAuth state authentic but expired — authorization took longer than the freshness window"
+                        );
+                        OAuthCallbackOutcome::Error(
+                            "Authorization took too long and the sign-in session expired. Please retry the authorization.".into(),
                         )
                     } else if let Some(err) = oauth_error {
                         let msg = if let Some(desc) = error_desc {
@@ -318,6 +332,23 @@ fn now_unix_secs() -> u64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0)
+}
+
+/// Read an OAuth `expires_in` lifetime from a token-endpoint response,
+/// parsing leniently.
+///
+/// Several providers return `expires_in` as a JSON string (e.g. `"3600"`)
+/// rather than a number. `Value::as_u64` returns `None` for a string, which
+/// silently discards the real lifetime; `oauth_refresh.rs` then stamps the
+/// `DEFAULT_FALLBACK_LIFETIME_SECS` (3600s) expiry. When the true lifetime is
+/// shorter than the fallback, the access token dies before the proactive
+/// refresh engine expects — the silent daily-401 pattern. Try the numeric
+/// form first, then fall back to parsing a numeric string.
+fn parse_expires_in(value: &serde_json::Value) -> Option<u64> {
+    value.get("expires_in").and_then(|v| {
+        v.as_u64()
+            .or_else(|| v.as_str().and_then(|s| s.trim().parse::<u64>().ok()))
+    })
 }
 
 /// Evict the oldest sessions from a map when it exceeds `max_size`.
@@ -1004,8 +1035,17 @@ fn get_or_create_oauth_hmac_secret() -> [u8; 32] {
 
 type HmacSha256 = Hmac<Sha256>;
 
-/// Maximum age of an OAuth state parameter (10 minutes), matching the session TTL.
-const OAUTH_STATE_MAX_AGE_SECS: u64 = 600;
+/// Security freshness window for the OAuth state HMAC: the maximum age of a
+/// state parameter we will still accept on the callback.
+///
+/// Deliberately decoupled from — and larger than — the user-facing completion
+/// window (`OAUTH_SESSION_TTL_SECS`, the callback accept-timeout) by a grace
+/// margin, so a legitimate but slow authorization (enterprise SSO + MFA) that
+/// completes near the accept-timeout boundary is never rejected as a
+/// forged/expired state. Anti-replay binding is provided primarily by the
+/// per-session `expected_state` echo check; this window is only the outer bound
+/// on how stale a minted state may be.
+const OAUTH_STATE_MAX_AGE_SECS: u64 = OAUTH_SESSION_TTL_SECS + 5 * 60;
 
 /// Generate an HMAC-signed OAuth state parameter bound to this app instance.
 ///
@@ -1030,19 +1070,39 @@ fn generate_oauth_state() -> String {
     format!("{message}.{tag}")
 }
 
-/// Verify an HMAC-signed OAuth state parameter.
+/// Outcome of verifying an OAuth `state` parameter returned on the callback.
+#[derive(Debug, PartialEq, Eq)]
+enum OAuthStateVerification {
+    /// HMAC valid and timestamp within the freshness window.
+    Valid,
+    /// HMAC valid (authentic — minted by this app instance) but the timestamp is
+    /// older than `OAUTH_STATE_MAX_AGE_SECS`. Distinguished from `Invalid` so a
+    /// slow but legitimate login surfaces as "session expired", not "CSRF attack".
+    Expired { age_secs: u64 },
+    /// Malformed format or HMAC mismatch — not minted by this instance.
+    Invalid,
+}
+
+/// Verify an HMAC-signed OAuth state parameter returned on the callback.
 ///
-/// Checks that:
+/// The argument is **untrusted input** — the `state` query parameter the browser
+/// echoed back — so it (not the value the server generated) is what must be
+/// validated to provide real cross-instance replay / forgery protection.
+///
+/// Checks, in order:
 /// 1. The format is `{nonce}.{timestamp}.{hmac}`
-/// 2. The HMAC is valid for this app instance's secret
+/// 2. The HMAC is valid for this app instance's secret (constant-time compare)
 /// 3. The timestamp is within `OAUTH_STATE_MAX_AGE_SECS`
 ///
-/// Returns `true` if the state is valid.
-fn verify_oauth_state(state: &str) -> bool {
+/// A valid-HMAC-but-stale state returns `Expired` rather than `Invalid`, so the
+/// caller can surface a non-alarming "authorization took too long" message
+/// instead of a misleading CSRF warning. Logging is left to the caller, which
+/// has the surrounding session context.
+fn verify_oauth_state(state: &str) -> OAuthStateVerification {
     // Split into exactly 3 parts: nonce, timestamp, hmac
     let parts: Vec<&str> = state.rsplitn(2, '.').collect();
     if parts.len() != 2 {
-        return false;
+        return OAuthStateVerification::Invalid;
     }
     let tag_b64 = parts[0];
     let message = parts[1];
@@ -1050,7 +1110,7 @@ fn verify_oauth_state(state: &str) -> bool {
     // message must be "nonce.timestamp"
     let dot_pos = match message.rfind('.') {
         Some(p) => p,
-        None => return false,
+        None => return OAuthStateVerification::Invalid,
     };
     let timestamp_str = &message[dot_pos + 1..];
 
@@ -1058,35 +1118,48 @@ fn verify_oauth_state(state: &str) -> bool {
     let secret = get_or_create_oauth_hmac_secret();
     let mut mac = match HmacSha256::new_from_slice(&secret) {
         Ok(m) => m,
-        Err(_) => return false,
+        Err(_) => return OAuthStateVerification::Invalid,
     };
     mac.update(message.as_bytes());
 
     let expected_tag = match URL_SAFE_NO_PAD.decode(tag_b64) {
         Ok(t) => t,
-        Err(_) => return false,
+        Err(_) => return OAuthStateVerification::Invalid,
     };
 
     if mac.verify_slice(&expected_tag).is_err() {
-        tracing::warn!("OAuth state HMAC verification failed — possible cross-instance replay");
-        return false;
+        return OAuthStateVerification::Invalid;
     }
 
-    // Verify timestamp freshness
+    // HMAC is authentic — now check timestamp freshness separately so an expired
+    // (but genuine) state is reported distinctly from a forged one.
     let timestamp: u64 = match timestamp_str.parse() {
         Ok(t) => t,
-        Err(_) => return false,
+        Err(_) => return OAuthStateVerification::Invalid,
     };
-    let now = now_unix_secs();
-    if now.saturating_sub(timestamp) > OAUTH_STATE_MAX_AGE_SECS {
-        tracing::warn!(
-            age_secs = now.saturating_sub(timestamp),
-            "OAuth state expired"
-        );
-        return false;
+    let age = now_unix_secs().saturating_sub(timestamp);
+    if age > OAUTH_STATE_MAX_AGE_SECS {
+        return OAuthStateVerification::Expired { age_secs: age };
     }
 
-    true
+    OAuthStateVerification::Valid
+}
+
+/// Test-only helper: build an authentic state token with a caller-chosen
+/// timestamp, mirroring `generate_oauth_state`'s construction. Lets tests
+/// exercise the freshness/`Expired` path without sleeping.
+#[cfg(test)]
+fn generate_oauth_state_at(timestamp: u64) -> String {
+    use aes_gcm::aead::rand_core::{OsRng, RngCore};
+    let mut nonce_bytes = [0u8; 16];
+    OsRng.fill_bytes(&mut nonce_bytes);
+    let nonce = URL_SAFE_NO_PAD.encode(nonce_bytes);
+    let message = format!("{nonce}.{timestamp}");
+    let secret = get_or_create_oauth_hmac_secret();
+    let mut mac = HmacSha256::new_from_slice(&secret).expect("HMAC accepts any key size");
+    mac.update(message.as_bytes());
+    let tag = URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
+    format!("{message}.{tag}")
 }
 
 // -- Unified OAuth Sessions ---------------------------------------
@@ -1360,6 +1433,28 @@ pub async fn start_oauth(
             ));
         };
 
+    // Trust-boundary pre-flight: a confidential flow that uses neither PKCE
+    // nor a client_secret cannot authenticate at the token endpoint — the
+    // provider rejects `exchange_oauth_code` with a 401, but only AFTER the
+    // user has completed the entire consent round-trip. Catch the
+    // misconfiguration here, before we launch the browser, and surface an
+    // actionable error instead of a cryptic post-consent failure.
+    //
+    // App-managed secrets resolve above (today only for Microsoft); a user who
+    // supplies just a client_id for a confidential provider that does not
+    // support PKCE (GitHub, Slack, Discord, Notion) — or a custom non-PKCE
+    // provider — lands here.
+    let has_client_secret = client_secret
+        .as_ref()
+        .map(|s| !s.expose_secret().trim().is_empty())
+        .unwrap_or(false);
+    if !resolved_pkce && !has_client_secret {
+        return Err(AppError::Validation(format!(
+            "Provider '{provider_id}' uses a confidential OAuth flow (no PKCE), so a client secret is required. \
+             Add the client secret for '{provider_id}' and try again."
+        )));
+    }
+
     // Bind TCP listener for redirect
     let listener = TcpListener::bind("127.0.0.1:0")
         .await
@@ -1583,7 +1678,7 @@ pub async fn refresh_oauth_token(
     Ok(json!({
         "access_token": value.get("access_token").and_then(|v| v.as_str()),
         "refresh_token": value.get("refresh_token").and_then(|v| v.as_str()),
-        "expires_in": value.get("expires_in").and_then(|v| v.as_u64()),
+        "expires_in": parse_expires_in(&value),
         "token_type": value.get("token_type").and_then(|v| v.as_str()),
         "scope": value.get("scope").and_then(|v| v.as_str()),
     }))
@@ -1643,7 +1738,7 @@ async fn exchange_oauth_code(
             .get("token_type")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
-        expires_in: value.get("expires_in").and_then(|v| v.as_u64()),
+        expires_in: parse_expires_in(&value),
         extra: {
             // Capture any provider-specific extra fields (e.g. Slack's team, Atlassian's cloud IDs)
             let known_keys = [
@@ -1669,4 +1764,96 @@ async fn exchange_oauth_code(
             }
         },
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_expires_in;
+    use serde_json::json;
+
+    #[test]
+    fn parses_numeric_expires_in() {
+        assert_eq!(parse_expires_in(&json!({ "expires_in": 3600 })), Some(3600));
+    }
+
+    #[test]
+    fn parses_string_expires_in() {
+        // Providers that quote the value (e.g. some Microsoft / legacy endpoints)
+        // must not be silently discarded into the 3600s fallback.
+        assert_eq!(
+            parse_expires_in(&json!({ "expires_in": "1800" })),
+            Some(1800)
+        );
+    }
+
+    #[test]
+    fn trims_whitespace_in_string_expires_in() {
+        assert_eq!(
+            parse_expires_in(&json!({ "expires_in": " 900 " })),
+            Some(900)
+        );
+    }
+
+    #[test]
+    fn returns_none_when_missing() {
+        assert_eq!(parse_expires_in(&json!({ "token_type": "Bearer" })), None);
+    }
+
+    #[test]
+    fn returns_none_for_unparsable_string() {
+        // A genuinely unusable value falls through to None, which lets the
+        // refresh engine apply its documented fallback rather than panicking.
+        assert_eq!(parse_expires_in(&json!({ "expires_in": "soon" })), None);
+        assert_eq!(parse_expires_in(&json!({ "expires_in": null })), None);
+    }
+
+    #[test]
+    fn verify_accepts_freshly_generated_state() {
+        let state = super::generate_oauth_state();
+        assert_eq!(
+            super::verify_oauth_state(&state),
+            super::OAuthStateVerification::Valid
+        );
+    }
+
+    #[test]
+    fn verify_rejects_tampered_hmac() {
+        // Flip the last character of the tag so the HMAC no longer verifies.
+        let mut state = super::generate_oauth_state();
+        let last = state.pop().expect("state is non-empty");
+        state.push(if last == 'A' { 'B' } else { 'A' });
+        assert_eq!(
+            super::verify_oauth_state(&state),
+            super::OAuthStateVerification::Invalid
+        );
+    }
+
+    #[test]
+    fn verify_rejects_malformed_states() {
+        // Untrusted callbacks with no state, or a structurally invalid one,
+        // must be rejected (these previously slipped past because the check ran
+        // against the server's own value).
+        for bad in ["", "not-a-state", "a.b", "only-one-part"] {
+            assert_eq!(
+                super::verify_oauth_state(bad),
+                super::OAuthStateVerification::Invalid,
+                "expected Invalid for {bad:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn verify_reports_expired_for_authentic_but_stale_state() {
+        // A genuine state (valid HMAC) past the freshness window must surface as
+        // Expired, not Invalid — so a slow login is not mislabeled a CSRF attack.
+        let stale_ts =
+            super::now_unix_secs().saturating_sub(super::OAUTH_STATE_MAX_AGE_SECS + 60);
+        let state = super::generate_oauth_state_at(stale_ts);
+        match super::verify_oauth_state(&state) {
+            super::OAuthStateVerification::Expired { age_secs } => {
+                assert!(age_secs > super::OAUTH_STATE_MAX_AGE_SECS);
+            }
+            other => panic!("expected Expired, got {other:?}"),
+        }
+    }
 }

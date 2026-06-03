@@ -21,6 +21,16 @@ use portable_pty::MasterPty;
 
 use super::types::{FleetSession, FleetSessionState};
 
+/// Visible-name sentinel stamped on every Fleet session Athena spawns
+/// herself (`fleet_spawn` → `"athena"`, `fleet_dispatch` → `"athena-<role>"`).
+/// It's the recursion-guard marker the proactive evaluator keys off of, and —
+/// more critically — the marker the autonomous `fleet_send_input` autoapprove
+/// guard checks: autonomous Athena may only drive PTYs she created herself,
+/// never the user's own live terminals. Defined here so the spawn-time tag
+/// (`commands::companion::approvals`) and the read-time guard
+/// ([`FleetRegistry::is_athena_owned`]) can't drift apart.
+pub const ATHENA_SESSION_NAME_SENTINEL: &str = "athena";
+
 /// Inner per-session record. The shape returned to the UI is
 /// [`FleetSession`] (built via [`FleetSessionInner::to_dto`]).
 pub struct FleetSessionInner {
@@ -114,6 +124,22 @@ impl FleetRegistry {
                 s.cwd.to_string_lossy().into_owned(),
             )
         })
+    }
+
+    /// Whether `session_id` names a tracked session that Athena spawned
+    /// herself — its visible name carries the [`ATHENA_SESSION_NAME_SENTINEL`]
+    /// stamped at spawn (`"athena"` from `fleet_spawn`, `"athena-<role>"` from
+    /// `fleet_dispatch`). This is the safety gate for the autonomous
+    /// `fleet_send_input` autoapprove path: a hallucinated or stale `session_id`
+    /// — or a user-spawned session that drifted into `AwaitingInput` — must not
+    /// let autonomous Athena type into a PTY she didn't create. Returns `false`
+    /// for unknown / unnamed / user-owned sessions (fail-closed).
+    pub fn is_athena_owned(&self, session_id: &str) -> bool {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(session_id)
+            .and_then(|s| s.name.as_deref())
+            .map(|name| name.starts_with(ATHENA_SESSION_NAME_SENTINEL))
+            .unwrap_or(false)
     }
 
     /// Returns `true` if a non-exited session with this `cwd` is tracked.
@@ -232,13 +258,34 @@ impl FleetRegistry {
     /// Hibernate: mark the session `Hibernated`, flag it so the reaper records
     /// the imminent child exit as a sleep (not a death), and close the PTY to
     /// free the process. `claude_session_id` + `cwd` are retained for wake.
+    ///
+    /// `require_resting` closes a TOCTOU race in the auto-hibernate path: the
+    /// staleness ticker collects `Idle`/`Stale` candidates under the lock,
+    /// releases it, then calls this per candidate. In that window a hook can
+    /// flip the session to `Running` (PreToolUse / UserPromptSubmit) or
+    /// `AwaitingInput` (Notification), and acting on the now-stale snapshot
+    /// would kill a freshly-resumed turn or a session waiting on the user —
+    /// the silent "ate my work at 2am" failure. With `require_resting = true`
+    /// we re-check the state *inside this same lock* (atomic with the mutation)
+    /// and bail unless it's still `Idle`/`Stale`. The manual
+    /// `fleet_hibernate_session` command passes `false`: the user explicitly
+    /// chose to sleep whatever is currently running.
+    ///
     /// Returns `false` if the id is unknown or the session can't be hibernated
-    /// (already exited / hibernated, or never bound a `claude_session_id`).
-    pub fn hibernate(&self, session_id: &str) -> bool {
+    /// (already exited / hibernated, never bound a `claude_session_id`, or
+    /// `require_resting` and it has re-engaged since the snapshot).
+    pub fn hibernate(&self, session_id: &str, require_resting: bool) -> bool {
         use std::sync::atomic::Ordering;
         let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
         let Some(session) = map.get_mut(session_id) else { return false; };
         if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+            return false;
+        }
+        if require_resting
+            && !matches!(session.state, FleetSessionState::Idle | FleetSessionState::Stale)
+        {
+            // Re-engaged (Running) or now waiting on the user (AwaitingInput)
+            // since the ticker snapshotted it — never sleep a live turn.
             return false;
         }
         if session.claude_session_id.is_none() {
@@ -291,4 +338,120 @@ pub fn now_ms() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis() as i64)
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::AtomicBool;
+
+    /// Build a minimal session record with no live PTY (master/writer `None`),
+    /// so `hibernate` can be exercised without spawning a real child.
+    fn session(id: &str, state: FleetSessionState, csid: Option<&str>) -> FleetSessionInner {
+        FleetSessionInner {
+            id: id.to_string(),
+            claude_session_id: csid.map(|s| s.to_string()),
+            cwd: PathBuf::from("/tmp/test"),
+            project_label: "test".to_string(),
+            name: None,
+            args: Vec::new(),
+            state,
+            last_activity_ms: now_ms(),
+            created_at_ms: now_ms(),
+            child_pid: Some(1234),
+            exit_code: None,
+            state_reason: None,
+            master: Mutex::new(None),
+            writer: Mutex::new(None),
+            hibernating: AtomicBool::new(false),
+        }
+    }
+
+    fn state_of(reg: &FleetRegistry, id: &str) -> FleetSessionState {
+        let map = reg.sessions.lock().unwrap();
+        map.get(id).unwrap().state
+    }
+
+    #[test]
+    fn is_athena_owned_keys_off_the_spawn_sentinel() {
+        // Mirrors how the two Athena spawn paths tag sessions:
+        // `fleet_spawn` → "athena", `fleet_dispatch` → "athena-<role>".
+        // The guard must accept those and reject everything else, so a
+        // hallucinated/stale id or a user-owned terminal can't be driven
+        // by the autonomous fleet_send_input autoapprove path.
+        let reg = FleetRegistry::default();
+        reg.insert(session("spawn", FleetSessionState::Idle, Some("cc-spawn")));
+        reg.insert(session("dispatch", FleetSessionState::Idle, Some("cc-dispatch")));
+        reg.insert(session("user", FleetSessionState::Idle, Some("cc-user")));
+        reg.insert(session("anon", FleetSessionState::Idle, Some("cc-anon")));
+
+        reg.rename("spawn", Some(ATHENA_SESSION_NAME_SENTINEL.to_string()));
+        reg.rename("dispatch", Some(format!("{ATHENA_SESSION_NAME_SENTINEL}-writer")));
+        // A user-spawned session the user renamed for themselves.
+        reg.rename("user", Some("my debugging terminal".to_string()));
+        // "anon" keeps its default name: None.
+
+        assert!(reg.is_athena_owned("spawn"));
+        assert!(reg.is_athena_owned("dispatch"));
+        assert!(!reg.is_athena_owned("user"));
+        assert!(!reg.is_athena_owned("anon"));
+        // Unknown id — the hallucinated/stale-session_id case the guard exists for.
+        assert!(!reg.is_athena_owned("does-not-exist"));
+    }
+
+    #[test]
+    fn require_resting_hibernates_idle_and_stale() {
+        let reg = FleetRegistry::default();
+        reg.insert(session("idle", FleetSessionState::Idle, Some("cc-idle")));
+        reg.insert(session("stale", FleetSessionState::Stale, Some("cc-stale")));
+
+        assert!(reg.hibernate("idle", true));
+        assert!(reg.hibernate("stale", true));
+        assert_eq!(state_of(&reg, "idle"), FleetSessionState::Hibernated);
+        assert_eq!(state_of(&reg, "stale"), FleetSessionState::Hibernated);
+    }
+
+    #[test]
+    fn require_resting_refuses_running_and_awaiting_input() {
+        // The TOCTOU guard: a session that re-engaged (Running) or started
+        // waiting on the user (AwaitingInput) since the ticker snapshotted it
+        // must NOT be slept — its in-flight turn would be dropped silently.
+        let reg = FleetRegistry::default();
+        reg.insert(session("run", FleetSessionState::Running, Some("cc-run")));
+        reg.insert(session("await", FleetSessionState::AwaitingInput, Some("cc-await")));
+
+        assert!(!reg.hibernate("run", true));
+        assert!(!reg.hibernate("await", true));
+        // State is untouched — no process killed, no turn lost.
+        assert_eq!(state_of(&reg, "run"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "await"), FleetSessionState::AwaitingInput);
+    }
+
+    #[test]
+    fn manual_path_sleeps_running_session() {
+        // The manual `fleet_hibernate_session` command passes `require_resting
+        // = false`: the user explicitly chose to sleep whatever is running.
+        let reg = FleetRegistry::default();
+        reg.insert(session("run", FleetSessionState::Running, Some("cc-run")));
+
+        assert!(reg.hibernate("run", false));
+        assert_eq!(state_of(&reg, "run"), FleetSessionState::Hibernated);
+    }
+
+    #[test]
+    fn hibernate_refuses_unresumable_and_terminal_regardless_of_flag() {
+        let reg = FleetRegistry::default();
+        // No claude_session_id → can't resume what we can't name.
+        reg.insert(session("nocsid", FleetSessionState::Idle, None));
+        // Already terminal / already asleep.
+        reg.insert(session("exited", FleetSessionState::Exited, Some("cc-x")));
+        reg.insert(session("slept", FleetSessionState::Hibernated, Some("cc-s")));
+
+        for flag in [true, false] {
+            assert!(!reg.hibernate("nocsid", flag));
+            assert!(!reg.hibernate("exited", flag));
+            assert!(!reg.hibernate("slept", flag));
+            assert!(!reg.hibernate("missing", flag));
+        }
+    }
 }

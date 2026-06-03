@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw, Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import EmptyState, { InboxZero } from '@/features/shared/components/feedback/EmptyState';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { storeBus } from '@/lib/storeBus';
@@ -30,10 +31,16 @@ export default function IncidentsInbox() {
   const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
+  const [justCleared, setJustCleared] = useState(false);
+  // Armed by an actual incident action (ack / resolve / dismiss) so a filter
+  // change that yields zero never triggers the celebration — only clearing the
+  // open inbox does.
+  const clearedByActionRef = useRef(false);
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
   const actions = useIncidentActions({
     onAfterChange: async () => {
+      clearedByActionRef.current = true;
       setSelectedIds(new Set());
       await refresh();
     },
@@ -94,11 +101,31 @@ export default function IncidentsInbox() {
     });
   }, []);
 
-  const isFiltered =
-    (filters.statuses?.length ?? 0) > 0 ||
+  // "Narrowed" = the user moved beyond the default open-only inbox view. The
+  // default (statuses: ['open'], nothing else) is NOT narrowed, so reaching
+  // zero there reads as a healthy "all clear" rather than a no-match result —
+  // and only that path earns the inbox-zero celebration.
+  const statusesAreDefaultOpen =
+    !filters.statuses || (filters.statuses.length === 1 && filters.statuses[0] === 'open');
+  const isNarrowed =
+    !statusesAreDefaultOpen ||
     (filters.severities?.length ?? 0) > 0 ||
     (filters.source_tables?.length ?? 0) > 0 ||
-    !!filters.persona_id;
+    !!filters.persona_id ||
+    !!filters.since;
+
+  // Detect an action-driven drain to zero. Evaluated once the refresh settles;
+  // a non-action path (filter change) leaves the ref unarmed, so no pop fires.
+  useEffect(() => {
+    if (loading) return;
+    if (incidents.length > 0) {
+      setJustCleared(false);
+      clearedByActionRef.current = false;
+      return;
+    }
+    if (clearedByActionRef.current && !isNarrowed) setJustCleared(true);
+    clearedByActionRef.current = false;
+  }, [loading, incidents.length, isNarrowed]);
 
   const selectedArray = Array.from(selectedIds);
   const hasSelection = selectedArray.length > 0;
@@ -169,10 +196,20 @@ export default function IncidentsInbox() {
             <LoadingSpinner size="lg" label={t.overview.incidents.loading} />
           </div>
         ) : incidents.length === 0 ? (
-          <div className="flex items-center justify-center py-16 typo-body text-foreground">
-            {isFiltered
-              ? t.overview.incidents.empty_state_filtered
-              : t.overview.incidents.empty_state_open}
+          <div className="flex items-center justify-center py-16">
+            {isNarrowed ? (
+              <EmptyState
+                icon={Inbox}
+                title={t.overview.incidents.empty_filtered_title}
+                subtitle={t.overview.incidents.empty_state_filtered}
+              />
+            ) : (
+              <InboxZero
+                title={t.overview.incidents.empty_open_title}
+                subtitle={t.overview.incidents.empty_state_open}
+                celebrate={justCleared}
+              />
+            )}
           </div>
         ) : (
           <div className="divide-y divide-primary/5">

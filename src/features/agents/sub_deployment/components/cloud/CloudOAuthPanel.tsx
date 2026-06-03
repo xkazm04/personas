@@ -63,7 +63,7 @@ export function CloudOAuthPanel({
             value={oauthCode}
             onChange={(e) => setOauthCode(e.target.value)}
             placeholder={dt.paste_code}
-            className="w-full px-3 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground placeholder:text-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
+            className="w-full px-3 py-2 typo-body rounded-modal bg-secondary/40 border border-primary/15 text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-indigo-500/40 transition-colors"
           />
         </div>
 

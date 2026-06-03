@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { Play, Server } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 import { Button } from '@/features/shared/components/buttons';
 import { ToolInputForm } from './McpToolInputForm';
 import { ToolResultDisplay } from './McpToolResultDisplay';
@@ -61,17 +62,13 @@ export function ToolDetail({
         onClick={() => onExecute(currentTool.name)}
         disabled={executing}
         loading={executing}
-        className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20"
+        className="bg-status-success/10 text-status-success border border-status-success/20 hover:bg-status-success/20"
       >
         {executing ? sh.running_tool : sh.execute_tool}
       </Button>
 
       {/* Error */}
-      {execError && (
-        <div className="p-3 rounded-card bg-red-500/10 border border-red-500/20 typo-code text-red-400 font-mono whitespace-pre-wrap">
-          {execError}
-        </div>
-      )}
+      {execError && <InlineErrorBanner message={execError} />}
 
       {/* Result */}
       {result && <ToolResultDisplay result={result} />}

@@ -5,6 +5,7 @@ import { updatePersonaParameters } from '@/api/agents/personaParameters';
 import { toastCatch } from '@/lib/silentCatch';
 import type { PersonaParameter } from '@/lib/bindings/PersonaParameter';
 import { DebtText, debtText } from '@/i18n/DebtText';
+import { useTranslation } from '@/i18n/useTranslation';
 
 
 /**
@@ -19,6 +20,8 @@ import { DebtText, debtText } from '@/i18n/DebtText';
  * so it costs zero screen real estate on personas that aren't tunable.
  */
 export function PersonaParametersCard() {
+  const { t } = useTranslation();
+  const labels = t.agents.parameters_card;
   const selectedPersona = useAgentStore((s) => s.selectedPersona);
   const fetchPersonas = useAgentStore((s) => s.fetchPersonas);
 
@@ -88,7 +91,7 @@ export function PersonaParametersCard() {
     <section className="rounded-card border border-card-border bg-card-bg p-4 shadow-elevation-1 mb-3">
       <header className="flex items-center gap-2 mb-3">
         <Sliders className="w-4 h-4 text-primary/80" />
-        <h3 className="typo-section-title text-foreground">Parameters</h3>
+        <h3 className="typo-section-title text-foreground">{labels.title}</h3>
         <span className="typo-caption text-foreground ml-2">
           <DebtText k="auto_adjustable_without_rebuild_72b22655" />
         </span>
@@ -124,7 +127,7 @@ export function PersonaParametersCard() {
                   )}
                   {isSaved && !isSaving && (
                     <span className="inline-flex items-center gap-1 typo-caption text-status-success">
-                      <Check className="w-3 h-3" /> Saved
+                      <Check className="w-3 h-3" /> {labels.saved}
                     </span>
                   )}
                   {!isDefault && !isSaving && !isSaved && (
@@ -134,7 +137,7 @@ export function PersonaParametersCard() {
                       className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-foreground cursor-pointer transition-colors"
                       title={debtText("auto_reset_to_default_39c90eb7")}
                     >
-                      <RotateCcw className="w-3 h-3" /> reset
+                      <RotateCcw className="w-3 h-3" /> {labels.reset}
                     </button>
                   )}
                 </span>
@@ -156,7 +159,7 @@ export function PersonaParametersCard() {
                   onClick={() => void commit(param, current)}
                   className="self-end px-2.5 py-1 rounded-interactive bg-primary/15 border border-primary/30 hover:bg-primary/25 typo-caption font-semibold text-foreground cursor-pointer transition-colors"
                 >
-                  Apply
+                  {labels.apply}
                 </button>
               )}
             </div>
@@ -178,6 +181,7 @@ function ParameterEditor({
   onDraft: (v: PersonaParameter['value']) => void;
   onCommit: (v: PersonaParameter['value']) => void;
 }) {
+  const { t } = useTranslation();
   const inputId = `param-${param.key}`;
   switch (param.type) {
     case 'number': {
@@ -226,7 +230,7 @@ function ParameterEditor({
               b ? 'bg-status-success' : 'bg-foreground/30'
             }`}
           />
-          {b ? 'On' : 'Off'}
+          {b ? t.agents.parameters_card.on : t.agents.parameters_card.off}
         </button>
       );
     }

@@ -158,7 +158,11 @@ pub fn cancel_generate_job(
 const MAX_JSON_PAYLOAD_BYTES: usize = 512 * 1024;
 
 /// Validate that a JSON string field is well-formed and within the size limit.
-fn validate_json_field(name: &str, value: &str) -> Result<(), AppError> {
+///
+/// `pub(super)` so sibling commands in `commands::design` (notably
+/// `build_sessions::save_adoption_answers`) can enforce the same trust-boundary
+/// validation rather than duplicating the size cap + parse.
+pub(super) fn validate_json_field(name: &str, value: &str) -> Result<(), AppError> {
     if value.len() > MAX_JSON_PAYLOAD_BYTES {
         return Err(AppError::Validation(format!(
             "{name} exceeds maximum size ({} bytes, limit {MAX_JSON_PAYLOAD_BYTES})",

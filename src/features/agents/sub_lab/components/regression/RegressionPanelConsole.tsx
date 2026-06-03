@@ -22,7 +22,7 @@ import { ModelToggleGrid } from '../../shared';
 import { RegressionResultsView } from './RegressionResultsView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
-import { compositeScore } from '@/lib/eval/evalFramework';
+import { computeRegressionDeltas } from './computeRegressionDeltas';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -93,39 +93,25 @@ export function RegressionPanelConsole() {
   const { t } = useTranslation();
   const s = useRegressionPanelState();
 
-  const dimDeltas: DimSummary[] = useMemo(() => {
-    if (s.currentResults.length === 0 || s.baselineResults.length === 0) return [];
-    let totalTA = 0, totalOQ = 0, totalPC = 0, n = 0;
-    for (const curr of s.currentResults) {
-      if (curr.toolAccuracyScore == null || curr.outputQualityScore == null || curr.protocolCompliance == null) continue;
-      const baseline = s.baselineResults.find((b) => b.scenarioName === curr.scenarioName && b.modelId === curr.modelId);
-      if (!baseline || baseline.toolAccuracyScore == null || baseline.outputQualityScore == null || baseline.protocolCompliance == null) continue;
-      totalTA += (curr.toolAccuracyScore - baseline.toolAccuracyScore);
-      totalOQ += (curr.outputQualityScore - baseline.outputQualityScore);
-      totalPC += (curr.protocolCompliance - baseline.protocolCompliance);
-      n += 1;
-    }
-    if (n === 0) return [];
-    return [
-      { label: 'Tool accuracy', delta: Math.round(totalTA / n), icon: Target },
-      { label: 'Output quality', delta: Math.round(totalOQ / n), icon: FileText },
-      { label: 'Protocol compliance', delta: Math.round(totalPC / n), icon: ShieldCheck },
-    ];
-  }, [s.currentResults, s.baselineResults]);
+  // Same filtered input the breakdown view below consumes — so the warning
+  // lights and Δ header are provably the same math as the per-scenario rows.
+  const comparisonResults = useMemo(
+    () => s.currentResults.filter((r) => r.versionId === s.selectedVersionId),
+    [s.currentResults, s.selectedVersionId],
+  );
 
-  const overallDelta = useMemo(() => {
-    if (s.currentResults.length === 0 || s.baselineResults.length === 0) return null;
-    let total = 0, n = 0;
-    for (const curr of s.currentResults) {
-      if (curr.toolAccuracyScore == null || curr.outputQualityScore == null || curr.protocolCompliance == null) continue;
-      const baseline = s.baselineResults.find((b) => b.scenarioName === curr.scenarioName && b.modelId === curr.modelId);
-      if (!baseline || baseline.toolAccuracyScore == null || baseline.outputQualityScore == null || baseline.protocolCompliance == null) continue;
-      total += compositeScore(curr.toolAccuracyScore, curr.outputQualityScore, curr.protocolCompliance) -
-               compositeScore(baseline.toolAccuracyScore, baseline.outputQualityScore, baseline.protocolCompliance);
-      n += 1;
-    }
-    return n === 0 ? null : Math.round(total / n);
-  }, [s.currentResults, s.baselineResults]);
+  const summary = useMemo(
+    () => computeRegressionDeltas(s.baselineResults, comparisonResults, s.threshold),
+    [s.baselineResults, comparisonResults, s.threshold],
+  );
+
+  const dimDeltas: DimSummary[] = summary.deltas.length === 0 ? [] : [
+    { label: 'Tool accuracy', delta: summary.avgToolAccuracy, icon: Target },
+    { label: 'Output quality', delta: summary.avgOutputQuality, icon: FileText },
+    { label: 'Protocol compliance', delta: summary.avgProtocol, icon: ShieldCheck },
+  ];
+
+  const overallDelta = summary.deltas.length > 0 ? summary.overallDelta : null;
 
   if (!s.baselinePin) {
     return (
@@ -297,7 +283,7 @@ export function RegressionPanelConsole() {
       {s.currentResults.length > 0 && s.baselineResults.length > 0 && s.selectedVersion && (
         <RegressionResultsView
           baselineResults={s.baselineResults}
-          currentResults={s.currentResults.filter((r) => r.versionId === s.selectedVersionId)}
+          currentResults={comparisonResults}
           baselineVersionNum={s.baselinePin.versionNumber}
           currentVersionNum={s.selectedVersion.version_number}
           threshold={s.threshold}

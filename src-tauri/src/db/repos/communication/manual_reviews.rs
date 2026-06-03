@@ -133,6 +133,13 @@ pub fn get_all(pool: &DbPool, status: Option<&str>) -> Result<Vec<PersonaManualR
 /// Used by the runner to inject prior review decisions into the next execution
 /// so the agent can learn from past human feedback.
 ///
+/// The lookback window is measured against `resolved_at` — the moment the human
+/// actually acted — not `created_at`. A review opened 30 days ago and approved
+/// yesterday is *fresh* feedback and must reach the learning loop; windowing on
+/// `created_at` would silently drop exactly the long-lived reviews a human
+/// finally got around to. `COALESCE(resolved_at, created_at)` keeps any legacy
+/// rows that were marked terminal before `resolved_at` was populated.
+///
 /// - `days`: lookback window in days
 /// - `limit`: max number of reviews to return
 pub fn get_recent_resolved(
@@ -147,8 +154,8 @@ pub fn get_recent_resolved(
             "SELECT * FROM persona_manual_reviews
              WHERE persona_id = ?1
                AND status IN ('approved', 'rejected', 'resolved')
-               AND (julianday('now') - julianday(created_at)) <= ?2
-             ORDER BY created_at DESC
+               AND (julianday('now') - julianday(COALESCE(resolved_at, created_at))) <= ?2
+             ORDER BY COALESCE(resolved_at, created_at) DESC
              LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![persona_id, days, limit], row_to_review)?;
@@ -748,6 +755,111 @@ mod tests {
         let pool = init_test_db().unwrap();
         let result = get_by_id(&pool, "nonexistent");
         assert!(result.is_err());
+    }
+
+    /// Backdate a review's `created_at` (and optionally `resolved_at`) and mark
+    /// it `approved` so it qualifies for `get_recent_resolved`. Lets us exercise
+    /// the lookback window without waiting real days.
+    fn set_review_timestamps(
+        pool: &DbPool,
+        review_id: &str,
+        created_at: &str,
+        resolved_at: Option<&str>,
+    ) {
+        let conn = pool.get().unwrap();
+        conn.execute(
+            "UPDATE persona_manual_reviews
+             SET status = 'approved', created_at = ?1, resolved_at = ?2
+             WHERE id = ?3",
+            params![created_at, resolved_at, review_id],
+        )
+        .unwrap();
+    }
+
+    fn create_pending_review(pool: &DbPool, persona_id: &str, execution_id: &str) -> String {
+        create(
+            pool,
+            CreateManualReviewInput {
+                execution_id: execution_id.to_string(),
+                persona_id: persona_id.to_string(),
+                title: "Lookback review".into(),
+                description: None,
+                severity: None,
+                context_data: None,
+                suggested_actions: None,
+                use_case_id: None,
+            },
+        )
+        .unwrap()
+        .id
+    }
+
+    /// An RFC3339 timestamp `days_ago` before the real current time. Relative to
+    /// `now()` so the lookback assertions stay stable whenever the test is run
+    /// (the query measures against `julianday('now')`).
+    fn days_ago(days: i64) -> String {
+        (chrono::Utc::now() - chrono::Duration::days(days)).to_rfc3339()
+    }
+
+    /// A review opened long ago but resolved *recently* is fresh human feedback
+    /// and must fall inside the lookback window. Before the fix the window keyed
+    /// off `created_at`, so these long-lived-then-just-resolved reviews — exactly
+    /// the ones a human finally acted on — never reached the learning loop.
+    #[test]
+    fn test_recent_resolved_windows_on_resolved_at() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+
+        // Created 30 days ago, resolved 1 day ago.
+        let id = create_pending_review(&pool, &persona_id, &execution_id);
+        set_review_timestamps(&pool, &id, &days_ago(30), Some(&days_ago(1)));
+
+        // 7-day window: excluded if filtering on created_at, included on resolved_at.
+        let within = get_recent_resolved(&pool, &persona_id, 7, 5).unwrap();
+        assert_eq!(
+            within.len(),
+            1,
+            "review resolved yesterday must be inside a 7-day window even though it was created 30 days ago"
+        );
+        assert_eq!(within[0].id, id);
+    }
+
+    /// A review both created and resolved long ago stays outside the window.
+    #[test]
+    fn test_recent_resolved_excludes_old_resolution() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+
+        let id = create_pending_review(&pool, &persona_id, &execution_id);
+        set_review_timestamps(&pool, &id, &days_ago(60), Some(&days_ago(50)));
+
+        let within = get_recent_resolved(&pool, &persona_id, 7, 5).unwrap();
+        assert!(
+            within.is_empty(),
+            "review resolved 50 days ago must be outside a 7-day window"
+        );
+    }
+
+    /// Legacy rows that reached a terminal status before `resolved_at` was
+    /// populated fall back to `created_at` via COALESCE rather than vanishing.
+    #[test]
+    fn test_recent_resolved_coalesce_fallback_to_created_at() {
+        let pool = init_test_db().unwrap();
+        let (persona_id, execution_id) = setup_persona_and_execution(&pool);
+
+        let id = create_pending_review(&pool, &persona_id, &execution_id);
+        // Move to a terminal status, then null out resolved_at to simulate a
+        // legacy row, keeping a recent created_at.
+        update_status(&pool, &id, ManualReviewStatus::Resolved, None).unwrap();
+        set_review_timestamps(&pool, &id, &days_ago(1), None);
+
+        let within = get_recent_resolved(&pool, &persona_id, 7, 5).unwrap();
+        assert_eq!(
+            within.len(),
+            1,
+            "terminal row with NULL resolved_at should fall back to created_at"
+        );
+        assert_eq!(within[0].id, id);
     }
 
     #[test]

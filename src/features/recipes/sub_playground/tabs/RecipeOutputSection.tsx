@@ -61,7 +61,7 @@ export function RecipeOutputSection({
       )}
 
       {/* Output Section - Two Columns */}
-      <div className="flex-1 min-h-0 p-4 grid grid-cols-2 gap-4">
+      <div className="flex-1 min-h-0 p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Rendered Prompt */}
         <div className="flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
@@ -74,9 +74,9 @@ export function RecipeOutputSection({
                 className="flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
               >
                 {copiedPrompt ? (
-                  <><Check className="w-3 h-3 text-emerald-400" /> Copied</>
+                  <><Check className="w-3 h-3 text-emerald-400" /> {t.common.copied}</>
                 ) : (
-                  <><Copy className="w-3 h-3" /> Copy</>
+                  <><Copy className="w-3 h-3" /> {t.common.copy}</>
                 )}
               </button>
             )}
@@ -102,9 +102,9 @@ export function RecipeOutputSection({
                 className="flex items-center gap-1 typo-body text-foreground hover:text-foreground transition-colors"
               >
                 {copiedOutput ? (
-                  <><Check className="w-3 h-3 text-emerald-400" /> Copied</>
+                  <><Check className="w-3 h-3 text-emerald-400" /> {t.common.copied}</>
                 ) : (
-                  <><Copy className="w-3 h-3" /> Copy</>
+                  <><Copy className="w-3 h-3" /> {t.common.copy}</>
                 )}
               </button>
             )}

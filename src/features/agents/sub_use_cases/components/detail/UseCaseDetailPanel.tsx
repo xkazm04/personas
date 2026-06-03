@@ -6,7 +6,6 @@ import { UseCaseFixtureDropdown } from './UseCaseFixtureDropdown';
 import { InputStageSummary, PipelineArrow } from './UseCaseDetailSections';
 import { useUseCaseDetail } from '../../libs/useUseCaseDetail';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText } from '@/i18n/DebtText';
 
 
 interface UseCaseDetailPanelProps {
@@ -56,17 +55,23 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
 
   return (
     <div className="space-y-1.5">
-      {/* Pipeline: Input -> Transform -> Output + Test actions */}
-      <div className="flex items-center gap-0.5">
+      {/* Pipeline + stage labels share ONE grid template so the labels always
+          track their controls — robust to font scaling, zoom, and longer
+          translated labels. (Replaces the old hand-tuned `width: 130` + `w-3.5`
+          spacer strip that re-created the row's widths by hand and snapped out
+          of alignment.) The three `1fr` columns hold Input / Transform / Output;
+          the `auto` columns hold the two arrows and the test-action cluster. */}
+      <div className="grid grid-cols-[1fr_auto_1fr_auto_1fr_auto] items-center gap-x-0.5 gap-y-1.5">
+        {/* Row 1 — controls (auto-placed left-to-right into columns 1-6) */}
         {/* Input Sources */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <InputStageSummary useCase={useCase} />
         </div>
 
         <PipelineArrow />
 
         {/* Transform: Model Config */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <UseCaseModelDropdown
             hasOverride={hasOverride}
             modelLabel={modelLabel}
@@ -79,12 +84,12 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
         <PipelineArrow />
 
         {/* Output Channels */}
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0">
           <UseCaseChannelDropdown channels={channels} onToggle={handleChannelToggle} />
         </div>
 
         {/* Fixture + Test actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0 ml-1.5">
+        <div className="flex items-center gap-1.5 ml-1.5">
           <UseCaseFixtureDropdown
             fixtures={fixtures}
             selectedFixtureId={selectedFixtureId}
@@ -128,11 +133,11 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
               !hasPrompt
                 ? uc.no_prompt_configured
                 : isManualRunning
-                  ? 'Manual run in progress'
-                  : 'Run this use case now — fires real execution and downstream events'
+                  ? uc.manual_run_in_progress
+                  : uc.run_now_tooltip
             }
           >
-            <Rocket className="w-3.5 h-3.5" /> <DebtText k="auto_run_now_2af00e23" />
+            <Rocket className="w-3.5 h-3.5" /> {uc.run_now}
           </button>
           <button
             onClick={() => setEditorTab('lab')}
@@ -142,16 +147,12 @@ export function UseCaseDetailPanel({ useCaseId }: UseCaseDetailPanelProps) {
             {uc.tests} <ArrowRight className="w-3 h-3" />
           </button>
         </div>
-      </div>
 
-      {/* Pipeline stage labels */}
-      <div className="flex items-center gap-0.5 px-1">
-        <span className="flex-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_input}</span>
-        <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_transform}</span>
-        <div className="w-3.5 flex-shrink-0" />
-        <span className="flex-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_output}</span>
-        <div className="flex-shrink-0 ml-1.5" style={{ width: 130 }} />
+        {/* Row 2 — stage labels, pinned to the same stage columns (1/3/5) so
+            they always sit centered under their controls. */}
+        <span className="row-start-2 col-start-1 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_input}</span>
+        <span className="row-start-2 col-start-3 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_transform}</span>
+        <span className="row-start-2 col-start-5 text-center typo-body text-foreground uppercase tracking-wider font-medium">{uc.stage_output}</span>
       </div>
 
       {/* Full-width row: progress indicator and save error */}

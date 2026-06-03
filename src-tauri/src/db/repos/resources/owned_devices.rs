@@ -17,6 +17,8 @@ use crate::error::AppError;
 /// then store the same value so each can recognise the other as its own.
 pub fn ensure_device_group_id(pool: &DbPool) -> Result<String, AppError> {
     let conn = pool.get()?;
+
+    // Fast path: already anchored.
     let existing: Option<String> = conn
         .query_row(
             "SELECT device_group_id FROM local_identity WHERE id = 1",
@@ -29,20 +31,41 @@ pub fn ensure_device_group_id(pool: &DbPool) -> Result<String, AppError> {
         return Ok(id);
     }
 
-    let new_id = uuid::Uuid::new_v4().to_string();
-    let affected = conn.execute(
-        "UPDATE local_identity SET device_group_id = ?1 WHERE id = 1",
-        rusqlite::params![new_id],
+    // First-time anchor — must be atomic. The previous read→generate→
+    // unconditional-UPDATE was a race: two concurrent first-time callers (e.g.
+    // the pairing flow and the UI loading the Network tab) both read NULL,
+    // generated DIFFERENT uuids, and both UPDATEd id=1. The one that returned
+    // first handed its uuid to the pairing partner out-of-band, but the DB kept
+    // the other writer's uuid — permanently desyncing the device group with no
+    // error to debug. Fix: a conditional UPDATE that only the first writer wins
+    // (SQLite serializes the write), then re-SELECT the persisted value so EVERY
+    // caller returns the single id that actually landed in the DB.
+    let candidate = uuid::Uuid::new_v4().to_string();
+    conn.execute(
+        "UPDATE local_identity SET device_group_id = ?1 WHERE id = 1 AND device_group_id IS NULL",
+        rusqlite::params![candidate],
     )?;
-    if affected == 0 {
-        // No identity row yet — identity initialization (engine/identity.rs) must
-        // run before a device group can be anchored. Erroring here (rather than
-        // returning an unpersisted id) keeps the group id stable across calls.
-        return Err(AppError::Internal(
+
+    let persisted: Option<String> = conn
+        .query_row(
+            "SELECT device_group_id FROM local_identity WHERE id = 1",
+            [],
+            |row| row.get::<_, Option<String>>(0),
+        )
+        .optional_flatten();
+
+    match persisted {
+        // The committed value — either our `candidate` (we won) or a racing
+        // caller's id (they won; our conditional UPDATE matched 0 rows). Both
+        // callers converge here.
+        Some(id) => Ok(id),
+        // Still NULL only when there is no identity row to anchor to. Identity
+        // initialization (engine/identity.rs) must run first; erroring (rather
+        // than returning an unpersisted id) keeps the group id stable.
+        None => Err(AppError::Internal(
             "local identity not initialized; cannot assign a device group".into(),
-        ));
+        )),
     }
-    Ok(new_id)
 }
 
 /// Register (or update) a peer as one of the user's own devices. Idempotent on

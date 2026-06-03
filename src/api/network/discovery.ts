@@ -39,6 +39,10 @@ export interface NetworkStatusInfo {
   discovered_peer_count: number;
   connected_peer_count: number;
   local_peer_id: string;
+  /** True when the local signing identity couldn't be resolved (e.g. a reset OS
+   *  keyring). `local_peer_id` is then empty; the UI surfaces a degraded warning
+   *  instead of silently showing a blank identity. Mirrors the Rust struct. */
+  identity_degraded: boolean;
 }
 
 export interface ConnectionHealth {

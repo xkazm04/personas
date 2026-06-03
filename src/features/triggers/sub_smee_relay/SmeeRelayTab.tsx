@@ -9,6 +9,8 @@ import {
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useSmeeRelayStatus } from '@/hooks/realtime/useSmeeRelayStatus';
 import { useAgentStore } from '@/stores/agentStore';
 import {
@@ -152,7 +154,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
             <span className="typo-body text-foreground">
               {activeCount > 0
                 ? `${activeCount} relay${activeCount !== 1 ? 's' : ''} active`
-                : 'No active relays'}
+                : t.triggers.no_active_relays}
             </span>
             {totalRelayed > 0 && (
               <span className="typo-caption text-purple-400/70 font-medium">
@@ -310,31 +312,21 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
           </div>
         )}
 
-        {/* Loading */}
+        {/* Loading — shape-matched skeleton rows so chrome lands before data */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" className="text-foreground" />
-          </div>
+          <ListSkeleton rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
         )}
 
         {/* Empty state */}
         {!isLoading && relays.length === 0 && !showAdd && (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-              <Unplug className="w-7 h-7 text-purple-400/50" />
-            </div>
-            <p className="typo-body font-medium text-foreground">{t.triggers.no_smee_relays}</p>
-            <p className="typo-body text-foreground mt-1 max-w-sm">
-              {t.triggers.smee_relay_desc}
-            </p>
-            <button
-              onClick={() => setShowAdd(true)}
-              className="mt-4 flex items-center gap-1.5 px-4 py-2 typo-body font-medium rounded-modal bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/15 transition-colors"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              {t.triggers.add_first_relay}
-            </button>
-          </div>
+          <EmptyState
+            icon={Unplug}
+            iconColor="text-purple-400/60"
+            iconContainerClassName="bg-purple-500/10 border-purple-500/20"
+            title={t.triggers.no_smee_relays}
+            subtitle={t.triggers.smee_relay_desc}
+            action={{ label: t.triggers.add_first_relay, onClick: () => setShowAdd(true), icon: Plus }}
+          />
         )}
 
         {/* Relay list */}
@@ -426,7 +418,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
 
                     {/* Right side: actions */}
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <CopyButton text={relay.channelUrl} tooltip="Copy channel URL" />
+                      <CopyButton text={relay.channelUrl} tooltip={t.triggers.copy_channel_url_title} />
                       <button
                         onClick={() => handleToggleStatus(relay)}
                         className={`p-1.5 rounded-card transition-colors ${
@@ -434,7 +426,7 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                             ? 'text-amber-400/60 hover:text-amber-400 hover:bg-amber-500/10'
                             : 'text-emerald-400/60 hover:text-emerald-400 hover:bg-emerald-500/10'
                         }`}
-                        title={isActive ? 'Pause relay' : 'Resume relay'}
+                        title={isActive ? t.triggers.pause_relay : t.triggers.resume_relay}
                       >
                         {isActive ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
                       </button>
@@ -444,13 +436,13 @@ export function SmeeRelayTab({ onSwitchToLiveStream }: SmeeRelayTabProps) {
                             onClick={() => handleDelete(relay.id)}
                             className="px-2 py-1 rounded-card typo-caption font-medium text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 transition-colors"
                           >
-                            Confirm
+                            {t.common.confirm}
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
                             className="px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground transition-colors"
                           >
-                            Cancel
+                            {t.common.cancel}
                           </button>
                         </div>
                       ) : (

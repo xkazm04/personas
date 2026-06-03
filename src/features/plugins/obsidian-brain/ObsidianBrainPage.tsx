@@ -26,7 +26,7 @@ export default function ObsidianBrainPage() {
 
       <ContentBody centered>
         <div key={obsidianBrainTab} className="animate-fade-slide-in">
-          <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label="Loading..." /></div>}>
+          <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label={t.plugins.obsidian_brain.loading} /></div>}>
             {obsidianBrainTab === 'setup' && <SetupPanel />}
             {obsidianBrainTab === 'sync' && <SyncPanel />}
             {obsidianBrainTab === 'browse' && <BrowsePanel />}

@@ -304,6 +304,40 @@ pub fn list_messages(
     Ok(rows)
 }
 
+/// Fetch a single proactive message by id, regardless of status.
+///
+/// The engage path uses this instead of scanning a capped [`list_messages`]
+/// window: on a long-lived install (proactive rows are never pruned) a
+/// still-deliverable nudge can fall outside the newest N rows, which made the
+/// "Athena reached out" engage button spuriously error with "not found".
+/// A direct lookup is O(1) and has no scale ceiling. Returns `Ok(None)` when
+/// no row with that id exists.
+pub fn get_by_id(pool: &UserDbPool, id: &str) -> Result<Option<ProactiveMessage>, AppError> {
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT id, trigger_kind, trigger_ref, message, status, created_at, delivered_at, resolved_at, scheduled_for
+             FROM companion_proactive_message
+             WHERE id = ?1",
+            params![id],
+            |row| {
+                Ok(ProactiveMessage {
+                    id: row.get(0)?,
+                    trigger_kind: row.get(1)?,
+                    trigger_ref: row.get(2)?,
+                    message: row.get(3)?,
+                    status: row.get(4)?,
+                    created_at: row.get(5)?,
+                    delivered_at: row.get(6)?,
+                    resolved_at: row.get(7)?,
+                    scheduled_for: row.get(8)?,
+                })
+            },
+        )
+        .optional()?;
+    Ok(row)
+}
+
 /// Transition `queued → delivered` for the given message id.
 pub fn mark_delivered(pool: &UserDbPool, id: &str) -> Result<(), AppError> {
     let now = Utc::now().to_rfc3339();

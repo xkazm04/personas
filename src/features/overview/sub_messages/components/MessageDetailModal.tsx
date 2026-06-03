@@ -28,7 +28,7 @@ import { buildSummariseChatPrompt } from '../libs/chatSeed';
 import type { CompanionCockpitSpecBody } from '@/api/companion';
 
 import { formatRelativeTime } from '@/lib/utils/formatters';
-import { deliveryStatusConfig, channelLabels } from '../libs/messageHelpers';
+import { ChannelDeliveryPill } from './ChannelDeliveryPill';
 import {
   SeverityIndicator,
   ContextDataPreview,
@@ -90,7 +90,8 @@ const RATING_MEMORY_CATEGORY = 'learned';
  *   II. Improve agent  — star rating quick path + free-form feedback.
  *                        Ratings are upserted into the persona's memory
  *                        store so re-rating updates rather than duplicates.
- *   III. Delivery      — colophon row of channel × status chips.
+ *   III. Delivery      — row of ChannelDeliveryPill chips (brand icon in a
+ *                        status-colored ring + status label + RelativeTime).
  *   IV. Pending decisions — surfaces manual-review rows linked to the
  *                        same execution_id. Inline approve/reject so the
  *                        user can resolve message + review in one stop.
@@ -687,7 +688,7 @@ export function MessageDetailModal({
             )}
           </section>
 
-          {/* III. Delivery — colophon row */}
+          {/* III. Delivery — channel-icon status pills */}
           <section className="mb-10">
             <SectionMark
               index="III"
@@ -700,36 +701,10 @@ export function MessageDetailModal({
                 {t.overview.messages_view.no_channels}
               </p>
             ) : (
-              <div className="flex flex-wrap gap-x-6 gap-y-3">
-                {deliveries.map((d) => {
-                  const defaultStatus = deliveryStatusConfig.pending!;
-                  const statusCfg = deliveryStatusConfig[d.status] ?? defaultStatus;
-                  const StatusIcon = statusCfg.icon;
-                  return (
-                    <div key={d.id} className="inline-flex items-center gap-2 typo-body">
-                      <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${statusCfg.color}`} />
-                      <span className="text-foreground/90 font-medium">
-                        {channelLabels[d.channel_type] ?? d.channel_type}
-                      </span>
-                      <span className={`typo-caption font-semibold ${statusCfg.color}`}>
-                        {statusCfg.label}
-                      </span>
-                      {d.delivered_at && (
-                        <span className="typo-caption text-foreground tabular-nums">
-                          · {formatRelativeTime(d.delivered_at)}
-                        </span>
-                      )}
-                      {d.error_message && (
-                        <span
-                          className="typo-caption text-red-400/80 truncate max-w-[220px]"
-                          title={d.error_message}
-                        >
-                          · {d.error_message}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="flex flex-wrap gap-2">
+                {deliveries.map((d) => (
+                  <ChannelDeliveryPill key={d.id} delivery={d} t={t} />
+                ))}
               </div>
             )}
           </section>

@@ -65,6 +65,10 @@ export function PersonaRunner() {
   }
 
   const summaryPresentation = getStatusEntry(state.executionSummary?.status ?? 'failed');
+  // Once elapsed crosses the typical (median) duration the determinate fill is
+  // pinned at 100% and stops conveying anything — switch to an amber indeterminate
+  // sweep so "running long" is felt, not just read.
+  const isOverBudget = state.typicalDurationMs != null && state.elapsedMs >= state.typicalDurationMs;
 
   return (
     <div ref={state.runnerRef} className="space-y-4">
@@ -152,11 +156,17 @@ export function PersonaRunner() {
             {state.typicalDurationMs ? (
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between typo-body">
-                  <span className="text-foreground">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>
-                  <span className="text-foreground">{state.elapsedMs < state.typicalDurationMs ? tx(t.agents.executions.typically_completes, { elapsed: formatElapsed(state.typicalDurationMs) }) : t.agents.executions.taking_longer}</span>
+                  <span className={isOverBudget ? 'text-amber-300' : 'text-foreground'}>{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>
+                  <span className={isOverBudget ? 'text-amber-300' : 'text-foreground'}>{state.elapsedMs < state.typicalDurationMs ? tx(t.agents.executions.typically_completes, { elapsed: formatElapsed(state.typicalDurationMs) }) : t.agents.executions.taking_longer}</span>
                 </div>
                 <div className="w-full h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-                  <div className="animate-fade-in h-full rounded-full bg-primary/40" style={{ width: `${Math.min(100, (state.elapsedMs / state.typicalDurationMs) * 100)}%` }} />
+                  {isOverBudget ? (
+                    <div className="relative h-full w-full overflow-hidden rounded-full bg-amber-400/50">
+                      <span className="animate-stage-shimmer pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-amber-200/60 to-transparent" />
+                    </div>
+                  ) : (
+                    <div className="animate-fade-in h-full rounded-full bg-primary/40" style={{ width: `${Math.min(100, (state.elapsedMs / state.typicalDurationMs) * 100)}%` }} />
+                  )}
                 </div>
               </div>
             ) : <span className="typo-body text-foreground">{tx(t.agents.executions.elapsed, { elapsed: formatElapsed(state.elapsedMs) })}</span>}

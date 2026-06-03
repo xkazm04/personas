@@ -172,6 +172,24 @@ function dedupeById(items: DisplayItem[]): DisplayItem[] {
   return out;
 }
 
+/**
+ * A DisplayItem is "displayable" when it carries real content — a non-empty
+ * title that isn't the `[roadmap.<id>]` missing-content placeholder. An empty
+ * live list, or one whose items all lack a matching locale entry, yields zero
+ * displayable entries.
+ */
+function isDisplayable(item: DisplayItem): boolean {
+  return item.title.trim().length > 0 && item.title !== `[roadmap.${item.id}]`;
+}
+
+function buildBundledItems(
+  release: Release,
+  bundledItems: Record<string, { title: string; description: string }> | undefined,
+): DisplayItem[] {
+  const built = release.items.map((item, idx) => fromBundled(item, idx + 1, bundledItems));
+  return dedupeById(built).sort((a, b) => a.sort_order - b.sort_order);
+}
+
 function buildDisplayItems(
   release: Release,
   liveOverride: LiveRoadmap | null | undefined,
@@ -180,11 +198,25 @@ function buildDisplayItems(
 ): DisplayItem[] {
   if (liveOverride) {
     const locale = liveOverride.i18n[language] ?? liveOverride.i18n.en;
-    const built = liveOverride.release.items.map((item, idx) => fromLive(item, idx + 1, locale));
-    return dedupeById(built).sort((a, b) => a.sort_order - b.sort_order);
+    const built = dedupeById(
+      liveOverride.release.items.map((item, idx) => fromLive(item, idx + 1, locale)),
+    ).sort((a, b) => a.sort_order - b.sort_order);
+    // A schema-valid but empty (`items: []`) payload — or a stale cached
+    // payload whose items all lack locale content — yields zero displayable
+    // entries. Without this guard the whole roadmap (status pill included)
+    // blanks, because `if (!hero) return null` short-circuits the component,
+    // and the bundled fallback that exists for exactly this case is
+    // unreachable since `liveOverride` always wins. Fall back to bundled
+    // content instead so a single content-author mistake can't blank the
+    // roadmap for every desktop client.
+    if (built.some(isDisplayable)) return built;
+    Sentry.addBreadcrumb({
+      category: 'live-roadmap',
+      message: 'buildDisplayItems: live payload yielded zero displayable items; falling back to bundled content',
+      level: 'warning',
+    });
   }
-  const built = release.items.map((item, idx) => fromBundled(item, idx + 1, bundledItems));
-  return dedupeById(built).sort((a, b) => a.sort_order - b.sort_order);
+  return buildBundledItems(release, bundledItems);
 }
 
 function RoadmapHero({ item, t }: { item: DisplayItem; t: ReleasesTranslation }) {

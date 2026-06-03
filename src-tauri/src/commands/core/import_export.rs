@@ -297,7 +297,14 @@ pub async fn import_persona(
     // Validate persona fields
     let p = &bundle.persona;
     validation::require_non_empty("persona name", &p.name)?;
-    validation::require_max_len("persona name", &p.name, MAX_NAME_LEN)?;
+    // The persona is stored with an " (imported)" suffix (see the create()
+    // call below). Validate the *final* mutated name, not the raw p.name —
+    // otherwise a name at exactly MAX_NAME_LEN passes here but exceeds the
+    // limit once the 11-byte suffix is appended, failing later inside
+    // persona_repo::create with a confusing post-validation error (or
+    // silently breaching the invariant the check was meant to enforce).
+    let imported_name = format!("{} (imported)", p.name);
+    validation::require_max_len("persona name", &imported_name, MAX_NAME_LEN)?;
     validation::require_max_len("system_prompt", &p.system_prompt, MAX_SYSTEM_PROMPT_LEN)?;
     validation::require_optional_max_len("description", &p.description, MAX_DESCRIPTION_LEN)?;
     validation::require_optional_max_len(
@@ -399,7 +406,7 @@ pub async fn import_persona(
     let new_persona = persona_repo::create(
         pool,
         crate::db::models::CreatePersonaInput {
-            name: format!("{} (imported)", p.name),
+            name: imported_name,
             system_prompt: p.system_prompt.clone(),
             project_id: None,
             description: p.description.clone(),

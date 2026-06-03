@@ -8,6 +8,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 import { InboxItem } from './ReviewListItem';
 import { ConversationThread } from './ReviewDetailPanel';
 import { useProgressiveReveal, useRevealTracker } from '@/hooks/utility/interaction/useProgressiveReveal';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { AnimatedCounter } from '@/features/shared/components/display/AnimatedCounter';
 import { Numeric } from '@/features/shared/components/display/Numeric';
 import { RevealItem } from '@/features/shared/components/display/RevealItem';
@@ -175,10 +176,10 @@ export function ReviewInboxPanel({
                 />
               ) : (
                 <div className="flex-1 flex items-center justify-center">
-                  <div className="text-center">
-                    <MessageSquare className="w-8 h-8 text-foreground mx-auto mb-2" />
-                    <p className="typo-body text-foreground">{t.overview.review.select_review}</p>
-                  </div>
+                  <EmptyState
+                    icon={MessageSquare}
+                    title={t.overview.review.select_review}
+                  />
                 </div>
               )}
             </div>

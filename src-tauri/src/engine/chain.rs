@@ -568,7 +568,12 @@ fn evaluate_predicate(
         ChainConditionType::Jsonpath => {
             let path = match condition.get("jsonpath").and_then(|p| p.as_str()) {
                 Some(p) => p,
-                None => return false,
+                None => {
+                    tracing::warn!(
+                        "Chain jsonpath condition is missing its \"jsonpath\" field; treating as non-matching."
+                    );
+                    return false;
+                }
             };
             let expected = condition.get("expected");
 
@@ -576,14 +581,74 @@ fn evaluate_predicate(
                 .and_then(|o| serde_json::from_str(o).ok())
                 .unwrap_or(serde_json::Value::Null);
 
-            evaluate_simple_jsonpath(&output, path)
-                .map(|found| match expected {
-                    Some(exp) => found == exp,
+            match evaluate_simple_jsonpath(&output, path) {
+                Some(found) => match expected {
+                    // Scalar type-coercion: `expected` comes from config JSON and
+                    // is almost always a string, while the extracted value may be
+                    // a number or bool (e.g. config `"200"` vs output `200`, or
+                    // `"true"` vs `true`). Strict serde_json equality would make
+                    // these never match, silently dead-ending the chain.
+                    Some(exp) => json_scalar_eq(found, exp),
                     None => !found.is_null(), // Just check it exists and isn't null
-                })
-                .unwrap_or(false)
+                },
+                None => {
+                    // Silent non-firing is the worst failure mode for an
+                    // event-chaining feature — surface the dead path instead of
+                    // returning false with zero signal.
+                    tracing::warn!(
+                        jsonpath = %path,
+                        "Chain jsonpath condition did not resolve against the upstream output; the chain will not fire. Either the source never produced this value, or the path syntax (quoted keys, multiple indices like a[0][1], or filters) is unsupported by the simple evaluator."
+                    );
+                    false
+                }
+            }
         }
     }
+}
+
+/// Compare a jsonpath-extracted value against the configured `expected` value
+/// with scalar type-coercion. `expected` is parsed from config JSON (usually a
+/// string), while `found` reflects the upstream output's real JSON type. Strict
+/// equality would make `"200" != 200` and `"true" != true`, so we coerce across
+/// scalar types: exact equality first, then numeric, then boolean. Non-scalars
+/// (arrays/objects) only match by exact structural equality.
+fn json_scalar_eq(found: &serde_json::Value, expected: &serde_json::Value) -> bool {
+    use serde_json::Value;
+
+    // Exact structural/type equality (covers string==string, number==number, …).
+    if found == expected {
+        return true;
+    }
+
+    // Numeric coercion: 200 == "200", 200 == 200.0, "1.5" == 1.5.
+    let as_number = |v: &Value| -> Option<f64> {
+        match v {
+            Value::Number(n) => n.as_f64(),
+            Value::String(s) => s.trim().parse::<f64>().ok(),
+            _ => None,
+        }
+    };
+    if let (Some(a), Some(b)) = (as_number(found), as_number(expected)) {
+        return a == b;
+    }
+
+    // Boolean coercion: true == "true", false == "FALSE".
+    let as_bool = |v: &Value| -> Option<bool> {
+        match v {
+            Value::Bool(b) => Some(*b),
+            Value::String(s) => match s.trim().to_ascii_lowercase().as_str() {
+                "true" => Some(true),
+                "false" => Some(false),
+                _ => None,
+            },
+            _ => None,
+        }
+    };
+    if let (Some(a), Some(b)) = (as_bool(found), as_bool(expected)) {
+        return a == b;
+    }
+
+    false
 }
 
 /// Simple JSONPath evaluator supporting dot notation: `$.foo.bar.baz`
@@ -698,6 +763,55 @@ mod tests {
         });
         let output = r#"{"result":{"data":"something"}}"#;
         assert!(!evaluate_predicate(Some(&cond), "completed", Some(output)));
+    }
+
+    #[test]
+    fn test_predicate_jsonpath_number_string_coercion() {
+        // config `"200"` (string) must match a numeric output `200`.
+        let cond = json!({
+            "type": "jsonpath",
+            "jsonpath": "$.result.code",
+            "expected": "200"
+        });
+        let output = r#"{"result":{"code":200}}"#;
+        assert!(evaluate_predicate(Some(&cond), "completed", Some(output)));
+    }
+
+    #[test]
+    fn test_predicate_jsonpath_bool_string_coercion() {
+        let cond = json!({
+            "type": "jsonpath",
+            "jsonpath": "$.ok",
+            "expected": "true"
+        });
+        let output = r#"{"ok":true}"#;
+        assert!(evaluate_predicate(Some(&cond), "completed", Some(output)));
+    }
+
+    #[test]
+    fn test_predicate_jsonpath_coercion_still_distinguishes() {
+        // Coercion must not collapse genuinely different scalars.
+        let cond = json!({
+            "type": "jsonpath",
+            "jsonpath": "$.result.code",
+            "expected": "200"
+        });
+        let output = r#"{"result":{"code":201}}"#;
+        assert!(!evaluate_predicate(Some(&cond), "completed", Some(output)));
+    }
+
+    #[test]
+    fn test_json_scalar_eq() {
+        assert!(json_scalar_eq(&json!(200), &json!("200")));
+        assert!(json_scalar_eq(&json!("200"), &json!(200)));
+        assert!(json_scalar_eq(&json!(true), &json!("true")));
+        assert!(json_scalar_eq(&json!(1.5), &json!("1.5")));
+        assert!(json_scalar_eq(&json!("approved"), &json!("approved")));
+        assert!(!json_scalar_eq(&json!(200), &json!("201")));
+        assert!(!json_scalar_eq(&json!(true), &json!("false")));
+        // Non-scalars only match by exact structural equality.
+        assert!(json_scalar_eq(&json!([1, 2]), &json!([1, 2])));
+        assert!(!json_scalar_eq(&json!([1, 2]), &json!("[1,2]")));
     }
 
     #[test]

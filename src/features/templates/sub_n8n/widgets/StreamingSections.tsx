@@ -167,7 +167,7 @@ export function StreamingSections({ sections, isStreaming }: StreamingSectionsPr
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-primary/8 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
+          <div className="w-1.5 h-1.5 rounded-full bg-violet-400 motion-safe:animate-pulse" />
           <span className="typo-heading font-semibold uppercase tracking-wider text-foreground">
             {t.templates.n8n.streaming_sections}
           </span>

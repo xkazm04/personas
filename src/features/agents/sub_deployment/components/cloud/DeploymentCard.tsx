@@ -75,7 +75,7 @@ export function DeploymentCard({
               onClick={() => onTest(d.id, d.personaId)}
               disabled={isBusy || testRunning}
               className="p-1.5 rounded-card text-foreground hover:text-blue-400
-                         hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer"
+                         hover:bg-blue-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
             >
               {testRunning ? <LoadingSpinner size="sm" /> : <FlaskConical className="w-3.5 h-3.5" />}
             </button>
@@ -87,7 +87,7 @@ export function DeploymentCard({
               onClick={() => handleAction(d.id, () => onPause(d.id))}
               disabled={isBusy}
               className="p-1.5 rounded-card text-foreground hover:text-amber-400
-                         hover:bg-amber-500/10 disabled:opacity-40 transition-colors cursor-pointer"
+                         hover:bg-amber-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
             >
               {isBusy ? <LoadingSpinner size="sm" /> : <Pause className="w-3.5 h-3.5" />}
             </button>
@@ -99,7 +99,7 @@ export function DeploymentCard({
               onClick={() => handleAction(d.id, () => onResume(d.id))}
               disabled={isBusy}
               className="p-1.5 rounded-card text-foreground hover:text-emerald-400
-                         hover:bg-emerald-500/10 disabled:opacity-40 transition-colors cursor-pointer"
+                         hover:bg-emerald-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
             >
               {isBusy ? <LoadingSpinner size="sm" /> : <Play className="w-3.5 h-3.5" />}
             </button>
@@ -110,7 +110,7 @@ export function DeploymentCard({
             onClick={() => handleAction(d.id, () => onRemove(d.id))}
             disabled={isBusy}
             className="p-1.5 rounded-card text-foreground hover:text-red-400
-                       hover:bg-red-500/10 disabled:opacity-40 transition-colors cursor-pointer"
+                       hover:bg-red-500/10 disabled:opacity-40 transition-colors cursor-pointer focus-ring"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -127,7 +127,7 @@ export function DeploymentCard({
           title={dt.copy_endpoint}
           onClick={() => copyEndpoint(d.slug)}
           className="p-1.5 rounded-card text-foreground hover:text-foreground/90
-                     hover:bg-secondary/50 transition-colors cursor-pointer"
+                     hover:bg-secondary/50 transition-colors cursor-pointer focus-ring"
         >
           {copiedId === d.slug ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
         </button>
@@ -138,7 +138,7 @@ export function DeploymentCard({
             rel="noopener noreferrer"
             title={dt.open_endpoint}
             className="p-1.5 rounded-card text-foreground hover:text-foreground/90
-                       hover:bg-secondary/50 transition-colors"
+                       hover:bg-secondary/50 transition-colors focus-ring"
           >
             <ExternalLink className="w-3.5 h-3.5" />
           </a>

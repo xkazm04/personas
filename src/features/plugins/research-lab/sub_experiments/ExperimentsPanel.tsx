@@ -203,7 +203,7 @@ export default function ExperimentsPanel() {
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, exp.id)}
-                    className="p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all flex-shrink-0"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background flex-shrink-0"
                     title={t.common.delete}
                     aria-label={t.common.delete}
                   >

@@ -9,6 +9,7 @@ import {
   Inbox,
   Layers,
   ListChecks,
+  RefreshCw,
   ScrollText,
   Sparkles,
   Target,
@@ -17,15 +18,21 @@ import {
   UserCircle2,
   Workflow,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
+import { useToastStore } from '@/stores/toastStore';
 import { silentCatch } from '@/lib/silentCatch';
 import {
   companionDeleteBrainItem,
   companionGetBrainItem,
   companionListBrainItems,
+  companionRunConsolidation,
+  companionRunReflection,
   type BrainDetail,
   type BrainKind,
   type BrainListItem,
@@ -64,24 +71,39 @@ type KindDescKey =
   | 'brain_desc_doctrine'
   | 'brain_desc_constitution';
 
-const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey; descKey: KindDescKey }[] = [
+// Visual families — color-code the 13 memory kinds so the eye can cluster
+// related memory at a glance ("memory lives in the fuchsia cluster") and build
+// spatial memory across sessions. The accent paints each card's icon and its
+// left accent bar; the KINDS reading order already keeps each family contiguous
+// in the grid so the colours read as clusters.
+type BrainFamily = 'identity' | 'goals' | 'procedural' | 'episodic' | 'doctrine';
+
+const FAMILY_ACCENT: Record<BrainFamily, { icon: string; bar: string }> = {
+  identity: { icon: 'text-cyan-400', bar: 'bg-cyan-400/60' },        // identity + the three fact scopes
+  goals: { icon: 'text-amber-400', bar: 'bg-amber-400/60' },         // goals + backlog
+  procedural: { icon: 'text-violet-400', bar: 'bg-violet-400/60' },  // procedurals + rituals
+  episodic: { icon: 'text-fuchsia-400', bar: 'bg-fuchsia-400/60' },  // episodes + reflections + decisions
+  doctrine: { icon: 'text-slate-400', bar: 'bg-slate-400/60' },      // doctrine + constitution
+};
+
+const KINDS: { kind: BrainKind; icon: typeof Bot; labelKey: KindLabelKey; descKey: KindDescKey; family: BrainFamily }[] = [
   // Reading order: who I think she is (identity), what she knows about
   // me (facts), what I'm trying to do (goals + backlog), how she's
   // agreed to behave (procedurals + rituals), what she remembers
   // (episodes, reflections), the docs, her contract.
-  { kind: 'identity', icon: User, labelKey: 'identity', descKey: 'brain_desc_identity' },
-  { kind: 'fact:user', icon: UserCircle2, labelKey: 'facts_user', descKey: 'brain_desc_facts_user' },
-  { kind: 'fact:project', icon: Sparkles, labelKey: 'facts_project', descKey: 'brain_desc_facts_project' },
-  { kind: 'fact:world', icon: Globe2, labelKey: 'facts_world', descKey: 'brain_desc_facts_world' },
-  { kind: 'goal', icon: Target, labelKey: 'goals', descKey: 'brain_desc_goals' },
-  { kind: 'backlog', icon: Inbox, labelKey: 'backlog', descKey: 'brain_desc_backlog' },
-  { kind: 'procedural', icon: Workflow, labelKey: 'procedurals', descKey: 'brain_desc_procedurals' },
-  { kind: 'ritual', icon: Compass, labelKey: 'rituals', descKey: 'brain_desc_rituals' },
-  { kind: 'episode', icon: Bot, labelKey: 'episodes', descKey: 'brain_desc_episodes' },
-  { kind: 'reflection', icon: ListChecks, labelKey: 'reflections', descKey: 'brain_desc_reflections' },
-  { kind: 'design_decision', icon: ScrollText, labelKey: 'design_decisions', descKey: 'brain_desc_design_decisions' },
-  { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine', descKey: 'brain_desc_doctrine' },
-  { kind: 'constitution', icon: Layers, labelKey: 'constitution', descKey: 'brain_desc_constitution' },
+  { kind: 'identity', icon: User, labelKey: 'identity', descKey: 'brain_desc_identity', family: 'identity' },
+  { kind: 'fact:user', icon: UserCircle2, labelKey: 'facts_user', descKey: 'brain_desc_facts_user', family: 'identity' },
+  { kind: 'fact:project', icon: Sparkles, labelKey: 'facts_project', descKey: 'brain_desc_facts_project', family: 'identity' },
+  { kind: 'fact:world', icon: Globe2, labelKey: 'facts_world', descKey: 'brain_desc_facts_world', family: 'identity' },
+  { kind: 'goal', icon: Target, labelKey: 'goals', descKey: 'brain_desc_goals', family: 'goals' },
+  { kind: 'backlog', icon: Inbox, labelKey: 'backlog', descKey: 'brain_desc_backlog', family: 'goals' },
+  { kind: 'procedural', icon: Workflow, labelKey: 'procedurals', descKey: 'brain_desc_procedurals', family: 'procedural' },
+  { kind: 'ritual', icon: Compass, labelKey: 'rituals', descKey: 'brain_desc_rituals', family: 'procedural' },
+  { kind: 'episode', icon: Bot, labelKey: 'episodes', descKey: 'brain_desc_episodes', family: 'episodic' },
+  { kind: 'reflection', icon: ListChecks, labelKey: 'reflections', descKey: 'brain_desc_reflections', family: 'episodic' },
+  { kind: 'design_decision', icon: ScrollText, labelKey: 'design_decisions', descKey: 'brain_desc_design_decisions', family: 'episodic' },
+  { kind: 'doctrine', icon: BookOpen, labelKey: 'doctrine', descKey: 'brain_desc_doctrine', family: 'doctrine' },
+  { kind: 'constitution', icon: Layers, labelKey: 'constitution', descKey: 'brain_desc_constitution', family: 'doctrine' },
 ];
 
 /**
@@ -246,30 +268,35 @@ function TypesView() {
 
   return (
     <div className="grid grid-cols-2 gap-3 p-5">
-      {KINDS.map(({ kind, icon: Icon, labelKey, descKey }) => (
-        <button
-          key={kind}
-          onClick={() => setBrainView({ open: true, kind, id: null })}
-          className="text-left rounded-card border border-foreground/10 hover:border-primary/30 bg-foreground/[0.02] hover:bg-primary/5 px-4 py-3 transition-colors focus-ring"
-        >
-          <div className="flex items-center gap-2 mb-1">
-            <Icon className="w-4 h-4 text-primary" />
-            <span className="typo-body font-medium">
-              {t.plugins.companion[labelKey]}
-            </span>
-          </div>
-          <div className="typo-caption text-foreground mb-1.5">
-            {t.plugins.companion[descKey]}
-          </div>
-          <div className="typo-caption text-primary/80">
-            {counts[kind] === undefined
-              ? '…'
-              : counts[kind] === 1
-                ? t.plugins.companion.brain_one_item
-                : `${counts[kind]} ${t.plugins.companion.brain_items}`}
-          </div>
-        </button>
-      ))}
+      {KINDS.map(({ kind, icon: Icon, labelKey, descKey, family }) => {
+        const accent = FAMILY_ACCENT[family];
+        return (
+          <button
+            key={kind}
+            onClick={() => setBrainView({ open: true, kind, id: null })}
+            className="relative overflow-hidden text-left rounded-card border border-foreground/10 hover:border-primary/30 bg-foreground/[0.02] hover:bg-primary/5 px-4 py-3 transition-all hover:-translate-y-0.5 hover:shadow-elevation-2 focus-ring"
+          >
+            {/* Left accent bar — the family's colour, clipped to the card radius. */}
+            <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${accent.bar}`} />
+            <div className="flex items-center gap-2 mb-1">
+              <Icon className={`w-4 h-4 ${accent.icon}`} />
+              <span className="typo-body font-medium">
+                {t.plugins.companion[labelKey]}
+              </span>
+            </div>
+            <div className="typo-caption text-foreground mb-1.5">
+              {t.plugins.companion[descKey]}
+            </div>
+            <div className="typo-body font-semibold text-foreground">
+              {counts[kind] === undefined
+                ? '…'
+                : counts[kind] === 1
+                  ? t.plugins.companion.brain_one_item
+                  : `${counts[kind]} ${t.plugins.companion.brain_items}`}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -300,11 +327,7 @@ function ListView({ kind }: { kind: BrainKind }) {
     );
   }
   if (items.length === 0) {
-    return (
-      <p className="p-5 typo-body text-foreground">
-        {t.plugins.companion.brain_empty}
-      </p>
-    );
+    return <ListEmpty kind={kind} />;
   }
 
   return (
@@ -321,11 +344,21 @@ function ListView({ kind }: { kind: BrainKind }) {
                   {item.title}
                 </span>
                 <span className="typo-caption text-foreground shrink-0">
-                  · {formatRelativeTime(item.meta)}
+                  ·{' '}
+                  {Number.isNaN(Date.parse(item.meta)) ? (
+                    // `meta` is overloaded: a bare timestamp for some kinds
+                    // (episodes, reflections, …) but a composite status line
+                    // for others (goals, backlog, …). Only render the live
+                    // relative-time label when it actually parses as a date;
+                    // otherwise show the composite string verbatim.
+                    item.meta
+                  ) : (
+                    <RelativeTime timestamp={item.meta} className="text-foreground" />
+                  )}
                 </span>
               </div>
               <div className="typo-caption text-foreground line-clamp-2">
-                {item.preview || '(empty)'}
+                {item.preview || t.plugins.companion.brain_empty_placeholder}
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-foreground mt-1 shrink-0" />
@@ -333,6 +366,127 @@ function ListView({ kind }: { kind: BrainKind }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** Icon for a memory kind, mirroring `kindLabel`'s scoped-variant prefixes. */
+function kindIcon(kind: BrainKind): LucideIcon {
+  const exact = KINDS.find((k) => k.kind === kind);
+  if (exact) return exact.icon;
+  if (kind.startsWith('procedural')) return Workflow;
+  if (kind.startsWith('goal')) return Target;
+  if (kind.startsWith('ritual')) return Compass;
+  if (kind.startsWith('backlog')) return Inbox;
+  if (kind.startsWith('fact')) return Sparkles;
+  return Bot;
+}
+
+/**
+ * Empty memory kind — a guided launchpad instead of a dead `<p>`. Reuses the
+ * shared `EmptyState` primitive (icon + title + hint) and routes the user
+ * forward with a kind-aware CTA:
+ *   - `reflection` → run the reflection generator and jump straight to the
+ *     new entry (mirrors the Memory tab's bulk action; resolves the empty
+ *     state on the spot).
+ *   - fact kinds → kick off a consolidation pass (the pipeline that proposes
+ *     facts to remember), with a toast pointing at the Memory-tab review.
+ *   - everything else → open Athena's chat seeded with a "help me add the
+ *     first entry" opener, mirroring WelcomeHero's launchpad feel.
+ */
+function ListEmpty({ kind }: { kind: BrainKind }) {
+  const { t, tx } = useTranslation();
+  const setBrainView = useCompanionStore((s) => s.setBrainView);
+  const addToast = useToastStore((s) => s.addToast);
+  const [running, setRunning] = useState(false);
+
+  const Icon = kindIcon(kind);
+  const isReflection = kind === 'reflection';
+  const isFact = kind === 'fact' || kind.startsWith('fact:');
+
+  const generateReflection = useCallback(async () => {
+    setRunning(true);
+    try {
+      const id = await companionRunReflection();
+      addToast(t.plugins.companion.reflections, 'success');
+      // Jump straight to the new reflection so the result is visible — this
+      // also unmounts the empty state.
+      setBrainView({ open: true, kind: 'reflection', id });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addToast(`${t.plugins.companion.reflection_failed}: ${msg}`, 'error');
+      silentCatch('companion_run_reflection')(err);
+      setRunning(false);
+    }
+  }, [addToast, setBrainView, t]);
+
+  const runConsolidation = useCallback(async () => {
+    setRunning(true);
+    try {
+      await companionRunConsolidation();
+      addToast(t.plugins.companion.brain_empty_consolidation_started, 'success');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      addToast(msg, 'error');
+      silentCatch('companion_run_consolidation')(err);
+    } finally {
+      setRunning(false);
+    }
+  }, [addToast, t]);
+
+  const askAthena = useCallback(() => {
+    useCompanionStore.getState().setPendingPrompt({
+      text: tx(t.plugins.companion.brain_empty_ask_prompt, {
+        kind: kindLabel(t, kind),
+      }),
+      autoSend: true,
+    });
+    useCompanionStore.getState().setState('open');
+  }, [t, tx, kind]);
+
+  if (running) {
+    return (
+      <EmptyState
+        icon={Icon}
+        title={t.plugins.companion.brain_empty}
+        subtitle={t.plugins.companion.brain_empty_hint}
+      >
+        <div className="flex items-center gap-2 typo-caption text-foreground">
+          <LoadingSpinner size="sm" />
+          <span>
+            {isReflection
+              ? t.plugins.companion.reflection_running
+              : t.plugins.companion.consolidation_running}
+          </span>
+        </div>
+      </EmptyState>
+    );
+  }
+
+  const action = isReflection
+    ? {
+        label: t.plugins.companion.memory_generate_reflection,
+        onClick: generateReflection,
+        icon: Sparkles,
+      }
+    : isFact
+      ? {
+          label: t.plugins.companion.memory_run_consolidation,
+          onClick: runConsolidation,
+          icon: RefreshCw,
+        }
+      : {
+          label: t.plugins.companion.brain_empty_ask_cta,
+          onClick: askAthena,
+          icon: Sparkles,
+        };
+
+  return (
+    <EmptyState
+      icon={Icon}
+      title={t.plugins.companion.brain_empty}
+      subtitle={t.plugins.companion.brain_empty_hint}
+      action={action}
+    />
   );
 }
 
@@ -403,7 +557,7 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
         )}
       </div>
       <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-        <MarkdownRenderer content={detail.content || '(empty)'} />
+        <MarkdownRenderer content={detail.content || t.plugins.companion.brain_empty_placeholder} />
         <BrainLinksStrip
           content={detail.content || ''}
           onOpen={(kind, id) => setBrainView({ open: true, kind, id })}
@@ -426,19 +580,4 @@ function DetailView({ kind, id }: { kind: BrainKind; id: string }) {
       )}
     </div>
   );
-}
-
-/** Render an ISO timestamp as "Xm ago" / "Xh ago" / "MMM D". Cheap. */
-function formatRelativeTime(iso: string): string {
-  const t = Date.parse(iso);
-  if (Number.isNaN(t)) return iso;
-  const diffSec = (Date.now() - t) / 1000;
-  if (diffSec < 60) return 'just now';
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
-  if (diffSec < 7 * 86400) return `${Math.floor(diffSec / 86400)}d ago`;
-  return new Date(t).toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-  });
 }

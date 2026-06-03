@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   Check, X, AlertTriangle, Info, AlertCircle,
@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
+import { InboxZero } from '@/features/shared/components/feedback/EmptyState';
 import { ContextDataPreview } from './ReviewListItem';
 import { silentCatch } from '@/lib/silentCatch';
 
@@ -74,6 +75,19 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
   const current = pending[currentIdx];
   const total = pending.length;
 
+  // One-shot inbox-zero celebration: fire only when the queue drains from
+  // having items to empty (i.e. the user just actioned the LAST review), not
+  // when the panel mounts already-empty. The pop itself is reduced-motion
+  // gated inside InboxZero.
+  const [justCleared, setJustCleared] = useState(false);
+  const prevTotalRef = useRef(total);
+  useEffect(() => {
+    const prev = prevTotalRef.current;
+    prevTotalRef.current = total;
+    if (prev > 0 && total === 0) setJustCleared(true);
+    else if (total > 0) setJustCleared(false);
+  }, [total]);
+
   // Decision state for multi-decision context_data
   const [decisionStates, setDecisionStates] = useState<Record<string, 'accepted' | 'rejected' | null>>({});
   const toggleDecision = useCallback((id: string, state: 'accepted' | 'rejected') => {
@@ -138,11 +152,12 @@ export function TriagePlayer({ reviews, onApprove, onReject, isProcessing }: Tri
 
   if (total === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center">
-          <Check className="w-8 h-8 text-emerald-400" />
-        </div>
-        <p className="typo-body text-foreground">{t.overview.review.all_caught_up}</p>
+      <div className="flex items-center justify-center py-16">
+        <InboxZero
+          title={t.overview.review_focus.all_caught_up}
+          subtitle={t.overview.review_focus.no_pending}
+          celebrate={justCleared}
+        />
       </div>
     );
   }

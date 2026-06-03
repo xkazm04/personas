@@ -97,7 +97,7 @@ export function CloudDeploymentsPanel({
               disabled={isDeploying || deployablePersonas.length === 0}
               className="w-full px-3 py-2 typo-body rounded-modal
                          bg-secondary/40 border border-primary/15
-                         text-foreground placeholder:text-foreground
+                         text-foreground placeholder:text-muted-foreground
                          focus-visible:outline-none focus-visible:border-indigo-500/40
                          disabled:opacity-40 disabled:cursor-not-allowed
                          transition-colors"

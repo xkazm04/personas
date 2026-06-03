@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import { Activity, AlertCircle, Flame, Snowflake, TrendingDown, TrendingUp } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -171,6 +172,7 @@ export function ExecutionHeatmap({
   className,
 }: ExecutionHeatmapProps) {
   const { t, tx, language } = useTranslation();
+  const reduceMotion = useReducedMotion() ?? false;
   const [data, setData] = useState<ExecutionHeatmapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -257,6 +259,8 @@ export function ExecutionHeatmap({
               onHover={setHover}
               onClick={onDayClick}
               t={t}
+              tx={tx}
+              reduceMotion={reduceMotion}
             />
           </div>
 
@@ -310,7 +314,7 @@ function HeatmapSkeleton() {
 }
 
 function HeatmapGrid({
-  weeks, monthLabels, thresholds, onHover, onClick, t,
+  weeks, monthLabels, thresholds, onHover, onClick, t, tx, reduceMotion,
 }: {
   weeks: FilledDay[][];
   monthLabels: { weekIndex: number; month: number }[];
@@ -318,6 +322,8 @@ function HeatmapGrid({
   onHover: (hover: { day: FilledDay; rect: DOMRect } | null) => void;
   onClick?: (date: string) => void;
   t: Translations;
+  tx: (template: string, params: Record<string, string | number>) => string;
+  reduceMotion: boolean;
 }) {
   const cols = weeks.length;
   const width = cols * (CELL_SIZE + CELL_GAP) - CELL_GAP;
@@ -327,7 +333,10 @@ function HeatmapGrid({
     <svg
       width={width}
       height={WEEK_HEIGHT + monthLabelHeight + 4}
-      role="img"
+      // When day cells are clickable they become focusable buttons, so the SVG
+      // is a labelled group rather than an atomic image (role="img" would hide
+      // the interactive children from assistive tech).
+      role={onClick ? 'group' : 'img'}
       aria-label={debtText("auto_execution_activity_over_the_last_year_d8c7055f")}
       style={{ display: 'block' }}
     >
@@ -362,12 +371,24 @@ function HeatmapGrid({
               fill={INTENSITY_FILL[level]}
               stroke={INTENSITY_BORDER[level]}
               strokeWidth={0.6}
+              // Interactive cells are keyboard-operable buttons with a visible
+              // focus ring (was mouse-only before — WCAG 2.4.7 / 2.1.1).
+              className={interactive ? 'focus-ring' : undefined}
+              role={interactive ? 'button' : undefined}
+              tabIndex={interactive ? 0 : undefined}
+              aria-label={interactive ? dayLabelText(day, t, tx) : undefined}
               style={{
                 cursor: interactive ? 'pointer' : 'default',
-                transition: 'transform 120ms ease, filter 120ms ease',
+                // Reduced-motion: drop the hover transform/filter transition.
+                transition: reduceMotion ? undefined : 'transform 120ms ease, filter 120ms ease',
               }}
               onMouseEnter={(e) => onHover({ day, rect: e.currentTarget.getBoundingClientRect() })}
               onMouseLeave={() => onHover(null)}
+              onFocus={interactive ? (e) => onHover({ day, rect: e.currentTarget.getBoundingClientRect() }) : undefined}
+              onBlur={interactive ? () => onHover(null) : undefined}
+              onKeyDown={interactive ? (e) => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick?.(day.date); }
+              } : undefined}
               onClick={() => interactive && onClick?.(day.date)}
             />
           );
@@ -377,13 +398,14 @@ function HeatmapGrid({
   );
 }
 
-function HoverLine({
-  day, t, tx,
-}: {
-  day: FilledDay;
-  t: Translations;
-  tx: (template: string, params: Record<string, string | number>) => string;
-}) {
+/** Single source of truth for a day's readout — used by both the hover/focus
+ *  tooltip and the cell's `aria-label`, so keyboard and screen-reader users get
+ *  the exact same information as a mouse hover. */
+function dayLabelText(
+  day: FilledDay,
+  t: Translations,
+  tx: (template: string, params: Record<string, string | number>) => string,
+): string {
   const date = formatHumanDate(day.date);
   let line: string;
   if (day.count === 0) line = t.overview.heatmap.tooltip_no_runs;
@@ -393,7 +415,17 @@ function HoverLine({
   if (day.cost > 0) {
     line += tx(t.overview.heatmap.tooltip_with_cost, { cost: day.cost.toFixed(2) });
   }
-  return <span>{line}</span>;
+  return line;
+}
+
+function HoverLine({
+  day, t, tx,
+}: {
+  day: FilledDay;
+  t: Translations;
+  tx: (template: string, params: Record<string, string | number>) => string;
+}) {
+  return <span>{dayLabelText(day, t, tx)}</span>;
 }
 
 const TOOLTIP_OFFSET = 8;

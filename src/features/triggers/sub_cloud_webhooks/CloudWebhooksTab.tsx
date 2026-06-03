@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { Cloud, CloudOff, Copy, Check, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import EmptyState from '@/features/shared/components/feedback/EmptyState';
+import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
 import { useAgentStore } from '@/stores/agentStore';
 import { useCloudWebhookRelay } from '@/hooks/realtime/useCloudWebhookRelay';
 import {
@@ -125,17 +127,11 @@ export function CloudWebhooksTab() {
   if (!relay.connected && !isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="w-14 h-14 mx-auto rounded-2xl bg-muted/30 border border-border/30 flex items-center justify-center">
-            <CloudOff className="w-7 h-7 text-foreground" />
-          </div>
-          <div>
-            <p className="typo-body font-medium text-foreground">{t.triggers.cloud_not_connected}</p>
-            <p className="typo-body text-foreground mt-1">
-              {t.triggers.cloud_not_connected_desc}
-            </p>
-          </div>
-        </div>
+        <EmptyState
+          icon={CloudOff}
+          title={t.triggers.cloud_not_connected}
+          subtitle={t.triggers.cloud_not_connected_desc}
+        />
       </div>
     );
   }
@@ -224,28 +220,24 @@ export function CloudWebhooksTab() {
                 onClick={() => { setShowCreate(false); setCreatePersonaId(''); }}
                 className="px-3 py-2 typo-body text-foreground hover:text-foreground transition-colors"
               >
-                Cancel
+                {t.common.cancel}
               </button>
             </div>
           </div>
         )}
 
-        {/* Loading state */}
+        {/* Loading state — shape-matched skeleton rows so chrome lands before data */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" className="text-foreground" />
-          </div>
+          <ListSkeleton rows={3} rowHeight={64} className="rounded-modal overflow-hidden" />
         )}
 
         {/* Empty state */}
         {!isLoading && webhookRows.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <Webhook className="w-8 h-8 text-foreground mb-3" />
-            <p className="typo-body text-foreground">{t.triggers.no_webhook_triggers}</p>
-            <p className="typo-body text-foreground mt-1">
-              {t.triggers.no_webhook_triggers_desc}
-            </p>
-          </div>
+          <EmptyState
+            icon={Webhook}
+            title={t.triggers.no_webhook_triggers}
+            subtitle={t.triggers.no_webhook_triggers_desc}
+          />
         )}
 
         {/* Webhook triggers list */}
@@ -301,9 +293,9 @@ export function CloudWebhooksTab() {
                         title={t.triggers.copy_webhook_secret_title}
                       >
                         {copiedId === `secret-${row.trigger.id}` ? (
-                          <span className="text-emerald-400">Copied</span>
+                          <span className="text-emerald-400">{t.common.copied}</span>
                         ) : (
-                          'Secret'
+                          t.triggers.secret_label
                         )}
                       </button>
                     )}
@@ -328,9 +320,7 @@ export function CloudWebhooksTab() {
               {t.triggers.recent_firings}
             </h4>
             {firingsLoading ? (
-              <div className="flex items-center justify-center py-6">
-                <LoadingSpinner className="text-foreground" />
-              </div>
+              <ListSkeleton rows={3} rowHeight={40} leading={false} className="border border-border/30 rounded-modal overflow-hidden" />
             ) : firings.length === 0 ? (
               <p className="typo-body text-foreground py-4">{t.triggers.no_firings}</p>
             ) : (
@@ -338,8 +328,8 @@ export function CloudWebhooksTab() {
                 <div className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2 bg-secondary/30 border-b border-border/20 text-xs font-mono text-foreground uppercase tracking-wider">
                   <span>{t.triggers.status_col_label}</span>
                   <span>{t.triggers.fired_at_label}</span>
-                  <span>Duration</span>
-                  <span className="text-right">Cost</span>
+                  <span>{t.triggers.duration_col_label}</span>
+                  <span className="text-right">{t.triggers.cost_col_label}</span>
                 </div>
                 {firings.map((f) => (
                   <div key={f.id} className="grid grid-cols-[1fr_0.8fr_0.6fr_0.8fr] gap-3 px-4 py-2.5 border-b border-border/10 last:border-b-0 typo-body">

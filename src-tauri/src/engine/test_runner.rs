@@ -19,6 +19,14 @@ static SCENARIO_CACHE: std::sync::LazyLock<Mutex<HashMap<u64, (Instant, Vec<Test
 
 const SCENARIO_CACHE_TTL_SECS: u64 = 600;
 
+/// Truncate `s` to at most `max_chars` characters without splitting a multibyte
+/// UTF-8 character. Byte-range slicing (`&s[..n]`) panics when `n` lands
+/// mid-glyph, which LLM output (emoji, smart quotes, em-dashes, CJK) routinely
+/// produces — so previews here must count characters, not bytes.
+fn truncate_chars(s: &str, max_chars: usize) -> String {
+    s.chars().take(max_chars).collect()
+}
+
 fn scenario_cache_key(
     persona: &crate::db::models::Persona,
     tools: &[crate::db::models::PersonaToolDefinition],
@@ -710,7 +718,7 @@ fn parse_scenarios_from_output(output: &str) -> Result<Vec<TestScenario>, String
 
     Err(format!(
         "Failed to parse test scenarios from coordinator output. Raw output (first 500 chars): {}",
-        &trimmed[..trimmed.len().min(500)]
+        truncate_chars(trimmed, 500)
     ))
 }
 
@@ -822,7 +830,7 @@ async fn execute_scenario_ollama(
         return Err(format!(
             "Ollama API error ({}): {}",
             status,
-            &text[..text.len().min(200)]
+            truncate_chars(&text, 200)
         ));
     }
 
@@ -935,12 +943,10 @@ pub(crate) async fn score_result(
         Some(crate::db::models::Json(output.tool_calls.clone()))
     };
 
-    let preview = if output.assistant_text.len() > 2000 {
-        Some(output.assistant_text[..2000].to_string())
-    } else if output.assistant_text.is_empty() {
+    let preview = if output.assistant_text.is_empty() {
         None
     } else {
-        Some(output.assistant_text.clone())
+        Some(truncate_chars(&output.assistant_text, 2000))
     };
 
     // Try LLM-based evaluation for richer scoring with rationale/suggestions
@@ -2526,7 +2532,7 @@ fn parse_draft_from_output(output: &str) -> Result<(serde_json::Value, String), 
 
     Err(format!(
         "Failed to parse draft from output. Raw output (first 500 chars): {}",
-        &trimmed[..trimmed.len().min(500)]
+        truncate_chars(trimmed, 500)
     ))
 }
 
@@ -2644,4 +2650,30 @@ Respond with ONLY a JSON object (no markdown fences, no extra text):
         run_results_summary = run_results_summary,
         user_feedback_section = user_feedback_section,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn truncate_chars_never_panics_on_multibyte_boundary() {
+        // A 4-byte emoji straddling every byte index up to the char limit is the
+        // exact condition that made `&s[..n]` panic. Counting chars must be safe.
+        let s = "😀".repeat(50); // 50 chars, 200 bytes
+        for n in 0..=60 {
+            let out = truncate_chars(&s, n);
+            assert_eq!(out.chars().count(), n.min(50));
+            assert!(s.starts_with(&out));
+        }
+    }
+
+    #[test]
+    fn truncate_chars_keeps_short_strings_whole() {
+        assert_eq!(truncate_chars("hello", 2000), "hello");
+        assert_eq!(truncate_chars("", 500), "");
+        // Smart quotes / em-dashes are multibyte too — must pass through intact.
+        let mixed = "“café” — 你好 🚀";
+        assert_eq!(truncate_chars(mixed, 2000), mixed);
+    }
 }

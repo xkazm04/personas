@@ -84,59 +84,75 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
       />
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        {/* Left — roster */}
+        {/* Left — navigation + roster, sectioned so the eye separates
+            WORKSPACE (navigation) from MEMBERS (data) like an IDE sidebar. */}
         <div className="flex-shrink-0 w-[300px] flex flex-col border-r border-primary/10 bg-secondary/10">
-          <div className="flex-shrink-0 px-4 py-2.5 border-b border-primary/10">
-            <p className="typo-caption text-foreground/60">{memberCountLabel}</p>
+          {/* WORKSPACE — the mode trio, tightened into one distinct group. */}
+          <div className="flex-shrink-0 px-3 pt-3 pb-2">
+            <p className="px-1 mb-1.5 typo-label uppercase tracking-wider text-foreground">
+              {ts.section_workspace}
+            </p>
+            <div className="flex flex-col gap-0.5 rounded-card bg-secondary/20 p-1">
+              {/* Orchestrate — the primary action */}
+              <button
+                type="button"
+                data-testid="team-mode-orchestrate"
+                onClick={() => setMode({ kind: 'orchestrate' })}
+                aria-pressed={mode.kind === 'orchestrate'}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
+                  mode.kind === 'orchestrate'
+                    ? 'border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 text-violet-200'
+                    : 'border-transparent text-foreground hover:bg-secondary/40'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 flex-shrink-0" />
+                <span className="typo-body font-medium">{ts.orchestrate_assignment}</span>
+              </button>
+
+              {/* Assignment board — manage the team's multiple assignments */}
+              <button
+                type="button"
+                data-testid="team-mode-board"
+                onClick={() => setMode({ kind: 'board' })}
+                aria-pressed={mode.kind === 'board'}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
+                  mode.kind === 'board'
+                    ? 'border-primary/40 bg-secondary/40 text-foreground/90'
+                    : 'border-transparent text-foreground hover:bg-secondary/40'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 flex-shrink-0" />
+                <span className="typo-body font-medium">{ts.board_label}</span>
+              </button>
+
+              {/* Workspace settings */}
+              <button
+                type="button"
+                data-testid="team-mode-workspace"
+                onClick={() => setMode({ kind: 'workspace' })}
+                aria-pressed={mode.kind === 'workspace'}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
+                  mode.kind === 'workspace'
+                    ? 'border-primary/40 bg-secondary/40 text-foreground/90'
+                    : 'border-transparent text-foreground hover:bg-secondary/40'
+                }`}
+              >
+                <Settings className="w-4 h-4 flex-shrink-0" />
+                <span className="typo-body font-medium">{ts.workspace_settings}</span>
+              </button>
+            </div>
           </div>
 
-          {/* Orchestrate entry — pinned at top of the list as the primary action */}
-          <button
-            type="button"
-            data-testid="team-mode-orchestrate"
-            onClick={() => setMode({ kind: 'orchestrate' })}
-            aria-pressed={mode.kind === 'orchestrate'}
-            className={`flex-shrink-0 mx-2 mt-2 mb-1 flex items-center gap-2 px-3 py-2.5 rounded-card border transition-colors ${
-              mode.kind === 'orchestrate'
-                ? 'border-violet-500/40 bg-gradient-to-r from-violet-500/15 to-indigo-500/15 text-violet-200'
-                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
-            }`}
-          >
-            <Sparkles className="w-4 h-4 flex-shrink-0" />
-            <span className="typo-body font-medium">{ts.orchestrate_assignment}</span>
-          </button>
+          {/* Hairline divider — navigation above, member data below. */}
+          <div className="flex-shrink-0 border-t border-primary/10" />
 
-          {/* Assignment board — manage the team's multiple assignments */}
-          <button
-            type="button"
-            data-testid="team-mode-board"
-            onClick={() => setMode({ kind: 'board' })}
-            aria-pressed={mode.kind === 'board'}
-            className={`flex-shrink-0 mx-2 mb-1 flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
-              mode.kind === 'board'
-                ? 'border-primary/40 bg-secondary/40 text-foreground/90'
-                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4 flex-shrink-0" />
-            <span className="typo-body font-medium">{ts.board_label}</span>
-          </button>
-
-          {/* Workspace settings entry */}
-          <button
-            type="button"
-            data-testid="team-mode-workspace"
-            onClick={() => setMode({ kind: 'workspace' })}
-            aria-pressed={mode.kind === 'workspace'}
-            className={`flex-shrink-0 mx-2 mb-1 flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
-              mode.kind === 'workspace'
-                ? 'border-primary/40 bg-secondary/40 text-foreground/90'
-                : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/40'
-            }`}
-          >
-            <Settings className="w-4 h-4 flex-shrink-0" />
-            <span className="typo-body font-medium">{ts.workspace_settings}</span>
-          </button>
+          {/* MEMBERS — the roster */}
+          <div className="flex-shrink-0 px-3 pt-3 pb-1.5 flex items-center justify-between gap-2">
+            <p className="px-1 typo-label uppercase tracking-wider text-foreground">
+              {ts.section_members}
+            </p>
+            <span className="typo-caption text-foreground">{memberCountLabel}</span>
+          </div>
 
           <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-2 flex flex-col gap-1">
             {members.map((m) => (

@@ -278,6 +278,19 @@ export function NetworkDashboard() {
         </div>
       ) : (
         <div className="space-y-2">
+          {/* Degraded-identity warning — the snapshot reports `identity_degraded`
+              when the local signing key couldn't be resolved (e.g. a reset OS
+              keyring). Surface it instead of silently showing a blank Peer ID. */}
+          {networkStatus.identity_degraded && (
+            <div className="rounded-card border border-status-error/40 bg-status-error/10 p-3 flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-status-error flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="typo-body font-medium text-status-error">{st.identity_degraded_title}</div>
+                <div className="typo-caption text-foreground mt-0.5">{st.identity_degraded_hint}</div>
+              </div>
+            </div>
+          )}
+
           {/* Stat cards grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {/* Status card */}

@@ -40,26 +40,41 @@ fn render_template(template: &str, input_data: &HashMap<String, serde_json::Valu
         .into_owned()
 }
 
-/// Scan rendered prompt for unreplaced `{{variable}}` placeholders and return
-/// an error listing the missing variables if any are found.
-fn validate_no_unreplaced_placeholders(rendered: &str) -> Result<(), AppError> {
-    let missing: Vec<String> = PLACEHOLDER_RE
-        .captures_iter(rendered)
-        .map(|c| c[1].to_string())
-        .collect::<Vec<_>>();
-    // deduplicate while preserving order
+/// Collect the unique `{{key}}` placeholders declared in the RAW template,
+/// in first-seen order.
+fn template_placeholder_keys(template: &str) -> Vec<&str> {
     let mut seen = std::collections::HashSet::new();
-    let unique: Vec<&str> = missing
-        .iter()
-        .filter(|s| seen.insert(s.as_str()))
-        .map(|s| s.as_str())
+    PLACEHOLDER_RE
+        .captures_iter(template)
+        .filter_map(|c| c.get(1).map(|m| m.as_str()))
+        .filter(|key| seen.insert(*key))
+        .collect()
+}
+
+/// Validate that every `{{key}}` placeholder declared in the RAW recipe template
+/// has a corresponding value in `input_data`, returning an error listing the
+/// unsupplied variables if any are missing.
+///
+/// The required-key set is derived from the *template*, not from a re-scan of the
+/// rendered prompt. Re-scanning the output is unsound because substitution is
+/// single-pass: a user-supplied value that legitimately contains literal `{{...}}`
+/// text — code snippets, mustache examples, quoted templates — would otherwise be
+/// mistaken for an unreplaced placeholder and abort an execution where every real
+/// variable was actually provided.
+fn validate_required_inputs_present(
+    template: &str,
+    input_data: &HashMap<String, serde_json::Value>,
+) -> Result<(), AppError> {
+    let missing: Vec<&str> = template_placeholder_keys(template)
+        .into_iter()
+        .filter(|key| !input_data.contains_key(*key))
         .collect();
-    if unique.is_empty() {
+    if missing.is_empty() {
         Ok(())
     } else {
         Err(AppError::Validation(format!(
             "Template has unreplaced placeholder(s): {}. Provide values for these variables.",
-            unique.join(", ")
+            missing.join(", ")
         )))
     }
 }
@@ -102,12 +117,15 @@ pub fn update_recipe(
 pub fn delete_recipe(state: State<'_, Arc<AppState>>, id: String) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
 
-    // Check for in-flight tasks referencing this recipe and reject deletion
-    // to prevent orphaned background processes and confusing UI errors.
-    for domain in &["recipe_execution", "recipe_generation", "recipe_versioning"] {
-        if state.process_registry.get_id(domain).is_some() {
+    // Reject deletion only when an in-flight task targets *this* recipe, to
+    // prevent orphaned background processes and confusing UI errors. A run
+    // against a different recipe must not block this delete. `recipe_generation`
+    // is intentionally absent: it produces a brand-new recipe and references no
+    // existing one, so it can never conflict with deleting an existing recipe.
+    for domain in &["recipe_execution", "recipe_versioning"] {
+        if state.process_registry.active_target(domain).as_deref() == Some(id.as_str()) {
             return Err(AppError::Validation(format!(
-                "Cannot delete recipe while a {} task is in progress. Cancel it first.",
+                "Cannot delete recipe while a {} task is in progress for it. Cancel it first.",
                 domain.replace('_', " ")
             )));
         }
@@ -152,10 +170,13 @@ pub fn execute_recipe(
     require_auth_sync(&state)?;
     let recipe = repo::get_by_id(&state.db, &input.recipe_id)?;
 
+    // Validate required inputs against the RAW template before rendering, so that
+    // literal `{{...}}` text inside supplied values can't masquerade as a missing
+    // variable (see `validate_required_inputs_present`).
+    validate_required_inputs_present(&recipe.prompt_template, &input.input_data)?;
+
     // Single-pass substitution of {{variable}} placeholders
     let rendered = render_template(&recipe.prompt_template, &input.input_data);
-
-    validate_no_unreplaced_placeholders(&rendered)?;
 
     Ok(RecipeExecutionResult {
         recipe_id: recipe.id,
@@ -177,10 +198,13 @@ pub async fn start_recipe_execution(
     require_auth(&state).await?;
     let recipe = repo::get_by_id(&state.db, &recipe_id)?;
 
+    // Validate required inputs against the RAW template before rendering, so that
+    // literal `{{...}}` text inside supplied values can't masquerade as a missing
+    // variable (see `validate_required_inputs_present`).
+    validate_required_inputs_present(&recipe.prompt_template, &input_data)?;
+
     // Single-pass substitution of {{variable}} placeholders
     let rendered = render_template(&recipe.prompt_template, &input_data);
-
-    validate_no_unreplaced_placeholders(&rendered)?;
 
     let cli_args = build_credential_task_cli_args();
     let execution_id = uuid::Uuid::new_v4().to_string();
@@ -192,6 +216,8 @@ pub async fn start_recipe_execution(
         ));
     }
     registry.set_id("recipe_execution", execution_id.clone());
+    // Track which recipe this run targets so delete_recipe can scope its guard.
+    registry.set_target("recipe_execution", Some(recipe_id.clone()));
 
     spawn_ai_artifact_task(AiArtifactParams {
         app,
@@ -408,6 +434,8 @@ pub async fn start_recipe_versioning(
         ));
     }
     registry.set_id("recipe_versioning", versioning_id.clone());
+    // Track which recipe this run targets so delete_recipe can scope its guard.
+    registry.set_target("recipe_versioning", Some(recipe_id.clone()));
 
     spawn_ai_artifact_task(AiArtifactParams {
         app,
@@ -487,7 +515,7 @@ pub fn revert_recipe_version(
 // Tests
 //
 // These pin the contract documented in `docs/RECIPE-TEMPLATES.md`. Any change
-// to `render_template` or `validate_no_unreplaced_placeholders` must update
+// to `render_template` or `validate_required_inputs_present` must update
 // both the spec and these tests.
 // ============================================================================
 
@@ -602,20 +630,32 @@ mod tests {
         // A key with Value::Null is rendered, NOT reported as missing.
         let rendered = render_template("v={{v}}", &data(&[("v", Value::Null)]));
         assert_eq!(rendered, "v=null");
-        assert!(validate_no_unreplaced_placeholders(&rendered).is_ok());
+        assert!(validate_required_inputs_present("v={{v}}", &data(&[("v", Value::Null)])).is_ok());
     }
 
     #[test]
-    fn validate_no_unreplaced_placeholders_passes_when_clean() {
-        assert!(validate_no_unreplaced_placeholders("no braces here").is_ok());
-        assert!(validate_no_unreplaced_placeholders("Hello Ada.").is_ok());
+    fn validate_required_inputs_present_passes_when_no_placeholders() {
+        let none = data(&[]);
+        assert!(validate_required_inputs_present("no braces here", &none).is_ok());
+        assert!(validate_required_inputs_present("Hello Ada.", &none).is_ok());
     }
 
     #[test]
-    fn validate_no_unreplaced_placeholders_lists_missing_keys_unique_and_ordered() {
-        let err = validate_no_unreplaced_placeholders("{{a}} {{b}} {{a}} {{c}}").unwrap_err();
+    fn validate_required_inputs_present_passes_when_all_supplied() {
+        let provided = data(&[
+            ("name", Value::String("Ada".into())),
+            ("topic", Value::String("Rust".into())),
+        ]);
+        assert!(validate_required_inputs_present("{{name}} on {{topic}}", &provided).is_ok());
+    }
+
+    #[test]
+    fn validate_required_inputs_present_lists_missing_keys_unique_and_ordered() {
+        // No inputs supplied → every distinct placeholder is missing, deduped in
+        // first-seen order: a, b, c.
+        let err =
+            validate_required_inputs_present("{{a}} {{b}} {{a}} {{c}}", &data(&[])).unwrap_err();
         let msg = format!("{:?}", err);
-        // Deduped, first-seen order: a, b, c
         assert!(
             msg.contains("a, b, c"),
             "expected 'a, b, c' in error, got: {}",
@@ -624,9 +664,44 @@ mod tests {
     }
 
     #[test]
-    fn validate_no_unreplaced_placeholders_ignores_invalid_token_shapes() {
-        // `{{ name }}` and `{{user.name}}` aren't placeholders, so they don't
+    fn validate_required_inputs_present_reports_only_unsupplied_keys() {
+        // `a` is supplied, `b` is not → only `b` is reported.
+        let err = validate_required_inputs_present(
+            "{{a}} {{b}}",
+            &data(&[("a", Value::String("x".into()))]),
+        )
+        .unwrap_err();
+        let msg = format!("{:?}", err);
+        assert!(msg.contains('b'), "expected 'b' in error, got: {}", msg);
+        assert!(
+            !msg.contains("a,") && !msg.contains(" a") && !msg.contains("a}"),
+            "did not expect supplied key 'a' in error, got: {}",
+            msg
+        );
+    }
+
+    #[test]
+    fn validate_required_inputs_present_ignores_invalid_token_shapes() {
+        // `{{ name }}` and `{{user.name}}` aren't valid placeholders, so they don't
         // trigger missing-key errors.
-        assert!(validate_no_unreplaced_placeholders("{{ name }} {{user.name}}").is_ok());
+        assert!(
+            validate_required_inputs_present("{{ name }} {{user.name}}", &data(&[])).is_ok()
+        );
+    }
+
+    #[test]
+    fn validate_required_inputs_present_ignores_braces_in_supplied_values() {
+        // Regression: a supplied value that itself contains literal `{{...}}` text
+        // (a code snippet, a mustache example) must NOT be re-scanned and mistaken
+        // for an unreplaced placeholder. Every template variable is provided here,
+        // so validation passes even though the rendered output contains `{{x}}`.
+        let provided = data(&[(
+            "snippet",
+            Value::String("render with {{x}} and {{y}}".into()),
+        )]);
+        assert!(validate_required_inputs_present("Code: {{snippet}}", &provided).is_ok());
+        // And the rendered prompt indeed carries the literal braces through.
+        let rendered = render_template("Code: {{snippet}}", &provided);
+        assert_eq!(rendered, "Code: render with {{x}} and {{y}}");
     }
 }

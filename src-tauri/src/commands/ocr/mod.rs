@@ -187,15 +187,23 @@ async fn run_gemini_ocr(
     });
 
     let start = Instant::now();
+    // Send the credential via the `x-goog-api-key` header rather than a `?key=`
+    // query param: reqwest's error Display includes the request URL on
+    // connect/timeout/request failures, so a key in the URL would leak into
+    // AppError::Internal -> toasts, console, and Sentry breadcrumbs.
     let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent?key={}",
-        model_name, api_key
+        "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+        model_name
     );
 
     let cancel_token = operation_id.as_deref().map(register_cancel_token);
     let _guard = operation_id.as_deref().map(CancelGuard);
 
-    let request_future = SHARED_HTTP.post(&url).json(&body).send();
+    let request_future = SHARED_HTTP
+        .post(&url)
+        .header("x-goog-api-key", api_key)
+        .json(&body)
+        .send();
     let resp = match cancel_token.as_ref() {
         Some(token) => tokio::select! {
             biased;

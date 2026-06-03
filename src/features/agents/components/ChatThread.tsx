@@ -3,10 +3,10 @@ import {
   Bot,
   User,
 } from 'lucide-react';
-import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { ChatMessage } from '@/lib/bindings/ChatMessage';
 import { ChatMessageContent } from './ChatMessageContent';
+import { InlineErrorBanner } from '@/features/shared/components/feedback/InlineErrorBanner';
 
 interface ChatThreadProps {
   messages: ChatMessage[];
@@ -15,11 +15,16 @@ interface ChatThreadProps {
   error: string | null;
   streamingMessageId?: string | null;
   onSendToLab?: (code: string, language?: string) => void;
+  /**
+   * Resend the last turn. When provided, the error card surfaces a Retry
+   * button wired to this handler so the user can recover without re-typing.
+   */
+  onRetry?: () => void;
 }
 
 export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
   function ChatThread(
-    { messages, isThinking, thinkingLabel, error, streamingMessageId, onSendToLab },
+    { messages, isThinking, thinkingLabel, error, streamingMessageId, onSendToLab, onRetry },
     ref,
   ) {
     const { t } = useTranslation();
@@ -80,15 +85,27 @@ export const ChatThread = forwardRef<HTMLDivElement, ChatThreadProps>(
               <Bot className="w-3.5 h-3.5 text-primary/60" />
             </div>
             <div className="flex items-center gap-2 pt-1.5">
-              <LoadingSpinner size="sm" className="text-primary/50" />
+              <span className="flex items-center gap-1" aria-hidden="true">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.3s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:-0.15s]" />
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce" />
+              </span>
               <span className="typo-body text-foreground">{thinkingLabel}</span>
             </div>
           </div>
         )}
 
-        {/* Error */}
+        {/* Error — bordered status card aligned under the message column,
+            with a Retry affordance that resends the last turn. */}
         {error && (
-          <p className="typo-body text-red-400 px-10">{error}</p>
+          <div className="pl-10">
+            <InlineErrorBanner
+              severity="error"
+              message={error}
+              onRetry={onRetry}
+              compact
+            />
+          </div>
         )}
       </div>
     );

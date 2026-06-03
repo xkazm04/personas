@@ -20,7 +20,7 @@ import { ModelToggleGrid } from '../../shared';
 import { RegressionResultsView } from './RegressionResultsView';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useRegressionPanelState, REG_DEFAULT_THRESHOLD } from './useRegressionPanelState';
-import { compositeScore } from '@/lib/eval/evalFramework';
+import { computeRegressionDeltas } from './computeRegressionDeltas';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -44,22 +44,20 @@ export function RegressionPanelGate() {
   const s = useRegressionPanelState();
   const [hasRun, setHasRun] = useState(false);
 
+  // Same filtered input the breakdown view below consumes — so the gate
+  // verdict is provably the same math as the per-scenario rows it summarizes.
+  const comparisonResults = useMemo(
+    () => s.currentResults.filter((r) => r.versionId === s.selectedVersionId),
+    [s.currentResults, s.selectedVersionId],
+  );
+
   const gateState: GateState = useMemo(() => {
     if (s.running) return 'verifying';
     if (!hasRun) return 'open';
-    if (s.currentResults.length === 0 || s.baselineResults.length === 0) return 'open';
-    // Calculate verdict from results
-    let failures = 0;
-    for (const curr of s.currentResults) {
-      if (curr.toolAccuracyScore == null || curr.outputQualityScore == null || curr.protocolCompliance == null) continue;
-      const baseline = s.baselineResults.find((b) => b.scenarioName === curr.scenarioName && b.modelId === curr.modelId);
-      if (!baseline || baseline.toolAccuracyScore == null || baseline.outputQualityScore == null || baseline.protocolCompliance == null) continue;
-      const cComp = compositeScore(curr.toolAccuracyScore, curr.outputQualityScore, curr.protocolCompliance);
-      const bComp = compositeScore(baseline.toolAccuracyScore, baseline.outputQualityScore, baseline.protocolCompliance);
-      if (cComp - bComp < -s.threshold) failures += 1;
-    }
-    return failures > 0 ? 'held' : 'cleared';
-  }, [s.running, s.currentResults, s.baselineResults, s.threshold, hasRun]);
+    if (comparisonResults.length === 0 || s.baselineResults.length === 0) return 'open';
+    const { failureCount } = computeRegressionDeltas(s.baselineResults, comparisonResults, s.threshold);
+    return failureCount > 0 ? 'held' : 'cleared';
+  }, [s.running, comparisonResults, s.baselineResults, s.threshold, hasRun]);
 
   if (!s.baselinePin) {
     return (
@@ -192,7 +190,7 @@ export function RegressionPanelGate() {
         {s.currentResults.length > 0 && s.baselineResults.length > 0 && s.selectedVersion && (
           <RegressionResultsView
             baselineResults={s.baselineResults}
-            currentResults={s.currentResults.filter((r) => r.versionId === s.selectedVersionId)}
+            currentResults={comparisonResults}
             baselineVersionNum={s.baselinePin.versionNumber}
             currentVersionNum={s.selectedVersion.version_number}
             threshold={s.threshold}

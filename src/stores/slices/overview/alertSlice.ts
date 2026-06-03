@@ -47,16 +47,24 @@ interface MetricsSnapshot {
 function evaluateRule(rule: AlertRule, metrics: MetricsSnapshot): { triggered: boolean; value: number } {
   let value: number;
   switch (rule.metric) {
-    case 'error_rate':
-      value = metrics.totalExecutions > 0
-        ? (metrics.failedExecutions / metrics.totalExecutions) * 100
-        : 0;
+    // error_rate / success_rate use the DECIDED denominator — completed runs
+    // only (successful + failed) — to match the SLA repo (sla.rs: "success_rate
+    // must be successful / (successful + failed); cancelled rows are excluded")
+    // and prompt-performance (metrics.rs: error_rate over success + failed).
+    // Dividing by totalExecutions (COUNT(*) over ALL statuses incl. running,
+    // queued, cancelled) inflated the denominator, so an error_rate rule could
+    // sit under its threshold while the SLA card showed a higher rate, and
+    // success_rate + error_rate failed to sum to 100%.
+    case 'error_rate': {
+      const decided = metrics.successfulExecutions + metrics.failedExecutions;
+      value = decided > 0 ? (metrics.failedExecutions / decided) * 100 : 0;
       break;
-    case 'success_rate':
-      value = metrics.totalExecutions > 0
-        ? (metrics.successfulExecutions / metrics.totalExecutions) * 100
-        : 0;
+    }
+    case 'success_rate': {
+      const decided = metrics.successfulExecutions + metrics.failedExecutions;
+      value = decided > 0 ? (metrics.successfulExecutions / decided) * 100 : 0;
       break;
+    }
     case 'cost':
       value = metrics.totalCostUsd;
       break;

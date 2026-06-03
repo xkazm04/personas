@@ -87,8 +87,21 @@ pub fn get_rotation_history_bulk(
 ) -> Result<std::collections::HashMap<String, Vec<CredentialRotationEntry>>, AppError> {
     let mut out = std::collections::HashMap::with_capacity(credential_ids.len());
     for credential_id in credential_ids {
-        let history = rotation_repo::get_history(&state.db, &credential_id, limit)?;
-        out.insert(credential_id, history);
+        // Isolate per-credential failures: one corrupted row, transient lock, or
+        // bad id must not blank out the entire annotation layer. Mirrors
+        // `get_all_rotation_statuses` — log and skip, return the successful subset.
+        match rotation_repo::get_history(&state.db, &credential_id, limit) {
+            Ok(history) => {
+                out.insert(credential_id, history);
+            }
+            Err(e) => {
+                tracing::warn!(
+                    "Batched rotation history: skipping credential {}: {}",
+                    credential_id,
+                    e
+                );
+            }
+        }
     }
     Ok(out)
 }

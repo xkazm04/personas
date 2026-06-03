@@ -100,12 +100,12 @@ export default function GalleryPage() {
 
         {/* Search */}
         <div className="relative">
-          <Search className="w-[17px] h-[17px] absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground" />
+          <Search className="w-[17px] h-[17px] absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/60" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t.plugins.artist.search}
-            className="pl-8 pr-3 py-1.5 rounded-card bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground focus:outline-none focus:border-rose-500/30 w-48"
+            className="pl-8 pr-3 py-1.5 rounded-card bg-background/80 border border-primary/10 text-md text-foreground placeholder:text-foreground/40 focus-ring w-48"
           />
         </div>
 
@@ -114,7 +114,7 @@ export default function GalleryPage() {
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-            className="px-2 py-1.5 rounded-card bg-transparent border border-transparent text-md text-foreground focus:outline-none focus:border-primary/20"
+            className="px-2 py-1.5 rounded-card bg-transparent border border-transparent text-md text-foreground/60 focus-ring"
           >
             <option value="date">{t.plugins.artist.sort_date}</option>
             <option value="name">{t.plugins.artist.sort_name}</option>
@@ -167,7 +167,7 @@ export default function GalleryPage() {
 
       {/* Folder info */}
       {artistFolder && (
-        <p className="text-md text-foreground font-mono truncate">
+        <p className="text-md text-foreground/50 font-mono truncate">
           {t.plugins.artist.watching} {artistFolder}
         </p>
       )}
@@ -201,7 +201,7 @@ export default function GalleryPage() {
             <section key={group.labelKey} className="space-y-2">
               <header className="flex items-baseline gap-2 sticky top-0 z-10 bg-background/95 backdrop-blur py-1 -mx-2 px-2">
                 <h3 className="typo-section-title">{groupLabel(group.labelKey)}</h3>
-                <span className="text-md text-foreground tabular-nums">{group.assets.length}</span>
+                <span className="text-md text-foreground/60 tabular-nums">{group.assets.length}</span>
               </header>
               {galleryMode === '2d' ? (
                 <Gallery2D

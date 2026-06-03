@@ -114,11 +114,10 @@ pub async fn companion_engage_proactive(
     ipc_auth::require_auth(&state).await?;
     // Fetch the message before resolving so we can return its body to
     // the caller. The resolve step bumps backlog reminded_count for
-    // backlog_aging triggers.
-    let messages = proactive::list_messages(&state.user_db, false, 200)?;
-    let msg = messages
-        .into_iter()
-        .find(|m| m.id == message_id)
+    // backlog_aging triggers. Look the row up directly by id — a capped
+    // list scan would miss still-deliverable nudges once enough rows
+    // accumulate on a long-lived install.
+    let msg = proactive::get_by_id(&state.user_db, &message_id)?
         .ok_or_else(|| AppError::Internal(format!("proactive `{message_id}` not found")))?;
     proactive::resolve(&state.user_db, &message_id, true)?;
     Ok(EngageOutcome {

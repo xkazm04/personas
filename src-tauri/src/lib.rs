@@ -61,6 +61,11 @@ pub(crate) static SSRF_SAFE_HTTP: LazyLock<reqwest::Client> =
 pub struct ActiveProcess {
     /// The ID of the currently-running task (e.g. design_id, negotiation_id).
     pub id: Option<String>,
+    /// Optional identifier of the domain resource this run targets (e.g. the
+    /// recipe id for `recipe_execution`/`recipe_versioning`). Lets callers ask
+    /// "is a run in flight for *this* resource?" instead of "any run at all?".
+    /// Cleared together with `id` so it never lingers past the run.
+    pub target_ref: Option<String>,
     /// PID of the CLI child process, used to kill on cancel.
     pub child_pid: Option<u32>,
     /// Per-run cancellation token.  Set to `true` when the run is superseded
@@ -72,6 +77,7 @@ impl Default for ActiveProcess {
     fn default() -> Self {
         Self {
             id: None,
+            target_ref: None,
             child_pid: None,
             cancelled: Arc::new(AtomicBool::new(false)),
         }
@@ -153,6 +159,7 @@ impl ActiveProcessRegistry {
         // Install new run state
         let token = Arc::new(AtomicBool::new(false));
         proc.id = Some(id);
+        proc.target_ref = None;
         proc.cancelled = token.clone();
 
         (old_pid, token)
@@ -164,12 +171,35 @@ impl ActiveProcessRegistry {
         map.get(domain).and_then(|p| p.id.clone())
     }
 
+    /// Record the domain resource this run targets (e.g. the recipe id for a
+    /// recipe execution/versioning run). Pairs with [`Self::active_target`] so
+    /// conflict checks can be scoped to the specific resource.
+    pub fn set_target(&self, domain: &str, target: Option<String>) {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.entry(domain.to_string()).or_default().target_ref = target;
+    }
+
+    /// Return the target resource id of the *active* run for a domain, if any.
+    /// Returns `None` when no run is active, even if a stale `target_ref`
+    /// somehow lingers — so callers never see a phantom conflict.
+    pub fn active_target(&self, domain: &str) -> Option<String> {
+        let map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        map.get(domain).and_then(|p| {
+            if p.id.is_some() {
+                p.target_ref.clone()
+            } else {
+                None
+            }
+        })
+    }
+
     /// Clear the active task ID for a domain (only if it matches the expected value).
     pub fn clear_id_if(&self, domain: &str, expected: &str) {
         let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
         if let Some(proc) = map.get_mut(domain) {
             if proc.id.as_deref() == Some(expected) {
                 proc.id = None;
+                proc.target_ref = None;
             }
         }
     }
@@ -177,7 +207,10 @@ impl ActiveProcessRegistry {
     /// Clear the active task ID unconditionally and return the old value.
     pub fn take_id(&self, domain: &str) -> Option<String> {
         let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
-        map.get_mut(domain).and_then(|p| p.id.take())
+        map.get_mut(domain).and_then(|p| {
+            p.target_ref = None;
+            p.id.take()
+        })
     }
 
     /// Set the child PID for a domain.
@@ -2985,4 +3018,63 @@ pub fn run() {
             eprintln!("Fatal: Tauri application failed to start: {e}");
             std::process::exit(1);
         });
+}
+
+#[cfg(test)]
+mod registry_target_tests {
+    use super::ActiveProcessRegistry;
+
+    // Pins the fix for "delete_recipe blocks all recipes during any in-flight
+    // task": a run's target resource id is tracked so conflict checks scope to
+    // the actually-targeted recipe, not "any run in this domain".
+
+    #[test]
+    fn active_target_returns_target_only_while_run_is_active() {
+        let reg = ActiveProcessRegistry::new();
+        // No run yet → no target.
+        assert_eq!(reg.active_target("recipe_execution"), None);
+
+        reg.set_id("recipe_execution", "task-1".into());
+        reg.set_target("recipe_execution", Some("recipe-A".into()));
+        assert_eq!(
+            reg.active_target("recipe_execution").as_deref(),
+            Some("recipe-A")
+        );
+    }
+
+    #[test]
+    fn unrelated_recipe_run_does_not_match_a_different_recipe() {
+        let reg = ActiveProcessRegistry::new();
+        reg.set_id("recipe_execution", "task-1".into());
+        reg.set_target("recipe_execution", Some("recipe-A".into()));
+
+        // Deleting recipe-B must not see a conflict from a run targeting recipe-A.
+        let blocks_b = reg.active_target("recipe_execution").as_deref() == Some("recipe-B");
+        assert!(!blocks_b, "a run for recipe-A must not block deleting recipe-B");
+    }
+
+    #[test]
+    fn clearing_the_id_also_clears_the_target() {
+        let reg = ActiveProcessRegistry::new();
+        reg.set_id("recipe_versioning", "task-1".into());
+        reg.set_target("recipe_versioning", Some("recipe-A".into()));
+
+        // Completion path clears the id when it matches.
+        reg.clear_id_if("recipe_versioning", "task-1");
+        assert_eq!(reg.active_target("recipe_versioning"), None);
+
+        // Cancellation path (take_id) also clears the target.
+        reg.set_id("recipe_versioning", "task-2".into());
+        reg.set_target("recipe_versioning", Some("recipe-B".into()));
+        assert_eq!(reg.take_id("recipe_versioning").as_deref(), Some("task-2"));
+        assert_eq!(reg.active_target("recipe_versioning"), None);
+    }
+
+    #[test]
+    fn generation_without_a_target_never_reports_a_conflict() {
+        let reg = ActiveProcessRegistry::new();
+        // recipe_generation produces a brand-new recipe and sets no target.
+        reg.set_id("recipe_generation", "gen-1".into());
+        assert_eq!(reg.active_target("recipe_generation"), None);
+    }
 }

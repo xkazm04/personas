@@ -109,6 +109,12 @@ pub struct NetworkStatusInfo {
     pub discovered_peer_count: u32,
     pub connected_peer_count: u32,
     pub local_peer_id: String,
+    /// True when the local signing identity could not be resolved (notably a
+    /// lost OS keyring). `local_peer_id` is then empty, but unlike the old
+    /// silent default this flag tells the UI the identity is broken so it can
+    /// surface the failure and prompt re-initialization instead of showing a
+    /// healthy-looking blank.
+    pub identity_degraded: bool,
 }
 
 /// Info about a specific peer connection.

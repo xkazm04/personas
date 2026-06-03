@@ -1,5 +1,5 @@
 import {
-  MessageSquare, Mail, Bell, Send, Phone, Hash, Webhook,
+  MessageSquare, Mail, Bell, Send, Phone, Hash, Webhook, Monitor,
 } from 'lucide-react';
 import type { ParsedChannel } from './types';
 
@@ -10,6 +10,7 @@ const CHANNEL_ICONS: Record<string, React.ComponentType<{ className?: string; st
   sms: Phone,
   webhook: Webhook,
   push: Bell, notification: Bell, notify: Bell,
+  desktop: Monitor,
 };
 
 const CHANNEL_TINTS: Record<string, string> = {
@@ -19,6 +20,7 @@ const CHANNEL_TINTS: Record<string, string> = {
   sms: '#22c55e',
   webhook: '#64748b',
   push: '#a78bfa', notification: '#a78bfa', notify: '#a78bfa',
+  desktop: '#a78bfa',
 };
 
 /** Turn a concatenated messageSummary (`"slack: team · email: daily"`) back

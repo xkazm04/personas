@@ -99,6 +99,33 @@ export function createRunLifecycle<
       });
     },
 
+    /**
+     * Seed the lifecycle into the 'running' state for a run recovered from
+     * persisted state (page refresh / HMR) WITHOUT re-emitting the markStarted
+     * set() — the slice seeds its own isRunning/activeId fields directly from
+     * the recovered snapshot. Re-arms the safety timeout so a recovered run
+     * that never reports completion still self-clears.
+     *
+     * Why this is required: `currentState` lives in this module closure and
+     * resets to 'idle' whenever the store is recreated. A recovered run sets
+     * isRunning=true in the slice but never calls markStarted, so without this
+     * seed the FSM stays at 'idle' and the later 'finished'/'cancelled'
+     * transition is rejected (idle has no such edge) — leaving isRunning pinned
+     * true forever (phantom run; every subsequent run forced to background).
+     */
+    markRecovered(set: (partial: Record<string, unknown>) => void) {
+      if (!tryTransition('running')) return;
+      scheduleSafetyTimeout(() => {
+        logger.warn("Safety timeout fired for recovered run — may have stalled", { timeoutMinutes: RUN_MAX_DURATION_MS / 60_000, isRunningKey, progressKey });
+        tryTransition('timed_out');
+        set({
+          [isRunningKey]: false,
+          [progressKey]: null,
+          error: `Run timed out after ${RUN_MAX_DURATION_MS / 60_000} minutes. The operation may have stalled.`,
+        });
+      });
+    },
+
     /** Clear safety timeout and set isRunning=false (on error during start). */
     markFailed(set: (partial: Record<string, unknown>) => void) {
       if (!tryTransition('failed')) return;

@@ -1,11 +1,13 @@
 import { useState, useCallback, useRef, type KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 interface TagChipInputProps {
   tags: string[];
   onChange: (tags: string[]) => void;
 }
 
 export function TagChipInput({ tags, onChange }: TagChipInputProps) {
+  const { t } = useTranslation();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -57,7 +59,7 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={() => { if (input.trim()) addTag(input); }}
-        placeholder={tags.length === 0 ? 'Type tag and press Enter...' : ''}
+        placeholder={tags.length === 0 ? t.recipes.tag_input_placeholder : ''}
         className="flex-1 min-w-[80px] bg-transparent typo-body text-foreground placeholder:text-foreground focus-visible:outline-none py-0.5"
       />
     </div>

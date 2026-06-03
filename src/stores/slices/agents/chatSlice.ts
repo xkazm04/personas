@@ -216,6 +216,17 @@ export const createChatSlice: StateCreator<AgentStore, [], [], ChatSlice> = (set
         // Register Tauri event listeners for this execution's output + status.
         // These are needed because the Chat tab doesn't mount usePersonaExecution.
         setupChatExecListeners(exec.id, personaId, sessionId, set, get);
+      } else {
+        // executePersona resolved but returned no execution id (queue full, throttle,
+        // or a detached spawn that produced no row). No listeners will ever attach,
+        // so without this the composer stays disabled and the indicator spins forever.
+        // Reset the streaming/executing flags and surface the failure.
+        reportError(
+          new Error('Execution did not start: no execution id was returned'),
+          'Failed to send chat message',
+          set,
+          { stateUpdates: { chatStreaming: false, isExecuting: false, activeExecutionId: null } },
+        );
       }
     } catch (err) {
       reportError(err, "Failed to send chat message", set, { stateUpdates: { chatStreaming: false, isExecuting: false } });

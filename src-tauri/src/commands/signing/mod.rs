@@ -50,6 +50,19 @@ pub fn sign_document(
         .map(|n| n.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown".into());
 
+    // Parse + validate the metadata JSON UP FRONT, before signing and the DB
+    // insert, so the whole command is all-or-nothing. Previously the parse
+    // lived in the sidecar step AFTER `repo::insert_signature` had already
+    // committed the row: invalid-JSON metadata returned Err while the DB kept
+    // a signature the user was told failed, no sidecar came back, and a retry
+    // produced a duplicate row. Validating here makes a bad input fail before
+    // any state changes.
+    let parsed_metadata: Option<serde_json::Value> = metadata
+        .as_deref()
+        .map(serde_json::from_str)
+        .transpose()
+        .map_err(|e| AppError::Validation(format!("Invalid metadata JSON: {e}")))?;
+
     // Read the file ONCE and derive the hash + signature from the same byte
     // buffer. Two separate `std::fs::read` calls (hash first, then read-to-sign)
     // opened a TOCTOU window: an editor autosave / build tool / cloud-sync
@@ -97,11 +110,7 @@ pub fn sign_document(
             display_name: ident.display_name,
         },
         signed_at: now,
-        metadata: metadata
-            .as_deref()
-            .map(|m| serde_json::from_str(m))
-            .transpose()
-            .map_err(|e| AppError::Validation(format!("Invalid metadata JSON: {e}")))?,
+        metadata: parsed_metadata,
     };
     let sidecar_json = serde_json::to_string_pretty(&sidecar)?;
 

@@ -318,8 +318,39 @@ fn validate(r: &LiveRoadmap) -> Result<(), String> {
             r.release.version
         ));
     }
-    if !r.i18n.contains_key("en") {
-        return Err("i18n.en block is required".to_string());
+    let en = r
+        .i18n
+        .get("en")
+        .ok_or_else(|| "i18n.en block is required".to_string())?;
+
+    // A schema-valid but empty payload renders to zero items on the desktop,
+    // which blanks the entire roadmap surface (the bundled fallback is
+    // unreachable because the live payload always wins). Reject it here so the
+    // frontend's Err → bundled-content path kicks in instead.
+    if r.release.items.is_empty() {
+        return Err("release.items must contain at least one item".to_string());
+    }
+
+    // Every item needs a non-empty English title. Without a matching locale
+    // entry the desktop renders the item as a literal `[roadmap.<id>]`
+    // placeholder, so an item with no `en` content is as broken as a missing
+    // one — reject the payload rather than ship placeholders to every client.
+    for item in &r.release.items {
+        match en.items.get(&item.id) {
+            Some(content) if !content.title.trim().is_empty() => {}
+            Some(_) => {
+                return Err(format!(
+                    "i18n.en.items[{:?}] has an empty title",
+                    item.id
+                ));
+            }
+            None => {
+                return Err(format!(
+                    "i18n.en is missing an entry for item id {:?}",
+                    item.id
+                ));
+            }
+        }
     }
     Ok(())
 }
@@ -375,13 +406,21 @@ mod tests {
     use super::*;
 
     fn make_valid() -> LiveRoadmap {
+        let mut en_items = HashMap::new();
+        en_items.insert(
+            "1".to_string(),
+            LiveRoadmapLocaleItem {
+                title: "Live updates".into(),
+                description: Some("Roadmap content the developer can update remotely".into()),
+            },
+        );
         let mut i18n = HashMap::new();
         i18n.insert(
             "en".to_string(),
             LiveRoadmapLocale {
                 label: Some("Roadmap".into()),
                 summary: None,
-                items: HashMap::new(),
+                items: en_items,
             },
         );
         LiveRoadmap {
@@ -390,7 +429,13 @@ mod tests {
             release: LiveRoadmapRelease {
                 version: "roadmap".into(),
                 status: "roadmap".into(),
-                items: vec![],
+                items: vec![LiveRoadmapItem {
+                    id: "1".into(),
+                    item_type: "feature".into(),
+                    status: Some("in_progress".into()),
+                    priority: Some("now".into()),
+                    sort_order: Some(1),
+                }],
             },
             i18n,
         }
@@ -419,6 +464,37 @@ mod tests {
     fn rejects_missing_en_locale() {
         let mut r = make_valid();
         r.i18n.clear();
+        assert!(validate(&r).is_err());
+    }
+
+    #[test]
+    fn rejects_empty_items() {
+        // A schema-valid payload with no items would blank the desktop
+        // roadmap; reject it so the bundled fallback renders instead.
+        let mut r = make_valid();
+        r.release.items.clear();
+        assert!(validate(&r).is_err());
+    }
+
+    #[test]
+    fn rejects_item_without_en_content() {
+        // An item with no matching `en` locale entry renders as a literal
+        // `[roadmap.<id>]` placeholder — treat it as a broken payload.
+        let mut r = make_valid();
+        r.i18n.get_mut("en").unwrap().items.clear();
+        assert!(validate(&r).is_err());
+    }
+
+    #[test]
+    fn rejects_item_with_blank_en_title() {
+        let mut r = make_valid();
+        r.i18n
+            .get_mut("en")
+            .unwrap()
+            .items
+            .get_mut("1")
+            .unwrap()
+            .title = "   ".into();
         assert!(validate(&r).is_err());
     }
 

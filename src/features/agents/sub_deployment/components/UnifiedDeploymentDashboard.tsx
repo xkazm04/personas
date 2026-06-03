@@ -12,9 +12,11 @@ import { SummaryCard } from './DeploymentSubComponents';
 import { DeploymentTable } from './DeploymentTable';
 import { DeploymentFilters } from './DeploymentFilters';
 import { BulkActionsToolbar } from './BulkActionsToolbar';
+import { DEPLOYMENT_ACCENTS } from './deploymentTokens';
 import { useDeploymentHealth } from '../hooks/useDeploymentHealth';
 import { useDeploymentTest } from '../hooks/useDeploymentTest';
 import { useTranslation } from '@/i18n/useTranslation';
+import EmptyState, { NoResults } from '@/features/shared/components/feedback/EmptyState';
 
 export function UnifiedDeploymentDashboard() {
   const personaName = usePersonaNameMap();
@@ -34,6 +36,7 @@ export function UnifiedDeploymentDashboard() {
   const cloudBulkRemove = useSystemStore((s) => s.cloudBulkRemove);
   const gitlabFetchAgents = useSystemStore((s) => s.gitlabFetchAgents);
   const gitlabUndeployAgent = useSystemStore((s) => s.gitlabUndeployAgent);
+  const setCloudTab = useSystemStore((s) => s.setCloudTab);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -174,8 +177,8 @@ export function UnifiedDeploymentDashboard() {
           <SummaryCard icon={Activity} label={dt.total} value={unified.length} />
           <SummaryCard icon={CheckCircle2} label={dt.active} value={activeCount} color="text-emerald-400" />
           <SummaryCard icon={PauseCircle} label={dt.paused} value={pausedCount} color="text-amber-400" />
-          <SummaryCard icon={Cloud} label={dt.cloud} value={totalCloud} color="text-blue-400" connected={cloudConnected} />
-          <SummaryCard icon={GitBranch} label={dt.gitlab} value={totalGitlab} color="text-orange-400" connected={gitlabConnected} />
+          <SummaryCard icon={Cloud} label={dt.cloud} value={totalCloud} color={DEPLOYMENT_ACCENTS.cloud.text} connected={cloudConnected} />
+          <SummaryCard icon={GitBranch} label={dt.gitlab} value={totalGitlab} color={DEPLOYMENT_ACCENTS.gitlab.text} connected={gitlabConnected} />
         </div>
         <DeploymentFilters
           search={search} onSearchChange={setSearch}
@@ -187,28 +190,30 @@ export function UnifiedDeploymentDashboard() {
       {/* Table */}
       <div className="flex-1 overflow-auto">
         {!cloudConnected && !gitlabConnected ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
-              <Cloud className="w-7 h-7 text-primary/60" />
-            </div>
-            <p className="typo-body font-medium text-foreground">{dt.no_targets_title}</p>
-            <p className="typo-body text-foreground mt-1 max-w-xs">
-              {dt.no_targets_hint}
-            </p>
+          <div className="flex items-center justify-center h-full px-6">
+            <EmptyState
+              icon={Cloud}
+              title={dt.no_targets_title}
+              subtitle={dt.no_targets_hint}
+              action={{ label: dt.connect_cloud_cta, onClick: () => setCloudTab('cloud'), icon: Cloud }}
+              secondaryAction={{ label: dt.connect_gitlab_cta, onClick: () => setCloudTab('gitlab'), icon: GitBranch }}
+            />
           </div>
         ) : displayRows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center px-6">
-            <div className="w-14 h-14 rounded-2xl bg-secondary/50 border border-primary/15 flex items-center justify-center mb-4">
-              <Activity className="w-7 h-7 text-foreground" />
-            </div>
-            <p className="typo-body font-medium text-foreground">
-              {search || targetFilter !== 'all' || statusFilter !== 'all' ? dt.no_match_filters : dt.no_deployments}
-            </p>
-            <p className="typo-body text-foreground mt-1">
-              {search || targetFilter !== 'all' || statusFilter !== 'all'
-                ? dt.adjust_filters
-                : dt.deploy_hint}
-            </p>
+          <div className="flex items-center justify-center h-full px-6">
+            {search || targetFilter !== 'all' || statusFilter !== 'all' ? (
+              <NoResults
+                onReset={() => { setSearch(''); setTargetFilter('all'); setStatusFilter('all'); }}
+                title={dt.no_match_filters}
+                subtitle={dt.adjust_filters}
+              />
+            ) : (
+              <EmptyState
+                icon={Activity}
+                title={dt.no_deployments}
+                subtitle={dt.deploy_hint}
+              />
+            )}
           </div>
         ) : (
           <DeploymentTable

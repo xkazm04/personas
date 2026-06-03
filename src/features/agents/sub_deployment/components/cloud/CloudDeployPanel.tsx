@@ -17,6 +17,7 @@ import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import { useCloudHealthMonitor } from '@/features/agents/sub_deployment/hooks/useCloudHealthMonitor';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { DEPLOYMENT_ACCENTS } from '@/features/agents/sub_deployment/components/deploymentTokens';
 
 
 // ---------------------------------------------------------------------------
@@ -179,7 +180,7 @@ export default function CloudDeployPanel() {
   return (
     <ContentBox>
       <ContentHeader
-        icon={<Cloud className="w-5 h-5 text-indigo-400" />}
+        icon={<Cloud className={`w-5 h-5 ${DEPLOYMENT_ACCENTS.cloud.text}`} />}
         iconColor="indigo"
         title={t.deployment.cloud_execution}
         actions={

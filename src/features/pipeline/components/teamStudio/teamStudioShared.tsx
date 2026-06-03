@@ -342,6 +342,13 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
     }
   }, [teamId, goal, steps, createAssignment, startAssignment]);
 
+  // Guided empty state: tappable example goals (+ a one-line helper) shown only
+  // while the user hasn't typed a goal and nothing is previewed/launched yet, so
+  // a first-time user has a concrete model of what a good goal looks like
+  // (restores the affordance the old CanvasAssistant offered pre-migration).
+  const exampleGoals = [ts.example_goal_1, ts.example_goal_2, ts.example_goal_3, ts.example_goal_4];
+  const showExamples = !goal.trim() && !launched && !steps;
+
   return (
     <div className="flex flex-col gap-3 h-full">
       <div className="flex items-center gap-2">
@@ -358,6 +365,25 @@ export function OrchestrationConsole({ teamId, members }: OrchestrationConsolePr
         placeholder={ts.orchestrate_placeholder}
         className="w-full resize-none rounded-input bg-secondary/30 border border-primary/20 text-foreground typo-body px-3 py-2 focus:outline-none focus:border-primary/60"
       />
+
+      {showExamples && (
+        <div className="flex flex-col gap-1.5 -mt-1">
+          <p className="typo-caption text-foreground">{ts.examples_helper}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {exampleGoals.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                data-testid="team-goal-example"
+                onClick={() => setGoal(ex)}
+                className="rounded-full border border-primary/15 bg-secondary/30 px-2.5 py-1 typo-caption text-foreground hover:bg-secondary/50 transition-colors"
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <button

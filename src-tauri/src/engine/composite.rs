@@ -24,6 +24,13 @@ use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::resources::triggers as trigger_repo;
 use crate::db::DbPool;
 use crate::keyed_pool::KeyedResourcePool;
+use crate::validation::trigger::MAX_COMPOSITE_WINDOW_SECONDS;
+
+/// Maximum number of events pulled into memory per composite tick. Bounds
+/// per-tick allocation and SQLite pool pressure regardless of how wide a
+/// trigger's `window_seconds` is. Generous enough that hitting it signals a
+/// genuinely over-dense window (the engine warns when capped).
+const COMPOSITE_EVENT_SCAN_LIMIT: i64 = 5_000;
 
 // ---------------------------------------------------------------------------
 // Partial-match observability types
@@ -164,7 +171,10 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
         return;
     }
 
-    // Find the maximum window we need to look back
+    // Find the maximum window we need to look back. Clamp defensively to the
+    // same ceiling the create/update validator enforces — a row persisted
+    // before that guard existed (or edited directly in the DB) could otherwise
+    // drive an unbounded look-back and a full-table scan every tick.
     let max_window = composite_triggers
         .iter()
         .filter_map(|t| {
@@ -175,18 +185,33 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
             }
         })
         .max()
-        .unwrap_or(300);
+        .unwrap_or(300)
+        .min(MAX_COMPOSITE_WINDOW_SECONDS as u64);
 
-    // Load recent events within the max window
+    // Load recent events within the max window. Pass an explicit row cap so a
+    // single trigger with a large window can't pull the entire window's event
+    // table into memory and starve the shared SQLite pool. The query orders by
+    // created_at ASC, so on a cap hit we keep the OLDEST events in the window
+    // and drop the newest — warn loudly so the over-dense window is visible and
+    // can be narrowed before matches are silently missed.
     let since = (Utc::now() - Duration::seconds(max_window as i64)).to_rfc3339();
     let until = Utc::now().to_rfc3339();
-    let recent_events = match event_repo::get_in_range(pool, &since, &until, None) {
-        Ok((events, _)) => events,
-        Err(e) => {
-            tracing::error!("Failed to load recent events for composite evaluation: {e} — composite evaluation skipped this tick");
-            return;
-        }
-    };
+    let (recent_events, events_capped) =
+        match event_repo::get_in_range(pool, &since, &until, Some(COMPOSITE_EVENT_SCAN_LIMIT)) {
+            Ok(res) => res,
+            Err(e) => {
+                tracing::error!("Failed to load recent events for composite evaluation: {e} — composite evaluation skipped this tick");
+                return;
+            }
+        };
+    if events_capped {
+        tracing::warn!(
+            scan_limit = COMPOSITE_EVENT_SCAN_LIMIT,
+            max_window_seconds = max_window,
+            event_count = recent_events.len(),
+            "Composite evaluation hit the per-tick event cap; only the oldest {COMPOSITE_EVENT_SCAN_LIMIT} events in the window were loaded. Narrow window_seconds on this install to avoid missed composite matches."
+        );
+    }
 
     let now = Utc::now();
 
@@ -206,6 +231,11 @@ pub fn composite_tick(pool: &DbPool, state: &CompositeState) {
             if conditions.is_empty() {
                 continue;
             }
+
+            // Defensive clamp (mirrors the create/update validator): keeps the
+            // per-trigger window and the suppression duration bounded even for a
+            // row that predates `window_seconds` validation.
+            let window_secs = window_secs.min(MAX_COMPOSITE_WINDOW_SECONDS as u64);
 
             let op = operator.as_deref().unwrap_or("all");
 
@@ -393,9 +423,17 @@ fn evaluate_sequence_detailed(
     // First compute basic match counts for all conditions
     let mut statuses = compute_condition_statuses(conditions, events);
 
-    // Now check sequence ordering — a condition may have matching events
-    // but not in the right chronological order
-    let mut last_time: Option<DateTime<Utc>> = None;
+    // Now check sequence ordering. `events` is pre-sorted ascending by
+    // created_at (see the windowing in `evaluate_composite_*`), so positional
+    // order == chronological order. Each step must consume a DISTINCT event
+    // that comes strictly after the one the previous step consumed — we advance
+    // a positional cursor (`next_search`) rather than comparing timestamps
+    // inclusively. The old `ts >= last_time` + search-from-index-0 let ONE
+    // physical event satisfy two adjacent steps (e.g. two steps of the same
+    // event_type, or a single event matching adjacent conditions), so a
+    // sequence that should require N distinct ordered events could fire on
+    // fewer. Consuming by index guarantees each event satisfies at most one step.
+    let mut next_search = 0usize;
     let mut sequence_broken = false;
 
     for (i, cond) in conditions.iter().enumerate() {
@@ -405,27 +443,16 @@ fn evaluate_sequence_detailed(
             continue;
         }
 
-        let matched = events.iter().find(|e| {
-            if !event_matches_condition(e, cond) {
-                return false;
-            }
-            if let Some(ref lt) = last_time {
-                if let Ok(ts) = DateTime::parse_from_rfc3339(&e.created_at) {
-                    ts.with_timezone(&Utc) >= *lt
-                } else {
-                    false
-                }
-            } else {
-                true
-            }
-        });
+        // First not-yet-consumed event (index >= next_search) matching this step.
+        let found = events
+            .get(next_search..)
+            .and_then(|rest| rest.iter().position(|e| event_matches_condition(e, cond)))
+            .map(|offset| next_search + offset);
 
-        match matched {
-            Some(e) => {
-                if let Ok(ts) = DateTime::parse_from_rfc3339(&e.created_at) {
-                    last_time = Some(ts.with_timezone(&Utc));
-                }
+        match found {
+            Some(idx) => {
                 statuses[i].matched = true;
+                next_search = idx + 1; // consume it; the next step must be strictly after
             }
             None => {
                 statuses[i].matched = false;
@@ -465,4 +492,80 @@ fn event_matches_condition(
     }
 
     true
+}
+
+#[cfg(test)]
+mod sequence_tests {
+    use super::*;
+    use crate::db::models::{CompositeCondition, PersonaEvent, PersonaEventStatus};
+
+    fn ev(event_type: &str, created_at: &str) -> PersonaEvent {
+        PersonaEvent {
+            id: format!("evt-{event_type}-{created_at}"),
+            project_id: "p".into(),
+            event_type: event_type.into(),
+            source_type: "test".into(),
+            source_id: None,
+            target_persona_id: None,
+            payload: None,
+            status: PersonaEventStatus::Pending,
+            error_message: None,
+            processed_at: None,
+            created_at: created_at.into(),
+            use_case_id: None,
+            retry_count: 0,
+        }
+    }
+
+    fn cond(event_type: &str) -> CompositeCondition {
+        CompositeCondition {
+            event_type: event_type.into(),
+            source_filter: None,
+        }
+    }
+
+    /// The regression: two steps of the same event_type with only ONE physical
+    /// event in the window must NOT fire — a single event can satisfy at most
+    /// one sequence step.
+    #[test]
+    fn one_event_cannot_satisfy_two_steps() {
+        let conditions = vec![cond("A"), cond("A")];
+        let e = ev("A", "2026-06-02T10:00:00Z");
+        let events: Vec<&PersonaEvent> = vec![&e];
+        let (fired, statuses) = evaluate_sequence_detailed(&conditions, &events);
+        assert!(!fired, "one event must not satisfy two sequence steps");
+        assert!(statuses[0].matched);
+        assert!(!statuses[1].matched);
+    }
+
+    #[test]
+    fn two_distinct_same_type_events_fire() {
+        let conditions = vec![cond("A"), cond("A")];
+        let e1 = ev("A", "2026-06-02T10:00:00Z");
+        let e2 = ev("A", "2026-06-02T10:00:01Z");
+        let events: Vec<&PersonaEvent> = vec![&e1, &e2];
+        assert!(evaluate_sequence_detailed(&conditions, &events).0);
+    }
+
+    #[test]
+    fn ordered_sequence_fires_missing_step_does_not() {
+        let conditions = vec![cond("A"), cond("B")];
+        let a = ev("A", "2026-06-02T10:00:00Z");
+        let b = ev("B", "2026-06-02T10:00:05Z");
+        let ordered: Vec<&PersonaEvent> = vec![&a, &b];
+        assert!(evaluate_sequence_detailed(&conditions, &ordered).0);
+        let only_b: Vec<&PersonaEvent> = vec![&b];
+        assert!(!evaluate_sequence_detailed(&conditions, &only_b).0);
+    }
+
+    /// Two distinct physical events sharing the same timestamp still satisfy two
+    /// steps — consumption is positional, not an inclusive timestamp compare.
+    #[test]
+    fn same_timestamp_distinct_events_fire() {
+        let conditions = vec![cond("A"), cond("B")];
+        let a = ev("A", "2026-06-02T10:00:00Z");
+        let b = ev("B", "2026-06-02T10:00:00Z");
+        let events: Vec<&PersonaEvent> = vec![&a, &b];
+        assert!(evaluate_sequence_detailed(&conditions, &events).0);
+    }
 }

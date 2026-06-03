@@ -314,6 +314,8 @@ pub async fn gitlab_deploy_persona(
                 web_url: agent.web_url,
                 method: "api".to_string(),
                 credentials_provisioned,
+                tag_created: false,
+                version: None,
             }
         }
         Err(_api_err) => {
@@ -338,6 +340,8 @@ pub async fn gitlab_deploy_persona(
                 web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned,
+                tag_created: false,
+                version: None,
             }
         }
     };
@@ -462,14 +466,27 @@ fn parse_persona_tag(tag_name: &str) -> Option<(String, String, Option<String>)>
     }
 }
 
-/// Build a tag name for a persona version.
-fn build_persona_tag(persona_name: &str, version: u32, environment: Option<&str>) -> String {
-    let slug = persona_name
-        .to_lowercase()
+/// Slugify a persona name into the canonical tag segment: lowercase, spaces to
+/// dashes, then strip everything that is not alphanumeric or a dash.
+///
+/// This MUST be the single source of truth for both *building* a persona tag
+/// and *matching* one. The two sides previously diverged — the build side
+/// filtered to alphanumeric-or-dash while the rollback match side only did
+/// `to_lowercase().replace(' ', "-")` — so a name with punctuation (e.g.
+/// `My Bot!`) tagged as `persona/my-bot/v1` on deploy but matched as `my-bot!`
+/// on rollback, silently disabling rollback for an entire class of names. Route
+/// every slug computation through this helper so the mismatch class cannot recur.
+fn slugify_persona_name(name: &str) -> String {
+    name.to_lowercase()
         .replace(' ', "-")
         .chars()
         .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
+        .collect()
+}
+
+/// Build a tag name for a persona version.
+fn build_persona_tag(persona_name: &str, version: u32, environment: Option<&str>) -> String {
+    let slug = slugify_persona_name(persona_name);
     match environment {
         Some(env) => format!("{PERSONA_TAG_PREFIX}{slug}/{env}/v{version}"),
         None => format!("{PERSONA_TAG_PREFIX}{slug}/v{version}"),
@@ -534,12 +551,7 @@ pub async fn gitlab_list_persona_versions(
 ) -> Result<Vec<GitLabPersonaVersion>, AppError> {
     let client = get_gitlab_client(&state).await?;
 
-    let slug = persona_name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
+    let slug = slugify_persona_name(&persona_name);
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
     // Fire both API calls concurrently — they are independent
@@ -551,7 +563,7 @@ pub async fn gitlab_list_persona_versions(
     let agents = agents_result.unwrap_or_default();
     let current_agent = agents
         .iter()
-        .find(|a| a.name.to_lowercase().replace(' ', "-") == slug);
+        .find(|a| slugify_persona_name(&a.name) == slug);
 
     let mut versions: Vec<GitLabPersonaVersion> = tags
         .into_iter()
@@ -649,13 +661,7 @@ pub async fn gitlab_deploy_persona_versioned(
     let project = client.get_project(project_id).await?;
 
     // Compute the tag search prefix before spawning concurrent work
-    let slug = persona
-        .name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
+    let slug = slugify_persona_name(&persona.name);
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
     // Deploy the agent and fetch existing tags concurrently — they are independent
@@ -667,7 +673,7 @@ pub async fn gitlab_deploy_persona_versioned(
                 .unwrap_or_default()
         },);
 
-    let deploy_result = match agent_result {
+    let mut deploy_result = match agent_result {
         Ok(agent) => {
             tracing::info!(
                 persona_id = %persona_id,
@@ -680,6 +686,8 @@ pub async fn gitlab_deploy_persona_versioned(
                 web_url: agent.web_url,
                 method: "api".to_string(),
                 credentials_provisioned,
+                tag_created: false,
+                version: None,
             }
         }
         Err(_api_err) => {
@@ -696,6 +704,8 @@ pub async fn gitlab_deploy_persona_versioned(
                 web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned,
+                tag_created: false,
+                version: None,
             }
         }
     };
@@ -735,6 +745,8 @@ pub async fn gitlab_deploy_persona_versioned(
                     tag = %tag_name,
                     "Created version tag for persona deployment"
                 );
+                deploy_result.tag_created = true;
+                deploy_result.version = Some(version);
                 break;
             }
             Err(e) => {
@@ -802,7 +814,7 @@ pub async fn gitlab_rollback_persona(
     let (parsed_name, parsed_version, parsed_env) = parse_persona_tag(&target_tag)
         .ok_or_else(|| AppError::GitLab(format!("Invalid persona version tag: {target_tag}")))?;
 
-    if parsed_name.to_lowercase() != persona_name.to_lowercase().replace(' ', "-") {
+    if parsed_name.to_lowercase() != slugify_persona_name(&persona_name) {
         return Err(AppError::GitLab(format!(
             "Tag '{}' does not belong to persona '{}'",
             target_tag, persona_name
@@ -813,7 +825,7 @@ pub async fn gitlab_rollback_persona(
     let all_personas = personas::get_all(&state.db)?;
     let persona = all_personas
         .iter()
-        .find(|p| p.name.to_lowercase().replace(' ', "-") == parsed_name.to_lowercase())
+        .find(|p| slugify_persona_name(&p.name) == parsed_name.to_lowercase())
         .ok_or_else(|| {
             AppError::GitLab(format!(
                 "Persona '{}' not found in local database",
@@ -836,15 +848,22 @@ pub async fn gitlab_rollback_persona(
             ))
         })?;
 
-    // Extract the system prompt from the historical AGENTS.md
-    let snapshot_prompt =
-        extract_prompt_from_agents_md(&historical_agents_md).unwrap_or_else(|| {
-            tracing::warn!(
-                target_tag = %target_tag,
-                "Could not parse system prompt from historical AGENTS.md, using raw content"
-            );
-            historical_agents_md.clone()
-        });
+    // Extract the system prompt from the historical AGENTS.md. If it can't be
+    // parsed (heading renamed, no fenced block, format drift), FAIL HARD rather
+    // than falling back to the entire raw markdown document as the prompt — a
+    // rollback that quietly deploys a corrupted prompt is worse than one that
+    // refuses, because the operator believes the known-good version was restored.
+    let snapshot_prompt = extract_prompt_from_agents_md(&historical_agents_md).ok_or_else(|| {
+        tracing::error!(
+            target_tag = %target_tag,
+            "Could not parse system prompt from historical AGENTS.md at tag '{}'; refusing rollback",
+            target_tag
+        );
+        AppError::GitLab(format!(
+            "Could not parse the system prompt from the historical AGENTS.md at tag '{}'. The snapshot's format may have drifted (renamed heading or missing fenced block). Refusing to roll back rather than deploy a malformed prompt.",
+            target_tag
+        ))
+    })?;
 
     // Build agent definition using the historical snapshot prompt
     let definition =
@@ -854,12 +873,7 @@ pub async fn gitlab_rollback_persona(
     let project = client.get_project(project_id).await?;
 
     // Compute the tag search prefix before spawning concurrent work
-    let slug = persona_name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
+    let slug = slugify_persona_name(&persona_name);
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
     // Deploy the agent and fetch existing tags concurrently — they are independent
@@ -877,6 +891,8 @@ pub async fn gitlab_rollback_persona(
             web_url: agent.web_url,
             method: "api".to_string(),
             credentials_provisioned: 0,
+            tag_created: false,
+            version: None,
         },
         Err(_) => {
             // Fallback: push the historical AGENTS.md content directly
@@ -890,6 +906,8 @@ pub async fn gitlab_rollback_persona(
                 web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned: 0,
+                tag_created: false,
+                version: None,
             }
         }
     };
@@ -975,12 +993,7 @@ pub async fn gitlab_list_persona_branches(
 ) -> Result<Vec<GitLabPersonaBranch>, AppError> {
     let client = get_gitlab_client(&state).await?;
 
-    let slug = persona_name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
+    let slug = slugify_persona_name(&persona_name);
     let search_prefix = format!("{PERSONA_TAG_PREFIX}{slug}/");
 
     let branches = client
@@ -1019,12 +1032,7 @@ pub async fn gitlab_setup_persona_branches(
 ) -> Result<Vec<GitLabPersonaBranch>, AppError> {
     let client = get_gitlab_client(&state).await?;
 
-    let slug = persona_name
-        .to_lowercase()
-        .replace(' ', "-")
-        .chars()
-        .filter(|c| c.is_alphanumeric() || *c == '-')
-        .collect::<String>();
+    let slug = slugify_persona_name(&persona_name);
 
     let project = client.get_project(project_id).await?;
     let default_branch = project.default_branch.as_deref().unwrap_or("main");
@@ -1133,6 +1141,8 @@ pub async fn gitlab_rollback_from_history(
             web_url: agent.web_url,
             method: "api".to_string(),
             credentials_provisioned: 0,
+            tag_created: false,
+            version: None,
         },
         Err(_) => {
             let project = client.get_project(project_id).await?;
@@ -1154,6 +1164,8 @@ pub async fn gitlab_rollback_from_history(
                 web_url: Some(format!("{}/blob/{}/AGENTS.md", project.web_url, branch)),
                 method: "agents_md".to_string(),
                 credentials_provisioned: 0,
+                tag_created: false,
+                version: None,
             }
         }
     };
@@ -1255,5 +1267,27 @@ mod tests {
         let prompt = "Open another block:\n```rust\nlet x = 1;\n```";
         let md = wrap_section(&format_system_prompt_section(prompt));
         assert_eq!(extract_prompt_from_agents_md(&md).as_deref(), Some(prompt));
+    }
+
+    #[test]
+    fn slugify_strips_punctuation_and_lowercases() {
+        assert_eq!(slugify_persona_name("My Bot!"), "my-bot");
+        assert_eq!(slugify_persona_name("Order #2 Bot!"), "order-2-bot");
+        assert_eq!(slugify_persona_name("already-clean"), "already-clean");
+        assert_eq!(slugify_persona_name("Spaces  And   Tabs"), "spaces--and---tabs");
+    }
+
+    /// The rollback bug regression: the tag a persona deploys under (build side)
+    /// must equal the slug the rollback match computes from the same name. A
+    /// punctuated name like `My Bot!` previously tagged as `my-bot` but matched
+    /// as `my-bot!`, so rollback could never find it.
+    #[test]
+    fn build_tag_slug_matches_parsed_slug_for_punctuated_name() {
+        let name = "My Bot!";
+        let tag = build_persona_tag(name, 1, None);
+        assert_eq!(tag, "persona/my-bot/v1");
+        let (parsed_name, _v, _env) = parse_persona_tag(&tag).expect("parse");
+        // This equality is exactly the rollback "tag belongs to persona" check.
+        assert_eq!(parsed_name.to_lowercase(), slugify_persona_name(name));
     }
 }
