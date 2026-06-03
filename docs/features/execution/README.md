@@ -81,7 +81,7 @@ src-tauri/src/engine/webhook.rs                  (HTTP webhook server on port 94
 src-tauri/src/engine/scheduler.rs + cron.rs      (trigger time computation)
 src-tauri/src/engine/prompt.rs                   (prompt assembly + memory injection)
 src-tauri/src/engine/runner/team_context.rs      (team-alignment block: roster + capabilities + active team goals + self-filter doctrine + STANDARDS & BRANCHING POLICY, injected per execution. Merge authority: when a project's standards_config is set, the policy block makes the QA Guardian the SOLE merge gate — the implementer (Dev Clone) opens a PR and hands off, never self-merges/auto-merges; QA tests in an isolated worktree then merges. Enforced in-prompt because private/free repos can't configure branch-protection required checks.)
-src-tauri/src/engine/goal_advance.rs             (turn a team's dev_goal into a goal-linked assignment; orchestrator auto-writes goal progress on done)
+src-tauri/src/engine/goal_advance.rs             (turn a team's dev_goal into a goal-linked assignment; orchestrator auto-writes goal progress on done. Decomposition: open to-dos → steps, else LLM `decompose_goal`. Both sources chain LINEARLY — each step `depends_on` the previous — and the decompose prompt MANDATES an implementation step before any review/security/docs, so the orchestrator runs scope→implement→review→… in order instead of launching all steps at once against unimplemented work)
 src-tauri/src/engine/cli_process.rs              (Claude CLI subprocess driver)
 src-tauri/src/engine/parser.rs                   (protocol message extraction from stdout)
 src-tauri/src/engine/dispatch.rs                 (protocol message → DB write)

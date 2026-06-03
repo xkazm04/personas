@@ -233,6 +233,33 @@ path) is unaffected since orphans aren't `dev_projects.team_id`-linked.
 
 ---
 
+## 4b. Intermediate-check findings (2026-06-03 full-fleet run) — FIXED
+
+A second full-fleet run (all 7 canonical teams, seeded via backlog scans) surfaced three
+NEW gaps beyond G1–G8, all now fixed:
+
+- **GAP-A — broken goal decomposition (the keystone).** Every goal decomposed into
+  `scope → review → security → docs` with **no implementation step**, and `goal_advance.rs`
+  passed `depends_on_indices: None` for every step → the orchestrator launched all steps at
+  once, out of order → reviewers/security/docs ran against work that didn't exist
+  (`precondition_failed` / `blocked_dependency`); budget burned reviewing nothing.
+  **Fixed** (`1d339f383`): steps now chain LINEARLY (`depends_on` the previous) in both the
+  to-dos and decompose paths, and the `decompose_goal` prompt MANDATES an implementation step
+  (engineer/Dev Clone) before any review/security/docs. Also resolves the release-before-
+  increment symptom (was G5-adjacent).
+- **GAP-B — QA Guardian timeout backwards.** QA's `uc_pr_review` does the heaviest op (fresh
+  `npm install` + full suite in an isolated worktree) but adoption gave it the LOWEST
+  `timeout_ms` (300000/600000) while Dev Clone had 1200000; QA execs timed out at 300s.
+  **Fixed** (`938be21e1`): template + all 7 live QAs raised to the 1200000 (20-min) ceiling.
+- **GAP-C — wrong repo URL (the "404 PAT").** 5 of 7 canonical projects had `github_url = NULL`,
+  so the repo URL was guessed as `xpri**c**e-*` while the real repos are `xpri**z**e-*` → 404,
+  misreported as a PAT-permission failure. **Fixed** (live DB): set all 7 projects' `github_url`
+  from their verified local `origin` remotes. Not a credential problem.
+
+(Open: GAP-D — the Visual Brand artist sits on every SDLC team but has no image connector, so
+it no-ops each cascade. Off the dev critical path; optional cleanup = drop it from the
+`sdlc-lifecycle` preset + re-sync.)
+
 ## 5. Recommended next steps (in order)
 
 1. **P0 — Re-run the soak with the self-heal ON for one full window**, then
