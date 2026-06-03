@@ -1672,6 +1672,14 @@
     "scan_history": "スキャン履歴 ("
   },
   "dev_lifecycle": {
+    "goal_handoff_label": "AI チームに引き継ぐ",
+    "goal_handoff_button": "AI チームに引き継ぐ",
+    "goal_handoff_explain": "AI チームがここにあるタスクを順に処理するか、ゴールをステップに分解してから作業を開始します。進行中の作業内容はその場で確認できます。",
+    "goal_handoff_active": "AI チームはすでにこのゴールに取り組んでいます。",
+    "goal_handoff_confirm_q": "AI チームにこのゴールの作業を開始させますか?",
+    "goal_handoff_start": "はい、開始します",
+    "goal_more_details": "詳細",
+    "goal_more_details_hint": "依存関係、連携チーム、履歴",
     "start_a_competition": "コンペティションを開始",
     "start_a_competition_desc": "異なる戦略を持つ 2〜4 のコンペティターを生成して、同じタスクに取り組ませます。勝者のアプローチが昇格されます。",
     "task_title": "タスクタイトル",

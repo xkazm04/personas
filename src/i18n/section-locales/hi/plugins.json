@@ -1672,6 +1672,14 @@
     "scan_history": "Scan इतिहास ("
   },
   "dev_lifecycle": {
+    "goal_handoff_label": "अपनी AI टीम को सौंपें",
+    "goal_handoff_button": "AI टीम को सौंपें",
+    "goal_handoff_explain": "आपकी AI टीम यहाँ दिए गए कार्यों पर काम करेगी — या लक्ष्य को चरणों में विभाजित करेगी — और फिर काम शुरू कर देगी। वे जो करते हैं उसे आप उसी समय देख सकते हैं।",
+    "goal_handoff_active": "आपकी AI टीम पहले से ही इस लक्ष्य पर काम कर रही है।",
+    "goal_handoff_confirm_q": "इस लक्ष्य पर अपनी AI टीम को शुरू करें?",
+    "goal_handoff_start": "हाँ, शुरू करें",
+    "goal_more_details": "अधिक विवरण",
+    "goal_more_details_hint": "निर्भरताएँ, जुड़ी हुई टीमें, और इतिहास",
     "start_a_competition": "प्रतियोगिता शुरू करें",
     "start_a_competition_desc": "समान कार्य को हल करने के लिए विभिन्न strategies के साथ 2–4 प्रतियोगी spawn करें। विजेता का दृष्टिकोण प्रोमोट होता है।",
     "task_title": "कार्य शीर्षक",

@@ -21,6 +21,7 @@ import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
@@ -38,6 +39,7 @@ import type { GoalProgressSuggestion } from '@/lib/bindings/GoalProgressSuggesti
 import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import { GoalStatusBadge } from './GoalStatusBadge';
+import { GoalHandoffPanel } from './GoalHandoffPanel';
 import { isComplete } from './goalStatus';
 
 /** Dependency kinds the drawer authors (free-text on the wire; cycle-checked
@@ -217,6 +219,13 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
 
   if (!goal) return null;
   const showNudge = progress && progress.total_count > 0 && progress.suggested !== goal.progress;
+  // Hand-off state: a team is already working this goal when any linked
+  // assignment is queued/running/awaiting-review. hasTeam gates the control —
+  // there's no AI team to hand to unless the project has one.
+  const hasActiveAssignment = assignments.some(
+    (a) => a.status === 'queued' || a.status === 'running' || a.status === 'awaiting_review',
+  );
+  const hasTeam = !!projects.find((p) => p.id === goal.project_id)?.team_id;
 
   return (
     <BaseModal
@@ -335,50 +344,19 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
         </Section>
       )}
 
-      {/* Dependencies + follow-ups (always shown so the add pickers are reachable) */}
-      <Section icon={GitMerge} label={dl.goal_detail_dependencies}>
-        <div className="space-y-3">
-          <DepGroup
-            label={dl.goal_dep_depends_on}
-            rows={blocksDeps}
-            goalById={goalById}
-            candidates={candidates}
-            addPlaceholder={dl.goal_dep_add_depends_on}
-            emptyLabel={dl.goal_dep_none}
-            onAdd={(id) => addDep(id, DEP_BLOCKS)}
-            onRemove={removeDep}
-          />
-          <DepGroup
-            label={dl.goal_dep_follows}
-            rows={followsDeps}
-            goalById={goalById}
-            candidates={candidates}
-            addPlaceholder={dl.goal_dep_add_follows}
-            emptyLabel={dl.goal_dep_none}
-            onAdd={(id) => addDep(id, DEP_FOLLOWS)}
-            onRemove={removeDep}
-          />
-        </div>
-      </Section>
-
-      {/* Advance this goal with its owning team — builds a goal-linked
-          assignment from the open to-dos (else decomposes) and runs it. */}
-      {goal && !isComplete(goal.status) && projects.find((p) => p.id === goal.project_id)?.team_id && (
-        <Section icon={ArrowRight} label={dl.goal_advance_label}>
-          {assignments.some((a) => a.status === 'queued' || a.status === 'running' || a.status === 'awaiting_review') ? (
-            <p className="typo-caption text-foreground/70">{dl.goal_advance_active}</p>
-          ) : (
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button variant="secondary" size="sm" onClick={handleAdvance} disabled={advancing}>
-                {advancing ? dl.goal_advance_starting : dl.goal_advance_button}
-              </Button>
-              <span className="typo-caption text-foreground/60">{dl.goal_advance_hint}</span>
-            </div>
-          )}
-        </Section>
+      {/* Hand this goal to the project's AI team — plain-language control with
+          an inline confirm explaining, in plain words, what starting the team
+          will do (replaces the developer-worded "advance" affordance). */}
+      {!isComplete(goal.status) && hasTeam && (
+        <GoalHandoffPanel
+          hasActiveAssignment={hasActiveAssignment}
+          advancing={advancing}
+          onAdvance={handleAdvance}
+        />
       )}
 
-      {/* Linked team-assignment steps + intervention */}
+      {/* What the AI team is doing right now — kept OUTSIDE the fold so an
+          awaiting-review step (the only in-drawer intervention) is never buried. */}
       {steps.length > 0 && (
         <Section icon={Users} label={dl.goal_detail_team_steps}>
           <ul className="space-y-1.5">
@@ -412,6 +390,44 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
           </ul>
         </Section>
       )}
+
+      {/* More details — secondary / power-user surfaces (dependency authoring,
+          linked teams, raw activity) folded so the drawer leads with the human
+          stuff a non-technical user needs first. Collapsed state persists. */}
+      <SectionCard
+        collapsible
+        title={dl.goal_more_details}
+        subtitle={dl.goal_more_details_hint}
+        storageKey="goals.detailDrawer.moreDetails"
+        defaultCollapsed
+        size="sm"
+        className="mt-3"
+      >
+      {/* Dependencies + follow-ups (always shown so the add pickers are reachable) */}
+      <Section icon={GitMerge} label={dl.goal_detail_dependencies} flush>
+        <div className="space-y-3">
+          <DepGroup
+            label={dl.goal_dep_depends_on}
+            rows={blocksDeps}
+            goalById={goalById}
+            candidates={candidates}
+            addPlaceholder={dl.goal_dep_add_depends_on}
+            emptyLabel={dl.goal_dep_none}
+            onAdd={(id) => addDep(id, DEP_BLOCKS)}
+            onRemove={removeDep}
+          />
+          <DepGroup
+            label={dl.goal_dep_follows}
+            rows={followsDeps}
+            goalById={goalById}
+            candidates={candidates}
+            addPlaceholder={dl.goal_dep_add_follows}
+            emptyLabel={dl.goal_dep_none}
+            onAdd={(id) => addDep(id, DEP_FOLLOWS)}
+            onRemove={removeDep}
+          />
+        </div>
+      </Section>
 
       {/* Linked team assignments */}
       {assignments.length > 0 && (
@@ -450,13 +466,14 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
           </ul>
         </Section>
       )}
+      </SectionCard>
     </BaseModal>
   );
 }
 
-function Section({ icon: Icon, label, children }: { icon: typeof Target; label: string; children: ReactNode }) {
+function Section({ icon: Icon, label, children, flush = false }: { icon: typeof Target; label: string; children: ReactNode; flush?: boolean }) {
   return (
-    <div className="pt-3 mt-3 border-t border-primary/10">
+    <div className={flush ? '' : 'pt-3 mt-3 border-t border-primary/10'}>
       <div className="flex items-center gap-2 mb-2">
         <Icon className="w-3.5 h-3.5 text-foreground" />
         <h3 className="typo-caption uppercase tracking-[0.18em] text-foreground">{label}</h3>

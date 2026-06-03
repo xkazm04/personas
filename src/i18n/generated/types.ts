@@ -12672,6 +12672,14 @@ export type Translations = {
       goal_advance_starting: string;
       goal_advance_active: string;
       goal_advance_hint: string;
+      goal_handoff_label: string;
+      goal_handoff_button: string;
+      goal_handoff_explain: string;
+      goal_handoff_active: string;
+      goal_handoff_confirm_q: string;
+      goal_handoff_start: string;
+      goal_more_details: string;
+      goal_more_details_hint: string;
       goal_detail_activity: string;
       goal_item_add: string;
       goal_item_add_placeholder: string;

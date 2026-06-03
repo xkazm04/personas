@@ -11812,6 +11812,14 @@
       "scan_history": "Riwayat Pindai ("
     },
     "dev_lifecycle": {
+      "goal_handoff_label": "Serahkan ke tim AI Anda",
+      "goal_handoff_button": "Serahkan ke tim AI",
+      "goal_handoff_explain": "Tim AI Anda akan mengerjakan daftar tugas di sini — atau memecah sasaran menjadi langkah-langkah — lalu mulai bekerja. Anda dapat meninjau apa yang mereka lakukan saat berlangsung.",
+      "goal_handoff_active": "Tim AI Anda sudah mengerjakan sasaran ini.",
+      "goal_handoff_confirm_q": "Mulai tim AI Anda untuk sasaran ini?",
+      "goal_handoff_start": "Ya, mulai",
+      "goal_more_details": "Detail selengkapnya",
+      "goal_more_details_hint": "Dependensi, tim terkait, dan riwayat",
       "start_a_competition": "Mulai Kompetisi",
       "start_a_competition_desc": "Jalankan 2–4 pesaing dengan strategi berbeda untuk menangani tugas yang sama. Pendekatan pemenang akan dipromosikan.",
       "task_title": "Judul tugas",

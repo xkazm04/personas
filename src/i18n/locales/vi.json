@@ -11812,6 +11812,14 @@
       "scan_history": "Lịch sử quét ("
     },
     "dev_lifecycle": {
+      "goal_handoff_label": "Bàn giao cho đội ngũ AI của bạn",
+      "goal_handoff_button": "Giao cho đội ngũ AI",
+      "goal_handoff_explain": "Đội ngũ AI của bạn sẽ xử lý các đầu việc ở đây — hoặc chia nhỏ mục tiêu thành các bước — rồi bắt đầu làm việc. Bạn có thể theo dõi những gì họ làm ngay khi nó diễn ra.",
+      "goal_handoff_active": "Đội ngũ AI của bạn đang làm việc với mục tiêu này rồi.",
+      "goal_handoff_confirm_q": "Bắt đầu cho đội ngũ AI của bạn xử lý mục tiêu này?",
+      "goal_handoff_start": "Có, bắt đầu",
+      "goal_more_details": "Thêm chi tiết",
+      "goal_more_details_hint": "Các phụ thuộc, đội ngũ liên kết và lịch sử",
       "start_a_competition": "Bắt đầu một cuộc thi",
       "start_a_competition_desc": "Tạo 2–4 đối thủ với các chiến lược khác nhau để giải quyết cùng một tác vụ. Cách tiếp cận của người chiến thắng được thăng cấp.",
       "task_title": "Tiêu đề tác vụ",

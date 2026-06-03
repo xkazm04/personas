@@ -11812,6 +11812,14 @@
       "scan_history": "Scan-Verlauf ("
     },
     "dev_lifecycle": {
+      "goal_handoff_label": "An dein AI-Team übergeben",
+      "goal_handoff_button": "An AI-Team übergeben",
+      "goal_handoff_explain": "Dein AI-Team arbeitet die hier aufgeführten Aufgaben ab – oder zerlegt das Ziel in Schritte – und beginnt dann mit der Arbeit. Du kannst dabei in Echtzeit verfolgen, was es tut.",
+      "goal_handoff_active": "Dein AI-Team arbeitet bereits an diesem Ziel.",
+      "goal_handoff_confirm_q": "Dein AI-Team mit diesem Ziel starten?",
+      "goal_handoff_start": "Ja, starten",
+      "goal_more_details": "Weitere Details",
+      "goal_more_details_hint": "Abhängigkeiten, verknüpfte Teams und Verlauf",
       "start_a_competition": "Wettbewerb starten",
       "start_a_competition_desc": "Spawnt 2–4 Wettbewerber mit unterschiedlichen Strategien, um dieselbe Aufgabe anzugehen. Der Ansatz des Gewinners wird befördert.",
       "task_title": "Aufgabentitel",
