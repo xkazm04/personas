@@ -1,5 +1,7 @@
 import { Trash2, Clock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { statusBadge } from '@/lib/eval/evalFramework';
 import { LabEmptyState } from './LabEmptyState';
 
@@ -85,10 +87,10 @@ export function LabHistoryTable<TRun extends { id: string; status: string; creat
                   </td>
                 ))}
                 <td className="px-3 py-2.5">
-                  <span className={statusBadge(run.status)}>{run.status}</span>
+                  <span className={statusBadge(run.status)}>{tokenLabel(t, 'execution', run.status)}</span>
                 </td>
                 <td className="px-3 py-2.5 typo-caption text-foreground whitespace-nowrap">
-                  {new Date(run.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  <RelativeTime timestamp={run.createdAt} />
                 </td>
                 <td className="px-2 py-2.5">
                   <button

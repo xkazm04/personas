@@ -1212,6 +1212,11 @@ export type Translations = {
       auto_optimize: string;
       auto_optimize_enabled: string;
       auto_optimize_disabled: string;
+      auto_optimize_schedule: string;
+      auto_optimize_daily: string;
+      auto_optimize_weekly: string;
+      auto_optimize_min_score_label: string;
+      auto_optimize_hint: string;
       phase_drafting: string;
       phase_generating: string;
       phase_executing: string;
@@ -1297,6 +1302,7 @@ export type Translations = {
       cancel_eval: string;
       min_2_versions_warning: string;
       radar_title: string;
+      radar_solo_hint: string;
       eval_summary: string;
       version_model_matrix: string;
       avg_column: string;
@@ -1372,6 +1378,8 @@ export type Translations = {
       draft_changes: string;
       current_column: string;
       accept_draft: string;
+      improve_ready_title: string;
+      improve_ready_review: string;
       accept_applies_desc: string;
       draft_accepted: string;
       score_comparison: string;
@@ -1427,6 +1435,8 @@ export type Translations = {
       no_versions: string;
       versions_auto_edit: string;
       select_two_compare: string;
+      compare_runs: string;
+      composite: string;
       click_a_b_hint: string;
       run_ab_versions: string;
       run_check: string;
@@ -1435,6 +1445,8 @@ export type Translations = {
       error_rate_rollback_hint: string;
       actions_label: string;
       promote_to_production: string;
+      set_as_baseline: string;
+      in_production: string;
       unarchive_action: string;
       rollback_to_this: string;
       pin_as_baseline: string;

@@ -10,6 +10,7 @@ import { sanitizeRichSummary } from '@/lib/utils/sanitizers/sanitizeHtml';
 import { AbResultsViewVersus } from './AbResultsViewVersus';
 import { AbResultsViewDiff } from './AbResultsViewDiff';
 import { LabResultsSkeleton } from '../shared/LabResultsSkeleton';
+import { WinnerCallout } from '../shared/WinnerCallout';
 import { DebtText, debtText } from '@/i18n/DebtText';
 
 
@@ -150,7 +151,7 @@ const VERSION_COLORS = [
   { accent: 'violet', gradient: 'from-violet-500/15 via-violet-500/10 to-violet-500/5', border: 'border-violet-500/20', text: 'text-violet-400', bg: 'bg-violet-500/15' },
 ] as const;
 
-export function AbResultsView({ results, runId: _runId, userRatings, onRate, initialVariant = 'baseline', loading }: Props) {
+export function AbResultsView({ results, runId, userRatings, onRate, initialVariant = 'baseline', loading }: Props) {
   const { t } = useTranslation();
   const aggregation = useMemo(() => aggregateAbResults(results), [results]);
   const { versionAggs, matrix } = aggregation;
@@ -170,6 +171,8 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, ini
   const selectedFirst = selectedResults[0] ?? null;
   const selectedVersion = selectedCell ? versionAggs.find((a) => a.versionId === selectedCell.versionId) : null;
 
+  const winnerAgg = versionAggs.find((a) => a.versionId === aggregation.winnerId) ?? null;
+
   const variantProps: AbVariantProps = {
     results,
     aggregation,
@@ -179,6 +182,12 @@ export function AbResultsView({ results, runId: _runId, userRatings, onRate, ini
 
   return (
     <div className="space-y-4">
+      <WinnerCallout
+        versionId={aggregation.winnerId}
+        versionNumber={winnerAgg?.versionNumber ?? null}
+        score={winnerAgg?.compositeScore ?? null}
+        runId={runId}
+      />
       <div className="flex items-center gap-1 pb-2 border-b border-primary/10" role="tablist" aria-label={debtText("auto_results_view_variant_e5de107c")}>
         {VARIANT_TABS.map(({ id, label, subtitle, icon: Icon }) => {
           const active = variant === id;

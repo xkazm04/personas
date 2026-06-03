@@ -7,6 +7,7 @@ import { useAgentStore } from "@/stores/agentStore";
 import { VersionItem, DiffViewer, type VersionAction } from '@/features/agents/sub_lab/shared';
 import ContentLoader from '@/features/shared/components/progress/ContentLoader';
 import { ScoreTrendCard } from './ScoreTrendCard';
+import { RunCompareCard } from './RunCompareCard';
 import { PromptTimeline } from './PromptTimeline';
 import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText, debtText } from '@/i18n/DebtText';
@@ -109,6 +110,11 @@ export function VersionsPanel() {
           <ViewToggle view={view} onChange={handleViewChange} />
         </div>
         <PromptTimeline />
+        {/* Cross-run insight — visible in the default timeline view, not just the list view. */}
+        <div className="grid gap-3 lg:grid-cols-2">
+          <ScoreTrendCard personaId={personaId} />
+          <RunCompareCard personaId={personaId} />
+        </div>
       </div>
     );
   }
@@ -208,6 +214,9 @@ export function VersionsPanel() {
 
         {/* Score trend */}
         <ScoreTrendCard personaId={personaId} />
+
+        {/* Cross-run comparison */}
+        <RunCompareCard personaId={personaId} />
 
         {/* Error rate monitor */}
         <div className="rounded-modal border border-primary/10 bg-secondary/20 p-4 space-y-3">
