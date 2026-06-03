@@ -646,6 +646,7 @@
     "cancel_eval": "평가 취소",
     "min_2_versions_warning": "최소 2개의 프롬프트 버전이 필요합니다. 버전 탭에서 더 많은 버전을 생성하세요.",
     "radar_title": "모델 성능 레이더",
+    "radar_solo_hint": "이 버전만 표시하려면 더블클릭하세요",
     "eval_summary": "평가 요약",
     "version_model_matrix": "버전 × 모델 매트릭스",
     "avg_column": "평균",

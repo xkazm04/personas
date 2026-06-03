@@ -1218,6 +1218,7 @@
       "cancel_eval": "評価をキャンセル",
       "min_2_versions_warning": "少なくとも2つのプロンプトバージョンが必要です。バージョンタブでバージョンを追加してください。",
       "radar_title": "モデルパフォーマンスレーダー",
+      "radar_solo_hint": "ダブルクリックでこのバージョンのみを表示",
       "eval_summary": "評価サマリー",
       "version_model_matrix": "バージョン × モデルマトリクス",
       "avg_column": "平均",

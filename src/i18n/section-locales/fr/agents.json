@@ -646,6 +646,7 @@
     "cancel_eval": "Annuler l'évaluation",
     "min_2_versions_warning": "Au moins 2 versions de prompt sont nécessaires. Créez d'autres versions dans l'onglet Versions.",
     "radar_title": "Radar de performance des modèles",
+    "radar_solo_hint": "Double-cliquez pour isoler cette version",
     "eval_summary": "Résumé de l'évaluation",
     "version_model_matrix": "Matrice version × modèle",
     "avg_column": "Moy.",

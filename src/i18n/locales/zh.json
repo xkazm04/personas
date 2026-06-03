@@ -1218,6 +1218,7 @@
       "cancel_eval": "取消评估",
       "min_2_versions_warning": "至少需要 2 个提示词版本。请在版本标签页创建更多版本。",
       "radar_title": "模型性能雷达图",
+      "radar_solo_hint": "双击以单独显示此版本",
       "eval_summary": "评估摘要",
       "version_model_matrix": "版本 × 模型矩阵",
       "avg_column": "平均",

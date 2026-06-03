@@ -646,6 +646,7 @@
     "cancel_eval": "Batal Eval",
     "min_2_versions_warning": "Diperlukan setidaknya 2 versi prompt. Buat versi lebih di tab Versi.",
     "radar_title": "Radar Performa Model",
+    "radar_solo_hint": "Klik dua kali untuk mengisolasi versi ini",
     "eval_summary": "Ringkasan Evaluasi",
     "version_model_matrix": "Matriks Versi x Model",
     "avg_column": "Rata-rata",

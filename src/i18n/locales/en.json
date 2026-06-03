@@ -1266,6 +1266,7 @@
       "cancel_eval": "Cancel Eval",
       "min_2_versions_warning": "At least 2 prompt versions are needed. Create more versions in the Versions tab.",
       "radar_title": "Model Performance Radar",
+      "radar_solo_hint": "Double-click to isolate this version",
       "eval_summary": "Evaluation Summary",
       "version_model_matrix": "Version x Model Matrix",
       "avg_column": "Avg",

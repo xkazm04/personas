@@ -646,6 +646,7 @@
     "cancel_eval": "Evaluierung abbrechen",
     "min_2_versions_warning": "Mindestens 2 Prompt-Versionen erforderlich. Erstellen Sie weitere Versionen im Versionen-Tab.",
     "radar_title": "Modellleistungs-Radar",
+    "radar_solo_hint": "Doppelklicken, um diese Version zu isolieren",
     "eval_summary": "Evaluierungszusammenfassung",
     "version_model_matrix": "Version x Modell-Matrix",
     "avg_column": "Durchschn.",

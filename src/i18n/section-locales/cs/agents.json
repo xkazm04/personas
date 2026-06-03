@@ -646,6 +646,7 @@
     "cancel_eval": "Zrušit hodnocení",
     "min_2_versions_warning": "Jsou potřeba alespoň 2 verze promptu. Vytvořte další v záložce Verze.",
     "radar_title": "Radar výkonu modelů",
+    "radar_solo_hint": "Dvojklikem izolujete tuto verzi",
     "eval_summary": "Shrnutí hodnocení",
     "version_model_matrix": "Matice Verze x Model",
     "avg_column": "Prům.",

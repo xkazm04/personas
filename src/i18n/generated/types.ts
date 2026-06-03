@@ -1272,6 +1272,7 @@ export type Translations = {
       cancel_eval: string;
       min_2_versions_warning: string;
       radar_title: string;
+      radar_solo_hint: string;
       eval_summary: string;
       version_model_matrix: string;
       avg_column: string;

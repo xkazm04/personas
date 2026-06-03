@@ -646,6 +646,7 @@
     "cancel_eval": "Hủy đánh giá",
     "min_2_versions_warning": "Cần ít nhất 2 phiên bản prompt. Tạo thêm phiên bản trong tab Phiên bản.",
     "radar_title": "Radar hiệu suất mô hình",
+    "radar_solo_hint": "Nhấp đúp để tách riêng phiên bản này",
     "eval_summary": "Tóm tắt đánh giá",
     "version_model_matrix": "Ma trận Phiên bản x Mô hình",
     "avg_column": "TB",
