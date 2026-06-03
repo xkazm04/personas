@@ -110,6 +110,11 @@ export function VersionsPanel() {
           <ViewToggle view={view} onChange={handleViewChange} />
         </div>
         <PromptTimeline />
+        {/* Cross-run insight — visible in the default timeline view, not just the list view. */}
+        <div className="grid gap-3 lg:grid-cols-2">
+          <ScoreTrendCard personaId={personaId} />
+          <RunCompareCard personaId={personaId} />
+        </div>
       </div>
     );
   }
