@@ -218,6 +218,8 @@ export default function IncidentsInbox() {
                 group={group}
                 collapsed={collapsedGroups.has(group.key)}
                 onToggle={() => toggleGroup(group.key)}
+                onAckAll={(ids) => void actions.bulkAck(ids)}
+                onResolveAll={(ids) => void actions.bulkResolve(ids)}
                 renderRow={renderRow}
               />
             ))}
