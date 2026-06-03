@@ -5135,6 +5135,7 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "group_no_persona": "Không có tác nhân",
       "urgency_critical": "Cần chú ý ngay",
       "urgency_high": "Quan trọng",
       "urgency_medium": "Nên xem",

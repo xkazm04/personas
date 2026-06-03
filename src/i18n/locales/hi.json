@@ -5135,6 +5135,7 @@
       "in_window": "विंडो में"
     },
     "incidents": {
+      "group_no_persona": "कोई एजेंट नहीं",
       "urgency_critical": "अभी ध्यान दें",
       "urgency_high": "महत्वपूर्ण",
       "urgency_medium": "देखने लायक",

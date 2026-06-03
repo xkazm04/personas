@@ -5135,6 +5135,7 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "group_no_persona": "Bez agenta",
       "urgency_critical": "Vyžaduje pozornost",
       "urgency_high": "Důležité",
       "urgency_medium": "Stojí za pohled",

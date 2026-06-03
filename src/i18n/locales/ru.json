@@ -5135,6 +5135,7 @@
       "in_window": "в окне"
     },
     "incidents": {
+      "group_no_persona": "Без агента",
       "urgency_critical": "Требует внимания сейчас",
       "urgency_high": "Важно",
       "urgency_medium": "Стоит посмотреть",

@@ -5135,6 +5135,7 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "group_no_persona": "エージェントなし",
       "urgency_critical": "今すぐ対応が必要",
       "urgency_high": "重要",
       "urgency_medium": "確認推奨",

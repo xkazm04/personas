@@ -5135,6 +5135,7 @@
       "in_window": "في النافذة"
     },
     "incidents": {
+      "group_no_persona": "بدون وكيل",
       "urgency_critical": "يحتاج اهتمامًا الآن",
       "urgency_high": "مهم",
       "urgency_medium": "يستحق النظر",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { RefreshCw, Inbox } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -13,7 +13,9 @@ import { consumePendingIncidentDeepLink } from '../libs/incidentDeepLink';
 import { IncidentsInboxKpiHeader } from './IncidentsInboxKpiHeader';
 import { IncidentsFilterBar } from './IncidentsFilterBar';
 import { IncidentRow } from './IncidentRow';
+import { IncidentAgentGroup } from './IncidentAgentGroup';
 import { IncidentDetailModal } from './IncidentDetailModal';
+import { groupIncidentsByAgent } from '../libs/groupIncidents';
 import type { IncidentFilters } from '@/lib/bindings/IncidentFilters';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 
@@ -30,6 +32,7 @@ export default function IncidentsInbox() {
   const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
   const actions = useIncidentActions({
@@ -93,6 +96,39 @@ export default function IncidentsInbox() {
       return next;
     });
   }, []);
+
+  const toggleGroup = useCallback((key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }, []);
+
+  // Group open incidents by the agent they belong to so the inbox answers
+  // "which of my agents needs me?" — worst-severity agents float to the top.
+  const groups = useMemo(() => groupIncidentsByAgent(incidents), [incidents]);
+
+  const renderRow = useCallback(
+    (incident: AuditIncident) => (
+      <IncidentRow
+        key={incident.id}
+        incident={incident}
+        selected={selectedIds.has(incident.id)}
+        onSelectChange={(sel) => toggleSelect(incident.id, sel)}
+        onAcknowledge={() => void actions.acknowledge(incident.id)}
+        onResolve={() => void actions.resolve(incident.id)}
+        onDismiss={() => void actions.dismiss(incident.id)}
+        onReopen={() => void actions.reopen(incident.id)}
+        onOpenDetail={() => setDetailIncident(incident)}
+      />
+    ),
+    [selectedIds, toggleSelect, actions],
+  );
 
   const isFiltered =
     (filters.statuses?.length ?? 0) > 0 ||
@@ -175,18 +211,14 @@ export default function IncidentsInbox() {
               : t.overview.incidents.empty_state_open}
           </div>
         ) : (
-          <div className="divide-y divide-primary/5">
-            {incidents.map((incident) => (
-              <IncidentRow
-                key={incident.id}
-                incident={incident}
-                selected={selectedIds.has(incident.id)}
-                onSelectChange={(sel) => toggleSelect(incident.id, sel)}
-                onAcknowledge={() => void actions.acknowledge(incident.id)}
-                onResolve={() => void actions.resolve(incident.id)}
-                onDismiss={() => void actions.dismiss(incident.id)}
-                onReopen={() => void actions.reopen(incident.id)}
-                onOpenDetail={() => setDetailIncident(incident)}
+          <div>
+            {groups.map((group) => (
+              <IncidentAgentGroup
+                key={group.key}
+                group={group}
+                collapsed={collapsedGroups.has(group.key)}
+                onToggle={() => toggleGroup(group.key)}
+                renderRow={renderRow}
               />
             ))}
           </div>

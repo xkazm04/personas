@@ -5135,6 +5135,7 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "group_no_persona": "Tanpa agen",
       "urgency_critical": "Perlu perhatian sekarang",
       "urgency_high": "Penting",
       "urgency_medium": "Layak dilihat",

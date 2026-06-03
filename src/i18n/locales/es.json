@@ -5135,6 +5135,7 @@
       "in_window": "en ventana"
     },
     "incidents": {
+      "group_no_persona": "Sin agente",
       "urgency_critical": "Requiere atención ahora",
       "urgency_high": "Importante",
       "urgency_medium": "Vale la pena revisar",

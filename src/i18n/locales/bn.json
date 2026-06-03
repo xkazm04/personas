@@ -5135,6 +5135,7 @@
       "in_window": "উইন্ডোতে"
     },
     "incidents": {
+      "group_no_persona": "কোনো এজেন্ট নেই",
       "urgency_critical": "এখনই মনোযোগ দিন",
       "urgency_high": "গুরুত্বপূর্ণ",
       "urgency_medium": "দেখার মতো",

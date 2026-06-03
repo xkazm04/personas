@@ -5135,6 +5135,7 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "group_no_persona": "Kein Agent",
       "urgency_critical": "Sofort prüfen",
       "urgency_high": "Wichtig",
       "urgency_medium": "Sehenswert",

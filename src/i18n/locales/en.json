@@ -5269,6 +5269,7 @@
       "in_window": "in window"
     },
     "incidents": {
+      "group_no_persona": "No agent",
       "urgency_critical": "Needs attention now",
       "urgency_high": "Important",
       "urgency_medium": "Worth a look",
