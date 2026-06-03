@@ -36,6 +36,7 @@ The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven
 - **Each incident says what to do** — the detail modal leads with a guidance callout keyed off the source stream (`incidentGuidance` → `tool` / `credential` / `provider` / …). Resolving offers one-tap note presets ("Fixed", "Transient — ignored", …), and closed rows show their resolution note inline as a recap. Fact values render smartly (timestamps → relative time, URLs as links, per-fact copy).
 - **The grouped inbox remembers its shape** — a collapse-all / expand-all control plus per-agent collapse state persisted to `localStorage` (`incidents:collapsed-groups`). Per-agent headers stay sticky while scrolling.
 - **Navigable by keyboard and time** — keyboard triage (j/k move, Enter open, A acknowledge, R resolve, Esc clear) over the visible rows, announced to screen readers via a polite aria-live region, and "All time / Last 24 hours / Last 7 days" range chips wired to the `since` filter.
+- **Nothing rots unseen** — active incidents open past three days carry a "Stale" tag and amber age, and a newest/oldest sort toggle reorders incidents within each agent group so the longest-waiting work can be pulled to the top.
 
 ## Additional overview modules
 
