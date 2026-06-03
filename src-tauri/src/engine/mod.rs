@@ -1988,9 +1988,14 @@ async fn handle_execution_result(
 
     // Chain triggers -- extract chain depth/visited/trace_id from execution's input_data
     // (propagated via chain event payloads to prevent infinite cycles)
-    let (chain_depth, mut visited, existing_chain_trace_id) = exec_repo::get_by_id(pool, exec_id)
+    let source_input = exec_repo::get_by_id(pool, exec_id)
         .ok()
-        .and_then(|exec| exec.input_data)
+        .and_then(|exec| exec.input_data);
+    // T1 (dual-driver): step executions are DAG-driven — suppress their
+    // team-handoff chain triggers so the connection graph doesn't double-drive
+    // the same work the orchestrator already schedules.
+    let source_is_assignment_step = chain::input_is_assignment_step(source_input.as_deref());
+    let (chain_depth, mut visited, existing_chain_trace_id) = source_input
         .map(|input| chain::extract_chain_metadata(Some(&input)))
         .unwrap_or_default();
     visited.insert(persona_id.to_string());
@@ -2008,6 +2013,7 @@ async fn handle_execution_result(
         chain_depth,
         &visited,
         chain_trace_id.as_deref(),
+        source_is_assignment_step,
     );
     if let Some(ref sched) = scheduler {
         sched.record_chain_cascade(&cascade_metrics);
@@ -3468,17 +3474,21 @@ fn spawn_delayed_retry(
             // (`create_retry` doesn't copy input_data — the retry row starts
             // with NULL input). Fall back to the retry exec's own input_data
             // for the rare case the original was lost.
-            let (chain_depth, mut visited, existing_chain_trace_id) =
-                exec_repo::get_by_id(&pool, &original_exec_id)
-                    .ok()
-                    .and_then(|exec| exec.input_data)
-                    .or_else(|| {
-                        exec_repo::get_by_id(&pool, &exec_id)
-                            .ok()
-                            .and_then(|exec| exec.input_data)
-                    })
-                    .map(|input| chain::extract_chain_metadata(Some(&input)))
-                    .unwrap_or_default();
+            let source_input = exec_repo::get_by_id(&pool, &original_exec_id)
+                .ok()
+                .and_then(|exec| exec.input_data)
+                .or_else(|| {
+                    exec_repo::get_by_id(&pool, &exec_id)
+                        .ok()
+                        .and_then(|exec| exec.input_data)
+                });
+            // T1 (dual-driver): see handle_execution_result — same suppression
+            // on the retry path.
+            let source_is_assignment_step =
+                chain::input_is_assignment_step(source_input.as_deref());
+            let (chain_depth, mut visited, existing_chain_trace_id) = source_input
+                .map(|input| chain::extract_chain_metadata(Some(&input)))
+                .unwrap_or_default();
             visited.insert(persona_id.clone());
             let chain_trace_id =
                 existing_chain_trace_id.or_else(|| result.trace_id.clone());
@@ -3492,6 +3502,7 @@ fn spawn_delayed_retry(
                 chain_depth,
                 &visited,
                 chain_trace_id.as_deref(),
+                source_is_assignment_step,
             );
             // Best-effort metrics recording — same as the regular path
             // (`handle_execution_result`) does when a scheduler is present.

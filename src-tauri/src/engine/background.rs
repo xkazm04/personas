@@ -2594,12 +2594,8 @@ mod tests {
             triggers_evaluated: 3,
             predicates_matched: 2,
             events_published: 2,
-            events_failed: 0,
-            cycles_detected: 0,
-            mark_failures: 0,
-            broken_triggers: 0,
             duration_ms: 42,
-            chain_depth: 0,
+            ..Default::default()
         };
         state.record_chain_cascade(&metrics);
         assert_eq!(state.stats().chain_cascades_total, 1);
