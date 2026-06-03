@@ -37,8 +37,9 @@ Clicking a goal in Board / Map / Timeline / the attention drawer opens the **det
 ### Detail drawer
 `GoalDetailDrawer` is the focused view for one goal:
 
+- **Description** — rendered as **markdown** (`MarkdownRenderer`, GFM + code-span/heading/list/table support), so autonomously-generated goal descriptions (which carry code-span file paths, structure, and a backlog-provenance footer) read cleanly instead of as a flat blob. The Board card shows a markdown-stripped single-line preview (`goalPreview`) under its 2-line clamp.
 - **Hybrid progress nudge** — `dev_tools_resolve_goal_progress` composes the goal's checklist items, sub-goals, and linked team-assignment steps into a *suggested* progress %. When it differs from the stored value, the drawer offers **Accept / edit** — progress is never written silently; a manual override always wins.
-- **Composed checklist** — ad-hoc items (add / toggle / delete), sub-goals, and linked team-assignment steps in one list. A team step in `awaiting_review` gets inline **skip / abort** intervention (via the team-assignment review path).
+- **Composed checklist** — ad-hoc items (add / toggle / delete), sub-goals, and linked team-assignment steps in one list. A team step in `awaiting_review` gets inline **skip / abort** intervention (via the team-assignment review path). A step that produced an `outputSummary` is **expandable** (chevron) — its output renders as markdown inline (`StepRow`), so the actual work each role did is reviewable from the goal, not just the step title.
 - **Linked teams** — the team assignments advancing this goal (title + status) with **unlink**.
 - **Dependencies & follow-ups** — author cross-goal links: **Depends on** (a `blocks` edge — must finish first; backend cycle-checks) and **Follows** (a `follows` edge — sequence). Pick from the project's goals; add/remove via `add_goal_dependency` / `remove_goal_dependency`. These render on the Map.
 - **Activity feed** — recent `dev_goal_signals`, including the `team_*` and `athena_update` signals described below.

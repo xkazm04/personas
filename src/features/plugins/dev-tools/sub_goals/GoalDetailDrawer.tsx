@@ -15,12 +15,14 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import {
   Target, X, Plus, Trash2, Check, Circle, CheckCircle2, AlertCircle,
   Clock, Users, ListChecks, Activity, Pencil, SkipForward, Ban, GitMerge, ArrowRight,
+  ChevronRight, ChevronDown,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { toastCatch, silentCatch } from '@/lib/silentCatch';
@@ -249,7 +251,9 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       </div>
 
       {goal.description && (
-        <p className="typo-body text-foreground leading-relaxed mb-4">{goal.description}</p>
+        <div className="mb-4 rounded-card border border-primary/10 bg-card/30 px-3.5 py-3">
+          <MarkdownRenderer content={goal.description} className="typo-body leading-relaxed" />
+        </div>
       )}
 
       {/* Hybrid progress nudge */}
@@ -382,33 +386,16 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       {steps.length > 0 && (
         <Section icon={Users} label={dl.goal_detail_team_steps}>
           <ul className="space-y-1.5">
-            {steps.map((step) => {
-              const awaiting = step.status === 'awaiting_review';
-              return (
-                <li key={step.id} className="flex items-center gap-2.5 typo-body">
-                  {stepIsDone(step.status)
-                    ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    : awaiting
-                      ? <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-                      : <Clock className="w-4 h-4 text-foreground shrink-0" />}
-                  <span className="flex-1 text-foreground truncate">{step.title}</span>
-                  {awaiting ? (
-                    <span className="flex items-center gap-1 shrink-0">
-                      <Button variant="ghost" size="icon-sm" title={dl.goal_intervene_skip} onClick={() => handleResolveStep(step.id, 'skip')}>
-                        <SkipForward className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button variant="ghost" size="icon-sm" title={dl.goal_intervene_abort} onClick={() => handleResolveStep(step.id, 'abort')}>
-                        <Ban className="w-3.5 h-3.5 text-red-400" />
-                      </Button>
-                    </span>
-                  ) : (
-                    <span className="typo-caption uppercase tracking-wide text-foreground shrink-0">
-                      {tokenLabel(t, 'execution', step.status)}
-                    </span>
-                  )}
-                </li>
-              );
-            })}
+            {steps.map((step) => (
+              <StepRow
+                key={step.id}
+                step={step}
+                statusLabel={tokenLabel(t, 'execution', step.status)}
+                skipLabel={dl.goal_intervene_skip}
+                abortLabel={dl.goal_intervene_abort}
+                onResolve={handleResolveStep}
+              />
+            ))}
           </ul>
         </Section>
       )}
@@ -463,6 +450,74 @@ function Section({ icon: Icon, label, children }: { icon: typeof Target; label: 
       </div>
       {children}
     </div>
+  );
+}
+
+/**
+ * One linked team-assignment step. The title row is collapsed by default; when
+ * the step produced an `outputSummary` (the work the role actually did), a
+ * chevron expands it as markdown — so a goal's progress is reviewable at a
+ * high level instead of a bare title. Awaiting-review steps keep their inline
+ * skip/abort intervention.
+ */
+function StepRow({
+  step, statusLabel, skipLabel, abortLabel, onResolve,
+}: {
+  step: TeamAssignmentStep;
+  statusLabel: string;
+  skipLabel: string;
+  abortLabel: string;
+  onResolve: (stepId: string, action: 'skip' | 'abort') => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const awaiting = step.status === 'awaiting_review';
+  const output = step.outputSummary?.trim();
+  const hasOutput = !!output;
+  return (
+    <li className="rounded-card border border-primary/10 bg-card/20">
+      <div className="flex items-center gap-2.5 typo-body px-2.5 py-1.5">
+        <button
+          type="button"
+          onClick={() => hasOutput && setOpen((v) => !v)}
+          className={`shrink-0 ${hasOutput ? 'text-foreground' : 'opacity-0 pointer-events-none'}`}
+          aria-label={open ? 'Collapse step output' : 'Expand step output'}
+          aria-expanded={open}
+        >
+          {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+        </button>
+        {stepIsDone(step.status)
+          ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          : awaiting
+            ? <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+            : <Clock className="w-4 h-4 text-foreground shrink-0" />}
+        <button
+          type="button"
+          onClick={() => hasOutput && setOpen((v) => !v)}
+          className={`flex-1 min-w-0 text-left text-foreground truncate ${hasOutput ? '' : 'cursor-default'}`}
+        >
+          {step.title}
+        </button>
+        {awaiting ? (
+          <span className="flex items-center gap-1 shrink-0">
+            <Button variant="ghost" size="icon-sm" title={skipLabel} onClick={() => onResolve(step.id, 'skip')}>
+              <SkipForward className="w-3.5 h-3.5" />
+            </Button>
+            <Button variant="ghost" size="icon-sm" title={abortLabel} onClick={() => onResolve(step.id, 'abort')}>
+              <Ban className="w-3.5 h-3.5 text-red-400" />
+            </Button>
+          </span>
+        ) : (
+          <span className="typo-caption uppercase tracking-wide text-foreground shrink-0">
+            {statusLabel}
+          </span>
+        )}
+      </div>
+      {open && hasOutput && (
+        <div className="border-t border-primary/10 px-3 py-2 max-h-80 overflow-y-auto">
+          <MarkdownRenderer content={output} className="typo-caption leading-relaxed" />
+        </div>
+      )}
+    </li>
   );
 }
 
