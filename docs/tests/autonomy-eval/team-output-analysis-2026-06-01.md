@@ -284,7 +284,7 @@ ships** — 22 `dev-clone.pr.created`, 11 `qa.pr.approved`, real merged PRs on a
 refuses false bumps and emits `release.hold`; Docs verifies before editing; QA tests in a
 worktree and bounces bad PRs with `changes_requested`). The gaps below are the next layer.
 
-### T1 — Dual-driver redundancy (architecture; the big one)
+### T1 — Dual-driver redundancy (architecture; the big one) — FIXED (405e50435)
 The **event-chain subscriptions** (team_handoff connections) and the **assignment DAG**
 (goal-advance steps) drive the *same work in parallel with no mutual awareness*. Proof: at
 19:04 two Dev Clone executions started simultaneously for the same ADR-0009 increment — one
@@ -296,13 +296,19 @@ churn. *Direction:* one driver per work item — when a step execution emits eve
 team-handoff routing for it (the engine knows the execution is step-driven via `input_data
 .assignment_id`), or retire chain connections on goal-advance-managed teams (chain becomes
 the fallback for non-goal work).
+  **Fixed** (`405e50435`): `evaluate_chain_triggers` suppresses `team_handoff.*` triggers when
+  the source execution is an assignment step (detected via `assignment_id`+`step_id` in its
+  input); named-event subscriptions still route. New `handoffs_suppressed` metric + tests.
 
-### T2 — No context flow between chained steps (teamwork)
+### T2 — No context flow between chained steps (teamwork) — FIXED (4c559526c)
 `build_step_input` passes only `step_title` + `step_description`; a predecessor's
 `output_summary` is stored but **never forwarded**. `depends_on` gives *ordering*, not
 *context* — the reviewer/QA must rediscover what the implementer did from repo state, and
 with several open PRs they can pick the wrong one. *Direction:* include the depends_on
 predecessors' `output_summary` (and extracted PR URL/branch) in the next step's input.
+  **Fixed** (`4c559526c`): `run_step` collects direct predecessors' `output_summary` (capped
+  1500 chars each) and embeds them as `predecessor_outputs` in the step input, which the prompt
+  pipeline renders into the persona's "## Input Data" section.
 
 ### T3 — Over-triggered verification roles (persona design / cost)
 Release Manager ran **51×/$36.81** and Docs Steward **51×/$30.53** — more than any builder —
