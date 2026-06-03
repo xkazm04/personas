@@ -400,13 +400,34 @@ pub fn build_decompose_prompt(goal: &str, candidates: &[Candidate]) -> String {
         .join("\n");
     format!(
         r#"You are decomposing a team-level goal into an ordered checklist
-of steps for an AI agent team.
+of steps for an AI agent team that ships working software.
 
 ## Goal
 {goal}
 
 ## Team roster (every step must be assignable to one of these)
 {roster}
+
+## Required pipeline shape (CRITICAL)
+The steps run SEQUENTIALLY — each step consumes the previous step's output, so
+order matters. A goal is only delivered when code is actually WRITTEN, so the
+checklist MUST contain an IMPLEMENTATION step that produces the code/tests, and
+it MUST come BEFORE any review / test / security / docs step. Never produce a
+checklist that reviews, security-scans, or documents work that no prior step
+implemented — that is the most common failure and wastes the whole run.
+
+Follow this canonical order (include the steps that fit the goal; always include
+implement):
+1. (optional) Scope / design — an architect produces a short plan/ADR + task breakdown.
+2. REQUIRED — Implement — the engineer / builder / "Dev Clone" persona writes the
+   actual code + tests for the increment (this is the step that delivers value).
+3. (optional) Review — a reviewer checks the IMPLEMENTED change.
+4. (optional) Security — a security persona scans the IMPLEMENTED change.
+5. (optional) Docs — a docs persona updates docs for the SHIPPED change.
+
+Assign the implementation step to the roster entry whose capability is building/
+coding/engineering (the engineer or "Dev Clone"). Assign each other step to the
+roster entry whose capability text best matches it.
 
 ## Response
 Respond with ONLY a JSON object on a single line, no markdown:
@@ -417,9 +438,9 @@ Respond with ONLY a JSON object on a single line, no markdown:
     "suggestedUseCaseId": "<the matching use_case_id from the same line, or null>"}}
 ]}}
 
-Aim for 2-6 steps. The first step usually has no dependencies; subsequent steps
-consume the previous step's output. Pick suggested persona/use-case based on
-which roster entry's capability text best matches the step description."#
+Aim for 2-5 steps, in execution order (the engine chains them so step N depends
+on step N-1). The first step has no dependencies; every later step consumes the
+prior step's output."#
     )
 }
 

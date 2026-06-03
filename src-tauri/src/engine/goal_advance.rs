@@ -103,10 +103,26 @@ pub async fn advance_goal(
         .filter(|i| !i.done)
         .collect();
 
+    // Both step sources chain LINEARLY: each step `depends_on` the previous
+    // one. The SDLC pipeline a goal decomposes into is inherently ordered
+    // (scope → implement → review → security → docs); without dependencies the
+    // orchestrator launched every step at once, so reviewers/security/docs ran
+    // before — or instead of — the implementation and concluded
+    // `precondition_failed` against work that did not exist yet. A forward-only
+    // chain makes the orchestrator gate each step on its predecessor.
+    let chain_dep = |idx: usize| -> Option<Vec<i32>> {
+        if idx == 0 {
+            None
+        } else {
+            Some(vec![idx as i32 - 1])
+        }
+    };
+
     let steps: Vec<CreateTeamAssignmentStepInput> = if !open_items.is_empty() {
         open_items
             .iter()
-            .map(|it| CreateTeamAssignmentStepInput {
+            .enumerate()
+            .map(|(idx, it)| CreateTeamAssignmentStepInput {
                 // Title verbatim — the orchestrator's close-loop matches it to
                 // check the to-do off when the step completes.
                 title: it.title.clone(),
@@ -116,7 +132,7 @@ pub async fn advance_goal(
                 )),
                 assigned_persona_id: None,
                 assigned_use_case_id: None,
-                depends_on_indices: None,
+                depends_on_indices: chain_dep(idx),
             })
             .collect()
     } else {
@@ -129,7 +145,8 @@ pub async fn advance_goal(
         }
         proposed
             .into_iter()
-            .map(|p| CreateTeamAssignmentStepInput {
+            .enumerate()
+            .map(|(idx, p)| CreateTeamAssignmentStepInput {
                 title: p.title,
                 description: if p.description.trim().is_empty() {
                     None
@@ -138,7 +155,7 @@ pub async fn advance_goal(
                 },
                 assigned_persona_id: p.suggested_persona_id,
                 assigned_use_case_id: p.suggested_use_case_id,
-                depends_on_indices: None,
+                depends_on_indices: chain_dep(idx),
             })
             .collect()
     };
