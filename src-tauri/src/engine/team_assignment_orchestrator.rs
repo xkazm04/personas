@@ -483,7 +483,12 @@ async fn run_step(
     }
 
     // Resolve description into input_data so the persona gets meaningful context.
-    let input_payload = build_step_input(&step, use_case_id.as_deref());
+    // T2 (context flow): `depends_on` gives ORDERING only — without forwarding
+    // what the predecessors actually produced, a reviewer/QA step must
+    // rediscover the implementer's work from repo state and can pick the wrong
+    // PR. Forward each direct predecessor's output_summary (capped).
+    let predecessor_outputs = collect_predecessor_outputs(pool, &step);
+    let input_payload = build_step_input(&step, use_case_id.as_deref(), &predecessor_outputs);
     let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
 
     let exec = exec_repo::create(
@@ -591,14 +596,69 @@ fn check_persona_eligible(persona: &Persona) -> Result<(), String> {
     Ok(())
 }
 
-fn build_step_input(step: &TeamAssignmentStep, use_case_id: Option<&str>) -> serde_json::Value {
-    json!({
+/// Max chars of a single predecessor output forwarded into a step's input.
+/// Summaries are typically 0.5–2KB; the cap keeps a long chain from bloating
+/// the prompt while preserving PR URLs/branches and the gist of the work.
+const PREDECESSOR_OUTPUT_MAX_CHARS: usize = 1500;
+
+/// Load the outputs of the steps this step `depends_on` (direct predecessors
+/// only), in step order, for forwarding into the step input. Best-effort: a
+/// repo error or a predecessor without an output simply contributes nothing.
+fn collect_predecessor_outputs(
+    pool: &DbPool,
+    step: &TeamAssignmentStep,
+) -> Vec<serde_json::Value> {
+    let dep_ids = parse_depends_on(step.depends_on.as_deref());
+    if dep_ids.is_empty() {
+        return Vec::new();
+    }
+    let steps = match assignment_repo::list_steps(pool, &step.assignment_id) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    steps
+        .into_iter()
+        .filter(|s| dep_ids.iter().any(|d| d == &s.id))
+        .filter_map(|s| {
+            let summary = s
+                .output_summary
+                .as_deref()
+                .map(str::trim)
+                .filter(|t| !t.is_empty())?
+                .to_string();
+            let total_chars = summary.chars().count();
+            let mut forwarded: String =
+                summary.chars().take(PREDECESSOR_OUTPUT_MAX_CHARS).collect();
+            if total_chars > PREDECESSOR_OUTPUT_MAX_CHARS {
+                forwarded.push_str(" …[truncated]");
+            }
+            Some(json!({
+                "step_title": s.title,
+                "status": s.status,
+                "output_summary": forwarded,
+            }))
+        })
+        .collect()
+}
+
+fn build_step_input(
+    step: &TeamAssignmentStep,
+    use_case_id: Option<&str>,
+    predecessor_outputs: &[serde_json::Value],
+) -> serde_json::Value {
+    let mut input = json!({
         "assignment_id": step.assignment_id,
         "step_id": step.id,
         "use_case_id": use_case_id,
         "step_title": step.title,
         "step_description": step.description,
-    })
+    });
+    // What the steps this one depends_on produced — the reviewer/QA/docs step
+    // acts on THIS work (PR URL, branch, what was done), not a fresh discovery.
+    if !predecessor_outputs.is_empty() {
+        input["predecessor_outputs"] = serde_json::Value::Array(predecessor_outputs.to_vec());
+    }
+    input
 }
 
 // ----------------------------------------------------------------------------
