@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { LazyChart } from '@/features/shared/charts/RechartsWrapper';
 import { ChartErrorBoundary } from '@/features/overview/sub_usage/components/ChartErrorBoundary';
 import { useScaledFontSize } from '@/stores/themeStore';
@@ -15,6 +15,18 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
   const sf = useScaledFontSize();
   const chart = useChartTheme();
   const radarVersions = versionAggs.slice(0, 4);
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+
+  // Toggle a version's overlay; never hide the last visible series.
+  const toggleVersion = (id: string) => {
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) { next.delete(id); return next; }
+      if (radarVersions.length - next.size <= 1) return prev;
+      next.add(id);
+      return next;
+    });
+  };
 
   const radarData = useMemo(() =>
     [
@@ -58,7 +70,7 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
                       color: chart.tooltipText,
                     }}
                   />
-                  {radarVersions.map((agg, idx) => (
+                  {radarVersions.map((agg, idx) => hidden.has(agg.versionId) ? null : (
                     <R.Radar key={agg.versionId} name={`v${agg.versionNumber}`} dataKey={agg.versionId}
                       stroke={seriesColor(idx, chart)}
                       fill={seriesColor(idx, chart)}
@@ -70,12 +82,20 @@ export function EvalRadarChart({ versionAggs }: EvalRadarChartProps) {
           </ChartErrorBoundary>
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
-          {radarVersions.map((agg, idx) => (
-            <span key={agg.versionId} className="inline-flex items-center gap-1.5 px-2 py-1 rounded-card typo-body border border-primary/10 bg-secondary/20 text-foreground">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seriesColor(idx, chart) }} />
-              v{agg.versionNumber}
-            </span>
-          ))}
+          {radarVersions.map((agg, idx) => {
+            const isHidden = hidden.has(agg.versionId);
+            return (
+              <button
+                key={agg.versionId}
+                onClick={() => toggleVersion(agg.versionId)}
+                aria-pressed={!isHidden}
+                className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-card typo-body border border-primary/10 bg-secondary/20 text-foreground transition-opacity ${isHidden ? 'opacity-40' : 'hover:bg-secondary/40'}`}
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: seriesColor(idx, chart) }} />
+                <span className={isHidden ? 'line-through' : ''}>v{agg.versionNumber}</span>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
