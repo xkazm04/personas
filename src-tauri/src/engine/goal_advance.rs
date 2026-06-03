@@ -118,6 +118,19 @@ pub async fn advance_goal(
         }
     };
 
+    // The implementation step MUST run on the engineer / Dev Clone. The decompose
+    // LLM sometimes suggests the architect for it (architects plan, they don't
+    // code) and the orchestrator honors a pre-assigned persona verbatim — which
+    // would re-create the funnel loss the implement step exists to close. Pin any
+    // implement step to the team's engineer deterministically.
+    let engineer_id: Option<String> = personas
+        .iter()
+        .find(|p| {
+            p.template_category.as_deref() == Some("dev-clone")
+                || p.name.to_ascii_lowercase().contains("dev clone")
+        })
+        .map(|p| p.id.clone());
+
     let steps: Vec<CreateTeamAssignmentStepInput> = if !open_items.is_empty() {
         open_items
             .iter()
@@ -146,16 +159,29 @@ pub async fn advance_goal(
         proposed
             .into_iter()
             .enumerate()
-            .map(|(idx, p)| CreateTeamAssignmentStepInput {
-                title: p.title,
-                description: if p.description.trim().is_empty() {
+            .map(|(idx, p)| {
+                let is_impl = p.title.to_ascii_lowercase().contains("implement");
+                let description = if p.description.trim().is_empty() {
                     None
                 } else {
                     Some(p.description)
-                },
-                assigned_persona_id: p.suggested_persona_id,
-                assigned_use_case_id: p.suggested_use_case_id,
-                depends_on_indices: chain_dep(idx),
+                };
+                // Implement step → engineer (clear the LLM's use-case suggestion so
+                // the orchestrator scopes the engineer's own capability). Otherwise
+                // honor the decompose suggestion.
+                let (assigned_persona_id, assigned_use_case_id) =
+                    if is_impl && engineer_id.is_some() {
+                        (engineer_id.clone(), None)
+                    } else {
+                        (p.suggested_persona_id, p.suggested_use_case_id)
+                    };
+                CreateTeamAssignmentStepInput {
+                    title: p.title,
+                    description,
+                    assigned_persona_id,
+                    assigned_use_case_id,
+                    depends_on_indices: chain_dep(idx),
+                }
             })
             .collect()
     };
