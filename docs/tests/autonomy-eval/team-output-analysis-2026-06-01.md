@@ -273,6 +273,72 @@ NEW gaps beyond G1–G8, all now fixed:
 it no-ops each cascade. Off the dev critical path; optional cleanup = drop it from the
 `sdlc-lifecycle` preset + re-sync.)
 
+---
+
+## 4c. Output-quality gap analysis (2026-06-03 post-fix run, ~12:35–20:30 UTC)
+
+Full-output sweep (executions, step outputs, real GitHub PRs, goal movement, event flow,
+memories) of the run that carried the complete GAP-A stack. **Headline: the fleet genuinely
+ships** — 22 `dev-clone.pr.created`, 11 `qa.pr.approved`, real merged PRs on all 7 repos,
+4 goals driven to 100% with merged code, and the roles are individually disciplined (Release
+refuses false bumps and emits `release.hold`; Docs verifies before editing; QA tests in a
+worktree and bounces bad PRs with `changes_requested`). The gaps below are the next layer.
+
+### T1 — Dual-driver redundancy (architecture; the big one)
+The **event-chain subscriptions** (team_handoff connections) and the **assignment DAG**
+(goal-advance steps) drive the *same work in parallel with no mutual awareness*. Proof: at
+19:04 two Dev Clone executions started simultaneously for the same ADR-0009 increment — one
+`_chain_depth:1` (handoff) and one `assignment_id:183ee7db` (step) — producing the
+near-identical competing PRs ai-paralegal **#6 and #7**; ai-bookkeeper **#15 (open) duplicates
+already-merged #13**. Volume: **181 chain-driven vs 71 assignment-driven** executions — the
+chain dominates, and it carries both the duplicate implementations and most verification
+churn. *Direction:* one driver per work item — when a step execution emits events, suppress
+team-handoff routing for it (the engine knows the execution is step-driven via `input_data
+.assignment_id`), or retire chain connections on goal-advance-managed teams (chain becomes
+the fallback for non-goal work).
+
+### T2 — No context flow between chained steps (teamwork)
+`build_step_input` passes only `step_title` + `step_description`; a predecessor's
+`output_summary` is stored but **never forwarded**. `depends_on` gives *ordering*, not
+*context* — the reviewer/QA must rediscover what the implementer did from repo state, and
+with several open PRs they can pick the wrong one. *Direction:* include the depends_on
+predecessors' `output_summary` (and extracted PR URL/branch) in the next step's input.
+
+### T3 — Over-triggered verification roles (persona design / cost)
+Release Manager ran **51×/$36.81** and Docs Steward **51×/$30.53** — more than any builder —
+with most runs correctly concluding "no action needed" (`no_input_available`). They are
+woken by *every* cascade event rather than by release/docs-worthy conditions. Compounding:
+**20 `release.version.bumped` + 13 `release.published` in ~8h** (v0.13.1→v0.13.2 hours
+apart) — there is no release-cadence policy, so every merge cascades into a bump+publish.
+*Direction:* narrow their listen filters (Release: `qa.pr.approved`/merge only; Docs: merged
+user-facing changes only), debounce/batch, and add a release-cadence rule to
+`standards_config`.
+
+### T4 — Goal progress is binary; Board checklists empty (goal fulfillment)
+Progress only moves 0→100 when the assignment completes — in-flight goals sit at 0% with
+half their steps done (poor visibility; Portfolio under-reports). Decomposed goals carry **no
+`dev_goal_items`**, so Board cards show no checklist. *Direction:* write partial progress on
+step completion (the hybrid resolver already composes linked steps — apply it per-step), and
+optionally mirror decomposed steps into goal to-dos.
+
+### T5 — Open-PR backlog hygiene (goal fulfillment)
+~9 PRs sit OPEN across the repos — duplicates (#15 vs merged #13), superseded attempts, and
+unmerged `chore(release)` PRs — while their goals are already marked done. Nothing owns
+driving open PRs to merge/close. *Direction:* give QA or Release an open-PR sweep
+responsibility (close superseded, merge approved), and/or gate goal-done on no open PRs from
+its branches.
+
+### T6 — Learning loop dormant (teamwork)
+**1 team memory written in the whole run** (vs 46 pre-existing) despite 207 completions, ADR
+decisions, and QA bounces. Auto-triage approvals bypass the human-review→memory pattern, and
+personas don't persist decisions/constraints. *Direction:* memory writes on
+`qa.pr.changes_requested` (constraint), ADR acceptance (decision), and auto-approved reviews.
+
+### T7 — Design hygiene (small)
+Artist no-op ×19 (GAP-D); Dev Clone `template_category='devops'` (mis-set — the engineer pin
+works via name fallback; fix the data); branch naming drifts (`dev-clone/*` vs `devclone/*`
+vs `qa/*`) — `standards_config` naming rule exists but isn't enforced in-prompt consistently.
+
 ## 5. Recommended next steps (in order)
 
 1. **P0 — Re-run the soak with the self-heal ON for one full window**, then
