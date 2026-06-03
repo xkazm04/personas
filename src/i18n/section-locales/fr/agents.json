@@ -721,6 +721,8 @@
     "draft_changes": "Changements du brouillon",
     "current_column": "Actuel",
     "accept_draft": "Accepter le brouillon",
+    "improve_ready_title": "Brouillon de prompt prêt",
+    "improve_ready_review": "Examiner",
     "accept_applies_desc": "L'acceptation applique le prompt du brouillon à l'agent, créant une nouvelle version de prompt.",
     "draft_accepted": "Brouillon accepté et appliqué",
     "score_comparison": "Comparaison des scores",

@@ -721,6 +721,8 @@
     "draft_changes": "초안 변경",
     "current_column": "현재",
     "accept_draft": "초안 수락",
+    "improve_ready_title": "프롬프트 초안 준비됨",
+    "improve_ready_review": "검토",
     "accept_applies_desc": "수락하면 초안 프롬프트가 페르소나에 적용되어 새 프롬프트 버전이 생성됩니다.",
     "draft_accepted": "초안이 수락되어 적용됨",
     "score_comparison": "점수 비교",

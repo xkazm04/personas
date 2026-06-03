@@ -721,6 +721,8 @@
     "draft_changes": "草稿变更",
     "current_column": "当前",
     "accept_draft": "接受草稿",
+    "improve_ready_title": "提示词草稿已就绪",
+    "improve_ready_review": "查看",
     "accept_applies_desc": "接受后将草稿提示词应用到代理，创建新的提示词版本。",
     "draft_accepted": "草稿已接受并应用",
     "score_comparison": "分数比较",

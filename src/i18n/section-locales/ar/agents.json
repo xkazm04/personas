@@ -721,6 +721,8 @@
     "draft_changes": "تغييرات المسودة",
     "current_column": "الحالي",
     "accept_draft": "قبول المسودة",
+    "improve_ready_title": "مسودة الموجّه جاهزة",
+    "improve_ready_review": "مراجعة",
     "accept_applies_desc": "القبول يطبّق تعليمات المسودة على الشخصية وينشئ إصداراً جديداً.",
     "draft_accepted": "المسودة مقبولة ومطبّقة",
     "score_comparison": "مقارنة النتائج",

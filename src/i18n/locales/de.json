@@ -1293,6 +1293,8 @@
       "draft_changes": "Entwurfsänderungen",
       "current_column": "Aktuell",
       "accept_draft": "Entwurf akzeptieren",
+      "improve_ready_title": "Prompt-Entwurf bereit",
+      "improve_ready_review": "Überprüfen",
       "accept_applies_desc": "Akzeptieren wendet den Entwurfs-Prompt auf die Persona an und erstellt eine neue Prompt-Version.",
       "draft_accepted": "Entwurf akzeptiert und angewendet",
       "score_comparison": "Punktzahlvergleich",

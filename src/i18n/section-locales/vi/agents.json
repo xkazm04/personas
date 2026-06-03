@@ -721,6 +721,8 @@
     "draft_changes": "Thay đổi bản nháp",
     "current_column": "Hiện tại",
     "accept_draft": "Chấp nhận bản nháp",
+    "improve_ready_title": "Bản nháp prompt đã sẵn sàng",
+    "improve_ready_review": "Xem lại",
     "accept_applies_desc": "Chấp nhận áp dụng prompt bản nháp cho tác nhân, tạo phiên bản prompt mới.",
     "draft_accepted": "Bản nháp đã chấp nhận và áp dụng",
     "score_comparison": "So sánh điểm",

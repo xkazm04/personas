@@ -1293,6 +1293,8 @@
       "draft_changes": "下書きの変更",
       "current_column": "現在",
       "accept_draft": "下書きを承認",
+      "improve_ready_title": "プロンプトの下書きが準備できました",
+      "improve_ready_review": "確認",
       "accept_applies_desc": "承認するとペルソナに下書きプロンプトが適用され、新しいプロンプトバージョンが作成されます。",
       "draft_accepted": "下書きを承認して適用しました",
       "score_comparison": "スコア比較",

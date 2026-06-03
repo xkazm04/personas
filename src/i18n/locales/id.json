@@ -1293,6 +1293,8 @@
       "draft_changes": "Perubahan Draf",
       "current_column": "Saat Ini",
       "accept_draft": "Terima Draf",
+      "improve_ready_title": "Draf prompt siap",
+      "improve_ready_review": "Tinjau",
       "accept_applies_desc": "Menerima menerapkan prompt draf ke persona, membuat versi prompt baru.",
       "draft_accepted": "Draf diterima dan diterapkan",
       "score_comparison": "Perbandingan Skor",

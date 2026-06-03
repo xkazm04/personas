@@ -721,6 +721,8 @@
     "draft_changes": "Cambios del borrador",
     "current_column": "Actual",
     "accept_draft": "Aceptar borrador",
+    "improve_ready_title": "Borrador de prompt listo",
+    "improve_ready_review": "Revisar",
     "accept_applies_desc": "Aceptar aplica el prompt borrador a la persona, creando una nueva versión de prompt.",
     "draft_accepted": "Borrador aceptado y aplicado",
     "score_comparison": "Comparación de puntuaciones",

@@ -1341,6 +1341,8 @@
       "draft_changes": "Draft Changes",
       "current_column": "Current",
       "accept_draft": "Accept Draft",
+      "improve_ready_title": "Prompt draft ready",
+      "improve_ready_review": "Review",
       "accept_applies_desc": "Accept applies the draft prompt to the persona, creating a new prompt version.",
       "draft_accepted": "Draft accepted and applied",
       "score_comparison": "Score Comparison",

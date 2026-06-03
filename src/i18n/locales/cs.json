@@ -1293,6 +1293,8 @@
       "draft_changes": "Navrhované změny",
       "current_column": "Současné",
       "accept_draft": "Přijmout návrh",
+      "improve_ready_title": "Návrh promptu je připraven",
+      "improve_ready_review": "Zkontrolovat",
       "accept_applies_desc": "Přijetím se navržený prompt aplikuje na personu a vytvoří se nová verze promptu.",
       "draft_accepted": "Návrh byl přijat a aplikován",
       "score_comparison": "Porovnání skóre",

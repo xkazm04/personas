@@ -1293,6 +1293,8 @@
       "draft_changes": "খসড়া পরিবর্তন",
       "current_column": "বর্তমান",
       "accept_draft": "খসড়া গ্রহণ করুন",
+      "improve_ready_title": "প্রম্পট খসড়া প্রস্তুত",
+      "improve_ready_review": "পর্যালোচনা করুন",
       "accept_applies_desc": "গ্রহণ করলে পার্সোনায় খসড়া প্রম্পট প্রয়োগ হয়, একটি নতুন প্রম্পট সংস্করণ তৈরি হয়।",
       "draft_accepted": "খসড়া গৃহীত ও প্রয়োগ হয়েছে",
       "score_comparison": "স্কোর তুলনা",

@@ -1347,6 +1347,8 @@ export type Translations = {
       draft_changes: string;
       current_column: string;
       accept_draft: string;
+      improve_ready_title: string;
+      improve_ready_review: string;
       accept_applies_desc: string;
       draft_accepted: string;
       score_comparison: string;

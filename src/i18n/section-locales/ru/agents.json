@@ -721,6 +721,8 @@
     "draft_changes": "Изменения черновика",
     "current_column": "Текущий",
     "accept_draft": "Принять черновик",
+    "improve_ready_title": "Черновик промпта готов",
+    "improve_ready_review": "Просмотреть",
     "accept_applies_desc": "Принятие применяет черновой промпт к агенту, создавая новую версию.",
     "draft_accepted": "Черновик принят и применён",
     "score_comparison": "Сравнение баллов",
