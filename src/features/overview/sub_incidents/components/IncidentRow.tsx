@@ -1,4 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
   severityBadgeClass,
@@ -8,6 +9,7 @@ import {
   relativeTime,
   statusLabel,
 } from '../libs/incidentTaxonomy';
+import { incidentRowSubtext } from '../libs/incidentDetail';
 
 interface Props {
   incident: AuditIncident;
@@ -40,6 +42,9 @@ export function IncidentRow({
   // red, medium reads amber, and closed incidents are muted to neutral so the
   // open work stands out.
   const rank = severityRank(incident.severity);
+  // Human-readable inline subtext: prose detail shows, structured (JSON /
+  // key=value) payloads are suppressed here and broken down in the detail modal.
+  const subtext = incidentRowSubtext(incident.detail);
   const accent = isClosed
     ? 'border-l-transparent'
     : rank >= 3
@@ -65,7 +70,7 @@ export function IncidentRow({
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${severityBadgeClass(incident.severity)}`}>
-            {incident.severity}
+            {tokenLabel(t, 'severity', incident.severity)}
           </span>
           <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
           {!isOpen && (
@@ -89,8 +94,8 @@ export function IncidentRow({
           )}
         </div>
 
-        {incident.detail && (
-          <p className="mt-1 typo-caption text-foreground line-clamp-2">{incident.detail}</p>
+        {subtext && (
+          <p className="mt-1 typo-caption text-foreground line-clamp-1">{subtext}</p>
         )}
       </div>
 
