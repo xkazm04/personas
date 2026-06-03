@@ -21,7 +21,7 @@ function makeHarness(seed: Partial<SystemStore> = {}) {
   state = { ...state, ...slice, ...seed };
   return {
     get: () => state,
-    buffer: (taskId: string) => state.taskOutputBuffers[taskId],
+    buffer: (taskId: string) => state.taskOutputBuffers[taskId] ?? [],
   };
 }
 
