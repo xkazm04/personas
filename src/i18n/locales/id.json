@@ -5135,6 +5135,15 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "guidance_label": "Apa yang harus dilakukan",
+      "guidance_tool": "Periksa koneksi atau kredensial alat, lalu jalankan ulang agen.",
+      "guidance_credential": "Autentikasi ulang atau ganti kredensial ini di Koneksi, lalu jalankan ulang.",
+      "guidance_healing": "Pemulihan otomatis tidak dapat memperbaikinya. Tinjau proses terbaru agen dan instruksinya.",
+      "guidance_provider": "Penyedia model cadangan digunakan. Tidak perlu tindakan kecuali sering terjadi.",
+      "guidance_policy": "Sebuah kebijakan memblokir ini. Sesuaikan kebijakan di Pengaturan jika seharusnya diizinkan.",
+      "guidance_alert": "Aturan peringatan terpicu. Tinjau metrik yang melewati ambangnya.",
+      "guidance_execution": "Proses agen gagal. Buka eksekusi untuk melihat error, lalu jalankan ulang.",
+      "guidance_default": "Tinjau detail di bawah, lalu selesaikan atau abaikan.",
       "groups_collapse_all": "Tutup semua",
       "groups_expand_all": "Buka semua",
       "group_no_persona": "Tanpa agen",

@@ -5135,6 +5135,15 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "guidance_label": "该怎么做",
+      "guidance_tool": "检查该工具的连接或凭据，然后重新运行该代理。",
+      "guidance_credential": "在连接中重新认证或轮换此凭据，然后重新运行。",
+      "guidance_healing": "自动修复未能解决此问题。请查看该代理近期的运行及其指令。",
+      "guidance_provider": "已使用备用模型提供商。除非频繁发生，否则无需处理。",
+      "guidance_policy": "某项策略阻止了此项。如应允许，请在设置中调整该策略。",
+      "guidance_alert": "某条告警规则已触发。请查看超过阈值的指标。",
+      "guidance_execution": "代理运行失败。打开该执行查看错误，然后重新运行。",
+      "guidance_default": "查看下方详情，然后将其解决或忽略。",
       "groups_collapse_all": "全部折叠",
       "groups_expand_all": "全部展开",
       "group_no_persona": "无代理",

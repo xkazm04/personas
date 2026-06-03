@@ -5135,6 +5135,15 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "guidance_label": "Nên làm gì",
+      "guidance_tool": "Kiểm tra kết nối hoặc thông tin xác thực của công cụ, rồi chạy lại tác nhân.",
+      "guidance_credential": "Xác thực lại hoặc xoay vòng thông tin xác thực này trong Kết nối, rồi chạy lại.",
+      "guidance_healing": "Tự phục hồi không khắc phục được. Xem lần chạy gần đây của tác nhân và hướng dẫn của nó.",
+      "guidance_provider": "Đã dùng nhà cung cấp mô hình dự phòng. Không cần hành động trừ khi xảy ra thường xuyên.",
+      "guidance_policy": "Một chính sách đã chặn mục này. Điều chỉnh chính sách trong Cài đặt nếu nên cho phép.",
+      "guidance_alert": "Một quy tắc cảnh báo đã kích hoạt. Xem chỉ số đã vượt ngưỡng.",
+      "guidance_execution": "Lần chạy tác nhân thất bại. Mở phần thực thi để xem lỗi, rồi chạy lại.",
+      "guidance_default": "Xem chi tiết bên dưới, rồi giải quyết hoặc bỏ qua.",
       "groups_collapse_all": "Thu gọn tất cả",
       "groups_expand_all": "Mở rộng tất cả",
       "group_no_persona": "Không có tác nhân",

@@ -5135,6 +5135,15 @@
       "in_window": "dans la fenêtre"
     },
     "incidents": {
+      "guidance_label": "Que faire",
+      "guidance_tool": "Vérifiez la connexion ou les identifiants de l'outil, puis relancez l'agent.",
+      "guidance_credential": "Ré-authentifiez ou changez ces identifiants dans Connexions, puis relancez.",
+      "guidance_healing": "La réparation automatique a échoué. Examinez la dernière exécution de l'agent et ses instructions.",
+      "guidance_provider": "Un fournisseur de modèle de secours a été utilisé. Aucune action sauf si cela arrive souvent.",
+      "guidance_policy": "Une politique a bloqué ceci. Ajustez la politique dans les Paramètres si cela devrait être autorisé.",
+      "guidance_alert": "Une règle d'alerte s'est déclenchée. Examinez la métrique qui a dépassé son seuil.",
+      "guidance_execution": "L'exécution de l'agent a échoué. Ouvrez l'exécution pour voir l'erreur, puis relancez.",
+      "guidance_default": "Examinez les détails ci-dessous, puis résolvez ou ignorez.",
       "groups_collapse_all": "Tout réduire",
       "groups_expand_all": "Tout développer",
       "group_no_persona": "Aucun agent",

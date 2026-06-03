@@ -95,6 +95,25 @@ export function severityUrgencyLabel(t: Translations, severity: string): string 
   }
 }
 
+/**
+ * Plain-language "what to do" guidance for an incident, keyed off its source
+ * stream. Surfaced as a callout in the detail modal so a non-technical user
+ * knows the next step, not just what failed.
+ */
+export function incidentGuidance(t: Translations, sourceTable: string): string {
+  switch (sourceTable) {
+    case 'tool_execution_audit_log': return t.overview.incidents.guidance_tool;
+    case 'credential_audit_log': return t.overview.incidents.guidance_credential;
+    case 'healing_audit_log':
+    case 'persona_healing_issues': return t.overview.incidents.guidance_healing;
+    case 'provider_audit_log': return t.overview.incidents.guidance_provider;
+    case 'policy_events': return t.overview.incidents.guidance_policy;
+    case 'fired_alerts': return t.overview.incidents.guidance_alert;
+    case 'execution_error': return t.overview.incidents.guidance_execution;
+    default: return t.overview.incidents.guidance_default;
+  }
+}
+
 export function statusLabel(t: Translations, status: string): string {
   switch (status) {
     case 'open': return t.overview.incidents.filter_status_open;

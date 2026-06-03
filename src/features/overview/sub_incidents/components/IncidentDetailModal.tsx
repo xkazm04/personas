@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
@@ -14,6 +15,7 @@ import {
   reopenAuditIncident,
 } from '@/api/overview/incidents';
 import {
+  incidentGuidance,
   severityRank,
   severityShapeStatus,
   severityUrgencyLabel,
@@ -146,6 +148,16 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
           </StatusBadge>
           <StatusBadge variant="neutral">{statusLabel(t, incident.status)}</StatusBadge>
           <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
+        </div>
+
+        <div className="flex items-start gap-2 rounded-card border border-primary/15 bg-primary/5 px-3 py-2">
+          <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
+          <div className="min-w-0">
+            <span className="typo-overline text-foreground block">
+              {t.overview.incidents.guidance_label}
+            </span>
+            <p className="typo-body text-foreground">{incidentGuidance(t, incident.sourceTable)}</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

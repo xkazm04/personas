@@ -5275,6 +5275,15 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      guidance_label: string;
+      guidance_tool: string;
+      guidance_credential: string;
+      guidance_healing: string;
+      guidance_provider: string;
+      guidance_policy: string;
+      guidance_alert: string;
+      guidance_execution: string;
+      guidance_default: string;
       groups_collapse_all: string;
       groups_expand_all: string;
       group_no_persona: string;

@@ -5135,6 +5135,15 @@
       "in_window": "기간 내"
     },
     "incidents": {
+      "guidance_label": "조치 방법",
+      "guidance_tool": "도구의 연결 또는 자격 증명을 확인한 후 에이전트를 다시 실행하세요.",
+      "guidance_credential": "연결에서 이 자격 증명을 다시 인증하거나 교체한 후 다시 실행하세요.",
+      "guidance_healing": "자동 복구로 해결하지 못했습니다. 에이전트의 최근 실행과 지침을 검토하세요.",
+      "guidance_provider": "백업 모델 공급자가 사용되었습니다. 자주 발생하지 않으면 조치가 필요 없습니다.",
+      "guidance_policy": "정책이 이를 차단했습니다. 허용해야 한다면 설정에서 정책을 조정하세요.",
+      "guidance_alert": "경고 규칙이 발동했습니다. 임계값을 넘은 지표를 검토하세요.",
+      "guidance_execution": "에이전트 실행이 실패했습니다. 실행을 열어 오류를 확인한 후 다시 실행하세요.",
+      "guidance_default": "아래 세부 정보를 검토한 후 해결하거나 무시하세요.",
       "groups_collapse_all": "모두 접기",
       "groups_expand_all": "모두 펼치기",
       "group_no_persona": "에이전트 없음",

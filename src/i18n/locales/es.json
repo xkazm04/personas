@@ -5135,6 +5135,15 @@
       "in_window": "en ventana"
     },
     "incidents": {
+      "guidance_label": "Qué hacer",
+      "guidance_tool": "Revisa la conexión o las credenciales de la herramienta y vuelve a ejecutar el agente.",
+      "guidance_credential": "Vuelve a autenticar o rota esta credencial en Conexiones y ejecuta de nuevo.",
+      "guidance_healing": "La auto-reparación no pudo solucionarlo. Revisa la ejecución reciente del agente y sus instrucciones.",
+      "guidance_provider": "Se usó un proveedor de modelo de respaldo. No se necesita acción salvo que ocurra a menudo.",
+      "guidance_policy": "Una política bloqueó esto. Ajusta la política en Ajustes si debería permitirse.",
+      "guidance_alert": "Se activó una regla de alerta. Revisa la métrica que superó su umbral.",
+      "guidance_execution": "La ejecución del agente falló. Abre la ejecución para ver el error y vuelve a ejecutar.",
+      "guidance_default": "Revisa los detalles de abajo y luego resuélvelo o descártalo.",
       "groups_collapse_all": "Contraer todo",
       "groups_expand_all": "Expandir todo",
       "group_no_persona": "Sin agente",

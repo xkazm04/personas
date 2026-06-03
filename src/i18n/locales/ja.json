@@ -5135,6 +5135,15 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "guidance_label": "対処方法",
+      "guidance_tool": "ツールの接続または認証情報を確認し、エージェントを再実行してください。",
+      "guidance_credential": "接続でこの認証情報を再認証またはローテーションし、再実行してください。",
+      "guidance_healing": "自動修復で解決できませんでした。エージェントの最近の実行と指示を確認してください。",
+      "guidance_provider": "予備のモデルプロバイダーが使用されました。頻発しない限り対応は不要です。",
+      "guidance_policy": "ポリシーによりブロックされました。許可すべき場合は設定でポリシーを調整してください。",
+      "guidance_alert": "アラートルールが発動しました。しきい値を超えた指標を確認してください。",
+      "guidance_execution": "エージェントの実行が失敗しました。実行を開いてエラーを確認し、再実行してください。",
+      "guidance_default": "以下の詳細を確認し、解決または却下してください。",
       "groups_collapse_all": "すべて折りたたむ",
       "groups_expand_all": "すべて展開",
       "group_no_persona": "エージェントなし",
