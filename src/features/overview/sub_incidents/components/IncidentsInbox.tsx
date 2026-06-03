@@ -35,6 +35,7 @@ export default function IncidentsInbox() {
   const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(null);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
@@ -137,12 +138,90 @@ export default function IncidentsInbox() {
     setCollapsedGroups(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)));
   }, [allCollapsed, groups]);
 
+  // Flatten the rows the user can actually see (skipping collapsed groups) so
+  // keyboard navigation moves through exactly what's on screen.
+  const visibleIncidents = useMemo(
+    () => groups.filter((g) => !collapsedGroups.has(g.key)).flatMap((g) => g.incidents),
+    [groups, collapsedGroups],
+  );
+
+  // Latest-value refs so the global keydown listener can stay mounted once
+  // without re-binding on every focus change or refresh.
+  const visibleRef = useRef(visibleIncidents);
+  visibleRef.current = visibleIncidents;
+  const focusedIdRef = useRef(focusedId);
+  focusedIdRef.current = focusedId;
+  const modalOpenRef = useRef(false);
+  modalOpenRef.current = detailIncident !== null;
+  const actionsRef = useRef(actions);
+  actionsRef.current = actions;
+
+  // Keyboard triage: j/k (or arrows) move the cursor, Enter opens, A/R act on
+  // the focused incident, Esc clears. Ignored while typing or with the modal up.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (modalOpenRef.current) return;
+      const tgt = e.target as HTMLElement | null;
+      if (
+        tgt &&
+        (tgt.tagName === 'INPUT' || tgt.tagName === 'TEXTAREA' || tgt.tagName === 'SELECT' || tgt.isContentEditable)
+      ) {
+        return;
+      }
+      const list = visibleRef.current;
+      if (list.length === 0) return;
+      const curIdx = list.findIndex((i) => i.id === focusedIdRef.current);
+      const focusAt = (idx: number) => {
+        const id = list[idx]?.id;
+        if (!id) return;
+        setFocusedId(id);
+        document.getElementById(`incident-row-${id}`)?.scrollIntoView({ block: 'nearest' });
+      };
+      switch (e.key) {
+        case 'j':
+        case 'ArrowDown':
+          e.preventDefault();
+          focusAt(curIdx < 0 ? 0 : Math.min(list.length - 1, curIdx + 1));
+          break;
+        case 'k':
+        case 'ArrowUp':
+          e.preventDefault();
+          focusAt(curIdx < 0 ? list.length - 1 : Math.max(0, curIdx - 1));
+          break;
+        case 'Enter':
+          if (curIdx >= 0) {
+            e.preventDefault();
+            setDetailIncident(list[curIdx]!);
+          }
+          break;
+        case 'a':
+          if (curIdx >= 0 && list[curIdx]!.status === 'open') {
+            e.preventDefault();
+            void actionsRef.current.acknowledge(list[curIdx]!.id);
+          }
+          break;
+        case 'r':
+          if (curIdx >= 0) {
+            e.preventDefault();
+            void actionsRef.current.resolve(list[curIdx]!.id);
+          }
+          break;
+        case 'Escape':
+          setFocusedId(null);
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const renderRow = useCallback(
     (incident: AuditIncident) => (
       <IncidentRow
         key={incident.id}
         incident={incident}
         selected={selectedIds.has(incident.id)}
+        focused={focusedId === incident.id}
         onSelectChange={(sel) => toggleSelect(incident.id, sel)}
         onAcknowledge={() => void actions.acknowledge(incident.id)}
         onResolve={() => void actions.resolve(incident.id)}
@@ -151,7 +230,7 @@ export default function IncidentsInbox() {
         onOpenDetail={() => setDetailIncident(incident)}
       />
     ),
-    [selectedIds, toggleSelect, actions],
+    [selectedIds, focusedId, toggleSelect, actions],
   );
 
   const isFiltered =

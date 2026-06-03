@@ -17,6 +17,8 @@ import { incidentRowSubtext } from '../libs/incidentDetail';
 interface Props {
   incident: AuditIncident;
   selected: boolean;
+  /** Keyboard-triage focus — renders a focus ring and is the j/k cursor. */
+  focused?: boolean;
   onSelectChange: (selected: boolean) => void;
   onAcknowledge: () => void;
   onResolve: () => void;
@@ -28,6 +30,7 @@ interface Props {
 export function IncidentRow({
   incident,
   selected,
+  focused = false,
   onSelectChange,
   onAcknowledge,
   onResolve,
@@ -57,7 +60,12 @@ export function IncidentRow({
         : 'border-l-transparent';
 
   return (
-    <div className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 hover:bg-secondary/20 transition-colors`}>
+    <div
+      id={`incident-row-${incident.id}`}
+      className={`flex items-start gap-3 border-l-2 ${accent} px-4 py-3 transition-colors ${
+        focused ? 'bg-secondary/30 ring-1 ring-inset ring-primary/40' : 'hover:bg-secondary/20'
+      }`}
+    >
       <input
         type="checkbox"
         checked={selected}
