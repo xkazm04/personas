@@ -33,6 +33,8 @@ The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven
 - **Severity carries a colour-blind-safe shape** (`StatusShape`) plus a plain-language urgency framing ("Needs attention now / Important / Worth a look / Minor"), so priority survives without colour. An always-visible legend (`IncidentSeverityLegend`) decodes the shapes into urgency under the KPI tiles, and the Critical KPI tile leads with the same framing when any critical incident is open.
 - **Incidents group by agent** (`libs/groupIncidents.ts`, `IncidentAgentGroup.tsx`) into collapsible per-agent sections ordered worst-severity-first, answering "which of my agents needs me?" — agent-less incidents fall into a "No agent" bucket that sorts last. Each group header offers one-click acknowledge / resolve-all for that agent.
 - **Filters speak plain language too** — the severity and source filter chips resolve through `tokenLabel` / `sourceTableLabel`, so a user filters by "Tool" or "Credential", not `tool_execution_audit_log`.
+- **Each incident says what to do** — the detail modal leads with a guidance callout keyed off the source stream (`incidentGuidance` → `tool` / `credential` / `provider` / …). Resolving offers one-tap note presets ("Fixed", "Transient — ignored", …), and closed rows show their resolution note inline as a recap. Fact values render smartly (timestamps → relative time, URLs as links, per-fact copy).
+- **The grouped inbox remembers its shape** — a collapse-all / expand-all control plus per-agent collapse state persisted to `localStorage` (`incidents:collapsed-groups`).
 
 ## Additional overview modules
 
