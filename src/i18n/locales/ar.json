@@ -5135,6 +5135,10 @@
       "in_window": "في النافذة"
     },
     "incidents": {
+      "preset_fixed": "تم الإصلاح",
+      "preset_transient": "عابر — تم تجاهله",
+      "preset_known_issue": "مشكلة معروفة",
+      "preset_not_an_issue": "ليست مشكلة",
       "guidance_label": "ما العمل",
       "guidance_tool": "تحقق من اتصال الأداة أو بيانات اعتمادها، ثم أعد تشغيل الوكيل.",
       "guidance_credential": "أعد المصادقة أو بدّل بيانات الاعتماد هذه في الاتصالات، ثم أعد التشغيل.",

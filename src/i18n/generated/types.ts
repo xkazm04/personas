@@ -5275,6 +5275,10 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      preset_fixed: string;
+      preset_transient: string;
+      preset_known_issue: string;
+      preset_not_an_issue: string;
       guidance_label: string;
       guidance_tool: string;
       guidance_credential: string;

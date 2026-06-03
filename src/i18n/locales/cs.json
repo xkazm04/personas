@@ -5135,6 +5135,10 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "preset_fixed": "Vyřešeno",
+      "preset_transient": "Dočasné — ignorováno",
+      "preset_known_issue": "Známý problém",
+      "preset_not_an_issue": "Není problém",
       "guidance_label": "Co dělat",
       "guidance_tool": "Zkontrolujte připojení nebo přihlašovací údaje nástroje a spusťte agenta znovu.",
       "guidance_credential": "Znovu ověřte nebo vyměňte tyto údaje v Připojeních a spusťte znovu.",

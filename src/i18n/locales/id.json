@@ -5135,6 +5135,10 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "preset_fixed": "Diperbaiki",
+      "preset_transient": "Sementara — diabaikan",
+      "preset_known_issue": "Masalah yang diketahui",
+      "preset_not_an_issue": "Bukan masalah",
       "guidance_label": "Apa yang harus dilakukan",
       "guidance_tool": "Periksa koneksi atau kredensial alat, lalu jalankan ulang agen.",
       "guidance_credential": "Autentikasi ulang atau ganti kredensial ini di Koneksi, lalu jalankan ulang.",

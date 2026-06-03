@@ -5135,6 +5135,10 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "preset_fixed": "修正済み",
+      "preset_transient": "一時的 — 無視",
+      "preset_known_issue": "既知の問題",
+      "preset_not_an_issue": "問題なし",
       "guidance_label": "対処方法",
       "guidance_tool": "ツールの接続または認証情報を確認し、エージェントを再実行してください。",
       "guidance_credential": "接続でこの認証情報を再認証またはローテーションし、再実行してください。",

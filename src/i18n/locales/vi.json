@@ -5135,6 +5135,10 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "preset_fixed": "Đã sửa",
+      "preset_transient": "Tạm thời — đã bỏ qua",
+      "preset_known_issue": "Sự cố đã biết",
+      "preset_not_an_issue": "Không phải sự cố",
       "guidance_label": "Nên làm gì",
       "guidance_tool": "Kiểm tra kết nối hoặc thông tin xác thực của công cụ, rồi chạy lại tác nhân.",
       "guidance_credential": "Xác thực lại hoặc xoay vòng thông tin xác thực này trong Kết nối, rồi chạy lại.",

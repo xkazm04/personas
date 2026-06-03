@@ -5135,6 +5135,10 @@
       "in_window": "উইন্ডোতে"
     },
     "incidents": {
+      "preset_fixed": "ঠিক করা হয়েছে",
+      "preset_transient": "সাময়িক — উপেক্ষিত",
+      "preset_known_issue": "পরিচিত সমস্যা",
+      "preset_not_an_issue": "সমস্যা নয়",
       "guidance_label": "কী করবেন",
       "guidance_tool": "টুলের সংযোগ বা শংসাপত্র যাচাই করুন, তারপর এজেন্ট পুনরায় চালান।",
       "guidance_credential": "সংযোগে এই শংসাপত্র পুনরায় প্রমাণীকরণ বা রোটেট করুন, তারপর পুনরায় চালান।",

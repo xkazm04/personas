@@ -5135,6 +5135,10 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "preset_fixed": "已修复",
+      "preset_transient": "暂时性 — 已忽略",
+      "preset_known_issue": "已知问题",
+      "preset_not_an_issue": "非问题",
       "guidance_label": "该怎么做",
       "guidance_tool": "检查该工具的连接或凭据，然后重新运行该代理。",
       "guidance_credential": "在连接中重新认证或轮换此凭据，然后重新运行。",

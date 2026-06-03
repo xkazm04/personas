@@ -5135,6 +5135,10 @@
       "in_window": "विंडो में"
     },
     "incidents": {
+      "preset_fixed": "ठीक किया",
+      "preset_transient": "अस्थायी — अनदेखा किया",
+      "preset_known_issue": "ज्ञात समस्या",
+      "preset_not_an_issue": "समस्या नहीं",
       "guidance_label": "क्या करें",
       "guidance_tool": "टूल का कनेक्शन या क्रेडेंशियल जाँचें, फिर एजेंट को दोबारा चलाएँ।",
       "guidance_credential": "कनेक्शन में इस क्रेडेंशियल को फिर से प्रमाणित या रोटेट करें, फिर दोबारा चलाएँ।",

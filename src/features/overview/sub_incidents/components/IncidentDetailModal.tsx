@@ -34,6 +34,13 @@ interface IncidentDetailModalProps {
 
 type Action = 'start' | 'resolve' | 'dismiss' | 'reopen';
 
+const RESOLUTION_PRESETS = [
+  'preset_fixed',
+  'preset_transient',
+  'preset_known_issue',
+  'preset_not_an_issue',
+] as const;
+
 /**
  * Detail modal for a single audit incident with the full lifecycle
  * state-setter. Built on the shared DetailModal (which wraps BaseModal, so the
@@ -212,6 +219,18 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
             >
               {t.overview.incidents.detail_note_label}
             </label>
+            <div className="mb-2 flex flex-wrap gap-1.5">
+              {RESOLUTION_PRESETS.map((presetKey) => (
+                <button
+                  key={presetKey}
+                  type="button"
+                  onClick={() => setNote(t.overview.incidents[presetKey])}
+                  className="px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+                >
+                  {t.overview.incidents[presetKey]}
+                </button>
+              ))}
+            </div>
             <textarea
               id="incident-resolution-note"
               value={note}

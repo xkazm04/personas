@@ -5135,6 +5135,10 @@
       "in_window": "en ventana"
     },
     "incidents": {
+      "preset_fixed": "Resuelto",
+      "preset_transient": "Transitorio — ignorado",
+      "preset_known_issue": "Problema conocido",
+      "preset_not_an_issue": "No es un problema",
       "guidance_label": "Qué hacer",
       "guidance_tool": "Revisa la conexión o las credenciales de la herramienta y vuelve a ejecutar el agente.",
       "guidance_credential": "Vuelve a autenticar o rota esta credencial en Conexiones y ejecuta de nuevo.",

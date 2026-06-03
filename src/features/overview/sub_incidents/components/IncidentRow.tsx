@@ -108,6 +108,12 @@ export function IncidentRow({
         {subtext && (
           <p className="mt-1 typo-caption text-foreground line-clamp-1">{subtext}</p>
         )}
+
+        {isClosed && incident.resolutionNote && (
+          <p className="mt-1 typo-caption text-foreground line-clamp-1">
+            {t.overview.incidents.detail_label_resolution_note}: {incident.resolutionNote}
+          </p>
+        )}
       </div>
 
       <div className="flex shrink-0 items-center gap-1">

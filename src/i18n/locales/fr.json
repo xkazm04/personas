@@ -5135,6 +5135,10 @@
       "in_window": "dans la fenêtre"
     },
     "incidents": {
+      "preset_fixed": "Corrigé",
+      "preset_transient": "Transitoire — ignoré",
+      "preset_known_issue": "Problème connu",
+      "preset_not_an_issue": "Pas un problème",
       "guidance_label": "Que faire",
       "guidance_tool": "Vérifiez la connexion ou les identifiants de l'outil, puis relancez l'agent.",
       "guidance_credential": "Ré-authentifiez ou changez ces identifiants dans Connexions, puis relancez.",
