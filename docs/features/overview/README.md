@@ -30,8 +30,9 @@ The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven
 
 - **Rows show plain content, not payloads.** The promoter's `detail` field (a mix of prose, `key=value` fragments, and JSON) is normalized by `libs/incidentDetail.ts` — human prose shows inline, structured payloads are suppressed on the row and broken down in the detail modal. Severity renders as a friendly token label ("Critical"), never the raw machine token.
 - **The detail modal breaks JSON down** into a labelled fact grid (`IncidentDetailBreakdown.tsx`), with the original JSON behind a collapsed "raw data" toggle for power users (reuses `sub_events/HighlightedJson`).
-- **Severity carries a colour-blind-safe shape** (`StatusShape`) plus a plain-language urgency framing ("Needs attention now / Important / Worth a look / Minor"), so priority survives without colour.
-- **Incidents group by agent** (`libs/groupIncidents.ts`, `IncidentAgentGroup.tsx`) into collapsible per-agent sections ordered worst-severity-first, answering "which of my agents needs me?" — agent-less incidents fall into a "No agent" bucket that sorts last.
+- **Severity carries a colour-blind-safe shape** (`StatusShape`) plus a plain-language urgency framing ("Needs attention now / Important / Worth a look / Minor"), so priority survives without colour. An always-visible legend (`IncidentSeverityLegend`) decodes the shapes into urgency under the KPI tiles, and the Critical KPI tile leads with the same framing when any critical incident is open.
+- **Incidents group by agent** (`libs/groupIncidents.ts`, `IncidentAgentGroup.tsx`) into collapsible per-agent sections ordered worst-severity-first, answering "which of my agents needs me?" — agent-less incidents fall into a "No agent" bucket that sorts last. Each group header offers one-click acknowledge / resolve-all for that agent.
+- **Filters speak plain language too** — the severity and source filter chips resolve through `tokenLabel` / `sourceTableLabel`, so a user filters by "Tool" or "Credential", not `tool_execution_audit_log`.
 
 ## Additional overview modules
 
