@@ -24,6 +24,15 @@ The active tab comes from `useOverviewStore().overviewTab`. Sidebar-visible tabs
 | Leaderboard | Persona rankings, podium, radar score details | `sub_leaderboard` |
 | Certification | **Dev-only.** Read-only viewer over the team-autonomy eval/certification bundles in `docs/test/runs/` — per-team certification status, sortable run history, and per-run detail (dimensions, gates, grounding, trajectory, judge panel). Hidden from production builds. | `sub_certification`, `commands/eval_runs.rs` |
 
+### Incidents inbox (`sub_incidents`)
+
+The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven audit streams (alerts, tool errors, credential failures, healing misses, provider failovers, policy drops, healing issues) are promoted into one `open → acknowledged → in_progress → resolved/dismissed` list. It is written to read for **non-technical users**:
+
+- **Rows show plain content, not payloads.** The promoter's `detail` field (a mix of prose, `key=value` fragments, and JSON) is normalized by `libs/incidentDetail.ts` — human prose shows inline, structured payloads are suppressed on the row and broken down in the detail modal. Severity renders as a friendly token label ("Critical"), never the raw machine token.
+- **The detail modal breaks JSON down** into a labelled fact grid (`IncidentDetailBreakdown.tsx`), with the original JSON behind a collapsed "raw data" toggle for power users (reuses `sub_events/HighlightedJson`).
+- **Severity carries a colour-blind-safe shape** (`StatusShape`) plus a plain-language urgency framing ("Needs attention now / Important / Worth a look / Minor"), so priority survives without colour.
+- **Incidents group by agent** (`libs/groupIncidents.ts`, `IncidentAgentGroup.tsx`) into collapsible per-agent sections ordered worst-severity-first, answering "which of my agents needs me?" — agent-less incidents fall into a "No agent" bucket that sorts last.
+
 ## Additional overview modules
 
 
