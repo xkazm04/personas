@@ -5135,6 +5135,10 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "urgency_critical": "Vyžaduje pozornost",
+      "urgency_high": "Důležité",
+      "urgency_medium": "Stojí za pohled",
+      "urgency_low": "Drobné",
       "detail_raw_toggle": "Nezpracovaná data",
       "title": "Incidenty",
       "subtitle": "Třídicí schránka pro upozornění, chyby nástrojů, selhání přihlašovacích údajů, nezdařená léčení a zásahy zásad",

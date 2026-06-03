@@ -5135,6 +5135,10 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "urgency_critical": "Perlu perhatian sekarang",
+      "urgency_high": "Penting",
+      "urgency_medium": "Layak dilihat",
+      "urgency_low": "Kecil",
       "detail_raw_toggle": "Data mentah",
       "title": "Insiden",
       "subtitle": "Kotak triase lintas sumber untuk peringatan, kesalahan alat, kegagalan kredensial, kegagalan pemulihan, dan pelanggaran kebijakan",

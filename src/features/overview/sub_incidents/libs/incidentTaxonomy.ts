@@ -1,5 +1,6 @@
 import { AlertTriangle, Bell, Database, KeyRound, Stethoscope, ShieldAlert, Wrench, Zap } from 'lucide-react';
 import { SEVERITY_COLORS } from '@/lib/utils/formatters';
+import type { StatusKey } from '@/lib/design/statusTokens';
 import type { Translations } from '@/i18n/en';
 
 /**
@@ -60,6 +61,37 @@ export function severityRank(severity: string): number {
     case 'medium': return 2;
     case 'low': return 1;
     default: return 0;
+  }
+}
+
+/**
+ * Redundant, colour-independent severity cue for colour-blind users. Maps the
+ * four-step severity onto the shared StatusShape vocabulary so each urgency
+ * tier carries a distinct shape, not just a colour (critical/high → triangle,
+ * medium → diamond, low → ring).
+ */
+export function severityShapeStatus(severity: string): StatusKey {
+  switch (severity) {
+    case 'critical':
+    case 'high':
+      return 'error';
+    case 'medium':
+      return 'warning';
+    default:
+      return 'neutral';
+  }
+}
+
+/**
+ * Plain-language urgency framing for a severity token — what the user should do
+ * about it, rather than the engineer-facing "critical / high / medium / low".
+ */
+export function severityUrgencyLabel(t: Translations, severity: string): string {
+  switch (severity) {
+    case 'critical': return t.overview.incidents.urgency_critical;
+    case 'high': return t.overview.incidents.urgency_high;
+    case 'medium': return t.overview.incidents.urgency_medium;
+    default: return t.overview.incidents.urgency_low;
   }
 }
 

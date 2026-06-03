@@ -5135,6 +5135,10 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "urgency_critical": "今すぐ対応が必要",
+      "urgency_high": "重要",
+      "urgency_medium": "確認推奨",
+      "urgency_low": "軽微",
       "detail_raw_toggle": "生データ",
       "title": "インシデント",
       "subtitle": "アラート、ツールエラー、認証情報の失敗、修復漏れ、ポリシードロップを横断的に確認するトリアージ受信箱",

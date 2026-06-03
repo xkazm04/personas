@@ -1,9 +1,12 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
+import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import type { AuditIncident } from '@/lib/bindings/AuditIncident';
 import {
   severityBadgeClass,
   severityRank,
+  severityShapeStatus,
+  severityUrgencyLabel,
   sourceTableIcon,
   sourceTableLabel,
   relativeTime,
@@ -69,8 +72,16 @@ export function IncidentRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${severityBadgeClass(incident.severity)}`}>
-            {tokenLabel(t, 'severity', incident.severity)}
+          <span className="inline-flex items-center gap-1">
+            <StatusShape
+              status={severityShapeStatus(incident.severity)}
+              size="sm"
+              title={severityUrgencyLabel(t, incident.severity)}
+              aria-label={severityUrgencyLabel(t, incident.severity)}
+            />
+            <span className={`typo-caption px-1.5 py-0.5 rounded-card border ${severityBadgeClass(incident.severity)}`}>
+              {tokenLabel(t, 'severity', incident.severity)}
+            </span>
           </span>
           <span className="typo-body text-foreground font-medium truncate">{incident.title}</span>
           {!isOpen && (

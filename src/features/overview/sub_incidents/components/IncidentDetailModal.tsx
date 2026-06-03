@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { tokenLabel } from '@/i18n/tokenMaps';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { StatusBadge } from '@/features/shared/components/display/StatusBadge';
+import { StatusShape } from '@/features/shared/components/display/StatusShape';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { Button } from '@/features/shared/components/buttons';
 import { toastCatch } from '@/lib/silentCatch';
@@ -13,6 +15,8 @@ import {
 } from '@/api/overview/incidents';
 import {
   severityRank,
+  severityShapeStatus,
+  severityUrgencyLabel,
   sourceTableLabel,
   statusLabel,
 } from '../libs/incidentTaxonomy';
@@ -133,9 +137,15 @@ export function IncidentDetailModal({ incident, onClose, onChanged }: IncidentDe
       actions={footer}
     >
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2">
-          <StatusBadge variant={severityVariant}>{incident.severity}</StatusBadge>
+        <div className="flex flex-wrap items-center gap-2">
+          <StatusBadge variant={severityVariant}>
+            <span className="inline-flex items-center gap-1.5">
+              <StatusShape status={severityShapeStatus(incident.severity)} size="sm" colorClass="" />
+              {tokenLabel(t, 'severity', incident.severity)}
+            </span>
+          </StatusBadge>
           <StatusBadge variant="neutral">{statusLabel(t, incident.status)}</StatusBadge>
+          <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

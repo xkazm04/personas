@@ -5135,6 +5135,10 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "urgency_critical": "Cần chú ý ngay",
+      "urgency_high": "Quan trọng",
+      "urgency_medium": "Nên xem",
+      "urgency_low": "Nhỏ",
       "detail_raw_toggle": "Dữ liệu thô",
       "title": "Sự cố",
       "subtitle": "Hộp phân loại liên nguồn cho cảnh báo, lỗi công cụ, lỗi thông tin xác thực, lần tự sửa bị bỏ lỡ và chặn bởi chính sách",

@@ -5135,6 +5135,10 @@
       "in_window": "en ventana"
     },
     "incidents": {
+      "urgency_critical": "Requiere atención ahora",
+      "urgency_high": "Importante",
+      "urgency_medium": "Vale la pena revisar",
+      "urgency_low": "Menor",
       "detail_raw_toggle": "Datos sin procesar",
       "title": "Incidentes",
       "subtitle": "Bandeja de triage entre fuentes para alertas, errores de herramientas, fallos de credenciales, fallos de reparación y descartes de políticas",

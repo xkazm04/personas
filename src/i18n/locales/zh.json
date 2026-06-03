@@ -5135,6 +5135,10 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "urgency_critical": "需立即处理",
+      "urgency_high": "重要",
+      "urgency_medium": "值得关注",
+      "urgency_low": "次要",
       "detail_raw_toggle": "原始数据",
       "title": "事件",
       "subtitle": "用于处理警报、工具错误、凭据失败、修复遗漏和策略拦截的跨来源分诊收件箱",

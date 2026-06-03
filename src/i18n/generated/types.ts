@@ -5275,6 +5275,10 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      urgency_critical: string;
+      urgency_high: string;
+      urgency_medium: string;
+      urgency_low: string;
       detail_raw_toggle: string;
       title: string;
       subtitle: string;

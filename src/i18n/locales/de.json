@@ -5135,6 +5135,10 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "urgency_critical": "Sofort prüfen",
+      "urgency_high": "Wichtig",
+      "urgency_medium": "Sehenswert",
+      "urgency_low": "Gering",
       "detail_raw_toggle": "Rohdaten",
       "title": "Vorfälle",
       "subtitle": "Quellenübergreifender Triage-Posteingang für Warnungen, Toolfehler, fehlgeschlagene Zugangsdaten, Healing-Ausfälle und Richtlinien-Drops",

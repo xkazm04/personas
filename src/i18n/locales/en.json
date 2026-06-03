@@ -5269,6 +5269,10 @@
       "in_window": "in window"
     },
     "incidents": {
+      "urgency_critical": "Needs attention now",
+      "urgency_high": "Important",
+      "urgency_medium": "Worth a look",
+      "urgency_low": "Minor",
       "detail_raw_toggle": "Raw data",
       "title": "Incidents",
       "subtitle": "Cross-source triage inbox for alerts, tool errors, credential failures, healing misses, and policy drops",
