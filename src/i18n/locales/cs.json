@@ -5135,6 +5135,8 @@
       "in_window": "v okně"
     },
     "incidents": {
+      "groups_collapse_all": "Sbalit vše",
+      "groups_expand_all": "Rozbalit vše",
       "group_no_persona": "Bez agenta",
       "urgency_critical": "Vyžaduje pozornost",
       "urgency_high": "Důležité",

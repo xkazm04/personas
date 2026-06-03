@@ -5135,6 +5135,8 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "groups_collapse_all": "Alle einklappen",
+      "groups_expand_all": "Alle ausklappen",
       "group_no_persona": "Kein Agent",
       "urgency_critical": "Sofort prüfen",
       "urgency_high": "Wichtig",

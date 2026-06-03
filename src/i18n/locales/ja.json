@@ -5135,6 +5135,8 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "groups_collapse_all": "すべて折りたたむ",
+      "groups_expand_all": "すべて展開",
       "group_no_persona": "エージェントなし",
       "urgency_critical": "今すぐ対応が必要",
       "urgency_high": "重要",

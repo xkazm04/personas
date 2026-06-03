@@ -5269,6 +5269,8 @@
       "in_window": "in window"
     },
     "incidents": {
+      "groups_collapse_all": "Collapse all",
+      "groups_expand_all": "Expand all",
       "group_no_persona": "No agent",
       "urgency_critical": "Needs attention now",
       "urgency_high": "Important",

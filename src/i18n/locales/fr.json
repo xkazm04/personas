@@ -5135,6 +5135,8 @@
       "in_window": "dans la fenêtre"
     },
     "incidents": {
+      "groups_collapse_all": "Tout réduire",
+      "groups_expand_all": "Tout développer",
       "group_no_persona": "Aucun agent",
       "urgency_critical": "À traiter maintenant",
       "urgency_high": "Important",

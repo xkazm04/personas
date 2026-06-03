@@ -5135,6 +5135,8 @@
       "in_window": "trong cửa sổ"
     },
     "incidents": {
+      "groups_collapse_all": "Thu gọn tất cả",
+      "groups_expand_all": "Mở rộng tất cả",
       "group_no_persona": "Không có tác nhân",
       "urgency_critical": "Cần chú ý ngay",
       "urgency_high": "Quan trọng",

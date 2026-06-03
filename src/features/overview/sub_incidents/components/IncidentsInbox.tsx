@@ -28,12 +28,21 @@ const DEFAULT_FILTERS: IncidentFilters = {
   since: null,
 };
 
+const COLLAPSED_GROUPS_KEY = 'incidents:collapsed-groups';
+
 export default function IncidentsInbox() {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<IncidentFilters>(DEFAULT_FILTERS);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [detailIncident, setDetailIncident] = useState<AuditIncident | null>(null);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_GROUPS_KEY);
+      return raw ? new Set<string>(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   const { incidents, summary, loading, error, refresh } = useIncidentsData(filters);
   const actions = useIncidentActions({
@@ -113,6 +122,20 @@ export default function IncidentsInbox() {
   // Group open incidents by the agent they belong to so the inbox answers
   // "which of my agents needs me?" — worst-severity agents float to the top.
   const groups = useMemo(() => groupIncidentsByAgent(incidents), [incidents]);
+
+  // Persist collapsed groups so a tidied inbox stays tidy across refresh/reopen.
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_GROUPS_KEY, JSON.stringify(Array.from(collapsedGroups)));
+    } catch (e) {
+      silentCatch('incidents.collapsed-groups.persist')(e);
+    }
+  }, [collapsedGroups]);
+
+  const allCollapsed = groups.length > 0 && groups.every((g) => collapsedGroups.has(g.key));
+  const toggleAllGroups = useCallback(() => {
+    setCollapsedGroups(allCollapsed ? new Set() : new Set(groups.map((g) => g.key)));
+  }, [allCollapsed, groups]);
 
   const renderRow = useCallback(
     (incident: AuditIncident) => (
@@ -215,6 +238,19 @@ export default function IncidentsInbox() {
           </div>
         ) : (
           <div>
+            {groups.length > 1 && (
+              <div className="flex justify-end px-4 py-1.5">
+                <button
+                  type="button"
+                  onClick={toggleAllGroups}
+                  className="typo-caption text-foreground rounded-card px-2 py-0.5 hover:bg-secondary/40 transition-colors focus-ring"
+                >
+                  {allCollapsed
+                    ? t.overview.incidents.groups_expand_all
+                    : t.overview.incidents.groups_collapse_all}
+                </button>
+              </div>
+            )}
             {groups.map((group) => (
               <IncidentAgentGroup
                 key={group.key}

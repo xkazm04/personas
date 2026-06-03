@@ -5135,6 +5135,8 @@
       "in_window": "উইন্ডোতে"
     },
     "incidents": {
+      "groups_collapse_all": "সব সংকুচিত করুন",
+      "groups_expand_all": "সব প্রসারিত করুন",
       "group_no_persona": "কোনো এজেন্ট নেই",
       "urgency_critical": "এখনই মনোযোগ দিন",
       "urgency_high": "গুরুত্বপূর্ণ",

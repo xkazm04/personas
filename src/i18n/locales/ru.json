@@ -5135,6 +5135,8 @@
       "in_window": "в окне"
     },
     "incidents": {
+      "groups_collapse_all": "Свернуть все",
+      "groups_expand_all": "Развернуть все",
       "group_no_persona": "Без агента",
       "urgency_critical": "Требует внимания сейчас",
       "urgency_high": "Важно",

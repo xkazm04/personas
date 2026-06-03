@@ -5275,6 +5275,8 @@ export type Translations = {
       in_window: string;
     };
     incidents: {
+      groups_collapse_all: string;
+      groups_expand_all: string;
       group_no_persona: string;
       urgency_critical: string;
       urgency_high: string;

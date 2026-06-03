@@ -5135,6 +5135,8 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "groups_collapse_all": "全部折叠",
+      "groups_expand_all": "全部展开",
       "group_no_persona": "无代理",
       "urgency_critical": "需立即处理",
       "urgency_high": "重要",

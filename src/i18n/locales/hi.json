@@ -5135,6 +5135,8 @@
       "in_window": "विंडो में"
     },
     "incidents": {
+      "groups_collapse_all": "सभी संक्षिप्त करें",
+      "groups_expand_all": "सभी विस्तृत करें",
       "group_no_persona": "कोई एजेंट नहीं",
       "urgency_critical": "अभी ध्यान दें",
       "urgency_high": "महत्वपूर्ण",
