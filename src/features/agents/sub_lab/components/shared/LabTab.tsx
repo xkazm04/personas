@@ -36,6 +36,9 @@ export function LabTab() {
   const setLabMode = useAgentStore((s) => s.setLabMode);
   const personaId = useAgentStore((s) => s.selectedPersona?.id);
   const hydrateActiveProgress = useAgentStore((s) => s.hydrateActiveProgress);
+  const runningMode = useAgentStore((s) => s.labProgress?.mode ?? null);
+  const isArenaRunning = useAgentStore((s) => s.isArenaRunning);
+  const isMatrixRunning = useAgentStore((s) => s.isMatrixRunning);
 
   // Restore persisted tab on mount.
   // Phase F: a pending Athena `companion://open-lab` jump beats the
@@ -73,6 +76,7 @@ export function LabTab() {
           {modeTabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = labMode === tab.id;
+            const running = tab.id === runningMode || (tab.id === 'arena' && isArenaRunning) || (tab.id === 'matrix' && isMatrixRunning);
             return (
               <button
                 key={tab.id}
@@ -85,6 +89,7 @@ export function LabTab() {
               >
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 {tab.label}
+                {running && <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-primary motion-safe:animate-pulse" />}
                 {isActive && (
                   <motion.div
                     layoutId="labModeTab"
