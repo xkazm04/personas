@@ -520,6 +520,79 @@ pub async fn fleet_recent_transcripts(
     .map_err(|e| format!("recent transcripts task failed: {e}"))?
 }
 
+// ── Fleet-wide token aggregate — the efficiency bar's data source ───────────
+// Per-session rollups answer "how heavy is THIS session"; the aggregate answers
+// "how is the whole fleet doing" so an operator running many CLIs can see total
+// burn, cache efficiency, and how many sessions are bloated enough to compact.
+
+/// Context size (tokens) above which a session counts as "bloated" — re-sending
+/// a heavy conversation on every turn. MUST stay in sync with the red threshold
+/// in `src/features/plugins/fleet/sub_grid/FleetContextPill.tsx`.
+pub const CONTEXT_BLOAT_TOKENS: i64 = 150_000;
+
+/// Fleet-wide rollup summed across the bound sessions the caller passes in.
+/// Powers the grid's fleet-efficiency bar — the aggregate companion to the
+/// per-session [`FleetTranscriptSummary`] / `FleetContextPill`.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct FleetTokenAggregate {
+    /// Sessions that had a readable transcript and were folded into the sums.
+    pub session_count: i32,
+    /// Summed token totals across every included session.
+    pub tokens: FleetTokenTotals,
+    /// Sum of each session's current context size (`last_context_tokens`) — the
+    /// combined per-turn re-send cost of the whole fleet.
+    pub total_context_tokens: i64,
+    /// Sessions whose current context exceeds [`CONTEXT_BLOAT_TOKENS`] — the
+    /// "red zone" ones worth compacting. Mirrors `FleetContextPill`'s red bucket.
+    pub bloated_count: i32,
+}
+
+/// Pure aggregation over already-read summaries — separated from IO so it can be
+/// unit-tested with synthetic rollups.
+pub fn aggregate_summaries(summaries: &[FleetTranscriptSummary]) -> FleetTokenAggregate {
+    let mut agg = FleetTokenAggregate::default();
+    for s in summaries {
+        agg.session_count += 1;
+        agg.tokens.input += s.tokens.input;
+        agg.tokens.output += s.tokens.output;
+        agg.tokens.cache_creation += s.tokens.cache_creation;
+        agg.tokens.cache_read += s.tokens.cache_read;
+        agg.total_context_tokens += s.last_context_tokens;
+        if s.last_context_tokens > CONTEXT_BLOAT_TOKENS {
+            agg.bloated_count += 1;
+        }
+    }
+    agg
+}
+
+/// Aggregate token totals + cache efficiency across the given bound sessions.
+/// The caller (the grid) passes the `claudeSessionId`s it already holds from the
+/// registry snapshot, so this stays decoupled from the registry and folds only
+/// newly-appended transcript bytes per session (same cheap delta path as
+/// [`fleet_session_metadata`]). Sessions without a transcript yet are skipped.
+#[tauri::command]
+pub async fn fleet_token_summary(
+    claude_session_ids: Vec<String>,
+) -> Result<FleetTokenAggregate, String> {
+    tokio::task::spawn_blocking(move || {
+        let mut summaries = Vec::new();
+        for id in &claude_session_ids {
+            let Some(path) = find_transcript(id) else {
+                continue;
+            };
+            ingest_delta(id, &path);
+            if let Some(s) = metadata_for(id, &path.to_string_lossy()) {
+                summaries.push(s);
+            }
+        }
+        Ok::<FleetTokenAggregate, String>(aggregate_summaries(&summaries))
+    })
+    .await
+    .map_err(|e| format!("token summary task failed: {e}"))?
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -571,6 +644,36 @@ mod tests {
         assert_eq!(s.tokens.input, 0);
         assert!(s.files_touched.is_empty());
         assert!(s.first_timestamp.is_none());
+    }
+
+    #[test]
+    fn aggregate_sums_tokens_and_flags_bloated() {
+        // Session A: small context (100 input + 2000 cache_read = 2100).
+        let a = summarize_lines("a", "/a.jsonl", &lines(&[
+            r#"{"type":"assistant","message":{"model":"m","content":[],"usage":{"input_tokens":100,"output_tokens":20,"cache_read_input_tokens":2000}}}"#,
+        ]));
+        // Session B: bloated context (200000 input, > CONTEXT_BLOAT_TOKENS).
+        let b = summarize_lines("b", "/b.jsonl", &lines(&[
+            r#"{"type":"assistant","message":{"model":"m","content":[],"usage":{"input_tokens":200000,"output_tokens":50}}}"#,
+        ]));
+
+        let agg = aggregate_summaries(&[a, b]);
+        assert_eq!(agg.session_count, 2);
+        assert_eq!(agg.tokens.input, 200_100);
+        assert_eq!(agg.tokens.output, 70);
+        assert_eq!(agg.tokens.cache_read, 2000);
+        assert_eq!(agg.tokens.cache_creation, 0);
+        assert_eq!(agg.total_context_tokens, 202_100);
+        // Only B exceeds the bloat threshold.
+        assert_eq!(agg.bloated_count, 1);
+    }
+
+    #[test]
+    fn aggregate_empty_is_zero() {
+        let agg = aggregate_summaries(&[]);
+        assert_eq!(agg.session_count, 0);
+        assert_eq!(agg.tokens.input, 0);
+        assert_eq!(agg.bloated_count, 0);
     }
 
     #[test]

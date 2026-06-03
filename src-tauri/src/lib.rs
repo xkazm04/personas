@@ -3016,6 +3016,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_read_transcript,
             commands::fleet::transcript_read::fleet_recent_transcripts,
             commands::fleet::transcript_read::fleet_session_metadata,
+            commands::fleet::transcript_read::fleet_token_summary,
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
             commands::fleet::process_scan::fleet_resume_orphan,

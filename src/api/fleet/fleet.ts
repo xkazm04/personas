@@ -10,6 +10,7 @@ import { invokeWithTimeout as invoke } from '@/lib/tauriInvoke';
 import type { FleetRegistrySnapshot } from '@/lib/bindings/FleetRegistrySnapshot';
 import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
+import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 
 /**
@@ -136,6 +137,16 @@ export const readTranscript = (claudeSessionId: string) =>
  */
 export const sessionMetadata = (claudeSessionId: string) =>
   invoke<FleetTranscriptSummary | null>('fleet_session_metadata', { claudeSessionId });
+
+/**
+ * Fleet-wide token aggregate across the given bound sessions — total burn,
+ * cache totals, and how many sessions are bloated enough to compact. The caller
+ * passes the `claudeSessionId`s it already holds from the registry snapshot;
+ * the backend folds only newly-appended transcript bytes per session (the same
+ * cheap delta path as `sessionMetadata`). Powers the grid's efficiency bar.
+ */
+export const tokenSummary = (claudeSessionIds: string[]) =>
+  invoke<FleetTokenAggregate>('fleet_token_summary', { claudeSessionIds });
 
 /**
  * Summarize the most recently-active transcripts across all projects — the

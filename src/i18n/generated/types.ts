@@ -10767,6 +10767,12 @@ export type Translations = {
       skill_applied_toast: string;
       context_size_label: string;
       context_size_hint: string;
+      fleet_total_tokens: string;
+      fleet_total_tokens_hint: string;
+      fleet_cache_hit: string;
+      fleet_cache_hit_hint: string;
+      fleet_heavy_sessions: string;
+      fleet_heavy_hint: string;
       state_hibernated: string;
       dot_console_hibernated: string;
       sleep_session: string;

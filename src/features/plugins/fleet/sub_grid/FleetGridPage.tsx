@@ -35,6 +35,7 @@ import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetSessionInsights } from './FleetSessionInsights';
 import { FleetContextPill } from './FleetContextPill';
+import { FleetTokenSummaryBar } from './FleetTokenSummaryBar';
 import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
@@ -351,6 +352,13 @@ export default function FleetGridPage() {
     [sessions, activeSessionId],
   );
 
+  // Bound Claude session ids feed the fleet-wide token aggregate bar. Unbound
+  // (Spawning) sessions have no transcript yet, so they're excluded.
+  const boundClaudeIds = useMemo(
+    () => sessions.map((s) => s.claudeSessionId).filter((id): id is string => !!id),
+    [sessions],
+  );
+
   // Sessions that can host a live terminal (everything but exited) — drives
   // the tiled grid view. Most-recently-active first.
   const liveSessions = useMemo(
@@ -483,6 +491,8 @@ export default function FleetGridPage() {
         <div data-testid="fleet-grid-page" />
 
         <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
+
+        <FleetTokenSummaryBar claudeSessionIds={boundClaudeIds} />
 
         <FleetNeedsYouBanner
           waiting={waitingSessions}
