@@ -43,7 +43,7 @@ export function IncidentAgentGroup({
 
   return (
     <div>
-      <div className="flex w-full items-center gap-2 border-b border-primary/10 bg-secondary/20 px-4 py-2 hover:bg-secondary/30 transition-colors">
+      <div className="sticky top-0 z-20 flex w-full items-center gap-2 border-b border-primary/10 bg-secondary px-4 py-2">
         <button
           type="button"
           onClick={onToggle}
