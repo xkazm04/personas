@@ -77,8 +77,16 @@ pub async fn advance_goal(
     let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
     for m in &members {
         if let Ok(p) = persona_repo::get_by_id(pool, &m.persona_id) {
+            // `needs_credentials` is ADVISORY, not a hard block: the runtime
+            // resolves a credential by service-type at execution time (G3 proved
+            // Dev Clone opens real PRs despite the badge). Excluding it dropped the
+            // IMPLEMENTER (Dev Clone) + QA + Release from the candidate pool, which
+            // forced decompose into implementer-less scope→review→docs pipelines —
+            // the root of the "reviews work that was never implemented" failure.
+            // Treat ready + needs_credentials as usable; only genuinely-broken
+            // statuses are excluded.
             if p.enabled
-                && p.setup_status == "ready"
+                && matches!(p.setup_status.as_str(), "ready" | "needs_credentials")
                 && !matches!(p.trust_level, PersonaTrustLevel::Revoked)
             {
                 personas.push(p);
