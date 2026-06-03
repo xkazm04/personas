@@ -1672,6 +1672,14 @@
     "scan_history": "Historial de Escaneos ("
   },
   "dev_lifecycle": {
+    "goal_handoff_label": "Delega en tu equipo de IA",
+    "goal_handoff_button": "Delegar al equipo de IA",
+    "goal_handoff_explain": "Tu equipo de IA trabajará en las tareas pendientes que hay aquí —o dividirá el objetivo en pasos— y luego se pondrá a trabajar. Podrás revisar lo que hacen a medida que sucede.",
+    "goal_handoff_active": "Tu equipo de IA ya está trabajando en este objetivo.",
+    "goal_handoff_confirm_q": "¿Poner a tu equipo de IA a trabajar en este objetivo?",
+    "goal_handoff_start": "Sí, empezar",
+    "goal_more_details": "Más detalles",
+    "goal_more_details_hint": "Dependencias, equipos vinculados e historial",
     "start_a_competition": "Iniciar una Competencia",
     "start_a_competition_desc": "Genera 2–4 competidores con diferentes estrategias para abordar la misma tarea. El enfoque del ganador se promueve.",
     "task_title": "Título de la tarea",

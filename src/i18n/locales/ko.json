@@ -11770,6 +11770,14 @@
       "scan_history": "스캔 이력 ("
     },
     "dev_lifecycle": {
+      "goal_handoff_label": "AI 팀에 넘기기",
+      "goal_handoff_button": "AI 팀에 넘기기",
+      "goal_handoff_explain": "AI 팀이 여기 있는 할 일을 처리하거나 목표를 단계별로 나눈 다음 작업을 시작합니다. 진행되는 과정을 실시간으로 확인할 수 있습니다.",
+      "goal_handoff_active": "AI 팀이 이미 이 목표를 작업하고 있습니다.",
+      "goal_handoff_confirm_q": "이 목표에 대해 AI 팀을 시작할까요?",
+      "goal_handoff_start": "예, 시작합니다",
+      "goal_more_details": "자세히 보기",
+      "goal_more_details_hint": "종속성, 연결된 팀 및 이력",
       "start_a_competition": "경쟁 시작",
       "start_a_competition_desc": "2-4개의 경쟁자를 생성하여 다양한 전략으로 동일한 작업을 수행하세요. 승자의 접근 방식이 승격됩니다.",
       "task_title": "작업 제목",

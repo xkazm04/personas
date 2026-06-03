@@ -11770,6 +11770,14 @@
       "scan_history": "扫描历史 ("
     },
     "dev_lifecycle": {
+      "goal_handoff_label": "交给你的 AI 团队",
+      "goal_handoff_button": "交给 AI 团队",
+      "goal_handoff_explain": "你的 AI 团队会处理这里的待办事项——或将目标拆解为多个步骤——然后开始工作。你可以实时查看他们的进展。",
+      "goal_handoff_active": "你的 AI 团队已经在处理此目标。",
+      "goal_handoff_confirm_q": "让你的 AI 团队开始处理此目标？",
+      "goal_handoff_start": "是的，开始",
+      "goal_more_details": "更多详情",
+      "goal_more_details_hint": "依赖项、关联的团队及历史记录",
       "start_a_competition": "开始竞赛",
       "start_a_competition_desc": "派生 2–4 个使用不同策略的竞争者来处理同一任务。获胜者的方法将被晋升。",
       "task_title": "任务标题",

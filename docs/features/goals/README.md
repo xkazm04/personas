@@ -35,13 +35,13 @@ Clicking a goal in Board / Map / Timeline / the attention drawer opens the **det
 `+ New goal` (header and empty state) opens `GoalEditorModal` — create/edit/delete with title, description, status, and target date. (Goals can also still be imported from GitHub issues.)
 
 ### Detail drawer
-`GoalDetailDrawer` is the focused view for one goal:
+`GoalDetailDrawer` is the focused view for one goal. It is laid out for non-technical users: the human, actionable content leads (status, the progress nudge, the checklist, the hand-off, and what the team is doing right now), and the power-user surfaces fold away under a collapsible **More details** section (a shared `SectionCard`, collapsed by default, state persisted).
 
 - **Hybrid progress nudge** — `dev_tools_resolve_goal_progress` composes the goal's checklist items, sub-goals, and linked team-assignment steps into a *suggested* progress %. When it differs from the stored value, the drawer offers **Accept / edit** — progress is never written silently; a manual override always wins.
-- **Composed checklist** — ad-hoc items (add / toggle / delete), sub-goals, and linked team-assignment steps in one list. A team step in `awaiting_review` gets inline **skip / abort** intervention (via the team-assignment review path).
-- **Linked teams** — the team assignments advancing this goal (title + status) with **unlink**.
-- **Dependencies & follow-ups** — author cross-goal links: **Depends on** (a `blocks` edge — must finish first; backend cycle-checks) and **Follows** (a `follows` edge — sequence). Pick from the project's goals; add/remove via `add_goal_dependency` / `remove_goal_dependency`. These render on the Map.
-- **Activity feed** — recent `dev_goal_signals`, including the `team_*` and `athena_update` signals described below.
+- **Composed checklist** — ad-hoc items (add / toggle / delete) and sub-goals.
+- **Hand to your AI team** — the plain-language hand-off control (`GoalHandoffPanel`): one button plus an inline confirm that explains, in plain words, what starting the team will do, so kicking off real (token-spending) work is a deliberate, understood choice. Shown when the project has an owning team and the goal isn't complete; once a team is on it the panel shows a live "already working" state. (This is the **Advance with team** action reworded for clarity — see [Advancing a goal](#advancing-a-goal-teams-work-it).)
+- **Team steps** — linked team-assignment steps, kept *outside* the fold so an `awaiting_review` step's inline **skip / abort** intervention (via the team-assignment review path) is never buried.
+- *Under **More details*** — **Linked teams** (assignments advancing this goal, title + status, with **unlink**); **Dependencies & follow-ups** (author cross-goal links: **Depends on** = a `blocks` edge, must finish first, backend cycle-checks; **Follows** = a `follows` edge, sequence; pick from the project's goals, add/remove via `add_goal_dependency` / `remove_goal_dependency`; these render on the Map); and the **Activity feed** (recent `dev_goal_signals`, including the `team_*` and `athena_update` signals described below).
 
 ## How progress flows in
 
@@ -62,7 +62,7 @@ The block resolves a team's goals by walking **team → project → goals** via 
 Linking a goal to a team makes it *visible* to executions; **advancing** is the team actually working it. An advance turns a goal into a running, goal-linked `team_assignment`:
 
 - **Initiator** — `engine/goal_advance.rs::advance_goal` (command `advance_team_goal`) builds an assignment **with `goal_id` set** and runs it on the orchestrator, behind a one-active-assignment-per-goal guard. **Hybrid step source**: if the goal has open to-dos (`dev_goal_items`), one step per to-do (title verbatim); otherwise the goal is LLM-decomposed.
-- **Triggers** — the **Advance with team** button in the goal detail drawer (shown when the goal's project has an owning team and the goal isn't complete); Athena (team path); and the autonomous tick below.
+- **Triggers** — the **Hand to your AI team** control in the goal detail drawer (`GoalHandoffPanel` — a plain-language relabel of the former "Advance with team", gated behind an inline confirm; shown when the goal's project has an owning team and the goal isn't complete); Athena (team path); and the autonomous tick below.
 - **Progress closes automatically** — when a goal-linked assignment reaches `done`, the orchestrator checks off the to-dos it worked (step title ↔ to-do title) and writes the goal's progress via `apply_resolved_goal_progress`. This is what makes a team that did the work actually *move* the goal — `dev_goal_signals` are observational, and before this progress only moved on a manual accept. Status flips `open → in-progress` the moment the first step runs and `→ done` at 100%; progress never regresses a hand-set value.
 - **Autonomous advancement** — `GoalAdvanceSubscription`, gated by the **default-OFF** `autonomous_goal_advancement` setting, ticks every 5 min and keeps each goal-linked team's active goal moving unattended. Guardrails: one active assignment per goal, a 30-min per-goal cooldown after any assignment (no failure-retry stampede), eligible-persona check, and a per-tick cap. Nothing spends tokens autonomously until you opt in.
 

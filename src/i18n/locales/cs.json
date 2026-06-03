@@ -11770,6 +11770,14 @@
       "scan_history": "Historie skenů ("
     },
     "dev_lifecycle": {
+      "goal_handoff_label": "Předat vašemu AI týmu",
+      "goal_handoff_button": "Předat AI týmu",
+      "goal_handoff_explain": "Váš AI tým si projde úkoly zde uvedené — nebo rozdělí cíl na kroky — a poté začne pracovat. Můžete sledovat, co dělají, v reálném čase.",
+      "goal_handoff_active": "Váš AI tým již na tomto cíli pracuje.",
+      "goal_handoff_confirm_q": "Spustit váš AI tým na tomto cíli?",
+      "goal_handoff_start": "Ano, spustit",
+      "goal_more_details": "Více podrobností",
+      "goal_more_details_hint": "Závislosti, propojené týmy a historie",
       "start_a_competition": "Spustit soutěž",
       "start_a_competition_desc": "Spusť 2–4 soutěžících s různými strategiemi, aby řešili stejný úkol. Přístup vítěze bude povýšen.",
       "task_title": "Název úkolu",
