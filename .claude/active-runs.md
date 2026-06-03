@@ -32,13 +32,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### friend-goals — /friend loop: humanize sub_goals (Goals module) for non-technical users
-- Started: 2026-06-03 09:52
-- Status: started
-- Branch: worktree-friend-goals-095226
-- Worktree: .claude/worktrees/friend-goals-095226/
-- Paths: src/features/plugins/dev-tools/sub_goals/ (frontend only; may touch src/i18n/locales/*.json + src/features/shared/components/layout/sidebar/sidebarData.ts). Worktree-isolated; no Rust planned.
-- Note: /friend endless development loop, redesign/upgrade UI/UX so the Goals module (Board/Map/Timeline/Portfolio + editor/detail drawer) reads for non-technical users (plain-language copy, starter goals, view explainers, simpler detail drawer).
+### research-fleet-token-optimization — /research: token-usage optimization for fleet CLI spawning/management (source: headroom repo)
+- Started: 2026-06-03 (this session)
+- Status: completed — Findings [2]+[3] shipped to master in 3 atomic commits: 923e96ac2 (fleet-wide token/cache bar + fleet_token_summary cmd) + 29b51a63b (inline /compact action on bloated sessions) + 46548322f (docs/features/fleet.md sync). GATES: cargo test --lib --features desktop = 745 passed/0 failed (incl. 2 new aggregate tests + export_bindings); tsc --noEmit exit 0; eslint 0 errors; vitest FleetTokenSummaryBar 4/4 + FleetContextPill 6/6. Finding [1] (compression proxy) DEFERRED for user discussion (OAuth-subscription-preservation risk). Finding [4] (cross-CLI shared MCP context) → descoped-reopenable. Also: codebase-stack.md updated (Fleet = 3rd claude-spawn path). NOT mine in tree: DevProject/DevStandard/EvalRunDetail bindings (foreign drift, left untouched).
+- Branch: master
+- Paths: src/features/plugins/fleet/sub_grid/{FleetTokenSummaryBar,FleetContextPill,FleetGridPage}.tsx + tests; src-tauri/src/commands/fleet/transcript_read.rs + lib.rs; src/api/fleet/fleet.ts; src/i18n (en.json + generated); src/lib/bindings/FleetTokenAggregate.ts + commandNames; docs/features/fleet.md; Obsidian Research/Lessons (outside repo).
+- Note: /research run. headroom (chopratejas/headroom) = local cloned repo source. Focus=code, token optimization for large CLI fleets.
 
 ### friend-incidents — /friend loop: humanize sub_incidents for non-technical users
 - Started: 2026-06-03 09:50
@@ -443,6 +442,10 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-06-03 — completed] friend-goals — /friend loop: humanize sub_goals (Goals module) for non-technical users (1 cycle)**
+  - **What:** 1 commit on `worktree-friend-goals-095226` (bc89dde07): friendlier goal detail drawer. Reordered `GoalDetailDrawer` to lead with human/actionable content (status → progress nudge → checklist → hand-off → live team steps) and folded the power-user surfaces (Dependencies / Linked teams / Activity) into a collapsible `SectionCard` "More details" fold. New `GoalHandoffPanel` replaces the jargon "Advance with team / decomposes the goal" with one button + an inline plain-language confirm. 8 new i18n keys × 14 locales (13 parallel subagents). tsc + lint clean (0 errors). NOT live-verified (verify off) — manual checklist in report; branch left for user merge (master advanced underneath; en.json/generated-i18n may conflict). NOT pushed.
+  - **Paths:** src/features/plugins/dev-tools/sub_goals/** (GoalDetailDrawer + new GoalHandoffPanel) + docs/features/goals/README.md + src/i18n/locales/*.json + generated i18n (types/enSectionStrings/section-locales/*/plugins.json).
 
 - **[2026-06-03 — completed] friend-sublab — /friend loop over the agent Lab (12 cycles)**
   - **What:** 12 atomic commits on `worktree-friend-sublab-092849` (1c3ffac33..ec215b1e3), all frontend deepen-existing on the Lab. Shipped: localized history status tokens + RelativeTime; Auto-Optimize config popover (schedule/threshold/models, mgmt API already accepted them); promote-the-winner callout in A/B+Eval results (Arena excluded — ranks models not versions); Eval matrix score heatmap; ScoreTrend cross-run insight (mode-filter chips + click-to-jump + avg line); winner column in A/B+Eval history; "draft ready" callout on the Improve panel (surfaces existing acceptDraft); cross-run compare card; trend+compare surfaced in the Versions timeline view; run-in-progress pulse on mode tabs; Eval radar version toggle + double-click solo. ~14 new agents.lab i18n keys, all translated across 14 locales each cycle. tsc + lint clean every cycle. NOT live-verified (tsc/lint only) — branch left for user review/merge. NOT pushed.
