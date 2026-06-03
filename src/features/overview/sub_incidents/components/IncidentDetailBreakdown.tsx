@@ -2,7 +2,24 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { HighlightedJson } from '@/features/overview/sub_events/HighlightedJson';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
+import { CopyButton } from '@/features/shared/components/buttons';
 import { normalizeIncidentDetail } from '../libs/incidentDetail';
+
+const ISO_RE = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}/;
+const URL_RE = /^https?:\/\/\S+$/i;
+
+/** Render a fact value in its most human form: a relative time for timestamps,
+ *  a distinct treatment for URLs, plain text otherwise. */
+function FactValue({ value }: { value: string }) {
+  if (ISO_RE.test(value) && !Number.isNaN(new Date(value).getTime())) {
+    return <RelativeTime timestamp={value} />;
+  }
+  if (URL_RE.test(value)) {
+    return <span className="text-primary break-all">{value}</span>;
+  }
+  return <span className="break-words">{value}</span>;
+}
 
 /**
  * Visually structured breakdown of an incident's `detail` payload. Prose shows
@@ -47,10 +64,15 @@ export function IncidentDetailBreakdown({ detail }: { detail: string | null }) {
         {facts.map((fact) => (
           <div
             key={fact.label}
-            className="min-w-0 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2"
+            className="group/fact relative min-w-0 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2"
           >
+            <div className="absolute right-1.5 top-1.5 opacity-0 transition-opacity group-hover/fact:opacity-100">
+              <CopyButton text={fact.value} iconSize="w-3 h-3" />
+            </div>
             <dt className="typo-overline text-foreground mb-0.5">{fact.label}</dt>
-            <dd className="typo-body text-foreground break-words">{fact.value}</dd>
+            <dd className="typo-body text-foreground break-words pr-5">
+              <FactValue value={fact.value} />
+            </dd>
           </div>
         ))}
       </dl>
