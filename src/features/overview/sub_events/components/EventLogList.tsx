@@ -8,13 +8,14 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import DetailModal from '@/features/overview/components/dashboard/widgets/DetailModal';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
+import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
-import { formatRelativeTime, EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
+import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
-import { EventDetailContent } from './EventLogItem';
+import { EventDetailContent } from './EventDetailContent';
 import { createLogger } from "@/lib/log";
 import { debtText } from '@/i18n/DebtText';
 
@@ -100,7 +101,6 @@ export default function EventLogList() {
     return () => observer.disconnect();
   }, [hasMoreOlder, isLoadingOlder, loadOlder, filteredEvents.length]);
 
-  const [copiedPayload, setCopiedPayload] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [viewName, setViewName] = useState('');
   const [triggerFilter, setTriggerFilter] = useState<string>('all');
@@ -254,7 +254,7 @@ export default function EventLogList() {
       sortable: true,
       align: 'right' as const,
       render: (event) => (
-        <span className="typo-body text-foreground">{formatRelativeTime(event.created_at)}</span>
+        <RelativeTime timestamp={event.created_at} className="typo-body text-foreground" />
       ),
     },
   ];
@@ -440,13 +440,9 @@ export default function EventLogList() {
         <DetailModal
           title={`${t.overview.events.event_detail_title} ${selectedEvent.event_type}`}
           subtitle={`${t.overview.events.event_detail_status} ${selectedEvent.status}`}
-          onClose={() => { setSelectedEvent(null); setCopiedPayload(false); }}
+          onClose={() => setSelectedEvent(null)}
         >
-          <EventDetailContent
-            event={selectedEvent}
-            copiedPayload={copiedPayload}
-            setCopiedPayload={setCopiedPayload}
-          />
+          <EventDetailContent event={selectedEvent} />
         </DetailModal>
       )}
     </ContentBox>
