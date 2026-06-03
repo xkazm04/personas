@@ -34,7 +34,8 @@ The Incidents tab is a cross-source triage inbox: failure-shaped rows from seven
 - **Incidents group by agent** (`libs/groupIncidents.ts`, `IncidentAgentGroup.tsx`) into collapsible per-agent sections ordered worst-severity-first, answering "which of my agents needs me?" — agent-less incidents fall into a "No agent" bucket that sorts last. Each group header offers one-click acknowledge / resolve-all for that agent.
 - **Filters speak plain language too** — the severity and source filter chips resolve through `tokenLabel` / `sourceTableLabel`, so a user filters by "Tool" or "Credential", not `tool_execution_audit_log`.
 - **Each incident says what to do** — the detail modal leads with a guidance callout keyed off the source stream (`incidentGuidance` → `tool` / `credential` / `provider` / …). Resolving offers one-tap note presets ("Fixed", "Transient — ignored", …), and closed rows show their resolution note inline as a recap. Fact values render smartly (timestamps → relative time, URLs as links, per-fact copy).
-- **The grouped inbox remembers its shape** — a collapse-all / expand-all control plus per-agent collapse state persisted to `localStorage` (`incidents:collapsed-groups`).
+- **The grouped inbox remembers its shape** — a collapse-all / expand-all control plus per-agent collapse state persisted to `localStorage` (`incidents:collapsed-groups`). Per-agent headers stay sticky while scrolling.
+- **Navigable by keyboard and time** — keyboard triage (j/k move, Enter open, A acknowledge, R resolve, Esc clear) over the visible rows, and "All time / Last 24 hours / Last 7 days" range chips wired to the `since` filter.
 
 ## Additional overview modules
 
