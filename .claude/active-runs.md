@@ -42,7 +42,7 @@ timestamp — the next session can recognize it as abandoned.
 
 ### friend-incidents — /friend loop: humanize sub_incidents for non-technical users
 - Started: 2026-06-03 09:50
-- Status: started
+- Status: completed — 16 cycles, merged to master (b5505d847); worktree removed + branch deleted. (Required a user-authorized checkpoint commit 1adee979e of 235 in-flight files to clean the tree first.)
 - Branch: worktree-friend-incidents-094958
 - Worktree: .claude/worktrees/friend-incidents-094958/
 - Paths: src/features/overview/sub_incidents/ (frontend only; may touch src/i18n/locales/*.json). Worktree-isolated; no Rust planned.
