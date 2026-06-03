@@ -80,6 +80,26 @@ fn preset_role_config(role: &str) -> String {
     serde_json::json!({ "preset_role": role }).to_string()
 }
 
+/// Recover a member's SEMANTIC preset role from the stash `preset_role_config`
+/// wrote into `persona_team_members.config` (`{"preset_role":"<role>"}`). The
+/// `role` column is CHECK-constrained to the pipeline-role enum and always
+/// lands as `worker`, so it can't be used to identify which manifest role a
+/// member fills. Falls back to the raw `role` for any member not adopted from a
+/// preset. Without this recovery, `retry_failed_members` reads every existing
+/// member as `worker` — so it can neither skip already-present roles (it would
+/// re-adopt duplicates) nor resolve connection endpoints back to existing
+/// members (new members would wire only to each other, not into the pipeline).
+fn member_semantic_role(config: Option<&str>, role: &str) -> String {
+    config
+        .and_then(|c| serde_json::from_str::<serde_json::Value>(c).ok())
+        .and_then(|v| {
+            v.get("preset_role")
+                .and_then(|r| r.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| role.to_string())
+}
+
 /// `instant_adopt_template_inner` expects the template's DESIGN — the
 /// `payload` object — as its `design_result_json`, NOT the whole
 /// on-disk template file (`{ id, name, payload: { … } }`). The
@@ -527,17 +547,22 @@ pub fn retry_failed_members(
     let mut role_to_member_id: std::collections::HashMap<String, String> =
         std::collections::HashMap::new();
     for m in &existing_members {
-        role_to_member_id.insert(m.role.clone(), m.id.clone());
+        // Key by the SEMANTIC role (recovered from config), NOT the always-
+        // `worker` pipeline-role column — otherwise the skip + connection
+        // rebuild below can't match existing members to manifest roles.
+        let semantic = member_semantic_role(m.config.as_deref(), &m.role);
+        role_to_member_id.insert(semantic, m.id.clone());
     }
     let existing_members_view: Vec<AdoptedTeamPresetMember> = existing_members
         .iter()
         .filter_map(|m| {
+            let semantic = member_semantic_role(m.config.as_deref(), &m.role);
             preset
                 .members
                 .iter()
-                .find(|pm| pm.role == m.role)
+                .find(|pm| pm.role == semantic)
                 .map(|pm| AdoptedTeamPresetMember {
-                    role: m.role.clone(),
+                    role: semantic.clone(),
                     template_id: pm.template_id.clone(),
                     persona_id: m.persona_id.clone(),
                     team_member_id: m.id.clone(),
@@ -760,4 +785,30 @@ pub fn retry_failed_members(
         failed_members: failures,
         created_connections,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn semantic_role_recovers_preset_role_from_config() {
+        // The role column is always `worker`; the real role is stashed in config.
+        let cfg = preset_role_config("architect");
+        assert_eq!(member_semantic_role(Some(&cfg), "worker"), "architect");
+        let cfg = preset_role_config("qa");
+        assert_eq!(member_semantic_role(Some(&cfg), "worker"), "qa");
+    }
+
+    #[test]
+    fn semantic_role_falls_back_to_role_column_when_no_preset_stash() {
+        // Non-preset member (no config / no preset_role key) → use the raw role.
+        assert_eq!(member_semantic_role(None, "reviewer"), "reviewer");
+        assert_eq!(member_semantic_role(Some("{}"), "orchestrator"), "orchestrator");
+        assert_eq!(member_semantic_role(Some("not json"), "worker"), "worker");
+        assert_eq!(
+            member_semantic_role(Some(r#"{"other":"x"}"#), "worker"),
+            "worker"
+        );
+    }
 }

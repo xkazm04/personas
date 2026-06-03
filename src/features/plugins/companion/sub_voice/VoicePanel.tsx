@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Cloud, ExternalLink, HardDrive, KeyRound, Mic, RefreshCw, RotateCcw, ShieldCheck } from 'lucide-react';
 import { SectionCard } from '@/features/shared/components/layout/SectionCard';
 import { AccessibleToggle } from '@/features/shared/components/forms/AccessibleToggle';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useSystemStore } from '@/stores/systemStore';
@@ -89,15 +90,14 @@ function EngineSelectorCard() {
           </label>
           <span className="typo-code text-[11px] text-foreground">{Math.round(volume * 100)}%</span>
         </div>
-        <input
-          type="range"
+        <Slider
           min={0}
           max={1}
           step={0.05}
           value={volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-          className="w-full accent-primary"
-          aria-label={t.plugins.companion.voice_volume_label}
+          onChange={(v) => setVolume(v)}
+          ariaLabel={t.plugins.companion.voice_volume_label}
+          showBubble={false}
         />
       </div>
     </SectionCard>
@@ -675,15 +675,15 @@ function SliderRow({ label, hint, value, onChange, min, max, step, defaultLabel 
         <span className="typo-code text-foreground text-[11px]">{display}</span>
       </div>
       <div className="flex items-center gap-2">
-        <input
-          type="range"
+        <Slider
           min={min}
           max={max}
           step={step}
           value={sliderValue}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="flex-1 accent-cyan-400"
-          aria-label={label}
+          onChange={(v) => onChange(v)}
+          ariaLabel={label}
+          showBubble={false}
+          className="flex-1"
         />
         {value != null && (
           <button

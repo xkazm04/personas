@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
+import { Slider } from '@/features/shared/components/forms/Slider';
 
 // ---------------------------------------------------------------------------
 // Small reusable inputs shared by the toolbar's property popovers and the
@@ -59,14 +60,15 @@ export function RangeField({
           {format ? format(value) : value.toFixed(2)}
         </span>
       </div>
-      <input
-        type="range"
+      <Slider
         min={min}
         max={max}
         step={step}
         value={value}
-        onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-1 accent-rose-400"
+        onChange={(v) => onChange(v)}
+        ariaLabel={label}
+        formatValue={format}
+        showBubble={false}
       />
     </label>
   );

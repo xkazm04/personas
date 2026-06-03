@@ -12,6 +12,7 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dna, Sparkles, Play, Loader2, CheckCircle2, Plus, Target, Zap,
@@ -353,17 +354,19 @@ function ObjectiveTernary({
             <div key={key} className="flex items-center gap-2">
               <Icon className={`w-3 h-3 ${tone}`} aria-hidden="true" />
               <span className={`typo-caption font-semibold w-14 ${tone}`}>{label}</span>
-              <input
-                type="range" min={0} max={100}
+              <Slider
+                min={0}
+                max={100}
                 value={Math.round(objective[key] * 100)}
-                onChange={(e) => {
-                  const next = { ...objective, [key]: Number(e.target.value) / 100 };
+                onChange={(v) => {
+                  const next = { ...objective, [key]: v / 100 };
                   const t = next.quality + next.speed + next.cost;
                   if (t > 0) { next.quality /= t; next.speed /= t; next.cost /= t; }
                   onChange(next);
                 }}
-                className="flex-1 h-1 accent-primary"
-                aria-label={`${label} weight`}
+                ariaLabel={`${label} weight`}
+                showBubble={false}
+                className="flex-1"
               />
               <span className="typo-data text-foreground w-9 text-right">{Math.round(objective[key] * 100)}</span>
             </div>
@@ -624,12 +627,13 @@ export function GenomeBreedingPanel() {
                           <span className="typo-label text-foreground"><DebtText k="auto_mutation_rate_c56ae891" /></span>
                           <span className="typo-data-lg text-foreground">{Math.round(mutationRate * 100)}%</span>
                         </div>
-                        <input
-                          type="range" min={0} max={50}
+                        <Slider
+                          min={0}
+                          max={50}
                           value={Math.round(mutationRate * 100)}
-                          onChange={(e) => setMutationRate(Number(e.target.value) / 100)}
-                          aria-label={debtText("auto_mutation_rate_c56ae891")}
-                          className="w-full h-1 accent-primary"
+                          onChange={(v) => setMutationRate(v / 100)}
+                          ariaLabel={debtText('auto_mutation_rate_c56ae891')}
+                          showBubble={false}
                         />
                         <p className="typo-caption text-foreground mt-2">
                           {mutationRate < 0.1 ? 'Conservative — offspring closely resemble parents.' :

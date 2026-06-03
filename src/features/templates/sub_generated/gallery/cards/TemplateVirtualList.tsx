@@ -1,6 +1,7 @@
 import { useRef, useEffect } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useScrollRestoration } from '@/hooks/utility/interaction/useScrollRestoration';
 import { SearchEmptyState } from '../explore/EmptyState';
 import { CompactRow } from './CompactRow';
 import { ComfortableRow } from './ComfortableRow';
@@ -60,6 +61,12 @@ export function TemplateVirtualList({
 }: TemplateVirtualListProps) {
   const { t } = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Remember the gallery scroll offset across route/tab switches; AI-search
+  // results are a distinct context from the browse list, so they start at top.
+  const setScrollContainerRef = useScrollRestoration(
+    `templates/gallery|ai=${isAiResult ? '1' : '0'}`,
+    scrollContainerRef,
+  );
   const estimateRowSize = density === 'compact' ? 40 : 72;
 
   const virtualizer = useVirtualizer({
@@ -103,7 +110,7 @@ export function TemplateVirtualList({
 
       {/* Scrollable virtual list */}
       <div
-        ref={scrollContainerRef}
+        ref={setScrollContainerRef}
         className="flex-1 overflow-y-auto"
         style={{ scrollbarGutter: 'stable' }}
       >

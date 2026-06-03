@@ -5,6 +5,7 @@ import type { CronPreview } from '@/api/pipeline/triggers';
 import { CRON_PRESETS, type ScheduleEntry } from '../libs/scheduleHelpers';
 import { useConflictPreview } from '../libs/useCronPreview';
 import { TimezoneSelect, getDetectedTimezone } from '@/features/triggers/sub_triggers/TimezoneSelect';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -220,13 +221,13 @@ export default function FrequencyEditor({
               )}
             </div>
           ) : (
-            <input
-              type="number"
-              value={intervalInput}
-              onChange={(e) => setIntervalInput(e.target.value)}
-              placeholder="300"
+            <NumberStepper
+              value={intervalInput.trim() === '' ? null : Number(intervalInput)}
+              onChange={(v) => setIntervalInput(v == null ? '' : String(v))}
               min={10}
-              className="w-full px-3 py-2 typo-code font-mono bg-secondary/40 border border-primary/15 rounded-card text-foreground/90 placeholder:text-foreground focus-visible:outline-none focus-visible:border-primary/30 focus-visible:ring-1 focus-visible:ring-primary/20"
+              allowEmpty
+              placeholder="300"
+              className="w-full"
             />
           )}
         </div>

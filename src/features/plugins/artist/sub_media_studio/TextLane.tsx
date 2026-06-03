@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { MapPin, Plus, X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import type { BeatAnchor, TextItem, VideoClip } from './types';
 
 interface TextLaneProps {
@@ -125,14 +126,12 @@ function BeatEditModal({
                   className="px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground placeholder:text-foreground/40"
                   aria-label={t.media_studio.anchor_word}
                 />
-                <input
-                  type="number"
-                  min={1}
+                <NumberStepper
                   value={anchorOccurrence}
-                  onChange={(e) => setAnchorOccurrence(Math.max(1, Number(e.target.value) || 1))}
-                  className="w-14 px-2 py-1.5 text-md bg-secondary/40 border border-primary/10 rounded-card text-foreground tabular-nums"
-                  aria-label={t.media_studio.anchor_occurrence}
-                  title={t.media_studio.anchor_occurrence_hint}
+                  onChange={(v) => setAnchorOccurrence(v ?? 1)}
+                  min={1}
+                  ariaLabel={t.media_studio.anchor_occurrence}
+                  className="w-24"
                 />
               </div>
             )}

@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Plus, Users, Zap, Trash2, ArrowRight, Layers } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useVaultStore } from '@/stores/vaultStore';
+import { listCredentials } from '@/api/vault/credentials';
+import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { AutoTeamModal } from './AutoTeamModal';
 import { CreateTeamForm } from './CreateTeamForm';
@@ -33,6 +36,11 @@ export default function TeamList() {
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newColor, setNewColor] = useState('#6366f1');
+  // Codebase repository for the new team (provisions a Codebase connector).
+  const [newGithubUrl, setNewGithubUrl] = useState('');
+  const [newPrCred, setNewPrCred] = useState<string | null>(null);
+  const [newMainBranch, setNewMainBranch] = useState('');
+  const [githubCreds, setGithubCreds] = useState<{ id: string; name: string }[]>([]);
   const [confirmDisbandId, setConfirmDisbandId] = useState<string | null>(null);
   const [showAutoTeam, setShowAutoTeam] = useState(false);
 
@@ -44,6 +52,21 @@ export default function TeamList() {
 
   useEffect(() => { fetchTeams(); }, [fetchTeams]);
 
+  // Load GitHub PAT credentials when the create form opens so the repo picker
+  // can authenticate and list repositories.
+  useEffect(() => {
+    if (!showCreate) return;
+    listCredentials()
+      .then((creds) =>
+        setGithubCreds(
+          creds
+            .filter((c) => c.serviceType === 'github' || c.serviceType === 'github_actions')
+            .map((c) => ({ id: c.id, name: c.name })),
+        ),
+      )
+      .catch(silentCatch('TeamList:listGithubCreds'));
+  }, [showCreate]);
+
   const sortedTeams = useMemo(
     () => [...teams].sort((a, b) => a.name.localeCompare(b.name)),
     [teams],
@@ -51,14 +74,38 @@ export default function TeamList() {
 
   const handleCreate = async () => {
     if (!newName.trim()) return;
-    await createTeam({
+    const team = await createTeam({
       name: newName.trim(),
       description: newDescription.trim() || undefined,
       color: newColor,
     });
+    // Provision a Codebase connector wired to the chosen GitHub repo so the
+    // team carries a single source-control truth (consumed by Dev Tools'
+    // "Team" source mode). Repo-centric: no local root_path at team level.
+    if (team && newGithubUrl.trim()) {
+      const data: Record<string, string> = {
+        project_name: newName.trim(),
+        team_id: team.id,
+        github_url: newGithubUrl.trim(),
+        mode: 'team',
+      };
+      if (newMainBranch.trim()) data.main_branch = newMainBranch.trim();
+      try {
+        await useVaultStore.getState().createCredential({
+          name: `Codebase — ${newName.trim()}`,
+          service_type: 'codebase',
+          data,
+        });
+      } catch (err) {
+        toastCatch('Failed to create Codebase connector')(err);
+      }
+    }
     setNewName('');
     setNewDescription('');
     setNewColor('#6366f1');
+    setNewGithubUrl('');
+    setNewPrCred(null);
+    setNewMainBranch('');
     setShowCreate(false);
   };
 
@@ -100,6 +147,13 @@ export default function TeamList() {
               newColor={newColor} onColorChange={setNewColor}
               onSubmit={handleCreate} onCancel={() => setShowCreate(false)}
               existingNames={teams.map((tm) => tm.name)}
+              githubCreds={githubCreds}
+              prCredentialId={newPrCred}
+              onCredChange={setNewPrCred}
+              githubUrl={newGithubUrl}
+              onGithubUrlChange={setNewGithubUrl}
+              mainBranch={newMainBranch}
+              onMainBranchChange={setNewMainBranch}
             />
           </div>
         )}

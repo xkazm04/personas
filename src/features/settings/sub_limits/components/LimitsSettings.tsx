@@ -7,6 +7,7 @@ import type { MonthlySpendResult } from '@/lib/bindings/MonthlySpendResult';
 import { formatCost } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 const CEILING_KEY = 'monthly_cost_ceiling_usd';
 const WARNING_THRESHOLD = 0.8;
@@ -99,17 +100,16 @@ export default function LimitsSettings() {
           <div className="px-4 py-4 space-y-3">
             <p className="typo-body text-foreground">{s.ceiling_hint}</p>
             <div className="flex items-center gap-2">
-              <span className="typo-body text-foreground">$</span>
-              <input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.01"
-                value={ceiling.value === '0' ? '' : ceiling.value}
-                onChange={(e) => ceiling.setValue(e.target.value || '0')}
+              <NumberStepper
+                value={ceiling.value === '0' ? null : Number(ceiling.value)}
+                onChange={(v) => ceiling.setValue(v == null ? '0' : String(v))}
+                min={0}
+                step={0.01}
+                allowEmpty
+                prefix="$"
                 placeholder={s.ceiling_placeholder}
-                aria-label={s.ceiling_aria}
-                className="w-32 px-2 py-1 typo-body rounded-input bg-secondary/30 border border-primary/10 text-foreground placeholder:text-foreground/50 focus:outline-none focus:border-primary/40"
+                ariaLabel={s.ceiling_aria}
+                className="w-36"
               />
               <span className="typo-caption text-foreground">{s.ceiling_unit}</span>
               <button

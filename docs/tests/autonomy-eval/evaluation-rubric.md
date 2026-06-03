@@ -233,3 +233,54 @@ To keep the judge honest:
 - **§6.2 — no incident raised is inconclusive.** A resilience-track run that raised **no** incident at all (`raised===0`) caps at **`PROMISING`** — the run did not exercise the path the seed is meant to test, so it is inconclusive, not a pass. (The held-out resilience seed is constructed so the engineer hits a genuine missing precondition and must escalate rather than fabricate a workaround.)
 
 Both caps are gated on `isResilienceTrack` and only ever lower the verdict (worst-binding-constraint, like every other cap in §0/§1.A) — they can never raise it, and they have zero effect on non-resilience runs.
+
+## §7 Standards & branching compliance (code-track seeds with a standards policy)
+
+"Production quality" is not only "the build is green" — it is also "the team followed the
+standards the project told it to follow." A Dev Tools project can declare a **standards
+policy** (the pipeline's Standards stage → `dev_projects.standards_config`): which pre-commit
+gates must pass (lint / docs-required / code-quality), which branch PRs open against
+(`pr_base`), and whether GitHub-native auto-merge is enabled. `engine/runner/team_context.rs`
+injects that policy into every team-member execution's prompt, so Dev Clone / QA Guardian are
+*told* to honor it. §7 is the eval-side counterpart: **did the team's artifacts actually honor
+the policy it was given?**
+
+§7 applies **only** to seeds whose `tracks` array includes `"code"` **and** whose bound
+project carries a non-null `standards_config`. For every other run it is a strict no-op (no
+facts, no cap, no scorecard subtree, no stdout segment — byte-identical, protected by the
+golden-diff invariant, exactly like §6). Like §1.A.1 / §1.A.2 / §6 it is **a cap + reported
+facts only — never folded into `team_score`** or the roll-up divisors.
+
+### Per-rule signals (computed by `lib/eval/standards.mjs`, reusing already-gathered signals)
+
+The scorer is **pure** — it re-uses signals `evaluate.mjs` already computes (the §1.A code-track
+build/lint/test results, whether docs were touched in the increment, and the §1.A.1 delivered-
+increment fact) rather than running anything new. A rule is **scored** (`pass`/`fail`) only when
+the policy requires it; rules that can't be observed from a local clone are reported **`na`**
+(informational, excluded from the percentage).
+
+| Rule | Scored when | Pass means |
+|---|---|---|
+| `precommit.lint` | `precommit.lint` is on | code-track lint = `pass`. (Note: a code-track lint fail is only a §1.A *warn*; when the policy **requires** lint, that same failure becomes a real §7 violation → caps PROMISING.) |
+| `precommit.code_quality` | `precommit.code_quality` is on | code-track build **and** test did not fail (a gate that didn't run is `na`, not a false pass) |
+| `precommit.docs_required` | `precommit.docs_required` is on | the increment touched docs (`.md`/`.adr` in the patch) |
+| `branching.pr_base` (`main`) | `pr_base = 'main'` | the §1.A.1 increment reached the main base (work wasn't stranded on an un-merged `dev-clone/*` branch) |
+| `branching.pr_base` (`test`) | `pr_base = 'test'` | **`na`** — the test base isn't observable from the local main/master clone |
+| `branching.automerge` | auto-merge enabled | **`na`** — a GitHub-side setting, not observable from local git |
+
+`pct` = passed ÷ scored (`na` rules excluded); `applicable` = at least one rule was scored.
+
+### The cap
+
+- **§7.1 — standards must be fully honored.** A code-track run whose project declares a policy
+  but whose artifacts did **not** fully honor it (`applicable && pct < 100` — any scored rule
+  failed) caps the verdict at **`PROMISING`**. Good work that ignores the team's own declared
+  standard is not production. (A build/test failure already caps **`NOT-READY`** via §1.A, which
+  outranks this — so §7's net-new bite is the *policy-required* lint gate, the docs-required
+  gate, and the merge-to-base flow.)
+
+The cap is gated on `standards.applicable` and only ever lowers the verdict (worst-binding-
+constraint, like every other cap) — it can never raise it, and it has zero effect on doc-track
+runs or projects with no declared policy. The full per-rule breakdown is surfaced in
+`scorecard.standards_compliance` and rendered in the in-app Certification dashboard's run
+detail (`StandardsCard`).

@@ -11,7 +11,8 @@ import {
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { silentCatch } from '@/lib/silentCatch';
-import { DebtText } from '@/i18n/DebtText';
+import { DebtText, debtText } from '@/i18n/DebtText';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 import {
   companionApplyConsolidationItem,
@@ -432,15 +433,13 @@ function ItemCard({
             <span className="typo-caption text-foreground">
               <DebtText k="auto_importance_1_5_1bfa4b92" />
             </span>
-            <input
-              type="number"
+            <NumberStepper
+              value={draftImportance}
+              onChange={(v) => setDraftImportance(v ?? 1)}
               min={1}
               max={5}
-              value={draftImportance}
-              onChange={(e) =>
-                setDraftImportance(Math.max(1, Math.min(5, Number(e.target.value))))
-              }
-              className="mt-0.5 w-20 bg-foreground/5 rounded px-2 py-1 typo-caption focus-ring"
+              ariaLabel={debtText('auto_importance_1_5_1bfa4b92')}
+              className="mt-0.5 w-24"
             />
           </label>
         </div>

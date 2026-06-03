@@ -12,7 +12,7 @@ Pipeline is the visual workflow canvas for composing multi-persona teams. It ren
 
 | Surface | Behavior | Implementation |
 | --- | --- | --- |
-| Team list | Sidebar list of existing teams with create/edit. The create form (`CreateTeamForm.tsx`) checks the team name against existing teams inline as you type — a debounced spinner → emerald "Name available" → amber "Already in use, try X" via `useAsyncFieldValidation` + `FormField`'s `availability` prop — so collisions surface at type-time, not on save | `TeamList.tsx`, `CreateTeamForm.tsx`, `TeamCard.tsx` |
+| Team list | Sidebar list of existing teams with create/edit. The create form (`CreateTeamForm.tsx`) checks the team name against existing teams inline as you type — a debounced spinner → emerald "Name available" → amber "Already in use, try X" via `useAsyncFieldValidation` + `FormField`'s `availability` prop — so collisions surface at type-time, not on save. The form also has a **Codebase repository** section (GitHub connector picker + repo selector + optional main branch); when a repo is set, submitting provisions a `Codebase — <team>` connector (`service_type: codebase`) carrying `team_id` + `github_url` (+ `main_branch`, `mode: 'team'`), giving the team a single source-control truth that Dev Tools' "Team" source mode consumes | `TeamList.tsx`, `CreateTeamForm.tsx`, `TeamCard.tsx` |
 | Canvas | xyflow graph of persona nodes + connection edges | `TeamCanvas.tsx`, `canvas/CanvasFlowLayer.tsx`, `canvas/CanvasOverlays.tsx` |
 | Team config | Per-team settings panel | `TeamConfigPanel.tsx` |
 | Drag panel | Drag-source for adding personas to the canvas | `TeamDragPanel.tsx`, `canvas/useCanvasDragDrop.ts` |

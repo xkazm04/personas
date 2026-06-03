@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { PIXELS_PER_SECOND_DEFAULT, MIN_ZOOM, MAX_ZOOM } from './constants';
 import type { VideoClip, AudioClip, TextItem, ImageItem } from './types';
 import type { PlaybackEngine } from './hooks/useTimelinePlayback';
@@ -336,13 +337,13 @@ function TimelinePanelImpl({
           <ZoomOut className="w-3.5 h-3.5" />
         </Button>
 
-        <input
-          type="range"
+        <Slider
           min={MIN_ZOOM}
           max={MAX_ZOOM}
           value={zoom}
-          onChange={(e) => setZoom(Number(e.target.value))}
-          className="w-24 h-1 accent-rose-400"
+          onChange={(v) => setZoom(v)}
+          showBubble={false}
+          className="w-24"
         />
 
         <Button variant="ghost" size="icon-sm" onClick={zoomIn} title={t.media_studio.zoom_in}>

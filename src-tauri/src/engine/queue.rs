@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// Default maximum queue depth per persona.
@@ -80,6 +81,15 @@ pub struct ConcurrencyTracker {
     /// An execution needs both per-persona AND global capacity to run.
     /// 0 = unlimited (no global cap).
     global_max_concurrent: usize,
+    /// Quota-aware admission gate. When `Some(t)` and `now < t`, the AI
+    /// provider's session/usage/rate limit was recently hit, so admission is
+    /// PAUSED until `t` — new work waits in the per-persona queues instead of
+    /// being admitted to run and failing fast against the limit. Set reactively
+    /// by the engine when a completed execution failed with a RateLimit/
+    /// SessionLimit classification; auto-clears by expiry (a probe execution
+    /// after `t` either succeeds → admission resumes, or re-arms the cooldown).
+    /// `None` = no limit known → admission unaffected (the common case).
+    quota_cooldown_until: Option<DateTime<Utc>>,
 }
 
 impl ConcurrencyTracker {
@@ -90,6 +100,7 @@ impl ConcurrencyTracker {
             queues: HashMap::new(),
             max_queue_depth: DEFAULT_MAX_QUEUE_DEPTH,
             global_max_concurrent: GLOBAL_MAX_CONCURRENT,
+            quota_cooldown_until: None,
         }
     }
 
@@ -101,6 +112,7 @@ impl ConcurrencyTracker {
             queues: HashMap::new(),
             max_queue_depth: max_depth,
             global_max_concurrent: GLOBAL_MAX_CONCURRENT,
+            quota_cooldown_until: None,
         }
     }
 
@@ -134,6 +146,33 @@ impl ConcurrencyTracker {
     /// Returns `true` if unlimited (0) or below the limit.
     pub fn has_global_capacity(&self) -> bool {
         self.global_max_concurrent == 0 || self.total_running() < self.global_max_concurrent
+    }
+
+    /// Quota gate: `true` when the AI provider's session/usage/rate limit is NOT
+    /// in cooldown (the common case), so admission may proceed. `false` while a
+    /// recently-hit limit's cooldown is still in the future — admission pauses.
+    pub fn quota_available(&self) -> bool {
+        match self.quota_cooldown_until {
+            Some(t) => Utc::now() >= t,
+            None => true,
+        }
+    }
+
+    /// Arm (or extend) the quota cooldown: pause admission until `until`. Never
+    /// shortens an existing cooldown (takes the later of the two) so a burst of
+    /// limit-failures doesn't prematurely lift the pause. Called by the engine
+    /// when a completed execution failed against a rate/session limit.
+    pub fn set_quota_cooldown(&mut self, until: DateTime<Utc>) {
+        self.quota_cooldown_until = Some(match self.quota_cooldown_until {
+            Some(existing) if existing > until => existing,
+            _ => until,
+        });
+    }
+
+    /// The current quota cooldown deadline, if any (for observability/UI).
+    #[allow(dead_code)]
+    pub fn quota_cooldown_until(&self) -> Option<DateTime<Utc>> {
+        self.quota_cooldown_until
     }
 
     /// Total queued executions across all personas.
@@ -190,13 +229,24 @@ impl ConcurrencyTracker {
         max_concurrent: i32,
         priority: ExecutionPriority,
     ) -> AdmitResult {
-        // Try to run immediately — need both per-persona and global capacity
+        // Try to run immediately — need per-persona AND global capacity AND the
+        // provider quota not be in cooldown. When a session/usage/rate limit was
+        // recently hit, `quota_available()` is false → fall through to enqueue so
+        // the work WAITS rather than running straight into the limit and failing.
         let persona_ok = self.has_capacity(persona_id, max_concurrent);
         let global_ok = self.has_global_capacity();
+        let quota_ok = self.quota_available();
 
-        if persona_ok && global_ok {
+        if persona_ok && global_ok && quota_ok {
             self.add_running(persona_id, execution_id);
             return AdmitResult::Running;
+        }
+        if persona_ok && global_ok && !quota_ok {
+            tracing::debug!(
+                persona_id = persona_id,
+                execution_id = execution_id,
+                "Admission held by quota cooldown — enqueuing instead of running"
+            );
         }
 
         // Check backpressure
@@ -259,6 +309,9 @@ impl ConcurrencyTracker {
     /// an execution was promoted from the queue to running, `None` if the queue
     /// is empty or persona has no queue.
     pub fn drain_next(&mut self, persona_id: &str, max_concurrent: i32) -> Option<QueuedExecution> {
+        if !self.quota_available() {
+            return None;
+        }
         if !self.has_capacity(persona_id, max_concurrent) {
             return None;
         }
@@ -304,6 +357,9 @@ impl ConcurrencyTracker {
     /// Returns `None` if the global limit is at capacity or all queues are
     /// empty / blocked on their per-persona limits.
     pub fn drain_next_global(&mut self) -> Option<QueuedExecution> {
+        if !self.quota_available() {
+            return None;
+        }
         if !self.has_global_capacity() {
             return None;
         }
@@ -856,6 +912,61 @@ mod tests {
         assert!(matches!(
             tracker.admit("pb", "e2", 0, ExecutionPriority::Normal),
             AdmitResult::Queued { .. }
+        ));
+    }
+
+    // -- Quota-aware admission ------------------------------------------------
+
+    #[test]
+    fn test_quota_available_by_default() {
+        let tracker = ConcurrencyTracker::new();
+        assert!(tracker.quota_available(), "no cooldown => available");
+        assert_eq!(tracker.quota_cooldown_until(), None);
+    }
+
+    #[test]
+    fn test_quota_cooldown_future_blocks_past_allows() {
+        let mut tracker = ConcurrencyTracker::new();
+        tracker.set_quota_cooldown(Utc::now() + chrono::Duration::minutes(10));
+        assert!(!tracker.quota_available(), "future cooldown => unavailable");
+        // A past deadline means the cooldown has lapsed.
+        tracker.set_quota_cooldown(Utc::now() - chrono::Duration::minutes(1));
+        // set never shortens, so the 10-min future deadline still stands.
+        assert!(!tracker.quota_available(), "set never shortens an active cooldown");
+    }
+
+    #[test]
+    fn test_quota_cooldown_never_shortens() {
+        let mut tracker = ConcurrencyTracker::new();
+        let far = Utc::now() + chrono::Duration::minutes(30);
+        tracker.set_quota_cooldown(far);
+        tracker.set_quota_cooldown(Utc::now() + chrono::Duration::minutes(5));
+        assert_eq!(tracker.quota_cooldown_until(), Some(far), "keeps the later deadline");
+    }
+
+    #[test]
+    fn test_admit_enqueues_during_cooldown_even_with_capacity() {
+        let mut tracker = ConcurrencyTracker::new();
+        // Plenty of capacity, but quota is in cooldown -> must enqueue, not run.
+        tracker.set_quota_cooldown(Utc::now() + chrono::Duration::minutes(10));
+        assert!(matches!(
+            tracker.admit("p", "e1", 0, ExecutionPriority::Normal),
+            AdmitResult::Queued { .. }
+        ));
+        assert_eq!(tracker.total_running(), 0, "nothing runs during cooldown");
+        assert_eq!(tracker.total_queued(), 1, "work waits in the queue");
+        // drains are also held during cooldown
+        assert!(tracker.drain_next_global().is_none(), "no promotion during cooldown");
+    }
+
+    #[test]
+    fn test_admit_runs_after_cooldown_lapses() {
+        let mut tracker = ConcurrencyTracker::new();
+        tracker.set_quota_cooldown(Utc::now() - chrono::Duration::seconds(1)); // already lapsed
+        assert!(tracker.quota_available());
+        assert!(matches!(
+            tracker.admit("p", "e1", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
         ));
     }
 }

@@ -2,7 +2,7 @@
   "id": "sdlc-lifecycle",
   "schema_version": 1,
   "name": "SDLC Delivery Team",
-  "description": "Seven pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work into a story-pointed plan, a dev clone implements that plan (writes the code + tests, runs them) and scans for backlog, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, a docs steward keeps the README and changelog in sync, and an artist generates on-brand UI/visual assets for the feature in parallel with the build. They hand work forward through events and share the same codebase and memory. (The artist needs an image-generation credential; without one it stays idle and the build cascade is unaffected.)",
+  "description": "Eight pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work into a story-pointed plan, a dev clone implements that plan (writes the code + tests, runs them) and scans for backlog, a QA guardian tests each PR the dev clone opens in an isolated git worktree and then merges it (auto-merge per the project's standards policy) or returns it for fixes, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, a docs steward keeps the README and changelog in sync, and an artist generates on-brand UI/visual assets for the feature in parallel with the build. They hand work forward through events and share the same codebase and memory. (The artist needs an image-generation credential, and QA Guardian's PR-merge action needs a GitHub credential; without those they stay idle and the build cascade is unaffected.)",
   "icon": "Workflow",
   "color": "#6366f1",
   "category": [
@@ -11,7 +11,7 @@
   ],
   "team": {
     "name": "SDLC Delivery Team",
-    "description": "Architect → implement → review → security → release → docs — end-to-end software lifecycle on one codebase.",
+    "description": "Architect → implement → QA-test/merge → review → security → release → docs — end-to-end software lifecycle on one codebase.",
     "color": "#6366f1"
   },
   "group": {
@@ -31,6 +31,12 @@
       "role": "engineer",
       "x": 240,
       "y": 120
+    },
+    {
+      "template_id": "qa-guardian",
+      "role": "qa",
+      "x": 480,
+      "y": 320
     },
     {
       "template_id": "code-reviewer",
@@ -75,6 +81,24 @@
       "to": "reviewer",
       "connection_type": "sequential",
       "label": "implemented changes + tests to review (implementation.completed)"
+    },
+    {
+      "from": "engineer",
+      "to": "qa",
+      "connection_type": "sequential",
+      "label": "opened PR to test in an isolated worktree + merge or return (dev-clone.pr.created)"
+    },
+    {
+      "from": "qa",
+      "to": "release",
+      "connection_type": "sequential",
+      "label": "tested + merged PR ready to ship (qa.pr.approved)"
+    },
+    {
+      "from": "qa",
+      "to": "engineer",
+      "connection_type": "feedback",
+      "label": "tests failed — changes requested back to the author (qa.pr.changes_requested)"
     },
     {
       "from": "reviewer",

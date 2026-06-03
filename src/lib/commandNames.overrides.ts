@@ -6,7 +6,6 @@
  * `node scripts/generate-command-names.mjs` and remove it from this list.
  */
 export type UnregisteredCommand =
-  | "dev_tools_accept_idea"
   | "dev_tools_batch_create_tasks"
   | "dev_tools_cancel_task"
   | "dev_tools_delete_triage_idea"
@@ -14,7 +13,6 @@ export type UnregisteredCommand =
   | "dev_tools_get_batch_status"
   | "dev_tools_move_context"
   | "dev_tools_record_goal_signal"
-  | "dev_tools_reject_idea"
   | "dev_tools_scan_directory"
   | "dev_tools_start_task"
   | "dev_tools_triage_ideas"

@@ -2,6 +2,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { Check, X } from 'lucide-react';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX } from '../../libs/memoryConstants';
+import { Slider } from '@/features/shared/components/forms/Slider';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
 
@@ -87,14 +88,14 @@ export default function MemoryRowDetail({
 
         <div className="flex items-center gap-1">
           <span className="typo-body text-foreground">{pt.importance_label}</span>
-          <input
-            type="range"
+          <Slider
             min={IMPORTANCE_MIN}
             max={IMPORTANCE_MAX}
             value={editImportance}
-            onChange={(e) => setEditImportance(Number(e.target.value))}
+            onChange={(v) => setEditImportance(v)}
+            ariaLabel={pt.importance_label}
+            showBubble={false}
             className="w-14"
-            style={{ ['--slider-progress' as string]: (editImportance - IMPORTANCE_MIN) / (IMPORTANCE_MAX - IMPORTANCE_MIN) }}
           />
           <span className="typo-body text-foreground w-3 text-right">{editImportance}</span>
         </div>

@@ -2,7 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 export interface SliderProps {
   value: number;
+  /** Fires continuously while dragging / on every keyboard step (the live "draft"). */
   onChange: (value: number) => void;
+  /**
+   * Fires once when an interaction settles (drag release or blur), and only when
+   * the value actually changed. Use this — not `onChange` — for expensive side
+   * effects (IPC, network) so a drag doesn't fire one per tick.
+   */
+  onCommit?: (value: number) => void;
   min: number;
   max: number;
   step?: number;
@@ -27,6 +34,7 @@ export interface SliderProps {
 export function Slider({
   value,
   onChange,
+  onCommit,
   min,
   max,
   step = 1,
@@ -40,18 +48,38 @@ export function Slider({
   const [active, setActive] = useState(false);
   const fraction = max > min ? Math.min(1, Math.max(0, (value - min) / (max - min))) : 0;
 
+  // Refs let the window-level pointerup handler (registered once per active session)
+  // read the latest value / onCommit without re-subscribing or capturing stale closures.
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onCommitRef = useRef(onCommit);
+  onCommitRef.current = onCommit;
+  // Value captured when the interaction began, so onCommit fires only on a real change.
+  const startRef = useRef(value);
+
+  const beginActive = useCallback(() => {
+    startRef.current = valueRef.current;
+    setActive(true);
+  }, []);
+  const endActive = useCallback(() => {
+    setActive(false);
+    if (onCommitRef.current && valueRef.current !== startRef.current) {
+      onCommitRef.current(valueRef.current);
+    }
+    // Mark committed so a trailing blur after a drag-release doesn't double-fire.
+    startRef.current = valueRef.current;
+  }, []);
+
   // A pointer-drag ends with a window-level pointerup (the pointer may leave the thumb).
-  const onPointerDown = useCallback(() => setActive(true), []);
   useEffect(() => {
     if (!active) return;
-    const end = () => setActive(false);
-    window.addEventListener('pointerup', end);
-    window.addEventListener('pointercancel', end);
+    window.addEventListener('pointerup', endActive);
+    window.addEventListener('pointercancel', endActive);
     return () => {
-      window.removeEventListener('pointerup', end);
-      window.removeEventListener('pointercancel', end);
+      window.removeEventListener('pointerup', endActive);
+      window.removeEventListener('pointercancel', endActive);
     };
-  }, [active]);
+  }, [active, endActive]);
 
   const bubbleRef = useRef<HTMLDivElement>(null);
   const label = formatValue ? formatValue(value) : String(value);
@@ -79,9 +107,9 @@ export function Slider({
         disabled={disabled}
         aria-label={ariaLabel}
         onChange={(e) => onChange(Number(e.target.value))}
-        onPointerDown={onPointerDown}
-        onFocus={() => setActive(true)}
-        onBlur={() => setActive(false)}
+        onPointerDown={beginActive}
+        onFocus={beginActive}
+        onBlur={endActive}
         className="w-full"
         style={{ ['--slider-progress' as string]: fraction }}
       />

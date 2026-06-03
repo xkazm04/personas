@@ -18,6 +18,9 @@ export interface Project {
   teamId?: string;
   testEnvUrl?: string;
   testEnvBranch?: string;
+  mainBranch?: string;
+  /** Standards & branching policy JSON (Pipeline Stage 3), or undefined. */
+  standardsConfig?: string;
 }
 
 export interface Goal {
@@ -54,6 +57,8 @@ export function toProject(dp: import("@/lib/bindings/DevProject").DevProject, go
     teamId: dp.team_id ?? undefined,
     testEnvUrl: dp.test_env_url ?? undefined,
     testEnvBranch: dp.test_env_branch ?? undefined,
+    mainBranch: dp.main_branch ?? undefined,
+    standardsConfig: dp.standards_config ?? undefined,
   };
 }
 
@@ -143,4 +148,8 @@ export interface EditProjectData {
   testEnvUrl: string;
   /** Branch deployed to the living test environment (e.g. `staging`). */
   testEnvBranch: string;
+  /** Project's primary/default branch (e.g. `main`/`master`). */
+  mainBranch: string;
+  /** Standards & branching policy JSON (Pipeline Stage 3); '' when unset. */
+  standardsConfig: string;
 }

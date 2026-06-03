@@ -462,6 +462,39 @@ pub fn start_loops(
             app: app.clone(),
             engine: engine.clone(),
         }),
+        // Autonomous assignment retry — default-OFF; gated on the
+        // AUTONOMOUS_ASSIGNMENT_RETRY setting inside its tick. Resumes an
+        // assignment soft-paused at awaiting_review after a retryable
+        // (quota/session/rate-limit) step failure so the goal-advance loop
+        // self-heals instead of deadlocking.
+        Box::new(subscription::AssignmentAutoResumeSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+            engine: engine.clone(),
+        }),
+        // Autonomous manual-review triage — default-OFF; gated on the
+        // AUTONOMOUS_REVIEW_TRIAGE setting inside its tick. Auto-approves routine
+        // (low/medium) pending reviews past a grace window so the accept→memory
+        // learning loop keeps turning unattended; high severity stays for a human.
+        Box::new(subscription::ManualReviewAutoTriageSubscription {
+            pool: pool.clone(),
+        }),
+        // Autonomous backlog -> goal (G7) — default-OFF; gated on the
+        // AUTONOMOUS_BACKLOG_TO_GOAL setting inside its tick. When a goal-linked
+        // project runs out of open goals, promote its best pending backlog idea
+        // to a new goal so the goal-advance loop self-sustains instead of idling.
+        Box::new(subscription::BacklogToGoalSubscription {
+            pool: pool.clone(),
+        }),
+        // Queue drain watchdog — re-drains the execution queue after a
+        // quota-aware admission cooldown lifts (the normal completion-driven
+        // drain can't restart itself once all in-flight work has finished).
+        // Always-on; cheap no-op when the queue is empty / at capacity.
+        Box::new(subscription::QueueDrainWatchdog {
+            pool: pool.clone(),
+            app: app.clone(),
+            engine: engine.clone(),
+        }),
         // Incident auto-continuation (P2.3b): re-run blocked work when its
         // persona-raised incident is resolved. Idempotent via claim_continuation.
         Box::new(crate::engine::incident_continuation::IncidentContinuationSubscription {
@@ -1260,6 +1293,20 @@ fn schedule_hourly_cap_exceeded(
     recent + pending >= ceiling
 }
 
+/// Decide whether a scheduled persona is over its monthly budget.
+///
+/// This is the canonical decision shared with the manual/preview gate in
+/// `commands/execution/executions.rs` (the `budget > 0.0` guard +
+/// `get_monthly_spend`). A budget of `0.0` is a LEGAL value
+/// (`validate_max_budget_usd` allows `>= 0`) that means "unlimited", and
+/// `None` (no budget set) is likewise unlimited — neither is ever over budget.
+/// Only a positive cap that monthly spend meets-or-exceeds counts. The caller
+/// must pass spend from `get_monthly_spend` so the cron path measures the SAME
+/// executions the budget UI shows (terminal statuses only, ops-chat excluded).
+fn schedule_over_budget(max_budget: Option<f64>, monthly_spend: f64) -> bool {
+    matches!(max_budget, Some(budget) if budget > 0.0 && monthly_spend >= budget)
+}
+
 fn log_schedule_rate_limit_issue(
     pool: &DbPool,
     trigger: &crate::db::models::PersonaTrigger,
@@ -1501,26 +1548,46 @@ pub fn trigger_scheduler_tick_counted(scheduler: &SchedulerState, pool: &DbPool)
         // 2. Parse config once; reuse for event_type, payload, and next schedule time
         let cfg = trigger.parse_config();
 
-        // Check if persona is over budget for scheduled triggers
+        // Check if persona is over budget for scheduled triggers.
+        //
+        // This MUST mirror the canonical manual/preview budget gate in
+        // commands/execution/executions.rs (the `budget > 0.0` guard +
+        // get_monthly_spend) — otherwise a scheduled agent diverges from what
+        // the same persona does when run by hand. Three rules the old bespoke
+        // inline SQL got wrong and this path fixes:
+        //   1. A budget of 0.0 is a LEGAL value (validate_max_budget_usd allows
+        //      >= 0) that means "unlimited" on the manual path. The old query
+        //      had no `budget > 0.0` guard, so `0.0 >= 0.0` made such personas
+        //      permanently "over budget" and silently paused.
+        //   2. get_monthly_spend only counts terminal statuses
+        //      (completed/failed/incomplete/cancelled), not in-flight rows.
+        //   3. get_monthly_spend excludes conversational `_ops` chat spend the
+        //      old query wrongly counted, matching the budget UI exactly.
         if trigger.trigger_type == "schedule" {
-            let over_budget: bool = pool
+            let max_budget: Option<f64> = pool
                 .get()
-                .map_err(|e| e.to_string())
+                .ok()
                 .and_then(|conn| {
                     conn.query_row(
-                        "SELECT COALESCE((
-                        SELECT SUM(cost_usd)
-                        FROM persona_executions
-                        WHERE persona_id = ?1 AND created_at >= datetime('now', 'start of month')
-                    ), 0.0) >= max_budget_usd
-                    FROM personas
-                    WHERE id = ?1 AND max_budget_usd IS NOT NULL",
+                        "SELECT max_budget_usd FROM personas WHERE id = ?1",
                         rusqlite::params![trigger.persona_id],
-                        |row| row.get(0),
+                        |row| row.get::<_, Option<f64>>(0),
                     )
-                    .map_err(|e| e.to_string())
+                    .ok()
                 })
-                .unwrap_or(false);
+                .flatten();
+
+            // Only personas with a POSITIVE cap can be over budget; querying
+            // monthly spend for the unlimited case (None or 0.0) is wasted
+            // work, so short-circuit before touching the DB. schedule_over_budget
+            // re-applies the same guard so it is correct in isolation too.
+            let over_budget = if matches!(max_budget, Some(b) if b > 0.0) {
+                let spend =
+                    exec_repo::get_monthly_spend(pool, &trigger.persona_id).unwrap_or(0.0);
+                schedule_over_budget(max_budget, spend)
+            } else {
+                false
+            };
 
             if over_budget {
                 tracing::warn!(persona_id = %trigger.persona_id, "Cron agent paused due to exceeded budget");
@@ -2014,6 +2081,36 @@ mod tests {
         assert_eq!(stats.triggers_fired, 0);
         assert_eq!(stats.queue_rejections, 0);
         assert_eq!(stats.subscriptions_crashed, 0);
+    }
+
+    // ========================================================================
+    // Cron budget gate parity with the canonical manual/preview gate
+    // (executions.rs). Regression coverage for idea-c0734d28: the old bespoke
+    // inline SQL had no `budget > 0.0` guard, so a persona with max_budget_usd
+    // = 0.0 (a legal "unlimited" value) was ALWAYS reported over budget and
+    // silently paused, diverging from the manual run path.
+    // ========================================================================
+
+    #[test]
+    fn schedule_over_budget_treats_zero_as_unlimited() {
+        // 0.0 is a legal budget meaning "unlimited" — never over budget,
+        // even when spend is positive.
+        assert!(!schedule_over_budget(Some(0.0), 0.0));
+        assert!(!schedule_over_budget(Some(0.0), 12.34));
+    }
+
+    #[test]
+    fn schedule_over_budget_none_is_unlimited() {
+        // No budget set → unlimited, regardless of spend.
+        assert!(!schedule_over_budget(None, 0.0));
+        assert!(!schedule_over_budget(None, 999.0));
+    }
+
+    #[test]
+    fn schedule_over_budget_positive_cap_enforced() {
+        assert!(!schedule_over_budget(Some(10.0), 9.99)); // under cap → runs
+        assert!(schedule_over_budget(Some(10.0), 10.0)); // at cap (>=) → paused
+        assert!(schedule_over_budget(Some(10.0), 10.01)); // over cap → paused
     }
 
     // ========================================================================

@@ -29,6 +29,7 @@ import { createLogger } from "@/lib/log";
 
 const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
+import { BacklogInboxGroup } from './BacklogInboxGroup';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
 import type { TriageReview } from './TriagePlayer';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
@@ -331,6 +332,9 @@ export default function ManualReviewList() {
       />
 
       <ContentBody flex>
+        {/* #1 — Dev Tools backlog (pending scanned ideas) triaged inline here,
+            so reviews + backlog candidates live in one inbox. */}
+        <BacklogInboxGroup />
         <AnimatePresence mode="wait">
         {reviewQueue.loading && filteredReviews.length === 0 ? (
           <div key="loading" className="flex-1 min-h-0 overflow-hidden">

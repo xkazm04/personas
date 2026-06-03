@@ -86,6 +86,7 @@ pub fn dev_tools_update_project(
     pr_credential_id: Option<Option<String>>,
     test_env_url: Option<Option<String>>,
     test_env_branch: Option<Option<String>>,
+    main_branch: Option<Option<String>>,
 ) -> Result<DevProject, AppError> {
     require_auth_sync(&state)?;
     repo::update_project(
@@ -102,7 +103,135 @@ pub fn dev_tools_update_project(
         pr_credential_id.as_ref().map(|o| o.as_deref()),
         test_env_url.as_ref().map(|o| o.as_deref()),
         test_env_branch.as_ref().map(|o| o.as_deref()),
+        main_branch.as_ref().map(|o| o.as_deref()),
     )
+}
+
+/// Set or clear the project's standards & branching policy (Pipeline Stage 3).
+/// `config` is the raw JSON envelope `{ precommit, branching }` (the shape is
+/// owned by the frontend; validated here only to be parseable). `None` clears it.
+#[tauri::command]
+pub fn dev_tools_set_standards_config(
+    state: State<'_, Arc<AppState>>,
+    project_id: String,
+    config: Option<String>,
+) -> Result<DevProject, AppError> {
+    require_auth_sync(&state)?;
+    if let Some(ref json) = config {
+        serde_json::from_str::<serde_json::Value>(json)
+            .map_err(|e| AppError::Validation(format!("Invalid standards_config JSON: {e}")))?;
+    }
+    repo::update_standards_config(&state.db, &project_id, config.as_deref())
+}
+
+/// PR-test-merge protocol embedded into existing QA Guardian instances'
+/// `design_context.use_cases[]` (the canonical version lives in the template +
+/// recipe for new adoptions). Drives the uc_pr_review behavior at execution.
+const QA_PR_REVIEW_USE_CASE_DESC: &str = "When Dev Clone opens a PR (this use-case fires on dev-clone.pr.created), test it in ISOLATION and decide merge vs return. (a) Read the event payload for the PR branch + number + repo. (b) Create an isolated git worktree off the PR branch (git worktree add a scratch path on that branch) and work ONLY there so you never disturb the team's checkout. (c) Run the project's full test command inside that worktree. (d) Decide from the result + the STANDARDS & BRANCHING POLICY block in your prompt: tests PASS and the policy enables automerge -> enable GitHub native auto-merge on the PR (gh pr merge --auto, or the auto-merge API) targeting the policy's automerge branch so it merges once required checks pass, then emit qa.pr.approved; tests PASS and automerge is off -> approve the PR (gh pr review --approve) and emit qa.pr.approved; tests FAIL -> request changes (gh pr review --request-changes) with the failing output and emit qa.pr.changes_requested so Dev Clone fixes it. (e) ALWAYS clean up the scratch worktree (git worktree remove), leave no orphan branches. Never merge on a failing or un-run suite. Needs the GitHub connector to apply the PR action; without it, run the tests and emit the verdict event but report the action could not be applied.";
+
+/// In-place backfill (Pipeline Stage 3d) — retrofit the PR-test-merge capability
+/// onto EXISTING QA Guardian persona instances in current teams (adopted personas
+/// have no template->instance sync). For each persona named like "QA Guardian":
+///  1. append a `uc_pr_review` use-case to `design_context.use_cases[]` (if absent), and
+///  2. insert a `dev-clone.pr.created` listen subscription (source_filter "*" since QA
+///     doesn't emit it — mirrors `wire_event_subscriptions_from_use_cases`).
+/// Idempotent + additive (never deletes existing use-cases). Returns a summary.
+#[tauri::command]
+pub fn dev_tools_backfill_qa_pr_review(
+    state: State<'_, Arc<AppState>>,
+) -> Result<serde_json::Value, AppError> {
+    require_auth_sync(&state)?;
+    let conn = state.db.get()?;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let rows: Vec<(String, String, Option<String>)> = {
+        let mut stmt = conn
+            .prepare("SELECT id, name, design_context FROM personas WHERE name LIKE '%QA Guardian%'")?;
+        let mapped = stmt.query_map([], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?, r.get::<_, Option<String>>(2)?))
+        })?;
+        mapped.filter_map(Result::ok).collect()
+    };
+
+    let mut use_cases_added = 0u32;
+    let mut subscriptions_added = 0u32;
+    let mut persona_names: Vec<String> = Vec::new();
+
+    for (pid, name, dc_json) in &rows {
+        persona_names.push(name.clone());
+
+        // 1. Append uc_pr_review to design_context.use_cases[] if absent.
+        let mut dc: serde_json::Value = dc_json
+            .as_deref()
+            .and_then(|s| serde_json::from_str(s).ok())
+            .unwrap_or_else(|| serde_json::json!({}));
+        let has_uc = dc
+            .get("use_cases")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .any(|u| u.get("id").and_then(|x| x.as_str()) == Some("uc_pr_review"))
+            })
+            .unwrap_or(false);
+        if !has_uc {
+            let uc = serde_json::json!({
+                "id": "uc_pr_review",
+                "title": "PR Test + Merge",
+                "description": QA_PR_REVIEW_USE_CASE_DESC,
+                "category": "development",
+                "enabled": true,
+                "event_subscriptions": [
+                    { "event_type": "dev-clone.pr.created", "direction": "listen" },
+                    { "event_type": "qa.pr.approved", "direction": "emit" },
+                    { "event_type": "qa.pr.changes_requested", "direction": "emit" }
+                ]
+            });
+            match dc.get_mut("use_cases").and_then(|v| v.as_array_mut()) {
+                Some(arr) => arr.push(uc),
+                None => dc["use_cases"] = serde_json::json!([uc]),
+            }
+            let new_dc = serde_json::to_string(&dc)
+                .map_err(|e| AppError::Internal(format!("serialize design_context: {e}")))?;
+            conn.execute(
+                "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
+                rusqlite::params![new_dc, now, pid],
+            )?;
+            use_cases_added += 1;
+        }
+
+        // 2. Insert the cross-persona dev-clone.pr.created subscription if absent.
+        let exists: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM persona_event_subscriptions WHERE persona_id = ?1 AND event_type = 'dev-clone.pr.created'",
+            rusqlite::params![pid],
+            |r| r.get(0),
+        )?;
+        if exists == 0 {
+            let sub_id = uuid::Uuid::new_v4().to_string();
+            conn.execute(
+                "INSERT INTO persona_event_subscriptions
+                 (id, persona_id, event_type, source_filter, use_case_id, enabled, created_at, updated_at)
+                 VALUES (?1, ?2, 'dev-clone.pr.created', '*', 'uc_pr_review', 1, ?3, ?3)",
+                rusqlite::params![sub_id, pid, now],
+            )?;
+            subscriptions_added += 1;
+        }
+    }
+
+    let github_credentials_in_vault: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_credentials WHERE service_type IN ('github','github_actions')",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+
+    Ok(serde_json::json!({
+        "personas_matched": rows.len(),
+        "use_cases_added": use_cases_added,
+        "subscriptions_added": subscriptions_added,
+        "persona_names": persona_names,
+        "github_credentials_in_vault": github_credentials_in_vault,
+    }))
 }
 
 #[tauri::command]
@@ -795,6 +924,118 @@ pub fn dev_tools_update_idea(
         risk,
         rejection_reason.as_ref().map(|o| o.as_deref()),
     )
+}
+
+/// Accept a backlog idea (triage). Persists `status = accepted` and records the
+/// human decision as a shared team memory when the idea's project is team-bound
+/// (the dev-backlog learning loop — mirrors `manual_reviews::update_status`).
+#[tauri::command]
+pub fn dev_tools_accept_idea(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
+    let idea = repo::update_idea(
+        &state.db, &id, None, None, Some("accepted"), None, None, None, None, None,
+    )?;
+    record_idea_decision(&state.db, &idea, "accepted");
+    Ok(idea)
+}
+
+/// Reject a backlog idea (triage). Persists `status = rejected` (+ reason) and
+/// records the decision as a shared team `constraint` memory when team-bound, so
+/// the team + future scans avoid re-surfacing it.
+#[tauri::command]
+pub fn dev_tools_reject_idea(
+    state: State<'_, Arc<AppState>>,
+    id: String,
+    reason: Option<String>,
+) -> Result<DevIdea, AppError> {
+    require_auth_sync(&state)?;
+    let idea = repo::update_idea(
+        &state.db, &id, None, None, Some("rejected"), None, None, None, None,
+        Some(reason.as_deref()),
+    )?;
+    record_idea_decision(&state.db, &idea, "rejected");
+    Ok(idea)
+}
+
+/// Pending backlog ideas across ALL projects (bounded) — the source for the
+/// unified Human-Review inbox's "Dev Tools backlog" group. Project names are
+/// resolved client-side from the projects store.
+#[tauri::command]
+pub fn dev_tools_list_pending_ideas(
+    state: State<'_, Arc<AppState>>,
+    limit: Option<i64>,
+) -> Result<Vec<DevIdea>, AppError> {
+    require_auth_sync(&state)?;
+    repo::list_ideas(&state.db, None, Some("pending"), None, Some(limit.unwrap_or(100)), None)
+}
+
+/// Write a human triage decision to the idea's bound team's shared memory ledger
+/// (best-effort). Team-less projects skip the memory; the Scanner-suppress loop
+/// (idea_scanner) covers re-surfacing for those. Deduped by `(team_id, title)`.
+fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str) {
+    let project_id = match idea.project_id.as_deref() {
+        Some(p) if !p.is_empty() => p,
+        _ => return,
+    };
+    let team_id: Option<String> = pool.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT team_id FROM dev_projects WHERE id = ?1",
+            rusqlite::params![project_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
+    });
+    let team_id = match team_id.filter(|s| !s.is_empty()) {
+        Some(t) => t,
+        None => return,
+    };
+
+    let title = format!("Human {verdict}: {}", idea.title);
+    if let Ok(conn) = pool.get() {
+        let exists: bool = conn
+            .query_row(
+                "SELECT 1 FROM team_memories WHERE team_id = ?1 AND title = ?2 LIMIT 1",
+                rusqlite::params![team_id, title],
+                |_| Ok(true),
+            )
+            .unwrap_or(false);
+        if exists {
+            return;
+        }
+    }
+
+    // approved → settled decision; rejected → guardrail constraint (mirrors reviews).
+    let (category, importance) = if verdict == "rejected" {
+        ("constraint", 8)
+    } else {
+        ("decision", 7)
+    };
+    let content = format!(
+        "Human {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
+        idea.title,
+        idea.description
+            .as_deref()
+            .map(|d| format!(": {d}"))
+            .unwrap_or_default(),
+    );
+    let tm = crate::db::models::CreateTeamMemoryInput {
+        team_id,
+        run_id: None,
+        member_id: None,
+        persona_id: None,
+        title,
+        content,
+        category: Some(category.to_string()),
+        importance: Some(importance),
+        tags: Some(format!("dev-backlog,{verdict}")),
+    };
+    if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
+        tracing::warn!(idea_id = %idea.id, error = %e, "dev-backlog learning loop: failed to write team memory");
+    }
 }
 
 #[tauri::command]

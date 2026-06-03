@@ -5,12 +5,12 @@
 import {
   TIME_PRESETS,
   WEEKDAYS,
-  clampHour,
   selectionForTimePreset,
   updateTime,
   type TriggerSelection,
 } from '../useCasePickerShared';
 import { useTranslation } from '@/i18n/useTranslation';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 
 export function TimeControls({
   selection,
@@ -66,13 +66,12 @@ export function TimeControls({
             </div>
           )}
           <span className="text-foreground font-mono ml-auto">@</span>
-          <input
-            type="number"
+          <NumberStepper
+            value={hourOfDay}
+            onChange={(v) => onChange(updateTime(selection, { hourOfDay: v ?? 0 }))}
             min={0}
             max={23}
-            value={hourOfDay}
-            onChange={(e) => onChange(updateTime(selection, { hourOfDay: clampHour(e.target.value) }))}
-            className="focus-ring w-12 rounded ring-1 ring-primary/30 bg-primary/10 px-1.5 py-0.5 font-mono text-foreground text-center tabular-nums"
+            className="w-20"
           />
           <span className="text-foreground font-mono tabular-nums">:00</span>
         </div>

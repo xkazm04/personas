@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { updateTeam } from '@/api/pipeline/teams';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { silentCatch } from '@/lib/silentCatch';
 import type { UpdateTeamInput } from '@/lib/bindings/UpdateTeamInput';
 
@@ -140,23 +141,26 @@ export function TeamWorkspacePane({ teamId }: { teamId: string }) {
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="typo-label text-foreground/85">{ts.default_budget_label}</span>
-          <input
-            type="number"
+          <NumberStepper
+            value={budget.trim() === '' ? null : Number(budget)}
+            onChange={(v) => setBudget(v == null ? '' : String(v))}
             min={0}
-            step="0.01"
-            value={budget}
-            onChange={(e) => setBudget(e.target.value)}
-            className="rounded-input bg-secondary/30 border border-primary/20 text-foreground/90 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
+            step={0.01}
+            allowEmpty
+            prefix="$"
+            ariaLabel={ts.default_budget_label}
+            className="w-full"
           />
         </label>
         <label className="flex flex-col gap-1.5">
           <span className="typo-label text-foreground/85">{ts.default_turns_label}</span>
-          <input
-            type="number"
+          <NumberStepper
+            value={turns.trim() === '' ? null : Number(turns)}
+            onChange={(v) => setTurns(v == null ? '' : String(v))}
             min={0}
-            value={turns}
-            onChange={(e) => setTurns(e.target.value)}
-            className="rounded-input bg-secondary/30 border border-primary/20 text-foreground/90 typo-body px-2 py-1.5 focus:outline-none focus:border-primary/60"
+            allowEmpty
+            ariaLabel={ts.default_turns_label}
+            className="w-full"
           />
         </label>
       </div>

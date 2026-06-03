@@ -5,8 +5,8 @@ use rusqlite::{params, Row};
 use crate::db::models::{
     AttentionItem, AttentionQueue, DevCompetition, DevCompetitionSlot, DevContext, DevContextGroup,
     DevContextGroupRelationship, DevGoal, DevGoalDependency, DevGoalItem, DevGoalSignal, DevIdea,
-    DevProject, DevScan, DevTask, GoalProgressSuggestion, PortfolioProjectSummary, PortfolioSummary,
-    TriageRule,
+    DevProject, DevScan, DevStandard, DevTask, GoalProgressSuggestion, PortfolioProjectSummary,
+    PortfolioSummary, TriageRule,
 };
 use crate::db::query_builder::QueryBuilder;
 use crate::db::DbPool;
@@ -36,6 +36,8 @@ fn row_to_project(row: &Row) -> rusqlite::Result<DevProject> {
         pr_credential_id: row.get("pr_credential_id").unwrap_or(None),
         test_env_url: row.get("test_env_url").unwrap_or(None),
         test_env_branch: row.get("test_env_branch").unwrap_or(None),
+        main_branch: row.get("main_branch").unwrap_or(None),
+        standards_config: row.get("standards_config").unwrap_or(None),
         team_id: row.get("team_id").unwrap_or(None),
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
@@ -276,6 +278,7 @@ pub fn update_project(
     pr_credential_id: Option<Option<&str>>,
     test_env_url: Option<Option<&str>>,
     test_env_branch: Option<Option<&str>>,
+    main_branch: Option<Option<&str>>,
 ) -> Result<DevProject, AppError> {
     timed_query!("dev_projects", "dev_projects::update_project", {
         get_project_by_id(pool, id)?;
@@ -306,6 +309,7 @@ pub fn update_project(
         push_field!(pr_credential_id, "pr_credential_id", sets, param_idx);
         push_field!(test_env_url, "test_env_url", sets, param_idx);
         push_field!(test_env_branch, "test_env_branch", sets, param_idx);
+        push_field!(main_branch, "main_branch", sets, param_idx);
 
         let sql = format!(
             "UPDATE dev_projects SET {} WHERE id = ?{}",
@@ -347,6 +351,9 @@ pub fn update_project(
         if let Some(v) = test_env_branch {
             param_values.push(Box::new(v.map(|s| s.to_string())));
         }
+        if let Some(v) = main_branch {
+            param_values.push(Box::new(v.map(|s| s.to_string())));
+        }
         param_values.push(Box::new(id.to_string()));
 
         let params_ref: Vec<&dyn rusqlite::types::ToSql> =
@@ -382,6 +389,102 @@ pub fn update_static_scan_config(
             params![config_json, now, id],
         )?;
         get_project_by_id(pool, id)
+    })
+}
+
+/// Set or clear the standards & branching policy JSON for a project
+/// (Pipeline Stage 3). Shape is opaque to the repo — the frontend owns it
+/// (`{ precommit, branching }`). Pass `None` to clear.
+pub fn update_standards_config(
+    pool: &DbPool,
+    id: &str,
+    config_json: Option<&str>,
+) -> Result<DevProject, AppError> {
+    timed_query!("dev_projects", "dev_projects::update_standards_config", {
+        get_project_by_id(pool, id)?;
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_projects SET standards_config = ?1, updated_at = ?2 WHERE id = ?3",
+            params![config_json, now, id],
+        )?;
+        get_project_by_id(pool, id)
+    })
+}
+
+// ============================================================================
+// Dev Standards (Pipeline Stage 3b — golden-standard scan findings)
+// ============================================================================
+
+fn row_to_standard(row: &Row) -> rusqlite::Result<DevStandard> {
+    Ok(DevStandard {
+        id: row.get("id")?,
+        project_id: row.get("project_id")?,
+        scan_id: row.get("scan_id").unwrap_or(None),
+        rule_key: row.get("rule_key")?,
+        category: row.get("category")?,
+        title: row.get("title")?,
+        status: row.get("status")?,
+        severity: row.get("severity")?,
+        evidence: row.get("evidence").unwrap_or(None),
+        recommendation: row.get("recommendation").unwrap_or(None),
+        created_at: row.get("created_at")?,
+        updated_at: row.get("updated_at")?,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn create_standard(
+    pool: &DbPool,
+    project_id: &str,
+    scan_id: Option<&str>,
+    rule_key: &str,
+    category: &str,
+    title: &str,
+    status: &str,
+    severity: &str,
+    evidence: Option<&str>,
+    recommendation: Option<&str>,
+) -> Result<DevStandard, AppError> {
+    timed_query!("dev_standards", "dev_standards::create_standard", {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().to_rfc3339();
+        let conn = pool.get()?;
+        conn.execute(
+            "INSERT INTO dev_standards (id, project_id, scan_id, rule_key, category, title, status, severity, evidence, recommendation, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?11)",
+            params![id, project_id, scan_id, rule_key, category, title, status, severity, evidence, recommendation, now],
+        )?;
+        conn.query_row("SELECT * FROM dev_standards WHERE id = ?1", params![id], row_to_standard)
+            .map_err(Into::into)
+    })
+}
+
+pub fn list_standards_by_project(
+    pool: &DbPool,
+    project_id: &str,
+) -> Result<Vec<DevStandard>, AppError> {
+    timed_query!("dev_standards", "dev_standards::list_standards_by_project", {
+        let conn = pool.get()?;
+        let mut stmt = conn
+            .prepare("SELECT * FROM dev_standards WHERE project_id = ?1 ORDER BY category, rule_key")?;
+        let rows = stmt.query_map(params![project_id], row_to_standard)?;
+        let mut out = Vec::new();
+        for r in rows {
+            out.push(r?);
+        }
+        Ok(out)
+    })
+}
+
+pub fn clear_standards_for_project(pool: &DbPool, project_id: &str) -> Result<usize, AppError> {
+    timed_query!("dev_standards", "dev_standards::clear_standards_for_project", {
+        let conn = pool.get()?;
+        let n = conn.execute(
+            "DELETE FROM dev_standards WHERE project_id = ?1",
+            params![project_id],
+        )?;
+        Ok(n)
     })
 }
 
@@ -1321,38 +1424,44 @@ mod apply_progress_tests {
     fn update_project_sets_and_clears_test_env_fields() {
         let pool = init_test_db().unwrap();
         let p = create_project(&pool, "P", "/tmp/p", None, None, None, None, None).unwrap();
-        // Default NULL on create (test env is a post-creation concept).
+        // Default NULL on create (test env + main branch are post-creation concepts).
         assert_eq!(p.test_env_url, None);
         assert_eq!(p.test_env_branch, None);
+        assert_eq!(p.main_branch, None);
 
-        // SET: outer Some, inner Some(value). 9 leading Nones = params through pr_credential_id.
+        // SET: outer Some, inner Some(value). 9 leading Nones = params through pr_credential_id;
+        // the final three are test_env_url / test_env_branch / main_branch.
         let p = update_project(
             &pool, &p.id,
             None, None, None, None, None, None, None, None, None,
             Some(Some("https://staging.example.test")),
             Some(Some("staging")),
+            Some(Some("main")),
         )
         .unwrap();
         assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
         assert_eq!(p.test_env_branch.as_deref(), Some("staging"));
+        assert_eq!(p.main_branch.as_deref(), Some("main"));
 
         // LEAVE UNCHANGED: outer None → value persists.
         let p = update_project(
             &pool, &p.id,
-            None, None, None, None, None, None, None, None, None, None, None,
+            None, None, None, None, None, None, None, None, None, None, None, None,
         )
         .unwrap();
         assert_eq!(p.test_env_url.as_deref(), Some("https://staging.example.test"));
+        assert_eq!(p.main_branch.as_deref(), Some("main"));
 
         // CLEAR: outer Some, inner None → back to NULL.
         let p = update_project(
             &pool, &p.id,
             None, None, None, None, None, None, None, None, None,
-            Some(None), Some(None),
+            Some(None), Some(None), Some(None),
         )
         .unwrap();
         assert_eq!(p.test_env_url, None);
         assert_eq!(p.test_env_branch, None);
+        assert_eq!(p.main_branch, None);
     }
 }
 

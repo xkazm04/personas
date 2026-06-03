@@ -6,6 +6,7 @@ import type { CustomThemeConfig } from '@/stores/themeStore';
 import { deriveCustomThemeVars } from '@/lib/theme/deriveCustomTheme';
 import { getContrastRatio, getContrastLevel, type ContrastLevel } from '@/lib/theme/contrastRatio';
 import { Button } from '@/features/shared/components/buttons';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { ColorRow } from './ColorRow';
 import { ThemePreview } from './ThemePreview';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -221,7 +222,15 @@ export default function CustomThemeCreator() {
             </div>
             <div className="flex items-center gap-3">
               <label className="typo-caption text-foreground w-24 flex-shrink-0">{s.angle}</label>
-              <input type="range" min={0} max={360} value={backgroundAngle} onChange={(e) => setBackgroundAngle(Number(e.target.value))} className="flex-1 accent-primary h-1.5" />
+              <Slider
+                min={0}
+                max={360}
+                value={backgroundAngle}
+                onChange={(v) => setBackgroundAngle(v)}
+                ariaLabel={s.angle}
+                showBubble={false}
+                className="flex-1"
+              />
               <span className="typo-code font-mono text-foreground w-10 text-right">{backgroundAngle}&deg;</span>
             </div>
           </div>

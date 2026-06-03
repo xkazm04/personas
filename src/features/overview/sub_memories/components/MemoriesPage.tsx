@@ -17,7 +17,8 @@ import { InlineAddMemoryForm } from './CreateMemoryForm';
 import { MemoryConflictReview } from './MemoryConflictReview';
 import ReviewResultsModal from './ReviewResultsModal';
 import MemoryDetailModal from './MemoryDetailModal';
-import { useVirtualList } from '@/hooks/utility/interaction/useVirtualList';
+import { GroupedVirtualList } from '@/features/shared/components/display/GroupedVirtualList';
+import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
 import { MEMORY_CATEGORY_COLORS, ALL_MEMORY_CATEGORIES } from '@/lib/utils/formatters';
 import { categoryColor, importanceColor } from '../libs/memoryVisualTokens';
 import type { PersonaMemory } from '@/lib/types/types';
@@ -162,9 +163,21 @@ function MemoriesPageBaseline() {
   const hasFilters = !!selectedPersonaId || !!selectedCategory || !!search || !!selectedTier;
   const clearFilters = useCallback(() => { setSearch(''); setSelectedPersonaId(null); setSelectedCategory(null); setSelectedTier(null); }, []);
 
-  const { parentRef: memoryListRef, virtualizer } = useVirtualList(memories, 48);
   const colWidths = useColumnWidths('overview-memories');
   const memGridTemplate = colWidths.template(MEMORY_COLUMNS);
+
+  // Bucket the (created-at desc) list under sticky day headers for temporal
+  // wayfinding. Restore the scroll offset across tab/route/persona switches; a
+  // new (persona, category, tier) context starts at the top.
+  const groupLabels = useMemo(() => timeGroupLabels(t), [t]);
+  const groupOf = useCallback(
+    (memory: PersonaMemory) => {
+      const key = timeGroupKey(memory.created_at);
+      return { key, label: groupLabels[key] };
+    },
+    [groupLabels],
+  );
+  const memoryScrollRestoreKey = `overview/memories|persona=${selectedPersonaId ?? 'all'}|cat=${selectedCategory ?? 'all'}|tier=${selectedTier ?? 'all'}`;
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -425,20 +438,24 @@ function MemoriesPageBaseline() {
                   <p className="typo-body text-foreground"><DebtText k="auto_no_memories_match_current_filters_06cb075f" /></p>
                 </div>
               ) : (
-                <div ref={memoryListRef} className={`flex-1 overflow-y-auto focus:outline-none ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`} tabIndex={0} role="grid" aria-label={debtText("auto_memory_list_a2a82929")} onKeyDown={handleListKeyDown}>
-                  <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
-                    {virtualizer.getVirtualItems().map((virtualRow) => {
-                      const memory = memories[virtualRow.index]!;
-                      const persona = personaMap.get(memory.persona_id);
-                      const isFocused = virtualRow.index === focusedIndex;
-                      return (
-                        <div key={memory.id} data-index={virtualRow.index} role="row" aria-selected={isFocused} style={{ position: 'absolute', top: 0, transform: `translateY(${virtualRow.start}px)`, width: '100%' }} className={`${isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''} ${pendingDeleteId === memory.id ? 'bg-red-500/10' : ''}`}>
-                          <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={virtualRow.index} gridTemplate={memGridTemplate} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} onRestore={() => setMemoryTier(memory.id, 'active')} />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <GroupedVirtualList<PersonaMemory>
+                  items={memories}
+                  groupOf={groupOf}
+                  getItemKey={(memory) => memory.id}
+                  estimateItemSize={48}
+                  className={`flex-1 focus:outline-none ${colWidths.isResizing ? 'select-none cursor-col-resize' : ''}`}
+                  scrollRestoreKey={memoryScrollRestoreKey}
+                  scrollContainerProps={{ tabIndex: 0, role: 'grid', 'aria-label': debtText("auto_memory_list_a2a82929"), onKeyDown: handleListKeyDown }}
+                  renderItem={(memory, index) => {
+                    const persona = personaMap.get(memory.persona_id);
+                    const isFocused = index === focusedIndex;
+                    return (
+                      <div data-index={index} role="row" aria-selected={isFocused} className={`h-full ${isFocused ? 'ring-1 ring-primary/40 ring-inset z-[1]' : ''} ${pendingDeleteId === memory.id ? 'bg-red-500/10' : ''}`}>
+                        <MemoryRow memory={memory} personaName={persona?.name || 'Unknown'} index={index} gridTemplate={memGridTemplate} onDelete={() => deleteMemory(memory.id)} onSelect={() => setSelectedMemory(memory)} onRestore={() => setMemoryTier(memory.id, 'active')} />
+                      </div>
+                    );
+                  }}
+                />
               )}
             </>
           )}

@@ -127,14 +127,103 @@ pub fn build_team_alignment_block(
     let roster_ids: Vec<String> = roster_rows.iter().map(|(id, ..)| id.clone()).collect();
     let incidents = gather_open_incidents(pool, &roster_ids);
 
-    render_alignment_block(
+    let alignment = render_alignment_block(
         &persona.name,
         self_role.as_deref(),
         team_name,
         &teammates,
         &goals,
         &incidents,
-    )
+    );
+
+    // Append the project's standards & branching policy (Pipeline Stage 3) so
+    // team personas (Dev Clone, QA Guardian) implement, commit, and open/merge
+    // PRs in line with it. Resolved from the same project as the goals.
+    let standards = resolve_standards_policy(pool, persona, team_id);
+    match (alignment, standards) {
+        (Some(a), Some(s)) => Some(format!("{a}{s}")),
+        (Some(a), None) => Some(a),
+        (None, Some(s)) => Some(s),
+        (None, None) => None,
+    }
+}
+
+/// Render the bound project's standards & branching policy as a prompt block,
+/// resolved from `standards_config` (Pipeline Stage 3). `None` when no project
+/// resolves or no policy is configured. Branch selectors resolve to the
+/// project's `main_branch` / `test_env_branch`.
+fn resolve_standards_policy(pool: &DbPool, persona: &Persona, team_id: &str) -> Option<String> {
+    let project_id = persona
+        .parsed_design_context()
+        .dev_project_id
+        .filter(|p| !p.is_empty())
+        .or_else(|| {
+            pool.get().ok().and_then(|conn| {
+                conn.query_row(
+                    "SELECT id FROM dev_projects WHERE team_id = ?1 LIMIT 1",
+                    params![team_id],
+                    |r| r.get::<_, String>(0),
+                )
+                .ok()
+            })
+        })?;
+    let project = dt_repo::get_project_by_id(pool, &project_id).ok()?;
+    let cfg: serde_json::Value = serde_json::from_str(project.standards_config.as_deref()?).ok()?;
+
+    let main_b = project.main_branch.as_deref().unwrap_or("main");
+    let test_b = project.test_env_branch.as_deref().unwrap_or("");
+    let resolve_branch = |sel: &str| if sel == "test" { test_b } else { main_b };
+
+    let branching = cfg.get("branching");
+    let pr_base = resolve_branch(
+        branching
+            .and_then(|b| b.get("pr_base"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("main"),
+    );
+    let automerge = branching.and_then(|b| b.get("automerge"));
+    let am_enabled = automerge
+        .and_then(|a| a.get("enabled"))
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let am_target = resolve_branch(
+        automerge
+            .and_then(|a| a.get("target"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("main"),
+    );
+
+    let pc = cfg.get("precommit");
+    let pc_flag = |k: &str| {
+        pc.and_then(|p| p.get(k))
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+    };
+    let mut gates: Vec<&str> = Vec::new();
+    if pc_flag("lint") {
+        gates.push("lint");
+    }
+    if pc_flag("docs_required") {
+        gates.push("docs-updated");
+    }
+    if pc_flag("code_quality") {
+        gates.push("code-quality");
+    }
+    let gates_str = if gates.is_empty() {
+        "none".to_string()
+    } else {
+        gates.join(", ")
+    };
+    let automerge_str = if am_enabled {
+        format!("ENABLED — use GitHub native auto-merge into `{am_target}` (it merges once required checks pass)")
+    } else {
+        "disabled — do not auto-merge".to_string()
+    };
+
+    Some(format!(
+        "\n\n## STANDARDS & BRANCHING POLICY — project \"{}\"\nThis project's team must respect the following when implementing, committing, and opening/merging PRs:\n- Open pull requests against the branch `{}`.\n- Pre-commit gates that must pass before you commit: {}.\n- Gate scope: run the gates on YOUR increment (the changed files / PR diff), NOT the whole repository. Pre-existing repo-wide lint/test debt that you did not introduce (stray files, baseline errors on untouched code) is a WARN to record, NOT a commit/release blocker — do not HOLD the team's deliverable on baseline debt you didn't create. Only block on gate failures your own change introduced.\n- Implementer (Dev Clone) in TEAM MODE: once your increment is green, OPEN A PR against `{}` via `gh pr create` and emit `dev-clone.pr.created` (PR url + branch + repo) so QA Guardian tests it in an isolated worktree and merges-or-returns it — do NOT commit straight to the base branch; the PR + QA test gate is the point of this team's flow. ALSO emit implementation.completed so the Code Reviewer reviews.\n- Automerge: {}.\n",
+        project.name, pr_base, gates_str, pr_base, automerge_str
+    ))
 }
 
 /// Resolve the team's active (non-done) goals, flagging which ones a team

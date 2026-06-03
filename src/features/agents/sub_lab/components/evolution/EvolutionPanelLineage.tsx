@@ -12,6 +12,7 @@
  */
 import { Loader2, Sparkles, Play, ToggleLeft, ToggleRight, TrendingUp, CheckCircle2, XCircle, Zap, Target, DollarSign, ChevronDown, FlaskConical, GitCommit } from 'lucide-react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { useEvolutionPanelState } from './useEvolutionPanelState';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { EvolutionCycle } from '@/lib/bindings/EvolutionCycle';
@@ -275,11 +276,14 @@ function ObjectiveSliders({ objective, setObjective }: { objective: FitnessObjec
   const row = (key: keyof FitnessObjective, label: string, color: string) => (
     <div className="flex items-center gap-2">
       <span className={`typo-caption w-16 ${color}`}>{label}</span>
-      <input
-        type="range" min={0} max={100}
+      <Slider
+        min={0}
+        max={100}
         value={Math.round(objective[key] * 100)}
-        onChange={(e) => adjust(key, Number(e.target.value) / 100)}
-        className="flex-1 h-1 accent-violet-500"
+        onChange={(v) => adjust(key, v / 100)}
+        ariaLabel={label}
+        showBubble={false}
+        className="flex-1"
       />
       <span className="typo-caption text-foreground w-9 text-right">{Math.round(objective[key] * 100)}%</span>
     </div>
@@ -298,7 +302,16 @@ function SliderField({ id, label, value, onChange, min, max }: { id: string; lab
     <div>
       <label htmlFor={id} className="typo-caption text-foreground">{label}</label>
       <div className="flex items-center gap-2 mt-1">
-        <input id={id} type="range" min={min} max={max} value={Math.round(value * 100)} onChange={(e) => onChange(Number(e.target.value) / 100)} className="flex-1 h-1 accent-violet-500" />
+        <Slider
+          id={id}
+          min={min}
+          max={max}
+          value={Math.round(value * 100)}
+          onChange={(v) => onChange(v / 100)}
+          ariaLabel={label}
+          showBubble={false}
+          className="flex-1"
+        />
         <span className="typo-caption text-foreground w-9 text-right">{Math.round(value * 100)}%</span>
       </div>
     </div>

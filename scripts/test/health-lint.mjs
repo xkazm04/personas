@@ -21,6 +21,20 @@ const XPRICE_ROOT = 'xprice'; // pinned repos are expected under C:\Users\mkdol\
 const HANDOFF_TRIGGER_TYPES = new Set(['event_listener', 'chain', 'webhook', 'polling']);
 // Trigger types that let an ENTRY member self-start without a human.
 const SELFSTART_TRIGGER_TYPES = new Set(['schedule', 'event_listener', 'webhook', 'polling']);
+// Preset roles that do CODE-TRACK work and therefore REQUIRE a codebase pin to
+// read the repo. The artist (visual/brand asset generation) reads no code — a
+// missing pin for it is expected, not a blocker (it just needs an image-gen
+// credential; the preset notes it stays idle without one and the build cascade
+// is unaffected). Unknown roles default to code-track (conservative).
+const CODE_TRACK_ROLES = new Set(['architect', 'engineer', 'reviewer', 'security', 'release', 'docs', 'qa']);
+
+/** Recover a member's semantic preset role from config ({"preset_role":"<role>"}).
+ * The persona_team_members.role column is CHECK-constrained to the pipeline-role
+ * enum and is always `worker` for preset members, so it can't identify the role. */
+function memberPresetRole(config, role) {
+  const c = tryJson(config);
+  return (c && typeof c === 'object' && c.preset_role) || role || null;
+}
 
 import { argStrict as arg } from './lib/cli.mjs';
 const HAS = (name) => process.argv.includes(name);
@@ -83,6 +97,22 @@ function lintMember(db, m, isEntry) {
     warns.push('entry member cannot self-start autonomously (no schedule/event trigger) — a human or Athena must kick the chain');
   }
 
+  // --- persona Active/Off toggle (THE silent cascade-killer) ---
+  // The wiring above can be perfect yet the chain still dies here: a disabled
+  // persona is skipped by the event bus SILENTLY (engine/background.rs: "skip —
+  // no DLQ, no retry"). The handoff event is marked `delivered` and then
+  // dropped with no error trail, so DB forensics show "delivered" with no
+  // execution — invisible without this check. A non-entry disabled member is a
+  // hard blocker (the cascade stops there); a disabled entry can still be
+  // seed-kicked but will never self-start, so it blocks unattended autonomy.
+  if (!m.enabled) {
+    blockers.push(
+      isEntry
+        ? 'persona is DISABLED — the event bus skips disabled personas silently, so it will NOT self-start; only a direct seed/kick runs it'
+        : 'persona is DISABLED — the event bus silently skips it (handoff delivered-then-dropped, no error/DLQ). The team chain dies here.',
+    );
+  }
+
   // --- codebase pin (code-track) ---
   const devProjectId = dc?.dev_project_id || dc?.devProjectId || null;
   let pin = { id: devProjectId, state: 'none', repo: null, root: null };
@@ -91,8 +121,14 @@ function lintMember(db, m, isEntry) {
     if (!dp) pin = { id: devProjectId, state: 'unresolved', repo: null, root: null };
     else pin = { id: devProjectId, state: 'ok', repo: dp.name, root: dp.root_path };
   }
-  if (pin.state === 'none') blockers.push('no codebase pin (design_context.dev_project_id missing) — code-track work cannot read the repo');
-  else if (pin.state === 'unresolved') blockers.push(`codebase pin ${devProjectId.slice(0, 8)} does not resolve to a dev_projects row`);
+  // Role-aware: a missing pin is a blocker only for code-track roles. The
+  // artist reads no code, so a missing pin is expected → warn, not a blocker.
+  const presetRole = memberPresetRole(m.mconfig, m.mrole);
+  const isCodeTrackRole = !presetRole || CODE_TRACK_ROLES.has(presetRole);
+  if (pin.state === 'none') {
+    if (isCodeTrackRole) blockers.push('no codebase pin (design_context.dev_project_id missing) — code-track work cannot read the repo');
+    else warns.push(`no codebase pin — expected for non-code-track role '${presetRole}' (generates assets, reads no repo)`);
+  } else if (pin.state === 'unresolved') blockers.push(`codebase pin ${devProjectId.slice(0, 8)} does not resolve to a dev_projects row`);
   else if (!/xprice/i.test(pin.root || '')) warns.push(`codebase pin resolves outside xprice: ${pin.root}`);
 
   // --- setup / credentials ---
@@ -110,6 +146,7 @@ function lintMember(db, m, isEntry) {
     subs,
     canReceiveHandoff,
     canSelfStart,
+    enabled: !!m.enabled,
     pin,
     setup_status: m.setup_status,
     blockers,
@@ -120,7 +157,7 @@ function lintMember(db, m, isEntry) {
 export function lintTeam(db, team) {
   const members = db
     .prepare(
-      `SELECT m.id mid, m.role mrole, m.persona_id, p.name, p.structured_prompt, p.design_context, p.system_prompt, p.setup_status
+      `SELECT m.id mid, m.role mrole, m.config mconfig, m.persona_id, p.name, p.structured_prompt, p.design_context, p.system_prompt, p.setup_status, p.enabled
        FROM persona_team_members m JOIN personas p ON p.id=m.persona_id WHERE m.team_id=?`,
     )
     .all(team.id);
@@ -142,13 +179,16 @@ export function lintTeam(db, team) {
     ? db.prepare(`SELECT COUNT(*) c FROM persona_executions WHERE persona_id IN (${pids.map(() => '?').join(',')})`).get(...pids).c
     : 0;
 
-  // Broken handoff edges: non-feedback edges whose target cannot receive a handoff.
+  // Broken handoff edges: non-feedback edges whose target cannot receive a
+  // handoff — either it has no enabled receiver trigger, OR the persona itself
+  // is DISABLED (the event bus skips disabled personas silently, so a delivered
+  // handoff is dropped with no trace). Both stop the cascade dead at that edge.
   const brokenEdges = conns
     .filter((c) => c.ct !== 'feedback')
     .map((c) => ({ from: midToMember.get(c.s)?.name, to: midToMember.get(c.t)?.name, toMid: c.t }))
     .filter((e) => {
       const r = memberResults.find((mr) => mr.persona_id === midToMember.get(e.toMid)?.persona_id);
-      return r && !r.canReceiveHandoff;
+      return r && (!r.canReceiveHandoff || !r.enabled);
     });
 
   // Pin agreement (code-track teams should all pin the same repo).

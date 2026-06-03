@@ -3538,6 +3538,40 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN test_env_branch TEXT;")
         .ok();
 
+    // -- dev_projects: primary/default branch (the source-control pipeline stage's
+    // baseline, e.g. `main`/`master`). Nullable / no default; set via
+    // dev_tools_update_project. Existing projects unaffected.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN main_branch TEXT;")
+        .ok();
+
+    // -- dev_projects: standards & branching policy (Pipeline Stage 3). Opaque
+    // JSON envelope { precommit, branching } set via dev_tools_set_standards_config;
+    // the connected team's personas must respect it. Nullable / no default.
+    ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN standards_config TEXT;")
+        .ok();
+
+    // -- dev_standards: per-rule compliance findings from the golden-standard
+    // LLM scan (Pipeline Stage 3b). One row per rule the scan checks.
+    ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS dev_standards (
+            id            TEXT PRIMARY KEY,
+            project_id    TEXT NOT NULL REFERENCES dev_projects(id) ON DELETE CASCADE,
+            scan_id       TEXT,
+            rule_key      TEXT NOT NULL,
+            category      TEXT NOT NULL,
+            title         TEXT NOT NULL,
+            status        TEXT NOT NULL,
+            severity      TEXT NOT NULL DEFAULT 'info',
+            evidence      TEXT,
+            recommendation TEXT,
+            created_at    TEXT NOT NULL,
+            updated_at    TEXT NOT NULL
+        );
+         CREATE INDEX IF NOT EXISTS idx_dev_standards_project ON dev_standards(project_id);",
+    )
+    .ok();
+
     // -- audit_incidents: auto-continuation guard (P2.3b).
     // Nullable timestamp stamped when the incident-continuation reactive loop
     // re-runs the blocked work. NULL = not yet continued. The consumer claims a

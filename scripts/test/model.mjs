@@ -37,14 +37,17 @@ export function entryPersonaIds(members, connections) {
   return new Set(members.filter((m) => !nonFeedbackTargets.has(m.member_id)).map((m) => m.persona_id));
 }
 
-/** The repo a code-track team is pinned to (from any member's design_context.dev_project_id). */
+/** The repo a code-track team is pinned to (from any member's design_context.dev_project_id).
+ * Also surfaces the project's `standards_config` (the pre-commit + branching
+ * policy set in the Dev Tools pipeline) so the eval layer can score §7
+ * standards compliance. `standardsConfig` is null when the column is unset. */
 export function teamRepo(db, members) {
   for (const m of members) {
     const dc = tryJson(m.design_context);
     const pid = dc?.dev_project_id || dc?.devProjectId;
     if (pid) {
-      const dp = db.prepare(`SELECT name, root_path FROM dev_projects WHERE id = ?`).get(pid);
-      if (dp) return { projectId: pid, name: dp.name, root: dp.root_path };
+      const dp = db.prepare(`SELECT name, root_path, standards_config FROM dev_projects WHERE id = ?`).get(pid);
+      if (dp) return { projectId: pid, name: dp.name, root: dp.root_path, standardsConfig: tryJson(dp.standards_config) ?? null };
     }
   }
   return null;

@@ -2662,6 +2662,8 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_project,
             commands::infrastructure::dev_tools::dev_tools_create_project,
             commands::infrastructure::dev_tools::dev_tools_update_project,
+            commands::infrastructure::dev_tools::dev_tools_set_standards_config,
+            commands::infrastructure::dev_tools::dev_tools_backfill_qa_pr_review,
             commands::infrastructure::dev_tools::dev_tools_delete_project,
             commands::infrastructure::dev_tools::dev_tools_get_active_project,
             commands::infrastructure::dev_tools::dev_tools_set_active_project,
@@ -2721,6 +2723,9 @@ pub fn run() {
             commands::infrastructure::dev_tools::dev_tools_get_idea,
             commands::infrastructure::dev_tools::dev_tools_create_idea,
             commands::infrastructure::dev_tools::dev_tools_update_idea,
+            commands::infrastructure::dev_tools::dev_tools_accept_idea,
+            commands::infrastructure::dev_tools::dev_tools_reject_idea,
+            commands::infrastructure::dev_tools::dev_tools_list_pending_ideas,
             commands::infrastructure::dev_tools::dev_tools_delete_idea,
             commands::infrastructure::dev_tools::dev_tools_bulk_delete_ideas,
             // Dev Tools -- Scans
@@ -2735,6 +2740,8 @@ pub fn run() {
             commands::infrastructure::idea_scanner::dev_tools_get_idea_scan_status,
             // Dev Tools -- Static Scan (deterministic CLI-driven sibling)
             commands::infrastructure::static_scan::dev_tools_set_static_scan_config,
+            commands::infrastructure::standards_scan::dev_tools_run_standards_scan,
+            commands::infrastructure::standards_scan::dev_tools_list_standards,
             commands::infrastructure::static_scan::dev_tools_run_static_scan,
             // Dev Tools -- Tasks
             commands::infrastructure::dev_tools::dev_tools_list_tasks,

@@ -1292,8 +1292,9 @@ pub fn spawn_subscriptions(
 /// **Gated OFF by default** (`settings_keys::AUTONOMOUS_GOAL_ADVANCEMENT`): the
 /// tick is a no-op until the user opts in, so nothing spends tokens
 /// autonomously without consent. Guardrails when ON: one active assignment per
-/// goal (enforced in `advance_goal`), a 30-minute per-goal cooldown after any
-/// assignment (so a failed run isn't retried in a tight loop), eligible-persona
+/// goal (enforced in `advance_goal`), a per-goal cooldown after any assignment
+/// (so a failed run isn't retried in a tight loop; currently 2h, tuned up from
+/// the 30m default for the day-long multi-team soak test), eligible-persona
 /// check, and a hard per-tick cap so a large fleet ramps gradually.
 pub struct GoalAdvanceSubscription {
     pub pool: DbPool,
@@ -1304,9 +1305,36 @@ pub struct GoalAdvanceSubscription {
 /// Max goals advanced per tick — bounds the autonomous spend ramp.
 const GOAL_ADVANCE_MAX_PER_TICK: usize = 3;
 
+/// G1 — quota-aware backpressure for the autonomous-spend loops. Returns true
+/// when the Claude account hit a session/usage/rate limit in the recent window,
+/// i.e. we're inside a limit window. While active, the goal-advance and
+/// assignment-retry ticks SKIP — so a burst doesn't keep slamming an exhausted
+/// quota (the dominant failure mode in the soak: 94% of failures were session
+/// limit). Cheap recency probe over recent failed executions; the self-heal
+/// still retries the work once the window clears.
+const QUOTA_COOLDOWN_LOOKBACK_MINUTES: i64 = 15;
+fn quota_cooldown_active(pool: &DbPool) -> bool {
+    let Ok(conn) = pool.get() else { return false };
+    let n: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM persona_executions
+             WHERE status = 'failed'
+               AND created_at > datetime('now', ?1)
+               AND (LOWER(COALESCE(output_data,'')) LIKE '%session limit%'
+                    OR LOWER(COALESCE(output_data,'')) LIKE '%usage limit%'
+                    OR LOWER(COALESCE(output_data,'')) LIKE '%hit your%limit%'
+                    OR LOWER(COALESCE(error_message,'')) LIKE '%rate limit%'
+                    OR LOWER(COALESCE(error_message,'')) LIKE '%429%')",
+            rusqlite::params![format!("-{QUOTA_COOLDOWN_LOOKBACK_MINUTES} minutes")],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    n > 0
+}
+
 /// Goal-linked teams with an active, unworked goal and no recent assignment.
-/// Returns `(team_id, goal_id)` pairs. The 30-min cooldown via `created_at`
-/// prevents stampede + failure-retry loops.
+/// Returns `(team_id, goal_id)` pairs. The cooldown via `created_at` (2h for the
+/// soak test, default 30m) prevents stampede + failure-retry loops.
 fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, crate::error::AppError> {
     let conn = pool.get()?;
     let mut stmt = conn.prepare(
@@ -1320,7 +1348,10 @@ fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, 
              SELECT 1 FROM team_assignments ta
              WHERE ta.goal_id = g.id
                AND (ta.status IN ('queued', 'running', 'awaiting_review')
-                    OR ta.created_at > datetime('now', '-30 minutes'))
+                    -- Per-goal cooldown: tuned up 30m -> 2h for the day-long
+                    -- multi-team soak test (2h cadence per team). Revert to
+                    -- '-30 minutes' to restore the default advancement rate.
+                    OR ta.created_at > datetime('now', '-120 minutes'))
            )
          ORDER BY g.updated_at ASC",
     )?;
@@ -1365,6 +1396,12 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
         if !enabled {
             return;
         }
+        // G1: quota-aware backpressure — don't start NEW team work while the
+        // account is inside a session/usage-limit window.
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("goal_advance: quota cooldown active — skipping tick");
+            return;
+        }
 
         // Candidate query is sync rusqlite — offload off the async worker.
         let pool = self.pool.clone();
@@ -1403,6 +1440,561 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
         }
         if started > 0 {
             tracing::info!(count = started, "goal_advance: autonomous tick started {started} assignment(s)");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Autonomous assignment retry (default-OFF) — self-heal quota-failed assignments
+// ---------------------------------------------------------------------------
+
+/// Per-step retry cap for the autonomous resume path. Once a step has been
+/// auto-retried this many times the failure is almost certainly not a transient
+/// quota blip, so the assignment is left paused for a human.
+const ASSIGNMENT_RETRY_MAX: i64 = 8;
+/// Backoff between auto-retries of a failed step (minutes). Long enough that a
+/// Claude session/usage-limit window has a real chance to reset before the next
+/// attempt; with the cap this spans several hours of recovery.
+const ASSIGNMENT_RETRY_BACKOFF_MINUTES: i64 = 30;
+/// Max assignments resumed per tick — bounds the spend ramp (mirrors
+/// `GOAL_ADVANCE_MAX_PER_TICK`).
+const ASSIGNMENT_AUTO_RESUME_MAX_PER_TICK: usize = 5;
+
+/// Resumes team assignments soft-paused at `awaiting_review` because a step
+/// failed for a RETRYABLE reason (Claude session/usage limit, rate limit) —
+/// resetting those steps and re-running them once the quota window has likely
+/// recovered, so the unattended goal-advance loop self-heals instead of
+/// deadlocking. Default-OFF (`AUTONOMOUS_ASSIGNMENT_RETRY`); per-persona opt-out
+/// via `design_context.repeat_on_failure`; bounded by a per-step cap + backoff.
+pub struct AssignmentAutoResumeSubscription {
+    pub pool: DbPool,
+    pub app: AppHandle,
+    pub engine: Arc<ExecutionEngine>,
+}
+
+/// A failed step that passed the SQL-expressible retry filters (assignment
+/// `awaiting_review`, step `failed`, under the retry cap, past the backoff).
+/// The retryable-error classification + per-persona repeat gate run in Rust.
+struct RetryCandidateStep {
+    assignment_id: String,
+    step_id: String,
+    persona_id: Option<String>,
+    execution_id: Option<String>,
+    step_error: Option<String>,
+}
+
+fn find_assignment_retry_candidates(
+    pool: &DbPool,
+) -> Result<Vec<RetryCandidateStep>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let backoff = format!("-{ASSIGNMENT_RETRY_BACKOFF_MINUTES} minutes");
+    let mut stmt = conn.prepare(
+        "SELECT s.assignment_id, s.id, s.assigned_persona_id, s.execution_id, s.error_message
+         FROM team_assignment_steps s
+         JOIN team_assignments a ON a.id = s.assignment_id
+         WHERE a.status = 'awaiting_review'
+           AND s.status = 'failed'
+           AND COALESCE(s.retry_count, 0) < ?1
+           AND (s.completed_at IS NULL OR s.completed_at < datetime('now', ?2))
+         ORDER BY s.completed_at ASC",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![ASSIGNMENT_RETRY_MAX, backoff], |r| {
+        Ok(RetryCandidateStep {
+            assignment_id: r.get(0)?,
+            step_id: r.get(1)?,
+            persona_id: r.get(2)?,
+            execution_id: r.get(3)?,
+            step_error: r.get(4)?,
+        })
+    })?;
+    Ok(rows.filter_map(Result::ok).collect())
+}
+
+/// Is this failed step's failure TRANSIENT (worth retrying once conditions
+/// recover) rather than permanent? Looks at the step's own `error_message` plus
+/// its execution's `error_message` and `output_data` (where the CLI's "You've
+/// hit your session limit" lands), and classifies via the failover taxonomy.
+///
+/// Retryable = the transient categories that an overloaded quota burst produces
+/// and that waiting/recovery resolves: rate/session limit, timeout, transient
+/// process failure, network, and 5xx API errors. NOT retryable: missing binary,
+/// credential failure, validation, tool errors, or unknown — waiting won't fix
+/// those, so the assignment stays paused for a human (and the per-step retry cap
+/// bounds the cost of a step that keeps failing transiently).
+fn step_failure_is_retryable(pool: &DbPool, exec_id: Option<&str>, step_error: Option<&str>) -> bool {
+    use crate::engine::error_taxonomy::ErrorCategory;
+    let mut blob = step_error.unwrap_or("").to_string();
+    if let Some(eid) = exec_id {
+        if let Ok(conn) = pool.get() {
+            if let Ok((err, out)) = conn.query_row(
+                "SELECT COALESCE(error_message,''), COALESCE(output_data,'') FROM persona_executions WHERE id = ?1",
+                rusqlite::params![eid],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            ) {
+                blob.push(' ');
+                blob.push_str(&err);
+                blob.push(' ');
+                blob.push_str(&out);
+            }
+        }
+    }
+    matches!(
+        crate::engine::failover::classify_error(&blob),
+        Some(
+            ErrorCategory::RateLimit
+                | ErrorCategory::SessionLimit
+                | ErrorCategory::Timeout
+                | ErrorCategory::TransientProcessFailure
+                | ErrorCategory::Network
+                | ErrorCategory::ApiError
+        )
+    )
+}
+
+/// Per-persona opt-out: `design_context.repeat_on_failure` — default TRUE when
+/// absent/unparseable (repeat is the default; this is an opt-out, not opt-in).
+fn persona_repeats_on_failure(pool: &DbPool, persona_id: Option<&str>) -> bool {
+    let Some(pid) = persona_id else { return true };
+    let Ok(conn) = pool.get() else { return true };
+    let dc: Option<String> = conn
+        .query_row("SELECT design_context FROM personas WHERE id = ?1", rusqlite::params![pid], |r| r.get(0))
+        .ok()
+        .flatten();
+    match dc.as_deref().and_then(|s| serde_json::from_str::<serde_json::Value>(s).ok()) {
+        Some(v) => v
+            .get("repeat_on_failure")
+            .and_then(|b| b.as_bool())
+            .unwrap_or(true),
+        None => true,
+    }
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for AssignmentAutoResumeSubscription {
+    fn name(&self) -> &'static str {
+        "assignment_auto_resume"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(90)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_ASSIGNMENT_RETRY,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        // G1: don't retry into an active limit window — wait for it to clear so
+        // the retry actually has a chance to succeed instead of re-failing.
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("assignment_auto_resume: quota cooldown active — skipping tick");
+            return;
+        }
+
+        // SQL filter + retryable-classification + per-persona gate, all on the
+        // blocking pool (sync rusqlite). Result groups retryable step ids by
+        // assignment so each assignment is resumed once.
+        let pool = self.pool.clone();
+        let by_assignment = match tokio::task::spawn_blocking(move || {
+            let cands = find_assignment_retry_candidates(&pool)?;
+            let mut grouped: std::collections::BTreeMap<String, Vec<String>> =
+                std::collections::BTreeMap::new();
+            for c in cands {
+                if !step_failure_is_retryable(&pool, c.execution_id.as_deref(), c.step_error.as_deref())
+                {
+                    continue;
+                }
+                if !persona_repeats_on_failure(&pool, c.persona_id.as_deref()) {
+                    continue;
+                }
+                grouped.entry(c.assignment_id).or_default().push(c.step_id);
+            }
+            Ok::<_, crate::error::AppError>(grouped)
+        })
+        .await
+        {
+            Ok(Ok(m)) => m,
+            Ok(Err(e)) => {
+                tracing::warn!(error = %e, "assignment_auto_resume: candidate query failed");
+                return;
+            }
+            Err(_) => return,
+        };
+
+        let mut resumed = 0usize;
+        for (assignment_id, step_ids) in by_assignment
+            .into_iter()
+            .take(ASSIGNMENT_AUTO_RESUME_MAX_PER_TICK)
+        {
+            match crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
+                Arc::new(self.pool.clone()),
+                self.app.clone(),
+                self.engine.clone(),
+                None,
+                &assignment_id,
+                &step_ids,
+            ) {
+                Ok(()) => {
+                    resumed += 1;
+                    tracing::info!(assignment_id = %assignment_id, steps = step_ids.len(), "assignment_auto_resume: resumed retryable-failed assignment");
+                }
+                Err(e) => {
+                    tracing::warn!(assignment_id = %assignment_id, error = %e, "assignment_auto_resume: resume failed");
+                }
+            }
+        }
+        if resumed > 0 {
+            tracing::info!(count = resumed, "assignment_auto_resume: resumed {resumed} assignment(s)");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Autonomous manual-review triage (default-OFF) — keep the learning loop turning
+// ---------------------------------------------------------------------------
+
+/// A review must sit `pending` at least this long before auto-triage touches
+/// it, giving a human first crack.
+const REVIEW_TRIAGE_GRACE_MINUTES: i64 = 60;
+/// Max reviews auto-triaged per tick.
+const REVIEW_TRIAGE_MAX_PER_TICK: usize = 10;
+
+/// Auto-resolves routine `persona_manual_reviews` that have sat `pending` past a
+/// grace window, so the accept/reject → memory learning loop keeps turning
+/// unattended. Conservative policy: APPROVES only low/medium severity (which
+/// `manual_reviews::update_status` routes into a `decision` team/persona memory);
+/// HIGH/critical severity is left for a human. Default-OFF
+/// (`AUTONOMOUS_REVIEW_TRIAGE`). Distinct from the command-triggered
+/// `gc_stale_pending`, which neutral-resolves (no learning signal).
+pub struct ManualReviewAutoTriageSubscription {
+    pub pool: DbPool,
+}
+
+/// One pending review eligible for auto-triage.
+struct TriageCandidate {
+    id: String,
+    severity: String,
+}
+
+fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let cutoff = format!("-{REVIEW_TRIAGE_GRACE_MINUTES} minutes");
+    let mut stmt = conn.prepare(
+        "SELECT id, COALESCE(severity,'medium') FROM persona_manual_reviews
+         WHERE status = 'pending' AND created_at < datetime('now', ?1)
+         ORDER BY created_at ASC",
+    )?;
+    let rows = stmt.query_map(rusqlite::params![cutoff], |r| {
+        Ok(TriageCandidate {
+            id: r.get(0)?,
+            severity: r.get(1)?,
+        })
+    })?;
+    Ok(rows.filter_map(Result::ok).collect())
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
+    fn name(&self) -> &'static str {
+        "manual_review_auto_triage"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(120)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_REVIEW_TRIAGE,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+
+        let pool = self.pool.clone();
+        let triaged = tokio::task::spawn_blocking(move || {
+            let cands = match find_triage_candidates(&pool) {
+                Ok(c) => c,
+                Err(e) => {
+                    tracing::warn!(error = %e, "manual_review_auto_triage: query failed");
+                    return 0usize;
+                }
+            };
+            let mut n = 0usize;
+            for c in cands.into_iter().take(REVIEW_TRIAGE_MAX_PER_TICK) {
+                // Conservative: only routine (low/medium) severity is auto-approved;
+                // high/critical stays pending for a human.
+                let sev = c.severity.to_ascii_lowercase();
+                if sev == "high" || sev == "critical" {
+                    continue;
+                }
+                match crate::db::repos::communication::manual_reviews::update_status(
+                    &pool,
+                    &c.id,
+                    crate::db::models::ManualReviewStatus::Approved,
+                    Some(
+                        "[auto-triaged — unattended review policy: routine (low/medium) \
+                         severity auto-approved; feeds the accept→decision learning loop]"
+                            .to_string(),
+                    ),
+                ) {
+                    Ok(()) => n += 1,
+                    Err(e) => {
+                        tracing::warn!(review_id = %c.id, error = %e, "manual_review_auto_triage: approve failed")
+                    }
+                }
+            }
+            n
+        })
+        .await
+        .unwrap_or(0);
+
+        if triaged > 0 {
+            tracing::info!(count = triaged, "manual_review_auto_triage: auto-approved {triaged} routine review(s)");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Autonomous backlog → goal (default-OFF) — keep the goal-advance loop fed
+// ---------------------------------------------------------------------------
+
+/// Max goals promoted per tick (one per idling project; this caps the total).
+const BACKLOG_TO_GOAL_MAX_PER_TICK: usize = 5;
+
+/// Keeps the unattended goal-advance loop self-sustaining (analysis §G7): when a
+/// goal-linked project has run out of open goals (the loop would otherwise
+/// idle), promote that project's single BEST pending backlog idea (highest
+/// impact, lowest risk, lowest effort) into a new `dev_goals` row and mark the
+/// idea accepted. ONE goal per idling project per tick — flood-safe; nothing
+/// happens for a project that still has an open goal or no pending ideas.
+/// Default-OFF (`AUTONOMOUS_BACKLOG_TO_GOAL`).
+pub struct BacklogToGoalSubscription {
+    pub pool: DbPool,
+}
+
+/// The best pending idea for an idling goal-linked project.
+struct PromotableIdea {
+    idea_id: String,
+    project_id: String,
+    title: String,
+    description: Option<String>,
+}
+
+fn find_promotable_ideas(pool: &DbPool) -> Result<Vec<PromotableIdea>, crate::error::AppError> {
+    let conn = pool.get()?;
+    // One row per IDLING goal-linked project (no open, non-done, progress<100
+    // goal): that project's single best pending idea, ranked impact desc, risk
+    // asc, effort asc, oldest first as the tiebreak.
+    let mut stmt = conn.prepare(
+        "SELECT i.id, i.project_id, i.title, i.description
+         FROM dev_ideas i
+         JOIN dev_projects dp ON dp.id = i.project_id
+         WHERE dp.team_id IS NOT NULL
+           AND i.status = 'pending'
+           AND NOT EXISTS (
+             SELECT 1 FROM dev_goals g
+             WHERE g.project_id = i.project_id
+               AND g.status NOT IN ('done','completed')
+               AND g.progress < 100
+           )
+           AND i.id = (
+             SELECT i2.id FROM dev_ideas i2
+             WHERE i2.project_id = i.project_id AND i2.status = 'pending'
+             ORDER BY COALESCE(i2.impact,0) DESC, COALESCE(i2.risk,99) ASC, COALESCE(i2.effort,99) ASC, i2.created_at ASC
+             LIMIT 1
+           )
+         ORDER BY i.project_id",
+    )?;
+    let rows = stmt.query_map([], |r| {
+        Ok(PromotableIdea {
+            idea_id: r.get(0)?,
+            project_id: r.get(1)?,
+            title: r.get(2)?,
+            description: r.get(3)?,
+        })
+    })?;
+    Ok(rows.filter_map(Result::ok).collect())
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for BacklogToGoalSubscription {
+    fn name(&self) -> &'static str {
+        "backlog_to_goal"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(150)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_BACKLOG_TO_GOAL,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        // Don't generate new work while inside a quota-limit window (G1).
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("backlog_to_goal: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let pool = self.pool.clone();
+        let promoted = tokio::task::spawn_blocking(move || {
+            let ideas = match find_promotable_ideas(&pool) {
+                Ok(v) => v,
+                Err(e) => {
+                    tracing::warn!(error = %e, "backlog_to_goal: query failed");
+                    return 0usize;
+                }
+            };
+            let mut n = 0usize;
+            for idea in ideas.into_iter().take(BACKLOG_TO_GOAL_MAX_PER_TICK) {
+                let desc = format!(
+                    "{}\n\n(Promoted from backlog idea {} to keep the team's goal queue fed.)",
+                    idea.description.as_deref().unwrap_or("").trim(),
+                    idea.idea_id,
+                );
+                match crate::db::repos::dev_tools::create_goal(
+                    &pool,
+                    &idea.project_id,
+                    &idea.title,
+                    Some(desc.trim()),
+                    None,
+                    Some("open"),
+                    None,
+                    None,
+                ) {
+                    Ok(_) => {
+                        // Mark the idea consumed so it is never re-promoted.
+                        let _ = crate::db::repos::dev_tools::update_idea(
+                            &pool,
+                            &idea.idea_id,
+                            None,
+                            None,
+                            Some("accepted"),
+                            None,
+                            None,
+                            None,
+                            None,
+                            None,
+                        );
+                        n += 1;
+                        tracing::info!(project_id = %idea.project_id, idea_id = %idea.idea_id, "backlog_to_goal: promoted backlog idea to goal");
+                    }
+                    Err(e) => {
+                        tracing::warn!(idea_id = %idea.idea_id, error = %e, "backlog_to_goal: create_goal failed")
+                    }
+                }
+            }
+            n
+        })
+        .await
+        .unwrap_or(0);
+
+        if promoted > 0 {
+            tracing::info!(count = promoted, "backlog_to_goal: promoted {promoted} backlog idea(s) to goals");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Queue drain watchdog — re-drain the execution queue after a quota cooldown
+// ---------------------------------------------------------------------------
+
+/// Re-attempts draining the execution queue on a timer. The queue is normally
+/// drained on each execution COMPLETION (a freed slot promotes the next queued
+/// item) — but quota-aware admission can pause ALL admission while the AI
+/// provider's limit is in cooldown, and once every in-flight execution has
+/// drained there is no completion left to trigger a re-drain when the cooldown
+/// later expires. This watchdog closes that gap: each tick, while the quota
+/// cooldown has lifted and there is spare capacity with work waiting, it
+/// promotes queued executions (each promotion's completion then cascades the
+/// rest via the normal drain path). Also a general safety net for an otherwise
+/// stuck queue. Always-on and a cheap no-op when idle. NOT gated by a setting —
+/// it only ever drains work that was already admitted-then-queued.
+pub struct QueueDrainWatchdog {
+    pub pool: DbPool,
+    pub app: AppHandle,
+    pub engine: Arc<ExecutionEngine>,
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for QueueDrainWatchdog {
+    fn name(&self) -> &'static str {
+        "queue_drain_watchdog"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(30)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(60)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(45)
+    }
+
+    async fn tick(&self) {
+        // Promote up to a bounded number of queued executions per tick so a
+        // post-cooldown queue fills its free slots promptly. Stop early when:
+        // the quota is still in cooldown, there's no global capacity, the queue
+        // is empty, OR a drain promoted nothing (e.g. all queued items are at
+        // their per-persona cap) — the no-progress break prevents spinning.
+        const MAX_PROMOTE_PER_TICK: usize = 16;
+        for _ in 0..MAX_PROMOTE_PER_TICK {
+            let (proceed, before) = {
+                let t = self.engine.tracker().lock().await;
+                (
+                    t.quota_available() && t.has_global_capacity() && t.total_queued() > 0,
+                    t.total_running(),
+                )
+            };
+            if !proceed {
+                break;
+            }
+            self.engine
+                .drain_after_slot_freed(self.app.clone(), self.pool.clone())
+                .await;
+            let after = self.engine.tracker().lock().await.total_running();
+            if after <= before {
+                break;
+            }
         }
     }
 }

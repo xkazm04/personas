@@ -68,7 +68,7 @@ export const createProject = (name: string, rootPath: string, description?: stri
     teamId: teamId,
   });
 
-export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null }) =>
+export const updateProject = (id: string, updates: { name?: string; description?: string; status?: string; techStack?: string; githubUrl?: string; monitoringCredentialId?: string | null; monitoringProjectSlug?: string | null; teamId?: string | null; prCredentialId?: string | null; testEnvUrl?: string | null; testEnvBranch?: string | null; mainBranch?: string | null }) =>
   invoke<DevProject>("dev_tools_update_project", {
     id,
     name: updates.name,
@@ -88,7 +88,31 @@ export const updateProject = (id: string, updates: { name?: string; description?
     // untouched.
     testEnvUrl: updates.testEnvUrl,
     testEnvBranch: updates.testEnvBranch,
+    // Option<Option<String>> like the test-env fields: a string SETS the
+    // project's primary/default branch, `null` CLEARS, `undefined` leaves it.
+    mainBranch: updates.mainBranch,
   });
+
+/** Set or clear the project's standards & branching policy (Pipeline Stage 3).
+ *  `config` is the JSON envelope `{ precommit, branching }` as a string, or null to clear. */
+export const setStandardsConfig = (projectId: string, config: string | null) =>
+  invoke<DevProject>("dev_tools_set_standards_config", { projectId, config });
+
+/** Run the golden-standard LLM scan (Stage 3b). Returns the scan id; findings
+ *  land in dev_standards and a `dev_tools_standards_scan_status` event fires. */
+export const runStandardsScan = (projectId: string) =>
+  invoke<{ scan_id: string }>("dev_tools_run_standards_scan", { projectId });
+
+export const listStandards = (projectId: string) =>
+  invoke<import("@/lib/bindings/DevStandard").DevStandard[]>("dev_tools_list_standards", { projectId });
+
+/** Retrofit the PR-test-merge capability onto existing QA Guardian instances
+ *  (Stage 3d backfill). Idempotent. Returns a summary of what was wired. */
+export const backfillQaPrReview = () =>
+  invoke<{ personas_matched: number; use_cases_added: number; subscriptions_added: number; persona_names: string[]; github_credentials_in_vault: number }>(
+    "dev_tools_backfill_qa_pr_review",
+    {},
+  );
 
 export const deleteProject = (id: string) =>
   invoke<boolean>("dev_tools_delete_project", { id });
@@ -609,6 +633,11 @@ export const acceptIdea = (id: string) =>
 
 export const rejectIdea = (id: string, reason?: string) =>
   safeInvoke<DevIdea>({} as DevIdea, "dev_tools_reject_idea", { id, reason: reason });
+
+/** Pending backlog ideas across all projects — source for the Human-Review
+ *  inbox's "Dev Tools backlog" group. Project names resolved from the store. */
+export const listPendingIdeas = (limit?: number) =>
+  safeInvoke<DevIdea[]>([], "dev_tools_list_pending_ideas", { limit });
 
 export const deleteTriageIdea = (id: string) =>
   safeInvoke<boolean>(false, "dev_tools_delete_triage_idea", { id });

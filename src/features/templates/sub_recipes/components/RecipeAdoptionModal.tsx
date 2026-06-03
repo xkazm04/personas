@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { X, Sparkles, AlertTriangle, ExternalLink } from 'lucide-react';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
+import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
 import { useAgentStore } from '@/stores/agentStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { Recipe, BindingValue, RecipeBinding, BindingKind, Eligibility } from '../types';
@@ -421,18 +422,15 @@ function BindingInput({ kind, value, onChange }: BindingInputProps) {
     case 'number': {
       return (
         <div className="flex items-center gap-2">
-          <input
-            type="number"
-            className={`${inputCls} max-w-[140px]`}
+          <NumberStepper
+            value={typeof value === 'number' ? value : null}
+            onChange={(v) => onChange(v ?? undefined)}
             min={kind.min}
             max={kind.max}
-            value={typeof value === 'number' ? value : ''}
-            onChange={(e) => {
-              const n = e.target.value === '' ? undefined : Number(e.target.value);
-              onChange(n);
-            }}
+            allowEmpty
+            suffix={kind.unit}
+            className="max-w-[140px]"
           />
-          {kind.unit && <span className="typo-caption text-foreground">{kind.unit}</span>}
         </div>
       );
     }

@@ -1,9 +1,11 @@
-import { Check } from 'lucide-react';
+import { Check, Code2, GitFork } from 'lucide-react';
 import { FormField, type FieldAvailability } from '@/features/shared/components/forms/FormField';
 import {
   useAsyncFieldValidation,
   suggestAlternativeName,
 } from '@/features/shared/components/forms/useAsyncFieldValidation';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
+import { GitHubRepoSelector } from '@/features/plugins/dev-tools/sub_projects/GitHubRepoSelector';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -30,6 +32,15 @@ interface CreateTeamFormProps {
   onCancel: () => void;
   /** Existing team names, used to flag duplicates inline as the user types. */
   existingNames?: string[];
+  // -- Codebase repository (provisions a Codebase connector on create) --
+  /** Vault GitHub PAT credentials, offered to authenticate the repo list. */
+  githubCreds: { id: string; name: string }[];
+  prCredentialId: string | null;
+  onCredChange: (id: string | null) => void;
+  githubUrl: string;
+  onGithubUrlChange: (url: string) => void;
+  mainBranch: string;
+  onMainBranchChange: (branch: string) => void;
 }
 
 export function CreateTeamForm({
@@ -42,8 +53,16 @@ export function CreateTeamForm({
   onSubmit,
   onCancel,
   existingNames = [],
+  githubCreds,
+  prCredentialId,
+  onCredChange,
+  githubUrl,
+  onGithubUrlChange,
+  mainBranch,
+  onMainBranchChange,
 }: CreateTeamFormProps) {
   const { t, tx } = useTranslation();
+  const dp = t.plugins.dev_projects;
 
   const nameCheck = useAsyncFieldValidation({
     check: (value) => {
@@ -129,6 +148,45 @@ export function CreateTeamForm({
             })}
           </div>
         </div>
+        {/* Codebase repository — wires the team to a GitHub repo via a
+            Codebase connector created on submit (see TeamList.handleCreate). */}
+        <div className="pt-1 border-t border-primary/10">
+          <div className="flex items-center gap-2 pt-3 mb-2.5">
+            <Code2 className="w-3.5 h-3.5 text-indigo-300/80 flex-shrink-0" />
+            <span className="typo-card-label">{t.pipeline.team_codebase_heading}</span>
+          </div>
+          <p className="typo-caption text-foreground/60 mb-3">{t.pipeline.team_codebase_hint}</p>
+
+          <div className="space-y-3">
+            <div>
+              <label className="typo-caption font-medium text-foreground mb-1.5 block">{t.pipeline.team_connector_label}</label>
+              <ThemedSelect value={prCredentialId ?? ''} onValueChange={(v) => onCredChange(v || null)}>
+                <option value="">{dp.team_binding_none}</option>
+                {githubCreds.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </ThemedSelect>
+            </div>
+
+            <GitHubRepoSelector value={githubUrl} onChange={onGithubUrlChange} credentialId={prCredentialId} />
+
+            <div>
+              <label className="typo-caption font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                <GitFork className="w-3 h-3 text-indigo-300/70" />
+                {dp.main_branch_label}
+                <span className="typo-caption text-foreground/50 font-normal">({dp.team_binding_optional})</span>
+              </label>
+              <input
+                type="text"
+                value={mainBranch}
+                onChange={(e) => onMainBranchChange(e.target.value)}
+                placeholder={dp.main_branch_placeholder}
+                className={INPUT_FIELD}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex justify-end gap-2 pt-2">
           <button
             onClick={onCancel}

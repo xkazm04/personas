@@ -108,6 +108,16 @@ pub struct DevProject {
     pub test_env_url: Option<String>,
     /// Branch deployed to the living test environment (e.g. `staging`). Nullable.
     pub test_env_branch: Option<String>,
+    /// The project's primary/default branch (e.g. `main` or `master`). The
+    /// source-control pipeline stage's baseline; nullable, auto-prefilled from
+    /// the repo's default branch when known. Added 2026-05-31.
+    pub main_branch: Option<String>,
+    /// Standards & branching policy (Pipeline Stage 3). Opaque JSON envelope
+    /// `{ precommit:{lint,docs_required,code_quality}, branching:{pr_base,automerge} }`
+    /// the connected team's personas must respect (injected into member
+    /// executions via team_context + CODEBASE_* env). Set via
+    /// `dev_tools_set_standards_config`. Added 2026-05-31.
+    pub standards_config: Option<String>,
     /// Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
     /// project's surface in `ProjectManagerPage` shows the bound team's name
     /// inline so the developer can see at a glance which pipeline owns the
@@ -392,6 +402,34 @@ pub struct DevScan {
     pub duration_ms: Option<i64>,
     pub error: Option<String>,
     pub created_at: String,
+}
+
+// ============================================================================
+// Dev Standards (Pipeline Stage 3 — golden-standard scan findings)
+// ============================================================================
+
+/// One per-rule compliance finding from the golden-standard LLM scan
+/// (`standards_scan.rs`). The scan adapts the shipped golden ruleset to the
+/// repo's character and reports each rule's status to this table.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DevStandard {
+    pub id: String,
+    pub project_id: String,
+    pub scan_id: Option<String>,
+    /// Stable rule identifier, e.g. `lint.config`, `docs.readme`, `tests.coverage`, `branching.naming`.
+    pub rule_key: String,
+    /// `precommit` | `docs` | `code_quality` | `branching` | `testing`.
+    pub category: String,
+    pub title: String,
+    /// `present` | `partial` | `missing`.
+    pub status: String,
+    /// `info` | `warn` | `critical`.
+    pub severity: String,
+    pub evidence: Option<String>,
+    pub recommendation: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 // ============================================================================

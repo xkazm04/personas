@@ -11,11 +11,13 @@
   "is_published": true,
   "service_flow": [
     "Codebase",
+    "GitHub",
     "Messages"
   ],
   "payload": {
     "service_flow": [
       "Codebase",
+      "GitHub",
       "Messages"
     ],
     "persona": {
@@ -36,7 +38,7 @@
         "A clean scan is value — \"coverage target met\" or \"no new bugs\" WITH the scanned state is a successful, useful result."
       ],
       "constraints": [
-        "Never require a pull request — the codebase connector is the trigger surface.",
+        "The scheduled coverage + bug-hunt capabilities never require a pull request — the codebase connector is their trigger surface. The PR-review capability (uc_pr_review) is the ONE reactive path: it runs only when Dev Clone emits dev-clone.pr.created.",
         "Never re-report a bug already tracked in memory — dedupe on file:line + signature.",
         "Never commit unvalidated tests as covered — if run_tests is unavailable, mark them UNVALIDATED.",
         "Never flood the review queue — respect max_findings_per_run / max_modules_per_run."
@@ -50,7 +52,7 @@
       "verbosity_default": "normal",
       "trigger_composition": "per_use_case",
       "message_composition": "per_use_case",
-      "operating_instructions": "Two scheduled, codebase-driven capabilities, both memory-backed:\n1. **uc_coverage_scan** (scheduled) — read memory for prior coverage progress, scan the registered codebase via the codebase connector (search_code, read_file, list_files, get_contexts), identify the next untested / low-coverage modules, write the missing tests following the module's existing test framework + fixture patterns, validate with run_tests, then PERSIST updated coverage progress to memory (per-module status, tests written, pending modules). Bounded by max_modules_per_run. When the coverage target is met, report it (value delivered).\n2. **uc_bug_hunt** (scheduled) — read memory for already-reported findings, scan the codebase for likely defects (null derefs, error-handling gaps, edge cases, resource leaks, security), and file each NEW finding above the severity floor as a human-review item, recording it in memory to avoid duplicates. Emit qa.bug.found so Dev Clone can pick up confirmed fixes.\nNever require a pull request — QA Guardian works proactively from the codebase, not reactively from PRs. The codebase connector is mandatory; without it, report that it is not accessible.",
+      "operating_instructions": "Three capabilities — two scheduled + codebase-driven (memory-backed), one reactive on pull requests:\n1. **uc_coverage_scan** (scheduled) — read memory for prior coverage progress, scan the registered codebase via the codebase connector (search_code, read_file, list_files, get_contexts), identify the next untested / low-coverage modules, write the missing tests following the module's existing test framework + fixture patterns, validate with run_tests, then PERSIST updated coverage progress to memory (per-module status, tests written, pending modules). Bounded by max_modules_per_run. When the coverage target is met, report it (value delivered).\n2. **uc_bug_hunt** (scheduled) — read memory for already-reported findings, scan the codebase for likely defects (null derefs, error-handling gaps, edge cases, resource leaks, security), and file each NEW finding above the severity floor as a human-review item, recording it in memory to avoid duplicates. Emit qa.bug.found so Dev Clone can pick up confirmed fixes.\n3. **uc_pr_review** (event-listen on dev-clone.pr.created) — when Dev Clone opens a PR, test it in ISOLATION and decide merge vs return. (a) Read the event payload for the PR branch + number + repo. (b) Create an isolated git worktree off the PR branch — `git worktree add .qa/<pr>/<id> <pr-branch>` — and work ONLY there so you never disturb the team's checkout. (c) Run the project's full test command inside that worktree. (d) Decide from the result + the STANDARDS & BRANCHING POLICY block in your prompt: tests PASS and the policy enables automerge → enable GitHub native auto-merge on the PR (`gh pr merge <pr> --auto`, or the auto-merge API) targeting the policy's automerge branch so it merges once required checks pass, then emit qa.pr.approved; tests PASS and automerge is off → approve the PR (`gh pr review <pr> --approve`) and emit qa.pr.approved (ready for a human merge); tests FAIL → request changes (`gh pr review <pr> --request-changes`) with the failing output and emit qa.pr.changes_requested so Dev Clone fixes it. (e) ALWAYS clean up: `git worktree remove` the scratch worktree, leave no orphan branches. Never merge on a failing or un-run suite.\nThe scheduled coverage + bug-hunt capabilities work proactively from the codebase (codebase connector mandatory; without it, report it is not accessible). uc_pr_review is the reactive exception and additionally needs the GitHub connector to merge / approve / request-changes — if GitHub is missing, still run the tests in the worktree and emit the verdict event, but report that the PR action could not be applied.",
       "tool_guidance": "### Codebase connector (primary, mandatory)\n- `list_files()` / `search_code(query)` — locate modules + discover test framework, fixtures, mock patterns\n- `read_file(path)` — full source + existing tests in the same module\n- `get_context_detail(module)` — architecture context to write meaningful tests\n- `run_tests()` — validate newly written tests; returns pass/fail per test + coverage where available\n- `apply_diff(file, diff)` / `file_write` — add new test files following project conventions\n### Memory (mandatory, both capabilities)\n- Read FIRST every run: coverage progress (per-module status, tests written, pending modules, frameworks) and reported-bug signatures (file:line).\n- Write AFTER every run: updated per-module coverage state; new bug findings with stable signatures.\n- This cross-run memory is what makes the work incremental instead of repetitive.\n### Coverage loop\nread memory → scan for untested/low-coverage modules → write tests for the next `max_modules_per_run` → run_tests → persist progress → emit qa.coverage.improved. When all modules meet `coverage_target`, report 'coverage target met this cycle'.\n### Bug-hunt loop\nread memory → scan for defects above `severity_floor` (null derefs, error-handling gaps, edge cases, resource leaks, security) → file each NEW finding as a human-review item → record signature in memory → emit qa.bug.found. When none found, report 'no new issues this cycle' with scanned modules.",
       "error_handling": "Codebase connector offline / not mounted → report 'codebase not accessible' and stop (no value possible — precondition_failed). `run_tests` unavailable → still write tests but mark them UNVALIDATED in memory + the summary; do not count them toward coverage. No untested modules remain → 'coverage target met this cycle' WITH current state (value delivered). No new bugs found → 'no new issues this cycle' WITH scanned modules (value delivered). First run (no memory) → scan from scratch, seed coverage state. Conflicting memory → trust the most recent run's per-module state.",
       "examples": [],
@@ -78,6 +80,44 @@
             }
           ],
           "setup_instructions": "1. Install the Personas CLI or desktop app locally.\n2. Register a codebase at Settings -> Connectors -> Codebase -> Add.\n3. Point it at the repository root. Initial indexing takes 30-90s for most projects.\n4. QA Guardian picks the registered codebase automatically — if you have several, it asks you to choose during adoption."
+        },
+        {
+          "name": "github",
+          "label": "GitHub",
+          "auth_type": "api_key",
+          "role": "vcs",
+          "category": "development",
+          "required": false,
+          "fallback_note": "Without GitHub, uc_pr_review still tests each PR in an isolated worktree and emits its verdict event, but cannot approve / request-changes / enable native auto-merge on the PR itself.",
+          "requires_resource": "repositories",
+          "api_base_url": "https://api.github.com",
+          "credential_fields": [
+            {
+              "key": "personal_access_token",
+              "label": "Personal Access Token",
+              "type": "password",
+              "placeholder": "github_pat_…",
+              "helpText": "Fine-grained PAT with Pull requests (read + write), Contents (read), and Checks (read) scopes on the target repository — used to approve / request-changes / enable auto-merge.",
+              "required": true
+            },
+            {
+              "key": "owner",
+              "label": "Repository owner",
+              "type": "text",
+              "placeholder": "your-org-or-username",
+              "helpText": "GitHub username or organization that owns the target repository.",
+              "required": true
+            },
+            {
+              "key": "repo",
+              "label": "Repository name",
+              "type": "text",
+              "placeholder": "your-repo",
+              "helpText": "Repository slug (the part after owner/ in the GitHub URL).",
+              "required": true
+            }
+          ],
+          "setup_instructions": "1. GitHub -> Settings -> Developer settings -> Personal access tokens -> Fine-grained -> Generate.\n2. Scope to the target repository. Grant Pull requests (rw), Contents (r), Checks (r).\n3. Paste owner, repo name, and PAT above. QA Guardian uses these to approve / request changes / enable native auto-merge on PRs it has tested."
         }
       ],
       "notification_channels_default": [
@@ -102,6 +142,13 @@
           "version": "1.0.0",
           "bindings": {}
         }
+      },
+      {
+        "recipe_ref": {
+          "id": "c0a5e300-4b1d-4c0a-9e30-73a5c0a5e300",
+          "version": "1.0.0",
+          "bindings": {}
+        }
       }
     ],
     "adoption_questions": [
@@ -118,9 +165,9 @@
         "optional": false,
         "allow_custom": true,
         "default": "codebase",
-        "maps_to": "use_cases[uc_coverage_scan].sample_input.target_codebase",
+        "maps_to": "persona.design_context[dev_project_id]",
         "variable_name": "target_codebase",
-        "context": "Required. QA Guardian scans this codebase on a schedule to raise test coverage and find bugs.",
+        "context": "Required. QA Guardian scans this codebase on a schedule to raise test coverage and find bugs, and checks out PRs from it for the uc_pr_review capability. Pins this persona to the selected Dev Tools project (design_context.dev_project_id) so its codebase tools resolve that repo at runtime; the pin survives team disband, matching the rest of the SDLC team.",
         "dimension": "connector",
         "dynamic_source": {
           "service_type": "development",

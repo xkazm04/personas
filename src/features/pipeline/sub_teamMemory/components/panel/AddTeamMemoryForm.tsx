@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { CreateTeamMemoryInput } from '@/lib/bindings/CreateTeamMemoryInput';
 import { IMPORTANCE_MIN, IMPORTANCE_MAX, IMPORTANCE_DEFAULT } from '../../libs/memoryConstants';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const CATEGORIES = ['observation', 'decision', 'context', 'learning'] as const;
@@ -91,14 +92,14 @@ export default function AddTeamMemoryForm({ teamId, onSubmit }: AddTeamMemoryFor
 
         <div className="flex items-center gap-1">
           <span className="typo-body text-foreground">{t.pipeline.importance_label}</span>
-          <input
-            type="range"
+          <Slider
             min={IMPORTANCE_MIN}
             max={IMPORTANCE_MAX}
             value={importance}
-            onChange={(e) => setImportance(Number(e.target.value))}
+            onChange={(v) => setImportance(v)}
+            ariaLabel={t.pipeline.importance_label}
+            showBubble={false}
             className="w-14"
-            style={{ ['--slider-progress' as string]: (importance - IMPORTANCE_MIN) / (IMPORTANCE_MAX - IMPORTANCE_MIN) }}
           />
           <span className="typo-body text-foreground w-3 text-right">{importance}</span>
         </div>

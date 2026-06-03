@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { Button } from '@/features/shared/components/buttons';
+import { Slider } from '@/features/shared/components/forms/Slider';
 import type { TwinDistilledFact } from '@/lib/bindings/TwinDistilledFact';
 import type { TwinCommunication } from '@/lib/bindings/TwinCommunication';
 
@@ -152,14 +153,14 @@ export function DistilledFactsPanel({ twinId }: Props) {
             </label>
             <label className="space-y-1">
               <span className="typo-caption text-foreground">{t.distilled.importanceLabel}</span>
-              <input
-                type="range"
+              <Slider
                 min={1}
                 max={5}
                 step={1}
                 value={draftImportance}
-                onChange={(e) => setDraftImportance(Number(e.target.value))}
-                className="w-full"
+                onChange={(v) => setDraftImportance(v)}
+                ariaLabel={t.distilled.importanceLabel}
+                showBubble={false}
               />
               <span className="block text-[10px] text-foreground text-right">{draftImportance} / 5</span>
             </label>
