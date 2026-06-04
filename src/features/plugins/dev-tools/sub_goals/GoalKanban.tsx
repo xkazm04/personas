@@ -12,6 +12,26 @@ import { GoalStatusBadge } from './GoalStatusBadge';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 import { goalAccentEdgeStyle } from './goalsTheme';
 
+/**
+ * Flatten markdown to a clean single-line preview for the line-clamped card.
+ * The detail drawer renders full markdown; here we only want readable text, so
+ * strip code-span backticks, heading/list/emphasis markers, links→label, and
+ * the "(Promoted from backlog idea …)" provenance footer that bloats
+ * autonomously-generated goal descriptions.
+ */
+function goalPreview(md: string): string {
+  return md
+    .replace(/\n\(Promoted from backlog idea[^)]*\)\s*$/i, '')
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*+]\s+/gm, '')
+    .replace(/(\*\*|__|\*|_|~~)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
 // canonical GOAL_STATUS_META.lane, so the board can't drift from the rest of
@@ -100,7 +120,7 @@ function GoalCard({
         <div className="flex-1 min-w-0">
           <h4 className="typo-card-label truncate">{goal.title}</h4>
           {goal.description && (
-            <p className="text-[11px] text-foreground mt-0.5 line-clamp-2">{goal.description}</p>
+            <p className="text-[11px] text-foreground mt-0.5 line-clamp-2">{goalPreview(goal.description)}</p>
           )}
         </div>
         {onOpen && (

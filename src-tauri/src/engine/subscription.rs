@@ -1687,13 +1687,18 @@ pub struct ManualReviewAutoTriageSubscription {
 struct TriageCandidate {
     id: String,
     severity: String,
+    title: String,
+    description: String,
+    suggested_actions: String,
 }
 
 fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::error::AppError> {
     let conn = pool.get()?;
     let cutoff = format!("-{REVIEW_TRIAGE_GRACE_MINUTES} minutes");
     let mut stmt = conn.prepare(
-        "SELECT id, COALESCE(severity,'medium') FROM persona_manual_reviews
+        "SELECT id, COALESCE(severity,'medium'), COALESCE(title,''), \
+                COALESCE(description,''), COALESCE(suggested_actions,'')
+         FROM persona_manual_reviews
          WHERE status = 'pending' AND created_at < datetime('now', ?1)
          ORDER BY created_at ASC",
     )?;
@@ -1701,9 +1706,54 @@ fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::
         Ok(TriageCandidate {
             id: r.get(0)?,
             severity: r.get(1)?,
+            title: r.get(2)?,
+            description: r.get(3)?,
+            suggested_actions: r.get(4)?,
         })
     })?;
     Ok(rows.filter_map(Result::ok).collect())
+}
+
+/// Business/policy markers — a HARD denylist. A high/critical review whose text
+/// matches ANY of these is NEVER auto-approved unattended; it is a genuine human
+/// decision (PHI/compliance, production config, pricing, irreversible/destructive
+/// change, secrets/credentials). The denylist wins on any overlap with the
+/// safe-technical allowlist below.
+const REVIEW_BUSINESS_POLICY_MARKERS: &[&str] = &[
+    "phi", "hipaa", "baa", "pii", "compliance", "gdpr",
+    "production", "prod deploy", "prod-deploy", "production config", "production-config",
+    "pricing", "price", "payment", "billing",
+    "origin push", "push to origin", "force push", "force-push", "--force",
+    "irreversible", "destructive", "rm -rf", "drop table", "delete all", "purge",
+    "credential", "secret", "api key", "egress",
+];
+
+/// Safe technical-status markers — items the team policy says should NOT be human
+/// review items at all (a red build, a lint failure, a code-review change-request,
+/// a missing dependency/migration, a mis-sequenced handoff). A high/critical
+/// review matching one of these (and NO business/policy marker) is safe to
+/// auto-approve unattended.
+const REVIEW_SAFE_TECHNICAL_MARKERS: &[&str] = &[
+    "lint", "eslint", "tsc", "typecheck", "type error",
+    "red build", "build is red", "build red", "ci red", "ci fail", "build fail",
+    "test fail", "tests fail", "failing test",
+    "request_changes", "request-changes", "request changes", "change-request",
+    "missing dependency", "missing migration", "migration landed", "migration needed",
+    "migration before", "pre-existing lint", "pre-existing", "baseline lint", "stray file",
+    "mis-sequenced", "handoff", "blocked — fix", "blocked - fix",
+    "findings to triage", "review findings", "e2e review",
+];
+
+/// Decide whether a HIGH/critical-severity pending review is safe to auto-approve
+/// unattended. Conservative: the business/policy denylist wins on any overlap, and
+/// anything not recognised as a safe technical-status item stays pending for a
+/// human. Pure + unit-tested.
+fn high_severity_auto_approvable(title: &str, description: &str, suggested_actions: &str) -> bool {
+    let hay = format!("{title}\n{description}\n{suggested_actions}").to_ascii_lowercase();
+    if REVIEW_BUSINESS_POLICY_MARKERS.iter().any(|m| hay.contains(m)) {
+        return false; // genuine business/policy decision — never auto-approve
+    }
+    REVIEW_SAFE_TECHNICAL_MARKERS.iter().any(|m| hay.contains(m))
 }
 
 #[async_trait::async_trait]
@@ -1735,6 +1785,18 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
             return;
         }
 
+        // High/critical auto-approval is a SEPARATE, riskier opt-in: only safe
+        // technical-status items (allowlist) with no business/policy marker
+        // (denylist) are approved; genuine business/policy decisions stay human.
+        let high_enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_REVIEW_TRIAGE_HIGH,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+
         let pool = self.pool.clone();
         let triaged = tokio::task::spawn_blocking(move || {
             let cands = match find_triage_candidates(&pool) {
@@ -1746,21 +1808,33 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
             };
             let mut n = 0usize;
             for c in cands.into_iter().take(REVIEW_TRIAGE_MAX_PER_TICK) {
-                // Conservative: only routine (low/medium) severity is auto-approved;
-                // high/critical stays pending for a human.
                 let sev = c.severity.to_ascii_lowercase();
-                if sev == "high" || sev == "critical" {
-                    continue;
-                }
+                let note = if sev == "high" || sev == "critical" {
+                    // High/critical: approve ONLY when the high tier is enabled AND
+                    // the item is a safe technical-status item with no business/policy
+                    // marker. Everything else (incl. unrecognised high items) stays
+                    // pending for a human.
+                    if !high_enabled
+                        || !high_severity_auto_approvable(
+                            &c.title,
+                            &c.description,
+                            &c.suggested_actions,
+                        )
+                    {
+                        continue;
+                    }
+                    "[auto-triaged — high-severity technical-status item: matched the \
+                     safe-technical allowlist with no business/policy marker; genuine \
+                     business/policy decisions are never auto-approved]"
+                } else {
+                    "[auto-triaged — unattended review policy: routine (low/medium) \
+                     severity auto-approved; feeds the accept→decision learning loop]"
+                };
                 match crate::db::repos::communication::manual_reviews::update_status(
                     &pool,
                     &c.id,
                     crate::db::models::ManualReviewStatus::Approved,
-                    Some(
-                        "[auto-triaged — unattended review policy: routine (low/medium) \
-                         severity auto-approved; feeds the accept→decision learning loop]"
-                            .to_string(),
-                    ),
+                    Some(note.to_string()),
                 ) {
                     Ok(()) => n += 1,
                     Err(e) => {
@@ -1934,6 +2008,111 @@ impl ReactiveSubscription for BacklogToGoalSubscription {
     }
 }
 
+// =============================================================================
+// G7 — Autonomous idea replenishment (last link of the self-sustaining loop)
+// =============================================================================
+
+/// When a goal-managed project is FULLY idle — no open goals AND no pending
+/// backlog ideas — the loop starves: `backlog_to_goal` has nothing to promote
+/// and `goal_advance` nothing to advance. This subscription replenishes the
+/// backlog by running an idea scan (architecture-analyst agent) on ONE such
+/// project per tick. Guardrails: a 20h per-project cooldown via the
+/// `dev_scans` history (scans spawn a paid CLI agent, ~$1-3 / ~6 min), the
+/// quota gate, and the default-OFF `autonomous_idea_scan` setting.
+pub struct IdeaReplenishSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// One fully-idle, scan-cooled project: `(project_id, name)`.
+fn find_replenish_candidate(
+    pool: &DbPool,
+) -> Result<Option<(String, String)>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT dp.id, dp.name FROM dev_projects dp
+         WHERE dp.team_id IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dev_goals g WHERE g.project_id = dp.id
+                             AND g.status NOT IN ('done','completed') AND g.progress < 100)
+           AND NOT EXISTS (SELECT 1 FROM dev_ideas i WHERE i.project_id = dp.id
+                             AND i.status = 'pending')
+           AND NOT EXISTS (SELECT 1 FROM dev_scans s WHERE s.project_id = dp.id
+                             AND s.created_at > datetime('now','-20 hours'))
+         ORDER BY dp.updated_at ASC
+         LIMIT 1",
+    )?;
+    let row = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .filter_map(Result::ok)
+        .next();
+    Ok(row)
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for IdeaReplenishSubscription {
+    fn name(&self) -> &'static str {
+        "idea_replenish"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_IDEA_SCAN,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        // Don't spend on scans while inside a quota-limit window (G1).
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("idea_replenish: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let candidate = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || find_replenish_candidate(&pool))
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .flatten()
+        };
+        let Some((project_id, name)) = candidate else {
+            return;
+        };
+
+        tracing::info!(project_id = %project_id, project = %name, "idea_replenish: project fully idle (no goals, no ideas) — running backlog scan");
+        match crate::commands::infrastructure::idea_scanner::run_scan_core(
+            self.app.clone(),
+            self.pool.clone(),
+            project_id.clone(),
+            vec!["architecture-analyst".to_string()],
+        )
+        .await
+        {
+            Ok(v) => {
+                tracing::info!(project_id = %project_id, scan = %v, "idea_replenish: scan launched");
+            }
+            Err(e) => {
+                tracing::warn!(project_id = %project_id, error = %e, "idea_replenish: scan launch failed");
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Queue drain watchdog — re-drain the execution queue after a quota cooldown
 // ---------------------------------------------------------------------------
@@ -2021,6 +2200,68 @@ mod tests {
         async fn tick(&self) {
             self.tick_count.fetch_add(1, Ordering::Relaxed);
         }
+    }
+
+    #[test]
+    fn test_high_severity_auto_approvable_classifier() {
+        // Safe technical-status items (real stranded examples) -> approvable.
+        assert!(high_severity_auto_approvable(
+            "PR #1 is red — needs migration landed on main before it can merge",
+            "",
+            ""
+        ));
+        assert!(high_severity_auto_approvable(
+            "REQUEST_CHANGES — lint gate fails on new src/lib/lighttrack.ts (17 errors)",
+            "",
+            ""
+        ));
+        assert!(high_severity_auto_approvable(
+            "Release blocked — fix 10 pre-existing lint errors",
+            "",
+            ""
+        ));
+        assert!(high_severity_auto_approvable(
+            "Eligibility Filtering — 4 review findings to triage",
+            "",
+            ""
+        ));
+
+        // Genuine business/policy decisions (real stranded examples) -> NEVER approvable.
+        assert!(!high_severity_auto_approvable(
+            "PHI egress to external observability — needs HIPAA/BAA decision",
+            "",
+            ""
+        ));
+        assert!(!high_severity_auto_approvable(
+            "Release tagged — approve origin push + confirm production-deploy gate",
+            "",
+            ""
+        ));
+        assert!(!high_severity_auto_approvable(
+            "Pricing change for the paid tier",
+            "",
+            ""
+        ));
+
+        // Denylist WINS on overlap: a change-request that also touches production stays human.
+        assert!(!high_severity_auto_approvable(
+            "REQUEST_CHANGES — production config change to prod deploy",
+            "",
+            ""
+        ));
+        // The PII-egress REQUEST_CHANGES variant stays human even though it mentions a code review.
+        assert!(!high_severity_auto_approvable(
+            "Merge gate: telemetry changeset — REQUEST_CHANGES (live customer PII egress)",
+            "",
+            ""
+        ));
+
+        // Unrecognised high-severity item -> stays pending (conservative default).
+        assert!(!high_severity_auto_approvable(
+            "Investigate intermittent customer report",
+            "",
+            ""
+        ));
     }
 
     #[test]

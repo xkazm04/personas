@@ -51,6 +51,9 @@ pub struct CascadeMetrics {
     pub events_failed: u32,
     /// Number of triggers skipped due to cycle detection.
     pub cycles_detected: u32,
+    /// Number of team-handoff triggers suppressed because the source execution
+    /// was an assignment step (the DAG owns the flow — see T1 dual-driver).
+    pub handoffs_suppressed: u32,
     /// Number of triggers that failed to mark as triggered (and were disabled).
     pub mark_failures: u32,
     /// Number of triggers moved to errored state (mark + disable both failed).
@@ -80,6 +83,19 @@ pub struct CascadeMetrics {
 /// `chain_depth` tracks how many chain hops have occurred so far. The initial
 /// caller passes 0. `visited_personas` tracks which persona IDs have already
 /// appeared in this chain to detect cycles.
+/// True when the source execution was spawned by the team-assignment
+/// orchestrator (its input carries `assignment_id` + `step_id` — see
+/// `build_step_input`). Such executions are DAG-driven: the assignment's
+/// `depends_on` graph schedules the next role, so the connection-graph
+/// handoff relay must not double-drive the same work (the 2026-06-03 run
+/// produced competing duplicate PRs from exactly that overlap).
+pub fn input_is_assignment_step(input: Option<&str>) -> bool {
+    input
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(raw).ok())
+        .map(|v| v.get("assignment_id").is_some() && v.get("step_id").is_some())
+        .unwrap_or(false)
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn evaluate_chain_triggers(
     pool: &DbPool,
@@ -90,6 +106,7 @@ pub fn evaluate_chain_triggers(
     chain_depth: u32,
     visited_personas: &HashSet<String>,
     chain_trace_id: Option<&str>,
+    source_is_assignment_step: bool,
 ) -> CascadeMetrics {
     let hop_start = Instant::now();
     let mut metrics = CascadeMetrics {
@@ -153,6 +170,42 @@ pub fn evaluate_chain_triggers(
                 continue;
             }
         };
+
+        // T1 (dual-driver) + T3 (cascade churn): team-handoff edges fire only
+        // for FRESH, non-DAG sources.
+        // - An assignment-step execution is DAG-driven — the orchestrator's
+        //   `depends_on` graph schedules the next role itself; routing the
+        //   handoff too double-drives the same work (two implementers,
+        //   competing PRs).
+        // - A chain execution (depth ≥ 1) firing ITS handoffs spirals into
+        //   multi-hop verification churn (release→docs→release… at depths 2-4
+        //   burned ~$60/day concluding "no action needed"). Handoffs are
+        //   single-hop reactions now — multi-step flow belongs to the DAG.
+        // Named-event subscriptions still route normally in both cases.
+        {
+            let publishes_handoff = config
+                .get("event_type")
+                .and_then(|v| v.as_str())
+                .map(|t| t.starts_with("team_handoff."))
+                .unwrap_or(false);
+            if publishes_handoff && (source_is_assignment_step || chain_depth >= 1) {
+                tracing::info!(
+                    trigger_id = %trigger.id,
+                    source_persona_id = %source_persona_id,
+                    target_persona_id = %trigger.persona_id,
+                    chain_depth,
+                    source_is_assignment_step,
+                    "Chain handoff suppressed: {} (the DAG owns multi-step flow)",
+                    if source_is_assignment_step {
+                        "source execution is an assignment step"
+                    } else {
+                        "handoffs are single-hop — source is already a chain execution"
+                    },
+                );
+                metrics.handoffs_suppressed += 1;
+                continue;
+            }
+        }
 
         // Cycle detection: skip if target persona was already visited in this chain
         if visited_personas.contains(&trigger.persona_id) {
@@ -1012,7 +1065,7 @@ mod tests {
 
         let visited = HashSet::new();
         let metrics =
-            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 0, &visited, None);
+            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 0, &visited, None, false);
 
         assert_eq!(metrics.chain_depth, 0);
         assert_eq!(metrics.triggers_evaluated, 0);
@@ -1057,6 +1110,7 @@ mod tests {
             0,
             &visited,
             Some("trace-1"),
+            false,
         );
 
         assert_eq!(metrics.chain_depth, 0);
@@ -1067,6 +1121,91 @@ mod tests {
         assert_eq!(metrics.cycles_detected, 0);
         // duration_ms should be set (at least 0)
         assert!(metrics.duration_ms < 5000, "duration should be reasonable");
+    }
+
+    #[test]
+    fn test_handoff_suppressed_for_assignment_step_source() {
+        let pool = init_test_db().unwrap();
+        let a = make_persona(&pool, "Agent A");
+        let b = make_persona(&pool, "Agent B");
+        let c = make_persona(&pool, "Agent C");
+
+        // Handoff-wired edge A -> B (event_type "team_handoff.<target>", as
+        // created by wire_team_handoff) — must be suppressed for step sources.
+        let handoff_config = json!({
+            "source_persona_id": a,
+            "event_type": format!("team_handoff.{b}"),
+            "condition": { "type": "success" },
+            "payload_forward": true,
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: b.clone(),
+                trigger_type: "chain".into(),
+                config: Some(handoff_config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+        // A normal (non-handoff) chain trigger A -> C — must still fire.
+        let normal_config = json!({
+            "source_persona_id": a,
+            "event_type": "chain_triggered",
+            "condition": { "type": "success" },
+        })
+        .to_string();
+        trigger_repo::create(
+            &pool,
+            CreateTriggerInput {
+                persona_id: c.clone(),
+                trigger_type: "chain".into(),
+                config: Some(normal_config),
+                enabled: Some(true),
+                use_case_id: None,
+            },
+        )
+        .unwrap();
+
+        // Source is an assignment step → handoff suppressed, normal fires.
+        let visited = HashSet::new();
+        let metrics = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-1", 0, &visited, None, true,
+        );
+        assert_eq!(metrics.triggers_evaluated, 2);
+        assert_eq!(metrics.handoffs_suppressed, 1);
+        assert_eq!(metrics.events_published, 1);
+
+        // Source is NOT a step → both fire, nothing suppressed.
+        let metrics2 = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-2", 0, &visited, None, false,
+        );
+        assert_eq!(metrics2.handoffs_suppressed, 0);
+        assert_eq!(metrics2.events_published, 2);
+
+        // T3: handoffs are single-hop — a chain execution (depth ≥ 1) does not
+        // fire further handoffs, but normal chain triggers still cascade.
+        let metrics3 = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-3", 1, &visited, None, false,
+        );
+        assert_eq!(metrics3.handoffs_suppressed, 1);
+        assert_eq!(metrics3.events_published, 1);
+    }
+
+    #[test]
+    fn test_input_is_assignment_step_detection() {
+        assert!(input_is_assignment_step(Some(
+            r#"{"assignment_id":"a1","step_id":"s1","step_title":"Implement"}"#
+        )));
+        // Chain payloads / plain event payloads are NOT steps.
+        assert!(!input_is_assignment_step(Some(
+            r#"{"_chain_depth":1,"source_persona_id":"p"}"#
+        )));
+        assert!(!input_is_assignment_step(Some(r#"{"assignment_id":"a1"}"#)));
+        assert!(!input_is_assignment_step(Some("not json")));
+        assert!(!input_is_assignment_step(None));
     }
 
     #[test]
@@ -1096,7 +1235,7 @@ mod tests {
         let visited = HashSet::new();
         // Execution failed, so predicate should not match
         let metrics =
-            evaluate_chain_triggers(&pool, &a, "failed", None, "exec-1", 0, &visited, None);
+            evaluate_chain_triggers(&pool, &a, "failed", None, "exec-1", 0, &visited, None, false);
 
         assert_eq!(metrics.triggers_evaluated, 1);
         assert_eq!(metrics.predicates_matched, 0);
@@ -1131,7 +1270,7 @@ mod tests {
         let mut visited = HashSet::new();
         visited.insert(b.clone());
         let metrics =
-            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 1, &visited, None);
+            evaluate_chain_triggers(&pool, &a, "completed", None, "exec-1", 1, &visited, None, false);
 
         assert_eq!(metrics.chain_depth, 1);
         assert_eq!(metrics.triggers_evaluated, 1);
@@ -1155,6 +1294,7 @@ mod tests {
             MAX_CHAIN_DEPTH,
             &visited,
             None,
+            false,
         );
 
         assert_eq!(metrics.chain_depth, MAX_CHAIN_DEPTH);

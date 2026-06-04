@@ -1,0 +1,28 @@
+[
+  {
+    "id": "7a85f523-ca1b-496c-81c6-899dc9a48010",
+    "execution_id": "3db34694-c53d-4e54-9076-9299ed59ee22",
+    "persona_id": "07d58839-4dcf-4061-91f1-5c9191583409",
+    "title": "Code Review verdict: REQUEST_CHANGES on telemetry PII remediation (f793188)",
+    "description": "The PII egress remediation is strong (capture default-off + gated), but redactPII at src/lib/telemetry.ts:46 has a verified bypass: the canonical US phone format '(555) 123-4567' (and '+1 (...)') is NOT redacted because the regex permits only one separator between digits. This leaks when LIGHTTRACK_CAPTURE_IO is enabled. One-line fix ([\\s().-]{0,2}) + a regression test clears it.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-06-01T13:25:35.403837+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "40af75fa-018e-4680-8d72-cd391190f923",
+    "execution_id": "59581609-086c-42f0-ba9e-d184ac8214ad",
+    "persona_id": "58b0e140-5ba9-4ed4-a365-cae8da61cf19",
+    "title": "README pre-0.2.13 drift: Supabase narrative vs Firestore/PGlite + missing billing/auth routes",
+    "description": "While syncing README for 0.2.13, I found drift that predates this release (shipped in 0.2.12) and intentionally did NOT fabricate fixes for it: (1) README still narrates a Supabase auth + DATABASE_URL story, but .env.example now exposes DB_DRIVER, PGLITE_PATH, FIRESTORE_PROJECT_ID, NEXT_PUBLIC_FIREBASE_* and LLM_PROVIDER/Claude-CLI engine vars — suggesting a Firestore/PGlite + switchable-LLM direction. (2) The Routes table is missing /login, /billing, and the Polar webhook endpoint. A focused reconciliation pass is warranted, ideally confirming the actual auth+DB architecture from code before rewriting the narrative.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-06-01T13:35:47.499532200+00:00",
+    "use_case_id": "uc_docs_sync"
+  }
+]

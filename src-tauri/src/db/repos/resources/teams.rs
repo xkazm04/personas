@@ -695,6 +695,22 @@ pub fn has_running_pipeline(pool: &DbPool, team_id: &str) -> Result<bool, AppErr
     })
 }
 
+/// True if a dev project references this team as its canonical `team_id`.
+/// `delete_team` refuses such deletions because `dev_projects.team_id` has no
+/// foreign key — deleting the team would otherwise leave a dangling project→team
+/// pointer (the G8 footgun). Re-point or unlink the project first.
+pub fn is_linked_to_dev_project(pool: &DbPool, team_id: &str) -> Result<bool, AppError> {
+    timed_query!("teams", "teams::is_linked_to_dev_project", {
+        let conn = pool.get()?;
+        let count: i64 = conn.query_row(
+            "SELECT COUNT(*) FROM dev_projects WHERE team_id = ?1",
+            params![team_id],
+            |row| row.get(0),
+        )?;
+        Ok(count > 0)
+    })
+}
+
 pub fn create_pipeline_run(
     pool: &DbPool,
     team_id: &str,

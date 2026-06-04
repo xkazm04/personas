@@ -77,8 +77,16 @@ pub async fn advance_goal(
     let mut personas: Vec<Persona> = Vec::with_capacity(members.len());
     for m in &members {
         if let Ok(p) = persona_repo::get_by_id(pool, &m.persona_id) {
+            // `needs_credentials` is ADVISORY, not a hard block: the runtime
+            // resolves a credential by service-type at execution time (G3 proved
+            // Dev Clone opens real PRs despite the badge). Excluding it dropped the
+            // IMPLEMENTER (Dev Clone) + QA + Release from the candidate pool, which
+            // forced decompose into implementer-less scope→review→docs pipelines —
+            // the root of the "reviews work that was never implemented" failure.
+            // Treat ready + needs_credentials as usable; only genuinely-broken
+            // statuses are excluded.
             if p.enabled
-                && p.setup_status == "ready"
+                && matches!(p.setup_status.as_str(), "ready" | "needs_credentials")
                 && !matches!(p.trust_level, PersonaTrustLevel::Revoked)
             {
                 personas.push(p);
@@ -103,10 +111,39 @@ pub async fn advance_goal(
         .filter(|i| !i.done)
         .collect();
 
+    // Both step sources chain LINEARLY: each step `depends_on` the previous
+    // one. The SDLC pipeline a goal decomposes into is inherently ordered
+    // (scope → implement → review → security → docs); without dependencies the
+    // orchestrator launched every step at once, so reviewers/security/docs ran
+    // before — or instead of — the implementation and concluded
+    // `precondition_failed` against work that did not exist yet. A forward-only
+    // chain makes the orchestrator gate each step on its predecessor.
+    let chain_dep = |idx: usize| -> Option<Vec<i32>> {
+        if idx == 0 {
+            None
+        } else {
+            Some(vec![idx as i32 - 1])
+        }
+    };
+
+    // The implementation step MUST run on the engineer / Dev Clone. The decompose
+    // LLM sometimes suggests the architect for it (architects plan, they don't
+    // code) and the orchestrator honors a pre-assigned persona verbatim — which
+    // would re-create the funnel loss the implement step exists to close. Pin any
+    // implement step to the team's engineer deterministically.
+    let engineer_id: Option<String> = personas
+        .iter()
+        .find(|p| {
+            p.template_category.as_deref() == Some("dev-clone")
+                || p.name.to_ascii_lowercase().contains("dev clone")
+        })
+        .map(|p| p.id.clone());
+
     let steps: Vec<CreateTeamAssignmentStepInput> = if !open_items.is_empty() {
         open_items
             .iter()
-            .map(|it| CreateTeamAssignmentStepInput {
+            .enumerate()
+            .map(|(idx, it)| CreateTeamAssignmentStepInput {
                 // Title verbatim — the orchestrator's close-loop matches it to
                 // check the to-do off when the step completes.
                 title: it.title.clone(),
@@ -116,7 +153,7 @@ pub async fn advance_goal(
                 )),
                 assigned_persona_id: None,
                 assigned_use_case_id: None,
-                depends_on_indices: None,
+                depends_on_indices: chain_dep(idx),
             })
             .collect()
     } else {
@@ -129,18 +166,44 @@ pub async fn advance_goal(
         }
         proposed
             .into_iter()
-            .map(|p| CreateTeamAssignmentStepInput {
-                title: p.title,
-                description: if p.description.trim().is_empty() {
+            .enumerate()
+            .map(|(idx, p)| {
+                let is_impl = p.title.to_ascii_lowercase().contains("implement");
+                let description = if p.description.trim().is_empty() {
                     None
                 } else {
                     Some(p.description)
-                },
-                assigned_persona_id: p.suggested_persona_id,
-                assigned_use_case_id: p.suggested_use_case_id,
-                depends_on_indices: None,
+                };
+                // Implement step → engineer (clear the LLM's use-case suggestion so
+                // the orchestrator scopes the engineer's own capability). Otherwise
+                // honor the decompose suggestion.
+                let (assigned_persona_id, assigned_use_case_id) =
+                    if is_impl && engineer_id.is_some() {
+                        (engineer_id.clone(), None)
+                    } else {
+                        (p.suggested_persona_id, p.suggested_use_case_id)
+                    };
+                CreateTeamAssignmentStepInput {
+                    title: p.title,
+                    description,
+                    assigned_persona_id,
+                    assigned_use_case_id,
+                    depends_on_indices: chain_dep(idx),
+                }
             })
             .collect()
+    };
+
+    // T4: a decomposed goal has no authored to-dos, so the Board card shows an
+    // empty checklist and progress only jumps 0→100 at the end. Mirror the
+    // decomposed steps into `dev_goal_items` — the per-step close-loop checks
+    // them off by title as the team works, and a future re-advance of this
+    // goal takes the open-items path verbatim (continuity). The open-items
+    // path already HAS items; never mirror twice.
+    let mirror_todo_titles: Vec<String> = if open_items.is_empty() {
+        steps.iter().map(|s| s.title.clone()).collect()
+    } else {
+        Vec::new()
     };
 
     let input = CreateTeamAssignmentInput {
@@ -157,6 +220,12 @@ pub async fn advance_goal(
         steps,
     };
     let assignment = assignment_repo::create(pool, input)?;
+
+    for title in &mirror_todo_titles {
+        if let Err(e) = dev_tools_repo::create_goal_item(pool, goal_id, title) {
+            tracing::warn!(goal_id, error = %e, "goal_advance: failed to mirror step into goal to-do");
+        }
+    }
 
     orchestrator::run_assignment(
         Arc::new(pool.clone()),

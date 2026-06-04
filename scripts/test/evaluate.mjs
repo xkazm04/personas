@@ -69,9 +69,14 @@ function deliveredIncrement(repoRoot, baseHead) {
   if (!repoRoot || !baseHead) return { delivered: false, reason: 'no repo/base ref' };
   const git = (args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).trim();
   try {
-    const master = ['master', 'main'].map((b) => { try { return git(['rev-parse', '--verify', b]); } catch { return null; } }).find(Boolean);
-    if (!master) return { delivered: false, reason: 'no master/main branch' };
-    if (master === baseHead) return { delivered: false, reason: 'master did not advance (work likely on an un-merged dev-clone branch)' };
+    // Automerge lands the increment on ORIGIN (GitHub), and the local checkout
+    // is never pulled after the run — so local main/master stays at the pre-run
+    // head and would read as "did not advance". Fetch + check the REMOTE-tracking
+    // branch to see the merged state (fall back to local refs when offline).
+    try { git(['fetch', '--quiet', 'origin']); } catch { /* offline → local refs */ }
+    const master = ['origin/main', 'origin/master', 'main', 'master'].map((b) => { try { return git(['rev-parse', '--verify', b]); } catch { return null; } }).find(Boolean);
+    if (!master) return { delivered: false, reason: 'no main/master branch' };
+    if (master === baseHead) return { delivered: false, reason: 'base branch did not advance (work likely on an un-merged dev-clone branch)' };
     const files = git(['diff', '--name-only', `${baseHead}..${master}`]).split('\n').map((s) => s.trim()).filter(Boolean);
     // a real increment = source/test files, excluding pure docs + version/changelog churn
     const sourceish = files.filter((f) =>

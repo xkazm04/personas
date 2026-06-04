@@ -179,7 +179,9 @@
     "persona_meta": {
       "name": "T: QA Guardian",
       "icon": "ShieldCheck",
-      "color": "#10B981"
+      "color": "#10B981",
+      "max_concurrent": 4,
+      "timeout_ms": 1200000
     }
   }
 }

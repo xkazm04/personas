@@ -1,0 +1,26 @@
+{
+  "runId": "run-2026-06-01T13-42-17-medical_bill_stabilization_triage",
+  "team": "SDLC — Medical Bill Negotiator",
+  "teamId": "ee73dd94-4267-4735-9f5d-87c04e385aea",
+  "sinceIso": "2026-06-01T13:41:17.376Z",
+  "counts": {
+    "executions": 7,
+    "executionsByStatus": {
+      "completed": 6,
+      "failed": 1
+    },
+    "personasExecuted": 7,
+    "reviews": 3,
+    "memories": 12,
+    "events": 17,
+    "eventsByStatus": {
+      "delivered": 17
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "incidents": 0,
+    "logsCopied": 7
+  },
+  "cost_usd": 4.12125075,
+  "repoDiffBytes": 121204
+}

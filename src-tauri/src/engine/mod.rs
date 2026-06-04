@@ -147,6 +147,7 @@ pub mod protocol;
 pub mod provider;
 pub mod quality_gate;
 pub mod queue;
+pub mod resource_governor;
 pub mod rate_limiter;
 pub mod recipe_eligibility;
 pub mod recipe_matcher;
@@ -477,6 +478,7 @@ impl ExecutionEngine {
         // change). Defensively clamp so a corrupt/out-of-range stored value
         // falls back to the documented default. No pool (headless/test) keeps
         // the GLOBAL_MAX_CONCURRENT const fallback.
+        let spawn_governor = pool.is_some();
         let mut tracker = ConcurrencyTracker::new();
         if let Some(p) = pool.as_ref() {
             let configured = crate::db::repos::core::settings::get(
@@ -498,8 +500,18 @@ impl ExecutionEngine {
             Some(p) => Arc::new(failover::ProviderCircuitBreaker::with_persistence(p)),
             None => Arc::new(failover::ProviderCircuitBreaker::new()),
         };
+        let tracker = Arc::new(Mutex::new(tracker));
+        // Resource-aware admission governor: pause new admissions under high host
+        // load so we don't pile executions onto a stressed machine and risk an
+        // OOM kill. Real-app context only (a pool exists); headless/test skips it.
+        if spawn_governor {
+            let governor_tracker = tracker.clone();
+            tauri::async_runtime::spawn(async move {
+                resource_governor::run(governor_tracker).await;
+            });
+        }
         Self {
-            tracker: Arc::new(Mutex::new(tracker)),
+            tracker,
             tasks: Arc::new(Mutex::new(HashMap::new())),
             child_pids: Arc::new(Mutex::new(HashMap::new())),
             cancelled_flags: Arc::new(Mutex::new(HashMap::new())),
@@ -1976,9 +1988,14 @@ async fn handle_execution_result(
 
     // Chain triggers -- extract chain depth/visited/trace_id from execution's input_data
     // (propagated via chain event payloads to prevent infinite cycles)
-    let (chain_depth, mut visited, existing_chain_trace_id) = exec_repo::get_by_id(pool, exec_id)
+    let source_input = exec_repo::get_by_id(pool, exec_id)
         .ok()
-        .and_then(|exec| exec.input_data)
+        .and_then(|exec| exec.input_data);
+    // T1 (dual-driver): step executions are DAG-driven — suppress their
+    // team-handoff chain triggers so the connection graph doesn't double-drive
+    // the same work the orchestrator already schedules.
+    let source_is_assignment_step = chain::input_is_assignment_step(source_input.as_deref());
+    let (chain_depth, mut visited, existing_chain_trace_id) = source_input
         .map(|input| chain::extract_chain_metadata(Some(&input)))
         .unwrap_or_default();
     visited.insert(persona_id.to_string());
@@ -1996,6 +2013,7 @@ async fn handle_execution_result(
         chain_depth,
         &visited,
         chain_trace_id.as_deref(),
+        source_is_assignment_step,
     );
     if let Some(ref sched) = scheduler {
         sched.record_chain_cascade(&cascade_metrics);
@@ -2178,6 +2196,23 @@ fn check_and_apply_circuit_breaker(pool: &DbPool, app: &AppHandle, persona_id: &
         }
     };
     if !persona.enabled {
+        return;
+    }
+
+    // Team-cascade members idle/no-op as part of NORMAL flow — a release with
+    // nothing new to ship, a reviewer waiting on an implementation. That's a
+    // legitimate idle, not a wastefully-spinning standalone persona, and
+    // DISABLING one silently breaks the whole team's handoff chain (observed:
+    // Medical Bill's release auto-disabled after consecutive no-op releases,
+    // stalling the team and aborting the next run at the health-lint gate). The
+    // breaker exists for self-scheduled standalone personas, so skip it for
+    // anything bound to a team.
+    if persona.home_team_id.is_some() {
+        tracing::debug!(
+            persona_id = %persona.id,
+            persona_name = %persona.name,
+            "circuit breaker: skipped for team member (no-ops are normal cascade flow)"
+        );
         return;
     }
 
@@ -3439,17 +3474,21 @@ fn spawn_delayed_retry(
             // (`create_retry` doesn't copy input_data — the retry row starts
             // with NULL input). Fall back to the retry exec's own input_data
             // for the rare case the original was lost.
-            let (chain_depth, mut visited, existing_chain_trace_id) =
-                exec_repo::get_by_id(&pool, &original_exec_id)
-                    .ok()
-                    .and_then(|exec| exec.input_data)
-                    .or_else(|| {
-                        exec_repo::get_by_id(&pool, &exec_id)
-                            .ok()
-                            .and_then(|exec| exec.input_data)
-                    })
-                    .map(|input| chain::extract_chain_metadata(Some(&input)))
-                    .unwrap_or_default();
+            let source_input = exec_repo::get_by_id(&pool, &original_exec_id)
+                .ok()
+                .and_then(|exec| exec.input_data)
+                .or_else(|| {
+                    exec_repo::get_by_id(&pool, &exec_id)
+                        .ok()
+                        .and_then(|exec| exec.input_data)
+                });
+            // T1 (dual-driver): see handle_execution_result — same suppression
+            // on the retry path.
+            let source_is_assignment_step =
+                chain::input_is_assignment_step(source_input.as_deref());
+            let (chain_depth, mut visited, existing_chain_trace_id) = source_input
+                .map(|input| chain::extract_chain_metadata(Some(&input)))
+                .unwrap_or_default();
             visited.insert(persona_id.clone());
             let chain_trace_id =
                 existing_chain_trace_id.or_else(|| result.trace_id.clone());
@@ -3463,6 +3502,7 @@ fn spawn_delayed_retry(
                 chain_depth,
                 &visited,
                 chain_trace_id.as_deref(),
+                source_is_assignment_step,
             );
             // Best-effort metrics recording — same as the regular path
             // (`handle_execution_result`) does when a scheduler is present.

@@ -41,6 +41,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::time::{sleep, Duration};
 
 use crate::db::models::{Persona, PersonaTrustLevel, TeamAssignmentStep};
+use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::orchestration::team_assignments as assignment_repo;
@@ -223,8 +224,124 @@ pub fn auto_resume_retryable_steps(
         assignment_repo::update_step_status(&pool, sid, "pending", None, None)?;
         assignment_repo::increment_step_retry(&pool, sid)?;
     }
+    // F1: the failed step's dependents were cascade-skipped at failure time —
+    // resuming only the failed step would leave the pipeline tail (review /
+    // QA-merge) permanently skipped, so the assignment completes WITHOUT its
+    // merge gate (observed: implement retried fine, QA never ran). Restore the
+    // skipped subtree too (cascade-skips only — user skips are never touched).
+    let roots: HashSet<String> = step_ids.iter().cloned().collect();
+    match restore_cascade_skipped_dependents(&pool, assignment_id, &roots) {
+        Ok(n) if n > 0 => {
+            tracing::info!(assignment_id, restored = n, "auto-resume: restored cascade-skipped dependents");
+        }
+        Err(e) => {
+            tracing::warn!(assignment_id, error = %e, "auto-resume: failed to restore skipped dependents");
+        }
+        _ => {}
+    }
     resume_assignment(pool, app, engine, embedding_manager, assignment_id.to_string());
     Ok(())
+}
+
+/// Restore CASCADE-skipped dependents of the given root steps, transitively.
+/// Cascade-skips carry the marker error_message "Dependency was skipped or
+/// failed" — user-intervention skips don't and are never touched. Returns how
+/// many steps went back to `pending`.
+fn restore_cascade_skipped_dependents(
+    pool: &DbPool,
+    assignment_id: &str,
+    roots: &HashSet<String>,
+) -> Result<usize, AppError> {
+    let steps = assignment_repo::list_steps(pool, assignment_id)?;
+    let mut restored_ids: HashSet<String> = roots.clone();
+    let mut restored = 0usize;
+    loop {
+        let mut changed = false;
+        for s in &steps {
+            if restored_ids.contains(&s.id) || s.status != "skipped" {
+                continue;
+            }
+            if s.error_message.as_deref() != Some("Dependency was skipped or failed") {
+                continue;
+            }
+            if parse_depends_on(s.depends_on.as_deref())
+                .iter()
+                .any(|d| restored_ids.contains(d))
+            {
+                assignment_repo::update_step_status(pool, &s.id, "pending", None, None)?;
+                restored_ids.insert(s.id.clone());
+                restored += 1;
+                changed = true;
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    Ok(restored)
+}
+
+/// Startup orphan-recovery (V8): re-attach orchestrator tick tasks to
+/// assignments that were `running`/`queued` when the app last exited. Their
+/// tokio tasks died with the process, leaving `matching`/`running` steps
+/// pointing at executions the startup recovery already failed — without
+/// re-attachment the assignment wedges forever. The orphaned steps' work never
+/// produced a result, so they simply go back to `pending` (with a note), any
+/// cascade-skipped dependents are restored, and `run_assignment` is re-spawned
+/// (an assignment whose steps are all terminal just gets finalized by its
+/// first tick).
+pub fn recover_orphaned_assignments(
+    pool: Arc<DbPool>,
+    app: AppHandle,
+    engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
+) {
+    let stale = match assignment_repo::list_active(&pool) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(error = %e, "assignment orphan-recovery: query failed");
+            return;
+        }
+    };
+    if stale.is_empty() {
+        return;
+    }
+    for a in stale {
+        let mut roots: HashSet<String> = HashSet::new();
+        if let Ok(steps) = assignment_repo::list_steps(&pool, &a.id) {
+            for s in steps
+                .iter()
+                .filter(|s| matches!(s.status.as_str(), "matching" | "running"))
+            {
+                if assignment_repo::update_step_status(
+                    &pool,
+                    &s.id,
+                    "pending",
+                    Some("App restarted while step was running — re-queued"),
+                    None,
+                )
+                .is_ok()
+                {
+                    roots.insert(s.id.clone());
+                }
+            }
+        }
+        let restored = restore_cascade_skipped_dependents(&pool, &a.id, &roots).unwrap_or(0);
+        tracing::info!(
+            assignment_id = %a.id,
+            title = %a.title,
+            requeued_steps = roots.len(),
+            restored_skipped = restored,
+            "assignment orphan-recovery: re-attaching tick task"
+        );
+        run_assignment(
+            pool.clone(),
+            app.clone(),
+            engine.clone(),
+            embedding_manager.clone(),
+            a.id,
+        );
+    }
 }
 
 /// Resume an assignment from `awaiting_review`. Restarts the tick task.
@@ -483,7 +600,12 @@ async fn run_step(
     }
 
     // Resolve description into input_data so the persona gets meaningful context.
-    let input_payload = build_step_input(&step, use_case_id.as_deref());
+    // T2 (context flow): `depends_on` gives ORDERING only — without forwarding
+    // what the predecessors actually produced, a reviewer/QA step must
+    // rediscover the implementer's work from repo state and can pick the wrong
+    // PR. Forward each direct predecessor's output_summary (capped).
+    let predecessor_outputs = collect_predecessor_outputs(pool, &step);
+    let input_payload = build_step_input(&step, use_case_id.as_deref(), &predecessor_outputs);
     let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
 
     let exec = exec_repo::create(
@@ -523,10 +645,46 @@ async fn run_step(
         let execution = exec_repo::get_by_id(pool, &exec.id)?;
         match execution.status.as_str() {
             "completed" => {
-                let summary = execution
-                    .output_data
-                    .as_deref()
-                    .map(|s| s.chars().take(2000).collect::<String>());
+                // Tail, not head: the execution's verdict / business outcome
+                // lands at the END of the output stream — the head is the
+                // narrative opening ("I'll start by orienting…"), which made
+                // forwarded predecessor context and the goal drawer's step
+                // output near-useless.
+                let summary = execution.output_data.as_deref().map(|s| {
+                    let chars: Vec<char> = s.chars().collect();
+                    let start = chars.len().saturating_sub(2000);
+                    chars[start..].iter().collect::<String>()
+                });
+
+                // V1/V2 (QA fix loop): a "completed" QA execution that emitted
+                // `qa.pr.changes_requested` is NOT a done step — it's a bounce.
+                // Re-queue the implementer + QA for another round (capped),
+                // so the assignment can only complete on a clean QA pass and
+                // a goal never counts "done" with its PR stranded open.
+                if step_emitted_changes_requested(pool, &persona_id, &execution.created_at) {
+                    if step.retry_count < MAX_QA_FIX_ROUNDS {
+                        if trigger_qa_rework(pool, &step, summary.as_deref()).is_ok() {
+                            emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                            return Ok(());
+                        }
+                        // fall through to plain done when rework wasn't possible
+                    } else {
+                        let msg = format!(
+                            "QA requested changes {} times — fix-loop cap reached; human review required",
+                            step.retry_count
+                        );
+                        assignment_repo::update_step_status(
+                            pool,
+                            &step.id,
+                            "failed",
+                            Some(&msg),
+                            summary.as_deref(),
+                        )?;
+                        emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                        return Ok(());
+                    }
+                }
+
                 assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
                 record_assignment_goal_signal(
@@ -536,6 +694,31 @@ async fn run_step(
                     "team_step",
                     summary.as_deref().or(Some(step.title.as_str())),
                 );
+                // T4 (live progress): a goal-linked step that finishes checks
+                // its matching to-do off NOW and recomputes the goal's progress
+                // incrementally — Board/Portfolio no longer sit at 0% until the
+                // whole assignment completes. Same title-match + resolver the
+                // assignment-done close-loop uses; manual overrides still win
+                // (the resolver never silently regresses). Best-effort.
+                if let Some(gid) = goal_id.as_deref() {
+                    if let Ok(items) = crate::db::repos::dev_tools::list_goal_items(pool, gid) {
+                        if let Some(it) =
+                            items.iter().find(|i| !i.done && i.title == step.title)
+                        {
+                            let _ = crate::db::repos::dev_tools::update_goal_item(
+                                pool,
+                                &it.id,
+                                None,
+                                Some(true),
+                            );
+                        }
+                    }
+                    if let Err(e) =
+                        crate::db::repos::dev_tools::apply_resolved_goal_progress(pool, gid)
+                    {
+                        tracing::debug!(goal_id = %gid, error = %e, "per-step goal-progress update failed");
+                    }
+                }
                 return Ok(());
             }
             "failed" | "cancelled" => {
@@ -577,7 +760,12 @@ fn check_persona_eligible(persona: &Persona) -> Result<(), String> {
     if !persona.enabled {
         return Err("disabled".into());
     }
-    if persona.setup_status != "ready" {
+    // `needs_credentials` is ADVISORY, not a hard block: the runtime resolves a
+    // credential by service-type at execution (G3 proved Dev Clone opens real PRs
+    // despite the badge). Rejecting it here failed every assignment-driven Dev
+    // Clone / QA / Release step pre-flight (cascade-skipping the rest) — mirror of
+    // the goal_advance candidate filter. Treat ready + needs_credentials as usable.
+    if !matches!(persona.setup_status.as_str(), "ready" | "needs_credentials") {
         return Err(format!("setup_status={}", persona.setup_status));
     }
     if matches!(persona.trust_level, PersonaTrustLevel::Revoked) {
@@ -586,14 +774,213 @@ fn check_persona_eligible(persona: &Persona) -> Result<(), String> {
     Ok(())
 }
 
-fn build_step_input(step: &TeamAssignmentStep, use_case_id: Option<&str>) -> serde_json::Value {
-    json!({
+/// Max chars of a single predecessor output forwarded into a step's input.
+/// Summaries are typically 0.5–2KB; the cap keeps a long chain from bloating
+/// the prompt while preserving PR URLs/branches and the gist of the work.
+const PREDECESSOR_OUTPUT_MAX_CHARS: usize = 1500;
+
+/// V1/V2 (QA fix loop): how many `qa.pr.changes_requested` rounds a step pair
+/// gets before the loop escalates to a human. Round counting lives on the QA
+/// step's `retry_count`.
+const MAX_QA_FIX_ROUNDS: i32 = 2;
+
+/// Marker prefix written into a step's `error_message` when it is reset for
+/// rework; `build_step_input` forwards anything carrying it as
+/// `rework_feedback` so the re-run acts on the QA verdict instead of starting
+/// blind.
+const REWORK_MARKER: &str = "REWORK — QA requested changes: ";
+
+/// V1/V2: did this step's execution emit `qa.pr.changes_requested` during its
+/// run window? `persona_events.source_id` stores the EMITTING persona, so the
+/// window is bounded by the execution's `created_at` (per-run precise — a
+/// step's `started_at` survives resets and would leak prior rounds' events).
+fn step_emitted_changes_requested(pool: &DbPool, persona_id: &str, exec_created_at: &str) -> bool {
+    event_repo::count_by_type_and_source_since(
+        pool,
+        "qa.pr.changes_requested",
+        persona_id,
+        exec_created_at,
+    )
+    .map(|n| n > 0)
+    .unwrap_or(false)
+}
+
+/// V1 (the fix loop): a QA step bounced the PR. Reset the work for another
+/// round instead of letting "done" swallow the verdict:
+/// - every DIRECT `depends_on` predecessor that already ran goes back to
+///   `pending`, carrying the QA verdict as a `REWORK` marker (forwarded into
+///   its re-run input as `rework_feedback`);
+/// - the QA step itself goes back to `pending` too — the DAG's ordering
+///   re-runs implementer first, QA after, automatically;
+/// - the QA step's `retry_count` counts the rounds (capped by the caller).
+///
+/// Before this, all 13 `qa.pr.changes_requested` events across the campaign
+/// produced ZERO re-works (nothing subscribes to the event and feedback edges
+/// are never handoff-wired) — every bounced PR stranded open while the goal
+/// was still marked done.
+fn trigger_qa_rework(
+    pool: &DbPool,
+    qa_step: &TeamAssignmentStep,
+    qa_summary: Option<&str>,
+) -> Result<(), AppError> {
+    let dep_ids = parse_depends_on(qa_step.depends_on.as_deref());
+    let steps = assignment_repo::list_steps(pool, &qa_step.assignment_id)?;
+
+    let verdict: String = qa_summary
+        .unwrap_or("(no QA summary captured)")
+        .chars()
+        .take(1200)
+        .collect();
+    let rework_msg = format!("{REWORK_MARKER}{verdict}");
+
+    let mut reset = 0usize;
+    for pred in steps
+        .iter()
+        .filter(|s| dep_ids.iter().any(|d| d == &s.id) && s.status == "done")
+    {
+        assignment_repo::update_step_status(pool, &pred.id, "pending", Some(&rework_msg), None)?;
+        reset += 1;
+    }
+    // No predecessor to redo (shouldn't happen in a chained pipeline) — leave
+    // the step done rather than wedging the assignment on an unrunnable loop.
+    if reset == 0 {
+        tracing::warn!(
+            step_id = %qa_step.id,
+            assignment_id = %qa_step.assignment_id,
+            "qa rework: changes_requested but no done predecessor to reset — leaving step done"
+        );
+        return Err(AppError::Internal("no predecessor to rework".into()));
+    }
+
+    // Re-queue the QA step itself (keeps its verdict as output_summary) and
+    // count the round on its retry counter.
+    assignment_repo::update_step_status(pool, &qa_step.id, "pending", None, qa_summary)?;
+    assignment_repo::increment_step_retry(pool, &qa_step.id)?;
+
+    // T6 (learning loop): every bounce is a durable lesson — write it to the
+    // shared team ledger as a `constraint` so future increments avoid the same
+    // failure (the ledger's top-N digest is injected into every member's
+    // prompt). The round number keeps repeat bounces distinct. Best-effort.
+    if let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) {
+        let lesson: String = verdict.chars().take(800).collect();
+        let tm = crate::db::models::CreateTeamMemoryInput {
+            team_id: assignment.team_id.clone(),
+            run_id: None,
+            member_id: None,
+            persona_id: qa_step.assigned_persona_id.clone(),
+            title: format!(
+                "QA bounce (round {}): {}",
+                qa_step.retry_count + 1,
+                assignment.title
+            ),
+            content: format!(
+                "QA requested changes on this increment's PR. Verdict: {lesson}"
+            ),
+            category: Some("constraint".to_string()),
+            importance: Some(7),
+            tags: Some("qa,changes_requested".to_string()),
+        };
+        if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
+            tracing::warn!(step_id = %qa_step.id, error = %e, "qa rework: failed to write bounce lesson to team ledger");
+        }
+    }
+    assignment_repo::insert_event(
+        pool,
+        &qa_step.assignment_id,
+        Some(&qa_step.id),
+        "qa_changes_requested_rework",
+        Some(
+            &json!({
+                "round": qa_step.retry_count + 1,
+                "predecessors_reset": reset,
+            })
+            .to_string(),
+        ),
+    )?;
+    tracing::info!(
+        step_id = %qa_step.id,
+        assignment_id = %qa_step.assignment_id,
+        round = qa_step.retry_count + 1,
+        predecessors_reset = reset,
+        "qa rework: changes_requested — reset implementer + QA step for another round"
+    );
+    Ok(())
+}
+
+/// Load the outputs of the steps this step `depends_on` (direct predecessors
+/// only), in step order, for forwarding into the step input. Best-effort: a
+/// repo error or a predecessor without an output simply contributes nothing.
+fn collect_predecessor_outputs(
+    pool: &DbPool,
+    step: &TeamAssignmentStep,
+) -> Vec<serde_json::Value> {
+    let dep_ids = parse_depends_on(step.depends_on.as_deref());
+    if dep_ids.is_empty() {
+        return Vec::new();
+    }
+    let steps = match assignment_repo::list_steps(pool, &step.assignment_id) {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    steps
+        .into_iter()
+        .filter(|s| dep_ids.iter().any(|d| d == &s.id))
+        .filter_map(|s| {
+            let summary = s
+                .output_summary
+                .as_deref()
+                .map(str::trim)
+                .filter(|t| !t.is_empty())?
+                .to_string();
+            let total_chars = summary.chars().count();
+            let mut forwarded: String =
+                summary.chars().take(PREDECESSOR_OUTPUT_MAX_CHARS).collect();
+            if total_chars > PREDECESSOR_OUTPUT_MAX_CHARS {
+                forwarded.push_str(" …[truncated]");
+            }
+            Some(json!({
+                "step_title": s.title,
+                "status": s.status,
+                "output_summary": forwarded,
+            }))
+        })
+        .collect()
+}
+
+fn build_step_input(
+    step: &TeamAssignmentStep,
+    use_case_id: Option<&str>,
+    predecessor_outputs: &[serde_json::Value],
+) -> serde_json::Value {
+    let mut input = json!({
         "assignment_id": step.assignment_id,
         "step_id": step.id,
         "use_case_id": use_case_id,
         "step_title": step.title,
         "step_description": step.description,
-    })
+    });
+    // What the steps this one depends_on produced — the reviewer/QA/docs step
+    // acts on THIS work (PR URL, branch, what was done), not a fresh discovery.
+    if !predecessor_outputs.is_empty() {
+        input["predecessor_outputs"] = serde_json::Value::Array(predecessor_outputs.to_vec());
+    }
+    // V1 (QA fix loop): a step reset for rework carries the QA verdict in its
+    // error_message — surface it so the re-run FIXES the bounced PR (push to
+    // the same branch) instead of starting a fresh implementation.
+    if let Some(feedback) = step
+        .error_message
+        .as_deref()
+        .filter(|m| m.starts_with(REWORK_MARKER))
+    {
+        input["rework_feedback"] = serde_json::Value::String(feedback.to_string());
+        input["rework_instruction"] = serde_json::Value::String(
+            "A previous round of this step opened a PR that QA bounced (changes requested). \
+             Address the QA feedback above by FIXING the existing PR branch (push amendments \
+             to the same branch / PR) — do NOT open a new PR or re-implement from scratch."
+                .into(),
+        );
+    }
+    input
 }
 
 // ----------------------------------------------------------------------------

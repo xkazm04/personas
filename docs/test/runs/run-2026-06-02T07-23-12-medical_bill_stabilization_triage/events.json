@@ -1,0 +1,222 @@
+[
+  {
+    "id": "b39d29d1-a1bf-47c2-abeb-406c63b95abc",
+    "event_type": "architecture.analysis.completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "300e2d99-1f31-4fd7-855b-5eaacb0b7bf6",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:27:42.520851400+00:00",
+    "created_at": "2026-06-02T07:27:41.831993500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "c9209ae3-6c39-4562-8bd2-881f0916045e",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Solution_Architect",
+    "source_id": "300e2d99-1f31-4fd7-855b-5eaacb0b7bf6",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:27:42.521079300+00:00",
+    "created_at": "2026-06-02T07:27:41.833774200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "3f4261be-f345-4ae6-8ec7-fd02cc7a8164",
+    "event_type": "team_handoff.7b95ec9e-9105-46c6-b217-68d7f6811b0f",
+    "source_type": "chain",
+    "source_id": "43f23c0c-006e-4251-8aa6-24665181945b",
+    "target_persona_id": "7b95ec9e-9105-46c6-b217-68d7f6811b0f",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:27:42.523815700+00:00",
+    "created_at": "2026-06-02T07:27:42.151100300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "7455f41d-ec33-4e73-bb34-534dc8a6fa65",
+    "event_type": "team_handoff.26cb4689-a987-436b-9f5b-99bcf2fb2f10",
+    "source_type": "chain",
+    "source_id": "d3681109-7298-488d-8b34-d79a87d95250",
+    "target_persona_id": "26cb4689-a987-436b-9f5b-99bcf2fb2f10",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:27:42.525618600+00:00",
+    "created_at": "2026-06-02T07:27:42.155073+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "dd88f008-e447-486c-9a1c-1bfdb39efd37",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Visual_Brand_Asset_Factory",
+    "source_id": "7b95ec9e-9105-46c6-b217-68d7f6811b0f",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:28:22.508139+00:00",
+    "created_at": "2026-06-02T07:28:20.982687100+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "4664cf45-d3a5-4dba-b1fd-d36b79082224",
+    "event_type": "dev-clone.pr.blocked",
+    "source_type": "persona:T:_Dev_Clone",
+    "source_id": "26cb4689-a987-436b-9f5b-99bcf2fb2f10",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:33:08.523347100+00:00",
+    "created_at": "2026-06-02T07:33:07.284541700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "ef37fad5-97ce-4a6a-8e8b-368480015afe",
+    "event_type": "team_handoff.29fa443d-d25a-402f-98de-137459bb0e6f",
+    "source_type": "chain",
+    "source_id": "6620c16d-68c8-4b6e-9f23-08d7cd517539",
+    "target_persona_id": "29fa443d-d25a-402f-98de-137459bb0e6f",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:33:08.526362500+00:00",
+    "created_at": "2026-06-02T07:33:07.894255500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "98ca536c-8448-4e61-b07a-e59858f053f1",
+    "event_type": "team_handoff.7cf556ae-d197-470b-90b2-59e62f093e8e",
+    "source_type": "chain",
+    "source_id": "142e15d7-c9fd-459c-bb8d-c5281698deaf",
+    "target_persona_id": "7cf556ae-d197-470b-90b2-59e62f093e8e",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:33:08.528105100+00:00",
+    "created_at": "2026-06-02T07:33:07.897375400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "ac179fed-7d1a-4b25-8955-6cd39237ab31",
+    "event_type": "code_review.completed",
+    "source_type": "persona:T:_Code_Reviewer",
+    "source_id": "7cf556ae-d197-470b-90b2-59e62f093e8e",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:35:30.518262700+00:00",
+    "created_at": "2026-06-02T07:35:29.708524700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "7d613e2a-4d96-4c11-90b2-3896ae002998",
+    "event_type": "team_handoff.11f95374-5789-431d-a41a-80399c9e7ca4",
+    "source_type": "chain",
+    "source_id": "7f59e099-3d22-40b7-9d68-7959eee0d326",
+    "target_persona_id": "11f95374-5789-431d-a41a-80399c9e7ca4",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:35:30.521160200+00:00",
+    "created_at": "2026-06-02T07:35:29.980935900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "94c38fb2-588e-4803-b492-fe5745b490c3",
+    "event_type": "qa.coverage.improved",
+    "source_type": "persona:T:_QA_Guardian",
+    "source_id": "29fa443d-d25a-402f-98de-137459bb0e6f",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:37:00.516618200+00:00",
+    "created_at": "2026-06-02T07:36:58.982625500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "c0efc66a-64bc-4ad1-bae8-a18f710bff9b",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_QA_Guardian",
+    "source_id": "29fa443d-d25a-402f-98de-137459bb0e6f",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:37:00.516768700+00:00",
+    "created_at": "2026-06-02T07:36:58.983142200+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "aac76d19-412a-4113-a770-b5d8106e2cba",
+    "event_type": "team_handoff.16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+    "source_type": "chain",
+    "source_id": "d50c1e3d-14e6-4854-a0fc-27296354c627",
+    "target_persona_id": "16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:37:00.519440300+00:00",
+    "created_at": "2026-06-02T07:36:59.226626+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "e5fe1f32-c4ad-4dbb-96c1-22cedc46527c",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Release_Manager",
+    "source_id": "16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:38:16.520780+00:00",
+    "created_at": "2026-06-02T07:38:16.191392600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "52fb1715-fe98-4351-895e-1fe98b5bf8a8",
+    "event_type": "team_handoff.b3c0322b-2c43-44ff-8ddf-51c4e73a043b",
+    "source_type": "chain",
+    "source_id": "902dd86f-bbd9-46e5-b442-a2067b40caa7",
+    "target_persona_id": "b3c0322b-2c43-44ff-8ddf-51c4e73a043b",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:38:16.523915200+00:00",
+    "created_at": "2026-06-02T07:38:16.427106700+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d2a8c7c9-bfe7-48a0-bb2f-b5b4da42d2dc",
+    "event_type": "security.scan.completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "11f95374-5789-431d-a41a-80399c9e7ca4",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:38:36.506602600+00:00",
+    "created_at": "2026-06-02T07:38:36.450799500+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "b0f4ff54-08ed-4a2f-90f5-219cb770f537",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Security_Sentinel",
+    "source_id": "11f95374-5789-431d-a41a-80399c9e7ca4",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:38:36.506755300+00:00",
+    "created_at": "2026-06-02T07:38:36.451633400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d3bdc412-b075-4231-8ea4-3754061a628f",
+    "event_type": "team_handoff.16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+    "source_type": "chain",
+    "source_id": "eb7a55c6-eaf4-4f3b-9a76-5b315ab4c778",
+    "target_persona_id": "16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:38:38.518524600+00:00",
+    "created_at": "2026-06-02T07:38:36.681540600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "c9fe99cc-4a9e-438e-b9ae-3c0ed165aafe",
+    "event_type": "docs.sync.completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "b3c0322b-2c43-44ff-8ddf-51c4e73a043b",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:39:32.511332600+00:00",
+    "created_at": "2026-06-02T07:39:32.026205800+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "639f7701-e599-49f1-8c38-b983fd0e6624",
+    "event_type": "task_completed",
+    "source_type": "persona:T:_Docs_Steward",
+    "source_id": "b3c0322b-2c43-44ff-8ddf-51c4e73a043b",
+    "target_persona_id": null,
+    "status": "delivered",
+    "processed_at": "2026-06-02T07:39:32.511527200+00:00",
+    "created_at": "2026-06-02T07:39:32.027224100+00:00",
+    "use_case_id": null
+  }
+]

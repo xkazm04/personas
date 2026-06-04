@@ -739,6 +739,60 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 }
             }
         }
+        ProtocolMessage::ProposeBacklog {
+            title,
+            description,
+            category,
+            impact,
+            effort,
+            risk,
+        } => {
+            // Surface a future-work item into the project's backlog (dev_ideas),
+            // scoped to the persona's pinned repo so it lands in that project's
+            // inbox. Keeps runs FEEDING the backlog (the audit found runs left it
+            // stale) for a human or a later parallel run to pick up.
+            if title.trim().is_empty() {
+                ctx.logger
+                    .log("[BACKLOG] propose_backlog dropped — empty title");
+            } else if ctx.is_simulation {
+                ctx.logger
+                    .log("[SIM] propose_backlog skipped (simulation run)");
+            } else {
+                let project_id =
+                    crate::db::repos::core::personas::get_by_id(ctx.pool, ctx.persona_id)
+                        .ok()
+                        .and_then(|p| p.design_context)
+                        .and_then(|dc| serde_json::from_str::<serde_json::Value>(&dc).ok())
+                        .and_then(|v| {
+                            v.get("devProjectId")
+                                .and_then(|x| x.as_str())
+                                .map(String::from)
+                        });
+                match crate::db::repos::dev_tools::create_idea(
+                    ctx.pool,
+                    project_id.as_deref(),
+                    None,
+                    "team_proposed",
+                    category.as_deref(),
+                    title,
+                    description.as_deref(),
+                    None,
+                    Some("pending"),
+                    *effort,
+                    *impact,
+                    *risk,
+                    None,
+                    None,
+                ) {
+                    Ok(idea) => ctx
+                        .logger
+                        .log(&format!("[BACKLOG] Proposed: {title} ({})", idea.id)),
+                    Err(e) => ctx
+                        .logger
+                        .log(&format!("[BACKLOG] Failed to propose '{title}': {e}")),
+                }
+            }
+        }
         ProtocolMessage::ExecutionFlow { .. } => {
             // Execution flows are handled at the top level, not here
             ctx.logger

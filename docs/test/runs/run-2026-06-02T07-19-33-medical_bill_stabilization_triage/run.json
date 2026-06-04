@@ -1,0 +1,583 @@
+{
+  "runId": "run-2026-06-02T07-19-33-medical_bill_stabilization_triage",
+  "seed": {
+    "id": "medical-bill/stabilization-triage",
+    "team": "SDLC — Medical Bill Negotiator",
+    "repo": "medical-bill-negotiator",
+    "tracks": [
+      "code",
+      "doc"
+    ],
+    "exercises_roles": [
+      "architect",
+      "reviewer",
+      "security"
+    ],
+    "held_out": false,
+    "goal": "This codebase has accumulated correctness and robustness risks. As the Solution Architect, have the team identify the single highest-priority correctness or robustness defect in this repository (grounded in the actual code — error handling, edge cases, unsafe assumptions), and fix it production-ready. Prioritize stability over new features.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm test"
+    },
+    "acceptance_hint": "A real, grounded stabilization fix (bug/edge-case/error-handling) at the correct module, production-ready, ideally with a regression test. Judge: does the team verify the fix doesn't break existing behavior?",
+    "notes": "Stabilization seed — exercises the stabilization/bugfix work type (§2.1 balance)."
+  },
+  "verdict": "BROKEN",
+  "reason": "pre-flight health gate failed",
+  "lint": {
+    "team": "SDLC — Medical Bill Negotiator",
+    "teamId": "ee73dd94-4267-4735-9f5d-87c04e385aea",
+    "memberCount": 8,
+    "execCount": 41,
+    "entry": [
+      "T: Solution Architect"
+    ],
+    "connections": [
+      {
+        "from": "T: Code Reviewer",
+        "to": "T: Security Sentinel",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Release Manager",
+        "to": "T: Docs Steward",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Docs Steward",
+        "to": "T: Solution Architect",
+        "type": "feedback"
+      },
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Dev Clone",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Dev Clone",
+        "to": "T: Code Reviewer",
+        "type": "sequential"
+      },
+      {
+        "from": "T: Dev Clone",
+        "to": "T: QA Guardian",
+        "type": "sequential"
+      },
+      {
+        "from": "T: QA Guardian",
+        "to": "T: Release Manager",
+        "type": "sequential"
+      },
+      {
+        "from": "T: QA Guardian",
+        "to": "T: Dev Clone",
+        "type": "feedback"
+      },
+      {
+        "from": "T: Solution Architect",
+        "to": "T: Visual Brand Asset Factory",
+        "type": "sequential"
+      }
+    ],
+    "brokenEdges": [
+      {
+        "from": "T: Security Sentinel",
+        "to": "T: Release Manager",
+        "toMid": "ca807645-418c-4692-bb55-e396b2250a27"
+      },
+      {
+        "from": "T: QA Guardian",
+        "to": "T: Release Manager",
+        "toMid": "ca807645-418c-4692-bb55-e396b2250a27"
+      }
+    ],
+    "resolvedRepos": [
+      "Medical Bill Negotiator"
+    ],
+    "members": [
+      {
+        "name": "T: Solution Architect",
+        "persona_id": "300e2d99-1f31-4fd7-855b-5eaacb0b7bf6",
+        "isEntry": true,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * 1"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "architecture.review.completed"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team.idea.accepted"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "architecture.review.completed",
+            "enabled": true
+          },
+          {
+            "event": "team.idea.accepted",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Code Reviewer",
+        "persona_id": "7cf556ae-d197-470b-90b2-59e62f093e8e",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.7cf556ae-d197-470b-90b2-59e62f093e8e"
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.7cf556ae-d197-470b-90b2-59e62f093e8e"
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Security Sentinel",
+        "persona_id": "11f95374-5789-431d-a41a-80399c9e7ca4",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.11f95374-5789-431d-a41a-80399c9e7ca4"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.11f95374-5789-431d-a41a-80399c9e7ca4"
+          }
+        ],
+        "subs": [],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Release Manager",
+        "persona_id": "16ef9c2b-3ec9-4098-9fa8-809cc9c577ab",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "github.pull_request.merged"
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.16ef9c2b-3ec9-4098-9fa8-809cc9c577ab"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.16ef9c2b-3ec9-4098-9fa8-809cc9c577ab"
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.16ef9c2b-3ec9-4098-9fa8-809cc9c577ab"
+          }
+        ],
+        "subs": [
+          {
+            "event": "github.pull_request.merged",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": false,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [
+          "persona is DISABLED — the event bus silently skips it (handoff delivered-then-dropped, no error/DLQ). The team chain dies here."
+        ],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Docs Steward",
+        "persona_id": "b3c0322b-2c43-44ff-8ddf-51c4e73a043b",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "release.published"
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.b3c0322b-2c43-44ff-8ddf-51c4e73a043b"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.b3c0322b-2c43-44ff-8ddf-51c4e73a043b"
+          }
+        ],
+        "subs": [
+          {
+            "event": "release.published",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "ready",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)"
+        ]
+      },
+      {
+        "name": "T: Dev Clone",
+        "persona_id": "26cb4689-a987-436b-9f5b-99bcf2fb2f10",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "polling",
+            "enabled": true,
+            "event": "0 * * * *"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": "dev-clone.backlog.candidate"
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": "dev-clone.backlog.triaged"
+          },
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 17 * * 5"
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.26cb4689-a987-436b-9f5b-99bcf2fb2f10"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.26cb4689-a987-436b-9f5b-99bcf2fb2f10"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "dev-clone.backlog.candidate"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "qa.bug.found"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "dev-clone.backlog.triaged"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "review_decision.approved"
+          }
+        ],
+        "subs": [
+          {
+            "event": "dev-clone.backlog.candidate",
+            "enabled": true
+          },
+          {
+            "event": "qa.bug.found",
+            "enabled": true
+          },
+          {
+            "event": "dev-clone.backlog.triaged",
+            "enabled": true
+          },
+          {
+            "event": "review_decision.approved",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: QA Guardian",
+        "persona_id": "29fa443d-d25a-402f-98de-137459bb0e6f",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 1,
+        "capabilitySource": "instructions+use_cases",
+        "triggers": [
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 9 * * *"
+          },
+          {
+            "type": "schedule",
+            "enabled": true,
+            "event": "0 13 * * *"
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.29fa443d-d25a-402f-98de-137459bb0e6f"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.29fa443d-d25a-402f-98de-137459bb0e6f"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "trigger_fired"
+          }
+        ],
+        "subs": [
+          {
+            "event": "dev-clone.pr.created",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": "3e1f8d3e-fcc5-465c-ae0e-c003b6faacfc",
+          "state": "ok",
+          "repo": "Medical Bill Negotiator",
+          "root": "C:/Users/mkdol/xprice/medical-bill-negotiator"
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      },
+      {
+        "name": "T: Visual Brand Asset Factory",
+        "persona_id": "7b95ec9e-9105-46c6-b217-68d7f6811b0f",
+        "isEntry": false,
+        "spState": "ok",
+        "dcState": "ok",
+        "useCases": 0,
+        "capabilitySource": "instructions",
+        "triggers": [
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "manual",
+            "enabled": true,
+            "event": null
+          },
+          {
+            "type": "chain",
+            "enabled": true,
+            "event": "team_handoff.7b95ec9e-9105-46c6-b217-68d7f6811b0f"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "team_handoff.7b95ec9e-9105-46c6-b217-68d7f6811b0f"
+          },
+          {
+            "type": "event_listener",
+            "enabled": true,
+            "event": "brand.brief.generated"
+          }
+        ],
+        "subs": [
+          {
+            "event": "brand.brief.generated",
+            "enabled": true
+          }
+        ],
+        "canReceiveHandoff": true,
+        "canSelfStart": true,
+        "enabled": true,
+        "pin": {
+          "id": null,
+          "state": "none",
+          "repo": null,
+          "root": null
+        },
+        "setup_status": "needs_credentials",
+        "blockers": [],
+        "warns": [
+          "use_cases empty (capability is in structured_prompt.instructions — acceptable, but the runtime \"Active Capabilities\" section will be empty)",
+          "no codebase pin — expected for non-code-track role 'artist' (generates assets, reads no repo)",
+          "setup_status=needs_credentials (likely missing credentials)"
+        ]
+      }
+    ],
+    "totalBlockers": 1,
+    "verdict": "CANNOT-CASCADE"
+  }
+}

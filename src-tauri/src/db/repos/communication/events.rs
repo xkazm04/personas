@@ -423,6 +423,34 @@ pub fn count_by_source(pool: &DbPool, persona_id: &str) -> Result<i64, AppError>
     })
 }
 
+/// Count events of one type emitted by one persona since a timestamp. Used by
+/// the team-assignment orchestrator to detect that a step's execution emitted
+/// a verdict event (e.g. `qa.pr.changes_requested`) during its run window —
+/// `source_id` stores the EMITTING persona's id (see dispatch.rs).
+pub fn count_by_type_and_source_since(
+    pool: &DbPool,
+    event_type: &str,
+    source_persona_id: &str,
+    since: &str,
+) -> Result<i64, AppError> {
+    timed_query!(
+        "persona_events",
+        "persona_events::count_by_type_and_source_since",
+        {
+            let conn = pool.get()?;
+            let mut stmt = conn.prepare_cached(
+                "SELECT COUNT(*) FROM persona_events
+                 WHERE event_type = ?1 AND source_id = ?2 AND created_at >= ?3",
+            )?;
+            let count: i64 =
+                stmt.query_row(params![event_type, source_persona_id, since], |row| {
+                    row.get(0)
+                })?;
+            Ok(count)
+        }
+    )
+}
+
 pub fn cleanup(pool: &DbPool, older_than_days: Option<i64>) -> Result<i64, AppError> {
     timed_query!("persona_events", "persona_events::cleanup", {
         let days = older_than_days.unwrap_or(30);

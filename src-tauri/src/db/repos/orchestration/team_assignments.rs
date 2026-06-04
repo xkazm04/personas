@@ -282,6 +282,22 @@ pub fn list_for_team(pool: &DbPool, team_id: &str) -> Result<Vec<TeamAssignment>
     rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
 }
 
+/// Assignments whose orchestrator tick task should be alive: `running` or
+/// `queued`. Used by startup orphan-recovery — after a restart these rows have
+/// no tokio task attached and would wedge forever without re-attachment.
+pub fn list_active(pool: &DbPool) -> Result<Vec<TeamAssignment>, AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, team_id, title, goal, status, match_strategy, max_parallel_steps,
+                source, companion_op_id, goal_id, created_at, started_at, completed_at, error_message
+         FROM team_assignments
+         WHERE status IN ('running', 'queued')
+         ORDER BY created_at ASC",
+    )?;
+    let rows = stmt.query_map([], row_to_assignment)?;
+    rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)
+}
+
 /// Goals hub: every assignment linked to a `dev_goals` row, any status.
 /// Backs the goal's progress resolver + live activity surface.
 pub fn list_for_goal(pool: &DbPool, goal_id: &str) -> Result<Vec<TeamAssignment>, AppError> {

@@ -90,6 +90,13 @@ pub struct ConcurrencyTracker {
     /// after `t` either succeeds → admission resumes, or re-arms the cooldown).
     /// `None` = no limit known → admission unaffected (the common case).
     quota_cooldown_until: Option<DateTime<Utc>>,
+    /// Resource-pressure gate. `true` when host CPU/memory load is above the
+    /// high-water threshold, so admission is PAUSED — new work waits in the
+    /// per-persona queues instead of piling onto a stressed host (which risks an
+    /// OOM kill). Set by the periodic resource governor with hysteresis (pause at
+    /// the high watermark, resume below the low watermark). Running executions are
+    /// never interrupted; only new admissions defer. `false` = load is healthy.
+    resource_throttled: bool,
 }
 
 impl ConcurrencyTracker {
@@ -101,6 +108,7 @@ impl ConcurrencyTracker {
             max_queue_depth: DEFAULT_MAX_QUEUE_DEPTH,
             global_max_concurrent: GLOBAL_MAX_CONCURRENT,
             quota_cooldown_until: None,
+            resource_throttled: false,
         }
     }
 
@@ -113,6 +121,7 @@ impl ConcurrencyTracker {
             max_queue_depth: max_depth,
             global_max_concurrent: GLOBAL_MAX_CONCURRENT,
             quota_cooldown_until: None,
+            resource_throttled: false,
         }
     }
 
@@ -173,6 +182,25 @@ impl ConcurrencyTracker {
     #[allow(dead_code)]
     pub fn quota_cooldown_until(&self) -> Option<DateTime<Utc>> {
         self.quota_cooldown_until
+    }
+
+    /// Resource gate: `true` when host load is below the high-water threshold
+    /// (the common case) so admission may proceed; `false` while CPU/memory
+    /// pressure is high — admission pauses to avoid piling onto a stressed host.
+    pub fn resource_available(&self) -> bool {
+        !self.resource_throttled
+    }
+
+    /// Set the resource-pressure pause. Called by the periodic resource governor
+    /// with hysteresis so a brief spike doesn't flap admission on/off.
+    pub fn set_resource_throttled(&mut self, throttled: bool) {
+        self.resource_throttled = throttled;
+    }
+
+    /// Whether admission is currently paused by resource pressure (for the UI).
+    #[allow(dead_code)]
+    pub fn resource_throttled(&self) -> bool {
+        self.resource_throttled
     }
 
     /// Total queued executions across all personas.
@@ -236,16 +264,19 @@ impl ConcurrencyTracker {
         let persona_ok = self.has_capacity(persona_id, max_concurrent);
         let global_ok = self.has_global_capacity();
         let quota_ok = self.quota_available();
+        let resource_ok = self.resource_available();
 
-        if persona_ok && global_ok && quota_ok {
+        if persona_ok && global_ok && quota_ok && resource_ok {
             self.add_running(persona_id, execution_id);
             return AdmitResult::Running;
         }
-        if persona_ok && global_ok && !quota_ok {
+        if persona_ok && global_ok && (!quota_ok || !resource_ok) {
             tracing::debug!(
                 persona_id = persona_id,
                 execution_id = execution_id,
-                "Admission held by quota cooldown — enqueuing instead of running"
+                quota_held = !quota_ok,
+                resource_held = !resource_ok,
+                "Admission held (quota cooldown or resource pressure) — enqueuing instead of running"
             );
         }
 
@@ -933,6 +964,39 @@ mod tests {
         tracker.set_quota_cooldown(Utc::now() - chrono::Duration::minutes(1));
         // set never shortens, so the 10-min future deadline still stands.
         assert!(!tracker.quota_available(), "set never shortens an active cooldown");
+    }
+
+    // -- Resource-aware admission ---------------------------------------------
+
+    #[test]
+    fn test_resource_available_by_default() {
+        let tracker = ConcurrencyTracker::new();
+        assert!(tracker.resource_available(), "no pressure => available");
+        assert!(!tracker.resource_throttled());
+    }
+
+    #[test]
+    fn test_resource_throttle_queues_then_resumes() {
+        let mut tracker = ConcurrencyTracker::new();
+        // Healthy load: admission runs immediately.
+        assert!(matches!(
+            tracker.admit("pa", "e1", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
+        // High load: new admissions defer to the per-persona queue instead of
+        // running onto a stressed host.
+        tracker.set_resource_throttled(true);
+        assert!(!tracker.resource_available());
+        assert!(matches!(
+            tracker.admit("pb", "e2", 0, ExecutionPriority::Normal),
+            AdmitResult::Queued { .. }
+        ));
+        // Load recovers: admission resumes.
+        tracker.set_resource_throttled(false);
+        assert!(matches!(
+            tracker.admit("pc", "e3", 0, ExecutionPriority::Normal),
+            AdmitResult::Running
+        ));
     }
 
     #[test]
