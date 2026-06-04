@@ -41,6 +41,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::time::{sleep, Duration};
 
 use crate::db::models::{Persona, PersonaTrustLevel, TeamAssignmentStep};
+use crate::db::repos::communication::events as event_repo;
 use crate::db::repos::core::personas as persona_repo;
 use crate::db::repos::execution::executions as exec_repo;
 use crate::db::repos::orchestration::team_assignments as assignment_repo;
@@ -528,10 +529,46 @@ async fn run_step(
         let execution = exec_repo::get_by_id(pool, &exec.id)?;
         match execution.status.as_str() {
             "completed" => {
-                let summary = execution
-                    .output_data
-                    .as_deref()
-                    .map(|s| s.chars().take(2000).collect::<String>());
+                // Tail, not head: the execution's verdict / business outcome
+                // lands at the END of the output stream — the head is the
+                // narrative opening ("I'll start by orienting…"), which made
+                // forwarded predecessor context and the goal drawer's step
+                // output near-useless.
+                let summary = execution.output_data.as_deref().map(|s| {
+                    let chars: Vec<char> = s.chars().collect();
+                    let start = chars.len().saturating_sub(2000);
+                    chars[start..].iter().collect::<String>()
+                });
+
+                // V1/V2 (QA fix loop): a "completed" QA execution that emitted
+                // `qa.pr.changes_requested` is NOT a done step — it's a bounce.
+                // Re-queue the implementer + QA for another round (capped),
+                // so the assignment can only complete on a clean QA pass and
+                // a goal never counts "done" with its PR stranded open.
+                if step_emitted_changes_requested(pool, &persona_id, &execution.created_at) {
+                    if step.retry_count < MAX_QA_FIX_ROUNDS {
+                        if trigger_qa_rework(pool, &step, summary.as_deref()).is_ok() {
+                            emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                            return Ok(());
+                        }
+                        // fall through to plain done when rework wasn't possible
+                    } else {
+                        let msg = format!(
+                            "QA requested changes {} times — fix-loop cap reached; human review required",
+                            step.retry_count
+                        );
+                        assignment_repo::update_step_status(
+                            pool,
+                            &step.id,
+                            "failed",
+                            Some(&msg),
+                            summary.as_deref(),
+                        )?;
+                        emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                        return Ok(());
+                    }
+                }
+
                 assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
                 record_assignment_goal_signal(
@@ -601,6 +638,106 @@ fn check_persona_eligible(persona: &Persona) -> Result<(), String> {
 /// the prompt while preserving PR URLs/branches and the gist of the work.
 const PREDECESSOR_OUTPUT_MAX_CHARS: usize = 1500;
 
+/// V1/V2 (QA fix loop): how many `qa.pr.changes_requested` rounds a step pair
+/// gets before the loop escalates to a human. Round counting lives on the QA
+/// step's `retry_count`.
+const MAX_QA_FIX_ROUNDS: i32 = 2;
+
+/// Marker prefix written into a step's `error_message` when it is reset for
+/// rework; `build_step_input` forwards anything carrying it as
+/// `rework_feedback` so the re-run acts on the QA verdict instead of starting
+/// blind.
+const REWORK_MARKER: &str = "REWORK — QA requested changes: ";
+
+/// V1/V2: did this step's execution emit `qa.pr.changes_requested` during its
+/// run window? `persona_events.source_id` stores the EMITTING persona, so the
+/// window is bounded by the execution's `created_at` (per-run precise — a
+/// step's `started_at` survives resets and would leak prior rounds' events).
+fn step_emitted_changes_requested(pool: &DbPool, persona_id: &str, exec_created_at: &str) -> bool {
+    event_repo::count_by_type_and_source_since(
+        pool,
+        "qa.pr.changes_requested",
+        persona_id,
+        exec_created_at,
+    )
+    .map(|n| n > 0)
+    .unwrap_or(false)
+}
+
+/// V1 (the fix loop): a QA step bounced the PR. Reset the work for another
+/// round instead of letting "done" swallow the verdict:
+/// - every DIRECT `depends_on` predecessor that already ran goes back to
+///   `pending`, carrying the QA verdict as a `REWORK` marker (forwarded into
+///   its re-run input as `rework_feedback`);
+/// - the QA step itself goes back to `pending` too — the DAG's ordering
+///   re-runs implementer first, QA after, automatically;
+/// - the QA step's `retry_count` counts the rounds (capped by the caller).
+///
+/// Before this, all 13 `qa.pr.changes_requested` events across the campaign
+/// produced ZERO re-works (nothing subscribes to the event and feedback edges
+/// are never handoff-wired) — every bounced PR stranded open while the goal
+/// was still marked done.
+fn trigger_qa_rework(
+    pool: &DbPool,
+    qa_step: &TeamAssignmentStep,
+    qa_summary: Option<&str>,
+) -> Result<(), AppError> {
+    let dep_ids = parse_depends_on(qa_step.depends_on.as_deref());
+    let steps = assignment_repo::list_steps(pool, &qa_step.assignment_id)?;
+
+    let verdict: String = qa_summary
+        .unwrap_or("(no QA summary captured)")
+        .chars()
+        .take(1200)
+        .collect();
+    let rework_msg = format!("{REWORK_MARKER}{verdict}");
+
+    let mut reset = 0usize;
+    for pred in steps
+        .iter()
+        .filter(|s| dep_ids.iter().any(|d| d == &s.id) && s.status == "done")
+    {
+        assignment_repo::update_step_status(pool, &pred.id, "pending", Some(&rework_msg), None)?;
+        reset += 1;
+    }
+    // No predecessor to redo (shouldn't happen in a chained pipeline) — leave
+    // the step done rather than wedging the assignment on an unrunnable loop.
+    if reset == 0 {
+        tracing::warn!(
+            step_id = %qa_step.id,
+            assignment_id = %qa_step.assignment_id,
+            "qa rework: changes_requested but no done predecessor to reset — leaving step done"
+        );
+        return Err(AppError::Internal("no predecessor to rework".into()));
+    }
+
+    // Re-queue the QA step itself (keeps its verdict as output_summary) and
+    // count the round on its retry counter.
+    assignment_repo::update_step_status(pool, &qa_step.id, "pending", None, qa_summary)?;
+    assignment_repo::increment_step_retry(pool, &qa_step.id)?;
+    assignment_repo::insert_event(
+        pool,
+        &qa_step.assignment_id,
+        Some(&qa_step.id),
+        "qa_changes_requested_rework",
+        Some(
+            &json!({
+                "round": qa_step.retry_count + 1,
+                "predecessors_reset": reset,
+            })
+            .to_string(),
+        ),
+    )?;
+    tracing::info!(
+        step_id = %qa_step.id,
+        assignment_id = %qa_step.assignment_id,
+        round = qa_step.retry_count + 1,
+        predecessors_reset = reset,
+        "qa rework: changes_requested — reset implementer + QA step for another round"
+    );
+    Ok(())
+}
+
 /// Load the outputs of the steps this step `depends_on` (direct predecessors
 /// only), in step order, for forwarding into the step input. Best-effort: a
 /// repo error or a predecessor without an output simply contributes nothing.
@@ -657,6 +794,22 @@ fn build_step_input(
     // acts on THIS work (PR URL, branch, what was done), not a fresh discovery.
     if !predecessor_outputs.is_empty() {
         input["predecessor_outputs"] = serde_json::Value::Array(predecessor_outputs.to_vec());
+    }
+    // V1 (QA fix loop): a step reset for rework carries the QA verdict in its
+    // error_message — surface it so the re-run FIXES the bounced PR (push to
+    // the same branch) instead of starting a fresh implementation.
+    if let Some(feedback) = step
+        .error_message
+        .as_deref()
+        .filter(|m| m.starts_with(REWORK_MARKER))
+    {
+        input["rework_feedback"] = serde_json::Value::String(feedback.to_string());
+        input["rework_instruction"] = serde_json::Value::String(
+            "A previous round of this step opened a PR that QA bounced (changes requested). \
+             Address the QA feedback above by FIXING the existing PR branch (push amendments \
+             to the same branch / PR) — do NOT open a new PR or re-implement from scratch."
+                .into(),
+        );
     }
     input
 }
