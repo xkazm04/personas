@@ -417,17 +417,23 @@ checklist that reviews, security-scans, or documents work that no prior step
 implemented — that is the most common failure and wastes the whole run.
 
 Follow this canonical order (include the steps that fit the goal; always include
-implement):
+implement AND the QA test+merge step):
 1. (optional) Scope / design — an architect produces a short plan/ADR + task breakdown.
 2. REQUIRED — Implement — the engineer / builder / "Dev Clone" persona writes the
-   actual code + tests for the increment (this is the step that delivers value).
+   actual code + tests for the increment and opens a PR (this is the step that
+   delivers value).
 3. (optional) Review — a reviewer checks the IMPLEMENTED change.
 4. (optional) Security — a security persona scans the IMPLEMENTED change.
-5. (optional) Docs — a docs persona updates docs for the SHIPPED change.
+5. REQUIRED — QA test + merge — the QA persona tests the opened PR in an isolated
+   worktree and MERGES it (or requests changes). Without this step the PR strands
+   open and the goal is not actually delivered — the work only counts when it is
+   on the main branch.
+6. (optional) Docs — a docs persona updates docs for the MERGED change.
 
 Assign the implementation step to the roster entry whose capability is building/
-coding/engineering (the engineer or "Dev Clone"). Assign each other step to the
-roster entry whose capability text best matches it.
+coding/engineering (the engineer or "Dev Clone"), and the QA test+merge step to
+the QA / quality-guardian roster entry. Assign each other step to the roster
+entry whose capability text best matches it.
 
 ## Response
 Respond with ONLY a JSON object on a single line, no markdown:
