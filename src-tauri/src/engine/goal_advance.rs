@@ -194,6 +194,18 @@ pub async fn advance_goal(
             .collect()
     };
 
+    // T4: a decomposed goal has no authored to-dos, so the Board card shows an
+    // empty checklist and progress only jumps 0→100 at the end. Mirror the
+    // decomposed steps into `dev_goal_items` — the per-step close-loop checks
+    // them off by title as the team works, and a future re-advance of this
+    // goal takes the open-items path verbatim (continuity). The open-items
+    // path already HAS items; never mirror twice.
+    let mirror_todo_titles: Vec<String> = if open_items.is_empty() {
+        steps.iter().map(|s| s.title.clone()).collect()
+    } else {
+        Vec::new()
+    };
+
     let input = CreateTeamAssignmentInput {
         team_id: team_id.to_string(),
         title: derive_advance_title(&goal.title),
@@ -208,6 +220,12 @@ pub async fn advance_goal(
         steps,
     };
     let assignment = assignment_repo::create(pool, input)?;
+
+    for title in &mirror_todo_titles {
+        if let Err(e) = dev_tools_repo::create_goal_item(pool, goal_id, title) {
+            tracing::warn!(goal_id, error = %e, "goal_advance: failed to mirror step into goal to-do");
+        }
+    }
 
     orchestrator::run_assignment(
         Arc::new(pool.clone()),

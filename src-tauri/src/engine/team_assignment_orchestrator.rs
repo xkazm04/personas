@@ -578,6 +578,31 @@ async fn run_step(
                     "team_step",
                     summary.as_deref().or(Some(step.title.as_str())),
                 );
+                // T4 (live progress): a goal-linked step that finishes checks
+                // its matching to-do off NOW and recomputes the goal's progress
+                // incrementally — Board/Portfolio no longer sit at 0% until the
+                // whole assignment completes. Same title-match + resolver the
+                // assignment-done close-loop uses; manual overrides still win
+                // (the resolver never silently regresses). Best-effort.
+                if let Some(gid) = goal_id.as_deref() {
+                    if let Ok(items) = crate::db::repos::dev_tools::list_goal_items(pool, gid) {
+                        if let Some(it) =
+                            items.iter().find(|i| !i.done && i.title == step.title)
+                        {
+                            let _ = crate::db::repos::dev_tools::update_goal_item(
+                                pool,
+                                &it.id,
+                                None,
+                                Some(true),
+                            );
+                        }
+                    }
+                    if let Err(e) =
+                        crate::db::repos::dev_tools::apply_resolved_goal_progress(pool, gid)
+                    {
+                        tracing::debug!(goal_id = %gid, error = %e, "per-step goal-progress update failed");
+                    }
+                }
                 return Ok(());
             }
             "failed" | "cancelled" => {
