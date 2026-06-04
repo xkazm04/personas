@@ -394,6 +394,16 @@ pub fn start_loops(
     scheduler.running.store(true, Ordering::Relaxed);
     tracing::info!("Scheduler starting via unified subscription model");
 
+    // V8: re-attach orchestrator tick tasks to team assignments orphaned by the
+    // last shutdown (status running/queued with no task) — their in-flight
+    // steps re-queue as pending and the assignment resumes instead of wedging.
+    crate::engine::team_assignment_orchestrator::recover_orphaned_assignments(
+        Arc::new(pool.clone()),
+        app.clone(),
+        engine.clone(),
+        None,
+    );
+
     // Build the HTTP client for the polling subscription.
     // Uses SsrfSafeResolver to reject private IPs at connect time,
     // closing the DNS-rebinding TOCTOU window (CWE-367).

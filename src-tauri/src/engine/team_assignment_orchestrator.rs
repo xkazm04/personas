@@ -224,8 +224,124 @@ pub fn auto_resume_retryable_steps(
         assignment_repo::update_step_status(&pool, sid, "pending", None, None)?;
         assignment_repo::increment_step_retry(&pool, sid)?;
     }
+    // F1: the failed step's dependents were cascade-skipped at failure time —
+    // resuming only the failed step would leave the pipeline tail (review /
+    // QA-merge) permanently skipped, so the assignment completes WITHOUT its
+    // merge gate (observed: implement retried fine, QA never ran). Restore the
+    // skipped subtree too (cascade-skips only — user skips are never touched).
+    let roots: HashSet<String> = step_ids.iter().cloned().collect();
+    match restore_cascade_skipped_dependents(&pool, assignment_id, &roots) {
+        Ok(n) if n > 0 => {
+            tracing::info!(assignment_id, restored = n, "auto-resume: restored cascade-skipped dependents");
+        }
+        Err(e) => {
+            tracing::warn!(assignment_id, error = %e, "auto-resume: failed to restore skipped dependents");
+        }
+        _ => {}
+    }
     resume_assignment(pool, app, engine, embedding_manager, assignment_id.to_string());
     Ok(())
+}
+
+/// Restore CASCADE-skipped dependents of the given root steps, transitively.
+/// Cascade-skips carry the marker error_message "Dependency was skipped or
+/// failed" — user-intervention skips don't and are never touched. Returns how
+/// many steps went back to `pending`.
+fn restore_cascade_skipped_dependents(
+    pool: &DbPool,
+    assignment_id: &str,
+    roots: &HashSet<String>,
+) -> Result<usize, AppError> {
+    let steps = assignment_repo::list_steps(pool, assignment_id)?;
+    let mut restored_ids: HashSet<String> = roots.clone();
+    let mut restored = 0usize;
+    loop {
+        let mut changed = false;
+        for s in &steps {
+            if restored_ids.contains(&s.id) || s.status != "skipped" {
+                continue;
+            }
+            if s.error_message.as_deref() != Some("Dependency was skipped or failed") {
+                continue;
+            }
+            if parse_depends_on(s.depends_on.as_deref())
+                .iter()
+                .any(|d| restored_ids.contains(d))
+            {
+                assignment_repo::update_step_status(pool, &s.id, "pending", None, None)?;
+                restored_ids.insert(s.id.clone());
+                restored += 1;
+                changed = true;
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    Ok(restored)
+}
+
+/// Startup orphan-recovery (V8): re-attach orchestrator tick tasks to
+/// assignments that were `running`/`queued` when the app last exited. Their
+/// tokio tasks died with the process, leaving `matching`/`running` steps
+/// pointing at executions the startup recovery already failed — without
+/// re-attachment the assignment wedges forever. The orphaned steps' work never
+/// produced a result, so they simply go back to `pending` (with a note), any
+/// cascade-skipped dependents are restored, and `run_assignment` is re-spawned
+/// (an assignment whose steps are all terminal just gets finalized by its
+/// first tick).
+pub fn recover_orphaned_assignments(
+    pool: Arc<DbPool>,
+    app: AppHandle,
+    engine: Arc<ExecutionEngine>,
+    embedding_manager: Option<Arc<EmbeddingManager>>,
+) {
+    let stale = match assignment_repo::list_active(&pool) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!(error = %e, "assignment orphan-recovery: query failed");
+            return;
+        }
+    };
+    if stale.is_empty() {
+        return;
+    }
+    for a in stale {
+        let mut roots: HashSet<String> = HashSet::new();
+        if let Ok(steps) = assignment_repo::list_steps(&pool, &a.id) {
+            for s in steps
+                .iter()
+                .filter(|s| matches!(s.status.as_str(), "matching" | "running"))
+            {
+                if assignment_repo::update_step_status(
+                    &pool,
+                    &s.id,
+                    "pending",
+                    Some("App restarted while step was running — re-queued"),
+                    None,
+                )
+                .is_ok()
+                {
+                    roots.insert(s.id.clone());
+                }
+            }
+        }
+        let restored = restore_cascade_skipped_dependents(&pool, &a.id, &roots).unwrap_or(0);
+        tracing::info!(
+            assignment_id = %a.id,
+            title = %a.title,
+            requeued_steps = roots.len(),
+            restored_skipped = restored,
+            "assignment orphan-recovery: re-attaching tick task"
+        );
+        run_assignment(
+            pool.clone(),
+            app.clone(),
+            engine.clone(),
+            embedding_manager.clone(),
+            a.id,
+        );
+    }
 }
 
 /// Resume an assignment from `awaiting_review`. Restarts the tick task.
