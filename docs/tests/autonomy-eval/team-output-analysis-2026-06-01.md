@@ -345,6 +345,75 @@ Artist no-op ×19 (GAP-D); Dev Clone `template_category='devops'` (mis-set — t
 works via name fallback; fix the data); branch naming drifts (`dev-clone/*` vs `devclone/*`
 vs `qa/*`) — `standards_config` naming rule exists but isn't enforced in-prompt consistently.
 
+---
+
+## 4d. PR + goal-state review (2026-06-04 morning, app stopped — stable snapshot)
+
+Full review of all open PRs (29 across 7 repos) and the goal ledger (50 goals) after the
+overnight run, gathering the larger issue sample before the next campaign. **T1/T2 confirmed
+at scale overnight**: 158 handoff-suppression breadcrumbs, zero new duplicate PRs (all
+remaining dups predate the fix), 72 executions carried `predecessor_outputs`; the night
+shipped 30 goals / 26 PRs / 22 QA-merges / 193-vs-1 completed-vs-failed for $210.
+
+**Campaign delivery funnel: 51 `dev-clone.pr.created` → 35 `qa.pr.approved` (69%) →
+13 `qa.pr.changes_requested` → 0 re-works.** Grant-writing + local-seo lanes are fully clean
+(0 open PRs); merged work is substantial (+323/+404-line real increments). The leaks:
+
+### V1 — QA bounce is a dead end (CRITICAL; the feedback loop never existed)
+All **13** `qa.pr.changes_requested` events across the whole campaign produced **zero**
+Dev Clone follow-ups — there are **0 subscriptions** for the event, and `wire_team_handoff`
+explicitly wires only non-feedback edges, so the preset's qa→engineer feedback connection was
+never materialised. Not a T1 regression — it never worked. Every bounced PR strands open.
+*Direction:* wire `qa.pr.changes_requested` → Dev Clone fix-PR path (subscription or an
+orchestrator retry-step that re-queues the implement step with the QA verdict as input).
+
+### V2 — "Done" ≠ delivered (CRITICAL; goal integrity)
+**48/50 goals are `done` while ~16 of the campaign's 51 PRs never merged** — 11
+implementation PRs sit open (incl. the bounced ones). The QA step "completes" by bouncing
+(it did its job), the assignment completes, the close-loop marks the goal done — so a goal
+counts delivered while its code never reached main (e.g. Medical Bill's editor-extraction
+goal: done 06-03 17:47, its PR #3 still open). *Direction:* a bounced increment should hold
+the assignment in an active fix loop (V1), and/or the goal close-loop should require
+`qa.pr.approved` for steps that opened a PR.
+
+### V3 — Release-PR lane unowned + self-superseding
+**10 open `chore(release)` PRs** (8 on ai-bookkeeper alone: v0.10.0→v0.14.0, oldest from
+06-01). QA's merge gate triggers only on `dev-clone.pr.created`, so release PRs have no merge
+owner; each new bump obsoletes the previous PR (same package.json/CHANGELOG lines — only the
+newest, #22, is even MERGEABLE). *Direction:* Release Manager self-merges its release PR (its
+lane, post-QA-of-features), or the release flow stops opening PRs and commits the bump after
+the feature merge; auto-close superseded release PRs.
+
+### V4 — Docs-PR lane unowned (same shape)
+**8 open docs PRs** (apprenticeship ×4, paralegal ×3, medical ×1) — distinct, small, useful
+syncs that nobody merges. Same ownership fix as V3.
+
+### V5 — Stacked-PR foundations rot
+ai-paralegal: FeatureStore foundation **#3 open since 06-03 09:18**, with #4 (migration) and
+#9 (GCS adapter, overnight) stacking on top — matching the day-old "foundation UNTRACKED
+blocks CI/merge" incident. Teams keep building on unmerged bases; the stack deepens daily.
+*Direction:* the V1/V2 fix largely resolves this (bounced/stuck PRs get re-worked instead of
+bypassed); plus an architect-prompt rule: don't scope increments atop an unmerged PR.
+
+### V6 — Shared PAT degrades the QA verdict (G3b resurfaced with data)
+QA's formal `REQUEST_CHANGES` review is **rejected by GitHub** ("review API rejects
+REQUEST_CHANGES from the authoring PAT") because QA and Dev Clone share one PAT — the verdict
+lands as a plain comment, invisible to merge tooling. *Direction:* a second PAT (bot account)
+for QA, or accept comment-verdicts as the gate signal (the in-app event already is).
+
+### V7 — One-time cleanup backlog (pre-fix leftovers)
+Bookkeeper #10/#12 (duplicate test PRs, pre-T1) + #15 (dup of merged #13); immigration #16
+(re-do of closed #15); medical #1/#2 (06-01-era, predate the QA gate). Manual sweep: keep the
+better twin, close the rest.
+
+### V8 — App-stop orphans (minor)
+2 assignments were `running` when the app stopped (LogEvent sink; LLM guardrails decorator) —
+one with a half-skipped step list. Verify auto-resume picks them up cleanly on next start.
+
+> Positives worth keeping: goal-title near-duplicates = **0** (backlog promotion doesn't
+> repeat itself); merged increments are real, tested code; QA self-detected and closed one
+> duplicate-of-shipped-code PR; two of seven repos have perfectly clean PR lanes.
+
 ## 5. Recommended next steps (in order)
 
 1. **P0 — Re-run the soak with the self-heal ON for one full window**, then
