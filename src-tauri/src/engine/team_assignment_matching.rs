@@ -428,7 +428,10 @@ implement AND the QA test+merge step):
    worktree and MERGES it (or requests changes). Without this step the PR strands
    open and the goal is not actually delivered — the work only counts when it is
    on the main branch.
-6. (optional) Docs — a docs persona updates docs for the MERGED change.
+6. (optional) Release — when the increment ships user-visible value, the release
+   persona bumps the version + CHANGELOG directly on the base branch AFTER the
+   merge (mechanical lane — no PR).
+7. (optional) Docs — a docs persona updates docs for the MERGED change.
 
 Assign the implementation step to the roster entry whose capability is building/
 coding/engineering (the engineer or "Dev Clone"), and the QA test+merge step to

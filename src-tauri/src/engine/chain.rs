@@ -171,24 +171,36 @@ pub fn evaluate_chain_triggers(
             }
         };
 
-        // T1 (dual-driver): an assignment-step execution is DAG-driven — the
-        // orchestrator's `depends_on` graph schedules the next role itself.
-        // Routing the connection-graph handoff here as well double-drives the
-        // same work (two implementers, competing PRs). Suppress handoff edges
-        // for step sources; named-event subscriptions (e.g.
-        // dev-clone.pr.created → QA) still route normally.
-        if source_is_assignment_step {
+        // T1 (dual-driver) + T3 (cascade churn): team-handoff edges fire only
+        // for FRESH, non-DAG sources.
+        // - An assignment-step execution is DAG-driven — the orchestrator's
+        //   `depends_on` graph schedules the next role itself; routing the
+        //   handoff too double-drives the same work (two implementers,
+        //   competing PRs).
+        // - A chain execution (depth ≥ 1) firing ITS handoffs spirals into
+        //   multi-hop verification churn (release→docs→release… at depths 2-4
+        //   burned ~$60/day concluding "no action needed"). Handoffs are
+        //   single-hop reactions now — multi-step flow belongs to the DAG.
+        // Named-event subscriptions still route normally in both cases.
+        {
             let publishes_handoff = config
                 .get("event_type")
                 .and_then(|v| v.as_str())
                 .map(|t| t.starts_with("team_handoff."))
                 .unwrap_or(false);
-            if publishes_handoff {
+            if publishes_handoff && (source_is_assignment_step || chain_depth >= 1) {
                 tracing::info!(
                     trigger_id = %trigger.id,
                     source_persona_id = %source_persona_id,
                     target_persona_id = %trigger.persona_id,
-                    "Chain handoff suppressed: source execution is an assignment step (the DAG owns the flow)"
+                    chain_depth,
+                    source_is_assignment_step,
+                    "Chain handoff suppressed: {} (the DAG owns multi-step flow)",
+                    if source_is_assignment_step {
+                        "source execution is an assignment step"
+                    } else {
+                        "handoffs are single-hop — source is already a chain execution"
+                    },
                 );
                 metrics.handoffs_suppressed += 1;
                 continue;
@@ -1172,6 +1184,14 @@ mod tests {
         );
         assert_eq!(metrics2.handoffs_suppressed, 0);
         assert_eq!(metrics2.events_published, 2);
+
+        // T3: handoffs are single-hop — a chain execution (depth ≥ 1) does not
+        // fire further handoffs, but normal chain triggers still cascade.
+        let metrics3 = evaluate_chain_triggers(
+            &pool, &a, "completed", None, "exec-3", 1, &visited, None, false,
+        );
+        assert_eq!(metrics3.handoffs_suppressed, 1);
+        assert_eq!(metrics3.events_published, 1);
     }
 
     #[test]
