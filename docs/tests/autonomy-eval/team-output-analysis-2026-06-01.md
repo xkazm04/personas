@@ -168,7 +168,7 @@ Clone's trigger description), and `release.version.bumped` (paired with `release
 which has cross-persona subscribers). Live teams unchanged (template edits are future-only);
 existing dead self-loop subscriptions are harmless.
 
-### G5 — Release gate blocked by PRE-EXISTING repo debt, not the deliverable  ·  **P1**
+### G5 — Release gate blocked by PRE-EXISTING repo debt, not the deliverable  ·  ~~P1~~ **ADDRESSED 2026-06-05**
 Every release attempt HOLDs on red lint from stray/pre-existing files
 (`lighttrack.ts`, "10 pre-existing lint errors"). The gate doesn't distinguish
 the team's increment from the repo's baseline debt, so the team loops on a
@@ -176,6 +176,12 @@ blocker it isn't tasked to fix, and **nothing ships**.
 **Direction:** scope the quality gate to the increment (diff-only lint/test), or
 add a one-time "clean the baseline" task per repo before the soak, or let the
 standards policy treat pre-existing debt as a warn not a hard block.
+**Addressed (two layers):** the policy block's gate-scope rule (ship on increment-green,
+WARN on baseline debt) stopped the false blocks; and the debt itself is now being retired —
+dedicated cleanup goals created on the two known-debt repos (ai-bookkeeper: pre-existing lint
+errors; local-seo: ~17 errors incl. src/lib/lighttrack.ts) so repo-wide gates run green and
+any future red gate is a real regression.
+
 
 ### G6 — High-severity reviews strand value behind a human  ·  ~~P1~~ **IMPLEMENTED 2026-06-02**
 High/critical reviews accumulated (27 stranded in the live DB): ~12 were technical-status
@@ -412,12 +418,16 @@ Open PRs 29 → 7, all legitimate in-flight code increments.
 **8 open docs PRs** (apprenticeship ×4, paralegal ×3, medical ×1) — distinct, small, useful
 syncs that nobody merges. Same ownership fix as V3.
 
-### V5 — Stacked-PR foundations rot
+### V5 — Stacked-PR foundations rot — ADDRESSED
 ai-paralegal: FeatureStore foundation **#3 open since 06-03 09:18**, with #4 (migration) and
 #9 (GCS adapter, overnight) stacking on top — matching the day-old "foundation UNTRACKED
 blocks CI/merge" incident. Teams keep building on unmerged bases; the stack deepens daily.
-*Direction:* the V1/V2 fix largely resolves this (bounced/stuck PRs get re-worked instead of
-bypassed); plus an architect-prompt rule: don't scope increments atop an unmerged PR.
+**Addressed:** (1) the policy block now forbids scoping/building an increment atop an
+UNMERGED PR — if work needs an unmerged base, the increment IS "land that PR first";
+(2) the live paralegal stack got a dedicated goal with one ordered to-do per PR
+(#3 foundation → #4 migration → #9 GCS → #7 verify-or-close) — the open-items path turns
+them into QA-routed steps verbatim, so the team lands its own backlog through the normal
+machinery.
 
 ### V6 — Shared PAT degrades the QA verdict (G3b resurfaced with data)
 QA's formal `REQUEST_CHANGES` review is **rejected by GitHub** ("review API rejects
@@ -450,6 +460,12 @@ one with a half-skipped step list. Verify auto-resume picks them up cleanly on n
    (G4) — both unblock real shipping and reduce noise.
 5. **P1/P2 — Policy auto-approval for safe review classes** (G6) and **backlog→
    goal feedback** (G7) so the loop self-sustains without a human babysitting it.
+   *(G7 CLOSED 2026-06-05: `backlog_to_goal` promotes pending ideas → `goal_advance` runs
+   them → and the new `IdeaReplenishSubscription` (`autonomous_idea_scan`, default-OFF,
+   now ON) refills a FULLY idle project — no open goals, no pending ideas — with a fresh
+   architecture-analyst backlog scan, one project/tick, 20h per-project cooldown via
+   `dev_scans`. The loop is self-sustaining end-to-end: scan → ideas → goals →
+   assignments → PRs → QA-merge → release → repeat.)*
 
 > Net: the agents are good; the **pipeline around them** (quota pacing, the PR/QA
 > handshake, the release gate, event wiring, review auto-approval, goal

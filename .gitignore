@@ -89,6 +89,8 @@ tmp/
 
 # Test results (generated, not needed in repo)
 docs/tests/results/
+# Autonomy-eval harness run bundles (large generated transcripts/scorecards)
+docs/test/runs/
 
 # Per-run JSON reports written by tools/test-mcp/e2e_*.py drivers
 # (often capture env vars in output_preview — secret-scanning hazard)
