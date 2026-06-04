@@ -310,22 +310,30 @@ predecessors' `output_summary` (and extracted PR URL/branch) in the next step's 
   1500 chars each) and embeds them as `predecessor_outputs` in the step input, which the prompt
   pipeline renders into the persona's "## Input Data" section.
 
-### T3 — Over-triggered verification roles (persona design / cost)
+### T3 — Over-triggered verification roles (persona design / cost) — FIXED
 Release Manager ran **51×/$36.81** and Docs Steward **51×/$30.53** — more than any builder —
 with most runs correctly concluding "no action needed" (`no_input_available`). They are
 woken by *every* cascade event rather than by release/docs-worthy conditions. Compounding:
 **20 `release.version.bumped` + 13 `release.published` in ~8h** (v0.13.1→v0.13.2 hours
 apart) — there is no release-cadence policy, so every merge cascades into a bump+publish.
-*Direction:* narrow their listen filters (Release: `qa.pr.approved`/merge only; Docs: merged
-user-facing changes only), debounce/batch, and add a release-cadence rule to
-`standards_config`.
+**Fixed (3 prongs):** (1) team-handoff chains are now SINGLE-HOP — a chain execution
+(depth ≥ 1) no longer fires further handoffs, killing the release→docs→release depth-2..4
+verification spirals (multi-step flow belongs to the DAG); (2) the redundant
+`dev-clone.pr.created → uc_pr_review` listeners on the 7 canonical teams were disabled
+(enabled=0, reversible) — the mandated QA STEP + bounce loop is the one QA path, ending
+double-QA per PR; (3) the policy block gained a release-cadence rule (patch-bump per shipped
+increment OK; tag/publish ≤ 1/day, batch the day's increments; NOTHING if nothing merged)
+and decompose gained an optional post-merge RELEASE step (mechanical lane) — without it the
+single-driver stack would never have released at all.
 
-### T4 — Goal progress is binary; Board checklists empty (goal fulfillment)
+### T4 — Goal progress is binary; Board checklists empty (goal fulfillment) — FIXED
 Progress only moves 0→100 when the assignment completes — in-flight goals sit at 0% with
 half their steps done (poor visibility; Portfolio under-reports). Decomposed goals carry **no
-`dev_goal_items`**, so Board cards show no checklist. *Direction:* write partial progress on
-step completion (the hybrid resolver already composes linked steps — apply it per-step), and
-optionally mirror decomposed steps into goal to-dos.
+`dev_goal_items`**, so Board cards show no checklist. **Fixed:** goal_advance now mirrors decomposed
+steps into `dev_goal_items` (the Board card gets a live checklist; the next advance of the
+goal takes the open-items path verbatim), and the orchestrator's per-step done path checks
+the matching to-do off + calls `apply_resolved_goal_progress` — progress moves live as steps
+complete (never regresses; manual overrides still win; done only at a composed 100).
 
 ### T5 — Open-PR backlog hygiene (goal fulfillment)
 ~9 PRs sit OPEN across the repos — duplicates (#15 vs merged #13), superseded attempts, and
