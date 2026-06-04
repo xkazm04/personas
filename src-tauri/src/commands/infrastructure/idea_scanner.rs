@@ -261,8 +261,21 @@ pub async fn dev_tools_run_scan(
     _context_id: Option<String>,
 ) -> Result<serde_json::Value, AppError> {
     require_auth(&state).await?;
+    run_scan_core(app, state.db.clone(), project_id, scan_types).await
+}
 
-    let project = repo::get_project_by_id(&state.db, &project_id)?;
+/// Core scan launcher — shared by the `dev_tools_run_scan` command and the
+/// autonomous idea-replenishment subscription (G7,
+/// `engine::subscription::IdeaReplenishSubscription`). Creates the scan
+/// record, spawns the agent run in the background, and returns the scan id
+/// immediately (the scan itself takes minutes).
+pub async fn run_scan_core(
+    app: tauri::AppHandle,
+    db: crate::db::DbPool,
+    project_id: String,
+    scan_types: Vec<String>,
+) -> Result<serde_json::Value, AppError> {
+    let project = repo::get_project_by_id(&db, &project_id)?;
 
     // Resolve agents before creating any DB records to avoid orphaned "running" scans
     let all_agents = get_scan_agents();
@@ -278,7 +291,7 @@ pub async fn dev_tools_run_scan(
     // Create scan record
     let scan_type_str = scan_types.join(",");
     let scan = repo::create_scan(
-        &state.db,
+        &db,
         Some(&project_id),
         &scan_type_str,
         Some("running"),
@@ -290,7 +303,7 @@ pub async fn dev_tools_run_scan(
     IDEA_SCAN_JOBS.set_status(&app, &scan_id, "running", None);
 
     // Get existing context summary for richer analysis
-    let contexts = repo::list_contexts_by_project(&state.db, &project_id, None).unwrap_or_default();
+    let contexts = repo::list_contexts_by_project(&db, &project_id, None).unwrap_or_default();
     let context_summary = if contexts.is_empty() {
         None
     } else {
@@ -309,7 +322,7 @@ pub async fn dev_tools_run_scan(
     // Triage learning loop: feed rejected ideas back so the scan won't
     // re-surface items the human already triaged away.
     let rejected_titles: Option<String> =
-        repo::list_ideas(&state.db, Some(&project_id), Some("rejected"), None, Some(50), None)
+        repo::list_ideas(&db, Some(&project_id), Some("rejected"), None, Some(50), None)
             .ok()
             .filter(|v| !v.is_empty())
             .map(|v| {
@@ -327,7 +340,7 @@ pub async fn dev_tools_run_scan(
     );
 
     let app_handle = app.clone();
-    let pool = state.db.clone();
+    let pool = db.clone();
     let scan_id_for_task = scan_id.clone();
     let token_for_task = cancel_token;
     let root_path = project.root_path.clone();

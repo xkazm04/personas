@@ -2008,6 +2008,111 @@ impl ReactiveSubscription for BacklogToGoalSubscription {
     }
 }
 
+// =============================================================================
+// G7 — Autonomous idea replenishment (last link of the self-sustaining loop)
+// =============================================================================
+
+/// When a goal-managed project is FULLY idle — no open goals AND no pending
+/// backlog ideas — the loop starves: `backlog_to_goal` has nothing to promote
+/// and `goal_advance` nothing to advance. This subscription replenishes the
+/// backlog by running an idea scan (architecture-analyst agent) on ONE such
+/// project per tick. Guardrails: a 20h per-project cooldown via the
+/// `dev_scans` history (scans spawn a paid CLI agent, ~$1-3 / ~6 min), the
+/// quota gate, and the default-OFF `autonomous_idea_scan` setting.
+pub struct IdeaReplenishSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// One fully-idle, scan-cooled project: `(project_id, name)`.
+fn find_replenish_candidate(
+    pool: &DbPool,
+) -> Result<Option<(String, String)>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT dp.id, dp.name FROM dev_projects dp
+         WHERE dp.team_id IS NOT NULL
+           AND NOT EXISTS (SELECT 1 FROM dev_goals g WHERE g.project_id = dp.id
+                             AND g.status NOT IN ('done','completed') AND g.progress < 100)
+           AND NOT EXISTS (SELECT 1 FROM dev_ideas i WHERE i.project_id = dp.id
+                             AND i.status = 'pending')
+           AND NOT EXISTS (SELECT 1 FROM dev_scans s WHERE s.project_id = dp.id
+                             AND s.created_at > datetime('now','-20 hours'))
+         ORDER BY dp.updated_at ASC
+         LIMIT 1",
+    )?;
+    let row = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .filter_map(Result::ok)
+        .next();
+    Ok(row)
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for IdeaReplenishSubscription {
+    fn name(&self) -> &'static str {
+        "idea_replenish"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+
+    async fn tick(&self) {
+        // Default-OFF gate — opt-in only.
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_IDEA_SCAN,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        // Don't spend on scans while inside a quota-limit window (G1).
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("idea_replenish: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let candidate = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || find_replenish_candidate(&pool))
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .flatten()
+        };
+        let Some((project_id, name)) = candidate else {
+            return;
+        };
+
+        tracing::info!(project_id = %project_id, project = %name, "idea_replenish: project fully idle (no goals, no ideas) — running backlog scan");
+        match crate::commands::infrastructure::idea_scanner::run_scan_core(
+            self.app.clone(),
+            self.pool.clone(),
+            project_id.clone(),
+            vec!["architecture-analyst".to_string()],
+        )
+        .await
+        {
+            Ok(v) => {
+                tracing::info!(project_id = %project_id, scan = %v, "idea_replenish: scan launched");
+            }
+            Err(e) => {
+                tracing::warn!(project_id = %project_id, error = %e, "idea_replenish: scan launch failed");
+            }
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Queue drain watchdog — re-drain the execution queue after a quota cooldown
 // ---------------------------------------------------------------------------

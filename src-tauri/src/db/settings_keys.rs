@@ -254,6 +254,17 @@ pub const AUTONOMOUS_BACKLOG_TO_GOAL: &str = "autonomous_backlog_to_goal";
 /// Default for [`AUTONOMOUS_BACKLOG_TO_GOAL`] — off (opt-in autonomy).
 pub const AUTONOMOUS_BACKLOG_TO_GOAL_DEFAULT: bool = false;
 
+/// G7 — the last link of the self-sustaining loop: when a goal-managed project
+/// is FULLY idle (no open goals AND no pending backlog ideas — the backlog ran
+/// dry), run an idea scan to replenish it (`dev_tools` idea scanner,
+/// architecture-analyst agent). One project per tick, per-project cooldown of
+/// 20h via the `dev_scans` history — scans spawn a paid CLI agent (~$1-3), so
+/// this is deliberately the slowest wheel. Default OFF — opt-in. Read by
+/// `engine::subscription::IdeaReplenishSubscription`. Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_IDEA_SCAN: &str = "autonomous_idea_scan";
+/// Default for [`AUTONOMOUS_IDEA_SCAN`] — off (opt-in autonomy).
+pub const AUTONOMOUS_IDEA_SCAN_DEFAULT: bool = false;
+
 /// Global cap on the number of executions that may run concurrently across ALL
 /// personas. Read ONCE at engine construction (see
 /// `crate::engine::ExecutionEngine::new`) and seeded into the
@@ -342,6 +353,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_REVIEW_TRIAGE,
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
     AUTONOMOUS_BACKLOG_TO_GOAL,
+    AUTONOMOUS_IDEA_SCAN,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
@@ -445,6 +457,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_ASSIGNMENT_RETRY
         | AUTONOMOUS_REVIEW_TRIAGE
         | AUTONOMOUS_BACKLOG_TO_GOAL
+        | AUTONOMOUS_IDEA_SCAN
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),

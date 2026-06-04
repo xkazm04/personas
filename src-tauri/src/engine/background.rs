@@ -496,6 +496,14 @@ pub fn start_loops(
         Box::new(subscription::BacklogToGoalSubscription {
             pool: pool.clone(),
         }),
+        // G7 — autonomous idea replenishment: when a goal-managed project is
+        // fully idle (no open goals, no pending ideas), run a backlog scan to
+        // refeed the loop. Default-OFF (`autonomous_idea_scan`); 20h
+        // per-project cooldown; one project per tick.
+        Box::new(subscription::IdeaReplenishSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).
