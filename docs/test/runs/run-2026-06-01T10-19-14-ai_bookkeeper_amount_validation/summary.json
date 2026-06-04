@@ -1,0 +1,25 @@
+{
+  "runId": "run-2026-06-01T10-19-14-ai_bookkeeper_amount_validation",
+  "team": "SDLC — ai-bookkeeper",
+  "teamId": "f8a981a8-79aa-46ee-bc19-b68c087dc96d",
+  "sinceIso": "2026-06-01T10:18:14.841Z",
+  "counts": {
+    "executions": 4,
+    "executionsByStatus": {
+      "completed": 4
+    },
+    "personasExecuted": 4,
+    "reviews": 0,
+    "memories": 8,
+    "events": 14,
+    "eventsByStatus": {
+      "delivered": 14
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "incidents": 0,
+    "logsCopied": 4
+  },
+  "cost_usd": 3.3418782500000006,
+  "repoDiffBytes": 165970
+}

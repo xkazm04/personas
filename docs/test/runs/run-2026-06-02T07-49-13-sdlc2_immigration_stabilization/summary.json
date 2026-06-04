@@ -1,0 +1,25 @@
+{
+  "runId": "run-2026-06-02T07-49-13-sdlc2_immigration_stabilization",
+  "team": "SDLC2 — Immigration",
+  "teamId": "27328eda-3e88-4fed-b612-f5985ea63f4f",
+  "sinceIso": "2026-06-02T07:48:13.361Z",
+  "counts": {
+    "executions": 8,
+    "executionsByStatus": {
+      "completed": 8
+    },
+    "personasExecuted": 8,
+    "reviews": 1,
+    "memories": 15,
+    "events": 24,
+    "eventsByStatus": {
+      "delivered": 24
+    },
+    "approvals": 0,
+    "pipelineRuns": 0,
+    "incidents": 0,
+    "logsCopied": 8
+  },
+  "cost_usd": 7.00114275,
+  "repoDiffBytes": 767494
+}

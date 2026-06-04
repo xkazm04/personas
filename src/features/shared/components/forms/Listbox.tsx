@@ -1,13 +1,28 @@
 import { useState, useRef, useEffect, useCallback, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { Search } from 'lucide-react';
 import { useClickOutside } from '@/hooks/utility/interaction/useClickOutside';
+
+/** Props handed to the `children` render-prop on every render. */
+interface ListboxChildProps {
+  close: () => void;
+  focusIndex: number;
+  /** Current type-ahead query when `searchable` is enabled (always `''`
+   *  otherwise). The Listbox owns the input, focus management, and the
+   *  aria-live announcement; the *caller supplies the matcher* by filtering
+   *  its own option list with `query` and reporting the filtered length back
+   *  through `itemCount`. */
+  query: string;
+}
 
 interface ListboxProps {
   /** Render the trigger element. Consumer handles click via toggle(). */
   renderTrigger: (props: { isOpen: boolean; toggle: () => void }) => ReactNode;
   /** Render the dropdown options. */
-  children: (props: { close: () => void; focusIndex: number }) => ReactNode;
-  /** Total selectable items -- enables ArrowUp/Down keyboard navigation. */
+  children: (props: ListboxChildProps) => ReactNode;
+  /** Total selectable items -- enables ArrowUp/Down keyboard navigation.
+   *  In `searchable` mode pass the *filtered* length so both navigation and
+   *  the aria-live result count track what the user actually sees. */
   itemCount?: number;
   /** Called when Enter is pressed on a focused item (0-based index). */
   onSelectFocused?: (index: number) => void;
@@ -26,6 +41,24 @@ interface ListboxProps {
    *  card) that would otherwise clip the absolutely-positioned menu.
    *  Position recomputes on scroll/resize while open. */
   portal?: boolean;
+  /** Enable a type-ahead filter input pinned to the top of the popup. The
+   *  Listbox owns the query state and exposes it to `children` via `query`;
+   *  the consumer filters its options with whatever matcher it likes and
+   *  reports the filtered length through `itemCount`. Focus resets to the
+   *  first match on every keystroke and the result count is announced via an
+   *  aria-live region. New searchable consumers should guard
+   *  `onSelectFocused` against an empty filtered list. */
+  searchable?: boolean;
+  /** Placeholder for the search input (already translated by the caller). */
+  searchPlaceholder?: string;
+  /** Accessible label for the search input. Falls back to `ariaLabel`. */
+  searchAriaLabel?: string;
+  /** Build the aria-live result-count announcement (already translated).
+   *  Receives the current (filtered) `itemCount`. When omitted the bare
+   *  count is announced. */
+  renderSearchStatus?: (count: number) => string;
+  /** Notified on every search keystroke (e.g. to log / telemeter). */
+  onSearchChange?: (query: string) => void;
 }
 
 export function Listbox({
@@ -37,11 +70,18 @@ export function Listbox({
   className,
   menuClassName,
   portal = false,
+  searchable = false,
+  searchPlaceholder,
+  searchAriaLabel,
+  renderSearchStatus,
+  onSearchChange,
 }: ListboxProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(-1);
+  const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [menuPos, setMenuPos] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const close = useCallback(() => setOpen(false), []);
@@ -80,10 +120,26 @@ export function Listbox({
     };
   }, [open, portal]);
 
-  // Reset focus index when opening
+  // Reset focus index + search query when opening
   useEffect(() => {
-    if (open) setFocusIndex(-1);
+    if (open) {
+      setFocusIndex(-1);
+      setQuery('');
+    }
   }, [open]);
+
+  // Autofocus the search input once the searchable popup is on screen.
+  useEffect(() => {
+    if (!open || !searchable) return;
+    const id = requestAnimationFrame(() => searchInputRef.current?.focus());
+    return () => cancelAnimationFrame(id);
+  }, [open, searchable]);
+
+  // Type-ahead: every keystroke re-focuses the first match so Enter selects
+  // the top result.
+  useEffect(() => {
+    if (open && searchable) setFocusIndex(0);
+  }, [query, open, searchable]);
 
   // Arrow key navigation + Enter selection
   useEffect(() => {
@@ -108,6 +164,48 @@ export function Listbox({
     return () => document.removeEventListener('keydown', handleKey);
   }, [open, focusIndex, itemCount, onSelectFocused]);
 
+  // Sticky type-ahead header rendered at the top of the popup.
+  const searchHeader = searchable ? (
+    <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-foreground/10 bg-secondary/95 px-3 py-2 backdrop-blur-sm">
+      <Search className="h-4 w-4 shrink-0 text-foreground" aria-hidden="true" />
+      <input
+        ref={searchInputRef}
+        type="text"
+        value={query}
+        onChange={(e) => {
+          const value = e.target.value;
+          setQuery(value);
+          onSearchChange?.(value);
+        }}
+        onKeyDown={(e) => {
+          // Keep Escape working even when itemCount isn't supplied.
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            setOpen(false);
+          }
+        }}
+        placeholder={searchPlaceholder}
+        aria-label={searchAriaLabel ?? ariaLabel}
+        className="w-full bg-transparent typo-body text-foreground outline-none placeholder:text-muted-foreground"
+      />
+    </div>
+  ) : null;
+
+  // Visually-hidden live region announcing the filtered result count.
+  const searchStatus = searchable ? (
+    <div aria-live="polite" role="status" className="sr-only">
+      {query ? (renderSearchStatus ? renderSearchStatus(itemCount ?? 0) : String(itemCount ?? 0)) : ''}
+    </div>
+  ) : null;
+
+  const menuBody = (
+    <>
+      {searchHeader}
+      {children({ close, focusIndex, query })}
+      {searchStatus}
+    </>
+  );
+
   const menu = open ? (
     portal ? (
       menuPos &&
@@ -119,7 +217,7 @@ export function Listbox({
           role="listbox"
           aria-label={ariaLabel}
         >
-          {children({ close, focusIndex })}
+          {menuBody}
         </div>,
         document.body,
       )
@@ -132,7 +230,7 @@ export function Listbox({
         role="listbox"
         aria-label={ariaLabel}
       >
-        {children({ close, focusIndex })}
+        {menuBody}
       </div>
     )
   ) : null;

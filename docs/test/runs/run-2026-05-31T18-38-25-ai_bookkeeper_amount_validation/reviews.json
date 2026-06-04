@@ -1,0 +1,80 @@
+[
+  {
+    "id": "cfd70c5f-de88-4ca3-8b12-cf3c8adb14d8",
+    "execution_id": "6768a89d-dcb4-4306-9f29-e8d0ecc06eee",
+    "persona_id": "947a9d16-e44f-403a-90f7-2e8b14f5370b",
+    "title": "Approve foundational Design DNA brief for ai-paralegal (\"Capital Chambers\")",
+    "description": "No design.md existed, so I generated one from the live codebase tokens. This brief becomes the ground truth every future asset prompt is built from, so it should be confirmed before assets are produced. Review the four-role palette, typography, and layout metaphor — all sourced from tailwind.config.ts / globals.css / layout.tsx.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-31T18:44:31.945778600+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "695b4579-a4b9-4ac2-a4c1-cd3f5d8df790",
+    "execution_id": "eab9c87a-4f0f-4665-abe1-ea2a8e621d03",
+    "persona_id": "947a9d16-e44f-403a-90f7-2e8b14f5370b",
+    "title": "Approve Capital Chambers hero asset (8/10)",
+    "description": "First-round hero brand image for ai-paralegal, grounded in the Capital Chambers brief. Recommended variation scored 8/10 by Gemini Vision (above the 7 threshold) on cycle 1 of 3. Both variations rendered the parchment/walnut/brass system well but omitted the oxblood wax-seal accent. Evaluation is advisory — human approval required before the asset ships.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-31T18:47:53.860691100+00:00",
+    "use_case_id": "uc_asset_generation"
+  },
+  {
+    "id": "c078354b-f154-4588-a349-27e0687ea756",
+    "execution_id": "98e816d8-e36d-465c-a9e9-239978ab4dac",
+    "persona_id": "7e3774e7-84de-46ab-bea5-16c192171dd1",
+    "title": "Review ADR 0008 T1 implementation — note 1 justified scope deviation",
+    "description": "Dev Clone implemented the Architect's single accepted task (commit 326ce2c). All gates green (151/151 tests, tsc clean). One deviation from the literal task scope requires reviewer awareness: the Architect specified the test should export parseRequest from route.ts, but importing ./route under the tsx test runner fails on the server-only package (via @/lib/ai). parseRequest was therefore extracted into a new sibling module parse-request.ts (imported by both route and test) — single source of truth, no behavior change. Approve as-is, or request a different testability approach.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-31T18:52:09.296429+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "f872e4c0-e6d4-4456-8e09-012ecc19e79b",
+    "execution_id": "78b3e444-ad87-4e01-807f-3e5caaf53c90",
+    "persona_id": "c86ab977-1000-4f74-8a53-db59f1687950",
+    "title": "QA findings at POST /api/categorize boundary (ADR 0008 T1 area)",
+    "description": "Implementation commit 326ce2c is APPROVED (151/151 green, tsc clean, independently re-verified). Separately, the bug-hunt surfaced two pre-existing input-hygiene gaps in the surrounding categorize code (not regressions). Review each.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-31T18:55:33.459009400+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "f6f74894-e2d6-4357-86f7-34e0dc6e096c",
+    "execution_id": "98d92a31-5f97-4f17-917a-fea827f5d6e6",
+    "persona_id": "7e3774e7-84de-46ab-bea5-16c192171dd1",
+    "title": "Triage: cap + delimit `description` at POST /api/categorize (security, medium)",
+    "description": "QA Guardian flagged an unbounded + undelimited `description` reaching the LLM prompt (token-cost + prompt-injection risk). Confirmed at parse-request.ts:28 and categorize.ts:307. Proposed: cap at 500 chars in parseRequest (reject → 400) and wrap in a delimited data-only block in buildPrompt; verified via new unit tests + lint/typecheck. Implementation is held pending your accept — I will not open a PR without it.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-31T18:57:23.159650400+00:00",
+    "use_case_id": "uc_triage"
+  },
+  {
+    "id": "d74d8f96-2e8d-419c-823a-b32d593570f2",
+    "execution_id": "fa61947b-490a-448d-a4d7-96aa131cf7cd",
+    "persona_id": "c86ab977-1000-4f74-8a53-db59f1687950",
+    "title": "Behavior-preserving refactor of money-handling route — polar/webhook (validated)",
+    "description": "To make the Polar webhook unit-testable, I extracted its inline event→ledger decision into a pure sibling (resolve-order.ts) and reduced route.ts to verify-signature → resolveCreditAction → credit(). The change is behavior-preserving and fully validated (160/160 tests incl. 9 new, tsc clean, eslint clean). Because this route credits/debits real token balances, surfacing it for a human glance before it ships rather than counting it as a silent test-only change.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-05-31T19:01:04.885118200+00:00",
+    "use_case_id": null
+  }
+]

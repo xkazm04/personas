@@ -1,0 +1,15 @@
+[
+  {
+    "id": "2a89376b-913a-411a-8b56-707721f84997",
+    "execution_id": "fab0466c-450e-458f-9982-bf60e80af5f5",
+    "persona_id": "c86cdb42-dc78-4475-b499-725ece72dee2",
+    "title": "Approve release v0.11.0 + confirm v0.10.0/v0.11.0 merge order",
+    "description": "Release PR #4 (release/v0.11.0) stages the version bump (0.9.0→0.11.0) and changelog for the merged roundToCents feature (PR #3). The annotated git tag / GitHub Release is held pending your approval. Two coupled decisions: (1) approve publishing v0.11.0; (2) confirm the merge sequence — recommended to merge PR #2 (v0.10.0, Metered AI Advisor) before PR #4, otherwise package.json will conflict.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-06-02T12:58:27.303914900+00:00",
+    "use_case_id": null
+  }
+]

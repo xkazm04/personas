@@ -1,0 +1,553 @@
+{
+  "runId": "run-2026-06-02T07-23-12-medical_bill_stabilization_triage",
+  "seed": {
+    "id": "medical-bill/stabilization-triage",
+    "team": "SDLC — Medical Bill Negotiator",
+    "repo": "medical-bill-negotiator",
+    "tracks": [
+      "code",
+      "doc"
+    ],
+    "exercises_roles": [
+      "architect",
+      "reviewer",
+      "security"
+    ],
+    "held_out": false,
+    "goal": "This codebase has accumulated correctness and robustness risks. As the Solution Architect, have the team identify the single highest-priority correctness or robustness defect in this repository (grounded in the actual code — error handling, edge cases, unsafe assumptions), and fix it production-ready. Prioritize stability over new features.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm test"
+    },
+    "acceptance_hint": "A real, grounded stabilization fix (bug/edge-case/error-handling) at the correct module, production-ready, ideally with a regression test. Judge: does the team verify the fix doesn't break existing behavior?",
+    "notes": "Stabilization seed — exercises the stabilization/bugfix work type (§2.1 balance)."
+  },
+  "startedAt": "2026-06-02T07:23:13.134Z",
+  "endedAt": "2026-06-02T07:40:17.256Z",
+  "windowMin": 60,
+  "sinceIso": "2026-06-02T07:22:13.134Z",
+  "entry": {
+    "personaId": "300e2d99-1f31-4fd7-855b-5eaacb0b7bf6",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "852aea7377be76b5",
+  "configHashPost": "852aea7377be76b5",
+  "configUnchanged": true,
+  "repoHeadPre": "02b6a965b5e04528b96102db78ec1def0785e2b1",
+  "repoHeadPost": "02b6a965b5e04528b96102db78ec1def0785e2b1",
+  "repoDirtyPre": true,
+  "repoChangedDuringRun": true,
+  "repoCommittedDuringRun": false,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-06-02T07:23:16.155Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:23:31.169Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:23:46.175Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:24:01.195Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:24:16.208Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:24:31.224Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:24:46.230Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:25:01.252Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:25:16.258Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:25:31.275Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:25:46.294Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:26:01.311Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:26:16.326Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:26:31.338Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:26:46.352Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:27:01.368Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:27:16.386Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:27:31.404Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:27:46.411Z",
+      "execs": 3,
+      "running": 2,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:28:01.428Z",
+      "execs": 3,
+      "running": 2,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:28:16.441Z",
+      "execs": 3,
+      "running": 2,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:28:31.463Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:28:46.485Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:29:01.495Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:29:16.502Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:29:31.520Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:29:46.540Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:30:01.552Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:30:16.558Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:30:31.567Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:30:46.579Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:31:01.589Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:31:16.603Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:31:31.620Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:31:46.627Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:32:01.632Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:32:16.647Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:32:31.653Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:32:46.671Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:33:01.677Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:33:16.689Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:33:31.705Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:33:46.716Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:34:01.726Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:34:16.742Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:34:31.758Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:34:46.774Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:35:01.792Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:35:16.812Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:35:31.821Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:35:46.828Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:36:01.836Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:36:16.841Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:36:31.856Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:36:46.870Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:37:01.882Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:37:16.896Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:37:31.910Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:37:46.915Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:38:01.927Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:38:16.947Z",
+      "execs": 8,
+      "running": 2,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:38:31.955Z",
+      "execs": 8,
+      "running": 2,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:38:46.962Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:39:01.976Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:39:16.982Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:39:31.998Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:39:47.006Z",
+      "execs": 8,
+      "running": 0,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:40:02.023Z",
+      "execs": 8,
+      "running": 0,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T07:40:17.029Z",
+      "execs": 8,
+      "running": 0,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-06-02T07-23-12-medical_bill_stabilization_triage",
+    "team": "SDLC — Medical Bill Negotiator",
+    "teamId": "ee73dd94-4267-4735-9f5d-87c04e385aea",
+    "sinceIso": "2026-06-02T07:22:13.134Z",
+    "counts": {
+      "executions": 8,
+      "executionsByStatus": {
+        "completed": 8
+      },
+      "personasExecuted": 8,
+      "reviews": 4,
+      "memories": 17,
+      "events": 20,
+      "eventsByStatus": {
+        "delivered": 20
+      },
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "incidents": 0,
+      "logsCopied": 8
+    },
+    "cost_usd": 6.565379499999998,
+    "repoDiffBytes": 140801
+  }
+}

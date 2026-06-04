@@ -1,0 +1,762 @@
+{
+  "runId": "run-2026-06-02T12-39-36-g3_pr_qa_handshake",
+  "seed": {
+    "id": "g3/pr-qa-handshake",
+    "team": "SDLC — ai-bookkeeper",
+    "repo": "ai-bookkeeper",
+    "tracks": [
+      "code"
+    ],
+    "exercises_roles": [
+      "architect",
+      "engineer",
+      "qa"
+    ],
+    "held_out": false,
+    "goal": "Add a small, well-tested pure utility roundToCents(amount: number): number that rounds a monetary amount to 2 decimal places (half-up), in a new focused file under the ledger/money-utilities area of this codebase (follow the repo's existing structure + test conventions), with a unit test covering normal, rounding-boundary, and negative cases. Keep it tiny and self-contained — the point is a clean, minimal end-to-end increment, not a large feature.",
+    "repo_cmds": {
+      "build": "npm run build",
+      "lint": "npm run lint",
+      "test": "npm test"
+    },
+    "acceptance_hint": "A tiny pure utility + unit test, implemented end-to-end. The objective is to EXERCISE THE PR->QA HANDSHAKE: Dev Clone implements, opens a PR (dev-clone.pr.created), QA Guardian tests it in an isolated worktree and merges-or-returns it. Feature value is secondary; the handshake firing is the success criterion.",
+    "notes": "G3 proof seed (2026-06-02). Minimal task to prove the dev-clone.pr.created -> QA Guardian uc_pr_review handshake end-to-end on the real xprize-ai-bookkeeper repo, via the 8-member re-composed SDLC — ai-bookkeeper team (Dev Clone + QA Guardian, standards_config pr_base=main + automerge on). NOT held-out — proof, not certification."
+  },
+  "startedAt": "2026-06-02T12:39:36.325Z",
+  "endedAt": "2026-06-02T13:04:11.157Z",
+  "windowMin": 30,
+  "sinceIso": "2026-06-02T12:38:36.324Z",
+  "entry": {
+    "personaId": "eab96372-5af3-4163-b379-a6a8e633b6da",
+    "name": "T: Solution Architect"
+  },
+  "configHashPre": "6eb8bcb4c385ab1a",
+  "configHashPost": "6eb8bcb4c385ab1a",
+  "configUnchanged": true,
+  "repoHeadPre": "3f26d29f49e3ee5dd525ac708ca81a811e7ecf43",
+  "repoHeadPost": "3f26d29f49e3ee5dd525ac708ca81a811e7ecf43",
+  "repoDirtyPre": true,
+  "repoChangedDuringRun": false,
+  "repoCommittedDuringRun": false,
+  "kickReturned": false,
+  "heartbeat": [
+    {
+      "t": "2026-06-02T12:39:39.361Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:39:54.381Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:40:09.397Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:40:24.414Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:40:39.430Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:40:54.448Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:41:09.464Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:41:24.481Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:41:39.489Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:41:54.497Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:42:09.514Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:42:24.530Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:42:39.547Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:42:54.565Z",
+      "execs": 1,
+      "running": 1,
+      "distinctPersonas": 1,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:43:09.581Z",
+      "execs": 3,
+      "running": 2,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:43:24.598Z",
+      "execs": 3,
+      "running": 2,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:43:39.615Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:43:54.631Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:44:09.648Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:44:24.664Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:44:39.683Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:44:54.698Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:45:09.715Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:45:24.731Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:45:39.748Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:45:54.765Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:46:09.781Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:46:24.799Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:46:39.816Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:46:54.832Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:47:09.849Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:47:24.865Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:47:39.882Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:47:54.899Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:48:09.916Z",
+      "execs": 3,
+      "running": 1,
+      "distinctPersonas": 3,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:48:24.932Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:48:39.950Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:48:54.966Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:49:09.983Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:49:24.999Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:49:40.016Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:49:55.033Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:50:10.050Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:50:25.066Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:50:40.083Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:50:55.100Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:51:10.116Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:51:25.133Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:51:40.150Z",
+      "execs": 5,
+      "running": 2,
+      "distinctPersonas": 5,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:51:55.166Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:52:10.183Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:52:25.199Z",
+      "execs": 6,
+      "running": 2,
+      "distinctPersonas": 6,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:52:40.217Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:52:55.233Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:53:10.250Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:53:25.267Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:53:40.283Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:53:55.299Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:54:10.316Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:54:25.334Z",
+      "execs": 7,
+      "running": 2,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:54:40.351Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:54:55.367Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:55:10.384Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:55:25.400Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:55:40.417Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:55:55.434Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:56:10.451Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:56:25.467Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:56:40.484Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:56:55.500Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:57:10.517Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:57:25.535Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:57:40.550Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:57:55.568Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:58:10.585Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:58:25.601Z",
+      "execs": 7,
+      "running": 1,
+      "distinctPersonas": 7,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:58:40.617Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:58:55.635Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:59:10.651Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:59:25.668Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:59:40.685Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T12:59:55.701Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:00:10.717Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:00:25.734Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:00:40.751Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:00:55.768Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:01:10.785Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:01:25.802Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:01:40.818Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:01:55.835Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:02:10.852Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:02:25.868Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:02:40.885Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:02:55.902Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:03:10.918Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:03:25.935Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:03:40.952Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:03:55.969Z",
+      "execs": 8,
+      "running": 1,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    },
+    {
+      "t": "2026-06-02T13:04:10.986Z",
+      "execs": 8,
+      "running": 0,
+      "distinctPersonas": 8,
+      "owedHandoffs": 0
+    }
+  ],
+  "summary": {
+    "runId": "run-2026-06-02T12-39-36-g3_pr_qa_handshake",
+    "team": "SDLC — ai-bookkeeper",
+    "teamId": "f8a981a8-79aa-46ee-bc19-b68c087dc96d",
+    "sinceIso": "2026-06-02T12:38:36.324Z",
+    "counts": {
+      "executions": 8,
+      "executionsByStatus": {
+        "completed": 8
+      },
+      "personasExecuted": 8,
+      "reviews": 1,
+      "memories": 15,
+      "events": 23,
+      "eventsByStatus": {
+        "delivered": 23
+      },
+      "approvals": 0,
+      "pipelineRuns": 0,
+      "incidents": 0,
+      "logsCopied": 8
+    },
+    "cost_usd": 8.6390455,
+    "repoDiffBytes": 184502
+  }
+}

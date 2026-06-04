@@ -1,0 +1,41 @@
+[
+  {
+    "id": "b70aefd9-36ad-44f1-9374-b729061d87c2",
+    "execution_id": "8daff2a4-716a-4bff-8ae5-a2778cbcf158",
+    "persona_id": "5a01c859-d35b-417c-801c-d94fff2d22e2",
+    "title": "Code Review APPROVE — money-handling boundary (POST /api/categorize amount validation)",
+    "description": "Reviewed branch dev-clone/wire-amount-validation-categorize-main: replaces Number.isFinite with isValidSignedAmount at the live categorize boundary. 9/9 tests green, lint clean, no typecheck errors in changed files (only pre-existing @supabase/ssr baseline debt). No critical/security/correctness issues; net security improvement. Verdict APPROVE-with-notes. Because this boundary feeds real ledger/token-charged operations, surfacing the verdict for a human glance before merge, per team policy.",
+    "severity": "low",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-06-01T11:50:09.643342900+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "d6e08d5e-aefb-4c10-b086-df1420c8eaf1",
+    "execution_id": "d50eb309-25e3-4dd4-ac6f-4c0bebd18510",
+    "persona_id": "4bdd9f73-3d05-4100-8d73-381eeb9583e4",
+    "title": "Security findings — ai-bookkeeper @ 0.9.0 (1 high, 3 medium, 2 low)",
+    "description": "Rescan after the app gained live API routes + LLM. Triage each finding: action now, schedule, or accept-with-note. H1 (categorize prompt-injection/unbounded description) is already team-approved for fix and just needs landing. M2 (amount.ts coercion) must land before the SMS/OCR adapter. M3 (postcss) is build-only and may be accepted-with-note rather than forcing a next downgrade.",
+    "severity": "high",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-06-01T11:54:39.586989300+00:00",
+    "use_case_id": null
+  },
+  {
+    "id": "80541c8b-e08d-41fb-b9a8-37513e5a33c2",
+    "execution_id": "b9fb199a-3a32-4972-9885-20c78f83729c",
+    "persona_id": "c86cdb42-dc78-4475-b499-725ece72dee2",
+    "title": "Approve release v0.10.0 (MINOR) — tag & publish ai-bookkeeper",
+    "description": "Release PR #2 (release/v0.10.0 → main) bumps package.json 0.9.0→0.10.0 and prepends the categorized CHANGELOG entry. Bump = MINOR (one additive feature commit 6034931e; no breaking changes). The actual git tag + GitHub release are held pending your approval because Automerge is disabled per team policy and tag/publish is irreversible/outward-facing. Approving = merge PR #2, then I (or release tooling) cut the annotated tag v0.10.0 on the merge commit and publish the release notes. Note: open security findings from the 2026-06-01 scan are carried as Known Issues, not fixed here.",
+    "severity": "medium",
+    "status": "pending",
+    "reviewer_notes": null,
+    "resolved_at": null,
+    "created_at": "2026-06-01T11:58:53.844667300+00:00",
+    "use_case_id": null
+  }
+]
