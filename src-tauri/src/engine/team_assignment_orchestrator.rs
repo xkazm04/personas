@@ -740,6 +740,34 @@ fn trigger_qa_rework(
     // count the round on its retry counter.
     assignment_repo::update_step_status(pool, &qa_step.id, "pending", None, qa_summary)?;
     assignment_repo::increment_step_retry(pool, &qa_step.id)?;
+
+    // T6 (learning loop): every bounce is a durable lesson — write it to the
+    // shared team ledger as a `constraint` so future increments avoid the same
+    // failure (the ledger's top-N digest is injected into every member's
+    // prompt). The round number keeps repeat bounces distinct. Best-effort.
+    if let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) {
+        let lesson: String = verdict.chars().take(800).collect();
+        let tm = crate::db::models::CreateTeamMemoryInput {
+            team_id: assignment.team_id.clone(),
+            run_id: None,
+            member_id: None,
+            persona_id: qa_step.assigned_persona_id.clone(),
+            title: format!(
+                "QA bounce (round {}): {}",
+                qa_step.retry_count + 1,
+                assignment.title
+            ),
+            content: format!(
+                "QA requested changes on this increment's PR. Verdict: {lesson}"
+            ),
+            category: Some("constraint".to_string()),
+            importance: Some(7),
+            tags: Some("qa,changes_requested".to_string()),
+        };
+        if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
+            tracing::warn!(step_id = %qa_step.id, error = %e, "qa rework: failed to write bounce lesson to team ledger");
+        }
+    }
     assignment_repo::insert_event(
         pool,
         &qa_step.assignment_id,

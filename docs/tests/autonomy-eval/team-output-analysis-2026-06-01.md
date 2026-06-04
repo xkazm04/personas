@@ -342,11 +342,16 @@ driving open PRs to merge/close. *Direction:* give QA or Release an open-PR swee
 responsibility (close superseded, merge approved), and/or gate goal-done on no open PRs from
 its branches.
 
-### T6 — Learning loop dormant (teamwork)
-**1 team memory written in the whole run** (vs 46 pre-existing) despite 207 completions, ADR
-decisions, and QA bounces. Auto-triage approvals bypass the human-review→memory pattern, and
-personas don't persist decisions/constraints. *Direction:* memory writes on
-`qa.pr.changes_requested` (constraint), ADR acceptance (decision), and auto-approved reviews.
+### T6 — Learning loop dormant (teamwork) — RE-DIAGNOSED + CLOSED
+Original diagnosis ("1 team memory all run; auto-triage bypasses the memory pattern") was
+**partly wrong** — the snapshot predated the writes. Re-measured: auto-triage DOES route
+through `manual_reviews::update_status`, whose learning block wrote **12 decision memories
+overnight** (14 approvals, ~2 dedup-suppressed); personas wrote 391 L1 memories; and the
+read side works — `get_for_injection` puts the top-15 ledger entries into every team
+member's prompt ("Team Shared Knowledge"). The one genuinely missing write: **QA bounces**.
+**Closed:** `trigger_qa_rework` now writes each bounce to the team ledger as a `constraint`
+(round-numbered title, verdict content, importance 7) — every bounce becomes a durable
+lesson the whole team reads on its next run.
 
 ### T7 — Design hygiene (small)
 Artist no-op ×19 (GAP-D); Dev Clone `template_category='devops'` (mis-set — the engineer pin
