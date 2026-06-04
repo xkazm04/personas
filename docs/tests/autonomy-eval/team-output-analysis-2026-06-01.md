@@ -359,22 +359,29 @@ shipped 30 goals / 26 PRs / 22 QA-merges / 193-vs-1 completed-vs-failed for $210
 13 `qa.pr.changes_requested` → 0 re-works.** Grant-writing + local-seo lanes are fully clean
 (0 open PRs); merged work is substantial (+323/+404-line real increments). The leaks:
 
-### V1 — QA bounce is a dead end (CRITICAL; the feedback loop never existed)
+### V1 — QA bounce is a dead end (CRITICAL; the feedback loop never existed) — FIXED
 All **13** `qa.pr.changes_requested` events across the whole campaign produced **zero**
 Dev Clone follow-ups — there are **0 subscriptions** for the event, and `wire_team_handoff`
 explicitly wires only non-feedback edges, so the preset's qa→engineer feedback connection was
 never materialised. Not a T1 regression — it never worked. Every bounced PR strands open.
-*Direction:* wire `qa.pr.changes_requested` → Dev Clone fix-PR path (subscription or an
-orchestrator retry-step that re-queues the implement step with the QA verdict as input).
+**Fixed (orchestrator QA fix loop):** when a QA step's execution emits
+`qa.pr.changes_requested`, the step is NOT marked done — the orchestrator resets the
+implementer (QA verdict forwarded as `rework_feedback` + fix-the-SAME-PR-branch instruction)
+and the QA step to pending; the DAG re-runs implement→QA. `MAX_QA_FIX_ROUNDS=2` (counted on
+the QA step's `retry_count`) then fails the step → assignment parks at `awaiting_review` for
+a human. Decompose now also MANDATES the QA test+merge step, so all goal work flows through
+the loop. Step `output_summary` switched head→tail so the forwarded verdict is the actual
+conclusion, not the narrative opening. (Note: subscription-path QA bounces — non-step,
+chain-era — remain dead-ends by scope; goal work no longer uses that path.)
 
-### V2 — "Done" ≠ delivered (CRITICAL; goal integrity)
+### V2 — "Done" ≠ delivered (CRITICAL; goal integrity) — FIXED (same mechanism)
 **48/50 goals are `done` while ~16 of the campaign's 51 PRs never merged** — 11
 implementation PRs sit open (incl. the bounced ones). The QA step "completes" by bouncing
 (it did its job), the assignment completes, the close-loop marks the goal done — so a goal
 counts delivered while its code never reached main (e.g. Medical Bill's editor-extraction
-goal: done 06-03 17:47, its PR #3 still open). *Direction:* a bounced increment should hold
-the assignment in an active fix loop (V1), and/or the goal close-loop should require
-`qa.pr.approved` for steps that opened a PR.
+goal: done 06-03 17:47, its PR #3 still open). **Fixed via the V1 loop:** an assignment can only
+complete on a clean QA pass (a bounce re-queues; the cap escalates to a human instead of
+silently completing) — so goal-done now implies merged-on-main for decomposed work.
 
 ### V3 — Release-PR lane unowned + self-superseding
 **10 open `chore(release)` PRs** (8 on ai-bookkeeper alone: v0.10.0→v0.14.0, oldest from
