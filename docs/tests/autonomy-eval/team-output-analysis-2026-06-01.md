@@ -383,15 +383,19 @@ goal: done 06-03 17:47, its PR #3 still open). **Fixed via the V1 loop:** an ass
 complete on a clean QA pass (a bounce re-queues; the cap escalates to a human instead of
 silently completing) — so goal-done now implies merged-on-main for decomposed work.
 
-### V3 — Release-PR lane unowned + self-superseding
+### V3 — Release-PR lane unowned + self-superseding — FIXED (mechanical lanes)
 **10 open `chore(release)` PRs** (8 on ai-bookkeeper alone: v0.10.0→v0.14.0, oldest from
 06-01). QA's merge gate triggers only on `dev-clone.pr.created`, so release PRs have no merge
 owner; each new bump obsoletes the previous PR (same package.json/CHANGELOG lines — only the
-newest, #22, is even MERGEABLE). *Direction:* Release Manager self-merges its release PR (its
-lane, post-QA-of-features), or the release flow stops opening PRs and commits the bump after
-the feature merge; auto-close superseded release PRs.
+newest, #22, is even MERGEABLE). **Fixed:** root cause was the policy block itself ("never commit to base" + "QA sole merge
+authority on ANY PR" left Release/Docs no legal path). The policy now scopes QA's authority
+to CODE PRs and adds MECHANICAL LANES — Release (bump/CHANGELOG/tags) and Docs (README/docs
+syncs) commit directly to the base branch, never via PRs; own-lane stale PRs may be
+self-merged/closed. Backlog disposed: 10 release PRs closed, 3 docs PRs merged + 5 closed
+(conflicted the moment the first sync landed — the self-superseding pattern observed live).
+Open PRs 29 → 7, all legitimate in-flight code increments.
 
-### V4 — Docs-PR lane unowned (same shape)
+### V4 — Docs-PR lane unowned (same shape) — FIXED (same mechanism)
 **8 open docs PRs** (apprenticeship ×4, paralegal ×3, medical ×1) — distinct, small, useful
 syncs that nobody merges. Same ownership fix as V3.
 
