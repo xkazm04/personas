@@ -96,6 +96,11 @@ const TOUR_SEQUENCE: TourId[] = [
   'teams-orchestration',
 ];
 
+/** The user-selectable tours in recommended order (excludes the Starter tier variant). */
+export function getTourSequence(): readonly TourId[] {
+  return TOUR_SEQUENCE;
+}
+
 /** The next not-yet-completed tour to suggest after `currentId`, or null when none remain. */
 export function getNextTourId(currentId: TourId, completed: Record<TourId, boolean>): TourId | null {
   const startIdx = currentId === 'getting-started-simple' ? 0 : TOUR_SEQUENCE.indexOf(currentId);

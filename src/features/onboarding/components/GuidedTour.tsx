@@ -8,7 +8,7 @@ import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
 import { getActiveTourSteps, getTourById, type TourId } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
-import { getStepColors, getNextTourId } from './tourConstants';
+import { getStepColors, getNextTourId, getTourSequence } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
 import { StepProgress } from './StepProgress';
 import { TourProgressArc } from './TourProgressArc';
@@ -187,6 +187,12 @@ export default function GuidedTour() {
   if (showCompletion) {
     const nextTourId = getNextTourId(tourId, completionMap);
     const nextTour = nextTourId ? getTourById(nextTourId) : null;
+    // Every other selectable tour (not the current one, not the primary "next"
+    // suggestion) so the completion screen doubles as a jump-to-any-tour hub.
+    const otherTours = getTourSequence()
+      .filter((id) => id !== tourId && id !== nextTourId)
+      .map((id) => getTourById(id))
+      .filter((td): td is NonNullable<typeof td> => Boolean(td));
     return (
       <div
         data-testid="tour-completion"
@@ -218,6 +224,31 @@ export default function GuidedTour() {
                 <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_up_next}</span>
                 <p className={`typo-heading ${colors.text} mt-1`}>{nextTour.title}</p>
                 <p className="typo-body text-foreground leading-relaxed mt-0.5">{nextTour.description}</p>
+              </div>
+            )}
+            {otherTours.length > 0 && (
+              <div className="w-full text-left">
+                <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_more}</span>
+                <div className="mt-1.5 flex flex-col gap-1">
+                  {otherTours.map((td) => {
+                    const done = completionMap[td.id];
+                    return (
+                      <button
+                        key={td.id}
+                        type="button"
+                        onClick={() => handleFinishTour(td.id)}
+                        data-testid={`tour-complete-jump-${td.id}`}
+                        className="group flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-primary/10 hover:bg-secondary/30 transition-colors text-left"
+                      >
+                        <span className={`flex items-center justify-center w-5 h-5 rounded-full border flex-shrink-0 ${done ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'border-primary/15 text-foreground'}`}>
+                          {done ? <Check className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
+                        </span>
+                        <span className="typo-body text-foreground truncate flex-1">{td.title}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-foreground opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

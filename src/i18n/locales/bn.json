@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "এর পরে",
     "tour_complete_next": "পরের ট্যুর শুরু করুন",
     "tour_minimized_hint": "{tour} · {completed}/{total} ধাপ · চালিয়ে যেতে ক্লিক করুন",
+    "tour_complete_more": "অথবা অন্য একটি ট্যুর দেখুন",
     "minimize": "ছোট করুন",
     "end_tour": "ট্যুর শেষ করুন",
     "back": "পিছনে",

@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "Berikutnya",
     "tour_complete_next": "Mulai tur berikutnya",
     "tour_minimized_hint": "{tour} · {completed}/{total} langkah · klik untuk lanjut",
+    "tour_complete_more": "Atau jelajahi tur lain",
     "minimize": "Perkecil",
     "end_tour": "Akhiri tur",
     "back": "Kembali",

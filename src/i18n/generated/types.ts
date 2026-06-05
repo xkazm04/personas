@@ -9703,6 +9703,7 @@ export type Translations = {
     tour_complete_up_next: string;
     tour_complete_next: string;
     tour_minimized_hint: string;
+    tour_complete_more: string;
     tour_loading: string;
     tour_skip: string;
     what_to_explore: string;

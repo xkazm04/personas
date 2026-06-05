@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "Tiếp theo",
     "tour_complete_next": "Bắt đầu hướng dẫn tiếp theo",
     "tour_minimized_hint": "{tour} · {completed}/{total} bước · nhấp để tiếp tục",
+    "tour_complete_more": "Hoặc khám phá hướng dẫn khác",
     "minimize": "Thu nhỏ",
     "end_tour": "Kết thúc hướng dẫn",
     "back": "Quay lại",

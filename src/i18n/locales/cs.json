@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "Dále",
     "tour_complete_next": "Spustit další prohlídku",
     "tour_minimized_hint": "{tour} · {completed}/{total} kroků · pokračujte kliknutím",
+    "tour_complete_more": "Nebo prozkoumejte jinou prohlídku",
     "minimize": "Minimalizovat",
     "end_tour": "Ukončit prohlídku",
     "back": "Zpět",

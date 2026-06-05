@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "A continuación",
     "tour_complete_next": "Empezar el siguiente tour",
     "tour_minimized_hint": "{tour} · {completed}/{total} pasos · haz clic para continuar",
+    "tour_complete_more": "O explora otro tour",
     "minimize": "Minimizar",
     "end_tour": "Finalizar recorrido",
     "back": "Atrás",

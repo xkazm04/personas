@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "接下来",
     "tour_complete_next": "开始下一个导览",
     "tour_minimized_hint": "{tour} · {completed}/{total} 步 · 点击继续",
+    "tour_complete_more": "或体验其他导览",
     "minimize": "最小化",
     "end_tour": "结束引导",
     "back": "返回",

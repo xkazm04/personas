@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "आगे",
     "tour_complete_next": "अगला टूर शुरू करें",
     "tour_minimized_hint": "{tour} · {completed}/{total} चरण · जारी रखने के लिए क्लिक करें",
+    "tour_complete_more": "या कोई और टूर देखें",
     "minimize": "छोटा करें",
     "end_tour": "टूर समाप्त करें",
     "back": "वापस",

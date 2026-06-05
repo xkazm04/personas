@@ -9248,6 +9248,7 @@
     "tour_complete_up_next": "Далее",
     "tour_complete_next": "Начать следующий тур",
     "tour_minimized_hint": "{tour} · {completed}/{total} шагов · нажмите, чтобы продолжить",
+    "tour_complete_more": "Или пройдите другой тур",
     "minimize": "Свернуть",
     "end_tour": "Завершить тур",
     "back": "Назад",
