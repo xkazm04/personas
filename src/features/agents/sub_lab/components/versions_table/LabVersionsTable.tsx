@@ -10,6 +10,7 @@ import { UnifiedTable, type TableColumn } from '@/features/shared/components/dis
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
+import { useSeedAthenaComposer } from '@/features/plugins/companion/useSeedAthenaComposer';
 import { buildVersionRows, type VersionRow } from '../../libs/versionMatrixRows';
 import { VersionStatusBadge } from './VersionStatusBadge';
 import { VersionRatingCell } from './VersionRatingCell';
@@ -48,6 +49,7 @@ export function LabVersionsTable() {
   const startArena = useAgentStore((s) => s.startArena);
   const isArenaRunning = useAgentStore((s) => s.isArenaRunning);
   const addToast = useToastStore((s) => s.addToast);
+  const seedAthena = useSeedAthenaComposer();
 
   const personaId = selectedPersona?.id;
   const [measuringVersionId, setMeasuringVersionId] = useState<string | null>(null);
@@ -113,6 +115,33 @@ export function LabVersionsTable() {
         startArena(personaId, MEASURE_MODELS, undefined, row.versionId);
         addToast(tx(lab.vr_measuring_toast, { version: row.versionNumber }), 'success', 4000);
       },
+      onImprove: (row) => {
+        if (!selectedPersona) return;
+        // Seed Athena's composer with an improvement brief and wait for the user
+        // to specify the focus before they send it.
+        let seed: string;
+        const r = row.rating;
+        const metrics = r
+          ? ([
+              { label: lab.vr_metric_tool, v: r.toolAccuracy },
+              { label: lab.vr_metric_quality, v: r.outputQuality },
+              { label: lab.vr_metric_protocol, v: r.protocolCompliance },
+            ].filter((m) => m.v != null) as { label: string; v: number }[])
+          : [];
+        if (metrics.length) {
+          const weakest = metrics.reduce((a, b) => (b.v < a.v ? b : a));
+          seed = tx(lab.vr_improve_seed_measured, {
+            name: selectedPersona.name,
+            version: row.versionNumber,
+            metric: weakest.label,
+            score: Math.round(weakest.v),
+            model: modelLabel(row.modelId),
+          });
+        } else {
+          seed = tx(lab.vr_improve_seed_plain, { name: selectedPersona.name, version: row.versionNumber });
+        }
+        seedAthena(seed);
+      },
       onDiff: (row) => setDiffRow(row),
       onToggleBaseline: (row) => {
         if (!personaId) return;
@@ -121,7 +150,7 @@ export function LabVersionsTable() {
       },
       onToggleArchive: (row) => tagVersion(row.versionId, row.isArchived ? 'experimental' : 'archived'),
     }),
-    [personaId, activateVersion, startArena, addToast, tx, lab, unpinBaseline, pinBaseline, tagVersion],
+    [personaId, selectedPersona, activateVersion, startArena, addToast, tx, lab, seedAthena, unpinBaseline, pinBaseline, tagVersion],
   );
 
   const columns: TableColumn<VersionRow>[] = useMemo(
