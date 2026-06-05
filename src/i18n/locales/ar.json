@@ -9241,6 +9241,8 @@
     "tour_locate_title": "أرِني أين يوجد هذا",
     "tour_progress_done": "اكتمل {completed} من {total}",
     "tour_skip_step": "تخطي الخطوة",
+    "tour_intro_heading": "قبل أن تبدأ",
+    "tour_intro_steps": "{count} خطوات · تقدّم على راحتك",
     "minimize": "تصغير",
     "end_tour": "إنهاء الجولة",
     "back": "رجوع",

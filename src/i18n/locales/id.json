@@ -9241,6 +9241,8 @@
     "tour_locate_title": "Tunjukkan di mana ini",
     "tour_progress_done": "{completed} dari {total} selesai",
     "tour_skip_step": "Lewati langkah",
+    "tour_intro_heading": "Sebelum mulai",
+    "tour_intro_steps": "{count} langkah · santai saja",
     "minimize": "Perkecil",
     "end_tour": "Akhiri tur",
     "back": "Kembali",

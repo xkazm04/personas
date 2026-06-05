@@ -9696,6 +9696,8 @@ export type Translations = {
     tour_locate_title: string;
     tour_progress_done: string;
     tour_skip_step: string;
+    tour_intro_heading: string;
+    tour_intro_steps: string;
     tour_loading: string;
     tour_skip: string;
     what_to_explore: string;

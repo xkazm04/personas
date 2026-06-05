@@ -9241,6 +9241,8 @@
     "tour_locate_title": "Cho tôi xem nó ở đâu",
     "tour_progress_done": "Hoàn thành {completed}/{total}",
     "tour_skip_step": "Bỏ qua bước",
+    "tour_intro_heading": "Trước khi bắt đầu",
+    "tour_intro_steps": "{count} bước · theo nhịp độ của bạn",
     "minimize": "Thu nhỏ",
     "end_tour": "Kết thúc hướng dẫn",
     "back": "Quay lại",

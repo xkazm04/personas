@@ -6,6 +6,7 @@ import type { TourId, TourStepId, TourStepDef } from '@/stores/slices/system/tou
 import { Button } from '@/features/shared/components/buttons';
 import { getStepColors } from './tourConstants';
 import { StepProgress } from './StepProgress';
+import { TourIntroCard } from './TourIntroCard';
 import { useTranslation } from '@/i18n/useTranslation';
 
 const TourAppearanceContent = lazy(() => import('./steps/TourAppearanceContent'));
@@ -43,6 +44,7 @@ export function TourPanelBody({
   if (!currentStep) return null;
 
   const colors = getStepColors(tourColor);
+  const hasProgress = Object.values(completedSteps).some(Boolean);
 
   // Determine if this step has a specialized content component (Tour 1 only)
   const isGettingStarted = tourId === 'getting-started';
@@ -153,6 +155,9 @@ export function TourPanelBody({
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto px-4 pb-3" key={currentStep.id}>
+        {currentIndex === 0 && !hasProgress && (
+          <TourIntroCard tourId={tourId} stepCount={steps.length} />
+        )}
         <Suspense fallback={<div className="py-4 text-center text-foreground typo-body">{t.onboarding.tour_loading}</div>}>
           {/* Tour 1: Getting Started - specialized content */}
           {isGettingStarted && currentStep.id === 'appearance-setup' && <TourAppearanceContent />}

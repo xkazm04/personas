@@ -9241,6 +9241,8 @@
     "tour_locate_title": "이 위치 보기",
     "tour_progress_done": "{total}개 중 {completed}개 완료",
     "tour_skip_step": "단계 건너뛰기",
+    "tour_intro_heading": "시작하기 전에",
+    "tour_intro_steps": "{count}단계 · 자신의 속도로",
     "minimize": "Minimize",
     "end_tour": "End tour",
     "back": "Back",

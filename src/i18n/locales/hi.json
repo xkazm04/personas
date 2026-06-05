@@ -9241,6 +9241,8 @@
     "tour_locate_title": "दिखाएँ यह कहाँ है",
     "tour_progress_done": "{total} में से {completed} पूर्ण",
     "tour_skip_step": "चरण छोड़ें",
+    "tour_intro_heading": "शुरू करने से पहले",
+    "tour_intro_steps": "{count} चरण · अपनी गति से चलें",
     "minimize": "छोटा करें",
     "end_tour": "टूर समाप्त करें",
     "back": "वापस",
