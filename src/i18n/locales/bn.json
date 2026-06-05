@@ -9236,6 +9236,8 @@
     "progress_adopt": "এজেন্ট অ্যাডপ্ট করুন",
     "progress_execute": "প্রথম রান",
     "tour_step_of": "ধাপ {current}/{total}",
+    "tour_show_me": "দেখান",
+    "tour_show_me_title": "এই উপাদানে স্ক্রোল করে আবার হাইলাইট করুন",
     "minimize": "ছোট করুন",
     "end_tour": "ট্যুর শেষ করুন",
     "back": "পিছনে",

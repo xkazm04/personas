@@ -9236,6 +9236,8 @@
     "progress_adopt": "Adopt agent",
     "progress_execute": "First run",
     "tour_step_of": "Step {current} of {total}",
+    "tour_show_me": "위치 보기",
+    "tour_show_me_title": "해당 요소로 스크롤하고 다시 강조",
     "minimize": "Minimize",
     "end_tour": "End tour",
     "back": "Back",

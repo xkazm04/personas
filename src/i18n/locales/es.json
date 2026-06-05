@@ -9236,6 +9236,8 @@
     "progress_adopt": "Adoptar agente",
     "progress_execute": "Primera ejecución",
     "tour_step_of": "Paso {current} de {total}",
+    "tour_show_me": "Mostrar",
+    "tour_show_me_title": "Desplázate y vuelve a resaltar esto en pantalla",
     "minimize": "Minimizar",
     "end_tour": "Finalizar recorrido",
     "back": "Atrás",

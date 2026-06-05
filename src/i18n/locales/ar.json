@@ -9236,6 +9236,8 @@
     "progress_adopt": "اعتماد الوكيل",
     "progress_execute": "التشغيل الأول",
     "tour_step_of": "الخطوة {current} من {total}",
+    "tour_show_me": "أرِني",
+    "tour_show_me_title": "مرِّر لإظهار هذا العنصر وإبرازه من جديد",
     "minimize": "تصغير",
     "end_tour": "إنهاء الجولة",
     "back": "رجوع",

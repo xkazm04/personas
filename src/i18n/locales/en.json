@@ -9685,6 +9685,8 @@
     "resume_continue_cta": "Continue tour",
     "back": "Back",
     "complete_tour": "Complete Tour",
+    "tour_show_me": "Show me",
+    "tour_show_me_title": "Scroll to and re-highlight this on screen",
     "tour_loading": "Loading...",
     "tour_skip": "Skip",
     "what_to_explore": "What to explore",

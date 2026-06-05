@@ -9236,6 +9236,8 @@
     "progress_adopt": "Áp dụng tác nhân",
     "progress_execute": "Lần chạy đầu tiên",
     "tour_step_of": "Bước {current} trong {total}",
+    "tour_show_me": "Chỉ cho tôi",
+    "tour_show_me_title": "Cuộn đến và làm nổi bật lại phần này",
     "minimize": "Thu nhỏ",
     "end_tour": "Kết thúc hướng dẫn",
     "back": "Quay lại",

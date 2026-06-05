@@ -9691,6 +9691,8 @@ export type Translations = {
     resume_continue_cta: string;
     back: string;
     complete_tour: string;
+    tour_show_me: string;
+    tour_show_me_title: string;
     tour_loading: string;
     tour_skip: string;
     what_to_explore: string;

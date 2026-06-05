@@ -9236,6 +9236,8 @@
     "progress_adopt": "Agenten übernehmen",
     "progress_execute": "Erster Start",
     "tour_step_of": "Schritt {current} von {total}",
+    "tour_show_me": "Zeigen",
+    "tour_show_me_title": "Zum Element scrollen und erneut hervorheben",
     "minimize": "Minimieren",
     "end_tour": "Tour beenden",
     "back": "Zurück",

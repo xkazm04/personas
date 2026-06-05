@@ -9236,6 +9236,8 @@
     "progress_adopt": "Adoptovat agenta",
     "progress_execute": "První běh",
     "tour_step_of": "Krok {current} z {total}",
+    "tour_show_me": "Ukázat",
+    "tour_show_me_title": "Posunout a znovu zvýraznit tento prvek",
     "minimize": "Minimalizovat",
     "end_tour": "Ukončit prohlídku",
     "back": "Zpět",

@@ -9236,6 +9236,8 @@
     "progress_adopt": "采用代理",
     "progress_execute": "首次运行",
     "tour_step_of": "第 {current} 步，共 {total} 步",
+    "tour_show_me": "显示位置",
+    "tour_show_me_title": "滚动到该元素并重新高亮",
     "minimize": "最小化",
     "end_tour": "结束引导",
     "back": "返回",

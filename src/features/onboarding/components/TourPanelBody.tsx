@@ -1,8 +1,9 @@
 import { lazy, Suspense } from 'react';
-import { ChevronRight, ChevronLeft, Check, ArrowRight, Eye } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, ArrowRight, Eye, Crosshair } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
-import { getActiveTourSteps, isExplorationTourEvent } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, isExplorationTourEvent, isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 import type { TourId, TourStepId, TourStepDef } from '@/stores/slices/system/tourSlice';
+import { Button } from '@/features/shared/components/buttons';
 import { getStepColors } from './tourConstants';
 import { StepProgress } from './StepProgress';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -49,6 +50,27 @@ export function TourPanelBody({
   const requiresAcknowledge = isExplorationTourEvent(currentStep.completeOn);
   const handleAcknowledge = () => useSystemStore.getState().emitTourEvent(currentStep.completeOn);
 
+  // "Show me" — the element this step (or its active sub-step) points at. Lets the
+  // user re-summon the spotlight after it fades or they've scrolled/clicked away.
+  const activeHighlight =
+    currentStep.subSteps[subStepIndex]?.highlightTestId ?? currentStep.highlightTestId ?? null;
+  const canShowMe = !!activeHighlight && isSafeTourTestId(activeHighlight);
+
+  const handleShowMe = () => {
+    if (!activeHighlight || !isSafeTourTestId(activeHighlight)) return;
+    // Only act when the target is actually mounted. Re-firing the spotlight at a
+    // missing testid would trip TourSpotlight's onMissing handler and dismiss the
+    // whole tour — so if it's not on screen, do nothing rather than risk that.
+    const el = document.querySelector(`[data-testid="${activeHighlight}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Setting the same value is a Zustand no-op, so clear then re-set on the next
+    // tick to force the spotlight to re-measure and pulse around the element.
+    const setHighlight = useSystemStore.getState().setHighlightTestId;
+    setHighlight(null);
+    window.setTimeout(() => setHighlight(activeHighlight), 60);
+  };
+
   return (
     <>
       {/* Step progress */}
@@ -58,15 +80,30 @@ export function TourPanelBody({
 
       {/* Step header */}
       <div className="px-4 pt-3 pb-2 border-b border-primary/5">
-        <h4 className="typo-heading text-foreground/90 flex items-center gap-2">
-          {currentStep.title}
-          {isStepCompleted && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 typo-body font-medium text-emerald-400">
-              <Check className="w-2.5 h-2.5" />
-              {t.onboarding.done_button}
-            </span>
+        <div className="flex items-start justify-between gap-2">
+          <h4 className="typo-heading text-foreground/90 flex items-center gap-2 min-w-0">
+            <span className="truncate">{currentStep.title}</span>
+            {isStepCompleted && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-input bg-emerald-500/10 border border-emerald-500/20 typo-body font-medium text-emerald-400 flex-shrink-0">
+                <Check className="w-2.5 h-2.5" />
+                {t.onboarding.done_button}
+              </span>
+            )}
+          </h4>
+          {canShowMe && (
+            <Button
+              variant="ghost"
+              size="xs"
+              icon={<Crosshair className="w-3 h-3" />}
+              onClick={handleShowMe}
+              title={t.onboarding.tour_show_me_title}
+              data-testid="tour-btn-show-me"
+              className={`flex-shrink-0 ${colors.text}`}
+            >
+              {t.onboarding.tour_show_me}
+            </Button>
           )}
-        </h4>
+        </div>
         <p className="typo-body text-foreground leading-relaxed mt-1">{currentStep.description}</p>
       </div>
 
