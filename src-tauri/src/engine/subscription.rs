@@ -1319,7 +1319,10 @@ fn quota_cooldown_active(pool: &DbPool) -> bool {
         .query_row(
             "SELECT COUNT(*) FROM persona_executions
              WHERE status = 'failed'
-               AND created_at > datetime('now', ?1)
+               -- datetime() normalizes the RFC3339 'T' separator: a raw string
+               -- compare made EVERY same-day row count as recent ('T' > ' '),
+               -- wedging the quota gate for the whole day after one limit hit.
+               AND datetime(created_at) > datetime('now', ?1)
                AND (LOWER(COALESCE(output_data,'')) LIKE '%session limit%'
                     OR LOWER(COALESCE(output_data,'')) LIKE '%usage limit%'
                     OR LOWER(COALESCE(output_data,'')) LIKE '%hit your%limit%'
@@ -2089,7 +2092,7 @@ fn find_replenish_candidate(
            AND NOT EXISTS (SELECT 1 FROM dev_ideas i WHERE i.project_id = dp.id
                              AND i.status = 'pending')
            AND NOT EXISTS (SELECT 1 FROM dev_scans s WHERE s.project_id = dp.id
-                             AND s.created_at > datetime('now','-20 hours'))
+                             AND datetime(s.created_at) > datetime('now','-20 hours'))
          ORDER BY dp.updated_at ASC
          LIMIT 1",
     )?;
@@ -2206,7 +2209,7 @@ fn find_triage_candidate_project(
                   AND i.status = 'pending' AND i.priority IS NULL) >= 3
            AND NOT EXISTS (SELECT 1 FROM dev_scans s WHERE s.project_id = dp.id
                              AND s.scan_type = 'backlog-triage'
-                             AND s.created_at > datetime('now','-24 hours'))
+                             AND datetime(s.created_at) > datetime('now','-24 hours'))
          ORDER BY dp.updated_at ASC
          LIMIT 1",
     )?;
