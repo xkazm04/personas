@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useMemo, useCallback, useState } from 'react';
+import { TeamAssignmentBoardFlightDeck } from './TeamAssignmentBoardFlightDeck';
+import { TeamAssignmentBoardFlowLanes } from './TeamAssignmentBoardFlowLanes';
 import { Clock, Loader2, AlertCircle, CheckCircle2, Ban } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -31,7 +33,54 @@ function toIsoUtc(s: string): string {
  * or queued assignment. Other columns are display-only (status is not user
  * forced).
  */
+/* ----------------------------------------------------------------------------
+ * PROTOTYPE SCAFFOLD (temporary): tab switcher over directional variants.
+ * Baseline stays the default so nothing changes on load. Removed at
+ * consolidation once a winner is declared.
+ * -------------------------------------------------------------------------- */
+type BoardVariant = 'baseline' | 'flightdeck' | 'flowlanes';
+
+const VARIANT_TABS: Array<{ id: BoardVariant; label: string; hint: string }> = [
+  { id: 'baseline', label: 'Baseline', hint: 'Current kanban, bare cards' },
+  { id: 'flightdeck', label: 'Flight Deck', hint: 'Mission rail + step relay in deep focus' },
+  { id: 'flowlanes', label: 'Flow Lanes', hint: 'Kanban with live cards + drill-in drawer' },
+];
+
 export function TeamAssignmentBoard({ teamId }: { teamId: string }) {
+  const [variant, setVariant] = useState<BoardVariant>('baseline');
+  return (
+    <div className="h-full flex flex-col gap-2 min-h-0">
+      <div className="flex items-center gap-1 flex-shrink-0">
+        {VARIANT_TABS.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            onClick={() => setVariant(v.id)}
+            title={v.hint}
+            className={`px-2.5 py-1 rounded-interactive typo-caption transition-colors ${
+              variant === v.id
+                ? 'bg-primary/15 text-foreground font-medium'
+                : 'text-foreground/55 hover:bg-secondary/40 hover:text-foreground/85'
+            }`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0">
+        {variant === 'flightdeck' ? (
+          <TeamAssignmentBoardFlightDeck teamId={teamId} />
+        ) : variant === 'flowlanes' ? (
+          <TeamAssignmentBoardFlowLanes teamId={teamId} />
+        ) : (
+          <TeamAssignmentBoardBaseline teamId={teamId} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TeamAssignmentBoardBaseline({ teamId }: { teamId: string }) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
   const assignments = usePipelineStore((s) => s.assignmentsByTeam[teamId]);
