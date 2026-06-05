@@ -9249,6 +9249,7 @@
     "tour_complete_next": "次のツアーを開始",
     "tour_minimized_hint": "{tour} · {completed}/{total} ステップ · クリックで再開",
     "tour_complete_more": "他のツアーも見る",
+    "tour_target_offscreen": "このステップが指す対象はまだ画面にありません。表示されると自動でハイライトされます。",
     "minimize": "最小化",
     "end_tour": "ツアーを終了",
     "back": "戻る",

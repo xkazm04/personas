@@ -1,6 +1,5 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import { silentCatch } from '@/lib/silentCatch';
 import { useTrackedElementRect } from '@/hooks/utility/interaction/useTrackedElementRect';
 
 const PADDING = 8;
@@ -12,9 +11,12 @@ const BORDER_RADIUS = 12;
  *   `[data-testid="${tourHighlightTestId}"]`.
  * - Re-measures on: scroll, resize, and DOM mutations inside an ancestor of
  *   the target (NOT document.body — onboarding-era CPU wins matter).
- * - When the target unmounts for good (after a short re-appear retry window),
- *   the spotlight auto-dismisses the tour instead of trapping the UI behind a
- *   stale cut-out that overlays nothing clickable.
+ * - When the target can't be found (initial anchor-miss or anchored-then-gone),
+ *   the spotlight no longer dismisses the tour. It flags `tourHighlightMissing`
+ *   so the panel shows a "not on screen yet" note while the tour stays alive;
+ *   the overlay is `pointer-events-none`, so an absent cut-out never traps the
+ *   UI. (Earlier this path called `dismissTour`, which was too aggressive — it
+ *   killed the whole tour on a transient/never-present anchor.)
  *
  * The element-tracking core (measure + observer + missing-target retry) now
  * lives in the shared `useTrackedElementRect` hook, also used by Athena's
@@ -23,24 +25,27 @@ const BORDER_RADIUS = 12;
 export default function TourSpotlight() {
   const tourActive = useSystemStore((s) => s.tourActive);
   const highlightTestId = useSystemStore((s) => s.tourHighlightTestId);
-  // Tour store exposes a dismissTour action; we call it if the target disappears.
-  const dismissTour = useSystemStore((s) => s.dismissTour);
+  const setHighlightMissing = useSystemStore((s) => s.setHighlightMissing);
 
+  // Flag (don't dismiss) when the target can't be found, so the tour survives.
   const onMissing = useCallback(() => {
-    // Auto-end the tour so the user isn't stuck behind a stale mask.
-    // `dismissTour` is idempotent, so racing mutations can't stack dismissals.
-    try {
-      dismissTour?.();
-    } catch (err) {
-      silentCatch('features/onboarding/components/TourSpotlight:catch1')(err);
-    }
-  }, [dismissTour]);
+    setHighlightMissing(true);
+  }, [setHighlightMissing]);
 
   const rect = useTrackedElementRect(highlightTestId, {
     padding: PADDING,
     active: tourActive,
     onMissing,
   });
+
+  // Keep the flag in sync: clear optimistically whenever the highlight changes
+  // (the tracker re-assesses), and whenever the target is actually found.
+  useEffect(() => {
+    setHighlightMissing(false);
+  }, [highlightTestId, setHighlightMissing]);
+  useEffect(() => {
+    if (rect) setHighlightMissing(false);
+  }, [rect, setHighlightMissing]);
 
   if (!tourActive || !rect) return null;
 

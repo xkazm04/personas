@@ -9249,6 +9249,7 @@
     "tour_complete_next": "Démarrer la visite suivante",
     "tour_minimized_hint": "{tour} · {completed}/{total} étapes · cliquez pour reprendre",
     "tour_complete_more": "Ou explorez une autre visite",
+    "tour_target_offscreen": "Ce que cette étape indique n'est pas encore à l'écran — il sera surligné dès qu'il apparaîtra.",
     "minimize": "Réduire",
     "end_tour": "Terminer la visite",
     "back": "Retour",

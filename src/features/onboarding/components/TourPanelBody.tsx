@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { ChevronRight, ChevronLeft, Check, ArrowRight, Eye, Crosshair } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, ArrowRight, Eye, Crosshair, EyeOff } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { getActiveTourSteps, isExplorationTourEvent, isSafeTourTestId } from '@/stores/slices/system/tourSlice';
 import type { TourId, TourStepId, TourStepDef } from '@/stores/slices/system/tourSlice';
@@ -41,6 +41,7 @@ export function TourPanelBody({
   onComplete,
 }: TourPanelBodyProps) {
   const { t } = useTranslation();
+  const highlightMissing = useSystemStore((s) => s.tourHighlightMissing);
   const steps = getActiveTourSteps(tourId);
   const currentStep = steps[currentIndex];
   if (!currentStep) return null;
@@ -157,6 +158,15 @@ export function TourPanelBody({
 
       {/* Step content */}
       <div className="flex-1 overflow-y-auto px-4 pb-3" key={currentStep.id}>
+        {highlightMissing && (
+          <div
+            data-testid="tour-target-missing"
+            className="mt-2 flex items-start gap-2 rounded-modal border border-amber-500/25 bg-amber-500/10 p-2.5"
+          >
+            <EyeOff className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
+            <p className="typo-body text-foreground leading-relaxed">{t.onboarding.tour_target_offscreen}</p>
+          </div>
+        )}
         {currentIndex === 0 && !hasProgress && (
           <TourIntroCard tourId={tourId} stepCount={steps.length} />
         )}

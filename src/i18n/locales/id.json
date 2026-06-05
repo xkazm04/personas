@@ -9249,6 +9249,7 @@
     "tour_complete_next": "Mulai tur berikutnya",
     "tour_minimized_hint": "{tour} · {completed}/{total} langkah · klik untuk lanjut",
     "tour_complete_more": "Atau jelajahi tur lain",
+    "tour_target_offscreen": "Yang ditunjuk langkah ini belum ada di layar — akan disorot begitu muncul.",
     "minimize": "Perkecil",
     "end_tour": "Akhiri tur",
     "back": "Kembali",

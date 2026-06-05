@@ -9698,6 +9698,7 @@
     "tour_complete_next": "Start the next tour",
     "tour_minimized_hint": "{tour} · {completed}/{total} steps · click to resume",
     "tour_complete_more": "Or explore another tour",
+    "tour_target_offscreen": "What this step points at isn't on screen yet — it'll highlight once it appears.",
     "tour_loading": "Loading...",
     "tour_skip": "Skip",
     "what_to_explore": "What to explore",
