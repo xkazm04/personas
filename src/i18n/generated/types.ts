@@ -9698,6 +9698,10 @@ export type Translations = {
     tour_skip_step: string;
     tour_intro_heading: string;
     tour_intro_steps: string;
+    tour_complete_title: string;
+    tour_complete_recap: string;
+    tour_complete_up_next: string;
+    tour_complete_next: string;
     tour_loading: string;
     tour_skip: string;
     what_to_explore: string;

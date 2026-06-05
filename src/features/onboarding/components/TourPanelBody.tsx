@@ -24,6 +24,7 @@ interface TourPanelBodyProps {
   onNext: () => void;
   onPrev: () => void;
   onJump: (index: number) => void;
+  onComplete: () => void;
 }
 
 export function TourPanelBody({
@@ -37,6 +38,7 @@ export function TourPanelBody({
   onNext,
   onPrev,
   onJump,
+  onComplete,
 }: TourPanelBodyProps) {
   const { t } = useTranslation();
   const steps = getActiveTourSteps(tourId);
@@ -193,7 +195,7 @@ export function TourPanelBody({
         <div className="flex items-center gap-2">
           {allCompleted ? (
             <button
-              onClick={() => useSystemStore.getState().finishTour()}
+              onClick={onComplete}
               data-testid="tour-btn-finish"
               className="flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 transition-colors"
             >

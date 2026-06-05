@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, X, MapPin, Sparkles, Volume2 } from 'lucide-react';
+import { ChevronRight, X, MapPin, Sparkles, Volume2, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
-import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, getTourById, type TourId } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
-import { getStepColors } from './tourConstants';
+import { getStepColors, getNextTourId } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
 import { StepProgress } from './StepProgress';
 import { useTourNarration } from './useTourNarration';
@@ -42,9 +42,12 @@ export default function GuidedTour() {
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
   const captureAppearanceBaseline = useSystemStore((s) => s.captureAppearanceBaseline);
   const setHighlightTestId = useSystemStore((s) => s.setHighlightTestId);
+  const completionMap = useSystemStore((s) => s.tourCompletionMap);
 
   const { t, tx } = useTranslation();
   const [isMinimized, setIsMinimized] = useState(false);
+  // Celebration screen shown after the last step, before the panel closes.
+  const [showCompletion, setShowCompletion] = useState(false);
   // Track pending setTimeouts so they can be cleared on dismissal/unmount.
   // Without this, a queued advance/highlight can fire after the tour ends and
   // navigate to a stale step index or set a highlight that's never dismissed.
@@ -72,6 +75,10 @@ export default function GuidedTour() {
   }, [tourActive, clearPendingTimeouts]);
 
   useEffect(() => () => clearPendingTimeouts(), [clearPendingTimeouts]);
+
+  // Drop the completion screen if the tour ends or switches out from under it.
+  useEffect(() => { if (!tourActive) setShowCompletion(false); }, [tourActive]);
+  useEffect(() => { setShowCompletion(false); }, [tourId]);
 
   const tourDef = getTourById(tourId);
   const visibleSteps = getActiveTourSteps(tourId);
@@ -152,7 +159,7 @@ export default function GuidedTour() {
   }, [currentIndex, tourActive, navigateToStep, isMinimized, tourResumePending]);
 
   const handleNext = () => {
-    if (allCompleted) { useSystemStore.getState().finishTour(); return; }
+    if (allCompleted) { setShowCompletion(true); return; }
     advanceTour();
   };
   const handlePrev = () => {
@@ -161,11 +168,73 @@ export default function GuidedTour() {
   const handleJump = (index: number) => {
     goToTourStep(index);
   };
+  // Finish the current tour. Optionally launch the next suggested one in the
+  // same gesture (mark current complete first so the completion map is right).
+  const handleFinishTour = (nextTourId?: TourId) => {
+    setShowCompletion(false);
+    useSystemStore.getState().finishTour();
+    if (nextTourId) useSystemStore.getState().startTour(nextTourId);
+  };
 
   if (!tourActive || !currentStep || !tourDef) return null;
   // Modal-owns-screen precedence (see README "Onboarding modal vs Guided Tour").
   if (onboardingActive) return null;
   const colors = getStepColors(tourDef.color);
+
+  // Completion celebration — shown after the final step instead of closing the
+  // panel cold. Offers to roll straight into the next suggested tour.
+  if (showCompletion) {
+    const nextTourId = getNextTourId(tourId, completionMap);
+    const nextTour = nextTourId ? getTourById(nextTourId) : null;
+    return (
+      <div
+        data-testid="tour-completion"
+        className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
+        style={{ width: panelWidth }}
+      >
+        <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
+                <Sparkles className={`w-4 h-4 ${colors.text}`} />
+              </div>
+              <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
+            </div>
+            <Button variant="ghost" size="icon-sm" onClick={() => handleFinishTour()} title={t.onboarding.end_tour} data-testid="tour-completion-dismiss">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto flex flex-col items-center gap-4 px-6 pt-8 pb-4 text-center">
+            <div className="w-14 h-14 rounded-modal bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+              <Check className="w-7 h-7 text-emerald-400" />
+            </div>
+            <div>
+              <p className="typo-heading text-foreground/90">{t.onboarding.tour_complete_title}</p>
+              <p className="typo-body text-foreground mt-1">{tx(t.onboarding.tour_complete_recap, { total: visibleSteps.length })}</p>
+            </div>
+            {nextTour && (
+              <div className={`w-full rounded-modal ${colors.subtle} border ${colors.accent} p-3 text-left`}>
+                <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_up_next}</span>
+                <p className={`typo-heading ${colors.text} mt-1`}>{nextTour.title}</p>
+                <p className="typo-body text-foreground leading-relaxed mt-0.5">{nextTour.description}</p>
+              </div>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t border-primary/8 flex flex-col gap-2">
+            {nextTour && (
+              <Button variant="primary" block onClick={() => handleFinishTour(nextTour.id)} data-testid="tour-completion-next">
+                {t.onboarding.tour_complete_next}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
+            <Button variant="ghost" block onClick={() => handleFinishTour()} data-testid="tour-completion-done">
+              {t.onboarding.done_button}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Resume interstitial — shown when the tour was resumed (e.g. footer button).
   // The route is intentionally NOT changed yet; clicking Continue clears the
@@ -301,6 +370,7 @@ export default function GuidedTour() {
           onNext={handleNext}
           onPrev={handlePrev}
           onJump={handleJump}
+          onComplete={() => setShowCompletion(true)}
         />
       </div>
     </div>
