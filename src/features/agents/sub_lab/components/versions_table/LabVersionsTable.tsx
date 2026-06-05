@@ -18,8 +18,23 @@ import { VersionRowActions, type RowActionHandlers } from './VersionRowActions';
 /** Regression flag threshold — a drop of this many composite points vs baseline. */
 const REGRESSION_DROP = 5;
 
-const modelLabel = (modelId: string | null): string =>
-  modelId ? (ALL_MODELS.find((m) => m.id === modelId || m.model === modelId)?.label ?? modelId) : '—';
+/**
+ * Friendly versioned display names for the Anthropic tier (the catalog labels
+ * are intentionally bare — "Haiku" — for the Arena roster cards, so the version
+ * suffix is added here, table-local). Update when the model family rolls.
+ */
+const MODEL_VERSION_LABEL: Record<string, string> = {
+  haiku: 'Haiku 4.5',
+  sonnet: 'Sonnet 4.6',
+  opus: 'Opus 4.8',
+};
+
+const modelLabel = (modelId: string | null): string => {
+  if (!modelId) return '—';
+  const versioned = Object.entries(MODEL_VERSION_LABEL).find(([k]) => modelId === k || modelId.includes(k));
+  if (versioned) return versioned[1];
+  return ALL_MODELS.find((m) => m.id === modelId || m.model === modelId)?.label ?? modelId;
+};
 
 /**
  * Consolidated Lab surface: one table of every (prompt version × model) the

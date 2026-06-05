@@ -1212,7 +1212,7 @@
       "vr_col_version": "Version",
       "vr_col_model": "Model",
       "vr_col_rating": "Rating",
-      "vr_col_delta": "Δ baseline",
+      "vr_col_delta": "Baseline",
       "vr_col_cost": "Cost",
       "vr_col_status": "Status",
       "vr_col_actions": "Actions",

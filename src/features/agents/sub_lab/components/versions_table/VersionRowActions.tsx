@@ -73,7 +73,7 @@ export function VersionRowActions({
         disabled={row.isActive || !row.modelId}
         active={row.isActive}
       >
-        <Power className="w-3.5 h-3.5" />
+        <Power className="w-4 h-4" />
       </IconBtn>
 
       <IconBtn
@@ -82,7 +82,7 @@ export function VersionRowActions({
         onClick={() => handlers.onMeasure(row)}
         disabled={measuring}
       >
-        {measuring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FlaskConical className="w-3.5 h-3.5" />}
+        {measuring ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
       </IconBtn>
 
       {handlers.onImprove && (
@@ -91,7 +91,7 @@ export function VersionRowActions({
           testid={`vr-improve-${row.key}`}
           onClick={() => handlers.onImprove?.(row)}
         >
-          <Sparkles className="w-3.5 h-3.5" />
+          <Sparkles className="w-4 h-4" />
         </IconBtn>
       )}
 
@@ -101,7 +101,7 @@ export function VersionRowActions({
         onClick={() => handlers.onDiff(row)}
         disabled={!hasActiveVersion || row.isActive}
       >
-        <GitCompareArrows className="w-3.5 h-3.5" />
+        <GitCompareArrows className="w-4 h-4" />
       </IconBtn>
 
       <IconBtn
@@ -110,7 +110,7 @@ export function VersionRowActions({
         onClick={() => handlers.onToggleBaseline(row)}
         active={row.isBaseline}
       >
-        <Target className="w-3.5 h-3.5" />
+        <Target className="w-4 h-4" />
       </IconBtn>
 
       <IconBtn
@@ -120,7 +120,7 @@ export function VersionRowActions({
         danger={!row.isArchived}
         disabled={row.isActive}
       >
-        {row.isArchived ? <ArchiveRestore className="w-3.5 h-3.5" /> : <Archive className="w-3.5 h-3.5" />}
+        {row.isArchived ? <ArchiveRestore className="w-4 h-4" /> : <Archive className="w-4 h-4" />}
       </IconBtn>
     </div>
   );
