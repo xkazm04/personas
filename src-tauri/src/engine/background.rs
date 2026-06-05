@@ -504,6 +504,13 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Roster redesign — Product Strategist backlog triage: ranks the
+        // next-up queue + rejects low-value ideas (default-OFF
+        // `autonomous_backlog_triage`; 24h/project cooldown).
+        Box::new(subscription::BacklogTriageSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).

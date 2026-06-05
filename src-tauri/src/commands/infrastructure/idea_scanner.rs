@@ -68,6 +68,7 @@ fn build_idea_scan_prompt(
     agents: &[&ScanAgentMeta],
     context_summary: Option<&str>,
     rejected_titles: Option<&str>,
+    team_ledger: Option<&str>,
 ) -> String {
     let mut agent_section = String::new();
     for agent in agents {
@@ -89,6 +90,14 @@ fn build_idea_scan_prompt(
         .map(|s| format!("\n## Already Rejected — the human triaged these away; do NOT re-surface them or close variants\n{s}\n"))
         .unwrap_or_default();
 
+    // The owning team's shared ledger — settled decisions + hard constraints
+    // from prior increments. Ideas must BUILD ON these, never contradict or
+    // re-propose them.
+    let ledger_hint = team_ledger
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Team Shared Knowledge — settled decisions & constraints from prior work (build on these; do NOT contradict or re-propose)\n{s}\n"))
+        .unwrap_or_default();
+
     // The `category` token list MUST stay in sync with `db::models::IdeaCategory`.
     // That enum is the canonical vocabulary; legacy values from older code
     // paths or LLM hallucinations are remapped at insert time by
@@ -99,7 +108,7 @@ fn build_idea_scan_prompt(
 You are analyzing a codebase to generate actionable improvement ideas. You have been activated with specific scan agent perspectives that determine what to look for.
 
 ## Project ID: {project_id}
-{context_hint}{rejected_hint}
+{context_hint}{rejected_hint}{ledger_hint}
 ## Active Scan Agents
 {agent_section}
 
@@ -166,6 +175,15 @@ enum IdeaProtocol {
         ideas_generated: i32,
         agents_used: i32,
     },
+    /// Backlog-triage decision from the Product Strategist job: rank a pending
+    /// idea (`priority` 1 = do next) or reject it (with a reason that feeds the
+    /// scanner-suppress + team-memory learning loops).
+    Triage {
+        idea_id: String,
+        action: String,
+        priority: Option<i32>,
+        reason: Option<String>,
+    },
 }
 
 /// Score fields (effort/impact/risk) must be present and inside 1..=10. The LLM
@@ -221,6 +239,27 @@ fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
             effort,
             impact,
             risk,
+        });
+    }
+
+    if let Some(triage) = val.get("triage") {
+        let idea_id = triage.get("idea_id")?.as_str()?.to_string();
+        let action = triage.get("action")?.as_str()?.to_string();
+        if !matches!(action.as_str(), "rank" | "reject") {
+            return None;
+        }
+        return Some(IdeaProtocol::Triage {
+            idea_id,
+            action,
+            priority: triage
+                .get("priority")
+                .and_then(|p| p.as_i64())
+                .filter(|p| (1..=20).contains(p))
+                .map(|p| p as i32),
+            reason: triage
+                .get("reason")
+                .and_then(|r| r.as_str())
+                .map(|s| s.to_string()),
         });
     }
 
@@ -332,11 +371,28 @@ pub async fn run_scan_core(
                     .join("\n")
             });
 
+    // Cooperation through memory: when the project is team-owned, give the
+    // scan the team's shared ledger (decisions/constraints from prior work) so
+    // new ideas build on what shipped and respect settled constraints instead
+    // of re-proposing or contradicting them.
+    let team_ledger: Option<String> = project.team_id.as_deref().and_then(|team_id| {
+        crate::db::repos::resources::team_memories::get_for_injection(&db, team_id, 12)
+            .ok()
+            .filter(|m| !m.is_empty())
+            .map(|m| {
+                m.iter()
+                    .map(|tm| format!("- [{}] {}: {}", tm.category, tm.title, tm.content))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            })
+    });
+
     let prompt_text = build_idea_scan_prompt(
         &project_id,
         &selected_agents,
         context_summary.as_deref(),
         rejected_titles.as_deref(),
+        team_ledger.as_deref(),
     );
 
     let app_handle = app.clone();
@@ -633,6 +689,24 @@ async fn run_idea_scan(
                                     ),
                                 );
                             }
+                            IdeaProtocol::Triage {
+                                idea_id,
+                                action,
+                                priority,
+                                reason,
+                            } => {
+                                if apply_triage_decision(
+                                    pool, project_id, &idea_id, &action, priority,
+                                    reason.as_deref(),
+                                ) {
+                                    ideas_created += 1; // counts applied decisions
+                                    IDEA_SCAN_JOBS.emit_line(
+                                        app,
+                                        scan_id,
+                                        format!("[Triage] {action} {idea_id} (priority={priority:?})"),
+                                    );
+                                }
+                            }
                         }
                     }
                 }
@@ -724,4 +798,241 @@ async fn run_idea_scan(
     );
 
     Ok(ideas_created)
+}
+
+// =============================================================================
+// Backlog triage — the Product Strategist's prioritization job (roster redesign)
+// =============================================================================
+
+/// Apply one strategist triage decision. Validates the idea belongs to THIS
+/// project and is still pending (a hallucinated id can't touch other projects).
+/// `rank` writes `dev_ideas.priority`; `reject` persists the rejection + the
+/// shared-team constraint memory (the same learning loop human triage uses).
+fn apply_triage_decision(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    idea_id: &str,
+    action: &str,
+    priority: Option<i32>,
+    reason: Option<&str>,
+) -> bool {
+    let idea = match repo::get_idea_by_id(pool, idea_id) {
+        Ok(i) => i,
+        Err(_) => return false,
+    };
+    if idea.project_id.as_deref() != Some(project_id) || idea.status != "pending" {
+        return false;
+    }
+    match action {
+        "rank" => {
+            let Some(p) = priority else { return false };
+            repo::set_idea_priority(pool, idea_id, Some(p)).is_ok()
+        }
+        "reject" => {
+            match repo::update_idea(
+                pool, idea_id, None, None, Some("rejected"), None, None, None, None,
+                Some(reason),
+            ) {
+                Ok(updated) => {
+                    super::dev_tools::record_idea_decision_by(
+                        pool, &updated, "rejected", "Strategist",
+                    );
+                    true
+                }
+                Err(_) => false,
+            }
+        }
+        _ => false,
+    }
+}
+
+/// Build the Product Strategist's backlog-triage prompt: every pending idea
+/// (with lens + self-scores), the team's shared ledger, and what recently
+/// shipped — the strategist ranks the top items (1 = do next), rejects
+/// low-value/duplicate ones with reasons, and leaves the rest unranked.
+fn build_backlog_triage_prompt(
+    project_name: &str,
+    strategist_identity: Option<&str>,
+    ideas: &[crate::db::models::DevIdea],
+    team_ledger: Option<&str>,
+    shipped: Option<&str>,
+) -> String {
+    let identity = strategist_identity
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("## Your identity\n{s}\n\n"))
+        .unwrap_or_else(|| {
+            "## Your identity\nYou are the team's Product Strategist — the business seat. \
+             You think in user value, revenue, retention, and momentum, not in refactors. \
+             You own WHAT gets built next.\n\n"
+                .into()
+        });
+    let mut ideas_block = String::new();
+    for i in ideas {
+        ideas_block.push_str(&format!(
+            "- id={} | lens={} | impact={:?} effort={:?} risk={:?} | {}\n  {}\n",
+            i.id,
+            i.scan_type,
+            i.impact,
+            i.effort,
+            i.risk,
+            i.title,
+            i.description.as_deref().unwrap_or("").trim(),
+        ));
+    }
+    let ledger = team_ledger
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Team Shared Knowledge — settled decisions & constraints (respect these)\n{s}\n"))
+        .unwrap_or_default();
+    let shipped_block = shipped
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Recently shipped (don't re-do; build on it)\n{s}\n"))
+        .unwrap_or_default();
+    format!(
+        r#"# Backlog Triage — {project_name}
+
+{identity}You are triaging the project's pending backlog. Rank what the team should do NEXT
+for maximum real-world value, reject what isn't worth doing, and leave the rest.
+{ledger}{shipped_block}
+## Pending ideas
+{ideas_block}
+## Rules
+- RANK at most 5 ideas: priority 1 = do next, 2 = after that, … Balance the THEMES —
+  a healthy next-up queue mixes business/user value with technical health; never rank
+  five same-lens refactors in a row.
+- REJECT ideas that are low-value, duplicate, contradict a settled decision, or solve a
+  problem no user has. Give a one-sentence reason — it becomes a durable team memory and
+  suppresses re-surfacing.
+- Leave everything else untouched (pending, unranked).
+- Do NOT read the codebase in depth — judge from the idea descriptions, the ledger, and
+  what shipped. This is a prioritization pass, not a re-scan.
+
+## Output protocol
+One JSON object per line, nothing else around them:
+{{"triage": {{"idea_id": "<id from the list>", "action": "rank", "priority": 1, "reason": "<why now>"}}}}
+{{"triage": {{"idea_id": "<id from the list>", "action": "reject", "reason": "<why not>"}}}}
+
+End with: {{"scan_summary": {{"ideas_generated": <decisions made>, "agents_used": 1}}}}
+"#
+    )
+}
+
+/// Run the strategist backlog-triage job for one project. Mirrors
+/// `run_scan_core`'s shape (dev_scans record with scan_type `backlog-triage`,
+/// background CLI run via the scanner plumbing, triage protocol applied by the
+/// shared stream loop). Engine-callable (no auth) — used by
+/// `engine::subscription::BacklogTriageSubscription`.
+pub async fn run_backlog_triage(
+    app: tauri::AppHandle,
+    db: crate::db::DbPool,
+    project_id: String,
+) -> Result<serde_json::Value, AppError> {
+    let project = repo::get_project_by_id(&db, &project_id)?;
+    let ideas = repo::list_ideas(&db, Some(&project_id), Some("pending"), None, Some(60), None)?;
+    if ideas.len() < 3 {
+        return Err(AppError::Validation(
+            "Backlog triage skipped: fewer than 3 pending ideas".into(),
+        ));
+    }
+
+    // The team's Product Strategist persona lends its identity when present.
+    let strategist_identity: Option<String> = project.team_id.as_deref().and_then(|team_id| {
+        db.get().ok().and_then(|conn| {
+            conn.query_row(
+                "SELECT p.system_prompt FROM personas p
+                 JOIN persona_team_members ptm ON ptm.persona_id = p.id
+                 WHERE ptm.team_id = ?1
+                   AND (p.name LIKE '%Product Strategist%' OR p.template_category = 'product-strategist')
+                 LIMIT 1",
+                rusqlite::params![team_id],
+                |r| r.get::<_, Option<String>>(0),
+            )
+            .ok()
+            .flatten()
+        })
+    });
+
+    let team_ledger: Option<String> = project.team_id.as_deref().and_then(|team_id| {
+        crate::db::repos::resources::team_memories::get_for_injection(&db, team_id, 12)
+            .ok()
+            .filter(|m| !m.is_empty())
+            .map(|m| {
+                m.iter()
+                    .map(|tm| format!("- [{}] {}: {}", tm.category, tm.title, tm.content))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            })
+    });
+
+    let shipped: Option<String> = db.get().ok().and_then(|conn| {
+        conn.prepare(
+            "SELECT title FROM dev_goals WHERE project_id = ?1
+             AND status IN ('done','completed') ORDER BY updated_at DESC LIMIT 8",
+        )
+        .ok()
+        .and_then(|mut stmt| {
+            stmt.query_map(rusqlite::params![project_id], |r| r.get::<_, String>(0))
+                .ok()
+                .map(|rows| {
+                    rows.flatten()
+                        .map(|t| format!("- {t}"))
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                })
+        })
+        .filter(|s| !s.is_empty())
+    });
+
+    let prompt_text = build_backlog_triage_prompt(
+        &project.name,
+        strategist_identity.as_deref(),
+        &ideas,
+        team_ledger.as_deref(),
+        shipped.as_deref(),
+    );
+
+    let scan = repo::create_scan(&db, Some(&project_id), "backlog-triage", Some("running"))?;
+    let scan_id = scan.id.clone();
+    let cancel_token = CancellationToken::new();
+    IDEA_SCAN_JOBS.insert_running(scan_id.clone(), cancel_token.clone(), IdeaScanExtra)?;
+    IDEA_SCAN_JOBS.set_status(&app, &scan_id, "running", None);
+
+    let app_handle = app.clone();
+    let pool = db.clone();
+    let scan_id_for_task = scan_id.clone();
+    let root_path = project.root_path.clone();
+    tokio::spawn(async move {
+        let result = tokio::select! {
+            _ = cancel_token.cancelled() => {
+                Err(AppError::Internal("Backlog triage cancelled".into()))
+            }
+            res = run_idea_scan(
+                &app_handle,
+                &scan_id_for_task,
+                &pool,
+                &project_id,
+                &root_path,
+                prompt_text,
+            ) => res
+        };
+        match result {
+            Ok(decisions) => {
+                let _ = repo::update_scan(
+                    &pool, &scan_id_for_task, Some("complete"), Some(decisions),
+                    None, None, None, None,
+                );
+                IDEA_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "completed", None);
+                tracing::info!(scan_id = %scan_id_for_task, decisions, "backlog triage complete");
+            }
+            Err(e) => {
+                let msg = format!("{e}");
+                let _ = repo::update_scan(
+                    &pool, &scan_id_for_task, Some("error"), None, None, None, None,
+                    Some(Some(&msg)),
+                );
+                IDEA_SCAN_JOBS.set_status(&app_handle, &scan_id_for_task, "failed", Some(msg));
+            }
+        }
+    });
+
+    Ok(json!({ "scan_id": scan_id, "scan_type": "backlog-triage" }))
 }

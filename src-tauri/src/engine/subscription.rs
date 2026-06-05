@@ -1882,8 +1882,10 @@ struct PromotableIdea {
 fn find_promotable_ideas(pool: &DbPool) -> Result<Vec<PromotableIdea>, crate::error::AppError> {
     let conn = pool.get()?;
     // One row per IDLING goal-linked project (no open, non-done, progress<100
-    // goal): that project's single best pending idea, ranked impact desc, risk
-    // asc, effort asc, oldest first as the tiebreak.
+    // goal): that project's single best pending idea. STRATEGIST-RANKED ideas
+    // win first (`priority` ASC, 1 = do next — written by the backlog-triage
+    // job); unranked ideas fall back to the scanner self-scores (impact desc,
+    // risk asc, effort asc, oldest first).
     let mut stmt = conn.prepare(
         "SELECT i.id, i.project_id, i.title, i.description
          FROM dev_ideas i
@@ -1899,7 +1901,8 @@ fn find_promotable_ideas(pool: &DbPool) -> Result<Vec<PromotableIdea>, crate::er
            AND i.id = (
              SELECT i2.id FROM dev_ideas i2
              WHERE i2.project_id = i.project_id AND i2.status = 'pending'
-             ORDER BY COALESCE(i2.impact,0) DESC, COALESCE(i2.risk,99) ASC, COALESCE(i2.effort,99) ASC, i2.created_at ASC
+             ORDER BY (i2.priority IS NULL) ASC, i2.priority ASC,
+                      COALESCE(i2.impact,0) DESC, COALESCE(i2.risk,99) ASC, COALESCE(i2.effort,99) ASC, i2.created_at ASC
              LIMIT 1
            )
          ORDER BY i.project_id",
@@ -2024,6 +2027,55 @@ pub struct IdeaReplenishSubscription {
     pub app: tauri::AppHandle,
 }
 
+/// The roster-aligned ideation lenses the replenish loop rotates through —
+/// each maps to a team perspective so the backlog carries real-life variety
+/// instead of architecture-only items: Architect (architecture), Security
+/// Sentinel (security), QA (test), engineer (optimizer/error-handling), the UX
+/// seat (ux/accessibility/onboarding), and the Product Strategist (business).
+const REPLENISH_LENSES: &[&str] = &[
+    "architecture-analyst",
+    "business-strategist",
+    "ux-reviewer",
+    "security-auditor",
+    "test-strategist",
+    "code-optimizer",
+    "accessibility-checker",
+    "onboarding-designer",
+    "error-handler",
+];
+
+/// Pick the 2 least-recently-used lenses for a project from the rotation,
+/// based on the `dev_scans` history (scan_type is a comma-joined list).
+/// Never-used lenses come first, then oldest-used — so every perspective gets
+/// its turn before any repeats.
+fn pick_replenish_lenses(pool: &DbPool, project_id: &str) -> Vec<String> {
+    let mut last_used: std::collections::HashMap<&str, String> = Default::default();
+    if let Ok(conn) = pool.get() {
+        if let Ok(mut stmt) = conn.prepare(
+            "SELECT scan_type, MAX(created_at) FROM dev_scans
+             WHERE project_id = ?1 GROUP BY scan_type",
+        ) {
+            if let Ok(rows) = stmt.query_map([project_id], |r| {
+                Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?))
+            }) {
+                for (types, at) in rows.flatten() {
+                    for t in types.split(',').map(str::trim) {
+                        if let Some(lens) = REPLENISH_LENSES.iter().find(|l| **l == t) {
+                            let e = last_used.entry(lens).or_default();
+                            if at > *e {
+                                *e = at.clone();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut ordered: Vec<&str> = REPLENISH_LENSES.to_vec();
+    ordered.sort_by_key(|l| last_used.get(l).cloned().unwrap_or_default());
+    ordered.into_iter().take(2).map(String::from).collect()
+}
+
 /// One fully-idle, scan-cooled project: `(project_id, name)`.
 fn find_replenish_candidate(
     pool: &DbPool,
@@ -2094,12 +2146,21 @@ impl ReactiveSubscription for IdeaReplenishSubscription {
             return;
         };
 
-        tracing::info!(project_id = %project_id, project = %name, "idea_replenish: project fully idle (no goals, no ideas) — running backlog scan");
+        // Rotate roster-aligned lenses (LRU) so backlog variety mirrors a real
+        // team: architecture one round, business/UX/security/test the next.
+        let lenses = {
+            let pool = self.pool.clone();
+            let pid = project_id.clone();
+            tokio::task::spawn_blocking(move || pick_replenish_lenses(&pool, &pid))
+                .await
+                .unwrap_or_else(|_| vec!["architecture-analyst".to_string()])
+        };
+        tracing::info!(project_id = %project_id, project = %name, lenses = ?lenses, "idea_replenish: project fully idle (no goals, no ideas) — running backlog scan");
         match crate::commands::infrastructure::idea_scanner::run_scan_core(
             self.app.clone(),
             self.pool.clone(),
             project_id.clone(),
-            vec!["architecture-analyst".to_string()],
+            lenses,
         )
         .await
         {
@@ -2108,6 +2169,111 @@ impl ReactiveSubscription for IdeaReplenishSubscription {
             }
             Err(e) => {
                 tracing::warn!(project_id = %project_id, error = %e, "idea_replenish: scan launch failed");
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Roster redesign — Product Strategist backlog triage
+// =============================================================================
+
+/// When a goal-managed project's pending backlog grows past a threshold with
+/// unranked items, run the Product Strategist triage job: it RANKS the next-up
+/// queue (`dev_ideas.priority`, promotion prefers ranked) balancing business /
+/// UX / technical themes, and REJECTS low-value items (reason → shared team
+/// constraint memory + scanner suppression). Replaces the naive
+/// impact/effort-only promotion shortcut. One project per tick; 24h
+/// per-project cooldown via `dev_scans` (`backlog-triage`); default-OFF
+/// `autonomous_backlog_triage`.
+pub struct BacklogTriageSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// One project needing triage: ≥ 6 pending ideas, ≥ 3 of them unranked, and no
+/// `backlog-triage` run in the last 24h.
+fn find_triage_candidate_project(
+    pool: &DbPool,
+) -> Result<Option<(String, String)>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT dp.id, dp.name FROM dev_projects dp
+         WHERE dp.team_id IS NOT NULL
+           AND (SELECT COUNT(*) FROM dev_ideas i WHERE i.project_id = dp.id
+                  AND i.status = 'pending') >= 6
+           AND (SELECT COUNT(*) FROM dev_ideas i WHERE i.project_id = dp.id
+                  AND i.status = 'pending' AND i.priority IS NULL) >= 3
+           AND NOT EXISTS (SELECT 1 FROM dev_scans s WHERE s.project_id = dp.id
+                             AND s.scan_type = 'backlog-triage'
+                             AND s.created_at > datetime('now','-24 hours'))
+         ORDER BY dp.updated_at ASC
+         LIMIT 1",
+    )?;
+    let row = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)))?
+        .filter_map(Result::ok)
+        .next();
+    Ok(row)
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for BacklogTriageSubscription {
+    fn name(&self) -> &'static str {
+        "backlog_triage"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(1200)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(2400)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(420)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_BACKLOG_TRIAGE,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("backlog_triage: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let candidate = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || find_triage_candidate_project(&pool))
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .flatten()
+        };
+        let Some((project_id, name)) = candidate else {
+            return;
+        };
+
+        tracing::info!(project_id = %project_id, project = %name, "backlog_triage: pending backlog needs ranking — running strategist triage");
+        match crate::commands::infrastructure::idea_scanner::run_backlog_triage(
+            self.app.clone(),
+            self.pool.clone(),
+            project_id.clone(),
+        )
+        .await
+        {
+            Ok(v) => {
+                tracing::info!(project_id = %project_id, scan = %v, "backlog_triage: triage launched");
+            }
+            Err(e) => {
+                tracing::warn!(project_id = %project_id, error = %e, "backlog_triage: launch failed");
             }
         }
     }

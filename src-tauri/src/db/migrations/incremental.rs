@@ -3547,6 +3547,11 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // -- dev_projects: standards & branching policy (Pipeline Stage 3). Opaque
     // JSON envelope { precommit, branching } set via dev_tools_set_standards_config;
     // the connected team's personas must respect it. Nullable / no default.
+    // -- dev_ideas: strategist triage rank (1 = do next). Written by the
+    // backlog-triage job (Product Strategist); backlog_to_goal promotes ranked
+    // ideas first. Nullable — unranked ideas fall back to impact/effort order.
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN priority INTEGER;").ok();
+
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN standards_config TEXT;")
         .ok();
 

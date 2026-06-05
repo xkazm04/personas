@@ -423,7 +423,13 @@ implement AND the QA test+merge step):
    actual code + tests for the increment and opens a PR (this is the step that
    delivers value).
 3. (optional) Review — a reviewer checks the IMPLEMENTED change.
-4. (optional) Security — a security persona scans the IMPLEMENTED change.
+4. (optional) Security — INCLUDE this step whenever the increment touches auth,
+   sessions, permissions, PII/PHI, payments/billing, secrets/credentials, file
+   uploads, or external input parsing — the security persona scans the
+   IMPLEMENTED change. Skip it only for changes that clearly touch none of those.
+4b. (optional) UX review — for USER-FACING increments (UI, flows, onboarding,
+   copy), the UX persona reviews the implemented change for flow clarity,
+   accessibility, and consistency.
 5. REQUIRED — QA test + merge — the QA persona tests the opened PR in an isolated
    worktree and MERGES it (or requests changes). Without this step the PR strands
    open and the goal is not actually delivered — the work only counts when it is

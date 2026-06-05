@@ -378,6 +378,9 @@ pub struct DevIdea {
     pub effort: Option<i32>,
     pub impact: Option<i32>,
     pub risk: Option<i32>,
+    /// Strategist triage rank (1 = do next). Set by the backlog-triage job;
+    /// promotion prefers ranked ideas. None = unranked.
+    pub priority: Option<i32>,
     pub provider: Option<String>,
     pub model: Option<String>,
     pub rejection_reason: Option<String>,
