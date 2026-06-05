@@ -1069,7 +1069,12 @@ async fn list_tools_sse(fields: &HashMap<String, String>) -> Result<Vec<McpTool>
 
     let auth_token = fields.get("auth_token");
 
-    let client = crate::SHARED_HTTP.clone();
+    // The SSE URL comes from user credential data. The pre-flight
+    // validate_url_safety check above is TOCTOU-vulnerable (DNS rebinding) and
+    // does not cover redirects, so the request itself must go through the
+    // SSRF-safe client whose resolver rejects private/internal IPs on every
+    // connection (including redirect hops).
+    let client = crate::SSRF_SAFE_HTTP.clone();
 
     // Initialize
     let init_payload = jsonrpc_request(
@@ -1111,7 +1116,12 @@ async fn execute_tool_sse(
 
     let auth_token = fields.get("auth_token");
 
-    let client = crate::SHARED_HTTP.clone();
+    // The SSE URL comes from user credential data. The pre-flight
+    // validate_url_safety check above is TOCTOU-vulnerable (DNS rebinding) and
+    // does not cover redirects, so the request itself must go through the
+    // SSRF-safe client whose resolver rejects private/internal IPs on every
+    // connection (including redirect hops).
+    let client = crate::SSRF_SAFE_HTTP.clone();
 
     // Initialize
     let init_payload = jsonrpc_request(
