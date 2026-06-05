@@ -322,9 +322,6 @@ export interface LabSlice {
    *  in + tag it production, then switch the active model. */
   activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<void>;
 
-  // Prompt Improvement Engine
-  improvePrompt: (personaId: string, runId: string, mode: string) => Promise<string | null>;
-
   // Active progress hydration (restores progress after page refresh)
   hydrateActiveProgress: (personaId: string) => Promise<void>;
 
@@ -555,19 +552,6 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
         get().fetchVersionRatings(personaId);
       } catch (err) {
         reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
-      }
-    },
-
-    // Prompt Improvement Engine
-    improvePrompt: async (personaId, runId, mode) => {
-      try {
-        const version = await api.labImprovePrompt(personaId, runId, mode);
-        // Refresh versions list to include the new one
-        get().fetchVersions(personaId);
-        return version.id;
-      } catch (err) {
-        reportError(err, "Failed to generate prompt improvement", set, { action: "lab.improvePrompt" });
-        return null;
       }
     },
 
