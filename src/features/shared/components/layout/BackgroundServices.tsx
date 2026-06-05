@@ -12,7 +12,7 @@ import { useLabEvents } from "@/hooks/lab/useLabEvents";
 import { useHealthDigestScheduler, useHealthDigestPrefetch } from "@/features/agents/sub_health";
 import { useRemediationEvaluator } from "@/features/vault/shared/hooks/health/useRemediationEvaluator";
 import { useLangfuseStackEvents } from "@/features/plugins/langfuse/useLangfuseStackEvents";
-import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/pipeline/sub_assignments";
+import { useAssignmentNotificationDispatcher, useGlobalAssignmentProgressListener } from "@/features/teams/sub_assignments";
 import { useAthenaAssignmentReconciliation } from "@/features/plugins/companion/useAthenaAssignmentReconciliation";
 
 

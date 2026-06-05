@@ -12860,6 +12860,10 @@ export type Translations = {
       gate_hourly_scan: string;
       gate_approval_listener: string;
       gate_rejection_listener: string;
+      goal_view_board: string;
+      goal_view_map: string;
+      goal_view_timeline: string;
+      goal_view_portfolio: string;
     };
     dev_projects: {
       bulk_selected_one: string;

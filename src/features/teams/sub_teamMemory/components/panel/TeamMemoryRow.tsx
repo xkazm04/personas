@@ -17,7 +17,7 @@ function parseRevisions(tags: string | null): { source: string; revisions: Revis
     const parsed = JSON.parse(tags);
     if (typeof parsed === 'object' && parsed !== null && Array.isArray(parsed.revisions))
       return { source: parsed.source ?? '', revisions: parsed.revisions };
-  } catch (err) { silentCatch("features/pipeline/sub_teamMemory/components/panel/TeamMemoryRow:catch1")(err); }
+  } catch (err) { silentCatch("features/teams/sub_teamMemory/components/panel/TeamMemoryRow:catch1")(err); }
   return { source: tags, revisions: [] };
 }
 

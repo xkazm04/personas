@@ -2,7 +2,7 @@ import { startTransition } from "react";
 import type { StateCreator } from "zustand";
 import { storeBus, AccessorKey } from "@/lib/storeBus";
 import type { SystemStore } from "../../storeTypes";
-import type { SidebarSection, HomeTab, GoalsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
+import type { SidebarSection, HomeTab, GoalsTab, TeamsTab, EditorTab, DesignSubTab, TemplateTab, CloudTab, SettingsTab, DevToolsTab, AgentTab, PluginTab, EventBusTab, ResearchLabTab } from "@/lib/types/types";
 import type { CompanionCockpitSpecBody } from "@/api/companion";
 
 /**
@@ -53,6 +53,8 @@ export interface UiSlice {
   sidebarSection: SidebarSection;
   homeTab: HomeTab;
   goalsTab: GoalsTab;
+  /** L2 inside the Teams section: workspace (canvas/Studio) or the Goals hub. */
+  teamsTab: TeamsTab;
   /**
    * Selected release version on the Home → "What's New" surface. Driven by
    * the sidebar Level 3 release nav; the page-body `<ReleasesNavBar>` was
@@ -147,6 +149,7 @@ export interface UiSlice {
   resetHomeSections: () => void;
   setHomeTab: (tab: HomeTab) => void;
   setGoalsTab: (tab: GoalsTab) => void;
+  setTeamsTab: (tab: TeamsTab) => void;
   setHomeReleaseVersion: (version: string) => void;
   setTemplateTab: (tab: TemplateTab) => void;
   setAgentTab: (tab: AgentTab) => void;
@@ -260,6 +263,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   homeHiddenSections: [],
   homeTab: "welcome" as HomeTab,
   goalsTab: "board" as GoalsTab,
+  teamsTab: "workspace" as TeamsTab,
   homeReleaseVersion: "roadmap",
   templateTab: "generated" as TemplateTab,
   agentTab: "all" as AgentTab,
@@ -346,6 +350,7 @@ export const createUiSlice: StateCreator<SystemStore, [], [], UiSlice> = (set, g
   })),
   setHomeTab: (tab) => startTransition(() => set({ homeTab: tab })),
   setGoalsTab: (tab) => startTransition(() => set({ goalsTab: tab })),
+  setTeamsTab: (tab) => startTransition(() => set({ teamsTab: tab })),
   setHomeReleaseVersion: (version) => startTransition(() => set({ homeReleaseVersion: version })),
   setTemplateTab: (tab) => startTransition(() => set({ templateTab: tab })),
   setAgentTab: (tab) => startTransition(() => set({ agentTab: tab })),

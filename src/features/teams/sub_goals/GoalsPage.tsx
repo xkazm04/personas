@@ -4,11 +4,13 @@ import { Button } from '@/features/shared/components/buttons';
 import { IconGoals } from '@/features/shared/components/layout/sidebar/SidebarIcons';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
+import type { GoalsTab } from '@/lib/types/types';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
-import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsPortfolio } from './GoalsPortfolio';
@@ -31,6 +33,7 @@ export default function GoalsPage() {
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const goals = useSystemStore((s) => s.goals);
   const goalsTab = useSystemStore((s) => s.goalsTab);
+  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -69,6 +72,20 @@ export default function GoalsPage() {
         subtitle={activeProject?.root_path ?? '—'}
         actions={
           <div className="flex items-center gap-2">
+            {/* View switcher — moved in-page when Goals became an L2 item
+                inside the Teams section (the sidebar no longer drives it). */}
+            <SegmentedTabs<GoalsTab>
+              tabs={[
+                { id: 'board', label: dl.goal_view_board },
+                { id: 'map', label: dl.goal_view_map },
+                { id: 'timeline', label: dl.goal_view_timeline },
+                { id: 'portfolio', label: dl.goal_view_portfolio },
+              ]}
+              activeTab={goalsTab}
+              onTabChange={setGoalsTab}
+              fullWidth={false}
+              ariaLabel={t.plugins.dev_lifecycle.tab_goals}
+            />
             <Button
               variant="accent"
               accentColor="violet"

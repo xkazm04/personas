@@ -133,7 +133,7 @@ export function useAutoTeam(): AutoTeamState {
       } catch (err) {
         // Roll back the partial team — best-effort, we've already surfaced the
         // failure via the outer catch.
-        try { await deleteTeam(team.id); } catch (err) { silentCatch("features/pipeline/components/useAutoTeam:catch1")(err); }
+        try { await deleteTeam(team.id); } catch (err) { silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:catch1")(err); }
         setCreatedTeam(null);
         throw err;
       }
@@ -194,11 +194,11 @@ export function useAutoTeam(): AutoTeamState {
               });
               seeded++;
             }
-          } catch (err) { silentCatch("features/pipeline/components/useAutoTeam:catch2")(err); }
+          } catch (err) { silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:catch2")(err); }
 
           if (seeded >= 10) break; // Cap seeded memories
         }
-      } catch (err) { silentCatch("features/pipeline/components/useAutoTeam:catch3")(err); }
+      } catch (err) { silentCatch("features/teams/sub_teamWorkspace/useAutoTeam:catch3")(err); }
 
       setMemoriesSeeded(seeded);
       await fetchTeams();

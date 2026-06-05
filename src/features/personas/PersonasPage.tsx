@@ -11,7 +11,7 @@ import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { CredentialNavProvider } from '@/features/vault/shared/hooks/CredentialNavContext';
 import { ErrorBanner } from '@/features/shared/components/feedback/ErrorBanner';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
-import { CanvasDragProvider } from '@/features/pipeline/sub_canvas';
+import { CanvasDragProvider } from '@/features/teams/sub_canvas';
 import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
@@ -23,9 +23,9 @@ const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m =
 const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
 const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
 const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
-const GoalsPage = lazy(() => import('@/features/plugins/dev-tools/sub_goals/GoalsPage'));
+const GoalsPage = lazy(() => import('@/features/teams/sub_goals/GoalsPage'));
 const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
-const TeamCanvas = lazy(() => import('@/features/pipeline/components/TeamCanvas'));
+const TeamCanvas = lazy(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
 const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
 const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
 const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
@@ -73,11 +73,12 @@ export default function PersonasPage() {
   // D7 — subscribes to `athena://orchestration/digest-changed` and
   // populates the operative-memory store the LiveOpsStrip reads.
   useOperativeMemoryBridge();
-  const { sidebarSection, cloudTab, agentTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
+  const { sidebarSection, cloudTab, agentTab, teamsTab, pluginTab, isCreatingPersona, isLoading, error } = useSystemStore(
     useShallow((s) => ({
       sidebarSection: s.sidebarSection,
       cloudTab: s.cloudTab,
       agentTab: s.agentTab,
+      teamsTab: s.teamsTab,
       pluginTab: s.pluginTab,
       isCreatingPersona: s.isCreatingPersona,
       isLoading: s.isLoading,
@@ -209,10 +210,6 @@ export default function PersonasPage() {
           </ErrorBoundary>
         );
       }
-      // Teams sub-view (tier-gated in sidebar — TIERS.TEAM)
-      if (agentTab === 'team') {
-        return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
-      }
       // Groups→Teams consolidation (Phase 4): the standalone Groups manager
       // is retired — a team is now the workspace. Any lingering
       // agentTab==='groups' falls through to the default Agents view.
@@ -228,7 +225,13 @@ export default function PersonasPage() {
     if (sidebarSection === 'overview') {
       return <ErrorBoundary name="Overview"><Suspense fallback={SectionFallback}><OverviewPage /></Suspense></ErrorBoundary>;
     }
-    if (sidebarSection === 'goals') return <ErrorBoundary name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
+    if (sidebarSection === 'teams') {
+      // Teams 1st-level section: Workspace (canvas/Studio) or the Goals hub.
+      if (teamsTab === 'goals') {
+        return <ErrorBoundary name="Goals"><Suspense fallback={SectionFallback}><GoalsPage /></Suspense></ErrorBoundary>;
+      }
+      return <ErrorBoundary name="Teams"><Suspense fallback={SectionFallback}><TeamCanvas /></Suspense></ErrorBoundary>;
+    }
     if (sidebarSection === 'credentials') return <ErrorBoundary name="Vault"><Suspense fallback={SectionFallback}><CredentialManager /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'events') return <ErrorBoundary name="Triggers"><Suspense fallback={SectionFallback}><TriggersPage /></Suspense></ErrorBoundary>;
     if (sidebarSection === 'design-reviews') return <ErrorBoundary name="Design Reviews"><Suspense fallback={SectionFallback}><DesignReviewsPage /></Suspense></ErrorBoundary>;

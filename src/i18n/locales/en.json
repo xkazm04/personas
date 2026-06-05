@@ -12853,7 +12853,11 @@
       "gate_dev_clone": "Dev Clone adopted",
       "gate_hourly_scan": "Hourly scan scheduled",
       "gate_approval_listener": "Approval listener wired",
-      "gate_rejection_listener": "Rejection listener wired"
+      "gate_rejection_listener": "Rejection listener wired",
+      "goal_view_board": "Board",
+      "goal_view_map": "Map",
+      "goal_view_timeline": "Timeline",
+      "goal_view_portfolio": "Portfolio"
     },
     "dev_projects": {
       "bulk_selected_one": "project selected",

@@ -120,9 +120,6 @@ export function useBreadcrumbTrail(): BreadcrumbSegment[] {
         if (agentTab === 'cloud') {
           trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setAgentTab('all') });
           trail.push({ label: 'Cloud' });
-        } else if (agentTab === 'team') {
-          trail.push({ label: sectionLabel, onClick: () => useSystemStore.getState().setAgentTab('all') });
-          trail.push({ label: 'Teams' });
         } else if (isCreatingPersona) {
           // No breadcrumb during agent creation — the matrix IS the creation surface
         } else if (selectedPersonaId && selectedPersona) {

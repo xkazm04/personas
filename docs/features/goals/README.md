@@ -6,8 +6,8 @@ Goals give **high-level direction** to both development and teams, and are the c
 
 ## Where it lives
 
-- **Top-level sidebar section** — `Goals` (between Overview and Agents), in addition to the legacy Dev Tools › Goals tab (a contextual shortcut). Both render the same surface (`src/features/plugins/dev-tools/sub_goals/`).
-- **L2 sub-nav** — four surfaces: **Board · Map · Timeline · Portfolio**. Board / Map / Timeline are scoped to the active project (`LifecycleProjectPicker` in the header); **Portfolio** is cross-project (and now carries the per-project "needs you" drawer — the former standalone Attention tab was folded into it).
+- **Inside the top-level `Teams` section** — Teams was promoted to a 1st-level sidebar section (2026-06-05) and Goals consolidated under it as an L2 item (next to the team Workspace), in addition to the legacy Dev Tools › Goals tab (a contextual shortcut). Both render the same surface (`src/features/teams/sub_goals/`).
+- **In-page view switcher** — four surfaces: **Board · Map · Timeline · Portfolio**, switched via a `SegmentedTabs` strip in the page header (moved in-page when Goals became an L2 item — the sidebar no longer drives the views). Board / Map / Timeline are scoped to the active project (`LifecycleProjectPicker` in the header); **Portfolio** is cross-project (and carries the per-project "needs you" drawer — the former standalone Attention tab was folded into it).
 - **Persistence** — the active project is persisted (`systemStore` partialize), so goals re-fetch after a hard refresh.
 
 ## Canonical status model
