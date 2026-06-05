@@ -1535,6 +1535,19 @@ const metabase: EP[] = [
   ep('GET', '/api/user/current', 'Get current user (healthcheck)', [], ['Users']),
 ];
 
+// -- Granola (AI meeting notes) ---
+const granola: EP[] = [
+  ep('GET', '/notes', 'List meeting notes', [
+    queryP('limit', false, 'Max notes to return'),
+    queryP('cursor', false, 'Pagination cursor from a previous response'),
+    queryP('created_after', false, 'ISO-8601 timestamp filter'),
+  ], ['Notes']),
+  ep('GET', '/notes/{id}', 'Get a note (optionally with transcript)', [
+    pathP('id'),
+    queryP('include', false, "Set to 'transcript' to include the full transcript"),
+  ], ['Notes']),
+];
+
 export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   alpha_vantage,
   azure_devops,
@@ -1562,6 +1575,7 @@ export const CATALOG_API_ENDPOINTS: Record<string, ApiEndpoint[]> = {
   twilio_segment,
   planetscale,
   notion,
+  granola,
   cal_com,
   calendly,
   telegram,

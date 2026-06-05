@@ -135,6 +135,7 @@ const LICENSE_OVERRIDES: Record<string, LicenseTier> = {
 
   elevenlabs:                      'personal',
   google_gemini:                   'personal',
+  granola:                         'paid',
   apify:                           'personal',
   youtube_data:                    'personal',
   deepgram:                        'personal',
