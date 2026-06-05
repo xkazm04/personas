@@ -205,6 +205,8 @@ pub async fn companion_approve_action(
         // UnifiedMatrixEntry consumes both via the same prefill slot.
         "build_oneshot" => execute_build_oneshot(&state, &app, &params).await,
         "run_arena" => execute_run_arena(&state, &app, &params).await,
+        "companion_breed_personas" => execute_companion_breed_personas(&state, &app, &params).await,
+        "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, &params).await,
         // `compose_dashboard` is now auto-fire (no approval card) —
         // handled by the dispatcher + session.rs. The executor below
         // is kept as a fallback in case an old approval row from
@@ -1592,6 +1594,89 @@ async fn execute_run_arena(
         // the arena view automatically.
         client_action: None,
     })
+}
+
+/// Headless breed: cross-breed 2+ personas via the genome engine. The Versions
+/// & Ratings redesign descoped Breed from the Lab UI, so Athena is now its only
+/// driver — she proposes it (approval-gated, since it spawns a compute-heavy
+/// run) and this forwards to the existing `genome_start_breeding` command.
+/// Offspring land in the genome breeding tables for any future surface to read.
+async fn execute_companion_breed_personas(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let parent_ids: Vec<String> = params
+        .get("parent_ids")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    if parent_ids.len() < 2 {
+        return Err(AppError::Internal(
+            "companion_breed_personas: `parent_ids` needs at least 2 persona ids".into(),
+        ));
+    }
+    // Fitness weights default to a quality-leaning blend when Athena omits them.
+    let fitness_objective: crate::engine::genome::FitnessObjective = params
+        .get("fitness_objective")
+        .cloned()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or(crate::engine::genome::FitnessObjective {
+            speed: 0.2,
+            quality: 0.6,
+            cost: 0.2,
+        });
+    let mutation_rate = params.get("mutation_rate").and_then(|v| v.as_f64());
+    let generations = params
+        .get("generations")
+        .and_then(|v| v.as_i64())
+        .map(|n| n as i32);
+
+    let run = crate::commands::execution::genome::genome_start_breeding(
+        state.clone(),
+        app.clone(),
+        parent_ids.clone(),
+        fitness_objective,
+        mutation_rate,
+        generations,
+    )
+    .await?;
+
+    Ok(ExecuteResult::message(format!(
+        "Breeding run `{}` started from {} parents. Offspring appear once the run completes.",
+        run.id,
+        parent_ids.len()
+    )))
+}
+
+/// Headless evolve: trigger one auto-evolution cycle for a persona (breed →
+/// evaluate → promote) via the existing `evolution_trigger_cycle` command.
+/// Approval-gated; descoped from the Lab UI in the redesign.
+async fn execute_companion_evolve_persona(
+    state: &State<'_, Arc<AppState>>,
+    _app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let persona_id = params
+        .get("persona_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("companion_evolve_persona: missing `persona_id`".into()))?
+        .to_string();
+
+    let cycle = crate::commands::execution::evolution::evolution_trigger_cycle(
+        state.clone(),
+        persona_id.clone(),
+    )
+    .await?;
+
+    Ok(ExecuteResult::message(format!(
+        "Evolution cycle `{}` triggered for persona `{persona_id}`.",
+        cycle.id
+    )))
 }
 
 /// Persist a dashboard composition (singleton). The spec is stored as
