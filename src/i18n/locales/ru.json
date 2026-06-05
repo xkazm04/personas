@@ -9238,6 +9238,7 @@
     "tour_step_of": "Шаг {current} из {total}",
     "tour_show_me": "Показать",
     "tour_show_me_title": "Прокрутить и снова подсветить этот элемент",
+    "tour_locate_title": "Показать, где это",
     "minimize": "Свернуть",
     "end_tour": "Завершить тур",
     "back": "Назад",

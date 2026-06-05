@@ -9238,6 +9238,7 @@
     "tour_step_of": "Schritt {current} von {total}",
     "tour_show_me": "Zeigen",
     "tour_show_me_title": "Zum Element scrollen und erneut hervorheben",
+    "tour_locate_title": "Zeigen, wo das ist",
     "minimize": "Minimieren",
     "end_tour": "Tour beenden",
     "back": "Zurück",

@@ -50,26 +50,28 @@ export function TourPanelBody({
   const requiresAcknowledge = isExplorationTourEvent(currentStep.completeOn);
   const handleAcknowledge = () => useSystemStore.getState().emitTourEvent(currentStep.completeOn);
 
-  // "Show me" — the element this step (or its active sub-step) points at. Lets the
-  // user re-summon the spotlight after it fades or they've scrolled/clicked away.
-  const activeHighlight =
-    currentStep.subSteps[subStepIndex]?.highlightTestId ?? currentStep.highlightTestId ?? null;
-  const canShowMe = !!activeHighlight && isSafeTourTestId(activeHighlight);
-
-  const handleShowMe = () => {
-    if (!activeHighlight || !isSafeTourTestId(activeHighlight)) return;
-    // Only act when the target is actually mounted. Re-firing the spotlight at a
-    // missing testid would trip TourSpotlight's onMissing handler and dismiss the
-    // whole tour — so if it's not on screen, do nothing rather than risk that.
-    const el = document.querySelector(`[data-testid="${activeHighlight}"]`);
+  // Re-summon the spotlight for a target — scroll it into view and re-pulse the
+  // cut-out. Guarded to only fire when the element is actually mounted: re-firing
+  // at a missing testid would trip TourSpotlight's onMissing handler and dismiss
+  // the whole tour, so an off-screen target is a no-op rather than a risk.
+  const focusHighlight = (testId: string | null | undefined) => {
+    if (!testId || !isSafeTourTestId(testId)) return;
+    const el = document.querySelector(`[data-testid="${testId}"]`);
     if (!el) return;
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
     // Setting the same value is a Zustand no-op, so clear then re-set on the next
     // tick to force the spotlight to re-measure and pulse around the element.
     const setHighlight = useSystemStore.getState().setHighlightTestId;
     setHighlight(null);
-    window.setTimeout(() => setHighlight(activeHighlight), 60);
+    window.setTimeout(() => setHighlight(testId), 60);
   };
+
+  // "Show me" header control — points at whatever the current step / active
+  // sub-step highlights.
+  const activeHighlight =
+    currentStep.subSteps[subStepIndex]?.highlightTestId ?? currentStep.highlightTestId ?? null;
+  const canShowMe = !!activeHighlight && isSafeTourTestId(activeHighlight);
+  const handleShowMe = () => focusHighlight(activeHighlight);
 
   return (
     <>
@@ -107,25 +109,45 @@ export function TourPanelBody({
         <p className="typo-body text-foreground leading-relaxed mt-1">{currentStep.description}</p>
       </div>
 
-      {/* Sub-step indicators */}
+      {/* Sub-step indicators — clickable when the sub-step points at an element */}
       {currentStep.subSteps.length > 0 && (
         <div className="px-4 pt-2 pb-2 flex flex-wrap items-center gap-1.5 border-b border-primary/5">
-          {currentStep.subSteps.map((sub, i) => (
-            <div
-              key={sub.id}
-              data-testid={`tour-substep-${sub.id}`}
-              className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption transition-all ${
-                i < subStepIndex
-                  ? 'bg-emerald-500/10 text-emerald-400'
-                  : i === subStepIndex
-                    ? `${colors.subtle} ${colors.text} font-medium`
-                    : 'bg-secondary/20 text-foreground'
-              }`}
-            >
-              {i < subStepIndex ? <Check className="w-2.5 h-2.5" /> : null}
-              {sub.label}
-            </div>
-          ))}
+          {currentStep.subSteps.map((sub, i) => {
+            const stateClass =
+              i < subStepIndex
+                ? 'bg-emerald-500/10 text-emerald-400'
+                : i === subStepIndex
+                  ? `${colors.subtle} ${colors.text} font-medium`
+                  : 'bg-secondary/20 text-foreground';
+            const locatable = isSafeTourTestId(sub.highlightTestId);
+            const inner = (
+              <>
+                {i < subStepIndex ? <Check className="w-2.5 h-2.5" /> : null}
+                {sub.label}
+                {locatable && <Crosshair className="w-2.5 h-2.5 opacity-50 group-hover:opacity-100 transition-opacity" />}
+              </>
+            );
+            return locatable ? (
+              <button
+                key={sub.id}
+                type="button"
+                onClick={() => focusHighlight(sub.highlightTestId)}
+                data-testid={`tour-substep-${sub.id}`}
+                title={t.onboarding.tour_locate_title}
+                className={`group flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption transition-all cursor-pointer hover:brightness-125 ${stateClass}`}
+              >
+                {inner}
+              </button>
+            ) : (
+              <div
+                key={sub.id}
+                data-testid={`tour-substep-${sub.id}`}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-card typo-caption transition-all ${stateClass}`}
+              >
+                {inner}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -146,6 +168,7 @@ export function TourPanelBody({
               requiresAcknowledge={requiresAcknowledge}
               isStepCompleted={isStepCompleted}
               onAcknowledge={handleAcknowledge}
+              onFocusSubStep={focusHighlight}
             />
           )}
         </Suspense>
@@ -189,13 +212,14 @@ export function TourPanelBody({
 }
 
 /** Generic step content for tours that don't have specialized interactive components */
-function GenericStepContent({ step, subStepIndex, colors, requiresAcknowledge, isStepCompleted, onAcknowledge }: {
+function GenericStepContent({ step, subStepIndex, colors, requiresAcknowledge, isStepCompleted, onAcknowledge, onFocusSubStep }: {
   step: Pick<TourStepDef, 'hint' | 'subSteps'>;
   subStepIndex: number;
   colors: { subtle: string; accent: string; text: string };
   requiresAcknowledge: boolean;
   isStepCompleted: boolean;
   onAcknowledge: () => void;
+  onFocusSubStep: (testId: string | null | undefined) => void;
 }) {
   const { t } = useTranslation();
   const activeHint = step.subSteps[subStepIndex]?.hint ?? step.hint;
@@ -231,9 +255,20 @@ function GenericStepContent({ step, subStepIndex, colors, requiresAcknowledge, i
                   i === subStepIndex ? `${colors.accent} ${colors.subtle}` : 'border-primary/15'
                 }`} />
               )}
-              <p className="typo-body leading-relaxed text-foreground">
+              <p className="typo-body leading-relaxed text-foreground flex-1">
                 {sub.hint}
               </p>
+              {isSafeTourTestId(sub.highlightTestId) && (
+                <button
+                  type="button"
+                  onClick={() => onFocusSubStep(sub.highlightTestId)}
+                  title={t.onboarding.tour_locate_title}
+                  data-testid={`tour-locate-${sub.id}`}
+                  className={`flex-shrink-0 mt-0.5 p-1 rounded-card ${colors.text} hover:bg-secondary/40 transition-colors`}
+                >
+                  <Crosshair className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
           ))}
         </div>

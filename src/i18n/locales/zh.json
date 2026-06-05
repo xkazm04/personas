@@ -9238,6 +9238,7 @@
     "tour_step_of": "第 {current} 步，共 {total} 步",
     "tour_show_me": "显示位置",
     "tour_show_me_title": "滚动到该元素并重新高亮",
+    "tour_locate_title": "显示它的位置",
     "minimize": "最小化",
     "end_tour": "结束引导",
     "back": "返回",

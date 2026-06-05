@@ -9238,6 +9238,7 @@
     "tour_step_of": "{total}ステップ中{current}番目",
     "tour_show_me": "表示",
     "tour_show_me_title": "この要素までスクロールして再度ハイライト",
+    "tour_locate_title": "これがどこにあるか表示",
     "minimize": "最小化",
     "end_tour": "ツアーを終了",
     "back": "戻る",
