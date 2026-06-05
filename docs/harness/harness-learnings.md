@@ -325,3 +325,25 @@
 - **NaN math** — Wave 8d closed 3 (timeout clamp issues). 2 of the original report's 6 "NaN risks" were verified already-fixed; 1 had wrong file location. Future scans should grep for `parseInt(...) || N` patterns where N skips lower bounds, and `Math.min(...)` without matching `Math.max(...)` in input handlers.
 - **Concurrent-WIP discipline**: when running fix waves on personas, expect parallel work (other AI sessions / human edits) to land mid-session. Snapshot it as a `chore: snapshot concurrent WIP` commit between wave commits to keep wave commits surgical and auditable.
 - **`use-element-visible` pattern adoption**: `CompositePartialMatchIndicator` and `ScheduleTimeline` are now both visibility-gated. Other polling components in `triggers/`, `health/`, `overview/sub_realtime/` likely benefit from the same gate — audit ~10 candidate components on future cleanup-gap waves.
+
+## Scan-and-decide — Connections & Credentials (Pipeline C, 2026-06-05)
+
+### Build & verification gotcha (HIGH VALUE — read before any Rust work here)
+- **`cargo check` with NO features FAILS** at Tauri codegen: `capabilities/default.json` references `updater:default`, but `tauri-plugin-updater` is an *optional* dep behind the `desktop` feature and `Cargo.toml` has `default = []`. The error ("Permission updater:default not found …") is a build-script failure that aborts **before** rustc compiles the crate, so a bare `cargo check` never type-checks your code. Always verify with `cargo check --features desktop-full` (CI build = desktop+ml+p2p). KB/vector code (`commands/credentials/vector_kb.rs`, `engine/vector_store.rs`, `state.vector_store`) is `ml`-gated, so `desktop-full` is required to check it.
+- **`cargo … | tail` reports tail's exit code, not cargo's** — a "build failed" can hide behind EXIT=0. Use `${PIPESTATUS[0]}` or redirect to a file and check `$?`.
+
+### SSRF infrastructure
+- Two modules: `engine::ssrf_safe_dns` (defines `SsrfSafeDnsResolver` + `build_ssrf_safe_client()`, backs global `crate::SSRF_SAFE_HTTP`, 30s timeout) and `engine::url_safety` (`validate_url_safety()` pre-flight + a second `SsrfSafeResolver`). For any outbound call whose URL comes from user/credential data, use **`crate::SSRF_SAFE_HTTP`**, never the plain `crate::SHARED_HTTP`. Pre-flight `validate_url_safety` is TOCTOU-vulnerable (DNS rebinding) and ignores redirects — the resolver client is the real guard.
+
+### Choke points (single point to fix a whole class)
+- `engine/db_query.rs::http_client()` — every REST DB connector (neon/supabase/upstash/planetscale/convex + introspection) flows through it; now returns `SSRF_SAFE_HTTP`.
+- `engine/mcp_tools.rs::validate_mcp_command()` — every stdio MCP spawn (via `spawn_mcp_process`) validates here; now constrains *arguments* (remote-URL specs + docker host-escape flags), not just the binary allowlist.
+- `engine/rotation.rs` per-credential lock: `ROTATING_CREDENTIALS` static + `try_lock_credential`/`unlock_credential`/`is_credential_rotating`. Rotation `rotation_type` history values include `"anomaly"` and (new) `"anomaly_remediation"`; `detect_anomalies` once-per-episode dedup keys on the most-recent history entry's type.
+
+### Pre-existing test failure (NOT a regression)
+- `engine::db_query::tests::test_sanitize_strips_field_values` (db_query.rs:~3106) fails on master — `sanitize_error` redacts the short value "5432" the test expects preserved. Independent of any SSRF work; touched-module suite is otherwise 61 passed / 4 ignored.
+
+## Open follow-ups (from Pipeline C — Connections & Credentials, 2026-06-05)
+- **MCP consent gate (completes idea #2)**: arg-hardening blocks remote-URL specs + docker host-escape flags, but does NOT stop `npx <poisoned-but-real-registry-package>`. A per-command user consent gate (approve + remember on first use) is the only complete fix — a published package is statically indistinguishable from a malicious one.
+- **Rejected this scan (still open)**: tool-audit log omits MCP call arguments (forensic gap); legacy RSA-only IPC decrypt path should default-reject (downgrade vector); credential-topology IPC reads (`list_credentials`/`vault_status`/`credential_blast_radius`) lack the `requires(privileged)` guard their write siblings have; forced OAuth refresh (`oauth_refresh.rs`, force=true) can revoke a working token then fail to persist without marking `needs_reauth`; `import_foraged_credential` is not idempotent (double-click dupes).
+- **Fix the pre-existing `test_sanitize_strips_field_values` failure** (sanitizer over-redacts short numeric values).
