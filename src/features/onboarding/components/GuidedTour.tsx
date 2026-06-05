@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { ChevronRight, X, MapPin, Sparkles, Volume2, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
@@ -175,6 +175,17 @@ export default function GuidedTour() {
     setShowCompletion(false);
     useSystemStore.getState().finishTour();
     if (nextTourId) useSystemStore.getState().startTour(nextTourId);
+  };
+
+  // Keyboard navigation — DELIBERATELY scoped to the panel (handler lives on the
+  // panel root, so it only fires when focus is inside the tour panel). The tour
+  // runs alongside the live app where the user types and uses arrows, so a global
+  // listener would hijack app keys. Editable targets are ignored as defense.
+  const handlePanelKeyDown = (e: ReactKeyboardEvent) => {
+    if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); handleNext(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); handlePrev(); }
+    else if (e.key === 'Escape') { e.preventDefault(); setIsMinimized(true); }
   };
 
   if (!tourActive || !currentStep || !tourDef) return null;
@@ -361,6 +372,7 @@ export default function GuidedTour() {
     <div
       key="tour-panel"
       data-testid="tour-panel"
+      onKeyDown={handlePanelKeyDown}
       className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
       style={{ width: panelWidth }}
     >
