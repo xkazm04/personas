@@ -56,7 +56,7 @@ Rust backend                          React frontend
 | Rust `tracing::warn!` events | Yes | Stored as breadcrumbs for context |
 | App sessions | Yes | Active user counts per release (Release Health) |
 | Feature visits (section + tab) | Yes | Identify popular and underused features |
-| Session summary (visit counts) | Yes | Aggregate usage per session |
+| Session summary (visited **and** ignored) | Yes | Aggregate usage + features never opened, per session |
 | Interaction events (key actions) | Yes | Track adoption of specific workflows |
 
 ## What Is Never Collected
@@ -202,9 +202,12 @@ No code changes are required to disable monitoring.
 |------|------|
 | `src-tauri/src/main.rs` | Sentry guard initialization, Rust `before_send` PII filter |
 | `src-tauri/src/logging.rs` | `sentry-tracing` layer in subscriber registry |
-| `src/lib/sentry.ts` | Frontend Sentry init, JS `beforeSend` PII filter, `trackFeature`/`trackInteraction` |
-| `src/lib/analytics.ts` | Zustand navigation subscriber, session summary, analytics init |
-| `src/main.tsx` | Error Boundary, global error handlers, analytics bootstrap |
+| `src/lib/sentry.ts` | Frontend Sentry init, JS `beforeSend` PII filter, `trackFeature`/`trackInteraction`/`trackSessionSummary` |
+| `src/lib/analytics/navCatalog.ts` | Declarative catalog — every sidebar section + tab dimension (source of truth for coverage and "ignored") |
+| `src/lib/analytics/sink.ts` | Transport abstraction (`AnalyticsSink`) — default `sentrySink`; swap point for future local-first / product-analytics backends |
+| `src/lib/analytics/summary.ts` | Pure `buildSessionSummary` — diffs visited counts against the full catalog |
+| `src/lib/analytics/index.ts` | Multi-store Zustand navigation subscriber, session-summary flush, `initAnalytics` |
+| `src/main.tsx` | Error Boundary, global error handlers, telemetry-gated analytics bootstrap |
 | `vite.config.ts` | Hidden source map generation |
 | `.github/workflows/release.yml` | DSN injection + source map upload step |
 
@@ -241,15 +244,22 @@ Anonymous feature usage events are sent alongside error events to help identify 
 ### Architecture
 
 ```
-Zustand store (state change)
-  └─ analytics.ts subscriber
-       ├─ trackFeature("overview", "executions", "tab_switch")
-       │    └─ Sentry.captureMessage("feature_visit: overview.executions", "info")
-       │         tags: event_type=feature_visit, feature.section=overview, feature.tab=executions
+Zustand stores (system + overview, state change)
+  └─ analytics/index.ts subscriber  ── driven by navCatalog (full coverage)
+       ├─ getAnalyticsSink().feature({ section, tab, action })  ── sink seam
+       │    └─ sentrySink → trackFeature(...)
+       │         └─ Sentry.captureMessage("feature_visit: overview.executions", "info")
+       │              tags: event_type=feature_visit, feature.section=overview, feature.tab=executions
        │
-       └─ beforeunload → session_summary event
-            extras: { visit.home: 3, visit.overview.executions: 7, ... }
+       └─ beforeunload → buildSessionSummary(counts) → sink.session(...)
+            extras: { visit.*: n, sections_ignored: "...", tabs_ignored: "...", ... }
 ```
+
+The **sink** (`analytics/sink.ts`) is the transport seam: instrumentation emits
+structured events to the active `AnalyticsSink` rather than calling Sentry
+directly. Today the only sink is `sentrySink`; a future local-first SQLite sink
+or product-analytics sink can be dropped in via `setAnalyticsSink()` with zero
+changes to instrumentation.
 
 ### Event Types
 
@@ -257,7 +267,7 @@ Zustand store (state change)
 |-------|-----------|------------|
 | `feature_visit` | `event_type: feature_visit` | User navigates to a section or switches a tab |
 | `interaction` | `event_type: interaction` | User performs a key action (create, execute, deploy, etc.) |
-| `session_summary` | `event_type: session_summary` | Once on app close — aggregated visit counts for the session |
+| `session_summary` | `event_type: session_summary` | Once on app close — visit counts **plus** the ignored set (`sections_ignored`, `tabs_ignored`) computed against the full catalog |
 
 ### Deduplication & Sampling
 
@@ -275,17 +285,26 @@ To view feature usage data in Sentry:
 
 ### Auto-Tracked Navigation
 
-The following state changes are tracked automatically via the Zustand subscriber in `analytics.ts`:
+Coverage is **declarative and complete** — every `SidebarSection` and every
+store-backed tab dimension is enumerated in `analytics/navCatalog.ts`, and the
+subscriber in `analytics/index.ts` tracks all of them. (This replaced the old
+hand-maintained `TAB_SECTION_MAP`, which tracked only 6 of ~16 tab dimensions
+and was blind to non-system stores.)
 
-| Store Field | Section | Tracked As |
-|---|---|---|
-| `sidebarSection` | (value itself) | `feature_visit: {section}` |
-| `homeTab` | `home` | `feature_visit: home.{tab}` |
-| `editorTab` | `personas` | `feature_visit: personas.{tab}` |
-| `overviewTab` | `overview` | `feature_visit: overview.{tab}` |
-| `templateTab` | `design-reviews` | `feature_visit: design-reviews.{tab}` |
-| `cloudTab` | `cloud` | `feature_visit: cloud.{tab}` |
-| `settingsTab` | `settings` | `feature_visit: settings.{tab}` |
+The catalog is the single thing to update when adding a navigable surface:
+
+| Source | Coverage |
+|---|---|
+| `sidebarSection` (system store) | All 10 sections → `feature_visit: {section}` |
+| 12 system-store tab dimensions | `homeTab`, `goalsTab`, `templateTab`, `agentTab`, `editorTab`, `designSubTab`, `cloudTab`, `settingsTab`, `pluginTab`, `devToolsTab`, `eventBusTab`, `researchLabTab` |
+| `overviewTab` (overview store) | Attached lazily on first visit to the `overview` section |
+
+Counts are keyed `<dimension>:<value>` (e.g. `editorTab:use-cases`) so dimensions
+that share a value within one section never collide. Because the catalog is the
+denominator, the session summary reports the **ignored** set — sections and tabs
+that were never opened — not just what was visited. Adding a tab to the store and
+listing it in the catalog is all that's needed; the `satisfies` guards in
+`navCatalog.ts` fail the typecheck if a value drifts from the union in `types.ts`.
 
 ### Manual Interaction Tracking
 
@@ -312,5 +331,7 @@ These fire `interaction` events in Sentry with `ix.category`, `ix.action`, and `
 
 - **Store-level capture**: Add `Sentry.captureException` in Zustand store catch blocks to track IPC errors that are currently caught and displayed but not reported
 - **Rust file logging**: Activate `tracing-appender` (already in `Cargo.toml`) for local diagnostic log files alongside Sentry
-- **User opt-in**: Add a Settings toggle to let users disable error reporting at runtime
+- **User opt-in**: Done — the first-use consent modal has a telemetry checkbox and Settings → Account has a toggle (`telemetryPreference.ts`); `main.tsx` gates Sentry + analytics on `isTelemetryEnabled()`. Follow-up: switch the active sink to `noopSink` on a mid-session toggle-off so usage tracking stops without a restart.
+- **Local-first usage sink (Option B)**: Implement an `AnalyticsSink` backed by a SQLite `feature_usage` table + an in-app "used vs ignored" panel, using the catalog as the denominator. The sink seam means no instrumentation changes.
+- **Product-analytics sink (Option C)**: Implement an `AnalyticsSink` for a dedicated/self-hosted backend (PostHog/Umami) for cross-install funnels and retention.
 - **Supabase hybrid**: Forward critical crash reports to a Supabase `crash_reports` table for self-hosted visibility
