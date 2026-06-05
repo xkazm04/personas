@@ -489,6 +489,9 @@ async fn start_arena(
         &persona_id,
         &models_json,
         input.use_case_filter.as_deref(),
+        // Management-API arena measures the persona's current prompt; no version scope.
+        None,
+        None,
     ) {
         Ok(r) => r,
         Err(e) => {
@@ -514,6 +517,7 @@ async fn start_arena(
             std::env::temp_dir(),
             cancelled,
             use_case_filter,
+            None,
         )
         .await;
     });

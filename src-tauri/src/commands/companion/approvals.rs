@@ -1577,6 +1577,8 @@ async fn execute_run_arena(
         persona_id.clone(),
         models_vec,
         use_case_filter.clone(),
+        // Companion-triggered arena measures the persona's current prompt.
+        None,
     )
     .await?;
 

@@ -63,6 +63,11 @@ pub async fn lab_start_arena(
     persona_id: String,
     models: Vec<serde_json::Value>,
     use_case_filter: Option<String>,
+    // Optional: scope the arena to a specific prompt version. The consolidated
+    // "Versions & Ratings" table launches version-scoped measurements so the
+    // resulting scores attribute to a (version, model) cell. Omitted = measure
+    // the persona's current prompt, as before.
+    version_id: Option<String>,
 ) -> Result<LabArenaRun, AppError> {
     require_auth(&state).await?;
     // Validate at the trust boundary before any DB read or run row is created.
@@ -73,8 +78,27 @@ pub async fn lab_start_arena(
             "Select at least one model to run the arena comparison".into(),
         ));
     }
-    let persona = persona_repo::get_by_id(&state.db, &persona_id)?;
+    let mut persona = persona_repo::get_by_id(&state.db, &persona_id)?;
     let tools = tool_repo::get_tools_for_persona(&state.db, &persona_id)?;
+
+    // Resolve the optional version scope: load the snapshot, verify it belongs to
+    // this persona, and apply its prompt onto the persona we measure (mirrors
+    // lab_start_eval's per-version variant construction).
+    let version: Option<(String, i32)> = match version_id {
+        Some(vid) => {
+            let v = metrics_repo::get_prompt_version_by_id(&state.db, &vid)?;
+            if v.persona_id != persona_id {
+                return Err(AppError::Validation(format!(
+                    "Version {vid} does not belong to this persona"
+                )));
+            }
+            persona.structured_prompt = v.structured_prompt.clone();
+            persona.system_prompt = v.system_prompt.clone().unwrap_or_default();
+            Some((v.id, v.version_number))
+        }
+        None => None,
+    };
+
     let ephemeral = EphemeralPersona::from_persisted(persona, tools);
 
     let model_configs = parse_model_configs(models)?;
@@ -88,6 +112,8 @@ pub async fn lab_start_arena(
         &persona_id,
         &models_json,
         use_case_filter.as_deref(),
+        version.as_ref().map(|(id, _)| id.as_str()),
+        version.as_ref().map(|(_, num)| *num),
     )?;
     let run_id = run.id.clone();
 
@@ -109,6 +135,7 @@ pub async fn lab_start_arena(
             std::env::temp_dir(),
             cancelled_clone,
             use_case_filter,
+            version,
         ))
         .catch_unwind()
         .await;
@@ -1173,6 +1200,21 @@ pub fn lab_get_ratings(
 ) -> Result<Vec<LabUserRating>, AppError> {
     require_auth_sync(&state)?;
     ratings_repo::get_ratings_for_run(&state.db, &run_id)
+}
+
+/// Aggregate measured scores per (prompt version, model) for a persona — the
+/// data source for the consolidated "Versions & Ratings" table. Rolls up every
+/// version-attributed Arena / Eval / A-B result; legacy current-prompt arena
+/// runs (no `version_id`) are excluded. Each cell carries the weighted composite
+/// plus the underlying sub-scores, mean cost/latency, sample count, and the most
+/// recent measurement timestamp.
+#[tauri::command]
+pub fn lab_get_version_ratings(
+    state: State<'_, Arc<AppState>>,
+    persona_id: String,
+) -> Result<Vec<crate::db::models::LabVersionRating>, AppError> {
+    require_auth_sync(&state)?;
+    ratings_repo::get_version_ratings(&state.db, &persona_id)
 }
 
 // ============================================================================
