@@ -9239,6 +9239,7 @@
     "tour_show_me": "Chỉ cho tôi",
     "tour_show_me_title": "Cuộn đến và làm nổi bật lại phần này",
     "tour_locate_title": "Cho tôi xem nó ở đâu",
+    "tour_progress_done": "Hoàn thành {completed}/{total}",
     "minimize": "Thu nhỏ",
     "end_tour": "Kết thúc hướng dẫn",
     "back": "Quay lại",

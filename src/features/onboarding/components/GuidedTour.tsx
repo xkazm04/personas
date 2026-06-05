@@ -10,6 +10,7 @@ import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlic
 import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
+import { StepProgress } from './StepProgress';
 import { useTourNarration } from './useTourNarration';
 import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -191,22 +192,42 @@ export default function GuidedTour() {
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <div className={`w-12 h-12 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
-              <MapPin className={`w-6 h-6 ${colors.text}`} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Intro */}
+            <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-4 text-center">
+              <div className={`w-12 h-12 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
+                <MapPin className={`w-6 h-6 ${colors.text}`} />
+              </div>
+              <div>
+                <p className="typo-heading text-foreground/90">{t.onboarding.resume_continue_title}</p>
+                <p className="typo-caption text-foreground mt-1">
+                  {tx(t.onboarding.tour_progress_done, { completed: completedCount, total: visibleSteps.length })}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="typo-heading text-foreground/90">{t.onboarding.resume_continue_title}</p>
-              <p className="typo-body text-foreground mt-1">{currentStep.title}</p>
+            {/* Step preview — the same list as the live panel; click any step to
+                resume directly there. Clearing tourResumePending in the same set
+                lets the navigate effect run before the spotlight fires. */}
+            <div className="flex-1 overflow-y-auto px-4 pb-2">
+              <StepProgress
+                steps={visibleSteps}
+                currentIndex={currentIndex}
+                completedSteps={completedSteps}
+                onJump={(i) => useSystemStore.setState({ tourCurrentStepIndex: i, tourSubStepIndex: 0, tourResumePending: false })}
+              />
             </div>
-            <Button
-              variant="primary"
-              onClick={() => useSystemStore.setState({ tourResumePending: false })}
-              data-testid="tour-resume-continue"
-            >
-              {t.onboarding.resume_continue_cta}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            {/* Continue at the saved step */}
+            <div className="px-6 py-4 border-t border-primary/8">
+              <Button
+                variant="primary"
+                block
+                onClick={() => useSystemStore.setState({ tourResumePending: false })}
+                data-testid="tour-resume-continue"
+              >
+                {t.onboarding.resume_continue_cta}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

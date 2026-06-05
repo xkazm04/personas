@@ -9239,6 +9239,7 @@
     "tour_show_me": "দেখান",
     "tour_show_me_title": "এই উপাদানে স্ক্রোল করে আবার হাইলাইট করুন",
     "tour_locate_title": "এটি কোথায় আছে দেখান",
+    "tour_progress_done": "{total} টির মধ্যে {completed} টি সম্পন্ন",
     "minimize": "ছোট করুন",
     "end_tour": "ট্যুর শেষ করুন",
     "back": "পিছনে",
