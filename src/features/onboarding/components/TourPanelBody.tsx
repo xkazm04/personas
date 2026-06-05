@@ -81,7 +81,7 @@ export function TourPanelBody({
     <>
       {/* Step progress */}
       <div className="px-4 py-2.5 border-b border-primary/5" data-testid="tour-step-progress">
-        <StepProgress steps={steps} currentIndex={currentIndex} completedSteps={completedSteps} onJump={onJump} />
+        <StepProgress steps={steps} currentIndex={currentIndex} completedSteps={completedSteps} onJump={onJump} subStepIndex={subStepIndex} />
       </div>
 
       {/* Step header */}

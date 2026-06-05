@@ -7,6 +7,12 @@ interface StepProgressProps {
   currentIndex: number;
   completedSteps: Record<TourStepId, boolean>;
   onJump: (index: number) => void;
+  /**
+   * Active sub-step index of the current step. When provided, the current row
+   * shows a live `done/total` sub-step indicator so multi-part steps reveal
+   * their internal progress in the list. Omit (resume interstitial) to hide it.
+   */
+  subStepIndex?: number;
 }
 
 /**
@@ -20,6 +26,7 @@ export function StepProgress({
   currentIndex,
   completedSteps,
   onJump,
+  subStepIndex,
 }: StepProgressProps) {
   return (
     <div className="flex flex-col">
@@ -27,6 +34,8 @@ export function StepProgress({
         const isCompleted = completedSteps[step.id];
         const isCurrent = i === currentIndex;
         const colors = getStepColors(step.id);
+        const showSubProgress =
+          isCurrent && !isCompleted && subStepIndex != null && step.subSteps.length > 0;
 
         return (
           <button
@@ -61,6 +70,11 @@ export function StepProgress({
             >
               {step.title}
             </span>
+            {showSubProgress && (
+              <span className={`ml-auto pl-1.5 flex-shrink-0 typo-caption tabular-nums ${colors.text}`}>
+                {subStepIndex}/{step.subSteps.length}
+              </span>
+            )}
           </button>
         );
       })}
