@@ -1,15 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import { ChevronRight, X, MapPin, Sparkles, Volume2, Check } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAgentStore } from "@/stores/agentStore";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { storeBus } from '@/lib/storeBus';
 import { Button } from '@/features/shared/components/buttons';
-import { getActiveTourSteps, getTourById } from '@/stores/slices/system/tourSlice';
+import { getActiveTourSteps, getTourById, type TourId } from '@/stores/slices/system/tourSlice';
 import type { SidebarSection } from '@/lib/types/types';
-import { getStepColors } from './tourConstants';
+import { getStepColors, getNextTourId, getTourSequence } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
+import { StepProgress } from './StepProgress';
+import { TourProgressArc } from './TourProgressArc';
 import { useTourNarration } from './useTourNarration';
 import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -41,9 +43,12 @@ export default function GuidedTour() {
   const setOverviewTab = useOverviewStore((s) => s.setOverviewTab);
   const captureAppearanceBaseline = useSystemStore((s) => s.captureAppearanceBaseline);
   const setHighlightTestId = useSystemStore((s) => s.setHighlightTestId);
+  const completionMap = useSystemStore((s) => s.tourCompletionMap);
 
   const { t, tx } = useTranslation();
   const [isMinimized, setIsMinimized] = useState(false);
+  // Celebration screen shown after the last step, before the panel closes.
+  const [showCompletion, setShowCompletion] = useState(false);
   // Track pending setTimeouts so they can be cleared on dismissal/unmount.
   // Without this, a queued advance/highlight can fire after the tour ends and
   // navigate to a stale step index or set a highlight that's never dismissed.
@@ -71,6 +76,10 @@ export default function GuidedTour() {
   }, [tourActive, clearPendingTimeouts]);
 
   useEffect(() => () => clearPendingTimeouts(), [clearPendingTimeouts]);
+
+  // Drop the completion screen if the tour ends or switches out from under it.
+  useEffect(() => { if (!tourActive) setShowCompletion(false); }, [tourActive]);
+  useEffect(() => { setShowCompletion(false); }, [tourId]);
 
   const tourDef = getTourById(tourId);
   const visibleSteps = getActiveTourSteps(tourId);
@@ -151,7 +160,7 @@ export default function GuidedTour() {
   }, [currentIndex, tourActive, navigateToStep, isMinimized, tourResumePending]);
 
   const handleNext = () => {
-    if (allCompleted) { useSystemStore.getState().finishTour(); return; }
+    if (allCompleted) { setShowCompletion(true); return; }
     advanceTour();
   };
   const handlePrev = () => {
@@ -160,11 +169,115 @@ export default function GuidedTour() {
   const handleJump = (index: number) => {
     goToTourStep(index);
   };
+  // Finish the current tour. Optionally launch the next suggested one in the
+  // same gesture (mark current complete first so the completion map is right).
+  const handleFinishTour = (nextTourId?: TourId) => {
+    setShowCompletion(false);
+    useSystemStore.getState().finishTour();
+    if (nextTourId) useSystemStore.getState().startTour(nextTourId);
+  };
+
+  // Keyboard navigation — DELIBERATELY scoped to the panel (handler lives on the
+  // panel root, so it only fires when focus is inside the tour panel). The tour
+  // runs alongside the live app where the user types and uses arrows, so a global
+  // listener would hijack app keys. Editable targets are ignored as defense.
+  const handlePanelKeyDown = (e: ReactKeyboardEvent) => {
+    if ((e.target as HTMLElement).closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); handleNext(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); handlePrev(); }
+    else if (e.key === 'Escape') { e.preventDefault(); setIsMinimized(true); }
+  };
 
   if (!tourActive || !currentStep || !tourDef) return null;
   // Modal-owns-screen precedence (see README "Onboarding modal vs Guided Tour").
   if (onboardingActive) return null;
   const colors = getStepColors(tourDef.color);
+
+  // Completion celebration — shown after the final step instead of closing the
+  // panel cold. Offers to roll straight into the next suggested tour.
+  if (showCompletion) {
+    const nextTourId = getNextTourId(tourId, completionMap);
+    const nextTour = nextTourId ? getTourById(nextTourId) : null;
+    // Every other selectable tour (not the current one, not the primary "next"
+    // suggestion) so the completion screen doubles as a jump-to-any-tour hub.
+    const otherTours = getTourSequence()
+      .filter((id) => id !== tourId && id !== nextTourId)
+      .map((id) => getTourById(id))
+      .filter((td): td is NonNullable<typeof td> => Boolean(td));
+    return (
+      <div
+        data-testid="tour-completion"
+        className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
+        style={{ width: panelWidth }}
+      >
+        <div className={`h-full rounded-none rounded-r-2xl border border-l-0 ${colors.accent} bg-background shadow-elevation-4 ${colors.glow} overflow-hidden flex flex-col`}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-primary/8">
+            <div className="flex items-center gap-2.5">
+              <div className={`w-8 h-8 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
+                <Sparkles className={`w-4 h-4 ${colors.text}`} />
+              </div>
+              <h3 className="typo-heading text-foreground/90 leading-tight">{tourDef.title}</h3>
+            </div>
+            <Button variant="ghost" size="icon-sm" onClick={() => handleFinishTour()} title={t.onboarding.end_tour} data-testid="tour-completion-dismiss">
+              <X className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto flex flex-col items-center gap-4 px-6 pt-8 pb-4 text-center">
+            <div className="animate-success-pop w-14 h-14 rounded-modal bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+              <Check className="w-7 h-7 text-emerald-400" />
+            </div>
+            <div>
+              <p className="typo-heading text-foreground/90">{t.onboarding.tour_complete_title}</p>
+              <p className="typo-body text-foreground mt-1">{tx(t.onboarding.tour_complete_recap, { total: visibleSteps.length })}</p>
+            </div>
+            {nextTour && (
+              <div className={`w-full rounded-modal ${colors.subtle} border ${colors.accent} p-3 text-left`}>
+                <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_up_next}</span>
+                <p className={`typo-heading ${colors.text} mt-1`}>{nextTour.title}</p>
+                <p className="typo-body text-foreground leading-relaxed mt-0.5">{nextTour.description}</p>
+              </div>
+            )}
+            {otherTours.length > 0 && (
+              <div className="w-full text-left">
+                <span className="typo-caption uppercase tracking-wider text-foreground">{t.onboarding.tour_complete_more}</span>
+                <div className="mt-1.5 flex flex-col gap-1">
+                  {otherTours.map((td) => {
+                    const done = completionMap[td.id];
+                    return (
+                      <button
+                        key={td.id}
+                        type="button"
+                        onClick={() => handleFinishTour(td.id)}
+                        data-testid={`tour-complete-jump-${td.id}`}
+                        className="group flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-primary/10 hover:bg-secondary/30 transition-colors text-left"
+                      >
+                        <span className={`flex items-center justify-center w-5 h-5 rounded-full border flex-shrink-0 ${done ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400' : 'border-primary/15 text-foreground'}`}>
+                          {done ? <Check className="w-3 h-3" /> : <Sparkles className="w-3 h-3" />}
+                        </span>
+                        <span className="typo-body text-foreground truncate flex-1">{td.title}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-foreground opacity-0 group-hover:opacity-60 transition-opacity flex-shrink-0" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t border-primary/8 flex flex-col gap-2">
+            {nextTour && (
+              <Button variant="primary" block onClick={() => handleFinishTour(nextTour.id)} data-testid="tour-completion-next">
+                {t.onboarding.tour_complete_next}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
+            <Button variant="ghost" block onClick={() => handleFinishTour()} data-testid="tour-completion-done">
+              {t.onboarding.done_button}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Resume interstitial — shown when the tour was resumed (e.g. footer button).
   // The route is intentionally NOT changed yet; clicking Continue clears the
@@ -191,22 +304,42 @@ export default function GuidedTour() {
               <X className="w-3.5 h-3.5" />
             </Button>
           </div>
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6 text-center">
-            <div className={`w-12 h-12 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
-              <MapPin className={`w-6 h-6 ${colors.text}`} />
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Intro */}
+            <div className="flex flex-col items-center gap-3 px-6 pt-6 pb-4 text-center">
+              <div className={`w-12 h-12 rounded-modal ${colors.subtle} border ${colors.accent} flex items-center justify-center`}>
+                <MapPin className={`w-6 h-6 ${colors.text}`} />
+              </div>
+              <div>
+                <p className="typo-heading text-foreground/90">{t.onboarding.resume_continue_title}</p>
+                <p className="typo-caption text-foreground mt-1">
+                  {tx(t.onboarding.tour_progress_done, { completed: completedCount, total: visibleSteps.length })}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="typo-heading text-foreground/90">{t.onboarding.resume_continue_title}</p>
-              <p className="typo-body text-foreground mt-1">{currentStep.title}</p>
+            {/* Step preview — the same list as the live panel; click any step to
+                resume directly there. Clearing tourResumePending in the same set
+                lets the navigate effect run before the spotlight fires. */}
+            <div className="flex-1 overflow-y-auto px-4 pb-2">
+              <StepProgress
+                steps={visibleSteps}
+                currentIndex={currentIndex}
+                completedSteps={completedSteps}
+                onJump={(i) => useSystemStore.setState({ tourCurrentStepIndex: i, tourSubStepIndex: 0, tourResumePending: false })}
+              />
             </div>
-            <Button
-              variant="primary"
-              onClick={() => useSystemStore.setState({ tourResumePending: false })}
-              data-testid="tour-resume-continue"
-            >
-              {t.onboarding.resume_continue_cta}
-              <ChevronRight className="w-4 h-4" />
-            </Button>
+            {/* Continue at the saved step */}
+            <div className="px-6 py-4 border-t border-primary/8">
+              <Button
+                variant="primary"
+                block
+                onClick={() => useSystemStore.setState({ tourResumePending: false })}
+                data-testid="tour-resume-continue"
+              >
+                {t.onboarding.resume_continue_cta}
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -214,13 +347,22 @@ export default function GuidedTour() {
   }
 
   if (isMinimized) {
+    const minimizedHint = tx(t.onboarding.tour_minimized_hint, {
+      tour: tourDef.title,
+      completed: completedCount,
+      total: visibleSteps.length,
+    });
     return (
       <button
         onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
         data-testid="tour-panel-minimized"
+        title={minimizedHint}
+        aria-label={minimizedHint}
         className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
       >
-        <MapPin className={`w-4 h-4 ${colors.text}`} />
+        <span className={colors.text}>
+          <TourProgressArc completed={completedCount} total={visibleSteps.length} />
+        </span>
         <span className="typo-caption font-medium text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
       </button>
     );
@@ -230,6 +372,9 @@ export default function GuidedTour() {
     <div
       key="tour-panel"
       data-testid="tour-panel"
+      onKeyDown={handlePanelKeyDown}
+      role="region"
+      aria-label={`${t.onboarding.tour_a11y_region}: ${tourDef.title}`}
       className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
       style={{ width: panelWidth }}
     >
@@ -254,6 +399,21 @@ export default function GuidedTour() {
             </Button>
           </div>
         </div>
+        {/* Live narration caption — surfaces what Athena is speaking (distinct
+            from the on-screen description) while the audio plays, so narrated
+            tours are usable muted / accessible. No-op when voice isn't set up. */}
+        {narration.available
+          && (narration.status === 'speaking' || narration.status === 'loading')
+          && currentStep.narration && (
+          <div
+            data-testid="tour-narration-caption"
+            aria-live="polite"
+            className="flex items-start gap-2 px-4 py-2 border-b border-primary/8 bg-secondary/10"
+          >
+            <Volume2 className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${colors.text} animate-pulse`} />
+            <p className="typo-caption text-foreground leading-relaxed italic">{currentStep.narration}</p>
+          </div>
+        )}
         <TourPanelBody
           currentIndex={currentIndex}
           completedSteps={completedSteps}
@@ -265,6 +425,7 @@ export default function GuidedTour() {
           onNext={handleNext}
           onPrev={handlePrev}
           onJump={handleJump}
+          onComplete={() => setShowCompletion(true)}
         />
       </div>
     </div>
