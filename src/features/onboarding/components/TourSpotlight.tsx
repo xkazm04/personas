@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTrackedElementRect } from '@/hooks/utility/interaction/useTrackedElementRect';
 
@@ -47,7 +47,24 @@ export default function TourSpotlight() {
     if (rect) setHighlightMissing(false);
   }, [rect, setHighlightMissing]);
 
+  // Glide the cut-out between steps. The tracker holds the previous rect during
+  // its ~100ms re-measure on a highlight change, so the rect jumps old→new and a
+  // CSS transition animates that jump. Gate it to a short window after the
+  // highlight changes so live scroll/resize tracking stays instant (no lag), and
+  // let the global prefers-reduced-motion rule collapse it to instant.
+  const [transitioning, setTransitioning] = useState(false);
+  useEffect(() => {
+    if (!highlightTestId) { setTransitioning(false); return; }
+    setTransitioning(true);
+    const id = window.setTimeout(() => setTransitioning(false), 500);
+    return () => window.clearTimeout(id);
+  }, [highlightTestId]);
+
   if (!tourActive || !rect) return null;
+
+  const glide = transitioning
+    ? 'x 0.35s ease, y 0.35s ease, width 0.35s ease, height 0.35s ease'
+    : undefined;
 
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -70,6 +87,7 @@ export default function TourSpotlight() {
               rx={BORDER_RADIUS}
               ry={BORDER_RADIUS}
               fill="black"
+              style={{ transition: glide }}
             />
           </mask>
         </defs>
@@ -95,6 +113,7 @@ export default function TourSpotlight() {
           strokeWidth="2"
           strokeOpacity="0.5"
           className="animate-pulse"
+          style={{ transition: glide }}
         />
       </svg>
     </div>
