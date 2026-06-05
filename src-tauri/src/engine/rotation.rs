@@ -64,6 +64,18 @@ fn unlock_credential(credential_id: &str) {
     }
 }
 
+/// True if a rotation is currently in progress for this credential (the
+/// per-credential lock is held by a concurrent manual `rotate_now` or scheduled
+/// evaluation). Used by `evaluate_credential_events` to defer a firing instead
+/// of dropping it when rotation can't run right now.
+fn is_credential_rotating(credential_id: &str) -> bool {
+    ROTATING_CREDENTIALS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|set| set.contains(credential_id))
+}
+
 // ---------------------------------------------------------------------------
 // Windowed anomaly scoring constants
 // ---------------------------------------------------------------------------
@@ -1201,6 +1213,22 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
         };
 
         if should_fire {
+            // If a rotation is already in flight for this credential (a concurrent
+            // manual rotate_now or scheduled evaluation holds the per-credential
+            // lock), calling rotate_now would fail on the lock and the firing would
+            // be logged-and-dropped -- yet last_polled_at would still advance,
+            // losing a scheduled tick forever (the 2am-Saturday class of bug).
+            // Defer instead: skip advancing last_polled_at so this event is
+            // re-evaluated and fired on the next tick once the lock is free.
+            if is_credential_rotating(&event.credential_id) {
+                tracing::info!(
+                    credential_id = %event.credential_id,
+                    event_id = %event.id,
+                    "Credential events: rotation already in progress, deferring firing to next tick"
+                );
+                continue;
+            }
+
             tracing::info!(
                 credential_id = %event.credential_id,
                 event_id = %event.id,
