@@ -9250,6 +9250,7 @@
     "tour_minimized_hint": "{tour} · {completed}/{total} 步 · 点击继续",
     "tour_complete_more": "或体验其他导览",
     "tour_target_offscreen": "此步骤指向的内容尚未显示在屏幕上 —— 出现后会自动高亮。",
+    "tour_a11y_region": "引导教程",
     "minimize": "最小化",
     "end_tour": "结束引导",
     "back": "返回",

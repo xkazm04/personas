@@ -73,6 +73,8 @@
   "tour_complete_next": "Nächste Tour starten",
   "tour_minimized_hint": "{tour} · {completed}/{total} Schritte · zum Fortsetzen klicken",
   "tour_complete_more": "Oder erkunde eine andere Tour",
+  "tour_target_offscreen": "Das Ziel dieses Schritts ist noch nicht auf dem Bildschirm — es wird hervorgehoben, sobald es erscheint.",
+  "tour_a11y_region": "Geführte Tour",
   "minimize": "Minimieren",
   "end_tour": "Tour beenden",
   "back": "Zurück",

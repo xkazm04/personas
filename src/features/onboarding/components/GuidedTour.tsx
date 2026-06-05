@@ -373,6 +373,8 @@ export default function GuidedTour() {
       key="tour-panel"
       data-testid="tour-panel"
       onKeyDown={handlePanelKeyDown}
+      role="region"
+      aria-label={`${t.onboarding.tour_a11y_region}: ${tourDef.title}`}
       className="animate-fade-slide-in fixed left-0 top-[36px] bottom-0 z-[9999]"
       style={{ width: panelWidth }}
     >

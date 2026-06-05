@@ -9250,6 +9250,7 @@
     "tour_minimized_hint": "{tour} · {completed}/{total} ステップ · クリックで再開",
     "tour_complete_more": "他のツアーも見る",
     "tour_target_offscreen": "このステップが指す対象はまだ画面にありません。表示されると自動でハイライトされます。",
+    "tour_a11y_region": "ガイドツアー",
     "minimize": "最小化",
     "end_tour": "ツアーを終了",
     "back": "戻る",

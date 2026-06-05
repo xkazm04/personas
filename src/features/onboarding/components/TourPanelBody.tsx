@@ -85,8 +85,8 @@ export function TourPanelBody({
         <StepProgress steps={steps} currentIndex={currentIndex} completedSteps={completedSteps} onJump={onJump} subStepIndex={subStepIndex} />
       </div>
 
-      {/* Step header */}
-      <div className="px-4 pt-3 pb-2 border-b border-primary/5">
+      {/* Step header — aria-live so screen readers announce each step change */}
+      <div className="px-4 pt-3 pb-2 border-b border-primary/5" aria-live="polite">
         <div className="flex items-start justify-between gap-2">
           <h4 className="typo-heading text-foreground/90 flex items-center gap-2 min-w-0">
             <span className="truncate">{currentStep.title}</span>

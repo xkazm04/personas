@@ -73,6 +73,8 @@
   "tour_complete_next": "Начать следующий тур",
   "tour_minimized_hint": "{tour} · {completed}/{total} шагов · нажмите, чтобы продолжить",
   "tour_complete_more": "Или пройдите другой тур",
+  "tour_target_offscreen": "То, на что указывает этот шаг, пока не на экране — подсветится, когда появится.",
+  "tour_a11y_region": "Обучающий тур",
   "minimize": "Свернуть",
   "end_tour": "Завершить тур",
   "back": "Назад",

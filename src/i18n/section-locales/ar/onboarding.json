@@ -73,6 +73,8 @@
   "tour_complete_next": "ابدأ الجولة التالية",
   "tour_minimized_hint": "{tour} · {completed}/{total} خطوات · انقر للمتابعة",
   "tour_complete_more": "أو استكشف جولة أخرى",
+  "tour_target_offscreen": "العنصر الذي تشير إليه هذه الخطوة ليس على الشاشة بعد — سيتم إبرازه عند ظهوره.",
+  "tour_a11y_region": "جولة إرشادية",
   "minimize": "تصغير",
   "end_tour": "إنهاء الجولة",
   "back": "رجوع",

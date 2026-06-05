@@ -9250,6 +9250,7 @@
     "tour_minimized_hint": "{tour} · {completed}/{total}단계 · 클릭하여 계속",
     "tour_complete_more": "다른 투어 둘러보기",
     "tour_target_offscreen": "이 단계가 가리키는 대상이 아직 화면에 없습니다 — 나타나면 강조됩니다.",
+    "tour_a11y_region": "가이드 투어",
     "minimize": "Minimize",
     "end_tour": "End tour",
     "back": "Back",
