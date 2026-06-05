@@ -893,9 +893,12 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
 
         if should_record {
             let history = rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
-            let already_recorded = history
-                .first()
-                .is_some_and(|h| h.rotation_type == "anomaly");
+            // Treat a prior "anomaly_remediation" entry as "already handled" too,
+            // so the rotation triggered below fires at most once per anomaly
+            // episode rather than on every scan tick.
+            let already_recorded = history.first().is_some_and(|h| {
+                h.rotation_type == "anomaly" || h.rotation_type == "anomaly_remediation"
+            });
 
             if !already_recorded {
                 let detail = format!(
@@ -929,6 +932,32 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                         "failure_rate_1h": score.failure_rate_1h,
                     }),
                 );
+
+                // Actually remediate. detect_anomalies previously only recorded
+                // and alerted, so credentials whose remediation is RotateThenAlert
+                // or PreemptiveRotation accumulated "anomaly" history forever but
+                // were never rotated (success theater). Trigger the rotation now.
+                // rotate_now takes its own per-credential lock, so calling it here
+                // (detect_anomalies holds no lock) is safe; the !already_recorded
+                // guard above keeps it to once per episode. Disable is excluded --
+                // disabling is its own remediation, handled by evaluate_due_rotations.
+                if matches!(
+                    score.remediation,
+                    Remediation::RotateThenAlert | Remediation::PreemptiveRotation
+                ) {
+                    match rotate_now(pool, &cred.id, "anomaly_remediation").await {
+                        Ok(detail) => tracing::info!(
+                            credential_id = %cred.id,
+                            "Anomaly remediation: rotation succeeded -- {}",
+                            detail
+                        ),
+                        Err(e) => tracing::warn!(
+                            credential_id = %cred.id,
+                            error = %e,
+                            "Anomaly remediation: rotation failed"
+                        ),
+                    }
+                }
             }
         }
     }
