@@ -195,13 +195,25 @@ export function TourPanelBody({
               <Check className="w-3.5 h-3.5" />
               {t.onboarding.complete_tour}
             </button>
-          ) : (
+          ) : isStepCompleted ? (
             <button
               onClick={onNext}
               data-testid="tour-btn-next"
               className={`flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal ${colors.subtle} ${colors.text} border ${colors.accent} hover:brightness-125 transition-all`}
             >
-              {isStepCompleted ? t.onboarding.continue_button : t.onboarding.tour_skip}
+              {t.onboarding.continue_button}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            // Step not yet done: skipping is the *secondary* path (the primary one
+            // is performing the step's action), so de-emphasize it — a colored
+            // accent button here used to make "Skip" look like the main CTA.
+            <button
+              onClick={onNext}
+              data-testid="tour-btn-next"
+              className="flex items-center gap-1.5 px-4 py-2 typo-heading rounded-modal border border-primary/10 text-foreground hover:bg-secondary/50 hover:text-foreground/70 transition-all"
+            >
+              {t.onboarding.tour_skip_step}
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           )}

@@ -9240,6 +9240,7 @@
     "tour_show_me_title": "Faire défiler et surligner à nouveau cet élément",
     "tour_locate_title": "Montrer où se trouve cet élément",
     "tour_progress_done": "{completed} sur {total} terminés",
+    "tour_skip_step": "Passer l’étape",
     "minimize": "Réduire",
     "end_tour": "Terminer la visite",
     "back": "Retour",

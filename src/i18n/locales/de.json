@@ -9240,6 +9240,7 @@
     "tour_show_me_title": "Zum Element scrollen und erneut hervorheben",
     "tour_locate_title": "Zeigen, wo das ist",
     "tour_progress_done": "{completed} von {total} erledigt",
+    "tour_skip_step": "Schritt überspringen",
     "minimize": "Minimieren",
     "end_tour": "Tour beenden",
     "back": "Zurück",

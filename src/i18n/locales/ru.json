@@ -9240,6 +9240,7 @@
     "tour_show_me_title": "Прокрутить и снова подсветить этот элемент",
     "tour_locate_title": "Показать, где это",
     "tour_progress_done": "Выполнено {completed} из {total}",
+    "tour_skip_step": "Пропустить шаг",
     "minimize": "Свернуть",
     "end_tour": "Завершить тур",
     "back": "Назад",

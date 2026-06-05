@@ -9240,6 +9240,7 @@
     "tour_show_me_title": "Posunout a znovu zvýraznit tento prvek",
     "tour_locate_title": "Ukázat, kde to je",
     "tour_progress_done": "Hotovo {completed} z {total}",
+    "tour_skip_step": "Přeskočit krok",
     "minimize": "Minimalizovat",
     "end_tour": "Ukončit prohlídku",
     "back": "Zpět",

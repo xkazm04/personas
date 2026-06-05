@@ -9689,6 +9689,7 @@
     "tour_show_me_title": "Scroll to and re-highlight this on screen",
     "tour_locate_title": "Show me where this is",
     "tour_progress_done": "{completed} of {total} done",
+    "tour_skip_step": "Skip step",
     "tour_loading": "Loading...",
     "tour_skip": "Skip",
     "what_to_explore": "What to explore",
