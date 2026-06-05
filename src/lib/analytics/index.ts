@@ -164,6 +164,7 @@ export { trackFeature, trackInteraction } from '../sentry';
 export {
   getAnalyticsSink,
   setAnalyticsSink,
+  applyTelemetrySink,
   sentrySink,
   noopSink,
   type AnalyticsSink,

@@ -83,3 +83,18 @@ export function getAnalyticsSink(): AnalyticsSink {
 export function setAnalyticsSink(sink: AnalyticsSink): void {
   current = sink;
 }
+
+/**
+ * Point the active sink at a telemetry-preference change made mid-session.
+ * Turning telemetry OFF routes usage events to `noopSink` so tracking stops
+ * immediately — no restart needed; turning it back ON restores `sentrySink`.
+ *
+ * Scope: *usage analytics only*. Sentry error reporting and the navigation
+ * subscription are established once at startup (`main.tsx`, gated on
+ * `isTelemetryEnabled()`). So enabling telemetry that started OFF this session
+ * still needs a restart before anything is reported — there is no live
+ * subscription emitting events for the sink to receive.
+ */
+export function applyTelemetrySink(enabled: boolean): void {
+  setAnalyticsSink(enabled ? sentrySink : noopSink);
+}
