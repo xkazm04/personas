@@ -223,7 +223,7 @@ export default function GuidedTour() {
             </Button>
           </div>
           <div className="flex-1 overflow-y-auto flex flex-col items-center gap-4 px-6 pt-8 pb-4 text-center">
-            <div className="w-14 h-14 rounded-modal bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+            <div className="animate-success-pop w-14 h-14 rounded-modal bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
               <Check className="w-7 h-7 text-emerald-400" />
             </div>
             <div>
