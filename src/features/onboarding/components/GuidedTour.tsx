@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ChevronRight, X, MapPin, Sparkles } from 'lucide-react';
+import { ChevronRight, X, MapPin, Sparkles, Volume2 } from 'lucide-react';
 import { useSystemStore } from "@/stores/systemStore";
 import { useThemeStore } from "@/stores/themeStore";
 import { useAgentStore } from "@/stores/agentStore";
@@ -275,6 +275,21 @@ export default function GuidedTour() {
             </Button>
           </div>
         </div>
+        {/* Live narration caption — surfaces what Athena is speaking (distinct
+            from the on-screen description) while the audio plays, so narrated
+            tours are usable muted / accessible. No-op when voice isn't set up. */}
+        {narration.available
+          && (narration.status === 'speaking' || narration.status === 'loading')
+          && currentStep.narration && (
+          <div
+            data-testid="tour-narration-caption"
+            aria-live="polite"
+            className="flex items-start gap-2 px-4 py-2 border-b border-primary/8 bg-secondary/10"
+          >
+            <Volume2 className={`w-3.5 h-3.5 mt-0.5 flex-shrink-0 ${colors.text} animate-pulse`} />
+            <p className="typo-caption text-foreground leading-relaxed italic">{currentStep.narration}</p>
+          </div>
+        )}
         <TourPanelBody
           currentIndex={currentIndex}
           completedSteps={completedSteps}
