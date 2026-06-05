@@ -185,6 +185,62 @@ The **Tool Runner** UI (inline invocation from the Connectors sub-tab)
 has been descoped; the backend `run_tool` command remains for future
 surfaces (Lab, test harnesses).
 
+### Lab — the Versions & Ratings table
+
+The **Lab** tab is a single table for prompt-version management and
+measurement. It replaced an earlier 7-mode tab switcher (Arena · A/B ·
+Improve · Breed · Evolve · Versions · Regression), which asked the user to
+learn seven sub-tools to answer one question: *which version + model should
+go live?*
+
+**One row = one (prompt version × model) pair; exactly one row is the live
+config** (the version tagged `production` at the persona's effective model).
+Rows are the cartesian product of `persona_prompt_versions` and the models
+each version has been measured on, plus a placeholder row for versions never
+measured. Columns: **Version · Model · Rating · Δ baseline · Cost · Status ·
+Actions**. The Rating is the weighted composite (`tool_accuracy·0.4 +
+output_quality·0.4 + protocol·0.2`, the canonical `engine::eval::SCORE_WEIGHTS`)
+averaged across every measurement of that pair; the ★ marks the best model per
+version.
+
+Per-row **actions**:
+
+| Action | Effect |
+|---|---|
+| **Activate** | Rolls the version's prompt live + tags it `production`, **and** switches the persona's active model (`model_profile`) to the row's model. |
+| **Measure** | Runs a version-scoped **Arena** across models — the only surviving panel from the old switcher; results populate the row's rating. |
+| **Improve** | Opens the **Athena** companion with a pre-filled improvement brief (persona + version + weakest measured metric) and waits for the user to specify the focus. |
+| **Diff** | Compares the version's prompt against the active version. |
+| **Baseline** | Pins the row's version as the regression baseline; other rows then show **Δ vs baseline** on the same model (a drop ≥5 points is flagged). |
+| **Archive** | Tags the version `archived`. |
+
+What happened to the old modes:
+
+- **A/B + Eval + Regression** — folded into the table (compare ratings across
+  rows; Δ-vs-baseline is the regression signal).
+- **Improve** — the row action seeds Athena instead of a dedicated panel.
+- **Breed + Evolve** — descoped from the UI and exposed as **headless
+  companion actions** (`companion_breed_personas` / `companion_evolve_persona`,
+  approval-gated). The `genome_*` / `evolution_*` commands and engine are
+  unchanged; Athena is now their only driver.
+
+Backend: `lab_start_arena` takes an optional `version_id` (snapshots which
+version it measured onto `lab_arena_runs` / `lab_arena_results`);
+`lab_get_version_ratings` aggregates the (version, model) rollup across the
+arena / eval / ab result tables.
+
+Wiring:
+
+```
+src/features/agents/sub_lab/components/shared/LabTab.tsx        (renders the table)
+src/features/agents/sub_lab/components/versions_table/          (table + cells + row actions)
+src/features/agents/sub_lab/libs/versionMatrixRows.ts          (pure row builder)
+src/stores/slices/agents/labSlice.ts                            (versionRatings, activateVersion)
+src/features/plugins/companion/useSeedAthenaComposer.ts        (Improve → Athena composer seed)
+src-tauri/src/commands/execution/lab.rs                         (version-aware arena, ratings rollup)
+src-tauri/src/db/repos/lab/ratings.rs                          (get_version_ratings)
+```
+
 ### Persona icons
 
 A persona's `icon` column is a free-form string with four recognised
