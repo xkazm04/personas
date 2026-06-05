@@ -1238,6 +1238,8 @@
       "vr_empty_title": "No versions yet",
       "vr_empty_desc": "Edit and save the persona's prompt to create the first version, then measure it here.",
       "vr_measuring_toast": "Measuring v{version} across models…",
+      "vr_measure_modal_title": "Measure v{version}",
+      "vr_measure_scope_banner": "Measuring version {version} — its prompt runs against the models you pick. Scores land back in the ratings table.",
       "vr_diff_title": "v{version} vs active",
       "vr_diff_no_active": "No active version to compare against.",
       "vr_improve_seed_measured": "Improve persona \"{name}\" v{version}. Weakest measured metric: {metric} {score}/100 on {model}. What should I focus on? ",

@@ -1244,6 +1244,8 @@ export type Translations = {
       vr_empty_title: string;
       vr_empty_desc: string;
       vr_measuring_toast: string;
+      vr_measure_modal_title: string;
+      vr_measure_scope_banner: string;
       vr_diff_title: string;
       vr_diff_no_active: string;
       vr_improve_seed_measured: string;

@@ -1,23 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GitBranch, Star, AlertTriangle } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
-import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { resolveEffectiveModel } from '@/features/agents/sub_use_cases/libs/useCaseDetailHelpers';
-import { ALL_MODELS, ANTHROPIC_MODELS } from '@/lib/models/modelCatalog';
-import type { ModelTestConfig } from '@/api/agents/tests';
+import { ALL_MODELS } from '@/lib/models/modelCatalog';
 import { UnifiedTable, type TableColumn } from '@/features/shared/components/display/UnifiedTable';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { DiffViewer } from '@/features/agents/sub_lab/shared';
+import { ArenaPanel } from '../arena/ArenaPanel';
 import { useSeedAthenaComposer } from '@/features/plugins/companion/useSeedAthenaComposer';
 import { buildVersionRows, type VersionRow } from '../../libs/versionMatrixRows';
 import { VersionStatusBadge } from './VersionStatusBadge';
 import { VersionRatingCell } from './VersionRatingCell';
 import { VersionRowActions, type RowActionHandlers } from './VersionRowActions';
-
-/** Models a "Measure" action sweeps across (the Anthropic tier). */
-const MEASURE_MODELS: ModelTestConfig[] = ANTHROPIC_MODELS.map((m) => ({ id: m.id, provider: m.provider }));
 
 /** Regression flag threshold — a drop of this many composite points vs baseline. */
 const REGRESSION_DROP = 5;
@@ -46,13 +42,12 @@ export function LabVersionsTable() {
   const tagVersion = useAgentStore((s) => s.tagVersion);
   const pinBaseline = useAgentStore((s) => s.pinBaseline);
   const unpinBaseline = useAgentStore((s) => s.unpinBaseline);
-  const startArena = useAgentStore((s) => s.startArena);
   const isArenaRunning = useAgentStore((s) => s.isArenaRunning);
-  const addToast = useToastStore((s) => s.addToast);
   const seedAthena = useSeedAthenaComposer();
 
   const personaId = selectedPersona?.id;
   const [measuringVersionId, setMeasuringVersionId] = useState<string | null>(null);
+  const [measureRow, setMeasureRow] = useState<VersionRow | null>(null);
   const [diffRow, setDiffRow] = useState<VersionRow | null>(null);
 
   useEffect(() => {
@@ -110,10 +105,10 @@ export function LabVersionsTable() {
         activateVersion(personaId, row.versionId, row.modelId, row.provider || 'anthropic');
       },
       onMeasure: (row) => {
-        if (!personaId) return;
+        // Open the Arena colosseum scoped to this version; it runs the sweep and
+        // ratings refresh on completion (see the isArenaRunning effect below).
+        setMeasureRow(row);
         setMeasuringVersionId(row.versionId);
-        startArena(personaId, MEASURE_MODELS, undefined, row.versionId);
-        addToast(tx(lab.vr_measuring_toast, { version: row.versionNumber }), 'success', 4000);
       },
       onImprove: (row) => {
         if (!selectedPersona) return;
@@ -150,7 +145,7 @@ export function LabVersionsTable() {
       },
       onToggleArchive: (row) => tagVersion(row.versionId, row.isArchived ? 'experimental' : 'archived'),
     }),
-    [personaId, selectedPersona, activateVersion, startArena, addToast, tx, lab, seedAthena, unpinBaseline, pinBaseline, tagVersion],
+    [personaId, selectedPersona, activateVersion, tx, lab, seedAthena, unpinBaseline, pinBaseline, tagVersion],
   );
 
   const columns: TableColumn<VersionRow>[] = useMemo(
@@ -230,6 +225,25 @@ export function LabVersionsTable() {
             <DiffViewer versionA={activeVersion} versionB={diffRow.version} />
           ) : (
             <p className="typo-body text-foreground">{lab.vr_diff_no_active}</p>
+          )}
+        </div>
+      </BaseModal>
+
+      <BaseModal
+        isOpen={!!measureRow}
+        onClose={() => {
+          setMeasureRow(null);
+          setMeasuringVersionId(null);
+        }}
+        titleId="vr-measure-modal"
+        maxWidthClass="max-w-5xl"
+      >
+        <div className="p-4 space-y-3">
+          <h3 className="typo-section-title text-foreground">
+            {measureRow ? tx(lab.vr_measure_modal_title, { version: measureRow.versionNumber }) : ''}
+          </h3>
+          {measureRow && (
+            <ArenaPanel versionScope={{ versionId: measureRow.versionId, versionNumber: measureRow.versionNumber }} />
           )}
         </div>
       </BaseModal>
