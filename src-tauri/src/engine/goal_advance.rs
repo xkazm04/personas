@@ -219,6 +219,19 @@ pub async fn advance_goal(
         goal_id: Some(goal_id.to_string()),
         steps,
     };
+    // GAP-W2: re-check the one-active-assignment guard RIGHT BEFORE create —
+    // the top-of-function check is stale by now (LLM decomposition takes
+    // seconds, plenty for a concurrent initiator to win the race). The DB also
+    // enforces this via the partial unique index; this check just gives the
+    // friendlier error and skips the doomed insert.
+    let existing = assignment_repo::list_for_goal(pool, goal_id)?;
+    if existing
+        .iter()
+        .any(|a| matches!(a.status.as_str(), "queued" | "running" | "awaiting_review"))
+    {
+        return Ok(AdvanceResult::AlreadyAdvancing);
+    }
+
     let assignment = assignment_repo::create(pool, input)?;
 
     for title in &mirror_todo_titles {

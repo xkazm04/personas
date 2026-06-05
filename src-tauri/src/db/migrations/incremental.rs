@@ -3552,6 +3552,20 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // ideas first. Nullable — unranked ideas fall back to impact/effort order.
     ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN priority INTEGER;").ok();
 
+    // -- GAP-W2 (double-advance TOCTOU): at most ONE active assignment per
+    // goal, enforced at the DB level. advance_goal's guard reads, then spends
+    // seconds in LLM decomposition, then creates — two near-simultaneous
+    // initiations (manual + autonomous tick, or two ticks) both passed the
+    // stale guard and double-implemented the same goal. The partial unique
+    // index makes the second create fail instead.
+    ddl_step(
+        conn,
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_assignment_per_goal
+         ON team_assignments(goal_id)
+         WHERE goal_id IS NOT NULL AND status IN ('queued','running','awaiting_review');",
+    )
+    .ok();
+
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN standards_config TEXT;")
         .ok();
 
