@@ -1,8 +1,8 @@
 # Codebase Catalogs — personas
 
-> Generated: 2026-05-09T18:42:29.073Z
-> Templates: 125 across 14 categories
-> Connectors: 122 across 36 categories
+> Generated: 2026-06-05T11:39:40.883Z
+> Templates: 133 across 15 categories
+> Connectors: 127 across 36 categories
 >
 > **DO NOT EDIT MANUALLY.** Re-run `/refresh-context` to regenerate.
 > Consumed by `/research` for template/credential bucket dedup and gap analysis.
@@ -18,7 +18,16 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ---
 
-## Template Catalog (125)
+## Template Catalog (133)
+
+### _team_presets (6)
+
+- **undefined** — 从任何来源捕获想法,将其分诊为有依据的待办列表,跟踪执行期间所做的决定,并自动解决问题。六个预先连接的智能体共同将原始信号转化为已交付的工作。
+- **backlog-execution** — Capture ideas from any source, triage them into a grounded backlog, track decisions made during execution, and resolve issues automatically. Six pre-wired agents that together turn raw signal into shipped work.
+- **daily-ops** — A lightweight three-agent set for daily operational rhythm: morning email digest into a standup compilation into appointment orchestration. Minimal connectors, maximum cadence.
+- **engineering-triage** — Keep the codebase healthy. Scan for issues, prune dead code, guard documentation freshness, and gate quality — four agents that work the engineering hygiene backlog while you ship features.
+- **reflective-journaling** — A single grounded journaling coach that reads your vault, surfaces recurring patterns over time, and reflects them back in your chosen tone. A focused starting point you can grow into a larger team later.
+- **sdlc-lifecycle** — Eight pre-wired agents that cover software delivery end to end on one codebase: a solution architect scopes the work into a story-pointed plan, a dev clone implements that plan (writes the code + tests, runs them) and scans for backlog, a QA guardian tests each PR the dev clone opens in an isolated git worktree and then merges it (auto-merge per the project's standards policy) or returns it for fixes, a code reviewer guards quality, a security sentinel audits for vulnerabilities, a release manager versions and ships, a docs steward keeps the README and changelog in sync, and an artist generates on-brand UI/visual assets for the feature in parallel with the build. They hand work forward through events and share the same codebase and memory. (The artist needs an image-generation credential, and QA Guardian's PR-merge action needs a GitHub credential; without those they stay idle and the build cascade is unaffected.)
 
 ### content (13)
 
@@ -28,7 +37,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **autonomous-art-director** — Periodically conceives and generates unique art concepts using a connected image-AI provider, saves them to the in-app 2D gallery, and presents each piece for human curation. Learns from approvals and rejections to refine its creative direction over time. — flow: Image AI -> Artist Gallery -> Messages
 - **content-approval-workflow** — Monitors a knowledge base "Ready for Review" database view. When items appear, emails the assigned reviewer, posts to a messaging approval channel with action context, and waits for approval. On approval, moves the item to "Published" and notifies the author. — flow: knowledge base -> email -> messaging
 - **content-performance-reporter** — Analyzes page views, session duration, and bounce rate metrics from a local database to generate weekly trend reports with week-over-week comparisons, content rankings, and anomaly detection. Delivers structured insights via in-app messaging and progressively learns baseline patterns through agent memory. — flow: Local Database -> In-App Messaging
-- **demo-recorder** — Creates short demo recordings and step-by-step visual guides from running web applications by analyzing the codebase to understand features, autonomously navigating the app in a browser, and capturing annotated screenshots or video walkthroughs. Uses a tiered recording system (CDP screenshots -> Windows Game Bar -> Playwright) requiring zero mandatory installs. — flow: Codebase -> Desktop Browser -> Desktop Terminal -> Messages
+- **demo-recorder** — Creates short demo recordings and step-by-step visual guides from running web applications by analyzing the codebase to understand features, autonomously navigating the app in a browser, and capturing annotated screenshots or video walkthroughs. Uses a tiered recording system (CDP screenshots -> Windows Game Bar -> Playwright) requiring zero mandatory installs. — flow: Codebase -> Messages
 - **feature-video-creator** — Automates production of short feature announcement videos by generating scripts, voiceover audio via TTS API, and composing final videos via a cloud video API. Uses a 2-stage human review cycle (script approval, then final video approval) with Memory-driven learning to improve script style, visual choices, and narration tone over time. — flow: TTS API -> Video Composition API -> Messages
 - **game-character-animator** — Turns a single anchor character image into a complete animation set ready for 2D game engines. Uses AI image generation for pose-based animations (walk, run, attack, crouch, death) and procedural pixel-shift for subtle idle breathing. Normalizes every sprite sheet so the character body stays consistent and weapons overflow upward instead of squashing. — flow: Image AI -> Messages
 - **newsletter-curator** — Scans web sources and RSS feeds, curates the most relevant articles using editorial intelligence, assembles themed newsletter issues with original commentary, and delivers polished HTML emails to subscribers via SMTP. Learns from editorial feedback to progressively refine source selection, topic weighting, and writing tone. — flow: Web Sources -> RSS Feeds -> Editorial Engine -> SMTP Email
@@ -36,7 +45,7 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **social-media-designer** — Creates branded social media assets (carousels, stories, posts, covers) via the Canva Connect API. Takes a content brief, generates optimized copy, creates designs using your Canva brand kit, produces multiple variations, and presents for human review. Learns design preferences from approval patterns over time. — flow: Content Brief -> Canva -> Messages
 - **youtube-content-pipeline** — Autonomous YouTube production assistant: niche-gated research → hook-first outline → voice-matched script → 3-pass AI edit (retake removal + phrase repeat + silence polish) → publish prep. Creator films once; persona handles the other 90%. — flow: YouTube Data API -> Apify -> X (Twitter) -> Deepgram -> Desktop Terminal -> Messages
 
-### development (28)
+### development (31)
 
 - **autonomous-issue-resolver** — يحافظ على صحة قائمة مهام الدعم الهندسي من خلال المعالجة النشطة للمهام الراكدة في Jira. يقرأ كل خيط تعليقات، ويصنّف حالة كل مهمة، ويقيّم مشاعر المُبلِّغ، ويطابق الأعراض مع وثائق Notion وقاعدة معرفة محلية للحلول، وينشر حلولًا مع درجات ثقة، ويُصعّد المُبلِّغين الغاضبين أو عالي الأولوية إلى إدارة الهندسة، ويُنمّي قاعدة المعرفة مع كل إصلاح مؤكد.
 - **autonomous-issue-resolver** — অচল Jira ইস্যুগুলিকে সক্রিয়ভাবে সমাধান করে ইঞ্জিনিয়ারিং সহায়তা ব্যাকলগকে সুস্থ রাখে। প্রতিটি মন্তব্য থ্রেড পড়ে, ইস্যুর অবস্থা শ্রেণিবদ্ধ করে, রিপোর্টারের মনোভাব মূল্যায়ন করে, উপসর্গগুলিকে Notion ডকুমেন্টেশন এবং একটি স্থানীয় সমাধান জ্ঞানভান্ডারের সাথে মেলায়, আত্মবিশ্বাস স্কোর সহ সমাধান পোস্ট করে, রাগান্বিত বা উচ্চ-অগ্রাধিকার রিপোর্টারদের ইঞ্জিনিয়ারিং ম্যানেজমেন্টে বাড়ায় এবং প্রতিটি নিশ্চিত ফিক্সের সাথে জ্ঞানভান্ডার বাড়ায়।
@@ -53,24 +62,28 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **autonomous-issue-resolver** — Duy trì sức khỏe của backlog hỗ trợ kỹ thuật bằng cách chủ động giải quyết các ticket Jira đình trệ. Đọc từng luồng bình luận, phân loại trạng thái vấn đề, đánh giá cảm xúc của người báo cáo, đối chiếu triệu chứng với tài liệu Notion và một cơ sở tri thức giải pháp cục bộ, đăng các giải pháp kèm điểm tin cậy, leo thang những người báo cáo giận dữ hoặc ưu tiên cao cho quản lý kỹ thuật và mở rộng cơ sở tri thức sau mỗi bản sửa được xác nhận.
 - **autonomous-issue-resolver** — 通过主动处理 Jira 中停滞的工单来保持工程支持积压的健康。阅读每条评论、分类每个问题的状态、评估报告者情绪、将症状与 Notion 文档和本地解决方案知识库匹配、发布带置信度评分的解决方案、将愤怒或高优先级报告者升级给工程管理层,并在每次已确认的修复后扩充知识库。
 - **build-intelligence-use-case** — Monitors CircleCI pipeline events, analyzes failed build logs to identify root causes, posts enriched messages (not just "build failed" but "failed because X in file Y"), and comments on the source control PR with fix suggestions. Tracks flaky test patterns. — flow: CircleCI -> messaging -> source control
+- **code-reviewer** — Senior code reviewer that guards quality. Reviews target files or a changeset for security vulnerabilities, correctness bugs, and quality issues — every finding cites file:line with a concrete fix — and closes with an APPROVE / REQUEST_CHANGES verdict. Tracks findings in memory so resolved issues are not re-flagged and recurring anti-patterns surface over time. — flow: Codebase -> Messages
 - **codebase-health-scanner** — Monthly automated codebase health scanner that reviews context map freshness, runs multi-agent scans (security, quality, tech debt, test coverage), scores each context group, reports issues via built-in messages, and persists health snapshots for trend analysis in the Dev Tools plugin. — flow: Codebase
 - **design-handoff-coordinator** — Monitors Figma file version changes, extracts updated component names, creates or updates Linear tickets for the dev team with direct Figma links, and posts handoff summaries in the design messaging channels. — flow: Figma -> Linear -> messaging
 - **dev-clone** — Autonomous senior-developer clone that scans the codebase for backlog candidates, holds each for human accept/reject, implements accepted items as focused PRs, reacts to review comments via GitHub webhook, and bundles merged work into human-approved releases. Learns architecture patterns and review preferences from every triage and every comment. — flow: Codebase -> GitHub -> Messages
 - **dev-lifecycle-manager** — Watches source control for new PRs, issues, and releases. Auto-creates/updates linked Jira tickets, posts status updates to the messaging channel dev channels, and flags PRs that exceed size thresholds for manual review. — flow: source control -> Jira -> messaging
+- **docs-steward** — Keeps your README and changelog in sync with shipped code. Analyzes new commits, identifies functional changes (ignoring formatting and test-only noise), categorizes them, and updates the docs to match. Reads memory for the last-processed commit so each run only covers what's new, and can refresh docs automatically after each release. — flow: Codebase -> Messages
 - **documentation-freshness-guardian** — Scans knowledge base pages for staleness (no edits in N days), checks if referenced APIs or tools still exist, notifies page owners via email, and posts a messaging digest of stale docs. Tracks update promises in memory. — flow: knowledge base -> messaging -> email
 - **feature-flag-experiment-analyst** — Monitors PostHog feature flag changes and experiment results, posts summaries to the messaging channel product channels, creates Linear follow-up tickets for winning experiment variants, and archives flags that haven't been modified in 30+ days. — flow: PostHog -> messaging -> Linear
 - **feature-flag-governance-use-case** — Monitors LaunchDarkly for flag changes, posts change audit logs to the messaging channel, creates Linear cleanup tickets for flags older than 90 days, and maintains a knowledge base feature flag registry. Prevents flag naming collisions. — flow: LaunchDarkly -> messaging -> Linear -> knowledge base
 - **lean-codebase-sentinel** — Fast, deterministic codebase sweep that runs a static-analysis CLI (Fallow / Knip / jscpd / your tool of choice) in a registered codebase, parses the JSON report, and pushes prioritized refactoring ideas to the Dev Tools backlog. Designed as the lightweight sibling to Codebase Health Scanner — runs daily or per-commit, costs zero LLM tokens, and produces file:line:fix evidence ready for human triage or autonomous follow-up. — flow: Codebase -> Static-Analysis CLI
-- **qa-guardian** — Autonomous code reviewer that reacts to pull requests, analyzes code quality and security via the codebase connector, runs tests, scores PRs on a 1-10 scale, posts structured review comments on source control, and writes missing tests when coverage is poor. Designed as a companion to Dev Clone but works with any PR workflow. — flow: source control -> Codebase -> Messages
+- **qa-guardian** — Autonomous QA engineer that works proactively from your codebase — not from pull requests. On a schedule it incrementally raises test coverage (scan → write missing tests → validate with run_tests) and hunts for likely defects, filing findings for human triage. Tracks coverage + reported-bug progress in memory so every run advances instead of repeating. — flow: Codebase -> GitHub -> Messages
 - **real-time-database-watcher** — Subscribes to Supabase database webhooks for specific table changes (new users, order updates, flag changes). Posts enriched notifications to the messaging channel, triggers welcome email sequences for new signups, and logs anomalous data patterns. — flow: Supabase -> messaging -> email
 - **self-evolving-codebase-memory** — Builds a long-term memory layer for an entire codebase by capturing every Claude Code session via hooks, distilling lessons and decisions into structured wiki articles, and surfacing them automatically on future runs. Inspired by Karpathy-style LLM knowledge bases applied to internal conversations rather than external sources. — flow: Claude Code CLI -> Personas Memory -> In-App Messaging
 - **skill-librarian** — Maintains a project's `.claude/skills/` catalog as a living artifact. Audits existing skills against recent codebase changes, proposes targeted edits or retirements via human review, and — on approval — files a GitHub or GitLab issue describing the change so a developer can apply it through their normal review workflow. Tracks per-skill usage strength via `Skill-Ref: <slug>` commit markers so weak or stale skills surface for curation over time. — flow: Codebase -> Claude Code Skills -> Human Review -> GitHub / GitLab Issues (uses: codebase,github,gitlab) [trigger: schedule,event_listener]
+- **solution-architect** — Senior solution architect for your codebase. Evaluates proposed changes and ideas against the existing architecture, then publishes a concise ADR (context / decision / consequences) plus a story-pointed task breakdown a delivery agent can pick up. Tracks decisions in memory so each review extends the architectural record instead of restating it. — flow: Codebase -> Messages
 - **user-lifecycle-manager** — Handles auth provider auth events (signup, email change, deletion), provisions user records in Supabase, sends onboarding email sequences via email, and posts new user celebrations to the messaging channel. Handles the full user lifecycle from sign-up to churn. — flow: auth provider -> Supabase -> messaging -> email
 
-### devops (5)
+### devops (6)
 
 - **devops-guardian** — Unified DevOps monitoring agent that scans application errors, infrastructure metrics, database health, and deployment status from connected monitoring tools, correlates cross-domain signals (deploy-induced regressions, resource bottlenecks), triages incidents for human review, and learns from triage decisions to improve alert quality over time. — flow: Monitoring -> Database -> Deployment -> Messages
 - **incident-logger** — Single source of truth for every operational incident — intake with severity classification, lifecycle tracking with escalation timers and update cadences, auto-closure for stale low-severity items, and human-approved post-incident reviews with cross-incident pattern detection. — flow: Messages
+- **release-manager** — Automates release discipline. When a change merges, it applies semantic-versioning rules to the commits, bumps the version file, prepends a categorized changelog entry, drafts release notes, and tags the release. Records every version decision in memory so versioning is reasoned and auditable — not just incremented. — flow: Codebase -> GitHub -> Messages
 - **sentry-production-monitor** — Pulls unresolved Sentry issues daily, reads stack-trace source code across all registered codebases for cross-project root cause analysis, delivers Jira-format reports per issue, and learns from human triage which error patterns are actionable vs noise. — flow: Sentry -> Codebases -> Messages
 - **telegram-ops-command-center** — AI-powered ops control plane in your team's Telegram group — authorized operators send natural language commands (health checks, deployments, rollbacks, broadcasts); destructive actions gate on YES confirmation from the initiating operator; critical events route to a messaging channel with severity color coding; daily ops summary rolls up commands, health, and deploys. — flow: Telegram -> Messages
 - **workflow-error-intelligence** — Meta-observability agent that watches every other persona on the platform — subscribes to execution failure events, classifies each error by category and root cause, detects cross-workflow patterns (recurring, cascading, service-wide), sends real-time critical alerts, and delivers daily digests and weekly reliability reports. — flow: Messages
@@ -114,15 +127,14 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **web-marketing** — Weekly cross-channel marketing intelligence. Pulls paid campaign performance and organic SEO metrics, detects keyword cannibalization between paid and organic, and proposes specific optimizations that persist through human review into a learning memory of what works. — flow: Ad Platform -> Analytics Tool -> Messages
 - **website-conversion-audit** — On-demand website analysis agent specialized in auditing local service business websites (HVAC, plumbing, landscaping, roofing) for conversion optimization gaps. Scrapes and analyzes the target URL, scores gaps across 8 categories, and produces a prioritized recommendations report. Learns which gap types matter most via Memory. — flow: Website URL -> AI Analysis -> Messages
 
-### productivity (13)
+### productivity (12)
 
 - **appointment-orchestrator** — Processes new Calendly bookings end-to-end: enriches CRM contacts and deals, sends personalized confirmation emails with prep materials, notifies the team in the messaging channel, dispatches 24h reminders and post-meeting follow-ups, and handles cancellations gracefully. — flow: Calendly -> CRM -> email -> messaging
 - **daily-standup-compiler** — Personal business OS that starts each day informed, accountable, and focused. Morning briefing consolidates niche news, goal progress, pending work, and a prioritized action plan into one message. On-demand decision support builds weighted matrices with kill criteria. Weekly Sunday retrospective reviews goals and triages the week's captured ideas. — flow: Web Research -> Goals & Tasks -> Messages
 - **digital-clone** — Multi-channel communication proxy across email, messaging, and messaging. Reads inbound messages, drafts replies that match your per-recipient style, routes drafts for human approval, and graduates to auto-send after 20 consecutive unedited approvals per contact. Logs everything to a local SQLite database. — flow: email -> messaging -> messaging -> Built-in Database
-- **email-follow-up-tracker** — Monitors outbound email threads and delivers graduated messaging reminders when replies go overdue. Supports VIP prioritization, automatic resolution on reply detection, on-demand status reports, and memory-driven learning of per-recipient reply patterns. — flow: email -> messaging
+- **email-intelligence-operator** — End-to-end email intelligence — tracks outbound threads with graduated reminders, extracts actionable tasks from inbound mail into a knowledge base, and qualifies inbound leads with scored routing. — flow: email -> messaging -> knowledge base -> Local Database
 - **email-morning-digest** — Fetches overnight email, scores by adaptive sender importance, summarises the top messages into a daily digest. — flow: email
-- **email-task-extractor** — Scans email on a cadence for actionable content, applies NLP to detect explicit and implicit action items, extracts metadata (due dates, assignees, priority), and creates structured knowledge base tasks. Routes low-confidence items through human review and learns your team's patterns over time. — flow: email -> knowledge base -> Messages
-- **idea-harvester** — Mines ideas from wherever the user works — messaging, knowledge base, pasted URLs, raw text — runs them through human triage, and promotes accepted items into a structured backlog with codebase-grounded feasibility analysis. — flow: messaging -> knowledge base -> Codebase -> Messages
+- **idea-harvester** — Autonomous idea harvester that mines the web — trending repos, Hacker News, communities, competitor changelogs — grounded in your codebase's domain, plus optional team chat / knowledge-base sources, for concrete feature ideas. Holds each for triage and grounds accepted ideas in codebase feasibility. Works without any messaging connector. — flow: messaging -> knowledge base -> Codebase -> Messages
 - **meeting-lifecycle-manager** — Owns the full meeting lifecycle on calendar: contextual prep reminders 30 min before with attendee email history, real-time 'in-meeting' messaging status during, post-meeting notes + action-item distribution after, and a morning daily briefing summarizing the day's meetings. — flow: calendar -> email -> messaging
 - **personal-capture-bot** — Monitors a messaging bot for captured messages (tasks, ideas, bookmarks, notes), classifies each using context, routes tasks to spreadsheet and everything else to knowledge base, confirms receipt, and delivers a nightly digest of the day's captures. — flow: messaging -> knowledge base -> spreadsheet
 - **router** — Universal webhook receiver that replaces Zapier for simple automations. Accepts any webhook payload, classifies the event using signature matching + payload analysis + reasoning, and fan-outs to the messaging channel, email, knowledge base, and spreadsheet based on configurable routing rules. — flow: Webhook Ingestion -> messaging -> email -> knowledge base -> spreadsheet
@@ -149,47 +161,46 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **knowledge-base-health-auditor** — Treats your workspace knowledge surface like source code with a periodic test suite. Lints persona memories, vector knowledge bases, and an optional Obsidian vault for staleness, broken wikilinks, contradictions, and orphan pages — every finding routes through manual review so the human owns the prune decision. — flow: Personas Memory -> Personas Vector DB -> Obsidian Vault -> Messages
 - **linkedin-watchlist-scout** — Watches a curated list of LinkedIn company pages via Bright Data's structured LinkedIn scraper. Detects new posts, senior hires, product launches, and headcount shifts. Ships score-≥4 changes via messaging in real time, then ships a weekly digest connecting cross-company patterns. Built to demonstrate Bright Data's 660+ pre-built scrapers in a real agent workflow. — flow: Source List -> Bright Data -> Messaging
 - **product-analytics-briefer** — Daily product intelligence: pulls key metrics from your analytics tool, compares against goals and 7/30-day baselines, flags anomalies, delivers a plain-English briefing, and logs a longitudinal record for trend tracking. Learns which metrics matter from review feedback. — flow: Analytics Tool -> Messages -> Knowledge Base
-- **product-scout** — Scans configured email sources for implementation opportunities (new connectors, API version updates, tooling), enriches findings with web research, holds each for human triage, and learns which topic areas actually ship from accept/reject feedback. — flow: Email -> Web Research -> Messages
+- **product-scout** — Autonomous scout that finds real implementation opportunities (new integrations, API/version updates, tooling) for your codebase's stack via web research — GitHub releases, changelogs, the web — and optionally your newsletter inbox. Produces a deduplicated triage queue, not noise. Works fully autonomously without an email connector. — flow: Codebase -> Web -> Messages
 - **product-signal-detector** — Monitors product analytics for statistically significant signals — funnel breakages, feature adoption spikes, retention shifts — and routes them via insight cards with optional auto-ticketing for critical anomalies. Persistent-warning logic escalates slow-burn regressions. — flow: Analytics Tool -> Messages -> Ticketing Tool
 - **research-knowledge-curator** — Transforms web URLs into structured knowledge base pages with AI summarization, multi-dimensional taxonomy tagging, and automatic cross-referencing. Manual URL submission or scheduled RSS feed scanning; handles paywalls gracefully; maintains a controlled taxonomy across runs. — flow: Web Research -> Knowledge Base -> Messages
 - **research-paper-indexer** — Monitors arXiv, PubMed, and Semantic Scholar for papers matching configurable keyword groups. Generates structured Problem-Method-Result summaries, maintains a deduplicated searchable index with cross-references, and produces periodic trend reports across your research domains. — flow: Academic APIs -> Messages
 - **website-market-intelligence-profiler** — Turns a list of website URLs into a structured market intelligence database. Fetches each site, applies multi-dimensional AI classification (industry, audience, business model, value prop, company size, tech signals), writes results back to your source of truth, and delivers a landscape summary with white-space analysis. — flow: Source List -> Web Research -> Messages
 
-### sales (14)
+### sales (12)
 
 - **contact-enrichment-agent** — Contact intelligence agent that mines email communications for signature data and builds progressive, confidence-scored contact profiles in a local database. Batch and incremental enrichment modes feed a human-in-the-loop conflict resolver so existing records never get silently overwritten. — flow: email -> Local Database -> Messages
 - **contact-sync-manager** — Always-on contact harvesting agent. Polls email continuously for new signature data, maintains a living contact database with per-field confidence scoring and full change history, and routes field-level conflicts through a batch human-review pipeline. — flow: email -> Local Database
 - **crm-data-quality-auditor** — Weekly CRM hygiene agent. Detects duplicates, stale records, missing fields, and formatting inconsistencies; auto-fixes safe formatting; routes risky changes through human review; tracks a 0-100 data quality score with week-over-week trend and ships combined messaging + knowledge base reports. — flow: CRM -> knowledge base -> messaging
-- **email-lead-extractor** — Always-on email lead intake. Scans inbound Primary-category email, extracts structured contacts via header + body + signature NLP, scores every candidate on a 4-signal qualification model, and routes On Fire leads through manual review while logging every step to an auditable database. — flow: email -> Local Database
 - **lead-capture-pipeline** — Real-time form tool intake pipeline. Scores submissions with contextual judgment, enriches records in a CRM database with deduplication, sends tier-appropriate personalized welcome emails, and fires rich Hot / On Fire lead alerts to the sales team. — flow: form tool -> Airtable -> email -> Messaging
 - **local-business-lead-prospector** — Discovers local businesses in a configured niche and location with no website or significantly outdated ones, scores each as a prospect from web presence + review signals, and maintains a persistent pipeline with status tracking and weekly re-scoring. — flow: Local Database -> Messages
 - **outbound-sales-intelligence-pipeline** — Transforms raw prospect lists in spreadsheet into outreach-ready intelligence dossiers. Five-stage pipeline: verify email → enrich person → enrich company → AI analysis → cold outreach draft generation. Daily messaging summary keeps the sales team on top of pipeline health. — flow: spreadsheet -> Enrichment -> Messaging
 - **personality-enriched-sales-prep** — Builds behavioral profiles of external meeting attendees from LinkedIn activity and email history, then delivers a structured knowledge base prep brief plus a pre-meeting messaging reminder tailored to each attendee's communication style and decision-making pattern. — flow: Calendar -> email -> knowledge base -> Messaging
-- **sales-deal-analyzer** — Monthly win/loss analysis across all closed deals. Segments by deal size, industry, rep, lead source, stakeholder count, cycle length, and stage progression; compares against 3- and 6-month trailing averages; publishes a structured knowledge base report with executive summary, patterns, trends, and prioritized recommendations. — flow: CRM -> knowledge base
-- **sales-deal-tracker** — Polls the CRM in near-real-time for Opportunity changes — stage transitions, amount shifts, close date slips — sends contextual urgency-graded alerts, captures loss reviews, and delivers a daily pipeline snapshot with velocity metrics and at-risk deal detection. — flow: CRM -> Messaging
+- **sales-deal-intelligence** — Two lenses on the same pipeline: a near-real-time CRM sensor that emits urgency-graded alerts on every deal movement and a periodic win/loss analyst that segments closed deals across seven dimensions and publishes a knowledge-base report with ranked recommendations. — flow: CRM -> Messaging -> knowledge base
 - **sales-pipeline-autopilot** — Monitors CRM deal pipeline for stage transitions, sends personalized stage-specific follow-up emails, posts contextual team messages, flags stale deals through tiered escalation, and compiles a weekly pipeline health report. — flow: CRM -> Email -> Messaging
 - **sales-proposal-generator** — Monitors the CRM for newly qualified deals, researches prospect companies via web intelligence, and generates three-tier personalized proposals in knowledge base (startup / standard / enterprise) with executive summary, needs analysis, solution mapping, timeline, ROI pricing, and next steps. Every proposal flagged for human review before client delivery. — flow: CRM -> Web Research -> knowledge base
 - **sheets-e-commerce-command-center** — Continuously monitors a Shopify store: logs every order to a spreadsheet with automatic classification (high-value, international, bulk, discounted), alerts on threshold-crossing inventory, flags quality-issue refunds, and delivers a daily sales digest with rolling-average trend analysis. — flow: E-Commerce -> Spreadsheet -> Messaging
 - **website-conversion-auditor** — Crawls a business website via the desktop browser, scores it across 10 conversion dimensions (contact, social proof, CTA, mobile, speed, navigation, content, design, trust, engagement), delivers a prioritized audit report with revenue-impact estimates, and produces a ready-to-paste redesign prompt for AI website builders. — flow: Browser -> Messaging
 
-### security (3)
+### security (5)
 
 - **access-request-manager** — Security access governance agent that monitors a shared inbox for access requests, routes them through manager then admin approval, maintains an immutable audit trail, enforces timeout escalation, and notifies all parties via in-app messaging. — flow: email -> Local Database -> Messages
+- **ai-environment-posture-audit** — Audits the agent's own runtime environment on a schedule (not the user's codebase). Reviews connected MCP servers for poisoning indicators, installed templates for prompt-injection vectors, settings for credential exposure, dangerous-permission usage, and stale credentials. Findings surface in the manual review queue with severity tagging and optional messaging alerts for critical items. — flow: Local agent state -> MCP server registry -> Template catalog -> Settings store -> messaging
 - **brand-protection-sentinel** — Generates lookalike domain variants, scans DNS + WHOIS for new registrations, analyzes hosted content for brand impersonation, scores threats, alerts on high-risk phishing via the messaging channel, and produces weekly brand protection summaries tracked in knowledge base. — flow: security lookup -> knowledge base -> messaging
+- **security-sentinel** — On-demand security auditor for your codebase. Runs three scans — dependency vulnerabilities, exposed secrets, and risky patterns (auth bypasses, PII handling, injection) — then files severity-ranked findings with concrete remediation. Tracks reported findings in memory so re-scans dedupe known issues and show what's fixed versus still open. — flow: Codebase -> Messages
 - **security-vulnerability-pipeline** — Orchestrates vulnerability management end-to-end: scans source control/source control pushes via security scanner, correlates findings against open Jira security tickets to prevent duplicates, creates severity-prioritized tickets for new vulnerabilities, and alerts messaging with severity-appropriate urgency. — flow: Source Control -> security scanner -> Jira -> messaging
 
-### support (6)
+### support (5)
 
 - **customer-feedback-router** — Captures new ticketing conversations, classifies feedback, deduplicates against Linear issues, creates properly labeled tickets, and keeps the product team informed via the messaging channel summaries and weekly digests. — flow: ticketing -> messaging -> Linear
-- **email-support-assistant** — Processes incoming customer support emails against a structured knowledge base, sends confidence-gated auto-replies for well-matched questions, routes uncertain cases through human review with full context, and progressively learns from approved and rejected drafts. — flow: email -> Knowledge Base -> Messages
+- **email-support-operator** — End-to-end email support pipeline: triages incoming mail with evidence-based priority, files SLA-tracked tickets in a knowledge base, sends confidence-gated auto-replies, routes uncertain cases through human review, and escalates approaching SLA breaches. — flow: email -> knowledge base -> Messages
 - **knowledge-base-review-cycle-manager** — Scans a knowledge base for articles due for periodic review, assigns reviewers from a rotation, dispatches email reminders, broadcasts status to the messaging channel, tracks completions, and updates Last Reviewed + Next Due dates in knowledge base. — flow: knowledge base -> messaging -> email
-- **support-email-router** — Triages incoming email support emails with multi-signal priority classification, creates structured knowledge base tickets with SLA deadlines, and proactively escalates approaching SLA breaches. — flow: email -> knowledge base -> Messages
 - **support-escalation-engine** — Monitors support platform for tickets breaching response-time SLAs, escalates urgent issues to the messaging channel with full context, logs escalation patterns in knowledge base, and emails the support lead with a daily escalation summary. — flow: support platform -> messaging -> knowledge base -> email
 - **support-intelligence-use-case** — Triages support platform tickets with sentiment + urgency analysis, searches a knowledge base for known resolutions, routes appropriately across messaging channels, monitors SLA compliance, and enriches the KB as tickets resolve. — flow: support platform -> messaging -> knowledge base
 
 ---
 
-## Connector Catalog (122)
+## Connector Catalog (127)
 
 ### advertising (3)
 
@@ -313,10 +324,11 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **arcade** (API Key, freemium) — Arcade hosted MCP gateway providing thousands of enterprise-ready tools with managed OAuth and just-in-time authorization.
 - **mcp_gateway** (Built-in, free) — Bundle multiple MCP servers under one credential. Attach the gateway to a persona once and inherit every member tool.
 
-### knowledge_base (6)
+### knowledge_base (7)
 
 - **confluence** (API Token, paid) — Confluence wiki and knowledge base for team documentation and collaboration.
 - **desktop_obsidian** (Desktop Bridge, free) — Obsidian note-taking integration -- read, write, search, and navigate your knowledge vault via desktop bridge.
+- **granola** (API Key, freemium) — Granola AI meeting notes -- read AI-generated meeting summaries and transcripts so agents can act on what happened in meetings.
 - **notion** (PAT, free) — Notion workspace for knowledge bases, wikis, and project management.
 - **obsidian** (API Key, free) — Obsidian vault access via the Local REST API plugin for reading, writing, and searching notes.
 - **obsidian_memory** (Vault, ?) — Graph-aware operations over your Obsidian vault — semantic search, backlink walking, MOC discovery, and daily-journal authoring. Powered by the Obsidian Brain plugin and exposed automatically once a vault is configured.
@@ -336,15 +348,19 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - **betterstack** (PAT, paid) — Better Stack uptime monitoring, incident management, and status pages.
 - **sentry** (PAT, free) — Sentry application monitoring for errors, performance, and session replay.
 
-### notifications (3)
+### notifications (7)
 
+- **discord_webhook** (Webhook URL, free) — One-way outbound Discord notifications via channel webhook URL. Posts only to the channel that owns the webhook; cannot read messages or list channels.
+- **generic_webhook** (Webhook URL, free) — Generic JSON outbound webhook. POSTs `{ text: <rendered template>, event: <full event payload> }` to any user-supplied HTTPS URL. Use for PagerDuty Events v2, custom Zapier hooks, or any in-house alert pipeline.
 - **knock** (API Key, freemium) — Knock notification infrastructure for orchestrating cross-channel notifications with preferences and workflows.
 - **novu** (API Key, freemium) — Novu open-source notification infrastructure for in-app, email, SMS, push, and chat notifications via the Novu API.
 - **ntfy** (Access Token, free) — ntfy open-source push notification service for sending notifications to phones and desktops via simple HTTP.
+- **slack_webhook** (Webhook URL, free) — One-way outbound Slack notifications via incoming webhook URL. Posts only to the channel the webhook was provisioned for; cannot read messages, list channels, or perform bot actions.
+- **teams_webhook** (Webhook URL, free) — One-way outbound Microsoft Teams notifications via channel incoming webhook URL. Posts only to the channel that owns the connector; cannot read messages.
 
 ### personalization (1)
 
-- **twin** (Twin, ?) — Speak as the user. Provides identity, per-channel tone, memory recall, and interaction tracking to any persona. The active twin is resolved automatically — no per-persona attach step needed.
+- **twin** (Twin, ?) — Speak as a Twin. Bind a persona to a specific Twin profile from the Twin plugin — provides identity, per-channel tone, memory recall, and interaction tracking. Create multiple bindings to switch a persona between Twins; the binding's name is yours to choose.
 
 ### productivity (1)
 
@@ -427,18 +443,19 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ### Template categories by density
 
-- development: 28  (well-covered)
+- development: 31  (well-covered)
 - research: 15  (well-covered)
-- sales: 14  (well-covered)
 - content: 13  (well-covered)
-- productivity: 13  (well-covered)
 - finance: 12  (well-covered)
+- productivity: 12  (well-covered)
+- sales: 12  (well-covered)
+- _team_presets: 6
+- devops: 6
 - marketing: 6
-- support: 6
-- devops: 5
+- security: 5
+- support: 5
 - project-management: 4
 - legal: 3
-- security: 3
 - hr: 2  ← **sparse, gap candidate**
 - email: 1  ← **sparse, gap candidate**
 
@@ -446,9 +463,10 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 - database: 10  (well-covered)
 - cloud: 9  (well-covered)
+- knowledge_base: 7
+- notifications: 7
 - storage: 7
 - ai: 6
-- knowledge_base: 6
 - messaging: 6
 - project_management: 5
 - social: 5
@@ -460,7 +478,6 @@ When an idea is bucketed as a **template** or **credential** proposal:
 - advertising: 3
 - crm: 3
 - design: 3
-- notifications: 3
 - spreadsheet: 3
 - time_tracking: 3
 - web_scraping: 3
@@ -483,10 +500,11 @@ When an idea is bucketed as a **template** or **credential** proposal:
 
 ### Auth type distribution
 
-- API Key: 32
+- API Key: 33
 - PAT: 26
 - OAuth: 17
 - API Token: 9
+- Webhook URL: 4
 - Built-in: 3
 - Bot Token: 3
 - Service Account: 2
