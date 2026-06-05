@@ -11,6 +11,7 @@ import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { Persona } from "@/lib/bindings/Persona";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
+import type { LabVersionRating } from "@/lib/bindings/LabVersionRating";
 import type { LabResultEvent } from "@/lib/bindings/LabResultEvent";
 import type { LabResultKind } from "@/lib/bindings/LabResultKind";
 import type { LabToolCall } from "@/lib/bindings/LabToolCall";
@@ -21,8 +22,21 @@ import type { ModelTestConfig } from "./tests";
 // Arena -- Multi-model comparison
 // ============================================================================
 
-export const labStartArena = (personaId: string, models: ModelTestConfig[], useCaseFilter?: string) =>
-  invoke<LabArenaRun>("lab_start_arena", { personaId, models, useCaseFilter: useCaseFilter });
+export const labStartArena = (
+  personaId: string,
+  models: ModelTestConfig[],
+  useCaseFilter?: string,
+  // When set, the arena measures that specific prompt version (the consolidated
+  // "Versions & Ratings" table launches version-scoped measurements). Omitted =
+  // measure the persona's current prompt.
+  versionId?: string,
+) =>
+  invoke<LabArenaRun>("lab_start_arena", {
+    personaId,
+    models,
+    useCaseFilter: useCaseFilter,
+    versionId: versionId,
+  });
 
 export const labListArenaRuns = (personaId: string, limit?: number) =>
   invoke<LabArenaRun[]>("lab_list_arena_runs", { personaId, limit: limit });
@@ -157,6 +171,14 @@ export const labRateResult = (runId: string, resultId: string | null, scenarioNa
 
 export const labGetRatings = (runId: string) =>
   invoke<LabUserRating[]>("lab_get_ratings", { runId });
+
+// ============================================================================
+// Version Ratings -- aggregated (version × model) score rollup for the
+// consolidated "Versions & Ratings" table.
+// ============================================================================
+
+export const labGetVersionRatings = (personaId: string) =>
+  invoke<LabVersionRating[]>("lab_get_version_ratings", { personaId });
 
 // ============================================================================
 // Prompt Improvement Engine
