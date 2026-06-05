@@ -990,6 +990,9 @@ export interface TourSlice {
   resetTour: (tourId?: TourId) => void;
   consumeTourSearchPrefill: () => string | null;
   advanceSubStep: () => void;
+  /** Manually move the active sub-step pointer (clamped) — lets the user step
+   *  through a step's sub-steps at their own pace rather than only on events. */
+  goToSubStep: (index: number) => void;
   setHighlightTestId: (testId: string | null) => void;
   setHighlightMissing: (missing: boolean) => void;
   captureAppearanceBaseline: (baseline: { themeId: string; textScale: string; brightness: string }) => void;
@@ -1247,6 +1250,19 @@ export const createTourSlice: StateCreator<
         });
         persistCurrentTour();
       }
+    },
+
+    goToSubStep: (index) => {
+      const s = get();
+      const steps = getActiveTourSteps(s.tourActiveTourId);
+      const currentStep = steps[s.tourCurrentStepIndex];
+      if (!currentStep || currentStep.subSteps.length === 0) return;
+      const clamped = Math.max(0, Math.min(index, currentStep.subSteps.length - 1));
+      set({
+        tourSubStepIndex: clamped,
+        tourHighlightTestId: currentStep.subSteps[clamped]?.highlightTestId ?? null,
+      });
+      persistCurrentTour();
     },
 
     setHighlightTestId: (testId) => {

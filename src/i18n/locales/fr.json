@@ -9251,6 +9251,8 @@
     "tour_complete_more": "Ou explorez une autre visite",
     "tour_target_offscreen": "Ce que cette étape indique n'est pas encore à l'écran — il sera surligné dès qu'il apparaîtra.",
     "tour_a11y_region": "Visite guidée",
+    "tour_substep_prev": "Détail précédent",
+    "tour_substep_next": "Détail suivant",
     "minimize": "Réduire",
     "end_tour": "Terminer la visite",
     "back": "Retour",

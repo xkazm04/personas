@@ -75,6 +75,8 @@
   "tour_complete_more": "أو استكشف جولة أخرى",
   "tour_target_offscreen": "العنصر الذي تشير إليه هذه الخطوة ليس على الشاشة بعد — سيتم إبرازه عند ظهوره.",
   "tour_a11y_region": "جولة إرشادية",
+  "tour_substep_prev": "التفصيل السابق",
+  "tour_substep_next": "التفصيل التالي",
   "minimize": "تصغير",
   "end_tour": "إنهاء الجولة",
   "back": "رجوع",

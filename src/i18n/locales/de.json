@@ -9251,6 +9251,8 @@
     "tour_complete_more": "Oder erkunde eine andere Tour",
     "tour_target_offscreen": "Das Ziel dieses Schritts ist noch nicht auf dem Bildschirm — es wird hervorgehoben, sobald es erscheint.",
     "tour_a11y_region": "Geführte Tour",
+    "tour_substep_prev": "Vorheriges Detail",
+    "tour_substep_next": "Nächstes Detail",
     "minimize": "Minimieren",
     "end_tour": "Tour beenden",
     "back": "Zurück",

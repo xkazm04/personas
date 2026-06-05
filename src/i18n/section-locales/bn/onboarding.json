@@ -75,6 +75,8 @@
   "tour_complete_more": "অথবা অন্য একটি ট্যুর দেখুন",
   "tour_target_offscreen": "এই ধাপটি যা নির্দেশ করছে তা এখনও স্ক্রিনে নেই — উপস্থিত হলেই হাইলাইট হবে।",
   "tour_a11y_region": "গাইডেড ট্যুর",
+  "tour_substep_prev": "পূর্ববর্তী বিবরণ",
+  "tour_substep_next": "পরবর্তী বিবরণ",
   "minimize": "ছোট করুন",
   "end_tour": "ট্যুর শেষ করুন",
   "back": "পিছনে",

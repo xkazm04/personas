@@ -9251,6 +9251,8 @@
     "tour_complete_more": "Nebo prozkoumejte jinou prohlídku",
     "tour_target_offscreen": "To, na co tento krok ukazuje, zatím není na obrazovce — zvýrazní se, jakmile se objeví.",
     "tour_a11y_region": "Prohlídka s průvodcem",
+    "tour_substep_prev": "Předchozí detail",
+    "tour_substep_next": "Další detail",
     "minimize": "Minimalizovat",
     "end_tour": "Ukončit prohlídku",
     "back": "Zpět",

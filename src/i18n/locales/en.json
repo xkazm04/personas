@@ -9700,6 +9700,8 @@
     "tour_complete_more": "Or explore another tour",
     "tour_target_offscreen": "What this step points at isn't on screen yet — it'll highlight once it appears.",
     "tour_a11y_region": "Guided tour",
+    "tour_substep_prev": "Previous detail",
+    "tour_substep_next": "Next detail",
     "tour_loading": "Loading...",
     "tour_skip": "Skip",
     "what_to_explore": "What to explore",

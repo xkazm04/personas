@@ -75,6 +75,8 @@
   "tour_complete_more": "Hoặc khám phá hướng dẫn khác",
   "tour_target_offscreen": "Phần mà bước này trỏ tới chưa có trên màn hình — sẽ được làm nổi bật khi xuất hiện.",
   "tour_a11y_region": "Hướng dẫn tham quan",
+  "tour_substep_prev": "Mục trước",
+  "tour_substep_next": "Mục tiếp theo",
   "minimize": "Thu nhỏ",
   "end_tour": "Kết thúc hướng dẫn",
   "back": "Quay lại",

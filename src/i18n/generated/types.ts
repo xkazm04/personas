@@ -9706,6 +9706,8 @@ export type Translations = {
     tour_complete_more: string;
     tour_target_offscreen: string;
     tour_a11y_region: string;
+    tour_substep_prev: string;
+    tour_substep_next: string;
     tour_loading: string;
     tour_skip: string;
     what_to_explore: string;

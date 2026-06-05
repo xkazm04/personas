@@ -75,6 +75,8 @@
   "tour_complete_more": "या कोई और टूर देखें",
   "tour_target_offscreen": "यह चरण जिस ओर इशारा करता है वह अभी स्क्रीन पर नहीं है — दिखते ही हाइलाइट हो जाएगा।",
   "tour_a11y_region": "निर्देशित टूर",
+  "tour_substep_prev": "पिछला विवरण",
+  "tour_substep_next": "अगला विवरण",
   "minimize": "छोटा करें",
   "end_tour": "टूर समाप्त करें",
   "back": "वापस",

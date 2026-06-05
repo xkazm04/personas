@@ -153,6 +153,32 @@ export function TourPanelBody({
               </div>
             );
           })}
+          {currentStep.subSteps.length > 1 && (
+            <div className="ml-auto flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => useSystemStore.getState().goToSubStep(subStepIndex - 1)}
+                disabled={subStepIndex <= 0}
+                data-testid="tour-substep-prev"
+                title={t.onboarding.tour_substep_prev}
+                aria-label={t.onboarding.tour_substep_prev}
+                className="p-1 rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={() => useSystemStore.getState().goToSubStep(subStepIndex + 1)}
+                disabled={subStepIndex >= currentStep.subSteps.length - 1}
+                data-testid="tour-substep-next"
+                title={t.onboarding.tour_substep_next}
+                aria-label={t.onboarding.tour_substep_next}
+                className="p-1 rounded-card text-foreground hover:bg-secondary/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

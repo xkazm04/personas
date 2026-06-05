@@ -9251,6 +9251,8 @@
     "tour_complete_more": "他のツアーも見る",
     "tour_target_offscreen": "このステップが指す対象はまだ画面にありません。表示されると自動でハイライトされます。",
     "tour_a11y_region": "ガイドツアー",
+    "tour_substep_prev": "前の項目",
+    "tour_substep_next": "次の項目",
     "minimize": "最小化",
     "end_tour": "ツアーを終了",
     "back": "戻る",
