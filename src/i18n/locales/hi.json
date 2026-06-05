@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "आपने सभी {total} चरण पूरे कर लिए।",
     "tour_complete_up_next": "आगे",
     "tour_complete_next": "अगला टूर शुरू करें",
+    "tour_minimized_hint": "{tour} · {completed}/{total} चरण · जारी रखने के लिए क्लिक करें",
     "minimize": "छोटा करें",
     "end_tour": "टूर समाप्त करें",
     "back": "वापस",

@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "أكملت جميع الخطوات الـ {total}.",
     "tour_complete_up_next": "التالي",
     "tour_complete_next": "ابدأ الجولة التالية",
+    "tour_minimized_hint": "{tour} · {completed}/{total} خطوات · انقر للمتابعة",
     "minimize": "تصغير",
     "end_tour": "إنهاء الجولة",
     "back": "رجوع",

@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "你已完成全部 {total} 个步骤。",
     "tour_complete_up_next": "接下来",
     "tour_complete_next": "开始下一个导览",
+    "tour_minimized_hint": "{tour} · {completed}/{total} 步 · 点击继续",
     "minimize": "最小化",
     "end_tour": "结束引导",
     "back": "返回",

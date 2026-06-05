@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "{total}개 단계를 모두 완료했어요.",
     "tour_complete_up_next": "다음",
     "tour_complete_next": "다음 투어 시작",
+    "tour_minimized_hint": "{tour} · {completed}/{total}단계 · 클릭하여 계속",
     "minimize": "Minimize",
     "end_tour": "End tour",
     "back": "Back",

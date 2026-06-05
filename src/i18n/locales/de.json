@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "Du hast alle {total} Schritte abgeschlossen.",
     "tour_complete_up_next": "Als Nächstes",
     "tour_complete_next": "Nächste Tour starten",
+    "tour_minimized_hint": "{tour} · {completed}/{total} Schritte · zum Fortsetzen klicken",
     "minimize": "Minimieren",
     "end_tour": "Tour beenden",
     "back": "Zurück",

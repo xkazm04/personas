@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "全 {total} ステップを完了しました。",
     "tour_complete_up_next": "次は",
     "tour_complete_next": "次のツアーを開始",
+    "tour_minimized_hint": "{tour} · {completed}/{total} ステップ · クリックで再開",
     "minimize": "最小化",
     "end_tour": "ツアーを終了",
     "back": "戻る",

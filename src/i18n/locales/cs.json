@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "Dokončili jste všech {total} kroků.",
     "tour_complete_up_next": "Dále",
     "tour_complete_next": "Spustit další prohlídku",
+    "tour_minimized_hint": "{tour} · {completed}/{total} kroků · pokračujte kliknutím",
     "minimize": "Minimalizovat",
     "end_tour": "Ukončit prohlídku",
     "back": "Zpět",

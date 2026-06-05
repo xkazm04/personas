@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "Vous avez terminé les {total} étapes.",
     "tour_complete_up_next": "À suivre",
     "tour_complete_next": "Démarrer la visite suivante",
+    "tour_minimized_hint": "{tour} · {completed}/{total} étapes · cliquez pour reprendre",
     "minimize": "Réduire",
     "end_tour": "Terminer la visite",
     "back": "Retour",

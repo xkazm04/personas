@@ -11,6 +11,7 @@ import type { SidebarSection } from '@/lib/types/types';
 import { getStepColors, getNextTourId } from './tourConstants';
 import { TourPanelBody } from './TourPanelBody';
 import { StepProgress } from './StepProgress';
+import { TourProgressArc } from './TourProgressArc';
 import { useTourNarration } from './useTourNarration';
 import { TourNarrationButton } from './TourNarrationButton';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -304,13 +305,22 @@ export default function GuidedTour() {
   }
 
   if (isMinimized) {
+    const minimizedHint = tx(t.onboarding.tour_minimized_hint, {
+      tour: tourDef.title,
+      completed: completedCount,
+      total: visibleSteps.length,
+    });
     return (
       <button
         onClick={() => { setIsMinimized(false); navigateToStep(currentIndex); }}
         data-testid="tour-panel-minimized"
+        title={minimizedHint}
+        aria-label={minimizedHint}
         className={`animate-fade-slide-in fixed left-0 top-[50%] -translate-y-1/2 z-[9999] flex flex-col items-center gap-1.5 px-1.5 py-3 rounded-r-full bg-background border border-l-0 ${colors.accent} shadow-elevation-3 ${colors.glow} hover:shadow-elevation-3 transition-shadow cursor-pointer group`}
       >
-        <MapPin className={`w-4 h-4 ${colors.text}`} />
+        <span className={colors.text}>
+          <TourProgressArc completed={completedCount} total={visibleSteps.length} />
+        </span>
         <span className="typo-caption font-medium text-foreground [writing-mode:vertical-lr]">{completedCount}/{visibleSteps.length}</span>
       </button>
     );

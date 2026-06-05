@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "Bạn đã hoàn thành tất cả {total} bước.",
     "tour_complete_up_next": "Tiếp theo",
     "tour_complete_next": "Bắt đầu hướng dẫn tiếp theo",
+    "tour_minimized_hint": "{tour} · {completed}/{total} bước · nhấp để tiếp tục",
     "minimize": "Thu nhỏ",
     "end_tour": "Kết thúc hướng dẫn",
     "back": "Quay lại",

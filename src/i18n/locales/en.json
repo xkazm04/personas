@@ -9696,6 +9696,7 @@
     "tour_complete_recap": "You finished all {total} steps.",
     "tour_complete_up_next": "Up next",
     "tour_complete_next": "Start the next tour",
+    "tour_minimized_hint": "{tour} · {completed}/{total} steps · click to resume",
     "tour_loading": "Loading...",
     "tour_skip": "Skip",
     "what_to_explore": "What to explore",

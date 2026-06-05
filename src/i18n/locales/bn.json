@@ -9247,6 +9247,7 @@
     "tour_complete_recap": "আপনি সব {total}টি ধাপ সম্পন্ন করেছেন।",
     "tour_complete_up_next": "এর পরে",
     "tour_complete_next": "পরের ট্যুর শুরু করুন",
+    "tour_minimized_hint": "{tour} · {completed}/{total} ধাপ · চালিয়ে যেতে ক্লিক করুন",
     "minimize": "ছোট করুন",
     "end_tour": "ট্যুর শেষ করুন",
     "back": "পিছনে",
