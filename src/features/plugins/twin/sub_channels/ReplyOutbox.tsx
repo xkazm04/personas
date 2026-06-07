@@ -39,6 +39,11 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
   const [contacts, setContacts] = useState<TwinContact[]>([]);
   const [approving, setApproving] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  // The channel + contact the current draft was generated for. Approve logs
+  // against THIS frozen tuple, not the live selectors, so changing the dropdowns
+  // after generating can't mis-attribute the recorded send (bug-hunt 2026-06-07
+  // twin #3).
+  const [draftContext, setDraftContext] = useState<{ channel: TwinChannelKind; contactHandle: string } | null>(null);
 
   // Default the channel selector to the first active channel.
   useEffect(() => {
@@ -57,6 +62,12 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
       .then(setContacts)
       .catch(silentCatch('features/plugins/twin/sub_channels/ReplyOutbox:contacts'));
   }, [activeTwinId]);
+
+  // Drop the frozen context whenever the draft is cleared (Discard / Approve)
+  // so a stale tuple can't apply to a future draft.
+  useEffect(() => {
+    if (replyDraft === null) setDraftContext(null);
+  }, [replyDraft]);
 
   const channelOptions: ThemedSelectOption[] = useMemo(
     () =>
@@ -86,23 +97,27 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
         inbound.trim() || undefined,
         directions.trim() || undefined,
       );
+      // Freeze the channel + contact this draft was generated for.
+      setDraftContext({ channel: channelType, contactHandle: contactHandle.trim() });
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to draft reply');
     }
   };
 
   const handleApprove = async () => {
-    if (!activeTwinId || !channelType || !replyDraft?.trim()) return;
+    if (!activeTwinId || !draftContext || !replyDraft?.trim()) return;
     setApproving(true);
     setLocalError(null);
     try {
-      // Persist as an OUTBOUND communication — no real send, just the record.
+      // Persist as an OUTBOUND communication against the FROZEN channel/contact
+      // the draft was generated for — not the live selectors (bug-hunt
+      // 2026-06-07 twin #3).
       await recordInteraction(
         activeTwinId,
-        channelType,
+        draftContext.channel,
         'out',
         replyDraft.trim(),
-        contactHandle.trim() || undefined,
+        draftContext.contactHandle || undefined,
       );
       clearDraft();
       setInbound('');
@@ -202,7 +217,13 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
           animate={{ opacity: 1, height: 'auto' }}
           className="mt-4 pt-4 border-t border-primary/10"
         >
-          <Field label="Draft reply — edit before approving">
+          <Field
+            label={
+              draftContext
+                ? `Draft reply for ${draftContext.channel}${draftContext.contactHandle ? ` → ${draftContext.contactHandle}` : ''} — edit before approving`
+                : 'Draft reply — edit before approving'
+            }
+          >
             <textarea
               rows={5}
               value={replyDraft}
