@@ -584,7 +584,13 @@ pub fn record_interaction(
         let mem_content = if let Some(s) = summary {
             format!("[{channel}] {s}")
         } else {
-            format!("[{channel}] {}", &content[..content.len().min(500)])
+            // Char-safe truncation: byte-slicing user content panics on a
+            // multi-byte char straddling the cut (emoji/CJK/accents) — common for
+            // a multilingual personal-comms feature (bug-hunt 2026-06-07 twin #1).
+            format!(
+                "[{channel}] {}",
+                crate::utils::text::truncate_on_char_boundary(content, 500)
+            )
         };
         let title = contact_handle
             .map(|h| format!("{direction} with {h} on {channel}"))
