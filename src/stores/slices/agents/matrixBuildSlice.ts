@@ -237,6 +237,15 @@ export interface MatrixBuildSlice {
   clearBuildQuestion: (cellKey: string) => void;
   collectAnswer: (cellKey: string, answer: string) => void;
   clearPendingAnswers: () => void;
+  /**
+   * Session-targeted batch answer-collect. Unlike {@link collectAnswer} (which
+   * only ever touches the *active* session), this records answers for an
+   * explicit `sessionId` and removes the answered questions from that session's
+   * `pendingQuestions`. Used by the global Quick Answer popover, which may
+   * answer a backgrounded build session the user is not currently viewing.
+   * Optimistic: the backend confirms via cell_update / session_status events.
+   */
+  applyPendingAnswers: (sessionId: string, answers: Record<string, string>) => void;
 
   // Actions -- cell update confirmation
   confirmCellUpdate: (cellKey: string) => void;
@@ -1078,6 +1087,21 @@ export const createMatrixBuildSlice: StateCreator<
 
   clearPendingAnswers: () => {
     set((state) => updateSessionInState(state, null, (sess) => ({ ...sess, pendingAnswers: {} })));
+  },
+
+  applyPendingAnswers: (sessionId, answers) => {
+    const keys = Object.keys(answers);
+    if (keys.length === 0) return;
+    set((state) => updateSessionInState(state, sessionId, (sess) => {
+      const cellStates = { ...sess.cellStates };
+      for (const k of keys) cellStates[k] = 'filling';
+      return {
+        ...sess,
+        pendingAnswers: { ...sess.pendingAnswers, ...answers },
+        cellStates,
+        pendingQuestions: sess.pendingQuestions.filter((q) => !(q.cellKey in answers)),
+      };
+    }));
   },
 
   // -- Cell update confirmation -----------------------------------------------

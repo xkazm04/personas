@@ -205,6 +205,8 @@ pub async fn companion_approve_action(
         // UnifiedMatrixEntry consumes both via the same prefill slot.
         "build_oneshot" => execute_build_oneshot(&state, &app, &params).await,
         "run_arena" => execute_run_arena(&state, &app, &params).await,
+        "companion_breed_personas" => execute_companion_breed_personas(&state, &app, &params).await,
+        "companion_evolve_persona" => execute_companion_evolve_persona(&state, &app, &params).await,
         // `compose_dashboard` is now auto-fire (no approval card) —
         // handled by the dispatcher + session.rs. The executor below
         // is kept as a fallback in case an old approval row from
@@ -1577,6 +1579,8 @@ async fn execute_run_arena(
         persona_id.clone(),
         models_vec,
         use_case_filter.clone(),
+        // Companion-triggered arena measures the persona's current prompt.
+        None,
     )
     .await?;
 
@@ -1590,6 +1594,89 @@ async fn execute_run_arena(
         // the arena view automatically.
         client_action: None,
     })
+}
+
+/// Headless breed: cross-breed 2+ personas via the genome engine. The Versions
+/// & Ratings redesign descoped Breed from the Lab UI, so Athena is now its only
+/// driver — she proposes it (approval-gated, since it spawns a compute-heavy
+/// run) and this forwards to the existing `genome_start_breeding` command.
+/// Offspring land in the genome breeding tables for any future surface to read.
+async fn execute_companion_breed_personas(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let parent_ids: Vec<String> = params
+        .get("parent_ids")
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+    if parent_ids.len() < 2 {
+        return Err(AppError::Internal(
+            "companion_breed_personas: `parent_ids` needs at least 2 persona ids".into(),
+        ));
+    }
+    // Fitness weights default to a quality-leaning blend when Athena omits them.
+    let fitness_objective: crate::engine::genome::FitnessObjective = params
+        .get("fitness_objective")
+        .cloned()
+        .and_then(|v| serde_json::from_value(v).ok())
+        .unwrap_or(crate::engine::genome::FitnessObjective {
+            speed: 0.2,
+            quality: 0.6,
+            cost: 0.2,
+        });
+    let mutation_rate = params.get("mutation_rate").and_then(|v| v.as_f64());
+    let generations = params
+        .get("generations")
+        .and_then(|v| v.as_i64())
+        .map(|n| n as i32);
+
+    let run = crate::commands::execution::genome::genome_start_breeding(
+        state.clone(),
+        app.clone(),
+        parent_ids.clone(),
+        fitness_objective,
+        mutation_rate,
+        generations,
+    )
+    .await?;
+
+    Ok(ExecuteResult::message(format!(
+        "Breeding run `{}` started from {} parents. Offspring appear once the run completes.",
+        run.id,
+        parent_ids.len()
+    )))
+}
+
+/// Headless evolve: trigger one auto-evolution cycle for a persona (breed →
+/// evaluate → promote) via the existing `evolution_trigger_cycle` command.
+/// Approval-gated; descoped from the Lab UI in the redesign.
+async fn execute_companion_evolve_persona(
+    state: &State<'_, Arc<AppState>>,
+    _app: &tauri::AppHandle,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let persona_id = params
+        .get("persona_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("companion_evolve_persona: missing `persona_id`".into()))?
+        .to_string();
+
+    let cycle = crate::commands::execution::evolution::evolution_trigger_cycle(
+        state.clone(),
+        persona_id.clone(),
+    )
+    .await?;
+
+    Ok(ExecuteResult::message(format!(
+        "Evolution cycle `{}` triggered for persona `{persona_id}`.",
+        cycle.id
+    )))
 }
 
 /// Persist a dashboard composition (singleton). The spec is stored as
@@ -2219,6 +2306,49 @@ fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteResult, AppEr
     )))
 }
 
+/// Validate that a fleet session's working directory is one of the user's
+/// registered dev projects (or a subdirectory of one).
+///
+/// Athena-spawned fleet sessions run `claude --dangerously-skip-permissions`
+/// in `cwd` (see `fleet::pty::spawn_session`), so an arbitrary cwd would let a
+/// single approving click execute a permission-bypassing agent anywhere on
+/// disk. The ApprovalCard surfaces Athena's free-text rationale, not the
+/// resolved command, so the cwd cannot be trusted from the rationale — it must
+/// be constrained to the registered-project allowlist (`dev_projects`).
+fn validate_fleet_cwd(app: &tauri::AppHandle, cwd: &str) -> Result<(), AppError> {
+    let trimmed = cwd.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation(
+            "fleet cwd is required and must be a registered dev project directory".into(),
+        ));
+    }
+    // Canonicalize to resolve `..`/symlinks before the containment check.
+    let canon_cwd = std::fs::canonicalize(trimmed).map_err(|e| {
+        AppError::Validation(format!(
+            "fleet cwd `{trimmed}` is not an accessible directory: {e}"
+        ))
+    })?;
+    if !canon_cwd.is_dir() {
+        return Err(AppError::Validation(format!(
+            "fleet cwd `{trimmed}` is not a directory"
+        )));
+    }
+    let state = app.state::<Arc<AppState>>();
+    let projects = crate::db::repos::dev_tools::list_projects(&state.db, None)?;
+    let allowed = projects.iter().any(|p| {
+        std::fs::canonicalize(&p.root_path)
+            .map(|root| canon_cwd.starts_with(&root))
+            .unwrap_or(false)
+    });
+    if !allowed {
+        return Err(AppError::Validation(format!(
+            "fleet cwd `{trimmed}` is not within a registered dev project. \
+             Register the project in Dev Tools first, then dispatch into it."
+        )));
+    }
+    Ok(())
+}
+
 fn execute_fleet_spawn(
     app: &tauri::AppHandle,
     params: &serde_json::Value,
@@ -2227,6 +2357,9 @@ fn execute_fleet_spawn(
         .get("cwd")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("fleet_spawn: missing `cwd`".into()))?;
+    // Containment: only spawn into registered dev projects (claude runs with
+    // --dangerously-skip-permissions in this cwd).
+    validate_fleet_cwd(app, cwd)?;
     let args: Vec<String> = params
         .get("args")
         .and_then(|v| v.as_array())
@@ -2343,6 +2476,12 @@ fn execute_fleet_dispatch(
                 continue;
             }
         };
+        // Containment: each dispatched role must target a registered dev
+        // project (claude runs with --dangerously-skip-permissions there).
+        if let Err(e) = validate_fleet_cwd(app, cwd) {
+            failures.push(format!("role `{role}`: {e}"));
+            continue;
+        }
         let args: Vec<String> = spec
             .get("args")
             .and_then(|v| v.as_array())

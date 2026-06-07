@@ -110,7 +110,7 @@ export function DriveContextMenu({
           onClose();
         }
       }}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-input mx-1 ${
+      className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-all rounded-input mx-1 focus-ring ${
         opts.disabled
           ? "text-foreground opacity-40 cursor-not-allowed"
           : opts.danger

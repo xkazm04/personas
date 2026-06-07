@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { toastCatch } from '@/lib/silentCatch';
+import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import * as twinApi from '@/api/twin/twin';
 
 export interface QAPair {
@@ -62,6 +63,7 @@ export interface TrainingSession {
 
 /** Shared training state machine used by all training variants. */
 export function useTrainingSession(): TrainingSession {
+  const announce = useAnnounce();
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const activeTwin = useSystemStore((s) => s.twinProfiles).find((tp) => tp.id === activeTwinId);
   const recordTwinInteraction = useSystemStore((s) => s.recordTwinInteraction);
@@ -122,6 +124,8 @@ export function useTrainingSession(): TrainingSession {
   const generateQuestions = useCallback(async (topicPrompt: string) => {
     if (!activeTwin) return;
     setGenerating(true); setSessionSummary(null); followupSpawnedFor.current = new Set();
+    // Start cue — generation runs with only a spinner and no toast.
+    announce('Generating interview questions…', 'polite');
     const groundingBlock = groundingFacts.length > 0
       ? `\n\nAlready known about ${activeTwin.name} (do NOT re-ask these — build on or around them):\n${groundingFacts.map((f) => `- ${f.slice(0, 200)}${f.length > 200 ? '…' : ''}`).join('\n')}`
       : '';
@@ -132,6 +136,7 @@ export function useTrainingSession(): TrainingSession {
       const qaPairs: QAPair[] = lines.slice(0, 5).map((q, i) => ({ id: `q-${Date.now()}-${i}`, question: q, answer: '', saved: false }));
       if (qaPairs.length === 0) qaPairs.push({ id: `q-${Date.now()}-0`, question: `Tell me about ${topicPrompt.toLowerCase()}`, answer: '', saved: false });
       setQuestions(qaPairs); setCurrentIdx(0); setAnswerDraft(''); setPhase('interview');
+      announce(`${qaPairs.length} interview questions ready`, 'polite');
     } catch {
       const fallback: QAPair[] = [
         { id: 'f1', question: `What's your background in ${topicPrompt.toLowerCase()}?`, answer: '', saved: false },
@@ -139,8 +144,9 @@ export function useTrainingSession(): TrainingSession {
         { id: 'f3', question: `How would you explain this to someone new?`, answer: '', saved: false },
       ];
       setQuestions(fallback); setCurrentIdx(0); setPhase('interview');
+      announce('Question generation failed — using fallback questions', 'assertive');
     } finally { setGenerating(false); }
-  }, [activeTwin, callAi, groundingFacts]);
+  }, [activeTwin, callAi, groundingFacts, announce]);
 
   // Twin-simulation: draft the current question's answer AS the twin, grounded
   // in the twin's bio + tone + distilled facts (server-side). `directions`

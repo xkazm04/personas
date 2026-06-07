@@ -623,4 +623,59 @@ describe("matrixBuildSlice", () => {
       expect(useAgentStore.getState().buildPhase).toBe("promoted");
     });
   });
+
+  describe("applyPendingAnswers (session-targeted, for Quick Answer popover)", () => {
+    /** Push a pending question onto a specific session via the event handler. */
+    function pushQuestion(sessionId: string, cellKey: string) {
+      useAgentStore.getState().handleBuildQuestion({
+        type: "question",
+        session_id: sessionId,
+        cell_key: cellKey,
+        question: `Q for ${cellKey}?`,
+        options: null,
+      });
+    }
+
+    it("records answers and clears the answered questions for the target session", () => {
+      ensureSession("s1", "p-1");
+      pushQuestion("s1", "connectors");
+      pushQuestion("s1", "triggers");
+
+      useAgentStore.getState().applyPendingAnswers("s1", { connectors: "gmail" });
+
+      const s1 = useAgentStore.getState().buildSessions["s1"]!;
+      expect(s1.pendingAnswers).toEqual({ connectors: "gmail" });
+      expect(s1.pendingQuestions.map((q) => q.cellKey)).toEqual(["triggers"]);
+      expect(s1.cellStates["connectors"]).toBe("filling");
+    });
+
+    it("targets a backgrounded (non-active) session without touching the active one", () => {
+      ensureSession("s1", "p-1");
+      pushQuestion("s1", "connectors");
+      // Second session becomes active.
+      ensureSession("s2", "p-2");
+      pushQuestion("s2", "connectors");
+      expect(useAgentStore.getState().activeBuildSessionId).toBe("s2");
+
+      // Answer the BACKGROUNDED session s1.
+      useAgentStore.getState().applyPendingAnswers("s1", { connectors: "slack" });
+
+      const s1 = useAgentStore.getState().buildSessions["s1"]!;
+      const s2 = useAgentStore.getState().buildSessions["s2"]!;
+      expect(s1.pendingAnswers).toEqual({ connectors: "slack" });
+      expect(s1.pendingQuestions).toEqual([]);
+      // Active session s2 is untouched — both its question and scalar mirror.
+      expect(s2.pendingAnswers).toEqual({});
+      expect(s2.pendingQuestions.map((q) => q.cellKey)).toEqual(["connectors"]);
+      expect(useAgentStore.getState().buildPendingAnswers).toEqual({});
+    });
+
+    it("is a no-op for an empty answer map", () => {
+      ensureSession("s1", "p-1");
+      pushQuestion("s1", "connectors");
+      useAgentStore.getState().applyPendingAnswers("s1", {});
+      const s1 = useAgentStore.getState().buildSessions["s1"]!;
+      expect(s1.pendingQuestions.map((q) => q.cellKey)).toEqual(["connectors"]);
+    });
+  });
 });

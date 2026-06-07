@@ -86,7 +86,7 @@ export function DriveSignaturesPanel({
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -125,7 +125,7 @@ export function DriveSignaturesPanel({
                         onClose();
                       }
                     }}
-                    className="typo-body typo-card-label truncate hover:text-cyan-200 text-left transition-colors"
+                    className="typo-body typo-card-label truncate hover:text-cyan-200 text-left transition-colors focus-ring"
                   >
                     {sig.file_name}
                   </button>
@@ -148,7 +148,7 @@ export function DriveSignaturesPanel({
                     type="button"
                     onClick={() => handleExport(sig.id)}
                     title={t.plugins.doc_signing.export_sig}
-                    className="p-1.5 rounded-input text-foreground hover:text-sky-200 hover:bg-sky-500/15 transition-colors"
+                    className="p-1.5 rounded-input text-foreground hover:text-sky-200 hover:bg-sky-500/15 transition-colors focus-ring"
                   >
                     <Download className="w-3.5 h-3.5" />
                   </button>
@@ -156,7 +156,7 @@ export function DriveSignaturesPanel({
                     type="button"
                     onClick={() => handleDelete(sig.id)}
                     title={t.plugins.doc_signing.delete_signature}
-                    className="p-1.5 rounded-input text-foreground hover:text-rose-200 hover:bg-rose-500/15 transition-colors"
+                    className="p-1.5 rounded-input text-foreground hover:text-rose-200 hover:bg-rose-500/15 transition-colors focus-ring"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

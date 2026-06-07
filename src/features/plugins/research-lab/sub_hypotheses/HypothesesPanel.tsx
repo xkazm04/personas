@@ -87,7 +87,7 @@ export default function HypothesesPanel() {
             {activeProject && personas.length > 0 && (
               <button
                 onClick={() => setShowGenerate(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-violet-500/15 text-violet-300 hover:bg-violet-500/25 transition-colors focus-ring"
                 title={t.research_lab.generate_hypotheses}
               >
                 <Sparkles className="w-3.5 h-3.5" />
@@ -149,7 +149,7 @@ export default function HypothesesPanel() {
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, h.id)}
-                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background flex-shrink-0"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring flex-shrink-0"
                     title={t.common.delete}
                     aria-label={t.common.delete}
                   >

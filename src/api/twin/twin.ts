@@ -309,6 +309,31 @@ export const simulateAnswer = (
 ) =>
   invoke<string>("twin_simulate_answer", { twinId, question, directions });
 
+/**
+ * Channels outbox — draft a channel-appropriate REPLY to a specific contact,
+ * grounded on the contact's distilled facts + recent communications + the
+ * channel's tone profile (the same recall shelves a persona adopting the twin
+ * sees). `inboundMessage` is the message being replied to (optional);
+ * `directions` carries the user's steering on a regenerate. Returns the draft
+ * prose for the user to review/edit before approving — approving persists it
+ * as an outbound communication via `recordInteraction`. Nothing is sent over
+ * any channel here.
+ */
+export const draftReply = (
+  twinId: string,
+  channel: TwinChannelKind,
+  contactHandle?: string,
+  inboundMessage?: string,
+  directions?: string,
+) =>
+  invoke<string>("twin_draft_reply", {
+    twinId,
+    channel,
+    contactHandle,
+    inboundMessage,
+    directions,
+  });
+
 // ============================================================================
 // Training Studio — background batch generation (questions + answers)
 //

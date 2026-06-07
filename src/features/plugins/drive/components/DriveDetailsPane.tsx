@@ -122,7 +122,7 @@ export function DriveDetailsPane({
                     copyText(primary.path || "/")
                       .catch(silentCatch("drive:copy-path"));
                   }}
-                  className="p-1 rounded text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors flex-shrink-0"
+                  className="p-1 rounded text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors flex-shrink-0 focus-ring"
                   aria-label={t.plugins.drive.copy_path_tooltip}
                   title={t.plugins.drive.copy_path_tooltip}
                 >
@@ -432,7 +432,7 @@ function OpenInLightboxCTA({
     <button
       type="button"
       onClick={() => onPreviewClick(entry)}
-      className={`group w-full flex items-center justify-center gap-2 px-3 py-6 rounded-card border transition-all cursor-zoom-in ${styles}`}
+      className={`group w-full flex items-center justify-center gap-2 px-3 py-6 rounded-card border transition-all cursor-zoom-in focus-ring ${styles}`}
     >
       <Icon className="w-4 h-4 group-hover:scale-110 transition-transform" />
       <span className="typo-body font-semibold">{label}</span>
@@ -486,7 +486,7 @@ function ImagePreviewBlob({
     <button
       type="button"
       onClick={() => onPreviewClick(entry)}
-      className="group block w-full rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden hover:border-cyan-500/40 hover:shadow-[0_0_20px_-6px_rgba(34,211,238,0.5)] transition-all cursor-zoom-in"
+      className="group block w-full rounded-card border border-primary/10 bg-background/60 p-1 overflow-hidden hover:border-cyan-500/40 hover:shadow-[0_0_20px_-6px_rgba(34,211,238,0.5)] transition-all cursor-zoom-in focus-ring"
     >
       <img
         src={url}

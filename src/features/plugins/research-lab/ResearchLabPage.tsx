@@ -1,6 +1,7 @@
 import { lazy, Suspense, type ComponentType } from 'react';
 import { FlaskConical } from 'lucide-react';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
@@ -35,9 +36,11 @@ export default function ResearchLabPage() {
         subtitle={subtitle}
       />
       <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-        <Suspense fallback={<SuspenseFallback />}>
-          <Active />
-        </Suspense>
+        <ErrorBoundary name="Research Lab">
+          <Suspense fallback={<SuspenseFallback />}>
+            <Active />
+          </Suspense>
+        </ErrorBoundary>
       </div>
     </ContentBox>
   );

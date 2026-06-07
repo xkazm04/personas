@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -95,15 +95,119 @@ fn default_wiki_dir(app: &AppHandle, twin_id: &str) -> Result<PathBuf, AppError>
     Ok(base.join("twin-wikis").join(twin_id))
 }
 
+/// Resolve the on-disk wiki directory for a twin, with the caller-supplied
+/// `override_dir` treated strictly as a path RELATIVE to the app-managed twin
+/// wiki root (`default_wiki_dir`).
+///
+/// Security: `twin_compile_wiki` / `twin_audit_wiki` write LLM-distilled PII to
+/// disk. The directory must therefore never escape the app-controlled base —
+/// otherwise an injected `output_dir` (e.g. an OS autostart folder) combined
+/// with attacker-influenced memory content would yield arbitrary file writes.
+/// Containment mirrors the Drive sandbox's `resolve_safe`:
+///   - an empty/unset input maps to the default base (legitimate default —
+///     unchanged on-disk location),
+///   - absolute inputs are rejected (paths must be relative to the base),
+///   - any `..` (`Component::ParentDir`) component is rejected,
+///   - the candidate is joined onto the base and then canonicalized and
+///     verified to still live under the canonical base, catching symlink and
+///     residual-escape attempts.
 fn resolve_wiki_dir(
     app: &AppHandle,
     twin_id: &str,
     override_dir: Option<String>,
 ) -> Result<PathBuf, AppError> {
-    match override_dir.filter(|s| !s.trim().is_empty()) {
-        Some(s) => Ok(PathBuf::from(s)),
-        None => default_wiki_dir(app, twin_id),
+    // The app-controlled containment root. Also the default landing spot when
+    // no override is supplied, so legitimate/default usage is unaffected.
+    let base = default_wiki_dir(app, twin_id)?;
+
+    let rel = match override_dir.map(|s| s.trim().to_string()).filter(|s| !s.is_empty()) {
+        // Empty/unset override → the default base verbatim (legacy behavior).
+        None => return Ok(base),
+        Some(rel) => rel,
+    };
+
+    // Normalize leading separators so the override is unambiguously relative.
+    let rel = rel.trim_start_matches('/').trim_start_matches('\\');
+    if rel.is_empty() || rel == "." {
+        return Ok(base);
     }
+
+    let candidate = PathBuf::from(rel);
+
+    // Reject absolute inputs outright — the original bug was honoring any
+    // absolute path verbatim with zero containment.
+    if candidate.is_absolute() {
+        return Err(AppError::Validation(
+            "Wiki output_dir must be relative to the managed twin wiki root".into(),
+        ));
+    }
+
+    // Reject `..` (and any rooted/prefixed) components before touching the FS.
+    for comp in candidate.components() {
+        match comp {
+            Component::Normal(_) | Component::CurDir => {}
+            Component::ParentDir => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir may not contain '..'".into(),
+                ));
+            }
+            Component::RootDir | Component::Prefix(_) => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir must be relative".into(),
+                ));
+            }
+        }
+    }
+
+    let joined = base.join(&candidate);
+
+    // Canonicalize an existing ancestor (the deepest one that exists) and
+    // re-append the not-yet-created tail, then verify containment. This catches
+    // symlink escapes while still allowing a fresh sub-directory to be created.
+    let canonical = canonicalize_within(&joined)?;
+    let canonical_base = canonicalize_within(&base)?;
+    if !canonical.starts_with(&canonical_base) {
+        return Err(AppError::Forbidden(format!(
+            "Wiki output_dir escapes the managed twin wiki root: {rel}"
+        )));
+    }
+
+    Ok(canonical)
+}
+
+/// Canonicalize `path`, tolerating a tail that does not yet exist by walking up
+/// to the nearest existing ancestor, canonicalizing that, and re-joining the
+/// remaining (not-yet-created) components. Mirrors the Drive sandbox approach.
+fn canonicalize_within(path: &Path) -> Result<PathBuf, AppError> {
+    if path.exists() {
+        return std::fs::canonicalize(path)
+            .map_err(|e| AppError::Internal(format!("Failed to canonicalize wiki path: {e}")));
+    }
+    let mut ancestor = path.to_path_buf();
+    loop {
+        match ancestor.parent() {
+            Some(p) if p.as_os_str().is_empty() => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir resolves above the managed root".into(),
+                ));
+            }
+            Some(p) => ancestor = p.to_path_buf(),
+            None => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir resolves above the managed root".into(),
+                ));
+            }
+        }
+        if ancestor.exists() {
+            break;
+        }
+    }
+    let canonical_ancestor = std::fs::canonicalize(&ancestor)
+        .map_err(|e| AppError::Internal(format!("Failed to canonicalize wiki path: {e}")))?;
+    let tail = path
+        .strip_prefix(&ancestor)
+        .map_err(|_| AppError::Internal("wiki path prefix strip failed".into()))?;
+    Ok(canonical_ancestor.join(tail))
 }
 
 // ============================================================================
@@ -654,6 +758,184 @@ pub async fn twin_simulate_answer(
     let prompt_text = build_answer_prompt(&profile, tone.as_ref(), &facts, question, effective.as_deref());
     let raw = spawn_claude_with_prompt(prompt_text).await?;
     Ok(raw.trim().trim_matches('"').trim().to_string())
+}
+
+// ----------------------------------------------------------------------------
+// twin_draft_reply — Channels "outbox" side
+//
+// Drafts a channel-appropriate REPLY to a specific contact, grounded on the
+// same recall shelves a persona adopting the twin sees (the `twin_recall`
+// path): the contact's distilled facts + self-facts, recent communications
+// with that contact, and the channel's tone profile (falling back to the
+// generic tone). Mirrors `twin_simulate_answer`'s persona-invocation envelope
+// (spawn_claude_with_prompt) but frames the prompt as a reply-in-conversation
+// rather than an interview answer. Returns the draft PROSE; the human reviews/
+// edits it in the Channels atelier outbox and, on approve, persists it as an
+// outbound communication via the existing `twin_record_interaction`. Nothing
+// is sent over any channel here — draft + review only.
+// ----------------------------------------------------------------------------
+
+/// Recent-communications window grounding a drafted reply. Matches the
+/// recency-shelf intent of the recall layer while staying small enough that
+/// a long thread doesn't blow up the prompt.
+const DRAFT_REPLY_COMMS_LIMIT: i32 = 8;
+
+#[tauri::command]
+pub async fn twin_draft_reply(
+    state: State<'_, Arc<AppState>>,
+    twin_id: String,
+    channel: String,
+    contact_handle: Option<String>,
+    inbound_message: Option<String>,
+    directions: Option<String>,
+) -> Result<String, AppError> {
+    require_auth(&state).await?;
+
+    let channel = channel.trim();
+    if channel.is_empty() {
+        return Err(AppError::Validation(
+            "twin_draft_reply: channel is empty".into(),
+        ));
+    }
+
+    let profile = repo::get_profile_by_id(&state.db, &twin_id)?;
+
+    let contact_filter = contact_handle
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .map(str::to_string);
+    let filter_ref = contact_filter.as_deref();
+
+    // Channel-specific tone, falling back to the generic tone so a reply still
+    // grounds on the twin's voice even before a per-channel tone is configured.
+    let tone = match repo::get_tone_optional(&state.db, &twin_id, channel)? {
+        Some(t) => Some(t),
+        None => repo::get_tone_optional(&state.db, &twin_id, "generic")?,
+    };
+
+    // Recall shelves: contact-scoped facts (+ self-facts) and recent thread.
+    let facts =
+        repo::top_distilled_facts_for_recall(&state.db, &twin_id, filter_ref, SIMULATE_ANSWER_FACTS_LIMIT)?;
+    let recent =
+        repo::list_communications_by_contact(&state.db, &twin_id, filter_ref, DRAFT_REPLY_COMMS_LIMIT)?;
+
+    let inbound = inbound_message
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty());
+
+    let effective = merge_directions(profile.training_directives.as_deref(), directions.as_deref());
+    let prompt_text = build_reply_prompt(
+        &profile,
+        tone.as_ref(),
+        &facts,
+        &recent,
+        channel,
+        filter_ref,
+        inbound,
+        effective.as_deref(),
+    );
+    let raw = spawn_claude_with_prompt(prompt_text).await?;
+    Ok(raw.trim().trim_matches('"').trim().to_string())
+}
+
+/// Build the "draft a reply as the twin" prompt. Grounds on the same material
+/// `twin_recall` exposes — the contact's distilled facts, the recent thread,
+/// and the channel tone — but frames the task as composing the next outbound
+/// message in an ongoing conversation rather than answering an interview.
+#[allow(clippy::too_many_arguments)]
+fn build_reply_prompt(
+    profile: &TwinProfile,
+    tone: Option<&TwinTone>,
+    facts: &[TwinDistilledFact],
+    recent: &[TwinCommunication],
+    channel: &str,
+    contact_handle: Option<&str>,
+    inbound_message: Option<&str>,
+    directions: Option<&str>,
+) -> String {
+    let role_part = profile
+        .role
+        .as_ref()
+        .map(|r| r.trim())
+        .filter(|s| !s.is_empty())
+        .map(|r| format!(", {r}"))
+        .unwrap_or_default();
+
+    let bio_block = profile
+        .bio
+        .as_ref()
+        .map(|b| b.trim())
+        .filter(|s| !s.is_empty())
+        .map(|b| format!("\n\nBio:\n{b}"))
+        .unwrap_or_default();
+
+    let tone_block = match tone {
+        Some(t) if !t.voice_directives.trim().is_empty() => {
+            let mut s = format!(
+                "\n\nVoice for the {channel} channel — write the way they speak:\n{}",
+                t.voice_directives.trim()
+            );
+            if let Some(len) = t.length_hint.as_ref().map(|s| s.trim()).filter(|s| !s.is_empty()) {
+                s.push_str(&format!("\nPreferred reply length: {len}"));
+            }
+            s
+        }
+        _ => String::new(),
+    };
+
+    let contact_block = contact_handle
+        .map(|h| format!("\n\nYou are replying to: {h}"))
+        .unwrap_or_default();
+
+    let facts_block = if facts.is_empty() {
+        String::new()
+    } else {
+        let lines = facts
+            .iter()
+            .map(|f| format!("- {}", f.content.trim()))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\n\nWhat is known (about you and this contact — stay consistent, never contradict these):\n{lines}")
+    };
+
+    // Recent thread, oldest-first so the model reads it as a conversation.
+    let thread_block = if recent.is_empty() {
+        String::new()
+    } else {
+        let lines = recent
+            .iter()
+            .rev()
+            .map(|c| {
+                let who = match c.direction.as_str() {
+                    "out" => profile.name.as_str(),
+                    _ => contact_handle.unwrap_or("them"),
+                };
+                format!("{who}: {}", c.content.trim())
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("\n\nRecent conversation (oldest first):\n{lines}")
+    };
+
+    let inbound_block = inbound_message
+        .map(|m| format!("\n\nThe message you are replying to:\n{m}"))
+        .unwrap_or_default();
+
+    let directions_block = directions
+        .map(|d| d.trim())
+        .filter(|s| !s.is_empty())
+        .map(|d| format!("\n\nApply this steering the user asked for: {d}"))
+        .unwrap_or_default();
+
+    format!(
+        "You are \"{name}\"{role_part}. Draft the next reply to send on the {channel} channel, in {name}'s own first-person voice — concrete, personal, and natural, the way {name} actually writes on {channel}. \
+         Continue the conversation naturally; do not restate what was already said. \
+         Draw on the material below; where it doesn't cover something, reply plausibly and stay consistent, but never invent verifiable specifics (named dates, numbers, places, people) that aren't grounded here. \
+         Output ONLY the reply message itself — no preamble, no surrounding quotes, no \"As {name}, ...\" framing, no subject line unless this is an email channel.{bio_block}{tone_block}{contact_block}{facts_block}{thread_block}{inbound_block}{directions_block}",
+        name = profile.name,
+    )
 }
 
 /// Build the "answer as the twin" prompt shared by `twin_simulate_answer` and

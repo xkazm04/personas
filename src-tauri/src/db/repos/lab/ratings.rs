@@ -1,6 +1,6 @@
 use rusqlite::params;
 
-use crate::db::models::{CreateRatingInput, LabUserRating};
+use crate::db::models::{CreateRatingInput, LabUserRating, LabVersionRating};
 use crate::db::DbPool;
 use crate::error::AppError;
 
@@ -79,5 +79,108 @@ pub fn delete_ratings_for_run(pool: &DbPool, run_id: &str) -> Result<bool, AppEr
             params![run_id],
         )?;
         Ok(count > 0)
+    })
+}
+
+// -- Version × Model rating rollup ------------------------------
+
+/// Weighted composite (0-100) over whichever sub-scores are present, renormalising
+/// the canonical `SCORE_WEIGHTS` across the available components. `None` when no
+/// component has a value (e.g. every sample for the pair errored before scoring).
+fn composite_from_parts(ta: Option<f64>, oq: Option<f64>, pc: Option<f64>) -> Option<f64> {
+    use crate::engine::eval::{
+        WEIGHT_OUTPUT_QUALITY, WEIGHT_PROTOCOL_COMPLIANCE, WEIGHT_TOOL_ACCURACY,
+    };
+    let mut sum = 0.0;
+    let mut wsum = 0.0;
+    for (val, w) in [
+        (ta, WEIGHT_TOOL_ACCURACY),
+        (oq, WEIGHT_OUTPUT_QUALITY),
+        (pc, WEIGHT_PROTOCOL_COMPLIANCE),
+    ] {
+        if let Some(v) = val {
+            sum += v * w;
+            wsum += w;
+        }
+    }
+    if wsum > 0.0 {
+        let mean = sum / wsum; // already on the 0-100 scale
+        Some((mean * 100.0).round() / 100.0) // round to 2 decimals
+    } else {
+        None
+    }
+}
+
+/// Aggregate measured scores per (prompt version, model) for one persona across
+/// every version-attributed lab result (Arena / Eval / A-B). Powers the
+/// consolidated Lab "Versions & Ratings" table. Only `completed` results carrying
+/// a non-null `version_id` are counted, so legacy current-prompt arena runs are
+/// excluded. The composite applies `SCORE_WEIGHTS` over the present sub-scores.
+pub fn get_version_ratings(
+    pool: &DbPool,
+    persona_id: &str,
+) -> Result<Vec<LabVersionRating>, AppError> {
+    timed_query!("lab_version_ratings", "lab::get_version_ratings", {
+        let conn = pool.get()?;
+        let mut stmt = conn.prepare(
+            "WITH measured AS (
+                SELECT r.version_id AS version_id, r.version_number AS version_number,
+                       r.model_id AS model_id, r.provider AS provider,
+                       r.tool_accuracy_score AS ta, r.output_quality_score AS oq,
+                       r.protocol_compliance AS pc, r.cost_usd AS cost, r.duration_ms AS dur,
+                       r.created_at AS created_at
+                FROM lab_eval_results r JOIN lab_eval_runs run ON r.run_id = run.id
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
+                UNION ALL
+                SELECT r.version_id, r.version_number, r.model_id, r.provider,
+                       r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
+                       r.cost_usd, r.duration_ms, r.created_at
+                FROM lab_ab_results r JOIN lab_ab_runs run ON r.run_id = run.id
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
+                UNION ALL
+                SELECT r.version_id, r.version_number, r.model_id, r.provider,
+                       r.tool_accuracy_score, r.output_quality_score, r.protocol_compliance,
+                       r.cost_usd, r.duration_ms, r.created_at
+                FROM lab_arena_results r JOIN lab_arena_runs run ON r.run_id = run.id
+                WHERE run.persona_id = ?1 AND r.version_id IS NOT NULL AND r.status = 'completed'
+            )
+            SELECT version_id,
+                   MAX(version_number) AS version_number,
+                   model_id,
+                   MAX(provider) AS provider,
+                   AVG(CAST(ta AS REAL)) AS ta_avg,
+                   AVG(CAST(oq AS REAL)) AS oq_avg,
+                   AVG(CAST(pc AS REAL)) AS pc_avg,
+                   AVG(cost) AS cost_avg,
+                   AVG(CAST(dur AS REAL)) AS dur_avg,
+                   COUNT(*) AS sample_count,
+                   MAX(created_at) AS last_measured_at
+            FROM measured
+            GROUP BY version_id, model_id
+            ORDER BY version_number DESC, model_id",
+        )?;
+        let rows = stmt
+            .query_map(params![persona_id], |row| {
+                let ta: Option<f64> = row.get("ta_avg")?;
+                let oq: Option<f64> = row.get("oq_avg")?;
+                let pc: Option<f64> = row.get("pc_avg")?;
+                Ok(LabVersionRating {
+                    version_id: row.get("version_id")?,
+                    version_number: row.get::<_, Option<i32>>("version_number")?.unwrap_or(0),
+                    model_id: row.get("model_id")?,
+                    provider: row.get::<_, Option<String>>("provider")?.unwrap_or_default(),
+                    composite_score: composite_from_parts(ta, oq, pc),
+                    tool_accuracy: ta,
+                    output_quality: oq,
+                    protocol_compliance: pc,
+                    cost_usd: row.get::<_, Option<f64>>("cost_avg")?.unwrap_or(0.0),
+                    duration_ms: row.get::<_, Option<f64>>("dur_avg")?.unwrap_or(0.0),
+                    sample_count: row.get("sample_count")?,
+                    last_measured_at: row.get("last_measured_at")?,
+                })
+            })
+            .map_err(AppError::Database)?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(AppError::Database)
     })
 }

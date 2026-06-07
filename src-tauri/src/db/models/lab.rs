@@ -158,6 +158,12 @@ pub struct LabArenaRun {
     pub id: String,
     pub persona_id: String,
     pub status: LabRunStatus,
+    /// When the arena was scoped to a specific prompt version (the consolidated
+    /// "Versions & Ratings" table launches version-scoped measurements), this
+    /// records which one. `None` for legacy / current-prompt arena runs.
+    pub version_id: Option<String>,
+    #[ts(type = "number | null")]
+    pub version_number: Option<i32>,
     pub models_tested: Json<Vec<String>>,
     #[ts(type = "number")]
     pub scenarios_count: i32,
@@ -176,6 +182,11 @@ pub struct LabArenaRun {
 pub struct LabArenaResult {
     pub id: String,
     pub run_id: String,
+    /// Version attribution for the consolidated ratings rollup. `None` on legacy
+    /// arena rows that measured the persona's current prompt without a version link.
+    pub version_id: Option<String>,
+    #[ts(type = "number | null")]
+    pub version_number: Option<i32>,
     #[serde(flatten)]
     #[ts(flatten)]
     pub base: LabResultBase,
@@ -184,6 +195,8 @@ pub struct LabArenaResult {
 #[derive(Debug, Clone)]
 pub struct CreateArenaResultInput {
     pub run_id: String,
+    pub version_id: Option<String>,
+    pub version_number: Option<i32>,
     pub base: CreateLabResultBaseInput,
 }
 
@@ -406,6 +419,36 @@ pub struct CreateRatingInput {
     pub scenario_name: String,
     pub rating: i32,
     pub feedback: Option<String>,
+}
+
+// ============================================================================
+// Lab: Version Ratings (aggregated (version × model) score rollup)
+// ============================================================================
+
+/// One aggregated rating cell for the consolidated Lab "Versions & Ratings"
+/// table: the mean measured scores for a single (prompt version, model) pair,
+/// rolled up across every Arena / Eval / A-B result that targeted that version.
+/// `composite_score` applies the canonical `SCORE_WEIGHTS` to whichever of the
+/// three sub-scores are present (renormalised when some are missing); `None`
+/// when the pair has no scored sample yet.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LabVersionRating {
+    pub version_id: String,
+    #[ts(type = "number")]
+    pub version_number: i32,
+    pub model_id: String,
+    pub provider: String,
+    pub composite_score: Option<f64>,
+    pub tool_accuracy: Option<f64>,
+    pub output_quality: Option<f64>,
+    pub protocol_compliance: Option<f64>,
+    pub cost_usd: f64,
+    pub duration_ms: f64,
+    #[ts(type = "number")]
+    pub sample_count: i64,
+    pub last_measured_at: Option<String>,
 }
 
 // ============================================================================

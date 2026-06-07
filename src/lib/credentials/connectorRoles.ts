@@ -79,7 +79,7 @@ export const CONNECTOR_ROLES: ConnectorRole[] = [
   role('source_control',      ['github', 'gitlab', 'azure_devops']),
   role('ci_cd',               ['circleci', 'gitlab', 'azure_devops']),
   role('project_tracking',    ['jira', 'linear', 'clickup', 'monday_com', 'monday', 'asana', 'trello', 'todoist']),
-  role('knowledge_base',      ['confluence', 'airtable', 'coda']),
+  role('knowledge_base',      ['confluence', 'airtable', 'coda', 'granola']),
   role('design',              ['figma', 'canva', 'penpot']),
   role('feature_flags',       ['launchdarkly', 'posthog']),
 

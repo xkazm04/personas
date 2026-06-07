@@ -3,6 +3,7 @@ import { Palette } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { ContentBody, ContentBox, ContentHeader } from '@/features/shared/components/layout/ContentLayout';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 
 const CreativeStudioPanel = lazy(() => import('./sub_blender/CreativeStudioPanel'));
 const GalleryPage = lazy(() => import('./sub_gallery/GalleryPage'));
@@ -43,9 +44,11 @@ export default function ArtistPage() {
             data-testid="artist-page-media-studio"
             className="animate-fade-slide-in flex-1 flex flex-col min-h-0"
           >
-            <Suspense fallback={null}>
-              <MediaStudioPage />
-            </Suspense>
+            <ErrorBoundary name="Artist">
+              <Suspense fallback={null}>
+                <MediaStudioPage />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </ContentBody>
       </ContentBox>
@@ -61,10 +64,12 @@ export default function ArtistPage() {
           data-testid={`artist-page-${artistTab}`}
           className="animate-fade-slide-in"
         >
-          <Suspense fallback={null}>
-            {artistTab === 'blender' && <CreativeStudioPanel />}
-            {artistTab === 'gallery' && <GalleryPage />}
-          </Suspense>
+          <ErrorBoundary name="Artist">
+            <Suspense fallback={null}>
+              {artistTab === 'blender' && <CreativeStudioPanel />}
+              {artistTab === 'gallery' && <GalleryPage />}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </ContentBody>
     </ContentBox>

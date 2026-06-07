@@ -17,6 +17,28 @@ use app_lib::render_plan::{build_ffmpeg_args, compile};
 // Builders
 // ---------------------------------------------------------------------------
 
+/// `build_ffmpeg_args` now validates that every source path is an existing,
+/// regular local file (LFI/SSRF guard). These parity tests never invoke
+/// ffmpeg, but they DO build the args, so each logical fixture path is
+/// materialised as a real (empty) temp file. The mapping is deterministic on
+/// the original name so repeated references resolve to the same file, and the
+/// filter-graph assertions (which only inspect `-i` counts + filter syntax,
+/// never the literal path text) are unaffected.
+fn real_fixture_path(logical: &str) -> String {
+    let file_name = std::path::Path::new(logical)
+        .file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("fixture.bin");
+    let p = std::env::temp_dir().join("personas_export_parity").join(file_name);
+    if let Some(parent) = p.parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    if !p.exists() {
+        std::fs::write(&p, b"").expect("write fixture temp file");
+    }
+    p.to_string_lossy().into_owned()
+}
+
 fn empty_comp(fps: u32) -> Composition {
     Composition {
         id: None,
@@ -41,7 +63,7 @@ fn video_clip(
     TimelineItem::Video(VideoClipInput {
         id: Some(id.into()),
         label: None,
-        file_path: path.into(),
+        file_path: real_fixture_path(path),
         start_time: start,
         duration,
         trim_start: 0.0,
@@ -70,7 +92,7 @@ fn audio_clip_at(
     TimelineItem::Audio(AudioClipInput {
         id: Some(id.into()),
         label: None,
-        file_path: path.into(),
+        file_path: real_fixture_path(path),
         start_time: start,
         duration,
         trim_start: 0.0,
@@ -104,7 +126,7 @@ fn image(id: &str, path: &str, start: f64, duration: f64) -> TimelineItem {
     TimelineItem::Image(ImageItemInput {
         id: Some(id.into()),
         label: None,
-        file_path: path.into(),
+        file_path: real_fixture_path(path),
         start_time: start,
         duration,
         position_x: 0.5,
@@ -122,7 +144,10 @@ fn args_for(comp: &Composition) -> Vec<String> {
         &CompileDeps::none(),
     )
     .expect("compile");
-    build_ffmpeg_args(&plan, Path::new("/tmp/out.mp4"))
+    // `build_ffmpeg_args` now validates each source path (LFI/SSRF guard) and
+    // returns a Result; these graph-structure fixtures expect the args to
+    // build successfully.
+    build_ffmpeg_args(&plan, Path::new("/tmp/out.mp4")).expect("build args")
 }
 
 fn joined_filters(args: &[String]) -> Option<&str> {
@@ -234,7 +259,7 @@ fn speed_quarter_uses_atempo_chain_with_two_halves() {
     comp.items = vec![TimelineItem::Audio(AudioClipInput {
         id: Some("a1".into()),
         label: None,
-        file_path: "/n.wav".into(),
+        file_path: real_fixture_path("/n.wav"),
         start_time: 0.0,
         duration: 4.0,
         trim_start: 0.0,
@@ -262,7 +287,7 @@ fn speed_quadruple_uses_atempo_chain_with_two_doubles() {
     comp.items = vec![TimelineItem::Audio(AudioClipInput {
         id: Some("a1".into()),
         label: None,
-        file_path: "/n.wav".into(),
+        file_path: real_fixture_path("/n.wav"),
         start_time: 0.0,
         duration: 1.0,
         trim_start: 0.0,
@@ -389,7 +414,8 @@ fn overlap_mode_emits_xfade_filter_not_concat() {
         &CompileDeps::none(),
     )
     .expect("overlap compile");
-    let args = build_ffmpeg_args(&plan, std::path::Path::new("/tmp/out.mp4"));
+    let args =
+        build_ffmpeg_args(&plan, std::path::Path::new("/tmp/out.mp4")).expect("build args");
     let fc = joined_filters(&args).expect("filter complex present");
 
     // xfade present, concat absent on the video chain.
@@ -418,7 +444,7 @@ fn strip_audio_removes_embedded_audio_branch_only() {
     stripped.items = vec![TimelineItem::Video(VideoClipInput {
         id: Some("v1".into()),
         label: None,
-        file_path: "/a.mp4".into(),
+        file_path: real_fixture_path("/a.mp4"),
         start_time: 0.0,
         duration: 2.0,
         trim_start: 0.0,

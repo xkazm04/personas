@@ -470,6 +470,7 @@ fn well_known_base_url(service_type: &str) -> Option<&'static str> {
         "discord" => Some("https://discord.com/api/v10"),
         "airtable" => Some("https://api.airtable.com"),
         "notion" => Some("https://api.notion.com"),
+        "granola" => Some("https://public-api.granola.ai/v1"),
         "clickup" => Some("https://api.clickup.com/api/v2"),
         "cal_com" => Some("https://api.cal.com"),
         "calendly" => Some("https://api.calendly.com"),

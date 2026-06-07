@@ -278,7 +278,7 @@ export function DriveToolbar({
           <button
             type="button"
             onClick={() => onPathEditingChange?.(true)}
-            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground group-hover/breadcrumb:text-cyan-300 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0"
+            className="ml-auto flex items-center justify-center w-5 h-5 rounded text-foreground group-hover/breadcrumb:text-cyan-300 hover:!text-cyan-200 hover:bg-cyan-500/15 transition-all flex-shrink-0 focus-ring"
             title={t.plugins.drive.path_input_aria}
             aria-label={t.plugins.drive.path_input_aria}
           >
@@ -301,7 +301,7 @@ export function DriveToolbar({
           <button
             type="button"
             onClick={() => drive.setSearchQuery("")}
-            className="absolute right-1.5 p-0.5 rounded text-foreground hover:text-foreground hover:bg-primary/10"
+            className="absolute right-1.5 p-0.5 rounded text-foreground hover:text-foreground hover:bg-primary/10 focus-ring"
             aria-label={t.plugins.drive.search_clear_aria}
           >
             <X className="w-3 h-3" />
@@ -463,7 +463,7 @@ function MovePopover({
                 key={node.path || "__root__"}
                 type="button"
                 onClick={() => onPick(node.path)}
-                className="w-full flex items-center gap-2 py-1.5 pr-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/15 hover:text-cyan-100 transition-colors"
+                className="w-full flex items-center gap-2 py-1.5 pr-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/15 hover:text-cyan-100 transition-colors focus-ring"
                 style={{ paddingLeft: `${10 + depth * 14}px` }}
               >
                 <Folder className="w-3.5 h-3.5 text-sky-400 flex-shrink-0" />
@@ -516,7 +516,7 @@ function IconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-primary/10 disabled:opacity-40 disabled:text-foreground disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+      className="p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-primary/10 disabled:opacity-40 disabled:text-foreground disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors focus-ring"
     >
       <Icon className="w-4 h-4" />
     </button>
@@ -554,7 +554,7 @@ function BreadcrumbPill({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body font-medium truncate max-w-[160px] transition-colors ${stateClass}`}
+      className={`flex items-center gap-1 px-2 py-1 rounded-input typo-body font-medium truncate max-w-[160px] transition-colors focus-ring ${stateClass}`}
     >
       {Icon && <Icon className="w-3.5 h-3.5 flex-shrink-0" />}
       <span className="truncate">{label}</span>
@@ -584,7 +584,7 @@ function ViewSegment({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`flex items-center gap-1.5 px-2 py-1 rounded-input typo-body font-medium transition-all ${
+      className={`flex items-center gap-1.5 px-2 py-1 rounded-input typo-body font-medium transition-all focus-ring ${
         active
           ? "bg-gradient-to-b from-cyan-500/35 to-cyan-500/10 text-cyan-50 shadow-elevation-1 border border-cyan-500/50"
           : "text-foreground hover:text-cyan-200 hover:bg-primary/10 border border-transparent"
@@ -628,7 +628,7 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-body font-semibold transition-all ${styles[variant]}`}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-body font-semibold transition-all focus-ring ${styles[variant]}`}
     >
       <Icon className="w-3.5 h-3.5" />
       {label}

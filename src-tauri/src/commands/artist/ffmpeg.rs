@@ -271,6 +271,77 @@ async fn get_ffmpeg_version_async(ffmpeg_path: &Path) -> Result<String, AppError
 }
 
 // =============================================================================
+// Input validation (LFI / SSRF guard)
+// =============================================================================
+
+/// Reject any ffmpeg `-i` / source path that is not a plain local file.
+///
+/// ffmpeg's `-i` argument is not just a filesystem path: it also accepts
+/// protocol URLs and demuxer pseudo-paths (`http://`, `https://`, `concat:`,
+/// `subfile:`, `file:`, `pipe:`, `data:`, …). A caller-supplied input that
+/// uses one of these can make ffmpeg fetch internal/cloud-metadata URLs
+/// (SSRF) or splice in arbitrary local files and leak their contents into the
+/// probe JSON / output media (LFI). We only ever want callers to read real,
+/// already-existing local files, so we:
+///   1. reject any string that carries a URL/protocol scheme, and
+///   2. require the path to resolve to an existing *regular* file.
+///
+/// A Windows drive-letter prefix (`C:\...`) is a single alphabetic char
+/// followed by `:` and is explicitly preserved; only multi-character schemes
+/// (`http:`, `concat:`, …) are treated as protocols.
+fn validate_ffmpeg_input(path: &str) -> Result<(), AppError> {
+    // (1) Any `scheme://...` form is a protocol URL — never a local file.
+    if path.contains("://") {
+        return Err(AppError::Validation(format!(
+            "ffmpeg input rejected (URL/protocol scheme not allowed): {path}"
+        )));
+    }
+
+    // Explicit denylist of ffmpeg protocol / demuxer prefixes (case-insensitive).
+    // These take the `scheme:` form (no `//`) so the `://` check above misses
+    // them. `file:`/`pipe:`/`data:`/`concat:`/`subfile:` are LFI vectors;
+    // the network ones (`http:`, `tcp:`, `rtmp:`, …) are SSRF vectors.
+    const DENYLISTED_PREFIXES: &[&str] = &[
+        "concat:", "concatf:", "subfile:", "file:", "pipe:", "data:", "http:", "https:", "ftp:",
+        "tcp:", "udp:", "rtp:", "rtsp:", "rtmp:", "crypto:", "gopher:", "tls:", "srtp:", "async:",
+        "cache:",
+    ];
+    let lower = path.to_ascii_lowercase();
+    for prefix in DENYLISTED_PREFIXES {
+        if lower.starts_with(prefix) {
+            return Err(AppError::Validation(format!(
+                "ffmpeg input rejected (protocol/demuxer prefix '{prefix}' not allowed): {path}"
+            )));
+        }
+    }
+
+    // Generic guard: reject anything of the form `<scheme>:` where the scheme
+    // is more than one alphabetic char (e.g. an unknown/future ffmpeg
+    // protocol). A single-char prefix (`C:`) is a Windows drive and is kept.
+    if let Some(colon) = path.find(':') {
+        let scheme = &path[..colon];
+        if scheme.len() > 1 && scheme.chars().all(|c| c.is_ascii_alphabetic()) {
+            return Err(AppError::Validation(format!(
+                "ffmpeg input rejected (looks like a '{scheme}:' protocol, not a local file): {path}"
+            )));
+        }
+    }
+
+    // (2) Must resolve to an existing regular file — blocks directories,
+    // devices, FIFOs, and non-existent paths that could otherwise be coerced
+    // into a demuxer or block forever on a pipe.
+    let meta = std::fs::metadata(path)
+        .map_err(|e| AppError::Validation(format!("ffmpeg input not accessible: {path} ({e})")))?;
+    if !meta.is_file() {
+        return Err(AppError::Validation(format!(
+            "ffmpeg input rejected (not a regular file): {path}"
+        )));
+    }
+
+    Ok(())
+}
+
+// =============================================================================
 // Commands
 // =============================================================================
 
@@ -303,11 +374,17 @@ pub async fn artist_probe_media(
     state: State<'_, Arc<AppState>>,
     file_path: String,
 ) -> Result<MediaProbeResult, AppError> {
+    // LFI/SSRF guard: ffprobe's positional input accepts protocol URLs and
+    // demuxer paths just like ffmpeg's `-i`. Only allow real local files.
+    validate_ffmpeg_input(&file_path)?;
+
     let ffprobe_path = find_ffprobe_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffprobe not found (install ffmpeg)".into()))?;
 
     let mut cmd = TokioCommand::new(&ffprobe_path);
+    // Defense-in-depth: restrict ffprobe to the local-file protocol so even a
+    // bypass of the string check can't reach the network or stdin demuxers.
     cmd.args([
         "-v",
         "quiet",
@@ -315,6 +392,8 @@ pub async fn artist_probe_media(
         "json",
         "-show_format",
         "-show_streams",
+        "-protocol_whitelist",
+        "file",
         &file_path,
     ]);
     #[cfg(target_os = "windows")]
@@ -498,6 +577,9 @@ pub async fn artist_extract_audio(
     input_path: String,
     output_path: String,
 ) -> Result<String, AppError> {
+    // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
+    validate_ffmpeg_input(&input_path)?;
+
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -516,7 +598,8 @@ pub async fn artist_extract_audio(
     };
 
     let mut cmd = TokioCommand::new(&ffmpeg);
-    cmd.args(["-y", "-i", &input_path]);
+    // Defense-in-depth: restrict the input demuxer to the local-file protocol.
+    cmd.args(["-y", "-protocol_whitelist", "file", "-i", &input_path]);
     cmd.args(codec_args);
     cmd.arg(&output_path);
     #[cfg(target_os = "windows")]
@@ -544,15 +627,22 @@ pub async fn artist_save_thumbnail(
     time_seconds: f64,
     output_path: String,
 ) -> Result<String, AppError> {
+    // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
+    validate_ffmpeg_input(&input_path)?;
+
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
 
     let mut cmd = TokioCommand::new(&ffmpeg);
+    // Defense-in-depth: `-protocol_whitelist file` restricts the input demuxer
+    // to the local-file protocol (inserted before `-i`).
     cmd.args([
         "-y",
         "-ss",
         &format!("{:.3}", time_seconds.max(0.0)),
+        "-protocol_whitelist",
+        "file",
         "-i",
         &input_path,
         "-frames:v",
@@ -588,14 +678,20 @@ pub async fn artist_measure_loudness(
     state: State<'_, Arc<AppState>>,
     file_path: String,
 ) -> Result<LoudnessStats, AppError> {
+    // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
+    validate_ffmpeg_input(&file_path)?;
+
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
 
     let mut cmd = TokioCommand::new(&ffmpeg);
+    // Defense-in-depth: restrict the input demuxer to the local-file protocol.
     cmd.args([
         "-hide_banner",
         "-nostats",
+        "-protocol_whitelist",
+        "file",
         "-i",
         &file_path,
         "-af",
@@ -655,6 +751,9 @@ pub async fn artist_trim_file(
     end_seconds: f64,
     output_path: String,
 ) -> Result<String, AppError> {
+    // LFI/SSRF guard: reject protocol/demuxer inputs before touching ffmpeg.
+    validate_ffmpeg_input(&input_path)?;
+
     let ffmpeg = find_ffmpeg_path()
         .await
         .ok_or_else(|| AppError::NotFound("ffmpeg not found".into()))?;
@@ -664,12 +763,15 @@ pub async fn artist_trim_file(
 
     // First pass: stream-copy (fast)
     let mut cmd = TokioCommand::new(&ffmpeg);
+    // Defense-in-depth: restrict the input demuxer to the local-file protocol.
     cmd.args([
         "-y",
         "-ss",
         &format!("{start:.3}"),
         "-to",
         &format!("{end:.3}"),
+        "-protocol_whitelist",
+        "file",
         "-i",
         &input_path,
         "-c",
@@ -692,12 +794,15 @@ pub async fn artist_trim_file(
 
     // Fallback: re-encode
     let mut cmd2 = TokioCommand::new(&ffmpeg);
+    // Defense-in-depth: restrict the input demuxer to the local-file protocol.
     cmd2.args([
         "-y",
         "-ss",
         &format!("{start:.3}"),
         "-to",
         &format!("{end:.3}"),
+        "-protocol_whitelist",
+        "file",
         "-i",
         &input_path,
         "-c:v",
@@ -749,7 +854,9 @@ async fn run_ffmpeg_export(
     plan: &RenderPlan,
     output_path: &str,
 ) -> Result<(), AppError> {
-    let args = build_ffmpeg_args(plan, Path::new(output_path));
+    // Validates every caller-controlled source path (LFI/SSRF guard) and may
+    // reject the export before any ffmpeg process is spawned.
+    let args = build_ffmpeg_args(plan, Path::new(output_path))?;
 
     MEDIA_EXPORT_JOBS.emit_line(app, job_id, format!("Running: ffmpeg {}", args.join(" ")));
 
@@ -817,8 +924,16 @@ async fn run_ffmpeg_export(
 // by `render_plan::compile`. The builder below is a flat translation from
 // stages to ffmpeg filter graph notation.
 
-pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
-    let mut args: Vec<String> = vec!["-y".into()]; // overwrite output
+pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Result<Vec<String>, AppError> {
+    // overwrite output, and (defense-in-depth) restrict input demuxers to the
+    // local-file protocol plus the synthetic lavfi/pipe sources this builder
+    // itself emits. This blocks SSRF/LFI even if a composition smuggled a
+    // protocol URL into a source path (each path is also validated below).
+    let mut args: Vec<String> = vec![
+        "-y".into(),
+        "-protocol_whitelist".into(),
+        "file,lavfi,pipe".into(),
+    ];
 
     // ---- Step 1: source → ffmpeg input index map ----
     //
@@ -856,6 +971,10 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
                     // can be applied per-input (images need it, media don't).
                     continue;
                 }
+                // LFI/SSRF guard: every composition source path is caller-
+                // controlled and reaches ffmpeg's `-i`. Reject protocol/demuxer
+                // inputs before they can fetch internal URLs or read files.
+                validate_ffmpeg_input(path)?;
                 args.push("-i".into());
                 args.push(path.clone());
                 source_input_idx.insert(id, input_idx);
@@ -906,6 +1025,9 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
                 SourceEntry::File { path, .. } | SourceEntry::Proxy { path, .. } => path.clone(),
                 SourceEntry::Color { .. } => continue,
             };
+            // LFI/SSRF guard: image-overlay source paths also reach ffmpeg's
+            // `-i` and are caller-controlled.
+            validate_ffmpeg_input(&path)?;
             args.push("-loop".into());
             args.push("1".into());
             args.push("-i".into());
@@ -1094,7 +1216,7 @@ pub fn build_ffmpeg_args(plan: &RenderPlan, output_path: &Path) -> Vec<String> {
     ]);
 
     args.push(output_path.to_string_lossy().into_owned());
-    args
+    Ok(args)
 }
 
 fn build_video_stage_filter(input_idx: usize, label: &str, stage: &VideoStage) -> String {
