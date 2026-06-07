@@ -2306,6 +2306,49 @@ fn execute_fleet_kill(params: &serde_json::Value) -> Result<ExecuteResult, AppEr
     )))
 }
 
+/// Validate that a fleet session's working directory is one of the user's
+/// registered dev projects (or a subdirectory of one).
+///
+/// Athena-spawned fleet sessions run `claude --dangerously-skip-permissions`
+/// in `cwd` (see `fleet::pty::spawn_session`), so an arbitrary cwd would let a
+/// single approving click execute a permission-bypassing agent anywhere on
+/// disk. The ApprovalCard surfaces Athena's free-text rationale, not the
+/// resolved command, so the cwd cannot be trusted from the rationale — it must
+/// be constrained to the registered-project allowlist (`dev_projects`).
+fn validate_fleet_cwd(app: &tauri::AppHandle, cwd: &str) -> Result<(), AppError> {
+    let trimmed = cwd.trim();
+    if trimmed.is_empty() {
+        return Err(AppError::Validation(
+            "fleet cwd is required and must be a registered dev project directory".into(),
+        ));
+    }
+    // Canonicalize to resolve `..`/symlinks before the containment check.
+    let canon_cwd = std::fs::canonicalize(trimmed).map_err(|e| {
+        AppError::Validation(format!(
+            "fleet cwd `{trimmed}` is not an accessible directory: {e}"
+        ))
+    })?;
+    if !canon_cwd.is_dir() {
+        return Err(AppError::Validation(format!(
+            "fleet cwd `{trimmed}` is not a directory"
+        )));
+    }
+    let state = app.state::<Arc<AppState>>();
+    let projects = crate::db::repos::dev_tools::list_projects(&state.db, None)?;
+    let allowed = projects.iter().any(|p| {
+        std::fs::canonicalize(&p.root_path)
+            .map(|root| canon_cwd.starts_with(&root))
+            .unwrap_or(false)
+    });
+    if !allowed {
+        return Err(AppError::Validation(format!(
+            "fleet cwd `{trimmed}` is not within a registered dev project. \
+             Register the project in Dev Tools first, then dispatch into it."
+        )));
+    }
+    Ok(())
+}
+
 fn execute_fleet_spawn(
     app: &tauri::AppHandle,
     params: &serde_json::Value,
@@ -2314,6 +2357,9 @@ fn execute_fleet_spawn(
         .get("cwd")
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::Internal("fleet_spawn: missing `cwd`".into()))?;
+    // Containment: only spawn into registered dev projects (claude runs with
+    // --dangerously-skip-permissions in this cwd).
+    validate_fleet_cwd(app, cwd)?;
     let args: Vec<String> = params
         .get("args")
         .and_then(|v| v.as_array())
@@ -2430,6 +2476,12 @@ fn execute_fleet_dispatch(
                 continue;
             }
         };
+        // Containment: each dispatched role must target a registered dev
+        // project (claude runs with --dangerously-skip-permissions there).
+        if let Err(e) = validate_fleet_cwd(app, cwd) {
+            failures.push(format!("role `{role}`: {e}"));
+            continue;
+        }
         let args: Vec<String> = spec
             .get("args")
             .and_then(|v| v.as_array())
