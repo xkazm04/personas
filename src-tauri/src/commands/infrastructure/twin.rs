@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
@@ -95,15 +95,119 @@ fn default_wiki_dir(app: &AppHandle, twin_id: &str) -> Result<PathBuf, AppError>
     Ok(base.join("twin-wikis").join(twin_id))
 }
 
+/// Resolve the on-disk wiki directory for a twin, with the caller-supplied
+/// `override_dir` treated strictly as a path RELATIVE to the app-managed twin
+/// wiki root (`default_wiki_dir`).
+///
+/// Security: `twin_compile_wiki` / `twin_audit_wiki` write LLM-distilled PII to
+/// disk. The directory must therefore never escape the app-controlled base —
+/// otherwise an injected `output_dir` (e.g. an OS autostart folder) combined
+/// with attacker-influenced memory content would yield arbitrary file writes.
+/// Containment mirrors the Drive sandbox's `resolve_safe`:
+///   - an empty/unset input maps to the default base (legitimate default —
+///     unchanged on-disk location),
+///   - absolute inputs are rejected (paths must be relative to the base),
+///   - any `..` (`Component::ParentDir`) component is rejected,
+///   - the candidate is joined onto the base and then canonicalized and
+///     verified to still live under the canonical base, catching symlink and
+///     residual-escape attempts.
 fn resolve_wiki_dir(
     app: &AppHandle,
     twin_id: &str,
     override_dir: Option<String>,
 ) -> Result<PathBuf, AppError> {
-    match override_dir.filter(|s| !s.trim().is_empty()) {
-        Some(s) => Ok(PathBuf::from(s)),
-        None => default_wiki_dir(app, twin_id),
+    // The app-controlled containment root. Also the default landing spot when
+    // no override is supplied, so legitimate/default usage is unaffected.
+    let base = default_wiki_dir(app, twin_id)?;
+
+    let rel = match override_dir.map(|s| s.trim().to_string()).filter(|s| !s.is_empty()) {
+        // Empty/unset override → the default base verbatim (legacy behavior).
+        None => return Ok(base),
+        Some(rel) => rel,
+    };
+
+    // Normalize leading separators so the override is unambiguously relative.
+    let rel = rel.trim_start_matches('/').trim_start_matches('\\');
+    if rel.is_empty() || rel == "." {
+        return Ok(base);
     }
+
+    let candidate = PathBuf::from(rel);
+
+    // Reject absolute inputs outright — the original bug was honoring any
+    // absolute path verbatim with zero containment.
+    if candidate.is_absolute() {
+        return Err(AppError::Validation(
+            "Wiki output_dir must be relative to the managed twin wiki root".into(),
+        ));
+    }
+
+    // Reject `..` (and any rooted/prefixed) components before touching the FS.
+    for comp in candidate.components() {
+        match comp {
+            Component::Normal(_) | Component::CurDir => {}
+            Component::ParentDir => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir may not contain '..'".into(),
+                ));
+            }
+            Component::RootDir | Component::Prefix(_) => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir must be relative".into(),
+                ));
+            }
+        }
+    }
+
+    let joined = base.join(&candidate);
+
+    // Canonicalize an existing ancestor (the deepest one that exists) and
+    // re-append the not-yet-created tail, then verify containment. This catches
+    // symlink escapes while still allowing a fresh sub-directory to be created.
+    let canonical = canonicalize_within(&joined)?;
+    let canonical_base = canonicalize_within(&base)?;
+    if !canonical.starts_with(&canonical_base) {
+        return Err(AppError::Forbidden(format!(
+            "Wiki output_dir escapes the managed twin wiki root: {rel}"
+        )));
+    }
+
+    Ok(canonical)
+}
+
+/// Canonicalize `path`, tolerating a tail that does not yet exist by walking up
+/// to the nearest existing ancestor, canonicalizing that, and re-joining the
+/// remaining (not-yet-created) components. Mirrors the Drive sandbox approach.
+fn canonicalize_within(path: &Path) -> Result<PathBuf, AppError> {
+    if path.exists() {
+        return std::fs::canonicalize(path)
+            .map_err(|e| AppError::Internal(format!("Failed to canonicalize wiki path: {e}")));
+    }
+    let mut ancestor = path.to_path_buf();
+    loop {
+        match ancestor.parent() {
+            Some(p) if p.as_os_str().is_empty() => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir resolves above the managed root".into(),
+                ));
+            }
+            Some(p) => ancestor = p.to_path_buf(),
+            None => {
+                return Err(AppError::Validation(
+                    "Wiki output_dir resolves above the managed root".into(),
+                ));
+            }
+        }
+        if ancestor.exists() {
+            break;
+        }
+    }
+    let canonical_ancestor = std::fs::canonicalize(&ancestor)
+        .map_err(|e| AppError::Internal(format!("Failed to canonicalize wiki path: {e}")))?;
+    let tail = path
+        .strip_prefix(&ancestor)
+        .map_err(|_| AppError::Internal("wiki path prefix strip failed".into()))?;
+    Ok(canonical_ancestor.join(tail))
 }
 
 // ============================================================================
