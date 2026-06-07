@@ -239,7 +239,26 @@ pub async fn cloud_webhook_relay_tick(
 
         let cutoff = s.last_seen.get(&trigger.id).cloned();
 
-        for firing in firings {
+        // Process oldest-first so a publish failure holds the watermark at the
+        // last contiguous success rather than letting a later success advance
+        // past — and silently strand — the failed firing
+        // (bug-hunt 2026-06-07 cloud-sync #4).
+        let mut ordered: Vec<&_> = firings.iter().filter(|f| f.fired_at.is_some()).collect();
+        ordered.sort_by(|a, b| {
+            match (
+                a.fired_at
+                    .as_deref()
+                    .and_then(|t| DateTime::parse_from_rfc3339(t).ok()),
+                b.fired_at
+                    .as_deref()
+                    .and_then(|t| DateTime::parse_from_rfc3339(t).ok()),
+            ) {
+                (Some(x), Some(y)) => x.cmp(&y),
+                _ => a.fired_at.cmp(&b.fired_at),
+            }
+        });
+
+        for firing in ordered {
             let fired_at: String = match &firing.fired_at {
                 Some(t) => t.clone(),
                 None => continue,
@@ -317,11 +336,17 @@ pub async fn cloud_webhook_relay_tick(
                     s.last_seen.insert(trigger.id.clone(), watermark);
                 }
                 Err(e) => {
-                    tracing::debug!(
+                    // Hold the watermark at the last successful firing and stop
+                    // this trigger; the failed firing (and any newer) are retried
+                    // next poll, in order. Advancing past it would lose it forever
+                    // (bug-hunt 2026-06-07 cloud-sync #4).
+                    tracing::warn!(
                         firing_id = %firing.id,
+                        trigger_id = %trigger.id,
                         error = %e,
-                        "Failed to publish relayed webhook event"
+                        "Failed to publish relayed webhook event; holding watermark and retrying next poll"
                     );
+                    break;
                 }
             }
         }
