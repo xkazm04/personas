@@ -12,18 +12,19 @@ import {
   useNodesState, useEdgesState, type Node,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { Target } from 'lucide-react';
+import { Target, Wand2 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import { silentCatch } from '@/lib/silentCatch';
 import { goalAdvancingTeams } from '@/api/devTools/devTools';
 import { GoalNode } from './GoalNode';
-import { buildGoalGraph, type GoalNodeData } from './goalGraphLayout';
+import { GoalClusterNode } from './GoalClusterNode';
+import { buildGoalGraph, type GoalNodeData, type GoalMapNode } from './goalGraphLayout';
 import { goalStatusLabel, GOAL_STATUSES, goalStatusMeta } from './goalStatus';
 import { GoalAtmosphere } from './goalsTheme';
 
-const nodeTypes = { goal: GoalNode };
+const nodeTypes = { goal: GoalNode, goalCluster: GoalClusterNode };
 
 const posKey = (projectId: string) => `personas.goalmap.pos.${projectId}`;
 
@@ -37,10 +38,14 @@ function loadPositions(projectId: string): Record<string, { x: number; y: number
   }
 }
 
-function savePositions(projectId: string, nodes: Node<GoalNodeData>[]) {
+function savePositions(projectId: string, nodes: GoalMapNode[]) {
   try {
     const map: Record<string, { x: number; y: number }> = {};
-    for (const n of nodes) map[n.id] = { x: Math.round(n.position.x), y: Math.round(n.position.y) };
+    // Goal nodes only — cluster labels derive their position per build.
+    for (const n of nodes) {
+      if (n.type !== 'goal') continue;
+      map[n.id] = { x: Math.round(n.position.x), y: Math.round(n.position.y) };
+    }
     localStorage.setItem(posKey(projectId), JSON.stringify(map));
   } catch (err) {
     silentCatch('GoalGraphMap.savePositions')(err);
@@ -90,11 +95,12 @@ export function GoalGraphMap({
   nodesRef.current = nodes;
 
   // Rebuild when goals/deps change, preserving the user's dragged positions.
+  // Cluster labels always take their freshly-computed centroid (never kept).
   useEffect(() => {
     setNodes((prev) => {
-      const prevPos = new Map(prev.map((n) => [n.id, n.position]));
+      const prevPos = new Map(prev.filter((n) => n.type === 'goal').map((n) => [n.id, n.position]));
       return graph.nodes.map((n) => {
-        const kept = prevPos.get(n.id);
+        const kept = n.type === 'goal' ? prevPos.get(n.id) : undefined;
         return kept ? { ...n, position: kept } : n;
       });
     });
@@ -114,8 +120,29 @@ export function GoalGraphMap({
     [projectId],
   );
 
-  const hereCount = useMemo(() => nodes.filter((n) => n.data.here).length, [nodes]);
-  const nextCount = useMemo(() => nodes.filter((n) => n.data.next).length, [nodes]);
+  // Tidy layout: drop the project's saved drag positions and re-seed from the
+  // status-clustered force sim — the escape hatch for maps whose hand-dragged
+  // scatter predates clustering.
+  const handleTidy = useCallback(() => {
+    if (!projectId) return;
+    try {
+      localStorage.removeItem(posKey(projectId));
+    } catch (err) {
+      silentCatch('GoalGraphMap.tidy')(err);
+    }
+    const fresh = buildGoalGraph({ goals, dependencies, advancingTeams });
+    setNodes(fresh.nodes);
+    setEdges(fresh.edges);
+  }, [projectId, goals, dependencies, advancingTeams, setNodes, setEdges]);
+
+  const hereCount = useMemo(
+    () => nodes.filter((n) => n.type === 'goal' && (n.data as GoalNodeData).here).length,
+    [nodes],
+  );
+  const nextCount = useMemo(
+    () => nodes.filter((n) => n.type === 'goal' && (n.data as GoalNodeData).next).length,
+    [nodes],
+  );
 
   if (goals.length === 0) {
     return (
@@ -146,6 +173,15 @@ export function GoalGraphMap({
           </span>
         ))}
         <span className="ml-auto text-foreground/50">{dl.goal_map_drag_hint}</span>
+        <button
+          type="button"
+          onClick={handleTidy}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded-interactive text-foreground hover:bg-primary/10 transition-colors focus-ring"
+          title={dl.goal_map_tidy_hint}
+        >
+          <Wand2 className="w-3 h-3" />
+          {dl.goal_map_tidy}
+        </button>
       </div>
 
       <div
@@ -160,10 +196,12 @@ export function GoalGraphMap({
             nodeTypes={nodeTypes}
             onNodesChange={onNodesChange}
             onNodeDragStop={handleNodeDragStop}
-            onNodeClick={(_, node) => onGoalClick?.((node.data as GoalNodeData).goalId)}
+            onNodeClick={(_, node) => {
+              if (node.type === 'goal') onGoalClick?.((node.data as GoalNodeData).goalId);
+            }}
             fitView
             fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.15}
+            minZoom={0.25}
             maxZoom={1.8}
             proOptions={{ hideAttribution: true }}
             className="!bg-transparent"

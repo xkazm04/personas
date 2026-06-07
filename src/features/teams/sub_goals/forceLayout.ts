@@ -12,6 +12,9 @@ export interface NodePos {
   vx: number;
   vy: number;
   radius: number;
+  /** Cluster key (e.g. canonical status) — nodes gravitate toward their
+   *  group's anchor so the zoomed-out constellation has shape, not scatter. */
+  group?: string;
 }
 
 export function nodeRadius(goal: DevGoal): number {
@@ -24,15 +27,22 @@ export function runForceSimulation(
   width: number,
   height: number,
   iterations: number = 120,
+  /** Per-group gravity anchors (see NodePos.group). Nodes without a group
+   *  (or without an anchor) fall back to plain center gravity. */
+  groupAnchors?: Map<string, { x: number; y: number }>,
 ): NodePos[] {
   const cx = width / 2;
   const cy = height / 2;
 
   nodes.forEach((n, i) => {
+    // Seed near the group anchor when one exists (jittered ring so the
+    // repulsion pass has something to push apart); otherwise the classic
+    // center ring.
+    const anchor = (n.group && groupAnchors?.get(n.group)) || undefined;
     const angle = (i / nodes.length) * Math.PI * 2;
-    const r = Math.min(width, height) * 0.3;
-    n.x = cx + Math.cos(angle) * r;
-    n.y = cy + Math.sin(angle) * r;
+    const r = anchor ? Math.min(width, height) * 0.08 : Math.min(width, height) * 0.3;
+    n.x = (anchor?.x ?? cx) + Math.cos(angle) * r;
+    n.y = (anchor?.y ?? cy) + Math.sin(angle) * r;
     n.vx = 0;
     n.vy = 0;
   });
@@ -73,6 +83,13 @@ export function runForceSimulation(
     }
 
     for (const n of nodes) {
+      // Group gravity (stronger) keeps clusters coherent; center gravity
+      // (weaker) keeps the whole layout from drifting off-canvas.
+      const anchor = (n.group && groupAnchors?.get(n.group)) || undefined;
+      if (anchor) {
+        n.vx += (anchor.x - n.x) * 0.03 * decay;
+        n.vy += (anchor.y - n.y) * 0.03 * decay;
+      }
       n.vx += (cx - n.x) * 0.005 * decay;
       n.vy += (cy - n.y) * 0.005 * decay;
       n.vx *= 0.6;

@@ -41,9 +41,29 @@ export interface GoalNodeData extends Record<string, unknown> {
   overdue: boolean;
 }
 
+/** Data for the per-status cluster label rendered at far zoom (GoalClusterNode). */
+export interface GoalClusterData extends Record<string, unknown> {
+  status: GoalStatus;
+  count: number;
+  fill: string;
+}
+
 // Force-sim canvas — larger than the viewport so 100+ nodes have room to breathe.
 const LAYOUT_W = 1400;
 const LAYOUT_H = 900;
+
+/**
+ * Group-gravity anchors: each canonical status claims a quadrant, so the
+ * zoomed-out constellation reads as regions ("that pile is blocked work")
+ * instead of an undifferentiated scatter. Mirrors the board's left-to-right
+ * your-turn → agent's-turn → done flow on the top row; trouble sinks bottom-left.
+ */
+const STATUS_ANCHORS = new Map<string, { x: number; y: number }>([
+  ['open', { x: LAYOUT_W * 0.24, y: LAYOUT_H * 0.32 }],
+  ['in-progress', { x: LAYOUT_W * 0.62, y: LAYOUT_H * 0.34 }],
+  ['blocked', { x: LAYOUT_W * 0.3, y: LAYOUT_H * 0.78 }],
+  ['done', { x: LAYOUT_W * 0.78, y: LAYOUT_H * 0.74 }],
+]);
 
 const EDGE_STYLE: Record<GoalEdgeType, { stroke: string; width: number; dash?: string }> = {
   parent: { stroke: 'rgba(139, 92, 246, 0.45)', width: 2 },
@@ -94,8 +114,10 @@ export interface BuildArgs {
   advancingTeams?: Map<string, string>;
 }
 
+export type GoalMapNode = Node<GoalNodeData> | Node<GoalClusterData>;
+
 export function buildGoalGraph({ goals, dependencies, savedPositions, advancingTeams }: BuildArgs): {
-  nodes: Node<GoalNodeData>[];
+  nodes: GoalMapNode[];
   edges: Edge[];
 } {
   if (goals.length === 0) return { nodes: [], edges: [] };
@@ -118,14 +140,18 @@ export function buildGoalGraph({ goals, dependencies, savedPositions, advancingT
     });
   }
 
-  // Seed positions via the force sim; dragged positions override per-node.
+  // Seed positions via the status-clustered force sim; dragged positions
+  // override per-node.
   const sim: NodePos[] = goals.map((g) => ({
     id: g.id, x: 0, y: 0, vx: 0, vy: 0, radius: nodeRadius(g),
+    group: normalizeGoalStatus(g.status),
   }));
   const positioned = runForceSimulation(
     sim,
     rawEdges.map((e) => ({ source: e.source, target: e.target })),
     LAYOUT_W, LAYOUT_H,
+    120,
+    STATUS_ANCHORS,
   );
   const posMap = new Map(positioned.map((p) => [p.id, p]));
 
@@ -158,6 +184,31 @@ export function buildGoalGraph({ goals, dependencies, savedPositions, advancingT
     };
   });
 
+  // Per-status cluster labels (far zoom only — GoalClusterNode hides itself
+  // past the dot band). Positioned at the cluster's centroid, floated above
+  // its topmost member; computed from the FINAL positions (saved or sim) so
+  // the label follows wherever the goals actually sit.
+  const clusterNodes: Node<GoalClusterData>[] = [];
+  const byStatus = new Map<GoalStatus, { x: number; y: number }[]>();
+  for (const n of nodes) {
+    const d = n.data as GoalNodeData;
+    const arr = byStatus.get(d.status);
+    if (arr) arr.push(n.position);
+    else byStatus.set(d.status, [n.position]);
+  }
+  for (const [status, positions] of byStatus) {
+    const cx = positions.reduce((s, p) => s + p.x, 0) / positions.length;
+    const topY = Math.min(...positions.map((p) => p.y));
+    clusterNodes.push({
+      id: `cluster:${status}`,
+      type: 'goalCluster',
+      position: { x: cx, y: topY - 90 },
+      draggable: false,
+      selectable: false,
+      data: { status, count: positions.length, fill: goalStatusMeta(status).map.fill },
+    });
+  }
+
   const edges: Edge[] = rawEdges.map((e, i) => {
     const style = EDGE_STYLE[e.type];
     return {
@@ -170,5 +221,5 @@ export function buildGoalGraph({ goals, dependencies, savedPositions, advancingT
     };
   });
 
-  return { nodes, edges };
+  return { nodes: [...nodes, ...clusterNodes], edges };
 }

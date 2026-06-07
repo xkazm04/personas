@@ -5,8 +5,9 @@
  *
  * - **Far** (zoom < 0.45): a status-coloured dot wearing its progress as an
  *   SVG ring sweep — progress reads graphically, no doomed tiny "42%" text.
- *   "Now"/"Next" goals float a counter-scaled title label (constant screen
- *   size) so the map's anchor points stay legible from orbit.
+ *   Orientation at this distance comes from the status-cluster regions and
+ *   their GoalClusterNode labels, not from per-node text (per-node labels
+ *   overflowed into soup at scale).
  * - **Mid** (0.45–0.9): a title-only card. The title's font size counter-
  *   scales with zoom (capped), holding ~13px on screen across the whole band
  *   — big type, instant scanning, no metadata noise.
@@ -26,8 +27,9 @@ import type { GoalNodeData } from './goalGraphLayout';
 
 type Props = NodeProps & { data: GoalNodeData };
 
-/** Below this zoom the node is a progress-ring dot (the 100-node overview). */
-const DOT_ZOOM = 0.45;
+/** Below this zoom the node is a progress-ring dot (the 100-node overview).
+ *  Exported — GoalClusterNode shows its region label in exactly this band. */
+export const DOT_ZOOM = 0.45;
 /** Above this zoom the node expands from title-only to the full metadata card. */
 const DETAIL_ZOOM = 0.9;
 
@@ -51,10 +53,8 @@ const DOT_SIZE = 64;
 const RING_R = 26;
 const RING_C = 2 * Math.PI * RING_R;
 
-function DotNode({ data, ring, zoom }: { data: GoalNodeData; ring: string; zoom: number }) {
+function DotNode({ data, ring }: { data: GoalNodeData; ring: string }) {
   const pct = clampPct(data.progress);
-  // Counter-scale so the label holds ~11px on screen down to zoom ≈ 0.2.
-  const labelScale = Math.min(5, 1 / zoom);
   return (
     <div className={`relative rounded-full ${ring}`} title={`${data.title} — ${pct}%`}>
       <Handle type="target" position={Position.Left} className="!w-1.5 !h-1.5 !border-0 !bg-primary/30" />
@@ -74,17 +74,6 @@ function DotNode({ data, ring, zoom }: { data: GoalNodeData; ring: string; zoom:
           strokeDasharray={`${(RING_C * pct) / 100} ${RING_C}`}
         />
       </svg>
-      {/* "Now"/"Next" anchors float a constant-screen-size title label */}
-      {(data.here || data.next) && (
-        <div className="pointer-events-none absolute top-full left-0 mt-1 w-full flex justify-center">
-          <span
-            className={`text-[11px] font-semibold whitespace-nowrap ${data.here ? 'text-amber-300' : 'text-blue-300'}`}
-            style={{ transform: `scale(${labelScale})`, transformOrigin: 'top center' }}
-          >
-            {data.title.length > 26 ? `${data.title.slice(0, 25)}…` : data.title}
-          </span>
-        </div>
-      )}
       <Handle type="source" position={Position.Right} className="!w-1.5 !h-1.5 !border-0 !bg-primary/30" />
     </div>
   );
@@ -95,8 +84,9 @@ function DotNode({ data, ring, zoom }: { data: GoalNodeData; ring: string; zoom:
 function TitleNode({ data, ring, zoom }: { data: GoalNodeData; ring: string; zoom: number }) {
   const pct = clampPct(data.progress);
   // Inverse-scaled, capped, quantized to 2px steps (avoids re-layout thrash
-  // while zooming). Holds the title at ~13px on screen across the band.
-  const fontSize = Math.min(32, Math.round(13 / zoom / 2) * 2);
+  // while zooming). Holds the title at ~12-13px on screen across the band;
+  // the 26px cap keeps cards from ballooning near the band floor.
+  const fontSize = Math.min(26, Math.round(13 / zoom / 2) * 2);
   return (
     <div
       className={`rounded-card border bg-secondary/70 backdrop-blur-sm px-4 py-3 w-[240px] shadow-elevation-1 ${ring}`}
@@ -192,7 +182,7 @@ function GoalNodeImpl({ data, selected }: Props) {
         ? 'ring-2 ring-primary/60'
         : '';
 
-  if (zoom < DOT_ZOOM) return <DotNode data={data} ring={ring} zoom={zoom} />;
+  if (zoom < DOT_ZOOM) return <DotNode data={data} ring={ring} />;
   if (zoom < DETAIL_ZOOM) return <TitleNode data={data} ring={ring} zoom={zoom} />;
   return <DetailNode data={data} ring={ring} />;
 }
