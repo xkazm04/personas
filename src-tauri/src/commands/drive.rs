@@ -396,6 +396,28 @@ pub(crate) fn resolve_safe(root: &Path, rel: &str) -> Result<PathBuf, AppError> 
     let canonical = if joined.exists() {
         std::fs::canonicalize(&joined)?
     } else {
+        // The canonicalise-ancestor-then-append-tail approach below only resolves
+        // the deepest *existing* ancestor, so a symlink living in the not-yet-
+        // existing tail would be appended verbatim and could redirect a write
+        // outside the root while still passing the textual `starts_with(root)`
+        // check. Reject any path that traverses a symlink (symlink_metadata does
+        // not follow the link, so it detects the link itself), which makes this
+        // whole class of escape impossible (bug-hunt 2026-06-07 creative #3).
+        let mut probe = root.to_path_buf();
+        for comp in candidate.components() {
+            if let Component::Normal(seg) = comp {
+                probe.push(seg);
+                if let Ok(meta) = std::fs::symlink_metadata(&probe) {
+                    if meta.file_type().is_symlink() {
+                        return Err(AppError::Forbidden(format!(
+                            "Path traverses a symlink, which is not allowed in the managed drive: {}",
+                            rel
+                        )));
+                    }
+                }
+            }
+        }
+
         let parent = joined
             .parent()
             .ok_or_else(|| AppError::Validation("Drive path has no parent directory".into()))?;
