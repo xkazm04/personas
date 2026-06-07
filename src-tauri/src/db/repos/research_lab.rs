@@ -629,18 +629,24 @@ pub fn create_experiment_run(
     passed: bool,
 ) -> Result<ResearchExperimentRun, AppError> {
     let id = Uuid::new_v4().to_string();
-    let conn = pool.get()?;
-    let run_number: i32 = conn.query_row(
+    let mut conn = pool.get()?;
+    // BEGIN IMMEDIATE so the `MAX(run_number)+1` read and the INSERT are one
+    // serialized write. DbPool hands out independent connections, so without a
+    // transaction two concurrent runs (double-click, or engine + manual) both
+    // read the same MAX and INSERT the same run_number (bug-hunt 2026-06-07
+    // research #2).
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let run_number: i32 = tx.query_row(
         "SELECT COALESCE(MAX(run_number), 0) + 1 FROM research_experiment_runs WHERE experiment_id = ?1",
         params![experiment_id],
         |r| r.get(0),
     )?;
     let passed_int: i32 = if passed { 1 } else { 0 };
-    conn.execute(
+    tx.execute(
         "INSERT INTO research_experiment_runs (id, experiment_id, run_number, outputs, metrics, passed) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![id, experiment_id, run_number, outputs, metrics, passed_int],
     )?;
-    conn.query_row(
+    let run = tx.query_row(
         "SELECT id, experiment_id, run_number, inputs, outputs, metrics, passed, execution_id, duration_ms, cost_usd, created_at FROM research_experiment_runs WHERE id = ?1",
         params![id],
         |row| Ok(ResearchExperimentRun {
@@ -649,5 +655,7 @@ pub fn create_experiment_run(
             passed: row.get(6)?, execution_id: row.get(7)?, duration_ms: row.get(8)?,
             cost_usd: row.get(9)?, created_at: row.get(10)?,
         }),
-    ).map_err(AppError::from)
+    )?;
+    tx.commit()?;
+    Ok(run)
 }
