@@ -128,10 +128,25 @@ impl SessionKeyPair {
                 .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         } else {
             // -- Legacy mode: plain RSA (small payloads only) --
-            // See the `Legacy RSA-only fallback policy` docblock on
-            // `SessionKeyPair::decrypt` for the retirement plan. The counter
-            // and warn below are the telemetry that policy relies on.
+            // The separator-less dispatch is attacker/frontend-controllable, so a
+            // downgraded or malicious renderer can force every credential write
+            // down this weaker, unauthenticated-transport RSA-only branch. It is
+            // therefore rejected by default and only honoured during an explicit
+            // migration window via PERSONAS_ALLOW_LEGACY_IPC=1 (bug-hunt
+            // 2026-06-07 #5). The counter/warn remain the telemetry the retirement
+            // plan in the docblock above relies on.
             let hits = LEGACY_IPC_DECRYPT_CALLS.fetch_add(1, Ordering::Relaxed) + 1;
+            if std::env::var("PERSONAS_ALLOW_LEGACY_IPC").unwrap_or_default() != "1" {
+                tracing::warn!(
+                    target: "legacy_ipc_decrypt",
+                    hits,
+                    payload_len = ciphertext_b64.len(),
+                    "legacy RSA-only IPC decrypt path REJECTED (set PERSONAS_ALLOW_LEGACY_IPC=1 to allow during migration)"
+                );
+                return Err(CryptoError::Decrypt(
+                    "legacy IPC payload rejected: expected hybrid RSA+AES-GCM format".into(),
+                ));
+            }
             tracing::warn!(
                 target: "legacy_ipc_decrypt",
                 hits,
