@@ -15,7 +15,7 @@ use tauri::{AppHandle, State};
 use crate::companion::stt::{
     self,
     catalog::{WhisperModelEntry, WHISPER_MODELS},
-    downloader, validate_audio_len, validate_language,
+    downloader, validate_audio_len, validate_language, validate_wav_format,
 };
 use crate::error::AppError;
 use crate::ipc_auth::require_auth;
@@ -37,6 +37,10 @@ pub async fn companion_stt_transcribe(
         .decode(audio_base64.as_bytes())
         .map_err(|e| AppError::Validation(format!("companion_stt: invalid base64 audio: {e}")))?;
     validate_audio_len(bytes.len())?;
+    // Enforce the documented 16 kHz mono PCM WAV contract before spawning the
+    // engine — a partial/non-WAV blob in the size band would otherwise transcribe
+    // to empty/garbage with no signal to the caller (bug-hunt 2026-06-07 #6).
+    validate_wav_format(&bytes)?;
 
     let lang = match language.as_deref() {
         Some(l) => Some(validate_language(l)?.to_string()),
