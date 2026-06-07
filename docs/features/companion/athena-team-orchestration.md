@@ -1,6 +1,8 @@
 # Athena as team orchestrator (post-run reconciliation)
 
-Status: **design + seam identified.** The deterministic orchestrator and the
+Status: **design + seam identified.** The multi-author team-channel design
+([`docs/architecture/team-channel-orchestration.md`](../../architecture/team-channel-orchestration.md))
+now plans this hook's output to ALSO land in the team channel (C2 phase). The deterministic orchestrator and the
 Sonnet decompose ship today; the Athena post-run hook is the next focused,
 separately-verified change (it touches the background orchestrator loop + a
 new companion command, which want a real multi-persona run to validate).
