@@ -169,7 +169,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
             <button
               type="button"
               onClick={handleClose}
-              className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+              className="p-1.5 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               aria-label={t.plugins.drive.cancel}
             >
               <X className="w-4 h-4" />
@@ -207,7 +207,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                     type="button"
                     onClick={() => setBackend(b)}
                     disabled={phase === "running"}
-                    className={`rounded-input border px-3 py-2 typo-body font-semibold text-left transition-colors ${backend === b
+                    className={`rounded-input border px-3 py-2 typo-body font-semibold text-left transition-colors focus-ring ${backend === b
                         ? "border-violet-500/55 bg-violet-500/20 text-violet-50 shadow-[0_0_14px_-6px_rgba(167,139,250,0.6)]"
                         : "border-primary/20 bg-secondary/30 text-foreground hover:bg-secondary/50 hover:border-primary/30"
                       } disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -308,7 +308,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <button
                 type="button"
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               >
                 <Copy className="w-3.5 h-3.5" />
                 {t.plugins.doc_signing.copy}
@@ -317,7 +317,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                 type="button"
                 onClick={handleSave}
                 disabled={!!saved}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/30 to-fuchsia-500/10 text-violet-50 border border-violet-500/50 typo-body font-semibold hover:from-violet-500/40 hover:to-fuchsia-500/15 disabled:opacity-50 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/30 to-fuchsia-500/10 text-violet-50 border border-violet-500/50 typo-body font-semibold hover:from-violet-500/40 hover:to-fuchsia-500/15 disabled:opacity-50 transition-all focus-ring"
               >
                 <Save className="w-3.5 h-3.5" />
                 {saved ? t.plugins.drive.ocr_saved : t.plugins.drive.ocr_save}
@@ -325,7 +325,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               >
                 {t.plugins.drive.confirm}
               </button>
@@ -335,7 +335,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
               <button
                 type="button"
                 onClick={handleClose}
-                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors"
+                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 transition-colors focus-ring"
               >
                 {t.plugins.drive.cancel}
               </button>
@@ -343,7 +343,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
                 type="button"
                 onClick={handleExtract}
                 disabled={!canExtract || phase === "running"}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/30 to-fuchsia-500/10 text-violet-50 border border-violet-500/50 typo-body font-semibold hover:from-violet-500/40 hover:to-fuchsia-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_14px_-4px_rgba(167,139,250,0.5)]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-input bg-gradient-to-b from-violet-500/30 to-fuchsia-500/10 text-violet-50 border border-violet-500/50 typo-body font-semibold hover:from-violet-500/40 hover:to-fuchsia-500/15 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-[0_0_14px_-4px_rgba(167,139,250,0.5)] focus-ring"
               >
                 <ScanLine className="w-3.5 h-3.5" />
                 {phase === "running"

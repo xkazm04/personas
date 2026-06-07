@@ -184,7 +184,7 @@ export default function ExperimentsPanel() {
                         <button
                           onClick={(e) => handleRun(e, exp)}
                           disabled={isRunning}
-                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-60"
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-60 focus-ring"
                         >
                           {isRunning
                             ? <Loader2 className="w-3 h-3 animate-spin" />
@@ -194,7 +194,7 @@ export default function ExperimentsPanel() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); setRunsDrawer(exp); }}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground transition-colors"
+                        className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-foreground/5 text-foreground hover:bg-foreground/10 hover:text-foreground transition-colors focus-ring"
                       >
                         <History className="w-3 h-3" />
                         {t.research_lab.view_runs}
@@ -203,7 +203,7 @@ export default function ExperimentsPanel() {
                   </div>
                   <button
                     onClick={(e) => handleDelete(e, exp.id)}
-                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background flex-shrink-0"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring flex-shrink-0"
                     title={t.common.delete}
                     aria-label={t.common.delete}
                   >
