@@ -128,6 +128,17 @@ Director/Athena orchestration discussion).
   parsed in the orchestrator's completed-step arm, role-gated + length-capped.
   Posts land `author_kind='persona'`, `consumer='display'` (visible in Collab,
   NOT injected into other personas' steps — no persona→persona prompt loop).
+- **Director bridge (C3)**: when the Director evaluates a persona that's on a
+  team, its coaching verdicts are ALSO posted into that team's channel
+  (`engine/director.rs::bridge_verdicts_to_channel`) — `author_kind='director'`,
+  `addressed_to=[persona]`, `consumer='inject'` — so the guidance reaches the
+  coached persona's next step (with a receipt) instead of dead-ending in the
+  Overview UI. Severity-ranked, capped at 3/run (the §5 rate guardrail). The
+  Director's evaluation payload also gains a recent-channel digest
+  (`render_persona_channel_digest`) so it can coach on cooperation, not only
+  solo output. (Storm-triggered Director runs — a channel-traffic heuristic
+  firing focused evaluations — are a planned C3 follow-up; runs are
+  command-driven today.)
 - **Multi-author UI**: `CollabLive` renders each author kind distinctly
   (user directive / persona / Athena / Director). **Red Room** reads the same
   channel-native rows via `listTeamChannel`, so both surfaces show identical
