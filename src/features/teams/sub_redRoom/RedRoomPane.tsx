@@ -31,7 +31,7 @@ const VARIANT_TABS: Array<{ id: RedRoomVariant; label: string; hint: string }> =
 export function RedRoomPane({ teamId, members }: { teamId: string; members: StudioMember[] }) {
   const memberPersonaIds = useMemo(() => members.map((m) => m.personaId), [members]);
   const { items, loaded, projectId } = useRedRoomFeed(teamId, memberPersonaIds);
-  const [variant, setVariant] = useState<RedRoomVariant>('channel');
+  const [variant, setVariant] = useState<RedRoomVariant>('transcript');
 
   return (
     <div className="h-full flex flex-col gap-2 min-h-0" data-testid="red-room">

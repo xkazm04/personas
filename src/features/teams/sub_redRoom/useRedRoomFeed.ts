@@ -38,6 +38,8 @@ export interface RedRoomEventItem {
   /** First URL-ish artifact found in the payload (PR link, run link…). */
   artifact: { url: string; label: string } | null;
   errorMessage: string | null;
+  /** Raw payload (JSON or text) — the detail modal shows it in full. */
+  payloadRaw: string | null;
 }
 
 export interface RedRoomMemoryItem {
@@ -114,6 +116,27 @@ function firstString(o: Record<string, unknown>, keys: string[]): string | undef
 
 function shortUrl(url: string): string {
   return url.replace(/^https?:\/\//, '').slice(0, 40);
+}
+
+/* ----------------------------------------------------------------------------
+ * Universal member colour — one colour per team member, everywhere.
+ * Primary source is the persona's own `color` (the same hue the roster dots,
+ * canvas nodes and editor use), so the Red Room agrees with the rest of the
+ * app. Personas without a colour get a stable palette pick hashed from their
+ * id, so the assignment never shifts between renders or sessions.
+ * -------------------------------------------------------------------------- */
+
+const MEMBER_FALLBACK_PALETTE = [
+  '#a78bfa', '#60a5fa', '#fbbf24', '#34d399', '#f87171',
+  '#38bdf8', '#fb923c', '#e879f9', '#4ade80', '#f472b6',
+];
+
+export function memberColor(persona: { color?: string | null } | undefined, personaId: string | null): string {
+  if (persona?.color) return persona.color;
+  if (!personaId) return '#9ca3af';
+  let h = 0;
+  for (let i = 0; i < personaId.length; i++) h = (h * 31 + personaId.charCodeAt(i)) >>> 0;
+  return MEMBER_FALLBACK_PALETTE[h % MEMBER_FALLBACK_PALETTE.length]!;
 }
 
 const POLL_MS = 10_000;
@@ -209,6 +232,7 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
         summary,
         artifact,
         errorMessage: e.error_message,
+        payloadRaw: e.payload,
       };
     });
     const memItems: RedRoomItem[] = memories.map((m) => ({
