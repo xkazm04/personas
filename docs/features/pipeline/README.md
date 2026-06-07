@@ -84,6 +84,39 @@ Saved templates appear as violet chips above the assignment list. Click a chip t
 
 Athena (the companion) can create assignments from chat: "have the X team handle Y" → she emits an `assign_team` op → an approval card → on approval, `companion_assign_team` decomposes + creates + starts the assignment with `source='athena'`, tied to a companion `OperativeMemory` operation. Progress shows as inline cards in the chat panel (`CompanionAssignmentCards`). See [companion/README.md](../companion/README.md).
 
+## sub_redRoom — the team's communication log (Red room)
+
+Studio workspace mode. A read-only comm log composed from existing data: the
+persona-event bus (what members emitted), event subscriptions (who listens =
+addressed-to), and team memories (pinned knowledge). Two views: **Transcript**
+(mission radio log — monospace rows, universal member colours, family + member
+filters, 20-item infinite batches, click → full-transmission modal with raw
+payload) and **Relay** (handoff edges emitter → event → consumers + a
+shared-memory rail). Feed: `useRedRoomFeed` (unscoped recent events filtered
+to member-or-project, 10s poll).
+
+## sub_collab — Collab, the living chat (Design B)
+
+Studio workspace mode; the production "watch the team cooperate + intervene"
+surface chosen from a three-way design comparison (A wire-only / B read-model
+/ C dialogue-native — C's mock is kept as a tab for the future
+Director/Athena orchestration discussion).
+
+- **Read-model**: `list_team_channel` (commands/teams/team_channel.rs) unions
+  the authoritative step layer (`team_assignment_events`, noisy kinds
+  filtered), member bus traffic (`persona_events`, telemetry excluded) and
+  `team_memories` server-side, timestamps normalized to RFC3339, keyset-paged
+  (`before` cursor). Frontend: `useTeamChannel` — head refresh on
+  TEAM_ASSIGNMENT_PROGRESS push + 15s poll fallback, infinite history at the
+  top sentinel, presence derived from running steps.
+- **Directives**: the composer posts via `post_team_directive` → a
+  `team_memories` row (category `directive`, importance 10, persona_id NULL =
+  the user). Delivery is at STEP BOUNDARIES: the orchestrator injects the
+  team's recent directives into every step's input (`user_directives`) and
+  prompt (USER DIRECTIVES block in `team_context`), then writes a read-receipt
+  into the directive's `tags` (`{"deliveries":[{step_id,persona_id,at}]}`) —
+  rendered as ✓✓ "seen by" chips under the message.
+
 ## State and backend
 
 - Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.

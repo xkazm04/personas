@@ -140,12 +140,49 @@ pub fn build_team_alignment_block(
     // team personas (Dev Clone, QA Guardian) implement, commit, and open/merge
     // PRs in line with it. Resolved from the same project as the goals.
     let standards = resolve_standards_policy(pool, persona, team_id);
-    match (alignment, standards) {
-        (Some(a), Some(s)) => Some(format!("{a}{s}")),
-        (Some(a), None) => Some(a),
-        (None, Some(s)) => Some(s),
-        (None, None) => None,
+
+    // Design B (living chat): the user's channel directives — explicit,
+    // binding, above generic memory injection. Recency-capped (14d) and
+    // line-capped so the cost guardrail holds.
+    let directives = render_user_directives(pool, team_id);
+
+    let parts: Vec<String> = [alignment, directives, standards]
+        .into_iter()
+        .flatten()
+        .collect();
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.concat())
     }
+}
+
+/// Render the team's recent user directives (`team_memories.category =
+/// 'directive'`) as a binding prompt block. Newest 5 within 14 days; each
+/// line capped. Returns None when the channel has no recent directives.
+fn render_user_directives(pool: &DbPool, team_id: &str) -> Option<String> {
+    let directives =
+        crate::db::repos::resources::team_memories::list_directives(pool, team_id, 5).ok()?;
+    if directives.is_empty() {
+        return None;
+    }
+    let mut out = String::from(
+        "
+
+## USER DIRECTIVES — read before acting
+The user posted these into the team channel. They are BINDING guidance for current work — when a directive conflicts with a memory or your default plan, the directive wins. Acknowledge relevant directives in your result summary.
+",
+    );
+    for d in &directives {
+        let mut line = d.content.replace(['
+', ''], " ");
+        if line.chars().count() > 240 {
+            line = line.chars().take(240).collect::<String>() + "…";
+        }
+        out.push_str(&format!("- [{}] {}
+", d.created_at, line));
+    }
+    Some(out)
 }
 
 /// Render the bound project's standards & branching policy as a prompt block,

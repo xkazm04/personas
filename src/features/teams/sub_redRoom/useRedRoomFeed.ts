@@ -82,7 +82,7 @@ interface ParsedPayload {
 }
 
 /** Best-effort extraction of a human line + a link artifact from an event payload. */
-function parsePayload(payload: string | null): ParsedPayload {
+export function parsePayload(payload: string | null): ParsedPayload {
   if (!payload) return { summary: null, artifact: null };
   try {
     const p: unknown = JSON.parse(payload);

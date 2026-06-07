@@ -212,7 +212,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
           ) : mode.kind === 'redroom' ? (
             <RedRoomPane teamId={teamId} members={members} />
           ) : mode.kind === 'collab' ? (
-            <CollabPane />
+            <CollabPane teamId={teamId} members={members} />
           ) : mode.kind === 'workspace' ? (
             <TeamWorkspacePane teamId={teamId} />
           ) : selected ? (

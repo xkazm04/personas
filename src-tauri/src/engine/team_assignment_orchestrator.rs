@@ -605,7 +605,24 @@ async fn run_step(
     // rediscover the implementer's work from repo state and can pick the wrong
     // PR. Forward each direct predecessor's output_summary (capped).
     let predecessor_outputs = collect_predecessor_outputs(pool, &step);
-    let input_payload = build_step_input(&step, use_case_id.as_deref(), &predecessor_outputs);
+    // Design B (living chat): user directives posted into the team channel are
+    // delivered at STEP BOUNDARIES — each step launch injects the recent
+    // directives and records a read-receipt the Collab UI renders.
+    let directives = team_assignment_team_id(pool, &step.assignment_id)
+        .and_then(|tid| {
+            crate::db::repos::resources::team_memories::list_directives(pool, &tid, 5).ok()
+        })
+        .unwrap_or_default();
+    let directive_values: Vec<serde_json::Value> = directives
+        .iter()
+        .map(|d| json!({ "content": d.content, "posted_at": d.created_at }))
+        .collect();
+    let input_payload = build_step_input(
+        &step,
+        use_case_id.as_deref(),
+        &predecessor_outputs,
+        &directive_values,
+    );
     let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
 
     let exec = exec_repo::create(
@@ -619,6 +636,11 @@ async fn run_step(
 
     assignment_repo::set_step_execution(pool, &step.id, &exec.id)?;
     assignment_repo::update_step_status(pool, &step.id, "running", None, None)?;
+    for d in &directives {
+        let _ = crate::db::repos::resources::team_memories::record_directive_delivery(
+            pool, &d.id, &step.id, &persona_id,
+        );
+    }
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
     // First sign of work on a goal-linked assignment: flip the goal
     // open→in-progress so it reflects activity before any step finishes.
@@ -990,10 +1012,22 @@ fn record_bounce_lesson(
     }
 }
 
+/// Team id for an assignment (Design B directive delivery).
+fn team_assignment_team_id(pool: &Arc<DbPool>, assignment_id: &str) -> Option<String> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT team_id FROM team_assignments WHERE id = ?1",
+        rusqlite::params![assignment_id],
+        |r| r.get(0),
+    )
+    .ok()
+}
+
 fn build_step_input(
     step: &TeamAssignmentStep,
     use_case_id: Option<&str>,
     predecessor_outputs: &[serde_json::Value],
+    user_directives: &[serde_json::Value],
 ) -> serde_json::Value {
     let mut input = json!({
         "assignment_id": step.assignment_id,
@@ -1006,6 +1040,10 @@ fn build_step_input(
     // acts on THIS work (PR URL, branch, what was done), not a fresh discovery.
     if !predecessor_outputs.is_empty() {
         input["predecessor_outputs"] = serde_json::Value::Array(predecessor_outputs.to_vec());
+    }
+    // Design B: the user's channel directives — binding guidance for this step.
+    if !user_directives.is_empty() {
+        input["user_directives"] = serde_json::Value::Array(user_directives.to_vec());
     }
     // V1 (QA fix loop): a step reset for rework carries the QA verdict in its
     // error_message — surface it so the re-run FIXES the bounced PR (push to
