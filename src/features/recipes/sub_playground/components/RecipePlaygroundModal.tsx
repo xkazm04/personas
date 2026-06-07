@@ -93,7 +93,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
       <div className="flex-1 min-h-0 overflow-y-auto">
         <TabTransition tabKey={activeTab}>
           {activeTab === 'overview' && <RecipeOverviewTab recipe={currentRecipe} />}
-          {activeTab === 'test-runner' && <RecipeTestRunnerTab recipe={currentRecipe} />}
+          {activeTab === 'test-runner' && <RecipeTestRunnerTab recipe={currentRecipe} testRunner={testRunner} />}
           {activeTab === 'versions' && (
             <RecipeVersionsTab recipe={currentRecipe} onRecipeUpdated={setCurrentRecipe} />
           )}
