@@ -1020,10 +1020,40 @@ fn drive_root_path() -> Result<std::path::PathBuf, AppError> {
 }
 
 fn resolve_within(root: &std::path::Path, rel: &str) -> Result<std::path::PathBuf, AppError> {
-    let candidate = root.join(rel.trim_start_matches('/').trim_start_matches('\\'));
-    let canon = candidate
-        .canonicalize()
-        .unwrap_or_else(|_| candidate.clone());
+    let rel = rel.trim_start_matches('/').trim_start_matches('\\');
+    let candidate = std::path::PathBuf::from(rel);
+
+    // Reject absolute paths and `..` escapes up front. The canonical
+    // prefix check below is NOT sufficient on its own: when the target
+    // doesn't exist (count/list on a missing dir, or a write to a new
+    // path) `canonicalize()` fails and we fall back to the literal joined
+    // path -- and `Path::starts_with` is purely lexical, so
+    // `root/../../x` would still "start with" root and slip through. Mirror
+    // drive::resolve_safe's component guard so auto-fire local_drive ops
+    // (list/count/write/tts) can't escape the sandbox.
+    if candidate.is_absolute() {
+        return Err(AppError::Internal(format!(
+            "local_drive: rel_path `{rel}` must be relative to the drive root"
+        )));
+    }
+    for comp in candidate.components() {
+        match comp {
+            std::path::Component::Normal(_) | std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                return Err(AppError::Internal(format!(
+                    "local_drive: rel_path `{rel}` may not contain '..'"
+                )));
+            }
+            std::path::Component::RootDir | std::path::Component::Prefix(_) => {
+                return Err(AppError::Internal(format!(
+                    "local_drive: rel_path `{rel}` must be relative to the drive root"
+                )));
+            }
+        }
+    }
+
+    let joined = root.join(&candidate);
+    let canon = joined.canonicalize().unwrap_or_else(|_| joined.clone());
     let root_canon = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
     if !canon.starts_with(&root_canon) {
         return Err(AppError::Internal(format!(
