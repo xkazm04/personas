@@ -1,6 +1,6 @@
 # Team Channel Orchestration — "C-on-B" multi-author design
 
-Status: **design for joint discussion** (2026-06-07). Design B (the Collab
+Status: **DECIDED — ready to build** (2026-06-07; open questions resolved by the user, see §8). Design B (the Collab
 living chat: channel read-model + acknowledged directives) is SHIPPED; this
 doc reconsiders the Design C scope — a relay chat where **all orchestration
 actors write and listen** — against what the codebase actually has. Decision
@@ -74,11 +74,15 @@ The `list_team_channel` read-model gains one source branch; existing
 - **User** — `post_team_directive` re-targets the new table (UI unchanged).
 - **Personas** — a `{"channel_post": {text, reply_to?, mentions?}}` protocol
   verb parsed from step outputs, exactly like the Strategist triage verb.
-  Opt-in per use case (not every step should chat). This is the persona
-  *reply* path — acknowledging directives, asking the channel, announcing.
+  Opt-in per use case; **first wave (decided): Implementer (Dev Clone), QA
+  Guardian, Architect** — the three roles whose acknowledgments and questions
+  carry the most coordination signal. This is the persona *reply* path —
+  acknowledging directives, asking the channel, announcing.
 - **Athena** — `companion_post_team_message(team_id, body, addressed_to?)`.
-  Interactive use posts directly; autonomous use routes through the existing
-  approval executor (same gate as `companion_assign_team`).
+  Interactive use posts directly. Autonomous use is **free (no approval gate)
+  when the relevant `autonomous_*` setting is on** (decided — mirrors review
+  triage); with autonomy off, posts route through the approval executor.
+  Rate caps (§5) are the backstop either way.
 - **Director** — on verdict insert, if the persona is a team member: post the
   recommendation into that team's channel, `author_kind='director'`,
   `addressed_to=[persona]`, `consumer='inject'`. Coaching finally reaches the
@@ -95,8 +99,9 @@ The `list_team_channel` read-model gains one source branch; existing
   author='athena') as well as OperativeMemory; (b) `@athena` mentions route
   to `setPendingPrompt` — the user summons her inside the team conversation.
 - **Director** — (a) `gather_context` gains the channel slice for team-scoped
-  runs; (b) a rework-storm / failure-burst heuristic on channel traffic
-  triggers a focused `runDirectorOnPersona` (rate-limited).
+  runs; (b) **decided:** scheduled batches AND a rework-storm / failure-burst
+  heuristic on channel traffic both trigger focused `runDirectorOnPersona`
+  runs (rate-limited).
 - **User** — Collab Live renders all four author kinds (styling per kind);
   Red Room's Transcript becomes a raw lens over the same read-model (§6).
 
@@ -124,8 +129,10 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
   autonomous posts require approval; neither reacts to the other.
 - **Cost guardrail:** injection window stays recency- and length-capped
   (today: 5 newest / 14d / 240 chars per line).
-- **Retention:** channel messages TTL-pruned with the run history (decide
-  with the eval-bundle export — channel slices are valuable eval evidence).
+- **Retention:** channel messages TTL-pruned with the run history.
+  **Decided:** channel slices ARE exported into the certification bundles
+  (`docs/test/` harness) as graded cooperation evidence — retention must
+  outlive the eval window of any in-flight cert campaign.
 
 ## 6. Surface impact summary
 
@@ -133,7 +140,7 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 | --- | --- |
 | **Teams / orchestrator** | + messages table, + injection widening, + soft-pause flag. Tick loop untouched. |
 | **Collab (sub_collab)** | Author-kind styling, threading (reply_to), mention autocomplete, pause button. The C mock tab retires once real. |
-| **Red Room (sub_redRoom)** | Transcript becomes a raw lens over the channel read-model; Relay retires; folder folds into sub_collab. |
+| **Red Room (sub_redRoom)** | **Stays a separate surface for now (decided)** — likely converges into one Channel surface later. C1 only re-points its Transcript at the unified read-model so both surfaces show identical data; no folder fold-in yet. |
 | **Athena (companion)** | + `companion_post_team_message`, + reconciliation hook (channel-targeted), + @mention → pendingPrompt. Autonomy gated by the existing approval executor. |
 | **Director (sub_director + engine)** | + verdict→channel bridge (addressed coaching with receipts), + channel-aware context, + traffic-triggered focused runs. The Overview UI keeps the analytics; the channel carries the coaching. |
 
@@ -141,20 +148,23 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 
 | Phase | Scope | Effort |
 | --- | --- | --- |
-| **C1** | Messages table + author model + read-model branch + persona `channel_post` verb + multi-author UI + Red Room fold-in | ~1 week |
+| **C1** | Messages table + author model + read-model branch + persona `channel_post` verb (Implementer/QA/Architect) + multi-author UI; Red Room re-pointed at the unified read-model (no fold-in) | ~1 week |
 | **C2** | Athena adapters (post message, reconciliation→channel, @mention routing, approval gating) | ~1 week |
 | **C3** | Director bridge (verdict→channel, channel-aware context, storm trigger) — *cheapest high-value; can run before C2* | days |
 | **C4** | Soft-pause (orchestrator flag + UI) | days |
 
-## 8. Open questions for the joint design pass
+## 8. Decisions (resolved 2026-06-07)
 
-1. **Athena's autonomy level in the channel** — approval-gated always, or
-   free when `autonomous_*` settings are on (mirroring review triage)?
-2. **Director trigger policy** — scheduled batch only, or channel-traffic
-   triggers too? What storm thresholds?
-3. **Persona reply scope** — `channel_post` verb on which use cases? (QA +
-   implementer acknowledgments first?)
-4. **Red Room name/identity** — does the merged surface keep "Red room",
-   "Collab", or become one "Channel"?
-5. **Retention + eval** — do channel slices enter the certification bundles
-   (`docs/test/`) as graded evidence of cooperation quality?
+1. **Athena autonomy** — free (no approval gate) when the relevant
+   `autonomous_*` setting is on; approval-gated otherwise. Rate caps remain.
+2. **Director triggers** — both: scheduled batches AND channel-traffic storm
+   triggers (thresholds tuned during C3; start conservative).
+3. **Persona reply scope** — first wave: Implementer (Dev Clone) + QA
+   Guardian + Architect.
+4. **Surface identity** — Red Room and Collab stay SEPARATE for now (likely
+   one "Channel" surface later); C1 unifies only the read-model underneath.
+5. **Certification** — yes: channel slices enter the cert bundles as graded
+   cooperation evidence.
+
+**Build order:** C1 (foundation — everything depends on the messages table)
+→ C3 (Director bridge) → C2 (Athena adapters) → C4 (soft-pause).
