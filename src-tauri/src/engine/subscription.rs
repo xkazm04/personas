@@ -2283,6 +2283,113 @@ impl ReactiveSubscription for BacklogTriageSubscription {
 }
 
 // ---------------------------------------------------------------------------
+// Director storm trigger (C3) — focused coaching when a persona's team work
+// shows a burst of failures / QA change-requests.
+// ---------------------------------------------------------------------------
+
+/// Opt-in autonomous loop: when a team persona hits a STORM (≥2 step failures
+/// or QA change-requests in the last 2h) and the Director hasn't coached it via
+/// the channel in the last 6h, run a focused Director evaluation. The coaching
+/// is bridged into the team channel by `run_director_cycle_for` (C3), so it
+/// reaches the persona's next step. Complements the command-driven batch runs.
+pub struct DirectorStormSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// A persona whose recent team work shows a storm and who hasn't been coached
+/// in the channel recently (the rate-limit). Returns its persona id.
+fn find_storm_persona(pool: &DbPool) -> Result<Option<String>, crate::error::AppError> {
+    let conn = pool.get()?;
+    let mut stmt = conn.prepare(
+        "SELECT s.assigned_persona_id, COUNT(*) AS bursts
+         FROM team_assignment_events e
+         JOIN team_assignment_steps s ON s.id = e.step_id
+         JOIN team_assignments a ON a.id = e.assignment_id
+         WHERE e.kind IN ('step_failed', 'qa_changes_requested_rework')
+           AND datetime(e.created_at) > datetime('now', '-2 hours')
+           AND s.assigned_persona_id IS NOT NULL
+           AND a.team_id IS NOT NULL
+           AND NOT EXISTS (
+               SELECT 1 FROM team_channel_messages m
+               WHERE m.author_kind = 'director'
+                 AND m.addressed_to LIKE '%\"' || s.assigned_persona_id || '\"%'
+                 AND datetime(m.created_at) > datetime('now', '-6 hours')
+           )
+         GROUP BY s.assigned_persona_id
+         HAVING bursts >= 2
+         ORDER BY bursts DESC
+         LIMIT 1",
+    )?;
+    let row = stmt
+        .query_map([], |r| r.get::<_, String>(0))?
+        .filter_map(Result::ok)
+        .next();
+    Ok(row)
+}
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for DirectorStormSubscription {
+    fn name(&self) -> &'static str {
+        "director_storm"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(1800)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(3600)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(600)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_DIRECTOR_STORM,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("director_storm: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let persona = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || find_storm_persona(&pool))
+                .await
+                .ok()
+                .and_then(|r| r.ok())
+                .flatten()
+        };
+        let Some(persona_id) = persona else {
+            return;
+        };
+
+        let Some(state) = self.app.try_state::<std::sync::Arc<crate::AppState>>() else {
+            return;
+        };
+        tracing::info!(persona_id = %persona_id, "director_storm: storm detected — running focused Director coaching");
+        match crate::engine::director::run_director_cycle_for(
+            state.inner(),
+            self.app.clone(),
+            &persona_id,
+        )
+        .await
+        {
+            Ok(n) => tracing::info!(persona_id = %persona_id, verdicts = n, "director_storm: coaching complete"),
+            Err(e) => tracing::warn!(persona_id = %persona_id, error = %e, "director_storm: coaching failed"),
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Queue drain watchdog — re-drain the execution queue after a quota cooldown
 // ---------------------------------------------------------------------------
 

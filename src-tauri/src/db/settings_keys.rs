@@ -277,6 +277,15 @@ pub const AUTONOMOUS_BACKLOG_TRIAGE: &str = "autonomous_backlog_triage";
 /// Default for [`AUTONOMOUS_BACKLOG_TRIAGE`] — off (opt-in autonomy).
 pub const AUTONOMOUS_BACKLOG_TRIAGE_DEFAULT: bool = false;
 
+/// When `"true"`, the Director runs a focused coaching evaluation on a persona
+/// whose recent team work shows a STORM (a burst of step failures / QA
+/// change-requests). Default OFF — opt-in. Read by
+/// `engine::subscription::DirectorStormSubscription`. The coaching is bridged
+/// into the team channel (C3). Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_DIRECTOR_STORM: &str = "autonomous_director_storm";
+/// Default for [`AUTONOMOUS_DIRECTOR_STORM`] — off (opt-in autonomy).
+pub const AUTONOMOUS_DIRECTOR_STORM_DEFAULT: bool = false;
+
 /// Global cap on the number of executions that may run concurrently across ALL
 /// personas. Read ONCE at engine construction (see
 /// `crate::engine::ExecutionEngine::new`) and seeded into the
@@ -367,6 +376,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_BACKLOG_TO_GOAL,
     AUTONOMOUS_IDEA_SCAN,
     AUTONOMOUS_BACKLOG_TRIAGE,
+    AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
@@ -472,6 +482,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_BACKLOG_TO_GOAL
         | AUTONOMOUS_IDEA_SCAN
         | AUTONOMOUS_BACKLOG_TRIAGE
+        | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),

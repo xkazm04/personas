@@ -511,6 +511,14 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Director storm trigger (C3) — runs focused Director coaching on a
+        // persona whose recent team work shows a burst of failures / QA
+        // change-requests, bridging the verdict into the team channel
+        // (default-OFF `autonomous_director_storm`; 6h/persona rate-limit).
+        Box::new(subscription::DirectorStormSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).

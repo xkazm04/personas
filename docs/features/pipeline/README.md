@@ -136,9 +136,12 @@ Director/Athena orchestration discussion).
   Overview UI. Severity-ranked, capped at 3/run (the §5 rate guardrail). The
   Director's evaluation payload also gains a recent-channel digest
   (`render_persona_channel_digest`) so it can coach on cooperation, not only
-  solo output. (Storm-triggered Director runs — a channel-traffic heuristic
-  firing focused evaluations — are a planned C3 follow-up; runs are
-  command-driven today.)
+  solo output. **Storm trigger**: an opt-in autonomous loop
+  (`DirectorStormSubscription`, setting `autonomous_director_storm`, default
+  OFF) runs a focused Director evaluation on a persona whose recent team work
+  shows a burst (≥2 step failures / QA change-requests in 2h), rate-limited to
+  once per persona per 6h via the Director's own channel posts — complementing
+  the command-driven batch runs.
 - **Multi-author UI**: `CollabLive` renders each author kind distinctly
   (user directive / persona / Athena / Director). **Red Room** reads the same
   channel-native rows via `listTeamChannel`, so both surfaces show identical
