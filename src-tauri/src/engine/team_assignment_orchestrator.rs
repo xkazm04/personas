@@ -673,6 +673,10 @@ async fn run_step(
                             "QA requested changes {} times — fix-loop cap reached; human review required",
                             step.retry_count
                         );
+                        // W7: the costliest bounce (the one that reaches a
+                        // human) must also teach the team — previously only
+                        // rework rounds wrote the lesson.
+                        record_bounce_lesson(pool, &step, summary.as_deref(), step.retry_count, true);
                         assignment_repo::update_step_status(
                             pool,
                             &step.id,
@@ -857,33 +861,8 @@ fn trigger_qa_rework(
     assignment_repo::update_step_status(pool, &qa_step.id, "pending", None, qa_summary)?;
     assignment_repo::increment_step_retry(pool, &qa_step.id)?;
 
-    // T6 (learning loop): every bounce is a durable lesson — write it to the
-    // shared team ledger as a `constraint` so future increments avoid the same
-    // failure (the ledger's top-N digest is injected into every member's
-    // prompt). The round number keeps repeat bounces distinct. Best-effort.
-    if let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) {
-        let lesson: String = verdict.chars().take(800).collect();
-        let tm = crate::db::models::CreateTeamMemoryInput {
-            team_id: assignment.team_id.clone(),
-            run_id: None,
-            member_id: None,
-            persona_id: qa_step.assigned_persona_id.clone(),
-            title: format!(
-                "QA bounce (round {}): {}",
-                qa_step.retry_count + 1,
-                assignment.title
-            ),
-            content: format!(
-                "QA requested changes on this increment's PR. Verdict: {lesson}"
-            ),
-            category: Some("constraint".to_string()),
-            importance: Some(7),
-            tags: Some("qa,changes_requested".to_string()),
-        };
-        if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
-            tracing::warn!(step_id = %qa_step.id, error = %e, "qa rework: failed to write bounce lesson to team ledger");
-        }
-    }
+    // T6/W7 (learning loop): every bounce is a durable lesson.
+    record_bounce_lesson(pool, qa_step, Some(&verdict), qa_step.retry_count + 1, false);
     assignment_repo::insert_event(
         pool,
         &qa_step.assignment_id,
@@ -945,6 +924,64 @@ fn collect_predecessor_outputs(
             }))
         })
         .collect()
+}
+
+/// T6/W7: write a QA bounce to the shared team ledger as a directive
+/// `constraint` lesson. Fires on EVERY bounce — rework rounds AND the cap-out
+/// (the cap path previously skipped it, so the costliest failures taught the
+/// team nothing and Dev Clone repeated the same blocker across increments —
+/// observed: the identical NODE_ENV tsc error bounced three different PRs).
+/// The content leads with a do-not-repeat directive and carries QA's verdict
+/// tail (which includes the exact fix); importance 8 (9 when capped) keeps it
+/// inside the top-N prompt injection every member reads.
+fn record_bounce_lesson(
+    pool: &DbPool,
+    qa_step: &TeamAssignmentStep,
+    qa_summary: Option<&str>,
+    round: i32,
+    capped: bool,
+) {
+    let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) else {
+        return;
+    };
+    let lesson: String = qa_summary
+        .unwrap_or("(no QA summary captured)")
+        .chars()
+        .take(900)
+        .collect();
+    let title = if capped {
+        format!("QA bounce CAP — human gate reached: {}", assignment.title)
+    } else {
+        format!("QA bounce (round {round}): {}", assignment.title)
+    };
+    let tm = crate::db::models::CreateTeamMemoryInput {
+        team_id: assignment.team_id.clone(),
+        run_id: None,
+        member_id: None,
+        persona_id: qa_step.assigned_persona_id.clone(),
+        title,
+        content: format!(
+            "RECURRING-RISK CONSTRAINT — do NOT repeat this failure in ANY future increment. \
+             QA bounced this increment's PR{}. The verdict below names the blocker and the \
+             exact fix; apply the fix pattern proactively before opening future PRs. \
+             Verdict: {lesson}",
+            if capped {
+                " twice and the fix loop CAPPED OUT to a human"
+            } else {
+                ""
+            },
+        ),
+        category: Some("constraint".to_string()),
+        importance: Some(if capped { 9 } else { 8 }),
+        tags: Some(if capped {
+            "qa,changes_requested,capped".to_string()
+        } else {
+            "qa,changes_requested".to_string()
+        }),
+    };
+    if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
+        tracing::warn!(step_id = %qa_step.id, error = %e, "bounce lesson: failed to write to team ledger");
+    }
 }
 
 fn build_step_input(
