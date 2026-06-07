@@ -223,12 +223,20 @@ impl ManifestSync {
     }
 
     /// Handle an incoming ManifestRequest by building and returning our manifest.
+    ///
+    /// Resources flagged `requires_auth` are NEVER included here: this manifest is
+    /// served to ANY connected peer, and peer identity is not yet cryptographically
+    /// verified (see followups-2026-06-08.md "p2p signed handshake"). Disclosing an
+    /// auth-gated resource to an unauthenticated peer is exactly the leak the flag
+    /// exists to prevent, so we fail closed until verified-peer gating exists
+    /// (bug-hunt 2026-06-07 p2p #3, manifest half).
     pub fn build_local_manifest(&self) -> Result<Vec<ManifestEntry>, AppError> {
         let conn = self.pool.get()?;
         let mut stmt = conn.prepare(
             "SELECT resource_type, resource_id, display_name, access_level, tags
              FROM exposed_resources
-             WHERE expires_at IS NULL OR expires_at > datetime('now')",
+             WHERE (expires_at IS NULL OR expires_at > datetime('now'))
+               AND COALESCE(requires_auth, 0) = 0",
         )?;
 
         let entries = stmt
