@@ -152,6 +152,7 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 | **C2** | Athena adapters (post message, reconciliation→channel, @mention routing, approval gating) | ~1 week |
 | **C3** | Director bridge (verdict→channel, channel-aware context, storm trigger) — *cheapest high-value; can run before C2* | days |
 | **C4** | Soft-pause (orchestrator flag + UI) | days |
+| **C5** | **Flagship UI polish** (§9) — header band, author voice, threading, intervention affordances, demo | ~1 week |
 
 ## 8. Decisions (resolved 2026-06-07)
 
@@ -167,4 +168,38 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
    cooperation evidence.
 
 **Build order:** C1 (foundation — everything depends on the messages table)
-→ C3 (Director bridge) → C2 (Athena adapters) → C4 (soft-pause).
+→ C3 (Director bridge) → C2 (Athena adapters) → C4 (soft-pause) → **C5
+(flagship polish)**.
+
+## 9. C5 — flagship UI polish (final phase)
+
+Once the channel is functionally complete (C1–C4), one dedicated phase turns
+it from "a working feature" into a **flagship surface** — the component we
+demo. Scope (calibrate against `.claude/Design.md` tokens + the most polished
+existing surfaces, e.g. the questionnaire adoption flow):
+
+- **Identity & header band** — a real channel header (team crest, live member
+  presence with role colours, mission context, run/cost glance) instead of the
+  utilitarian strip; decorative-but-restrained background per Design.md (no
+  always-on motion — entry/hover/click-gated only).
+- **Author voice** — each author kind reads distinctly at a glance: user
+  (right-aligned directive), persona (avatar + role colour), Athena (companion
+  sigil + her accent), Director (coaching ribbon). Threading (`reply_to`)
+  rendered as indented sub-conversation, not flat rows.
+- **Live texture** — typing/working indicators from presence, message
+  entry animation (the shipped fade-slide, once-on-mount only), receipt
+  transitions (✓ → ✓✓), a "new messages" jump-to-latest pill when scrolled up.
+- **Intervention affordances** — review gates and the soft-pause control as
+  first-class inline cards (reuse the Flight Deck StepRelay intervention row),
+  `@mention` autocomplete in the composer, quick-directive chips.
+- **Empty/onboarding state** — a designed first-run state (what the channel is,
+  how directives steer the team) using `feedback/EmptyState`, not a bare line.
+- **Density & a11y** — typography per Design.md (no sub-`text-sm` body, no
+  pixel sizes), keyboard nav through messages, reduced-motion honoured, full
+  i18n extraction (the prototype's raw strings graduate here).
+- **Record a demo** — close the phase with `/record-demo` so the flagship has
+  a walkthrough.
+
+This phase is a `/prototype` candidate in its own right: treat the polished
+channel as a pillar component and iterate directional variants of the header +
+message-row treatment before consolidating.
