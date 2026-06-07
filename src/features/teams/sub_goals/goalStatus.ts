@@ -54,7 +54,7 @@ export const isComplete = (s: string): boolean => normalizeGoalStatus(s) === 'do
 export const isBlocked = (s: string): boolean => normalizeGoalStatus(s) === 'blocked';
 export const isInProgress = (s: string): boolean => normalizeGoalStatus(s) === 'in-progress';
 export const isOpen = (s: string): boolean => normalizeGoalStatus(s) === 'open';
-/** Not terminal — counts as active work (drives at-risk / portfolio rollups). */
+/** Not terminal — counts as active work (drives at-risk rollups + the Timeline). */
 export const isOngoing = (s: string): boolean => normalizeGoalStatus(s) !== 'done';
 
 export interface GoalStatusMeta {

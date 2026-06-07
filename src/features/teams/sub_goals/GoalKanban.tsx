@@ -296,7 +296,7 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
   }, [activeProjectId, goals.length]);
 
   // Toggle a to-do: optimistic local flip → persist the item → recompute the
-  // goal's % from the checklist and persist that too (so Map/Portfolio agree).
+  // goal's % from the checklist and persist that too (so the Map agrees).
   const handleToggleItem = useCallback(async (goal: DevGoal, itemId: string, done: boolean) => {
     const current = itemsRef.current.get(goal.id) ?? [];
     const updated = current.map((it) => (it.id === itemId ? { ...it, done } : it));

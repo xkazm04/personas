@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Layers } from 'lucide-react';
+import { Users, Target, LayoutDashboard, Waypoints, CalendarClock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
@@ -12,14 +12,13 @@ import type { TeamsTab, GoalsTab } from '@/lib/types/types';
  * - **Workspace** — the team management table / canvas. Carries the team
  *   roster underneath (click a team to open its Studio), preserving the
  *   roster UX that previously lived inside the Agents section.
- * - **Goals** — the Goals hub, with its view submenu (Board / Map / Timeline /
- *   Portfolio) nested underneath, mirroring the team-roster indent pattern.
+ * - **Goals** — the Goals hub, with its view submenu (Board / Map / Timeline)
+ *   nested underneath, mirroring the team-roster indent pattern.
  */
-const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_map' | 'goal_view_timeline' | 'goal_view_portfolio' }> = [
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_map' | 'goal_view_timeline' }> = [
   { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
   { id: 'map', icon: Waypoints, labelKey: 'goal_view_map' },
   { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
-  { id: 'portfolio', icon: Layers, labelKey: 'goal_view_portfolio' },
 ];
 
 export function TeamsSidebarNav() {
@@ -89,7 +88,7 @@ export function TeamsSidebarNav() {
         </div>
       )}
 
-      {/* Goals hub — view submenu (board/map/timeline/portfolio) underneath */}
+      {/* Goals hub — view submenu (board/map/timeline) underneath */}
       <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
         <button
           data-testid="teams-goals-nav"

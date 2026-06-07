@@ -1,8 +1,7 @@
 /**
  * GoalStatusBadge — the one place a goal status renders as a pill. Pulls colour
  * + label from the canonical `goalStatus` model so every surface (Board, Drawer,
- * Portfolio, Attention, Timeline) stays consistent and a status change is a
- * one-file edit.
+ * Timeline) stays consistent and a status change is a one-file edit.
  */
 import { useTranslation } from '@/i18n/useTranslation';
 import { goalStatusMeta, goalStatusLabel } from './goalStatus';

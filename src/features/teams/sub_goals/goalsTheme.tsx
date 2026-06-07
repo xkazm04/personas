@@ -4,8 +4,8 @@
  * Adapts the platform visual-identity philosophy (depth via low-opacity gradient
  * pools, motion as information, constraint/accent-parameterization) to the
  * desktop's own semantic tokens — no raw hex, no web-only primitives. Every
- * Goals surface (Board · Map · Timeline · Portfolio · Attention) composes from
- * these so the look stays cohesive and a tweak is a one-file edit.
+ * Goals surface (Board · Map · Timeline) composes from these so the look
+ * stays cohesive and a tweak is a one-file edit.
  */
 import type { CSSProperties, ReactNode } from 'react';
 import { goalStatusMeta } from './goalStatus';

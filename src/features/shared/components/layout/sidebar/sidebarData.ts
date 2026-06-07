@@ -5,7 +5,7 @@ import {
   Network, Database, Home, Compass, Shield, ShieldCheck, HardDriveDownload, Heart,
   FolderKanban, Map, Lightbulb, ArrowLeftRight, Play, Share2, Waypoints,
   Radio, Gauge, Unplug, Webhook, Puzzle, Store, Archive, Layers, Workflow,
-  GraduationCap, BookOpen, Trophy, AlertOctagon, Target, CalendarClock,
+  GraduationCap, BookOpen, Trophy, AlertOctagon, Target,
   User, Users, Mic, Volume2, Sparkles,
   Wand2, Image as ImageIcon, Film, Gauge as GaugeIcon, Bell,
   Terminal, RefreshCw, FolderOpen, ScrollText, History,
@@ -89,14 +89,6 @@ export const credentialItems: SubNavItem[] = [
   { id: 'from-template', label: 'Catalog', icon: LayoutTemplate },
   { id: 'graph', label: 'Dependencies', icon: Network },
   { id: 'add-new', label: 'Add new', icon: Plus },
-];
-
-/** Goals L2 sub-nav. (Attention folded into Portfolio's per-project drawer.) */
-export const goalItems: SubNavItem[] = [
-  { id: 'board', label: 'Board', icon: LayoutDashboard },
-  { id: 'map', label: 'Map', icon: Waypoints },
-  { id: 'timeline', label: 'Timeline', icon: CalendarClock },
-  { id: 'portfolio', label: 'Portfolio', icon: Layers },
 ];
 
 export const eventBusItems: SubNavItem[] = [
