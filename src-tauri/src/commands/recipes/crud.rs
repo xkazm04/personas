@@ -210,12 +210,14 @@ pub async fn start_recipe_execution(
     let execution_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
-    if registry.get_id("recipe_execution").is_some() {
+    // Atomic claim: try_begin checks "is a run live?" and installs the id under
+    // one lock, so two double-clicked starts can't both pass the guard and spawn
+    // duplicate CLI runs (bug-hunt 2026-06-07 recipes #2).
+    if !registry.try_begin("recipe_execution", execution_id.clone()) {
         return Err(AppError::Validation(
             "A recipe execution is already in progress. Cancel it first or wait for it to complete.".into(),
         ));
     }
-    registry.set_id("recipe_execution", execution_id.clone());
     // Track which recipe this run targets so delete_recipe can scope its guard.
     registry.set_target("recipe_execution", Some(recipe_id.clone()));
 
@@ -291,12 +293,12 @@ pub async fn start_recipe_generation(
     let generation_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
-    if registry.get_id("recipe_generation").is_some() {
+    // Atomic claim — see start_recipe_execution (bug-hunt 2026-06-07 recipes #2).
+    if !registry.try_begin("recipe_generation", generation_id.clone()) {
         return Err(AppError::Validation(
             "A recipe generation is already in progress. Cancel it first or wait for it to complete.".into(),
         ));
     }
-    registry.set_id("recipe_generation", generation_id.clone());
 
     spawn_ai_artifact_task(AiArtifactParams {
         app,
@@ -428,12 +430,12 @@ pub async fn start_recipe_versioning(
     let versioning_id = uuid::Uuid::new_v4().to_string();
 
     let registry = state.process_registry.clone();
-    if registry.get_id("recipe_versioning").is_some() {
+    // Atomic claim — see start_recipe_execution (bug-hunt 2026-06-07 recipes #2).
+    if !registry.try_begin("recipe_versioning", versioning_id.clone()) {
         return Err(AppError::Validation(
             "A recipe versioning is already in progress. Cancel it first or wait for it to complete.".into(),
         ));
     }
-    registry.set_id("recipe_versioning", versioning_id.clone());
     // Track which recipe this run targets so delete_recipe can scope its guard.
     registry.set_target("recipe_versioning", Some(recipe_id.clone()));
 
