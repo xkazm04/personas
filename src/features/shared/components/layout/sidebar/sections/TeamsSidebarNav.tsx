@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Users, Target, LayoutDashboard, Waypoints, CalendarClock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { isOngoing } from '@/features/teams/sub_goals/goalStatus';
 import type { TeamsTab, GoalsTab } from '@/lib/types/types';
 
 /**
@@ -31,10 +32,22 @@ export function TeamsSidebarNav() {
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
   const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  const goals = useSystemStore((s) => s.goals);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const fetchGoals = useSystemStore((s) => s.fetchGoals);
 
   useEffect(() => {
     void fetchTeams();
   }, [fetchTeams]);
+
+  // Goals are normally fetched by GoalsPage; fetch here too so the count
+  // badge is populated before the user ever opens the Goals hub.
+  useEffect(() => {
+    if (activeProjectId) void fetchGoals(activeProjectId);
+  }, [activeProjectId, fetchGoals]);
+
+  // Active = not done (canonical model) — mirrors the Teams count badge.
+  const activeGoalCount = useMemo(() => goals.filter((g) => isOngoing(g.status)).length, [goals]);
 
   const go = (tab: TeamsTab) => {
     setTeamsTab(tab);
@@ -102,6 +115,9 @@ export function TeamsSidebarNav() {
         >
           <Target className="w-4 h-4 flex-shrink-0" />
           {t.sidebar.goals}
+          {activeGoalCount > 0 && (
+            <span className="ml-auto typo-caption text-foreground/45 font-mono">{activeGoalCount}</span>
+          )}
         </button>
         {teamsTab === 'goals' && (
           <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
