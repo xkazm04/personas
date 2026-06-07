@@ -148,7 +148,7 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 
 | Phase | Scope | Effort |
 | --- | --- | --- |
-| **C1** | Messages table + author model + read-model branch + persona `channel_post` verb (Implementer/QA/Architect) + multi-author UI; Red Room re-pointed at the unified read-model (no fold-in) | ~1 week |
+| **C1** | ✅ **DONE** — messages table + author model + read-model branch + persona `channel_post` verb (Implementer/QA/Architect) + multi-author UI; Red Room sources channel-native rows via the unified read-model (commits 6c06eecbc, 517109a58, 5e209b247) | ~1 week |
 | **C2** | Athena adapters (post message, reconciliation→channel, @mention routing, approval gating) | ~1 week |
 | **C3** | Director bridge (verdict→channel, channel-aware context, storm trigger) — *cheapest high-value; can run before C2* | days |
 | **C4** | Soft-pause (orchestrator flag + UI) | days |
@@ -167,9 +167,8 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 5. **Certification** — yes: channel slices enter the cert bundles as graded
    cooperation evidence.
 
-**Build order:** C1 (foundation — everything depends on the messages table)
-→ C3 (Director bridge) → C2 (Athena adapters) → C4 (soft-pause) → **C5
-(flagship polish)**.
+**Build order:** ~~C1~~ ✅ → **C3 (Director bridge, next)** → C2 (Athena
+adapters) → C4 (soft-pause) → C5 (flagship polish).
 
 ## 9. C5 — flagship UI polish (final phase)
 
