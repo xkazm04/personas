@@ -12644,6 +12644,8 @@ export type Translations = {
       goal_card_items_more: string;
       goal_card_add_todos: string;
       goal_card_todos_done: string;
+      goal_board_show_done: string;
+      goal_board_hide_done: string;
       goal_map_here: string;
       goal_map_next: string;
       goal_map_next_desc: string;

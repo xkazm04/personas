@@ -18,7 +18,10 @@ import { GoalEditorModal } from './GoalEditorModal';
 
 type VariantId = 'board' | 'map';
 
-export default function GoalConstellation({ variant = 'board' }: { variant?: VariantId } = {}) {
+export default function GoalConstellation({
+  variant = 'board',
+  showDoneLane = false,
+}: { variant?: VariantId; showDoneLane?: boolean } = {}) {
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
@@ -51,7 +54,7 @@ export default function GoalConstellation({ variant = 'board' }: { variant?: Var
 
   return (
     <div className="space-y-3">
-      {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} />}
+      {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} />}
       {variant === 'map' && (
         <GoalGraphMap
           goals={goals}

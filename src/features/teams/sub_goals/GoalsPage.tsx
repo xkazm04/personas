@@ -1,17 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Target, Plus, Sparkles } from 'lucide-react';
+import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
+import { Tooltip } from '@/features/shared/components/display/Tooltip';
 import { IconGoals } from '@/features/shared/components/layout/sidebar/SidebarIcons';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
+import { silentCatch } from '@/lib/silentCatch';
 import { obsidianBrainPushGoals } from '@/api/obsidianBrain';
 import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecycle/LifecycleProjectPicker';
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
+import { isComplete } from './goalStatus';
+
+/** Board preference: whether the Done lane is visible. Hidden by default so
+ *  "Your turn" / "Agent's turn" split the full content width. */
+const SHOW_DONE_KEY = 'personas.goals.board.showDone';
+
+function readShowDone(): boolean {
+  try {
+    return localStorage.getItem(SHOW_DONE_KEY) === '1';
+  } catch (err) {
+    silentCatch('GoalsPage.readShowDone')(err);
+    return false;
+  }
+}
 
 /**
  * Goals — high-level direction surface.
@@ -22,7 +38,7 @@ import { GoalsTimeline } from './GoalsTimeline';
  * an authoring entry point (the "+ New goal" button) that opens GoalEditorModal.
  */
 export default function GoalsPage() {
-  const { t } = useTranslation();
+  const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const activeProject = useSystemStore((s) =>
     s.projects.find((p) => p.id === s.activeProjectId),
@@ -34,6 +50,20 @@ export default function GoalsPage() {
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
+  // Board-only: the Done lane is hidden by default (persisted preference).
+  const [showDone, setShowDone] = useState(readShowDone);
+
+  const toggleShowDone = () => {
+    const next = !showDone;
+    setShowDone(next);
+    try {
+      localStorage.setItem(SHOW_DONE_KEY, next ? '1' : '0');
+    } catch (err) {
+      silentCatch('GoalsPage.persistShowDone')(err);
+    }
+  };
+
+  const doneCount = goals.filter((g) => isComplete(g.status)).length;
 
   // Load goals for the active project at the page level — NOT inside
   // GoalConstellation, which only mounts once goals exist. Fetching here means
@@ -131,15 +161,31 @@ export default function GoalsPage() {
               <h3 className="typo-caption text-primary uppercase tracking-wider">
                 {t.plugins.dev_lifecycle.goal_constellation}({goals.length})
               </h3>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleSyncToObsidian}
-              >
-                {t.plugins.dev_tools.sync_to_obsidian}
-              </Button>
+              <div className="flex items-center gap-2">
+                {goalsTab === 'board' && (
+                  <Tooltip content={showDone ? dl.goal_board_hide_done : tx(dl.goal_board_show_done, { count: doneCount })}>
+                    <Button
+                      variant="secondary"
+                      size="icon-sm"
+                      aria-pressed={showDone}
+                      aria-label={showDone ? dl.goal_board_hide_done : tx(dl.goal_board_show_done, { count: doneCount })}
+                      onClick={toggleShowDone}
+                      className={showDone ? 'text-emerald-400' : ''}
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </Tooltip>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSyncToObsidian}
+                >
+                  {t.plugins.dev_tools.sync_to_obsidian}
+                </Button>
+              </div>
             </div>
-            <GoalConstellation variant={goalsTab as 'board' | 'map'} />
+            <GoalConstellation variant={goalsTab as 'board' | 'map'} showDoneLane={showDone} />
           </div>
         )}
       </ContentBody>

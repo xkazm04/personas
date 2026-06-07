@@ -11,26 +11,7 @@ import * as devApi from '@/api/devTools/devTools';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 import { goalAccentEdgeStyle } from './goalsTheme';
-
-/**
- * Flatten markdown to a clean single-line preview for the line-clamped card.
- * The detail drawer renders full markdown; here we only want readable text, so
- * strip code-span backticks, heading/list/emphasis markers, links→label, and
- * the "(Promoted from backlog idea …)" provenance footer that bloats
- * autonomously-generated goal descriptions.
- */
-function goalPreview(md: string): string {
-  return md
-    .replace(/\n\(Promoted from backlog idea[^)]*\)\s*$/i, '')
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/`([^`]+)`/g, '$1')
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
-    .replace(/^\s*[-*+]\s+/gm, '')
-    .replace(/(\*\*|__|\*|_|~~)/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+import { goalPreview } from './goalPreview';
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -260,7 +241,10 @@ function GoalCard({
 // Main kanban — thin wrapper over the shared board
 // ---------------------------------------------------------------------------
 
-export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) => void } = {}) {
+export default function GoalKanban({
+  onOpenGoal,
+  showDone = false,
+}: { onOpenGoal?: (id: string) => void; showDone?: boolean } = {}) {
   const { t } = useTranslation();
   const dt = t.plugins.dev_tools;
   const goals = useSystemStore((s) => s.goals);
@@ -320,8 +304,21 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
     }
   }, [updateGoal]);
 
+  // Done is opt-in (the GoalsPage toggle): hidden, "Your turn" / "Agent's
+  // turn" split the full content width and titles truncate far later. Done
+  // goals must also leave `items` — otherwise the board's fallback column
+  // would re-bucket them into "Your turn".
+  const lanes = useMemo(
+    () => (showDone ? LANE_CHROME : LANE_CHROME.filter((l) => l.id !== 'done')),
+    [showDone],
+  );
+  const visibleGoals = useMemo(
+    () => (showDone ? goals : goals.filter((g) => normalizeGoalStatus(g.status) !== 'done')),
+    [goals, showDone],
+  );
+
   const columns: KanbanColumn[] = useMemo(
-    () => LANE_CHROME.map((l) => ({
+    () => lanes.map((l) => ({
       id: l.id,
       label: dt[l.labelKey],
       icon: l.icon,
@@ -333,7 +330,7 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
       statuses: GOAL_STATUSES.filter((s) => GOAL_STATUS_META[s].lane === l.id),
       targetStatus: l.targetStatus,
     })),
-    [dt],
+    [dt, lanes],
   );
 
   const handleMove = useCallback(
@@ -359,11 +356,12 @@ export default function GoalKanban({ onOpenGoal }: { onOpenGoal?: (id: string) =
   return (
     <KanbanBoard<DevGoal>
       columns={columns}
-      items={goals}
+      items={visibleGoals}
       getItemId={(g) => g.id}
       getItemStatus={(g) => normalizeGoalStatus(g.status)}
       onItemMove={handleMove}
       dragMimeType={DRAG_MIME}
+      columnsClassName={showDone ? undefined : 'grid grid-cols-2 gap-4'}
       fallbackColumnId="your_turn"
       renderCard={(g) => (
         <GoalCard

@@ -81,8 +81,8 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
     ];
   });
 
-  it('renders each goal in its bucketed lane', () => {
-    render(<GoalKanban />);
+  it('renders each goal in its bucketed lane (Done shown via toggle)', () => {
+    render(<GoalKanban showDone />);
     expect(screen.getByText('Pending goal')).toBeInTheDocument();
     expect(screen.getByText('Running goal')).toBeInTheDocument();
     expect(screen.getByText('Done goal')).toBeInTheDocument();
@@ -90,6 +90,16 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
     expect(screen.getByText('Your turn')).toBeInTheDocument();
     expect(screen.getByText("Agent's turn")).toBeInTheDocument();
     expect(screen.getByText('Done')).toBeInTheDocument();
+  });
+
+  it('hides the Done lane (and done goals) by default', () => {
+    render(<GoalKanban />);
+    // Done lane + its goals are absent…
+    expect(screen.queryByText('Done')).not.toBeInTheDocument();
+    expect(screen.queryByText('Done goal')).not.toBeInTheDocument();
+    // …and done goals do NOT leak into the fallback "Your turn" lane.
+    expect(screen.getByText('Pending goal')).toBeInTheDocument();
+    expect(screen.getByText('Running goal')).toBeInTheDocument();
   });
 
   it('clicking +5% nudge calls updateGoal with progress + 5 clamped at 100', () => {
@@ -137,7 +147,7 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
 
   it('dropping a goal onto the Done lane calls updateGoal with status=completed', () => {
     testGoals = [makeGoal({ id: 'g-move', title: 'Mover', status: 'pending', progress: 40 })];
-    render(<GoalKanban />);
+    render(<GoalKanban showDone />);
     const card = screen.getByText('Mover').closest('div[draggable="true"]')!;
     const doneLane = screen.getByText('Done').closest('div[class*="rounded-card"]')!;
 
