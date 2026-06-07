@@ -14115,7 +14115,8 @@
       "deck_round": "round {round}",
       "deck_rework_tooltip": "Rework round {round} — QA requested changes",
       "deck_goal_chip": "Goal",
-      "deck_goal_chip_tooltip": "Advances a goal — open the Goals hub"
+      "deck_goal_chip_tooltip": "Advances a goal — open the Goals hub",
+      "red_room_label": "Red Room"
     },
     "category_changes": "Category changes",
     "importance_shifts": "Importance shifts",

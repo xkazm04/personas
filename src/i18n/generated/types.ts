@@ -14122,6 +14122,7 @@ export type Translations = {
       deck_rework_tooltip: string;
       deck_goal_chip: string;
       deck_goal_chip_tooltip: string;
+      red_room_label: string;
     };
     category_changes: string;
     importance_shifts: string;
