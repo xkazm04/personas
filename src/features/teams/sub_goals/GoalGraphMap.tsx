@@ -2,8 +2,9 @@
  * Map v2 — a pan/zoom/drag React Flow canvas over the project's goals and their
  * parent / dependency edges. Replaces the fixed SVG force graph: nodes are
  * freely draggable (positions persist per project), the minimap + controls make
- * 100+ node graphs navigable, and the level-of-detail nodes (see GoalNode) let
- * the user switch between a high-level overview and reading individual goals.
+ * 100+ node graphs navigable, and the three-band semantic-zoom nodes (see
+ * GoalNode: progress-ring dot → large-type title card → full metadata card)
+ * keep every distance readable, from orbit overview to per-goal detail.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {

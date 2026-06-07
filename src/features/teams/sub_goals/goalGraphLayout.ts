@@ -11,8 +11,9 @@ import type { Node, Edge } from '@xyflow/react';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalDependency } from '@/lib/bindings/DevGoalDependency';
 import {
-  goalStatusMeta, normalizeGoalStatus, isComplete, isInProgress, isOpen, type GoalStatus,
+  goalStatusMeta, normalizeGoalStatus, isComplete, isInProgress, isOpen, isOngoing, type GoalStatus,
 } from './goalStatus';
+import { goalPreview } from './goalPreview';
 import { runForceSimulation, nodeRadius, type NodePos } from './forceLayout';
 
 export type GoalEdgeType = 'parent' | 'blocks' | 'follows';
@@ -31,6 +32,13 @@ export interface GoalNodeData extends Record<string, unknown> {
   next: boolean;
   /** Name of the team whose assignment is advancing this goal (O4), if any. */
   advancingTeam?: string | null;
+  /** Markdown-flattened description preview for the detail zoom band —
+   *  computed once per graph build, not per zoom frame. */
+  description: string | null;
+  /** ISO target date (detail band meta row). */
+  targetDate: string | null;
+  /** Ongoing goal past its target date — the detail band paints the date red. */
+  overdue: boolean;
 }
 
 // Force-sim canvas — larger than the viewport so 100+ nodes have room to breathe.
@@ -123,10 +131,12 @@ export function buildGoalGraph({ goals, dependencies, savedPositions, advancingT
 
   const { here, next } = computeHereNext(goals, dependencies);
 
+  const now = Date.now();
   const nodes: Node<GoalNodeData>[] = goals.map((g) => {
     const meta = goalStatusMeta(g.status);
     const saved = savedPositions?.[g.id];
     const p = posMap.get(g.id);
+    const targetTs = g.target_date ? new Date(g.target_date).getTime() : NaN;
     return {
       id: g.id,
       type: 'goal',
@@ -141,6 +151,9 @@ export function buildGoalGraph({ goals, dependencies, savedPositions, advancingT
         here: here.has(g.id),
         next: next.has(g.id),
         advancingTeam: advancingTeams?.get(g.id) ?? null,
+        description: g.description ? goalPreview(g.description) || null : null,
+        targetDate: g.target_date,
+        overdue: !Number.isNaN(targetTs) && targetTs < now && isOngoing(g.status),
       },
     };
   });
