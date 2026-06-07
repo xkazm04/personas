@@ -69,6 +69,8 @@ export interface CreateResearchSource {
   abstractText?: string | null;
   doi?: string | null;
   url?: string | null;
+  pdfPath?: string | null;
+  citationCount?: number;
   metadata?: string | null;
 }
 
