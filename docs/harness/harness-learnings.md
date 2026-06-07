@@ -347,3 +347,27 @@
 - **MCP consent gate (completes idea #2)**: arg-hardening blocks remote-URL specs + docker host-escape flags, but does NOT stop `npx <poisoned-but-real-registry-package>`. A per-command user consent gate (approve + remember on first use) is the only complete fix — a published package is statically indistinguishable from a malicious one.
 - **Rejected this scan (still open)**: tool-audit log omits MCP call arguments (forensic gap); legacy RSA-only IPC decrypt path should default-reject (downgrade vector); credential-topology IPC reads (`list_credentials`/`vault_status`/`credential_blast_radius`) lack the `requires(privileged)` guard their write siblings have; forced OAuth refresh (`oauth_refresh.rs`, force=true) can revoke a working token then fail to persist without marking `needs_reauth`; `import_foraged_credential` is not idempotent (double-click dupes).
 - **Fix the pre-existing `test_sanitize_strips_field_values` failure** (sanitizer over-redacts short numeric values).
+
+## Scan-and-decide — Companion & Plugins (Pipeline C, 2026-06-07)
+
+### Build & verification
+- For the **Companion & Plugins** group, `cargo check --features desktop` is sufficient (no `ml`/`p2p` code in artist/drive/obsidian/ocr/research-lab/twin/companion). Note `commands/ocr/mod.rs` is `#[cfg(feature="desktop")]`-gated — a bare `cargo check` skips it entirely. (The earlier Connections run needed `desktop-full` only because vector_kb is `ml`-gated.)
+- **lefthook pre-commit** runs `npx eslint` which fails in shells without node_modules/.bin on PATH ("'eslint' is not recognized"). The repo documents `LEFTHOOK=0 git commit …` as the per-command disable; eslint itself runs fine via `node node_modules/eslint/bin/eslint.js …`. tsc likewise: `node node_modules/typescript/bin/tsc --noEmit` (plain `npx tsc` grabs a registry stub here).
+
+### Reuse-first infra (don't rebuild — scanners flag "plugins don't use X", not "X missing")
+- **ErrorBoundary** (class component) at `src/features/shared/components/feedback/ErrorBoundary.tsx` — props `{children, name?, onReset?}`, "Try Again" resets state (re-attempts a failed lazy import). Wrap plugin `<Suspense>`/panel bodies; keep ContentHeader outside so nav survives a crash.
+- **AriaLiveProvider** at `…/feedback/AriaLiveProvider.tsx` — app-wide region mounted in `App.tsx`. Use `useAnnounce()` in components, `announceImperative()` in non-component code. CRITICAL: `toastStore.addToast` ALREADY routes every toast through `announceImperative`, so toasts are auto-announced — only instrument the previously-silent operation *starts* / inline (non-toast) completions for a11y.
+- **`.focus-ring`** `@utility` in `src/styles/globals.css` is the single keyboard-only focus source of truth (`:focus-visible`). Don't hand-roll `focus:ring-*`/`focus-visible:ring-*`. Remaining drift after this run: `fleet/` and `dev-tools/`.
+- **Path sandbox pattern**: `commands/drive.rs::resolve_safe` (rejects abs + `Component::ParentDir`, canonicalizes, walks to nearest existing ancestor for not-yet-created targets). Mirror it for any user/agent-supplied path. `twin.rs::resolve_wiki_dir` and `companion/jobs/connector_use.rs::resolve_within` now follow it.
+
+### Companion autonomy / security model
+- Connector capabilities + the `requires_approval` gate live in `src/companion/connectors.rs`; the dispatcher honors it (`companion/dispatcher.rs:1270`). Reads with `requires_approval:false` auto-fire as jobs; flip the flag to put a human in front of a capability (done for `personas_database.execute_select`).
+- **Fleet sessions ALWAYS run `claude --dangerously-skip-permissions`** (`commands/fleet/pty.rs:163/187`), so constraining *args* is pointless — the only meaningful containment for `execute_fleet_spawn`/`dispatch` is the **cwd**. The registered-project allowlist is the `dev_projects` table (`root_path`), read via `crate::db::repos::dev_tools::list_projects(&state.db, None)`; `app.state::<Arc<AppState>>()` gets state inside an executor.
+- `serde_yaml = "0.9"` IS a dependency, but `commands/obsidian_brain/markdown.rs` deliberately uses a homegrown YAML emitter/parser — escaping was added in-place (`yaml_quote`/`unquote_yaml_scalar`) rather than reworking around serde_yaml.
+
+## Open follow-ups (from Pipeline C — Companion & Plugins, 2026-06-07)
+- **execute_select now approval-gated** — if autonomous read flows feel too gated, a column/table allowlist (denying the brain's PII tables) would be a less-blocking alternative to full approval.
+- **Fleet cwd allowlist completes the backend half of idea #5** — the deeper fix is the **ApprovalCard showing the resolved command** (cwd + args), not just Athena's free-text rationale; that's a frontend change left undone.
+- **aria-live instrumentation is representative, not exhaustive** — wired the 1–2 clearest long ops per plugin (image gen, vault sync, source ingest, OCR, twin studio). Other long ops (research report compile, experiment runs, blender renders) still announce nothing beyond their toasts.
+- **focus-ring drift remains in `fleet/` and `dev-tools/`** — same mechanical `.focus-ring` swap applies there on a future pass.
+- **Full vitest + full `cargo test` were NOT run** this session (time + pre-existing-noise risk). Verified: tsc 0, `cargo check --features desktop` 0, eslint 0 on changed files, and targeted tests `obsidian_brain::markdown` (9/9) + `render_plan_export_parity` (14/14).
