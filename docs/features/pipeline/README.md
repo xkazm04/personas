@@ -156,6 +156,14 @@ Director/Athena orchestration discussion).
   (user directive / persona / Athena / Director). **Red Room** reads the same
   channel-native rows via `listTeamChannel`, so both surfaces show identical
   channel traffic (kept separate for now per the C-on-B plan).
+- **Soft-pause (C4)**: `pause_team_assignment` flips a running/queued
+  assignment to the `paused` status; the orchestrator tick loop sees it next
+  tick and exits, so **no new steps launch while in-flight steps finish on
+  their own** (detached tasks). `resume_team_assignment` re-spawns the tick
+  loop from the current step states. Surfaced as a Pause/Resume control + a
+  `paused` phase on the Flight Deck board — the C-mock's "pause at checkpoint",
+  made real. Honest interrupt semantics: there is no mid-step interrupt (a
+  running CLI turn can't take input); pause acts at step boundaries.
 
 ## State and backend
 

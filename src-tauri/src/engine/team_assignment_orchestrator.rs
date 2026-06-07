@@ -344,8 +344,10 @@ pub fn recover_orphaned_assignments(
     }
 }
 
-/// Resume an assignment from `awaiting_review`. Restarts the tick task.
-fn resume_assignment(
+/// Resume an assignment from `awaiting_review` or `paused`. Restarts the tick
+/// task (the tick loop is idempotent — a fresh task picks up from the current
+/// step states).
+pub fn resume_assignment(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
@@ -354,6 +356,27 @@ fn resume_assignment(
 ) {
     let _ = assignment_repo::update_assignment_status(&pool, &assignment_id, "running", None);
     run_assignment(pool, app, engine, embedding_manager, assignment_id);
+}
+
+/// C4 soft-pause: request a running/queued assignment stop launching new steps.
+/// The live tick loop sees the `paused` status on its next tick and exits;
+/// in-flight step tasks are detached and finish on their own. `resume_assignment`
+/// restarts it. Errors if the assignment isn't in a pausable state.
+pub fn pause_assignment(
+    pool: &Arc<DbPool>,
+    app: &AppHandle,
+    assignment_id: &str,
+) -> Result<(), AppError> {
+    let assignment = assignment_repo::get_by_id(pool, assignment_id)?;
+    if !matches!(assignment.status.as_str(), "running" | "queued") {
+        return Err(AppError::Validation(format!(
+            "Assignment cannot be paused from status '{}'",
+            assignment.status
+        )));
+    }
+    assignment_repo::update_assignment_status(pool, assignment_id, "paused", None)?;
+    emit_progress(app, assignment_id, "paused", None);
+    Ok(())
 }
 
 // ----------------------------------------------------------------------------
@@ -389,6 +412,13 @@ async fn tick_loop(
         let assignment = assignment_repo::get_by_id(pool, assignment_id)?;
         if assignment.status == "aborted" {
             return Ok(()); // user abort — exit cleanly
+        }
+        if assignment.status == "paused" {
+            // C4 soft-pause: stop launching new steps and exit the loop. Any
+            // in-flight step tasks are detached tokio tasks and finish on their
+            // own (writing their results); `resume_assignment` re-spawns the
+            // loop, which picks up from the updated step states.
+            return Ok(());
         }
         let steps = assignment_repo::list_steps(pool, assignment_id)?;
 

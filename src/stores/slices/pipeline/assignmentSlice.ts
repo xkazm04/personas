@@ -4,6 +4,8 @@ import { reportError } from "../../storeTypes";
 
 import {
   abortTeamAssignment,
+  pauseTeamAssignment,
+  resumeTeamAssignment,
   createAssignmentTemplate,
   createTeamAssignment,
   deleteAssignmentTemplate,
@@ -67,6 +69,8 @@ export interface AssignmentSlice {
   ) => Promise<TeamAssignment | null>;
   startAssignment: (id: string) => Promise<void>;
   abortAssignment: (id: string, reason?: string) => Promise<void>;
+  pauseAssignment: (id: string) => Promise<void>;
+  resumeAssignment: (id: string) => Promise<void>;
   resolveAssignmentReview: (
     stepId: string,
     action: ResolveStepReviewAction,
@@ -215,6 +219,24 @@ export const createAssignmentSlice: StateCreator<
       await get().fetchAssignmentDetail(id);
     } catch (err) {
       reportError(err, "Failed to abort team assignment", set);
+    }
+  },
+
+  pauseAssignment: async (id) => {
+    try {
+      await pauseTeamAssignment(id);
+      await get().fetchAssignmentDetail(id);
+    } catch (err) {
+      reportError(err, "Failed to pause team assignment", set);
+    }
+  },
+
+  resumeAssignment: async (id) => {
+    try {
+      await resumeTeamAssignment(id);
+      await get().fetchAssignmentDetail(id);
+    } catch (err) {
+      reportError(err, "Failed to resume team assignment", set);
     }
   },
 

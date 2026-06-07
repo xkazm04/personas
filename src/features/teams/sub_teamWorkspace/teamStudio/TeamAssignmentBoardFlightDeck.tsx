@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Radio, Inbox } from 'lucide-react';
+import { Radio, Inbox, Pause, Play } from 'lucide-react';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -22,9 +22,10 @@ import {
  * visibility) by inverting the hierarchy: steps are the primary object.
  */
 
-const PHASES: Array<{ id: string; labelKey: 'deck_phase_active' | 'deck_phase_review' | 'deck_phase_queued' | 'deck_phase_landed' | 'deck_phase_stopped'; statuses: string[]; tone: string }> = [
+const PHASES: Array<{ id: string; labelKey: 'deck_phase_active' | 'deck_phase_review' | 'deck_phase_queued' | 'deck_phase_paused' | 'deck_phase_landed' | 'deck_phase_stopped'; statuses: string[]; tone: string }> = [
   { id: 'active', labelKey: 'deck_phase_active', statuses: ['running'], tone: 'text-blue-400' },
   { id: 'review', labelKey: 'deck_phase_review', statuses: ['awaiting_review'], tone: 'text-amber-400' },
+  { id: 'paused', labelKey: 'deck_phase_paused', statuses: ['paused'], tone: 'text-amber-300' },
   { id: 'queued', labelKey: 'deck_phase_queued', statuses: ['queued'], tone: 'text-foreground/60' },
   { id: 'landed', labelKey: 'deck_phase_landed', statuses: ['done'], tone: 'text-emerald-400' },
   { id: 'stopped', labelKey: 'deck_phase_stopped', statuses: ['failed', 'aborted'], tone: 'text-red-400' },
@@ -41,6 +42,8 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
   const ts = t.pipeline.team_studio;
   const assignments = usePipelineStore((s) => s.assignmentsByTeam[teamId]) ?? [];
   const refreshAssignments = useRefreshAssignments(teamId);
+  const pauseAssignment = usePipelineStore((s) => s.pauseAssignment);
+  const resumeAssignment = usePipelineStore((s) => s.resumeAssignment);
   const personaIndex = usePersonaIndex();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -118,6 +121,24 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                   <span className="inline-flex items-center gap-1.5 typo-caption text-blue-300">
                     <Radio className="w-3.5 h-3.5" /> {ts.deck_live}
                   </span>
+                )}
+                {(selected.status === 'running' || selected.status === 'queued') && (
+                  <button
+                    type="button"
+                    onClick={() => void pauseAssignment(selected.id)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-amber-500/30 bg-amber-500/10 typo-caption text-amber-300 hover:bg-amber-500/20 transition-colors"
+                  >
+                    <Pause className="w-3 h-3" /> {ts.deck_pause}
+                  </button>
+                )}
+                {selected.status === 'paused' && (
+                  <button
+                    type="button"
+                    onClick={() => void resumeAssignment(selected.id)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-blue-500/30 bg-blue-500/10 typo-caption text-blue-300 hover:bg-blue-500/20 transition-colors"
+                  >
+                    <Play className="w-3 h-3" /> {ts.deck_resume}
+                  </button>
                 )}
               </div>
             </div>

@@ -14094,7 +14094,10 @@
       "deck_goal_chip": "Goal",
       "deck_goal_chip_tooltip": "Advances a goal — open the Goals hub",
       "red_room_label": "Red room",
-      "collab_label": "Collab"
+      "collab_label": "Collab",
+      "deck_phase_paused": "Paused",
+      "deck_pause": "Pause",
+      "deck_resume": "Resume"
     },
     "category_changes": "Category changes",
     "importance_shifts": "Importance shifts",

@@ -14101,6 +14101,9 @@ export type Translations = {
       deck_goal_chip_tooltip: string;
       red_room_label: string;
       collab_label: string;
+      deck_phase_paused: string;
+      deck_pause: string;
+      deck_resume: string;
     };
     category_changes: string;
     importance_shifts: string;

@@ -2181,6 +2181,8 @@ pub fn run() {
             commands::teams::assignments::list_team_assignment_steps,
             commands::teams::assignments::start_team_assignment,
             commands::teams::assignments::abort_team_assignment,
+            commands::teams::assignments::pause_team_assignment,
+            commands::teams::assignments::resume_team_assignment,
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
             commands::teams::assignments::set_team_assignment_goal,

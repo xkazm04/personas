@@ -111,10 +111,11 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 "interrupt" therefore means:
 
 1. **Step-boundary delivery** (shipped) — a message lands in the next step.
-2. **Soft-pause** (new, C4) — user/Athena flags an assignment
-   `pause_requested`; the orchestrator finishes in-flight steps but launches
-   no new ones until resumed (mirrors `awaiting_review` mechanics). The C
-   mock's "pause at checkpoint" maps to exactly this.
+2. **Soft-pause** (C4, ✅ built) — `pause_team_assignment` sets the assignment
+   to `paused`; the tick loop exits, in-flight steps finish on their own, and
+   `resume_team_assignment` re-spawns the loop. The C mock's "pause at
+   checkpoint" maps to exactly this. (Implemented as a `paused` status rather
+   than a separate flag — mirrors `awaiting_review` mechanics.)
 3. **Abort** (exists) — unchanged.
 
 ## 5. Governance — the G4 lesson applied
@@ -151,7 +152,7 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 | **C1** | ✅ **DONE** — messages table + author model + read-model branch + persona `channel_post` verb (Implementer/QA/Architect) + multi-author UI; Red Room sources channel-native rows via the unified read-model (commits 6c06eecbc, 517109a58, 5e209b247) | ~1 week |
 | **C2** | ◑ **PARTIAL** — write adapter (companion_post_team_message + post_team_message approval op on the autoapprove allowlist) + @athena composer summon DONE; LLM reconciliation→channel deferred (needs a real async Athena turn) | ~1 week |
 | **C3** | ✅ **DONE** — Director bridge (verdict→channel addressed+injected with receipts, channel-aware context digest, opt-in storm-trigger subscription) | days |
-| **C4** | Soft-pause (orchestrator flag + UI) | days |
+| **C4** | ✅ **DONE** — soft-pause: `paused` status exits the tick loop (in-flight finishes), resume re-spawns; Pause/Resume on the Flight Deck | days |
 | **C5** | **Flagship UI polish** (§9) — header band, author voice, threading, intervention affordances, demo | ~1 week |
 
 ## 8. Decisions (resolved 2026-06-07)
@@ -167,8 +168,8 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 5. **Certification** — yes: channel slices enter the cert bundles as graded
    cooperation evidence.
 
-**Build order:** ~~C1~~ ✅ → ~~C3~~ ✅ → C2 ◑ (write+summon done;
-reconciliation deferred) → **C4 (soft-pause, next)** → C5 (flagship polish).
+**Build order:** ~~C1~~ ✅ → ~~C3~~ ✅ → C2 ◑ → ~~C4~~ ✅ → **C5
+(flagship polish, next)**.
 
 ## 9. C5 — flagship UI polish (final phase)
 
