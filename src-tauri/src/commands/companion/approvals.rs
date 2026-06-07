@@ -374,6 +374,24 @@ pub async fn auto_resolve_if_allowed(
         finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
         return Ok(false);
     }
+    // Re-validate the fleet_send_input target against the SAME params we are about
+    // to execute. The guard above checked the propose-time `approval.params_json`,
+    // but `load_pending` re-reads the payload from the DB, which a concurrent
+    // writer or a manual edit could have mutated since propose — validating one
+    // copy while executing another is a TOCTOU that could redirect the PTY write
+    // to a session Athena doesn't own, including the user's own terminal
+    // (bug-hunt 2026-06-07 companion #5). Fail closed on the freshly-loaded value.
+    if action == "fleet_send_input" {
+        let fresh_json = serde_json::to_string(&params).unwrap_or_default();
+        if !fleet_send_input_targets_athena_session(&fresh_json) {
+            tracing::warn!(
+                approval_id = %approval.id,
+                "fleet_send_input target is not Athena-owned at execute time (payload changed since propose) — declining autoapprove"
+            );
+            finalize_approval(&state, &approval.id, APPROVAL_STATUS_APPROVED_FAILED)?;
+            return Ok(false);
+        }
+    }
     let exec_result = match action.as_str() {
         "write_fact" => execute_write_fact(&state, &params).await,
         "write_backlog_item" => execute_write_backlog_item(&state, &params),
