@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Radio } from 'lucide-react';
 import { useRedRoomFeed } from './useRedRoomFeed';
-import { RedRoomChannel } from './RedRoomChannel';
 import { RedRoomTranscript } from './RedRoomTranscript';
 import { RedRoomRelay } from './RedRoomRelay';
 import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
@@ -14,16 +13,15 @@ import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudio
  * message is addressed to) and team memories (the channel's pinned knowledge).
  * No new backend; the room makes the orchestration traffic legible.
  *
- * PROTOTYPE SCAFFOLD (temporary): three directional variants behind a tab
- * switcher — Channel (chat metaphor) / Transcript (mission radio log) /
- * Relay (handoff edges + shared-memory rail). Consolidated once a winner is
+ * PROTOTYPE SCAFFOLD (temporary): two directional variants behind a tab
+ * switcher — Transcript (mission radio log) / Relay (handoff
+ * edges + shared-memory rail); Channel was pruned in round 2. Consolidated once a winner is
  * declared.
  */
 
-type RedRoomVariant = 'channel' | 'transcript' | 'relay';
+type RedRoomVariant = 'transcript' | 'relay';
 
 const VARIANT_TABS: Array<{ id: RedRoomVariant; label: string; hint: string }> = [
-  { id: 'channel', label: 'Channel', hint: 'Chat-style feed — events as messages from personas' },
   { id: 'transcript', label: 'Transcript', hint: 'Dense mission radio log with family filters' },
   { id: 'relay', label: 'Relay', hint: 'Handoff edges (who→what→whom) + shared-memory rail' },
 ];
@@ -38,7 +36,7 @@ export function RedRoomPane({ teamId, members }: { teamId: string; members: Stud
       {/* Header strip: identity + live stats + variant tabs */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <span className="inline-flex items-center gap-1.5 typo-label uppercase tracking-wider text-red-300/90">
-          <Radio className="w-3.5 h-3.5" /> Red Room
+          <Radio className="w-3.5 h-3.5" /> Red room
         </span>
         <span className="typo-caption text-foreground/45">
           {items.length} transmissions{projectId ? '' : ' · no linked project — member-scoped'}
@@ -65,12 +63,10 @@ export function RedRoomPane({ teamId, members }: { teamId: string; members: Stud
       <div className="flex-1 min-h-0 overflow-y-auto">
         {!loaded ? (
           <p className="typo-body text-foreground/45 px-1 py-3">Tuning in…</p>
-        ) : variant === 'transcript' ? (
-          <RedRoomTranscript items={items} />
         ) : variant === 'relay' ? (
           <RedRoomRelay items={items} />
         ) : (
-          <RedRoomChannel items={items} />
+          <RedRoomTranscript items={items} />
         )}
       </div>
     </div>

@@ -134,7 +134,7 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 aria-pressed={mode.kind === 'redroom'}
                 className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
                   mode.kind === 'redroom'
-                    ? 'border-red-500/40 bg-red-500/10 text-red-200'
+                    ? 'border-primary/40 bg-secondary/40 text-foreground/90'
                     : 'border-transparent text-foreground hover:bg-secondary/40'
                 }`}
               >
