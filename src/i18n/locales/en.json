@@ -13918,7 +13918,9 @@
     "trigger_on": "on:",
     "connecting_to_gitlab": "Connecting to GitLab...",
     "deploying_to_gitlab": "Deploying persona to GitLab...",
-    "pipeline_hash": "Pipeline #"
+    "pipeline_hash": "Pipeline #",
+    "notification_ask_athena": "Ask Athena to analyze",
+    "notification_athena_prompt": "Please analyze this notification I received and the underlying issue: \"{title}\" — {body} (status: {status}). Investigate what happened, the likely root cause, and tell me clearly whether anything needs my action."
   },
   "pipeline": {
     "assignments": {

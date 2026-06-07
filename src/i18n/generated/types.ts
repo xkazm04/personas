@@ -13925,6 +13925,8 @@ export type Translations = {
     connecting_to_gitlab: string;
     deploying_to_gitlab: string;
     pipeline_hash: string;
+    notification_ask_athena: string;
+    notification_athena_prompt: string;
   };
   pipeline: {
     assignments: {
