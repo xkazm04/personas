@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useAgentStore } from '@/stores/agentStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
@@ -183,6 +184,8 @@ export function StepRelay({
   personaIndex: Map<string, Persona>;
   onIntervened?: () => void;
 }) {
+  const { t, tx } = useTranslation();
+  const ts = t.pipeline.team_studio;
   const [expanded, setExpanded] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -236,10 +239,10 @@ export function StepRelay({
                     {s.retryCount > 0 && (
                       <span
                         className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-amber-500/10 border border-amber-500/25 typo-caption text-amber-300"
-                        title={`Rework round ${s.retryCount} — QA requested changes`}
+                        title={tx(ts.deck_rework_tooltip, { round: s.retryCount })}
                       >
                         <RotateCcw className="w-3 h-3" />
-                        round {s.retryCount + 1}
+                        {tx(ts.deck_round, { round: s.retryCount + 1 })}
                       </span>
                     )}
                   </div>
@@ -263,7 +266,7 @@ export function StepRelay({
                       onClick={() => void intervene(s.id, 'skip')}
                       className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/15 bg-secondary/40 typo-caption text-foreground/80 hover:bg-secondary/60 transition-colors disabled:opacity-50"
                     >
-                      <SkipForward className="w-3 h-3" /> Skip
+                      <SkipForward className="w-3 h-3" /> {ts.deck_skip}
                     </button>
                     <button
                       type="button"
@@ -271,7 +274,7 @@ export function StepRelay({
                       onClick={() => void intervene(s.id, 'abort')}
                       className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-red-500/25 bg-red-500/10 typo-caption text-red-300 hover:bg-red-500/20 transition-colors disabled:opacity-50"
                     >
-                      <Ban className="w-3 h-3" /> Abort
+                      <Ban className="w-3 h-3" /> {ts.deck_abort}
                     </button>
                   </div>
                 )}
@@ -286,7 +289,7 @@ export function StepRelay({
                     className="inline-flex items-center gap-1 typo-caption text-foreground/55 hover:text-foreground/85 transition-colors"
                   >
                     {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                    Output
+                    {ts.deck_output}
                   </button>
                   {isOpen && (
                     <div className="mt-1.5 rounded-card border border-primary/10 bg-background/50 px-3 py-2 max-h-72 overflow-y-auto">
@@ -305,6 +308,7 @@ export function StepRelay({
 
 /** Goal chip — marks a goal-linked assignment and deep-links to the Goals hub. */
 export function GoalChip({ goalId }: { goalId: string | null }) {
+  const { t } = useTranslation();
   const setTeamsTab = (tab: 'workspace' | 'goals') =>
     import('@/stores/systemStore').then((m) => m.useSystemStore.getState().setTeamsTab(tab));
   if (!goalId) return null;
@@ -313,10 +317,10 @@ export function GoalChip({ goalId }: { goalId: string | null }) {
       type="button"
       onClick={() => void setTeamsTab('goals')}
       className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-violet-500/10 border border-violet-500/25 typo-caption text-violet-300 hover:bg-violet-500/20 transition-colors"
-      title="Advances a goal — open the Goals hub"
+      title={t.pipeline.team_studio.deck_goal_chip_tooltip}
     >
       <Target className="w-3 h-3" />
-      Goal
+      {t.pipeline.team_studio.deck_goal_chip}
     </button>
   );
 }

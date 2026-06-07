@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { Users, Target } from 'lucide-react';
+import { Users, Target, LayoutDashboard, Waypoints, CalendarClock, Layers } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import type { TeamsTab } from '@/lib/types/types';
+import type { TeamsTab, GoalsTab } from '@/lib/types/types';
 
 /**
  * L2 nav for the Teams section (Teams promoted to 1st-level; Goals
@@ -12,13 +12,22 @@ import type { TeamsTab } from '@/lib/types/types';
  * - **Workspace** — the team management table / canvas. Carries the team
  *   roster underneath (click a team to open its Studio), preserving the
  *   roster UX that previously lived inside the Agents section.
- * - **Goals** — the Goals hub (Board / Map / Timeline / Portfolio switch
- *   in-page via `GoalsPage`'s own tab strip).
+ * - **Goals** — the Goals hub, with its view submenu (Board / Map / Timeline /
+ *   Portfolio) nested underneath, mirroring the team-roster indent pattern.
  */
+const GOAL_VIEWS: Array<{ id: GoalsTab; icon: typeof LayoutDashboard; labelKey: 'goal_view_board' | 'goal_view_map' | 'goal_view_timeline' | 'goal_view_portfolio' }> = [
+  { id: 'board', icon: LayoutDashboard, labelKey: 'goal_view_board' },
+  { id: 'map', icon: Waypoints, labelKey: 'goal_view_map' },
+  { id: 'timeline', icon: CalendarClock, labelKey: 'goal_view_timeline' },
+  { id: 'portfolio', icon: Layers, labelKey: 'goal_view_portfolio' },
+];
+
 export function TeamsSidebarNav() {
   const { t } = useTranslation();
   const teamsTab = useSystemStore((s) => s.teamsTab);
   const setTeamsTab = useSystemStore((s) => s.setTeamsTab);
+  const goalsTab = useSystemStore((s) => s.goalsTab);
+  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
   const teams = usePipelineStore((s) => s.teams);
   const selectedTeamId = usePipelineStore((s) => s.selectedTeamId);
   const selectTeam = usePipelineStore((s) => s.selectTeam);
@@ -80,8 +89,8 @@ export function TeamsSidebarNav() {
         </div>
       )}
 
-      {/* Goals hub — board/map/timeline/portfolio switch in-page */}
-      <div className="mt-3 pt-3 border-t border-primary/10">
+      {/* Goals hub — view submenu (board/map/timeline/portfolio) underneath */}
+      <div className="mt-3 pt-3 border-t border-primary/10 space-y-0.5">
         <button
           data-testid="teams-goals-nav"
           onClick={() => go('goals')}
@@ -95,6 +104,29 @@ export function TeamsSidebarNav() {
           <Target className="w-4 h-4 flex-shrink-0" />
           {t.sidebar.goals}
         </button>
+        {teamsTab === 'goals' && (
+          <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
+            {GOAL_VIEWS.map((v) => {
+              const Icon = v.icon;
+              return (
+                <button
+                  key={v.id}
+                  data-testid={`goals-view-${v.id}`}
+                  onClick={() => setGoalsTab(v.id)}
+                  aria-current={goalsTab === v.id ? 'page' : undefined}
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
+                    goalsTab === v.id
+                      ? 'bg-primary/10 text-foreground/90 font-medium'
+                      : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{t.plugins.dev_lifecycle[v.labelKey]}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </nav>
   );

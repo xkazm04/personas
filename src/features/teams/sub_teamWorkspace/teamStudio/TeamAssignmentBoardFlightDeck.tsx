@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Radio, Inbox } from 'lucide-react';
 import { usePipelineStore } from '@/stores/pipelineStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import {
@@ -21,12 +22,12 @@ import {
  * visibility) by inverting the hierarchy: steps are the primary object.
  */
 
-const PHASES: Array<{ id: string; label: string; statuses: string[]; tone: string }> = [
-  { id: 'active', label: 'Active', statuses: ['running'], tone: 'text-blue-400' },
-  { id: 'review', label: 'Needs review', statuses: ['awaiting_review'], tone: 'text-amber-400' },
-  { id: 'queued', label: 'Queued', statuses: ['queued'], tone: 'text-foreground/60' },
-  { id: 'landed', label: 'Landed', statuses: ['done'], tone: 'text-emerald-400' },
-  { id: 'stopped', label: 'Stopped', statuses: ['failed', 'aborted'], tone: 'text-red-400' },
+const PHASES: Array<{ id: string; labelKey: 'deck_phase_active' | 'deck_phase_review' | 'deck_phase_queued' | 'deck_phase_landed' | 'deck_phase_stopped'; statuses: string[]; tone: string }> = [
+  { id: 'active', labelKey: 'deck_phase_active', statuses: ['running'], tone: 'text-blue-400' },
+  { id: 'review', labelKey: 'deck_phase_review', statuses: ['awaiting_review'], tone: 'text-amber-400' },
+  { id: 'queued', labelKey: 'deck_phase_queued', statuses: ['queued'], tone: 'text-foreground/60' },
+  { id: 'landed', labelKey: 'deck_phase_landed', statuses: ['done'], tone: 'text-emerald-400' },
+  { id: 'stopped', labelKey: 'deck_phase_stopped', statuses: ['failed', 'aborted'], tone: 'text-red-400' },
 ];
 
 function toIsoUtc(s: string): string {
@@ -36,6 +37,8 @@ function toIsoUtc(s: string): string {
 }
 
 export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
+  const { t } = useTranslation();
+  const ts = t.pipeline.team_studio;
   const assignments = usePipelineStore((s) => s.assignmentsByTeam[teamId]) ?? [];
   const refreshAssignments = useRefreshAssignments(teamId);
   const personaIndex = usePersonaIndex();
@@ -75,7 +78,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
         <Inbox className="w-8 h-8 text-foreground/30" />
-        <p className="typo-body text-foreground/50">No assignments yet — orchestrate one to put the team to work.</p>
+        <p className="typo-body text-foreground/50">{ts.deck_empty}</p>
       </div>
     );
   }
@@ -87,7 +90,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
         {grouped.map((g) => (
           <div key={g.id}>
             <p className={`px-1 mb-1.5 typo-label uppercase tracking-wider ${g.tone}`}>
-              {g.label} <span className="text-foreground/40 font-mono">{g.items.length}</span>
+              {ts[g.labelKey]} <span className="text-foreground/40 font-mono">{g.items.length}</span>
             </p>
             <div className="space-y-1.5">
               {g.items.map((a) => (
@@ -113,7 +116,7 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                 <GoalChip goalId={selected.goalId} />
                 {selected.status === 'running' && (
                   <span className="inline-flex items-center gap-1.5 typo-caption text-blue-300">
-                    <Radio className="w-3.5 h-3.5" /> live
+                    <Radio className="w-3.5 h-3.5" /> {ts.deck_live}
                   </span>
                 )}
               </div>
@@ -137,11 +140,11 @@ export function TeamAssignmentBoardFlightDeck({ teamId }: { teamId: string }) {
                 }}
               />
             ) : (
-              <p className="typo-body text-foreground/45">Decomposing into steps…</p>
+              <p className="typo-body text-foreground/45">{ts.deck_decomposing}</p>
             )}
           </>
         ) : (
-          <p className="typo-body text-foreground/45">Select a mission.</p>
+          <p className="typo-body text-foreground/45">{ts.deck_select}</p>
         )}
       </div>
     </div>
