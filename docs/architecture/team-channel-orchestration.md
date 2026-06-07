@@ -2,9 +2,8 @@
 
 Status: **DECIDED — ready to build** (2026-06-07; open questions resolved by the user, see §8). Design B (the Collab
 living chat: channel read-model + acknowledged directives) is SHIPPED; this
-doc reconsiders the Design C scope — a relay chat where **all orchestration
-actors write and listen** — against what the codebase actually has. Decision
-pending a joint design pass over Director + Athena (the user's call).
+doc defines the Design C scope — a relay chat where **all orchestration
+actors write and listen** — against what the codebase actually has.
 
 Companion docs this builds on: [`athena-team-orchestration.md`](../features/companion/athena-team-orchestration.md)
 (post-run reconciliation seam), [`athena-decision-layer-plan.md`](../features/companion/athena-decision-layer-plan.md)
@@ -125,8 +124,9 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
   or `display` (human-only). No subscriber-less chatter class again.
 - **Author rate caps per assignment:** Athena and Director each ≤ N posts
   per assignment (start N=3); persona `channel_post` ≤ 1 per step.
-- **Loop prevention:** Director reacts only to `persona` traffic; Athena's
-  autonomous posts require approval; neither reacts to the other.
+- **Loop prevention:** Director reacts only to `persona` traffic; Athena
+  never reacts to Director posts (and vice versa) — the rate caps bound any
+  residual feedback through persona replies.
 - **Cost guardrail:** injection window stays recency- and length-capped
   (today: 5 newest / 14d / 240 chars per line).
 - **Retention:** channel messages TTL-pruned with the run history.
