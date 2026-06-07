@@ -184,6 +184,14 @@ enum IdeaProtocol {
         priority: Option<i32>,
         reason: Option<String>,
     },
+    /// Strategist goal-relation: writes a `depends`/`follows` edge between two
+    /// OPEN goals so autonomously-promoted goals stop living as unrelated
+    /// islands (the edges render on the Goals Map and drive Now/Next).
+    RelateGoals {
+        from_goal_id: String,
+        to_goal_id: String,
+        relation: String,
+    },
 }
 
 /// Score fields (effort/impact/risk) must be present and inside 1..=10. The LLM
@@ -260,6 +268,20 @@ fn parse_idea_protocol(text: &str) -> Option<IdeaProtocol> {
                 .get("reason")
                 .and_then(|r| r.as_str())
                 .map(|s| s.to_string()),
+        });
+    }
+
+    if let Some(rel) = val.get("relate_goals") {
+        let from_goal_id = rel.get("from_goal_id")?.as_str()?.to_string();
+        let to_goal_id = rel.get("to_goal_id")?.as_str()?.to_string();
+        let relation = rel.get("relation")?.as_str()?.to_string();
+        if from_goal_id == to_goal_id || !matches!(relation.as_str(), "depends" | "follows") {
+            return None;
+        }
+        return Some(IdeaProtocol::RelateGoals {
+            from_goal_id,
+            to_goal_id,
+            relation,
         });
     }
 
@@ -707,6 +729,22 @@ async fn run_idea_scan(
                                     );
                                 }
                             }
+                            IdeaProtocol::RelateGoals {
+                                from_goal_id,
+                                to_goal_id,
+                                relation,
+                            } => {
+                                if apply_goal_relation(
+                                    pool, project_id, &from_goal_id, &to_goal_id, &relation,
+                                ) {
+                                    ideas_created += 1;
+                                    IDEA_SCAN_JOBS.emit_line(
+                                        app,
+                                        scan_id,
+                                        format!("[Relate] {from_goal_id} {relation} {to_goal_id}"),
+                                    );
+                                }
+                            }
                         }
                     }
                 }
@@ -846,6 +884,40 @@ fn apply_triage_decision(
     }
 }
 
+/// Apply a strategist goal-relation. Both goals must belong to THIS project
+/// (hallucinated ids can't bridge projects). `depends` maps to the schema's
+/// `blocks` edge (cycle-checked by the repo); `follows` is the sequence edge.
+fn apply_goal_relation(
+    pool: &crate::db::DbPool,
+    project_id: &str,
+    from_goal_id: &str,
+    to_goal_id: &str,
+    relation: &str,
+) -> bool {
+    let in_project = |gid: &str| {
+        pool.get().ok().and_then(|conn| {
+            conn.query_row(
+                "SELECT 1 FROM dev_goals WHERE id = ?1 AND project_id = ?2",
+                rusqlite::params![gid, project_id],
+                |_| Ok(true),
+            )
+            .ok()
+        })
+        .unwrap_or(false)
+    };
+    if !in_project(from_goal_id) || !in_project(to_goal_id) {
+        return false;
+    }
+    let dep_type = if relation == "depends" { "blocks" } else { "follows" };
+    match repo::add_goal_dependency(pool, from_goal_id, to_goal_id, Some(dep_type)) {
+        Ok(_) => true,
+        Err(e) => {
+            tracing::debug!(from_goal_id, to_goal_id, relation, error = %e, "goal relation skipped (duplicate/cycle)");
+            false
+        }
+    }
+}
+
 /// Build the Product Strategist's backlog-triage prompt: every pending idea
 /// (with lens + self-scores), the team's shared ledger, and what recently
 /// shipped — the strategist ranks the top items (1 = do next), rejects
@@ -856,6 +928,7 @@ fn build_backlog_triage_prompt(
     ideas: &[crate::db::models::DevIdea],
     team_ledger: Option<&str>,
     shipped: Option<&str>,
+    open_goals: Option<&str>,
 ) -> String {
     let identity = strategist_identity
         .filter(|s| !s.trim().is_empty())
@@ -887,12 +960,16 @@ fn build_backlog_triage_prompt(
         .filter(|s| !s.trim().is_empty())
         .map(|s| format!("\n## Recently shipped (don't re-do; build on it)\n{s}\n"))
         .unwrap_or_default();
+    let goals_block = open_goals
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| format!("\n## Open goals (relate these where natural sequences/dependencies exist)\n{s}\n"))
+        .unwrap_or_default();
     format!(
         r#"# Backlog Triage — {project_name}
 
 {identity}You are triaging the project's pending backlog. Rank what the team should do NEXT
 for maximum real-world value, reject what isn't worth doing, and leave the rest.
-{ledger}{shipped_block}
+{ledger}{shipped_block}{goals_block}
 ## Pending ideas
 {ideas_block}
 ## Rules
@@ -905,11 +982,16 @@ for maximum real-world value, reject what isn't worth doing, and leave the rest.
 - Leave everything else untouched (pending, unranked).
 - Do NOT read the codebase in depth — judge from the idea descriptions, the ledger, and
   what shipped. This is a prioritization pass, not a re-scan.
+- RELATE the open goals where a REAL ordering exists: if goal B builds on goal A's output,
+  emit relation "depends" (B depends on A); if B is the natural next phase after A without
+  a hard blocker, emit "follows". Only relate when the connection is genuine — most goals
+  are legitimately independent; do NOT invent links.
 
 ## Output protocol
 One JSON object per line, nothing else around them:
 {{"triage": {{"idea_id": "<id from the list>", "action": "rank", "priority": 1, "reason": "<why now>"}}}}
 {{"triage": {{"idea_id": "<id from the list>", "action": "reject", "reason": "<why not>"}}}}
+{{"relate_goals": {{"from_goal_id": "<open goal id>", "to_goal_id": "<open goal id>", "relation": "depends|follows", "reason": "<one line>"}}}}
 
 End with: {{"scan_summary": {{"ideas_generated": <decisions made>, "agents_used": 1}}}}
 "#
@@ -982,12 +1064,38 @@ pub async fn run_backlog_triage(
         .filter(|s| !s.is_empty())
     });
 
+    // Open goals — the strategist relates them (depends/follows) where real
+    // sequences exist, so autonomously-promoted goals stop being islands.
+    let open_goals: Option<String> = db.get().ok().and_then(|conn| {
+        conn.prepare(
+            "SELECT id, title, status, progress FROM dev_goals WHERE project_id = ?1
+             AND status NOT IN ('done','completed') AND progress < 100
+             ORDER BY created_at DESC LIMIT 12",
+        )
+        .ok()
+        .and_then(|mut stmt| {
+            stmt.query_map(rusqlite::params![project_id], |r| {
+                Ok(format!(
+                    "- id={} [{} {}%] {}",
+                    r.get::<_, String>(0)?,
+                    r.get::<_, String>(2)?,
+                    r.get::<_, i32>(3)?,
+                    r.get::<_, String>(1)?
+                ))
+            })
+            .ok()
+            .map(|rows| rows.flatten().collect::<Vec<_>>().join("\n"))
+        })
+        .filter(|s| !s.is_empty())
+    });
+
     let prompt_text = build_backlog_triage_prompt(
         &project.name,
         strategist_identity.as_deref(),
         &ideas,
         team_ledger.as_deref(),
         shipped.as_deref(),
+        open_goals.as_deref(),
     );
 
     let scan = repo::create_scan(&db, Some(&project_id), "backlog-triage", Some("running"))?;

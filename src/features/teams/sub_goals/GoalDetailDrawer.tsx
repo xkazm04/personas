@@ -225,7 +225,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       isOpen={isOpen}
       onClose={onClose}
       titleId="goal-detail-title"
-      maxWidthClass="max-w-2xl"
+      maxWidthClass="max-w-[50rem]"
       panelClassName="bg-background border border-primary/10 rounded-2xl p-6 shadow-elevation-4 max-h-[88vh] overflow-y-auto"
     >
       {/* Header */}
@@ -428,9 +428,11 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
         <Section icon={Activity} label={dl.goal_detail_activity}>
           <ul className="space-y-1.5">
             {signals.slice(0, 12).map((sig) => (
-              <li key={sig.id} className="flex items-center gap-2 typo-caption text-foreground">
-                <span className="w-1.5 h-1.5 rounded-full bg-violet-400/60 shrink-0" />
-                <span className="text-foreground">{sig.message ?? sig.signal_type}</span>
+              <li key={sig.id} className="flex items-start gap-2 typo-caption text-foreground">
+                <span className="w-1.5 h-1.5 mt-1.5 rounded-full bg-violet-400/60 shrink-0" />
+                <span className="text-foreground line-clamp-2 min-w-0 flex-1">
+                  {readableSignal(sig.message) ?? sig.signal_type}
+                </span>
                 <RelativeTime timestamp={sig.created_at} className="ml-auto text-foreground shrink-0" />
               </li>
             ))}
@@ -439,6 +441,42 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       )}
     </BaseModal>
   );
+}
+
+/**
+ * Make a goal signal readable. Older `team_step` signals stored the raw tail
+ * of the execution output — agent-protocol JSON ({"emit_event":…},
+ * {"outcome_assessment":…}) that rendered as truncated garbage. Extract the
+ * human sentence in preference order: outcome_assessment.summary →
+ * task_completed action → the message stripped of protocol JSON. Tolerant of
+ * truncated fragments (regex on the key, not JSON.parse).
+ */
+function readableSignal(message: string | null | undefined): string | null {
+  if (!message) return null;
+  const trimmed = message.trim();
+  if (!trimmed) return null;
+  // Fast path: no protocol JSON in sight → already human text.
+  if (!trimmed.includes('{"') && !trimmed.includes('"summary"') && !trimmed.includes('emit_event')) {
+    return trimmed;
+  }
+  const grab = (key: string): string | null => {
+    const m = trimmed.match(new RegExp(`"${key}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`));
+    if (!m?.[1]) return null;
+    const text = m[1].replace(/\\n/g, ' ').replace(/\\"/g, '"').replace(/\s+/g, ' ').trim();
+    return text.length > 8 ? text : null;
+  };
+  // Best: the agent's own outcome summary; then its task action line.
+  const fromSummary = grab('summary');
+  if (fromSummary) return fromSummary;
+  const fromAction = grab('action');
+  if (fromAction) return fromAction;
+  // Last resort: drop JSON-ish chunks and keep whatever prose remains.
+  const stripped = trimmed
+    .replace(/\{"[\s\S]*?\}\}/g, ' ')
+    .replace(/\{"[\s\S]*$/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped.length > 12 ? stripped : null;
 }
 
 function Section({ icon: Icon, label, children }: { icon: typeof Target; label: string; children: ReactNode }) {

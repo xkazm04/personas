@@ -691,12 +691,18 @@ async fn run_step(
 
                 assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                // Activity feed gets the agent's readable outcome sentence,
+                // not the raw protocol-JSON tail (which rendered as garbage).
+                let signal_text = summary
+                    .as_deref()
+                    .and_then(extract_readable_outcome)
+                    .unwrap_or_else(|| step.title.clone());
                 record_assignment_goal_signal(
                     pool,
                     goal_id.as_deref(),
                     &step.assignment_id,
                     "team_step",
-                    summary.as_deref().or(Some(step.title.as_str())),
+                    Some(&signal_text),
                 );
                 // T4 (live progress): a goal-linked step that finishes checks
                 // its matching to-do off NOW and recomputes the goal's progress
@@ -1169,6 +1175,37 @@ fn emit_progress(app: &AppHandle, assignment_id: &str, status: &str, step_id: Op
 /// write a `dev_goal_signal` so the goal surfaces live team activity and the
 /// progress resolver can derive a suggestion. No-op for unlinked assignments;
 /// best-effort (a signal-write failure must never stall orchestration).
+/// Extract the human-readable outcome sentence from an execution-output tail.
+/// The tail is agent-protocol JSON; the goal Activity feed previously rendered
+/// it raw (truncated-JSON garbage). Preference: `outcome_assessment.summary`
+/// (the agent's own one-paragraph wrap) → `task_completed`'s `action` line.
+/// Tolerant of truncated fragments — scans for the key + quoted string instead
+/// of parsing whole JSON.
+fn extract_readable_outcome(raw: &str) -> Option<String> {
+    fn grab(raw: &str, key: &str) -> Option<String> {
+        let kpos = raw.rfind(&format!("\"{key}\""))?;
+        let after = &raw[kpos + key.len() + 2..];
+        let colon = after.find(':')?;
+        let after = after[colon + 1..].trim_start();
+        let mut out = String::new();
+        let mut chars = after.strip_prefix('"')?.chars();
+        while let Some(c) = chars.next() {
+            match c {
+                '\\' => match chars.next() {
+                    Some('n') => out.push(' '),
+                    Some(other) => out.push(other),
+                    None => break,
+                },
+                '"' => break,
+                _ => out.push(c),
+            }
+        }
+        let cleaned = out.split_whitespace().collect::<Vec<_>>().join(" ");
+        (cleaned.len() > 8).then_some(cleaned)
+    }
+    grab(raw, "summary").or_else(|| grab(raw, "action"))
+}
+
 fn record_assignment_goal_signal(
     pool: &DbPool,
     goal_id: Option<&str>,
