@@ -728,6 +728,16 @@ async fn run_step(
 
                 assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                // C1 (multi-author channel): gated roles (Implementer/QA/
+                // Architect) may broadcast ONE short message to the team channel
+                // from their output. Best-effort; scans the full output, not the
+                // tail summary.
+                maybe_post_channel_message(
+                    pool,
+                    &step,
+                    &persona_id,
+                    execution.output_data.as_deref(),
+                );
                 // Activity feed gets the agent's readable outcome sentence,
                 // not the raw protocol-JSON tail (which rendered as garbage).
                 let signal_text = summary
@@ -1036,6 +1046,83 @@ fn team_assignment_team_id(pool: &Arc<DbPool>, assignment_id: &str) -> Option<St
         |r| r.get(0),
     )
     .ok()
+}
+
+/// A persona's role within a team (`persona_team_members.role`).
+fn persona_team_role(pool: &Arc<DbPool>, team_id: &str, persona_id: &str) -> Option<String> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT role FROM persona_team_members WHERE team_id = ?1 AND persona_id = ?2",
+        rusqlite::params![team_id, persona_id],
+        |r| r.get(0),
+    )
+    .ok()
+}
+
+/// C1 first wave: only these roles may post to the channel (the ones whose
+/// acknowledgments / questions carry the most coordination signal). Decided
+/// in docs/architecture/team-channel-orchestration.md §8.
+const CHANNEL_POST_ROLES: &[&str] = &["engineer", "qa", "architect"];
+const CHANNEL_POST_MAX_CHARS: usize = 400;
+
+/// Parse the persona `channel_post` protocol from a step's output and, if the
+/// persona's role is gated-in, post ONE message to the team channel.
+///
+/// Protocol (robust to prose output — a line prefix, not JSON-from-prose):
+/// the agent may emit a single line `CHANNEL_POST: <text>` to broadcast a
+/// short status / question / acknowledgment to the team channel. The FIRST
+/// such line wins (1-per-step cap). Posts land as `author_kind='persona'`,
+/// `consumer='display'` — visible in Collab but NOT injected into other
+/// personas' steps, so persona traffic can't feed a persona→persona prompt
+/// loop (the G4 governance lesson). Best-effort; silently no-ops for
+/// non-gated roles or when no marker is present.
+fn maybe_post_channel_message(
+    pool: &Arc<DbPool>,
+    step: &TeamAssignmentStep,
+    persona_id: &str,
+    output: Option<&str>,
+) {
+    let Some(output) = output else {
+        return;
+    };
+    let Some(team_id) = team_assignment_team_id(pool, &step.assignment_id) else {
+        return;
+    };
+    let role = persona_team_role(pool, &team_id, persona_id).unwrap_or_default();
+    if !CHANNEL_POST_ROLES.contains(&role.as_str()) {
+        return;
+    }
+    let body = output.lines().find_map(|line| {
+        let t = line.trim();
+        let rest = t
+            .strip_prefix("CHANNEL_POST:")
+            .or_else(|| t.strip_prefix("CHANNEL POST:"))?
+            .trim();
+        if rest.is_empty() {
+            None
+        } else {
+            Some(rest.to_string())
+        }
+    });
+    let Some(mut body) = body else {
+        return;
+    };
+    if body.chars().count() > CHANNEL_POST_MAX_CHARS {
+        body = body.chars().take(CHANNEL_POST_MAX_CHARS).collect::<String>() + "…";
+    }
+    let _ = crate::db::repos::resources::team_channel::create(
+        pool,
+        crate::db::models::CreateChannelMessageInput {
+            team_id,
+            author_kind: "persona".into(),
+            author_id: Some(persona_id.to_string()),
+            body,
+            addressed_to: None,
+            reply_to: None,
+            assignment_id: Some(step.assignment_id.clone()),
+            consumer: Some("display".into()),
+        },
+    );
 }
 
 fn build_step_input(

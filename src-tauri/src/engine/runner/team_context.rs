@@ -146,7 +146,11 @@ pub fn build_team_alignment_block(
     // line-capped so the cost guardrail holds.
     let directives = render_user_directives(pool, team_id, &persona.id);
 
-    let parts: Vec<String> = [alignment, directives, standards]
+    // C1: teach the gated roles how to speak INTO the channel (the persona
+    // reply path). Only Implementer/QA/Architect get this capability.
+    let channel_post = render_channel_post_capability(self_role.as_deref());
+
+    let parts: Vec<String> = [alignment, directives, channel_post, standards]
         .into_iter()
         .flatten()
         .collect();
@@ -155,6 +159,29 @@ pub fn build_team_alignment_block(
     } else {
         Some(parts.concat())
     }
+}
+
+/// Roles allowed to post to the team channel (C1 first wave). Mirrors
+/// `CHANNEL_POST_ROLES` in the orchestrator — keep the two in sync.
+const CHANNEL_POST_CAPABLE_ROLES: &[&str] = &["engineer", "qa", "architect"];
+
+/// Teach a gated role (Implementer/QA/Architect) how to broadcast into the
+/// team channel. Returns None for every other role, so the capability never
+/// pollutes prompts that shouldn't have it.
+fn render_channel_post_capability(self_role: Option<&str>) -> Option<String> {
+    let role = self_role?;
+    if !CHANNEL_POST_CAPABLE_ROLES.contains(&role) {
+        return None;
+    }
+    Some(String::from(
+        "
+
+## TEAM CHANNEL — speaking to the team
+You may broadcast ONE short message to the shared team channel from this step, where the user and your teammates can read it. Use it sparingly, only when it helps coordination: acknowledge a directive you're acting on, flag a blocker or a decision that affects others, or ask a brief question. To post, include a single line in your output exactly like:
+CHANNEL_POST: <your one-line message>
+Keep it under ~400 characters and human-readable (no JSON, no logs). This is optional — most steps need no channel post. Do NOT use it to dump status that already shows in your result summary.
+",
+    ))
 }
 
 /// Render the team channel's recent injectable messages as a binding prompt
