@@ -432,6 +432,17 @@ fn fallback_policy() -> FallbackPolicy {
     }
 }
 
+/// Whether legacy, unauthenticated master-key files (a raw 32-byte blob or
+/// plaintext base64, written before AES-GCM/DPAPI wrapping) may be imported.
+/// Off by default: accepting any 32-byte file as the key let an attacker who can
+/// write the app-data dir plant a known key, then read every credential the user
+/// subsequently enters (bug-hunt 2026-06-07 #2). Enable for a single, logged
+/// migration run with `PERSONAS_MIGRATE_LEGACY_KEY=1`; the imported key is then
+/// immediately re-written in authenticated form.
+fn legacy_key_migration_allowed() -> bool {
+    std::env::var("PERSONAS_MIGRATE_LEGACY_KEY").unwrap_or_default() == "1"
+}
+
 /// Get or create the 32-byte master key. Cached in OnceLock after first call.
 ///
 /// The key is stored in a `ProtectedKey` wrapper that:
@@ -654,7 +665,22 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
         let needs_resave = false;
         (decrypted, needs_resave)
     } else {
-        // Legacy plaintext base64 format -- always needs migration
+        // Legacy plaintext base64 format (no DPAPI/AES-GCM wrapper). An attacker
+        // who can write this file would otherwise control the master key, so only
+        // import it during an explicit, logged migration run; otherwise fail
+        // closed (bug-hunt 2026-06-07 #2).
+        if !legacy_key_migration_allowed() {
+            return Err(CryptoError::KeyManagement(
+                "Refusing unauthenticated plaintext master-key file. Set \
+                 PERSONAS_MIGRATE_LEGACY_KEY=1 to import it once (it will be \
+                 re-encrypted in authenticated form)."
+                    .into(),
+            ));
+        }
+        tracing::warn!(
+            "PERSONAS_MIGRATE_LEGACY_KEY=1: importing legacy plaintext master-key \
+             file for one-time migration; it will be re-encrypted at rest."
+        );
         let bytes = B64.decode(trimmed)?;
         (bytes, true)
     };
@@ -887,10 +913,23 @@ fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 
 #[cfg(not(windows))]
 fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
-    // Support legacy plaintext fallback files written before this hardening
+    // A raw 32-byte blob is an unauthenticated legacy key (pre-AES-GCM). Accepting
+    // it unconditionally let an attacker plant a known master key, so it is only
+    // imported during an explicit, logged migration run; otherwise fail closed
+    // (bug-hunt 2026-06-07 #2).
     if data.len() == 32 {
-        // Could be a raw 32-byte key from before encryption was added
-        tracing::warn!("Detected unencrypted fallback key data, returning as-is for migration");
+        if !legacy_key_migration_allowed() {
+            return Err(CryptoError::KeyManagement(
+                "Refusing unauthenticated 32-byte legacy master key. Set \
+                 PERSONAS_MIGRATE_LEGACY_KEY=1 to import it once (it will be \
+                 re-encrypted in authenticated form)."
+                    .into(),
+            ));
+        }
+        tracing::warn!(
+            "PERSONAS_MIGRATE_LEGACY_KEY=1: accepting unauthenticated 32-byte legacy \
+             fallback key for one-time migration; it will be re-encrypted at rest."
+        );
         return Ok(data.to_vec());
     }
     unix_local_unprotect(data)
