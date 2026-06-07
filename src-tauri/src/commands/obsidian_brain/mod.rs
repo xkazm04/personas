@@ -454,6 +454,28 @@ fn log_sync(
     let _ = sync_repo::insert_sync_log(pool, &entry);
 }
 
+/// Build an injective vault filename for a synced entity. `sanitize_filename` is
+/// many-to-one (collapses many distinct chars to `-`, truncates at 100), so
+/// keying the on-disk note by title alone let two entities that sanitize to the
+/// same name clobber each other's file — silent data loss with success theater
+/// (bug-hunt 2026-06-07 creative #1). Appending a short, stable, filesystem-safe
+/// slice of the entity id makes the name unique per entity.
+fn vault_note_filename(title: &str, entity_id: &str) -> String {
+    let base = sanitize_filename(title);
+    let alnum: String = entity_id
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect();
+    let suffix = if alnum.len() > 8 {
+        alnum[alnum.len() - 8..].to_string()
+    } else if alnum.is_empty() {
+        "x".to_string()
+    } else {
+        alnum
+    };
+    format!("{base}--{suffix}.md")
+}
+
 #[tauri::command]
 pub fn obsidian_brain_push_sync(
     state: State<'_, Arc<AppState>>,
@@ -498,13 +520,6 @@ pub fn obsidian_brain_push_sync(
 
             for memory in &memories {
                 let cat_dir = persona_dir.join(&memory.category);
-                let filename = format!("{}.md", sanitize_filename(&memory.title));
-                let file_path = cat_dir.join(&filename);
-                let rel_path = file_path
-                    .strip_prefix(vault_base)
-                    .unwrap_or(&file_path)
-                    .to_string_lossy()
-                    .to_string();
 
                 let md_content = memory_to_markdown(memory, &persona.name);
                 let new_hash = compute_content_hash(&md_content);
@@ -519,11 +534,29 @@ pub fn obsidian_brain_push_sync(
                     }
                 }
 
-                // Ensure directory exists
-                if let Err(e) = std::fs::create_dir_all(&cat_dir) {
+                // Reuse the path already chosen for this entity (stable across
+                // title edits and never orphans an existing note); a NEW entity
+                // gets a collision-free, id-suffixed name so two memories that
+                // sanitize to the same title can't clobber one file
+                // (bug-hunt 2026-06-07 creative #1).
+                let rel_path = match existing.as_ref() {
+                    Some(es) => es.vault_file_path.clone(),
+                    None => {
+                        let abs = cat_dir.join(vault_note_filename(&memory.title, &memory.id));
+                        abs.strip_prefix(vault_base)
+                            .unwrap_or(&abs)
+                            .to_string_lossy()
+                            .to_string()
+                    }
+                };
+                let file_path = vault_base.join(&rel_path);
+
+                // Ensure directory exists (parent of the resolved file path).
+                let write_dir = file_path.parent().unwrap_or(cat_dir.as_path());
+                if let Err(e) = std::fs::create_dir_all(write_dir) {
                     result
                         .errors
-                        .push(format!("Failed to create dir {}: {e}", cat_dir.display()));
+                        .push(format!("Failed to create dir {}: {e}", write_dir.display()));
                     continue;
                 }
 
