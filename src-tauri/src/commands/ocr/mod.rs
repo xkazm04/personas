@@ -4,6 +4,7 @@ use chrono::Utc;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::Instant;
 use tauri::{AppHandle, State};
@@ -35,31 +36,61 @@ const OCR_SYSTEM_PROMPT: &str =
 const MAX_OCR_FILE_BYTES: u64 = 20 * 1024 * 1024;
 
 /// Registry of in-flight OCR cancellation tokens, keyed by client-supplied
-/// `operation_id`. The `cancel_ocr_operation` command pulls the token out
-/// and signals it; the OCR call's `tokio::select!` resolves to the
-/// cancellation arm and returns an "OCR cancelled" error.
-static OCR_CANCEL_TOKENS: LazyLock<Mutex<HashMap<String, CancellationToken>>> =
+/// `operation_id`. Each entry pairs the `CancellationToken` with a process-
+/// unique registration handle so that two runs sharing an `operation_id`
+/// (a stale/reused id from a re-mounted drawer, or a hardcoded default) do
+/// not corrupt each other's cancellation identity: the second `register`
+/// overwrites the first's entry, and when the first run finishes its guard
+/// only removes the entry if the stored handle still matches its own —
+/// otherwise it leaves the newer run's live token in place.
+///
+/// The `cancel_ocr_operation` command pulls the token out and signals it;
+/// the OCR call's `tokio::select!` resolves to the cancellation arm and
+/// returns an "OCR cancelled" error.
+static OCR_CANCEL_TOKENS: LazyLock<Mutex<HashMap<String, (u64, CancellationToken)>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-fn register_cancel_token(operation_id: &str) -> CancellationToken {
+/// Monotonic source of per-registration handles. Each `register_cancel_token`
+/// call claims a fresh value, giving every in-flight run a unique identity
+/// even when they share an `operation_id`.
+static OCR_CANCEL_HANDLE_SEQ: AtomicU64 = AtomicU64::new(0);
+
+/// Register a cancellation token for `operation_id`, returning the token and
+/// the unique handle that identifies this particular registration. If another
+/// run is already registered under the same id, its entry is overwritten (it
+/// stays cancellable via the new token) and its guard becomes a no-op on drop.
+fn register_cancel_token(operation_id: &str) -> (u64, CancellationToken) {
     let token = CancellationToken::new();
+    let handle = OCR_CANCEL_HANDLE_SEQ.fetch_add(1, Ordering::Relaxed);
     let mut map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
-    map.insert(operation_id.to_string(), token.clone());
-    token
+    map.insert(operation_id.to_string(), (handle, token.clone()));
+    (handle, token)
 }
 
-fn deregister_cancel_token(operation_id: &str) {
+/// Remove the registry entry for `operation_id` only when it still belongs to
+/// the registration identified by `handle`. This identity check is what keeps
+/// a finished run from deleting a newer same-id run's still-live token.
+fn deregister_cancel_token(operation_id: &str, handle: u64) {
     let mut map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
-    map.remove(operation_id);
+    if let std::collections::hash_map::Entry::Occupied(entry) = map.entry(operation_id.to_string()) {
+        if entry.get().0 == handle {
+            entry.remove();
+        }
+    }
 }
 
 /// RAII guard that removes the cancellation token from the registry when
 /// the OCR call returns or panics, preventing the map from growing on
-/// dropped futures.
-struct CancelGuard<'a>(&'a str);
+/// dropped futures. Removal is identity-guarded by the unique registration
+/// `handle`: a guard only clears its own entry, so a finished run never
+/// evicts a newer run that reused the same `operation_id`.
+struct CancelGuard<'a> {
+    operation_id: &'a str,
+    handle: u64,
+}
 impl Drop for CancelGuard<'_> {
     fn drop(&mut self) {
-        deregister_cancel_token(self.0);
+        deregister_cancel_token(self.operation_id, self.handle);
     }
 }
 
@@ -196,8 +227,22 @@ async fn run_gemini_ocr(
         model_name
     );
 
-    let cancel_token = operation_id.as_deref().map(register_cancel_token);
-    let _guard = operation_id.as_deref().map(CancelGuard);
+    // Register a cancellation token (when an operation_id is supplied) and pair
+    // it with an identity-guarded RAII guard so this run's drop only evicts its
+    // own registration, never a newer same-id run's live token.
+    let (cancel_token, _guard) = match operation_id.as_deref() {
+        Some(op_id) => {
+            let (handle, token) = register_cancel_token(op_id);
+            (
+                Some(token),
+                Some(CancelGuard {
+                    operation_id: op_id,
+                    handle,
+                }),
+            )
+        }
+        None => (None, None),
+    };
 
     let request_future = SHARED_HTTP
         .post(&url)
@@ -358,7 +403,9 @@ pub async fn cancel_ocr_operation(
 ) -> Result<bool, AppError> {
     require_auth_sync(&state)?;
     let map = OCR_CANCEL_TOKENS.lock().unwrap_or_else(|e| e.into_inner());
-    if let Some(token) = map.get(&operation_id) {
+    // Cancel whatever registration currently owns this operation_id (the most
+    // recent run); its handle-guarded drop will clean the entry up.
+    if let Some((_handle, token)) = map.get(&operation_id) {
         token.cancel();
         Ok(true)
     } else {
