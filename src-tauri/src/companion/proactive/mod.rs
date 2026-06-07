@@ -115,8 +115,14 @@ pub fn evaluate_with_extra_candidates(
         }
         match enqueue_if_new(pool, &nudge)? {
             Some(msg) => {
-                budget.increment(pool)?;
-                new_msgs.push(msg);
+                // Atomic claim — if a concurrent pass consumed the last unit
+                // between the check above and here, leave the row queued and
+                // stop so the cap holds (bug-hunt 2026-06-07 companion #2).
+                if budget.try_consume(pool)? {
+                    new_msgs.push(msg);
+                } else {
+                    break;
+                }
             }
             None => {
                 // Dedupe hit — same (trigger_kind, trigger_ref) is
@@ -286,15 +292,15 @@ pub fn deliver_due_scheduled(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>,
     let mut budget = budget::today(pool)?;
     let mut released = Vec::new();
     for msg in due {
-        if budget.is_exhausted() {
+        // Atomic claim doubles as the exhaustion check; overflow stays queued
+        // and due for the next tick (bug-hunt 2026-06-07 companion #2).
+        if !budget.try_consume(pool)? {
             tracing::info!(
-                "proactive: daily budget exhausted ({}), {} scheduled message(s) deferred",
+                "proactive: daily budget exhausted ({}), remaining scheduled message(s) deferred",
                 budget.cap(),
-                "remaining"
             );
             break;
         }
-        budget.increment(pool)?;
         released.push(msg);
     }
     Ok(released)
