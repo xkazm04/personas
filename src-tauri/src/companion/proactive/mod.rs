@@ -238,6 +238,16 @@ pub fn insert_scheduled(
 /// `queued`; the caller transitions to `delivered` via [`mark_delivered`]
 /// after emitting). Trigger-driven rows (scheduled_for IS NULL) are
 /// untouched — they flow through [`evaluate`] only.
+///
+/// Scheduled check-ins share the SAME daily delivery budget as the
+/// trigger path (see [`evaluate_with_extra_candidates`]): rows are
+/// processed oldest-first and each released row consumes one unit of
+/// today's budget. Once the budget is exhausted the remaining due rows
+/// are left `queued` so they release on a later tick — mirroring how the
+/// trigger path defers candidates past the cap. Re-reading
+/// [`budget::today`] here picks up any increments the trigger path
+/// already made in the same evaluation pass, so the two paths can't
+/// jointly exceed the cap.
 pub fn deliver_due_scheduled(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>, AppError> {
     let conn = pool.get()?;
     let now = Utc::now().to_rfc3339();
@@ -249,7 +259,7 @@ pub fn deliver_due_scheduled(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>,
            AND scheduled_for <= ?1
          ORDER BY scheduled_for ASC",
     )?;
-    let rows = stmt
+    let due = stmt
         .query_map(params![now], |row| {
             Ok(ProactiveMessage {
                 id: row.get(0)?,
@@ -264,7 +274,30 @@ pub fn deliver_due_scheduled(pool: &UserDbPool) -> Result<Vec<ProactiveMessage>,
             })
         })?
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(rows)
+    // Drop the read statement/borrow before the budget guard acquires
+    // its own pooled connection for the increment writes.
+    drop(stmt);
+    drop(conn);
+
+    // Gate each due row through the daily budget, exactly like the
+    // trigger path gates each candidate. Oldest-first (ORDER BY above)
+    // means the earliest commitments win the remaining budget; any
+    // overflow stays `queued` and due for the next tick.
+    let mut budget = budget::today(pool)?;
+    let mut released = Vec::new();
+    for msg in due {
+        if budget.is_exhausted() {
+            tracing::info!(
+                "proactive: daily budget exhausted ({}), {} scheduled message(s) deferred",
+                budget.cap(),
+                "remaining"
+            );
+            break;
+        }
+        budget.increment(pool)?;
+        released.push(msg);
+    }
+    Ok(released)
 }
 
 pub fn list_messages(
