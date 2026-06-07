@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
-import { listEvents, searchEvents, listSubscriptions } from '@/api/overview/events';
+import { listEvents, listSubscriptions } from '@/api/overview/events';
 import { listTeamMemories } from '@/api/pipeline/teamMemories';
 import { silentCatch } from '@/lib/silentCatch';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
@@ -65,7 +65,7 @@ export function toEpochUtc(s: string): number {
 }
 
 /** Visual family for an event type — drives the channel's colour coding. */
-export function eventFamily(eventType: string): 'handoff' | 'pr' | 'qa' | 'release' | 'failure' | 'build' | 'other' {
+export function eventFamily(eventType: string): 'handoff' | 'pr' | 'qa' | 'release' | 'failure' | 'build' | 'other' {  // 'note' is the memory pseudo-family, assigned by item kind
   const e = eventType.toLowerCase();
   if (e.includes('fail') || e.includes('error')) return 'failure';
   if (e.startsWith('team_handoff')) return 'handoff';
@@ -140,7 +140,7 @@ export function memberColor(persona: { color?: string | null } | undefined, pers
 }
 
 const POLL_MS = 10_000;
-const EVENT_LIMIT = 300;
+const EVENT_LIMIT = 500;
 
 export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
   const projects = useSystemStore((s) => s.projects);
@@ -158,23 +158,18 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
   const memberSet = useMemo(() => new Set(memberPersonaIds), [memberPersonaIds]);
 
   const refresh = useCallback(() => {
-    const fetchEvents = projectId
-      ? listEvents(EVENT_LIMIT, projectId)
-      : searchEvents({
-          eventType: null, sourceType: null, status: null, targetPersonaId: null,
-          since: null, until: null, search: null, limit: BigInt(EVENT_LIMIT),
-        }).then((r) => r.events);
-    fetchEvents
+    // Fetch UNSCOPED recent events and filter client-side: emitted by a member,
+    // addressed to a member, or stamped with the team's project. (A purely
+    // project-scoped query proved too narrow in practice — bus events from
+    // team executions don't reliably carry the dev project's id.)
+    listEvents(EVENT_LIMIT)
       .then((rows) => {
-        // Project-scoped → the project IS the team's traffic (keep all).
-        // Unscoped fallback → keep only events emitted by or addressed to a member.
-        const keep = projectId
-          ? rows
-          : rows.filter(
-              (e) =>
-                (e.source_id && memberSet.has(e.source_id)) ||
-                (e.target_persona_id && memberSet.has(e.target_persona_id)),
-            );
+        const keep = rows.filter(
+          (e) =>
+            (e.source_id && memberSet.has(e.source_id)) ||
+            (e.target_persona_id && memberSet.has(e.target_persona_id)) ||
+            (projectId !== null && e.project_id === projectId),
+        );
         setEvents(keep);
         setLoaded(true);
       })

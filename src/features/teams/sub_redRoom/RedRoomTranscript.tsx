@@ -16,7 +16,7 @@ import { RedRoomDetailModal } from './RedRoomDetailModal';
  * batches of 20 with an entry animation as you scroll.
  */
 
-const FAMILIES = ['handoff', 'pr', 'qa', 'release', 'failure', 'build', 'other'] as const;
+const FAMILIES = ['handoff', 'pr', 'qa', 'release', 'failure', 'build', 'note', 'other'] as const;
 
 const FAMILY_RAIL: Record<string, string> = {
   handoff: 'border-l-violet-400/70',
@@ -36,6 +36,7 @@ const FAMILY_TEXT: Record<string, string> = {
   release: 'text-emerald-300',
   failure: 'text-red-300',
   build: 'text-sky-300',
+  note: 'text-amber-200/90',
   other: 'text-foreground/60',
 };
 
@@ -85,7 +86,8 @@ export function RedRoomTranscript({ items }: { items: RedRoomItem[] }) {
   const filtered = useMemo(
     () =>
       items.filter((i) => {
-        if (activeFamilies.size > 0 && i.kind === 'event' && !activeFamilies.has(eventFamily(i.eventType))) return false;
+        const family = i.kind === 'memory' ? 'note' : eventFamily(i.eventType);
+        if (activeFamilies.size > 0 && !activeFamilies.has(family)) return false;
         if (activeMembers.size > 0 && (!i.personaId || !activeMembers.has(i.personaId))) return false;
         return true;
       }),
