@@ -16,6 +16,16 @@ future session picks them up without re-discovering them.
 
 > Both are best done together as one "data-driven sync cursor" change with focused tests (insert-during-pass, in-place-mutation-after-window) before touching the live mirror.
 
+## personal-twin #4 — profile update lost-update (High)
+- **File:** `src-tauri/src/db/repos/twin.rs:157-227` (`update_profile`), `src/stores/slices/system/twinSlice.ts:336-346`, `src/features/plugins/twin/sub_identity/IdentityAtelier.tsx:68-81`.
+- **Why deferred:** `update_profile` is a blind full-field overwrite with no optimistic-concurrency guard, so a stale form copy silently clobbers a concurrently-generated bio/identity. The correct fix adds an `updated_at` (or `version`) precondition to the `WHERE` clause and returns a `Conflict`, which must be threaded through the Tauri command signature, the **ts-rs generated bindings**, the store action, and the component (pass expected `updated_at`, handle `Conflict` by reloading). That's a coordinated Rust+binding+TS change too broad for a single safe commit this run.
+- **Recommended fix:** `UPDATE … SET … WHERE id = ?1 AND updated_at = ?expected`; 0 rows → `AppError::Conflict`. Client re-hydrates form state on profile change and prompts on conflict instead of blind-overwriting.
+
+## execution #6 — output-line interleaving across same-persona runs (Medium)
+- **File:** `src/hooks/execution/usePersonaExecution.ts:36` (`handleOutputLine`), `src/stores/slices/agents/executionSlice.ts:530` (`appendExecutionOutput`).
+- **Why deferred:** `handleOutputLine` receives only the line text, not an `execution_id`, so it can't correlate output the way the status path now does (execution #5, fixed). Closing it needs each `execution-output` event tagged with its `execution_id` and the handler/`appendExecutionOutput` to verify it against `activeExecutionId` (buffering background output under its own key). That requires changing the output event payload + correlated-stream plumbing.
+- **Recommended fix:** Tag `execution-output` with `execution_id`; `handleOutputLine`/`appendExecutionOutput` accept + verify it; background output buffers under its own per-execution key.
+
 ## execution #2 — concurrency-slot leak on tokio abort (Critical)
 - **File:** `src-tauri/src/engine/mod.rs:1117` (cleanup) vs `:1279`, `:1393` (`handle.abort()`).
 - **Why deferred:** `engine/mod.rs` had **pre-existing uncommitted working-tree changes** during the bug-hunt run, so a `git add` of the fix would bundle unrelated WIP into the atomic commit (no non-interactive hunk-staging). Commit/stash that WIP, then land the fix on a clean tree.
