@@ -271,7 +271,9 @@ export type Translations = {
     error_boundary_title_named: string;
     error_boundary_title: string;
     error_boundary_subtitle: string;
+    error_boundary_chunk_subtitle: string;
     try_again: string;
+    reload_app: string;
     go_to_dashboard: string;
     copy_report: string;
     copied_to_clipboard: string;

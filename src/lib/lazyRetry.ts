@@ -1,6 +1,22 @@
 import { lazy, createElement, type ComponentType } from 'react';
 
 /**
+ * True when an error is a failed dynamic-import (chunk fetch) rather than a
+ * render bug. Covers the engine-specific messages: Chromium/WebView2
+ * ("Failed to fetch dynamically imported module"), WebKit ("Importing a
+ * module script failed"), Firefox ("error loading dynamically imported
+ * module"). Error boundaries use this to offer a reload — resetting the
+ * boundary alone can't fix a chunk that no longer exists on the server
+ * (post-deploy hash change) or a dev server that went away.
+ */
+export function isChunkLoadError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return /failed to fetch dynamically imported module|importing a module script failed|error loading dynamically imported module/i.test(
+    message,
+  );
+}
+
+/**
  * Import with one automatic retry after 1.5 s — handles transient network
  * blips and stale-chunk 404s after a deploy.
  */

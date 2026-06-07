@@ -1,5 +1,5 @@
 import { idlePrefetch } from "@/lib/idlePrefetch";
-import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -16,32 +16,38 @@ import DesktopFooter from '@/features/shared/components/layout/DesktopFooter';
 import { useFleetCompanionBridge } from '@/features/plugins/companion/useFleetCompanionBridge';
 import { useMcpRequestBridge } from '@/features/plugins/companion/mcp/useMcpRequestBridge';
 import { useOperativeMemoryBridge } from '@/features/plugins/companion/orchestration/useOperativeMemoryBridge';
+import { lazyRetry } from '@/lib/lazyRetry';
 
-// Lazy-load all section content — only Sidebar stays eager (always visible)
-const HomePage = lazy(() => import('@/features/home/components/HomePage'));
-const PersonaEditor = lazy(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
-const PersonaOverviewPage = lazy(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
-const UnifiedBuildEntry = lazy(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
-const OverviewPage = lazy(() => import('@/features/overview/components/dashboard/OverviewPage'));
-const GoalsPage = lazy(() => import('@/features/teams/sub_goals/GoalsPage'));
-const CredentialManager = lazy(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
-const TeamCanvas = lazy(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
-const DesignReviewsPage = lazy(() => import('@/features/templates/components/DesignReviewsPage'));
-const SettingsPage = lazy(() => import('@/features/settings/components/SettingsPage'));
-const TriggersPage = lazy(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
-const CloudDeployPanel = lazy(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
-const GitLabPanel = lazy(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
-const UnifiedDeploymentDashboard = lazy(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
-const DevToolsPage = lazy(() => import('@/features/plugins/dev-tools/DevToolsPage'));
-const ArtistPage = lazy(() => import('@/features/plugins/artist/ArtistPage'));
-const ObsidianBrainPage = lazy(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
-const ResearchLabPage = lazy(() => import('@/features/plugins/research-lab/ResearchLabPage'));
-const DrivePage = lazy(() => import('@/features/plugins/drive/DrivePage'));
-const TwinPage = lazy(() => import('@/features/plugins/twin/TwinPage'));
-const CompanionPluginPage = lazy(() => import('@/features/plugins/companion/CompanionPluginPage'));
-const LangfusePage = lazy(() => import('@/features/plugins/langfuse/LangfusePage'));
-const PluginBrowsePage = lazy(() => import('@/features/plugins/PluginBrowsePage'));
-const SchedulesPage = lazy(() => import('@/features/schedules/components/ScheduleTimeline'));
+// Lazy-load all section content — only Sidebar stays eager (always visible).
+// lazyRetry (NOT raw React.lazy): raw lazy caches a rejected import promise
+// forever, so one failed chunk fetch (dev-server restart, post-deploy stale
+// chunk) bricked the section until a full page reload — the 2026-06-07
+// "infinite rendering" incident. lazyRetry swaps in a fresh lazy instance
+// after failure, so the next error-boundary reset / remount re-imports.
+const HomePage = lazyRetry(() => import('@/features/home/components/HomePage'));
+const PersonaEditor = lazyRetry(() => import('@/features/agents/sub_editor').then(m => ({ default: m.PersonaEditor })));
+const PersonaOverviewPage = lazyRetry(() => import('@/features/agents/components/allPersonas/PersonaOverviewPage'));
+const UnifiedBuildEntry = lazyRetry(() => import('@/features/agents/components/matrix/UnifiedBuildEntry').then(m => ({ default: m.UnifiedBuildEntry })));
+const OverviewPage = lazyRetry(() => import('@/features/overview/components/dashboard/OverviewPage'));
+const GoalsPage = lazyRetry(() => import('@/features/teams/sub_goals/GoalsPage'));
+const CredentialManager = lazyRetry(() => import('@/features/vault/sub_credentials/manager/CredentialManager').then(m => ({ default: m.CredentialManager })));
+const TeamCanvas = lazyRetry(() => import('@/features/teams/sub_teamWorkspace/TeamCanvas'));
+const DesignReviewsPage = lazyRetry(() => import('@/features/templates/components/DesignReviewsPage'));
+const SettingsPage = lazyRetry(() => import('@/features/settings/components/SettingsPage'));
+const TriggersPage = lazyRetry(() => import('@/features/triggers/TriggersPage').then(m => ({ default: m.TriggersPage })));
+const CloudDeployPanel = lazyRetry(() => import('@/features/agents/sub_deployment/components/cloud/CloudDeployPanel'));
+const GitLabPanel = lazyRetry(() => import('@/features/plugins/gitlab/components/GitLabPanel'));
+const UnifiedDeploymentDashboard = lazyRetry(() => import('@/features/agents/sub_deployment/components/UnifiedDeploymentDashboard'));
+const DevToolsPage = lazyRetry(() => import('@/features/plugins/dev-tools/DevToolsPage'));
+const ArtistPage = lazyRetry(() => import('@/features/plugins/artist/ArtistPage'));
+const ObsidianBrainPage = lazyRetry(() => import('@/features/plugins/obsidian-brain/ObsidianBrainPage'));
+const ResearchLabPage = lazyRetry(() => import('@/features/plugins/research-lab/ResearchLabPage'));
+const DrivePage = lazyRetry(() => import('@/features/plugins/drive/DrivePage'));
+const TwinPage = lazyRetry(() => import('@/features/plugins/twin/TwinPage'));
+const CompanionPluginPage = lazyRetry(() => import('@/features/plugins/companion/CompanionPluginPage'));
+const LangfusePage = lazyRetry(() => import('@/features/plugins/langfuse/LangfusePage'));
+const PluginBrowsePage = lazyRetry(() => import('@/features/plugins/PluginBrowsePage'));
+const SchedulesPage = lazyRetry(() => import('@/features/schedules/components/ScheduleTimeline'));
 
 // Shared Suspense fallback — null (content fades in via motion.div wrapper)
 const SectionFallback = null;
