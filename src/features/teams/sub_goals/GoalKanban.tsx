@@ -11,7 +11,6 @@ import * as devApi from '@/api/devTools/devTools';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 import { goalAccentEdgeStyle } from './goalsTheme';
-import { goalPreview } from './goalPreview';
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -33,10 +32,12 @@ interface LaneMeta {
   targetStatus: GoalStatus;
 }
 
+// Lane backgrounds are transparent — colour lives on the cards (and the lane
+// border/icon), so the board reads as cards on the page, not tinted wells.
 const LANE_CHROME: LaneMeta[] = [
-  { id: 'your_turn', labelKey: 'your_turn', icon: User, iconColor: 'text-amber-400', borderColor: 'border-amber-500/25', bgColor: 'bg-amber-500/5', ringColor: 'ring-amber-400/50', targetStatus: 'open' },
-  { id: 'agent_turn', labelKey: 'agents_turn', icon: Bot, iconColor: 'text-blue-400', borderColor: 'border-blue-500/25', bgColor: 'bg-blue-500/5', ringColor: 'ring-blue-400/50', targetStatus: 'in-progress' },
-  { id: 'done', labelKey: 'done', icon: CheckCircle2, iconColor: 'text-emerald-400', borderColor: 'border-emerald-500/25', bgColor: 'bg-emerald-500/5', ringColor: 'ring-emerald-400/50', targetStatus: 'done' },
+  { id: 'your_turn', labelKey: 'your_turn', icon: User, iconColor: 'text-amber-400', borderColor: 'border-amber-500/25', bgColor: 'bg-transparent', ringColor: 'ring-amber-400/50', targetStatus: 'open' },
+  { id: 'agent_turn', labelKey: 'agents_turn', icon: Bot, iconColor: 'text-blue-400', borderColor: 'border-blue-500/25', bgColor: 'bg-transparent', ringColor: 'ring-blue-400/50', targetStatus: 'in-progress' },
+  { id: 'done', labelKey: 'done', icon: CheckCircle2, iconColor: 'text-emerald-400', borderColor: 'border-emerald-500/25', bgColor: 'bg-transparent', ringColor: 'ring-emerald-400/50', targetStatus: 'done' },
 ];
 
 const PROGRESS_STEP = 5;
@@ -99,10 +100,9 @@ function GoalCard({
       <div className="flex items-start gap-2">
         <Target className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
-          <h4 className="typo-card-label truncate">{goal.title}</h4>
-          {goal.description && (
-            <p className="text-[11px] text-foreground mt-0.5 line-clamp-2">{goalPreview(goal.description)}</p>
-          )}
+          {/* Full title, wrapping — never truncated. The description lives in
+              the detail drawer (open affordance / "+N more"), not on the card. */}
+          <h4 className="typo-card-label leading-snug break-words">{goal.title}</h4>
         </div>
         {onOpen && (
           <button
