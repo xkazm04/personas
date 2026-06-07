@@ -51,6 +51,13 @@ export interface TwinSlice {
   twinChannels: TwinChannel[];
   twinChannelsLoading: boolean;
 
+  // -- Channels outbox: draft-reply staging ----------------------------
+  //    Holds the most recently generated reply draft so the ChannelsAtelier
+  //    outbox panel can show it in an editable textarea. Cleared on discard
+  //    or after the draft is approved (recorded as an outbound communication).
+  twinReplyDraft: string | null;
+  twinReplyDrafting: boolean;
+
   // -- Cross-tab handoff slot used by Reflections → Training "Dig deeper".
   //    ReflectionsPanel drops follow-up questions here, switches the tab to
   //    training, and useTrainingSession consumes (and clears) them on mount.
@@ -168,6 +175,20 @@ export interface TwinSlice {
     updates: { personaId?: string | null; label?: string | null; isActive?: boolean },
   ) => Promise<void>;
   deleteTwinChannel: (id: string) => Promise<void>;
+
+  // -- Channels outbox actions -----------------------------------------
+  /** Generate a draft reply and stash it in `twinReplyDraft` for review. */
+  draftTwinReply: (
+    twinId: string,
+    channel: TwinChannelKind,
+    contactHandle?: string,
+    inboundMessage?: string,
+    directions?: string,
+  ) => Promise<string>;
+  /** Overwrite the staged draft (used while the operator edits the textarea). */
+  setTwinReplyDraft: (draft: string | null) => void;
+  /** Discard the staged draft without sending/recording. */
+  clearTwinReplyDraft: () => void;
 }
 
 export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (set, get) => ({
@@ -185,6 +206,8 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
   twinVoiceLoading: false,
   twinChannels: [],
   twinChannelsLoading: false,
+  twinReplyDraft: null,
+  twinReplyDrafting: false,
   pendingTrainingQuestions: null,
   studioJobActive: false,
   studioBatchId: null,
@@ -560,4 +583,24 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
       reportError(err, "Failed to delete channel", set);
     }
   },
+
+  // -- Channels outbox actions -----------------------------------------
+
+  draftTwinReply: async (twinId, channel, contactHandle, inboundMessage, directions) => {
+    set({ twinReplyDrafting: true });
+    try {
+      const draft = await twinApi.draftReply(twinId, channel, contactHandle, inboundMessage, directions);
+      set({ twinReplyDraft: draft, twinReplyDrafting: false, error: null });
+      return draft;
+    } catch (err) {
+      reportError(err, "Failed to draft reply", set, {
+        stateUpdates: { twinReplyDrafting: false },
+      });
+      throw err;
+    }
+  },
+
+  setTwinReplyDraft: (draft) => set({ twinReplyDraft: draft }),
+
+  clearTwinReplyDraft: () => set({ twinReplyDraft: null }),
 });
