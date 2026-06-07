@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { listEvents, listSubscriptions } from '@/api/overview/events';
+import { listTeamChannel } from '@/api/pipeline/teamChannel';
 import { listTeamMemories } from '@/api/pipeline/teamMemories';
 import { silentCatch } from '@/lib/silentCatch';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
+import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /* ----------------------------------------------------------------------------
- * Red Room feed — the team's communication channel, composed ENTIRELY from
- * existing data (v1, read-only):
+ * Red Room feed — the team's communication channel (read-only), composed from:
  *
  *  - `persona_events` (the bus): what each member EMITTED — handoffs, PR
  *    lifecycle, QA verdicts, releases. The team's conversation, verbatim.
@@ -16,6 +17,11 @@ import type { TeamMemory } from '@/lib/bindings/TeamMemory';
  *    log render "addressed to" edges (X emitted → Y consumes).
  *  - `team_memories`: the shared memory ledger (decisions / constraints /
  *    learnings) — the channel's pinned knowledge.
+ *  - `team_channel_messages` (C1): the channel-native authors — user
+ *    directives + persona/athena/director posts — via `listTeamChannel`, so
+ *    Red Room shows the same channel traffic as Collab (the surfaces share the
+ *    read-model underneath, per the C-on-B decision to keep them separate but
+ *    unified). Step/event/memory rows are sourced above, not re-pulled here.
  *
  * Events are project-scoped (`persona_events.project_id`) and teams link to
  * projects via `dev_projects.team_id`; member-id filtering is applied on top
@@ -151,6 +157,7 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
 
   const [events, setEvents] = useState<PersonaEvent[]>([]);
   const [memories, setMemories] = useState<TeamMemory[]>([]);
+  const [channelMsgs, setChannelMsgs] = useState<TeamChannelItem[]>([]);
   const [consumersByType, setConsumersByType] = useState<Map<string, string[]>>(new Map());
   const [loaded, setLoaded] = useState(false);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -177,6 +184,20 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
     listTeamMemories(teamId, undefined, undefined, undefined, 100)
       .then(setMemories)
       .catch(silentCatch('teams/redRoom:memories'));
+    // C1: the channel table is the home for user directives + persona posts.
+    // Pull the channel-NATIVE author kinds (directive/persona/athena/director)
+    // so Red Room shows the same channel traffic as Collab — the step/event/
+    // memory rows Red Room already sources from listEvents/listTeamMemories are
+    // skipped here to avoid duplication.
+    listTeamChannel(teamId, 200)
+      .then((rows) =>
+        setChannelMsgs(
+          rows.filter((r) =>
+            r.kind === 'directive' || r.kind === 'persona' || r.kind === 'athena' || r.kind === 'director',
+          ),
+        ),
+      )
+      .catch(silentCatch('teams/redRoom:channel'));
   }, [projectId, teamId, memberSet]);
 
   // Subscriptions change rarely — fetch once per member set.
@@ -240,8 +261,26 @@ export function useRedRoomFeed(teamId: string, memberPersonaIds: string[]) {
       category: m.category,
       importance: m.importance,
     }));
-    return [...evItems, ...memItems].sort((a, b) => b.at - a.at);
-  }, [events, memories, consumersByType]);
+    // Channel-native messages → event items (eventType encodes the author),
+    // so the Transcript/Relay render them with the shared row + detail modal.
+    const chanItems: RedRoomItem[] = channelMsgs.map((c) => ({
+      kind: 'event' as const,
+      id: c.id,
+      at: toEpochUtc(c.at),
+      personaId: c.personaId,
+      eventType:
+        c.kind === 'directive' ? 'user.directive'
+        : c.kind === 'persona' ? 'persona.channel_post'
+        : `${c.kind}.message`,
+      status: 'processed',
+      consumers: [],
+      summary: c.body,
+      artifact: null,
+      errorMessage: null,
+      payloadRaw: c.extra,
+    }));
+    return [...evItems, ...memItems, ...chanItems].sort((a, b) => b.at - a.at);
+  }, [events, memories, channelMsgs, consumersByType]);
 
   return { items, memories, loaded, refresh, projectId };
 }

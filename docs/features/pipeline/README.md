@@ -122,6 +122,16 @@ Director/Athena orchestration discussion).
   column (`[{step_id,persona_id,at}]`) — rendered as ✓✓ "seen by" chips.
   Legacy `team_memories` directive rows are still read for display
   (back-compat) but no longer written or injected.
+- **Persona posts (C1)**: gated roles (Implementer / QA / Architect) may
+  broadcast ONE short message per step by emitting a `CHANNEL_POST: <text>`
+  line — taught via the TEAM CHANNEL capability block in `team_context`,
+  parsed in the orchestrator's completed-step arm, role-gated + length-capped.
+  Posts land `author_kind='persona'`, `consumer='display'` (visible in Collab,
+  NOT injected into other personas' steps — no persona→persona prompt loop).
+- **Multi-author UI**: `CollabLive` renders each author kind distinctly
+  (user directive / persona / Athena / Director). **Red Room** reads the same
+  channel-native rows via `listTeamChannel`, so both surfaces show identical
+  channel traffic (kept separate for now per the C-on-B plan).
 
 ## State and backend
 

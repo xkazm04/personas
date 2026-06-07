@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Send, Pin, Check, CheckCheck, AlertCircle } from 'lucide-react';
+import { ExternalLink, Send, Pin, Check, CheckCheck, AlertCircle, MessageSquare, Sparkles, Compass } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip } from '../sub_teamWorkspace/teamStudio/boardShared';
@@ -40,6 +40,15 @@ const STEP_TONE: Record<string, string> = {
   status_done: 'text-emerald-300',
   qa_changes_requested_rework: 'text-amber-300',
   created: 'text-foreground/60',
+};
+
+/** Per-author-kind voice for multi-author channel messages (C1/C2/C3). */
+const AUTHOR_KIND_META: Record<'persona' | 'athena' | 'director', {
+  label: string; Icon: typeof MessageSquare; iconColor: string; avatarBg: string; bubble: string; tag: string;
+}> = {
+  persona: { label: 'channel', Icon: MessageSquare, iconColor: 'text-foreground/60', avatarBg: 'bg-secondary/60', bubble: 'border-primary/15 bg-secondary/20', tag: 'text-foreground/45' },
+  athena: { label: 'Athena', Icon: Sparkles, iconColor: 'text-violet-300', avatarBg: 'bg-violet-500/15 border-violet-500/30', bubble: 'border-violet-500/25 bg-violet-500/5', tag: 'text-violet-300' },
+  director: { label: 'Director', Icon: Compass, iconColor: 'text-sky-300', avatarBg: 'bg-sky-500/15 border-sky-500/30', bubble: 'border-sky-500/25 bg-sky-500/5', tag: 'text-sky-300' },
 };
 
 const FAMILY_TEXT: Record<string, string> = {
@@ -215,6 +224,34 @@ function ChannelRow({ item, personaIndex }: { item: TeamChannelItem; personaInde
               <ExternalLink className="w-3 h-3" /> {artifact.label}
             </a>
           )}
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Multi-author channel messages (C1): persona channel_post, and later
+  // Athena (C2) / Director (C3) posts. Each author kind reads distinctly.
+  if (item.kind === 'persona' || item.kind === 'athena' || item.kind === 'director') {
+    const meta = AUTHOR_KIND_META[item.kind];
+    const speaker = item.kind === 'persona' ? name : meta.label;
+    return (
+      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex gap-2.5">
+        <span className={`flex items-center justify-center w-6 h-6 rounded-full border flex-shrink-0 mt-0.5 ${meta.avatarBg}`} style={item.kind === 'persona' ? { borderColor: color } : undefined}>
+          {item.kind === 'persona' && persona ? (
+            <PersonaIcon icon={persona.icon} color={persona.color} size="w-3.5 h-3.5" />
+          ) : (
+            <meta.Icon className={`w-3.5 h-3.5 ${meta.iconColor}`} />
+          )}
+        </span>
+        <div className={`flex-1 min-w-0 rounded-card border ${meta.bubble} px-3 py-1.5`}>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="typo-body font-medium" style={item.kind === 'persona' ? { color } : undefined}>
+              {speaker}
+            </span>
+            <span className={`typo-caption uppercase tracking-wider ${meta.tag}`}>{meta.label}</span>
+            <span className="typo-caption text-foreground/40"><RelativeTime timestamp={item.at} /></span>
+          </div>
+          <p className="typo-body text-foreground/85 whitespace-pre-wrap">{item.body}</p>
         </div>
       </motion.div>
     );
