@@ -6,6 +6,7 @@ import {
   ContentBody,
 } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -37,18 +38,20 @@ export default function CompanionPluginPage() {
 
       <ContentBody centered={tab !== 'memory'}>
         <div key={tab} className="animate-fade-slide-in h-full">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-20">
-                <LoadingSpinner size="lg" label={t.plugins.companion.loading} />
-              </div>
-            }
-          >
-            {tab === 'setup' && <SetupPanel />}
-            {tab === 'memory' && <MemoryPanel />}
-            {tab === 'voice' && <VoicePanel />}
-            {tab === 'decisions' && <DecisionsPanel />}
-          </Suspense>
+          <ErrorBoundary name="Companion">
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-20">
+                  <LoadingSpinner size="lg" label={t.plugins.companion.loading} />
+                </div>
+              }
+            >
+              {tab === 'setup' && <SetupPanel />}
+              {tab === 'memory' && <MemoryPanel />}
+              {tab === 'voice' && <VoicePanel />}
+              {tab === 'decisions' && <DecisionsPanel />}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </ContentBody>
     </ContentBox>
