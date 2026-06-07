@@ -24,11 +24,29 @@ pub async fn add_mcp_gateway_member(
     display_name: String,
     sort_order: Option<i32>,
 ) -> Result<String, AppError> {
+    // Gateway tools are exposed to personas as `"{display_name}::{tool}"` and
+    // routed back by splitting on the first `::`. If a display name itself
+    // contains `::`, routing becomes ambiguous — member tools turn uncallable,
+    // or a crafted name dispatches a call to the wrong member/credential
+    // (bug-hunt 2026-06-07 mcp #5). Enforce the separator invariant at the input
+    // boundary. Surrounding whitespace is trimmed so it can't break the
+    // exact-equality member match at parse time.
+    let display_name = display_name.trim();
+    if display_name.is_empty() {
+        return Err(AppError::Validation(
+            "Gateway member display name must not be empty".into(),
+        ));
+    }
+    if display_name.contains("::") {
+        return Err(AppError::Validation(
+            "Gateway member display name may not contain '::' (reserved as the gateway tool-name separator)".into(),
+        ));
+    }
     mcp_gateways::add_member(
         &state.db,
         &gateway_credential_id,
         &member_credential_id,
-        &display_name,
+        display_name,
         sort_order.unwrap_or(0),
     )
 }
