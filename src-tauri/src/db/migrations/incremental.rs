@@ -4416,4 +4416,32 @@ fn research_lab_align_columns(conn: &Connection) {
     for sql in backfills {
         let _ = ddl_step(conn, sql);
     }
+
+    // Team channel (C1 — multi-author orchestration channel). The authoritative
+    // store for messages from all four author kinds (user / athena / director /
+    // persona). Design B's directives previously lived in `team_memories`
+    // (category='directive'); they are dual-read by `list_team_channel` during
+    // the transition, while new posts land here. See
+    // docs/architecture/team-channel-orchestration.md.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_channel_messages (
+            id            TEXT PRIMARY KEY,
+            team_id       TEXT NOT NULL,
+            author_kind   TEXT NOT NULL,
+            author_id     TEXT,
+            body          TEXT NOT NULL,
+            addressed_to  TEXT,
+            reply_to      TEXT,
+            assignment_id TEXT,
+            consumer      TEXT NOT NULL DEFAULT 'inject',
+            deliveries    TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_team
+            ON team_channel_messages(team_id, created_at);",
+    );
 }

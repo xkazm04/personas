@@ -134,84 +134,10 @@ pub fn get_for_injection(
     })
 }
 
-/// Newest user directives for a team (category='directive'), recency-capped.
-/// Directives are the user's messages INTO the team channel; they ride into
-/// prompts both via `get_for_injection` (importance 10 sorts them up) and via
-/// the explicit USER DIRECTIVES block in `team_context`.
-pub fn list_directives(
-    pool: &DbPool,
-    team_id: &str,
-    limit: i64,
-) -> Result<Vec<TeamMemory>, AppError> {
-    timed_query!("team_memories", "team_memories::list_directives", {
-        let conn = pool.get()?;
-        let mut stmt = conn.prepare(
-            "SELECT * FROM team_memories
-             WHERE team_id = ?1 AND category = 'directive'
-               AND datetime(created_at) > datetime('now', '-14 days')
-             ORDER BY datetime(created_at) DESC LIMIT ?2",
-        )?;
-        let rows = stmt.query_map(params![team_id, limit], row_to_team_memory)?;
-        let results: Vec<TeamMemory> = rows
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(AppError::Database)?;
-        Ok(results)
-    })
-}
-
-/// Record that a directive was injected into a step's execution (the channel's
-/// read-receipt). Deliveries live in the memory's `tags` column as JSON:
-/// `{"deliveries":[{"step_id","persona_id","at"}]}` — idempotent per
-/// (step, persona). A dedicated table can replace this if volume demands.
-pub fn record_directive_delivery(
-    pool: &DbPool,
-    memory_id: &str,
-    step_id: &str,
-    persona_id: &str,
-) -> Result<(), AppError> {
-    timed_query!("team_memories", "team_memories::record_directive_delivery", {
-        let conn = pool.get()?;
-        let tags: Option<String> = conn
-            .query_row(
-                "SELECT tags FROM team_memories WHERE id = ?1",
-                params![memory_id],
-                |r| r.get(0),
-            )
-            .map_err(AppError::Database)?;
-        let mut root: serde_json::Value = tags
-            .as_deref()
-            .and_then(|t| serde_json::from_str(t).ok())
-            .unwrap_or_else(|| serde_json::json!({}));
-        if !root.is_object() {
-            root = serde_json::json!({});
-        }
-        let deliveries = root
-            .as_object_mut()
-            .expect("root coerced to object above")
-            .entry("deliveries")
-            .or_insert_with(|| serde_json::Value::Array(vec![]));
-        if let Some(arr) = deliveries.as_array_mut() {
-            let dup = arr.iter().any(|d| {
-                d.get("step_id").and_then(|v| v.as_str()) == Some(step_id)
-                    && d.get("persona_id").and_then(|v| v.as_str()) == Some(persona_id)
-            });
-            if dup {
-                return Ok(());
-            }
-            arr.push(serde_json::json!({
-                "step_id": step_id,
-                "persona_id": persona_id,
-                "at": chrono::Utc::now().to_rfc3339(),
-            }));
-        }
-        conn.execute(
-            "UPDATE team_memories SET tags = ?1, updated_at = datetime('now') WHERE id = ?2",
-            params![root.to_string(), memory_id],
-        )
-        .map_err(AppError::Database)?;
-        Ok(())
-    })
-}
+// Directive storage + receipts moved to the dedicated `team_channel` repo in
+// C1 (the multi-author channel table supersedes the category='directive'
+// memory rows). Legacy directive memories are still read for display by the
+// channel read-model, but no longer written or injected from here.
 
 pub fn create(pool: &DbPool, input: CreateTeamMemoryInput) -> Result<TeamMemory, AppError> {
     timed_query!("team_memories", "team_memories::create", {

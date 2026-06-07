@@ -605,17 +605,32 @@ async fn run_step(
     // rediscover the implementer's work from repo state and can pick the wrong
     // PR. Forward each direct predecessor's output_summary (capped).
     let predecessor_outputs = collect_predecessor_outputs(pool, &step);
-    // Design B (living chat): user directives posted into the team channel are
-    // delivered at STEP BOUNDARIES — each step launch injects the recent
-    // directives and records a read-receipt the Collab UI renders.
+    // C1 (multi-author channel): channel messages addressed to THIS persona
+    // (or the whole team) with consumer='inject' are delivered at STEP
+    // BOUNDARIES — each step launch injects the recent ones and records a
+    // read-receipt the Collab UI renders. Supersedes Design B's directive-only
+    // injection; the same hook now carries user directives + (C2/C3) Athena
+    // and Director posts.
     let directives = team_assignment_team_id(pool, &step.assignment_id)
         .and_then(|tid| {
-            crate::db::repos::resources::team_memories::list_directives(pool, &tid, 5).ok()
+            crate::db::repos::resources::team_channel::list_injectable_for_persona(
+                pool,
+                &tid,
+                &persona_id,
+                5,
+            )
+            .ok()
         })
         .unwrap_or_default();
     let directive_values: Vec<serde_json::Value> = directives
         .iter()
-        .map(|d| json!({ "content": d.content, "posted_at": d.created_at }))
+        .map(|d| {
+            json!({
+                "from": d.author_kind,
+                "content": d.body,
+                "posted_at": d.created_at,
+            })
+        })
         .collect();
     let input_payload = build_step_input(
         &step,
@@ -637,7 +652,7 @@ async fn run_step(
     assignment_repo::set_step_execution(pool, &step.id, &exec.id)?;
     assignment_repo::update_step_status(pool, &step.id, "running", None, None)?;
     for d in &directives {
-        let _ = crate::db::repos::resources::team_memories::record_directive_delivery(
+        let _ = crate::db::repos::resources::team_channel::record_delivery(
             pool, &d.id, &step.id, &persona_id,
         );
     }

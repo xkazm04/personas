@@ -109,13 +109,19 @@ Director/Athena orchestration discussion).
   (`before` cursor). Frontend: `useTeamChannel` — head refresh on
   TEAM_ASSIGNMENT_PROGRESS push + 15s poll fallback, infinite history at the
   top sentinel, presence derived from running steps.
-- **Directives**: the composer posts via `post_team_directive` → a
-  `team_memories` row (category `directive`, importance 10, persona_id NULL =
-  the user). Delivery is at STEP BOUNDARIES: the orchestrator injects the
-  team's recent directives into every step's input (`user_directives`) and
-  prompt (USER DIRECTIVES block in `team_context`), then writes a read-receipt
-  into the directive's `tags` (`{"deliveries":[{step_id,persona_id,at}]}`) —
-  rendered as ✓✓ "seen by" chips under the message.
+- **Directives & the channel table (C1)**: the composer posts via
+  `post_team_directive` → a `team_channel_messages` row (`author_kind='user'`,
+  `consumer='inject'`). This table is the authoritative multi-author store
+  (author kinds user/athena/director/persona — see
+  [`docs/architecture/team-channel-orchestration.md`](../../architecture/team-channel-orchestration.md)).
+  Delivery is at STEP BOUNDARIES: the orchestrator injects recent channel
+  messages addressed to the persona or whole team
+  (`team_channel::list_injectable_for_persona`, `consumer='inject'`) into every
+  step's input (`user_directives`) and prompt (TEAM CHANNEL block in
+  `team_context`), then writes a read-receipt into the message's `deliveries`
+  column (`[{step_id,persona_id,at}]`) — rendered as ✓✓ "seen by" chips.
+  Legacy `team_memories` directive rows are still read for display
+  (back-compat) but no longer written or injected.
 
 ## State and backend
 

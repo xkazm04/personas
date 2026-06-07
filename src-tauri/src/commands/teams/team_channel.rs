@@ -1,7 +1,7 @@
 //! Team channel — Design B read-model for the Collab living chat.
 //!
-//! Unions the team's three communication sources server-side into one
-//! chronological feed with keyset pagination:
+//! Unions the team's communication sources server-side into one chronological
+//! feed with keyset pagination:
 //!
 //!   1. `team_assignment_events` — the AUTHORITATIVE step layer (handoffs,
 //!      rework, review gates), scoped via the assignment's team and joined to
@@ -9,8 +9,11 @@
 //!      (matching/pending) are filtered out at the SQL level.
 //!   2. `persona_events` — bus traffic emitted by team members (artifacts,
 //!      PR lifecycle, handshakes). `task_completed` is excluded as telemetry.
-//!   3. `team_memories` — shared knowledge; `category='directive'` rows are
-//!      the user's messages and carry delivery receipts in `tags`.
+//!   3. `team_memories` — shared knowledge (legacy directives included for
+//!      back-compat).
+//!   4. `team_channel_messages` — the C1 multi-author table: the user's
+//!      directives plus (later) persona/athena/director posts, with delivery
+//!      receipts in `deliveries`.
 //!
 //! All timestamps are normalized to `YYYY-MM-DDTHH:MM:SSZ` in SQL (the three
 //! tables mix RFC3339 and SQLite-naive formats — the repo-wide clash).
@@ -22,7 +25,7 @@ use serde::Serialize;
 use tauri::State;
 use ts_rs::TS;
 
-use crate::db::repos::resources::team_memories as memories_repo;
+use crate::db::repos::resources::team_channel as channel_repo;
 use crate::error::AppError;
 use crate::ipc_auth::require_auth_sync;
 use crate::AppState;
@@ -126,7 +129,8 @@ pub fn list_team_channel(
         items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
     }
 
-    // --- 3. Shared memory + the user's directives ---
+    // --- 3. Shared memory (directives now live in the channel table; legacy
+    //         category='directive' rows are still read for back-compat) ---
     {
         let mut stmt = conn.prepare(
             "SELECT id,
@@ -156,46 +160,71 @@ pub fn list_team_channel(
         items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
     }
 
+    // --- 4. Channel messages (C1 — multi-author table; authoritative store
+    //         for new directives and, later, persona/athena/director posts) ---
+    {
+        let mut stmt = conn.prepare(
+            "SELECT id,
+                    strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) AS at,
+                    author_kind, author_id, body, deliveries, assignment_id
+             FROM team_channel_messages
+             WHERE team_id = ?1
+               AND strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) < ?2
+             ORDER BY at DESC LIMIT ?3",
+        )?;
+        let rows = stmt.query_map(params![team_id, cursor, limit], |r| {
+            let author_kind: String = r.get(2)?;
+            let deliveries: Option<String> = r.get(5)?;
+            // The frontend's receipt parser expects a `{"deliveries":[…]}`
+            // wrapper (it shares the team_memories tags shape); wrap the bare
+            // column array so directives render their seen-by chips unchanged.
+            let extra = deliveries.map(|d| format!("{{\"deliveries\":{d}}}"));
+            // author_kind → the UI's item kind. 'user' is a directive; the
+            // other kinds render via the multi-author path (C1c).
+            let kind = if author_kind == "user" { "directive".to_string() } else { author_kind.clone() };
+            Ok(TeamChannelItem {
+                id: r.get::<_, String>(0)?,
+                kind,
+                at: r.get(1)?,
+                label: author_kind,
+                body: r.get(4)?,
+                persona_id: r.get(3)?,
+                extra,
+                assignment_id: r.get(6)?,
+                step_id: None,
+            })
+        })?;
+        items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
+    }
+
     items.sort_by(|a, b| b.at.cmp(&a.at).then(b.id.cmp(&a.id)));
     items.truncate(limit as usize);
     Ok(items)
 }
 
-/// Post a user directive into the team channel. Stored as a high-importance
-/// `team_memories` row (`category='directive'`) so it (a) rides into prompts
-/// via the USER DIRECTIVES block + memory injection, and (b) accumulates
-/// step-boundary delivery receipts in `tags` (see the orchestrator hook).
+/// Post a user directive into the team channel. C1: stored in the
+/// authoritative `team_channel_messages` table (`author_kind='user'`,
+/// `consumer='inject'`). The orchestrator injects recent channel messages
+/// addressed to a persona at each step boundary and records delivery receipts
+/// on the message (see the orchestrator hook).
 #[tauri::command]
 pub fn post_team_directive(
     state: State<'_, Arc<AppState>>,
     team_id: String,
     content: String,
-) -> Result<crate::db::models::TeamMemory, AppError> {
+) -> Result<crate::db::models::TeamChannelMessage, AppError> {
     require_auth_sync(&state)?;
-    let content = content.trim().to_string();
-    if content.is_empty() {
-        return Err(AppError::Validation("Directive cannot be empty".into()));
-    }
-    let title: String = {
-        let one_line = content.replace(['\n', '\r'], " ");
-        if one_line.chars().count() > 80 {
-            one_line.chars().take(80).collect::<String>() + "…"
-        } else {
-            one_line
-        }
-    };
-    memories_repo::create(
+    channel_repo::create(
         &state.db,
-        crate::db::models::CreateTeamMemoryInput {
+        crate::db::models::CreateChannelMessageInput {
             team_id,
-            run_id: None,
-            member_id: None,
-            persona_id: None, // NULL author = the user
-            title,
-            content,
-            category: Some("directive".into()),
-            importance: Some(10),
-            tags: None,
+            author_kind: "user".into(),
+            author_id: None, // NULL author = the user
+            body: content,
+            addressed_to: None, // whole team
+            reply_to: None,
+            assignment_id: None,
+            consumer: Some("inject".into()),
         },
     )
 }
