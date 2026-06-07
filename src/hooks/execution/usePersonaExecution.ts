@@ -56,6 +56,17 @@ export function usePersonaExecution() {
 
     const { status, error, duration_ms, cost_usd } = validated;
 
+    // Correlate by execution id: drop events that belong to a different run than
+    // the focused one. Owner-alignment alone can't distinguish two runs of the
+    // same persona, so a late/duplicated terminal event for a PRIOR run could
+    // tear down the live run's UI (clear activeExecutionId, stop output, drop the
+    // recovery key) while it keeps running headless (bug-hunt 2026-06-07
+    // execution #5). When no execution id is present (legacy) or no run is active,
+    // fall through to preserve prior behavior.
+    const eventExecId = raw.execution_id as string | undefined;
+    const focusedExecId = useAgentStore.getState().activeExecutionId;
+    if (eventExecId && focusedExecId && eventExecId !== focusedExecId) return;
+
     // When promoted from queue to running, clear queue position
     if (status === 'running') {
       useAgentStore.getState().setQueueStatus(null, null);
