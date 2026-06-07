@@ -142,6 +142,16 @@ Director/Athena orchestration discussion).
   shows a burst (≥2 step failures / QA change-requests in 2h), rate-limited to
   once per persona per 6h via the Director's own channel posts — complementing
   the command-driven batch runs.
+- **Athena posts (C2)**: `companion_post_team_message` posts as
+  `author_kind='athena'`, `consumer='inject'` (whole-team or `addressed_to`).
+  Interactive use posts directly; autonomous use routes through the approval
+  executor's `post_team_message` op, which is on the `AUTOAPPROVE_ALLOWLIST` —
+  free under autonomous mode, gated otherwise (the §8 decision). `@athena` in
+  the Collab composer also summons her: the directive still posts to the
+  channel, and Athena opens with the message as context (`setPendingPrompt`).
+  (The LLM post-run reconciliation — Athena narrating finished assignments into
+  the channel — is a C2 follow-up; it needs a real async Athena turn rather
+  than a templated post under her name.)
 - **Multi-author UI**: `CollabLive` renders each author kind distinctly
   (user directive / persona / Athena / Director). **Red Room** reads the same
   channel-native rows via `listTeamChannel`, so both surfaces show identical

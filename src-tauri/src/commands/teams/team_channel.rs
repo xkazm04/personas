@@ -228,3 +228,32 @@ pub fn post_team_directive(
         },
     )
 }
+
+/// Athena (the companion) posts a message into a team channel (C2).
+/// `author_kind='athena'`, `consumer='inject'` so it reaches the addressed
+/// persona's next step (whole-team when `addressed_to` is None). Used both
+/// interactively (Athena posts directly when the user asks) and, under
+/// autonomous mode, via the approval executor's `post_team_message` op (which
+/// is on the autoapprove allowlist → free when autonomous, gated otherwise).
+#[tauri::command]
+pub fn companion_post_team_message(
+    state: State<'_, Arc<AppState>>,
+    team_id: String,
+    body: String,
+    addressed_to: Option<Vec<String>>,
+) -> Result<crate::db::models::TeamChannelMessage, AppError> {
+    require_auth_sync(&state)?;
+    channel_repo::create(
+        &state.db,
+        crate::db::models::CreateChannelMessageInput {
+            team_id,
+            author_kind: "athena".into(),
+            author_id: None,
+            body,
+            addressed_to,
+            reply_to: None,
+            assignment_id: None,
+            consumer: Some("inject".into()),
+        },
+    )
+}

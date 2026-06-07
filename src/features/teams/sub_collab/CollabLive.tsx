@@ -6,6 +6,7 @@ import { RelativeTime } from '@/features/shared/components/display/RelativeTime'
 import { usePersonaIndex, PersonaChip } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily, memberColor, parsePayload } from '../sub_redRoom/useRedRoomFeed';
 import { useTeamChannel, parseDeliveries } from './useTeamChannel';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -100,6 +101,16 @@ export function CollabLive({ teamId, members }: { teamId: string; members: Studi
     setDraft('');
     void sendDirective(text);
     stickBottom.current = true;
+    // C2: @athena mention → summon Athena into the conversation. The directive
+    // still posts to the channel (the team reads it); Athena is opened with the
+    // message as context so the user can converse with her about it.
+    if (/@athena\b/i.test(text)) {
+      useCompanionStore.getState().setPendingPrompt({
+        text: `I posted this in a team channel and tagged you:\n\n"${text}"\n\nPlease respond or help with this.`,
+        autoSend: true,
+      });
+      useCompanionStore.getState().setState('open');
+    }
   };
 
   return (
@@ -143,7 +154,7 @@ export function CollabLive({ teamId, members }: { teamId: string; members: Studi
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
-          placeholder="Message the team — delivered at the next step boundary, receipts below your message…"
+          placeholder="Message the team — delivered at the next step boundary. Tag @athena to bring her in…"
           className="flex-1 px-3 py-2 rounded-input bg-secondary/30 border border-primary/15 typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
           data-testid="collab-composer"
         />
