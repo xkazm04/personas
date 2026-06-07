@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, SlidersHorizontal, ArrowLeft, Users, Settings, LayoutGrid, Radio } from 'lucide-react';
+import { Sparkles, SlidersHorizontal, ArrowLeft, Users, Settings, LayoutGrid, Radio, MessagesSquare } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContentHeader } from '@/features/shared/components/layout/ContentLayout';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -7,6 +7,7 @@ import { useTeamStudioData } from './useTeamStudioData';
 import { TeamWorkspacePane } from './TeamWorkspacePane';
 import { TeamAssignmentBoard } from './TeamAssignmentBoard';
 import { RedRoomPane } from '../../sub_redRoom/RedRoomPane';
+import { CollabPane } from '../../sub_collab/CollabPane';
 import {
   MemberTierChip,
   TrustMeter,
@@ -38,7 +39,7 @@ interface TeamStudioSplitVariantProps {
   onBack?: () => void;
 }
 
-type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' } | { kind: 'board' } | { kind: 'redroom' } | { kind: 'workspace' };
+type RightMode = { kind: 'member'; memberId: string } | { kind: 'orchestrate' } | { kind: 'board' } | { kind: 'redroom' } | { kind: 'collab' } | { kind: 'workspace' };
 
 export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioSplitVariantProps) {
   const { t, tx } = useTranslation();
@@ -142,6 +143,22 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
                 <span className="typo-body font-medium">{ts.red_room_label}</span>
               </button>
 
+              {/* Collab — living-chat design comparison (mock) */}
+              <button
+                type="button"
+                data-testid="team-mode-collab"
+                onClick={() => setMode({ kind: 'collab' })}
+                aria-pressed={mode.kind === 'collab'}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-card border transition-colors ${
+                  mode.kind === 'collab'
+                    ? 'border-primary/40 bg-secondary/40 text-foreground/90'
+                    : 'border-transparent text-foreground hover:bg-secondary/40'
+                }`}
+              >
+                <MessagesSquare className="w-4 h-4 flex-shrink-0" />
+                <span className="typo-body font-medium">{ts.collab_label}</span>
+              </button>
+
               {/* Workspace settings */}
               <button
                 type="button"
@@ -194,6 +211,8 @@ export function TeamStudioSplitVariant({ teamId, teamName, onBack }: TeamStudioS
             <TeamAssignmentBoard teamId={teamId} />
           ) : mode.kind === 'redroom' ? (
             <RedRoomPane teamId={teamId} members={members} />
+          ) : mode.kind === 'collab' ? (
+            <CollabPane />
           ) : mode.kind === 'workspace' ? (
             <TeamWorkspacePane teamId={teamId} />
           ) : selected ? (

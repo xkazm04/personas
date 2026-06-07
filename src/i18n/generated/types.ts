@@ -12650,6 +12650,8 @@ export type Translations = {
       goal_map_next: string;
       goal_map_next_desc: string;
       goal_map_drag_hint: string;
+      goal_map_tidy: string;
+      goal_map_tidy_hint: string;
       goal_intervene_skip: string;
       goal_intervene_abort: string;
       goal_open_detail: string;
@@ -14098,6 +14100,7 @@ export type Translations = {
       deck_goal_chip: string;
       deck_goal_chip_tooltip: string;
       red_room_label: string;
+      collab_label: string;
     };
     category_changes: string;
     importance_shifts: string;

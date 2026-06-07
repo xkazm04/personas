@@ -12644,6 +12644,8 @@
       "goal_map_next": "Next",
       "goal_map_next_desc": "Ready to start",
       "goal_map_drag_hint": "Drag to arrange · zoom in for detail",
+      "goal_map_tidy": "Tidy layout",
+      "goal_map_tidy_hint": "Re-arrange goals into status clusters (clears dragged positions)",
       "goal_intervene_skip": "Skip step",
       "goal_intervene_abort": "Abort assignment",
       "goal_open_detail": "Open details",
@@ -14091,7 +14093,8 @@
       "deck_rework_tooltip": "Rework round {round} — QA requested changes",
       "deck_goal_chip": "Goal",
       "deck_goal_chip_tooltip": "Advances a goal — open the Goals hub",
-      "red_room_label": "Red room"
+      "red_room_label": "Red room",
+      "collab_label": "Collab"
     },
     "category_changes": "Category changes",
     "importance_shifts": "Importance shifts",
