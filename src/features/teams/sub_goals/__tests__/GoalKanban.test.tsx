@@ -176,6 +176,28 @@ describe('GoalKanban — drag-and-drop + progress nudge', () => {
     expect(updateGoal).toHaveBeenCalledWith('g-move', { status: 'done' });
   });
 
+  it('a dropped card does not stay stuck at drag opacity (dragend never fires on unmounted elements)', () => {
+    testGoals = [makeGoal({ id: 'g-op', title: 'Opacity goal', status: 'pending', progress: 40 })];
+    render(<GoalKanban showDone />);
+    const card = screen.getByText('Opacity goal').closest('div[draggable="true"]')!;
+    const doneLane = screen.getByText('Done').closest('div[class*="rounded-card"]')!;
+
+    const data = new Map<string, string>();
+    const dataTransfer = {
+      setData: (k: string, v: string) => { data.set(k, v); },
+      getData: (k: string) => data.get(k) ?? '',
+      types: ['application/x-personas-goal-id'],
+      effectAllowed: 'none',
+      dropEffect: 'none',
+    };
+    fireEvent.dragStart(card, { dataTransfer });
+    expect(card.className).toContain('opacity-40');
+    // Drop WITHOUT a dragend (what happens when the element unmounts mid-drag).
+    fireEvent.dragOver(doneLane, { dataTransfer });
+    fireEvent.drop(doneLane, { dataTransfer });
+    expect(card.className).not.toContain('opacity-40');
+  });
+
   it('drop on the same lane the goal is already in is a no-op', () => {
     testGoals = [makeGoal({ id: 'g-stay', title: 'Stayer', status: 'pending', progress: 40 })];
     render(<GoalKanban />);
