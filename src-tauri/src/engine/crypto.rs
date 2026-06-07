@@ -410,6 +410,28 @@ impl From<CryptoError> for AppError {
 // Key Management
 // ---------------------------------------------------------------------------
 
+/// Policy for using the local-file fallback master key when the OS keychain is
+/// unavailable. Parsed in one place from `PERSONAS_ALLOW_FALLBACK_KEY` so the
+/// doc comment, the error text, and the runtime branch can never diverge again.
+/// The previous code documented an opt-in/fail-closed policy but implemented the
+/// opposite (fell back unless an undocumented `PERSONAS_DENY_FALLBACK_KEY` was
+/// set, and never read the `ALLOW` var the error names) — bug-hunt 2026-06-07 #1.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FallbackPolicy {
+    /// Fail closed: refuse to operate without OS keychain protection (default).
+    Deny,
+    /// Opt-in: allow the local fallback key (CI / headless / tests).
+    Allow,
+}
+
+fn fallback_policy() -> FallbackPolicy {
+    if std::env::var("PERSONAS_ALLOW_FALLBACK_KEY").unwrap_or_default() == "1" {
+        FallbackPolicy::Allow
+    } else {
+        FallbackPolicy::Deny
+    }
+}
+
 /// Get or create the 32-byte master key. Cached in OnceLock after first call.
 ///
 /// The key is stored in a `ProtectedKey` wrapper that:
@@ -435,26 +457,32 @@ pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
                 Ok(ProtectedKey::new(key))
             }
             Err(e) => {
-                // Desktop app: auto-fallback to DPAPI-protected local key file.
-                // This is safe because the local key is still encrypted with DPAPI
-                // (tied to the user's Windows login session) and has restrictive ACLs.
-                // Users can opt out with PERSONAS_DENY_FALLBACK_KEY=1 for strict mode.
-                if std::env::var("PERSONAS_DENY_FALLBACK_KEY").unwrap_or_default() == "1" {
-                    tracing::error!(
-                        "Keychain unavailable ({}) and PERSONAS_DENY_FALLBACK_KEY=1 is set. \
-                         Refusing to store credentials without OS keychain protection.",
-                        e
-                    );
-                    return Err(format!("Keychain unavailable: {e}"));
+                // Keychain unavailable. The local-file fallback key is weaker than
+                // keychain-bound protection (DPAPI/machine-derived, but readable by
+                // anyone who can read the user's app-data dir), so it is OPT-IN and
+                // fail-closed by default — matching the doc above and the error
+                // string below (bug-hunt 2026-06-07 #1).
+                match fallback_policy() {
+                    FallbackPolicy::Deny => {
+                        tracing::error!(
+                            "Keychain unavailable ({}). Refusing to store credentials \
+                             without OS keychain protection. Set \
+                             PERSONAS_ALLOW_FALLBACK_KEY=1 to allow a local fallback key.",
+                            e
+                        );
+                        Err(format!("Keychain unavailable: {e}"))
+                    }
+                    FallbackPolicy::Allow => {
+                        tracing::warn!(
+                            "Keychain unavailable ({}). PERSONAS_ALLOW_FALLBACK_KEY=1 is \
+                             set; using local fallback key. Credentials are still \
+                             encrypted at rest but not keychain-bound.",
+                            e
+                        );
+                        let _ = KEY_SOURCE.set(KeySource::LocalFallback);
+                        Ok(ProtectedKey::new(derive_fallback_key()))
+                    }
                 }
-
-                tracing::warn!(
-                    "Keychain unavailable ({}). Using DPAPI-protected local fallback key. \
-                     Credentials are still encrypted at rest.",
-                    e
-                );
-                let _ = KEY_SOURCE.set(KeySource::LocalFallback);
-                Ok(ProtectedKey::new(derive_fallback_key()))
             }
         }
     });
