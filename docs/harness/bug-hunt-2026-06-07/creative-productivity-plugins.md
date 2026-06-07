@@ -1,0 +1,68 @@
+# Bug Hunter — creative-productivity-plugins
+> Total: 7
+> Critical: 2 · High: 3 · Medium: 2 · Low: 0
+
+Audited the TS frontend and Rust backend for the bundled Artist / Drive / Obsidian Brain / OCR plugins. Files read: `src-tauri/src/commands/drive.rs`, `obsidian_brain/mod.rs`, `obsidian_brain/drive.rs`, `obsidian_brain/markdown.rs`, `obsidian_brain/conflict.rs`, `ocr/mod.rs`, `artist/mod.rs`, `artist/persistence.rs`, plus `src/api/drive.ts`, `src/api/ocr/index.ts`, `src/features/plugins/drive/hooks/useDrive.ts`, `src/features/plugins/artist/hooks/useArtistAssets.ts`, and the two store slices. Path-traversal guards in the *managed* Drive sandbox and the `read_vault_note` command are solid; the high-severity gaps cluster in the **vault sync** (data loss from filename collisions, non-atomic pull writes), an **unprotected vault browse command**, a **symlink-escape edge in `resolve_safe`**, and an **unsandboxed image-read command**.
+
+## 1. Vault push-sync silently overwrites notes that sanitize to the same filename
+- **Severity**: Critical
+- **Category**: state-corruption / silent-failure (data loss)
+- **File**: `src-tauri/src/commands/obsidian_brain/mod.rs:499-576` (memory loop; same pattern at `mirror_execution_knowledge_for_persona` `:386-405` and `push_competition_insight_to_vault` `:1710`)
+- **Scenario**: A persona has two memories in the same category, titled `Plan: Q1` and `Plan / Q1` (or `Plan*Q1`, or any pair that differs only by characters `sanitize_filename` maps to `-`, or by truncation past 100 chars). Both resolve to `<persona>/<memories>/<category>/Plan- Q1.md`. Push sync writes memory A, records `SyncState{entity_id=A, hash=hA, vault_file_path=P}`, then writes memory B to the **same path P**, blowing away A's bytes, and records `SyncState{entity_id=B, hash=hB, vault_file_path=P}`. Both increment `result.created`/`updated` — the run reports full success. A's content no longer exists anywhere in the vault, and on the next pull A's `three_way_compare` sees the file holding B's content (`VaultChanged`) and **overwrites memory A in the DB with memory B's body**.
+- **Root cause**: The design assumes `sanitize_filename(title)` is an injective key, but it is a lossy, many-to-one transform (`markdown.rs:231-250` collapses 9 distinct chars to `-` and truncates at 100). The sync layer keys DB state by `entity_id` but keys the *file* by sanitized title, so two identities legitimately share one file with no collision detection.
+- **Impact**: Silent, unrecoverable data loss of user notes plus cross-contamination of DB memories on the return pull. Worst kind: success theater on top of corruption.
+- **Fix sketch**: Make the vault filename a function of the entity id, not the title — e.g. `<sanitized-title>--<short-id>.md`, or detect collisions before write (`if path exists and its tracked entity_id != this one → disambiguate or error`). Persist the chosen `vault_file_path` per entity and reuse it, so a title edit renames rather than re-derives.
+
+## 2. `obsidian_brain_list_vault_files` accepts arbitrary paths and leaks absolute directory listings outside the vault
+- **Severity**: Critical
+- **Category**: path-traversal / validation-gap
+- **File**: `src-tauri/src/commands/obsidian_brain/mod.rs:1224-1299`
+- **Scenario**: The companion read command `obsidian_brain_read_vault_note` (`:1301-1352`) carefully rejects absolute paths, rejects `..` components, and canonicalises+containment-checks. `obsidian_brain_list_vault_files` does **none** of that: `scan_path = vault_base.join(p)` with the user `path` verbatim (`:1232-1235`). A call with `path = "../../../../Users/kazda"` (or, since `Path::join` discards the base when given an absolute path, `path = "C:\\Users\\kazda\\.ssh"`) walks that tree and returns every `.md` plus full **absolute paths** in `VaultTreeNode.path`. A prompt-injected persona that can reach this IPC enumerates the user's filesystem.
+- **Root cause**: Two sibling commands were written to different trust models; the listing path assumed `path` is always a UI-supplied in-vault subfolder and never re-validated it. `Path::join` silently honouring an absolute argument is the landmine.
+- **Impact**: Security — directory enumeration / information disclosure of arbitrary filesystem locations, returned with absolute paths that then feed `read_vault_note`-adjacent flows.
+- **Fix sketch**: Factor the `read_vault_note` guard (reject absolute, reject `..`, canonicalise both sides, assert `starts_with(vault_canon)`) into one helper and call it from **every** command that joins a caller-supplied vault path, including the lister. Return vault-relative paths, never absolute.
+
+## 3. `resolve_safe` symlink-escape when the target does not yet exist
+- **Severity**: High
+- **Category**: path-traversal
+- **File**: `src-tauri/src/commands/drive.rs:396-432`
+- **Scenario**: The managed Drive root contains a symlink directory `link → C:\Users\kazda` (planted by a prior process, a copied archive that preserved a symlink, or an OS-level action). An agent calls `drive_write("link/evil.lnk", payload)`. Because the final target `link/evil.lnk` does **not** exist, `resolve_safe` takes the else branch (`:399-424`): it walks up to the nearest *existing* ancestor (`<root>/link`, which exists), canonicalises **that** (resolving the symlink to `C:\Users\kazda`)… but then re-appends the **un-canonicalised tail** (`evil.lnk`) via `canonical_ancestor.join(tail)`. The containment check `canonical.starts_with(root)` is run against `C:\Users\kazda\evil.lnk`, which does NOT start with root — so this *specific* shape is caught. The real gap: when the symlink is an **intermediate** tail component whose own parent already exists and is itself inside root (e.g. target `a/link/evil.txt` where `a/` exists in root but `a/link` is a symlink out), the loop stops at `a` (exists), canonicalises `a` (stays in root), and joins `link/evil.txt` textually — the symlinked `link` is never resolved, so `starts_with(root)` passes and the write follows the symlink outside the sandbox.
+- **Root cause**: The function only canonicalises the existing ancestor, trusting that the *tail* contains no symlinks. The existing-target branch (`std::fs::canonicalize(&joined)`, `:396`) is symlink-safe; the not-yet-exists branch breaks that invariant for any symlink that lives in the not-yet-canonicalised tail.
+- **Impact**: Arbitrary file write outside the managed Drive sandbox (data corruption / potential RCE via writing into a startup/autorun location), defeating the documented "symlinks that escape the sandbox are also caught" guarantee.
+- **Fix sketch**: After computing the candidate, canonicalise the **deepest existing prefix of the full join** (re-resolving on every loop iteration, not just the first existing ancestor), and additionally reject any path whose existing components include a symlink that points outside root. Simpler: refuse to create through any component that is a symlink (`symlink_metadata` check per tail segment), or create the parent chain first and re-canonicalise the now-existing parent before the final join.
+
+## 4. Pull-sync filename collision overwrites a local note, then `std::fs::write` is non-atomic
+- **Severity**: High
+- **Category**: silent-failure (data loss)
+- **File**: `src-tauri/src/commands/obsidian_brain/drive.rs:623-645` (Google-Drive pull); same collision class in local `try_import_vault_note` `mod.rs:973-1011`
+- **Scenario (Drive pull)**: Two files in the same Drive sync folder are named `notes.md` and (after a rename round-trip) another `notes.md` in a different subfolder that flattens to the same `file_key`/`local_path` — or simply a remote `notes.md` whose content differs from an untracked local `notes.md`. `pull_from_drive` computes `local_path = local_folder.join(safe_name)` and, on download, does `std::fs::write(&local_path, &content)` (`:642`) — a **truncate-then-stream** that (a) clobbers an existing local note that was never tracked, and (b) is **non-atomic**: a crash/kill mid-write leaves a half-written or zero-byte note. The local push/pull paths were deliberately moved to `atomic_write` (`mod.rs:59-71`, e.g. `:788`), but this Drive pull was not.
+- **Root cause**: The Drive sync module duplicated the write logic before the atomic-write fix landed and never adopted it; it also has no "local file exists but isn't ours" guard, so an unmanaged note in the synced folder is silently overwritten by the remote copy.
+- **Impact**: Loss of an untracked user note on pull, plus torn writes on crash. (Module is currently dormant per `:16-20`, but it is wired behind `#[tauri::command]`s ready to ship — pre-existing landmine.)
+- **Fix sketch**: Route every vault write through `atomic_write`; before overwriting an existing-but-untracked local file, treat it as a conflict (back it up or surface it) instead of blind `write`.
+
+## 5. `artist_read_image_base64` reads any absolute path with no sandbox and no size cap
+- **Severity**: High
+- **Category**: path-traversal / resource-leak (OOM)
+- **File**: `src-tauri/src/commands/artist/mod.rs:331-350`
+- **Scenario**: `artist_read_image_base64(file_path)` does `Path::new(&file_path)` → `std::fs::read(path)` → base64, with **zero** path validation and **zero** size limit (contrast `drive_read`'s `MAX_READ_BYTES`, `drive.rs:903-915`, and OCR's `MAX_OCR_FILE_BYTES`). A persona/tool call with `file_path = "C:\\Users\\kazda\\.ssh\\id_rsa"` returns its contents as a `data:...;base64` string to the caller (it doesn't even require an image extension — non-images just get `image/png`-ish framing). Separately, pointing it at a multi-GB file does `fs::read` (whole file into RAM) **plus** a ~1.33× base64 copy, OOM-crashing the backend.
+- **Root cause**: The command assumes `file_path` is always a gallery asset path the UI already trusts; it is exported as a raw IPC command with no allowlist, no managed-root confinement, and no streaming/limit.
+- **Impact**: Arbitrary local file read (secret exfiltration) and a trivial OOM denial-of-service.
+- **Fix sketch**: Resolve the path through the same managed-root/`resolve_safe` sandbox (or restrict to the artist folder), enforce an image-extension allowlist, and `stat` for a size cap before reading; reject anything over a few MB.
+
+## 6. Artist asset delete orphans the on-disk file and re-imports it on next scan (store ↔ disk desync)
+- **Severity**: Medium
+- **Category**: state-corruption
+- **File**: `src-tauri/src/commands/artist/mod.rs:230-234` (`artist_delete_asset`) with `src/features/plugins/artist/hooks/useArtistAssets.ts:59-63` (`deleteAsset`)
+- **Scenario**: User deletes a gallery asset. `artist_delete_asset` only calls `repo::delete_asset(pool, &id)` — it never removes the file on disk. The hook optimistically drops the row from local state (`setAssets(prev => prev.filter(...))`). The next time the user runs "Scan & Import" (`scanAndImport`, `:34-57`), `artist_scan_folder` re-discovers the still-present file, mints it a **new UUID** (`mod.rs:754`), and `artist_import_asset` inserts it — the "deleted" asset reappears, now untracked by any prior tags/rename. Rename, by contrast, *does* touch disk (`:304-308`), so delete is inconsistent with the rest of the surface.
+- **Root cause**: Delete was modeled as a DB-only operation while scan treats the filesystem as the source of truth, so the two disagree about what "deleted" means. The optimistic store removal hides the divergence until a rescan.
+- **Impact**: Deleted images resurrect on rescan; lost tag/rename metadata; user confusion and unbounded gallery growth. Recoverable but surprising.
+- **Fix sketch**: Make delete authoritative — either move the file to a trash dir (mirror Drive's soft-delete) and remove the DB row, or record deleted file paths and have `artist_scan_folder` skip them. Keep one source of truth.
+
+## 7. `drive_copy` / `pasteHere` partial folder copy leaves a half-copied tree and fires "added" for orphans
+- **Severity**: Medium
+- **Category**: silent-failure / state-corruption
+- **File**: `src-tauri/src/commands/drive.rs:1205-1252` + `copy_dir_recursive:1310-1324`; UI driver `src/features/plugins/drive/hooks/useDrive.ts:494-514`
+- **Scenario**: A user pastes (copies) a large folder and the copy fails partway — e.g. disk-full, or a single child hits a permission error inside `copy_dir_recursive` (`std::fs::copy` returns `Err` via `?` at `:1320`). `drive_copy` then returns `Err` and **never reaches** the cleanup-less return, leaving a **partially-populated destination directory** on disk. No rollback removes the half-copied tree. In `pasteHere`, `runBulk` catches the per-item error with `toastCatch` and continues, so the user sees a toast but the corrupt partial folder remains and a subsequent paste of the same name now collides. For a *successful* dir copy, `emit_added_for_subtree` (`:1258-1308`) fans out `added` events best-effort; if the walk errors mid-way, subscribed personas receive `added` for only some leaves — event stream silently disagrees with disk.
+- **Root cause**: `copy_dir_recursive` has no transactional/cleanup semantics — it assumes copies either fully succeed or the caller tolerates partial state. The event emission assumes the copy that preceded it was complete.
+- **Impact**: Orphaned partial directories accumulate, name collisions on retry, and event subscribers act on an incomplete fileset. Recoverable but messy; degrades trust in the "managed drive" abstraction.
+- **Fix sketch**: Copy into a temp sibling dir and atomically rename into place on full success; on any error, best-effort `remove_dir_all` the partial temp. Emit subtree `added` events only after the rename commits.
