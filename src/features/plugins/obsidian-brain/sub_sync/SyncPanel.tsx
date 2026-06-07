@@ -8,6 +8,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
+import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 import {
   obsidianBrainPushSync,
   obsidianBrainPullSync,
@@ -24,6 +25,7 @@ import ConflictDiffView from './ConflictDiffView';
 export default function SyncPanel() {
   const { t, tx } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
+  const announce = useAnnounce();
   const connected = useSystemStore((s) => s.obsidianConnected);
   const activeVaultPath = useSystemStore((s) => s.obsidianVaultPath);
   const activeVaultName = useSystemStore((s) => s.obsidianVaultName);
@@ -85,6 +87,9 @@ export default function SyncPanel() {
   const pushSync = useCallback(async () => {
     setPushing(true);
     setSyncRunning(true);
+    // Start cue for screen readers — the result toast (which already
+    // announces) only fires once the sync settles.
+    announce(t.plugins.obsidian_brain.pushing, 'polite');
     try {
       // Always send the explicit selection. Per @/api/obsidianBrain contract,
       // `undefined` means "sync ALL personas" — sending it here when the user
@@ -109,11 +114,12 @@ export default function SyncPanel() {
       setPushing(false);
       setSyncRunning(false);
     }
-  }, [selectedPersonaIds, addToast, recordResult, setSyncRunning, setLastSyncAt]);
+  }, [selectedPersonaIds, addToast, announce, recordResult, setSyncRunning, setLastSyncAt, t]);
 
   const pullSync = useCallback(async () => {
     setPulling(true);
     setSyncRunning(true);
+    announce(t.plugins.obsidian_brain.pulling, 'polite');
     try {
       const result = await obsidianBrainPullSync();
       setConflicts(result.conflicts);
@@ -146,7 +152,7 @@ export default function SyncPanel() {
       setPulling(false);
       setSyncRunning(false);
     }
-  }, [addToast, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts]);
+  }, [addToast, announce, recordResult, setSyncRunning, setLastSyncAt, setPendingConflicts, t]);
 
   const resolveConflict = useCallback(async (conflict: SyncConflict, resolution: ObsidianConflictResolution) => {
     try {

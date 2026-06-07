@@ -21,6 +21,7 @@ import {
 import { useTranslation } from "@/i18n/useTranslation";
 import { silentCatch, toastCatch } from "@/lib/silentCatch";
 import { useToastStore } from "@/stores/toastStore";
+import { useAnnounce } from "@/features/shared/components/feedback/AriaLiveProvider";
 import { BaseModal } from "@/features/shared/components/modals";
 
 import type { useOcr } from "./useOcr";
@@ -42,6 +43,7 @@ const DEFAULT_OUTPUT_SUFFIX = ".ocr.txt";
 export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
   const { t } = useTranslation();
   const addToast = useToastStore((s) => s.addToast);
+  const announce = useAnnounce();
   const [phase, setPhase] = useState<Phase>("input");
   const [prompt, setPrompt] = useState("");
   const [result, setResult] = useState<OcrDriveResult | null>(null);
@@ -81,6 +83,7 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
     setPhase("running");
     setResult(null);
     setSaved(null);
+    announce(t.plugins.drive.ocr_running, "polite");
     const trimmedPrompt = prompt.trim() || undefined;
     try {
       let res: OcrDriveResult;
@@ -100,10 +103,14 @@ export function DriveOcrDrawer({ entry, ocr, onClose, onFileWritten }: Props) {
       }
       setResult(res);
       setPhase("done");
+      // The "done" phase renders the result inline with no toast, so this
+      // is the only completion signal a screen-reader user gets.
+      announce(t.plugins.drive.ocr_done, "polite");
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // Cancellation is a user-initiated outcome, not an error to surface.
       if (!msg.includes("OCR cancelled")) {
+        announce(msg, "assertive");
         toastCatch("drive:ocr")(e);
       }
       setPhase("input");

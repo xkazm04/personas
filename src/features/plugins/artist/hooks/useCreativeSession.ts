@@ -12,10 +12,12 @@ import { useToastStore } from '@/stores/toastStore';
 import { EventName } from '@/lib/eventRegistry';
 import { useTranslation } from '@/i18n/useTranslation';
 import { silentCatch } from '@/lib/silentCatch';
+import { useAnnounce } from '@/features/shared/components/feedback/AriaLiveProvider';
 
 
 export function useCreativeSession() {
   const { t, tx } = useTranslation();
+  const announce = useAnnounce();
   const sessionId = useSystemStore((s) => s.creativeSessionId);
   const running = useSystemStore((s) => s.creativeSessionRunning);
   const output = useSystemStore((s) => s.creativeSessionOutput);
@@ -32,6 +34,9 @@ export function useCreativeSession() {
     const newId = `creative-${crypto.randomUUID()}`;
     setSessionId(newId);
     setRunning(true);
+    // Screen-reader cue mirroring the visual "streaming" spinner — the
+    // generation can take a while and produces no toast on start.
+    announce('Generating image…', 'polite');
     // Seed session history with the first line before any streaming output
     startCreativeSessionRecord({
       id: newId,
@@ -52,12 +57,11 @@ export function useCreativeSession() {
     } catch (err) {
       setRunning(false);
       finalizeCreativeSession(newId, 'failed');
-      useToastStore.getState().addToast(
-        err instanceof Error ? err.message : String(err),
-        'error',
-      );
+      const message = err instanceof Error ? err.message : String(err);
+      announce(message, 'assertive');
+      useToastStore.getState().addToast(message, 'error');
     }
-  }, [setSessionId, setRunning, appendOutput, artistFolder, startCreativeSessionRecord, finalizeCreativeSession]);
+  }, [setSessionId, setRunning, appendOutput, artistFolder, startCreativeSessionRecord, finalizeCreativeSession, announce]);
 
   const cancel = useCallback(async () => {
     if (sessionId) {
@@ -119,6 +123,7 @@ export function useCreativeSession() {
             const line = `[Error] ${error}`;
             appendOutput(line);
             appendCreativeSessionLine(job_id, line);
+            announce(error, 'assertive');
           }
           if (status === 'failed') finalizeCreativeSession(job_id, 'failed');
           else if (status === 'cancelled') finalizeCreativeSession(job_id, 'cancelled');
@@ -133,6 +138,7 @@ export function useCreativeSession() {
       (event) => {
         setRunning(false);
         finalizeCreativeSession(event.payload.session_id, 'completed');
+        announce('Image generated', 'polite');
         // Auto-scan for new assets after session completes
         scanForNewAssets();
       },
@@ -143,7 +149,7 @@ export function useCreativeSession() {
       unsubStatus.then((fn) => fn());
       unsubComplete.then((fn) => fn());
     };
-  }, [appendOutput, setRunning, scanForNewAssets, appendCreativeSessionLine, finalizeCreativeSession]);
+  }, [appendOutput, setRunning, scanForNewAssets, appendCreativeSessionLine, finalizeCreativeSession, announce]);
 
   return { sessionId, running, output, sendPrompt, cancel, clear };
 }
