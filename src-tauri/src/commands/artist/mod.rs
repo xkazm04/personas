@@ -328,22 +328,71 @@ pub fn artist_ensure_folders(folder: String) -> Result<(), AppError> {
 
 /// Read a local image file and return it as a base64 data URL.
 /// Used by the gallery to render images without needing the asset protocol.
+///
+/// Hardened (bug-hunt 2026-06-07 creative #5): previously this read ANY path
+/// with no validation and no size cap, so a caller could exfiltrate secrets
+/// (e.g. `~/.ssh/id_rsa`) as base64 or OOM the backend with a huge file. Now
+/// confined to the managed app-data root, restricted to image extensions, and
+/// size-capped before the read.
 #[tauri::command]
 pub fn artist_read_image_base64(file_path: String) -> Result<String, AppError> {
     use base64::engine::general_purpose::STANDARD as B64;
     use base64::Engine as _;
 
+    /// Cap reads so a multi-GB file can't OOM the backend (`fs::read` loads the
+    /// whole file plus a ~1.33x base64 copy).
+    const MAX_IMAGE_BYTES: u64 = 64 * 1024 * 1024;
+    const ALLOWED_EXTS: &[&str] = &[
+        "png", "jpg", "jpeg", "gif", "webp", "bmp", "svg", "avif", "ico",
+    ];
+
     let path = Path::new(&file_path);
-    if !path.exists() {
-        return Err(AppError::NotFound(format!("File not found: {file_path}")));
+
+    // 1. Absolute, no `..` traversal.
+    if !path.is_absolute()
+        || path
+            .components()
+            .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(AppError::Validation(
+            "Image path must be absolute with no `..` segments".into(),
+        ));
     }
 
-    let bytes = std::fs::read(path)?;
+    // 2. Image-extension allowlist — this command renders gallery images, never
+    //    arbitrary files, so a non-image path (a key, a `.env`) is rejected.
     let ext = path
         .extension()
         .and_then(|e| e.to_str())
-        .unwrap_or("png")
-        .to_lowercase();
+        .map(|e| e.to_lowercase())
+        .unwrap_or_default();
+    if !ALLOWED_EXTS.contains(&ext.as_str()) {
+        return Err(AppError::Validation(format!("Unsupported image type: .{ext}")));
+    }
+
+    // 3. Confine to the managed app-data root (resolving symlinks).
+    let managed_root = dirs::home_dir()
+        .ok_or_else(|| AppError::Internal("Cannot determine home directory".into()))?
+        .join("Personas");
+    let canon = std::fs::canonicalize(path)
+        .map_err(|_| AppError::NotFound(format!("File not found: {file_path}")))?;
+    let root_canon = managed_root.canonicalize().unwrap_or(managed_root);
+    if !canon.starts_with(&root_canon) {
+        return Err(AppError::Forbidden(
+            "Image path is outside the managed artist folder".into(),
+        ));
+    }
+
+    // 4. Size cap BEFORE reading.
+    let meta = std::fs::metadata(&canon)?;
+    if meta.len() > MAX_IMAGE_BYTES {
+        return Err(AppError::Validation(format!(
+            "Image too large: {} bytes (max {MAX_IMAGE_BYTES})",
+            meta.len()
+        )));
+    }
+
+    let bytes = std::fs::read(&canon)?;
     let mime = mime_from_ext(&ext);
     let b64 = B64.encode(&bytes);
     Ok(format!("data:{mime};base64,{b64}"))
