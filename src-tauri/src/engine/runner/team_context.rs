@@ -144,7 +144,7 @@ pub fn build_team_alignment_block(
     // Design B (living chat): the user's channel directives — explicit,
     // binding, above generic memory injection. Recency-capped (14d) and
     // line-capped so the cost guardrail holds.
-    let directives = render_user_directives(pool, team_id);
+    let directives = render_user_directives(pool, team_id, &persona.id);
 
     let parts: Vec<String> = [alignment, directives, standards]
         .into_iter()
@@ -157,30 +157,40 @@ pub fn build_team_alignment_block(
     }
 }
 
-/// Render the team's recent user directives (`team_memories.category =
-/// 'directive'`) as a binding prompt block. Newest 5 within 14 days; each
-/// line capped. Returns None when the channel has no recent directives.
-fn render_user_directives(pool: &DbPool, team_id: &str) -> Option<String> {
-    let directives =
-        crate::db::repos::resources::team_memories::list_directives(pool, team_id, 5).ok()?;
-    if directives.is_empty() {
+/// Render the team channel's recent injectable messages as a binding prompt
+/// block. C1: messages addressed to this persona or the whole team
+/// (`consumer='inject'`); newest 5 within 14 days, each line capped. Carries
+/// user directives plus (C2/C3) Athena and Director posts, with the author
+/// kind rendered so the persona knows who is speaking.
+fn render_user_directives(pool: &DbPool, team_id: &str, persona_id: &str) -> Option<String> {
+    let messages = crate::db::repos::resources::team_channel::list_injectable_for_persona(
+        pool, team_id, persona_id, 5,
+    )
+    .ok()?;
+    if messages.is_empty() {
         return None;
     }
     let mut out = String::from(
         "
 
-## USER DIRECTIVES — read before acting
-The user posted these into the team channel. They are BINDING guidance for current work — when a directive conflicts with a memory or your default plan, the directive wins. Acknowledge relevant directives in your result summary.
+## TEAM CHANNEL — read before acting
+These messages were posted into the team channel for you. They are BINDING guidance for current work — when a channel message conflicts with a memory or your default plan, the message wins. Acknowledge the relevant ones in your result summary.
 ",
     );
-    for d in &directives {
-        let mut line = d.content.replace(['
-', ''], " ");
+    for m in &messages {
+        let who = match m.author_kind.as_str() {
+            "user" => "User",
+            "athena" => "Athena",
+            "director" => "Director",
+            "persona" => "Teammate",
+            other => other,
+        };
+        let mut line = m.body.replace(['\n', '\r'], " ");
         if line.chars().count() > 240 {
             line = line.chars().take(240).collect::<String>() + "…";
         }
-        out.push_str(&format!("- [{}] {}
-", d.created_at, line));
+        out.push_str(&format!("- [{}] {}: {}
+", m.created_at, who, line));
     }
     Some(out)
 }
