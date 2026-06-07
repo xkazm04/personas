@@ -280,7 +280,7 @@ pub fn connector_readiness(conn: &Connection, connector_name: &str) -> Readiness
             // must surface, and a persona promoted with an unbindable
             // connector executes blind. `resolve_one_credential` returns
             // Some only for an unambiguous bind.
-            if resolve_one_credential(conn, name).is_some() {
+            if resolve_ready_credential(conn, name).is_some() {
                 Readiness::Ready
             } else {
                 needs(SetupKind::VaultCredential)
@@ -434,6 +434,54 @@ fn resolve_one_credential(conn: &Connection, connector_name: &str) -> Option<Str
         return Some(by_category[0].clone());
     }
     None
+}
+
+/// Readiness-only refinement of `resolve_one_credential`: a `Credential`
+/// connector is *Ready* only if it binds to a credential that is actually
+/// usable — at least one non-empty field value and a last healthcheck that did
+/// not fail. A zero-field (`data: {}`) or last-failed credential is still
+/// *bindable* for editing/execution (so `resolve_one_credential` /
+/// `resolve_credential_links` are unchanged), but must not promote a persona to
+/// Ready or it executes blind (bug-hunt 2026-06-07 #4).
+fn resolve_ready_credential(conn: &Connection, connector_name: &str) -> Option<String> {
+    let id = resolve_one_credential(conn, connector_name)?;
+    if credential_is_usable(conn, &id) {
+        Some(id)
+    } else {
+        None
+    }
+}
+
+/// Whether a stored credential has the substance required to count as ready:
+/// at least one field carrying an actual value, and `healthcheck_last_success`
+/// is not an explicit `Some(false)`. A never-probed credential (`None`) is
+/// allowed — it is not presumed broken — but an empty or last-failed one is not.
+fn credential_is_usable(conn: &Connection, credential_id: &str) -> bool {
+    // 1. Must have at least one field carrying a value. An empty `data: {}`
+    //    credential creates zero `credential_fields` rows; a field cleared to
+    //    "" has an empty `encrypted_value`.
+    let field_count: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM credential_fields \
+             WHERE credential_id = ?1 AND encrypted_value != ''",
+            [credential_id],
+            |r| r.get(0),
+        )
+        .unwrap_or(0);
+    if field_count == 0 {
+        return false;
+    }
+    // 2. The last healthcheck must not have failed.
+    let metadata: Option<String> = conn
+        .query_row(
+            "SELECT metadata FROM persona_credentials WHERE id = ?1",
+            [credential_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten();
+    let ledger = crate::db::models::CredentialLedger::parse(metadata.as_deref());
+    ledger.healthcheck_last_success != Some(false)
 }
 
 /// Resolve, for every `Credential`-class connector in `connector_names`, the
