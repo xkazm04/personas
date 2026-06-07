@@ -209,9 +209,19 @@ pub fn capabilities_for(service_type: &str) -> Option<&'static [ConnectorCapabil
             },
             ConnectorCapability {
                 slug: "execute_select",
-                description: "Run a single read-only SQL statement (SELECT only — any other verb is rejected at parse time). Returns rows as markdown.",
+                // Approval-gated: although SELECT-only, the statement runs
+                // against the full companion brain DB (every distilled fact,
+                // episode, memory and goal) and the row guard is just a
+                // `starts_with("select")` parse check. Left auto-firing, a
+                // prompt-injection payload in any ingested content (a fetched
+                // URL, a drive file, another connector's output) could make
+                // Athena emit `execute_select "select * from ..."` that runs
+                // silently and leaks PII into the chat/episode log. Requiring
+                // approval puts a human in front of the raw query without
+                // blocking the schema-only list_tables/describe_table reads.
+                description: "Run a single read-only SQL statement (SELECT only — any other verb is rejected at parse time). Returns rows as markdown. Requires approval before running.",
                 args: "sql: string, limit?: number (default 50)",
-                requires_approval: false,
+                requires_approval: true,
             },
             ConnectorCapability {
                 slug: "execute_mutation",
