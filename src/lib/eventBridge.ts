@@ -510,6 +510,11 @@ const registry: EventRegistration[] = [
         EventName.QUEUE_STATUS,
         (payload) => {
           const store = useOverviewStore.getState();
+          // Keep the FleetActivityStrip's capacity gauge honest: the queue
+          // event carries the authoritative live global cap.
+          if (typeof payload.global_capacity === "number" && payload.global_capacity > 0) {
+            store.setMaxParallelExecutions(payload.global_capacity);
+          }
           if (payload.action === "queued") {
             store.processQueued(
               "execution",

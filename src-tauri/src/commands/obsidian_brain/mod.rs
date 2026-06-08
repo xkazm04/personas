@@ -454,6 +454,28 @@ fn log_sync(
     let _ = sync_repo::insert_sync_log(pool, &entry);
 }
 
+/// Build an injective vault filename for a synced entity. `sanitize_filename` is
+/// many-to-one (collapses many distinct chars to `-`, truncates at 100), so
+/// keying the on-disk note by title alone let two entities that sanitize to the
+/// same name clobber each other's file — silent data loss with success theater
+/// (bug-hunt 2026-06-07 creative #1). Appending a short, stable, filesystem-safe
+/// slice of the entity id makes the name unique per entity.
+fn vault_note_filename(title: &str, entity_id: &str) -> String {
+    let base = sanitize_filename(title);
+    let alnum: String = entity_id
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric())
+        .collect();
+    let suffix = if alnum.len() > 8 {
+        alnum[alnum.len() - 8..].to_string()
+    } else if alnum.is_empty() {
+        "x".to_string()
+    } else {
+        alnum
+    };
+    format!("{base}--{suffix}.md")
+}
+
 #[tauri::command]
 pub fn obsidian_brain_push_sync(
     state: State<'_, Arc<AppState>>,
@@ -498,13 +520,6 @@ pub fn obsidian_brain_push_sync(
 
             for memory in &memories {
                 let cat_dir = persona_dir.join(&memory.category);
-                let filename = format!("{}.md", sanitize_filename(&memory.title));
-                let file_path = cat_dir.join(&filename);
-                let rel_path = file_path
-                    .strip_prefix(vault_base)
-                    .unwrap_or(&file_path)
-                    .to_string_lossy()
-                    .to_string();
 
                 let md_content = memory_to_markdown(memory, &persona.name);
                 let new_hash = compute_content_hash(&md_content);
@@ -519,11 +534,29 @@ pub fn obsidian_brain_push_sync(
                     }
                 }
 
-                // Ensure directory exists
-                if let Err(e) = std::fs::create_dir_all(&cat_dir) {
+                // Reuse the path already chosen for this entity (stable across
+                // title edits and never orphans an existing note); a NEW entity
+                // gets a collision-free, id-suffixed name so two memories that
+                // sanitize to the same title can't clobber one file
+                // (bug-hunt 2026-06-07 creative #1).
+                let rel_path = match existing.as_ref() {
+                    Some(es) => es.vault_file_path.clone(),
+                    None => {
+                        let abs = cat_dir.join(vault_note_filename(&memory.title, &memory.id));
+                        abs.strip_prefix(vault_base)
+                            .unwrap_or(&abs)
+                            .to_string_lossy()
+                            .to_string()
+                    }
+                };
+                let file_path = vault_base.join(&rel_path);
+
+                // Ensure directory exists (parent of the resolved file path).
+                let write_dir = file_path.parent().unwrap_or(cat_dir.as_path());
+                if let Err(e) = std::fs::create_dir_all(write_dir) {
                     result
                         .errors
-                        .push(format!("Failed to create dir {}: {e}", cat_dir.display()));
+                        .push(format!("Failed to create dir {}: {e}", write_dir.display()));
                     continue;
                 }
 
@@ -1221,6 +1254,52 @@ pub fn obsidian_brain_resolve_conflict(
 
 // ── Phase 4: Vault Browser ──────────────────────────────────────────
 
+/// Resolve a caller-supplied path that must stay inside the configured vault.
+/// Rejects absolute paths and `..` segments, then canonicalises both the vault
+/// root and the joined target and asserts containment — covering symlink escapes
+/// (canonicalize resolves them) and Windows case-folding (canonicalize normalises
+/// case). `rel = None`/empty resolves to the vault root. Returns the canonical,
+/// in-vault absolute path.
+///
+/// Every command that joins a caller-supplied path to the vault MUST go through
+/// this so the guard cannot diverge between siblings — which is exactly how the
+/// listing command shipped without the read command's checks
+/// (bug-hunt 2026-06-07 creative #2).
+fn resolve_vault_subpath(vault_base: &Path, rel: Option<&str>) -> Result<std::path::PathBuf, AppError> {
+    let vault_canon = vault_base
+        .canonicalize()
+        .map_err(|e| AppError::Validation(format!("Vault path is not accessible: {e}")))?;
+    let rel = match rel {
+        None => return Ok(vault_canon),
+        Some(r) if r.trim().is_empty() => return Ok(vault_canon),
+        Some(r) => r,
+    };
+    let candidate = Path::new(rel);
+    if candidate.is_absolute() {
+        return Err(AppError::Validation(
+            "Path must be relative to the vault root".into(),
+        ));
+    }
+    if candidate
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(AppError::Validation(
+            "Path must not contain `..` segments".into(),
+        ));
+    }
+    let target_canon = vault_canon
+        .join(candidate)
+        .canonicalize()
+        .map_err(|e| AppError::Validation(format!("Vault path not found: {e}")))?;
+    if !target_canon.starts_with(&vault_canon) {
+        return Err(AppError::Validation(
+            "Path resolves outside the configured vault".into(),
+        ));
+    }
+    Ok(target_canon)
+}
+
 #[tauri::command]
 pub fn obsidian_brain_list_vault_files(
     state: State<'_, Arc<AppState>>,
@@ -1229,21 +1308,30 @@ pub fn obsidian_brain_list_vault_files(
     require_auth_sync(&state)?;
     let config = get_config_or_err(&state.db)?;
     let vault_base = Path::new(&config.vault_path);
-    let scan_path = match &path {
-        Some(p) => vault_base.join(p),
-        None => vault_base.to_path_buf(),
-    };
+    // Confine the listing to the vault. This previously joined the caller path
+    // verbatim, so an absolute or `..` path enumerated arbitrary directories and
+    // returned their absolute paths (bug-hunt 2026-06-07 creative #2).
+    let vault_canon = vault_base
+        .canonicalize()
+        .map_err(|e| AppError::Validation(format!("Vault path is not accessible: {e}")))?;
+    let scan_path = resolve_vault_subpath(vault_base, path.as_deref())?;
 
-    fn build_tree(dir: &Path, depth: u32) -> VaultTreeNode {
+    fn build_tree(dir: &Path, root: &Path, depth: u32) -> VaultTreeNode {
         let name = dir
             .file_name()
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default();
+        // Always report vault-relative paths, never absolute filesystem paths.
+        let rel_path = dir
+            .strip_prefix(root)
+            .unwrap_or(dir)
+            .to_string_lossy()
+            .to_string();
 
         if depth > 5 {
             return VaultTreeNode {
                 name,
-                path: dir.to_string_lossy().to_string(),
+                path: rel_path,
                 is_dir: true,
                 children: vec![],
                 note_count: 0,
@@ -1269,15 +1357,29 @@ pub fn obsidian_brain_list_vault_files(
                     continue;
                 }
 
+                // Never descend into symlinked directories — a symlink inside
+                // the vault can still point outside it.
+                let is_symlink = entry
+                    .file_type()
+                    .map(|t| t.is_symlink())
+                    .unwrap_or(false);
+                if is_symlink {
+                    continue;
+                }
+
                 if ep.is_dir() {
-                    let child = build_tree(&ep, depth + 1);
+                    let child = build_tree(&ep, root, depth + 1);
                     note_count += child.note_count;
                     children.push(child);
                 } else if ep.extension().map(|e| e == "md").unwrap_or(false) {
                     note_count += 1;
                     children.push(VaultTreeNode {
                         name: fname,
-                        path: ep.to_string_lossy().to_string(),
+                        path: ep
+                            .strip_prefix(root)
+                            .unwrap_or(&ep)
+                            .to_string_lossy()
+                            .to_string(),
                         is_dir: false,
                         children: vec![],
                         note_count: 0,
@@ -1288,14 +1390,14 @@ pub fn obsidian_brain_list_vault_files(
 
         VaultTreeNode {
             name,
-            path: dir.to_string_lossy().to_string(),
+            path: rel_path,
             is_dir: true,
             children,
             note_count,
         }
     }
 
-    Ok(build_tree(&scan_path, 0))
+    Ok(build_tree(&scan_path, &vault_canon, 0))
 }
 
 #[tauri::command]
@@ -1305,48 +1407,11 @@ pub fn obsidian_brain_read_vault_note(
 ) -> Result<String, AppError> {
     require_auth_sync(&state)?;
     let config = get_config_or_err(&state.db)?;
-
-    // Safety: confine the read to the configured vault. Path::starts_with does
-    // string-segment matching only -- it does not normalise `..` segments and
-    // is case-sensitive on Windows, where the filesystem isn't. An absolute
-    // path like `C:\Users\x\.ssh\id_rsa` was caught by the previous check, but
-    // a relative path like `..\..\.ssh\id_rsa` joined naively would escape,
-    // and a literal `C:\Users\X\Documents\Vault\..\..\.ssh\id_rsa` could
-    // textually start with vault_base while resolving outside it.
-    //
-    // The robust shape: treat input as relative-only, reject `..` components
-    // up front, then canonicalise both sides and verify containment. The
-    // double belt covers symlink escapes (canonicalize resolves them) and
-    // Windows case-folding (canonicalize normalises case).
     let vault_base = Path::new(&config.vault_path);
-    let candidate = Path::new(&file_path);
-
-    if candidate.is_absolute() {
-        return Err(AppError::Validation(
-            "File path must be relative to the vault root".into(),
-        ));
-    }
-    if candidate
-        .components()
-        .any(|c| matches!(c, std::path::Component::ParentDir))
-    {
-        return Err(AppError::Validation(
-            "File path must not contain `..` segments".into(),
-        ));
-    }
-
-    let vault_canon = vault_base.canonicalize().map_err(|e| {
-        AppError::Validation(format!("Vault path is not accessible: {e}"))
-    })?;
-    let target_canon = vault_canon.join(candidate).canonicalize().map_err(|e| {
-        AppError::Validation(format!("Vault note not found: {e}"))
-    })?;
-    if !target_canon.starts_with(&vault_canon) {
-        return Err(AppError::Validation(
-            "File path resolves outside the configured vault".into(),
-        ));
-    }
-
+    // Confine the read to the configured vault via the shared guard (rejects
+    // absolute/`..`, canonicalises both sides, asserts containment — covering
+    // symlink escapes and Windows case-folding).
+    let target_canon = resolve_vault_subpath(vault_base, Some(&file_path))?;
     std::fs::read_to_string(&target_canon)
         .map_err(|e| AppError::Validation(format!("Failed to read file: {e}")))
 }

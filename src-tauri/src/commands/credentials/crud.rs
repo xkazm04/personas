@@ -54,7 +54,13 @@ pub fn create_credential(
 
     // Store an empty blob -- all secrets live in credential_fields now.
     let name = input.name.clone();
-    let healthcheck_passed = input.healthcheck_passed.unwrap_or(false);
+    // `healthcheck_passed` from the client is a UX hint that a probe was attempted
+    // in the renderer — it is NOT proof. Stamping it verbatim let any IPC caller
+    // fabricate a "Connection verified" / healthy badge for empty or invalid
+    // credentials (bug-hunt 2026-06-07 #3). Treat it only as a REQUEST to run a
+    // real server-side probe after creation; the ledger is only ever stamped by
+    // code that actually ran the probe.
+    let verify_requested = input.healthcheck_passed.unwrap_or(false);
     let db_input = CreateCredentialInput {
         encrypted_data: String::new(),
         iv: String::new(),
@@ -64,23 +70,35 @@ pub fn create_credential(
     };
 
     // Create credential + save fields in a single transaction to prevent orphaned rows
-    let mut cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
+    let cred = repo::create_with_fields(&state.db, db_input, &field_map)?;
 
     audit_log::insert_warn(&state.db, &cred.id, &name, "create", None);
 
-    // Persist pre-creation healthcheck result so credential appears as "healthy"
-    if healthcheck_passed {
-        if let Err(e) = repo::append_healthcheck_metadata(
-            &state.db,
-            &cred.id,
-            true,
-            "Connection verified during setup",
-        ) {
-            tracing::warn!(credential_id = %cred.id, error = %e, "Failed to set initial healthcheck metadata");
-        } else {
-            // Re-read so the returned object includes updated metadata
-            cred = repo::get_by_id(&state.db, &cred.id)?;
-        }
+    // If the setup flow asked to verify, run the ACTUAL healthcheck server-side
+    // (loads + decrypts the stored credential and probes the service) and let it
+    // stamp the true result — rather than trusting the client's claim. Fire-and-
+    // forget so create returns promptly; the UI reflects the result on its next
+    // credential refresh.
+    if verify_requested {
+        let pool = state.db.clone();
+        let credential_id = cred.id.clone();
+        tauri::async_runtime::spawn(async move {
+            match crate::engine::healthcheck::run_healthcheck(&pool, &credential_id).await {
+                Ok(result) => {
+                    if let Err(e) = repo::append_healthcheck_metadata(
+                        &pool,
+                        &credential_id,
+                        result.success,
+                        &result.message,
+                    ) {
+                        tracing::warn!(credential_id = %credential_id, error = %e, "Failed to persist post-create healthcheck metadata");
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(credential_id = %credential_id, error = %e, "Post-create healthcheck failed");
+                }
+            }
+        });
     }
 
     // Auto-provision a keepalive rotation policy for OAuth credentials

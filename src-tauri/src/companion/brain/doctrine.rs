@@ -283,6 +283,13 @@ pub struct IngestStats {
     pub errors: Vec<String>,
 }
 
+/// Process-wide lock serializing doctrine ingestion. See `ingest_all`.
+#[cfg(feature = "ml")]
+fn ingest_lock() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<tokio::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+}
+
 /// Run a full doctrine ingestion pass. Idempotent — safe to call on every
 /// app start. Reads the curated allowlist, chunks each doc, embeds
 /// new/changed chunks, removes orphaned rows.
@@ -291,6 +298,15 @@ pub async fn ingest_all(
     pool: &UserDbPool,
     embedder: &Arc<EmbeddingManager>,
 ) -> Result<IngestStats, AppError> {
+    // Serialize ingest process-wide. ingest_all runs on companion_init (startup)
+    // AND from the "refresh doctrine" button (companion_reingest_doctrine); each
+    // chunk's upsert is a select-then-insert across pooled connections with no
+    // UNIQUE constraint, so two overlapping passes both observe None and both
+    // INSERT, duplicating every doctrine chunk (+ its FTS/embedding rows). One
+    // async lock makes a pass atomic with respect to any other pass
+    // (bug-hunt 2026-06-07 companion #3).
+    let _ingest_guard = ingest_lock().lock().await;
+
     embeddings::ensure_vec_table(pool)?;
 
     let mut stats = IngestStats::default();

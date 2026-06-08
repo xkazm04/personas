@@ -84,3 +84,9 @@ export function useRecipeTestRunner(recipe: RecipeDefinition) {
     cancelExecution: execution.cancel,
   };
 }
+
+/// Shape returned by `useRecipeTestRunner`. Lifted into props so a SINGLE runner
+/// instance can be shared — RecipePlaygroundModal owns it and the test-runner tab
+/// consumes it — instead of each call site creating independent `useState`, which
+/// left the History tab and badge permanently empty (bug-hunt 2026-06-07 recipes #1).
+export type RecipeTestRunner = ReturnType<typeof useRecipeTestRunner>;

@@ -56,6 +56,19 @@ export interface ProcessActivitySlice {
   activeProcessCount: number;
   recentProcesses: ActiveProcess[]; // last 10 completed, newest first
 
+  /**
+   * Live global concurrency cap — the `max_parallel_executions` setting that
+   * bounds how many executions run at once before the rest queue. Drives the
+   * {@link FleetActivityStrip} capacity gauge: the strip renders this many bars
+   * so a full strip means the fleet is at the configured limit. Seeded from the
+   * setting on mount, refreshed by `QUEUE_STATUS` events (which carry
+   * `global_capacity`) and by the Limits settings panel after a save. Holds the
+   * backend default until the real value loads.
+   */
+  maxParallelExecutions: number;
+  /** Update {@link maxParallelExecutions}. Ignores non-positive/NaN inputs. */
+  setMaxParallelExecutions: (max: number) => void;
+
   // Actions
   processStarted: (domain: string, runId?: string, label?: string, navigateTo?: ProcessNavigateTo) => void;
   processEnded: (
@@ -117,6 +130,14 @@ export interface ProcessActivitySlice {
 }
 
 const MAX_RECENT = 10;
+
+/**
+ * Frontend default for {@link ProcessActivitySlice.maxParallelExecutions}.
+ * Mirrors the Rust `MAX_PARALLEL_EXECUTIONS_DEFAULT` in
+ * `src-tauri/src/db/settings_keys.rs` — keep the two in sync. Used as the
+ * capacity-gauge denominator until the real setting loads.
+ */
+export const DEFAULT_MAX_PARALLEL_EXECUTIONS = 10;
 
 /**
  * Build a storage key from `(domain, runId)`.
@@ -207,6 +228,14 @@ export const createProcessActivitySlice: StateCreator<
   activeProcesses: {},
   activeProcessCount: 0,
   recentProcesses: [],
+  maxParallelExecutions: DEFAULT_MAX_PARALLEL_EXECUTIONS,
+
+  setMaxParallelExecutions: (max) => {
+    if (!Number.isFinite(max) || max <= 0) return;
+    set((state) =>
+      state.maxParallelExecutions === max ? state : { maxParallelExecutions: max },
+    );
+  },
 
   processStarted: (domain, runId, label, navigateTo) => {
     const key = processKey(domain, runId);

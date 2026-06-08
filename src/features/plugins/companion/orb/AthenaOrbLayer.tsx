@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
 import { useHoldToTalk } from '../useHoldToTalk';
@@ -44,6 +45,9 @@ export default function AthenaOrbLayer() {
   const fleetGridOpen = useSystemStore((s) => s.fleetGridOpen);
   const state = useCompanionStore((s) => s.state);
   const setState = useCompanionStore((s) => s.setState);
+  const fleetAutoNotice = useCompanionStore((s) => s.fleetAutoNotice);
+  const clearFleetAutoNotice = useCompanionStore((s) => s.clearFleetAutoNotice);
+  const { t, tx } = useTranslation();
   const talk = useHoldToTalk();
 
   // Slice 5 — `;`-leader numeric decision syntax. While a decision is pending,
@@ -163,6 +167,27 @@ export default function AthenaOrbLayer() {
       aria-live="polite"
       data-testid="companion-orb-layer"
     >
+      {fleetAutoNotice && (
+        <button
+          type="button"
+          key={fleetAutoNotice.at}
+          onClick={clearFleetAutoNotice}
+          data-testid="fleet-auto-notice"
+          title={t.plugins.companion.fleet_auto_decided_dismiss}
+          className="pointer-events-auto fixed bottom-28 right-6 max-w-xs rounded-card bg-secondary px-3 py-2 text-left shadow-elevation-3"
+        >
+          <div className="typo-caption font-medium text-foreground">
+            {fleetAutoNotice.projectLabel
+              ? tx(t.plugins.companion.fleet_auto_decided_to, {
+                  project: fleetAutoNotice.projectLabel,
+                })
+              : t.plugins.companion.fleet_auto_decided}
+          </div>
+          <div className="typo-caption mt-0.5 truncate text-foreground/90">
+            {fleetAutoNotice.text}
+          </div>
+        </button>
+      )}
       <AthenaOrb talk={talk} />
     </div>,
     document.body,

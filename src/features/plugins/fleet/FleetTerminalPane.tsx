@@ -15,8 +15,11 @@ interface FleetTerminalPaneProps {
  * `fleetTerminalManager`. The durable xterm instance (renderer, keyboard, PTY
  * subscription, scrollback) lives in the manager keyed by `sessionId`, so
  * switching the active session or tiling many sessions attaches/detaches the
- * same terminal instead of disposing and re-creating it: scrollback survives,
- * background sessions keep receiving output, and switching back is instant.
+ * same terminal instead of disposing and re-creating it. Attaching subscribes
+ * to live PTY output and replays the backend ring snapshot; detaching
+ * unsubscribes (the Rust reader keeps buffering into the ring, but stops
+ * streaming over IPC) — so an unwatched session costs nothing to render and
+ * switching back replays the recent tail.
  *
  * The pane is deliberately chrome-free — font size, copy-on-select and theme
  * live in Fleet Settings, applied live across all terminals via the manager.

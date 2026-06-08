@@ -687,8 +687,38 @@ pub async fn kb_search(
         Some(&format!("query_len={}, top_k={top_k}", query.query.len())),
     );
 
+    // Reconcile the query embedder with the model/dims this KB's index was built
+    // with. embedding_model/embedding_dims are recorded at create time but were
+    // never re-read on search, so a default-model change (new app version, edited
+    // constant) silently embedded queries with the wrong model — either a hard
+    // sqlite-vec dimension error or, worse, plausible-but-wrong neighbours
+    // (bug-hunt 2026-06-07 mcp #2).
+    let (kb_model, kb_dims): (String, i64) = {
+        let conn = state.user_db.get()?;
+        conn.query_row(
+            "SELECT embedding_model, embedding_dims FROM knowledge_bases WHERE id = ?1",
+            params![query.kb_id],
+            |r| Ok((r.get(0)?, r.get(1)?)),
+        )
+        .map_err(|_| AppError::NotFound(format!("Knowledge base not found: {}", query.kb_id)))?
+    };
+    if kb_model.as_str() != embedder.model_name() || kb_dims != embedder.dimensions() as i64 {
+        return Err(AppError::Validation(format!(
+            "This knowledge base was indexed with model '{kb_model}' ({kb_dims} dims) but the current \
+             embedding model is '{}' ({} dims). Re-index the knowledge base to search it.",
+            embedder.model_name(),
+            embedder.dimensions()
+        )));
+    }
+
     // Embed the query
     let query_vec = embedder.embed_query(&query.query).await?;
+    if query_vec.len() as i64 != kb_dims {
+        return Err(AppError::Internal(format!(
+            "Query embedding produced {} dims, expected {kb_dims}",
+            query_vec.len()
+        )));
+    }
 
     // Vector search with overfetch: BM25 re-ranks within this pool. Vector
     // ranking is canonical — `score`/`distance` per chunk are unchanged. Only

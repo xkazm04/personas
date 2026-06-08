@@ -12,7 +12,7 @@
 
 use std::collections::HashSet;
 use std::process::Stdio;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::time::{Duration, Instant};
 
@@ -141,23 +141,33 @@ fn clear_interrupt(turn_id: &str) {
 /// 2. The semantics from Q3 are "stop = next user input"; that's a
 ///    cooperative pause, not a process-kill. A flag the spawned task
 ///    checks before each potentially-blocking step is exactly that.
-static AUTONOMOUS_CANCEL: AtomicBool = AtomicBool::new(false);
+/// Monotonic generation counter for autonomous continuation ticks. Each
+/// scheduled tick captures the current value; cancelling advances it. A tick
+/// aborts as soon as the global value no longer matches the one it captured.
+///
+/// This replaces a single `AtomicBool` that was *reset* on every new schedule:
+/// a user "stop" set the bool, but if that same turn's reply also emitted
+/// `continue_autonomously`, `schedule_autonomous_tick` reset the bool and the
+/// originally-pending tick — still polling — saw `cancelled == false` and fired,
+/// so the loop the user halted kept running (bug-hunt 2026-06-07 companion #1).
+/// A generation token is never reset (only advanced), so a stale tick can never
+/// be revived by a later schedule.
+static AUTONOMOUS_GEN: AtomicU64 = AtomicU64::new(0);
 
-/// Set the cancel flag so any pending continuation tick bails out on
-/// its next check. No-op if nothing's pending — the flag self-clears
-/// when a fresh continuation is scheduled.
+/// Cancel every pending continuation tick by advancing the generation. Any tick
+/// that captured an earlier generation aborts on its next check.
 pub fn cancel_pending_autonomy() {
-    AUTONOMOUS_CANCEL.store(true, Ordering::SeqCst);
+    AUTONOMOUS_GEN.fetch_add(1, Ordering::SeqCst);
 }
 
-/// Reset the cancel flag in preparation for a freshly-scheduled tick.
-fn reset_autonomous_cancel() {
-    AUTONOMOUS_CANCEL.store(false, Ordering::SeqCst);
+/// Snapshot the current generation when scheduling a tick.
+fn current_autonomy_gen() -> u64 {
+    AUTONOMOUS_GEN.load(Ordering::SeqCst)
 }
 
-/// Was the in-flight tick cancelled while it was waiting / running?
-fn autonomous_was_cancelled() -> bool {
-    AUTONOMOUS_CANCEL.load(Ordering::SeqCst)
+/// Has a newer schedule or a cancel superseded the tick that captured `my_gen`?
+fn autonomous_superseded(my_gen: u64) -> bool {
+    AUTONOMOUS_GEN.load(Ordering::SeqCst) != my_gen
 }
 
 /// Tauri event channel that streams every CLI line to the frontend.
@@ -829,21 +839,24 @@ fn schedule_autonomous_tick(
     voice_enabled: bool,
     recall_synthesis_enabled: bool,
 ) {
-    reset_autonomous_cancel();
+    // Capture the generation this tick belongs to. A user "stop" (or any newer
+    // schedule) advances the global generation, after which this tick aborts —
+    // and, unlike the old reset-the-bool scheme, it can never be revived.
+    let my_gen = current_autonomy_gen();
     let _ = tauri::async_runtime::spawn_blocking(move || {
-        // Poll the cancel flag while waiting out the delay. A coarse
+        // Poll the generation while waiting out the delay. A coarse
         // 200ms tick is plenty — the delay itself is 15s; finer polling
         // wouldn't change the user's experience.
         let started = Instant::now();
         while started.elapsed() < AUTONOMOUS_CONTINUATION_DELAY {
-            if autonomous_was_cancelled() {
-                tracing::debug!("autonomous tick cancelled during delay");
+            if autonomous_superseded(my_gen) {
+                tracing::debug!("autonomous tick superseded during delay");
                 return;
             }
             std::thread::sleep(Duration::from_millis(200));
         }
-        if autonomous_was_cancelled() {
-            tracing::debug!("autonomous tick cancelled at delay boundary");
+        if autonomous_superseded(my_gen) {
+            tracing::debug!("autonomous tick superseded at delay boundary");
             return;
         }
 
@@ -993,8 +1006,8 @@ async fn run_cli(
     // don't auto-pick up the Personas project's CLAUDE.md as context.
     let cwd = dirs::home_dir().unwrap_or_else(|| std::env::temp_dir());
 
-    let mut child = Command::new(&cmd_program)
-        .args(&argv)
+    let mut cmd = Command::new(&cmd_program);
+    cmd.args(&argv)
         .current_dir(&cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -1008,7 +1021,12 @@ async fn run_cli(
         // a way to "send a copy of herself to investigate" without
         // re-priming context. Harmless on older CLI versions (env var
         // is ignored if the feature isn't recognized).
-        .env("CLAUDE_CODE_FORK_SUBAGENT", "1")
+        .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
+    // No console window on Windows — see apply_no_console_window. Without
+    // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
+    // and eventually dies on spawn with 0xC0000142.
+    apply_no_console_window(&mut cmd);
+    let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
 
@@ -1335,6 +1353,39 @@ pub fn base_cli_invocation() -> (String, Vec<String>) {
         ("cmd".into(), vec!["/C".into(), "claude.cmd".into()])
     } else {
         ("claude".into(), vec![])
+    }
+}
+
+/// Apply the Windows "no console window" creation flag to a CLI command.
+///
+/// The Personas app is a GUI process with no console of its own. A console-
+/// subsystem child — the `cmd /C claude.cmd` chain from [`base_cli_invocation`]
+/// — spawned without this flag gets a fresh `conhost.exe` allocated on the
+/// interactive desktop. That both flashes a black window on every turn AND,
+/// multiplied across the fleet PTYs + build sessions + back-to-back
+/// proactive / brain / consolidation turns, drains the window-station desktop
+/// heap. Once that heap is exhausted, new console children fail to initialize
+/// and exit immediately with `STATUS_DLL_INIT_FAILED` (`0xC0000142`) — observed
+/// in the wild on a fleet-orchestration proactive turn ("claude exited with
+/// status exit code: 0xc0000142"). Running `claude` from an existing console
+/// (cmd.exe / Windows Terminal) never hits this, which is why it only reproduces
+/// inside the app.
+///
+/// The `CliArgs` / [`crate::engine::cli_process`] spawn family already sets this
+/// on every spawn; the `base_cli_invocation` family historically did not. This
+/// helper centralizes the flag so the two families can't drift apart again. All
+/// of these calls pipe stdin/stdout/stderr, so the child never needs a console.
+/// No-op on non-Windows.
+pub fn apply_no_console_window(cmd: &mut tokio::process::Command) {
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = cmd;
     }
 }
 

@@ -25,19 +25,21 @@ import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { computeFleetPulse, layoutSlots, STRIP_SLOTS } from './fleetStripModel';
+import { getAppSettingCoalesced } from '@/hooks/utility/data/useSettings';
+import { computeFleetPulse, layoutSlots, slotCountForCapacity } from './fleetStripModel';
 import { elapsedStr } from './monitor/monitorModel';
 
-/** Centre line of the bar track (index space). */
-const MID = (STRIP_SLOTS - 1) / 2;
+/** App-settings key for the global concurrency cap (mirrors the Rust const). */
+const MAX_PARALLEL_KEY = 'max_parallel_executions';
 
 /**
  * Bar fill colour along the primary→accent ramp, keyed to the bar's ABSOLUTE
  * distance from centre — central bars are primary, edge bars accent — so the
- * ramp is stable regardless of how many are lit.
+ * ramp is stable regardless of how many are lit. `mid` is the centre line of
+ * the (now dynamic) bar track.
  */
-function rampColor(index: number): string {
-  const pct = Math.round((Math.abs(index - MID) / MID) * 100);
+function rampColor(index: number, mid: number): string {
+  const pct = mid <= 0 ? 0 : Math.round((Math.abs(index - mid) / mid) * 100);
   return `color-mix(in srgb, var(--accent) ${pct}%, var(--primary))`;
 }
 
@@ -86,7 +88,29 @@ export default function FleetActivityStrip() {
   // this recomputes exactly when the fleet's live state moves.
   const activeProcesses = useOverviewStore((s) => s.activeProcesses);
   const pulse = useMemo(() => computeFleetPulse(activeProcesses), [activeProcesses]);
-  const slots = useMemo(() => layoutSlots(pulse, STRIP_SLOTS), [pulse]);
+
+  // Capacity-gauge: the strip renders one bar per concurrent slot, so a full
+  // strip means the fleet is at the configured `max_parallel_executions` limit.
+  // The cap lives in the store (kept fresh by QUEUE_STATUS events + the Limits
+  // panel); seed it once on mount from the persisted setting so a custom cap is
+  // reflected before any queue activity.
+  const maxParallel = useOverviewStore((s) => s.maxParallelExecutions);
+  const setMaxParallel = useOverviewStore((s) => s.setMaxParallelExecutions);
+  useEffect(() => {
+    let cancelled = false;
+    void getAppSettingCoalesced(MAX_PARALLEL_KEY).then((raw) => {
+      if (cancelled || raw == null) return;
+      const n = Number.parseInt(raw, 10);
+      if (Number.isFinite(n) && n > 0) setMaxParallel(n);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [setMaxParallel]);
+
+  const slotCount = useMemo(() => slotCountForCapacity(maxParallel), [maxParallel]);
+  const mid = (slotCount - 1) / 2;
+  const slots = useMemo(() => layoutSlots(pulse, slotCount), [pulse, slotCount]);
 
   const running = pulse.running;
   const queued = pulse.queued;
@@ -125,7 +149,7 @@ export default function FleetActivityStrip() {
         {/* Bar track — pinned to the top hairline. */}
         <span className="absolute inset-x-3 top-0 h-[2px] flex items-stretch gap-px">
           {slots.map((kind, i) => {
-            const background = kind === 'running' ? rampColor(i) : 'var(--primary)';
+            const background = kind === 'running' ? rampColor(i, mid) : 'var(--primary)';
             // Running bars share ONE pulse MotionValue → synchronized breathing.
             // Queued/empty hold a static opacity (springing on kind change).
             if (kind === 'running' && !prefersReducedMotion) {

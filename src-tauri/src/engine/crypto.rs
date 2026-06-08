@@ -128,10 +128,25 @@ impl SessionKeyPair {
                 .map_err(|e| CryptoError::Decrypt(format!("Invalid UTF-8 in decrypted data: {e}")))
         } else {
             // -- Legacy mode: plain RSA (small payloads only) --
-            // See the `Legacy RSA-only fallback policy` docblock on
-            // `SessionKeyPair::decrypt` for the retirement plan. The counter
-            // and warn below are the telemetry that policy relies on.
+            // The separator-less dispatch is attacker/frontend-controllable, so a
+            // downgraded or malicious renderer can force every credential write
+            // down this weaker, unauthenticated-transport RSA-only branch. It is
+            // therefore rejected by default and only honoured during an explicit
+            // migration window via PERSONAS_ALLOW_LEGACY_IPC=1 (bug-hunt
+            // 2026-06-07 #5). The counter/warn remain the telemetry the retirement
+            // plan in the docblock above relies on.
             let hits = LEGACY_IPC_DECRYPT_CALLS.fetch_add(1, Ordering::Relaxed) + 1;
+            if std::env::var("PERSONAS_ALLOW_LEGACY_IPC").unwrap_or_default() != "1" {
+                tracing::warn!(
+                    target: "legacy_ipc_decrypt",
+                    hits,
+                    payload_len = ciphertext_b64.len(),
+                    "legacy RSA-only IPC decrypt path REJECTED (set PERSONAS_ALLOW_LEGACY_IPC=1 to allow during migration)"
+                );
+                return Err(CryptoError::Decrypt(
+                    "legacy IPC payload rejected: expected hybrid RSA+AES-GCM format".into(),
+                ));
+            }
             tracing::warn!(
                 target: "legacy_ipc_decrypt",
                 hits,
@@ -410,6 +425,39 @@ impl From<CryptoError> for AppError {
 // Key Management
 // ---------------------------------------------------------------------------
 
+/// Policy for using the local-file fallback master key when the OS keychain is
+/// unavailable. Parsed in one place from `PERSONAS_ALLOW_FALLBACK_KEY` so the
+/// doc comment, the error text, and the runtime branch can never diverge again.
+/// The previous code documented an opt-in/fail-closed policy but implemented the
+/// opposite (fell back unless an undocumented `PERSONAS_DENY_FALLBACK_KEY` was
+/// set, and never read the `ALLOW` var the error names) — bug-hunt 2026-06-07 #1.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FallbackPolicy {
+    /// Fail closed: refuse to operate without OS keychain protection (default).
+    Deny,
+    /// Opt-in: allow the local fallback key (CI / headless / tests).
+    Allow,
+}
+
+fn fallback_policy() -> FallbackPolicy {
+    if std::env::var("PERSONAS_ALLOW_FALLBACK_KEY").unwrap_or_default() == "1" {
+        FallbackPolicy::Allow
+    } else {
+        FallbackPolicy::Deny
+    }
+}
+
+/// Whether legacy, unauthenticated master-key files (a raw 32-byte blob or
+/// plaintext base64, written before AES-GCM/DPAPI wrapping) may be imported.
+/// Off by default: accepting any 32-byte file as the key let an attacker who can
+/// write the app-data dir plant a known key, then read every credential the user
+/// subsequently enters (bug-hunt 2026-06-07 #2). Enable for a single, logged
+/// migration run with `PERSONAS_MIGRATE_LEGACY_KEY=1`; the imported key is then
+/// immediately re-written in authenticated form.
+fn legacy_key_migration_allowed() -> bool {
+    std::env::var("PERSONAS_MIGRATE_LEGACY_KEY").unwrap_or_default() == "1"
+}
+
 /// Get or create the 32-byte master key. Cached in OnceLock after first call.
 ///
 /// The key is stored in a `ProtectedKey` wrapper that:
@@ -435,26 +483,32 @@ pub fn get_master_key() -> Result<&'static [u8; 32], CryptoError> {
                 Ok(ProtectedKey::new(key))
             }
             Err(e) => {
-                // Desktop app: auto-fallback to DPAPI-protected local key file.
-                // This is safe because the local key is still encrypted with DPAPI
-                // (tied to the user's Windows login session) and has restrictive ACLs.
-                // Users can opt out with PERSONAS_DENY_FALLBACK_KEY=1 for strict mode.
-                if std::env::var("PERSONAS_DENY_FALLBACK_KEY").unwrap_or_default() == "1" {
-                    tracing::error!(
-                        "Keychain unavailable ({}) and PERSONAS_DENY_FALLBACK_KEY=1 is set. \
-                         Refusing to store credentials without OS keychain protection.",
-                        e
-                    );
-                    return Err(format!("Keychain unavailable: {e}"));
+                // Keychain unavailable. The local-file fallback key is weaker than
+                // keychain-bound protection (DPAPI/machine-derived, but readable by
+                // anyone who can read the user's app-data dir), so it is OPT-IN and
+                // fail-closed by default — matching the doc above and the error
+                // string below (bug-hunt 2026-06-07 #1).
+                match fallback_policy() {
+                    FallbackPolicy::Deny => {
+                        tracing::error!(
+                            "Keychain unavailable ({}). Refusing to store credentials \
+                             without OS keychain protection. Set \
+                             PERSONAS_ALLOW_FALLBACK_KEY=1 to allow a local fallback key.",
+                            e
+                        );
+                        Err(format!("Keychain unavailable: {e}"))
+                    }
+                    FallbackPolicy::Allow => {
+                        tracing::warn!(
+                            "Keychain unavailable ({}). PERSONAS_ALLOW_FALLBACK_KEY=1 is \
+                             set; using local fallback key. Credentials are still \
+                             encrypted at rest but not keychain-bound.",
+                            e
+                        );
+                        let _ = KEY_SOURCE.set(KeySource::LocalFallback);
+                        Ok(ProtectedKey::new(derive_fallback_key()))
+                    }
                 }
-
-                tracing::warn!(
-                    "Keychain unavailable ({}). Using DPAPI-protected local fallback key. \
-                     Credentials are still encrypted at rest.",
-                    e
-                );
-                let _ = KEY_SOURCE.set(KeySource::LocalFallback);
-                Ok(ProtectedKey::new(derive_fallback_key()))
             }
         }
     });
@@ -626,7 +680,22 @@ fn load_local_fallback_key() -> Result<Option<[u8; 32]>, CryptoError> {
         let needs_resave = false;
         (decrypted, needs_resave)
     } else {
-        // Legacy plaintext base64 format -- always needs migration
+        // Legacy plaintext base64 format (no DPAPI/AES-GCM wrapper). An attacker
+        // who can write this file would otherwise control the master key, so only
+        // import it during an explicit, logged migration run; otherwise fail
+        // closed (bug-hunt 2026-06-07 #2).
+        if !legacy_key_migration_allowed() {
+            return Err(CryptoError::KeyManagement(
+                "Refusing unauthenticated plaintext master-key file. Set \
+                 PERSONAS_MIGRATE_LEGACY_KEY=1 to import it once (it will be \
+                 re-encrypted in authenticated form)."
+                    .into(),
+            ));
+        }
+        tracing::warn!(
+            "PERSONAS_MIGRATE_LEGACY_KEY=1: importing legacy plaintext master-key \
+             file for one-time migration; it will be re-encrypted at rest."
+        );
         let bytes = B64.decode(trimmed)?;
         (bytes, true)
     };
@@ -859,10 +928,23 @@ fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
 
 #[cfg(not(windows))]
 fn platform_unprotect(data: &[u8]) -> Result<Vec<u8>, CryptoError> {
-    // Support legacy plaintext fallback files written before this hardening
+    // A raw 32-byte blob is an unauthenticated legacy key (pre-AES-GCM). Accepting
+    // it unconditionally let an attacker plant a known master key, so it is only
+    // imported during an explicit, logged migration run; otherwise fail closed
+    // (bug-hunt 2026-06-07 #2).
     if data.len() == 32 {
-        // Could be a raw 32-byte key from before encryption was added
-        tracing::warn!("Detected unencrypted fallback key data, returning as-is for migration");
+        if !legacy_key_migration_allowed() {
+            return Err(CryptoError::KeyManagement(
+                "Refusing unauthenticated 32-byte legacy master key. Set \
+                 PERSONAS_MIGRATE_LEGACY_KEY=1 to import it once (it will be \
+                 re-encrypted in authenticated form)."
+                    .into(),
+            ));
+        }
+        tracing::warn!(
+            "PERSONAS_MIGRATE_LEGACY_KEY=1: accepting unauthenticated 32-byte legacy \
+             fallback key for one-time migration; it will be re-encrypted at rest."
+        );
         return Ok(data.to_vec());
     }
     unix_local_unprotect(data)

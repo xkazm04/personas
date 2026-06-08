@@ -1,15 +1,18 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { RecipeDefinition } from '@/lib/bindings/RecipeDefinition';
-import { useRecipeTestRunner } from '../libs/useRecipeTestRunner';
+import type { RecipeTestRunner } from '../libs/useRecipeTestRunner';
 import { parseInputSchema, parseMockValues } from './recipeTestHelpers';
 import { RecipeInputSection } from './RecipeInputSection';
 import { RecipeOutputSection } from './RecipeOutputSection';
 
 interface RecipeTestRunnerTabProps {
   recipe: RecipeDefinition;
+  // A single runner instance lifted to RecipePlaygroundModal so the History tab
+  // and badge observe the same runs (bug-hunt 2026-06-07 recipes #1).
+  testRunner: RecipeTestRunner;
 }
 
-export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
+export function RecipeTestRunnerTab({ recipe, testRunner }: RecipeTestRunnerTabProps) {
   const { fields, parseError } = useMemo(() => parseInputSchema(recipe.input_schema), [recipe.input_schema]);
   const mockValues = useMemo(() => parseMockValues(recipe.sample_inputs), [recipe.sample_inputs]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>(() => {
@@ -24,7 +27,7 @@ export function RecipeTestRunnerTab({ recipe }: RecipeTestRunnerTabProps) {
   const {
     running, result, error, execute,
     executionPhase, executionLines, llmOutput, executionError,
-  } = useRecipeTestRunner(recipe);
+  } = testRunner;
 
   const handleFieldChange = useCallback((key: string, value: string) => {
     setFieldValues((prev) => ({ ...prev, [key]: value }));

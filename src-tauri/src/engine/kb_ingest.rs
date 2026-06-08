@@ -310,6 +310,19 @@ async fn embed_and_store_vectors(
 
         let embeddings = embedder.embed_batch(batch_texts).await?;
 
+        // embed_batch must return exactly one vector per input, in order. If the
+        // embedder (ONNX/fastembed) ever returns fewer, zip() would silently
+        // truncate — leaving chunk rows with no vector (permanently unsearchable)
+        // and an inflated document counter (bug-hunt 2026-06-07 mcp #3). Fail
+        // loudly so the caller's cleanup_orphaned_chunks path runs.
+        if embeddings.len() != batch_texts.len() {
+            return Err(AppError::Internal(format!(
+                "embed_batch returned {} vectors for {} inputs",
+                embeddings.len(),
+                batch_texts.len()
+            )));
+        }
+
         let entries: Vec<(String, Vec<f32>)> = batch_ids
             .iter()
             .cloned()

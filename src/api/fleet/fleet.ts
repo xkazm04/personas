@@ -12,6 +12,7 @@ import type { FleetHookStatus } from '@/lib/bindings/FleetHookStatus';
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 import type { FleetTokenAggregate } from '@/lib/bindings/FleetTokenAggregate';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
+import type { FleetTerminalPreview } from '@/lib/bindings/FleetTerminalPreview';
 
 /**
  * Spawn a new Claude Code session in a PTY rooted at `cwd`.
@@ -40,6 +41,33 @@ export const writeInput = (sessionId: string, text: string) =>
  */
 export const resizeSession = (sessionId: string, cols: number, rows: number) =>
   invoke<null>('fleet_resize_session', { sessionId, cols, rows });
+
+/**
+ * Subscribe to a session's live PTY output and get its current ring-buffer
+ * snapshot back. Until a terminal subscribes, the backend buffers that
+ * session's output silently (no IPC, no xterm parse) — so a 16-CLI fleet only
+ * costs the app the stream(s) actually on screen. Reset the terminal and write
+ * the returned snapshot BEFORE processing live `fleet-session-output` events so
+ * a re-focus doesn't duplicate the buffered tail.
+ */
+export const subscribeTerminal = (sessionId: string) =>
+  invoke<string>('fleet_subscribe_terminal', { sessionId });
+
+/**
+ * Stop receiving a session's live PTY output (the backend keeps buffering into
+ * its ring). Call when a terminal pane detaches / scrolls off-screen.
+ * Idempotent.
+ */
+export const unsubscribeTerminal = (sessionId: string) =>
+  invoke<null>('fleet_unsubscribe_terminal', { sessionId });
+
+/**
+ * Batched cooked previews (last `lines` plain-text lines, ANSI resolved) for
+ * the given sessions — the grid's unwatched tiles poll this in one call instead
+ * of each mounting a live xterm. Unknown sessions are omitted from the result.
+ */
+export const terminalPreviews = (sessionIds: string[], lines?: number) =>
+  invoke<FleetTerminalPreview[]>('fleet_terminal_previews', { sessionIds, lines });
 
 /**
  * Kill a session's child process. Idempotent (already-exited sessions

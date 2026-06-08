@@ -103,6 +103,21 @@ async fn receive_hook(
                         tool_result,
                     );
             }
+            // A running tool is proof the session is working, not waiting on the
+            // user. Correct a stale `AwaitingInput`/`Idle`/`Stale` immediately
+            // (Claude Code's idle Notification can wrongly park an in-progress
+            // session). Only emits on a real transition, so per-tool volume stays
+            // low — see `revive_to_running_on_activity`.
+            if registry().revive_to_running_on_activity(sid) {
+                let _ = app.emit(
+                    event_name::FLEET_SESSION_STATE,
+                    FleetStatePayload {
+                        session_id: sid.to_string(),
+                        state: state_to_token(FleetSessionState::Running),
+                        reason: Some("Tool activity — session is working".to_string()),
+                    },
+                );
+            }
         } else {
             apply_hook(sid, &event_kind, claude_session_id.clone(), message.as_deref(), &app);
         }

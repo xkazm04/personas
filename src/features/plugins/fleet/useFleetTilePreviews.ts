@@ -1,0 +1,74 @@
+import { useEffect, useRef, useState } from 'react';
+import { terminalPreviews } from '@/api/fleet/fleet';
+import { silentCatch } from '@/lib/silentCatch';
+
+interface Options {
+  /** Poll only while true (e.g. the grid overlay is open). */
+  enabled?: boolean;
+  /** Poll cadence. Previews are a glance — the focused tile is the live one. */
+  intervalMs?: number;
+  /** Lines per preview to request. */
+  lines?: number;
+}
+
+/**
+ * Batch-poll cooked terminal previews for the grid's *unwatched* tiles.
+ *
+ * The watched/active tile mounts a real (subscribed) terminal; every other
+ * visible tile renders a cheap text preview cooked from the backend output
+ * ring. Polling them in ONE batched IPC call per tick — not one xterm + one
+ * live stream per tile — is what keeps a 16-tile grid light: the app's per-tick
+ * cost is a single command returning a handful of short lines each, at a low
+ * cadence, instead of sixteen realtime VT streams.
+ *
+ * Returns `sessionId → cooked lines`. Empty list / `enabled: false` → no poll.
+ */
+export function useFleetTilePreviews(
+  sessionIds: string[],
+  opts?: Options,
+): Map<string, string[]> {
+  const enabled = opts?.enabled ?? true;
+  const intervalMs = opts?.intervalMs ?? 1200;
+  const lines = opts?.lines ?? 24;
+  const [previews, setPreviews] = useState<Map<string, string[]>>(new Map());
+
+  // Keep the id list in a ref so the poll interval isn't torn down and rebuilt
+  // every render (the array identity changes on every store patch). The tick
+  // reads the latest ids at fire time.
+  const idsRef = useRef<string[]>(sessionIds);
+  idsRef.current = sessionIds;
+
+  useEffect(() => {
+    if (!enabled) {
+      setPreviews((prev) => (prev.size ? new Map() : prev));
+      return;
+    }
+    let cancelled = false;
+
+    const tick = async () => {
+      const ids = idsRef.current;
+      if (ids.length === 0) {
+        if (!cancelled) setPreviews((prev) => (prev.size ? new Map() : prev));
+        return;
+      }
+      try {
+        const res = await terminalPreviews(ids, lines);
+        if (cancelled) return;
+        const next = new Map<string, string[]>();
+        for (const p of res) next.set(p.sessionId, p.lines);
+        setPreviews(next);
+      } catch (e) {
+        silentCatch('fleet/tilePreviews')(e);
+      }
+    };
+
+    void tick(); // paint immediately, don't wait a full interval
+    const handle = window.setInterval(() => void tick(), intervalMs);
+    return () => {
+      cancelled = true;
+      window.clearInterval(handle);
+    };
+  }, [enabled, intervalMs, lines]);
+
+  return previews;
+}

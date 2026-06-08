@@ -490,44 +490,83 @@ async fn refresh_single_credential_inner(
     patch.insert("needs_reauth".to_string(), serde_json::Value::Null);
     patch.insert("needs_reauth_at".to_string(), serde_json::Value::Null);
 
-    // ---- Atomic persist block ------------------------------------------------
+    // ---- Atomic persist block (with retry) -----------------------------------
     // Wrap access_token, oauth_token_expires_at, rotated refresh_token, AND the
-    // metadata patch in a single SQLite transaction.  This prevents credential
+    // metadata patch in a single SQLite transaction. This prevents credential
     // death when a crash occurs between persisting the new access_token and the
     // rotated refresh_token (the old one is already revoked server-side).
+    //
+    // Critically, the provider has ALREADY invalidated the old refresh_token the
+    // moment it returned the new one, so if this local write fails we must not
+    // simply drop the rotation — a single transient failure (keyring lock after
+    // a credential-manager migration, an AES seal/unseal hiccup, a full WAL)
+    // would otherwise leave the DB holding the dead old token and brick the
+    // credential permanently with no auto-recovery. Retry the commit a few times
+    // with backoff before surfacing the error (bug-hunt 2026-06-07
+    // credential-recipes #1).
     {
-        let mut conn = pool.get()?;
-        let tx = conn.transaction()?;
+        const MAX_PERSIST_ATTEMPTS: u32 = 3;
+        let mut attempt: u32 = 0;
+        loop {
+            attempt += 1;
+            let persist = (|| -> Result<(), AppError> {
+                let mut conn = pool.get()?;
+                let tx = conn.transaction()?;
 
-        cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
-        cred_repo::verify_field_roundtrip_on_conn(&tx, &cred.id, "access_token", &resolved.token)?;
-        cred_repo::upsert_field_on_conn(
-            &tx,
-            &cred.id,
-            "oauth_token_expires_at",
-            &expires_at_rfc3339,
-            false,
-        )?;
+                cred_repo::upsert_field_on_conn(&tx, &cred.id, "access_token", &resolved.token, true)?;
+                cred_repo::verify_field_roundtrip_on_conn(&tx, &cred.id, "access_token", &resolved.token)?;
+                cred_repo::upsert_field_on_conn(
+                    &tx,
+                    &cred.id,
+                    "oauth_token_expires_at",
+                    &expires_at_rfc3339,
+                    false,
+                )?;
 
-        if let Some(ref new_refresh_token) = resolved.refresh_token {
-            cred_repo::upsert_field_on_conn(
-                &tx,
-                &cred.id,
-                "refresh_token",
-                new_refresh_token,
-                true,
-            )?;
-            cred_repo::verify_field_roundtrip_on_conn(
-                &tx,
-                &cred.id,
-                "refresh_token",
-                new_refresh_token,
-            )?;
+                if let Some(ref new_refresh_token) = resolved.refresh_token {
+                    cred_repo::upsert_field_on_conn(
+                        &tx,
+                        &cred.id,
+                        "refresh_token",
+                        new_refresh_token,
+                        true,
+                    )?;
+                    cred_repo::verify_field_roundtrip_on_conn(
+                        &tx,
+                        &cred.id,
+                        "refresh_token",
+                        new_refresh_token,
+                    )?;
+                }
+
+                cred_repo::patch_metadata_on_conn(&tx, &cred.id, patch.clone())?;
+
+                tx.commit()?;
+                Ok(())
+            })();
+
+            match persist {
+                Ok(()) => break,
+                Err(e) if attempt < MAX_PERSIST_ATTEMPTS => {
+                    tracing::warn!(
+                        credential_id = %cred.id,
+                        attempt,
+                        error = %e,
+                        "OAuth refresh persist failed; retrying so the provider-rotated refresh_token is not dropped"
+                    );
+                    tokio::time::sleep(std::time::Duration::from_millis(150 * attempt as u64)).await;
+                }
+                Err(e) => {
+                    tracing::error!(
+                        credential_id = %cred.id,
+                        attempts = attempt,
+                        error = %e,
+                        "OAuth refresh persist failed after retries; the rotated refresh_token could not be saved — credential may need re-authorization"
+                    );
+                    return Err(e);
+                }
+            }
         }
-
-        cred_repo::patch_metadata_on_conn(&tx, &cred.id, patch)?;
-
-        tx.commit()?;
     }
     // ---- End atomic persist block --------------------------------------------
 

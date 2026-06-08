@@ -186,6 +186,57 @@ fn extract_first_keyword(query_text: &str) -> Option<String> {
     }
 }
 
+/// Verbs that make a statement data-modifying even when it leads with `WITH`.
+/// SQLite, Postgres, Neon and PlanetScale all execute data-modifying CTEs of the
+/// form `WITH x AS (DELETE/INSERT/UPDATE ... RETURNING *) SELECT ...`, whose
+/// leading keyword is `WITH` — so a leading-keyword-only classifier wrongly
+/// reports them as reads (bug-hunt 2026-06-07 mcp #1).
+const CTE_MUTATION_VERBS: &[&str] = &[
+    "DELETE", "INSERT", "UPDATE", "MERGE", "REPLACE", "UPSERT", "TRUNCATE", "DROP", "ALTER",
+];
+
+/// Strip the contents of single- and double-quoted SQL literals so verb scanning
+/// ignores data/identifiers (e.g. a literal `'DELETE'` must not trip the check).
+/// Conservative: an unterminated quote drops the remainder — the safe direction
+/// for a mutation classifier.
+fn strip_sql_literals(sql: &str) -> String {
+    let mut out = String::with_capacity(sql.len());
+    let mut chars = sql.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\'' | '"' => {
+                let quote = c;
+                while let Some(n) = chars.next() {
+                    if n == quote {
+                        // Doubled-quote escape ('' or "") stays inside the literal.
+                        if chars.peek() == Some(&quote) {
+                            chars.next();
+                            continue;
+                        }
+                        break;
+                    }
+                }
+                out.push(' '); // replace the whole literal with a separator
+            }
+            _ => out.push(c),
+        }
+    }
+    out
+}
+
+/// True if a `WITH`-led statement embeds a data-modifying verb in its body.
+/// Literals are stripped first, and matching is token-exact (split on
+/// non-`[A-Za-z0-9_]`) so columns like `updated_at` / `deleted` do not
+/// false-positive.
+fn cte_body_has_mutation(query_text: &str) -> bool {
+    strip_sql_literals(query_text)
+        .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
+        .any(|tok| {
+            let up = tok.to_ascii_uppercase();
+            CTE_MUTATION_VERBS.contains(&up.as_str())
+        })
+}
+
 /// Returns `true` when the query is a read-only statement **in SQLite**.
 ///
 /// Only keywords that are valid SQLite read statements are recognised:
@@ -201,9 +252,11 @@ pub fn is_sqlite_read(query_text: &str) -> bool {
     match extract_first_keyword(query_text) {
         None => true, // empty / comment-only — not a mutation
         Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => false,
+        // A data-modifying CTE leads with WITH but is not read-only.
+        Some(ref kw) if kw == "WITH" => !cte_body_has_mutation(query_text),
         Some(kw) => matches!(
             kw.as_str(),
-            "SELECT" | "PRAGMA" | "EXPLAIN" | "WITH" | "VALUES" | "ANALYZE"
+            "SELECT" | "PRAGMA" | "EXPLAIN" | "VALUES" | "ANALYZE"
         ),
     }
 }
@@ -222,6 +275,9 @@ pub fn is_mutation(query_text: &str) -> bool {
     match extract_first_keyword(query_text) {
         None => false,                                        // comment-only — not a mutation
         Some(ref kw) if kw == "__UNCLOSED_COMMENT__" => true, // fail-safe
+        // A data-modifying CTE (`WITH ... (DELETE/INSERT/UPDATE ...)`) is a
+        // mutation despite leading with WITH (bug-hunt 2026-06-07 mcp #1).
+        Some(ref kw) if kw == "WITH" => cte_body_has_mutation(query_text),
         Some(kw) => !matches!(
             kw.as_str(),
             // SQL read-only keywords (covers MySQL SHOW/DESCRIBE, Postgres, etc.)
@@ -2601,6 +2657,28 @@ fn airtable_error_message(json: &Value, status: reqwest::StatusCode) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    // -- safe-mode mutation classifier (CTE bypass regression) -------
+
+    #[test]
+    fn test_data_modifying_cte_is_mutation() {
+        let cte = "WITH deleted AS (DELETE FROM kb_documents RETURNING *) SELECT * FROM deleted";
+        assert!(is_mutation(cte), "WITH ... DELETE must classify as a mutation");
+        assert!(!is_sqlite_read(cte), "WITH ... DELETE must not classify as a read");
+    }
+
+    #[test]
+    fn test_read_only_cte_is_not_mutation() {
+        let cte = "WITH recent AS (SELECT * FROM events WHERE deleted = 0) SELECT * FROM recent";
+        assert!(!is_mutation(cte), "WITH ... SELECT must stay a read");
+        assert!(is_sqlite_read(cte), "WITH ... SELECT is a read");
+    }
+
+    #[test]
+    fn test_cte_mutation_verb_in_string_literal_is_not_a_mutation() {
+        let q = "WITH t AS (SELECT * FROM logs WHERE msg = 'DELETE failed') SELECT * FROM t";
+        assert!(!is_mutation(q), "a verb inside a string literal must not trip the classifier");
+    }
 
     // -- extract_pg_host ---------------------------------------------
 

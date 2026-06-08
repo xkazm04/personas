@@ -9566,6 +9566,11 @@ export type Translations = {
       subtitle: string;
       description: string;
       refresh: string;
+      concurrency_section: string;
+      concurrency_hint: string;
+      concurrency_aria: string;
+      concurrency_range: string;
+      concurrency_queued_note: string;
       ceiling_section: string;
       ceiling_hint: string;
       ceiling_placeholder: string;
@@ -10764,6 +10769,7 @@ export type Translations = {
       preview_desc: string;
       preview_all_clear: string;
       preview_no_sessions: string;
+      preview_idle: string;
       dot_console_spawning: string;
       dot_console_alive: string;
       dot_console_exited: string;
@@ -12012,6 +12018,9 @@ export type Translations = {
       decision_recommend_review: string;
       decision_recommend_resolve: string;
       decision_recommend_review_open: string;
+      fleet_auto_decided: string;
+      fleet_auto_decided_to: string;
+      fleet_auto_decided_dismiss: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;

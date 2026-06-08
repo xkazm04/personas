@@ -46,6 +46,51 @@ pub async fn fleet_write_input(session_id: String, text: String) -> Result<(), S
     registry().write_input(&session_id, text.as_bytes())
 }
 
+/// Subscribe the frontend to a session's live PTY output and return the
+/// current ring-buffer snapshot to hydrate a freshly-focused terminal.
+///
+/// Until a session is subscribed the reader buffers its output silently (no
+/// IPC, no xterm parse) — this is what lets a 16-CLI fleet cost the app only
+/// the watched stream(s). The returned snapshot is the recent scrollback
+/// (capped at [`super::registry::OUTPUT_RING_CAP`]); the caller should `reset()`
+/// its terminal and write the snapshot before processing live chunks, so a
+/// re-focus doesn't duplicate what the buffered ring already contains.
+#[tauri::command]
+pub async fn fleet_subscribe_terminal(session_id: String) -> Result<String, String> {
+    registry()
+        .subscribe_output(&session_id)
+        .ok_or_else(|| format!("session not found: {session_id}"))
+}
+
+/// Stop forwarding a session's PTY output over IPC (the reader keeps buffering
+/// into the ring, so a later re-subscribe replays the recent tail). Called when
+/// a terminal pane detaches / goes off-screen. Idempotent.
+#[tauri::command]
+pub async fn fleet_unsubscribe_terminal(session_id: String) -> Result<(), String> {
+    registry().unsubscribe_output(&session_id);
+    Ok(())
+}
+
+/// Cooked terminal previews for the given sessions — the grid's *unwatched*
+/// tiles poll this in one batched call instead of each mounting a live xterm.
+/// Each entry is the last `lines` (default 24, capped 200) plain-text lines
+/// from that session's output ring (ANSI/cursor sequences resolved). Unknown
+/// sessions are omitted. The watched/active tile renders a real terminal and is
+/// not polled here.
+#[tauri::command]
+pub async fn fleet_terminal_previews(
+    session_ids: Vec<String>,
+    lines: Option<usize>,
+) -> Result<Vec<super::types::FleetTerminalPreview>, String> {
+    let max_lines = lines.unwrap_or(24).clamp(1, 200);
+    let previews = registry()
+        .preview_outputs(&session_ids, max_lines)
+        .into_iter()
+        .map(|(session_id, lines)| super::types::FleetTerminalPreview { session_id, lines })
+        .collect();
+    Ok(previews)
+}
+
 /// Resize the PTY for `session_id` to `cols × rows`. Called by xterm.js
 /// after the fit-addon recalculates on layout changes.
 #[tauri::command]

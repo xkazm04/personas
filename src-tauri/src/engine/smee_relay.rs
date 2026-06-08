@@ -194,6 +194,39 @@ struct RelayParams {
     allowed_repos: Option<Vec<String>>,
 }
 
+/// Cross-reconnect de-duplication for a smee relay. smee.io replays the
+/// channel's recent event history on every new SSE connection, so without this
+/// each transient disconnect (laptop sleep, Wi-Fi drop, smee rate-limit) would
+/// re-publish already-handled webhooks and spawn duplicate persona executions
+/// (bug-hunt 2026-06-07 triggers #1). Bounded FIFO so it can't grow unboundedly.
+#[derive(Default)]
+struct RelayDedup {
+    /// Most recent SSE `id:` seen — sent as `Last-Event-ID` on reconnect so a
+    /// spec-compliant server resumes after it instead of replaying from scratch.
+    last_event_id: Option<String>,
+    seen_order: std::collections::VecDeque<String>,
+    seen_set: std::collections::HashSet<String>,
+}
+
+impl RelayDedup {
+    const CAP: usize = 512;
+
+    /// Record `key`; return true if new, false if already seen this process.
+    fn check_and_insert(&mut self, key: String) -> bool {
+        if self.seen_set.contains(&key) {
+            return false;
+        }
+        self.seen_set.insert(key.clone());
+        self.seen_order.push_back(key);
+        if self.seen_order.len() > Self::CAP {
+            if let Some(old) = self.seen_order.pop_front() {
+                self.seen_set.remove(&old);
+            }
+        }
+        true
+    }
+}
+
 /// SSE relay loop: connects to a smee.io channel, streams SSE events,
 /// and publishes parsed payloads to the local event bus.
 async fn relay_sse_core(
@@ -202,6 +235,7 @@ async fn relay_sse_core(
     app: &AppHandle,
     state: &Arc<tokio::sync::Mutex<SmeeRelayState>>,
     cancel: &CancellationToken,
+    dedup: &mut RelayDedup,
 ) -> Result<(), String> {
     use crate::db::repos::communication::smee_relays as smee_relay_repo;
 
@@ -213,9 +247,14 @@ async fn relay_sse_core(
         .build()
         .map_err(|e| format!("HTTP client error: {e}"))?;
 
-    let resp = http
+    let mut req = http
         .get(&params.channel_url)
-        .header("Accept", "text/event-stream")
+        .header("Accept", "text/event-stream");
+    // Resume after the last event we processed so the server need not replay.
+    if let Some(ref last_id) = dedup.last_event_id {
+        req = req.header("Last-Event-ID", last_id.as_str());
+    }
+    let resp = req
         .send()
         .await
         .map_err(|e| format!("Connection failed: {e}"))?;
@@ -361,6 +400,39 @@ async fn relay_sse_core(
                     );
                     continue;
                 }
+            }
+
+            // Deduplicate replayed events. smee.io replays recent history on
+            // every reconnect, so derive a stable per-delivery key (SSE id >
+            // x-github-delivery header > content hash) and skip anything already
+            // published this process (bug-hunt 2026-06-07 triggers #1).
+            let sse_id = message
+                .lines()
+                .find_map(|l| l.strip_prefix("id:"))
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty());
+            if let Some(ref id) = sse_id {
+                dedup.last_event_id = Some(id.clone());
+            }
+            let dedup_key = sse_id
+                .or_else(|| {
+                    payload_json
+                        .get("x-github-delivery")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                })
+                .unwrap_or_else(|| {
+                    use std::hash::{Hash, Hasher};
+                    let mut h = std::collections::hash_map::DefaultHasher::new();
+                    data.hash(&mut h);
+                    format!("h:{:x}", h.finish())
+                });
+            if !dedup.check_and_insert(dedup_key) {
+                tracing::debug!(
+                    relay_key = %params.relay_key,
+                    "Smee relay: skipping duplicate (replayed) event"
+                );
+                continue;
             }
 
             let input = CreatePersonaEventInput {
@@ -566,6 +638,10 @@ pub async fn run_smee_relay(
                 }
                 let mut backoff = Duration::from_secs(1);
                 let max_backoff = Duration::from_secs(30);
+                // Persists across reconnects so a smee history replay on the
+                // fresh connection isn't re-published (bug-hunt 2026-06-07
+                // triggers #1).
+                let mut dedup = RelayDedup::default();
                 loop {
                     if cancel_for_task.is_cancelled() {
                         tracing::info!(relay_id = %relay_id2, "Smee relay task stopped by cancellation");
@@ -580,7 +656,7 @@ pub async fn run_smee_relay(
                         allowed_repos: allowed_repos2.clone(),
                     };
                     let connected_at = Instant::now();
-                    match relay_sse_core(&params, &pool2, &app2, &state2, &cancel_for_task).await {
+                    match relay_sse_core(&params, &pool2, &app2, &state2, &cancel_for_task, &mut dedup).await {
                         Ok(()) => {
                             if cancel_for_task.is_cancelled() {
                                 tracing::info!(relay_id = %relay_id2, "Smee relay disconnected for cancellation");

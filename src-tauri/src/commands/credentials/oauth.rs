@@ -334,6 +334,24 @@ fn now_unix_secs() -> u64 {
         .unwrap_or(0)
 }
 
+/// Fail loudly if the system clock predates the Unix epoch (dead CMOS battery,
+/// an epoch-0 VM boot, manual misconfiguration). Otherwise `now_unix_secs()`
+/// fabricates timestamp `0`, the minted OAuth state instantly fails its own
+/// freshness check on callback, and every flow is rejected with a misleading
+/// "Authorization took too long" that sends the user chasing the wrong cause
+/// (bug-hunt 2026-06-07 credential-recipes #2).
+fn ensure_valid_clock() -> Result<(), AppError> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|_| ())
+        .map_err(|_| {
+            AppError::Validation(
+                "System clock is invalid (set before 1970). Set your system clock and retry the connection."
+                    .into(),
+            )
+        })
+}
+
 /// Read an OAuth `expires_in` lifetime from a token-endpoint response,
 /// parsing leniently.
 ///
@@ -465,6 +483,7 @@ pub async fn start_google_credential_oauth(
     scopes.sort();
     scopes.dedup();
 
+    ensure_valid_clock()?;
     let oauth_state = generate_oauth_state();
 
     let mut auth_url = Url::parse("https://accounts.google.com/o/oauth2/v2/auth")
@@ -1477,6 +1496,7 @@ pub async fn start_oauth(
     };
 
     // Generate CSRF-protection state parameter
+    ensure_valid_clock()?;
     let oauth_state = generate_oauth_state();
 
     // Build authorization URL

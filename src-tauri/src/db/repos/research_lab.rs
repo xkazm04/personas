@@ -238,9 +238,50 @@ pub fn create_source(
         .map_err(AppError::from)
 }
 
+/// Strip a now-deleted entity id from every finding's denormalised JSON id-list
+/// column. These lists live in opaque TEXT, so SQLite's FK cascade can't scrub
+/// them; without this, findings keep dangling references that surface as broken
+/// citations or crash a later dereference (bug-hunt 2026-06-07 research #1).
+/// Runs on `tx` so it commits atomically with the parent delete. `column` is a
+/// hardcoded caller constant, never user input.
+fn strip_id_from_finding_lists(
+    tx: &rusqlite::Transaction,
+    column: &str,
+    id: &str,
+) -> Result<(), AppError> {
+    let like = format!("%\"{id}\"%"); // coarse pre-filter on the raw JSON text
+    let select = format!("SELECT id, {column} FROM research_findings WHERE {column} LIKE ?1");
+    let rows: Vec<(String, Option<String>)> = {
+        let mut stmt = tx.prepare(&select)?;
+        let mapped = stmt.query_map(params![like], |r| {
+            Ok((r.get::<_, String>(0)?, r.get::<_, Option<String>>(1)?))
+        })?;
+        mapped.filter_map(|r| r.ok()).collect()
+    };
+    for (finding_id, json) in rows {
+        let Some(json) = json else { continue };
+        let mut ids: Vec<String> = match serde_json::from_str(&json) {
+            Ok(v) => v,
+            Err(_) => continue, // not a JSON string-array — leave untouched
+        };
+        let before = ids.len();
+        ids.retain(|x| x != id);
+        if ids.len() != before {
+            let new_json = serde_json::to_string(&ids)
+                .map_err(|e| AppError::Internal(format!("re-encode finding ids: {e}")))?;
+            let update = format!("UPDATE research_findings SET {column} = ?1 WHERE id = ?2");
+            tx.execute(&update, params![new_json, finding_id])?;
+        }
+    }
+    Ok(())
+}
+
 pub fn delete_source(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute("DELETE FROM research_sources WHERE id = ?1", params![id])?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+    strip_id_from_finding_lists(&tx, "source_ids", id)?;
+    tx.execute("DELETE FROM research_sources WHERE id = ?1", params![id])?;
+    tx.commit()?;
     Ok(())
 }
 
@@ -343,8 +384,11 @@ pub fn update_hypothesis(
 }
 
 pub fn delete_hypothesis(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute("DELETE FROM research_hypotheses WHERE id = ?1", params![id])?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+    strip_id_from_finding_lists(&tx, "hypothesis_ids", id)?;
+    tx.execute("DELETE FROM research_hypotheses WHERE id = ?1", params![id])?;
+    tx.commit()?;
     Ok(())
 }
 
@@ -403,11 +447,11 @@ pub fn create_experiment(
 }
 
 pub fn delete_experiment(pool: &DbPool, id: &str) -> Result<(), AppError> {
-    let conn = pool.get()?;
-    conn.execute(
-        "DELETE FROM research_experiments WHERE id = ?1",
-        params![id],
-    )?;
+    let mut conn = pool.get()?;
+    let tx = conn.transaction()?;
+    strip_id_from_finding_lists(&tx, "source_experiment_ids", id)?;
+    tx.execute("DELETE FROM research_experiments WHERE id = ?1", params![id])?;
+    tx.commit()?;
     Ok(())
 }
 
@@ -629,18 +673,24 @@ pub fn create_experiment_run(
     passed: bool,
 ) -> Result<ResearchExperimentRun, AppError> {
     let id = Uuid::new_v4().to_string();
-    let conn = pool.get()?;
-    let run_number: i32 = conn.query_row(
+    let mut conn = pool.get()?;
+    // BEGIN IMMEDIATE so the `MAX(run_number)+1` read and the INSERT are one
+    // serialized write. DbPool hands out independent connections, so without a
+    // transaction two concurrent runs (double-click, or engine + manual) both
+    // read the same MAX and INSERT the same run_number (bug-hunt 2026-06-07
+    // research #2).
+    let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+    let run_number: i32 = tx.query_row(
         "SELECT COALESCE(MAX(run_number), 0) + 1 FROM research_experiment_runs WHERE experiment_id = ?1",
         params![experiment_id],
         |r| r.get(0),
     )?;
     let passed_int: i32 = if passed { 1 } else { 0 };
-    conn.execute(
+    tx.execute(
         "INSERT INTO research_experiment_runs (id, experiment_id, run_number, outputs, metrics, passed) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
         params![id, experiment_id, run_number, outputs, metrics, passed_int],
     )?;
-    conn.query_row(
+    let run = tx.query_row(
         "SELECT id, experiment_id, run_number, inputs, outputs, metrics, passed, execution_id, duration_ms, cost_usd, created_at FROM research_experiment_runs WHERE id = ?1",
         params![id],
         |row| Ok(ResearchExperimentRun {
@@ -649,5 +699,7 @@ pub fn create_experiment_run(
             passed: row.get(6)?, execution_id: row.get(7)?, duration_ms: row.get(8)?,
             cost_usd: row.get(9)?, created_at: row.get(10)?,
         }),
-    ).map_err(AppError::from)
+    )?;
+    tx.commit()?;
+    Ok(run)
 }

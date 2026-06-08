@@ -2136,7 +2136,12 @@ pub async fn twin_reflect(
                 let dir = if c.direction == "out" { "→" } else { "←" };
                 let handle = c.contact_handle.as_deref().unwrap_or("(no handle)");
                 let snippet = if c.content.len() > 240 {
-                    format!("{}…", &c.content[..240])
+                    // Char-safe: byte-slicing at 240 panics mid-multibyte-char
+                    // (bug-hunt 2026-06-07 twin #1).
+                    format!(
+                        "{}…",
+                        crate::utils::text::truncate_on_char_boundary(&c.content, 240)
+                    )
                 } else {
                     c.content.clone()
                 };

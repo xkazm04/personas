@@ -2,6 +2,7 @@ import { Trash2, BarChart3, Terminal as TerminalIcon } from 'lucide-react';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import { useTranslation } from '@/i18n/useTranslation';
 import { FleetTerminalPane } from './FleetTerminalPane';
+import { FleetTilePreview } from './FleetTilePreview';
 import { FleetSessionInsights } from './sub_grid/FleetSessionInsights';
 import { FleetStatusDots } from './FleetStatusDots';
 import { FleetTileAthenaBar } from './FleetTileAthenaBar';
@@ -10,6 +11,8 @@ import { sessionAttention, attentionClass, type FleetTileApproval } from './flee
 interface Props {
   session: FleetSession;
   isActive: boolean;
+  /** Cooked preview lines for an inactive tile (only the active tile is live). */
+  previewLines?: string[];
   /** Show the transcript-insights view instead of the live terminal. */
   showInsights: boolean;
   onToggleInsight: (id: string) => void;
@@ -29,7 +32,7 @@ interface Props {
  *  the Athena copilot bar. Extracted from FleetTerminalOverlay to keep both
  *  files lean. */
 export function FleetOverlayTile({
-  session: s, isActive, showInsights, onToggleInsight, onSelect, onKill,
+  session: s, isActive, previewLines, showInsights, onToggleInsight, onSelect, onKill,
   approvals, asking, onApprove, onReject, onAsk,
 }: Props) {
   const { t } = useTranslation();
@@ -73,8 +76,13 @@ export function FleetOverlayTile({
       <div className="flex-1 min-h-0">
         {showInsights ? (
           <FleetSessionInsights claudeSessionId={s.claudeSessionId} />
-        ) : (
+        ) : isActive ? (
+          // Only the active tile mounts a real (subscribed) terminal — the rest
+          // render a cheap polled preview, so a 16-tile grid streams one
+          // session, not sixteen. Click a tile to make it the live one.
           <FleetTerminalPane sessionId={s.id} autoFocus={false} />
+        ) : (
+          <FleetTilePreview lines={previewLines} />
         )}
       </div>
       <FleetTileAthenaBar

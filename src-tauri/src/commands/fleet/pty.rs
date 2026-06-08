@@ -12,7 +12,7 @@
 //! to look anything up via the registry while blocked on I/O.
 
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
@@ -20,7 +20,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::engine::event_registry::event_name;
 
-use super::registry::{now_ms, registry, FleetSessionInner};
+use super::registry::{now_ms, registry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP};
 use super::types::FleetSessionState;
 
 /// MCP wiring artefacts created at spawn time. Returned so we can hand
@@ -238,6 +238,10 @@ pub fn spawn_session(
         .unwrap_or("unknown")
         .to_string();
 
+    // Shared output ring: the reader task pushes every PTY chunk here (always,
+    // so the pipe never blocks) and forwards over IPC only while subscribed.
+    let output = Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP)));
+
     let inner = FleetSessionInner {
         id: id.clone(),
         // Pre-bound for fresh spawns (we passed `--session-id`); `None` for
@@ -256,16 +260,18 @@ pub fn spawn_session(
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
+        output: output.clone(),
     };
     registry().insert(inner);
 
     // Notify the UI a new session showed up.
     emit_registry_changed(&app, "added", &id);
 
-    // Reader task — blocking I/O on its own thread.
+    // Reader task — blocking I/O on its own thread. Owns the ring `Arc` so the
+    // per-read hot path never touches the registry map lock.
     let app_reader = app.clone();
     let id_reader = id.clone();
-    tokio::task::spawn_blocking(move || reader_loop(app_reader, id_reader, reader));
+    tokio::task::spawn_blocking(move || reader_loop(app_reader, id_reader, output, reader));
 
     // Reaper task — owns the child directly, waits, marks exit, emits.
     let app_reaper = app.clone();
@@ -390,9 +396,23 @@ fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
     McpSpawn { config_path: Some(config_path) }
 }
 
-/// Reader loop — blocks on `reader.read`, emits chunks, exits on EOF/error.
-fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::Read + Send>) {
-    let mut buf = [0u8; 8192];
+/// Reader loop — blocks on `reader.read`, buffers every chunk into the ring,
+/// and forwards over IPC ONLY while the session is subscribed. Exits on
+/// EOF/error.
+///
+/// The decoupling is the whole point: a 16-CLI fleet with one focused terminal
+/// emits one stream, not sixteen. Unwatched sessions still drain their PTY into
+/// the bounded ring (so claude never blocks on a full pipe and memory stays
+/// flat regardless of a 1M-token run), they just don't pay the
+/// serialize→IPC→xterm-parse cost for output nobody is looking at.
+fn reader_loop(
+    app: AppHandle,
+    session_id: String,
+    ring: Arc<Mutex<OutputRing>>,
+    mut reader: Box<dyn std::io::Read + Send>,
+) {
+    // 16 KiB (was 8) → fewer reads/emits per burst on fast 1M-token dumps.
+    let mut buf = [0u8; 16384];
     // First byte of PTY output ⇒ claude is up (banner/prompt drawn). Promote
     // Spawning → Idle once, so the session isn't mislabeled never-attached
     // while it sits at a fresh prompt with no transcript/hook yet. We do NOT
@@ -413,14 +433,23 @@ fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::
                         emit_registry_changed(&app, "updated", &session_id);
                     }
                 }
-                let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
-                let _ = app.emit(
-                    event_name::FLEET_SESSION_OUTPUT,
-                    OutputPayload {
-                        session_id: &session_id,
-                        chunk,
-                    },
-                );
+                // Always buffer (drains the PTY); learn whether to forward —
+                // both under one short ring lock, no registry-map contention.
+                let subscribed = {
+                    let mut r = ring.lock().unwrap_or_else(|e| e.into_inner());
+                    r.push(&buf[..n]);
+                    r.is_subscribed()
+                };
+                if subscribed {
+                    let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
+                    let _ = app.emit(
+                        event_name::FLEET_SESSION_OUTPUT,
+                        OutputPayload {
+                            session_id: &session_id,
+                            chunk,
+                        },
+                    );
+                }
             }
             Err(e) => {
                 if e.kind() == std::io::ErrorKind::Interrupted {
@@ -445,10 +474,16 @@ fn reaper_loop(
             if status.success() {
                 Some(0i32)
             } else {
-                // ExitStatus::exit_code is u32 on windows; squeeze into i32
-                // saturating for the UI. Unsigned >2^31 is unreachable in practice.
+                // ExitStatus::exit_code is u32 on Windows and is frequently an
+                // NTSTATUS (e.g. 0xC0000142 STATUS_DLL_INIT_FAILED when a
+                // console child can't initialize). REINTERPRET the bits as i32
+                // rather than saturating to i32::MAX — the old saturation threw
+                // the real code away and rendered every abnormal exit as the
+                // meaningless "code 2147483647", which is exactly why an exit
+                // read as "vanished without warning". The bit pattern round-
+                // trips back to the OS code (`as u32`) for display.
                 let code: u32 = status.exit_code();
-                Some(code.min(i32::MAX as u32) as i32)
+                Some(code as i32)
             }
         }
         Err(e) => {
@@ -456,6 +491,23 @@ fn reaper_loop(
             None
         }
     };
+
+    // Always log WHY a session ended. Previously the reaper logged nothing on a
+    // normal-looking exit, so an abnormal death (crash / spawn-time
+    // STATUS_DLL_INIT_FAILED) left no breadcrumb at all.
+    match exit_code {
+        Some(0) => tracing::debug!(session_id = %session_id, "fleet session exited cleanly"),
+        Some(c) => tracing::warn!(
+            session_id = %session_id,
+            code = c,
+            code_hex = %format!("0x{:08X}", c as u32),
+            "fleet session exited with a non-zero code"
+        ),
+        None => tracing::warn!(
+            session_id = %session_id,
+            "fleet session exited with no status (signal / crash)"
+        ),
+    }
 
     // Hibernation path: the operator killed the process to free it, not a real
     // death. `hibernate` already set state = Hibernated; leave it there, don't

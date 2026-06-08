@@ -7,6 +7,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from '@/stores/systemStore';
 import { FleetOverlayTile } from './FleetOverlayTile';
 import { setFleetFontOverride } from './fleetTerminalManager';
+import { useFleetTilePreviews } from './useFleetTilePreviews';
 import { approvalsForSession } from './fleetAttention';
 import { gridDim, densityFont } from './fleetGridLayout';
 
@@ -92,6 +93,18 @@ export function FleetTerminalOverlay({
     setFleetFontOverride(densityFont(dim));
     return () => setFleetFontOverride(null);
   }, [open, dim]);
+
+  // Unwatched tiles (not active, not showing Insights) render a cheap polled
+  // preview instead of a live terminal — only the active tile subscribes. Poll
+  // them in one batched call while the grid is open.
+  const previewIds = useMemo(
+    () =>
+      sessions
+        .map((s) => s.id)
+        .filter((id) => id !== activeSessionId && !insightTiles.has(id)),
+    [sessions, activeSessionId, insightTiles],
+  );
+  const previews = useFleetTilePreviews(previewIds, { enabled: open });
 
   // Route the global titlebar Back button (and Escape) to minimize, instead of
   // navigating the underlying page out from under the overlay.
@@ -179,6 +192,7 @@ export function FleetTerminalOverlay({
             key={s.id}
             session={s}
             isActive={s.id === activeSessionId}
+            previewLines={previews.get(s.id)}
             showInsights={insightTiles.has(s.id)}
             onToggleInsight={toggleInsight}
             onSelect={onSelect}

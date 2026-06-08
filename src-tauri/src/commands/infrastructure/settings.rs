@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, State};
 
 use crate::db::models::SettingsAuditEntry;
 use crate::db::repos::core::settings as repo;
@@ -59,6 +59,7 @@ pub fn get_app_settings_bulk(
 
 #[tauri::command]
 pub fn set_app_setting(
+    app: AppHandle,
     state: State<'_, Arc<AppState>>,
     key: String,
     value: String,
@@ -73,7 +74,29 @@ pub fn set_app_setting(
             MAX_SETTING_VALUE_SIZE,
         )));
     }
-    repo::set(&state.db, &key, &value)
+    repo::set(&state.db, &key, &value)?;
+
+    // Hot-apply the global concurrency cap so a change to `max_parallel_executions`
+    // takes effect WITHOUT an app restart (the engine otherwise reads this only
+    // once at startup). Fire-and-forget: the value is already persisted, so even
+    // if the live update is dropped the new cap applies on next launch. The value
+    // is clamped to the documented range as defense-in-depth (the Settings UI's
+    // stepper already constrains it).
+    if key == settings_keys::MAX_PARALLEL_EXECUTIONS {
+        if let Ok(n) = value.trim().parse::<usize>() {
+            let n = n.clamp(
+                settings_keys::MAX_PARALLEL_EXECUTIONS_MIN,
+                settings_keys::MAX_PARALLEL_EXECUTIONS_MAX,
+            );
+            let engine = state.engine.clone();
+            let pool = state.db.clone();
+            tauri::async_runtime::spawn(async move {
+                engine.set_global_max_concurrent(app, pool, n).await;
+            });
+        }
+    }
+
+    Ok(())
 }
 
 /// Delete a setting.

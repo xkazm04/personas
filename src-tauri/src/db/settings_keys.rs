@@ -297,13 +297,15 @@ pub const AUTONOMOUS_DIRECTOR_STORM_DEFAULT: bool = false;
 /// fallback; this setting's default is authoritative at runtime.)
 pub const MAX_PARALLEL_EXECUTIONS: &str = "max_parallel_executions";
 /// Default global concurrency cap when the row is unset (or invalid).
-pub const MAX_PARALLEL_EXECUTIONS_DEFAULT: usize = 5;
+pub const MAX_PARALLEL_EXECUTIONS_DEFAULT: usize = 10;
 /// Minimum accepted cap. 0 would deadlock the queue (nothing could ever admit),
 /// so the floor is 1 (fully serialized execution).
 pub const MAX_PARALLEL_EXECUTIONS_MIN: usize = 1;
 /// Upper guard rail for the configured global cap. Conservative ceiling; raise
 /// only after auditing DB pool size / provider rate limits / memory headroom.
-pub const MAX_PARALLEL_EXECUTIONS_MAX: usize = 64;
+/// Also the FleetActivityStrip's bar count maxes out here (it renders one bar
+/// per slot), so keep this aligned with `STRIP_SLOTS` in fleetStripModel.ts.
+pub const MAX_PARALLEL_EXECUTIONS_MAX: usize = 20;
 
 /// Whether each team-member persona execution runs inside its own per-execution
 /// git worktree (on branch `personas/exec/<execution_id>`) instead of the shared
@@ -548,10 +550,10 @@ mod tests {
         assert!(validate_key(MAX_PARALLEL_EXECUTIONS).is_ok());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "1").is_ok());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "5").is_ok());
-        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "64").is_ok());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "20").is_ok());
         // 0 would deadlock the queue -> rejected; over the ceiling -> rejected.
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "0").is_err());
-        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "65").is_err());
+        assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "21").is_err());
         // Non-integer / negative / blank / padded -> rejected.
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "5x").is_err());
         assert!(validate_value(MAX_PARALLEL_EXECUTIONS, "-1").is_err());

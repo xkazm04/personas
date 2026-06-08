@@ -14,7 +14,12 @@
  * *mount point* that attaches the holder into its container on mount and
  * detaches (NOT disposes) on unmount. Consequences:
  *
- *   - Switching sessions is instant and lossless (P1) — the buffer is intact.
+ *   - Attaching subscribes to live PTY output and replays the backend ring
+ *     snapshot; detaching unsubscribes (the Rust reader keeps buffering into a
+ *     bounded ring but stops streaming over IPC). An unwatched session costs
+ *     the app nothing to render; switching back replays the recent tail. This
+ *     is what lets a 16-CLI fleet stay light — work tracks watched sessions,
+ *     not running ones.
  *   - Many panes can attach different sessions at once → grid view (P2).
  *   - Renderer (WebGL) is attach-scoped so N background terminals don't hold
  *     N live GL contexts; unicode11 / web-links load once.
@@ -34,7 +39,7 @@ import '@xterm/xterm/css/xterm.css';
 import { listen } from '@tauri-apps/api/event';
 
 import { EventName } from '@/lib/eventRegistry';
-import { writeInput, resizeSession } from '@/api/fleet/fleet';
+import { writeInput, resizeSession, subscribeTerminal, unsubscribeTerminal } from '@/api/fleet/fleet';
 import { openExternalUrl } from '@/api/system/system';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { silentCatch } from '@/lib/silentCatch';
@@ -144,6 +149,18 @@ interface ManagedTerminal {
   opened: boolean;
   attached: boolean;
   rafId: number | null;
+  /**
+   * Subscription/hydration state. The backend only streams a session's PTY
+   * output while it's subscribed; on attach we (re)subscribe and replay the
+   * ring snapshot. Between issuing the subscribe and writing its snapshot, live
+   * `fleet-session-output` events must be held so they land AFTER the snapshot
+   * (never interleaved). `hydrating` gates that; `pendingLive` queues the live
+   * chunks; `hydrationGen` lets a newer attach/detach cancel a stale snapshot
+   * resolution (rapid switching).
+   */
+  hydrating: boolean;
+  pendingLive: string[];
+  hydrationGen: number;
 }
 
 // HMR-safe registry. Reusing the existing map across hot reloads keeps live
@@ -278,6 +295,9 @@ function getOrCreate(sessionId: string): ManagedTerminal {
     opened: false,
     attached: false,
     rafId: null,
+    hydrating: false,
+    pendingLive: [],
+    hydrationGen: 0,
   };
 
   // User keystrokes → PTY stdin (raw bytes; xterm's onData already includes
@@ -327,10 +347,16 @@ function getOrCreate(sessionId: string): ManagedTerminal {
   managed.resizeObs = new ResizeObserver(() => scheduleFit(managed));
   managed.resizeObs.observe(holder);
 
-  // PTY stdout → terminal. xterm buffers writes even before `open()`, so a
-  // never-yet-attached session still accumulates output for switch-back.
+  // PTY stdout → terminal. The backend only emits for this session while it's
+  // subscribed (see attachTerminal). While hydrating — between issuing the
+  // subscribe and writing its ring snapshot — queue live chunks so they land
+  // strictly AFTER the snapshot instead of interleaving with it.
   listen<{ session_id: string; chunk: string }>(EventName.FLEET_SESSION_OUTPUT, (event) => {
     if (event.payload.session_id !== sessionId) return;
+    if (managed.hydrating) {
+      managed.pendingLive.push(event.payload.chunk);
+      return;
+    }
     term.write(event.payload.chunk);
   })
     .then((fn) => {
@@ -357,10 +383,48 @@ export function attachTerminal(sessionId: string, container: HTMLElement): void 
   m.attached = true;
   loadWebgl(m);
   scheduleFit(m);
+  hydrate(m);
+}
+
+/**
+ * Subscribe the session's terminal to live output and replay the backend ring
+ * snapshot. Resetting + writing the full snapshot (rather than appending a
+ * delta) keeps this simple and dup-free: a re-attach can't double-render
+ * because the terminal is cleared first. While the subscribe is in flight,
+ * `hydrating` holds live chunks in `pendingLive`; they're flushed right after
+ * the snapshot so ordering is exact. A `hydrationGen` bump cancels a stale
+ * resolution if the pane detached/re-attached meanwhile.
+ */
+function hydrate(m: ManagedTerminal): void {
+  const gen = ++m.hydrationGen;
+  m.hydrating = true;
+  m.pendingLive = [];
+  subscribeTerminal(m.sessionId)
+    .then((snapshot) => {
+      // Superseded by a newer attach/detach — drop this snapshot.
+      if (gen !== m.hydrationGen || !m.attached) return;
+      // Clear any stale buffer so a re-focus doesn't duplicate the ring tail.
+      m.term.reset();
+      if (snapshot) m.term.write(snapshot);
+      const queued = m.pendingLive;
+      m.pendingLive = [];
+      m.hydrating = false;
+      for (const chunk of queued) m.term.write(chunk);
+    })
+    .catch((e) => {
+      // Subscribe failed (session gone, etc.) — stop hydrating so any future
+      // live chunks render directly rather than piling up in the queue.
+      if (gen === m.hydrationGen) {
+        m.hydrating = false;
+        m.pendingLive = [];
+      }
+      silentCatch('fleetTerminal:subscribe')(e);
+    });
 }
 
 /** Unmount `sessionId`'s terminal from the DOM but keep it (and its buffer)
- *  alive. Disposes the attach-scoped WebGL context. */
+ *  alive. Disposes the attach-scoped WebGL context and unsubscribes from live
+ *  output (the backend keeps buffering into its ring for a later re-attach). */
 export function detachTerminal(sessionId: string): void {
   const m = registry.get(sessionId);
   if (!m) return;
@@ -368,6 +432,11 @@ export function detachTerminal(sessionId: string): void {
     cancelAnimationFrame(m.rafId);
     m.rafId = null;
   }
+  // Cancel any in-flight hydration and stop streaming this session over IPC.
+  m.hydrationGen++;
+  m.hydrating = false;
+  m.pendingLive = [];
+  unsubscribeTerminal(sessionId).catch(silentCatch('fleetTerminal:unsubscribe'));
   disposeWebgl(m);
   m.attached = false;
   m.holder.parentElement?.removeChild(m.holder);

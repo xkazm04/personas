@@ -31,17 +31,35 @@ impl DailyBudget {
     pub fn is_exhausted(&self) -> bool {
         self.used >= self.cap
     }
-    /// Persist a +1 increment. Caller invokes this AFTER a successful
-    /// enqueue so a transient error doesn't burn budget.
-    pub fn increment(&mut self, pool: &UserDbPool) -> Result<(), AppError> {
+    /// Atomically claim one unit of today's budget. Returns `true` if a unit was
+    /// available and has now been consumed, `false` if the cap is already
+    /// reached. The check-and-increment is a single conditional UPDATE, so two
+    /// evaluate passes that overlap (background tick + a manual "evaluate now",
+    /// or the trigger path and the scheduled-delivery path within one pass) can
+    /// never both deliver up to the cap. The previous read-then-increment let
+    /// each pass independently burst to the cap → up to 2× the intended nudges
+    /// (bug-hunt 2026-06-07 companion #2). Call AFTER a successful enqueue so a
+    /// transient error doesn't burn budget.
+    pub fn try_consume(&mut self, pool: &UserDbPool) -> Result<bool, AppError> {
         let conn = pool.get()?;
+        // Ensure today's row exists so the conditional UPDATE has a row to gate.
         conn.execute(
-            "INSERT INTO companion_proactive_budget (date, count) VALUES (?1, 1)
-             ON CONFLICT(date) DO UPDATE SET count = count + 1",
+            "INSERT OR IGNORE INTO companion_proactive_budget (date, count) VALUES (?1, 0)",
             params![self.date],
         )?;
-        self.used = self.used.saturating_add(1);
-        Ok(())
+        let claimed = conn.execute(
+            "UPDATE companion_proactive_budget SET count = count + 1 \
+             WHERE date = ?1 AND count < ?2",
+            params![self.date, self.cap],
+        )?;
+        if claimed == 1 {
+            self.used = self.used.saturating_add(1);
+            Ok(true)
+        } else {
+            // Cap reached (possibly by a concurrent pass) — reflect it locally.
+            self.used = self.cap;
+            Ok(false)
+        }
     }
 }
 

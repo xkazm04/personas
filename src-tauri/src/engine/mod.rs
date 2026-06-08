@@ -549,6 +549,48 @@ impl ExecutionEngine {
         .await;
     }
 
+    /// Hot-apply a new global concurrency cap (the `max_parallel_executions`
+    /// setting) WITHOUT an app restart.
+    ///
+    /// Lowering the cap takes effect for the next admission decision — running
+    /// executions are never interrupted, they simply aren't replaced as fast.
+    /// Raising the cap frees slots immediately, so we proactively promote
+    /// queued work into the new headroom via `drain_after_slot_freed`.
+    ///
+    /// The drain loop is doubly bounded so it can never spin: it stops after at
+    /// most `max` iterations AND as soon as a pass promotes nothing (every
+    /// remaining queued item is blocked on its own per-persona limit, or global
+    /// capacity is exhausted). Progress is detected by the global queued count
+    /// strictly decreasing.
+    pub async fn set_global_max_concurrent(&self, app: AppHandle, pool: DbPool, max: usize) {
+        let raised = {
+            let mut t = self.tracker.lock().await;
+            let prev = t.global_max_concurrent();
+            t.set_global_max_concurrent(max);
+            tracing::info!(prev, new = max, "Global concurrency cap updated (hot-reload)");
+            max > prev
+        };
+        if !raised {
+            return;
+        }
+        for _ in 0..max {
+            let before = {
+                let t = self.tracker.lock().await;
+                if !(t.has_global_capacity() && t.total_queued() > 0) {
+                    break;
+                }
+                t.total_queued()
+            };
+            self.drain_after_slot_freed(app.clone(), pool.clone()).await;
+            let after = self.tracker.lock().await.total_queued();
+            if after >= before {
+                // Nothing was promoted this pass (all remaining queued work is
+                // blocked on per-persona limits) — stop rather than spin.
+                break;
+            }
+        }
+    }
+
     /// Returns a reference to the concurrency tracker (for tier usage reporting).
     pub fn tracker(&self) -> &Arc<Mutex<queue::ConcurrencyTracker>> {
         &self.tracker

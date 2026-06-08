@@ -288,7 +288,19 @@ pub fn evaluate_chain_triggers(
         let mark_result =
             trigger_repo::mark_triggered(pool, &trigger.id, None, trigger.trigger_version);
         let mark_ok = match mark_result {
-            Ok(_) => true,
+            Ok(true) => true,
+            // CAS lost: another concurrent evaluator (a racing completion handler
+            // or the startup overdue sweep) already claimed this fire. Skip the
+            // publish — doing it anyway double-fires the downstream persona, the
+            // exact race trigger_version exists to prevent (bug-hunt 2026-06-07
+            // triggers #3).
+            Ok(false) => {
+                tracing::debug!(
+                    trigger_id = %trigger.id,
+                    "Chain trigger already claimed by a concurrent evaluator (CAS lost); skipping publish"
+                );
+                continue;
+            }
             Err(first_err) => {
                 tracing::warn!(
                     trigger_id = %trigger.id,
@@ -298,7 +310,14 @@ pub fn evaluate_chain_triggers(
                 // Retry once
                 match trigger_repo::mark_triggered(pool, &trigger.id, None, trigger.trigger_version)
                 {
-                    Ok(_) => true,
+                    Ok(true) => true,
+                    Ok(false) => {
+                        tracing::debug!(
+                            trigger_id = %trigger.id,
+                            "Chain trigger claimed by a concurrent evaluator during retry (CAS lost); skipping publish"
+                        );
+                        continue;
+                    }
                     Err(retry_err) => {
                         metrics.mark_failures += 1;
                         let error_ctx = format!(

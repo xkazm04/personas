@@ -12,14 +12,171 @@
 //!   move into their respective tokio blocking tasks (see `pty::spawn_session`).
 //!   This avoids cross-task lock dances when the reader is blocked on read.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use portable_pty::MasterPty;
 
 use super::types::{FleetSession, FleetSessionState};
+
+/// Default cap (bytes) for a session's output ring buffer. Bounds the desktop
+/// app's memory per session regardless of how much a 1M-token run prints: a
+/// background (unsubscribed) session drains its PTY into this ring and emits
+/// nothing to the UI. ~512 KiB ≈ a few thousand lines of recent scrollback —
+/// enough for a switch-back replay to feel continuous. The win that lets us
+/// scale to 16 CLIs: the app's IPC + render work tracks the number of *watched*
+/// sessions, not the number running.
+pub const OUTPUT_RING_CAP: usize = 512 * 1024;
+
+/// Bounded ring of recent raw PTY bytes for one session, plus whether the
+/// frontend is currently rendering it live. The reader task ALWAYS pushes here
+/// (so the PTY pipe never fills and claude never blocks); it only forwards
+/// bytes over IPC when `subscribed` is set. On (re)subscribe the command
+/// replays [`OutputRing::snapshot`] so a freshly-focused terminal hydrates from
+/// the ring instead of from a re-streamed full history.
+pub struct OutputRing {
+    buf: VecDeque<u8>,
+    cap: usize,
+    subscribed: bool,
+}
+
+impl OutputRing {
+    pub fn new(cap: usize) -> Self {
+        Self { buf: VecDeque::new(), cap, subscribed: false }
+    }
+
+    /// Append raw PTY bytes, trimming the oldest beyond `cap`.
+    pub fn push(&mut self, bytes: &[u8]) {
+        self.buf.extend(bytes.iter().copied());
+        let len = self.buf.len();
+        if len > self.cap {
+            self.buf.drain(0..len - self.cap);
+        }
+    }
+
+    pub fn is_subscribed(&self) -> bool {
+        self.subscribed
+    }
+
+    pub fn set_subscribed(&mut self, on: bool) {
+        self.subscribed = on;
+    }
+
+    /// Current ring contents as a lossy UTF-8 string, for replay on subscribe.
+    /// Lossy is fine: the oldest bytes may be a truncated escape sequence (the
+    /// ring drops from the front), which xterm tolerates at the start of a write.
+    pub fn snapshot(&self) -> String {
+        let bytes: Vec<u8> = self.buf.iter().copied().collect();
+        String::from_utf8_lossy(&bytes).into_owned()
+    }
+
+    /// Cook the recent tail into the last `max_lines` plain-text lines for a
+    /// glanceable grid preview — no xterm, no live stream. Strips ANSI/CSI/OSC
+    /// escapes, applies `\n`/`\r`, and resets on screen-clear / alt-screen /
+    /// erase-line so an interactive TUI's in-place redraws don't pile up as junk.
+    /// Approximate by design: the focused tile gets a real terminal; this is the
+    /// cheap "what's on screen" snapshot the *unwatched* tiles render, polled at
+    /// a low rate. Only the tail is scanned so cost is bounded regardless of ring
+    /// size (the oldest scanned line may be slightly garbled, but it's dropped
+    /// anyway when we keep just the last `max_lines`).
+    pub fn preview_lines(&self, max_lines: usize) -> Vec<String> {
+        const SCAN: usize = 64 * 1024;
+        let len = self.buf.len();
+        let start = len.saturating_sub(SCAN);
+        let bytes: Vec<u8> = self.buf.iter().copied().skip(start).collect();
+        cook_lines(&bytes, max_lines)
+    }
+}
+
+/// Trim `lines` in place to at most `max` entries, dropping from the front
+/// (oldest). A tiny helper so the cook loop can cap as it goes.
+fn trim_lines(lines: &mut Vec<String>, max: usize) {
+    if lines.len() > max {
+        let drop = lines.len() - max;
+        lines.drain(0..drop);
+    }
+}
+
+/// Cook raw PTY bytes into plain-text lines for a preview (see
+/// [`OutputRing::preview_lines`]). Handles the escape sequences that actually
+/// matter for a scrolling-buffer TUI like Claude Code:
+///   - `\n` ends a line; `\r` overwrites the current line (spinner/progress).
+///   - CSI `…J` (erase display) and alt-screen toggles (`…?1049h/l`) clear all.
+///   - CSI `…K` (erase line) clears the current line (in-place input-box redraws).
+///   - all other CSI / OSC / `ESC x` sequences are consumed and dropped.
+/// Absolute cursor positioning isn't modeled (no grid) — fine for a glance.
+fn cook_lines(bytes: &[u8], max_lines: usize) -> Vec<String> {
+    let text = String::from_utf8_lossy(bytes);
+    let mut lines: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    let mut chars = text.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '\n' => {
+                lines.push(std::mem::take(&mut cur));
+                trim_lines(&mut lines, max_lines);
+            }
+            '\r' => cur.clear(),
+            '\t' => cur.push(' '),
+            '\u{1b}' => match chars.peek().copied() {
+                Some('[') => {
+                    chars.next();
+                    let mut params = String::new();
+                    while let Some(&p) = chars.peek() {
+                        chars.next();
+                        if ('\u{40}'..='\u{7e}').contains(&p) {
+                            match p {
+                                // Erase display / alt-screen enter+exit → wipe.
+                                'J' => {
+                                    cur.clear();
+                                    lines.clear();
+                                }
+                                'h' | 'l' if params.contains("1049") => {
+                                    cur.clear();
+                                    lines.clear();
+                                }
+                                // Erase line → clear the in-progress line.
+                                'K' => cur.clear(),
+                                _ => {}
+                            }
+                            break;
+                        }
+                        params.push(p);
+                    }
+                }
+                Some(']') => {
+                    // OSC — consume to BEL or ST (ESC \).
+                    chars.next();
+                    while let Some(&p) = chars.peek() {
+                        chars.next();
+                        if p == '\u{7}' {
+                            break;
+                        }
+                        if p == '\u{1b}' {
+                            if chars.peek() == Some(&'\\') {
+                                chars.next();
+                            }
+                            break;
+                        }
+                    }
+                }
+                Some(_) => {
+                    chars.next();
+                }
+                None => {}
+            },
+            c if (c as u32) < 0x20 => {} // drop other control chars
+            c => cur.push(c),
+        }
+    }
+    if !cur.is_empty() {
+        lines.push(cur);
+    }
+    trim_lines(&mut lines, max_lines);
+    lines
+}
 
 /// Visible-name sentinel stamped on every Fleet session Athena spawns
 /// herself (`fleet_spawn` → `"athena"`, `fleet_dispatch` → `"athena-<role>"`).
@@ -56,6 +213,10 @@ pub struct FleetSessionInner {
     /// the child's exit as `Hibernated` (resumable) instead of `Exited` (dead)
     /// and skips exit reconciliation. Reset on wake/respawn.
     pub hibernating: std::sync::atomic::AtomicBool,
+    /// Bounded ring of recent PTY output + the live-subscription flag. Shared
+    /// (`Arc`) with the reader task, which pushes every chunk here and forwards
+    /// over IPC only while subscribed. See [`OutputRing`].
+    pub output: Arc<Mutex<OutputRing>>,
 }
 
 impl FleetSessionInner {
@@ -208,6 +369,81 @@ impl FleetRegistry {
         false
     }
 
+    /// Promote a session to `Running` when concrete activity proves it's
+    /// working: a tool invocation (PreToolUse/PostToolUse) is incompatible with
+    /// sitting idle at a prompt waiting for the user. Transitions only out of
+    /// the resting states (`AwaitingInput` / `Idle` / `Stale`); leaves
+    /// `Spawning` / `Running` / `Exited` / `Hibernated` untouched. Returns
+    /// `true` only when it actually changed state, so the hook caller emits a
+    /// single refresh instead of one per tool call (PreToolUse is high-volume).
+    ///
+    /// This is the immediate corrector for the most common false-`AwaitingInput`:
+    /// Claude Code fires its idle "waiting for input" Notification during a long
+    /// tool wait or model-latency gap, parking an in-progress session — and
+    /// since tool hooks no longer flow through the lifecycle state machine,
+    /// nothing pulled it back. The next tool call now does, here. Regardless of
+    /// transition, the call refreshes `last_activity_ms` (a tool firing is
+    /// fresh activity) so the staleness ticker sees the session as alive.
+    pub fn revive_to_running_on_activity(&self, session_id: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false; };
+        session.last_activity_ms = now_ms();
+        if matches!(
+            session.state,
+            FleetSessionState::AwaitingInput | FleetSessionState::Idle | FleetSessionState::Stale
+        ) {
+            session.state = FleetSessionState::Running;
+            session.state_reason = Some("Tool activity — session is working".into());
+            return true;
+        }
+        false
+    }
+
+    /// Mark a session's terminal subscribed (the frontend is now rendering it
+    /// live) and return its ring snapshot so the freshly-focused terminal can
+    /// hydrate. After this returns, the reader task forwards live chunks over
+    /// IPC. `None` if the session is unknown. Low-frequency (one call per
+    /// attach), so taking the map lock here is fine — the per-read hot path
+    /// never touches the map (it holds the ring `Arc` directly).
+    pub fn subscribe_output(&self, session_id: &str) -> Option<String> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let session = map.get(session_id)?;
+        let mut ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+        ring.set_subscribed(true);
+        Some(ring.snapshot())
+    }
+
+    /// Stop forwarding a session's PTY output over IPC (it keeps buffering into
+    /// its ring, so a later re-subscribe replays the recent tail). No-op for
+    /// unknown sessions.
+    pub fn unsubscribe_output(&self, session_id: &str) {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get(session_id) {
+            session
+                .output
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .set_subscribed(false);
+        }
+    }
+
+    /// Cooked preview lines for several sessions at once — the data source for
+    /// the grid's *unwatched* tiles (the watched/active tile renders a real
+    /// terminal instead). Unknown sessions are skipped. One map lock + a brief
+    /// per-session ring lock; called at a low poll rate, so cheap even at 16
+    /// tiles. `max_lines` caps each entry.
+    pub fn preview_outputs(&self, session_ids: &[String], max_lines: usize) -> Vec<(String, Vec<String>)> {
+        let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        session_ids
+            .iter()
+            .filter_map(|id| {
+                let session = map.get(id)?;
+                let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
+                Some((id.clone(), ring.preview_lines(max_lines)))
+            })
+            .collect()
+    }
+
     /// Records that the child has exited. Updates state and clears the
     /// PTY resource slots. Called from the reaper task.
     pub fn mark_exited(&self, session_id: &str, exit_code: Option<i32>) {
@@ -218,7 +454,7 @@ impl FleetRegistry {
             session.last_activity_ms = now_ms();
             session.state_reason = Some(match exit_code {
                 Some(0) => "Exited cleanly".to_string(),
-                Some(c) => format!("Exited with code {c}"),
+                Some(c) => fleet_exit_reason(c),
                 None => "Exited (signal or crash)".to_string(),
             });
             if let Ok(mut w) = session.writer.lock() { *w = None; }
@@ -331,6 +567,29 @@ impl FleetRegistry {
     }
 }
 
+/// Human-readable reason for a non-zero Fleet child exit. Renders the OS code
+/// in hex (the form Windows documents NTSTATUS in) and special-cases the codes
+/// we've actually seen, so the UI can explain an exit the user would otherwise
+/// read as "vanished without warning" (the bare decimal of an NTSTATUS is
+/// meaningless to a human).
+fn fleet_exit_reason(code: i32) -> String {
+    let raw = code as u32;
+    let hex = format!("0x{raw:08X}");
+    match raw {
+        // STATUS_DLL_INIT_FAILED — on Windows this is overwhelmingly a console
+        // allocation failure: a GUI process spawned too many console children
+        // and the window-station desktop heap is exhausted. See
+        // `companion::session::apply_no_console_window`.
+        0xC000_0142 => format!(
+            "Exited with code {hex} (Windows could not start the process — \
+             usually too many CLI sessions open at once; close some and retry)"
+        ),
+        // STATUS_CONTROL_C_EXIT — Ctrl-C / console closed.
+        0xC000_013A => format!("Exited with code {hex} (interrupted / console closed)"),
+        _ => format!("Exited with code {code} ({hex})"),
+    }
+}
+
 /// Wall-clock ms since UNIX epoch. Used for `last_activity_ms` /
 /// `created_at_ms`.
 pub fn now_ms() -> i64 {
@@ -364,7 +623,79 @@ mod tests {
             master: Mutex::new(None),
             writer: Mutex::new(None),
             hibernating: AtomicBool::new(false),
+            output: Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP))),
         }
+    }
+
+    #[test]
+    fn output_ring_caps_and_keeps_tail() {
+        let mut r = OutputRing::new(8);
+        r.push(b"abcdef");
+        assert_eq!(r.snapshot(), "abcdef");
+        r.push(b"ghij"); // total 10 > cap 8 → drop oldest 2
+        assert_eq!(r.snapshot(), "cdefghij");
+        assert_eq!(r.snapshot().len(), 8);
+    }
+
+    #[test]
+    fn cook_strips_ansi_and_splits_lines() {
+        // SGR colour codes stripped; newlines split.
+        let out = cook_lines(b"\x1b[31mred\x1b[0m line\nsecond\n", 10);
+        assert_eq!(out, vec!["red line".to_string(), "second".to_string()]);
+    }
+
+    #[test]
+    fn cook_carriage_return_overwrites_current_line() {
+        // A spinner redraw: "10%\r20%\r30%" → only the final survives.
+        let out = cook_lines(b"working 10%\rworking 20%\rworking 30%", 10);
+        assert_eq!(out, vec!["working 30%".to_string()]);
+    }
+
+    #[test]
+    fn cook_erase_display_clears_scrollback() {
+        let out = cook_lines(b"old line\nmore\n\x1b[2Jfresh\n", 10);
+        assert_eq!(out, vec!["fresh".to_string()]);
+    }
+
+    #[test]
+    fn cook_alt_screen_enter_clears() {
+        let out = cook_lines(b"before\n\x1b[?1049hafter\n", 10);
+        assert_eq!(out, vec!["after".to_string()]);
+    }
+
+    #[test]
+    fn cook_caps_to_max_lines_keeping_tail() {
+        let out = cook_lines(b"a\nb\nc\nd\ne\n", 3);
+        assert_eq!(out, vec!["c".to_string(), "d".to_string(), "e".to_string()]);
+    }
+
+    #[test]
+    fn output_ring_subscription_flag_round_trips() {
+        let mut r = OutputRing::new(16);
+        assert!(!r.is_subscribed());
+        r.set_subscribed(true);
+        assert!(r.is_subscribed());
+        r.set_subscribed(false);
+        assert!(!r.is_subscribed());
+    }
+
+    #[test]
+    fn subscribe_output_sets_flag_and_returns_snapshot() {
+        let reg = FleetRegistry::default();
+        reg.insert(session("s", FleetSessionState::Running, Some("cc")));
+        // Seed some buffered output as the reader would.
+        {
+            let map = reg.sessions.lock().unwrap();
+            map.get("s").unwrap().output.lock().unwrap().push(b"hello world");
+        }
+        let snap = reg.subscribe_output("s");
+        assert_eq!(snap.as_deref(), Some("hello world"));
+        assert!(reg.sessions.lock().unwrap().get("s").unwrap().output.lock().unwrap().is_subscribed());
+        reg.unsubscribe_output("s");
+        assert!(!reg.sessions.lock().unwrap().get("s").unwrap().output.lock().unwrap().is_subscribed());
+        // Unknown session → None / no panic.
+        assert_eq!(reg.subscribe_output("missing"), None);
+        reg.unsubscribe_output("missing");
     }
 
     fn state_of(reg: &FleetRegistry, id: &str) -> FleetSessionState {
@@ -397,6 +728,33 @@ mod tests {
         assert!(!reg.is_athena_owned("anon"));
         // Unknown id — the hallucinated/stale-session_id case the guard exists for.
         assert!(!reg.is_athena_owned("does-not-exist"));
+    }
+
+    #[test]
+    fn revive_to_running_pulls_resting_states_up_only() {
+        // Tool activity (PreToolUse/PostToolUse) must pull a session out of the
+        // resting states it could have been wrongly parked in, but never disturb
+        // Spawning/Running/terminal sessions.
+        let reg = FleetRegistry::default();
+        reg.insert(session("await", FleetSessionState::AwaitingInput, Some("cc-a")));
+        reg.insert(session("idle", FleetSessionState::Idle, Some("cc-i")));
+        reg.insert(session("stale", FleetSessionState::Stale, Some("cc-s")));
+        reg.insert(session("run", FleetSessionState::Running, Some("cc-r")));
+        reg.insert(session("spawn", FleetSessionState::Spawning, None));
+
+        // Resting → Running, and reports the transition.
+        assert!(reg.revive_to_running_on_activity("await"));
+        assert!(reg.revive_to_running_on_activity("idle"));
+        assert!(reg.revive_to_running_on_activity("stale"));
+        // No transition needed / not applicable → false (so the hook stays quiet).
+        assert!(!reg.revive_to_running_on_activity("run"));
+        assert!(!reg.revive_to_running_on_activity("spawn"));
+        assert!(!reg.revive_to_running_on_activity("missing"));
+
+        assert_eq!(state_of(&reg, "await"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "idle"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "stale"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "spawn"), FleetSessionState::Spawning);
     }
 
     #[test]

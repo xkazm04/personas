@@ -165,6 +165,25 @@ impl ActiveProcessRegistry {
         (old_pid, token)
     }
 
+    /// Atomically claim a single-process domain for a new run *without*
+    /// displacing an existing one. Returns `true` if no run was active and `id`
+    /// is now installed; `false` if a run is already in progress (the caller
+    /// should reject). The check-and-install happen under one lock acquisition,
+    /// so two concurrent starts can never both win — unlike a `get_id()`-then-
+    /// `set_id()` pair, which races across an `.await` and lets both pass the
+    /// guard, spawning duplicate tasks and silently discarding a result
+    /// (bug-hunt 2026-06-07 recipes #2).
+    pub fn try_begin(&self, domain: &str, id: String) -> bool {
+        let mut map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
+        let proc = map.entry(domain.to_string()).or_default();
+        if proc.id.is_some() {
+            return false;
+        }
+        proc.id = Some(id);
+        proc.target_ref = None;
+        true
+    }
+
     /// Get the active task ID for a domain.
     pub fn get_id(&self, domain: &str) -> Option<String> {
         let map = self.processes.lock().unwrap_or_else(|e| e.into_inner());
@@ -3011,6 +3030,9 @@ pub fn run() {
             commands::fleet::commands::fleet_spawn_session,
             commands::fleet::commands::fleet_write_input,
             commands::fleet::commands::fleet_resize_session,
+            commands::fleet::commands::fleet_subscribe_terminal,
+            commands::fleet::commands::fleet_unsubscribe_terminal,
+            commands::fleet::commands::fleet_terminal_previews,
             commands::fleet::commands::fleet_kill_session,
             commands::fleet::commands::fleet_list_sessions,
             commands::fleet::commands::fleet_remove_session,
