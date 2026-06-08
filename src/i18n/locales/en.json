@@ -169,7 +169,14 @@
     "quick_decision_position": "Decision {current} of {total}",
     "quick_suggested_actions": "Suggested",
     "search_personas_placeholder": "Search personas…",
-    "no_search_personas": "No personas match \"{query}\""
+    "no_search_personas": "No personas match \"{query}\"",
+    "channels_mode": "Channels",
+    "channels_mode_title": "Watch multiple team channels in parallel",
+    "channels_teams_label": "Teams",
+    "channels_all": "All",
+    "channels_none": "None",
+    "channels_no_teams": "No teams with a channel yet",
+    "channels_select_prompt": "Select teams above to watch their channels"
   },
   "common": {
     "unknown_error": "Unknown error",

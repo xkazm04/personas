@@ -176,6 +176,13 @@ export type Translations = {
     quick_suggested_actions: string;
     search_personas_placeholder: string;
     no_search_personas: string;
+    channels_mode: string;
+    channels_mode_title: string;
+    channels_teams_label: string;
+    channels_all: string;
+    channels_none: string;
+    channels_no_teams: string;
+    channels_select_prompt: string;
   };
   common: {
     unknown_error: string;

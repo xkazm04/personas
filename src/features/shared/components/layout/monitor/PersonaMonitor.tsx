@@ -9,7 +9,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Mail, Layers, ChevronDown, Wrench, Search } from 'lucide-react';
+import { X, Activity, Mail, Layers, ChevronDown, Wrench, Search, MessagesSquare } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -21,6 +21,7 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
+import { MonitorChannelGrid } from './MonitorChannelGrid';
 import {
   buildMonitorModel, SEVERITY_META,
   processStatusMeta, processStatusLabel, severityLabel, elapsedStr, severityBucket,
@@ -55,6 +56,10 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     () => buildMonitorModel(personas, reviews, unreadMessages, activeProcesses, healthMap),
     [personas, reviews, unreadMessages, activeProcesses, healthMap],
   );
+
+  // View mode — the fleet persona grid, or "channel mode" (multiple team
+  // channels watched in parallel).
+  const [viewMode, setViewMode] = useState<'fleet' | 'channels'>('fleet');
 
   // Persona fulltext search — replaces the old Dev-Tools project filter. The
   // monitor defaults to showing ALL personas; the search narrows the grid by
@@ -208,28 +213,30 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               {fleet.liveCostUsd > 0 && <span className="text-foreground">· ${fleet.liveCostUsd.toFixed(3)}</span>}
             </span>
           )}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t.monitor.search_personas_placeholder}
-              className="w-44 pl-8 pr-7 py-1 rounded-full bg-secondary/20 border border-primary/15 typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40 transition-colors"
-              data-testid="monitor-persona-search"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/80 transition-colors"
-                aria-label={t.monitor.clear_filter}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          {teams.length > 0 && (
+          {viewMode === 'fleet' && (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t.monitor.search_personas_placeholder}
+                className="w-44 pl-8 pr-7 py-1 rounded-full bg-secondary/20 border border-primary/15 typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40 transition-colors"
+                data-testid="monitor-persona-search"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/80 transition-colors"
+                  aria-label={t.monitor.clear_filter}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+          {viewMode === 'fleet' && teams.length > 0 && (
             <button
               type="button"
               onClick={() => setGroupBy(groupBy === 'group' ? 'none' : 'group')}
@@ -243,6 +250,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
             >
               <Layers className="w-3 h-3" />
               {t.monitor.group_by_toggle}
+            </button>
+          )}
+          {teams.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setViewMode((v) => (v === 'channels' ? 'fleet' : 'channels'))}
+              aria-pressed={viewMode === 'channels'}
+              title={t.monitor.channels_mode_title}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border typo-body-lg transition-colors ${
+                viewMode === 'channels'
+                  ? 'border-status-error/40 bg-status-error/15 text-status-error'
+                  : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
+              }`}
+            >
+              <MessagesSquare className="w-3 h-3" />
+              {t.monitor.channels_mode}
             </button>
           )}
           {SEVERITIES.map((sev) =>
@@ -273,10 +296,16 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         </div>
       </div>
 
-      {/* System band — app-level activity with no persona */}
-      <SystemBand processes={systemProcesses} now={now} />
+      {/* System band — app-level activity with no persona (fleet view only) */}
+      {viewMode === 'fleet' && <SystemBand processes={systemProcesses} now={now} />}
 
-      {/* Body — persona grid with the drawer layered over it */}
+      {/* Channel mode — multiple team channels in parallel */}
+      {viewMode === 'channels' ? (
+        <div className="relative z-10 flex-1 min-h-0">
+          <MonitorChannelGrid teams={teams} personas={personas} />
+        </div>
+      ) : (
+      /* Body — persona grid with the drawer layered over it */
       <div className="relative z-10 flex-1 min-h-0 overflow-hidden">
         <div className="absolute inset-0 overflow-y-auto px-5 py-4">
           {displayCards.length === 0 ? (
@@ -390,6 +419,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           )}
         </AnimatePresence>
       </div>
+      )}
 
       {/* Footer hint */}
       <div className="relative z-10 flex-shrink-0 h-9 px-6 flex items-center justify-between border-t border-primary/8 bg-secondary/10 typo-caption text-foreground">

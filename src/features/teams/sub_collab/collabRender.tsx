@@ -4,6 +4,20 @@ import type { Persona } from '@/lib/bindings/Persona';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { memberColor } from '../sub_redRoom/useRedRoomFeed';
 
+/**
+ * Minimal member shape the channel surfaces need (presence avatars +
+ * member-id filtering). `StudioMember` is structurally assignable to this, so
+ * the Studio passes its full members and the monitor's channel grid can pass
+ * lightweight per-team rows derived from personas.
+ */
+export interface ChannelMember {
+  memberId: string;
+  personaId: string;
+  name: string;
+  icon: string | null;
+  color: string | null;
+}
+
 /* ----------------------------------------------------------------------------
  * Shared render metadata for the Collab channel surfaces (baseline + the C5
  * flagship variants). Keeps the per-kind vocabulary in one place so the

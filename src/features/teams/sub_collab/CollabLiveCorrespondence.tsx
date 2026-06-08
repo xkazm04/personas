@@ -8,6 +8,7 @@ import { eventFamily, parsePayload } from '../sub_redRoom/useRedRoomFeed';
 import { useTeamChannel, parseDeliveries } from './useTeamChannel';
 import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
+  type ChannelMember,
 } from './collabRender';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ChannelDetailModal } from './ChannelDetailModal';
@@ -15,7 +16,6 @@ import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
 import { silentCatch } from '@/lib/silentCatch';
-import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -31,7 +31,7 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * inline team-review intervention; pending manual reviews surface via the
  * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
-export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; members: StudioMember[] }) {
+export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
   const personaIndex = usePersonaIndex();
   const { items, loaded, exhausted, posting, presence, loadOlder, sendDirective } = useTeamChannel(teamId);
   const [draft, setDraft] = useState('');
@@ -116,7 +116,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
           <Radio className="w-4 h-4 text-status-error" />
         </div>
         <div className="min-w-0">
-          <div className="typo-body-lg font-semibold text-foreground leading-tight">Team channel</div>
+          <div className="typo-body-lg font-semibold text-foreground leading-tight truncate">{teamName ?? 'Team channel'}</div>
           <div className="typo-caption text-foreground/50 leading-tight truncate">
             {workingNames.length > 0 ? `${workingNames.slice(0, 3).join(', ')} working…` : `${members.length} members`}
           </div>
