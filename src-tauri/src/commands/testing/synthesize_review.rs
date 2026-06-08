@@ -142,6 +142,8 @@ pub async fn synthesize_manual_review(
             context_data: context_data.clone(),
             suggested_actions: suggested_actions_json.clone(),
             use_case_id: use_case_id.clone(),
+            assignment_id: None,
+            step_id: None,
         },
     )?;
 

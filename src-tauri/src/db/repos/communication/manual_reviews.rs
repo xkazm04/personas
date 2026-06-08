@@ -1,4 +1,4 @@
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{
     CreateManualReviewInput, CreatePersonaMemoryInput, CreateReviewMessageInput,
@@ -27,6 +27,8 @@ fn row_to_review(row: &rusqlite::Row) -> rusqlite::Result<PersonaManualReview> {
         created_at: row.get("created_at")?,
         updated_at: row.get("updated_at")?,
         use_case_id: row.get::<_, Option<String>>("use_case_id").unwrap_or(None),
+        assignment_id: row.get::<_, Option<String>>("assignment_id").unwrap_or(None),
+        step_id: row.get::<_, Option<String>>("step_id").unwrap_or(None),
     })
 }
 
@@ -54,8 +56,9 @@ pub fn create(
         conn.execute(
             "INSERT INTO persona_manual_reviews
              (id, execution_id, persona_id, title, description, severity, status,
-              context_data, suggested_actions, created_at, updated_at, use_case_id)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9, ?10)",
+              context_data, suggested_actions, created_at, updated_at, use_case_id,
+              assignment_id, step_id)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'pending', ?7, ?8, ?9, ?9, ?10, ?11, ?12)",
             params![
                 id,
                 input.execution_id,
@@ -67,11 +70,31 @@ pub fn create(
                 input.suggested_actions,
                 now,
                 input.use_case_id,
+                input.assignment_id,
+                input.step_id,
             ],
         )?;
 
         get_by_id(pool, &id)
     })
+}
+
+/// Resolve the team step `(assignment_id, step_id)` an execution belongs to, if
+/// any (Phase 1 resume loop). Returns `None` for standalone (non-team) runs.
+pub fn get_team_step_by_execution(
+    pool: &DbPool,
+    execution_id: &str,
+) -> Result<Option<(String, String)>, AppError> {
+    let conn = pool.get()?;
+    let row = conn
+        .query_row(
+            "SELECT assignment_id, id FROM team_assignment_steps
+             WHERE execution_id = ?1 LIMIT 1",
+            params![execution_id],
+            |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+        )
+        .optional()?;
+    Ok(row)
 }
 
 pub fn get_by_persona(

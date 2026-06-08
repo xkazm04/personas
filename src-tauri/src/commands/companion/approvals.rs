@@ -705,6 +705,8 @@ async fn execute_resolve_human_review(
     manual_repo::update_status(&state.db, &review_id, status, comment.clone())?;
     if let Ok(review) = manual_repo::get_by_id(&state.db, &review_id) {
         crate::commands::design::reviews::publish_review_decision(&state.db, app, &review);
+        // Resume-loop (Phase 1) — same reaction as the user path.
+        crate::commands::design::reviews::react_to_review_decision(state, app, &review);
     }
 
     Ok(ExecuteResult::message(format!(

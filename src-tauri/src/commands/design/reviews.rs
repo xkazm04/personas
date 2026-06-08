@@ -1053,9 +1053,86 @@ pub fn update_manual_review_status(
         // resolved the review — P1b fixed the asymmetry where the Athena path
         // never published this.
         publish_review_decision(&state.db, &app, &review);
+
+        // Resume-loop (Phase 1): if this review gated a team step that is still
+        // held, an APPROVAL resumes the blocked assignment. Shared with the
+        // Athena path so resolution reacts identically regardless of who acted.
+        react_to_review_decision(&state, &app, &review);
     }
 
     Ok(review)
+}
+
+/// Resume-loop reaction (Phase 1). On an APPROVAL whose review links a team step
+/// that is genuinely held (assignment `awaiting_review`/`paused` + step
+/// `failed`), reset+re-run the step via the orchestrator's retry primitive so
+/// the blocked assignment advances. Advisory reviews (no link, or the run
+/// already moved on) are a safe no-op. Best-effort: failures are logged.
+///
+/// Conservative by design: only approve/resolve resume; reject is recorded but
+/// does not auto-abort (that mapping is a later increment). Called from both the
+/// user path (here) and Athena's `execute_resolve_human_review`.
+pub(crate) fn react_to_review_decision(
+    state: &State<'_, Arc<AppState>>,
+    app: &tauri::AppHandle,
+    review: &crate::db::models::PersonaManualReview,
+) {
+    use crate::db::models::ManualReviewStatus;
+    if !matches!(
+        review.status,
+        ManualReviewStatus::Approved | ManualReviewStatus::Resolved
+    ) {
+        return;
+    }
+    let (Some(assignment_id), Some(step_id)) =
+        (review.assignment_id.clone(), review.step_id.clone())
+    else {
+        return; // advisory review — nothing linked to resume
+    };
+
+    // Only resume when the work is genuinely held; otherwise the run moved on.
+    let held = {
+        match state.db.get() {
+            Ok(conn) => conn
+                .query_row(
+                    "SELECT 1 FROM team_assignments a
+                     JOIN team_assignment_steps s ON s.assignment_id = a.id
+                     WHERE a.id = ?1 AND s.id = ?2
+                       AND a.status IN ('awaiting_review','paused')
+                       AND s.status = 'failed' LIMIT 1",
+                    rusqlite::params![assignment_id, step_id],
+                    |_| Ok(()),
+                )
+                .is_ok(),
+            Err(_) => false,
+        }
+    };
+    if !held {
+        tracing::debug!(review_id = %review.id, "review resolved but linked step not held — no resume");
+        return;
+    }
+
+    let pool = Arc::new(state.db.clone());
+    let engine = state.engine.clone();
+    let embedding_manager =
+        crate::commands::teams::assignments::embedding_manager_for_state(state);
+    match crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
+        pool,
+        app.clone(),
+        engine,
+        embedding_manager,
+        &assignment_id,
+        &[step_id.clone()],
+    ) {
+        Ok(()) => tracing::info!(
+            review_id = %review.id, assignment_id = %assignment_id, step_id = %step_id,
+            "Resumed blocked team step on review approval"
+        ),
+        Err(e) => tracing::warn!(
+            review_id = %review.id, error = %e,
+            "Failed to resume blocked step on review approval"
+        ),
+    }
 }
 
 /// Publish a `review_decision.{status}` event to the persona event bus so

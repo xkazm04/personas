@@ -588,6 +588,13 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                 .as_ref()
                 .map(|a| serde_json::json!(a).to_string());
             let context_data_for_eval = effective_context_data.clone();
+            // Phase 1 (resume loop): if this run is a team step, link the review
+            // back to its blocked work so an approval can resume the assignment.
+            let (link_assignment_id, link_step_id) =
+                match review_repo::get_team_step_by_execution(ctx.pool, ctx.execution_id) {
+                    Ok(Some((a, s))) => (Some(a), Some(s)),
+                    _ => (None, None),
+                };
             match review_repo::create(
                 ctx.pool,
                 CreateManualReviewInput {
@@ -599,6 +606,8 @@ pub fn dispatch(ctx: &mut DispatchContext<'_>, msg: &ProtocolMessage) {
                     context_data: effective_context_data,
                     suggested_actions: suggested_actions_json.clone(),
                     use_case_id: ctx.use_case_id.map(|s| s.to_string()),
+                    assignment_id: link_assignment_id,
+                    step_id: link_step_id,
                 },
             ) {
                 Ok(r) => {

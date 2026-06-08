@@ -1141,6 +1141,8 @@ fn route_verdicts(
             context_data: Some(context_json.to_string()),
             suggested_actions: Some(suggested_json.to_string()),
             use_case_id: None,
+            assignment_id: None,
+            step_id: None,
         };
 
         if let Err(e) = manual_reviews::create(pool, input) {

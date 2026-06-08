@@ -231,14 +231,14 @@ pub async fn resolve_team_assignment_review(
 /// stays the same; the orchestrator falls back to llm_eval when the
 /// option is None.
 #[cfg(feature = "ml")]
-fn embedding_manager_for_state(
+pub(crate) fn embedding_manager_for_state(
     state: &State<'_, Arc<AppState>>,
 ) -> Option<Arc<crate::engine::embedder::EmbeddingManager>> {
     state.embedding_manager.clone()
 }
 
 #[cfg(not(feature = "ml"))]
-fn embedding_manager_for_state(
+pub(crate) fn embedding_manager_for_state(
     _state: &State<'_, Arc<AppState>>,
 ) -> Option<Arc<crate::engine::team_assignment_matching::EmbeddingManager>> {
     None

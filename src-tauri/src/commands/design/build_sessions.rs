@@ -925,6 +925,8 @@ pub(crate) async fn gate_setup_status_on_verification(
                 .to_string(),
             ),
             use_case_id: exec.use_case_id.clone(),
+            assignment_id: None,
+            step_id: None,
         };
         if let Err(e) = crate::db::repos::communication::manual_reviews::create(&state.db, input) {
             tracing::warn!(persona_id = %persona_id, error = %e, "promote: failed to raise build-verification review");

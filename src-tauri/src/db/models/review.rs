@@ -80,6 +80,13 @@ pub struct PersonaManualReview {
     /// execution's `use_case_id` at dispatch time. Phase C5.
     #[serde(default)]
     pub use_case_id: Option<String>,
+    /// Resume-loop link (Phase 1). When this review was emitted by a persona
+    /// running as a team step, these point back at the blocked work so an
+    /// approval can resume it. NULL for standalone (non-team) reviews.
+    #[serde(default)]
+    pub assignment_id: Option<String>,
+    #[serde(default)]
+    pub step_id: Option<String>,
 }
 
 /// Status-bucketed manual-review counts — the L0 (skeleton) layer of the overview layered-fetch contract (see docs/architecture/overview-layered-fetch.md).
@@ -125,6 +132,12 @@ pub struct CreateManualReviewInput {
     pub suggested_actions: Option<String>,
     #[serde(default)]
     pub use_case_id: Option<String>,
+    /// Resume-loop link (Phase 1) — populated at create when the originating
+    /// execution maps to a team step. NULL for standalone reviews.
+    #[serde(default)]
+    pub assignment_id: Option<String>,
+    #[serde(default)]
+    pub step_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

@@ -553,6 +553,8 @@ fn handle_failure_action(
                     .to_string(),
                 ),
                 use_case_id: None,
+                assignment_id: None,
+                step_id: None,
             };
             if let Err(e) = crate::db::repos::communication::manual_reviews::create(pool, input) {
                 tracing::warn!(

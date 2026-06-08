@@ -425,6 +425,24 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         tracing::info!("Added use_case_id column to persona_manual_reviews");
     }
 
+    // Phase 1 (resume loop): link a review back to the team step it gates, so an
+    // approval can resume the blocked assignment. Populated at create time via
+    // the execution_id → team_assignment_steps join; NULL for standalone runs.
+    let has_review_assignment_id: bool = conn
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('persona_manual_reviews') WHERE name = 'assignment_id'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+    if !has_review_assignment_id {
+        ddl_step(
+            conn,
+            "ALTER TABLE persona_manual_reviews ADD COLUMN assignment_id TEXT;
+             ALTER TABLE persona_manual_reviews ADD COLUMN step_id TEXT;
+             CREATE INDEX IF NOT EXISTS idx_pmr_assignment ON persona_manual_reviews(assignment_id);",
+        )?;
+        tracing::info!("Added assignment_id + step_id columns to persona_manual_reviews");
+    }
+
     let has_memory_use_case_id: bool = conn
         .prepare(
             "SELECT COUNT(*) FROM pragma_table_info('persona_memories') WHERE name = 'use_case_id'",

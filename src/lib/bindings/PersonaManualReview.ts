@@ -6,4 +6,10 @@ export type PersonaManualReview = { id: string, execution_id: string, persona_id
  * Capability (use case) attribution. Inherited from the originating
  * execution's `use_case_id` at dispatch time. Phase C5.
  */
-use_case_id: string | null, };
+use_case_id: string | null, 
+/**
+ * Resume-loop link (Phase 1). When this review was emitted by a persona
+ * running as a team step, these point back at the blocked work so an
+ * approval can resume it. NULL for standalone (non-team) reviews.
+ */
+assignment_id: string | null, step_id: string | null, };
