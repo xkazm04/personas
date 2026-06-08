@@ -7,16 +7,16 @@
 // bottom-right. Reviews and messages get their own badges. The global fleet
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Activity, Mail, FolderGit2, Layers, ChevronDown, Wrench, Check } from 'lucide-react';
+import { X, Activity, Mail, Layers, ChevronDown, Wrench, Search } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useSystemStore } from '@/stores/systemStore';
 import { useIsDarkTheme } from '@/stores/themeStore';
 import { usePipelineStore } from '@/stores/pipelineStore';
-import { useCodebasePersonas } from '@/hooks/sidebar/useCodebasePersonas';
 import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useMonitorData } from './useMonitorData';
@@ -56,15 +56,17 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     [personas, reviews, unreadMessages, activeProcesses, healthMap],
   );
 
-  // Dev Tools project filter — when a project is active in the footer
-  // picker, narrow the grid to personas wired to a codebase connector
-  // (mirrors the Agents sidebar's active-project section).
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const setActiveProject = useSystemStore((s) => s.setActiveProject);
-  const codebasePersonaIds = useCodebasePersonas();
+  // Persona fulltext search — replaces the old Dev-Tools project filter. The
+  // monitor defaults to showing ALL personas; the search narrows the grid by
+  // persona name, debounced for a smooth typing experience.
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, 200).trim().toLowerCase();
   const displayCards = useMemo(
-    () => (activeProjectId ? cards.filter((c) => codebasePersonaIds.has(c.personaId)) : cards),
-    [cards, activeProjectId, codebasePersonaIds],
+    () =>
+      debouncedSearch
+        ? cards.filter((c) => c.personaName.toLowerCase().includes(debouncedSearch))
+        : cards,
+    [cards, debouncedSearch],
   );
 
   // Group-by toggle — when enabled, partition cards by their persona's
@@ -206,7 +208,27 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               {fleet.liveCostUsd > 0 && <span className="text-foreground">· ${fleet.liveCostUsd.toFixed(3)}</span>}
             </span>
           )}
-          <MonitorProjectPicker />
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground/40 pointer-events-none" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t.monitor.search_personas_placeholder}
+              className="w-44 pl-8 pr-7 py-1 rounded-full bg-secondary/20 border border-primary/15 typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40 transition-colors"
+              data-testid="monitor-persona-search"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground/40 hover:text-foreground/80 transition-colors"
+                aria-label={t.monitor.clear_filter}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           {teams.length > 0 && (
             <button
               type="button"
@@ -259,10 +281,10 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
         <div className="absolute inset-0 overflow-y-auto px-5 py-4">
           {displayCards.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center gap-3 typo-body text-foreground">
-              {activeProjectId ? t.monitor.no_project_personas : t.monitor.no_personas}
-              {activeProjectId && (
+              {debouncedSearch ? tx(t.monitor.no_search_personas, { query: search.trim() }) : t.monitor.no_personas}
+              {debouncedSearch && (
                 <button
-                  onClick={() => void setActiveProject(null)}
+                  onClick={() => setSearch('')}
                   className="px-3 py-1.5 rounded-modal border border-primary/15 bg-secondary/20 typo-heading font-medium text-foreground hover:bg-secondary/40 transition-colors"
                 >
                   {t.monitor.clear_filter}
@@ -632,99 +654,5 @@ function AttentionBadge({ label, count, className, icon: Icon, onClick }: Attent
   );
 }
 
-// ---------------------------------------------------------------------------
-// Dev Tools project picker (header) — mirrors the footer picker so the grid
-// can be scoped to a codebase project without leaving the Monitor. Opens
-// downward (header is z-20 so the menu floats over the grid).
-// ---------------------------------------------------------------------------
-
-function MonitorProjectPicker() {
-  const { t } = useTranslation();
-  const projects = useSystemStore((s) => s.projects);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
-  const setActiveProject = useSystemStore((s) => s.setActiveProject);
-  const fetchProjects = useSystemStore((s) => s.fetchProjects);
-  const [open, setOpen] = useState(false);
-  const loadedRef = useRef(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-    void fetchProjects();
-  }, [fetchProjects]);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  const activeProject = useMemo(
-    () => projects.find((p) => p.id === activeProjectId) ?? null,
-    [projects, activeProjectId],
-  );
-
-  if (projects.length === 0) return null;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((o) => !o)}
-        data-testid="monitor-project-picker"
-        aria-label={t.monitor.project_filter}
-        title={activeProject?.root_path ?? t.monitor.project_filter}
-        className={`flex items-center gap-1.5 h-8 px-2.5 rounded-full border typo-body-lg transition-colors max-w-[180px] ${
-          activeProject
-            ? 'border-indigo-500/40 bg-indigo-500/10 text-indigo-300'
-            : 'border-primary/15 bg-secondary/20 text-foreground hover:bg-secondary/30'
-        }`}
-      >
-        <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="truncate min-w-0">{activeProject?.name ?? t.monitor.project_filter}</span>
-        <ChevronDown className={`w-3 h-3 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-
-      {open && (
-        <div className="absolute top-full right-0 mt-2 w-64 rounded-modal border border-primary/15 bg-background shadow-elevation-4 p-2 z-30">
-          <div className="max-h-64 overflow-y-auto">
-            <button
-              onClick={() => { void setActiveProject(null); setOpen(false); }}
-              className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card typo-caption transition-colors text-left ${
-                activeProjectId === null ? 'bg-indigo-500/10 text-indigo-300' : 'text-foreground hover:bg-secondary/40'
-              }`}
-            >
-              <X className="w-3.5 h-3.5 flex-shrink-0" />
-              <span className="flex-1 min-w-0 truncate">{t.chrome.project_picker_none}</span>
-              {activeProjectId === null && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
-            </button>
-            {projects.map((p) => {
-              const isActive = p.id === activeProjectId;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => { void setActiveProject(p.id); setOpen(false); }}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-card typo-caption transition-colors text-left ${
-                    isActive ? 'bg-indigo-500/10 text-indigo-300' : 'text-foreground hover:bg-secondary/40'
-                  }`}
-                >
-                  <FolderGit2 className="w-3.5 h-3.5 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <div className="truncate">{p.name}</div>
-                    {p.root_path && <div className="text-[10px] text-foreground truncate">{p.root_path}</div>}
-                  </div>
-                  {isActive && <Check className="w-3 h-3 text-indigo-300 flex-shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default PersonaMonitor;

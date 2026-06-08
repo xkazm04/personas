@@ -167,7 +167,9 @@
     "live_chip": "{running} live",
     "live_chip_title": "{tools} tool calls in flight",
     "quick_decision_position": "Decision {current} of {total}",
-    "quick_suggested_actions": "Suggested"
+    "quick_suggested_actions": "Suggested",
+    "search_personas_placeholder": "Search personas…",
+    "no_search_personas": "No personas match \"{query}\""
   },
   "common": {
     "unknown_error": "Unknown error",

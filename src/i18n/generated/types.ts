@@ -174,6 +174,8 @@ export type Translations = {
     live_chip_title: string;
     quick_decision_position: string;
     quick_suggested_actions: string;
+    search_personas_placeholder: string;
+    no_search_personas: string;
   };
   common: {
     unknown_error: string;
