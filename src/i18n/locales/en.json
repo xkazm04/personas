@@ -183,7 +183,11 @@
     "channels_layout_timeline_hint": "All teams merged into one chronological stream",
     "channels_combined_title": "All teams",
     "channels_combined_subtitle": "Merged cross-team channel",
-    "channels_combined_quiet": "Quiet so far — activity from the selected teams lands here."
+    "channels_combined_quiet": "Quiet so far — activity from the selected teams lands here.",
+    "channels_jump_newest": "Newest",
+    "channels_filter_all": "All",
+    "channels_filter_signal": "Signal",
+    "channels_filter_alerts": "Alerts"
   },
   "common": {
     "unknown_error": "Unknown error",

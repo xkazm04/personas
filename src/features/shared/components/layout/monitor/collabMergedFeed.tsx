@@ -39,6 +39,24 @@ export interface TaggedItem {
   team: FeedTeam;
 }
 
+/** Noise filter for the merged stream. */
+export type FeedFilter = 'all' | 'signal' | 'alerts';
+
+/** Step kinds that are routine machine churn — hidden in `signal`/`alerts`. */
+const ROUTINE_STEPS = new Set(['step_running', 'step_done', 'step_skipped', 'created', 'paused', 'status_done']);
+/** Step kinds that demand attention — the only ones kept in `alerts`. */
+const ALERT_STEPS = new Set(['step_failed', 'status_awaiting_review', 'qa_changes_requested_rework']);
+
+/** True when an item should be shown under the given filter. */
+export function matchesFilter(item: TeamChannelItem, filter: FeedFilter): boolean {
+  if (filter === 'all') return true;
+  const isAlert = item.kind === 'step' && ALERT_STEPS.has(item.label);
+  if (filter === 'alerts') return isAlert || item.kind === 'directive';
+  // 'signal' — drop routine step churn, keep everything with human meaning.
+  if (item.kind === 'step' && ROUTINE_STEPS.has(item.label)) return false;
+  return true;
+}
+
 type PresenceMap = Map<string, 'working' | 'waiting'>;
 
 /** Hidden feeder — one per team — that reports its channel items + presence. */

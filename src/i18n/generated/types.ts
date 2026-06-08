@@ -190,6 +190,10 @@ export type Translations = {
     channels_combined_title: string;
     channels_combined_subtitle: string;
     channels_combined_quiet: string;
+    channels_jump_newest: string;
+    channels_filter_all: string;
+    channels_filter_signal: string;
+    channels_filter_alerts: string;
   };
   common: {
     unknown_error: string;
