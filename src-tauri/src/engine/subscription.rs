@@ -1420,7 +1420,20 @@ impl ReactiveSubscription for GoalAdvanceSubscription {
         };
 
         let mut started = 0usize;
-        for (team_id, goal_id) in candidates.into_iter().take(GOAL_ADVANCE_MAX_PER_TICK) {
+        // X2 fairness: advance AT MOST ONE goal per team per tick (breadth over
+        // depth). Candidates are ordered oldest-goal-first; without this, a team
+        // with several stale goals consumed the whole per-tick budget while other
+        // teams starved (the day-run showed 2 teams hogging ~60% while 3 starved).
+        // One-per-team spreads the budget across distinct teams; the 120-min
+        // cooldown then rotates which teams advance on subsequent ticks.
+        let mut seen_teams: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for (team_id, goal_id) in candidates.into_iter() {
+            if started >= GOAL_ADVANCE_MAX_PER_TICK {
+                break;
+            }
+            if !seen_teams.insert(team_id.clone()) {
+                continue; // a goal for this team was already attempted this tick
+            }
             match crate::engine::goal_advance::advance_goal(
                 &self.pool,
                 &self.app,
@@ -1908,12 +1921,17 @@ fn find_promotable_ideas(pool: &DbPool) -> Result<Vec<PromotableIdea>, crate::er
                AND g.status NOT IN ('done','completed')
                AND g.progress < 100
            )
-           AND i.id = (
+           AND i.id IN (
              SELECT i2.id FROM dev_ideas i2
              WHERE i2.project_id = i.project_id AND i2.status = 'pending'
              ORDER BY (i2.priority IS NULL) ASC, i2.priority ASC,
                       COALESCE(i2.impact,0) DESC, COALESCE(i2.risk,99) ASC, COALESCE(i2.effort,99) ASC, i2.created_at ASC
-             LIMIT 1
+             -- X1: promote the TOP 3 (not 1) per idling project so the project
+             -- holds a small set of coexisting open goals — the Product
+             -- Strategist's triage can then RELATE them (depends/follows). With
+             -- one-at-a-time promotion the relate feature was starved: no project
+             -- ever held >=2 open goals, so 0 relations were ever written.
+             LIMIT 3
            )
          ORDER BY i.project_id",
     )?;
