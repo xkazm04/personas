@@ -7,7 +7,7 @@
 clear approvals / human-reviews / incidents hands-free.
 
 ## The goal (user's words, distilled)
-1. A **bubble above the orb** that speaks (TTS) + shows text and **requests a DECISION** with numbered options ("Shall I deploy? 1) yes 2) no").
+1. A **bubble above the orb** that shows text (markdown — bullets/bold) and **requests a DECISION** with numbered options ("Shall I deploy? 1) yes 2) no"). TTS is **not** auto-spoken on surface — only on `0` (Explain/Recommend), see Slice 6.
 2. User answers by **clicking** an option OR by a **`;` leader-key then a digit** (numeric decision syntax). **`0` = Athena explains the options + gives her recommendation**, then re-asks.
 3. The same surface presents **proactive incidents** (open high/critical `audit_incidents` — the P2.5 thread) and **pending approvals / human-reviews** as these numbered decisions.
 4. Athena can **highlight/navigate** the app while asking (reuse the guided-walkthrough glide+glow).
@@ -75,8 +75,8 @@ When the user picks `0` (click or key), do NOT clear the decision: speak/show `r
 ### Slice 5 — `;` leader-key numeric syntax
 In `AthenaOrbLayer.tsx`'s raw keydown handler (next to the Shift+A block): a small leader state machine via `useRef`. When `pendingDecision != null` and the user presses `;` (and not in a typing target), arm a 2s window; the next `0-9` resolves: `1..n` → `options[n-1].run()` + clear; `0` → explain (slice 4). `Esc` disarms. Mirror the guard pattern from `QuickReplies`/`WorkspaceShortcuts` (skip when `tagName` INPUT/TEXTAREA or `isContentEditable`).
 
-### Slice 6 — TTS speaks the decision prompt
-The walkthrough narration is NOT spoken today. When a `pendingDecision` becomes active AND `voiceActive`, speak `prompt` (and on `0`, speak `recommendation`). Cleanest: a `CompanionPanel`-owned reaction (it has the voice context) that watches `pendingDecision` and calls the same path as `playProgressClip` (or `synthesize`+`play`). Best-effort; silent when voice off. Keep the bubble fully functional without it.
+### Slice 6 — TTS speaks ONLY the Explain/Recommend response
+The walkthrough narration is NOT spoken today. TTS does **not** auto-read the decision `prompt`/description when the bubble surfaces — that text is on-screen to read, and auto-reading a full review description over the user was noise. Athena speaks **only** when the user picks `0` (Explain/Recommend): a `CompanionPanel`-owned reaction watches `decisionExplained` and speaks the `recommendation` via `playProgressClip`, with markdown stripped first (`stripMarkdownForSpeech`) so she never reads `**`/`-`/`#` aloud. Best-effort; silent when voice off. The bubble itself renders `prompt`/`recommendation` as **markdown** (bullets + bold), so a well-formatted `request_review` description is legible in the bubble too.
 
 ### Slice 7 — spoken-number answering
 When `pendingDecision != null`, branch the STT result in `useHoldToTalk` (before `setVoiceTurnRequest` at ~L99): parse the transcript for a number word/digit (`"one"|"1"|… "zero"|"explain"|"yes"|"no"`). If it maps to an option (or 0), resolve the decision instead of firing a chat turn. Small pure `parseSpokenDecision(transcript, optionCount)` helper + unit test. If it doesn't parse to a decision answer, fall through to the normal chat turn.

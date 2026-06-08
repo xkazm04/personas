@@ -105,6 +105,23 @@ const IN_TURN_TOOL_THRESHOLD_MS = 6000;
 
 const ONE_DAY_MS = 86_400_000;
 
+/** Flatten markdown to speakable plain text so TTS never reads `**` / `-` / `#`
+ *  aloud. Lightweight (no parser) — strips the common inline/structural marks. */
+function stripMarkdownForSpeech(md: string): string {
+  return md
+    .replace(/```[\s\S]*?```/g, ' ')           // fenced code
+    .replace(/`([^`]+)`/g, '$1')                 // inline code
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')   // links/images → text
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')          // headings
+    .replace(/^\s*[-*+]\s+/gm, '')               // bullet markers
+    .replace(/^\s*\d+\.\s+/gm, '')               // ordered markers
+    .replace(/[*_]{1,3}([^*_]+)[*_]{1,3}/g, '$1') // bold/italic
+    .replace(/[*_~>]/g, '')                       // stray marks
+    .replace(/\n{2,}/g, '. ')                     // paragraph breaks → pause
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 /** Same calendar day in local time. */
 function sameLocalDay(a: Date, b: Date): boolean {
   return (
@@ -1653,34 +1670,26 @@ function Body(props: BodyProps) {
     void send(req);
   }, [voiceTurnRequest, streaming, send]);
 
-  // Slice 6 — speak the hands-free decision aloud. When a decision becomes
-  // active, Athena reads its `prompt`; when the user picks `0` (explain), she
-  // reads the `recommendation`. Best-effort via the same one-shot progress
-  // channel as acks/heartbeats (`playProgressClip` no-ops when voice is off),
-  // so the bubble stays fully usable text-only. Keyed on the decision id (not
-  // the object) so each prompt speaks exactly once, never on every render.
+  // Slice 6 — speak the hands-free decision aloud ONLY on Explain/Recommend.
+  // The decision text/description is NOT auto-read when the bubble surfaces
+  // (it's on-screen to read); Athena speaks only when the user picks `0`
+  // (explain), reading the `recommendation`. Markdown is stripped first so she
+  // never reads `**` / `-` aloud. Best-effort via the one-shot progress channel
+  // (`playProgressClip` no-ops when voice is off). Keyed on the decision id so
+  // the recommendation speaks exactly once, never on every render.
   const decisionId = useCompanionStore((s) => s.pendingDecision?.id ?? null);
   const decisionExplained = useCompanionStore((s) => s.decisionExplained);
-  const spokenDecisionPromptRef = useRef<string | null>(null);
   const spokenRecommendationForRef = useRef<string | null>(null);
   useEffect(() => {
     if (!decisionId) {
-      spokenDecisionPromptRef.current = null;
       spokenRecommendationForRef.current = null;
       return;
     }
-    if (spokenDecisionPromptRef.current !== decisionId) {
-      spokenDecisionPromptRef.current = decisionId;
-      const prompt = useCompanionStore.getState().pendingDecision?.prompt;
-      if (prompt) playProgressClip(prompt);
-    }
-  }, [decisionId, playProgressClip]);
-  useEffect(() => {
-    if (!decisionId || !decisionExplained) return;
+    if (!decisionExplained) return;
     if (spokenRecommendationForRef.current === decisionId) return;
     spokenRecommendationForRef.current = decisionId;
     const rec = useCompanionStore.getState().pendingDecision?.recommendation;
-    if (rec) playProgressClip(rec);
+    if (rec) playProgressClip(stripMarkdownForSpeech(rec));
   }, [decisionId, decisionExplained, playProgressClip]);
 
   // Wrench-send: pipe the textarea content into the self-improve loop.

@@ -106,10 +106,10 @@ To flag something for human review, output a JSON object on its own line:
 ```
 Fields:
 - `title` (required): Short title describing the review item
-- `description` (optional): Detailed description
+- `description` (optional): Detailed description — write it as concise MARKDOWN (it is rendered as markdown to the user): a one-line lede, then a short bullet list with the key facts in **bold**. Prefer 3–6 bullets over a paragraph.
 - `severity` (optional): "low", "medium", "high", "critical" (default: "medium")
 - `context_data` (optional): Additional context string
-- `suggested_actions` (optional): Array of suggested resolution steps
+- `suggested_actions` (optional): Array of distinct decision branches, each a short imperative phrase (each renders as a one-click button)
 
 "#;
 

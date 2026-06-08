@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Lightbulb } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
@@ -134,32 +135,27 @@ export function OrbDecisionBubble() {
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} w-[280px] max-w-[80vw] rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3`}
+      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} w-[336px] max-w-[80vw] rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5`}
       style={pos}
     >
       <span className="pointer-events-none absolute h-0 w-0" style={tail} aria-hidden />
 
-      <p
-        data-testid="athena-decision-prompt"
-        className="typo-body text-foreground/90 leading-relaxed"
-      >
-        {decision.prompt}
-      </p>
+      <div data-testid="athena-decision-prompt">
+        <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90 leading-relaxed" />
+      </div>
 
       {/* Slice 4 — `0` was picked: show the recommendation above the options. */}
       {explained && decision.recommendation && (
         <div
           data-testid="athena-decision-recommendation"
-          className="mt-2 rounded-input border border-primary/20 bg-primary/5 px-2.5 py-2"
+          className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
         >
-          <p className="typo-caption font-medium text-primary">
+          <p className="typo-label uppercase tracking-wider font-semibold text-primary">
             {t.plugins.companion.decision_recommend_prefix}
           </p>
-          <p className="mt-0.5 typo-caption text-foreground/85 leading-relaxed">
-            {decision.recommendation}
-          </p>
+          <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90 leading-relaxed" />
           {decision.detail && (
-            <p className="mt-1 typo-caption text-foreground/60 leading-relaxed">
+            <p className="mt-1.5 typo-caption text-foreground/60 leading-relaxed">
               {decision.detail}
             </p>
           )}

@@ -65,7 +65,7 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
       transition={{ duration: 0.14 }}
       aria-label={tx(t.monitor.quick_aria, { count: total })}
       data-testid="quick-answer-popover"
-      className="fixed top-[var(--titlebar-height,40px)] right-2 z-50 w-[480px] max-w-[calc(100vw-1rem)] max-h-[76vh] flex flex-col rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
+      className="fixed top-[var(--titlebar-height,40px)] right-2 z-50 w-[576px] max-w-[calc(100vw-1rem)] max-h-[80vh] flex flex-col rounded-modal border border-primary/15 bg-background shadow-elevation-4 overflow-hidden"
     >
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between gap-2 px-4 h-12 border-b border-primary/10 bg-secondary/15">
