@@ -153,7 +153,7 @@ not possible** (`conversation-orchestration.md` capability inventory). C's
 | **C2** | ◑ **PARTIAL** — write adapter (companion_post_team_message + post_team_message approval op on the autoapprove allowlist) + @athena composer summon DONE; LLM reconciliation→channel deferred (needs a real async Athena turn) | ~1 week |
 | **C3** | ✅ **DONE** — Director bridge (verdict→channel addressed+injected with receipts, channel-aware context digest, opt-in storm-trigger subscription) | days |
 | **C4** | ✅ **DONE** — soft-pause: `paused` status exits the tick loop (in-flight finishes), resume re-spawns; Pause/Resume on the Flight Deck | days |
-| **C5** | **Flagship UI polish** (§9) — header band, author voice, threading, intervention affordances, demo | ~1 week |
+| **C5** | ◑ **IN PROGRESS** — header band, two-row author voice, reply threading, inline review/failure intervention, designed empty state DONE (Correspondence is the winner); remaining: i18n extraction + a11y pass + /record-demo at consolidation | ~1 week |
 
 ## 8. Decisions (resolved 2026-06-07)
 
