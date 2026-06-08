@@ -445,10 +445,16 @@ fn reaper_loop(
             if status.success() {
                 Some(0i32)
             } else {
-                // ExitStatus::exit_code is u32 on windows; squeeze into i32
-                // saturating for the UI. Unsigned >2^31 is unreachable in practice.
+                // ExitStatus::exit_code is u32 on Windows and is frequently an
+                // NTSTATUS (e.g. 0xC0000142 STATUS_DLL_INIT_FAILED when a
+                // console child can't initialize). REINTERPRET the bits as i32
+                // rather than saturating to i32::MAX — the old saturation threw
+                // the real code away and rendered every abnormal exit as the
+                // meaningless "code 2147483647", which is exactly why an exit
+                // read as "vanished without warning". The bit pattern round-
+                // trips back to the OS code (`as u32`) for display.
                 let code: u32 = status.exit_code();
-                Some(code.min(i32::MAX as u32) as i32)
+                Some(code as i32)
             }
         }
         Err(e) => {
@@ -456,6 +462,23 @@ fn reaper_loop(
             None
         }
     };
+
+    // Always log WHY a session ended. Previously the reaper logged nothing on a
+    // normal-looking exit, so an abnormal death (crash / spawn-time
+    // STATUS_DLL_INIT_FAILED) left no breadcrumb at all.
+    match exit_code {
+        Some(0) => tracing::debug!(session_id = %session_id, "fleet session exited cleanly"),
+        Some(c) => tracing::warn!(
+            session_id = %session_id,
+            code = c,
+            code_hex = %format!("0x{:08X}", c as u32),
+            "fleet session exited with a non-zero code"
+        ),
+        None => tracing::warn!(
+            session_id = %session_id,
+            "fleet session exited with no status (signal / crash)"
+        ),
+    }
 
     // Hibernation path: the operator killed the process to free it, not a real
     // death. `hibernate` already set state = Hibernated; leave it there, don't

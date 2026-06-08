@@ -208,6 +208,36 @@ impl FleetRegistry {
         false
     }
 
+    /// Promote a session to `Running` when concrete activity proves it's
+    /// working: a tool invocation (PreToolUse/PostToolUse) is incompatible with
+    /// sitting idle at a prompt waiting for the user. Transitions only out of
+    /// the resting states (`AwaitingInput` / `Idle` / `Stale`); leaves
+    /// `Spawning` / `Running` / `Exited` / `Hibernated` untouched. Returns
+    /// `true` only when it actually changed state, so the hook caller emits a
+    /// single refresh instead of one per tool call (PreToolUse is high-volume).
+    ///
+    /// This is the immediate corrector for the most common false-`AwaitingInput`:
+    /// Claude Code fires its idle "waiting for input" Notification during a long
+    /// tool wait or model-latency gap, parking an in-progress session — and
+    /// since tool hooks no longer flow through the lifecycle state machine,
+    /// nothing pulled it back. The next tool call now does, here. Regardless of
+    /// transition, the call refreshes `last_activity_ms` (a tool firing is
+    /// fresh activity) so the staleness ticker sees the session as alive.
+    pub fn revive_to_running_on_activity(&self, session_id: &str) -> bool {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        let Some(session) = map.get_mut(session_id) else { return false; };
+        session.last_activity_ms = now_ms();
+        if matches!(
+            session.state,
+            FleetSessionState::AwaitingInput | FleetSessionState::Idle | FleetSessionState::Stale
+        ) {
+            session.state = FleetSessionState::Running;
+            session.state_reason = Some("Tool activity — session is working".into());
+            return true;
+        }
+        false
+    }
+
     /// Records that the child has exited. Updates state and clears the
     /// PTY resource slots. Called from the reaper task.
     pub fn mark_exited(&self, session_id: &str, exit_code: Option<i32>) {
@@ -218,7 +248,7 @@ impl FleetRegistry {
             session.last_activity_ms = now_ms();
             session.state_reason = Some(match exit_code {
                 Some(0) => "Exited cleanly".to_string(),
-                Some(c) => format!("Exited with code {c}"),
+                Some(c) => fleet_exit_reason(c),
                 None => "Exited (signal or crash)".to_string(),
             });
             if let Ok(mut w) = session.writer.lock() { *w = None; }
@@ -331,6 +361,29 @@ impl FleetRegistry {
     }
 }
 
+/// Human-readable reason for a non-zero Fleet child exit. Renders the OS code
+/// in hex (the form Windows documents NTSTATUS in) and special-cases the codes
+/// we've actually seen, so the UI can explain an exit the user would otherwise
+/// read as "vanished without warning" (the bare decimal of an NTSTATUS is
+/// meaningless to a human).
+fn fleet_exit_reason(code: i32) -> String {
+    let raw = code as u32;
+    let hex = format!("0x{raw:08X}");
+    match raw {
+        // STATUS_DLL_INIT_FAILED — on Windows this is overwhelmingly a console
+        // allocation failure: a GUI process spawned too many console children
+        // and the window-station desktop heap is exhausted. See
+        // `companion::session::apply_no_console_window`.
+        0xC000_0142 => format!(
+            "Exited with code {hex} (Windows could not start the process — \
+             usually too many CLI sessions open at once; close some and retry)"
+        ),
+        // STATUS_CONTROL_C_EXIT — Ctrl-C / console closed.
+        0xC000_013A => format!("Exited with code {hex} (interrupted / console closed)"),
+        _ => format!("Exited with code {code} ({hex})"),
+    }
+}
+
 /// Wall-clock ms since UNIX epoch. Used for `last_activity_ms` /
 /// `created_at_ms`.
 pub fn now_ms() -> i64 {
@@ -397,6 +450,33 @@ mod tests {
         assert!(!reg.is_athena_owned("anon"));
         // Unknown id — the hallucinated/stale-session_id case the guard exists for.
         assert!(!reg.is_athena_owned("does-not-exist"));
+    }
+
+    #[test]
+    fn revive_to_running_pulls_resting_states_up_only() {
+        // Tool activity (PreToolUse/PostToolUse) must pull a session out of the
+        // resting states it could have been wrongly parked in, but never disturb
+        // Spawning/Running/terminal sessions.
+        let reg = FleetRegistry::default();
+        reg.insert(session("await", FleetSessionState::AwaitingInput, Some("cc-a")));
+        reg.insert(session("idle", FleetSessionState::Idle, Some("cc-i")));
+        reg.insert(session("stale", FleetSessionState::Stale, Some("cc-s")));
+        reg.insert(session("run", FleetSessionState::Running, Some("cc-r")));
+        reg.insert(session("spawn", FleetSessionState::Spawning, None));
+
+        // Resting → Running, and reports the transition.
+        assert!(reg.revive_to_running_on_activity("await"));
+        assert!(reg.revive_to_running_on_activity("idle"));
+        assert!(reg.revive_to_running_on_activity("stale"));
+        // No transition needed / not applicable → false (so the hook stays quiet).
+        assert!(!reg.revive_to_running_on_activity("run"));
+        assert!(!reg.revive_to_running_on_activity("spawn"));
+        assert!(!reg.revive_to_running_on_activity("missing"));
+
+        assert_eq!(state_of(&reg, "await"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "idle"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "stale"), FleetSessionState::Running);
+        assert_eq!(state_of(&reg, "spawn"), FleetSessionState::Spawning);
     }
 
     #[test]

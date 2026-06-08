@@ -32,6 +32,21 @@ fn growth_map() -> &'static Mutex<HashMap<String, (u64, i64)>> {
     TRANSCRIPT_GROWTH.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+/// Per-session transcript-size baseline, captured the first tick a session is
+/// seen in `AwaitingInput`. If a later tick finds the transcript has grown PAST
+/// this baseline, the session kept producing output after the await flag was
+/// raised — i.e. the `AwaitingInput` was spurious (Claude Code fires its idle
+/// "waiting for input" Notification during long tool waits / model-latency gaps)
+/// — so we revive it to `Running`. Snapshotting on the first AwaitingInput tick
+/// rather than at the hook deliberately sidesteps transcript-flush races: by the
+/// next tick, the assistant message that triggered a *legitimate* await (e.g. an
+/// AskUserQuestion) is already on disk and folded into the baseline, so a
+/// genuinely-waiting session shows no growth past it and is correctly left alone.
+static AWAITING_BASELINE: OnceLock<Mutex<HashMap<String, u64>>> = OnceLock::new();
+fn awaiting_baseline() -> &'static Mutex<HashMap<String, u64>> {
+    AWAITING_BASELINE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
 /// A session that hasn't seen activity in this long is flagged Stale.
 /// 5 minutes — long enough that a thoughtful user typing slowly doesn't
 /// trip it, short enough that a forgotten window is flagged before the
@@ -188,11 +203,15 @@ fn tick_once(app: &AppHandle) {
     // `last_grew_ms` per session is the authoritative freshness signal.
     let mut grew_ids: HashSet<String> = HashSet::new();
     let mut last_grew: HashMap<String, i64> = HashMap::new();
+    // Current transcript size per session this tick — feeds the AwaitingInput
+    // baseline/revive check in Pass C.
+    let mut sizes: HashMap<String, u64> = HashMap::new();
     {
         let mut g = growth_map().lock().unwrap_or_else(|e| e.into_inner());
         for (id, csid) in &snaps {
             let Some(csid) = csid else { continue };
             let Some(size) = transcript_size(csid) else { continue };
+            sizes.insert(id.clone(), size);
             let entry = g.entry(id.clone()).or_insert((size, now));
             if size > entry.0 {
                 entry.0 = size;
@@ -210,9 +229,14 @@ fn tick_once(app: &AppHandle) {
     let mut newly_stale: Vec<String> = Vec::new();
     let mut revived: Vec<String> = Vec::new();
     {
+        // Lock the await-baseline map alongside the registry (consistent order:
+        // baseline before registry) so the AwaitingInput revive check is atomic
+        // with the state mutation.
+        let mut base = awaiting_baseline().lock().unwrap_or_else(|e| e.into_inner());
         let mut map = registry().sessions.lock().unwrap_or_else(|e| e.into_inner());
         for session in map.values_mut() {
             if matches!(session.state, FleetSessionState::Exited | FleetSessionState::Hibernated) {
+                base.remove(&session.id);
                 continue;
             }
             // Never-attached spawn: still `Spawning`, no Claude session id ever
@@ -232,6 +256,7 @@ fn tick_once(app: &AppHandle) {
                 session.state_reason = Some(
                     "Claude never attached — the folder may need trust approval, or claude failed to start. Safe to kill.".into(),
                 );
+                base.remove(&session.id);
                 newly_stale.push(session.id.clone());
                 continue;
             }
@@ -239,6 +264,39 @@ fn tick_once(app: &AppHandle) {
             if grew {
                 session.last_activity_ms = now;
             }
+
+            // AwaitingInput robustness — revive on growth that happens strictly
+            // AFTER the await began. The first tick that sees AwaitingInput
+            // records a transcript-size baseline (the question text that may
+            // justify a *legitimate* await is already flushed by then); any
+            // later tick whose transcript exceeds that baseline proves the
+            // session kept working, so the await was spurious → back to Running.
+            // A genuinely-waiting session never grows past the baseline and is
+            // left untouched (AwaitingInput is also exempt from flat-log
+            // staleness below). This is the no-tool backstop to the immediate
+            // PreToolUse corrector in `hooks::receive_hook`.
+            if matches!(session.state, FleetSessionState::AwaitingInput) {
+                if let Some(&size) = sizes.get(&session.id) {
+                    match base.get(&session.id).copied() {
+                        None => {
+                            base.insert(session.id.clone(), size);
+                        }
+                        Some(baseline) if size > baseline => {
+                            session.state = FleetSessionState::Running;
+                            session.state_reason =
+                                Some("Transcript grew after awaiting input — still working".into());
+                            session.last_activity_ms = now;
+                            base.remove(&session.id);
+                            revived.push(session.id.clone());
+                        }
+                        _ => {}
+                    }
+                }
+                continue;
+            }
+            // Not (any longer) awaiting input → drop any baseline we held.
+            base.remove(&session.id);
+
             // Freshness = the MOST RECENT of (a) real transcript growth and
             // (b) hook-driven activity. Using growth alone marked a working
             // session Stale during a long tool op (hooks firing, transcript
@@ -268,6 +326,9 @@ fn tick_once(app: &AppHandle) {
                 _ => {}
             }
         }
+        // Drop baselines for sessions that left the registry entirely (the
+        // in-loop removals already cover non-AwaitingInput live sessions).
+        base.retain(|k, _| map.contains_key(k));
     }
 
     // Emit state changes outside the lock.
