@@ -109,10 +109,10 @@ function SimpleQuestion({
               type="button"
               onClick={() => onChange(opt)}
               aria-pressed={value === opt}
-              className={`px-2.5 py-1 rounded-full border typo-caption transition-colors ${
+              className={`px-3 py-1.5 rounded-interactive border typo-body transition-colors ${
                 value === opt
-                  ? 'bg-primary/25 border-primary/50 text-foreground'
-                  : 'bg-primary/10 border-card-border text-foreground hover:bg-primary/20'
+                  ? 'bg-primary/25 border-primary/50 text-foreground font-medium'
+                  : 'bg-primary/10 border-card-border text-foreground/85 hover:bg-primary/20 hover:text-foreground'
               }`}
             >
               {opt}

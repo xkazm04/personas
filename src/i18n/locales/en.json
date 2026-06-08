@@ -189,7 +189,11 @@
     "channels_filter_signal": "Signal",
     "channels_filter_alerts": "Alerts",
     "channel_no_body": "No additional detail provided.",
-    "channel_raw_payload": "Raw payload"
+    "channel_raw_payload": "Raw payload",
+    "quick_choose_action": "Choose an action",
+    "quick_dismiss": "Dismiss",
+    "quick_prev_decision": "Previous decision",
+    "quick_next_decision": "Next decision"
   },
   "common": {
     "unknown_error": "Unknown error",

@@ -196,6 +196,10 @@ export type Translations = {
     channels_filter_alerts: string;
     channel_no_body: string;
     channel_raw_payload: string;
+    quick_choose_action: string;
+    quick_dismiss: string;
+    quick_prev_decision: string;
+    quick_next_decision: string;
   };
   common: {
     unknown_error: string;
