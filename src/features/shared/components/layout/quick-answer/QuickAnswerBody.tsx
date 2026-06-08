@@ -29,7 +29,7 @@ export function QuickAnswerBody({ onAfterBuilderNav }: { onAfterBuilderNav?: () 
   const { t } = useTranslation();
   const {
     questionGroups, reviews, total, isProcessing,
-    submitQuestionAnswers, handleReviewAction,
+    submitQuestionAnswers, handleReviewAction, handleDispatchAction,
   } = usePendingInteractions();
 
   if (total === 0) {
@@ -71,6 +71,7 @@ export function QuickAnswerBody({ onAfterBuilderNav }: { onAfterBuilderNav?: () 
             reviews={reviews}
             busy={isProcessing}
             onAction={handleReviewAction}
+            onDispatchAction={handleDispatchAction}
           />
         </section>
       )}

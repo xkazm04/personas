@@ -193,6 +193,17 @@ export const updateManualReviewStatus = (
     reviewerNotes: reviewerNotes,
   });
 
+/**
+ * Phase 4 — resolve a review by CHOOSING one of its suggested actions, which
+ * records the chosen branch AND dispatches a follow-up persona run to carry it
+ * out (unless a held team step was resumed instead). Returns the resolved row.
+ */
+export const dispatchReviewAction = (reviewId: string, action: string) =>
+  invoke<PersonaManualReview>("dispatch_review_action", {
+    reviewId,
+    action,
+  });
+
 export const getPendingReviewCount = (personaId?: string) =>
   invoke<number>("get_pending_review_count", {
     personaId: personaId,

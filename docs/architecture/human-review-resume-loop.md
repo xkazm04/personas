@@ -98,20 +98,31 @@ it is **silent and unverifiable**.
 
 ## Phase 4 — Suggested actions as real branches
 
-Today `suggested_actions` are inert everywhere except the Quick Answer stepper
-(which records the chosen action as a free-text note).
+Today `suggested_actions` were inert everywhere except the Quick Answer stepper
+(which only recorded the chosen action as a free-text note).
 
-1. **Structured branch.** A suggested action may carry an outcome intent
-   (`approve` | `regenerate` | `edit` | `escalate` | `dispatch:<persona/op>`).
-   Keep plain strings working (default `approve`); parse a typed form when present.
-2. **Dispatch on pick.** When an action is chosen, the Phase 1 reaction seam
-   dispatches it: advisory reviews `run_persona` a follow-up keyed on the action;
-   team-held reviews resume with the action folded into the step edit.
-3. **Carry intent into the loop.** Record the chosen branch (not just
-   approve/reject) in the learning memory payload + the `review_decision` event,
-   so future runs condition on *which* branch the human chose.
-4. **One action model** across all three surfaces (the stepper's branch buttons
-   become the shared pattern; Overview + orb adopt it).
+1. ✅ **Dispatch on pick (shipped).** New async command
+   `dispatch_review_action(review_id, action)`: resolves the review (approved,
+   chosen action recorded), surfaces it (Phase-2 toast + bus), then — **unless
+   the review gated a held team step that was just resumed instead**
+   (`react_to_review_decision` now returns whether it resumed) — **dispatches a
+   follow-up persona run** (`execute_persona_inner`) whose task is "a human chose
+   this action: …; carry it out." So picking a suggested action on an *advisory*
+   review now actually *does the thing*. Wired through
+   `useMonitorData.handleDispatchAction` → `usePendingInteractions` →
+   `QuickAnswerBody` → the stepper's action buttons (now a ▶ "Carry out" affordance
+   with a "Carrying out: …" toast). Falls back to record-only when dispatch isn't
+   wired.
+2. ✅ **Carry intent into the loop.** The chosen action is recorded in
+   `reviewer_notes` → flows into the `review_decision` event payload AND the
+   learning memory content, so future runs condition on *which* branch the human
+   chose.
+3. ⏳ **Structured branch (follow-up).** A suggested action may later carry a
+   typed outcome (`regenerate` | `edit` | `escalate` | `dispatch:<persona/op>`)
+   so the dispatch can do something more specific than "re-run with the action as
+   the task." Plain strings (today) default to the generic carry-out run.
+4. ⏳ **One action model** across all three surfaces (the stepper's carry-out
+   buttons are the pattern; Overview + orb adopt `dispatch_review_action` next).
 
 ## Phase 5 — Converge the surfaces (incl. the shared renderer, "3")
 

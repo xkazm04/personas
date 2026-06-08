@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Check, X, MessageSquarePlus, ChevronLeft, ChevronRight, CornerDownRight } from 'lucide-react';
+import { Check, X, MessageSquarePlus, ChevronLeft, ChevronRight, CornerDownRight, Play } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
+import { useToastStore } from '@/stores/toastStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { severityBucket, SEVERITY_META, severityLabel } from '@/features/shared/components/layout/monitor/monitorModel';
@@ -37,10 +38,14 @@ export function QuickAnswerReviewStepper({
   reviews,
   busy,
   onAction,
+  onDispatchAction,
 }: {
   reviews: ManualReviewItem[];
   busy: boolean;
   onAction: (id: string, status: ManualReviewStatus, notes?: string) => Promise<void>;
+  /** Phase 4 — choosing a suggested action resolves AND dispatches a follow-up
+   *  run to carry it out. Falls back to a plain approve-with-note if absent. */
+  onDispatchAction?: (id: string, action: string) => Promise<void>;
 }) {
   const { t, tx } = useTranslation();
   const [idx, setIdx] = useState(0);
@@ -66,6 +71,19 @@ export function QuickAnswerReviewStepper({
   const act = async (status: ManualReviewStatus, chosen?: string) => {
     const parts = [chosen, note.trim()].filter(Boolean);
     await onAction(review.id, status, parts.length ? parts.join(' — ') : undefined);
+  };
+
+  // Phase 4 — choosing a suggested action resolves the review AND dispatches a
+  // follow-up run to carry it out (records the branch + re-runs the persona).
+  // Falls back to a plain approve-with-note when dispatch isn't wired.
+  const chooseAction = async (action: string) => {
+    if (onDispatchAction) {
+      useToastStore.getState().addToast(`▶ ${tx(t.monitor.quick_carrying_out, { action })}`, 'success', 4000);
+      const combined = note.trim() ? `${action} — ${note.trim()}` : action;
+      await onDispatchAction(review.id, combined);
+    } else {
+      await act('approved', action);
+    }
   };
 
   return (
@@ -120,18 +138,25 @@ export function QuickAnswerReviewStepper({
       <div className="px-4 py-3 border-t border-card-border bg-secondary/10 flex flex-col gap-2">
         {actions.length > 0 && (
           <>
-            <p className="typo-label uppercase tracking-wider text-foreground/55">{t.monitor.quick_choose_action}</p>
+            <p className="typo-label uppercase tracking-wider text-foreground/55">
+              {onDispatchAction ? t.monitor.quick_choose_carry_out : t.monitor.quick_choose_action}
+            </p>
             <div className="flex flex-col gap-1.5">
               {actions.map((a, i) => (
                 <button
                   key={i}
                   type="button"
                   disabled={busy}
-                  onClick={() => void act('approved', a)}
+                  onClick={() => void chooseAction(a)}
+                  title={onDispatchAction ? t.monitor.quick_carry_out_hint : undefined}
                   data-testid={`quick-answer-action-${review.id}-${i}`}
                   className="group flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-interactive border border-card-border bg-card-bg/60 hover:border-emerald-500/45 hover:bg-emerald-500/10 disabled:opacity-50 transition-colors"
                 >
-                  <CornerDownRight className="w-4 h-4 flex-shrink-0 text-foreground/35 group-hover:text-emerald-400 transition-colors" />
+                  {onDispatchAction ? (
+                    <Play className="w-4 h-4 flex-shrink-0 text-foreground/35 group-hover:text-emerald-400 transition-colors" />
+                  ) : (
+                    <CornerDownRight className="w-4 h-4 flex-shrink-0 text-foreground/35 group-hover:text-emerald-400 transition-colors" />
+                  )}
                   <span className="typo-body text-foreground leading-snug">{a}</span>
                 </button>
               ))}

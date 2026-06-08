@@ -202,7 +202,10 @@
     "channels_hide_panel": "Hide panel",
     "channels_composer_pick": "Pick a team",
     "channels_composer_placeholder": "Message the team… Tag @athena to bring her in",
-    "channels_composer_send": "Send"
+    "channels_composer_send": "Send",
+    "quick_choose_carry_out": "Carry out an action",
+    "quick_carry_out_hint": "Approves the review and runs the persona to do this",
+    "quick_carrying_out": "Carrying out: {action}"
   },
   "common": {
     "unknown_error": "Unknown error",

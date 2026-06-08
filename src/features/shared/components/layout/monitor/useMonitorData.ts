@@ -9,7 +9,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAgentStore } from '@/stores/agentStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useSystemStore } from '@/stores/systemStore';
-import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
+import { listManualReviews, updateManualReviewStatus, dispatchReviewAction } from '@/api/overview/reviews';
 import { listMessages, markMessageRead } from '@/api/overview/messages';
 import { usePolling, POLLING_CONFIG } from '@/hooks/utility/timing/usePolling';
 import type { ManualReviewItem } from '@/lib/types/types';
@@ -54,6 +54,8 @@ export interface MonitorData {
   loading: boolean;
   isProcessing: boolean;
   handleReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => Promise<void>;
+  /** Phase 4 — choose a suggested action: resolves + dispatches a follow-up run. */
+  handleDispatchAction: (id: string, action: string) => Promise<void>;
   handleMarkRead: (id: string) => Promise<void>;
 }
 
@@ -147,6 +149,33 @@ export function useMonitorData(): MonitorData {
     [isProcessing, reviews, respondToCloudReview, reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount],
   );
 
+  // Phase 4 — resolve a review by CHOOSING a suggested action, which records the
+  // branch AND dispatches a follow-up persona run to carry it out. Cloud reviews
+  // have no dispatch path, so the choice is recorded as an approval.
+  const handleDispatchAction = useCallback(
+    async (id: string, action: string) => {
+      if (isProcessing) return;
+      const review = reviews.find((r) => r.id === id);
+      if (!review) return;
+      setIsProcessing(true);
+      try {
+        if (review.source === 'cloud') {
+          await respondToCloudReview(review.id, review.execution_id, 'approve', action);
+        } else {
+          await dispatchReviewAction(id, action);
+        }
+        await reloadReviews();
+        if (isCloudConnected) await fetchCloudReviews();
+        void fetchPendingReviewCount();
+      } catch (err) {
+        logger.error('Failed to dispatch review action', { error: err });
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [isProcessing, reviews, respondToCloudReview, reloadReviews, isCloudConnected, fetchCloudReviews, fetchPendingReviewCount],
+  );
+
   const handleMarkRead = useCallback(
     async (id: string) => {
       // Optimistic — drop it from the unread set immediately.
@@ -164,6 +193,6 @@ export function useMonitorData(): MonitorData {
 
   return {
     personas, healthMap, reviews, unreadMessages, activeProcesses,
-    loading, isProcessing, handleReviewAction, handleMarkRead,
+    loading, isProcessing, handleReviewAction, handleDispatchAction, handleMarkRead,
   };
 }

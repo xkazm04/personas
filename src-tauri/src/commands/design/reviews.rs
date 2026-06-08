@@ -1077,22 +1077,24 @@ pub fn update_manual_review_status(
 /// Conservative by design: only approve/resolve resume; reject is recorded but
 /// does not auto-abort (that mapping is a later increment). Called from both the
 /// user path (here) and Athena's `execute_resolve_human_review`.
+/// Returns `true` if it took the held-resume path (so callers like Phase 4's
+/// action dispatch can avoid double-running the work).
 pub(crate) fn react_to_review_decision(
     state: &State<'_, Arc<AppState>>,
     app: &tauri::AppHandle,
     review: &crate::db::models::PersonaManualReview,
-) {
+) -> bool {
     use crate::db::models::ManualReviewStatus;
     if !matches!(
         review.status,
         ManualReviewStatus::Approved | ManualReviewStatus::Resolved
     ) {
-        return;
+        return false;
     }
     let (Some(assignment_id), Some(step_id)) =
         (review.assignment_id.clone(), review.step_id.clone())
     else {
-        return; // advisory review — nothing linked to resume
+        return false; // advisory review — nothing linked to resume
     };
 
     // Only resume when the work is genuinely held; otherwise the run moved on.
@@ -1114,7 +1116,7 @@ pub(crate) fn react_to_review_decision(
     };
     if !held {
         tracing::debug!(review_id = %review.id, "review resolved but linked step not held — no resume");
-        return;
+        return false;
     }
 
     let pool = Arc::new(state.db.clone());
@@ -1138,6 +1140,84 @@ pub(crate) fn react_to_review_decision(
             "Failed to resume blocked step on review approval"
         ),
     }
+    true // took the held-resume path
+}
+
+/// Phase 4 — resolve a review by CHOOSING a suggested action, then DISPATCH a
+/// follow-up persona run to carry it out. This is what makes an advisory
+/// approval *do something*: the chosen branch is recorded (reviewer_notes →
+/// the `review_decision` event + the learning memory) and — unless the review
+/// gated a held team step that was just resumed instead — the persona is re-run
+/// with the chosen action as its task. Best-effort dispatch: a spawn failure is
+/// logged, never propagated (the resolution itself already succeeded).
+#[tauri::command]
+pub async fn dispatch_review_action(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    review_id: String,
+    action: String,
+) -> Result<PersonaManualReview, AppError> {
+    require_auth_sync(&state)?;
+    let learned = manual_repo::update_status(
+        &state.db,
+        &review_id,
+        crate::db::models::ManualReviewStatus::Approved,
+        Some(format!("Chose action: {action}")),
+    )?;
+    let review = manual_repo::get_by_id(&state.db, &review_id)?;
+
+    // Surface the resolution exactly like the plain path (Phase 2 toast + bus).
+    let _ = app.emit(
+        event_name::MANUAL_REVIEW_RESOLVED,
+        ManualReviewResolvedEvent {
+            review_id: review.id.clone(),
+            execution_id: review.execution_id.clone(),
+            persona_id: review.persona_id.clone(),
+            status: review.status.as_str().to_string(),
+            learned,
+        },
+    );
+    publish_review_decision(&state.db, &app, &review);
+
+    // If this gated a held team step, resuming IS carrying out the action — don't
+    // also spawn a standalone run. Otherwise dispatch a follow-up persona run.
+    let resumed = react_to_review_decision(&state, &app, &review);
+    if !resumed {
+        let task = format!(
+            "A human reviewed your item \"{}\" and chose this action: \"{}\".{} Carry out the chosen action now and report what you did.",
+            review.title,
+            action,
+            review
+                .description
+                .as_deref()
+                .map(|d| format!(" Original context: {d}"))
+                .unwrap_or_default(),
+        );
+        match crate::commands::execution::executions::execute_persona_inner(
+            &state,
+            app.clone(),
+            review.persona_id.clone(),
+            None,
+            Some(task),
+            review.use_case_id.clone(),
+            None,
+            None,
+            false,
+        )
+        .await
+        {
+            Ok(exec) => tracing::info!(
+                review_id = %review.id, persona_id = %review.persona_id, exec_id = %exec.id,
+                "Dispatched follow-up run from chosen review action"
+            ),
+            Err(e) => tracing::warn!(
+                review_id = %review.id, error = %e,
+                "Failed to dispatch follow-up run from review action"
+            ),
+        }
+    }
+
+    Ok(review)
 }
 
 /// Publish a `review_decision.{status}` event to the persona event bus so

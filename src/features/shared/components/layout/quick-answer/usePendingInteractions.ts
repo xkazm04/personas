@@ -40,6 +40,8 @@ export interface QuickAnswerData {
   /** Submit a persona's collected answers as one CLI batch (route-independent). */
   submitQuestionAnswers: (sessionId: string, answers: Record<string, string>) => Promise<void>;
   handleReviewAction: (id: string, status: ManualReviewStatus, notes?: string) => Promise<void>;
+  /** Phase 4 — choose a suggested action: resolves + dispatches a follow-up run. */
+  handleDispatchAction: (id: string, action: string) => Promise<void>;
 }
 
 /** A question that needs the full builder UI (file/URL attach or connector
@@ -54,7 +56,7 @@ export function usePendingInteractions(): QuickAnswerData {
   const personas = useAgentStore((s) => s.personas);
   const applyPendingAnswers = useAgentStore((s) => s.applyPendingAnswers);
 
-  const { reviews, loading, isProcessing, handleReviewAction } = useMonitorData();
+  const { reviews, loading, isProcessing, handleReviewAction, handleDispatchAction } = useMonitorData();
 
   const questionGroups = useMemo<QuestionGroup[]>(() => {
     const personaById = new Map(personas.map((p) => [p.id, p]));
@@ -103,5 +105,6 @@ export function usePendingInteractions(): QuickAnswerData {
     isProcessing,
     submitQuestionAnswers,
     handleReviewAction,
+    handleDispatchAction,
   };
 }

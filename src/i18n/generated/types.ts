@@ -209,6 +209,9 @@ export type Translations = {
     channels_composer_pick: string;
     channels_composer_placeholder: string;
     channels_composer_send: string;
+    quick_choose_carry_out: string;
+    quick_carry_out_hint: string;
+    quick_carrying_out: string;
   };
   common: {
     unknown_error: string;
