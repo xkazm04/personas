@@ -12645,7 +12645,9 @@
         "batch_pending_label": "{count} approvals pending from {session}",
         "batch_approve_all": "Approve all",
         "batch_approving": "Approving…"
-      }
+      },
+      "decision_hide": "Hide",
+      "decision_show": "Show decision"
     },
     "ocr": {
       "title": "OCR",

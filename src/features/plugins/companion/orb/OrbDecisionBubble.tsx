@@ -1,16 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Lightbulb } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import { Lightbulb, ChevronDown, ChevronUp, Sparkles, MessageSquareText, TriangleAlert, ShieldCheck } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { useSystemStore } from '@/stores/systemStore';
 import { useCompanionStore } from '../companionStore';
 import { explainDecision, runDecisionOption } from '../decision/resolveDecision';
-import type { DecisionOption } from '../decision/types';
+import type { DecisionOption, DecisionSource } from '../decision/types';
 import { ORB_SIZE } from './AthenaOrb';
 
 const BUBBLE_GAP = 12;
+
+/** Symbol shown on the collapsed chip, by what produced the decision. */
+const SOURCE_ICON: Record<DecisionSource, LucideIcon> = {
+  approval: ShieldCheck,
+  human_review: MessageSquareText,
+  incident: TriangleAlert,
+  adhoc: Sparkles,
+};
 
 /**
  * Athena hands-free decision bubble (P3, slices 2 + 4). A positioned,
@@ -55,6 +64,14 @@ export function OrbDecisionBubble() {
   const decisionId = decision?.id ?? null;
   const navigateRoute = decision?.navigateRoute;
   const highlightTestId = decision?.highlightTestId;
+
+  // The bubble can be collapsed down to a small symbol above the orb (the
+  // arrow/handle toggles it). A fresh decision always opens expanded so the
+  // user sees it; toggling is per-decision local state.
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    setCollapsed(false);
+  }, [decisionId]);
 
   // On a fresh decision: promote Athena out of dormancy so the orb is visible,
   // and ring the element the bubble is asking about (best-effort).
@@ -110,102 +127,130 @@ export function OrbDecisionBubble() {
         bottom: window.innerHeight - anchorTop + BUBBLE_GAP,
       };
 
-  // A primary tail pointing down toward the orb.
-  const tail: CSSProperties = dockedLeft
-    ? {
-        left: 18,
-        bottom: -7,
-        borderLeft: '6px solid transparent',
-        borderRight: '6px solid transparent',
-        borderTop: '7px solid var(--color-primary)',
-      }
-    : {
-        right: 18,
-        bottom: -7,
-        borderLeft: '6px solid transparent',
-        borderRight: '6px solid transparent',
-        borderTop: '7px solid var(--color-primary)',
-      };
+  // The arrow/handle bridges the surface to the orb AND is the show/hide
+  // toggle. It sits at the bottom on the docked side, pointing at the orb.
+  const handleSide: CSSProperties = dockedLeft ? { left: 14 } : { right: 14 };
+
+  // A short, markdown-free label for the collapsed chip (the review title, or
+  // the first line of the prompt).
+  const shortLabel =
+    (decision.prompt.split(/ — |\n/)[0] ?? decision.prompt)
+      .replace(/[*_`#>]/g, '')
+      .trim()
+      .slice(0, 80) || t.plugins.companion.decision_title;
+  const SourceIcon = SOURCE_ICON[decision.source] ?? Sparkles;
 
   return (
     <motion.div
       data-testid="athena-decision-bubble"
       data-companion-decision-id={decision.id}
       data-companion-decision-source={decision.source}
+      data-companion-decision-collapsed={collapsed}
       initial={reduceMotion ? false : { opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: 'easeOut' }}
-      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} w-[336px] max-w-[80vw] rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5`}
+      className={`pointer-events-auto fixed ${fleetGridOpen ? 'z-[220]' : 'z-[61]'} max-w-[80vw] ${collapsed ? 'w-auto' : 'w-[336px]'}`}
       style={pos}
     >
-      <span className="pointer-events-none absolute h-0 w-0" style={tail} aria-hidden />
-
-      <div data-testid="athena-decision-prompt">
-        <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90 leading-relaxed" />
-      </div>
-
-      {/* Slice 4 — `0` was picked: show the recommendation above the options. */}
-      {explained && decision.recommendation && (
-        <div
-          data-testid="athena-decision-recommendation"
-          className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
+      {collapsed ? (
+        /* Hidden — a small symbol/icon above the arrow. Click to re-open. */
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          data-testid="athena-decision-expand"
+          aria-label={t.plugins.companion.decision_show}
+          className="flex items-center gap-2 rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 pl-2.5 pr-3 py-2 hover:border-primary/50 transition-colors"
         >
-          <p className="typo-label uppercase tracking-wider font-semibold text-primary">
-            {t.plugins.companion.decision_recommend_prefix}
-          </p>
-          <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90 leading-relaxed" />
-          {decision.detail && (
-            <p className="mt-1.5 typo-caption text-foreground/60 leading-relaxed">
-              {decision.detail}
-            </p>
+          <span className="relative flex w-2 h-2 flex-shrink-0">
+            {!reduceMotion && <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />}
+            <span className="relative inline-flex w-2 h-2 rounded-full bg-primary" />
+          </span>
+          <SourceIcon className="w-4 h-4 text-primary flex-shrink-0" aria-hidden />
+          <span className="typo-caption font-medium text-foreground/90 max-w-[200px] truncate">{shortLabel}</span>
+        </button>
+      ) : (
+        <div className="relative rounded-card bg-background/95 border border-primary/30 shadow-elevation-3 p-3.5">
+          <div data-testid="athena-decision-prompt">
+            <MarkdownRenderer content={decision.prompt} className="typo-body text-foreground/90 leading-relaxed" />
+          </div>
+
+          {/* Slice 4 — `0` was picked: show the recommendation above the options. */}
+          {explained && decision.recommendation && (
+            <div
+              data-testid="athena-decision-recommendation"
+              className="mt-2.5 rounded-input border border-primary/20 bg-primary/5 px-3 py-2.5"
+            >
+              <p className="typo-label uppercase tracking-wider font-semibold text-primary">
+                {t.plugins.companion.decision_recommend_prefix}
+              </p>
+              <MarkdownRenderer content={decision.recommendation} className="mt-1 typo-body text-foreground/90 leading-relaxed" />
+              {decision.detail && (
+                <p className="mt-1.5 typo-caption text-foreground/60 leading-relaxed">
+                  {decision.detail}
+                </p>
+              )}
+            </div>
           )}
+
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
+            {decision.options.map((opt, i) => (
+              <button
+                key={opt.key}
+                type="button"
+                data-testid={`athena-decision-option-${i + 1}`}
+                onClick={() => pick(opt)}
+                title={opt.hint ?? opt.label}
+                className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring ${
+                  opt.danger
+                    ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 text-rose-400'
+                    : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary'
+                }`}
+              >
+                <span
+                  className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold ${
+                    opt.danger ? 'bg-rose-500/20' : 'bg-primary/20'
+                  }`}
+                  aria-hidden
+                >
+                  {i + 1}
+                </span>
+                <span className="truncate">{opt.label}</span>
+              </button>
+            ))}
+
+            {/* `0` — explain + recommend (slice 4). Does not clear the decision. */}
+            <button
+              type="button"
+              data-testid="athena-decision-option-0"
+              onClick={() => explainDecision()}
+              title={t.plugins.companion.decision_explain_hint}
+              className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground/80 px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring"
+            >
+              <span
+                className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-foreground/10"
+                aria-hidden
+              >
+                0
+              </span>
+              <Lightbulb className="w-3.5 h-3.5" aria-hidden />
+              <span className="truncate">{t.plugins.companion.decision_explain}</span>
+            </button>
+          </div>
         </div>
       )}
 
-      <div className="mt-2.5 flex flex-wrap gap-1.5">
-        {decision.options.map((opt, i) => (
-          <button
-            key={opt.key}
-            type="button"
-            data-testid={`athena-decision-option-${i + 1}`}
-            onClick={() => pick(opt)}
-            title={opt.hint ?? opt.label}
-            className={`inline-flex items-center gap-1.5 max-w-full rounded-interactive px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring ${
-              opt.danger
-                ? 'bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 hover:border-rose-500/30 text-rose-400'
-                : 'bg-primary/10 border border-primary/20 hover:bg-primary/20 hover:border-primary/30 text-primary'
-            }`}
-          >
-            <span
-              className={`inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold ${
-                opt.danger ? 'bg-rose-500/20' : 'bg-primary/20'
-              }`}
-              aria-hidden
-            >
-              {i + 1}
-            </span>
-            <span className="truncate">{opt.label}</span>
-          </button>
-        ))}
-
-        {/* `0` — explain + recommend (slice 4). Does not clear the decision. */}
-        <button
-          type="button"
-          data-testid="athena-decision-option-0"
-          onClick={() => explainDecision()}
-          title={t.plugins.companion.decision_explain_hint}
-          className="inline-flex items-center gap-1.5 max-w-full rounded-interactive bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 text-foreground/80 px-2.5 py-1.5 typo-caption font-medium transition-colors focus-ring"
-        >
-          <span
-            className="inline-flex items-center justify-center w-4 h-4 rounded text-[10px] font-semibold bg-foreground/10"
-            aria-hidden
-          >
-            0
-          </span>
-          <Lightbulb className="w-3.5 h-3.5" aria-hidden />
-          <span className="truncate">{t.plugins.companion.decision_explain}</span>
-        </button>
-      </div>
+      {/* The arrow/handle — toggles show/hide; points at the orb. */}
+      <button
+        type="button"
+        onClick={() => setCollapsed((c) => !c)}
+        data-testid="athena-decision-toggle"
+        aria-label={collapsed ? t.plugins.companion.decision_show : t.plugins.companion.decision_hide}
+        title={collapsed ? t.plugins.companion.decision_show : t.plugins.companion.decision_hide}
+        className="absolute -bottom-3 z-10 inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-background shadow-elevation-2 ring-2 ring-background hover:brightness-110 transition"
+        style={handleSide}
+      >
+        {collapsed ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+      </button>
     </motion.div>
   );
 }

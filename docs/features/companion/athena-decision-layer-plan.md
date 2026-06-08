@@ -7,7 +7,7 @@
 clear approvals / human-reviews / incidents hands-free.
 
 ## The goal (user's words, distilled)
-1. A **bubble above the orb** that shows text (markdown — bullets/bold) and **requests a DECISION** with numbered options ("Shall I deploy? 1) yes 2) no"). TTS is **not** auto-spoken on surface — only on `0` (Explain/Recommend), see Slice 6.
+1. A **bubble above the orb** that shows text (markdown — bullets/bold) and **requests a DECISION** with numbered options ("Shall I deploy? 1) yes 2) no"). TTS is **not** auto-spoken on surface — only on `0` (Explain/Recommend), see Slice 6. The **arrow/handle** between the bubble and the orb is a **show/hide toggle** (`athena-decision-toggle`): collapse the bubble down to a small source-iconned symbol chip (`athena-decision-expand`, with a pulse dot) that floats above the arrow, so a pending decision stays visible without occupying the screen; click the chip or the handle to re-open. A fresh decision always opens expanded.
 2. User answers by **clicking** an option OR by a **`;` leader-key then a digit** (numeric decision syntax). **`0` = Athena explains the options + gives her recommendation**, then re-asks.
 3. The same surface presents **proactive incidents** (open high/critical `audit_incidents` — the P2.5 thread) and **pending approvals / human-reviews** as these numbered decisions.
 4. Athena can **highlight/navigate** the app while asking (reuse the guided-walkthrough glide+glow).

@@ -12652,6 +12652,8 @@ export type Translations = {
         batch_approve_all: string;
         batch_approving: string;
       };
+      decision_hide: string;
+      decision_show: string;
     };
     ocr: {
       title: string;
