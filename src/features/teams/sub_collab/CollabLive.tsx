@@ -4,7 +4,8 @@ import { ExternalLink, Send, Pin, Check, CheckCheck, AlertCircle, MessageSquare,
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip } from '../sub_teamWorkspace/teamStudio/boardShared';
-import { eventFamily, memberColor, parsePayload } from '../sub_redRoom/useRedRoomFeed';
+import { eventFamily, memberColor } from '../sub_redRoom/useRedRoomFeed';
+import { payloadSummary } from './payloadView';
 import { useTeamChannel, parseDeliveries } from './useTeamChannel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
@@ -216,7 +217,7 @@ function ChannelRow({ item, personaIndex }: { item: TeamChannelItem; personaInde
   }
 
   if (item.kind === 'event') {
-    const { summary, artifact } = parsePayload(item.extra);
+    const { summary, artifact } = payloadSummary(item.extra);
     const fam = eventFamily(item.label);
     return (
       <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex gap-2.5">

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { X, ExternalLink, Pin } from 'lucide-react';
+import { useTranslation } from '@/i18n/useTranslation';
 import { BaseModal } from '@/lib/ui/BaseModal';
 import { Button } from '@/features/shared/components/buttons';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
@@ -7,7 +8,7 @@ import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { usePersonaIndex } from '../sub_teamWorkspace/teamStudio/boardShared';
-import { parsePayload } from '../sub_redRoom/useRedRoomFeed';
+import { humanizePayload, type Artifact } from './payloadView';
 import { AUTHOR_KIND_META, authorName, itemAccent } from './collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -15,30 +16,28 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * Full decomposed detail for a channel item — the modal half of the
  * "short line in the channel, full detail on click" split. The channel row
  * shows concise key metadata; this shows the complete, formatted content:
- * the full message (markdown), parsed artifact, and the raw payload
- * pretty-printed (copyable) for events whose decrypted payload is JSON.
+ * the primary message (markdown), a detail list of the remaining fields, the
+ * artifact, and the raw payload pretty-printed (copyable). Extraction goes
+ * through {@link humanizePayload} so the same payload renders consistently
+ * here and in the row, no matter which keys a persona used.
  */
 
-/** Pull the full readable body for an item (NOT length-capped, unlike the row). */
-function fullBody(item: TeamChannelItem): { text: string | null; artifactUrl: string | null; artifactLabel: string | null } {
-  if (item.kind === 'event') {
-    // Re-derive the artifact, but read the WHOLE message field (no slice).
-    const { artifact } = parsePayload(item.extra);
-    let text: string | null = null;
-    if (item.extra) {
-      try {
-        const o = JSON.parse(item.extra) as Record<string, unknown>;
-        for (const k of ['summary', 'message', 'title', 'description', 'reason', 'task', 'goal', 'verdict', 'note', 'content']) {
-          const v = o[k];
-          if (typeof v === 'string' && v.trim()) { text = v.trim(); break; }
-        }
-      } catch {
-        text = item.extra; // plain text payload
-      }
-    }
-    return { text, artifactUrl: artifact?.url ?? null, artifactLabel: artifact?.label ?? null };
+/** Decompose an item into headline text + supporting fields + artifact. */
+function fullBody(item: TeamChannelItem): { text: string | null; fields: Array<[string, string]>; artifact: Artifact | null } {
+  if (item.kind === 'step') {
+    // The step/assignment title is the headline; the payload (task / error /
+    // status the read-model synthesizes for review gates) becomes fields.
+    const v = humanizePayload(item.extra);
+    const fields = [...v.fields];
+    if (v.primary && v.primary !== item.body) fields.unshift(['Task', v.primary]);
+    return { text: item.body, fields, artifact: v.artifact };
   }
-  return { text: item.body, artifactUrl: null, artifactLabel: null };
+  if (item.kind === 'event') {
+    const v = humanizePayload(item.extra);
+    return { text: v.primary ?? item.body, fields: v.fields, artifact: v.artifact };
+  }
+  // memory / directive / agent voices — the body IS the content.
+  return { text: item.body, fields: [], artifact: null };
 }
 
 /** Pretty-print the raw payload when it's JSON (events), else null. */
@@ -52,10 +51,11 @@ function prettyRaw(item: TeamChannelItem): string | null {
 }
 
 export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | null; onClose: () => void }) {
+  const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
   const persona = item?.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = item ? itemAccent(item, persona) : '#9ca3af';
-  const detail = useMemo(() => (item ? fullBody(item) : { text: null, artifactUrl: null, artifactLabel: null }), [item]);
+  const detail = useMemo(() => (item ? fullBody(item) : { text: null, fields: [] as Array<[string, string]>, artifact: null }), [item]);
   const raw = useMemo(() => (item ? prettyRaw(item) : null), [item]);
 
   const eventLabel = item?.kind === 'memory' ? `memory · ${item.label}` : item?.label ?? '';
@@ -101,24 +101,34 @@ export function ChannelDetailModal({ item, onClose }: { item: TeamChannelItem | 
           <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
             {detail.text ? (
               <MarkdownRenderer content={detail.text} className="typo-body leading-relaxed" />
-            ) : (
-              <p className="typo-body text-foreground/45">No message body.</p>
+            ) : detail.fields.length === 0 ? (
+              <p className="typo-body text-foreground/45">{t.monitor.channel_no_body}</p>
+            ) : null}
+            {detail.fields.length > 0 && (
+              <dl className="rounded-card border border-primary/10 bg-secondary/15 divide-y divide-primary/8">
+                {detail.fields.map(([k, v]) => (
+                  <div key={k} className="flex gap-3 px-3 py-2">
+                    <dt className="typo-caption uppercase tracking-wider text-foreground/50 flex-shrink-0 w-32 truncate">{k}</dt>
+                    <dd className="typo-body text-foreground/85 min-w-0 whitespace-pre-wrap break-words">{v}</dd>
+                  </div>
+                ))}
+              </dl>
             )}
-            {detail.artifactUrl && (
-              <a href={detail.artifactUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-secondary/40 border border-primary/15 typo-body text-status-info hover:bg-secondary/60 transition-colors">
-                <ExternalLink className="w-4 h-4" /> {detail.artifactLabel ?? 'Open'}
+            {detail.artifact && (
+              <a href={detail.artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-interactive bg-secondary/40 border border-primary/15 typo-body text-status-info hover:bg-secondary/60 transition-colors">
+                <ExternalLink className="w-4 h-4" /> {detail.artifact.label}
               </a>
             )}
             {raw && (
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <p className="typo-label uppercase tracking-wider text-foreground/55">Full event payload</p>
+              <details className="group">
+                <summary className="flex items-center justify-between cursor-pointer list-none select-none">
+                  <span className="typo-label uppercase tracking-wider text-foreground/45 group-hover:text-foreground/70 transition-colors">{t.monitor.channel_raw_payload}</span>
                   <CopyButton text={raw} />
-                </div>
-                <pre className="rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground/75 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
+                </summary>
+                <pre className="mt-1.5 rounded-card border border-primary/10 bg-secondary/20 px-3 py-2 typo-caption font-mono text-foreground/75 overflow-x-auto max-h-72 overflow-y-auto whitespace-pre-wrap break-words">
                   {raw}
                 </pre>
-              </div>
+              </details>
             )}
           </div>
         </>

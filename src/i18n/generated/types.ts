@@ -194,6 +194,8 @@ export type Translations = {
     channels_filter_all: string;
     channels_filter_signal: string;
     channels_filter_alerts: string;
+    channel_no_body: string;
+    channel_raw_payload: string;
   };
   common: {
     unknown_error: string;

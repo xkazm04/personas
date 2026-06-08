@@ -187,7 +187,9 @@
     "channels_jump_newest": "Newest",
     "channels_filter_all": "All",
     "channels_filter_signal": "Signal",
-    "channels_filter_alerts": "Alerts"
+    "channels_filter_alerts": "Alerts",
+    "channel_no_body": "No additional detail provided.",
+    "channel_raw_payload": "Raw payload"
   },
   "common": {
     "unknown_error": "Unknown error",

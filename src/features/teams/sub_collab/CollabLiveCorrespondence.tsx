@@ -4,7 +4,8 @@ import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipFor
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
-import { eventFamily, parsePayload } from '../sub_redRoom/useRedRoomFeed';
+import { eventFamily } from '../sub_redRoom/useRedRoomFeed';
+import { payloadSummary } from './payloadView';
 import { useTeamChannel, parseDeliveries } from './useTeamChannel';
 import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
@@ -268,7 +269,7 @@ function resolveRow(item: TeamChannelItem) {
     isError = item.label === 'step_failed';
     alert = item.label === 'status_awaiting_review' || isError;
   } else if (item.kind === 'event') {
-    const parsed = parsePayload(item.extra);
+    const parsed = payloadSummary(item.extra);
     message = parsed.summary;
     artifact = parsed.artifact;
     eventTone = FAMILY_TEXT[eventFamily(item.label)] ?? FAMILY_TEXT.other!;

@@ -3,7 +3,8 @@ import { ExternalLink, AlertCircle, Pin } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
-import { parsePayload, eventFamily } from '@/features/teams/sub_redRoom/useRedRoomFeed';
+import { eventFamily } from '@/features/teams/sub_redRoom/useRedRoomFeed';
+import { payloadSummary } from '@/features/teams/sub_collab/payloadView';
 import { STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent } from '@/features/teams/sub_collab/collabRender';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 import { MERGED_ROW_HEIGHT, type TaggedItem } from './types';
@@ -23,7 +24,7 @@ function resolveCompact(item: TeamChannelItem): { event: string; tone: string; m
     };
   }
   if (item.kind === 'event') {
-    const { summary, artifact } = parsePayload(item.extra);
+    const { summary, artifact } = payloadSummary(item.extra);
     return { event: item.label, tone: FAMILY_TEXT[eventFamily(item.label)] ?? FAMILY_TEXT.other!, message: summary, artifact, isError: false, alert: false };
   }
   if (item.kind === 'memory') {

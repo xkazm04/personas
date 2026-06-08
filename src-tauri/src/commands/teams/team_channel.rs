@@ -76,7 +76,8 @@ pub fn list_team_channel(
             "SELECT e.id,
                     strftime('%Y-%m-%dT%H:%M:%SZ', datetime(e.created_at)) AS at,
                     e.kind, e.payload, e.assignment_id, e.step_id,
-                    s.assigned_persona_id, s.title
+                    s.assigned_persona_id, s.title,
+                    a.title AS asg_title, a.goal AS asg_goal, a.error_message AS asg_error
              FROM team_assignment_events e
              JOIN team_assignments a ON a.id = e.assignment_id
              LEFT JOIN team_assignment_steps s ON s.id = e.step_id
@@ -87,16 +88,43 @@ pub fn list_team_channel(
              ORDER BY at DESC LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![team_id, cursor, limit], |r| {
+            let kind: String = r.get(2)?;
+            let raw_payload: Option<String> = r.get(3)?;
+            let step_title: Option<String> = r.get(7)?;
+            let asg_title: Option<String> = r.get(8)?;
+            let asg_goal: Option<String> = r.get(9)?;
+            let asg_error: Option<String> = r.get(10)?;
+            // Body: the step title when the event names a step, else the
+            // assignment title — assignment-level events (created /
+            // status_awaiting_review / status_done) carry no step_id, so
+            // without this fallback they render with an empty body.
+            let body = step_title.or_else(|| asg_title.clone());
+            // Extra: keep the step payload when present; for the assignment-level
+            // review/done gates (payload is NULL) synthesize the review context
+            // from the assignment so the detail modal isn't empty.
+            let extra = raw_payload.or_else(|| {
+                if matches!(kind.as_str(), "status_awaiting_review" | "status_done" | "created") {
+                    Some(
+                        serde_json::json!({
+                            "task": asg_goal.clone().or_else(|| asg_title.clone()),
+                            "error": asg_error.clone(),
+                        })
+                        .to_string(),
+                    )
+                } else {
+                    None
+                }
+            });
             Ok(TeamChannelItem {
                 id: format!("tae-{}", r.get::<_, String>(0)?),
                 kind: "step".into(),
                 at: r.get(1)?,
-                label: r.get(2)?,
-                extra: r.get(3)?,
+                label: kind,
+                extra,
                 assignment_id: r.get(4)?,
                 step_id: r.get(5)?,
                 persona_id: r.get(6)?,
-                body: r.get(7)?,
+                body,
                 reply_to: None,
             })
         })?;
