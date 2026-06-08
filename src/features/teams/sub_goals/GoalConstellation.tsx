@@ -21,7 +21,8 @@ type VariantId = 'board' | 'map';
 export default function GoalConstellation({
   variant = 'board',
   showDoneLane = false,
-}: { variant?: VariantId; showDoneLane?: boolean } = {}) {
+  showProject = false,
+}: { variant?: VariantId; showDoneLane?: boolean; showProject?: boolean } = {}) {
   const goals = useSystemStore((s) => s.goals);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
 
@@ -54,7 +55,7 @@ export default function GoalConstellation({
 
   return (
     <div className="space-y-3">
-      {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} />}
+      {variant === 'board' && <GoalKanban onOpenGoal={setDetailGoalId} showDone={showDoneLane} showProject={showProject} />}
       {variant === 'map' && (
         <GoalGraphMap
           goals={goals}

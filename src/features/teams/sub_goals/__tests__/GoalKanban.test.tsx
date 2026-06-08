@@ -11,6 +11,7 @@ vi.mock('@/stores/systemStore', () => ({
   useSystemStore: (selector: (s: Record<string, unknown>) => unknown) =>
     selector({
       goals: testGoals,
+      projects: [],
       updateGoal,
     }),
 }));

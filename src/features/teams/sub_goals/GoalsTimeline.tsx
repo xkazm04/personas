@@ -13,7 +13,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { isOngoing, goalStatusMeta } from './goalStatus';
-import { GoalAtmosphere, SectionLabel } from './goalsTheme';
+import { GoalAtmosphere, SectionLabel, GoalProjectBadge } from './goalsTheme';
 
 type Bucket = 'overdue' | 'this_week' | 'this_month' | 'later' | 'undated';
 const BUCKET_ORDER: Bucket[] = ['overdue', 'this_week', 'this_month', 'later', 'undated'];
@@ -37,12 +37,18 @@ const BUCKET_ACCENT: Record<Bucket, string> = {
   undated: 'bg-foreground/20',
 };
 
-export function GoalsTimeline() {
+export function GoalsTimeline({ showProject = false }: { showProject?: boolean } = {}) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const goals = useSystemStore((s) => s.goals);
+  const projects = useSystemStore((s) => s.projects);
   const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
   const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
+
+  const projectNameById = useMemo(
+    () => new Map(projects.map((p) => [p.id, p.name])),
+    [projects],
+  );
 
   const labels: Record<Bucket, string> = {
     overdue: dl.timeline_overdue_group,
@@ -110,6 +116,9 @@ export function GoalsTimeline() {
                 >
                   <div className="flex items-center gap-2">
                     <span className="typo-body text-foreground truncate flex-1">{g.title}</span>
+                    {showProject && projectNameById.get(g.project_id) && (
+                      <GoalProjectBadge name={projectNameById.get(g.project_id)!} />
+                    )}
                     <GoalStatusBadge status={g.status} />
                     {g.target_date && (
                       <span className="typo-caption text-foreground tabular-nums shrink-0">

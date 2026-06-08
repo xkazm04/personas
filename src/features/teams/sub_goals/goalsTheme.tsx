@@ -8,6 +8,7 @@
  * stays cohesive and a tweak is a one-file edit.
  */
 import type { CSSProperties, ReactNode } from 'react';
+import { FolderKanban } from 'lucide-react';
 import { goalStatusMeta } from './goalStatus';
 
 /**
@@ -41,6 +42,23 @@ export function GoalAtmosphere({ className = '' }: { className?: string }) {
           'radial-gradient(120% 70% at 50% -10%, rgba(139,92,246,0.07), transparent 55%)',
       }}
     />
+  );
+}
+
+/**
+ * Project-origin chip — shown on Board cards / Timeline rows in the
+ * cross-project ("All projects") scope so each goal carries which project it
+ * belongs to. Hidden in single-project scope (redundant).
+ */
+export function GoalProjectBadge({ name, className = '' }: { name: string; className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1 max-w-[140px] px-1.5 py-0.5 rounded-full border border-primary/15 bg-primary/5 text-[10px] text-foreground ${className}`}
+      title={name}
+    >
+      <FolderKanban className="w-2.5 h-2.5 shrink-0 text-violet-400" />
+      <span className="truncate">{name}</span>
+    </span>
   );
 }
 

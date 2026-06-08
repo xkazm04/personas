@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Target, Plus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
+import { SegmentedTabs } from '@/features/shared/components/layout/SegmentedTabs';
 import { IconGoals } from '@/features/shared/components/layout/sidebar/SidebarIcons';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
@@ -29,13 +30,29 @@ function readShowDone(): boolean {
   }
 }
 
+/** Board/Timeline scope: cross-project ("all") vs the picked project ("project").
+ *  Defaults to cross-project so the hub opens as a portfolio-wide overview;
+ *  persisted so the choice sticks. The Map is always project-scoped. */
+type GoalScope = 'all' | 'project';
+const SCOPE_KEY = 'personas.goals.scope';
+
+function readScope(): GoalScope {
+  try {
+    return localStorage.getItem(SCOPE_KEY) === 'project' ? 'project' : 'all';
+  } catch (err) {
+    silentCatch('GoalsPage.readScope')(err);
+    return 'all';
+  }
+}
+
 /**
  * Goals — high-level direction surface.
  *
- * Reachable both as a top-level sidebar section and as a Dev Tools L3 tab;
- * both render this same project-scoped view. Layout follows the project-header
- * philosophy: title + project root path + shared LifecycleProjectPicker, plus
- * an authoring entry point (the "+ New goal" button) that opens GoalEditorModal.
+ * Reachable both as a top-level sidebar section and as a Dev Tools L3 tab.
+ * Layout follows the project-header philosophy: title + project root path +
+ * shared LifecycleProjectPicker + a Board/Timeline scope switch (All projects /
+ * This project), plus an authoring entry point (the "+ New goal" button) that
+ * opens GoalEditorModal.
  */
 export default function GoalsPage() {
   const { t, tx } = useTranslation();
@@ -47,11 +64,18 @@ export default function GoalsPage() {
   const goals = useSystemStore((s) => s.goals);
   const goalsTab = useSystemStore((s) => s.goalsTab);
   const fetchGoals = useSystemStore((s) => s.fetchGoals);
+  const fetchAllGoals = useSystemStore((s) => s.fetchAllGoals);
   const addToast = useToastStore((s) => s.addToast);
 
   const [editorOpen, setEditorOpen] = useState(false);
   // Board-only: the Done lane is hidden by default (persisted preference).
   const [showDone, setShowDone] = useState(readShowDone);
+  // Board/Timeline scope (persisted). The Map ignores it (always project-scoped).
+  const [scope, setScope] = useState<GoalScope>(readScope);
+
+  // Cross-project view is only meaningful for Board + Timeline; the Map needs
+  // one project's dependency graph + saved node positions, so it stays scoped.
+  const crossProject = scope === 'all' && (goalsTab === 'board' || goalsTab === 'timeline');
 
   const toggleShowDone = () => {
     const next = !showDone;
@@ -63,15 +87,30 @@ export default function GoalsPage() {
     }
   };
 
+  const changeScope = (next: GoalScope) => {
+    setScope(next);
+    try {
+      localStorage.setItem(SCOPE_KEY, next);
+    } catch (err) {
+      silentCatch('GoalsPage.persistScope')(err);
+    }
+  };
+
   const doneCount = goals.filter((g) => isComplete(g.status)).length;
 
-  // Load goals for the active project at the page level — NOT inside
-  // GoalConstellation, which only mounts once goals exist. Fetching here means
-  // an empty board still loads goals on refresh (fixes goals vanishing until a
-  // manual add re-triggered the fetch).
+  // Load goals at the page level — NOT inside GoalConstellation, which only
+  // mounts once goals exist. Fetching here means an empty board still loads on
+  // refresh. In cross-project scope we pull every project's goals into the same
+  // store array (so drag-to-move / progress still work); otherwise the active
+  // project's. `crossProject` flips false when switching to the Map, which
+  // re-scopes the store to the active project before the Map reads it.
   useEffect(() => {
-    if (activeProjectId) fetchGoals(activeProjectId);
-  }, [activeProjectId, fetchGoals]);
+    if (crossProject) {
+      void fetchAllGoals();
+    } else if (activeProjectId) {
+      void fetchGoals(activeProjectId);
+    }
+  }, [crossProject, activeProjectId, fetchGoals, fetchAllGoals]);
 
   const handleSyncToObsidian = async () => {
     if (!activeProjectId) return;
@@ -98,7 +137,24 @@ export default function GoalsPage() {
         subtitle={activeProject?.root_path ?? '—'}
         actions={
           <div className="flex items-center gap-2">
-<Button
+            {/* Scope switch — Board/Timeline only (the Map is always scoped to
+                one project). The project picker stays available either way, so
+                the user can narrow when needed and it remains the new-goal /
+                Map / sync target. */}
+            {(goalsTab === 'board' || goalsTab === 'timeline') && (
+              <SegmentedTabs<GoalScope>
+                variant="segment"
+                fullWidth={false}
+                ariaLabel={dl.goal_scope_all_projects}
+                activeTab={scope}
+                onTabChange={changeScope}
+                tabs={[
+                  { id: 'all', label: dl.goal_scope_all_projects },
+                  { id: 'project', label: dl.goal_scope_this_project },
+                ]}
+              />
+            )}
+            <Button
               variant="accent"
               accentColor="violet"
               size="sm"
@@ -115,7 +171,7 @@ export default function GoalsPage() {
 
       <ContentBody>
         {goalsTab === 'timeline' ? (
-          <GoalsTimeline />
+          <GoalsTimeline showProject={crossProject} />
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
@@ -185,7 +241,7 @@ export default function GoalsPage() {
                 </Button>
               </div>
             </div>
-            <GoalConstellation variant={goalsTab as 'board' | 'map'} showDoneLane={showDone} />
+            <GoalConstellation variant={goalsTab as 'board' | 'map'} showDoneLane={showDone} showProject={crossProject} />
           </div>
         )}
       </ContentBody>

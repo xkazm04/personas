@@ -10,7 +10,7 @@ import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import * as devApi from '@/api/devTools/devTools';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
-import { goalAccentEdgeStyle } from './goalsTheme';
+import { goalAccentEdgeStyle, GoalProjectBadge } from './goalsTheme';
 
 // ---------------------------------------------------------------------------
 // Lanes feed the shared <KanbanBoard>. Status→lane membership comes from the
@@ -58,11 +58,14 @@ function todoProgress(items: DevGoalItem[]): number {
 function GoalCard({
   goal,
   items,
+  projectName,
   onOpen,
   onToggleItem,
 }: {
   goal: DevGoal;
   items: DevGoalItem[];
+  /** Origin-project name — shown as a chip in cross-project scope; undefined hides it. */
+  projectName?: string;
   onOpen?: () => void;
   onToggleItem?: (itemId: string, done: boolean) => void;
 }) {
@@ -100,6 +103,8 @@ function GoalCard({
       <div className="flex items-start gap-2">
         <Target className="w-3.5 h-3.5 text-primary/60 mt-0.5 shrink-0" />
         <div className="flex-1 min-w-0">
+          {/* Cross-project scope: which project this goal belongs to (kicker). */}
+          {projectName && <GoalProjectBadge name={projectName} className="mb-1" />}
           {/* Full title, wrapping — never truncated. The description lives in
               the detail drawer (open affordance / "+N more"), not on the card. */}
           <h4 className="typo-card-label leading-snug break-words">{goal.title}</h4>
@@ -244,31 +249,48 @@ function GoalCard({
 export default function GoalKanban({
   onOpenGoal,
   showDone = false,
-}: { onOpenGoal?: (id: string) => void; showDone?: boolean } = {}) {
+  showProject = false,
+}: { onOpenGoal?: (id: string) => void; showDone?: boolean; showProject?: boolean } = {}) {
   const { t } = useTranslation();
   const dt = t.plugins.dev_tools;
   const goals = useSystemStore((s) => s.goals);
-  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+  const projects = useSystemStore((s) => s.projects);
   const updateGoal = useSystemStore((s) => s.updateGoal);
 
-  // Checklist items for every goal in the project — fetched in ONE batch query
-  // (no per-card fan-out), grouped by goal id. Refetches when the project or
-  // goal count changes; toggles update this map optimistically.
+  // project id → name, for the cross-project origin chip.
+  const projectNameById = useMemo(
+    () => new Map(projects.map((p) => [p.id, p.name])),
+    [projects],
+  );
+
+  // The set of projects the visible goals span (one in single-project scope,
+  // many in cross-project). Stable key so the item fetch only re-runs when the
+  // project set actually changes.
+  const projectIds = useMemo(
+    () => [...new Set(goals.map((g) => g.project_id))],
+    [goals],
+  );
+  const projectIdsKey = projectIds.slice().sort().join(',');
+
+  // Checklist items for every visible goal — one batch query per project the
+  // goals span (just the active project in single-project scope; a small
+  // fan-out across projects in cross-project scope), grouped by goal id.
+  // Toggles update this map optimistically.
   const [itemsByGoal, setItemsByGoal] = useState<Map<string, DevGoalItem[]>>(new Map());
   const itemsRef = useRef(itemsByGoal);
   itemsRef.current = itemsByGoal;
 
   useEffect(() => {
-    if (!activeProjectId || goals.length === 0) {
+    if (projectIds.length === 0) {
       setItemsByGoal(new Map());
       return;
     }
     let cancelled = false;
-    devApi.listGoalItemsForProject(activeProjectId)
-      .then((items) => {
+    Promise.all(projectIds.map((pid) => devApi.listGoalItemsForProject(pid)))
+      .then((lists) => {
         if (cancelled) return;
         const grouped = new Map<string, DevGoalItem[]>();
-        for (const it of items) {
+        for (const it of lists.flat()) {
           const arr = grouped.get(it.goal_id);
           if (arr) arr.push(it);
           else grouped.set(it.goal_id, [it]);
@@ -277,7 +299,9 @@ export default function GoalKanban({
       })
       .catch(silentCatch('GoalKanban.loadItems'));
     return () => { cancelled = true; };
-  }, [activeProjectId, goals.length]);
+    // projectIdsKey captures the project set; goals.length captures within-project adds.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectIdsKey, goals.length]);
 
   // Toggle a to-do: optimistic local flip → persist the item → recompute the
   // goal's % from the checklist and persist that too (so the Map agrees).
@@ -367,6 +391,7 @@ export default function GoalKanban({
         <GoalCard
           goal={g}
           items={itemsByGoal.get(g.id) ?? []}
+          projectName={showProject ? projectNameById.get(g.project_id) : undefined}
           onOpen={onOpenGoal ? () => onOpenGoal(g.id) : undefined}
           onToggleItem={(itemId, done) => handleToggleItem(g, itemId, done)}
         />

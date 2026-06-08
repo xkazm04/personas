@@ -34,6 +34,9 @@ export interface DevToolsProjectSlice {
   goalSignals: DevGoalSignal[];
 
   fetchGoals: (projectId: string) => Promise<void>;
+  /** Load goals across ALL projects (Board/Timeline "All projects" scope).
+   *  Writes the same `goals` array, so updateGoal/drag/progress all still work. */
+  fetchAllGoals: () => Promise<void>;
   createGoal: (projectId: string, title: string, description?: string, contextId?: string, targetDate?: string, parentGoalId?: string) => Promise<DevGoal>;
   updateGoal: (id: string, updates: { title?: string; description?: string; status?: string; progress?: number; targetDate?: string; contextId?: string }) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
@@ -160,6 +163,16 @@ export const createDevToolsProjectSlice: StateCreator<SystemStore, [], [], DevTo
     set({ goalsLoading: true });
     try {
       const goals = await devApi.listGoals(projectId);
+      set({ goals, goalsLoading: false, error: null });
+    } catch (err) {
+      reportError(err, "Failed to fetch goals", set, { stateUpdates: { goalsLoading: false } });
+    }
+  },
+
+  fetchAllGoals: async () => {
+    set({ goalsLoading: true });
+    try {
+      const goals = await devApi.listAllGoals();
       set({ goals, goalsLoading: false, error: null });
     } catch (err) {
       reportError(err, "Failed to fetch goals", set, { stateUpdates: { goalsLoading: false } });

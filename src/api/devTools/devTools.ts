@@ -222,6 +222,10 @@ export const resolveGoalProgress = (goalId: string) =>
 // Goals v2 — cross-project surfaces (Timeline / Map)
 // ============================================================================
 
+/** Every goal across all projects — backs the Board/Timeline "All projects" scope. */
+export const listAllGoals = () =>
+  invoke<DevGoal[]>("dev_tools_list_all_goals", {});
+
 /** All dependency edges for one project's goals in a single query (Map). */
 export const listGoalDependenciesForProject = (projectId: string) =>
   invoke<DevGoalDependency[]>("dev_tools_list_goal_dependencies_for_project", { projectId });
