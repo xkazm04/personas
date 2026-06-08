@@ -165,7 +165,9 @@
     "strip_open_hint": "Open monitor",
     "strip_idle_hint": "Fleet idle · open monitor",
     "live_chip": "{running} live",
-    "live_chip_title": "{tools} tool calls in flight"
+    "live_chip_title": "{tools} tool calls in flight",
+    "quick_decision_position": "Decision {current} of {total}",
+    "quick_suggested_actions": "Suggested"
   },
   "common": {
     "unknown_error": "Unknown error",

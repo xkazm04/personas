@@ -13,7 +13,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useAgentStore } from '@/stores/agentStore';
 import { usePendingInteractions } from './usePendingInteractions';
 import { QuickAnswerQuestionGroup } from './QuickAnswerQuestionGroup';
-import { QuickAnswerReviewCard } from './QuickAnswerReviewCard';
+import { QuickAnswerReviewStepper } from './QuickAnswerReviewStepper';
 
 interface QuickAnswerPopoverProps {
   onClose: () => void;
@@ -122,14 +122,13 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
                 <span className="typo-label font-bold uppercase tracking-[0.16em] text-foreground">
                   {t.monitor.quick_reviews_header}
                 </span>
-                {reviews.map((r) => (
-                  <QuickAnswerReviewCard
-                    key={r.id}
-                    review={r}
-                    busy={isProcessing}
-                    onAction={handleReviewAction}
-                  />
-                ))}
+                {/* One decision at a time, with the full untruncated description
+                    so the user knows exactly what they're approving. */}
+                <QuickAnswerReviewStepper
+                  reviews={reviews}
+                  busy={isProcessing}
+                  onAction={handleReviewAction}
+                />
               </section>
             )}
           </>

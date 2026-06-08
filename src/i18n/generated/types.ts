@@ -172,6 +172,8 @@ export type Translations = {
     strip_idle_hint: string;
     live_chip: string;
     live_chip_title: string;
+    quick_decision_position: string;
+    quick_suggested_actions: string;
   };
   common: {
     unknown_error: string;
