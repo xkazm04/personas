@@ -96,7 +96,15 @@ interface ContentHeaderProps {
    *  (the "Good Evening, Operator" treatment). This is what the user reads
    *  first. May be a dynamic count, status phrase, greeting, etc. */
   subtitle?: ReactNode;
+  /** Right-aligned controls on the SAME row as the title/subtitle. Use for one
+   *  or two compact actions; when the controls are many (switches + picker +
+   *  button) prefer `toolbar`, which drops them to their own row so they don't
+   *  collide with a long title. */
   actions?: ReactNode;
+  /** Controls rendered as a thin bar on the row BELOW the title/subtitle,
+   *  separated by a divider. The collision-free home for a page's switches,
+   *  primary action, and selectors. */
+  toolbar?: ReactNode;
   children?: ReactNode;
   /** Inline style applied to the header root — used to thread CSS custom
    *  properties (e.g. `--persona-accent`) into descendant components. */
@@ -109,6 +117,7 @@ export function ContentHeader({
   title,
   subtitle,
   actions,
+  toolbar,
   children,
   style,
 }: ContentHeaderProps) {
@@ -151,7 +160,7 @@ export function ContentHeader({
         scrolled ? 'shadow-elevation-2' : 'shadow-none',
       ].join(' ')}
     >
-      <div className="flex items-center gap-3 pr-20">
+      <div className={`flex items-center gap-3 ${actions ? 'pr-20' : ''}`}>
         {iconElement}
         <div className="flex-1 min-w-0">
           {/* Title = small mono-uppercase context label (Mission Control style). */}
@@ -165,6 +174,13 @@ export function ContentHeader({
         </div>
         {actions}
       </div>
+      {/* Toolbar — a thin controls bar on its own row below the title, so a long
+          title and a cluster of switches/actions never fight for the same space. */}
+      {toolbar && (
+        <div className="mt-3 pt-3 border-t border-primary/10 flex items-center flex-wrap gap-2">
+          {toolbar}
+        </div>
+      )}
       {children}
     </div>
   );

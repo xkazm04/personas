@@ -119,29 +119,30 @@ export function TeamsSidebarNav() {
             <span className="ml-auto typo-caption text-foreground/45 font-mono">{activeGoalCount}</span>
           )}
         </button>
-        {teamsTab === 'goals' && (
-          <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
-            {GOAL_VIEWS.map((v) => {
-              const Icon = v.icon;
-              return (
-                <button
-                  key={v.id}
-                  data-testid={`goals-view-${v.id}`}
-                  onClick={() => setGoalsTab(v.id)}
-                  aria-current={goalsTab === v.id ? 'page' : undefined}
-                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
-                    goalsTab === v.id
-                      ? 'bg-primary/10 text-foreground/90 font-medium'
-                      : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span className="truncate">{t.plugins.dev_lifecycle[v.labelKey]}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+        {/* View submenu — always expanded; clicking a view also navigates into
+            the Goals hub (so it works from anywhere in the Teams section). */}
+        <div className="ml-3 pl-2 border-l border-primary/10 space-y-0.5">
+          {GOAL_VIEWS.map((v) => {
+            const Icon = v.icon;
+            const active = teamsTab === 'goals' && goalsTab === v.id;
+            return (
+              <button
+                key={v.id}
+                data-testid={`goals-view-${v.id}`}
+                onClick={() => { go('goals'); setGoalsTab(v.id); }}
+                aria-current={active ? 'page' : undefined}
+                className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md typo-body transition-colors ${
+                  active
+                    ? 'bg-primary/10 text-foreground/90 font-medium'
+                    : 'text-foreground/70 hover:bg-secondary/30 hover:text-foreground/90'
+                }`}
+              >
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="truncate">{t.plugins.dev_lifecycle[v.labelKey]}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </nav>
   );

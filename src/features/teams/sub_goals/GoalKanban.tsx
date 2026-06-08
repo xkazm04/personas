@@ -8,7 +8,6 @@ import { KanbanBoard, type KanbanColumn } from '@/features/shared/components/kan
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import * as devApi from '@/api/devTools/devTools';
-import { GoalStatusBadge } from './GoalStatusBadge';
 import { GOAL_STATUSES, GOAL_STATUS_META, normalizeGoalStatus, isOngoing, type GoalLane, type GoalStatus } from './goalStatus';
 import { goalAccentEdgeStyle, GoalProjectBadge } from './goalsTheme';
 
@@ -80,7 +79,14 @@ function GoalCard({
   // manual progress (nudged inline) is the source of truth.
   const progressPct = hasTodos ? todoProgress(items) : (goal.progress ?? 0);
 
-  const inlineItems = items.slice(0, MAX_INLINE_TODOS);
+  // Open to-dos on top (the actionable ones), then done; newest-first within
+  // each group — so the card surfaces what still needs doing, not the history.
+  const orderedItems = useMemo(() => {
+    const open = items.filter((i) => !i.done).reverse();
+    const done = items.filter((i) => i.done).reverse();
+    return [...open, ...done];
+  }, [items]);
+  const inlineItems = orderedItems.slice(0, MAX_INLINE_TODOS);
   const extraCount = items.length - inlineItems.length;
 
   const handleNudge = useCallback(async (delta: number) => {
@@ -214,30 +220,33 @@ function GoalCard({
         </div>
       )}
 
-      {/* Meta row — date turns red when an ongoing goal is past its target.
-          A subtle "add to-dos" affordance (hover) routes authoring to the drawer. */}
-      <div className="flex items-center gap-2 mt-2">
-        <GoalStatusBadge status={goal.status} />
-        {goal.target_date && (() => {
-          const overdue = isOngoing(goal.status) && new Date(goal.target_date).getTime() < Date.now();
-          return (
-            <span className={`text-[9px] flex items-center gap-0.5 ${overdue ? 'text-red-400 font-medium' : 'text-foreground'}`}>
-              <Clock className="w-2.5 h-2.5" />
-              <RelativeTime timestamp={goal.target_date} />
-            </span>
-          );
-        })()}
-        {!hasTodos && onOpen && hovered && (
-          <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onOpen(); }}
-            className="ml-auto text-[9px] flex items-center gap-0.5 text-primary/70 hover:text-primary transition-colors"
-          >
-            <ListChecks className="w-2.5 h-2.5" />
-            {dl.goal_card_add_todos}
-          </button>
-        )}
-      </div>
+      {/* Meta row — status is conveyed by the left accent edge, so no badge
+          here; just the target date (red when an ongoing goal is overdue) and a
+          subtle hover "add to-dos" affordance. Rendered only when it has
+          content so empty cards don't carry a dead gap. */}
+      {(goal.target_date || (!hasTodos && onOpen)) && (
+        <div className="flex items-center gap-2 mt-2">
+          {goal.target_date && (() => {
+            const overdue = isOngoing(goal.status) && new Date(goal.target_date).getTime() < Date.now();
+            return (
+              <span className={`text-[9px] flex items-center gap-0.5 ${overdue ? 'text-red-400 font-medium' : 'text-foreground'}`}>
+                <Clock className="w-2.5 h-2.5" />
+                <RelativeTime timestamp={goal.target_date} />
+              </span>
+            );
+          })()}
+          {!hasTodos && onOpen && hovered && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onOpen(); }}
+              className="ml-auto text-[9px] flex items-center gap-0.5 text-primary/70 hover:text-primary transition-colors"
+            >
+              <ListChecks className="w-2.5 h-2.5" />
+              {dl.goal_card_add_todos}
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

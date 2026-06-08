@@ -135,8 +135,8 @@ export default function GoalsPage() {
         iconColor="violet"
         title={t.plugins.dev_lifecycle.tab_goals}
         subtitle={activeProject?.root_path ?? '—'}
-        actions={
-          <div className="flex items-center gap-2">
+        toolbar={
+          <>
             {/* Scope switch — Board/Timeline only (the Map is always scoped to
                 one project). The project picker stays available either way, so
                 the user can narrow when needed and it remains the new-goal /
@@ -154,18 +154,21 @@ export default function GoalsPage() {
                 ]}
               />
             )}
-            <Button
-              variant="accent"
-              accentColor="violet"
-              size="sm"
-              icon={<Plus className="w-3.5 h-3.5" />}
-              disabled={!activeProjectId}
-              onClick={() => setEditorOpen(true)}
-            >
-              {dl.goal_new_title}
-            </Button>
-            <LifecycleProjectPicker />
-          </div>
+            {/* Target + primary action pushed to the right edge of the bar. */}
+            <div className="ml-auto flex items-center gap-2">
+              <LifecycleProjectPicker />
+              <Button
+                variant="accent"
+                accentColor="violet"
+                size="sm"
+                icon={<Plus className="w-3.5 h-3.5" />}
+                disabled={!activeProjectId}
+                onClick={() => setEditorOpen(true)}
+              >
+                {dl.goal_new_title}
+              </Button>
+            </div>
+          </>
         }
       />
 
