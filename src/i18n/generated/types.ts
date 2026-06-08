@@ -183,6 +183,16 @@ export type Translations = {
     channels_none: string;
     channels_no_teams: string;
     channels_select_prompt: string;
+    channels_layout_grid: string;
+    channels_layout_grid_hint: string;
+    channels_layout_timeline: string;
+    channels_layout_timeline_hint: string;
+    channels_layout_swimlanes: string;
+    channels_layout_swimlanes_hint: string;
+    channels_combined_title: string;
+    channels_combined_subtitle: string;
+    channels_combined_quiet: string;
+    channels_show_more: string;
   };
   common: {
     unknown_error: string;

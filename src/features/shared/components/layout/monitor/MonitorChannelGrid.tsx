@@ -3,8 +3,13 @@ import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
+import { MonitorChannelTimeline } from './MonitorChannelTimeline';
+import { MonitorChannelSwimlanes } from './MonitorChannelSwimlanes';
+import type { FeedTeam } from './collabMergedFeed';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
+
+type ChannelLayout = 'grid' | 'timeline' | 'swimlanes';
 
 /**
  * Channel mode — watch multiple team channels in PARALLEL. A thin compact
@@ -61,6 +66,21 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
 
   const shown = channelTeams.filter((tm) => selected.has(tm.id));
 
+  // Layout: separate channels (grid) vs combined (timeline / swimlanes).
+  const [layout, setLayout] = useState<ChannelLayout>('grid');
+  const LAYOUTS: Array<{ id: ChannelLayout; label: string; hint: string }> = [
+    { id: 'grid', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint },
+    { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint },
+    { id: 'swimlanes', label: t.monitor.channels_layout_swimlanes, hint: t.monitor.channels_layout_swimlanes_hint },
+  ];
+  const feedTeams: FeedTeam[] = useMemo(
+    () =>
+      channelTeams
+        .filter((tm) => selected.has(tm.id))
+        .map((tm) => ({ teamId: tm.id, teamName: tm.name, teamColor: tm.color, members: membersByTeam.get(tm.id) ?? [] })),
+    [channelTeams, selected, membersByTeam],
+  );
+
   return (
     <div className="h-full flex flex-col min-h-0">
       {/* Thin team topbar */}
@@ -92,10 +112,27 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
             {allOn ? t.monitor.channels_none : t.monitor.channels_all}
           </button>
         )}
+        {/* Layout switcher — Grid (separate channels) vs combined Timeline / Swimlanes */}
+        <div className="flex-shrink-0 ml-auto flex items-center gap-0.5 rounded-full bg-secondary/20 p-0.5">
+          {LAYOUTS.map((l) => (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => setLayout(l.id)}
+              title={l.hint}
+              aria-pressed={layout === l.id}
+              className={`px-2.5 py-0.5 rounded-full typo-caption transition-colors ${
+                layout === l.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/50 hover:text-foreground/80'
+              }`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Responsive parallel-channel grid */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-3">
+      {/* Body — Grid (separate channels) / Timeline / Swimlanes (combined) */}
+      <div className="flex-1 min-h-0">
         {channelTeams.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground/50">
             <MessagesSquare className="w-8 h-8 text-foreground/25" />
@@ -103,13 +140,19 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
           </div>
         ) : shown.length === 0 ? (
           <div className="h-full flex items-center justify-center typo-body text-foreground/45">{t.monitor.channels_select_prompt}</div>
+        ) : layout === 'timeline' ? (
+          <div className="h-full p-3"><MonitorChannelTimeline teams={feedTeams} /></div>
+        ) : layout === 'swimlanes' ? (
+          <MonitorChannelSwimlanes teams={feedTeams} />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-3">
-            {shown.map((tm) => (
-              <div key={tm.id} className="h-[460px] min-h-0">
-                <CollabLiveCorrespondence teamId={tm.id} members={membersByTeam.get(tm.id) ?? []} teamName={tm.name} />
-              </div>
-            ))}
+          <div className="h-full overflow-y-auto p-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-3">
+              {shown.map((tm) => (
+                <div key={tm.id} className="h-[460px] min-h-0">
+                  <CollabLiveCorrespondence teamId={tm.id} members={membersByTeam.get(tm.id) ?? []} teamName={tm.name} />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

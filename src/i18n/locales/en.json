@@ -176,7 +176,17 @@
     "channels_all": "All",
     "channels_none": "None",
     "channels_no_teams": "No teams with a channel yet",
-    "channels_select_prompt": "Select teams above to watch their channels"
+    "channels_select_prompt": "Select teams above to watch their channels",
+    "channels_layout_grid": "Grid",
+    "channels_layout_grid_hint": "Separate channels side by side",
+    "channels_layout_timeline": "Timeline",
+    "channels_layout_timeline_hint": "All teams merged into one chronological stream",
+    "channels_layout_swimlanes": "Swimlanes",
+    "channels_layout_swimlanes_hint": "One column, grouped into collapsible per-team sections",
+    "channels_combined_title": "All teams",
+    "channels_combined_subtitle": "Merged cross-team channel",
+    "channels_combined_quiet": "Quiet so far — activity from the selected teams lands here.",
+    "channels_show_more": "Show {count} more"
   },
   "common": {
     "unknown_error": "Unknown error",

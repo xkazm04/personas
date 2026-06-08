@@ -32,6 +32,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### prototype-monitor-channel-combined — /prototype combined cross-team channel (Grid vs Timeline vs Swimlanes)
+- Started: 2026-06-08 (session 892a5254). Master + atomic per-round commits.
+- Paths: monitor/MonitorChannelGrid.tsx (+ layout switcher), MonitorChannelTimeline.tsx + MonitorChannelSwimlanes.tsx (variant siblings), collabMergedFeed.tsx (shared merge infra), .claude/active-runs.md.
+- Note: evaluating whether merging selected teams into ONE compact feed is UX-feasible vs the current grid of separate channels. Running app HMRs live.
+
 ### collab-c5-flagship-prototype — /prototype on the Collab channel (C5 flagship polish)
 - Started: 2026-06-08 (session 892a5254). Master + atomic per-round commits.
 - Status: started
@@ -539,6 +544,8 @@ timestamp — the next session can recognize it as abandoned.
 
 
 ## Recently completed (last 14 days)
+
+- **[2026-06-08 — completed (commit: 55203ce79)] research-claude-cli-2155-2168 — /research: Claude Code CHANGELOG 2.1.155→2.1.168 (code focus).** Floor advance 2.1.154 → 2.1.166 in `engine/provider/claude.rs` (constant + comment block + fixed the stale `test_minimum_version_is_set` assertion the 2026-05-28 run left at 2.1.149). Justification: the prior floor 2.1.154 itself carried (a) the `$TMPDIR`-override regression introduced in 2.1.154 and (b) the Opus-4.8 thinking-block API-error bug (2.1.156) — personas runs 4.8. 1 finding accepted; finding [2] (optional thinking-disable knob) deferred to the open companion-cost decision. Validated `cargo build --lib --features desktop` (Finished, 0 errors); `cargo test --lib` blocked by an UNRELATED pre-existing break at `dev_tools/triage.rs:63` (`#[cfg(test)]` `DevIdea{}` missing `priority` — another session's schema change, not touched). Research/Lessons notes written.
 
 - **[2026-06-08 — completed] goals-ui-merge-sync — merged origin/master (onboarding tour + vibeman security + lab redesign + quick-answer + friend-goals drawer) into the local Goals/Teams channel work.** A first merge attempt was reset mid-flight by a concurrent collab session (which committed 2e23c6096 over the shared checkout); recovered by reset --hard to that HEAD + clean (leonardo preserved) + a fresh `git merge origin/master`, re-resolving all 6 conflicts identically. Resolutions favor keeping BOTH features: GoalDetailDrawer = origin's friendlier hand-off + More-details fold AND local readableSignal activity rendering + max-w-[50rem]; GoalHandoffPanel relocated from retired dev-tools/sub_goals → teams/sub_goals; navCatalog analytics reconciled to the restructured taxonomy (goals→teams, dropped portfolio/team, +TeamsTab dimension). Generated files (types/enSectionStrings/commandNames) regenerated from source. Gates: tsc 0, vitest goals+analytics 34/34, cargo check --lib --features desktop exit 0, i18n no-extras.
 
