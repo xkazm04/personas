@@ -10,6 +10,7 @@ import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
 } from './collabRender';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { ChannelDetailModal } from './ChannelDetailModal';
 import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
 import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
@@ -42,6 +43,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
   const ordered = useMemo(() => [...items].reverse(), [items]);
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const [replyTarget, setReplyTarget] = useState<TeamChannelItem | null>(null);
+  const [detailItem, setDetailItem] = useState<TeamChannelItem | null>(null);
 
   useEffect(() => {
     const box = scrollBox.current;
@@ -190,6 +192,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
             personaIndex={personaIndex}
             parent={item.replyTo ? byId.get(item.replyTo) : undefined}
             onReply={() => setReplyTarget(item)}
+            onOpenDetail={() => setDetailItem(item)}
           />
         ))}
       </div>
@@ -239,6 +242,8 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
         </button>
         </div>
       </div>
+
+      <ChannelDetailModal item={detailItem} onClose={() => setDetailItem(null)} />
     </div>
   );
 }
@@ -288,11 +293,12 @@ function resolveRow(item: TeamChannelItem) {
  *   Row 2 (MESSAGE): the body, in an accent-tinted container indented under the source
  * A "Needs your review" row carries the inline ReviewInterventionCard below.
  */
-function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
+function CorrespondenceRow({ item, personaIndex, parent, onReply, onOpenDetail }: {
   item: TeamChannelItem;
   personaIndex: ReturnType<typeof usePersonaIndex>;
   parent?: TeamChannelItem;
   onReply?: () => void;
+  onOpenDetail?: () => void;
 }) {
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = itemAccent(item, persona);
@@ -333,10 +339,16 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
     );
 
   // ── System activity: a distinct compact alert strip (step layer + bus) ──
+  // Click opens the full decomposed detail; the strip itself stays a one-line
+  // key-metadata summary so the conversation isn't drowned in machine output.
   if (isSystem) {
     return (
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.14 }} className="group py-0.5">
-        <div className={`flex items-center gap-2 rounded-card border px-2.5 py-1.5 ${alert ? 'border-status-warning/30 bg-status-warning/[0.06]' : 'border-border/50 bg-foreground/[0.02]'}`}>
+        <button
+          type="button"
+          onClick={onOpenDetail}
+          className={`w-full text-left flex items-center gap-2 rounded-card border px-2.5 py-1.5 transition-colors ${alert ? 'border-status-warning/30 bg-status-warning/[0.06] hover:bg-status-warning/[0.1]' : 'border-border/50 bg-foreground/[0.02] hover:bg-foreground/[0.04]'}`}
+        >
           {alert ? (
             <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
           ) : (
@@ -346,12 +358,12 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
           <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${eventMono ? 'font-mono normal-case tracking-normal' : ''} ${eventTone}`}>{event}</span>
           {message && <span className={`typo-caption truncate ${isError ? 'text-status-error/80' : 'text-foreground/55'}`}>{message}</span>}
           {artifact && (
-            <a href={artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 typo-caption text-status-info hover:underline flex-shrink-0">
+            <a href={artifact.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="inline-flex items-center gap-1 typo-caption text-status-info hover:underline flex-shrink-0">
               <ExternalLink className="w-3 h-3" /> {artifact.label}
             </a>
           )}
           <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
-        </div>
+        </button>
         {intervene && item.assignmentId && (
           <div className="ml-2 mt-1"><ReviewInterventionCard assignmentId={item.assignmentId} personaIndex={personaIndex} /></div>
         )}
@@ -397,12 +409,16 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
       {(message || artifact || isUser || intervene) && (
         <div className="mt-1 ml-8">
           {(message || artifact || isUser) && (
-            <div className={`rounded-card border px-3 py-2 ${bodyClass}`}>
+            <div
+              className={`rounded-card border px-3 py-2 ${bodyClass} ${!isUser && onOpenDetail ? 'cursor-pointer hover:border-primary/25' : ''}`}
+              onClick={!isUser ? onOpenDetail : undefined}
+              title={!isUser && onOpenDetail ? 'Open full detail' : undefined}
+            >
               {message && (
-                <p className={`typo-body whitespace-pre-wrap ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{message}</p>
+                <p className={`typo-body whitespace-pre-wrap ${!isUser ? 'line-clamp-4' : ''} ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{message}</p>
               )}
               {artifact && (
-                <a href={artifact.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border typo-caption text-status-info hover:bg-secondary/60 transition-colors">
+                <a href={artifact.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border typo-caption text-status-info hover:bg-secondary/60 transition-colors">
                   <ExternalLink className="w-3 h-3" /> {artifact.label}
                 </a>
               )}
