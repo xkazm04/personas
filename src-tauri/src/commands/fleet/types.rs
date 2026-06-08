@@ -127,6 +127,19 @@ pub struct FleetHookStatus {
     pub port_matches: bool,
 }
 
+/// Cooked terminal preview for one session — the cheap, no-xterm "what's on
+/// screen" snapshot the grid's *unwatched* tiles render. Produced by
+/// `fleet_terminal_previews` (batched) from the session's output ring; `lines`
+/// is the last N cooked plain-text lines (ANSI/cursor sequences resolved). The
+/// focused/active tile renders a real terminal instead.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct FleetTerminalPreview {
+    pub session_id: String,
+    pub lines: Vec<String>,
+}
+
 /// Inbound payload from a Claude Code hook POST. The hook event type is
 /// in the URL path (`/fleet/hooks/:event`); the body carries CC's own
 /// hook payload as opaque JSON. Every field is `Option` because CC ships

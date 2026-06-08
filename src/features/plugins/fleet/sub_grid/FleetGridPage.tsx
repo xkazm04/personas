@@ -90,9 +90,12 @@ const GROUP_ORDER: ReadonlyArray<{
  *    did. Patches that touch one session preserve the other session
  *    objects' identity (see fleetPatchSession), so React.memo on each
  *    card avoids re-rendering the rows that didn't change.
- *  - Only the active session mounts an xterm — other sessions still
- *    receive PTY chunks in Rust but the FE event listener filters by id
- *    in O(1) and discards (only the active pane keeps a Terminal alive).
+ *  - Only the active session mounts an xterm AND subscribes to live output.
+ *    Unwatched sessions are not streamed at all: the Rust reader drains each
+ *    PTY into a bounded ring buffer and emits nothing over IPC until a pane
+ *    subscribes (then it replays the ring). So app IPC + xterm-parse cost
+ *    tracks the number of *watched* sessions, not the number running — the key
+ *    to scaling to 16 CLIs without out-rendering cmd.exe.
  *  - Event handlers (state / exited / registry-changed) are attached
  *    once via useEffect with empty-deps + stable refs for the slice
  *    actions; no resubscribe on every render.

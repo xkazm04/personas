@@ -10722,6 +10722,7 @@ export type Translations = {
       preview_desc: string;
       preview_all_clear: string;
       preview_no_sessions: string;
+      preview_idle: string;
       dot_console_spawning: string;
       dot_console_alive: string;
       dot_console_exited: string;

@@ -12,7 +12,7 @@
 //! to look anything up via the registry while blocked on I/O.
 
 use std::path::PathBuf;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use portable_pty::{native_pty_system, CommandBuilder, PtySize};
 use serde::Serialize;
@@ -20,7 +20,7 @@ use tauri::{AppHandle, Emitter, Manager};
 
 use crate::engine::event_registry::event_name;
 
-use super::registry::{now_ms, registry, FleetSessionInner};
+use super::registry::{now_ms, registry, FleetSessionInner, OutputRing, OUTPUT_RING_CAP};
 use super::types::FleetSessionState;
 
 /// MCP wiring artefacts created at spawn time. Returned so we can hand
@@ -238,6 +238,10 @@ pub fn spawn_session(
         .unwrap_or("unknown")
         .to_string();
 
+    // Shared output ring: the reader task pushes every PTY chunk here (always,
+    // so the pipe never blocks) and forwards over IPC only while subscribed.
+    let output = Arc::new(Mutex::new(OutputRing::new(OUTPUT_RING_CAP)));
+
     let inner = FleetSessionInner {
         id: id.clone(),
         // Pre-bound for fresh spawns (we passed `--session-id`); `None` for
@@ -256,16 +260,18 @@ pub fn spawn_session(
         master: Mutex::new(Some(pair.master)),
         writer: Mutex::new(Some(writer)),
         hibernating: std::sync::atomic::AtomicBool::new(false),
+        output: output.clone(),
     };
     registry().insert(inner);
 
     // Notify the UI a new session showed up.
     emit_registry_changed(&app, "added", &id);
 
-    // Reader task — blocking I/O on its own thread.
+    // Reader task — blocking I/O on its own thread. Owns the ring `Arc` so the
+    // per-read hot path never touches the registry map lock.
     let app_reader = app.clone();
     let id_reader = id.clone();
-    tokio::task::spawn_blocking(move || reader_loop(app_reader, id_reader, reader));
+    tokio::task::spawn_blocking(move || reader_loop(app_reader, id_reader, output, reader));
 
     // Reaper task — owns the child directly, waits, marks exit, emits.
     let app_reaper = app.clone();
@@ -390,9 +396,23 @@ fn build_mcp_spawn(fleet_session_id: &str) -> McpSpawn {
     McpSpawn { config_path: Some(config_path) }
 }
 
-/// Reader loop — blocks on `reader.read`, emits chunks, exits on EOF/error.
-fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::Read + Send>) {
-    let mut buf = [0u8; 8192];
+/// Reader loop — blocks on `reader.read`, buffers every chunk into the ring,
+/// and forwards over IPC ONLY while the session is subscribed. Exits on
+/// EOF/error.
+///
+/// The decoupling is the whole point: a 16-CLI fleet with one focused terminal
+/// emits one stream, not sixteen. Unwatched sessions still drain their PTY into
+/// the bounded ring (so claude never blocks on a full pipe and memory stays
+/// flat regardless of a 1M-token run), they just don't pay the
+/// serialize→IPC→xterm-parse cost for output nobody is looking at.
+fn reader_loop(
+    app: AppHandle,
+    session_id: String,
+    ring: Arc<Mutex<OutputRing>>,
+    mut reader: Box<dyn std::io::Read + Send>,
+) {
+    // 16 KiB (was 8) → fewer reads/emits per burst on fast 1M-token dumps.
+    let mut buf = [0u8; 16384];
     // First byte of PTY output ⇒ claude is up (banner/prompt drawn). Promote
     // Spawning → Idle once, so the session isn't mislabeled never-attached
     // while it sits at a fresh prompt with no transcript/hook yet. We do NOT
@@ -413,14 +433,23 @@ fn reader_loop(app: AppHandle, session_id: String, mut reader: Box<dyn std::io::
                         emit_registry_changed(&app, "updated", &session_id);
                     }
                 }
-                let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
-                let _ = app.emit(
-                    event_name::FLEET_SESSION_OUTPUT,
-                    OutputPayload {
-                        session_id: &session_id,
-                        chunk,
-                    },
-                );
+                // Always buffer (drains the PTY); learn whether to forward —
+                // both under one short ring lock, no registry-map contention.
+                let subscribed = {
+                    let mut r = ring.lock().unwrap_or_else(|e| e.into_inner());
+                    r.push(&buf[..n]);
+                    r.is_subscribed()
+                };
+                if subscribed {
+                    let chunk = String::from_utf8_lossy(&buf[..n]).into_owned();
+                    let _ = app.emit(
+                        event_name::FLEET_SESSION_OUTPUT,
+                        OutputPayload {
+                            session_id: &session_id,
+                            chunk,
+                        },
+                    );
+                }
             }
             Err(e) => {
                 if e.kind() == std::io::ErrorKind::Interrupted {

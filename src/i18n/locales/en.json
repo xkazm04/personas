@@ -10716,6 +10716,7 @@
       "preview_desc": "A read-only look at how your fleet would appear on the paired phone companion.",
       "preview_all_clear": "All clear",
       "preview_no_sessions": "No active sessions",
+      "preview_idle": "Waiting for output…",
       "dot_console_spawning": "Process spawning",
       "dot_console_alive": "Process alive",
       "dot_console_exited": "Process exited",
