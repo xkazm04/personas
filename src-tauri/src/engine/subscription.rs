@@ -1354,7 +1354,7 @@ fn find_goal_advance_candidates(pool: &DbPool) -> Result<Vec<(String, String)>, 
                     -- Per-goal cooldown: tuned up 30m -> 2h for the day-long
                     -- multi-team soak test (2h cadence per team). Revert to
                     -- '-30 minutes' to restore the default advancement rate.
-                    OR ta.created_at > datetime('now', '-120 minutes'))
+                    OR datetime(ta.created_at) > datetime('now', '-120 minutes'))
            )
          ORDER BY g.updated_at ASC",
     )?;
@@ -1498,7 +1498,7 @@ fn find_assignment_retry_candidates(
          WHERE a.status = 'awaiting_review'
            AND s.status = 'failed'
            AND COALESCE(s.retry_count, 0) < ?1
-           AND (s.completed_at IS NULL OR s.completed_at < datetime('now', ?2))
+           AND (s.completed_at IS NULL OR datetime(s.completed_at) < datetime('now', ?2))
          ORDER BY s.completed_at ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![ASSIGNMENT_RETRY_MAX, backoff], |r| {
@@ -1702,7 +1702,7 @@ fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::
         "SELECT id, COALESCE(severity,'medium'), COALESCE(title,''), \
                 COALESCE(description,''), COALESCE(suggested_actions,'')
          FROM persona_manual_reviews
-         WHERE status = 'pending' AND created_at < datetime('now', ?1)
+         WHERE status = 'pending' AND datetime(created_at) < datetime('now', ?1)
          ORDER BY created_at ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![cutoff], |r| {
