@@ -1,20 +1,65 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Radio, Activity } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
-import { MergedChannels, MergedRow, type FeedTeam } from './collabMergedFeed';
+import { MergedChannels, MergedRow, MERGED_ROW_HEIGHT, type FeedTeam, type TaggedItem } from './collabMergedFeed';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /**
  * TIMELINE — one combined cross-team stream.
  *
  * Every selected team's traffic merges into ONE chronological feed, newest
- * first. Each row carries a team-colour left rail + a compact team badge so
- * the source is unmistakable while everything reads as a single mission log.
- * The header glances the merged totals (teams · transmissions · working). This
- * is the "is interleaved legible?" hypothesis — maximum density, one column.
+ * first. Each row carries a team-colour left rail + a compact team badge so the
+ * source is unmistakable while everything reads as a single mission log. The
+ * list is VIRTUALIZED — only the visible rows mount — so hundreds of merged
+ * rows stay smooth and cheap (the merge window itself is capped upstream).
  */
+
+/** Virtualized row list — its own component so `useVirtualizer` isn't called
+ *  inside the MergedChannels render-prop. */
+function VirtualStream({
+  rows,
+  personaIndex,
+  onOpen,
+}: {
+  rows: TaggedItem[];
+  personaIndex: ReturnType<typeof usePersonaIndex>;
+  onOpen: (item: TeamChannelItem) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => MERGED_ROW_HEIGHT,
+    overscan: 12,
+    getItemKey: (i) => {
+      const r = rows[i];
+      return r ? `${r.team.teamId}:${r.item.id}` : String(i);
+    },
+  });
+
+  return (
+    <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
+      <div style={{ height: virtualizer.getTotalSize(), position: 'relative', width: '100%' }}>
+        {virtualizer.getVirtualItems().map((v) => {
+          const tagged = rows[v.index];
+          if (!tagged) return null;
+          return (
+            <div
+              key={v.key}
+              style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: MERGED_ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
+            >
+              <MergedRow tagged={tagged} showTeam personaIndex={personaIndex} onOpen={onOpen} />
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function MonitorChannelTimeline({ teams }: { teams: FeedTeam[] }) {
   const { t } = useTranslation();
   const personaIndex = usePersonaIndex();
@@ -54,24 +99,12 @@ export function MonitorChannelTimeline({ teams }: { teams: FeedTeam[] }) {
               </div>
             </div>
 
-            {/* Unified stream */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-2 py-2">
-              {merged.length === 0 ? (
-                <div className="h-full flex items-center justify-center typo-body text-foreground/45">{t.monitor.channels_combined_quiet}</div>
-              ) : (
-                <div className="space-y-0.5">
-                  {merged.map((tagged) => (
-                    <MergedRow
-                      key={`${tagged.team.teamId}:${tagged.item.id}`}
-                      tagged={tagged}
-                      showTeam
-                      personaIndex={personaIndex}
-                      onOpen={() => setDetail(tagged.item)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Unified, virtualized stream */}
+            {merged.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center typo-body text-foreground/45">{t.monitor.channels_combined_quiet}</div>
+            ) : (
+              <VirtualStream rows={merged} personaIndex={personaIndex} onOpen={setDetail} />
+            )}
 
             <ChannelDetailModal item={detail} onClose={() => setDetail(null)} />
           </div>

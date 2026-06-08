@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ExternalLink, AlertCircle, Pin } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -23,6 +22,10 @@ import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
  * READ-ONLY (click a row → the shared detail modal); full per-team interaction
  * stays in the grid layout.
  * -------------------------------------------------------------------------- */
+
+/** Hard cap on the merged window — bounds memory + keeps the virtualizer cheap
+ *  regardless of how many teams are selected. */
+const MAX_MERGED_ROWS = 600;
 
 export interface FeedTeam {
   teamId: string;
@@ -79,7 +82,10 @@ export function MergedChannels({
       flat.push(...rows);
     }
     flat.sort((a, b) => b.item.at.localeCompare(a.item.at));
-    return { merged: flat, byTeam: grouped };
+    // Bound the merged window so memory + the virtualizer stay cheap no matter
+    // how many teams are selected. The newest MAX_MERGED_ROWS are kept; the
+    // virtualized list only ever mounts the visible slice of these.
+    return { merged: flat.length > MAX_MERGED_ROWS ? flat.slice(0, MAX_MERGED_ROWS) : flat, byTeam: grouped };
   }, [teams, itemsByTeam]);
 
   return (
@@ -118,12 +124,18 @@ function resolveCompact(item: TeamChannelItem): { event: string; tone: string; m
   return { event: meta.label, tone: meta.tag, message: item.body, artifact: null, isError: false, alert: false };
 }
 
+/** Row height (px) the virtualizer estimates — keep in sync with the row's
+ *  vertical padding/line-height so scroll math is exact. */
+export const MERGED_ROW_HEIGHT = 30;
+
 /**
- * One compact merged-feed row: an optional team badge, the source persona, the
- * event chip, and a one-line message — clickable to open the full detail.
- * Shared by the Timeline (badge on) and Swimlanes (badge off, team in header).
+ * One compact merged-feed row: a team-colour rail + badge, the source persona,
+ * the event chip, and a one-line message — clickable to open the full detail.
+ * STATIC (no per-row mount animation) because the Timeline virtualizes it:
+ * rows mount/unmount as you scroll, so an entry animation would re-fire on
+ * every scroll. `memo` keeps re-renders to rows whose props actually changed.
  */
-export function MergedRow({
+export const MergedRow = memo(function MergedRow({
   tagged,
   showTeam,
   personaIndex,
@@ -132,7 +144,7 @@ export function MergedRow({
   tagged: TaggedItem;
   showTeam: boolean;
   personaIndex: ReturnType<typeof usePersonaIndex>;
-  onOpen: () => void;
+  onOpen: (item: TeamChannelItem) => void;
 }) {
   const { item, team } = tagged;
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
@@ -141,13 +153,10 @@ export function MergedRow({
   const { event, tone, message, artifact, isError, alert } = resolveCompact(item);
 
   return (
-    <motion.button
+    <button
       type="button"
-      onClick={onOpen}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.12 }}
-      className="w-full text-left flex items-center gap-2 rounded-card px-2.5 py-1.5 hover:bg-foreground/[0.04] transition-colors"
+      onClick={() => onOpen(item)}
+      className="w-full h-full text-left flex items-center gap-2 rounded-card px-2.5 hover:bg-foreground/[0.04] transition-colors"
       style={alert ? { boxShadow: 'inset 2px 0 0 var(--color-status-warning, #f59e0b)' } : { boxShadow: `inset 2px 0 0 ${team.teamColor}` }}
     >
       {showTeam && (
@@ -164,6 +173,6 @@ export function MergedRow({
       {message && <span className={`typo-caption truncate ${isError ? 'text-status-error/80' : 'text-foreground/55'}`}>{message}</span>}
       {artifact && <span className="inline-flex items-center gap-0.5 typo-caption text-status-info flex-shrink-0"><ExternalLink className="w-3 h-3" />{artifact.label}</span>}
       <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
-    </motion.button>
+    </button>
   );
-}
+});

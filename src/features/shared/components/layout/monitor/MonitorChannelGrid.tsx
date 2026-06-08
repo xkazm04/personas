@@ -4,18 +4,17 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { MonitorChannelTimeline } from './MonitorChannelTimeline';
-import { MonitorChannelSwimlanes } from './MonitorChannelSwimlanes';
 import type { FeedTeam } from './collabMergedFeed';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
-type ChannelLayout = 'grid' | 'timeline' | 'swimlanes';
+type ChannelLayout = 'grid' | 'timeline';
 
 /**
- * Channel mode — watch multiple team channels in PARALLEL. A thin compact
- * topbar selects/deselects teams; the selected teams render as live channels
- * in a responsive grid (up to 4 per row on wide screens, 2 on standard
- * desktop, 1 on smaller). Each team's members are derived from personas by
+ * Channel mode — watch multiple team channels at once. A thin compact topbar
+ * selects/deselects teams + a layout switcher: GRID (separate channels, full
+ * per-team interaction) or the combined TIMELINE (all teams merged into one
+ * virtualized chronological stream). Members are derived from personas by
  * `home_team_id`, so no extra fetch is needed.
  */
 export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; personas: Persona[] }) {
@@ -66,12 +65,12 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
 
   const shown = channelTeams.filter((tm) => selected.has(tm.id));
 
-  // Layout: separate channels (grid) vs combined (timeline / swimlanes).
-  const [layout, setLayout] = useState<ChannelLayout>('grid');
+  // Layout: the combined TIMELINE is the default (compact, scales to hundreds
+  // of rows); GRID (separate channels) is one click away for per-team action.
+  const [layout, setLayout] = useState<ChannelLayout>('timeline');
   const LAYOUTS: Array<{ id: ChannelLayout; label: string; hint: string }> = [
-    { id: 'grid', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint },
     { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint },
-    { id: 'swimlanes', label: t.monitor.channels_layout_swimlanes, hint: t.monitor.channels_layout_swimlanes_hint },
+    { id: 'grid', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint },
   ];
   const feedTeams: FeedTeam[] = useMemo(
     () =>
@@ -112,7 +111,7 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
             {allOn ? t.monitor.channels_none : t.monitor.channels_all}
           </button>
         )}
-        {/* Layout switcher — Grid (separate channels) vs combined Timeline / Swimlanes */}
+        {/* Layout switcher — Grid (separate channels) vs combined Timeline */}
         <div className="flex-shrink-0 ml-auto flex items-center gap-0.5 rounded-full bg-secondary/20 p-0.5">
           {LAYOUTS.map((l) => (
             <button
@@ -131,7 +130,7 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
         </div>
       </div>
 
-      {/* Body — Grid (separate channels) / Timeline / Swimlanes (combined) */}
+      {/* Body — Grid (separate channels) or combined Timeline */}
       <div className="flex-1 min-h-0">
         {channelTeams.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground/50">
@@ -142,8 +141,6 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
           <div className="h-full flex items-center justify-center typo-body text-foreground/45">{t.monitor.channels_select_prompt}</div>
         ) : layout === 'timeline' ? (
           <div className="h-full p-3"><MonitorChannelTimeline teams={feedTeams} /></div>
-        ) : layout === 'swimlanes' ? (
-          <MonitorChannelSwimlanes teams={feedTeams} />
         ) : (
           <div className="h-full overflow-y-auto p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-3">
