@@ -21,7 +21,7 @@ import { colorWithAlpha } from '@/lib/utils/colorWithAlpha';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 import { useMonitorData } from './useMonitorData';
 import { MonitorDrawer } from './MonitorDrawer';
-import { MonitorChannelGrid } from './MonitorChannelGrid';
+import { MonitorChannelGrid } from './channels';
 import {
   buildMonitorModel, SEVERITY_META,
   processStatusMeta, processStatusLabel, severityLabel, elapsedStr, severityBucket,

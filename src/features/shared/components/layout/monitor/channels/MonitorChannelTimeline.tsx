@@ -5,7 +5,10 @@ import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/b
 import { ChannelDetailModal } from '@/features/teams/sub_collab/ChannelDetailModal';
 import { useGroupedVirtualizer, GroupHeaderRow, GROUP_HEADER_SIZE } from '@/features/shared/components/display/GroupedVirtualList';
 import { buildGroupRows, timeGroupKey, timeGroupLabels } from '@/features/shared/components/display/grouping';
-import { MergedChannels, MergedRow, MERGED_ROW_HEIGHT, matchesFilter, type FeedTeam, type TaggedItem, type FeedFilter } from './collabMergedFeed';
+import { MergedChannels } from './mergedFeed';
+import { MergedRow } from './MergedRow';
+import { matchesFilter } from './feedFilter';
+import { MERGED_ROW_HEIGHT, type FeedTeam, type TaggedItem, type FeedFilter } from './types';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 /**

@@ -4,7 +4,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
 import { MonitorChannelTimeline } from './MonitorChannelTimeline';
-import type { FeedTeam } from './collabMergedFeed';
+import type { FeedTeam } from './types';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
