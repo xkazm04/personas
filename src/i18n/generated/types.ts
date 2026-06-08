@@ -200,6 +200,8 @@ export type Translations = {
     quick_dismiss: string;
     quick_prev_decision: string;
     quick_next_decision: string;
+    review_titlebar: string;
+    review_titlebar_attention: string;
   };
   common: {
     unknown_error: string;

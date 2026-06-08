@@ -43,6 +43,10 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     const onDown = (e: MouseEvent) => {
+      const target = e.target as Element | null;
+      // Ignore clicks on the titlebar trigger — it toggles the overlay itself,
+      // so closing here would race the re-click into a close-then-reopen.
+      if (target?.closest?.('[data-quick-answer-trigger]')) return;
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
     };
     window.addEventListener('keydown', onKey);

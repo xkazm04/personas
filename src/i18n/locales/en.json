@@ -193,7 +193,9 @@
     "quick_choose_action": "Choose an action",
     "quick_dismiss": "Dismiss",
     "quick_prev_decision": "Previous decision",
-    "quick_next_decision": "Next decision"
+    "quick_next_decision": "Next decision",
+    "review_titlebar": "Human review & questions",
+    "review_titlebar_attention": "{count} waiting for your answer"
   },
   "common": {
     "unknown_error": "Unknown error",
