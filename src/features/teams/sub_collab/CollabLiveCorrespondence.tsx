@@ -10,12 +10,14 @@ import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
 } from './collabRender';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
-import { usePendingInteractions } from '@/features/shared/components/layout/quick-answer/usePendingInteractions';
 import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
 import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
+import { listManualReviews, updateManualReviewStatus } from '@/api/overview/reviews';
 import { silentCatch } from '@/lib/silentCatch';
 import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
+import type { ManualReviewItem } from '@/lib/types/types';
+import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
 /**
  * CORRESPONDENCE variant — "the team is talking".
@@ -119,7 +121,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
       <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto rounded-card border border-border bg-foreground/[0.01] px-3 py-3 space-y-1">
         {/* Pending manual reviews (Director coaching / triage) for this team's
             personas — the quick-answer card, cross-referenced into the channel. */}
-        <PendingReviewTray memberIds={memberIds} />
+        <PendingReviewTray memberIds={memberIds} personaIndex={personaIndex} />
         {!exhausted && ordered.length > 0 && (
           <div ref={topSentinel} className="py-1 text-center">
             <span className="typo-caption text-foreground/40">loading earlier history…</span>
@@ -373,15 +375,82 @@ function ReviewInterventionCard({
 }
 
 /**
+ * Lightweight team-scoped pending-review feed. Deliberately does NOT reuse
+ * `usePendingInteractions`/`useMonitorData` (which also poll persona summaries
+ * + messages on the dashboard cadence) — an always-on channel surface
+ * shouldn't carry that load. Polls only `list_manual_reviews(pending)` on a
+ * gentle interval, filters to team members, and joins persona display info
+ * from the channel's persona index. Resolves via `update_manual_review_status`.
+ */
+function useTeamPendingReviews(memberIds: Set<string>, personaIndex: ReturnType<typeof usePersonaIndex>) {
+  const [reviews, setReviews] = useState<ManualReviewItem[]>([]);
+  const [busy, setBusy] = useState(false);
+
+  const refresh = useMemo(
+    () => () => {
+      listManualReviews(undefined, 'pending')
+        .then((rows) => {
+          const mapped = rows
+            .filter((r) => memberIds.has(r.persona_id))
+            .map((r): ManualReviewItem => {
+              const p = personaIndex.get(r.persona_id);
+              return {
+                id: r.id,
+                persona_id: r.persona_id,
+                execution_id: r.execution_id,
+                review_type: '',
+                content: r.description ?? '',
+                severity: r.severity,
+                status: r.status,
+                reviewer_notes: r.reviewer_notes,
+                context_data: r.context_data,
+                suggested_actions: r.suggested_actions,
+                title: r.title,
+                created_at: r.created_at,
+                resolved_at: r.resolved_at,
+                persona_name: p?.name?.replace(/^T: /, '') ?? undefined,
+                persona_icon: p?.icon ?? undefined,
+                persona_color: p?.color ?? undefined,
+              };
+            });
+          setReviews(mapped);
+        })
+        .catch(silentCatch('collab/correspondence:pendingReviews'));
+    },
+    [memberIds, personaIndex],
+  );
+
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 30_000);
+    return () => clearInterval(t);
+  }, [refresh]);
+
+  const onAction = async (id: string, status: ManualReviewStatus, notes?: string) => {
+    setBusy(true);
+    try {
+      await updateManualReviewStatus(id, status, notes);
+      setReviews((prev) => prev.filter((r) => r.id !== id)); // optimistic
+    } catch (err) {
+      silentCatch('collab/correspondence:resolveReview')(err);
+      refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { reviews, busy, onAction };
+}
+
+/**
  * Pending manual reviews (Director coaching / auto-triage) for this team's
  * personas, surfaced as the shared QuickAnswerReviewCard — the same approve/
  * reject component the title-bar quick-answer popover uses. This is the
  * cross-reference into the channel: a review raised against any team member
  * becomes actionable here, where the team is talking.
  */
-function PendingReviewTray({ memberIds }: { memberIds: Set<string> }) {
-  const { reviews, isProcessing, handleReviewAction } = usePendingInteractions();
-  const teamReviews = reviews.filter((r) => memberIds.has(r.persona_id));
+function PendingReviewTray({ memberIds, personaIndex }: { memberIds: Set<string>; personaIndex: ReturnType<typeof usePersonaIndex> }) {
+  const { reviews: teamReviews, busy, onAction } = useTeamPendingReviews(memberIds, personaIndex);
   if (teamReviews.length === 0) return null;
   return (
     <div className="mb-2 pb-2 border-b border-border space-y-1.5">
@@ -393,7 +462,7 @@ function PendingReviewTray({ memberIds }: { memberIds: Set<string> }) {
       <AnimatePresence initial={false}>
         {teamReviews.map((r) => (
           <motion.div key={r.id} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
-            <QuickAnswerReviewCard review={r} busy={isProcessing} onAction={handleReviewAction} />
+            <QuickAnswerReviewCard review={r} busy={busy} onAction={onAction} />
           </motion.div>
         ))}
       </AnimatePresence>
