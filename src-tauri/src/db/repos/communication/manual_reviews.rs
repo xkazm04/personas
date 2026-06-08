@@ -2,8 +2,8 @@ use rusqlite::{params, OptionalExtension};
 
 use crate::db::models::{
     CreateManualReviewInput, CreatePersonaMemoryInput, CreateReviewMessageInput,
-    CreateTeamMemoryInput, Json, ManualReviewCounts, ManualReviewStatus, PersonaManualReview,
-    ReviewMessage,
+    CreateTeamMemoryInput, Json, LearnedMemoryRef, ManualReviewCounts, ManualReviewStatus,
+    PersonaManualReview, ReviewMessage,
 };
 use crate::db::repos::core::memories;
 use crate::db::repos::resources::team_memories;
@@ -269,7 +269,7 @@ pub fn update_status(
     id: &str,
     status: ManualReviewStatus,
     reviewer_notes: Option<String>,
-) -> Result<(), AppError> {
+) -> Result<Option<LearnedMemoryRef>, AppError> {
     timed_query!("manual_reviews", "manual_reviews::update_status", {
         let now = chrono::Utc::now().to_rfc3339();
         let conn = pool.get()?;
@@ -301,6 +301,9 @@ pub fn update_status(
         if rows == 0 {
             return Err(AppError::NotFound(format!("Manual review {id}")));
         }
+
+        // Surfaced reference to whatever the learning loop wrote (Phase 2).
+        let mut learned: Option<LearnedMemoryRef> = None;
 
         // Learning loop: a resolved (approved/rejected) review IS human feedback.
         // Phase-1 structured shared memory (docs/tests/autonomy-eval/structured-shared-memory-design.md):
@@ -356,6 +359,8 @@ pub fn update_status(
                         ManualReviewStatus::Rejected => ("constraint", 8),
                         _ => ("decision", 7),
                     };
+                    let learned_title = title.clone();
+                    let learned_team_id = team_id.clone();
                     let tm = CreateTeamMemoryInput {
                         team_id,
                         run_id: None,
@@ -367,15 +372,28 @@ pub fn update_status(
                         importance: Some(importance),
                         tags: Some(format!("human-review,{verdict}")),
                     };
-                    if let Err(e) = team_memories::create(pool, tm) {
-                        tracing::warn!(review_id = %id, error = %e, "learning loop: failed to write shared team decision/constraint");
+                    match team_memories::create(pool, tm) {
+                        Ok(m) => {
+                            learned = Some(LearnedMemoryRef {
+                                id: m.id,
+                                scope: "team".into(),
+                                category: category.to_string(),
+                                title: learned_title,
+                                team_id: Some(learned_team_id),
+                                persona_id: current.persona_id.clone(),
+                            });
+                        }
+                        Err(e) => {
+                            tracing::warn!(review_id = %id, error = %e, "learning loop: failed to write shared team decision/constraint");
+                        }
                     }
                 }
             } else {
                 // Solo persona (no team) — keep the per-persona learned memory.
+                let learned_title = format!("Human {verdict}: {}", current.title);
                 let mem = CreatePersonaMemoryInput {
                     persona_id: current.persona_id.clone(),
-                    title: format!("Human {verdict}: {}", current.title),
+                    title: learned_title.clone(),
                     content,
                     category: Some("learned".to_string()),
                     source_execution_id: Some(current.execution_id.clone()),
@@ -383,13 +401,25 @@ pub fn update_status(
                     tags: Some(Json(vec!["human-review".to_string(), verdict.to_string()])),
                     use_case_id: current.use_case_id.clone(),
                 };
-                if let Err(e) = memories::create(pool, mem) {
-                    tracing::warn!(review_id = %id, error = %e, "learning loop: failed to synthesize learned memory from resolved review");
+                match memories::create(pool, mem) {
+                    Ok(m) => {
+                        learned = Some(LearnedMemoryRef {
+                            id: m.id,
+                            scope: "persona".into(),
+                            category: "learned".into(),
+                            title: learned_title,
+                            team_id: None,
+                            persona_id: current.persona_id.clone(),
+                        });
+                    }
+                    Err(e) => {
+                        tracing::warn!(review_id = %id, error = %e, "learning loop: failed to synthesize learned memory from resolved review");
+                    }
                 }
             }
         }
 
-        Ok(())
+        Ok(learned)
     })
 }
 

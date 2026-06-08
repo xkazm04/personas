@@ -202,6 +202,9 @@ export type Translations = {
     quick_next_decision: string;
     review_titlebar: string;
     review_titlebar_attention: string;
+    learned_constraint: string;
+    learned_decision: string;
+    learned_generic: string;
   };
   common: {
     unknown_error: string;

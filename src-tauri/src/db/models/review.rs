@@ -140,6 +140,24 @@ pub struct CreateManualReviewInput {
     pub step_id: Option<String>,
 }
 
+/// What a review resolution taught the fleet (Phase 2 — visible learning). The
+/// chokepoint already writes a learned/decision/constraint memory; this is the
+/// surfaced reference so the resolving UI can show "Learned: …" and link to it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub struct LearnedMemoryRef {
+    pub id: String,
+    /// `"team"` (shared `team_memories`) or `"persona"` (per-persona memory).
+    pub scope: String,
+    /// `"decision"` | `"constraint"` | `"learned"`.
+    pub category: String,
+    pub title: String,
+    /// The team this memory belongs to (when `scope == "team"`), for deep-link.
+    pub team_id: Option<String>,
+    pub persona_id: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct UpdateManualReviewInput {

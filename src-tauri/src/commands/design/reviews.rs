@@ -8,8 +8,8 @@ use tokio::io::AsyncBufReadExt;
 
 use crate::db::models::{
     CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreatePersonaEventInput,
-    CreateReviewMessageInput, ImportDesignReviewInput, ManualReviewCounts, ManualReviewPage,
-    PersonaDesignReview, PersonaManualReview, ReviewMessage,
+    CreateReviewMessageInput, ImportDesignReviewInput, LearnedMemoryRef, ManualReviewCounts,
+    ManualReviewPage, PersonaDesignReview, PersonaManualReview, ReviewMessage,
 };
 use crate::db::repos::communication::{
     events as event_repo, manual_reviews as manual_repo, reviews as repo,
@@ -1011,6 +1011,9 @@ struct ManualReviewResolvedEvent {
     execution_id: String,
     persona_id: String,
     status: String,
+    /// What the resolution taught the fleet (Phase 2 — visible learning).
+    /// `None` when no new memory was written (e.g. dedup-skip, pending).
+    learned: Option<LearnedMemoryRef>,
 }
 
 #[tauri::command]
@@ -1022,7 +1025,7 @@ pub fn update_manual_review_status(
     reviewer_notes: Option<String>,
 ) -> Result<PersonaManualReview, AppError> {
     require_auth_sync(&state)?;
-    manual_repo::update_status(&state.db, &id, status, reviewer_notes)?;
+    let learned = manual_repo::update_status(&state.db, &id, status, reviewer_notes)?;
     let review = manual_repo::get_by_id(&state.db, &id)?;
 
     if matches!(
@@ -1031,7 +1034,8 @@ pub fn update_manual_review_status(
             | crate::db::models::ManualReviewStatus::Rejected
             | crate::db::models::ManualReviewStatus::Resolved
     ) {
-        // Notify frontend via Tauri IPC (existing behavior)
+        // Notify frontend via Tauri IPC. `learned` surfaces what the resolution
+        // taught the fleet so the UI can show a "Learned: …" confirmation (P2).
         let _ = app.emit(
             event_name::MANUAL_REVIEW_RESOLVED,
             ManualReviewResolvedEvent {
@@ -1039,6 +1043,7 @@ pub fn update_manual_review_status(
                 execution_id: review.execution_id.clone(),
                 persona_id: review.persona_id.clone(),
                 status: review.status.as_str().to_string(),
+                learned: learned.clone(),
             },
         );
 

@@ -82,13 +82,19 @@ runner + orchestrator; revisit only if the advisory model proves insufficient.
 `team_memories` decision/imp-7 or constraint/imp-8; solo → `learned`/imp-5) — but
 it is **silent and unverifiable**.
 
-1. `update_status` returns the created memory id (or `MANUAL_REVIEW_RESOLVED`
-   carries it).
-2. The resolving UI (Quick Answer stepper first, then Overview + orb) shows a
-   transient **"Learned: _{decision|constraint}_"** confirmation with a link to
-   open the memory.
-3. The memory is **editable/deletable** from that link (reuse the memory editor),
-   so a wrong lesson is correctable — this is the trust win.
+1. ✅ **2a (shipped).** `update_status` now returns a `LearnedMemoryRef`
+   (`{id, scope, category, title, team_id, persona_id}`); the
+   `MANUAL_REVIEW_RESOLVED` event carries it; a global `eventBridge` listener
+   raises a **"🧠 Learned: _{title}_"** toast (guardrail / decision / generic by
+   category) — so the feedback loop is visible the moment a review resolves.
+   Fires only when a NEW memory was written (dedup-skips carry no `learned`).
+2. ⏳ **2b (follow-up).** Make the toast actionable — a **View** affordance that
+   deep-links to the created memory (team memory surface / persona memory) where
+   it is already **editable/deletable**, so a wrong lesson is correctable. Needs
+   a toast variant with an action (the current `StandardToast` has none) +
+   memory deep-link routing.
+3. Athena's auto-resolution path also writes the memory but does not yet emit the
+   toast event (it resolves in the background); wire it if surfacing is wanted.
 
 ## Phase 4 — Suggested actions as real branches
 

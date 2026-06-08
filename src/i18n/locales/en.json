@@ -195,7 +195,10 @@
     "quick_prev_decision": "Previous decision",
     "quick_next_decision": "Next decision",
     "review_titlebar": "Human review & questions",
-    "review_titlebar_attention": "{count} waiting for your answer"
+    "review_titlebar_attention": "{count} waiting for your answer",
+    "learned_constraint": "Guardrail saved to team memory",
+    "learned_decision": "Decision saved to team memory",
+    "learned_generic": "Saved to memory"
   },
   "common": {
     "unknown_error": "Unknown error",

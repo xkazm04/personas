@@ -1859,7 +1859,7 @@ impl ReactiveSubscription for ManualReviewAutoTriageSubscription {
                     crate::db::models::ManualReviewStatus::Approved,
                     Some(note.to_string()),
                 ) {
-                    Ok(()) => n += 1,
+                    Ok(_) => n += 1,
                     Err(e) => {
                         tracing::warn!(review_id = %c.id, error = %e, "manual_review_auto_triage: approve failed")
                     }

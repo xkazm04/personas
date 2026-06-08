@@ -13,6 +13,7 @@
 import { listen, emit, type UnlistenFn, type Event } from '@tauri-apps/api/event';
 import type { PersonaEvent } from '@/lib/bindings/PersonaEvent';
 import type { PersonaMessage } from '@/lib/bindings/PersonaMessage';
+import type { LearnedMemoryRef } from '@/lib/bindings/LearnedMemoryRef';
 import type { CircuitBreakerStatus } from '@/lib/bindings/CircuitBreakerStatus';
 import type { CircuitTransitionEvent } from '@/lib/bindings/CircuitTransitionEvent';
 import type { TraceSpan } from '@/lib/bindings/TraceSpan';
@@ -351,6 +352,9 @@ export interface ManualReviewResolvedPayload {
   execution_id: string;
   persona_id: string;
   status: string;
+  /** What the resolution taught the fleet (Phase 2 — visible learning). Null
+   *  when no new memory was written (dedup-skip / pending). */
+  learned?: LearnedMemoryRef | null;
 }
 
 /** Review message added (db/models/review.rs ReviewMessage). */

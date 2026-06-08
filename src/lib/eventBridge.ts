@@ -20,6 +20,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { useNotificationCenterStore } from "@/stores/notificationCenterStore";
 import { createLogger } from "@/lib/log";
 import { silentCatch } from '@/lib/silentCatch';
+import { getActiveTranslations } from "@/i18n/useTranslation";
 
 
 const logger = createLogger("event-bridge");
@@ -439,6 +440,31 @@ const registry: EventRegistration[] = [
           }
         },
       );
+      return [unlisten];
+    },
+  },
+
+  // -- Manual review resolved → "Learned" toast (Phase 2: visible learning) ---
+  // Resolving a review silently writes a learned/decision/constraint memory; this
+  // surfaces it so the feedback loop is visible ("the agent learned X"). Fires
+  // only when a NEW memory was written (dedup-skips carry no `learned`).
+  {
+    event: EventName.MANUAL_REVIEW_RESOLVED,
+    priority: "normal",
+    setup: async () => {
+      const unlisten = await typedListen(EventName.MANUAL_REVIEW_RESOLVED, (payload) => {
+        const learned = payload.learned;
+        if (!learned) return;
+        const t = getActiveTranslations();
+        const prefix =
+          learned.category === "constraint"
+            ? t.monitor.learned_constraint
+            : learned.category === "decision"
+              ? t.monitor.learned_decision
+              : t.monitor.learned_generic;
+        const title = learned.title.length > 90 ? `${learned.title.slice(0, 90)}…` : learned.title;
+        useToastStore.getState().addToast(`🧠 ${prefix} — ${title}`, "success", 5000);
+      });
       return [unlisten];
     },
   },
