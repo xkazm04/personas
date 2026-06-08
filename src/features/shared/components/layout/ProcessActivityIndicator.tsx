@@ -10,6 +10,8 @@ import { PersonaMonitor } from "@/features/shared/components/layout/monitor";
 import { QuickAnswerPopover } from "@/features/shared/components/layout/quick-answer/QuickAnswerPopover";
 
 /**
+ * @catalog Titlebar entry points — Human Review (Quick Answer popover) + Persona Monitor, two separate badged buttons.
+ *
  * Titlebar entry points for the two human-in-the-loop surfaces — kept as TWO
  * separate buttons so each toggles its own overlay cleanly:
  *

@@ -182,7 +182,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
 | `PersonaMonitor` | _(add a `@catalog` tag)_ |
 | `PluginsSidebarNav` | _(add a `@catalog` tag)_ |
-| `ProcessActivityIndicator` | Titlebar entry point for the Quick Answer popover and the Persona Monitor. |
+| `ProcessActivityIndicator` | Titlebar entry points — Human Review (Quick Answer popover) + Persona Monitor, two separate badged buttons. |
 | `QuickAnswerPopover` | _(add a `@catalog` tag)_ |
 | `QuickAnswerQuestionGroup` | One persona's pending build questions. |
 | `QuickAnswerReviewCard` | Compact, inline approve/reject for a pending human review. |
