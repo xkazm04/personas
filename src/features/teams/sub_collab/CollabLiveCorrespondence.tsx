@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
-import { usePersonaIndex, PersonaChip } from '../sub_teamWorkspace/teamStudio/boardShared';
+import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
 import { eventFamily, parsePayload } from '../sub_redRoom/useRedRoomFeed';
 import { useTeamChannel, parseDeliveries } from './useTeamChannel';
 import {
   STEP_VERB, STEP_TONE, FAMILY_TEXT, AUTHOR_KIND_META, authorName, itemAccent,
 } from './collabRender';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
+import { usePendingInteractions } from '@/features/shared/components/layout/quick-answer/usePendingInteractions';
+import { QuickAnswerReviewCard } from '@/features/shared/components/layout/quick-answer/QuickAnswerReviewCard';
+import { resolveTeamAssignmentReview } from '@/api/pipeline/assignments';
+import { silentCatch } from '@/lib/silentCatch';
 import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
@@ -32,6 +36,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
   const scrollBox = useRef<HTMLDivElement | null>(null);
   const stickBottom = useRef(true);
 
+  const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
   const ordered = useMemo(() => [...items].reverse(), [items]);
 
   // Group rhythm: hide the avatar/name header when the previous item shares the
@@ -112,6 +117,9 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
 
       {/* ── Conversation ── */}
       <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto rounded-card border border-border bg-foreground/[0.01] px-3 py-3 space-y-1">
+        {/* Pending manual reviews (Director coaching / triage) for this team's
+            personas — the quick-answer card, cross-referenced into the channel. */}
+        <PendingReviewTray memberIds={memberIds} />
         {!exhausted && ordered.length > 0 && (
           <div ref={topSentinel} className="py-1 text-center">
             <span className="typo-caption text-foreground/40">loading earlier history…</span>
@@ -163,15 +171,24 @@ function CorrespondenceRow({ item, grouped, personaIndex }: { item: TeamChannelI
     const verb = STEP_VERB[item.label] ?? item.label;
     const tone = STEP_TONE[item.label] ?? 'text-foreground/55';
     const gate = item.label === 'status_awaiting_review';
+    const failed = item.label === 'step_failed';
+    // A review gate (or a failure that paused the mission) gets the inline
+    // intervention card so the user can resolve it without leaving the channel.
+    const intervene = gate && !!item.assignmentId;
     return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16 }}
-        className={`flex items-center gap-2 pl-9 py-0.5 ${gate ? 'rounded-card border border-status-warning/25 bg-status-warning/5 px-2' : ''}`}>
-        {gate && <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />}
-        <span className="typo-caption" style={{ color: accent }}>{name}</span>
-        <span className={`typo-caption ${tone}`}>{verb}</span>
-        {item.body && <span className="typo-caption text-foreground/55 truncate">· {item.body}</span>}
-        <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
-      </motion.div>
+      <div className={intervene ? 'pl-9 py-0.5' : ''}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16 }}
+          className={`flex items-center gap-2 py-0.5 ${intervene ? '' : 'pl-9'} ${!intervene && (gate || failed) ? 'rounded-card border border-status-warning/25 bg-status-warning/5 px-2' : ''}`}>
+          {(gate || failed) && <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />}
+          <span className="typo-caption" style={{ color: accent }}>{name}</span>
+          <span className={`typo-caption ${tone}`}>{verb}</span>
+          {item.body && <span className="typo-caption text-foreground/55 truncate">· {item.body}</span>}
+          <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
+        </motion.div>
+        {intervene && item.assignmentId && (
+          <ReviewInterventionCard assignmentId={item.assignmentId} personaIndex={personaIndex} />
+        )}
+      </div>
     );
   }
 
@@ -265,6 +282,122 @@ function CorrespondenceRow({ item, grouped, personaIndex }: { item: TeamChannelI
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/**
+ * Inline team-review intervention — the cross-reference for a "Needs your
+ * review" channel row. Resolves the assignment's awaiting-review (or failed)
+ * step in place via the team-review path (skip / abort / edit-and-retry),
+ * mirroring the Flight Deck StepRelay actions so the user never leaves the
+ * conversation. (Team step reviews use `resolveTeamAssignmentReview`, distinct
+ * from the manual-review approve/reject path that `PendingReviewTray` wires.)
+ */
+function ReviewInterventionCard({
+  assignmentId,
+  personaIndex,
+}: {
+  assignmentId: string;
+  personaIndex: ReturnType<typeof usePersonaIndex>;
+}) {
+  const { steps, refresh } = useAssignmentSteps(assignmentId, true);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [note, setNote] = useState('');
+
+  const step = steps.find((s) => s.status === 'awaiting_review') ?? steps.find((s) => s.status === 'failed');
+  if (!step) return null;
+  const persona = step.assignedPersonaId ? personaIndex.get(step.assignedPersonaId) : undefined;
+
+  const act = async (kind: 'skip' | 'abort' | 'edit') => {
+    setBusy(kind);
+    try {
+      if (kind === 'edit') {
+        await resolveTeamAssignmentReview(step.id, { action: 'edit_requirement', data: { description: note.trim() } });
+      } else {
+        await resolveTeamAssignmentReview(step.id, { action: kind });
+      }
+      setNote('');
+      refresh();
+    } catch (err) {
+      silentCatch('collab/correspondence:reviewIntervention')(err);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  return (
+    <div className="mt-1 rounded-card border border-status-warning/30 bg-status-warning/5 p-3 flex flex-col gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <ClipboardCheck className="w-4 h-4 text-status-warning flex-shrink-0" />
+        <span className="typo-body font-semibold text-foreground truncate min-w-0">{step.title}</span>
+        <PersonaChip persona={persona} />
+      </div>
+      {step.errorMessage && (
+        <p className="typo-caption text-status-error/90 leading-snug">{step.errorMessage}</p>
+      )}
+      <input
+        type="text"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Optional: revise the requirement, then Edit & retry…"
+        className="px-3 py-1.5 rounded-input bg-primary/5 border border-card-border typo-caption text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
+      />
+      <div className="flex items-center gap-1.5 self-end flex-wrap">
+        <button
+          type="button"
+          disabled={!!busy}
+          onClick={() => void act('skip')}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-card-border bg-secondary/40 typo-caption text-foreground/85 hover:bg-secondary/60 transition-colors disabled:opacity-50"
+        >
+          <SkipForward className="w-3 h-3" /> Skip
+        </button>
+        <button
+          type="button"
+          disabled={!!busy}
+          onClick={() => void act('abort')}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-status-error/25 bg-status-error/10 typo-caption text-status-error hover:bg-status-error/20 transition-colors disabled:opacity-50"
+        >
+          <Ban className="w-3 h-3" /> Abort
+        </button>
+        <button
+          type="button"
+          disabled={!!busy || !note.trim()}
+          onClick={() => void act('edit')}
+          className="inline-flex items-center gap-1 px-2 py-1 rounded-interactive border border-primary/30 bg-primary/10 typo-caption text-primary hover:bg-primary/20 transition-colors disabled:opacity-40"
+        >
+          <RotateCcw className="w-3 h-3" /> Edit &amp; retry
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Pending manual reviews (Director coaching / auto-triage) for this team's
+ * personas, surfaced as the shared QuickAnswerReviewCard — the same approve/
+ * reject component the title-bar quick-answer popover uses. This is the
+ * cross-reference into the channel: a review raised against any team member
+ * becomes actionable here, where the team is talking.
+ */
+function PendingReviewTray({ memberIds }: { memberIds: Set<string> }) {
+  const { reviews, isProcessing, handleReviewAction } = usePendingInteractions();
+  const teamReviews = reviews.filter((r) => memberIds.has(r.persona_id));
+  if (teamReviews.length === 0) return null;
+  return (
+    <div className="mb-2 pb-2 border-b border-border space-y-1.5">
+      <div className="flex items-center gap-2 px-1">
+        <ClipboardCheck className="w-3.5 h-3.5 text-status-warning" />
+        <span className="typo-label uppercase tracking-[0.18em] text-status-warning/80 font-semibold">Needs your input</span>
+        <span className="ml-auto typo-caption text-foreground/40 tabular-nums">{teamReviews.length}</span>
+      </div>
+      <AnimatePresence initial={false}>
+        {teamReviews.map((r) => (
+          <motion.div key={r.id} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.16 }}>
+            <QuickAnswerReviewCard review={r} busy={isProcessing} onAction={handleReviewAction} />
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
   );
 }
 

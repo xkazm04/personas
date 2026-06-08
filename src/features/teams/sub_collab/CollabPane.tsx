@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { MessagesSquare } from 'lucide-react';
 import { CollabLive } from './CollabLive';
-import { CollabLiveBrief } from './CollabLiveBrief';
 import { CollabLiveCorrespondence } from './CollabLiveCorrespondence';
 import { CollabVariantC } from './CollabVariantC';
 import type { StudioMember } from '../sub_teamWorkspace/teamStudio/useTeamStudioData';
@@ -31,13 +30,12 @@ const TABS: Array<{ id: CollabTab; label: string; hint: string }> = [
 
 const LIVE_VARIANTS: Array<{ id: LiveVariant; label: string; hint: string }> = [
   { id: 'baseline', label: 'Baseline', hint: 'Current flat-row channel' },
-  { id: 'brief', label: 'Brief', hint: 'Mission-control briefing — header band + dense gutter log' },
   { id: 'correspondence', label: 'Correspondence', hint: 'Warm threaded conversation — author bubbles + interjections' },
 ];
 
 export function CollabPane({ teamId, members }: { teamId: string; members: StudioMember[] }) {
   const [tab, setTab] = useState<CollabTab>('live');
-  const [liveVariant, setLiveVariant] = useState<LiveVariant>('baseline');
+  const [liveVariant, setLiveVariant] = useState<LiveVariant>('correspondence');
 
   return (
     <div className="h-full flex flex-col gap-2 min-h-0" data-testid="collab-pane">
@@ -87,8 +85,6 @@ export function CollabPane({ teamId, members }: { teamId: string; members: Studi
       <div className="flex-1 min-h-0">
         {tab === 'dialogue-mock' ? (
           <CollabVariantC />
-        ) : liveVariant === 'brief' ? (
-          <CollabLiveBrief teamId={teamId} members={members} />
         ) : liveVariant === 'correspondence' ? (
           <CollabLiveCorrespondence teamId={teamId} members={members} />
         ) : (
