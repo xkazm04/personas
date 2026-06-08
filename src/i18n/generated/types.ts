@@ -11970,6 +11970,9 @@ export type Translations = {
       decision_recommend_review: string;
       decision_recommend_resolve: string;
       decision_recommend_review_open: string;
+      fleet_auto_decided: string;
+      fleet_auto_decided_to: string;
+      fleet_auto_decided_dismiss: string;
       guide_pc_title: string;
       guide_pc_intro: string;
       guide_pc_open: string;

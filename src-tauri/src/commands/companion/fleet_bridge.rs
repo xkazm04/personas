@@ -213,11 +213,20 @@ pub fn orchestrate_on_awaiting(
         "Fleet orchestration check. Session \"{label}\" (project {proj}) just entered AwaitingInput \
          — it finished its turn or is paused waiting for the next instruction. Live fleet status:\n\n\
          {digest}\n\n\
-         Decide the single best next step for the session(s) that actually need one. If there's a \
-         clear next instruction, propose a fleet_send_input action for that session with the exact \
-         text to type (press_enter true) so it can be auto-applied. If the work looks finished, or a \
-         step is risky/ambiguous/needs a real judgment call, do NOT act — instead surface a concise \
-         decision to the user. Leave sessions that are progressing fine alone. Be brief.",
+         Decide the single best next step for the session(s) that actually need one, then act under \
+         this confidence policy:\n\
+         • Every fleet_send_input you propose MUST carry a `confidence` param: \"high\", \"medium\", \
+         or \"low\", alongside the exact `text` to type (press_enter true) and a one-line `rationale`.\n\
+         • Use confidence \"high\" ONLY when the next step is obvious, safe, and you'd stake your \
+         judgment on it with no second opinion — high-confidence steps are applied automatically with \
+         no human check, so reserve it for the genuinely unambiguous.\n\
+         • Use \"medium\" or \"low\" whenever there is any real doubt, the step is a judgment call, or \
+         a wrong move would cost rework. These are NOT auto-applied: they surface to the user as a \
+         decision on the orb, so make the `rationale` a crisp one-liner the user can decide on at a \
+         glance, and still include the exact `text` you'd send.\n\
+         • If the work looks finished, or the situation needs a real human judgment call, do NOT \
+         propose a send-input at all — surface a concise decision to the user instead.\n\
+         Leave sessions that are progressing fine alone. Be brief.",
         label = project_label,
         proj = project_label,
     );

@@ -19,7 +19,7 @@ use std::sync::Arc;
 
 use rusqlite::{params, OptionalExtension};
 use serde::Serialize;
-use tauri::{Manager, State};
+use tauri::{Emitter, Manager, State};
 
 use crate::companion::brain::episodic::{self, EpisodeRole};
 use crate::companion::session::DEFAULT_SESSION_ID;
@@ -362,6 +362,25 @@ pub async fn auto_resolve_if_allowed(
         );
         return Ok(false);
     }
+    // Cautious confidence gate (user policy "auto vs consult" = Cautious):
+    // autonomous Athena only AUTO-fires a fleet_send_input she is highly
+    // confident about. Medium / low / absent confidence is left PENDING
+    // (`Ok(false)`) so the queued approval surfaces on the orb as a *consult*
+    // and the user makes the call. Confidence is self-reported by Athena in the
+    // proposal params (`confidence: "high" | "medium" | "low"` — see the
+    // orchestration directive in `fleet_bridge::orchestrate_on_awaiting`);
+    // anything other than an explicit "high" fails safe toward consulting. The
+    // Athena-owned guard above still applies — confidence never widens scope,
+    // only narrows what auto-fires.
+    if approval.action == "fleet_send_input"
+        && !fleet_send_input_is_high_confidence(&approval.params_json)
+    {
+        tracing::info!(
+            approval_id = %approval.id,
+            "autonomous autoapprove deferred: fleet_send_input confidence below 'high' — left pending as an orb consult"
+        );
+        return Ok(false);
+    }
     let state = app.state::<Arc<AppState>>();
     // Same atomic pending→running transition the manual path uses.
     let (action, params) = load_pending(&state, &approval.id)?;
@@ -417,7 +436,39 @@ pub async fn auto_resolve_if_allowed(
     };
     finalize_approval(&state, &approval.id, status_text)?;
     log_action_episode(&state, &embedder_log).await;
+
+    // Notify-only orb indicator (user policy "safety net" = Notify only): when a
+    // fleet_send_input auto-fired successfully, tell the orb what Athena just did
+    // so the user sees the hands-off action without having to watch the grid.
+    // Purely informational — no undo (the user opted out of an undo window).
+    if action == "fleet_send_input" && status_text == APPROVAL_STATUS_APPROVED {
+        emit_fleet_auto_decided(app, &params);
+    }
     Ok(true)
+}
+
+/// Emit the `athena://fleet/auto-decided` event the orb listens for to flash a
+/// brief "Athena → <project>: <text>" notice. Best-effort: a missing field or a
+/// failed emit just means no notice. The session's project label is looked up
+/// from the live registry so the notice names the project, not a raw UUID.
+fn emit_fleet_auto_decided(app: &tauri::AppHandle, params: &serde_json::Value) {
+    let session_id = params.get("session_id").and_then(|v| v.as_str()).unwrap_or("");
+    let text = params.get("text").and_then(|v| v.as_str()).unwrap_or("");
+    if session_id.is_empty() {
+        return;
+    }
+    let project_label = crate::commands::fleet::registry::registry()
+        .lookup_meta(session_id)
+        .map(|(label, _cwd)| label)
+        .unwrap_or_default();
+    let _ = app.emit(
+        "athena://fleet/auto-decided",
+        serde_json::json!({
+            "sessionId": session_id,
+            "projectLabel": project_label,
+            "text": text,
+        }),
+    );
 }
 
 // ── helpers ─────────────────────────────────────────────────────────────
@@ -2206,6 +2257,50 @@ fn fleet_send_input_targets_athena_session(params_json: &str) -> bool {
         .and_then(|s| s.as_str())
         .map(|sid| crate::commands::fleet::registry::registry().is_athena_owned(sid))
         .unwrap_or(false)
+}
+
+/// Whether a `fleet_send_input` proposal self-reports HIGH confidence — the
+/// cautious-mode gate for the autonomous autoapprove path. Only an explicit
+/// `"high"` lets Athena act unsupervised; `"medium"` / `"low"` / missing /
+/// unrecognized all defer to a user consult on the orb (return `false`).
+/// Case-insensitive and whitespace-tolerant; fails safe to `false`.
+fn fleet_send_input_is_high_confidence(params_json: &str) -> bool {
+    serde_json::from_str::<serde_json::Value>(params_json)
+        .ok()
+        .as_ref()
+        .and_then(|v| v.get("confidence"))
+        .and_then(|c| c.as_str())
+        .map(|c| c.trim().eq_ignore_ascii_case("high"))
+        .unwrap_or(false)
+}
+
+#[cfg(test)]
+mod confidence_gate_tests {
+    use super::fleet_send_input_is_high_confidence;
+
+    #[test]
+    fn only_explicit_high_passes() {
+        assert!(fleet_send_input_is_high_confidence(
+            r#"{"session_id":"s","text":"go","confidence":"high"}"#
+        ));
+        assert!(fleet_send_input_is_high_confidence(
+            r#"{"confidence":"HIGH"}"#
+        ));
+        assert!(fleet_send_input_is_high_confidence(
+            r#"{"confidence":" High "}"#
+        ));
+    }
+
+    #[test]
+    fn medium_low_missing_and_garbage_defer() {
+        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":"medium"}"#));
+        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":"low"}"#));
+        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":"very"}"#));
+        // Missing field, wrong type, and unparseable all fail safe.
+        assert!(!fleet_send_input_is_high_confidence(r#"{"session_id":"s","text":"go"}"#));
+        assert!(!fleet_send_input_is_high_confidence(r#"{"confidence":0.9}"#));
+        assert!(!fleet_send_input_is_high_confidence("not json"));
+    }
 }
 
 fn execute_fleet_send_input(params: &serde_json::Value) -> Result<ExecuteResult, AppError> {

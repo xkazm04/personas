@@ -6,6 +6,10 @@ import { EventName } from '@/lib/eventRegistry';
 import { silentCatch } from '@/lib/silentCatch';
 import type { FleetSession } from '@/lib/bindings/FleetSession';
 import type { FleetSessionState } from '@/lib/bindings/FleetSessionState';
+import { useCompanionStore } from './companionStore';
+
+/** How long the notify-only "Athena auto-decided" orb pill stays up. */
+const AUTO_NOTICE_MS = 7000;
 
 /**
  * Tier-1 Companion ↔ Fleet bridge.
@@ -107,10 +111,32 @@ export function useFleetCompanionBridge(): void {
       },
     );
 
+    // Notify-only: Athena auto-fired a high-confidence fleet_send_input into
+    // one of her own sessions. Flash a brief orb pill so the hands-off action
+    // is visible without watching the grid. FYI only — no undo (user policy).
+    let noticeTimer: number | undefined;
+    const unAutoP = listen<{ sessionId: string; projectLabel: string; text: string }>(
+      'athena://fleet/auto-decided',
+      (event) => {
+        useCompanionStore.getState().setFleetAutoNotice({
+          sessionId: event.payload.sessionId,
+          projectLabel: event.payload.projectLabel,
+          text: event.payload.text,
+          at: Date.now(),
+        });
+        if (noticeTimer) window.clearTimeout(noticeTimer);
+        noticeTimer = window.setTimeout(() => {
+          useCompanionStore.getState().clearFleetAutoNotice();
+        }, AUTO_NOTICE_MS);
+      },
+    );
+
     return () => {
       unStateP.then((fn) => fn());
       unExitedP.then((fn) => fn());
       unRegistryP.then((fn) => fn());
+      unAutoP.then((fn) => fn());
+      if (noticeTimer) window.clearTimeout(noticeTimer);
     };
   }, []);
 }

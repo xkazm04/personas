@@ -266,14 +266,28 @@ async function buildQueue(): Promise<PendingDecision[]> {
  * the gate flipping on, on approval/proactive events, and when `pendingDecision`
  * transitions back to null).
  */
+/**
+ * The orb decision queue is active when the user explicitly enabled hands-free
+ * decisions OR when autonomous mode is on. In autonomous mode Athena is already
+ * acting on the user's behalf, so the steps she is NOT confident enough to
+ * auto-apply (e.g. a medium/low-confidence fleet next-instruction) must surface
+ * as a consult on the orb rather than sitting invisibly in the approval list.
+ */
+function decisionsActive(): boolean {
+  const s = useSystemStore.getState();
+  return s.companionHandsFreeDecisions || s.companionAutonomousMode;
+}
+
 export function useDecisionQueue() {
-  const enabled = useSystemStore((s) => s.companionHandsFreeDecisions);
+  const enabled = useSystemStore(
+    (s) => s.companionHandsFreeDecisions || s.companionAutonomousMode,
+  );
   const pending = useCompanionStore((s) => s.pendingDecision);
   // Guard against overlapping pumps (each pump does 3 IPC round-trips).
   const pumping = useRef(false);
 
   const pump = useCallback(async () => {
-    if (!useSystemStore.getState().companionHandsFreeDecisions) return;
+    if (!decisionsActive()) return;
     // Only surface when the bubble is free.
     if (useCompanionStore.getState().pendingDecision) return;
     if (pumping.current) return;
@@ -285,7 +299,7 @@ export function useDecisionQueue() {
       // setting off or another path may have surfaced a decision meanwhile.
       if (
         next &&
-        useSystemStore.getState().companionHandsFreeDecisions &&
+        decisionsActive() &&
         !useCompanionStore.getState().pendingDecision
       ) {
         useCompanionStore.getState().setPendingDecision(next);
