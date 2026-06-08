@@ -109,12 +109,12 @@ export function useTeamChannel(teamId: string) {
   }, [refreshHead]);
 
   const sendDirective = useCallback(
-    async (content: string) => {
+    async (content: string, replyTo?: string) => {
       const text = content.trim();
       if (!text) return;
       setPosting(true);
       try {
-        await postTeamDirective(teamId, text);
+        await postTeamDirective(teamId, text, replyTo);
         refreshHead();
       } finally {
         setPosting(false);

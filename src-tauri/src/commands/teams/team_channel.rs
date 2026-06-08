@@ -48,6 +48,8 @@ pub struct TeamChannelItem {
     pub step_id: Option<String>,
     /// Raw JSON payload (events) or tags (memories — carries `deliveries`).
     pub extra: Option<String>,
+    /// Channel messages only: the message id this one replies to (threading).
+    pub reply_to: Option<String>,
 }
 
 const DEFAULT_LIMIT: i64 = 60;
@@ -95,6 +97,7 @@ pub fn list_team_channel(
                 step_id: r.get(5)?,
                 persona_id: r.get(6)?,
                 body: r.get(7)?,
+                reply_to: None,
             })
         })?;
         items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
@@ -124,6 +127,7 @@ pub fn list_team_channel(
                 body: None,
                 assignment_id: None,
                 step_id: None,
+                reply_to: None,
             })
         })?;
         items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
@@ -155,6 +159,7 @@ pub fn list_team_channel(
                 extra: r.get(6)?,
                 assignment_id: None,
                 step_id: None,
+                reply_to: None,
             })
         })?;
         items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
@@ -166,7 +171,7 @@ pub fn list_team_channel(
         let mut stmt = conn.prepare(
             "SELECT id,
                     strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) AS at,
-                    author_kind, author_id, body, deliveries, assignment_id
+                    author_kind, author_id, body, deliveries, assignment_id, reply_to
              FROM team_channel_messages
              WHERE team_id = ?1
                AND strftime('%Y-%m-%dT%H:%M:%SZ', datetime(created_at)) < ?2
@@ -192,6 +197,7 @@ pub fn list_team_channel(
                 extra,
                 assignment_id: r.get(6)?,
                 step_id: None,
+                reply_to: r.get(7)?,
             })
         })?;
         items.extend(rows.collect::<Result<Vec<_>, _>>().map_err(AppError::Database)?);
@@ -212,6 +218,7 @@ pub fn post_team_directive(
     state: State<'_, Arc<AppState>>,
     team_id: String,
     content: String,
+    reply_to: Option<String>,
 ) -> Result<crate::db::models::TeamChannelMessage, AppError> {
     require_auth_sync(&state)?;
     channel_repo::create(
@@ -222,7 +229,7 @@ pub fn post_team_directive(
             author_id: None, // NULL author = the user
             body: content,
             addressed_to: None, // whole team
-            reply_to: None,
+            reply_to, // threading: the channel message this replies to
             assignment_id: None,
             consumer: Some("inject".into()),
         },

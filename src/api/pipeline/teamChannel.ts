@@ -11,5 +11,5 @@ export const listTeamChannel = (teamId: string, limit?: number, before?: string)
   });
 
 /** Post a user directive into the channel (delivered at step boundaries, with receipts). */
-export const postTeamDirective = (teamId: string, content: string) =>
-  invoke<TeamChannelMessage>('post_team_directive', { teamId, content });
+export const postTeamDirective = (teamId: string, content: string, replyTo?: string) =>
+  invoke<TeamChannelMessage>('post_team_directive', { teamId, content, replyTo: replyTo ?? null });

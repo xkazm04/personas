@@ -20,4 +20,8 @@ body: string | null, assignmentId: string | null, stepId: string | null,
 /**
  * Raw JSON payload (events) or tags (memories — carries `deliveries`).
  */
-extra: string | null, };
+extra: string | null,
+/**
+ * Channel messages only: the message id this one replies to (threading).
+ */
+replyTo: string | null, };

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles } from 'lucide-react';
+import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
@@ -40,6 +40,8 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
 
   const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
   const ordered = useMemo(() => [...items].reverse(), [items]);
+  const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
+  const [replyTarget, setReplyTarget] = useState<TeamChannelItem | null>(null);
 
   useEffect(() => {
     const box = scrollBox.current;
@@ -67,7 +69,8 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
     const text = draft.trim();
     if (!text || posting) return;
     setDraft('');
-    void sendDirective(text);
+    void sendDirective(text, replyTarget?.id);
+    setReplyTarget(null);
     stickBottom.current = true;
     if (/@athena\b/i.test(text)) {
       useCompanionStore.getState().setPendingPrompt({
@@ -161,17 +164,37 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
           </div>
         )}
         {ordered.map((item) => (
-          <CorrespondenceRow key={item.id} item={item} personaIndex={personaIndex} />
+          <CorrespondenceRow
+            key={item.id}
+            item={item}
+            personaIndex={personaIndex}
+            parent={item.replyTo ? byId.get(item.replyTo) : undefined}
+            onReply={() => setReplyTarget(item)}
+          />
         ))}
       </div>
 
       {/* ── Composer ── */}
-      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-3 border-t border-border bg-foreground/[0.015]">
+      <div className="flex-shrink-0 flex flex-col gap-1.5 px-3 py-3 border-t border-border bg-foreground/[0.015]">
+        {replyTarget && (
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-card border border-primary/20 bg-primary/5">
+            <CornerDownRight className="w-3.5 h-3.5 text-primary/70 flex-shrink-0" />
+            <span className="typo-caption text-foreground/60 flex-shrink-0">Replying to</span>
+            <span className="typo-caption font-medium" style={{ color: itemAccent(replyTarget, replyTarget.personaId ? personaIndex.get(replyTarget.personaId) : undefined) }}>
+              {authorName(replyTarget, replyTarget.personaId ? personaIndex.get(replyTarget.personaId) : undefined)}
+            </span>
+            <span className="typo-caption text-foreground/45 truncate">{replyTarget.body ?? replyTarget.label}</span>
+            <button type="button" onClick={() => setReplyTarget(null)} className="ml-auto flex-shrink-0 text-foreground/40 hover:text-foreground/80 transition-colors" aria-label="Cancel reply">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
-          placeholder="Say something to the team… Tag @athena to bring her in"
+          placeholder={replyTarget ? 'Write your reply…' : 'Say something to the team… Tag @athena to bring her in'}
           className="flex-1 px-3.5 py-2.5 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
         />
         <button
@@ -182,6 +205,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
         >
           <Send className="w-4 h-4" /> Send
         </button>
+        </div>
       </div>
     </div>
   );
@@ -232,7 +256,12 @@ function resolveRow(item: TeamChannelItem) {
  *   Row 2 (MESSAGE): the body, in an accent-tinted container indented under the source
  * A "Needs your review" row carries the inline ReviewInterventionCard below.
  */
-function CorrespondenceRow({ item, personaIndex }: { item: TeamChannelItem; personaIndex: ReturnType<typeof usePersonaIndex> }) {
+function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
+  item: TeamChannelItem;
+  personaIndex: ReturnType<typeof usePersonaIndex>;
+  parent?: TeamChannelItem;
+  onReply?: () => void;
+}) {
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = itemAccent(item, persona);
   const source = authorName(item, persona);
@@ -241,6 +270,10 @@ function CorrespondenceRow({ item, personaIndex }: { item: TeamChannelItem; pers
   const isUser = item.kind === 'directive';
   const isAgentVoice = item.kind === 'athena' || item.kind === 'director';
   const intervene = item.kind === 'step' && item.label === 'status_awaiting_review' && !!item.assignmentId;
+  // A message you can reply to — the conversational kinds (not raw step/event rows).
+  const replyable = !!onReply && (item.kind === 'persona' || item.kind === 'athena' || item.kind === 'director' || item.kind === 'directive' || item.kind === 'memory');
+  const isReply = !!item.replyTo;
+  const parentPersona = parent?.personaId ? personaIndex.get(parent.personaId) : undefined;
 
   const deliveries = isUser ? parseDeliveries(item) : [];
   const seenIds = [...new Set(deliveries.map((d) => d.persona_id))];
@@ -265,7 +298,15 @@ function CorrespondenceRow({ item, personaIndex }: { item: TeamChannelItem; pers
     );
 
   return (
-    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className="py-1">
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className={`group py-1 ${isReply ? 'ml-5 pl-3 border-l-2 border-primary/15' : ''}`}>
+      {/* Reply reference — the message this one threads under */}
+      {isReply && parent && (
+        <div className="flex items-center gap-1.5 mb-0.5 typo-caption text-foreground/40">
+          <CornerDownRight className="w-3 h-3 flex-shrink-0" />
+          <span className="font-medium" style={{ color: itemAccent(parent, parentPersona) }}>{authorName(parent, parentPersona)}</span>
+          <span className="truncate">{parent.body ?? parent.label}</span>
+        </div>
+      )}
       {/* Row 1 — SOURCE + EVENT */}
       <div className="flex items-center gap-2 flex-wrap leading-tight">
         <span
@@ -277,6 +318,16 @@ function CorrespondenceRow({ item, personaIndex }: { item: TeamChannelItem; pers
         <span className="typo-body font-medium" style={{ color: accent }}>{source}</span>
         {alert && <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />}
         <span className={`typo-caption uppercase tracking-wider ${eventMono ? 'font-mono normal-case tracking-normal' : ''} ${eventTone}`}>{event}</span>
+        {replyable && (
+          <button
+            type="button"
+            onClick={onReply}
+            className="opacity-0 group-hover:opacity-100 inline-flex items-center gap-1 typo-caption text-foreground/40 hover:text-foreground/80 transition-all"
+            aria-label="Reply"
+          >
+            <Reply className="w-3 h-3" /> reply
+          </button>
+        )}
         <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
       </div>
 

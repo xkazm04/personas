@@ -164,6 +164,15 @@ Director/Athena orchestration discussion).
   `paused` phase on the Flight Deck board — the C-mock's "pause at checkpoint",
   made real. Honest interrupt semantics: there is no mid-step interrupt (a
   running CLI turn can't take input); pause acts at step boundaries.
+- **Flagship channel (C5, `CollabLiveCorrespondence`)**: the demo-grade Collab
+  surface — a bordered card with a header BAND (crest · live presence with
+  status dots · a data glance), a uniform **two-row message** shape (Source +
+  Event on row 1, the Message in an accent-tinted container on row 2), inline
+  review/failure intervention, a designed empty state, and **reply threading**:
+  `list_team_channel` carries `replyTo` (the channel table's column), the
+  composer's per-message Reply affordance posts a directive with
+  `post_team_directive(reply_to)`, and replies render indented under a quoted
+  reference to their parent.
 
 ## State and backend
 
