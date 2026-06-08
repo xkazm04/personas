@@ -1,10 +1,6 @@
 export { LabTab } from './components/shared/LabTab';
+// Arena survives as the Lab's measurement engine (driven by the Versions &
+// Ratings table's "Measure" action). The A/B / Improve / Breed / Evolve /
+// Regression / Versions panels were removed in the consolidation redesign.
 export { ArenaPanel } from './components/arena/ArenaPanel';
-export { AbPanel } from './components/ab/AbPanel';
-export { EvalPanel } from './components/eval/EvalPanel';
-export { MatrixPanel } from './components/matrix/MatrixPanel';
-export { VersionsPanel } from './components/shared/VersionsPanel';
-export { EvalResultsGrid } from './components/eval/EvalResultsGrid';
-export { MatrixResultsView } from './components/matrix/MatrixResultsView';
 export { ArenaResultsView } from './components/arena/ArenaResultsView';
-export { AbResultsView } from './components/ab/AbResultsView';

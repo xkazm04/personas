@@ -3335,6 +3335,30 @@ pub(super) fn run_incremental(conn: &Connection) -> Result<(), AppError> {
         },
     )?;
 
+    // Version attribution for Arena results (Lab "Versions & Ratings" redesign).
+    // Arena historically measured the persona's *current* prompt with no version
+    // link; the consolidated table aggregates ratings per (version, model), so a
+    // version-scoped Arena run now snapshots which version it measured. Nullable —
+    // pre-redesign arena rows stay NULL and are excluded from the ratings rollup.
+    run_step(
+        conn,
+        IncrementalMigration {
+            id: "lab_arena.version_attribution",
+            description: "Add version_id/version_number to lab_arena_runs + lab_arena_results",
+            already_applied: |conn| has_column(conn, "lab_arena_runs", "version_id"),
+            apply: |conn| {
+                ddl_step(
+                    conn,
+                    "ALTER TABLE lab_arena_runs ADD COLUMN version_id TEXT;\n\
+                     ALTER TABLE lab_arena_runs ADD COLUMN version_number INTEGER;\n\
+                     ALTER TABLE lab_arena_results ADD COLUMN version_id TEXT;\n\
+                     ALTER TABLE lab_arena_results ADD COLUMN version_number INTEGER;",
+                )?;
+                Ok(())
+            },
+        },
+    )?;
+
     Ok(())
 }
 

@@ -72,6 +72,14 @@ The module follows three primary navigation modes:
 
 The local source README at `src/features/overview/README.md` defines folder boundaries: realtime, persisted events, and observability are separate tiers and should not be mixed.
 
+## Quick Answer popover (title-bar)
+
+The title-bar attention button (`ProcessActivityIndicator`) is **split** so the user never has to navigate back to a draft just to unblock it. When something needs a direct answer — a build/adoption persona is waiting on a question, or a human review is pending — clicking it opens the lightweight **Quick Answer** popover (`src/features/shared/components/layout/quick-answer/`) so the user can respond and keep working wherever they are. When the only attention left is drafts-ready / unread messages (or nothing), the click opens the full-screen Persona Monitor instead; the popover also links back to it, so both stay reachable.
+
+- **Pending questions** are read live from `matrixBuildSlice.buildSessions` — the single source of truth — so a question raised while the user is on another screen still surfaces, and the badge count no longer depends on the matrix surface being mounted (it neither undercounts when the user is elsewhere nor double-counts the `input_required` process the matrix pushes while mounted). Simple questions (options / free-text) are answered inline and batch-submitted through the route-independent `answerBuildQuestion` IPC (the escaping/batch payload is shared with the matrix surface via `src/lib/build/answerPayload.ts`). Complex questions (connector picker, file/URL attachment, webhook source) deep-link to the builder.
+- **Human reviews** reuse the Monitor's `useMonitorData` (local + cloud) for inline approve/reject.
+- The badge counts pending questions + pending reviews + unread messages + drafts-ready. Live work (`running`) shows as a pulsing ring, not a count.
+
 ## Footer system-load gauge
 
 The footer's bottom-right cluster shows a small **system-load gauge** (`SystemLoadFooterIcon`) — a CPU icon plus two thin bars (CPU on top, used-RAM below) tinted green / amber / red. It is a *soft, advisory* signal answering **"does this machine have headroom for more local work?"** — a cue to orchestrate more agents or ease off. It is intentionally **not** coupled to the concurrency/rate limits, because host load is influenced by every other process on the PC; treat it as a hint, never a hard gate.

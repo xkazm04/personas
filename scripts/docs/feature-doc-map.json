@@ -65,7 +65,7 @@
     "lab-arena": {
       "stepFile": null,
       "tourEvent": "tour:lab-explored",
-      "description": "Exploration step — agents lab (arena / A-B / matrix)"
+      "description": "Exploration step — the agents Lab (consolidated Versions & Ratings table: activate / measure / improve per version)"
     },
     "events-intro": {
       "stepFile": null,

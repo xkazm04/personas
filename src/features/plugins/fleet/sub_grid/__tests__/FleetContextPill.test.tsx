@@ -3,7 +3,7 @@
  * readTranscript is mocked; useTranslation is real.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 import type { FleetTranscriptSummary } from '@/lib/bindings/FleetTranscriptSummary';
 
@@ -40,5 +40,34 @@ describe('FleetContextPill', () => {
     await waitFor(() => expect(fleetApi.readTranscript).toHaveBeenCalled());
     expect(screen.queryByTestId('fleet-context-pill')).not.toBeInTheDocument();
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('offers Compact only when bloated (>150k) and a handler is wired', async () => {
+    vi.mocked(fleetApi.readTranscript).mockResolvedValue(summary(180_000));
+    const onCompact = vi.fn();
+    render(
+      <FleetContextPill claudeSessionId="s1" sessionId="internal-1" canCompact onCompact={onCompact} />,
+    );
+    const btn = await screen.findByTestId('fleet-context-compact');
+    expect(btn).not.toBeDisabled();
+    fireEvent.click(btn);
+    expect(onCompact).toHaveBeenCalledWith('internal-1');
+  });
+
+  it('disables Compact when the session is not between turns', async () => {
+    vi.mocked(fleetApi.readTranscript).mockResolvedValue(summary(180_000));
+    render(
+      <FleetContextPill claudeSessionId="s1" sessionId="internal-1" canCompact={false} onCompact={vi.fn()} />,
+    );
+    expect(await screen.findByTestId('fleet-context-compact')).toBeDisabled();
+  });
+
+  it('shows no Compact action for a non-bloated session', async () => {
+    vi.mocked(fleetApi.readTranscript).mockResolvedValue(summary(42_000));
+    render(
+      <FleetContextPill claudeSessionId="s1" sessionId="internal-1" canCompact onCompact={vi.fn()} />,
+    );
+    await screen.findByTestId('fleet-context-pill');
+    expect(screen.queryByTestId('fleet-context-compact')).not.toBeInTheDocument();
   });
 });

@@ -325,3 +325,61 @@
 - **NaN math** — Wave 8d closed 3 (timeout clamp issues). 2 of the original report's 6 "NaN risks" were verified already-fixed; 1 had wrong file location. Future scans should grep for `parseInt(...) || N` patterns where N skips lower bounds, and `Math.min(...)` without matching `Math.max(...)` in input handlers.
 - **Concurrent-WIP discipline**: when running fix waves on personas, expect parallel work (other AI sessions / human edits) to land mid-session. Snapshot it as a `chore: snapshot concurrent WIP` commit between wave commits to keep wave commits surgical and auditable.
 - **`use-element-visible` pattern adoption**: `CompositePartialMatchIndicator` and `ScheduleTimeline` are now both visibility-gated. Other polling components in `triggers/`, `health/`, `overview/sub_realtime/` likely benefit from the same gate — audit ~10 candidate components on future cleanup-gap waves.
+
+## Scan-and-decide — Connections & Credentials (Pipeline C, 2026-06-05)
+
+### Build & verification gotcha (HIGH VALUE — read before any Rust work here)
+- **`cargo check` with NO features FAILS** at Tauri codegen: `capabilities/default.json` references `updater:default`, but `tauri-plugin-updater` is an *optional* dep behind the `desktop` feature and `Cargo.toml` has `default = []`. The error ("Permission updater:default not found …") is a build-script failure that aborts **before** rustc compiles the crate, so a bare `cargo check` never type-checks your code. Always verify with `cargo check --features desktop-full` (CI build = desktop+ml+p2p). KB/vector code (`commands/credentials/vector_kb.rs`, `engine/vector_store.rs`, `state.vector_store`) is `ml`-gated, so `desktop-full` is required to check it.
+- **`cargo … | tail` reports tail's exit code, not cargo's** — a "build failed" can hide behind EXIT=0. Use `${PIPESTATUS[0]}` or redirect to a file and check `$?`.
+
+### SSRF infrastructure
+- Two modules: `engine::ssrf_safe_dns` (defines `SsrfSafeDnsResolver` + `build_ssrf_safe_client()`, backs global `crate::SSRF_SAFE_HTTP`, 30s timeout) and `engine::url_safety` (`validate_url_safety()` pre-flight + a second `SsrfSafeResolver`). For any outbound call whose URL comes from user/credential data, use **`crate::SSRF_SAFE_HTTP`**, never the plain `crate::SHARED_HTTP`. Pre-flight `validate_url_safety` is TOCTOU-vulnerable (DNS rebinding) and ignores redirects — the resolver client is the real guard.
+
+### Choke points (single point to fix a whole class)
+- `engine/db_query.rs::http_client()` — every REST DB connector (neon/supabase/upstash/planetscale/convex + introspection) flows through it; now returns `SSRF_SAFE_HTTP`.
+- `engine/mcp_tools.rs::validate_mcp_command()` — every stdio MCP spawn (via `spawn_mcp_process`) validates here; now constrains *arguments* (remote-URL specs + docker host-escape flags), not just the binary allowlist.
+- `engine/rotation.rs` per-credential lock: `ROTATING_CREDENTIALS` static + `try_lock_credential`/`unlock_credential`/`is_credential_rotating`. Rotation `rotation_type` history values include `"anomaly"` and (new) `"anomaly_remediation"`; `detect_anomalies` once-per-episode dedup keys on the most-recent history entry's type.
+
+### Pre-existing test failure (NOT a regression)
+- `engine::db_query::tests::test_sanitize_strips_field_values` (db_query.rs:~3106) fails on master — `sanitize_error` redacts the short value "5432" the test expects preserved. Independent of any SSRF work; touched-module suite is otherwise 61 passed / 4 ignored.
+
+## Open follow-ups (from Pipeline C — Connections & Credentials, 2026-06-05)
+- **MCP consent gate (completes idea #2)**: arg-hardening blocks remote-URL specs + docker host-escape flags, but does NOT stop `npx <poisoned-but-real-registry-package>`. A per-command user consent gate (approve + remember on first use) is the only complete fix — a published package is statically indistinguishable from a malicious one.
+- **Rejected this scan (still open)**: tool-audit log omits MCP call arguments (forensic gap); legacy RSA-only IPC decrypt path should default-reject (downgrade vector); credential-topology IPC reads (`list_credentials`/`vault_status`/`credential_blast_radius`) lack the `requires(privileged)` guard their write siblings have; forced OAuth refresh (`oauth_refresh.rs`, force=true) can revoke a working token then fail to persist without marking `needs_reauth`; `import_foraged_credential` is not idempotent (double-click dupes).
+- **Fix the pre-existing `test_sanitize_strips_field_values` failure** (sanitizer over-redacts short numeric values).
+
+## Scan-and-decide — Companion & Plugins (Pipeline C, 2026-06-07)
+
+### Build & verification
+- For the **Companion & Plugins** group, `cargo check --features desktop` is sufficient (no `ml`/`p2p` code in artist/drive/obsidian/ocr/research-lab/twin/companion). Note `commands/ocr/mod.rs` is `#[cfg(feature="desktop")]`-gated — a bare `cargo check` skips it entirely. (The earlier Connections run needed `desktop-full` only because vector_kb is `ml`-gated.)
+- **lefthook pre-commit** runs `npx eslint` which fails in shells without node_modules/.bin on PATH ("'eslint' is not recognized"). The repo documents `LEFTHOOK=0 git commit …` as the per-command disable; eslint itself runs fine via `node node_modules/eslint/bin/eslint.js …`. tsc likewise: `node node_modules/typescript/bin/tsc --noEmit` (plain `npx tsc` grabs a registry stub here).
+
+### Reuse-first infra (don't rebuild — scanners flag "plugins don't use X", not "X missing")
+- **ErrorBoundary** (class component) at `src/features/shared/components/feedback/ErrorBoundary.tsx` — props `{children, name?, onReset?}`, "Try Again" resets state (re-attempts a failed lazy import). Wrap plugin `<Suspense>`/panel bodies; keep ContentHeader outside so nav survives a crash.
+- **AriaLiveProvider** at `…/feedback/AriaLiveProvider.tsx` — app-wide region mounted in `App.tsx`. Use `useAnnounce()` in components, `announceImperative()` in non-component code. CRITICAL: `toastStore.addToast` ALREADY routes every toast through `announceImperative`, so toasts are auto-announced — only instrument the previously-silent operation *starts* / inline (non-toast) completions for a11y.
+- **`.focus-ring`** `@utility` in `src/styles/globals.css` is the single keyboard-only focus source of truth (`:focus-visible`). Don't hand-roll `focus:ring-*`/`focus-visible:ring-*`. Remaining drift after this run: `fleet/` and `dev-tools/`.
+- **Path sandbox pattern**: `commands/drive.rs::resolve_safe` (rejects abs + `Component::ParentDir`, canonicalizes, walks to nearest existing ancestor for not-yet-created targets). Mirror it for any user/agent-supplied path. `twin.rs::resolve_wiki_dir` and `companion/jobs/connector_use.rs::resolve_within` now follow it.
+
+### Companion autonomy / security model
+- Connector capabilities + the `requires_approval` gate live in `src/companion/connectors.rs`; the dispatcher honors it (`companion/dispatcher.rs:1270`). Reads with `requires_approval:false` auto-fire as jobs; flip the flag to put a human in front of a capability (done for `personas_database.execute_select`).
+- **Fleet sessions ALWAYS run `claude --dangerously-skip-permissions`** (`commands/fleet/pty.rs:163/187`), so constraining *args* is pointless — the only meaningful containment for `execute_fleet_spawn`/`dispatch` is the **cwd**. The registered-project allowlist is the `dev_projects` table (`root_path`), read via `crate::db::repos::dev_tools::list_projects(&state.db, None)`; `app.state::<Arc<AppState>>()` gets state inside an executor.
+- `serde_yaml = "0.9"` IS a dependency, but `commands/obsidian_brain/markdown.rs` deliberately uses a homegrown YAML emitter/parser — escaping was added in-place (`yaml_quote`/`unquote_yaml_scalar`) rather than reworking around serde_yaml.
+
+## Open follow-ups (from Pipeline C — Companion & Plugins, 2026-06-07)
+- **execute_select now approval-gated** — if autonomous read flows feel too gated, a column/table allowlist (denying the brain's PII tables) would be a less-blocking alternative to full approval.
+- **Fleet cwd allowlist completes the backend half of idea #5** — the deeper fix is the **ApprovalCard showing the resolved command** (cwd + args), not just Athena's free-text rationale; that's a frontend change left undone.
+- **aria-live instrumentation is representative, not exhaustive** — wired the 1–2 clearest long ops per plugin (image gen, vault sync, source ingest, OCR, twin studio). Other long ops (research report compile, experiment runs, blender renders) still announce nothing beyond their toasts.
+- **focus-ring drift remains in `fleet/` and `dev-tools/`** — same mechanical `.focus-ring` swap applies there on a future pass.
+- **Full vitest + full `cargo test` were NOT run** this session (time + pre-existing-noise risk). Verified: tsc 0, `cargo check --features desktop` 0, eslint 0 on changed files, and targeted tests `obsidian_brain::markdown` (9/9) + `render_plan_export_parity` (14/14).
+
+### Round 2 — feature_scout (same group, 2026-06-07): codegen + feature wiring
+- **New Tauri command ⇒ regenerate command names or tsc fails.** Frontend `invoke` is `invokeWithTimeout` from `@/lib/tauriInvoke`, whose name param is the generated `CommandName` union in `src/lib/commandNames.generated.ts`. After adding a `#[tauri::command]` + registering it in `lib.rs generate_handler!`, run `node scripts/generate-command-names.mjs` (static parse of lib.rs, fast, NO cargo) or tsc errors `"x" is not assignable to CommandName`. i18n keys similarly need `node scripts/i18n/gen-types.mjs` + `scripts/i18n/split-locales.mjs`. All codegen tasks live in `scripts/run-codegen.mjs` (predev/prebuild presets) — run the individual generator, not the whole preset.
+- **i18n files are a shared-WIP trap.** `src/i18n/locales/en.json` + `src/i18n/generated/{types,enSectionStrings}.ts` are frequently part of a user's uncommitted WIP. Adding feature i18n keys entangles your change with theirs in the same generated artifacts (can't cleanly stage one without the other). For harness-added UI strings, prefer **inline literals** unless the i18n surface is yours — that keeps the user's i18n WIP untouched.
+- **runPersona pattern (research-lab):** `shared/runPersona.ts::runPersonaAndWait({personaId,input,onStatus})` → `{execution,output,passed}`; persona picked from `useAgentStore(s=>s.personas)`; parse CLI output defensively like `sub_hypotheses/parseHypotheses.ts`; `GenerateHypothesesModal.tsx` is the end-to-end reference. Reused for report Discussion/Abstract synthesis.
+- **ResearchReport has NO `content` column and NO update command** — reports are compiled to markdown on the fly (`sub_reports/compileReport.ts`); commands are only list/create/delete. Persisting compiled/synthesized report text across sessions needs a new `research_lab_update_report` command + ts-rs binding (out of scope this round; synthesis currently feeds the drawer's live Preview/Copy/Download only).
+- **Twin primitives:** `twin_simulate_answer` (LLM draft via `spawn_claude_with_prompt`), `twin_recall`/`top_distilled_facts_for_recall` (grounding), `twin_record_interaction` (log a communication). `twin_draft_reply` was built by composing these; returns a plain `String` to avoid a new ts-rs binding.
+
+## Open follow-ups (from Pipeline C round 2 — feature_scout, 2026-06-07)
+- **Report synthesis doesn't persist** — add `research_lab_update_report` (+ a `content`/`synthesis` column or section row + ts-rs binding) so AI-authored Abstract/Discussion survive a reload, then save from ReportPreviewDrawer instead of only live-compiling.
+- **OCR→KB/Obsidian sink (idea #1) was rejected this round** — still a real dead-end (OCR text never reaches the KB or vault); revisit if document search matters.
+- **Crossref dedup is create-time only** — no backfill of `citation_count`/`doi` for sources already in the table, and no periodic citation refresh.

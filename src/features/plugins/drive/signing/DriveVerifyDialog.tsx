@@ -86,7 +86,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+            className="p-1 rounded-input text-foreground hover:text-foreground hover:bg-secondary/60 transition-colors focus-ring"
             aria-label={t.plugins.drive.cancel}
           >
             <X className="w-4 h-4" />
@@ -146,7 +146,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
             <button
               type="button"
               onClick={onClose}
-              className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body font-semibold hover:bg-sky-500/35 transition-colors"
+              className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body font-semibold hover:bg-sky-500/35 transition-colors focus-ring"
             >
               {t.plugins.drive.confirm}
             </button>
@@ -156,7 +156,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={onClose}
                 disabled={phase === "verifying"}
-                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 disabled:opacity-50 transition-colors"
+                className="px-3 py-1.5 rounded-input typo-body font-medium text-foreground hover:bg-secondary/60 disabled:opacity-50 transition-colors focus-ring"
               >
                 {t.plugins.drive.cancel}
               </button>
@@ -164,7 +164,7 @@ export function DriveVerifyDialog({ entry, signing, onClose }: Props) {
                 type="button"
                 onClick={handleVerify}
                 disabled={phase === "verifying" || !sidecarJson.trim()}
-                className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body font-semibold hover:bg-sky-500/35 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-1.5 rounded-input bg-sky-500/25 text-sky-100 border border-sky-500/40 typo-body font-semibold hover:bg-sky-500/35 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-ring"
               >
                 {phase === "verifying"
                   ? t.plugins.doc_signing.verifying

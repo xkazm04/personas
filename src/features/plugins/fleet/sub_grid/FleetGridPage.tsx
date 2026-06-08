@@ -35,6 +35,7 @@ import { FleetSessionCard } from '../FleetSessionCard';
 import { FleetTerminalPane } from '../FleetTerminalPane';
 import { FleetSessionInsights } from './FleetSessionInsights';
 import { FleetContextPill } from './FleetContextPill';
+import { FleetTokenSummaryBar } from './FleetTokenSummaryBar';
 import { SkillLibraryDrawer } from '../SkillLibraryDrawer';
 import { FleetTerminalOverlay } from '../FleetTerminalOverlay';
 import { gcTerminals } from '../fleetTerminalManager';
@@ -253,6 +254,22 @@ export default function FleetGridPage() {
     }
   }, []);
 
+  // Compact a bloated session: write `/compact⏎` into its PTY (claude's native
+  // compaction). The session re-sends its whole conversation each turn, so this
+  // cuts per-turn cost for the rest of the run. Same write mechanism as skills.
+  const handleCompact = useCallback(async (id: string) => {
+    try {
+      await writeInput(id, '/compact\r');
+      const sess = sessions.find((s) => s.id === id);
+      addToast(
+        tx(t.plugins.fleet.compact_toast, { name: sess?.name ?? sess?.projectLabel ?? '' }),
+        'success',
+      );
+    } catch (e) {
+      toastCatch('FleetGridPage:compact', 'Failed to compact session')(e);
+    }
+  }, [sessions, addToast, t, tx]);
+
   // Apply a library skill (full slash command, incl. any args) to the focused
   // session — writes `<command>⏎` to its PTY (same mechanism as broadcast).
   const handleApplySkill = useCallback(async (command: string) => {
@@ -349,6 +366,13 @@ export default function FleetGridPage() {
   const activeSession = useMemo(
     () => sessions.find((s) => s.id === activeSessionId) ?? null,
     [sessions, activeSessionId],
+  );
+
+  // Bound Claude session ids feed the fleet-wide token aggregate bar. Unbound
+  // (Spawning) sessions have no transcript yet, so they're excluded.
+  const boundClaudeIds = useMemo(
+    () => sessions.map((s) => s.claudeSessionId).filter((id): id is string => !!id),
+    [sessions],
   );
 
   // Sessions that can host a live terminal (everything but exited) — drives
@@ -483,6 +507,8 @@ export default function FleetGridPage() {
         <div data-testid="fleet-grid-page" />
 
         <FleetSummaryPills counts={stateCounts} activeFilter={filter} onToggle={toggleFilter} />
+
+        <FleetTokenSummaryBar claudeSessionIds={boundClaudeIds} />
 
         <FleetNeedsYouBanner
           waiting={waitingSessions}
@@ -689,8 +715,19 @@ export default function FleetGridPage() {
                       {v.label}
                     </button>
                   ))}
-                  {/* Conversation-size efficiency indicator (F2). */}
-                  <span className="ml-2"><FleetContextPill claudeSessionId={activeSession.claudeSessionId} /></span>
+                  {/* Conversation-size efficiency indicator + inline compact (F2). */}
+                  <span className="ml-2">
+                    <FleetContextPill
+                      claudeSessionId={activeSession.claudeSessionId}
+                      sessionId={activeSession.id}
+                      canCompact={
+                        activeSession.state === 'idle' ||
+                        activeSession.state === 'awaiting_input' ||
+                        activeSession.state === 'stale'
+                      }
+                      onCompact={handleCompact}
+                    />
+                  </span>
                   {/* Skills drawer trigger — sits above the CLI. */}
                   <button
                     type="button"

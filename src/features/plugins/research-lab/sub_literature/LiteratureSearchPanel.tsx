@@ -91,7 +91,7 @@ function LiteratureSearchPanelBaseline() {
             </span>
             <button
               onClick={() => setShowArxiv(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-blue-500/15 text-blue-300 hover:bg-blue-500/25 transition-colors focus-ring"
               title={debtText("auto_search_arxiv_794e6027")}
             >
               <Search className="w-3.5 h-3.5" />
@@ -177,7 +177,7 @@ function LiteratureSearchPanelBaseline() {
                     <button
                       onClick={(e) => handleIngest(e, source.id)}
                       disabled={ingestingId === source.id}
-                      className="flex items-center gap-1 px-2 py-1 rounded-card text-[10px] bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1 px-2 py-1 rounded-card text-[10px] bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 focus-ring"
                       title={t.research_lab.ingest_to_kb}
                     >
                       <Database className="w-3 h-3" />
@@ -186,7 +186,7 @@ function LiteratureSearchPanelBaseline() {
                   )}
                   <button
                     onClick={(e) => handleDelete(e, source.id)}
-                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                    className="p-1 rounded opacity-60 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 hover:bg-red-500/10 text-red-400/60 hover:text-red-400 transition-all focus-ring"
                     title={t.common.delete}
                     aria-label={t.common.delete}
                   >

@@ -921,9 +921,29 @@ pub async fn kb_delete_document(
         ids
     };
 
-    // Delete vectors from the vec0 virtual table (same SQLite DB)
-    if state.vector_store.is_some() {
-        crate::engine::vector_store::delete_vectors_by_chunks(&tx, &kb_id, &chunk_ids)?;
+    // Delete vectors from the vec0 virtual table (same SQLite DB).
+    //
+    // Documents are only ever ingested while the vector store is present
+    // (kb_ingest requires it), so every chunk has corresponding vectors in the
+    // vec0 index. If the store is unavailable now (init failed / ml disabled),
+    // deleting the chunk and document rows below while leaving their vectors
+    // behind would permanently desync the vec0 index from the relational tables:
+    // kb_search would return orphaned vectors and silently shrink results.
+    // Refuse the partial delete instead -- the transaction rolls back on this
+    // early return, keeping the operation all-or-nothing. The user can retry
+    // once the knowledge-base engine is initialized.
+    match &state.vector_store {
+        Some(_) => {
+            crate::engine::vector_store::delete_vectors_by_chunks(&tx, &kb_id, &chunk_ids)?;
+        }
+        None => {
+            return Err(AppError::Execution(
+                "Vector store is unavailable; refusing to delete document because its \
+                 vectors cannot be removed (this would desync the vector index). \
+                 Retry once the knowledge-base engine is initialized."
+                    .to_string(),
+            ));
+        }
     }
 
     // Delete chunks, then the document row

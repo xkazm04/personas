@@ -130,8 +130,12 @@ function computeAllTimeChampion(runs: LabArenaRun[]): { model: string; wins: num
 /* Main component                                                      */
 /* ================================================================== */
 
-export function ArenaPanelColosseum() {
-  const { t } = useTranslation();
+export function ArenaPanelColosseum({
+  versionScope,
+}: {
+  versionScope?: { versionId: string; versionNumber: number };
+} = {}) {
+  const { t, tx } = useTranslation();
   const arenaRuns = useAgentStore((s) => s.arenaRuns);
   const arenaResultsMap = useAgentStore((s) => s.arenaResultsMap);
   const isLabRunning = useAgentStore((s) => s.isArenaRunning);
@@ -180,7 +184,9 @@ export function ArenaPanelColosseum() {
     if (!selectedPersona || selectedModels.size === 0) return;
     const models = selectedModelsToConfigs(selectedModels);
     const useCaseFilter = selectedUseCaseId && selectedUseCaseId !== '__all__' ? selectedUseCaseId : undefined;
-    const runId = await startArena(selectedPersona.id, models, useCaseFilter);
+    // versionScope (the Lab table's Measure action) measures that version's prompt;
+    // unscoped, the arena measures the persona's current prompt as before.
+    const runId = await startArena(selectedPersona.id, models, useCaseFilter, versionScope?.versionId);
     if (runId) setActiveRunId(runId);
   };
   const handleDelete = async (runId: string) => {
@@ -224,6 +230,15 @@ export function ArenaPanelColosseum() {
 
   return (
     <div className="space-y-8">
+      {versionScope && (
+        <div className="flex items-center gap-2 rounded-modal border border-primary/25 bg-primary/[0.06] px-4 py-2.5">
+          <Swords className="w-4 h-4 text-primary flex-shrink-0" />
+          <p className="typo-body text-foreground">
+            {tx(t.agents.lab.vr_measure_scope_banner, { version: versionScope.versionNumber })}
+          </p>
+        </div>
+      )}
+
       {/* ── ACT I : THE STAGE ────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-modal border border-primary/20 bg-gradient-to-b from-secondary/35 via-background/40 to-background/25">
         <Torch side="left"  lit={canLaunch} />

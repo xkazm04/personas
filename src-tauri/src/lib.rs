@@ -1648,6 +1648,7 @@ pub fn run() {
             commands::execution::lab::lab_get_active_progress,
             commands::execution::lab::lab_rate_result,
             commands::execution::lab::lab_get_ratings,
+            commands::execution::lab::lab_get_version_ratings,
             commands::execution::lab::lab_get_result_events,
             commands::execution::lab::lab_get_tool_calls,
             commands::execution::lab::lab_get_score_weights,
@@ -2841,6 +2842,8 @@ pub fn run() {
             commands::infrastructure::twin::twin_generate_bio,
             // Twin plugin -- Training Studio: twin-simulated answer drafting
             commands::infrastructure::twin::twin_simulate_answer,
+            // Twin plugin -- Channels outbox: draft a channel-appropriate reply
+            commands::infrastructure::twin::twin_draft_reply,
             // Twin plugin -- Training Studio: background batch generation
             commands::infrastructure::twin::twin_studio_generate_questions,
             commands::infrastructure::twin::twin_studio_generate_answers,
@@ -3021,6 +3024,7 @@ pub fn run() {
             commands::fleet::transcript_read::fleet_read_transcript,
             commands::fleet::transcript_read::fleet_recent_transcripts,
             commands::fleet::transcript_read::fleet_session_metadata,
+            commands::fleet::transcript_read::fleet_token_summary,
             commands::fleet::process_scan::fleet_detect_processes,
             commands::fleet::process_scan::fleet_kill_pid,
             commands::fleet::process_scan::fleet_resume_orphan,

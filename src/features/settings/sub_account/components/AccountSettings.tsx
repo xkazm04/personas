@@ -8,6 +8,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useAutoUpdater, type CheckOutcome } from '@/hooks/utility/data/useAutoUpdater';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { isTelemetryEnabled, setTelemetryEnabled } from '@/lib/telemetryPreference';
+import { applyTelemetrySink } from '@/lib/analytics';
 import { getUpdateHistory, clearUpdateHistory, type UpdateHistoryEntry } from '@/lib/updateHistory';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { useTranslation, interpolate } from '@/i18n/useTranslation';
@@ -96,6 +97,9 @@ export default function AccountSettings() {
               onChange={() => {
                 const next = !telemetryOn;
                 setTelemetryEnabled(next);
+                // Stop/resume usage tracking immediately (no restart). Error
+                // reporting still needs a restart — hence the note below stays.
+                applyTelemetrySink(next);
                 setTelemetryOn(next);
                 setTelemetryChanged(true);
               }}

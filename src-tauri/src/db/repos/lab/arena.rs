@@ -13,6 +13,8 @@ fn row_to_run(row: &Row) -> rusqlite::Result<LabArenaRun> {
         id: row.get("id")?,
         persona_id: row.get("persona_id")?,
         status: LabRunStatus::from_db(&row.get::<_, String>("status")?),
+        version_id: row.get("version_id").unwrap_or(None),
+        version_number: row.get("version_number").unwrap_or(None),
         models_tested: row.get("models_tested")?,
         scenarios_count: row.get("scenarios_count")?,
         use_case_filter: row.get("use_case_filter")?,
@@ -29,6 +31,8 @@ fn row_to_result(row: &Row) -> rusqlite::Result<LabArenaResult> {
     Ok(LabArenaResult {
         id: row.get("id")?,
         run_id: row.get("run_id")?,
+        version_id: row.get("version_id").unwrap_or(None),
+        version_number: row.get("version_number").unwrap_or(None),
         base: row_to_lab_result_base(row)?,
     })
 }
@@ -49,11 +53,14 @@ lab_crud! {
 
 // -- Arena-specific functions -----------------------------------
 
+#[allow(clippy::too_many_arguments)]
 pub fn create_run(
     pool: &DbPool,
     persona_id: &str,
     models_tested: &str,
     use_case_filter: Option<&str>,
+    version_id: Option<&str>,
+    version_number: Option<i32>,
 ) -> Result<LabArenaRun, AppError> {
     timed_query!("lab_arena_runs", "lab_arena_runs::create_run", {
         let id = uuid::Uuid::new_v4().to_string();
@@ -61,9 +68,9 @@ pub fn create_run(
 
         let conn = pool.get()?;
         conn.execute(
-            "INSERT INTO lab_arena_runs (id, persona_id, status, models_tested, use_case_filter, created_at)
-             VALUES (?1, ?2, 'generating', ?3, ?4, ?5)",
-            params![id, persona_id, models_tested, use_case_filter, now],
+            "INSERT INTO lab_arena_runs (id, persona_id, status, models_tested, use_case_filter, version_id, version_number, created_at)
+             VALUES (?1, ?2, 'generating', ?3, ?4, ?5, ?6, ?7)",
+            params![id, persona_id, models_tested, use_case_filter, version_id, version_number, now],
         )?;
         get_run_by_id(pool, &id)
     })
@@ -94,16 +101,18 @@ pub fn create_result(
             // (see write_tool_calls_child_rows below). The parent-table JSON
             // columns are dropped in step 7 of this ADR.
             "INSERT INTO lab_arena_results
-                (id, run_id, scenario_name, model_id, provider, status,
+                (id, run_id, version_id, version_number, scenario_name, model_id, provider, status,
                  output_preview,
                  tool_accuracy_score, output_quality_score, protocol_compliance,
                  input_tokens, output_tokens, cost_usd, duration_ms,
                  rationale, suggestions, error_message, eval_method, created_at)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21)
              RETURNING *",
             params![
                 id,
                 input.run_id,
+                input.version_id,
+                input.version_number,
                 input.base.scenario_name,
                 input.base.model_id,
                 input.base.provider,

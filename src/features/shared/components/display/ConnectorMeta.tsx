@@ -110,6 +110,7 @@ export const CONNECTOR_META: Record<string, ConnectorMeta> = {
   // -- Knowledge & Productivity ----------------------------------
   notion:             { label: 'Notion',             color: '#FFFFFF', iconUrl: 'https://cdn.simpleicons.org/notion/f0f0f0',          Icon: Globe },
   confluence:         { label: 'Confluence',         color: '#172B4D', iconUrl: 'https://cdn.simpleicons.org/confluence/172B4D',       Icon: BookOpen },
+  granola:            { label: 'Granola',            color: '#C49A6C', iconUrl: '/icons/connectors/granola.svg',                       Icon: FileText },
   airtable:           { label: 'Airtable',           color: '#18BFFF', iconUrl: 'https://cdn.simpleicons.org/airtable/18BFFF',        Icon: Table },
   coda:               { label: 'Coda',               color: '#F46A54', iconUrl: 'https://cdn.simpleicons.org/coda/F46A54',            Icon: FileText },
 

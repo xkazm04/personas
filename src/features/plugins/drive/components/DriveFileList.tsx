@@ -121,7 +121,7 @@ function InlineRenameInput({
   initialName,
   onCommit,
   onCancel,
-  className = "flex-1 min-w-0 px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40",
+  className = "flex-1 min-w-0 px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus-ring",
 }: {
   initialName: string;
   onCommit: (name: string) => void;
@@ -270,7 +270,7 @@ function ListView({
         type="button"
         onClick={() => drive.setSort(column)}
         title={isGrouped ? drive.sortDir : undefined}
-        className={`flex items-center gap-1 py-2 typo-label transition-colors ${
+        className={`flex items-center gap-1 py-2 typo-label transition-colors focus-ring ${
           isGrouped
             ? "text-cyan-200 hover:text-cyan-200"
             : active
@@ -583,7 +583,7 @@ function IconsView({
               initialName=""
               onCommit={(name) => onCommitPendingCreate?.(name)}
               onCancel={() => onCancelPendingCreate?.()}
-              className="w-full text-center px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+              className="w-full text-center px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus-ring"
             />
           </div>
         )}
@@ -612,7 +612,7 @@ function IconsView({
                     onCommitInlineRename?.(entry.path, newName)
                   }
                   onCancel={() => onCancelInlineRename?.()}
-                  className="w-full text-center px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
+                  className="w-full text-center px-1.5 py-0.5 rounded-input bg-background/80 border border-cyan-500/50 typo-body text-foreground focus-ring"
                 />
               </div>
             );
@@ -634,7 +634,7 @@ function IconsView({
                 if (!selected) drive.selectOnly(entry.path);
                 onContextMenu(entry, e.clientX, e.clientY);
               }}
-              className={`group flex flex-col items-center gap-2.5 p-3 rounded-modal border transition-all ${
+              className={`group flex flex-col items-center gap-2.5 p-3 rounded-modal border transition-all focus-ring ${
                 selected
                   ? `bg-cyan-500/10 border-cyan-500/50 ring-2 ${visual.ring} shadow-[0_0_20px_-8px_rgba(34,211,238,0.6)]`
                   : flash
@@ -861,7 +861,7 @@ function ColumnEntries({
               if (!selected) drive.selectOnly(entry.path);
               onContextMenu(entry, e.clientX, e.clientY);
             }}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-colors ${
+            className={`w-full flex items-center gap-2.5 px-3 py-2 typo-body text-left transition-colors focus-ring ${
               isActive
                 ? "bg-gradient-to-r from-cyan-500/25 via-cyan-500/10 to-transparent text-cyan-100 shadow-[inset_2px_0_0_rgba(34,211,238,0.9)]"
                 : selected
@@ -995,7 +995,7 @@ function RecursiveResultsView({
         <button
           type="button"
           onClick={() => drive.clearRecursiveSearch()}
-          className="px-2 py-1 rounded-input typo-body text-foreground hover:bg-secondary/60"
+          className="px-2 py-1 rounded-input typo-body text-foreground hover:bg-secondary/60 focus-ring"
         >
           {t.plugins.drive.search_back_to_folder}
         </button>
@@ -1056,7 +1056,7 @@ function RecursiveResultRow({
           drive.navigate(parent);
           drive.clearRecursiveSearch();
         }}
-        className="self-center p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors"
+        className="self-center p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-cyan-500/15 transition-colors focus-ring"
         title={t.plugins.drive.search_reveal_aria}
         aria-label={t.plugins.drive.search_reveal_aria}
       >

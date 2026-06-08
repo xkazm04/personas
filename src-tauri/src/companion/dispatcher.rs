@@ -161,6 +161,12 @@ const ALLOWED_ACTIONS: &[&str] = &[
     // this entry no approval card is ever created and nothing builds.
     "build_oneshot",
     "run_arena",
+    // Headless genome capabilities — the Lab descoped Breed/Evolve from the UI
+    // (the consolidated Versions & Ratings table replaced the tab switcher), so
+    // Athena is now the only surface that can drive them. Both are approval-
+    // gated: they spawn compute-heavy background runs the user should confirm.
+    "companion_breed_personas",
+    "companion_evolve_persona",
     // `compose_dashboard` is auto-fire — handled below alongside
     // `open_route` / `open_lab`. No approval card; the user already
     // asked for the dashboard, the click is friction.

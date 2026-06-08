@@ -1,4 +1,4 @@
-use rusqlite::params;
+use rusqlite::{params, OptionalExtension};
 use uuid::Uuid;
 
 use crate::db::models::{
@@ -142,29 +142,100 @@ pub fn list_sources(pool: &DbPool, project_id: &str) -> Result<Vec<ResearchSourc
     Ok(rows.filter_map(|r| r.ok()).collect())
 }
 
+/// Maps a full `research_sources` row to a `ResearchSource`. The SELECT column
+/// order must match `SOURCE_COLUMNS`.
+fn row_to_source(row: &rusqlite::Row) -> rusqlite::Result<ResearchSource> {
+    Ok(ResearchSource {
+        id: row.get(0)?,
+        project_id: row.get(1)?,
+        source_type: row.get(2)?,
+        title: row.get(3)?,
+        authors: row.get(4)?,
+        year: row.get(5)?,
+        abstract_text: row.get(6)?,
+        doi: row.get(7)?,
+        url: row.get(8)?,
+        pdf_path: row.get(9)?,
+        citation_count: row.get(10)?,
+        metadata: row.get(11)?,
+        relevance_score: row.get(12)?,
+        knowledge_base_id: row.get(13)?,
+        status: row.get(14)?,
+        ingested_at: row.get(15)?,
+        created_at: row.get(16)?,
+        updated_at: row.get(17)?,
+    })
+}
+
+const SOURCE_COLUMNS: &str = "id, project_id, source_type, title, authors, year, abstract_text, doi, url, pdf_path, citation_count, metadata, relevance_score, knowledge_base_id, status, ingested_at, created_at, updated_at";
+
 pub fn create_source(
     pool: &DbPool,
     input: &CreateResearchSource,
 ) -> Result<ResearchSource, AppError> {
-    let id = Uuid::new_v4().to_string();
     let conn = pool.get()?;
+
+    // Dedup guard: a paper added twice (e.g. via DOI lookup then arXiv search)
+    // should resolve to the same row instead of silently duplicating. Match
+    // within the same project on a normalized DOI (case-insensitive, trimmed);
+    // when the source has no DOI, fall back to a normalized URL match. Both keys
+    // are normalized identically on the stored side so an old un-normalized row
+    // still matches.
+    let doi_key = input
+        .doi
+        .as_deref()
+        .map(|d| d.trim().to_lowercase())
+        .filter(|d| !d.is_empty());
+    let url_key = input
+        .url
+        .as_deref()
+        .map(|u| u.trim().to_lowercase())
+        .filter(|u| !u.is_empty());
+
+    let existing: Option<ResearchSource> = if let Some(doi) = &doi_key {
+        conn.query_row(
+            &format!(
+                "SELECT {SOURCE_COLUMNS} FROM research_sources \
+                 WHERE project_id = ?1 AND doi IS NOT NULL AND lower(trim(doi)) = ?2 \
+                 LIMIT 1"
+            ),
+            params![input.project_id, doi],
+            row_to_source,
+        )
+        .optional()?
+    } else if let Some(url) = &url_key {
+        conn.query_row(
+            &format!(
+                "SELECT {SOURCE_COLUMNS} FROM research_sources \
+                 WHERE project_id = ?1 AND url IS NOT NULL AND lower(trim(url)) = ?2 \
+                 LIMIT 1"
+            ),
+            params![input.project_id, url],
+            row_to_source,
+        )
+        .optional()?
+    } else {
+        None
+    };
+
+    if let Some(found) = existing {
+        return Ok(found);
+    }
+
+    let id = Uuid::new_v4().to_string();
     conn.execute(
-        "INSERT INTO research_sources (id, project_id, source_type, title, authors, year, abstract_text, doi, url, metadata)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)",
-        params![id, input.project_id, input.source_type, input.title, input.authors, input.year, input.abstract_text, input.doi, input.url, input.metadata],
+        "INSERT INTO research_sources (id, project_id, source_type, title, authors, year, abstract_text, doi, url, pdf_path, citation_count, metadata)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+        params![id, input.project_id, input.source_type, input.title, input.authors, input.year, input.abstract_text, input.doi, input.url, input.pdf_path, input.citation_count, input.metadata],
     )?;
     let conn2 = pool.get()?;
-    conn2.query_row(
-        "SELECT id, project_id, source_type, title, authors, year, abstract_text, doi, url, pdf_path, citation_count, metadata, relevance_score, knowledge_base_id, status, ingested_at, created_at, updated_at FROM research_sources WHERE id = ?1",
-        params![id],
-        |row| Ok(ResearchSource {
-            id: row.get(0)?, project_id: row.get(1)?, source_type: row.get(2)?, title: row.get(3)?,
-            authors: row.get(4)?, year: row.get(5)?, abstract_text: row.get(6)?, doi: row.get(7)?,
-            url: row.get(8)?, pdf_path: row.get(9)?, citation_count: row.get(10)?, metadata: row.get(11)?,
-            relevance_score: row.get(12)?, knowledge_base_id: row.get(13)?, status: row.get(14)?,
-            ingested_at: row.get(15)?, created_at: row.get(16)?, updated_at: row.get(17)?,
-        }),
-    ).map_err(AppError::from)
+    conn2
+        .query_row(
+            &format!("SELECT {SOURCE_COLUMNS} FROM research_sources WHERE id = ?1"),
+            params![id],
+            row_to_source,
+        )
+        .map_err(AppError::from)
 }
 
 pub fn delete_source(pool: &DbPool, id: &str) -> Result<(), AppError> {

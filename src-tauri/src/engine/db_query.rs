@@ -25,9 +25,17 @@ use crate::error::AppError;
 /// Maximum rows returned per query to prevent memory exhaustion.
 const MAX_ROWS: usize = 500;
 
-/// Return the shared HTTP client (30-second timeout, connection pooling).
+/// Return the SSRF-safe HTTP client (30-second timeout, connection pooling, and
+/// a DNS resolver that rejects private/internal/metadata IPs at connect time).
+///
+/// Every DB connector below targets a URL/host built from user-supplied
+/// credential data (`project_url`, `connection_string`, `host`, …), so these
+/// requests are the highest-trust SSRF surface in the app. Using
+/// `SSRF_SAFE_HTTP` rather than the plain `SHARED_HTTP` closes the
+/// DNS-rebinding window and blocks pivots to cloud IMDS / internal services.
+/// Self-hosted DBs on private addresses are intentionally rejected.
 fn http_client() -> reqwest::Client {
-    crate::SHARED_HTTP.clone()
+    crate::SSRF_SAFE_HTTP.clone()
 }
 
 /// Strip credential material from error messages before they reach the UI,

@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../shared/channels';
 import { silentCatch } from '@/lib/silentCatch';
 import { useChannelActivity } from './useChannelActivity';
+import { ReplyOutbox } from './ReplyOutbox';
 
 
 /* ------------------------------------------------------------------ *
@@ -220,6 +221,9 @@ export default function ChannelsAtelier() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Reply outbox — draft + approve-before-send */}
+          {channels.length > 0 && <ReplyOutbox channels={channels} />}
 
           {/* Channel list */}
           {isLoading && channels.length === 0 ? (

@@ -16,7 +16,7 @@ import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpi
 import { ActivityDot } from '@/features/shared/components/display/ActivityDot';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
-import { silentCatch } from '@/lib/silentCatch';
+import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
   STT_DOWNLOAD_EVENT,
   companionSttDeleteModel,
@@ -174,6 +174,15 @@ function WhisperConfig() {
     try {
       await companionSttDownloadModel(id);
     } catch (e) {
+      // If the invoke itself throws (before any progress event), the row would
+      // otherwise sit on a 'queued' spinner forever. Flip it to a failed state
+      // carrying the reason so the row renders an actionable error (same shape
+      // the backend's SttDownloadProgress.error uses for stream failures).
+      const msg = e instanceof Error ? e.message : String(e);
+      setProgress((p) => ({
+        ...p,
+        [id]: { modelId: id, state: 'failed', bytesDownloaded: 0, bytesTotal: null, error: msg },
+      }));
       silentCatch('stt.download')(e);
     }
   }, []);
@@ -185,7 +194,9 @@ function WhisperConfig() {
         if (modelId === id) setModelId(null);
         await refreshModels();
       } catch (e) {
-        silentCatch('stt.delete')(e);
+        // A swallowed delete leaves a phantom model with no feedback; toast the
+        // reason so the user knows it didn't go away (and why).
+        toastCatch('stt.delete')(e);
       }
     },
     [modelId, setModelId, refreshModels],
@@ -330,6 +341,9 @@ function WhisperConfig() {
                         style={{ width: `${pct}%` }}
                       />
                     </div>
+                  )}
+                  {failed && prog?.error && (
+                    <p className="typo-caption text-rose-300 mt-2 break-words">{prog.error}</p>
                   )}
                 </div>
               );

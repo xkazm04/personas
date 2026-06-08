@@ -64,6 +64,18 @@ fn unlock_credential(credential_id: &str) {
     }
 }
 
+/// True if a rotation is currently in progress for this credential (the
+/// per-credential lock is held by a concurrent manual `rotate_now` or scheduled
+/// evaluation). Used by `evaluate_credential_events` to defer a firing instead
+/// of dropping it when rotation can't run right now.
+fn is_credential_rotating(credential_id: &str) -> bool {
+    ROTATING_CREDENTIALS
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+        .as_ref()
+        .is_some_and(|set| set.contains(credential_id))
+}
+
 // ---------------------------------------------------------------------------
 // Windowed anomaly scoring constants
 // ---------------------------------------------------------------------------
@@ -893,9 +905,12 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
 
         if should_record {
             let history = rotation_repo::get_history(pool, &cred.id, Some(1)).unwrap_or_default();
-            let already_recorded = history
-                .first()
-                .is_some_and(|h| h.rotation_type == "anomaly");
+            // Treat a prior "anomaly_remediation" entry as "already handled" too,
+            // so the rotation triggered below fires at most once per anomaly
+            // episode rather than on every scan tick.
+            let already_recorded = history.first().is_some_and(|h| {
+                h.rotation_type == "anomaly" || h.rotation_type == "anomaly_remediation"
+            });
 
             if !already_recorded {
                 let detail = format!(
@@ -929,6 +944,32 @@ pub async fn detect_anomalies(pool: &DbPool, app: &AppHandle) {
                         "failure_rate_1h": score.failure_rate_1h,
                     }),
                 );
+
+                // Actually remediate. detect_anomalies previously only recorded
+                // and alerted, so credentials whose remediation is RotateThenAlert
+                // or PreemptiveRotation accumulated "anomaly" history forever but
+                // were never rotated (success theater). Trigger the rotation now.
+                // rotate_now takes its own per-credential lock, so calling it here
+                // (detect_anomalies holds no lock) is safe; the !already_recorded
+                // guard above keeps it to once per episode. Disable is excluded --
+                // disabling is its own remediation, handled by evaluate_due_rotations.
+                if matches!(
+                    score.remediation,
+                    Remediation::RotateThenAlert | Remediation::PreemptiveRotation
+                ) {
+                    match rotate_now(pool, &cred.id, "anomaly_remediation").await {
+                        Ok(detail) => tracing::info!(
+                            credential_id = %cred.id,
+                            "Anomaly remediation: rotation succeeded -- {}",
+                            detail
+                        ),
+                        Err(e) => tracing::warn!(
+                            credential_id = %cred.id,
+                            error = %e,
+                            "Anomaly remediation: rotation failed"
+                        ),
+                    }
+                }
             }
         }
     }
@@ -1172,6 +1213,22 @@ pub async fn evaluate_credential_events(pool: &DbPool) {
         };
 
         if should_fire {
+            // If a rotation is already in flight for this credential (a concurrent
+            // manual rotate_now or scheduled evaluation holds the per-credential
+            // lock), calling rotate_now would fail on the lock and the firing would
+            // be logged-and-dropped -- yet last_polled_at would still advance,
+            // losing a scheduled tick forever (the 2am-Saturday class of bug).
+            // Defer instead: skip advancing last_polled_at so this event is
+            // re-evaluated and fired on the next tick once the lock is free.
+            if is_credential_rotating(&event.credential_id) {
+                tracing::info!(
+                    credential_id = %event.credential_id,
+                    event_id = %event.id,
+                    "Credential events: rotation already in progress, deferring firing to next tick"
+                );
+                continue;
+            }
+
             tracing::info!(
                 credential_id = %event.credential_id,
                 event_id = %event.id,

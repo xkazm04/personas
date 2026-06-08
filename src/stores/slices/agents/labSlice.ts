@@ -11,6 +11,7 @@ import type { LabMatrixResult } from "@/lib/bindings/LabMatrixResult";
 import type { LabEvalRun } from "@/lib/bindings/LabEvalRun";
 import type { LabEvalResult } from "@/lib/bindings/LabEvalResult";
 import type { LabUserRating } from "@/lib/bindings/LabUserRating";
+import type { LabVersionRating } from "@/lib/bindings/LabVersionRating";
 import type { PersonaPromptVersion } from "@/lib/bindings/PersonaPromptVersion";
 import type { LabRunStatus } from "@/lib/bindings/LabRunStatus";
 import type { ModelTestConfig } from "@/api/agents/tests";
@@ -266,7 +267,9 @@ export interface LabSlice {
   arenaRuns: LabArenaRun[];
   arenaResultsMap: Record<string, LabArenaResult[]>;
   fetchArenaRuns: (personaId: string) => Promise<void>;
-  startArena: (personaId: string, models: ModelTestConfig[], useCaseFilter?: string) => Promise<string | null>;
+  /** `versionId` scopes the arena to a specific prompt version (consolidated
+   *  "Versions & Ratings" table); omit it to measure the current prompt. */
+  startArena: (personaId: string, models: ModelTestConfig[], useCaseFilter?: string, versionId?: string) => Promise<string | null>;
   cancelArena: (runId: string) => Promise<void>;
   fetchArenaResults: (runId: string) => Promise<void>;
   deleteArenaRun: (runId: string) => Promise<void>;
@@ -312,8 +315,12 @@ export interface LabSlice {
   healthErrorRate: number | null;
   fetchHealthRate: (personaId: string) => Promise<void>;
 
-  // Prompt Improvement Engine
-  improvePrompt: (personaId: string, runId: string, mode: string) => Promise<string | null>;
+  // Version × Model ratings (consolidated "Versions & Ratings" table)
+  versionRatings: LabVersionRating[];
+  fetchVersionRatings: (personaId: string) => Promise<void>;
+  /** Make (version, model) the persona's live config: roll the version's prompt
+   *  in + tag it production, then switch the active model. */
+  activateVersion: (personaId: string, versionId: string, modelId: string, provider: string) => Promise<void>;
 
   // Active progress hydration (restores progress after page refresh)
   hydrateActiveProgress: (personaId: string) => Promise<void>;
@@ -390,8 +397,8 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
     arenaRuns: [],
     arenaResultsMap: {},
     fetchArenaRuns: arena.fetchRuns,
-    startArena: (personaId, models, useCaseFilter) =>
-      arena.wrapStart(api.labStartArena, personaId, models, useCaseFilter),
+    startArena: (personaId, models, useCaseFilter, versionId) =>
+      arena.wrapStart(api.labStartArena, personaId, models, useCaseFilter, versionId),
     cancelArena: arena.cancelRun,
     fetchArenaResults: arena.fetchResults,
     deleteArenaRun: arena.deleteRun,
@@ -508,16 +515,43 @@ export const createLabSlice: StateCreator<AgentStore, [], [], LabSlice> = (set, 
       }
     },
 
-    // Prompt Improvement Engine
-    improvePrompt: async (personaId, runId, mode) => {
+    // Version × Model ratings
+    versionRatings: [],
+    fetchVersionRatings: async (personaId) => {
       try {
-        const version = await api.labImprovePrompt(personaId, runId, mode);
-        // Refresh versions list to include the new one
-        get().fetchVersions(personaId);
-        return version.id;
+        const ratings = await api.labGetVersionRatings(personaId);
+        set({ versionRatings: ratings });
       } catch (err) {
-        reportError(err, "Failed to generate prompt improvement", set, { action: "lab.improvePrompt" });
-        return null;
+        reportError(err, "Failed to fetch version ratings", set, { action: "lab.fetchVersionRatings" });
+      }
+    },
+    activateVersion: async (personaId, versionId, modelId, provider) => {
+      try {
+        // 1. Roll the version's prompt live + tag it production (same path as
+        //    the legacy Versions panel's rollback).
+        await api.labRollbackVersion(versionId);
+        // 2. Switch the active model, preserving any other model_profile fields
+        //    (base_url / auth_token / cache policy) the persona already carries —
+        //    only the model + provider change. Reuses the encrypted-profile
+        //    write path via updatePersona (model_profile = JSON string).
+        const current = get().selectedPersona?.model_profile;
+        let profile: Record<string, unknown> = {};
+        if (current) {
+          try {
+            profile = JSON.parse(current) as Record<string, unknown>;
+          } catch {
+            profile = {};
+          }
+        }
+        profile.model = modelId;
+        profile.provider = provider || "anthropic";
+        await get().updatePersona(personaId, { model_profile: JSON.stringify(profile) });
+        // 3. Refresh derived state so the table re-marks the active row.
+        await get().selectPersona(personaId);
+        get().fetchVersions(personaId);
+        get().fetchVersionRatings(personaId);
+      } catch (err) {
+        reportError(err, "Failed to activate version", set, { action: "lab.activateVersion" });
       }
     },
 

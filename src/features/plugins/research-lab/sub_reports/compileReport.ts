@@ -3,6 +3,12 @@ import type {
   ResearchExperiment, ResearchFinding, ResearchReport,
 } from '@/api/researchLab/researchLab';
 
+/** AI-authored narrative sections. When absent, deterministic stubs are used. */
+export interface ReportSynthesis {
+  abstract?: string;
+  discussion?: string;
+}
+
 export interface CompileArgs {
   report: ResearchReport;
   project: ResearchProject;
@@ -10,6 +16,8 @@ export interface CompileArgs {
   hypotheses: ResearchHypothesis[];
   experiments: ResearchExperiment[];
   findings: ResearchFinding[];
+  /** Optional AI-authored Abstract + Discussion, merged into the markdown when present. */
+  synthesis?: ReportSynthesis;
 }
 
 /** Entry point — routes to the right template based on reportType. */
@@ -108,15 +116,23 @@ function header(report: ResearchReport, project: ResearchProject): string {
   return lines.join('\n');
 }
 
+/** Renders an `## Abstract` block when AI synthesis has produced one, else ''. */
+function abstractBlock(synthesis?: ReportSynthesis): string {
+  const text = synthesis?.abstract?.trim();
+  if (!text) return '';
+  return ['## Abstract', '', text, ''].join('\n');
+}
+
 // ---------------------------------------------------------------------------
 // Templates
 // ---------------------------------------------------------------------------
 
-function compileLiteratureReview({ report, project, sources }: CompileArgs): string {
+function compileLiteratureReview({ report, project, sources, synthesis }: CompileArgs): string {
   const indexed = sources.filter((s) => s.status === 'indexed');
   const pending = sources.filter((s) => s.status !== 'indexed');
   return [
     header(report, project),
+    abstractBlock(synthesis),
     '## Overview',
     '',
     `This review aggregates ${sources.length} source${sources.length === 1 ? '' : 's'} (${indexed.length} indexed) collected for **${project.name}**.`,
@@ -131,9 +147,10 @@ function compileLiteratureReview({ report, project, sources }: CompileArgs): str
   ].join('\n');
 }
 
-function compileExperimentReport({ report, project, experiments, hypotheses, findings }: CompileArgs): string {
+function compileExperimentReport({ report, project, experiments, hypotheses, findings, synthesis }: CompileArgs): string {
   return [
     header(report, project),
+    abstractBlock(synthesis),
     '## Hypotheses under Test',
     '',
     renderHypothesesList(hypotheses),
@@ -145,11 +162,14 @@ function compileExperimentReport({ report, project, experiments, hypotheses, fin
     '## Findings',
     '',
     renderFindingsList(findings),
+    ...(synthesis?.discussion?.trim()
+      ? ['', '## Discussion', '', synthesis.discussion.trim()]
+      : []),
   ].join('\n');
 }
 
 function compileFullPaper(args: CompileArgs): string {
-  const { report, project, sources, hypotheses, experiments, findings } = args;
+  const { report, project, sources, hypotheses, experiments, findings, synthesis } = args;
   const refs = sources
     .slice()
     .sort((a, b) => citationKey(a).localeCompare(citationKey(b)))
@@ -158,6 +178,7 @@ function compileFullPaper(args: CompileArgs): string {
 
   return [
     header(report, project),
+    abstractBlock(synthesis),
     '## 1. Introduction',
     '',
     project.description ?? '_No description set for this project._',
@@ -180,7 +201,7 @@ function compileFullPaper(args: CompileArgs): string {
     '',
     '## 5. Discussion',
     '',
-    '_To be authored._',
+    synthesis?.discussion?.trim() ? synthesis.discussion.trim() : '_To be authored._',
     '',
     '## References',
     '',
@@ -189,10 +210,11 @@ function compileFullPaper(args: CompileArgs): string {
 }
 
 function compileExecutiveSummary(args: CompileArgs): string {
-  const { report, project, sources, hypotheses, experiments, findings } = args;
+  const { report, project, sources, hypotheses, experiments, findings, synthesis } = args;
   const topFindings = [...findings].sort((a, b) => b.confidence - a.confidence).slice(0, 5);
   return [
     header(report, project),
+    abstractBlock(synthesis),
     '## Snapshot',
     '',
     `| Metric | Value |`,

@@ -1889,12 +1889,22 @@ pub async fn run_arena_test(
     _log_dir: std::path::PathBuf,
     cancelled: Arc<std::sync::atomic::AtomicBool>,
     use_case_filter: Option<String>,
+    // When the arena was launched scoped to a specific prompt version (the
+    // consolidated "Versions & Ratings" table), `ephemeral.persona` already
+    // carries that version's prompt and this stamps the attribution onto each
+    // result so the ratings rollup can group by (version, model). `None` = the
+    // legacy current-prompt arena, results stay version-less.
+    version: Option<(String, i32)>,
 ) {
     let persona = &ephemeral.persona;
     let tools = &ephemeral.tools;
+    let label = version
+        .as_ref()
+        .map(|(_, num)| format!("v{}", num))
+        .unwrap_or_default();
     let variants = vec![LabVariant {
         persona,
-        label: String::new(),
+        label,
         tools: Vec::new(),
     }];
 
@@ -1903,12 +1913,18 @@ pub async fn run_arena_test(
         update_status: Box::new(|pool, id, status, sc, sum, err, ca| {
             let _ = arena_repo::update_run_status(pool, id, status, sc, sum, err, ca);
         }),
-        persist_result: Box::new(|pool, run_id, _variant, scenario, model, status, scores| {
+        persist_result: Box::new(move |pool, run_id, _variant, scenario, model, status, scores| {
             let base = make_common_result_fields(scenario, model, status, scores);
+            let (version_id, version_number) = match &version {
+                Some((vid, vnum)) => (Some(vid.clone()), Some(*vnum)),
+                None => (None, None),
+            };
             match arena_repo::create_result(
                 pool,
                 &CreateArenaResultInput {
                     run_id: run_id.to_string(),
+                    version_id,
+                    version_number,
                     base,
                 },
             ) {

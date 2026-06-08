@@ -347,7 +347,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card bg-secondary/40 border border-primary/15 hover:bg-secondary/70 hover:border-primary/25 typo-body text-foreground transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-card bg-secondary/40 border border-primary/15 hover:bg-secondary/70 hover:border-primary/25 typo-body text-foreground transition-colors focus-ring"
           aria-label={t.plugins.drive.lightbox_close}
           title={t.plugins.drive.lightbox_close}
         >
@@ -368,7 +368,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           <button
             type="button"
             onClick={goPrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-secondary/50 border border-primary/15 hover:bg-cyan-500/25 hover:border-cyan-500/40 text-foreground hover:text-cyan-100 transition-colors shadow-elevation-2"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-secondary/50 border border-primary/15 hover:bg-cyan-500/25 hover:border-cyan-500/40 text-foreground hover:text-cyan-100 transition-colors shadow-elevation-2 focus-ring"
             aria-label={t.plugins.drive.lightbox_prev}
             title={t.plugins.drive.lightbox_prev}
           >
@@ -433,7 +433,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           <button
             type="button"
             onClick={goNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-secondary/50 border border-primary/15 hover:bg-cyan-500/25 hover:border-cyan-500/40 text-foreground hover:text-cyan-100 transition-colors shadow-elevation-2"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-12 h-12 rounded-full bg-secondary/50 border border-primary/15 hover:bg-cyan-500/25 hover:border-cyan-500/40 text-foreground hover:text-cyan-100 transition-colors shadow-elevation-2 focus-ring"
             aria-label={t.plugins.drive.lightbox_next}
             title={t.plugins.drive.lightbox_next}
           >
@@ -463,7 +463,7 @@ function ChromeIconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-primary/10 disabled:opacity-35 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors"
+      className="p-1.5 rounded-input text-foreground hover:text-cyan-200 hover:bg-primary/10 disabled:opacity-35 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-colors focus-ring"
     >
       <Icon className="w-3.5 h-3.5" />
     </button>

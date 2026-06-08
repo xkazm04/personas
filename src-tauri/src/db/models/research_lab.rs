@@ -93,6 +93,9 @@ pub struct CreateResearchSource {
     pub abstract_text: Option<String>,
     pub doi: Option<String>,
     pub url: Option<String>,
+    pub pdf_path: Option<String>,
+    #[ts(type = "number | undefined")]
+    pub citation_count: Option<i32>,
     pub metadata: Option<String>,
 }
 

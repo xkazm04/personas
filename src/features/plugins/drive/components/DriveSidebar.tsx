@@ -108,7 +108,7 @@ export function DriveSidebar({ drive, activeDragCount = null }: Props) {
             type="button"
             onClick={toggleRecentCollapsed}
             aria-expanded={!recentCollapsed}
-            className="group w-full px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground hover:text-cyan-200 transition-colors"
+            className="group w-full px-2 mb-1 flex items-center gap-1.5 typo-label text-foreground hover:text-cyan-200 transition-colors focus-ring"
           >
             {recentCollapsed ? (
               <ChevronRight className="w-3 h-3 text-foreground group-hover:text-cyan-200" />
@@ -223,7 +223,7 @@ function RecentRail({
                 ? `${entry.path}\n${MOD_KEY_LABEL}+${shortcutN}`
                 : entry.path
             }
-            className="group w-full flex items-center gap-2 py-1.5 px-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/10 hover:text-cyan-100 transition-colors"
+            className="group w-full flex items-center gap-2 py-1.5 px-2 rounded-input text-left typo-body text-foreground hover:bg-cyan-500/10 hover:text-cyan-100 transition-colors focus-ring"
           >
             <div
               className={`flex items-center justify-center w-5 h-5 rounded bg-gradient-to-br ${visual.gradient} flex-shrink-0`}
@@ -342,7 +342,7 @@ function TreeNode({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-input text-left typo-body transition-all ${
+        className={`group relative w-full flex items-center gap-1.5 py-1.5 pr-2 rounded-input text-left typo-body transition-all focus-ring ${
           dropActive
             ? "bg-cyan-500/30 ring-1 ring-cyan-400/60 text-cyan-50 shadow-[inset_0_0_12px_rgba(34,211,238,0.4)]"
             : dragHint

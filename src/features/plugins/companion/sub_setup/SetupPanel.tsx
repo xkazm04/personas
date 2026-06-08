@@ -125,7 +125,12 @@ export default function SetupPanel() {
       try {
         await companionSetSensorySourceEnabled(source, next);
       } catch (err) {
-        silentCatch('companion_set_sensory_source_enabled')(err);
+        // These switches govern privacy-sensitive desktop watching; if the
+        // backend can't enable a source (e.g. an OS permission it couldn't
+        // acquire) the toggle bounces back on refreshSensory(). Surface the
+        // reason via a toast instead of swallowing it, so the user isn't left
+        // wondering whether the switch is broken or silently on.
+        toastCatch('companion_set_sensory_source_enabled')(err);
       }
       void refreshSensory();
     },

@@ -3,6 +3,7 @@ import { copyText } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { Copy, HardDrive, Scissors, Trash2, Upload, X } from "lucide-react";
 
 import { ContentBox, ContentHeader } from "@/features/shared/components/layout/ContentLayout";
+import { ErrorBoundary } from "@/features/shared/components/feedback/ErrorBoundary";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
   driveOpenInOs,
@@ -493,6 +494,7 @@ export default function DrivePage() {
           )
         }
       />
+      <ErrorBoundary name="Drive">
       <div
         className="relative flex-1 min-h-0 flex flex-col bg-gradient-to-b from-background via-background to-background/95"
         onDragEnter={handleExternalDragEnter}
@@ -557,6 +559,7 @@ export default function DrivePage() {
           </div>
         )}
       </div>
+      </ErrorBoundary>
 
       {contextMenu && (
         <DriveContextMenu

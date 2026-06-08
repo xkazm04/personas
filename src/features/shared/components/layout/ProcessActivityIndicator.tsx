@@ -3,51 +3,75 @@ import { useReducedMotion } from "@/hooks/utility/interaction/useMotion";
 import { ActivityPulseIcon } from "@/features/shared/components/icons/ActivityPulseIcon";
 import { useOverviewStore } from "@/stores/overviewStore";
 import { useSystemStore } from "@/stores/systemStore";
+import { useAgentStore } from "@/stores/agentStore";
 import { useTranslation } from "@/i18n/useTranslation";
 import { PersonaMonitor } from "@/features/shared/components/layout/monitor";
+import { QuickAnswerPopover } from "@/features/shared/components/layout/quick-answer/QuickAnswerPopover";
 
 /**
- * Titlebar entry point for the Persona Monitor.
+ * Titlebar entry point for the Quick Answer popover and the Persona Monitor.
  *
- * The badge counts **attention** — pending human reviews, unread messages,
- * and processes blocked on the user (`input_required` / `draft_ready`). Live
- * work (`running`) is shown instead as a pulsing ring around the icon, so
- * colour answers "do I need to act?" and the pulse answers "is the fleet
- * busy?". Open state lives in the system store so Athena can open the
- * Monitor too (see `uiSlice.headerOverlay`).
+ * The badge counts **attention** — pending build/adoption questions, human
+ * reviews, unread messages, and drafts ready to test/promote. Live work
+ * (`running`) is shown instead as a pulsing ring around the icon, so colour
+ * answers "do I need to act?" and the pulse answers "is the fleet busy?".
+ *
+ * Click is **split**: when there's something to answer directly (questions or
+ * reviews) the click opens the lightweight Quick Answer popover so the user can
+ * respond and keep working; otherwise it opens the full-screen Monitor (fleet
+ * view / drafts / messages). The popover itself links back to the Monitor.
+ * Open state lives in the system store so Athena can open it too (see
+ * `uiSlice.headerOverlay`).
  */
 export default function ProcessActivityIndicator() {
   const { t, tx } = useTranslation();
   // The pulse loops on opacity, which the global <MotionConfig reducedMotion>
   // does NOT disable (it only stops one-shot transforms). Gate it explicitly.
   const prefersReducedMotion = useReducedMotion();
-  // Monitor open-state is the unified header-overlay controller (mutually
-  // exclusive with Notifications; closed by route nav / Back / Esc).
-  const monitorOpen = useSystemStore((s) => s.headerOverlay === 'monitor');
+  // Header-overlay controller (mutually exclusive with Notifications; closed by
+  // route nav / Back / Esc). This button owns 'monitor' and 'quick-answer'.
+  const headerOverlay = useSystemStore((s) => s.headerOverlay);
   const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  const overlayOpen = headerOverlay === 'monitor' || headerOverlay === 'quick-answer';
 
   const pendingReviewCount = useOverviewStore((s) => s.pendingReviewCount);
   const unreadMessageCount = useOverviewStore((s) => s.unreadMessageCount);
   // Derived counts — selectors return primitives, so with Object.is equality
   // the button re-renders only when a count/flag actually transitions.
-  const actionCount = useOverviewStore((s) =>
-    Object.values(s.activeProcesses).filter(
-      (p) => p.status === "input_required" || p.status === "draft_ready",
-    ).length,
+  // Drafts ready to test/promote — a "needs you" state that lives in the Monitor.
+  const draftReadyCount = useOverviewStore((s) =>
+    Object.values(s.activeProcesses).filter((p) => p.status === "draft_ready").length,
   );
   const running = useOverviewStore((s) =>
     Object.values(s.activeProcesses).some((p) => p.status === "running"),
   );
+  // Pending build/adoption questions, read straight from the build slice — the
+  // single source of truth. Works whether or not the matrix surface is mounted,
+  // so it neither undercounts when the user is elsewhere nor double-counts the
+  // `input_required` process the matrix surface pushes while mounted.
+  const questionCount = useAgentStore((s) => {
+    let n = 0;
+    for (const sess of Object.values(s.buildSessions)) {
+      if (sess.phase === "awaiting_input") n += sess.pendingQuestions.length;
+    }
+    return n;
+  });
 
-  const attention = pendingReviewCount + unreadMessageCount + actionCount;
+  // What the Quick Answer popover can act on directly (v1: questions + reviews).
+  const quickCount = questionCount + pendingReviewCount;
+  const attention = quickCount + unreadMessageCount + draftReadyCount;
 
   return (
     <>
       <button
-        className={`titlebar-btn relative ${monitorOpen ? 'titlebar-btn-active' : ''}`}
+        className={`titlebar-btn relative ${overlayOpen ? 'titlebar-btn-active' : ''}`}
         data-testid="titlebar-process-activity"
-        aria-pressed={monitorOpen}
-        onClick={() => setHeaderOverlay(monitorOpen ? 'none' : 'monitor')}
+        aria-pressed={overlayOpen}
+        onClick={() => {
+          if (overlayOpen) { setHeaderOverlay('none'); return; }
+          // Something to answer → fast popover; otherwise the full Monitor.
+          setHeaderOverlay(quickCount > 0 ? 'quick-answer' : 'monitor');
+        }}
         aria-label={attention > 0 ? tx(t.monitor.titlebar_attention, { count: attention }) : t.monitor.titlebar}
         title={attention > 0 ? tx(t.monitor.titlebar_tooltip, { count: attention }) : t.monitor.titlebar}
       >
@@ -79,11 +103,17 @@ export default function ProcessActivityIndicator() {
           </span>
         )}
       </button>
-      {/* AnimatePresence so PersonaMonitor's motion.div plays its fade-in on
-          open AND its exit fade-out on close (a bare conditional unmounts
-          instantly, skipping the exit animation). */}
+      {/* AnimatePresence so the overlay's motion.div plays its fade-in on open
+          AND its exit fade-out on close (a bare conditional unmounts instantly,
+          skipping the exit animation). */}
       <AnimatePresence>
-        {monitorOpen && <PersonaMonitor onClose={() => setHeaderOverlay('none')} />}
+        {headerOverlay === 'monitor' && <PersonaMonitor onClose={() => setHeaderOverlay('none')} />}
+        {headerOverlay === 'quick-answer' && (
+          <QuickAnswerPopover
+            onClose={() => setHeaderOverlay('none')}
+            onOpenMonitor={() => setHeaderOverlay('monitor')}
+          />
+        )}
       </AnimatePresence>
     </>
   );

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Brain } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
+import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -26,13 +27,15 @@ export default function ObsidianBrainPage() {
 
       <ContentBody centered>
         <div key={obsidianBrainTab} className="animate-fade-slide-in">
-          <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label={t.plugins.obsidian_brain.loading} /></div>}>
-            {obsidianBrainTab === 'setup' && <SetupPanel />}
-            {obsidianBrainTab === 'sync' && <SyncPanel />}
-            {obsidianBrainTab === 'browse' && <BrowsePanel />}
-            {obsidianBrainTab === 'graph' && <GraphPanel />}
-            {obsidianBrainTab === 'cloud' && <CloudSyncPanel />}
-          </Suspense>
+          <ErrorBoundary name="Obsidian Brain">
+            <Suspense fallback={<div className="flex items-center justify-center py-20"><LoadingSpinner size="lg" label={t.plugins.obsidian_brain.loading} /></div>}>
+              {obsidianBrainTab === 'setup' && <SetupPanel />}
+              {obsidianBrainTab === 'sync' && <SyncPanel />}
+              {obsidianBrainTab === 'browse' && <BrowsePanel />}
+              {obsidianBrainTab === 'graph' && <GraphPanel />}
+              {obsidianBrainTab === 'cloud' && <CloudSyncPanel />}
+            </Suspense>
+          </ErrorBoundary>
         </div>
       </ContentBody>
     </ContentBox>

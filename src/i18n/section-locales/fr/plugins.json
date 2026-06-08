@@ -1672,6 +1672,14 @@
     "scan_history": "Historique des scans ("
   },
   "dev_lifecycle": {
+    "goal_handoff_label": "Confier à votre équipe IA",
+    "goal_handoff_button": "Confier à l'équipe IA",
+    "goal_handoff_explain": "Votre équipe IA traitera les tâches listées ici — ou décomposera l'objectif en étapes — puis se mettra au travail. Vous pouvez suivre ce qu'elle fait en temps réel.",
+    "goal_handoff_active": "Votre équipe IA travaille déjà sur cet objectif.",
+    "goal_handoff_confirm_q": "Lancer votre équipe IA sur cet objectif ?",
+    "goal_handoff_start": "Oui, lancer",
+    "goal_more_details": "Plus de détails",
+    "goal_more_details_hint": "Dépendances, équipes liées et historique",
     "start_a_competition": "Démarrer une compétition",
     "start_a_competition_desc": "Lance 2 à 4 compétiteurs avec différentes stratégies pour la même tâche. L'approche gagnante est promue.",
     "task_title": "Titre de la tâche",

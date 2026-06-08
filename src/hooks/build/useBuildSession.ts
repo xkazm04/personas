@@ -50,6 +50,7 @@ import {
   getActiveBuildSession,
 } from "@/api/agents/buildSession";
 import type { BuildEvent } from "@/lib/types/buildTypes";
+import { buildBatchedAnswerPayload } from "@/lib/build/answerPayload";
 import { createLogger } from "@/lib/log";
 
 const logger = createLogger("build-session");
@@ -459,23 +460,12 @@ export function useBuildSession(
       }
       const store = useAgentStore.getState();
       const answers = store.buildPendingAnswers;
-      const entries = Object.entries(answers);
-      if (entries.length === 0) return;
+      if (Object.keys(answers).length === 0) return;
 
-      // Escape newlines and bracket-colon sequences in user answers so a
-      // pasted log snippet (or malicious input) cannot forge an extra
-      // `[dimension]:` line and overwrite an answer the user did not consent
-      // to. The backend parses this payload line-by-line — keeping each
-      // answer on a single line guarantees one line maps to one dimension.
-      const escapeAnswer = (raw: string): string =>
-        raw
-          .replace(/\\/g, '\\\\')
-          .replace(/\r\n|\r|\n/g, '\\n')
-          .replace(/\[/g, '\\[');
-
-      const combined = entries
-        .map(([cellKey, answer]) => `[${cellKey}]: ${escapeAnswer(answer)}`)
-        .join('\n');
+      // Escaping + line-per-dimension batching lives in the shared helper so the
+      // matrix/glyph surface and the global Quick Answer popover can never drift
+      // on this security-sensitive payload shape (see answerPayload.ts).
+      const combined = buildBatchedAnswerPayload(answers);
 
       // Use "_batch" as cellKey so the backend knows this is multi-dimension
       // The actual dimension keys are embedded in the answer text

@@ -347,17 +347,44 @@ pub fn research_lab_sync_to_obsidian(
 // Daily note sync — append active experiment check-ins to today's daily note
 // ============================================================================
 
+/// Serializes the daily-note read-modify-write critical section so two
+/// near-simultaneous syncs (engine mirror + manual click) can't both miss the
+/// check-in marker and clobber / duplicate each other's append. Mirrors the
+/// `OnceLock<Mutex<…>>` idiom this Brain module already uses for shared mutable
+/// vault state (see `obsidian_brain::graph::watcher_slot`).
+fn daily_note_lock() -> &'static std::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| std::sync::Mutex::new(()))
+}
+
 #[tauri::command]
 pub fn research_lab_sync_daily_note(
     state: State<'_, Arc<AppState>>,
     project_id: String,
 ) -> Result<String, AppError> {
     let project = repo::get_project(&state.db, &project_id)?;
-    let vault_path = project
-        .obsidian_vault_path
-        .as_deref()
-        .filter(|p| !p.is_empty())
-        .ok_or_else(|| AppError::Validation("No Obsidian vault linked to this project".into()))?;
+
+    // Resolve the vault the SAME way `research_lab_sync_to_obsidian` does:
+    // when the Research Lab mirror is enabled, route through the Brain-configured
+    // vault; otherwise fall back to the project's legacy per-project path. This
+    // keeps both commands targeting one consistent vault.
+    let vault_root = if crate::commands::obsidian_brain::mirror_config(&state.db).research_lab {
+        match crate::commands::obsidian_brain::mirror_vault_root(&state.db) {
+            Some(cfg) => cfg.vault_path,
+            None => {
+                return Err(AppError::Validation(
+                    "Research Lab mirror is enabled but no Obsidian vault is configured. Set one up in Obsidian Brain → Setup.".into(),
+                ))
+            }
+        }
+    } else {
+        let vp = project
+            .obsidian_vault_path
+            .as_deref()
+            .filter(|p| !p.is_empty())
+            .ok_or_else(|| AppError::Validation("No Obsidian vault linked to this project".into()))?;
+        vp.to_string()
+    };
 
     let experiments = repo::list_experiments(&state.db, &project_id)?;
     let active: Vec<_> = experiments
@@ -370,19 +397,8 @@ pub fn research_lab_sync_daily_note(
     }
 
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let daily_dir = Path::new(vault_path).join("Daily");
-    std::fs::create_dir_all(&daily_dir)
-        .map_err(|e| AppError::Internal(format!("Failed to create daily dir: {e}")))?;
 
-    let daily_path = daily_dir.join(format!("{today}.md"));
-    let existing = std::fs::read_to_string(&daily_path).unwrap_or_default();
-
-    let marker = format!("## Research Check-in: {}", project.name);
-    if existing.contains(&marker) {
-        return Ok("Daily note already has today's check-in".into());
-    }
-
-    let mut section = format!("\n{marker}\n\n");
+    let mut section = format!("\n## Research Check-in: {}\n\n", project.name);
     for exp in &active {
         section.push_str(&format!("- [ ] **{}** ({})\n", exp.name, exp.status));
         if let Some(sc) = &exp.success_criteria {
@@ -391,14 +407,37 @@ pub fn research_lab_sync_daily_note(
         section.push_str("  - Observations: \n");
     }
 
+    let marker = format!("## Research Check-in: {}", project.name);
+    let rel_path = format!("Daily/{today}.md");
+    let daily_path = Path::new(&vault_root).join(&rel_path);
+
+    // Serialize the read-modify-write so concurrent writers can't race on the
+    // marker check, then route the actual write through the same incremental,
+    // atomic mirror write path `sync_to_obsidian` uses (`mirror_write_note` →
+    // `atomic_write` + sync_state bookkeeping). The daily note is shared across
+    // projects, so it is keyed by the file (not a single entity) and we read the
+    // freshly-locked on-disk content right before deciding to append.
+    let _guard = daily_note_lock().lock().unwrap_or_else(|e| e.into_inner());
+
+    let existing = std::fs::read_to_string(&daily_path).unwrap_or_default();
+    if existing.contains(&marker) {
+        return Ok("Daily note already has today's check-in".into());
+    }
+
     let content = if existing.is_empty() {
         format!("---\ndate: {today}\n---\n{section}")
     } else {
         format!("{existing}\n{section}")
     };
 
-    std::fs::write(&daily_path, &content)
-        .map_err(|e| AppError::Internal(format!("Failed to write daily note: {e}")))?;
+    crate::commands::obsidian_brain::mirror_write_note(
+        &state.db,
+        &vault_root,
+        &rel_path,
+        "research_daily",
+        &rel_path,
+        &content,
+    )?;
 
     Ok(format!("Wrote {} experiments to {today}.md", active.len()))
 }

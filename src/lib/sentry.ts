@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/react";
+import type { SessionSummary } from "./analytics/sink";
 
 // ---------------------------------------------------------------------------
 // PII patterns to scrub from messages
@@ -99,6 +100,42 @@ export function trackInteraction(
     if (label) scope.setTag("ix.label", label);
     scope.setLevel("info");
     Sentry.captureMessage(`interaction: ${category}.${action}`, "info");
+  });
+}
+
+/**
+ * Emit the end-of-session usage rollup as a single Sentry event.
+ *
+ * One info-level `session_summary` per session keeps quota predictable while
+ * still carrying the full picture: per-feature visit counts as extras, plus
+ * the *ignored* set (sections/tabs never opened) so "which features are
+ * actively used vs ignored" is answerable directly from the event, not
+ * inferred from the absence of per-visit events.
+ *
+ * No PII: only section/tab identifier strings and counts.
+ */
+export function trackSessionSummary(summary: SessionSummary): void {
+  Sentry.withScope((scope) => {
+    scope.setTag("event_type", "session_summary");
+    scope.setLevel("info");
+    scope.setTag("sections_visited_count", String(summary.sectionsVisited.length));
+    scope.setExtras({
+      // Per-feature counts, prefixed for easy grouping in Sentry Discover.
+      ...Object.fromEntries(
+        Object.entries(summary.counts).map(([k, v]) => [`visit.${k}`, v]),
+      ),
+      total_visits: summary.totalVisits,
+      sections_visited: summary.sectionsVisited.join(",") || "(none)",
+      sections_ignored: summary.sectionsIgnored.join(",") || "(none)",
+      tabs_ignored: summary.tabsIgnored.join(",") || "(none)",
+      tabs_ignored_count: summary.tabsIgnored.length,
+      tabs_total: summary.tabsTotal,
+    });
+    Sentry.captureMessage(
+      `session_summary: ${summary.sectionsVisited.length}/${summary.sectionsTotal} sections, ` +
+        `${summary.tabsVisited.length}/${summary.tabsTotal} tabs, ${summary.totalVisits} visits`,
+      "info",
+    );
   });
 }
 
