@@ -32,6 +32,12 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### collab-c5-flagship-prototype — /prototype on the Collab channel (C5 flagship polish)
+- Started: 2026-06-08 (session 892a5254). Master + atomic per-round commits.
+- Status: started
+- Paths: src/features/teams/sub_collab/CollabLive.tsx (+ tab scaffold), CollabLiveBrief.tsx + CollabLiveCorrespondence.tsx (variant siblings, deleted at consolidation), CollabPane.tsx (host), .claude/active-runs.md.
+- Note: directional variants of the header band + message-row treatment; calibrated to questionnaire adoption flow. Running app HMRs live for evaluation (staying on master per this session’s established flow).
+
 ### teams-sidebar-restructure — Teams as 1st-level section (Goals consolidated) + features/teams folder + workspace prototypes
 - Started: 2026-06-05 (forked session 892a5254). Master + atomic commits, per-file staging.
 - Status: in progress — restructure 6e0af2b56, board consolidation 86497202d (Flight Deck won), formation icon 98a7eaada, Red Room round-1 committed; red-room variant pruning next
