@@ -11,6 +11,7 @@ import {
   type TourSurface,
   type TourSurfaceKey,
 } from '@/lib/design/tourSurfaces';
+import type { TourId } from '@/stores/slices/system/tourSlice';
 
 // -- Per-step icon map (all tours) ---------------------------------------
 
@@ -75,4 +76,37 @@ const STEP_TO_SURFACE: Record<string, TourSurfaceKey> = {
  */
 export function getStepColors(key: string): TourSurface {
   return getTourSurface(STEP_TO_SURFACE[key] ?? key);
+}
+
+// -- Recommended tour sequence ------------------------------------------
+
+/**
+ * The order tours are suggested in once one completes. The Starter
+ * (`getting-started-simple`) variant funnels into the same post-getting-started
+ * sequence. `getNextTourId` skips tours the user has already completed so the
+ * "start the next tour" nudge never points back at finished work.
+ */
+const TOUR_SEQUENCE: TourId[] = [
+  'getting-started',
+  'execution-observability',
+  'orchestration-events',
+  'plugins-explorer',
+  'schedules-mastery',
+  'templates-recipes',
+  'teams-orchestration',
+];
+
+/** The user-selectable tours in recommended order (excludes the Starter tier variant). */
+export function getTourSequence(): readonly TourId[] {
+  return TOUR_SEQUENCE;
+}
+
+/** The next not-yet-completed tour to suggest after `currentId`, or null when none remain. */
+export function getNextTourId(currentId: TourId, completed: Record<TourId, boolean>): TourId | null {
+  const startIdx = currentId === 'getting-started-simple' ? 0 : TOUR_SEQUENCE.indexOf(currentId);
+  for (let i = startIdx + 1; i < TOUR_SEQUENCE.length; i++) {
+    const id = TOUR_SEQUENCE[i];
+    if (id && !completed[id]) return id;
+  }
+  return null;
 }

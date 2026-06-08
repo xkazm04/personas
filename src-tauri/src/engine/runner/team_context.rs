@@ -140,12 +140,86 @@ pub fn build_team_alignment_block(
     // team personas (Dev Clone, QA Guardian) implement, commit, and open/merge
     // PRs in line with it. Resolved from the same project as the goals.
     let standards = resolve_standards_policy(pool, persona, team_id);
-    match (alignment, standards) {
-        (Some(a), Some(s)) => Some(format!("{a}{s}")),
-        (Some(a), None) => Some(a),
-        (None, Some(s)) => Some(s),
-        (None, None) => None,
+
+    // Design B (living chat): the user's channel directives — explicit,
+    // binding, above generic memory injection. Recency-capped (14d) and
+    // line-capped so the cost guardrail holds.
+    let directives = render_user_directives(pool, team_id, &persona.id);
+
+    // C1: teach the gated roles how to speak INTO the channel (the persona
+    // reply path). Only Implementer/QA/Architect get this capability.
+    let channel_post = render_channel_post_capability(self_role.as_deref());
+
+    let parts: Vec<String> = [alignment, directives, channel_post, standards]
+        .into_iter()
+        .flatten()
+        .collect();
+    if parts.is_empty() {
+        None
+    } else {
+        Some(parts.concat())
     }
+}
+
+/// Roles allowed to post to the team channel (C1 first wave). Mirrors
+/// `CHANNEL_POST_ROLES` in the orchestrator — keep the two in sync.
+const CHANNEL_POST_CAPABLE_ROLES: &[&str] = &["engineer", "qa", "architect"];
+
+/// Teach a gated role (Implementer/QA/Architect) how to broadcast into the
+/// team channel. Returns None for every other role, so the capability never
+/// pollutes prompts that shouldn't have it.
+fn render_channel_post_capability(self_role: Option<&str>) -> Option<String> {
+    let role = self_role?;
+    if !CHANNEL_POST_CAPABLE_ROLES.contains(&role) {
+        return None;
+    }
+    Some(String::from(
+        "
+
+## TEAM CHANNEL — speaking to the team
+You may broadcast ONE short message to the shared team channel from this step, where the user and your teammates can read it. Use it sparingly, only when it helps coordination: acknowledge a directive you're acting on, flag a blocker or a decision that affects others, or ask a brief question. To post, include a single line in your output exactly like:
+CHANNEL_POST: <your one-line message>
+Keep it under ~400 characters and human-readable (no JSON, no logs). This is optional — most steps need no channel post. Do NOT use it to dump status that already shows in your result summary.
+",
+    ))
+}
+
+/// Render the team channel's recent injectable messages as a binding prompt
+/// block. C1: messages addressed to this persona or the whole team
+/// (`consumer='inject'`); newest 5 within 14 days, each line capped. Carries
+/// user directives plus (C2/C3) Athena and Director posts, with the author
+/// kind rendered so the persona knows who is speaking.
+fn render_user_directives(pool: &DbPool, team_id: &str, persona_id: &str) -> Option<String> {
+    let messages = crate::db::repos::resources::team_channel::list_injectable_for_persona(
+        pool, team_id, persona_id, 5,
+    )
+    .ok()?;
+    if messages.is_empty() {
+        return None;
+    }
+    let mut out = String::from(
+        "
+
+## TEAM CHANNEL — read before acting
+These messages were posted into the team channel for you. They are BINDING guidance for current work — when a channel message conflicts with a memory or your default plan, the message wins. Acknowledge the relevant ones in your result summary.
+",
+    );
+    for m in &messages {
+        let who = match m.author_kind.as_str() {
+            "user" => "User",
+            "athena" => "Athena",
+            "director" => "Director",
+            "persona" => "Teammate",
+            other => other,
+        };
+        let mut line = m.body.replace(['\n', '\r'], " ");
+        if line.chars().count() > 240 {
+            line = line.chars().take(240).collect::<String>() + "…";
+        }
+        out.push_str(&format!("- [{}] {}: {}
+", m.created_at, who, line));
+    }
+    Some(out)
 }
 
 /// Render the bound project's standards & branching policy as a prompt block,
@@ -221,7 +295,7 @@ fn resolve_standards_policy(pool: &DbPool, persona: &Persona, team_id: &str) -> 
     };
 
     Some(format!(
-        "\n\n## STANDARDS & BRANCHING POLICY — project \"{}\"\nThis project's team must respect the following when implementing, committing, and opening/merging PRs:\n- Open pull requests against the branch `{}`.\n- Pre-commit gates that must pass before you commit: {}.\n- Gate scope: run the gates on YOUR increment (the changed files / PR diff), NOT the whole repository. Pre-existing repo-wide lint/test debt that you did not introduce (stray files, baseline errors on untouched code) is a WARN to record, NOT a commit/release blocker — do not HOLD the team's deliverable on baseline debt you didn't create. Only block on gate failures your own change introduced.\n- Architect / scoping: size each increment to fit ONE Dev Clone pass — the engine HARD-CAPS any single execution at 20 minutes, so an increment that needs more WILL time out before it can open a PR. Decompose a larger feature into multiple INDEPENDENT, vertically-sliced increments (each its own implement → PR → QA → merge step). The team runs SEVERAL of these IN PARALLEL, so each increment MUST be truly non-overlapping — touch different files/modules so concurrent increments never edit the same code or step on each other. NEVER scope or build an increment ON TOP OF AN UNMERGED PR: stacked PRs rot (the base PR stalls and every stacked one becomes unmergeable). If your increment needs unmerged work, the increment IS \"land that PR first\" (get it through QA) — or re-scope to something independent of it.\n- Implementer (Dev Clone) in TEAM MODE: ISOLATE your work in a DEDICATED git worktree off the base branch (`git worktree add <scratch-path> -b dev-clone/<slug>`), NEVER the team's shared checkout, so increments running IN PARALLEL never collide on the working tree; make every change there, and `git worktree remove` it once your PR is open. Once your increment is green there, OPEN A PR against `{}` via `gh pr create` and emit `dev-clone.pr.created` (PR url + branch + repo) so QA Guardian tests it in an isolated worktree and merges-or-returns it — do NOT commit straight to the base branch; the PR + QA test gate is the point of this team's flow. You (the implementer) MUST NOT merge or enable auto-merge — even when automerge is enabled for this project; performing the merge is the QA Guardian's exclusive job, done only AFTER its tests pass. Your job ends at opening the PR + emitting dev-clone.pr.created. ALSO emit implementation.completed so the Code Reviewer reviews.\n- Merge authority (CODE changes): the QA GUARDIAN is the SOLE merge authority for IMPLEMENTATION/code PRs — it merges (or enables native auto-merge on) a code PR ONLY after its own tests pass in an isolated worktree off the PR head, and requests changes (qa.pr.changes_requested) if they fail. Neither the implementer nor any other role may merge or enable auto-merge on a CODE PR. Because the repo may not enforce branch protection, this hand-off IS the gate; an implementer that self-merges its own PR defeats the entire QA gate.\n- Mechanical lanes (Release Manager + Docs Steward): version bumps, CHANGELOG entries, tags, and documentation syncs (README / docs/**) are MECHANICAL changes that do NOT go through the PR+QA gate — commit them DIRECTLY to the base branch as small atomic commits touching ONLY those files (never source code). Do NOT open PRs in these lanes: unowned release/docs PRs pile up unmerged and supersede each other. If a stale PR already exists in your own lane, you may merge or close it yourself. Anything that touches source code still goes through implement → PR → QA.\n- Release cadence: a patch-level version bump + CHANGELOG entry per SHIPPED increment is fine, but TAG/PUBLISH (release.published) at most once per day — batch the day's increments into one published release unless a breaking/critical fix ships. If nothing merged since the last bump, do NOTHING (no re-bump, no re-publish, no empty changelog churn).\n- Automerge: {}.\n- Deployment is FULLY AUTOMATIC: the platform's CI/CD (e.g. Vercel) deploys from the configured branch when a branch/PR is pushed or merged. NEVER run manual deployment commands (`vercel`, `vercel deploy`, `npm run deploy`, build-and-publish scripts, etc.) — they are redundant with the auto-deploy and cause duplicate/incorrect deployments. The team's job ends at the PR (Dev Clone), the QA verdict (QA Guardian), and the version bump + changelog (Release Manager); the platform performs the deploy itself.\n- Output routing — keep the USER's surfaces clean and business-level: (1) MESSAGES = ONE business-level summary per increment (what shipped + why it matters to the business), NOT a step-by-step log of each role's action. (2) HUMAN REVIEW = only genuine business/policy decisions that need a human (pricing, compliance/PHI, production config, an irreversible or destructive change) — technical status (a red build, a missing dependency, a code-review change-request, a mis-sequenced handoff) is NOT a Human Review item; resolve it within the team or report it in the increment result. (3) MEMORIES = only durable lessons useful to FUTURE runs (a decision, a gotcha, a convention), never raw step logs or per-execution telemetry.\n",
+        "\n\n## STANDARDS & BRANCHING POLICY — project \"{}\"\nThis project's team must respect the following when implementing, committing, and opening/merging PRs:\n- Open pull requests against the branch `{}`.\n- Pre-commit gates that must pass before you commit: {}.\n- Gate scope: run the gates on YOUR increment (the changed files / PR diff), NOT the whole repository. Pre-existing repo-wide lint/test debt that you did not introduce (stray files, baseline errors on untouched code) is a WARN to record, NOT a commit/release blocker — do not HOLD the team's deliverable on baseline debt you didn't create. Only block on gate failures your own change introduced.\n- Architect / scoping: size each increment to fit ONE Dev Clone pass — the engine HARD-CAPS any single execution at 20 minutes, so an increment that needs more WILL time out before it can open a PR. Decompose a larger feature into multiple INDEPENDENT, vertically-sliced increments (each its own implement → PR → QA → merge step). The team runs SEVERAL of these IN PARALLEL, so each increment MUST be truly non-overlapping — touch different files/modules so concurrent increments never edit the same code or step on each other. NEVER scope or build an increment ON TOP OF AN UNMERGED PR: stacked PRs rot (the base PR stalls and every stacked one becomes unmergeable). If your increment needs unmerged work, the increment IS \"land that PR first\" (get it through QA) — or re-scope to something independent of it.\n- Implementer (Dev Clone) in TEAM MODE: ISOLATE your work in a DEDICATED git worktree off the base branch (`git worktree add <scratch-path> -b dev-clone/<slug>`), NEVER the team's shared checkout, so increments running IN PARALLEL never collide on the working tree; make every change there, and `git worktree remove` it once your PR is open. Once your increment is green there, OPEN A PR against `{}` via `gh pr create` and emit `dev-clone.pr.created` (PR url + branch + repo) so QA Guardian tests it in an isolated worktree and merges-or-returns it — do NOT commit straight to the base branch; the PR + QA test gate is the point of this team's flow. You (the implementer) MUST NOT merge or enable auto-merge — even when automerge is enabled for this project; performing the merge is the QA Guardian's exclusive job, done only AFTER its tests pass. Your job ends at opening the PR + emitting dev-clone.pr.created. ALSO emit implementation.completed so the Code Reviewer reviews. Your PR must NOT touch CHANGELOG.md or version fields — those belong to the Release Manager's mechanical lane (post-merge, direct commit); a feature PR editing CHANGELOG races the release lane on the same lines, goes stale/dirty, and gets bounced by QA.\n- Merge authority (CODE changes): the QA GUARDIAN is the SOLE merge authority for IMPLEMENTATION/code PRs — it merges (or enables native auto-merge on) a code PR ONLY after its own tests pass in an isolated worktree off the PR head, and requests changes (qa.pr.changes_requested) if they fail. EXCEPTION — stale-CHANGELOG conflicts: when a PR is dirty ONLY because of CHANGELOG.md / version-bump conflicts with the base branch (the release lane moved underneath it), QA rebases the PR dropping the PR-side CHANGELOG/version hunks (the release lane owns those lines), re-tests, and proceeds — do NOT bounce a PR solely for CHANGELOG staleness. Any other conflict still bounces. Neither the implementer nor any other role may merge or enable auto-merge on a CODE PR. Because the repo may not enforce branch protection, this hand-off IS the gate; an implementer that self-merges its own PR defeats the entire QA gate.\n- Mechanical lanes (Release Manager + Docs Steward): version bumps, CHANGELOG entries, tags, and documentation syncs (README / docs/**) are MECHANICAL changes that do NOT go through the PR+QA gate — commit them DIRECTLY to the base branch as small atomic commits touching ONLY those files (never source code). Do NOT open PRs in these lanes: unowned release/docs PRs pile up unmerged and supersede each other. If a stale PR already exists in your own lane, you may merge or close it yourself. Anything that touches source code still goes through implement → PR → QA.\n- Release cadence: a patch-level version bump + CHANGELOG entry per SHIPPED increment is fine, but TAG/PUBLISH (release.published) at most once per day — batch the day's increments into one published release unless a breaking/critical fix ships. If nothing merged since the last bump, do NOTHING (no re-bump, no re-publish, no empty changelog churn).\n- Automerge: {}.\n- Deployment is FULLY AUTOMATIC: the platform's CI/CD (e.g. Vercel) deploys from the configured branch when a branch/PR is pushed or merged. NEVER run manual deployment commands (`vercel`, `vercel deploy`, `npm run deploy`, build-and-publish scripts, etc.) — they are redundant with the auto-deploy and cause duplicate/incorrect deployments. The team's job ends at the PR (Dev Clone), the QA verdict (QA Guardian), and the version bump + changelog (Release Manager); the platform performs the deploy itself.\n- Output routing — keep the USER's surfaces clean and business-level: (1) MESSAGES = ONE business-level summary per increment (what shipped + why it matters to the business), NOT a step-by-step log of each role's action. (2) HUMAN REVIEW = only genuine business/policy decisions that need a human (pricing, compliance/PHI, production config, an irreversible or destructive change) — technical status (a red build, a missing dependency, a code-review change-request, a mis-sequenced handoff) is NOT a Human Review item; resolve it within the team or report it in the increment result. (3) MEMORIES = only durable lessons useful to FUTURE runs (a decision, a gotcha, a convention), never raw step logs or per-execution telemetry.\n",
         project.name, pr_base, gates_str, pr_base, automerge_str
     ))
 }

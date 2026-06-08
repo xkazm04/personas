@@ -108,6 +108,11 @@ export function KanbanBoard<T>({
   const onDrop = (e: DragEvent<HTMLDivElement>, column: KanbanColumn) => {
     e.preventDefault();
     setDropTargetColumnId(null);
+    // Clear the drag state here, not just in onDragEnd: when the drop moves
+    // the card to another column, the original element unmounts before its
+    // native `dragend` fires, so onDragEnd never runs and the moved card
+    // would stay stuck at opacity-40 (it kept matching draggingId).
+    setDraggingId(null);
     if (!column.targetStatus || !onItemMove) return;
     const id = e.dataTransfer.getData(dragMimeType);
     if (!id) return;

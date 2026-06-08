@@ -1,11 +1,12 @@
 import { Component, type ReactNode } from 'react';
-import { RefreshCw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } from 'lucide-react';
+import { RefreshCw, RotateCcw, ChevronDown, ChevronRight, Copy, Check, Home, LifeBuoy } from 'lucide-react';
 import { useState } from 'react';
 import { useCopyToClipboard } from '@/hooks/utility/interaction/useCopyToClipboard';
 import { persistCrash } from '@/lib/utils/crashPersistence';
 import { createLogger } from "@/lib/log";
 import { useTranslation } from '@/i18n/useTranslation';
 import { useSystemStore } from "@/stores/systemStore";
+import { isChunkLoadError } from '@/lib/lazyRetry';
 
 const logger = createLogger("error-boundary");
 
@@ -84,6 +85,11 @@ function ErrorFallback({
   const [showDetails, setShowDetails] = useState(false);
   const { copied, copy } = useCopyToClipboard();
 
+  // Failed chunk fetch (dev-server restart, post-deploy stale chunk) — the
+  // lazyRetry wrappers make "Try Again" re-import, but if the server is still
+  // unreachable the only reliable recovery is a full reload, so surface it.
+  const chunkError = isChunkLoadError(error);
+
   const handleGoHome = () => {
     try {
       // Use the statically-imported store. Previously this used require(), a
@@ -128,7 +134,9 @@ function ErrorFallback({
                   : t.common.error_boundary_title}
               </p>
               <p className="typo-body text-foreground mt-0.5">
-                {t.common.error_boundary_subtitle}
+                {chunkError
+                  ? t.common.error_boundary_chunk_subtitle
+                  : t.common.error_boundary_subtitle}
               </p>
             </div>
           </div>
@@ -142,6 +150,15 @@ function ErrorFallback({
               <RefreshCw className="w-3.5 h-3.5" />
               {t.common.try_again}
             </button>
+            {chunkError && (
+              <button
+                onClick={() => window.location.reload()}
+                className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                {t.common.reload_app}
+              </button>
+            )}
             <button
               onClick={handleGoHome}
               className="flex items-center gap-2 px-3 py-2 typo-body rounded-xl border border-primary/15 text-foreground hover:text-foreground transition-colors"

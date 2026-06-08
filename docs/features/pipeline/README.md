@@ -84,6 +84,87 @@ Saved templates appear as violet chips above the assignment list. Click a chip t
 
 Athena (the companion) can create assignments from chat: "have the X team handle Y" → she emits an `assign_team` op → an approval card → on approval, `companion_assign_team` decomposes + creates + starts the assignment with `source='athena'`, tied to a companion `OperativeMemory` operation. Progress shows as inline cards in the chat panel (`CompanionAssignmentCards`). See [companion/README.md](../companion/README.md).
 
+## sub_redRoom — the team's communication log (Red room)
+
+Studio workspace mode. A read-only comm log composed from existing data: the
+persona-event bus (what members emitted), event subscriptions (who listens =
+addressed-to), and team memories (pinned knowledge). Two views: **Transcript**
+(mission radio log — monospace rows, universal member colours, family + member
+filters, 20-item infinite batches, click → full-transmission modal with raw
+payload) and **Relay** (handoff edges emitter → event → consumers + a
+shared-memory rail). Feed: `useRedRoomFeed` (unscoped recent events filtered
+to member-or-project, 10s poll).
+
+## sub_collab — Collab, the living chat (Design B)
+
+Studio workspace mode; the production "watch the team cooperate + intervene"
+surface chosen from a three-way design comparison (A wire-only / B read-model
+/ C dialogue-native — C's mock is kept as a tab for the future
+Director/Athena orchestration discussion).
+
+- **Read-model**: `list_team_channel` (commands/teams/team_channel.rs) unions
+  the authoritative step layer (`team_assignment_events`, noisy kinds
+  filtered), member bus traffic (`persona_events`, telemetry excluded) and
+  `team_memories` server-side, timestamps normalized to RFC3339, keyset-paged
+  (`before` cursor). Frontend: `useTeamChannel` — head refresh on
+  TEAM_ASSIGNMENT_PROGRESS push + 15s poll fallback, infinite history at the
+  top sentinel, presence derived from running steps.
+- **Directives & the channel table (C1)**: the composer posts via
+  `post_team_directive` → a `team_channel_messages` row (`author_kind='user'`,
+  `consumer='inject'`). This table is the authoritative multi-author store
+  (author kinds user/athena/director/persona — see
+  [`docs/architecture/team-channel-orchestration.md`](../../architecture/team-channel-orchestration.md)).
+  Delivery is at STEP BOUNDARIES: the orchestrator injects recent channel
+  messages addressed to the persona or whole team
+  (`team_channel::list_injectable_for_persona`, `consumer='inject'`) into every
+  step's input (`user_directives`) and prompt (TEAM CHANNEL block in
+  `team_context`), then writes a read-receipt into the message's `deliveries`
+  column (`[{step_id,persona_id,at}]`) — rendered as ✓✓ "seen by" chips.
+  Legacy `team_memories` directive rows are still read for display
+  (back-compat) but no longer written or injected.
+- **Persona posts (C1)**: gated roles (Implementer / QA / Architect) may
+  broadcast ONE short message per step by emitting a `CHANNEL_POST: <text>`
+  line — taught via the TEAM CHANNEL capability block in `team_context`,
+  parsed in the orchestrator's completed-step arm, role-gated + length-capped.
+  Posts land `author_kind='persona'`, `consumer='display'` (visible in Collab,
+  NOT injected into other personas' steps — no persona→persona prompt loop).
+- **Director bridge (C3)**: when the Director evaluates a persona that's on a
+  team, its coaching verdicts are ALSO posted into that team's channel
+  (`engine/director.rs::bridge_verdicts_to_channel`) — `author_kind='director'`,
+  `addressed_to=[persona]`, `consumer='inject'` — so the guidance reaches the
+  coached persona's next step (with a receipt) instead of dead-ending in the
+  Overview UI. Severity-ranked, capped at 3/run (the §5 rate guardrail). The
+  Director's evaluation payload also gains a recent-channel digest
+  (`render_persona_channel_digest`) so it can coach on cooperation, not only
+  solo output. **Storm trigger**: an opt-in autonomous loop
+  (`DirectorStormSubscription`, setting `autonomous_director_storm`, default
+  OFF) runs a focused Director evaluation on a persona whose recent team work
+  shows a burst (≥2 step failures / QA change-requests in 2h), rate-limited to
+  once per persona per 6h via the Director's own channel posts — complementing
+  the command-driven batch runs.
+- **Athena posts (C2)**: `companion_post_team_message` posts as
+  `author_kind='athena'`, `consumer='inject'` (whole-team or `addressed_to`).
+  Interactive use posts directly; autonomous use routes through the approval
+  executor's `post_team_message` op, which is on the `AUTOAPPROVE_ALLOWLIST` —
+  free under autonomous mode, gated otherwise (the §8 decision). `@athena` in
+  the Collab composer also summons her: the directive still posts to the
+  channel, and Athena opens with the message as context (`setPendingPrompt`).
+  (The LLM post-run reconciliation — Athena narrating finished assignments into
+  the channel — is a C2 follow-up; it needs a real async Athena turn rather
+  than a templated post under her name.)
+- **Multi-author UI**: `CollabLive` renders each author kind distinctly
+  (user directive / persona / Athena / Director). **Red Room** reads the same
+  channel-native rows via `listTeamChannel`, so both surfaces show identical
+  channel traffic (kept separate for now per the C-on-B plan).
+- **Soft-pause (C4)**: `pause_team_assignment` flips a running/queued
+  assignment to the `paused` status; the orchestrator tick loop sees it next
+  tick and exits, so **no new steps launch while in-flight steps finish on
+  their own** (detached tasks). `resume_team_assignment` re-spawns the tick
+  loop from the current step states. Surfaced as a Pause/Resume control + a
+  `paused` phase on the Flight Deck board — the C-mock's "pause at checkpoint",
+  made real. Honest interrupt semantics: there is no mid-step interrupt (a
+  running CLI turn can't take input); pause acts at step boundaries.
+
 ## State and backend
 
 - Frontend store: `src/stores/pipelineStore.ts` (teams, groups, recipes, assignments — see [recipes/README.md](../recipes/README.md) for the recipes side). The assignment slice is `src/stores/slices/pipeline/assignmentSlice.ts`.

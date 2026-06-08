@@ -513,6 +513,12 @@ fn build_director_payload(pool: &DbPool, ctx: &PersonaEvaluationContext, rollup:
     s.push_str(&format!("- Triggers configured: {}\n", ctx.trigger_count));
     s.push_str(&format!("- Avg cost/run: ${:.4}\n\n", ctx.avg_cost_usd));
 
+    // C3: channel-aware context — what this persona said / heard in its team
+    // channel(s), so coaching can address cooperation, not just solo output.
+    if let Some(digest) = render_persona_channel_digest(pool, &p.id) {
+        s.push_str(&digest);
+    }
+
     // 2b. Business-value + efficiency rollup
     s.push_str(&format!(
         "## Business value & model efficiency (last {} days, simulations excluded)\n",
@@ -877,6 +883,11 @@ pub async fn run_director_cycle_for(
 
     let verdicts = evaluate_with_llm(state, app.clone(), &director_id, &ctx).await?;
     route_verdicts(&state.db, &ctx, &verdicts)?;
+    // C3 (team-channel orchestration): coaching for a persona that's on a team
+    // is ALSO posted into that team's channel, addressed to the persona with
+    // consumer='inject' — so the guidance reaches its next step (with a
+    // receipt) instead of dead-ending in the Overview UI. Best-effort.
+    bridge_verdicts_to_channel(&state.db, &director_id, &ctx, &verdicts);
 
     // Curate the persona's memories as part of the review (dedup sweep + bounded
     // LLM "won't-use" pass). Best-effort: never fail the review on a cleanup
@@ -968,6 +979,134 @@ pub async fn run_director_cycle_batch(
 
 /// Phase 1 routing: every verdict becomes a `persona_manual_reviews` row.
 /// Phase 3 will split routing by severity.
+/// Cap on Director channel posts per evaluation run (the §5 rate guardrail —
+/// the most-severe verdicts win when a run emits more).
+const MAX_CHANNEL_POSTS_PER_RUN: usize = 3;
+
+/// C3 channel-aware context: a short digest of the team-channel messages this
+/// persona recently authored or was addressed by (incl. whole-team posts), so
+/// the Director can coach on cooperation. None when the persona isn't on a
+/// team or the channel is quiet.
+fn render_persona_channel_digest(pool: &DbPool, persona_id: &str) -> Option<String> {
+    let teams = persona_team_ids(pool, persona_id);
+    if teams.is_empty() {
+        return None;
+    }
+    let fetch = || -> Result<Vec<(String, String)>, AppError> {
+        let conn = pool.get()?;
+        let needle = format!("%\"{persona_id}\"%");
+        let mut out: Vec<(String, String)> = Vec::new();
+        for team_id in &teams {
+            let mut stmt = conn.prepare(
+                "SELECT author_kind, body FROM team_channel_messages
+                 WHERE team_id = ?1
+                   AND datetime(created_at) > datetime('now', '-14 days')
+                   AND (author_id = ?2 OR addressed_to IS NULL OR addressed_to LIKE ?3)
+                 ORDER BY datetime(created_at) DESC LIMIT 8",
+            )?;
+            let rows = stmt.query_map(
+                rusqlite::params![team_id, persona_id, needle],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            )?;
+            for row in rows {
+                out.push(row?);
+            }
+        }
+        Ok(out)
+    };
+    let mut lines: Vec<String> = fetch()
+        .unwrap_or_default()
+        .into_iter()
+        .map(|(kind, body)| {
+            let who = match kind.as_str() {
+                "user" => "User",
+                "athena" => "Athena",
+                "director" => "Director",
+                _ => "Channel",
+            };
+            format!("- {}: {}", who, truncate(&body, 160))
+        })
+        .collect();
+    if lines.is_empty() {
+        return None;
+    }
+    lines.truncate(8);
+    let mut s = String::from(
+        "## Recent team channel activity (what this persona said / heard)\nUse this to coach on cooperation and communication, not only solo output:\n",
+    );
+    for l in lines {
+        s.push_str(&l);
+        s.push('\n');
+    }
+    s.push('\n');
+    Some(s)
+}
+
+/// Team ids the persona belongs to (for the channel bridge).
+fn persona_team_ids(pool: &DbPool, persona_id: &str) -> Vec<String> {
+    let run = || -> Result<Vec<String>, AppError> {
+        let conn = pool.get()?;
+        let mut stmt =
+            conn.prepare("SELECT team_id FROM persona_team_members WHERE persona_id = ?1")?;
+        let rows = stmt.query_map(rusqlite::params![persona_id], |r| r.get::<_, String>(0))?;
+        Ok(rows.collect::<Result<Vec<_>, _>>()?)
+    };
+    run().unwrap_or_default()
+}
+
+fn severity_rank(s: DirectorSeverity) -> u8 {
+    match s {
+        DirectorSeverity::Error => 2,
+        DirectorSeverity::Warning => 1,
+        DirectorSeverity::Info => 0,
+    }
+}
+
+/// C3: post the Director's coaching into the channel(s) the coached persona is
+/// on, addressed to that persona with `consumer='inject'` (reaches the next
+/// step + receipt). Severity-ranked and capped per run to honour the channel
+/// rate guardrail. Best-effort — never fails the cycle.
+fn bridge_verdicts_to_channel(
+    pool: &DbPool,
+    director_id: &str,
+    ctx: &PersonaEvaluationContext,
+    verdicts: &[DirectorVerdict],
+) {
+    if verdicts.is_empty() {
+        return;
+    }
+    let teams = persona_team_ids(pool, &ctx.persona.id);
+    if teams.is_empty() {
+        return; // not a team member — coaching stays in the Overview UI only
+    }
+    let mut ranked: Vec<&DirectorVerdict> = verdicts.iter().collect();
+    ranked.sort_by_key(|v| std::cmp::Reverse(severity_rank(v.severity)));
+    for v in ranked.into_iter().take(MAX_CHANNEL_POSTS_PER_RUN) {
+        let mut body = format!("{}: {}", v.title, v.description);
+        if let Some(action) = v.suggested_actions.first() {
+            body.push_str(&format!(" — Try: {action}"));
+        }
+        if body.chars().count() > 400 {
+            body = body.chars().take(400).collect::<String>() + "…";
+        }
+        for team_id in &teams {
+            let _ = crate::db::repos::resources::team_channel::create(
+                pool,
+                crate::db::models::CreateChannelMessageInput {
+                    team_id: team_id.clone(),
+                    author_kind: "director".into(),
+                    author_id: Some(director_id.to_string()),
+                    body: body.clone(),
+                    addressed_to: Some(vec![ctx.persona.id.clone()]),
+                    reply_to: None,
+                    assignment_id: None,
+                    consumer: Some("inject".into()),
+                },
+            );
+        }
+    }
+}
+
 fn route_verdicts(
     pool: &DbPool,
     ctx: &PersonaEvaluationContext,

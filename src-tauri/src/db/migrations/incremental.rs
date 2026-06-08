@@ -3571,6 +3571,25 @@ pub fn ensure_composite_fires_table(conn: &Connection) -> Result<(), AppError> {
     // -- dev_projects: standards & branching policy (Pipeline Stage 3). Opaque
     // JSON envelope { precommit, branching } set via dev_tools_set_standards_config;
     // the connected team's personas must respect it. Nullable / no default.
+    // -- dev_ideas: strategist triage rank (1 = do next). Written by the
+    // backlog-triage job (Product Strategist); backlog_to_goal promotes ranked
+    // ideas first. Nullable — unranked ideas fall back to impact/effort order.
+    ddl_step(conn, "ALTER TABLE dev_ideas ADD COLUMN priority INTEGER;").ok();
+
+    // -- GAP-W2 (double-advance TOCTOU): at most ONE active assignment per
+    // goal, enforced at the DB level. advance_goal's guard reads, then spends
+    // seconds in LLM decomposition, then creates — two near-simultaneous
+    // initiations (manual + autonomous tick, or two ticks) both passed the
+    // stale guard and double-implemented the same goal. The partial unique
+    // index makes the second create fail instead.
+    ddl_step(
+        conn,
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_one_active_assignment_per_goal
+         ON team_assignments(goal_id)
+         WHERE goal_id IS NOT NULL AND status IN ('queued','running','awaiting_review');",
+    )
+    .ok();
+
     ddl_step(conn, "ALTER TABLE dev_projects ADD COLUMN standards_config TEXT;")
         .ok();
 
@@ -4421,4 +4440,32 @@ fn research_lab_align_columns(conn: &Connection) {
     for sql in backfills {
         let _ = ddl_step(conn, sql);
     }
+
+    // Team channel (C1 — multi-author orchestration channel). The authoritative
+    // store for messages from all four author kinds (user / athena / director /
+    // persona). Design B's directives previously lived in `team_memories`
+    // (category='directive'); they are dual-read by `list_team_channel` during
+    // the transition, while new posts land here. See
+    // docs/architecture/team-channel-orchestration.md.
+    let _ = ddl_step(
+        conn,
+        "CREATE TABLE IF NOT EXISTS team_channel_messages (
+            id            TEXT PRIMARY KEY,
+            team_id       TEXT NOT NULL,
+            author_kind   TEXT NOT NULL,
+            author_id     TEXT,
+            body          TEXT NOT NULL,
+            addressed_to  TEXT,
+            reply_to      TEXT,
+            assignment_id TEXT,
+            consumer      TEXT NOT NULL DEFAULT 'inject',
+            deliveries    TEXT,
+            created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+        );",
+    );
+    let _ = ddl_step(
+        conn,
+        "CREATE INDEX IF NOT EXISTS idx_team_channel_messages_team
+            ON team_channel_messages(team_id, created_at);",
+    );
 }

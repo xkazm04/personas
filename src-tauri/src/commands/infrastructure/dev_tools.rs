@@ -975,7 +975,18 @@ pub fn dev_tools_list_pending_ideas(
 /// Write a human triage decision to the idea's bound team's shared memory ledger
 /// (best-effort). Team-less projects skip the memory; the Scanner-suppress loop
 /// (idea_scanner) covers re-surfacing for those. Deduped by `(team_id, title)`.
-fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str) {
+pub(crate) fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str) {
+    record_idea_decision_by(pool, idea, verdict, "Human")
+}
+
+/// Same as [`record_idea_decision`] with an explicit actor ("Human" — the inbox
+/// triage — or "Strategist" — the autonomous backlog-triage job).
+pub(crate) fn record_idea_decision_by(
+    pool: &crate::db::DbPool,
+    idea: &DevIdea,
+    verdict: &str,
+    actor: &str,
+) {
     let project_id = match idea.project_id.as_deref() {
         Some(p) if !p.is_empty() => p,
         _ => return,
@@ -994,7 +1005,7 @@ fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str)
         None => return,
     };
 
-    let title = format!("Human {verdict}: {}", idea.title);
+    let title = format!("{actor} {verdict}: {}", idea.title);
     if let Ok(conn) = pool.get() {
         let exists: bool = conn
             .query_row(
@@ -1015,7 +1026,7 @@ fn record_idea_decision(pool: &crate::db::DbPool, idea: &DevIdea, verdict: &str)
         ("decision", 7)
     };
     let content = format!(
-        "Human {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
+        "{actor} {verdict} the backlog idea \"{}\"{}. Apply this to future scans + work — do not re-surface rejected items.",
         idea.title,
         idea.description
             .as_deref()

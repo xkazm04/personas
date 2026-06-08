@@ -2179,6 +2179,9 @@ pub fn run() {
             commands::teams::teams::suggest_topology_llm,
             commands::teams::teams::compile_workflow,
             // Team Memories
+            commands::teams::team_channel::list_team_channel,
+            commands::teams::team_channel::post_team_directive,
+            commands::teams::team_channel::companion_post_team_message,
             commands::teams::team_memories::list_team_memories,
             commands::teams::team_memories::create_team_memory,
             commands::teams::team_memories::delete_team_memory,
@@ -2198,6 +2201,8 @@ pub fn run() {
             commands::teams::assignments::list_team_assignment_steps,
             commands::teams::assignments::start_team_assignment,
             commands::teams::assignments::abort_team_assignment,
+            commands::teams::assignments::pause_team_assignment,
+            commands::teams::assignments::resume_team_assignment,
             commands::teams::assignments::resolve_team_assignment_review,
             commands::teams::assignments::delete_team_assignment,
             commands::teams::assignments::set_team_assignment_goal,

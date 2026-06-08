@@ -265,6 +265,27 @@ pub const AUTONOMOUS_IDEA_SCAN: &str = "autonomous_idea_scan";
 /// Default for [`AUTONOMOUS_IDEA_SCAN`] — off (opt-in autonomy).
 pub const AUTONOMOUS_IDEA_SCAN_DEFAULT: bool = false;
 
+/// Roster redesign — the Product Strategist's backlog-triage job: when a
+/// goal-managed project has enough pending ideas with unranked items, run a
+/// strategist CLI pass that RANKS the next-up queue (writes
+/// `dev_ideas.priority`; promotion prefers ranked) and REJECTS low-value items
+/// (reason → shared team constraint memory + scanner suppression). One project
+/// per tick, 24h per-project cooldown via `dev_scans` (scan_type
+/// `backlog-triage`). Default OFF — opt-in. Read by
+/// `engine::subscription::BacklogTriageSubscription`. Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_BACKLOG_TRIAGE: &str = "autonomous_backlog_triage";
+/// Default for [`AUTONOMOUS_BACKLOG_TRIAGE`] — off (opt-in autonomy).
+pub const AUTONOMOUS_BACKLOG_TRIAGE_DEFAULT: bool = false;
+
+/// When `"true"`, the Director runs a focused coaching evaluation on a persona
+/// whose recent team work shows a STORM (a burst of step failures / QA
+/// change-requests). Default OFF — opt-in. Read by
+/// `engine::subscription::DirectorStormSubscription`. The coaching is bridged
+/// into the team channel (C3). Stored `"true"`/`"false"`.
+pub const AUTONOMOUS_DIRECTOR_STORM: &str = "autonomous_director_storm";
+/// Default for [`AUTONOMOUS_DIRECTOR_STORM`] — off (opt-in autonomy).
+pub const AUTONOMOUS_DIRECTOR_STORM_DEFAULT: bool = false;
+
 /// Global cap on the number of executions that may run concurrently across ALL
 /// personas. Read ONCE at engine construction (see
 /// `crate::engine::ExecutionEngine::new`) and seeded into the
@@ -356,6 +377,8 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_REVIEW_TRIAGE_HIGH,
     AUTONOMOUS_BACKLOG_TO_GOAL,
     AUTONOMOUS_IDEA_SCAN,
+    AUTONOMOUS_BACKLOG_TRIAGE,
+    AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
     CLOUD_SYNC_ENABLED,
@@ -460,6 +483,8 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_REVIEW_TRIAGE
         | AUTONOMOUS_BACKLOG_TO_GOAL
         | AUTONOMOUS_IDEA_SCAN
+        | AUTONOMOUS_BACKLOG_TRIAGE
+        | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {
                 "true" | "false" => Ok(()),

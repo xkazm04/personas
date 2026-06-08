@@ -237,6 +237,8 @@ pub async fn companion_approve_action(
         // Phase C3 — Team assignment dispatch.
         "assign_team" => execute_assign_team(&state, &app, &params).await,
         "analyze_fleet" => execute_analyze_fleet(&state, &app, &params).await,
+        // Team-channel orchestration (C2) — Athena posts into a team channel.
+        "post_team_message" => execute_post_team_message(&state, &params),
         other => Err(AppError::Internal(format!(
             "approval `{approval_id}`: unknown action `{other}`"
         ))),
@@ -308,6 +310,10 @@ const AUTOAPPROVE_ALLOWLIST: &[&str] = &[
     "write_backlog_item",
     "enqueue_dev_job",
     "schedule_proactive",
+    // C2 — Athena posting into a team channel. Low blast radius (an internal
+    // message, not an external write or a team dispatch), so it's free under
+    // autonomous mode per the team-channel decision; gated otherwise.
+    "post_team_message",
     // Deliberate higher-blast-radius exception (opted in via autonomous mode):
     // Athena driving a Fleet session by typing into its terminal. This is the
     // "Ask Athena → she writes directly" loop. Under autonomous mode it only
@@ -2852,5 +2858,49 @@ async fn execute_assign_team(
         &result.assignment_id[..result.assignment_id.len().min(8)],
         &team_id[..team_id.len().min(8)],
         &result.companion_op_id[..result.companion_op_id.len().min(8)],
+    )))
+}
+
+/// C2: execute the `post_team_message` op — Athena posts a message into a team
+/// channel (`author_kind='athena'`, `consumer='inject'`). Params: `team_id`,
+/// `body` (or `message`), optional `addressed_to` (array of persona ids).
+fn execute_post_team_message(
+    state: &State<'_, Arc<AppState>>,
+    params: &serde_json::Value,
+) -> Result<ExecuteResult, AppError> {
+    let team_id = params
+        .get("team_id")
+        .and_then(|v| v.as_str())
+        .ok_or_else(|| AppError::Internal("post_team_message: missing `team_id`".into()))?
+        .to_string();
+    let body = params
+        .get("body")
+        .and_then(|v| v.as_str())
+        .or_else(|| params.get("message").and_then(|v| v.as_str()))
+        .ok_or_else(|| AppError::Internal("post_team_message: missing `body`".into()))?
+        .to_string();
+    let addressed_to = params.get("addressed_to").and_then(|v| v.as_array()).map(|a| {
+        a.iter()
+            .filter_map(|x| x.as_str().map(String::from))
+            .collect::<Vec<_>>()
+    });
+
+    let msg = crate::db::repos::resources::team_channel::create(
+        &state.db,
+        crate::db::models::CreateChannelMessageInput {
+            team_id: team_id.clone(),
+            author_kind: "athena".into(),
+            author_id: None,
+            body,
+            addressed_to,
+            reply_to: None,
+            assignment_id: None,
+            consumer: Some("inject".into()),
+        },
+    )?;
+    Ok(ExecuteResult::message(format!(
+        "Posted to team `{}` channel (message `{}`).",
+        &team_id[..team_id.len().min(8)],
+        &msg.id[..msg.id.len().min(12)],
     )))
 }

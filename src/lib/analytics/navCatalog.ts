@@ -20,6 +20,7 @@
 import type {
   SidebarSection,
   HomeTab,
+  TeamsTab,
   GoalsTab,
   EditorTab,
   DesignSubTab,
@@ -52,7 +53,7 @@ export interface TabDimension {
 export const SECTIONS = [
   'home',
   'overview',
-  'goals',
+  'teams',
   'personas',
   'events',
   'credentials',
@@ -67,9 +68,10 @@ export const SECTIONS = [
 
 const HOME_TABS = ['welcome', 'cockpit', 'roadmap', 'system-check', 'learning'] as const satisfies readonly HomeTab[];
 const OVERVIEW_TABS = ['home', 'incidents', 'executions', 'manual-review', 'messages', 'events', 'knowledge', 'sla', 'health', 'observability', 'leaderboard', 'director', 'certification'] as const satisfies readonly OverviewTab[];
-const GOALS_TABS = ['board', 'map', 'timeline', 'portfolio'] as const satisfies readonly GoalsTab[];
+const TEAMS_TABS = ['workspace', 'goals'] as const satisfies readonly TeamsTab[];
+const GOALS_TABS = ['board', 'map', 'timeline'] as const satisfies readonly GoalsTab[];
 const TEMPLATE_TABS = ['n8n', 'generated', 'recipes', 'presets'] as const satisfies readonly TemplateTab[];
-const AGENT_TABS = ['all', 'create', 'team', 'groups', 'cloud'] as const satisfies readonly AgentTab[];
+const AGENT_TABS = ['all', 'create', 'groups', 'cloud'] as const satisfies readonly AgentTab[];
 const EDITOR_TABS = ['activity', 'matrix', 'use-cases', 'lab', 'settings', 'chat', 'design', 'assertions'] as const satisfies readonly EditorTab[];
 const DESIGN_SUB_TABS = ['use-cases', 'prompt', 'connectors', 'triggers', 'messaging', 'automations'] as const satisfies readonly DesignSubTab[];
 const CLOUD_TABS = ['cloud', 'gitlab', 'unified'] as const satisfies readonly CloudTab[];
@@ -90,7 +92,8 @@ const RESEARCH_LAB_TABS = ['dashboard', 'projects', 'literature', 'hypotheses', 
 export const TAB_DIMENSIONS: readonly TabDimension[] = [
   { key: 'homeTab', store: 'system', section: 'home', values: HOME_TABS },
   { key: 'overviewTab', store: 'overview', section: 'overview', values: OVERVIEW_TABS },
-  { key: 'goalsTab', store: 'system', section: 'goals', values: GOALS_TABS },
+  { key: 'teamsTab', store: 'system', section: 'teams', values: TEAMS_TABS },
+  { key: 'goalsTab', store: 'system', section: 'teams', values: GOALS_TABS },
   { key: 'templateTab', store: 'system', section: 'design-reviews', values: TEMPLATE_TABS },
   { key: 'agentTab', store: 'system', section: 'personas', values: AGENT_TABS },
   { key: 'editorTab', store: 'system', section: 'personas', values: EDITOR_TABS },

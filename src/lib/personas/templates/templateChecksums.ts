@@ -80,6 +80,7 @@ export const TEMPLATE_CHECKSUMS: Record<string, string> = {
   'project-management/agency-client-retainer-manager.json': '0003903839c32973',
   'project-management/client-portal-orchestrator.json': '001957fbc6a42ca0',
   'project-management/deadline-synchronizer.json': '001a734fd4e4b972',
+  'project-management/product-strategist.json': '00193828673af5f6',
   'project-management/technical-decision-tracker.json': '001654d65f96a31f',
   'research/ai-research-report-generator.json': '0018e81100ace703',
   'research/ai-weekly-research.json': '000d9090e9be795b',

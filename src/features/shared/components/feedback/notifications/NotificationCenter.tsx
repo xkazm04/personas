@@ -1,11 +1,12 @@
-import { useCallback, useEffect } from 'react';
-import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight } from 'lucide-react';
+import { Fragment, useCallback, useEffect } from 'react';
+import { Bell, BellOff, X, ExternalLink, RefreshCw, FileText, Trash2, ClipboardCheck, ArrowRight, MessageCircleQuestion } from 'lucide-react';
 import { useNotificationCenterStore, type PipelineNotification, type ProcessType } from '@/stores/notificationCenterStore';
 import { useSystemStore } from '@/stores/systemStore';
 import { sanitizeExternalUrl } from '@/lib/utils/sanitizers/sanitizeUrl';
 import { StatusIcon } from '@/features/plugins/gitlab/components/pipelineHelpers';
 import { useTranslation } from '@/i18n/useTranslation';
 import { getProcessLabel } from '@/lib/notifications/notifyProcessComplete';
+import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,6 +36,30 @@ function statusLabel(status: string): string {
 /** Process notifications use pipelineId === 0 and encode processType in ref. */
 function isProcessNotification(n: PipelineNotification): boolean {
   return n.pipelineId === 0 && n.id.startsWith('proc-');
+}
+
+/**
+ * "Ask Athena" — close the tray, open the companion chat, and auto-send a
+ * request to analyze the notification's underlying issue (the same
+ * pendingPrompt+autoSend deep-link the proactive nudges use).
+ */
+function useAskAthena(notification: PipelineNotification, title: string, body: string) {
+  const { t, tx } = useTranslation();
+  const markRead = useNotificationCenterStore((s) => s.markRead);
+  const setHeaderOverlay = useSystemStore((s) => s.setHeaderOverlay);
+  return useCallback(() => {
+    markRead(notification.id);
+    setHeaderOverlay('none');
+    useCompanionStore.getState().setPendingPrompt({
+      text: tx(t.gitlab.notification_athena_prompt, {
+        title,
+        body,
+        status: notification.status,
+      }),
+      autoSend: true,
+    });
+    useCompanionStore.getState().setState('open');
+  }, [notification, title, body, markRead, setHeaderOverlay, t, tx]);
 }
 
 // ---------------------------------------------------------------------------
@@ -115,6 +140,7 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
   // Compose body lines: prefer message if present, fall back to status label.
   const headerTitle = notification.title ?? (hasReviewRedirect ? t.gitlab.human_review : processLabel);
   const bodyText = notification.message ?? statusLabel(notification.status);
+  const askAthena = useAskAthena(notification, headerTitle, bodyText);
 
   return (
     <div
@@ -140,9 +166,9 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
             {formatTimestamp(notification.timestamp)}
           </span>
         </div>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-start gap-2 mt-0.5">
           {/* eslint-disable-next-line custom/no-low-contrast-text-classes -- body intentionally dimmer than the title for hierarchy (per request) */}
-          <p className="typo-caption text-foreground/80 truncate flex-1">{bodyText}</p>
+          <p className="typo-caption text-foreground/80 break-words flex-1 min-w-0">{bodyText}</p>
           {redirectSection && (
             <button
               onClick={(e) => { e.stopPropagation(); handleRedirect(); }}
@@ -156,14 +182,24 @@ function ProcessNotificationItem({ notification }: { notification: PipelineNotif
         </div>
       </div>
 
-      {/* Dismiss (hover-only, top-right) */}
-      <button
-        onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="flex-shrink-0 mt-0.5 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
-        aria-label="Dismiss"
-      >
-        <X className="w-3 h-3" />
-      </button>
+      {/* Actions column (hover-only): dismiss on top, ask-Athena beneath */}
+      <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-0.5">
+        <button
+          onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
+          className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
+          aria-label="Dismiss"
+        >
+          <X className="w-3 h-3" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); askAthena(); }}
+          className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-violet-400 hover:text-violet-300 transition-all"
+          aria-label={t.gitlab.notification_ask_athena}
+          title={t.gitlab.notification_ask_athena}
+        >
+          <MessageCircleQuestion className="w-3 h-3" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -201,6 +237,7 @@ function NotificationItem({ notification }: { notification: PipelineNotification
 
   const pipelineTitle = `${t.gitlab.pipeline_hash}${notification.pipelineId}`;
   const bodyText = `${notification.ref} — ${statusLabel(notification.status)}`;
+  const askAthena = useAskAthena(notification, pipelineTitle, bodyText);
 
   return (
     <div
@@ -221,9 +258,9 @@ function NotificationItem({ notification }: { notification: PipelineNotification
             {formatTimestamp(notification.timestamp)}
           </span>
         </div>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="flex items-start gap-2 mt-0.5">
           {/* eslint-disable-next-line custom/no-low-contrast-text-classes -- body intentionally dimmer than the title for hierarchy (per request) */}
-          <p className="typo-caption text-foreground/80 truncate flex-1 font-mono">{bodyText}</p>
+          <p className="typo-caption text-foreground/80 break-words flex-1 min-w-0 font-mono">{bodyText}</p>
           <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
             {notification.webUrl && (
               <button
@@ -263,13 +300,24 @@ function NotificationItem({ notification }: { notification: PipelineNotification
         </div>
       </div>
 
-      <button
-        onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
-        className="flex-shrink-0 mt-0.5 p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
-        aria-label="Dismiss"
-      >
-        <X className="w-3 h-3" />
-      </button>
+      {/* Actions column (hover-only): dismiss on top, ask-Athena beneath */}
+      <div className="flex-shrink-0 mt-0.5 flex flex-col items-center gap-0.5">
+        <button
+          onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
+          className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-foreground hover:text-foreground/70 transition-all"
+          aria-label="Dismiss"
+        >
+          <X className="w-3 h-3" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); askAthena(); }}
+          className="p-1 rounded-card opacity-0 group-hover:opacity-100 hover:bg-primary/10 text-violet-400 hover:text-violet-300 transition-all"
+          aria-label={t.gitlab.notification_ask_athena}
+          title={t.gitlab.notification_ask_athena}
+        >
+          <MessageCircleQuestion className="w-3 h-3" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -355,11 +403,15 @@ export function NotificationCenter() {
                     </p>
                   </div>
                 ) : (
-                  notifications.map((n) =>
-                    isProcessNotification(n)
-                      ? <ProcessNotificationItem key={n.id} notification={n} />
-                      : <NotificationItem key={n.id} notification={n} />,
-                  )
+                  notifications.map((n, i) => (
+                    <Fragment key={n.id}>
+                      {/* Subtle divider between rows (not above the first) */}
+                      {i > 0 && <div className="h-px bg-primary/5 mx-3" aria-hidden="true" />}
+                      {isProcessNotification(n)
+                        ? <ProcessNotificationItem notification={n} />
+                        : <NotificationItem notification={n} />}
+                    </Fragment>
+                  ))
                 )}
             </div>
           </div>

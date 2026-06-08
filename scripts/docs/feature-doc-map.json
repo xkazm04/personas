@@ -327,7 +327,7 @@
     {
       "doc": "docs/features/goals/README.md",
       "sourceGlobs": [
-        "src/features/plugins/dev-tools/sub_goals/**"
+        "src/features/teams/sub_goals/**"
       ]
     },
     {
@@ -421,7 +421,7 @@
     {
       "doc": "docs/features/pipeline/README.md",
       "sourceGlobs": [
-        "src/features/pipeline/**",
+        "src/features/teams/**",
         "src-tauri/src/commands/teams/**",
         "src-tauri/src/db/repos/core/teams.rs",
         "src-tauri/src/db/repos/core/groups.rs",

@@ -392,9 +392,11 @@ export function getAuthMethods(connector: ConnectorDefinition): ConnectorAuthMet
 
 // -- Navigation Types ---------------------------------------------------
 
-export type SidebarSection = "home" | "overview" | "goals" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
+export type SidebarSection = "home" | "overview" | "teams" | "personas" | "events" | "credentials" | "design-reviews" | "plugins" | "schedules" | "settings";
+/** L2 inside the Teams section: the team workspace (canvas/orchestration) or the Goals hub. */
+export type TeamsTab = "workspace" | "goals";
 export type HomeTab = "welcome" | "cockpit" | "roadmap" | "system-check" | "learning";
-export type GoalsTab = "board" | "map" | "timeline" | "portfolio";
+export type GoalsTab = "board" | "map" | "timeline";
 export type EditorTab = "activity" | "matrix" | "use-cases" | "lab" | "settings" | "chat" | "design" | "assertions";
 /** Sub-tab within the Design hub. Use Cases sits leftmost as the default landing. */
 export type DesignSubTab = "use-cases" | "prompt" | "connectors" | "triggers" | "messaging" | "automations";
@@ -405,7 +407,7 @@ export type TemplateTab = "n8n" | "generated" | "recipes" | "presets";
 export type CloudTab = "cloud" | "gitlab" | "unified";
 export type SettingsTab = "account" | "appearance" | "notifications" | "engine" | "byom" | "portability" | "network" | "admin" | "config" | "api-keys" | "history" | "limits";
 export type DevToolsTab = "overview" | "projects" | "goals" | "context-map" | "idea-scanner" | "idea-triage" | "task-runner" | "lifecycle" | "skills" | "fleet";
-export type AgentTab = "all" | "create" | "team" | "groups" | "cloud";
+export type AgentTab = "all" | "create" | "groups" | "cloud";
 export type PluginTab = "browse" | "dev-tools" | "artist" | "obsidian-brain" | "research-lab" | "drive" | "twin" | "companion" | "langfuse";
 export type ResearchLabTab = "dashboard" | "projects" | "literature" | "hypotheses" | "experiments" | "findings" | "reports" | "graph";
 export type ObsidianBrainTab = "setup" | "sync" | "browse" | "graph" | "cloud";

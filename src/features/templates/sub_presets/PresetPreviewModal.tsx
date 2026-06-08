@@ -207,7 +207,8 @@ export function PresetPreviewModal({ open, preset, onClose }: PresetPreviewModal
 
   const handleOpenTeam = useCallback(() => {
     setSidebarSection('personas');
-    setAgentTab('team');
+    useSystemStore.getState().setSidebarSection('teams');
+    useSystemStore.getState().setTeamsTab('workspace');
     onClose();
   }, [setSidebarSection, setAgentTab, onClose]);
 

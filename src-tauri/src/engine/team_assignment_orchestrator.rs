@@ -344,8 +344,10 @@ pub fn recover_orphaned_assignments(
     }
 }
 
-/// Resume an assignment from `awaiting_review`. Restarts the tick task.
-fn resume_assignment(
+/// Resume an assignment from `awaiting_review` or `paused`. Restarts the tick
+/// task (the tick loop is idempotent — a fresh task picks up from the current
+/// step states).
+pub fn resume_assignment(
     pool: Arc<DbPool>,
     app: AppHandle,
     engine: Arc<ExecutionEngine>,
@@ -354,6 +356,27 @@ fn resume_assignment(
 ) {
     let _ = assignment_repo::update_assignment_status(&pool, &assignment_id, "running", None);
     run_assignment(pool, app, engine, embedding_manager, assignment_id);
+}
+
+/// C4 soft-pause: request a running/queued assignment stop launching new steps.
+/// The live tick loop sees the `paused` status on its next tick and exits;
+/// in-flight step tasks are detached and finish on their own. `resume_assignment`
+/// restarts it. Errors if the assignment isn't in a pausable state.
+pub fn pause_assignment(
+    pool: &Arc<DbPool>,
+    app: &AppHandle,
+    assignment_id: &str,
+) -> Result<(), AppError> {
+    let assignment = assignment_repo::get_by_id(pool, assignment_id)?;
+    if !matches!(assignment.status.as_str(), "running" | "queued") {
+        return Err(AppError::Validation(format!(
+            "Assignment cannot be paused from status '{}'",
+            assignment.status
+        )));
+    }
+    assignment_repo::update_assignment_status(pool, assignment_id, "paused", None)?;
+    emit_progress(app, assignment_id, "paused", None);
+    Ok(())
 }
 
 // ----------------------------------------------------------------------------
@@ -389,6 +412,13 @@ async fn tick_loop(
         let assignment = assignment_repo::get_by_id(pool, assignment_id)?;
         if assignment.status == "aborted" {
             return Ok(()); // user abort — exit cleanly
+        }
+        if assignment.status == "paused" {
+            // C4 soft-pause: stop launching new steps and exit the loop. Any
+            // in-flight step tasks are detached tokio tasks and finish on their
+            // own (writing their results); `resume_assignment` re-spawns the
+            // loop, which picks up from the updated step states.
+            return Ok(());
         }
         let steps = assignment_repo::list_steps(pool, assignment_id)?;
 
@@ -605,7 +635,39 @@ async fn run_step(
     // rediscover the implementer's work from repo state and can pick the wrong
     // PR. Forward each direct predecessor's output_summary (capped).
     let predecessor_outputs = collect_predecessor_outputs(pool, &step);
-    let input_payload = build_step_input(&step, use_case_id.as_deref(), &predecessor_outputs);
+    // C1 (multi-author channel): channel messages addressed to THIS persona
+    // (or the whole team) with consumer='inject' are delivered at STEP
+    // BOUNDARIES — each step launch injects the recent ones and records a
+    // read-receipt the Collab UI renders. Supersedes Design B's directive-only
+    // injection; the same hook now carries user directives + (C2/C3) Athena
+    // and Director posts.
+    let directives = team_assignment_team_id(pool, &step.assignment_id)
+        .and_then(|tid| {
+            crate::db::repos::resources::team_channel::list_injectable_for_persona(
+                pool,
+                &tid,
+                &persona_id,
+                5,
+            )
+            .ok()
+        })
+        .unwrap_or_default();
+    let directive_values: Vec<serde_json::Value> = directives
+        .iter()
+        .map(|d| {
+            json!({
+                "from": d.author_kind,
+                "content": d.body,
+                "posted_at": d.created_at,
+            })
+        })
+        .collect();
+    let input_payload = build_step_input(
+        &step,
+        use_case_id.as_deref(),
+        &predecessor_outputs,
+        &directive_values,
+    );
     let tools = tools_repo::get_tools_for_persona(pool, &persona_id).unwrap_or_default();
 
     let exec = exec_repo::create(
@@ -619,6 +681,11 @@ async fn run_step(
 
     assignment_repo::set_step_execution(pool, &step.id, &exec.id)?;
     assignment_repo::update_step_status(pool, &step.id, "running", None, None)?;
+    for d in &directives {
+        let _ = crate::db::repos::resources::team_channel::record_delivery(
+            pool, &d.id, &step.id, &persona_id,
+        );
+    }
     emit_progress(app, &step.assignment_id, "running", Some(&step.id));
     // First sign of work on a goal-linked assignment: flip the goal
     // open→in-progress so it reflects activity before any step finishes.
@@ -673,6 +740,10 @@ async fn run_step(
                             "QA requested changes {} times — fix-loop cap reached; human review required",
                             step.retry_count
                         );
+                        // W7: the costliest bounce (the one that reaches a
+                        // human) must also teach the team — previously only
+                        // rework rounds wrote the lesson.
+                        record_bounce_lesson(pool, &step, summary.as_deref(), step.retry_count, true);
                         assignment_repo::update_step_status(
                             pool,
                             &step.id,
@@ -687,12 +758,28 @@ async fn run_step(
 
                 assignment_repo::update_step_status(pool, &step.id, "done", None, summary.as_deref())?;
                 emit_progress(app, &step.assignment_id, "running", Some(&step.id));
+                // C1 (multi-author channel): gated roles (Implementer/QA/
+                // Architect) may broadcast ONE short message to the team channel
+                // from their output. Best-effort; scans the full output, not the
+                // tail summary.
+                maybe_post_channel_message(
+                    pool,
+                    &step,
+                    &persona_id,
+                    execution.output_data.as_deref(),
+                );
+                // Activity feed gets the agent's readable outcome sentence,
+                // not the raw protocol-JSON tail (which rendered as garbage).
+                let signal_text = summary
+                    .as_deref()
+                    .and_then(extract_readable_outcome)
+                    .unwrap_or_else(|| step.title.clone());
                 record_assignment_goal_signal(
                     pool,
                     goal_id.as_deref(),
                     &step.assignment_id,
                     "team_step",
-                    summary.as_deref().or(Some(step.title.as_str())),
+                    Some(&signal_text),
                 );
                 // T4 (live progress): a goal-linked step that finishes checks
                 // its matching to-do off NOW and recomputes the goal's progress
@@ -857,33 +944,8 @@ fn trigger_qa_rework(
     assignment_repo::update_step_status(pool, &qa_step.id, "pending", None, qa_summary)?;
     assignment_repo::increment_step_retry(pool, &qa_step.id)?;
 
-    // T6 (learning loop): every bounce is a durable lesson — write it to the
-    // shared team ledger as a `constraint` so future increments avoid the same
-    // failure (the ledger's top-N digest is injected into every member's
-    // prompt). The round number keeps repeat bounces distinct. Best-effort.
-    if let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) {
-        let lesson: String = verdict.chars().take(800).collect();
-        let tm = crate::db::models::CreateTeamMemoryInput {
-            team_id: assignment.team_id.clone(),
-            run_id: None,
-            member_id: None,
-            persona_id: qa_step.assigned_persona_id.clone(),
-            title: format!(
-                "QA bounce (round {}): {}",
-                qa_step.retry_count + 1,
-                assignment.title
-            ),
-            content: format!(
-                "QA requested changes on this increment's PR. Verdict: {lesson}"
-            ),
-            category: Some("constraint".to_string()),
-            importance: Some(7),
-            tags: Some("qa,changes_requested".to_string()),
-        };
-        if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
-            tracing::warn!(step_id = %qa_step.id, error = %e, "qa rework: failed to write bounce lesson to team ledger");
-        }
-    }
+    // T6/W7 (learning loop): every bounce is a durable lesson.
+    record_bounce_lesson(pool, qa_step, Some(&verdict), qa_step.retry_count + 1, false);
     assignment_repo::insert_event(
         pool,
         &qa_step.assignment_id,
@@ -947,10 +1009,157 @@ fn collect_predecessor_outputs(
         .collect()
 }
 
+/// T6/W7: write a QA bounce to the shared team ledger as a directive
+/// `constraint` lesson. Fires on EVERY bounce — rework rounds AND the cap-out
+/// (the cap path previously skipped it, so the costliest failures taught the
+/// team nothing and Dev Clone repeated the same blocker across increments —
+/// observed: the identical NODE_ENV tsc error bounced three different PRs).
+/// The content leads with a do-not-repeat directive and carries QA's verdict
+/// tail (which includes the exact fix); importance 8 (9 when capped) keeps it
+/// inside the top-N prompt injection every member reads.
+fn record_bounce_lesson(
+    pool: &DbPool,
+    qa_step: &TeamAssignmentStep,
+    qa_summary: Option<&str>,
+    round: i32,
+    capped: bool,
+) {
+    let Ok(assignment) = assignment_repo::get_by_id(pool, &qa_step.assignment_id) else {
+        return;
+    };
+    let lesson: String = qa_summary
+        .unwrap_or("(no QA summary captured)")
+        .chars()
+        .take(900)
+        .collect();
+    let title = if capped {
+        format!("QA bounce CAP — human gate reached: {}", assignment.title)
+    } else {
+        format!("QA bounce (round {round}): {}", assignment.title)
+    };
+    let tm = crate::db::models::CreateTeamMemoryInput {
+        team_id: assignment.team_id.clone(),
+        run_id: None,
+        member_id: None,
+        persona_id: qa_step.assigned_persona_id.clone(),
+        title,
+        content: format!(
+            "RECURRING-RISK CONSTRAINT — do NOT repeat this failure in ANY future increment. \
+             QA bounced this increment's PR{}. The verdict below names the blocker and the \
+             exact fix; apply the fix pattern proactively before opening future PRs. \
+             Verdict: {lesson}",
+            if capped {
+                " twice and the fix loop CAPPED OUT to a human"
+            } else {
+                ""
+            },
+        ),
+        category: Some("constraint".to_string()),
+        importance: Some(if capped { 9 } else { 8 }),
+        tags: Some(if capped {
+            "qa,changes_requested,capped".to_string()
+        } else {
+            "qa,changes_requested".to_string()
+        }),
+    };
+    if let Err(e) = crate::db::repos::resources::team_memories::create(pool, tm) {
+        tracing::warn!(step_id = %qa_step.id, error = %e, "bounce lesson: failed to write to team ledger");
+    }
+}
+
+/// Team id for an assignment (Design B directive delivery).
+fn team_assignment_team_id(pool: &Arc<DbPool>, assignment_id: &str) -> Option<String> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT team_id FROM team_assignments WHERE id = ?1",
+        rusqlite::params![assignment_id],
+        |r| r.get(0),
+    )
+    .ok()
+}
+
+/// A persona's role within a team (`persona_team_members.role`).
+fn persona_team_role(pool: &Arc<DbPool>, team_id: &str, persona_id: &str) -> Option<String> {
+    let conn = pool.get().ok()?;
+    conn.query_row(
+        "SELECT role FROM persona_team_members WHERE team_id = ?1 AND persona_id = ?2",
+        rusqlite::params![team_id, persona_id],
+        |r| r.get(0),
+    )
+    .ok()
+}
+
+/// C1 first wave: only these roles may post to the channel (the ones whose
+/// acknowledgments / questions carry the most coordination signal). Decided
+/// in docs/architecture/team-channel-orchestration.md §8.
+const CHANNEL_POST_ROLES: &[&str] = &["engineer", "qa", "architect"];
+const CHANNEL_POST_MAX_CHARS: usize = 400;
+
+/// Parse the persona `channel_post` protocol from a step's output and, if the
+/// persona's role is gated-in, post ONE message to the team channel.
+///
+/// Protocol (robust to prose output — a line prefix, not JSON-from-prose):
+/// the agent may emit a single line `CHANNEL_POST: <text>` to broadcast a
+/// short status / question / acknowledgment to the team channel. The FIRST
+/// such line wins (1-per-step cap). Posts land as `author_kind='persona'`,
+/// `consumer='display'` — visible in Collab but NOT injected into other
+/// personas' steps, so persona traffic can't feed a persona→persona prompt
+/// loop (the G4 governance lesson). Best-effort; silently no-ops for
+/// non-gated roles or when no marker is present.
+fn maybe_post_channel_message(
+    pool: &Arc<DbPool>,
+    step: &TeamAssignmentStep,
+    persona_id: &str,
+    output: Option<&str>,
+) {
+    let Some(output) = output else {
+        return;
+    };
+    let Some(team_id) = team_assignment_team_id(pool, &step.assignment_id) else {
+        return;
+    };
+    let role = persona_team_role(pool, &team_id, persona_id).unwrap_or_default();
+    if !CHANNEL_POST_ROLES.contains(&role.as_str()) {
+        return;
+    }
+    let body = output.lines().find_map(|line| {
+        let t = line.trim();
+        let rest = t
+            .strip_prefix("CHANNEL_POST:")
+            .or_else(|| t.strip_prefix("CHANNEL POST:"))?
+            .trim();
+        if rest.is_empty() {
+            None
+        } else {
+            Some(rest.to_string())
+        }
+    });
+    let Some(mut body) = body else {
+        return;
+    };
+    if body.chars().count() > CHANNEL_POST_MAX_CHARS {
+        body = body.chars().take(CHANNEL_POST_MAX_CHARS).collect::<String>() + "…";
+    }
+    let _ = crate::db::repos::resources::team_channel::create(
+        pool,
+        crate::db::models::CreateChannelMessageInput {
+            team_id,
+            author_kind: "persona".into(),
+            author_id: Some(persona_id.to_string()),
+            body,
+            addressed_to: None,
+            reply_to: None,
+            assignment_id: Some(step.assignment_id.clone()),
+            consumer: Some("display".into()),
+        },
+    );
+}
+
 fn build_step_input(
     step: &TeamAssignmentStep,
     use_case_id: Option<&str>,
     predecessor_outputs: &[serde_json::Value],
+    user_directives: &[serde_json::Value],
 ) -> serde_json::Value {
     let mut input = json!({
         "assignment_id": step.assignment_id,
@@ -963,6 +1172,10 @@ fn build_step_input(
     // acts on THIS work (PR URL, branch, what was done), not a fresh discovery.
     if !predecessor_outputs.is_empty() {
         input["predecessor_outputs"] = serde_json::Value::Array(predecessor_outputs.to_vec());
+    }
+    // Design B: the user's channel directives — binding guidance for this step.
+    if !user_directives.is_empty() {
+        input["user_directives"] = serde_json::Value::Array(user_directives.to_vec());
     }
     // V1 (QA fix loop): a step reset for rework carries the QA verdict in its
     // error_message — surface it so the re-run FIXES the bounced PR (push to
@@ -1132,6 +1345,37 @@ fn emit_progress(app: &AppHandle, assignment_id: &str, status: &str, step_id: Op
 /// write a `dev_goal_signal` so the goal surfaces live team activity and the
 /// progress resolver can derive a suggestion. No-op for unlinked assignments;
 /// best-effort (a signal-write failure must never stall orchestration).
+/// Extract the human-readable outcome sentence from an execution-output tail.
+/// The tail is agent-protocol JSON; the goal Activity feed previously rendered
+/// it raw (truncated-JSON garbage). Preference: `outcome_assessment.summary`
+/// (the agent's own one-paragraph wrap) → `task_completed`'s `action` line.
+/// Tolerant of truncated fragments — scans for the key + quoted string instead
+/// of parsing whole JSON.
+fn extract_readable_outcome(raw: &str) -> Option<String> {
+    fn grab(raw: &str, key: &str) -> Option<String> {
+        let kpos = raw.rfind(&format!("\"{key}\""))?;
+        let after = &raw[kpos + key.len() + 2..];
+        let colon = after.find(':')?;
+        let after = after[colon + 1..].trim_start();
+        let mut out = String::new();
+        let mut chars = after.strip_prefix('"')?.chars();
+        while let Some(c) = chars.next() {
+            match c {
+                '\\' => match chars.next() {
+                    Some('n') => out.push(' '),
+                    Some(other) => out.push(other),
+                    None => break,
+                },
+                '"' => break,
+                _ => out.push(c),
+            }
+        }
+        let cleaned = out.split_whitespace().collect::<Vec<_>>().join(" ");
+        (cleaned.len() > 8).then_some(cleaned)
+    }
+    grab(raw, "summary").or_else(|| grab(raw, "action"))
+}
+
 fn record_assignment_goal_signal(
     pool: &DbPool,
     goal_id: Option<&str>,

@@ -42,6 +42,14 @@ export const startTeamAssignment = (id: string) =>
 export const abortTeamAssignment = (id: string, reason?: string) =>
   invoke<void>("abort_team_assignment", { id, reason: reason ?? null });
 
+/** C4 soft-pause: stop launching new steps; in-flight steps finish. */
+export const pauseTeamAssignment = (id: string) =>
+  invoke<void>("pause_team_assignment", { id });
+
+/** Resume a soft-paused assignment — restarts the orchestrator tick loop. */
+export const resumeTeamAssignment = (id: string) =>
+  invoke<void>("resume_team_assignment", { id });
+
 /**
  * Advance a goal with its owning team: builds a goal-linked assignment (from the
  * goal's open to-dos, else LLM-decomposed) and runs it. Returns the new

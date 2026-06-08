@@ -124,6 +124,14 @@ export const useSystemStore = create<SystemStore>()(
       onRehydrateStorage: () => (state) => {
         if (!state) return;
 
+        // Sidebar schema drift: the 'goals' 1st-level section was rebranded
+        // to 'teams' (Goals consolidated under Teams, 2026-06-05). Map the
+        // legacy persisted value so returning users land on the same surface.
+        if ((state.sidebarSection as string) === 'goals') {
+          state.sidebarSection = 'teams';
+          state.teamsTab = 'goals';
+        }
+
         // Guard against onboarding schema drift: if a persisted step id no
         // longer exists in the current enum (app update renamed/removed a
         // step), discard the stale value so the overlay doesn't render blank

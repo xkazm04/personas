@@ -6,7 +6,7 @@ import { useTranslation } from '@/i18n/useTranslation';
 
 const ProjectOverviewPage = lazy(() => import('./sub_overview/ProjectOverviewPage'));
 const ProjectManagerPage = lazy(() => import('./sub_projects/ProjectManagerPage'));
-const GoalsPage = lazy(() => import('./sub_goals/GoalsPage'));
+const GoalsPage = lazy(() => import('@/features/teams/sub_goals/GoalsPage'));
 const ContextMapPage = lazy(() => import('./sub_context/ContextMapPage'));
 const IdeaScannerPage = lazy(() => import('./sub_scanner/IdeaScannerPage'));
 const IdeaTriagePage = lazy(() => import('./sub_triage/IdeaTriagePage'));

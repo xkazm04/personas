@@ -966,6 +966,13 @@ export interface TourSlice {
   tourSearchPrefill: string | null;
   tourSubStepIndex: number;
   tourHighlightTestId: string | null;
+  /**
+   * True when the current step's `tourHighlightTestId` target can't be found on
+   * screen (initial anchor-miss or anchored-then-gone). Driven entirely by
+   * `TourSpotlight` from the highlight's mount state. The panel shows a
+   * "not on screen yet" note off this — the tour stays alive either way.
+   */
+  tourHighlightMissing: boolean;
   tourAppearanceBaseline: { themeId: string; textScale: string; brightness: string } | null;
   tourCredentialInteractions: { categoriesBrowsed: string[]; connectorsViewed: number };
   /** Per-tour completion tracking for Learning center */
@@ -983,7 +990,11 @@ export interface TourSlice {
   resetTour: (tourId?: TourId) => void;
   consumeTourSearchPrefill: () => string | null;
   advanceSubStep: () => void;
+  /** Manually move the active sub-step pointer (clamped) — lets the user step
+   *  through a step's sub-steps at their own pace rather than only on events. */
+  goToSubStep: (index: number) => void;
   setHighlightTestId: (testId: string | null) => void;
+  setHighlightMissing: (missing: boolean) => void;
   captureAppearanceBaseline: (baseline: { themeId: string; textScale: string; brightness: string }) => void;
   recordCredentialInteraction: (type: 'category' | 'connector', id: string) => void;
   isTourCompleted: (tourId: TourId) => boolean;
@@ -1045,6 +1056,7 @@ export const createTourSlice: StateCreator<
     tourSearchPrefill: null,
     tourSubStepIndex: ps?.subStepIndex ?? 0,
     tourHighlightTestId: null,
+    tourHighlightMissing: false,
     tourAppearanceBaseline: null,
     tourCredentialInteractions: { categoriesBrowsed: [], connectorsViewed: 0 },
     tourCompletionMap: completionMap,
@@ -1240,6 +1252,19 @@ export const createTourSlice: StateCreator<
       }
     },
 
+    goToSubStep: (index) => {
+      const s = get();
+      const steps = getActiveTourSteps(s.tourActiveTourId);
+      const currentStep = steps[s.tourCurrentStepIndex];
+      if (!currentStep || currentStep.subSteps.length === 0) return;
+      const clamped = Math.max(0, Math.min(index, currentStep.subSteps.length - 1));
+      set({
+        tourSubStepIndex: clamped,
+        tourHighlightTestId: currentStep.subSteps[clamped]?.highlightTestId ?? null,
+      });
+      persistCurrentTour();
+    },
+
     setHighlightTestId: (testId) => {
       // Trust boundary: reject anything outside the testid convention so a
       // future caller can't smuggle quotes/brackets into the selector that
@@ -1256,6 +1281,8 @@ export const createTourSlice: StateCreator<
       }
       set({ tourHighlightTestId: testId });
     },
+
+    setHighlightMissing: (missing) => set({ tourHighlightMissing: missing }),
 
     captureAppearanceBaseline: (baseline) => set({ tourAppearanceBaseline: baseline }),
 

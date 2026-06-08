@@ -190,6 +190,43 @@ export function IconTeams({ active = false, className = '' }: IconProps) {
   );
 }
 
+// -- Teams (1st-level section): Formation flight ---------------------------
+// Three delta-wing craft in a tight V-formation climbing up-right, each with
+// a motion trail — an orchestrated crew moving in concert behind a leader.
+// Concept generated via Leonardo (formation-flight study) and recreated as a
+// stroke icon. Deliberately distinct from the Users silhouettes, the old
+// constellation cluster and the Goals bullseye.
+
+function DeltaCraft({ x, y, lead = false, active = false, pulse = '' }: { x: number; y: number; lead?: boolean; active?: boolean; pulse?: string }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      <path
+        d="M2.6 -2.6 L-2.4 -0.6 L-0.7 0.7 L0.6 2.4 Z"
+        stroke="currentColor"
+        strokeWidth={lead ? 1.3 : 1.1}
+        strokeLinejoin="round"
+        opacity={active ? (lead ? 0.85 : 0.6) : lead ? 0.55 : 0.38}
+      />
+      <circle cx="-0.7" cy="0.7" r="0.9" fill="currentColor" className={pulse} opacity={active ? undefined : 0.45} />
+    </g>
+  );
+}
+
+export function IconTeamsFormation({ active = false, className = '' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      {/* Motion trails — flow when active (the formation is "moving") */}
+      <line x1="12.4" y1="11.6" x2="7.6" y2="16.4" stroke="currentColor" strokeWidth="1" className={a('pi-flow', active)} opacity={active ? 0.55 : 0.2} />
+      <line x1="10.2" y1="13.8" x2="4.2" y2="19.8" stroke="currentColor" strokeWidth="0.9" className={a('pi-flow', active)} opacity={active ? 0.45 : 0.16} />
+      <line x1="5.2" y1="8.8" x2="1.6" y2="12.4" stroke="currentColor" strokeWidth="0.9" className={a('pi-flow', active)} opacity={active ? 0.45 : 0.16} />
+      {/* The V: leader front-high-right, two wingmates trailing on the flanks */}
+      <DeltaCraft x={17} y={7} lead active={active} pulse={a('pi-pulse', active)} />
+      <DeltaCraft x={14.9} y={14.1} active={active} pulse={a('pi-pulse-d', active)} />
+      <DeltaCraft x={9.9} y={9.1} active={active} pulse={a('pi-pulse-d', active)} />
+    </svg>
+  );
+}
+
 // -- Cloud: Mesh network -------------------------------------------------
 
 export function IconCloud({ active = false, className = '' }: IconProps) {
@@ -309,6 +346,7 @@ export function IconGoals({ active = false, className = '' }: IconProps) {
 export const SIDEBAR_ICONS: Record<string, (props: IconProps) => React.JSX.Element> = {
   home: IconHome,
   overview: IconOverview,
+  teams: IconTeamsFormation,
   goals: IconGoals,
   personas: IconAgents,
   events: IconEvents,

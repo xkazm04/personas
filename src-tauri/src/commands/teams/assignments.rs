@@ -153,6 +153,41 @@ pub async fn abort_team_assignment(
     orchestrator::resolve_review_abort(Arc::new(state.db.clone()), app, id, reason)
 }
 
+/// C4 soft-pause: stop launching new steps on a running/queued assignment.
+/// In-flight steps finish; the mission idles until `resume_team_assignment`.
+#[tauri::command]
+pub async fn pause_team_assignment(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    orchestrator::pause_assignment(&Arc::new(state.db.clone()), &app, &id)
+}
+
+/// Resume a soft-paused assignment — restarts the orchestrator tick loop from
+/// the current step states.
+#[tauri::command]
+pub async fn resume_team_assignment(
+    state: State<'_, Arc<AppState>>,
+    app: tauri::AppHandle,
+    id: String,
+) -> Result<(), AppError> {
+    require_auth(&state).await?;
+    let assignment = repo::get_by_id(&state.db, &id)?;
+    if assignment.status != "paused" {
+        return Err(AppError::Validation(format!(
+            "Assignment cannot be resumed from status '{}'",
+            assignment.status
+        )));
+    }
+    let pool = Arc::new(state.db.clone());
+    let engine = state.engine.clone();
+    let embedding_manager = embedding_manager_for_state(&state);
+    orchestrator::resume_assignment(pool, app, engine, embedding_manager, id);
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn resolve_team_assignment_review(
     state: State<'_, Arc<AppState>>,

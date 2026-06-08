@@ -1,4 +1,4 @@
-import { Component, lazy, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
+import { Component, Profiler, Suspense, useCallback, useEffect, useRef, useState, type ProfilerOnRenderCallback, type ReactNode } from "react";
 import { AnimatePresence, motion, MotionConfig } from "framer-motion";
 import PersonasPage from "@/features/personas/PersonasPage";
 import UpdateBanner from "@/features/shared/components/feedback/UpdateBanner";
@@ -28,6 +28,7 @@ import WorkspaceShortcuts from "@/lib/keyboard/WorkspaceShortcuts";
 import KeyboardNavMode from "@/lib/keyboard/KeyboardNavMode";
 import { ModalStackProvider } from "@/lib/ui/ModalStackContext";
 import { CARD_PADDING, TOOLS_BTN_COMPACT } from "@/lib/utils/designTokens";
+import { lazyRetry } from "@/lib/lazyRetry";
 
 initPseudoLocale();
 
@@ -87,18 +88,21 @@ class SilentErrorBoundary extends Component<
 
 // Lazy-load overlays and background services — none needed for first paint.
 // BackgroundServices hosts hooks that import domain stores (~300 KB deferred).
-const BackgroundServices = lazy(() => import("@/features/shared/components/layout/BackgroundServices"));
-const CommandPalette = lazy(() => import("@/features/shared/components/overlays/CommandPalette"));
-const GuidedTour = lazy(() => import("@/features/onboarding/components/GuidedTour"));
-const TourSpotlight = lazy(() => import("@/features/onboarding/components/TourSpotlight"));
-const ExecutionMiniPlayer = lazy(() => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"));
-const HealingToast = lazy(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
-const AlertToastContainer = lazy(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
-const NotificationCenter = lazy(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
-const ShareLinkHandler = lazy(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
-const CompanionPanel = lazy(() => import("@/features/plugins/companion/CompanionPanel"));
-const AthenaOrbLayer = lazy(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
-const AthenaGuideLayer = lazy(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
+// lazyRetry instead of raw React.lazy: a failed chunk fetch (dev-server
+// restart, post-deploy stale chunk) would otherwise cache the rejection
+// forever and brick the overlay until a full page reload.
+const BackgroundServices = lazyRetry(() => import("@/features/shared/components/layout/BackgroundServices"));
+const CommandPalette = lazyRetry(() => import("@/features/shared/components/overlays/CommandPalette"));
+const GuidedTour = lazyRetry(() => import("@/features/onboarding/components/GuidedTour"));
+const TourSpotlight = lazyRetry(() => import("@/features/onboarding/components/TourSpotlight"));
+const ExecutionMiniPlayer = lazyRetry(() => import("@/features/shared/components/overlays/executionPlayer/ExecutionMiniPlayer"));
+const HealingToast = lazyRetry(() => import("@/features/overview/components/feedback/HealingToast").then(m => ({ default: m.HealingToast })));
+const AlertToastContainer = lazyRetry(() => import("@/features/overview/sub_observability/components/AlertToastContainer").then(m => ({ default: m.AlertToastContainer })));
+const NotificationCenter = lazyRetry(() => import("@/features/shared/components/feedback/notifications/NotificationCenter").then(m => ({ default: m.NotificationCenter })));
+const ShareLinkHandler = lazyRetry(() => import("@/features/settings/sub_network/components/ShareLinkHandler").then(m => ({ default: m.ShareLinkHandler })));
+const CompanionPanel = lazyRetry(() => import("@/features/plugins/companion/CompanionPanel"));
+const AthenaOrbLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaOrbLayer"));
+const AthenaGuideLayer = lazyRetry(() => import("@/features/plugins/companion/orb/AthenaGuideLayer"));
 // Idle-prefetch list: same modules as the lazy() declarations above. Hits the
 // V8 module cache so the corresponding lazy() resolves synchronously when the
 // overlays mount (or when the user triggers them via Cmd+K, the floating

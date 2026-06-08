@@ -67,6 +67,12 @@
       "role": "artist",
       "x": 240,
       "y": 320
+    },
+    {
+      "template_id": "product-strategist",
+      "role": "product",
+      "x": 0,
+      "y": 320
     }
   ],
   "connections": [

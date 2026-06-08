@@ -134,6 +134,7 @@ fn row_to_idea(row: &Row) -> rusqlite::Result<DevIdea> {
         effort: row.get("effort")?,
         impact: row.get("impact")?,
         risk: row.get("risk")?,
+        priority: row.get("priority")?,
         provider: row.get("provider")?,
         model: row.get("model")?,
         rejection_reason: row.get("rejection_reason")?,
@@ -2378,6 +2379,19 @@ pub fn create_idea(
 }
 
 #[allow(clippy::too_many_arguments)]
+/// Strategist triage: set (or clear) an idea's rank. 1 = do next.
+pub fn set_idea_priority(pool: &DbPool, id: &str, priority: Option<i32>) -> Result<(), AppError> {
+    timed_query!("dev_ideas", "dev_ideas::set_priority", {
+        let conn = pool.get()?;
+        let now = chrono::Utc::now().to_rfc3339();
+        conn.execute(
+            "UPDATE dev_ideas SET priority = ?1, updated_at = ?2 WHERE id = ?3",
+            params![priority, now, id],
+        )?;
+        Ok(())
+    })
+}
+
 pub fn update_idea(
     pool: &DbPool,
     id: &str,
@@ -3348,6 +3362,7 @@ pub fn bulk_create_ideas_cross_project(
                 effort,
                 impact,
                 risk,
+                priority: None,
                 provider: None,
                 model: None,
                 rejection_reason: None,

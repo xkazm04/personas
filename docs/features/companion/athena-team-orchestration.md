@@ -1,9 +1,18 @@
 # Athena as team orchestrator (post-run reconciliation)
 
-Status: **design + seam identified.** The deterministic orchestrator and the
-Sonnet decompose ship today; the Athena post-run hook is the next focused,
-separately-verified change (it touches the background orchestrator loop + a
-new companion command, which want a real multi-persona run to validate).
+Status: **write adapter shipped (C2); reconciliation hook still designed.** The
+multi-author team-channel design
+([`docs/architecture/team-channel-orchestration.md`](../../architecture/team-channel-orchestration.md))
+landed Athena's **write path** into the channel: `companion_post_team_message`
+(`author_kind='athena'`, `consumer='inject'`) for interactive posts, plus a
+`post_team_message` approval-executor op on the autoapprove allowlist so
+autonomous posts are free under autonomous mode (gated otherwise). The `@athena`
+composer mention summons her into the conversation. What remains of this
+document's design — the **post-run reconciliation** hook (terminal assignment →
+an LLM-composed summary posted as Athena) — is deferred: it wants a real async
+Athena turn, not a templated post under her name, so it composes with the
+Athena async-UX milestone rather than coupling the orchestrator loop to the
+companion runtime.
 
 ## Division of labour
 

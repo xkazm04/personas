@@ -134,6 +134,11 @@ pub fn get_for_injection(
     })
 }
 
+// Directive storage + receipts moved to the dedicated `team_channel` repo in
+// C1 (the multi-author channel table supersedes the category='directive'
+// memory rows). Legacy directive memories are still read for display by the
+// channel read-model, but no longer written or injected from here.
+
 pub fn create(pool: &DbPool, input: CreateTeamMemoryInput) -> Result<TeamMemory, AppError> {
     timed_query!("team_memories", "team_memories::create", {
         if input.title.trim().is_empty() {
