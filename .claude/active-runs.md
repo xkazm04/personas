@@ -32,11 +32,6 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
-### prototype-monitor-channel-combined — /prototype combined cross-team channel (Grid vs Timeline vs Swimlanes)
-- Started: 2026-06-08 (session 892a5254). Master + atomic per-round commits.
-- Paths: monitor/MonitorChannelGrid.tsx (+ layout switcher), MonitorChannelTimeline.tsx + MonitorChannelSwimlanes.tsx (variant siblings), collabMergedFeed.tsx (shared merge infra), .claude/active-runs.md.
-- Note: evaluating whether merging selected teams into ONE compact feed is UX-feasible vs the current grid of separate channels. Running app HMRs live.
-
 ### collab-c5-flagship-prototype — /prototype on the Collab channel (C5 flagship polish)
 - Started: 2026-06-08 (session 892a5254). Master + atomic per-round commits.
 - Status: started
