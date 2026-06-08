@@ -3,8 +3,7 @@ import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
 import type { ChannelMember } from '@/features/teams/sub_collab/collabRender';
-import { MonitorChannelTimeline } from './MonitorChannelTimeline';
-import type { FeedTeam } from './types';
+import { ChannelTimelineWorkspace, type WorkspaceTeam } from './ChannelTimelineWorkspace';
 import type { Persona } from '@/lib/bindings/Persona';
 import type { PersonaTeam } from '@/lib/bindings/PersonaTeam';
 
@@ -72,17 +71,66 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
     { id: 'timeline', label: t.monitor.channels_layout_timeline, hint: t.monitor.channels_layout_timeline_hint },
     { id: 'grid', label: t.monitor.channels_layout_grid, hint: t.monitor.channels_layout_grid_hint },
   ];
-  const feedTeams: FeedTeam[] = useMemo(
+  // All channel teams + their selected flag + roster — the workspace owns the
+  // team filter (left sidebar), so the topbar chips are grid-mode only.
+  const workspaceTeams: WorkspaceTeam[] = useMemo(
     () =>
-      channelTeams
-        .filter((tm) => selected.has(tm.id))
-        .map((tm) => ({ teamId: tm.id, teamName: tm.name, teamColor: tm.color, members: membersByTeam.get(tm.id) ?? [] })),
+      channelTeams.map((tm) => ({
+        teamId: tm.id,
+        teamName: tm.name,
+        teamColor: tm.color,
+        members: membersByTeam.get(tm.id) ?? [],
+        selected: selected.has(tm.id),
+      })),
     [channelTeams, selected, membersByTeam],
   );
 
+  const layoutSwitcher = (
+    <div className="flex-shrink-0 flex items-center gap-0.5 rounded-full bg-secondary/20 p-0.5">
+      {LAYOUTS.map((l) => (
+        <button
+          key={l.id}
+          type="button"
+          onClick={() => setLayout(l.id)}
+          title={l.hint}
+          aria-pressed={layout === l.id}
+          className={`px-2.5 py-0.5 rounded-full typo-caption transition-colors ${
+            layout === l.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/50 hover:text-foreground/80'
+          }`}
+        >
+          {l.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (channelTeams.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground/50">
+        <MessagesSquare className="w-8 h-8 text-foreground/25" />
+        <span className="typo-body">{t.monitor.channels_no_teams}</span>
+      </div>
+    );
+  }
+
+  // TIMELINE — the flagship workspace (own team sidebar + Quick Answer + composer).
+  if (layout === 'timeline') {
+    return (
+      <div className="h-full p-2">
+        <ChannelTimelineWorkspace
+          teams={workspaceTeams}
+          onToggle={toggle}
+          allOn={allOn}
+          onSetAll={setAll}
+          layoutControl={layoutSwitcher}
+        />
+      </div>
+    );
+  }
+
+  // GRID — separate channels with the topbar team chips.
   return (
     <div className="h-full flex flex-col min-h-0">
-      {/* Thin team topbar */}
       <div className="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 border-b border-primary/10 bg-secondary/10 overflow-x-auto">
         <span className="typo-label uppercase tracking-wider text-foreground/50 flex-shrink-0">{t.monitor.channels_teams_label}</span>
         {channelTeams.map((tm) => {
@@ -111,36 +159,12 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
             {allOn ? t.monitor.channels_none : t.monitor.channels_all}
           </button>
         )}
-        {/* Layout switcher — Grid (separate channels) vs combined Timeline */}
-        <div className="flex-shrink-0 ml-auto flex items-center gap-0.5 rounded-full bg-secondary/20 p-0.5">
-          {LAYOUTS.map((l) => (
-            <button
-              key={l.id}
-              type="button"
-              onClick={() => setLayout(l.id)}
-              title={l.hint}
-              aria-pressed={layout === l.id}
-              className={`px-2.5 py-0.5 rounded-full typo-caption transition-colors ${
-                layout === l.id ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/50 hover:text-foreground/80'
-              }`}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
+        <div className="ml-auto">{layoutSwitcher}</div>
       </div>
 
-      {/* Body — Grid (separate channels) or combined Timeline */}
       <div className="flex-1 min-h-0">
-        {channelTeams.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center gap-2 text-center text-foreground/50">
-            <MessagesSquare className="w-8 h-8 text-foreground/25" />
-            <span className="typo-body">{t.monitor.channels_no_teams}</span>
-          </div>
-        ) : shown.length === 0 ? (
+        {shown.length === 0 ? (
           <div className="h-full flex items-center justify-center typo-body text-foreground/45">{t.monitor.channels_select_prompt}</div>
-        ) : layout === 'timeline' ? (
-          <div className="h-full p-3"><MonitorChannelTimeline teams={feedTeams} /></div>
         ) : (
           <div className="h-full overflow-y-auto p-3">
             <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-3">

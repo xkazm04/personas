@@ -198,7 +198,11 @@
     "review_titlebar_attention": "{count} waiting for your answer",
     "learned_constraint": "Guardrail saved to team memory",
     "learned_decision": "Decision saved to team memory",
-    "learned_generic": "Saved to memory"
+    "learned_generic": "Saved to memory",
+    "channels_hide_panel": "Hide panel",
+    "channels_composer_pick": "Pick a team",
+    "channels_composer_placeholder": "Message the team… Tag @athena to bring her in",
+    "channels_composer_send": "Send"
   },
   "common": {
     "unknown_error": "Unknown error",

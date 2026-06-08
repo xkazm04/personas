@@ -7,36 +7,21 @@
 
 import { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { X, Activity, CheckCircle2 } from 'lucide-react';
+import { X, Activity } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { useSystemStore } from '@/stores/systemStore';
-import { useAgentStore } from '@/stores/agentStore';
 import { usePendingInteractions } from './usePendingInteractions';
-import { QuickAnswerQuestionGroup } from './QuickAnswerQuestionGroup';
-import { QuickAnswerReviewStepper } from './QuickAnswerReviewStepper';
+import { QuickAnswerBody } from './QuickAnswerBody';
 
 interface QuickAnswerPopoverProps {
   onClose: () => void;
   onOpenMonitor: () => void;
 }
 
-/** Deep-link to a persona's builder surface (the C-ready seam for complex
- *  questions), mirroring the Monitor's process navigation. */
-function openBuilder(personaId: string, close: () => void) {
-  const system = useSystemStore.getState();
-  system.setSidebarSection('personas');
-  system.setEditorTab('matrix' as Parameters<typeof system.setEditorTab>[0]);
-  useAgentStore.getState().selectPersona(personaId);
-  close();
-}
-
 export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopoverProps) {
   const { t, tx } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
-  const {
-    questionGroups, reviews, total, isProcessing,
-    submitQuestionAnswers, handleReviewAction,
-  } = usePendingInteractions();
+  // Just the count for the header chip — the body owns the full data itself.
+  const { total } = usePendingInteractions();
 
   // Esc closes; click-outside closes. (Route nav / Back already clear the
   // header overlay centrally in uiSlice.)
@@ -100,46 +85,7 @@ export function QuickAnswerPopover({ onClose, onOpenMonitor }: QuickAnswerPopove
 
       {/* Body */}
       <div className="flex-1 min-h-0 overflow-y-auto p-4 flex flex-col gap-4">
-        {total === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2.5 py-12 text-center">
-            <CheckCircle2 className="w-9 h-9 text-emerald-400/80" />
-            <span className="typo-body-lg font-medium text-foreground">{t.monitor.quick_empty_title}</span>
-            <span className="typo-body text-foreground/60 max-w-[300px]">{t.monitor.quick_empty_body}</span>
-          </div>
-        ) : (
-          <>
-            {questionGroups.length > 0 && (
-              <section className="flex flex-col gap-2.5">
-                <span className="typo-label font-bold uppercase tracking-[0.16em] text-foreground/55">
-                  {t.monitor.quick_questions_header}
-                </span>
-                {questionGroups.map((g) => (
-                  <QuickAnswerQuestionGroup
-                    key={g.sessionId}
-                    group={g}
-                    busy={isProcessing}
-                    onSubmit={submitQuestionAnswers}
-                    onOpenBuilder={(pid) => openBuilder(pid, onClose)}
-                  />
-                ))}
-              </section>
-            )}
-            {reviews.length > 0 && (
-              <section className="flex flex-col gap-2.5">
-                <span className="typo-label font-bold uppercase tracking-[0.16em] text-foreground/55">
-                  {t.monitor.quick_reviews_header}
-                </span>
-                {/* One decision at a time, full description + the suggested
-                    actions as clickable triage branches. */}
-                <QuickAnswerReviewStepper
-                  reviews={reviews}
-                  busy={isProcessing}
-                  onAction={handleReviewAction}
-                />
-              </section>
-            )}
-          </>
-        )}
+        <QuickAnswerBody onAfterBuilderNav={onClose} />
       </div>
     </motion.div>
   );

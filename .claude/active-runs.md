@@ -32,6 +32,11 @@ timestamp — the next session can recognize it as abandoned.
 
 ## Active
 
+### channel-timeline-workspace — Channel Timeline → flagship 3-zone workspace (session bc1540d9)
+- Started: 2026-06-08. Master, atomic commits.
+- Paths: monitor/channels/* (MonitorChannelGrid, new ChannelTimelineWorkspace + resize/sidebar), quick-answer/* (extract QuickAnswerBody), i18n. Frontend only.
+- Note: left teams sidebar + center timeline + right Quick Answer sidebar (resizable/collapsible) + bottom team-targeted chat composer.
+
 ### refresh-context — regenerate codebase-context.md + codebase-catalogs.md (kazda machine)
 - Started: 2026-06-05 (this session, follows the Hermes /research run)
 - Paths: .claude/codebase-context.md + .claude/codebase-catalogs.md (both regenerated wholesale, single-writer). Read-only: SQLite DB at C:/Users/kazda/AppData/Roaming/com.personas.desktop/personas.db, scripts/templates/**, scripts/connectors/builtin/**

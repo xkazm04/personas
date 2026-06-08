@@ -205,6 +205,10 @@ export type Translations = {
     learned_constraint: string;
     learned_decision: string;
     learned_generic: string;
+    channels_hide_panel: string;
+    channels_composer_pick: string;
+    channels_composer_placeholder: string;
+    channels_composer_send: string;
   };
   common: {
     unknown_error: string;
