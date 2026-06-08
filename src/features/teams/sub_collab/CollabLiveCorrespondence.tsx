@@ -41,10 +41,6 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
   const memberIds = useMemo(() => new Set(members.map((m) => m.personaId)), [members]);
   const ordered = useMemo(() => [...items].reverse(), [items]);
 
-  // Group rhythm: hide the avatar/name header when the previous item shares the
-  // same author identity (consecutive-run grouping, chat-app style).
-  const identityOf = (it: TeamChannelItem) => `${it.kind}:${it.personaId ?? ''}`;
-
   useEffect(() => {
     const box = scrollBox.current;
     if (box && stickBottom.current) box.scrollTop = box.scrollHeight;
@@ -132,11 +128,9 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
         {loaded && ordered.length === 0 && (
           <p className="typo-body text-foreground/45 py-3">Quiet so far — say something to the team. Tag @athena to bring her in.</p>
         )}
-        {ordered.map((item, i) => {
-          const prev = i > 0 ? ordered[i - 1] : undefined;
-          const grouped = !!prev && identityOf(prev) === identityOf(item);
-          return <CorrespondenceRow key={item.id} item={item} grouped={grouped} personaIndex={personaIndex} />;
-        })}
+        {ordered.map((item) => (
+          <CorrespondenceRow key={item.id} item={item} personaIndex={personaIndex} />
+        ))}
       </div>
 
       {/* ── Composer ── */}
@@ -161,128 +155,128 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
   );
 }
 
-function CorrespondenceRow({ item, grouped, personaIndex }: { item: TeamChannelItem; grouped: boolean; personaIndex: ReturnType<typeof usePersonaIndex> }) {
+/**
+ * Resolve a channel item into the uniform two-row shape: SOURCE + EVENT for
+ * row 1, MESSAGE for row 2. Keeps the per-kind vocabulary in one place so the
+ * row layout below stays a single structure for every author kind.
+ */
+function resolveRow(item: TeamChannelItem) {
+  let event = item.label;
+  let eventTone = 'text-foreground/50';
+  let eventMono = false;
+  let message: string | null = item.body;
+  let artifact: { url: string; label: string } | null = null;
+  let isError = false;
+  let alert = false;
+
+  if (item.kind === 'step') {
+    event = STEP_VERB[item.label] ?? item.label;
+    eventTone = STEP_TONE[item.label] ?? 'text-foreground/55';
+    isError = item.label === 'step_failed';
+    alert = item.label === 'status_awaiting_review' || isError;
+  } else if (item.kind === 'event') {
+    const parsed = parsePayload(item.extra);
+    message = parsed.summary;
+    artifact = parsed.artifact;
+    eventTone = FAMILY_TEXT[eventFamily(item.label)] ?? FAMILY_TEXT.other!;
+    eventMono = true;
+  } else if (item.kind === 'memory') {
+    event = `memory · ${item.label}`;
+    eventTone = 'text-amber-300/80';
+  } else if (item.kind === 'directive') {
+    event = 'directive';
+    eventTone = 'text-status-success';
+  } else if (item.kind === 'persona' || item.kind === 'athena' || item.kind === 'director') {
+    const meta = AUTHOR_KIND_META[item.kind];
+    event = meta.label;
+    eventTone = meta.tag;
+  }
+  return { event, eventTone, eventMono, message, artifact, isError, alert };
+}
+
+/**
+ * Uniform two-row message row.
+ *   Row 1 (SOURCE + EVENT): sigil · author name (in their colour) · event chip · time
+ *   Row 2 (MESSAGE): the body, in an accent-tinted container indented under the source
+ * A "Needs your review" row carries the inline ReviewInterventionCard below.
+ */
+function CorrespondenceRow({ item, personaIndex }: { item: TeamChannelItem; personaIndex: ReturnType<typeof usePersonaIndex> }) {
   const persona = item.personaId ? personaIndex.get(item.personaId) : undefined;
   const accent = itemAccent(item, persona);
-  const name = authorName(item, persona);
+  const source = authorName(item, persona);
+  const { event, eventTone, eventMono, message, artifact, isError, alert } = resolveRow(item);
+
   const isUser = item.kind === 'directive';
-  const isInterjection = item.kind === 'athena' || item.kind === 'director';
+  const isAgentVoice = item.kind === 'athena' || item.kind === 'director';
+  const intervene = item.kind === 'step' && item.label === 'status_awaiting_review' && !!item.assignmentId;
 
-  // System/status line — the step layer, quiet and centred-left so human voices lead.
-  if (item.kind === 'step') {
-    const verb = STEP_VERB[item.label] ?? item.label;
-    const tone = STEP_TONE[item.label] ?? 'text-foreground/55';
-    const gate = item.label === 'status_awaiting_review';
-    const failed = item.label === 'step_failed';
-    // A review gate (or a failure that paused the mission) gets the inline
-    // intervention card so the user can resolve it without leaving the channel.
-    const intervene = gate && !!item.assignmentId;
-    return (
-      <div className={intervene ? 'pl-9 py-0.5' : ''}>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16 }}
-          className={`flex items-center gap-2 py-0.5 ${intervene ? '' : 'pl-9'} ${!intervene && (gate || failed) ? 'rounded-card border border-status-warning/25 bg-status-warning/5 px-2' : ''}`}>
-          {(gate || failed) && <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />}
-          <span className="typo-caption" style={{ color: accent }}>{name}</span>
-          <span className={`typo-caption ${tone}`}>{verb}</span>
-          {item.body && <span className="typo-caption text-foreground/55 truncate">· {item.body}</span>}
-          <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
-        </motion.div>
-        {intervene && item.assignmentId && (
-          <ReviewInterventionCard assignmentId={item.assignmentId} personaIndex={personaIndex} />
-        )}
-      </div>
+  const deliveries = isUser ? parseDeliveries(item) : [];
+  const seenIds = [...new Set(deliveries.map((d) => d.persona_id))];
+
+  // Row-2 container tint: tinted for human/agent voices, subtle for system rows.
+  let bodyClass = 'border-primary/12 bg-secondary/15';
+  if (isUser) bodyClass = 'border-status-success/25 bg-status-success/10';
+  else if (item.kind === 'athena') bodyClass = AUTHOR_KIND_META.athena.bubble;
+  else if (item.kind === 'director') bodyClass = AUTHOR_KIND_META.director.bubble;
+  else if (item.kind === 'memory') bodyClass = 'border-amber-500/20 bg-amber-500/5';
+
+  // Row-1 sigil.
+  const sigil =
+    item.kind === 'memory' ? (
+      <Pin className="w-3.5 h-3.5 text-amber-300/80" />
+    ) : isAgentVoice ? (
+      (() => { const M = AUTHOR_KIND_META[item.kind as 'athena' | 'director']; return <M.Icon className={`w-3.5 h-3.5 ${M.iconColor}`} />; })()
+    ) : persona ? (
+      <PersonaIcon icon={persona.icon} color={persona.color} size="w-3.5 h-3.5" />
+    ) : (
+      <span className="typo-caption text-foreground/40">·</span>
     );
-  }
 
-  // Bus event — a quiet status with artifact.
-  if (item.kind === 'event') {
-    const { summary, artifact } = parsePayload(item.extra);
-    const fam = eventFamily(item.label);
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16 }} className="flex items-baseline gap-2 pl-9 py-0.5">
-        <span className="typo-caption" style={{ color: accent }}>{name}</span>
-        <span className={`typo-caption font-mono ${FAMILY_TEXT[fam] ?? FAMILY_TEXT.other}`}>{item.label}</span>
-        {summary && <span className="typo-caption text-foreground/65 truncate">{summary}</span>}
-        {artifact && (
-          <a href={artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 typo-caption text-status-info hover:underline flex-shrink-0">
-            <ExternalLink className="w-3 h-3" /> {artifact.label}
-          </a>
-        )}
-        <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
-      </motion.div>
-    );
-  }
-
-  // Memory — a pinned note line.
-  if (item.kind === 'memory') {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16 }} className="flex items-baseline gap-2 pl-9 py-0.5">
-        <Pin className="w-3 h-3 text-amber-300/80 flex-shrink-0 self-center" />
-        <span className="typo-caption uppercase tracking-wider text-amber-300/80">{item.label}</span>
-        <span className="typo-caption text-foreground/70 truncate">{item.body}</span>
-      </motion.div>
-    );
-  }
-
-  // Athena / Director — centred interjection ribbon.
-  if (isInterjection) {
-    const meta = AUTHOR_KIND_META[item.kind as 'athena' | 'director'];
-    return (
-      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex justify-center py-1">
-        <div className={`max-w-[88%] rounded-card border px-3 py-2 ${meta.bubble}`}>
-          <div className="flex items-center gap-1.5">
-            <meta.Icon className={`w-3.5 h-3.5 ${meta.iconColor}`} />
-            <span className={`typo-caption uppercase tracking-wider font-semibold ${meta.tag}`}>{meta.label}</span>
-            <span className="typo-caption text-foreground/35"><RelativeTime timestamp={item.at} /></span>
-          </div>
-          <p className="mt-0.5 typo-body text-foreground/85 whitespace-pre-wrap">{item.body}</p>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // User directive — right-aligned bubble with receipts.
-  if (isUser) {
-    const deliveries = parseDeliveries(item);
-    const seenIds = [...new Set(deliveries.map((d) => d.persona_id))];
-    return (
-      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex justify-end py-0.5">
-        <div className="max-w-[78%] rounded-card rounded-br-sm border border-status-success/25 bg-status-success/10 px-3 py-2">
-          <p className="typo-body text-foreground/90 whitespace-pre-wrap">{item.body}</p>
-          <p className="mt-1 inline-flex items-center gap-1.5 typo-caption text-foreground/55 flex-wrap">
-            {seenIds.length > 0 ? (
-              <><CheckCheck className="w-3.5 h-3.5 text-status-success" /> seen by {seenIds.slice(0, 3).map((pid) => <PersonaChip key={pid} persona={personaIndex.get(pid)} />)}{seenIds.length > 3 && <span>+{seenIds.length - 3}</span>}</>
-            ) : (
-              <><Check className="w-3.5 h-3.5" /> delivered at next step boundary</>
-            )}
-            <span className="text-foreground/30"><RelativeTime timestamp={item.at} /></span>
-          </p>
-        </div>
-      </motion.div>
-    );
-  }
-
-  // Persona channel_post — left bubble, avatar shown unless grouped with prev.
   return (
-    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.18 }} className="flex gap-2.5 py-0.5">
-      <span className="w-7 flex-shrink-0 flex justify-center">
-        {!grouped && (
-          <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-secondary/70 border flex-shrink-0 mt-0.5" style={{ borderColor: accent }}>
-            {persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-4 h-4" /> : <span className="typo-caption text-foreground/40">·</span>}
-          </span>
-        )}
-      </span>
-      <div className="flex-1 min-w-0">
-        {!grouped && (
-          <div className="flex items-center gap-2 leading-tight">
-            <span className="typo-body font-medium" style={{ color: accent }}>{name}</span>
-            <span className="typo-caption text-foreground/35"><RelativeTime timestamp={item.at} /></span>
-          </div>
-        )}
-        <div className="max-w-[78%] rounded-card rounded-tl-sm border border-primary/12 bg-secondary/20 px-3 py-2 mt-0.5">
-          <p className="typo-body text-foreground/85 whitespace-pre-wrap">{item.body}</p>
-        </div>
+    <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className="py-1">
+      {/* Row 1 — SOURCE + EVENT */}
+      <div className="flex items-center gap-2 flex-wrap leading-tight">
+        <span
+          className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-secondary/70 border flex-shrink-0"
+          style={{ borderColor: accent }}
+        >
+          {sigil}
+        </span>
+        <span className="typo-body font-medium" style={{ color: accent }}>{source}</span>
+        {alert && <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />}
+        <span className={`typo-caption uppercase tracking-wider ${eventMono ? 'font-mono normal-case tracking-normal' : ''} ${eventTone}`}>{event}</span>
+        <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
       </div>
+
+      {/* Row 2 — MESSAGE */}
+      {(message || artifact || isUser || intervene) && (
+        <div className="mt-1 ml-8">
+          {(message || artifact || isUser) && (
+            <div className={`rounded-card border px-3 py-2 ${bodyClass}`}>
+              {message && (
+                <p className={`typo-body whitespace-pre-wrap ${isError ? 'text-status-error/90' : 'text-foreground/85'}`}>{message}</p>
+              )}
+              {artifact && (
+                <a href={artifact.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-interactive bg-secondary/40 border border-border typo-caption text-status-info hover:bg-secondary/60 transition-colors">
+                  <ExternalLink className="w-3 h-3" /> {artifact.label}
+                </a>
+              )}
+              {isUser && (
+                <p className="mt-1 inline-flex items-center gap-1.5 typo-caption text-foreground/55 flex-wrap">
+                  {seenIds.length > 0 ? (
+                    <><CheckCheck className="w-3.5 h-3.5 text-status-success" /> seen by {seenIds.slice(0, 3).map((pid) => <PersonaChip key={pid} persona={personaIndex.get(pid)} />)}{seenIds.length > 3 && <span>+{seenIds.length - 3}</span>}</>
+                  ) : (
+                    <><Check className="w-3.5 h-3.5" /> delivered at next step boundary</>
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+          {intervene && item.assignmentId && (
+            <ReviewInterventionCard assignmentId={item.assignmentId} personaIndex={personaIndex} />
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }
