@@ -1703,7 +1703,14 @@ fn find_triage_candidates(pool: &DbPool) -> Result<Vec<TriageCandidate>, crate::
                 COALESCE(description,''), COALESCE(suggested_actions,'')
          FROM persona_manual_reviews
          WHERE status = 'pending' AND datetime(created_at) < datetime('now', ?1)
-         ORDER BY created_at ASC",
+         -- Auto-APPROVABLE severities first (low/medium), THEN high/critical,
+         -- each oldest-first. Without this, a backlog of legitimately-held
+         -- high/critical business items (PHI/PII/compliance) at the front of an
+         -- oldest-first queue permanently STARVES the approvable low/medium
+         -- reviews behind them under the per-tick cap — the real reason
+         -- autonomous triage resolved nothing despite 29 approvable pending.
+         ORDER BY CASE WHEN lower(COALESCE(severity,'medium')) IN ('low','medium') THEN 0 ELSE 1 END,
+                  created_at ASC",
     )?;
     let rows = stmt.query_map(rusqlite::params![cutoff], |r| {
         Ok(TriageCandidate {
