@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck } from 'lucide-react';
+import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex, PersonaChip, useAssignmentSteps } from '../sub_teamWorkspace/teamStudio/boardShared';
@@ -20,15 +20,15 @@ import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
 /**
- * CORRESPONDENCE variant — "the team is talking".
+ * CORRESPONDENCE — the flagship team channel (C5 winner).
  *
- * Metaphor: a warm group conversation. Messages render as voiced BUBBLES — the
- * user right-aligned, personas left with their avatar, with consecutive
- * messages from one author grouped under a single avatar (chat-app rhythm).
- * Athena and Director arrive as centred INTERJECTION ribbons (a coach speaking
- * up), and the step layer reads as quiet system "status" lines so the human
- * voices dominate. Softer header (who's here). Differs from baseline (flat
- * rows) and Brief (dense log) by leaning all-in on the conversation feel.
+ * A bordered "channel" card: a HEADER BAND (crest · identity · live presence
+ * with status dots · a data glance) over the conversation, with the composer as
+ * a band at the bottom. Every message uses one uniform TWO-ROW shape —
+ * SOURCE + EVENT on row 1, the MESSAGE in an accent-tinted container on row 2
+ * (see `CorrespondenceRow` / `resolveRow`). "Needs your review" rows carry the
+ * inline team-review intervention; pending manual reviews surface via the
+ * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
 export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; members: StudioMember[] }) {
   const personaIndex = usePersonaIndex();
@@ -81,21 +81,23 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
   const workingNames = members
     .filter((m) => presence.get(m.personaId) === 'working')
     .map((m) => m.name.replace(/^T: /, ''));
+  const reviewCount = members.filter((m) => presence.get(m.personaId) === 'waiting').length;
 
   return (
-    <div className="h-full flex flex-col min-h-0">
-      {/* ── Soft header: who's here ── */}
-      <div className="flex-shrink-0 flex items-center gap-3 pb-2">
-        <div className="relative w-7 h-7 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
-          <Radio className="w-3.5 h-3.5 text-status-error" />
+    <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
+      {/* ── Header band: identity · live presence · data glance ── */}
+      <div className="flex-shrink-0 border-b border-border bg-foreground/[0.015] px-4 py-3 flex items-center gap-3">
+        <div className="relative w-8 h-8 rounded-full bg-status-error/15 flex items-center justify-center flex-shrink-0">
+          <Radio className="w-4 h-4 text-status-error" />
         </div>
         <div className="min-w-0">
-          <div className="typo-body font-semibold text-foreground leading-tight">Team channel</div>
+          <div className="typo-body-lg font-semibold text-foreground leading-tight">Team channel</div>
           <div className="typo-caption text-foreground/50 leading-tight truncate">
             {workingNames.length > 0 ? `${workingNames.slice(0, 3).join(', ')} working…` : `${members.length} members`}
           </div>
         </div>
         <div className="flex-1" />
+        {/* Live presence */}
         <div className="flex items-center -space-x-1.5">
           {members.slice(0, 8).map((m) => {
             const st = presence.get(m.personaId);
@@ -107,14 +109,29 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
                 style={st === 'working' ? { boxShadow: `0 0 0 2px ${m.color ?? '#60a5fa'}` } : undefined}
               >
                 <PersonaIcon icon={m.icon} color={m.color} size="w-4 h-4" />
+                {st && (
+                  <span className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full ring-2 ring-background ${st === 'working' ? 'bg-status-info' : 'bg-status-warning'}`} />
+                )}
               </span>
             );
           })}
         </div>
+        {/* Data glance */}
+        <div className="flex items-center gap-3.5 typo-data text-foreground tabular-nums pl-2 border-l border-border ml-1">
+          <span className="flex items-center gap-1.5" title="Transmissions">
+            <Activity className="w-4 h-4 text-foreground/45" /> {items.length}
+          </span>
+          {workingNames.length > 0 && <span className="text-status-info">{workingNames.length} working</span>}
+          {reviewCount > 0 && (
+            <span className="text-status-warning flex items-center gap-1.5">
+              <AlertCircle className="w-4 h-4" /> {reviewCount}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* ── Conversation ── */}
-      <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto rounded-card border border-border bg-foreground/[0.01] px-3 py-3 space-y-1">
+      <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1">
         {/* Pending manual reviews (Director coaching / triage) for this team's
             personas — the quick-answer card, cross-referenced into the channel. */}
         <PendingReviewTray memberIds={memberIds} personaIndex={personaIndex} />
@@ -123,10 +140,25 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
             <span className="typo-caption text-foreground/40">loading earlier history…</span>
           </div>
         )}
-        {exhausted && <p className="py-1 text-center typo-caption text-foreground/35">— start of the conversation —</p>}
+        {exhausted && ordered.length > 0 && <p className="py-1 text-center typo-caption text-foreground/35">— start of the conversation —</p>}
         {!loaded && <p className="typo-body text-foreground/45 py-3">Tuning in…</p>}
         {loaded && ordered.length === 0 && (
-          <p className="typo-body text-foreground/45 py-3">Quiet so far — say something to the team. Tag @athena to bring her in.</p>
+          <div className="flex flex-col items-center justify-center text-center py-14 px-6">
+            <div className="relative flex items-center justify-center mb-4" style={{ width: 96, height: 96 }}>
+              <div className="pointer-events-none absolute inset-0" style={{ background: 'radial-gradient(circle at 50% 50%, rgba(248,113,113,0.14), transparent 70%)' }} />
+              <div className="relative w-14 h-14 rounded-full bg-status-error/12 border border-status-error/20 flex items-center justify-center">
+                <Radio className="w-7 h-7 text-status-error/80" />
+              </div>
+            </div>
+            <h3 className="typo-section-title text-foreground">The team channel is quiet</h3>
+            <p className="typo-body text-foreground/60 mt-1.5 max-w-sm">
+              This is where the team talks — handoffs, PRs, QA verdicts, and Director coaching all land here as they happen.
+            </p>
+            <div className="mt-3 flex flex-col gap-1.5 typo-caption text-foreground/50">
+              <span className="inline-flex items-center gap-1.5"><Send className="w-3.5 h-3.5 text-status-success" /> Post a directive below to steer the next steps</span>
+              <span className="inline-flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-violet-300" /> Tag <span className="text-violet-300 font-medium">@athena</span> to bring her into the conversation</span>
+            </div>
+          </div>
         )}
         {ordered.map((item) => (
           <CorrespondenceRow key={item.id} item={item} personaIndex={personaIndex} />
@@ -134,7 +166,7 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
       </div>
 
       {/* ── Composer ── */}
-      <div className="flex-shrink-0 flex items-center gap-2 pt-2">
+      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-3 border-t border-border bg-foreground/[0.015]">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
