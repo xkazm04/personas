@@ -108,7 +108,7 @@ pub fn list_team_channel(
         let mut stmt = conn.prepare(
             "SELECT e.id,
                     strftime('%Y-%m-%dT%H:%M:%SZ', datetime(e.created_at)) AS at,
-                    e.event_type, e.payload, e.source_id
+                    e.event_type, e.payload, e.source_id, e.payload_iv
              FROM persona_events e
              WHERE e.source_id IN (SELECT persona_id FROM persona_team_members WHERE team_id = ?1)
                AND e.event_type != 'task_completed'
@@ -117,12 +117,23 @@ pub fn list_team_channel(
              ORDER BY at DESC LIMIT ?3",
         )?;
         let rows = stmt.query_map(params![team_id, cursor, limit], |r| {
+            // `persona_events.payload` is AES-encrypted at rest when `payload_iv`
+            // is set (mirrors events::row_to_event). Decrypt here — reading the
+            // raw column would surface ciphertext as a "hashed" message body.
+            let raw_payload: Option<String> = r.get(3)?;
+            let payload_iv: Option<String> = r.get(5).unwrap_or(None);
+            let extra = match (raw_payload, payload_iv) {
+                (Some(ct), Some(ref iv)) if !iv.is_empty() => {
+                    crate::engine::crypto::decrypt_from_db(&ct, iv).ok()
+                }
+                (p, _) => p, // plaintext or none
+            };
             Ok(TeamChannelItem {
                 id: format!("pe-{}", r.get::<_, String>(0)?),
                 kind: "event".into(),
                 at: r.get(1)?,
                 label: r.get(2)?,
-                extra: r.get(3)?,
+                extra,
                 persona_id: r.get(4)?,
                 body: None,
                 assignment_id: None,

@@ -73,12 +73,32 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
     setReplyTarget(null);
     stickBottom.current = true;
     if (/@athena\b/i.test(text)) {
+      // Tagging Athena runs her turn in the BACKGROUND (chat stays closed) and
+      // tells her which team/channel this came from so she reacts by posting
+      // BACK INTO the channel (companion_post_team_message), not in a chat panel.
       useCompanionStore.getState().setPendingPrompt({
-        text: `I posted this in a team channel and tagged you:\n\n"${text}"\n\nPlease respond or help with this.`,
+        text:
+          `You were tagged in a team channel (team_id: ${teamId}). The user wrote:\n\n` +
+          `"${text}"\n\n` +
+          `Respond by posting a short, helpful reply INTO that team's channel via your ` +
+          `post_team_message capability (team_id: ${teamId}), so the team and the user see ` +
+          `it in the conversation — do NOT reply only in chat. If a brief action helps, do ` +
+          `it first, then post a one-line status to the channel.`,
         autoSend: true,
       });
-      useCompanionStore.getState().setState('open');
+      // Intentionally NOT opening the companion panel — Athena answers in-channel.
     }
+  };
+
+  // @ath → @athena autocomplete: a trailing @-token that prefixes "athena".
+  const athenaSuggest = useMemo(() => {
+    const m = draft.match(/(?:^|\s)@([a-z]{1,5})$/i);
+    if (!m) return null;
+    const partial = m[1]!.toLowerCase();
+    return 'athena'.startsWith(partial) ? partial : null;
+  }, [draft]);
+  const completeAthena = () => {
+    setDraft((d) => d.replace(/(^|\s)@([a-z]{1,5})$/i, (_full, pre: string) => `${pre}@athena `));
   };
 
   const workingNames = members
@@ -189,11 +209,23 @@ export function CollabLiveCorrespondence({ teamId, members }: { teamId: string; 
             </button>
           </div>
         )}
+        {athenaSuggest && (
+          <button
+            type="button"
+            onClick={completeAthena}
+            className="self-start inline-flex items-center gap-1.5 px-2.5 py-1 rounded-card border border-violet-500/30 bg-violet-500/10 typo-caption text-violet-200 hover:bg-violet-500/20 transition-colors"
+          >
+            <Sparkles className="w-3.5 h-3.5" /> @athena <span className="text-foreground/40">— Tab to complete</span>
+          </button>
+        )}
         <div className="flex items-center gap-2">
         <input
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => { if (e.key === 'Enter') send(); }}
+          onKeyDown={(e) => {
+            if (e.key === 'Tab' && athenaSuggest) { e.preventDefault(); completeAthena(); return; }
+            if (e.key === 'Enter') send();
+          }}
           placeholder={replyTarget ? 'Write your reply…' : 'Say something to the team… Tag @athena to bring her in'}
           className="flex-1 px-3.5 py-2.5 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
         />
@@ -269,6 +301,9 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
 
   const isUser = item.kind === 'directive';
   const isAgentVoice = item.kind === 'athena' || item.kind === 'director';
+  // System activity (the step layer + bus events) reads as a distinct compact
+  // ALERT strip, visually separate from the human/agent conversation bubbles.
+  const isSystem = item.kind === 'step' || item.kind === 'event';
   const intervene = item.kind === 'step' && item.label === 'status_awaiting_review' && !!item.assignmentId;
   // A message you can reply to — the conversational kinds (not raw step/event rows).
   const replyable = !!onReply && (item.kind === 'persona' || item.kind === 'athena' || item.kind === 'director' || item.kind === 'directive' || item.kind === 'memory');
@@ -296,6 +331,33 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
     ) : (
       <span className="typo-caption text-foreground/40">·</span>
     );
+
+  // ── System activity: a distinct compact alert strip (step layer + bus) ──
+  if (isSystem) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.14 }} className="group py-0.5">
+        <div className={`flex items-center gap-2 rounded-card border px-2.5 py-1.5 ${alert ? 'border-status-warning/30 bg-status-warning/[0.06]' : 'border-border/50 bg-foreground/[0.02]'}`}>
+          {alert ? (
+            <AlertCircle className="w-3.5 h-3.5 text-status-warning flex-shrink-0" />
+          ) : (
+            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
+          )}
+          <span className="typo-caption font-medium flex-shrink-0" style={{ color: accent }}>{source}</span>
+          <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${eventMono ? 'font-mono normal-case tracking-normal' : ''} ${eventTone}`}>{event}</span>
+          {message && <span className={`typo-caption truncate ${isError ? 'text-status-error/80' : 'text-foreground/55'}`}>{message}</span>}
+          {artifact && (
+            <a href={artifact.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 typo-caption text-status-info hover:underline flex-shrink-0">
+              <ExternalLink className="w-3 h-3" /> {artifact.label}
+            </a>
+          )}
+          <span className="ml-auto typo-caption text-foreground/30 flex-shrink-0"><RelativeTime timestamp={item.at} /></span>
+        </div>
+        {intervene && item.assignmentId && (
+          <div className="ml-2 mt-1"><ReviewInterventionCard assignmentId={item.assignmentId} personaIndex={personaIndex} /></div>
+        )}
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.16 }} className={`group py-1 ${isReply ? 'ml-5 pl-3 border-l-2 border-primary/15' : ''}`}>
@@ -350,6 +412,11 @@ function CorrespondenceRow({ item, personaIndex, parent, onReply }: {
                     <><CheckCheck className="w-3.5 h-3.5 text-status-success" /> seen by {seenIds.slice(0, 3).map((pid) => <PersonaChip key={pid} persona={personaIndex.get(pid)} />)}{seenIds.length > 3 && <span>+{seenIds.length - 3}</span>}</>
                   ) : (
                     <><Check className="w-3.5 h-3.5" /> delivered at next step boundary</>
+                  )}
+                  {/@athena\b/i.test(item.body ?? '') && (
+                    <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded-interactive bg-violet-500/10 border border-violet-500/25 text-violet-300">
+                      <Sparkles className="w-3 h-3" /> Athena notified
+                    </span>
                   )}
                 </p>
               )}

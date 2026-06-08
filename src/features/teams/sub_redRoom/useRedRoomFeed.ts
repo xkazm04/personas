@@ -106,10 +106,20 @@ export function parsePayload(payload: string | null): ParsedPayload {
       return { summary: summary ? summary.slice(0, 280) : null, artifact };
     }
   } catch {
-    // not JSON — treat the raw payload as the summary line
+    // not JSON — treat the raw payload as the summary line, UNLESS it looks
+    // like an opaque token (a long unbroken base64/hex/uuid-ish blob with no
+    // whitespace). Those are ciphertext or ids that leaked into the payload,
+    // not human messages — suppress rather than render a "hashed" line.
+    if (looksOpaque(payload)) return { summary: null, artifact: null };
     return { summary: payload.slice(0, 280), artifact: null };
   }
   return { summary: null, artifact: null };
+}
+
+/** True for long whitespace-free base64/hex-ish blobs (ciphertext / ids). */
+function looksOpaque(s: string): boolean {
+  const t = s.trim();
+  return t.length >= 40 && !/\s/.test(t) && /^[A-Za-z0-9+/=_\-.]+$/.test(t);
 }
 
 function firstString(o: Record<string, unknown>, keys: string[]): string | undefined {
