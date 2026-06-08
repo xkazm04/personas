@@ -103,6 +103,17 @@ export interface ProcessActivitySlice {
    * `"input_required"` everywhere (see `status_tokens` in `src/i18n/en.ts`).
    */
   clearNonActive: () => void;
+  /**
+   * Reap `running` entries whose `startedAt` is older than `maxAgeMs` — they are
+   * almost certainly STALE: the execution completed/failed via a path that never
+   * emitted a frontend `processEnded` (a backend restart + orphan-recovery marks
+   * the row failed server-side with no event; a dropped completion event), so the
+   * monitor kept showing them "running" forever (the "29 running personas" that
+   * didn't match reality). The engine hard-caps any single execution at 20 min,
+   * so anything `running` past ~25 min cannot still be live. Decrements the count
+   * and records the reaped entries as `failed` in recent history.
+   */
+  reapStaleRunning: (maxAgeMs: number) => void;
 }
 
 const MAX_RECENT = 10;
@@ -346,6 +357,27 @@ export const createProcessActivitySlice: StateCreator<
         activeProcesses: kept,
         activeProcessCount: Object.keys(kept).length,
         recentProcesses: [],
+      };
+    });
+  },
+
+  reapStaleRunning: (maxAgeMs) => {
+    set((state) => {
+      const cutoff = Date.now() - maxAgeMs;
+      const reaped: ActiveProcess[] = [];
+      const kept: Record<string, ActiveProcess> = {};
+      for (const [key, proc] of Object.entries(state.activeProcesses)) {
+        if (proc.status === "running" && proc.startedAt < cutoff) {
+          reaped.push({ ...proc, status: "failed" });
+        } else {
+          kept[key] = proc;
+        }
+      }
+      if (reaped.length === 0) return state;
+      return {
+        activeProcesses: kept,
+        activeProcessCount: Object.keys(kept).length,
+        recentProcesses: [...reaped, ...state.recentProcesses].slice(0, MAX_RECENT),
       };
     });
   },

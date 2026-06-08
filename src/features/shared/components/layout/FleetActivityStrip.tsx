@@ -67,6 +67,20 @@ export default function FleetActivityStrip() {
     return () => controls.stop();
   }, [prefersReducedMotion, pulseOpacity]);
 
+  // Self-heal stale `running` entries: an execution that completed/failed via a
+  // path that never emitted `processEnded` (backend restart + orphan-recovery,
+  // dropped completion event) would otherwise show "running" forever and inflate
+  // the monitor count vs reality. The engine hard-caps a single execution at
+  // 20 min, so reap anything `running` past 25 min. Runs every 60s from this
+  // always-mounted chrome strip.
+  const reapStaleRunning = useOverviewStore((s) => s.reapStaleRunning);
+  useEffect(() => {
+    const STALE_MS = 25 * 60 * 1000;
+    reapStaleRunning(STALE_MS); // reap once on mount (catches post-restart staleness)
+    const id = setInterval(() => reapStaleRunning(STALE_MS), 60_000);
+    return () => clearInterval(id);
+  }, [reapStaleRunning]);
+
   // Subscribe to the whole map but reduce to the pulse with a memo keyed on the
   // map identity — the store replaces `activeProcesses` immutably on change, so
   // this recomputes exactly when the fleet's live state moves.
