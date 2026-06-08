@@ -1,5 +1,7 @@
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
-import { silentCatch } from '@/lib/silentCatch';
+
+// Canonical, shared across every review surface (Phase 5 convergence).
+export { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -31,14 +33,6 @@ export const SOURCE_LABELS: Record<SourceFilter, string> = {
   cloud: 'Cloud',
 };
 
-export function parseSuggestedActions(raw: string | null | undefined): string[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed.map(String);
-  } catch (err) { silentCatch("features/overview/sub_manual-review/libs/reviewHelpers:catch1")(err); }
-  return raw.split(/[;\n]+/).map((s) => s.trim()).filter(Boolean);
-}
 
 // Personas often prefix review titles with their own name (e.g.
 // "Idea Harvest Backlog - Approve Prioritization"). The persona is already

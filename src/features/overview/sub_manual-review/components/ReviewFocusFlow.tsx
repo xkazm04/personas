@@ -15,6 +15,7 @@ import { formatRelativeTime } from '@/lib/utils/formatters';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { ContextDataPreview } from './ReviewListItem';
 import { parseSuggestedActions, stripPersonaPrefix } from '../libs/reviewHelpers';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import {
   type TriageReview,
   type DecisionVerdict,
@@ -414,7 +415,7 @@ export function ReviewFocusFlow({ reviews, onApprove, onReject, isProcessing }: 
 
                   {/* Description */}
                   {current!.description && (
-                    <p className="typo-body text-foreground/90 leading-relaxed whitespace-pre-wrap">{current!.description}</p>
+                    <MarkdownRenderer content={current!.description} className="typo-body text-foreground/90 leading-relaxed" />
                   )}
 
                   {/* Extra prose context preserved by the backend when

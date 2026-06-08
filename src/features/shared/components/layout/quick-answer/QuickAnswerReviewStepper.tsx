@@ -5,6 +5,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { severityBucket, SEVERITY_META, severityLabel } from '@/features/shared/components/layout/monitor/monitorModel';
+import { parseSuggestedActions } from '@/lib/reviews/suggestedActions';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
 
@@ -18,21 +19,6 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * Approve/Reject is the fallback when a review carries no suggestions. The
  * description renders full and untruncated so the user knows what they pick.
  */
-
-/** Parse the suggested-actions JSON (`["a","b"]`, `{actions:[…]}`, or a string). */
-function parseActions(raw: string | null): string[] {
-  if (!raw) return [];
-  try {
-    const v: unknown = JSON.parse(raw);
-    if (Array.isArray(v)) return v.filter((x): x is string => typeof x === 'string' && x.trim().length > 0);
-    if (v && typeof v === 'object' && Array.isArray((v as { actions?: unknown }).actions)) {
-      return (v as { actions: unknown[] }).actions.filter((x): x is string => typeof x === 'string');
-    }
-  } catch {
-    if (raw.trim()) return [raw.trim()];
-  }
-  return [];
-}
 
 export function QuickAnswerReviewStepper({
   reviews,
@@ -65,7 +51,7 @@ export function QuickAnswerReviewStepper({
   if (reviews.length === 0 || !review) return null;
   const bucket = severityBucket(review.severity);
   const sev = SEVERITY_META[bucket];
-  const actions = parseActions(review.suggested_actions);
+  const actions = parseSuggestedActions(review.suggested_actions);
 
   // Resolve with an optional chosen action; the typed note augments it.
   const act = async (status: ManualReviewStatus, chosen?: string) => {

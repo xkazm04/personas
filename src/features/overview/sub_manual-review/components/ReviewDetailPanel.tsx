@@ -7,6 +7,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { listReviewMessages, addReviewMessage } from '@/api/overview/reviews';
 import { formatRelativeTime } from '@/lib/utils/formatters';
 import { SEVERITY_LABELS, parseSuggestedActions } from '../libs/reviewHelpers';
+import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { SeverityIndicator, ContextDataPreview } from './ReviewListItem';
 import type { ManualReviewItem } from '@/lib/types/types';
 import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
@@ -136,7 +137,7 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
               <span className="typo-body text-foreground">{formatRelativeTime(review.created_at)}</span>
             </div>
             <div className="rounded-modal bg-violet-500/[0.06] border border-violet-500/15 px-3.5 py-2.5">
-              <p className="typo-body text-foreground leading-relaxed whitespace-pre-wrap">{review.content}</p>
+              <MarkdownRenderer content={review.content} className="typo-body text-foreground leading-relaxed" />
             </div>
             {contextData && (
               <div className="mt-2 rounded-card bg-secondary/30 border border-primary/10 px-3 py-2">

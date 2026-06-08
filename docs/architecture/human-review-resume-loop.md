@@ -129,14 +129,25 @@ Today `suggested_actions` were inert everywhere except the Quick Answer stepper
 Keep all three surfaces (orb = ambient one-shot, Quick Answer = fast queue,
 Overview = deep workspace) but make them feel like one system:
 
-1. **One shared "review body" renderer** — markdown + `context_data`/decisions +
-   media + suggested-action branches — that degrades by available space. Add
-   markdown to the Overview surface (the only one without it); delete the three
-   duplicate `parseSuggestedActions`/`parseDecisions` implementations.
-2. **One action model** (Phase 4) and **one reaction** (Phase 1) underneath, so
-   the surface is purely a presentation choice.
-3. Drop dead code surfaced by the analysis (`TriagePlayer.tsx`, duplicate
-   parsers); restore `use_case_id` to the UI type for capability attribution.
+1. ◑ **Rendering convergence (in progress).**
+   - ✅ **Markdown in the Overview** — the Overview was the only surface
+     rendering review descriptions as plain `whitespace-pre-wrap`; its triage
+     player (`ReviewFocusFlow`), inbox detail (`ReviewDetailPanel`), and
+     multi-decision cards (`FocusedDecisionCard`) now use `MarkdownRenderer`,
+     matching the orb + Quick Answer.
+   - ✅ **One `parseSuggestedActions`** — the three drifting copies collapse to a
+     single canonical `@/lib/reviews/suggestedActions` (handles `["…"]`,
+     `{"actions":[…]}`, or a delimited string); `reviewHelpers` re-exports it and
+     the Quick Answer stepper imports it.
+   - ⏳ A single shared "review body" *component* (markdown + context/decisions +
+     media + action branches) is the larger follow-up; for now the surfaces share
+     the renderer + parser, not one component.
+2. ⏳ **One action model.** Adopt `dispatch_review_action` (Phase 4) in the
+   Overview triage action bar + the orb bubble, so picking an action carries it
+   out everywhere (today only the Quick Answer stepper dispatches).
+3. ⏳ Drop dead code (`TriagePlayer.tsx` — still referenced for its `TriageReview`
+   type + a cast in `ManualReviewList`, so it needs the type relocated first);
+   restore `use_case_id` to the `ManualReviewItem` UI type for attribution.
 
 ---
 
