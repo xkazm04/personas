@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check } from 'lucide-react';
+import { Gauge, AlertTriangle, RefreshCw, DollarSign, Check, Layers } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { useAppSetting } from '@/hooks/utility/data/useAppSetting';
 import { getAllMonthlySpend } from '@/api/overview/observability';
@@ -8,9 +8,18 @@ import { formatCost } from '@/lib/utils/formatters';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RecentChangeChip } from '@/features/settings/shared/RecentChangeChip';
 import { NumberStepper } from '@/features/shared/components/forms/NumberStepper';
+import Button from '@/features/shared/components/buttons/Button';
+import { useOverviewStore } from '@/stores/overviewStore';
 
 const CEILING_KEY = 'monthly_cost_ceiling_usd';
 const WARNING_THRESHOLD = 0.8;
+
+// Global concurrency cap (max_parallel_executions). Mirrors the Rust bounds in
+// src-tauri/src/db/settings_keys.rs — keep in sync.
+const CONCURRENCY_KEY = 'max_parallel_executions';
+const CONCURRENCY_MIN = 1;
+const CONCURRENCY_MAX = 20;
+const CONCURRENCY_DEFAULT = 10;
 
 function isValidCeiling(value: string): boolean {
   if (value.trim() === '') return true; // empty = unset; treated as 0
@@ -18,11 +27,18 @@ function isValidCeiling(value: string): boolean {
   return Number.isFinite(n) && n >= 0;
 }
 
+function isValidConcurrency(value: string): boolean {
+  const n = Number(value);
+  return Number.isInteger(n) && n >= CONCURRENCY_MIN && n <= CONCURRENCY_MAX;
+}
+
 export default function LimitsSettings() {
   const { t, tx } = useTranslation();
   const s = t.settings.limits;
 
   const ceiling = useAppSetting(CEILING_KEY, '0', isValidCeiling);
+  const concurrency = useAppSetting(CONCURRENCY_KEY, String(CONCURRENCY_DEFAULT), isValidConcurrency);
+  const setMaxParallel = useOverviewStore((s) => s.setMaxParallelExecutions);
   const [spend, setSpend] = useState<MonthlySpendResult | null>(null);
   const [spendError, setSpendError] = useState<string | null>(null);
   const [spendLoading, setSpendLoading] = useState(true);
@@ -66,7 +82,22 @@ export default function LimitsSettings() {
   // value; ceiling.saved is set by useAppSetting after a successful save.
   const isDirty = !ceiling.saved && ceiling.loaded;
 
-  if (!ceiling.loaded) return null;
+  const concurrencyDirty = !concurrency.saved && concurrency.loaded;
+  const concurrencyNum = useMemo(() => {
+    const n = Number.parseInt(concurrency.value, 10);
+    return Number.isFinite(n) ? n : CONCURRENCY_DEFAULT;
+  }, [concurrency.value]);
+
+  // Persist the cap, then push it into the store so the FleetActivityStrip's
+  // capacity gauge updates immediately (the backend hot-applies the live
+  // engine cap; no restart and no round-trip event needed for the UI).
+  const saveConcurrency = useCallback(async () => {
+    await concurrency.save();
+    const n = Number.parseInt(concurrency.value, 10);
+    if (Number.isFinite(n) && n > 0) setMaxParallel(n);
+  }, [concurrency, setMaxParallel]);
+
+  if (!ceiling.loaded || !concurrency.loaded) return null;
 
   return (
     <ContentBox>
@@ -94,6 +125,45 @@ export default function LimitsSettings() {
 
         <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden mb-4">
           <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-primary/80" />
+            <span className="typo-body font-medium text-foreground">{s.concurrency_section}</span>
+          </div>
+          <div className="px-4 py-4 space-y-3">
+            <p className="typo-body text-foreground">{s.concurrency_hint}</p>
+            <div className="flex items-center gap-2">
+              <NumberStepper
+                value={concurrencyNum}
+                onChange={(v) =>
+                  concurrency.setValue(v == null ? String(CONCURRENCY_DEFAULT) : String(v))
+                }
+                min={CONCURRENCY_MIN}
+                max={CONCURRENCY_MAX}
+                step={1}
+                ariaLabel={s.concurrency_aria}
+                className="w-32"
+              />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => void saveConcurrency()}
+                disabled={!concurrencyDirty || !isValidConcurrency(concurrency.value)}
+                icon={concurrency.saved && !concurrencyDirty ? <Check size={12} /> : undefined}
+              >
+                {concurrency.saved && !concurrencyDirty ? s.saved : s.set}
+              </Button>
+              <span className="typo-caption text-foreground ml-2">
+                {tx(s.concurrency_range, { min: CONCURRENCY_MIN, max: CONCURRENCY_MAX })}
+              </span>
+              {concurrency.error && (
+                <span className="typo-caption text-red-400 ml-2">{concurrency.error}</span>
+              )}
+            </div>
+            <p className="typo-caption text-foreground">{s.concurrency_queued_note}</p>
+          </div>
+        </div>
+
+        <div className="rounded-modal border border-primary/15 bg-secondary/40 overflow-hidden mb-4">
+          <div className="px-4 py-3 border-b border-primary/10 flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-emerald-400" />
             <span className="typo-body font-medium text-foreground">{s.ceiling_section}</span>
           </div>
@@ -112,21 +182,15 @@ export default function LimitsSettings() {
                 className="w-36"
               />
               <span className="typo-caption text-foreground">{s.ceiling_unit}</span>
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => void ceiling.save()}
                 disabled={!isDirty || !isValidCeiling(ceiling.value)}
-                className="ml-2 inline-flex items-center gap-1 px-3 py-1 rounded-interactive typo-caption font-medium bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                icon={ceiling.saved && !isDirty ? <Check size={12} /> : undefined}
               >
-                {ceiling.saved && !isDirty ? (
-                  <>
-                    <Check size={12} />
-                    {s.saved}
-                  </>
-                ) : (
-                  s.set
-                )}
-              </button>
+                {ceiling.saved && !isDirty ? s.saved : s.set}
+              </Button>
               {ceilingNum === 0 && (
                 <span className="typo-caption text-foreground ml-2">{s.unlimited}</span>
               )}

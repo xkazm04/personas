@@ -3,7 +3,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter};
 
 #[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
+// Fields serialize as snake_case ON THE WIRE — deliberately NO `rename_all`.
+// The frontend payload type and the eventBridge handler both read `run_id`
+// (src/lib/eventRegistry.ts `PROCESS_ACTIVITY`, src/lib/eventBridge.ts), and
+// this matches the sibling `QueueStatusEvent`. Re-adding
+// `#[serde(rename_all = "camelCase")]` would emit `runId`, so the bridge would
+// read `payload.run_id === undefined` and store every run under the bare
+// "execution" key — collapsing concurrent/team runs into one and clearing the
+// shared key on the first completion. That breaks FleetActivityStrip + the
+// Monitor's `activeProcesses['execution:'+id]` lookup. Keep snake_case.
 pub struct ProcessActivityEvent {
     pub domain: String,
     pub action: String,

@@ -27,13 +27,13 @@ test_env_url: string | null,
 /**
  * Branch deployed to the living test environment (e.g. `staging`). Nullable.
  */
-test_env_branch: string | null,
+test_env_branch: string | null, 
 /**
  * The project's primary/default branch (e.g. `main` or `master`). The
  * source-control pipeline stage's baseline; nullable, auto-prefilled from
  * the repo's default branch when known. Added 2026-05-31.
  */
-main_branch: string | null,
+main_branch: string | null, 
 /**
  * Standards & branching policy (Pipeline Stage 3). Opaque JSON envelope
  * `{ precommit:{lint,docs_required,code_quality}, branching:{pr_base,automerge} }`
@@ -41,7 +41,7 @@ main_branch: string | null,
  * executions via team_context + CODEBASE_* env). Set via
  * `dev_tools_set_standards_config`. Added 2026-05-31.
  */
-standards_config: string | null,
+standards_config: string | null, 
 /**
  * Optional binding to a `PersonaTeam` (PipelineTeam). When set, the
  * project's surface in `ProjectManagerPage` shows the bound team's name

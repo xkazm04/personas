@@ -9526,10 +9526,15 @@
       "showing_count": "Showing {shown} of {total}"
     },
     "limits": {
-      "title": "Spending Limits",
-      "subtitle": "Monthly cost ceiling and budget tracking",
+      "title": "Limits",
+      "subtitle": "Parallel-execution cap and monthly cost ceiling",
       "description": "Set a monthly USD ceiling on your Personas spend. Stage 1 (this build) is informational — it shows progress and warnings but does not block runs. Stage 2 will enforce the ceiling at execution-dispatch time.",
       "refresh": "Refresh",
+      "concurrency_section": "Parallel executions",
+      "concurrency_hint": "How many personas can run at the same time. Extra runs wait in a queue and start automatically as slots free up. Changes apply immediately — no restart needed.",
+      "concurrency_aria": "Maximum parallel executions",
+      "concurrency_range": "Between {min} and {max} concurrent runs.",
+      "concurrency_queued_note": "Runs beyond this limit are queued and promoted by priority, then arrival order, as running ones finish.",
       "ceiling_section": "Monthly ceiling",
       "ceiling_hint": "Combined cost across all personas, refreshed when you reopen this tab. Set to 0 to disable the ceiling.",
       "ceiling_placeholder": "0.00",

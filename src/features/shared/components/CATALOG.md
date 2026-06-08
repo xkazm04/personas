@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**186 reusable components** live under `src/features/shared/components/`.
+**190 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -179,7 +179,10 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PanelTabBar` | Horizontal tab bar for in-panel navigation. |
 | `PersonaMonitor` | _(add a `@catalog` tag)_ |
 | `PluginsSidebarNav` | _(add a `@catalog` tag)_ |
-| `ProcessActivityIndicator` | Titlebar entry point for the Persona Monitor. |
+| `ProcessActivityIndicator` | Titlebar entry point for the Quick Answer popover and the Persona Monitor. |
+| `QuickAnswerPopover` | _(add a `@catalog` tag)_ |
+| `QuickAnswerQuestionGroup` | One persona's pending build questions. |
+| `QuickAnswerReviewCard` | Compact, inline approve/reject for a pending human review. |
 | `RadioFooter` | Time we give either engine to reach playing state after a play/load. |
 | `RadioSettingsCard` | Settings → Account section. |
 | `ReasoningTrace` | _(add a `@catalog` tag)_ |
@@ -199,6 +202,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `TitleBarAmbient` | The time-of-day illustration in the centre of the title bar. |
 | `TitleCrossfade` | station switch). |
 | `useMonitorData` | _(add a `@catalog` tag)_ |
+| `usePendingInteractions` | _(add a `@catalog` tag)_ |
 | `useRadioState` | know when to refetch nowPlaying. |
 | `useSomafmMetadata` | Poll cadence for SomaFM metadata. |
 | `useYouTubePlayer` | Thin wrapper around the YouTube IFrame Player API. |
@@ -270,4 +274,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_186 components, 93 without a `@catalog` description._
+_190 components, 95 without a `@catalog` description._

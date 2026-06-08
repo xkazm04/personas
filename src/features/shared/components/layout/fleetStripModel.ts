@@ -5,8 +5,30 @@
 
 import type { ActiveProcess } from '@/stores/slices/processActivitySlice';
 
-/** Number of slots composing the strip's full width. */
+/**
+ * Upper bound on the strip's bar count. The strip is a capacity gauge — it
+ * normally renders exactly `cap` bars (see {@link slotCountForCapacity}) — but
+ * a very large cap is clamped to this so the 2px hairline never overflows.
+ */
 export const STRIP_SLOTS = 20;
+
+/**
+ * Lower bound on the strip's bar count. Below this a 1–3 bar strip reads as
+ * broken rather than as a gauge, so small caps clamp up to this.
+ */
+export const MIN_STRIP_SLOTS = 4;
+
+/**
+ * Bar count for a given global concurrency cap (the `max_parallel_executions`
+ * setting). `cap` running executions fill the strip exactly, so a full strip
+ * means the fleet is at its limit. Clamped to
+ * [{@link MIN_STRIP_SLOTS}, {@link STRIP_SLOTS}]; a non-positive/NaN cap falls
+ * back to the full width.
+ */
+export function slotCountForCapacity(cap: number): number {
+  if (!Number.isFinite(cap) || cap <= 0) return STRIP_SLOTS;
+  return Math.max(MIN_STRIP_SLOTS, Math.min(Math.round(cap), STRIP_SLOTS));
+}
 
 export interface FleetPulse {
   /** Executions currently running. */

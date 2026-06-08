@@ -9536,6 +9536,11 @@ export type Translations = {
       subtitle: string;
       description: string;
       refresh: string;
+      concurrency_section: string;
+      concurrency_hint: string;
+      concurrency_aria: string;
+      concurrency_range: string;
+      concurrency_queued_note: string;
       ceiling_section: string;
       ceiling_hint: string;
       ceiling_placeholder: string;
