@@ -93,6 +93,54 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
     )
     .all(sinceIso, ...personaIds, ...(execIds.length ? execIds : []));
 
+  // --- team channel messages (§8 Athena orchestration) ---------------------
+  // Every message posted in the team's channel within the run window — Athena's
+  // reactions (author_kind='athena') plus the director/persona/user context she
+  // reacts amid. `assignment_id` links a reaction to the moment that prompted
+  // it; the rationale footer (lines starting "› ") is the auditable trail.
+  // Best-effort: the table may not exist on an older schema (golden-safe — the
+  // scorer treats an absent/empty channel as not-applicable).
+  let channel = [];
+  try {
+    channel = db
+      .prepare(
+        `SELECT id, author_kind, author_id, body, addressed_to, consumer, assignment_id,
+                reply_to, created_at
+         FROM team_channel_messages
+         WHERE team_id = ? AND created_at >= ? ORDER BY created_at ASC`,
+      )
+      .all(teamId, sinceIso);
+  } catch {
+    /* pre-channel schema — leave empty */
+  }
+
+  // --- team assignments + their events (§8 reaction-worthy denominator) -----
+  // The development moments Athena is meant to react to: assignments reaching
+  // awaiting_review (cap-out), shipping (done + goal), and qa rework bounces.
+  let assignments = [];
+  let assignmentEvents = [];
+  try {
+    assignments = db
+      .prepare(
+        `SELECT id, title, status, goal_id, created_at, started_at, completed_at, error_message
+         FROM team_assignments
+         WHERE team_id = ? AND created_at >= ? ORDER BY created_at ASC`,
+      )
+      .all(teamId, sinceIso);
+    if (assignments.length) {
+      const aPh = inClause(assignments.length);
+      assignmentEvents = db
+        .prepare(
+          `SELECT id, assignment_id, step_id, kind, payload, created_at
+           FROM team_assignment_events
+           WHERE assignment_id IN (${aPh}) AND created_at >= ? ORDER BY created_at ASC`,
+        )
+        .all(...assignments.map((a) => a.id), sinceIso);
+    }
+  } catch {
+    /* pre-orchestration schema — leave empty */
+  }
+
   db.close();
 
   // --- approvals (companion brain, user DB) ---
@@ -153,6 +201,9 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
   write('approvals.json', approvals);
   write('pipeline_runs.json', pipelineRuns);
   write('incidents.json', incidents);
+  write('channel.json', channel);
+  write('assignments.json', assignments);
+  write('assignment_events.json', assignmentEvents);
 
   const byStatus = (rows) => rows.reduce((a, r) => ((a[r.status] = (a[r.status] || 0) + 1), a), {});
   const summary = {
@@ -171,6 +222,10 @@ export function gatherBundle({ runId, teamId, teamName, personaIds, sinceIso, re
       approvals: approvals.length,
       pipelineRuns: pipelineRuns.length,
       incidents: incidents.length,
+      channelMessages: channel.length,
+      athenaMessages: channel.filter((m) => m.author_kind === 'athena').length,
+      assignments: assignments.length,
+      assignmentEvents: assignmentEvents.length,
       logsCopied,
     },
     cost_usd: executions.reduce((s, e) => s + (e.cost_usd || 0), 0),

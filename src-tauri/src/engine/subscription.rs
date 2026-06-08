@@ -2415,6 +2415,103 @@ impl ReactiveSubscription for DirectorStormSubscription {
 }
 
 // ---------------------------------------------------------------------------
+// Athena channel reactions (cert: visible autonomous decisions in the channel)
+// ---------------------------------------------------------------------------
+
+/// Opt-in autonomous loop: Athena watches each goal-managed team's delivery
+/// stream and reacts IN THE TEAM CHANNEL at reaction-worthy moments — an
+/// awaiting-review cap-out she escalates to the user, a QA Guardian bounce, a
+/// shipped goal — making a genuine react/decline decision per team (a headless
+/// Claude call; she usually chooses silence). Lets the user SEE how Athena
+/// decides throughout development (the channel carries each reaction + its
+/// rationale footer). Restraint: at most `ATHENA_REACTION_MAX_PER_TICK` teams
+/// per tick, deduped against her last channel post per team (the detection
+/// cursor in `find_athena_reaction_signals`). Gated by
+/// `AUTONOMOUS_ATHENA_REACTIONS` (default OFF) and the AI quota cooldown (each
+/// reaction is one CLI decision).
+pub struct AthenaChannelReactionSubscription {
+    pub pool: DbPool,
+    pub app: tauri::AppHandle,
+}
+
+/// Backstop cap on Athena reactions per tick (one CLI decision each). The real
+/// debounce is the per-team "newer than her last post" cursor; this only bounds
+/// a cold-start burst across many teams.
+const ATHENA_REACTION_MAX_PER_TICK: usize = 4;
+
+#[async_trait::async_trait]
+impl ReactiveSubscription for AthenaChannelReactionSubscription {
+    fn name(&self) -> &'static str {
+        "athena_channel_reactions"
+    }
+    fn interval(&self) -> Duration {
+        Duration::from_secs(300)
+    }
+    fn idle_interval(&self) -> Duration {
+        Duration::from_secs(900)
+    }
+    fn initial_delay(&self) -> Duration {
+        Duration::from_secs(180)
+    }
+
+    async fn tick(&self) {
+        let enabled = crate::db::repos::core::settings::get(
+            &self.pool,
+            crate::db::settings_keys::AUTONOMOUS_ATHENA_REACTIONS,
+        )
+        .ok()
+        .flatten()
+        .as_deref()
+            == Some("true");
+        if !enabled {
+            return;
+        }
+        if quota_cooldown_active(&self.pool) {
+            tracing::info!("athena_channel_reactions: quota cooldown active — skipping tick");
+            return;
+        }
+
+        let signals = {
+            let pool = self.pool.clone();
+            tokio::task::spawn_blocking(move || {
+                crate::companion::athena_reaction::find_athena_reaction_signals(&pool)
+            })
+            .await
+            .ok()
+            .and_then(|r| r.ok())
+            .unwrap_or_default()
+        };
+        if signals.is_empty() {
+            return;
+        }
+
+        let mut posted = 0usize;
+        for signal in signals.into_iter().take(ATHENA_REACTION_MAX_PER_TICK) {
+            let team = signal.team_name.clone();
+            let kind = signal.kind.clone();
+            match crate::companion::athena_reaction::run_athena_reaction(
+                &self.app, &self.pool, signal,
+            )
+            .await
+            {
+                Ok(true) => {
+                    posted += 1;
+                }
+                Ok(false) => {
+                    tracing::debug!(team = %team, kind = %kind, "athena_channel_reactions: declined or no-op");
+                }
+                Err(e) => {
+                    tracing::warn!(team = %team, kind = %kind, error = %e, "athena_channel_reactions: reaction failed");
+                }
+            }
+        }
+        if posted > 0 {
+            tracing::info!(posted, "athena_channel_reactions: posted Athena reactions to channels");
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Queue drain watchdog — re-drain the execution queue after a quota cooldown
 // ---------------------------------------------------------------------------
 

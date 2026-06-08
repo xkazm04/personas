@@ -519,6 +519,16 @@ pub fn start_loops(
             pool: pool.clone(),
             app: app.clone(),
         }),
+        // Athena channel reactions — Athena watches each goal-managed team's
+        // delivery stream and posts a genuine react/decline decision into the
+        // team channel at reaction-worthy moments (cap-out escalations, QA
+        // bounces, shipped goals), so her orchestration is visible + auditable
+        // throughout development (default-OFF `autonomous_athena_reactions`;
+        // ≤4 teams/tick, deduped against her last channel post per team).
+        Box::new(subscription::AthenaChannelReactionSubscription {
+            pool: pool.clone(),
+            app: app.clone(),
+        }),
         // Queue drain watchdog — re-drains the execution queue after a
         // quota-aware admission cooldown lifts (the normal completion-driven
         // drain can't restart itself once all in-flight work has finished).

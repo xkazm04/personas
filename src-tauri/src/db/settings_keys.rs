@@ -277,6 +277,19 @@ pub const AUTONOMOUS_BACKLOG_TRIAGE: &str = "autonomous_backlog_triage";
 /// Default for [`AUTONOMOUS_BACKLOG_TRIAGE`] — off (opt-in autonomy).
 pub const AUTONOMOUS_BACKLOG_TRIAGE_DEFAULT: bool = false;
 
+/// Athena autonomous CHANNEL REACTIONS: when on, Athena observes each
+/// goal-managed team's dev events (PR opened, QA bounce, QA fix-loop cap-out,
+/// goal shipped, high/critical incident) and posts a reasoned reaction —
+/// with an explicit decision rationale — into the team channel
+/// (author_kind='athena'), escalating cap-outs/incidents to the user. Lets the
+/// user SEE Athena's decisions throughout development. Deterministic decision
+/// rules (no LLM in the tick — doctrine), 1 reaction/team/tick (restraint),
+/// deduped against her last post. Default OFF — opt-in. Read by
+/// `engine::subscription::AthenaChannelReactionSubscription`.
+pub const AUTONOMOUS_ATHENA_REACTIONS: &str = "autonomous_athena_reactions";
+/// Default for [`AUTONOMOUS_ATHENA_REACTIONS`] — off (opt-in autonomy).
+pub const AUTONOMOUS_ATHENA_REACTIONS_DEFAULT: bool = false;
+
 /// When `"true"`, the Director runs a focused coaching evaluation on a persona
 /// whose recent team work shows a STORM (a burst of step failures / QA
 /// change-requests). Default OFF — opt-in. Read by
@@ -378,6 +391,7 @@ const ALLOWED_KEYS: &[&str] = &[
     AUTONOMOUS_BACKLOG_TO_GOAL,
     AUTONOMOUS_IDEA_SCAN,
     AUTONOMOUS_BACKLOG_TRIAGE,
+    AUTONOMOUS_ATHENA_REACTIONS,
     AUTONOMOUS_DIRECTOR_STORM,
     MAX_PARALLEL_EXECUTIONS,
     EXECUTION_WORKTREE_ISOLATION,
@@ -484,6 +498,7 @@ pub fn validate_value(key: &str, value: &str) -> Result<(), String> {
         | AUTONOMOUS_BACKLOG_TO_GOAL
         | AUTONOMOUS_IDEA_SCAN
         | AUTONOMOUS_BACKLOG_TRIAGE
+        | AUTONOMOUS_ATHENA_REACTIONS
         | AUTONOMOUS_DIRECTOR_STORM
         | EXECUTION_WORKTREE_ISOLATION => {
             match value {

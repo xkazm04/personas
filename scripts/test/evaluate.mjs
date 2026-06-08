@@ -15,6 +15,7 @@ import { band, computeVerdict } from './lib/eval/verdict.mjs';
 import { repoFileIndex, groundingForText, addedDocsFromPatch } from './lib/eval/grounding.mjs';
 import { resilienceFacts } from './lib/eval/resilience.mjs';
 import { standardsCompliance } from './lib/eval/standards.mjs';
+import { athenaOrchestration } from './lib/eval/athena.mjs';
 import { RUBRIC } from './lib/rubric.mjs';
 
 /**
@@ -105,6 +106,10 @@ function main() {
   const events = readJson(join(dir, 'events.json'));
   // §6 resilience-track: older bundles lack incidents.json → default [] (golden-safe no-op).
   const incidents = existsSync(join(dir, 'incidents.json')) ? readJson(join(dir, 'incidents.json')) : [];
+  // §8 Athena orchestration: older bundles lack these → default [] (golden-safe no-op).
+  const channelMessages = existsSync(join(dir, 'channel.json')) ? readJson(join(dir, 'channel.json')) : [];
+  const assignmentsBundle = existsSync(join(dir, 'assignments.json')) ? readJson(join(dir, 'assignments.json')) : [];
+  const assignmentEvents = existsSync(join(dir, 'assignment_events.json')) ? readJson(join(dir, 'assignment_events.json')) : [];
 
   const db = openRead(MAIN_DB);
   const info = teamInfo(db, run.summary.team);
@@ -237,6 +242,17 @@ function main() {
     docChanged: docFiles.length > 0,
     increment,
   });
+  // §8 Athena orchestration & decision quality — computed from the channel +
+  // assignment trail; null (strict no-op) when the run shows no Athena posts AND
+  // no reaction-worthy moments, so runs without autonomous Athena reactions stay
+  // byte-identical. Informational (NOT a verdict cap): Athena reactions are an
+  // opt-in autonomy mode, so their absence/under-coverage must not fail an
+  // otherwise-good run — the dimension is for tracking how she decides.
+  const athena = athenaOrchestration({
+    channelMessages,
+    assignments: assignmentsBundle,
+    assignmentEvents,
+  });
   // The five rubric caps collapsed into ONE ordered fold (see lib/eval/verdict.mjs).
   // Each lowers the verdict to at most its `to`; the fold is order-independent
   // (cap is min-by-rank) but ordered to mirror the rubric narrative.
@@ -286,6 +302,9 @@ function main() {
     // §7 subtree added ONLY when a standards policy applied (same golden-safe
     // conditional spread — absent on doc-track runs + policy-less projects).
     ...(standards ? { standards_compliance: standards } : {}),
+    // §8 subtree added ONLY when there was Athena activity to grade (same
+    // golden-safe conditional spread — absent on runs with no channel reactions).
+    ...(athena ? { athena_orchestration: athena } : {}),
     rubric_version: judge ? '1-judged' : '1-deterministic',
     note: judge
       ? 'Judged scorecard (deterministic + agent-judge §1.B + portfolio balance §2.1). Still requires 3 consecutive PRODUCTION on held-out seeds + decay analysis to CERTIFY.'
@@ -387,6 +406,19 @@ function main() {
       L.push(`| \`${r.id}\` | ${r.status === 'pass' ? '✅ pass' : r.status === 'fail' ? '❌ fail' : '— n/a'} | ${r.basis} |`);
     }
   }
+  if (athena) {
+    const ax = athena.axes;
+    L.push('');
+    L.push('## Athena orchestration & decision quality (§8)');
+    L.push(`> How Athena ran the team unattended — ${athena.facts.athenaPosts} channel reaction(s) (${athena.facts.escalations} escalation, ${athena.facts.directives} directive, ${athena.facts.observations} observation) over ${ax.coverage.reactionWorthyMoments} reaction-worthy moment(s). Heuristic; deep soundness deferred to the judge.`);
+    L.push('');
+    L.push('| Axis | Value | Basis |');
+    L.push('|---|---|---|');
+    L.push(`| Reaction coverage (cap-outs) | ${ax.coverage.criticalCoveragePct ?? 'n/a'}% | ${ax.coverage.criticalCovered}/${ax.coverage.criticalMoments} awaiting-review moments reacted to |`);
+    L.push(`| Decision soundness | ${ax.soundness.soundnessPct ?? 'n/a'}% | ${ax.soundness.sound}/${ax.soundness.posts} posts sound · ${ax.soundness.unsound} over-escalation(s) |`);
+    L.push(`| Auditability | ${ax.auditability.auditablePct ?? 'n/a'}% | ${ax.auditability.withRationale}/${ax.auditability.posts} carry a rationale footer · ${ax.auditability.withLink} linked to an assignment |`);
+    L.push(`| Restraint / no-spam | ${ax.restraint.restraintOk ? '✅ ok' : '⚠️ review'} | reaction-rate ${ax.restraint.reactionRate ?? 'n/a'} · max ${ax.restraint.maxPostsPerAssignment} post(s)/assignment${ax.restraint.duplicateSuspected ? ' (repeat suspected)' : ''}${ax.restraint.overReacting ? ' (over-reacting)' : ''} |`);
+  }
   if (!judge) {
     L.push('');
     L.push('## Not yet scored (needs agent-judge, §1.B + §2.1)');
@@ -399,7 +431,7 @@ function main() {
   }
   writeFileSync(join(dir, 'scorecard.md'), L.join('\n') + '\n', 'utf8');
 
-  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}${isResilienceTrack && resilience ? ` resilience[raised=${resilience.raised},closed=${resilience.escalationClosed},recovery=${resilience.recoveryScore}]` : ''}${standards && standards.applicable ? ` standards[pct=${standards.pct}]` : ''}`);
+  console.log(`${vlabel}=${verdict} team=${teamScore} grounding=${groundingPct ?? 'n/a'}%${judge ? ` balance=${portfolioBalance} minPersona=${minPersonaOutput}` : ''}${codeTrack ? ` code[build=${codeTrack.build.status},lint=${codeTrack.lint.status},test=${codeTrack.test.status}]` : ''}${isCodeTrack ? ` delivered=${increment.delivered}${increment.delivered ? '' : ' (' + increment.reason + ')'}` : ''}${isResilienceTrack && resilience ? ` resilience[raised=${resilience.raised},closed=${resilience.escalationClosed},recovery=${resilience.recoveryScore}]` : ''}${standards && standards.applicable ? ` standards[pct=${standards.pct}]` : ''}${athena ? ` athena[posts=${athena.facts.athenaPosts},cov=${athena.axes.coverage.criticalCoveragePct ?? 'n/a'}%,audit=${athena.axes.auditability.auditablePct ?? 'n/a'}%,restraint=${athena.axes.restraint.restraintOk ? 'ok' : 'review'}]` : ''}`);
   console.log(`wrote ${join(dir, 'scorecard.md')}`);
 }
 

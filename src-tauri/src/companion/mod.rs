@@ -7,6 +7,7 @@
 //! `~/.personas/companion-brain/`. SQL tables (see `companion_node`,
 //! `companion_edge`, ...) are an index over those files plus runtime state.
 
+pub mod athena_reaction;
 pub mod brain;
 pub mod connectors;
 pub mod dev_session;

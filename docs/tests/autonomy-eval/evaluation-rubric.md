@@ -284,3 +284,47 @@ constraint, like every other cap) — it can never raise it, and it has zero eff
 runs or projects with no declared policy. The full per-rule breakdown is surfaced in
 `scorecard.standards_compliance` and rendered in the in-app Certification dashboard's run
 detail (`StandardsCard`).
+
+---
+
+## §8 Athena orchestration & decision quality (runs with autonomous channel reactions)
+
+"Works unattended for weeks" is not only the *team* delivering — it is **Athena steering the
+team** while no human watches: noticing when the team is stuck and only a human can unblock it,
+acknowledging real milestones, staying silent the rest of the time. When the
+`autonomous_athena_reactions` autonomy mode is on, Athena watches each goal-managed team's
+delivery stream and makes a genuine **react / decline decision** per reaction-worthy moment (a
+headless Claude decision — `companion/athena_reaction.rs`), posting into the team channel
+(`author_kind='athena'`) with an `⚠️ ` prefix on escalations, a `\n\n› <rationale>` audit footer,
+the `assignment_id` of the moment that prompted it, and `consumer='inject'` when she addresses a
+specific persona. §8 grades **how well she decided**, across the four axes the operator asked to
+track.
+
+§8 is computed by `lib/eval/athena.mjs` from the bundle's `channel.json` + `assignments.json` +
+`assignment_events.json`. It returns `null` — a strict no-op (no facts, no scorecard subtree, no
+stdout segment, byte-identical evaluator) — whenever the run shows **no** Athena channel posts
+**and** no reaction-worthy moments, so runs that never enabled the mode stay unchanged (the
+golden-diff invariant, exactly like §6 / §7). It is **reported facts only — never a verdict cap
+and never folded into `team_score`**: autonomous Athena reactions are an opt-in mode, so their
+absence or under-coverage must not fail an otherwise-production run. The dimension exists to make
+her decisions *visible and trackable* over a campaign, not to gate a single run.
+
+### Reaction-worthy moments (the denominator)
+
+| Moment | Detected from | Must Athena react? |
+|---|---|---|
+| `awaiting_review` | a `team_assignments` row in `awaiting_review` (the QA fix-loop capped out — the team cannot exit this state on its own) | **Yes** — only a human can unblock; silence here is a real miss |
+| `goal_done` | a `done` assignment with a `goal_id` | No — react only if it's a meaningful milestone |
+| `qa_bounce` | a `qa_changes_requested_rework` event | No — normal SDLC; react only on a non-self-correcting pattern |
+
+### The four axes (heuristic; `judgeRecommended: true` for deep soundness)
+
+| Axis | Metric | Basis |
+|---|---|---|
+| **Reaction coverage** | `criticalCoveragePct` = cap-out moments that drew an Athena post linked to that assignment ÷ all cap-out moments | She is judged on catching the **must-react** moments, *not* on narrating routine progress (overall reaction-rate is reported informational, never a coverage target). |
+| **Decision soundness** | `soundnessPct` = sound posts ÷ all posts | An **escalation** (`⚠️`) is sound only when it sits on an `awaiting_review` moment; escalating a shipped goal (or nothing) is an over-escalation. Observations and in-context directives are sound by default. |
+| **Auditability** | `auditablePct` = posts carrying **both** a `\n\n› ` rationale footer **and** an `assignment_id` link ÷ all posts | The trail must be reconstructable from the channel alone — every reaction explains *why* and *about what*. |
+| **Restraint / no-spam** | `restraintOk` = no `assignment_id` drew more than `MAX_POSTS_PER_ASSIGNMENT` (2) posts **and** reaction-rate ≤ `SPAM_REACTION_RATE` (1.5×) | She reacts selectively, not once per step, and doesn't repeat herself about one assignment without new activity. Declines (`react:false`) are logged, not posted, so restraint is inferred from posting selectivity. |
+
+The full per-axis breakdown is surfaced in `scorecard.athena_orchestration` and rendered in the
+in-app Certification dashboard's run detail.
