@@ -54,8 +54,46 @@ impl CliProvider for ClaudeProvider {
     }
 
     fn minimum_version(&self) -> Option<&str> {
-        // CLI ≥ 2.1.154 — floor advances when a newer CLI fixes the wrapping
+        // CLI ≥ 2.1.166 — floor advances when a newer CLI fixes the wrapping
         // contract personas depends on. Recent floor:
+        // - 2.1.155–2.1.166: floor advanced past 2.1.154 because the prior
+        //   floor ITSELF carries defects personas is exposed to. 2.1.163 fixes
+        //   a `$TMPDIR` override (a regression introduced in 2.1.154) that
+        //   repointed `/tmp/claude-{uid}` for EVERY command instead of only
+        //   sandboxed ones, breaking the Bash tool under bazel / EDR-protected
+        //   Go workflows (any tool-using persona). 2.1.156 fixes Opus 4.8
+        //   thinking blocks being modified into API errors — personas runs 4.8
+        //   (Athena's `claude-opus-4-8` pin + the `opus` alias auto-resolve),
+        //   so the 2.1.154 floor exposed every 4.8 spawn. 2.1.163 also fixes
+        //   `claude -p` hanging forever after its final result when a
+        //   backgrounded command never exits (stdin closed) — squarely
+        //   personas's spawn pattern (pipe prompt → close stdin; on the old
+        //   floor this surfaced as a `timeout_ms` abort instead of a clean
+        //   result), plus a Windows `EEXIST` on the session-env dir inside
+        //   OneDrive / with a read-only attribute (Windows is the primary
+        //   platform). 2.1.157 stops a sandbox network-permission PROMPT from
+        //   appearing in bypass-permissions mode / SDK — a prompt in
+        //   non-interactive `-p` under `--dangerously-skip-permissions` would
+        //   hang the run. 2.1.166 fixes a Windows PowerShell command-validation
+        //   hang (killed-process children holding output pipes) and adds
+        //   thinking-disable controls (`MAX_THINKING_TOKENS=0` / `--thinking
+        //   disabled`) for default-thinking models like 4.8 — NOT adopted
+        //   (personas has no thinking knob today; deferred alongside the open
+        //   companion-path `--effort`/cost decision). Passive BYOM/3P benefits:
+        //   2.1.163 (`ANTHROPIC_API_KEY required` on Bedrock/Vertex/Foundry +
+        //   `CI=true`), 2.1.161 (`forceLogin*` no longer blocks 3P provider
+        //   sessions), 2.1.162 (read-only config dir surfaces an error instead
+        //   of a blank startup hang), 2.1.161 (a failed parallel Bash no longer
+        //   cancels its siblings). Everything else in the range is
+        //   interactive-TUI / `claude agents` / background-session surface
+        //   personas never reaches in `-p`. New OTEL features (2.1.157
+        //   `tool_decision.tool_parameters`, 2.1.161 `OTEL_RESOURCE_ATTRIBUTES`
+        //   metric labels) stay blocked by the no-exporter descoped entry. The
+        //   `workflow` interactive trigger was renamed → `ultracode` (2.1.160),
+        //   but the headless `Workflow` TOOL name is unchanged (the 2026-05-31
+        //   init probe still finds it). 2.1.167/2.1.168 are pure "bug fixes and
+        //   reliability" releases above the floor; 2.1.155/2.1.159/2.1.164 not
+        //   user-facing. /research run 2026-06-08.
         // - 2.1.151–2.1.154: 2.1.151 not released upstream. 2.1.154 ships Opus
         //   4.8 + the `xhigh` effort tier (both already wired personas-side: the
         //   `opus` alias auto-resolves to 4.8, and `EFFORT_LEVELS` already
@@ -159,7 +197,7 @@ impl CliProvider for ClaudeProvider {
         // against the 2.1.126 floor lives in `Patterns/descoped-reopenable.md`.
         // The check is advisory: `provider::check_cli_version` returns an Err
         // string below the floor; no caller turns that into a hard refusal.
-        Some("2.1.154")
+        Some("2.1.166")
     }
 }
 
@@ -246,6 +284,6 @@ mod tests {
         let provider = ClaudeProvider;
         let min = provider.minimum_version();
         assert!(min.is_some());
-        assert_eq!(min.unwrap(), "2.1.149");
+        assert_eq!(min.unwrap(), "2.1.166");
     }
 }
