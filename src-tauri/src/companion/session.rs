@@ -1006,8 +1006,8 @@ async fn run_cli(
     // don't auto-pick up the Personas project's CLAUDE.md as context.
     let cwd = dirs::home_dir().unwrap_or_else(|| std::env::temp_dir());
 
-    let mut child = Command::new(&cmd_program)
-        .args(&argv)
+    let mut cmd = Command::new(&cmd_program);
+    cmd.args(&argv)
         .current_dir(&cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -1021,7 +1021,12 @@ async fn run_cli(
         // a way to "send a copy of herself to investigate" without
         // re-priming context. Harmless on older CLI versions (env var
         // is ignored if the feature isn't recognized).
-        .env("CLAUDE_CODE_FORK_SUBAGENT", "1")
+        .env("CLAUDE_CODE_FORK_SUBAGENT", "1");
+    // No console window on Windows — see apply_no_console_window. Without
+    // this the GUI app's `cmd /C claude.cmd` child drains the desktop heap
+    // and eventually dies on spawn with 0xC0000142.
+    apply_no_console_window(&mut cmd);
+    let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("spawn claude: {e}")))?;
 
@@ -1348,6 +1353,39 @@ pub fn base_cli_invocation() -> (String, Vec<String>) {
         ("cmd".into(), vec!["/C".into(), "claude.cmd".into()])
     } else {
         ("claude".into(), vec![])
+    }
+}
+
+/// Apply the Windows "no console window" creation flag to a CLI command.
+///
+/// The Personas app is a GUI process with no console of its own. A console-
+/// subsystem child — the `cmd /C claude.cmd` chain from [`base_cli_invocation`]
+/// — spawned without this flag gets a fresh `conhost.exe` allocated on the
+/// interactive desktop. That both flashes a black window on every turn AND,
+/// multiplied across the fleet PTYs + build sessions + back-to-back
+/// proactive / brain / consolidation turns, drains the window-station desktop
+/// heap. Once that heap is exhausted, new console children fail to initialize
+/// and exit immediately with `STATUS_DLL_INIT_FAILED` (`0xC0000142`) — observed
+/// in the wild on a fleet-orchestration proactive turn ("claude exited with
+/// status exit code: 0xc0000142"). Running `claude` from an existing console
+/// (cmd.exe / Windows Terminal) never hits this, which is why it only reproduces
+/// inside the app.
+///
+/// The `CliArgs` / [`crate::engine::cli_process`] spawn family already sets this
+/// on every spawn; the `base_cli_invocation` family historically did not. This
+/// helper centralizes the flag so the two families can't drift apart again. All
+/// of these calls pipe stdin/stdout/stderr, so the child never needs a console.
+/// No-op on non-Windows.
+pub fn apply_no_console_window(cmd: &mut tokio::process::Command) {
+    #[cfg(windows)]
+    {
+        #[allow(unused_imports)]
+        use std::os::windows::process::CommandExt;
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = cmd;
     }
 }
 

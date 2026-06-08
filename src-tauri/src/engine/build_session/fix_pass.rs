@@ -181,14 +181,17 @@ async fn invoke_claude_print(prompt: &str) -> Result<String, AppError> {
     ]);
 
     let cwd = dirs::home_dir().unwrap_or_else(std::env::temp_dir);
-    let mut child = Command::new(&cmd_program)
-        .args(&argv)
+    let mut cmd = Command::new(&cmd_program);
+    cmd.args(&argv)
         .current_dir(&cwd)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .env("CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "1")
-        .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1")
+        .env("CLAUDE_CODE_DISABLE_TERMINAL_TITLE", "1");
+    // No console window on Windows (desktop-heap / 0xC0000142 guard).
+    crate::companion::session::apply_no_console_window(&mut cmd);
+    let mut child = cmd
         .spawn()
         .map_err(|e| AppError::Internal(format!("fix_pass: spawn claude: {e}")))?;
 
