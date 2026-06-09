@@ -253,7 +253,8 @@
     "group_documents": "Tài liệu",
     "group_signatures": "Chữ ký",
     "group_other": "Khác",
-    "signed": "Đã ký"
+    "signed": "Đã ký",
+    "sidebar_trash": "Thùng rác"
   },
   "artist": {
     "title": "Artist",

@@ -253,7 +253,8 @@
     "group_documents": "وثائق",
     "group_signatures": "التوقيعات",
     "group_other": "آخر",
-    "signed": "موقّع"
+    "signed": "موقّع",
+    "sidebar_trash": "سلة المهملات"
   },
   "artist": {
     "title": "الفنان",

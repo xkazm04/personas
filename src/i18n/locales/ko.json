@@ -10410,7 +10410,8 @@
       "group_documents": "서류",
       "group_signatures": "서명",
       "group_other": "다른",
-      "signed": "서명됨"
+      "signed": "서명됨",
+      "sidebar_trash": "휴지통"
     },
     "artist": {
       "title": "Artist",

@@ -253,7 +253,8 @@
     "group_documents": "Unterlagen",
     "group_signatures": "Unterschriften",
     "group_other": "Andere",
-    "signed": "Signiert"
+    "signed": "Signiert",
+    "sidebar_trash": "Papierkorb"
   },
   "artist": {
     "title": "Künstler",

@@ -10410,7 +10410,8 @@
       "group_documents": "Документы",
       "group_signatures": "Подписи",
       "group_other": "Другой",
-      "signed": "Подписано"
+      "signed": "Подписано",
+      "sidebar_trash": "Корзина"
     },
     "artist": {
       "title": "Artist",

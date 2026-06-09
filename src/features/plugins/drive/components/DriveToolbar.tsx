@@ -423,11 +423,14 @@ function MovePopover({
   // Flatten the tree into a depth-tagged list. Filters out destinations
   // that would be invalid moves: any selection path itself, and any
   // descendant of a selection path (refuses ancestor-into-descendant —
-  // same guard the sidebar drop applies).
+  // same guard the sidebar drop applies), and the trash subtree ("move to
+  // trash" is the Delete action's job, not Move-to's).
   const candidates = useMemo(() => {
     const out: Array<{ node: DriveTreeNode; depth: number }> = [];
     if (!tree) return out;
     const isInvalid = (path: string) =>
+      path === ".trash" ||
+      path.startsWith(".trash/") ||
       selectionPaths.some(
         (p) => path === p || (p !== "" && path.startsWith(`${p}/`)),
       );

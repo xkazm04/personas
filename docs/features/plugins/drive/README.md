@@ -35,7 +35,7 @@ The backend root is `app_data_dir/drive` in release and `./.dev-drive` in debug.
 
 ## Trash / soft-delete
 
-`drive_delete` is a **soft delete**: items move into `<root>/.trash/<UTC-stamp>-<basename>/` rather than being removed. The original `drive.document.deleted` event still fires, so triggers behave the same. Items in the trash:
+`drive_delete` is a **soft delete**: items move into `<root>/.trash/<UTC-stamp>-<basename>/` rather than being removed. The original `drive.document.deleted` event still fires, so triggers behave the same. The sidebar has a dedicated Trash node (with item count) that opens the trash; `.trash` is hidden from the regular folder tree and from the Move-to destination picker. Items in the trash:
 
 - Surface in `drive_list` of the `.trash/` folder, so users can browse and manually move them out (effectively restoring them).
 - Are hard-deleted by `purge_old_trash` once their timestamp is older than 7 days. The purge piggybacks on the `drive_storage_info` cache-miss path so it has no extra IPC cost.

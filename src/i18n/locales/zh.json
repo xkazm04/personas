@@ -10410,7 +10410,8 @@
       "group_documents": "文件",
       "group_signatures": "签名",
       "group_other": "其他",
-      "signed": "已签名"
+      "signed": "已签名",
+      "sidebar_trash": "回收站"
     },
     "artist": {
       "title": "Artist",

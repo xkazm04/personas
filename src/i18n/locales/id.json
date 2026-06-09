@@ -10410,7 +10410,8 @@
       "group_documents": "Dokumen",
       "group_signatures": "Tanda tangan",
       "group_other": "Lainnya",
-      "signed": "Ditandatangani"
+      "signed": "Ditandatangani",
+      "sidebar_trash": "Sampah"
     },
     "artist": {
       "title": "Artist",

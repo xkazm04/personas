@@ -10410,7 +10410,8 @@
       "group_documents": "Documentos",
       "group_signatures": "Firmas",
       "group_other": "Otro",
-      "signed": "Firmado"
+      "signed": "Firmado",
+      "sidebar_trash": "Papelera"
     },
     "artist": {
       "title": "Artista",

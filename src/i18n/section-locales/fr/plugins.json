@@ -253,7 +253,8 @@
     "group_documents": "Documents",
     "group_signatures": "Signature",
     "group_other": "Autre",
-    "signed": "Signé"
+    "signed": "Signé",
+    "sidebar_trash": "Corbeille"
   },
   "artist": {
     "title": "Studio artistique",

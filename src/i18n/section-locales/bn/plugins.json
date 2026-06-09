@@ -253,7 +253,8 @@
     "group_documents": "নথিপত্র",
     "group_signatures": "স্বাক্ষর",
     "group_other": "অন্যান্য",
-    "signed": "স্বাক্ষরিত"
+    "signed": "স্বাক্ষরিত",
+    "sidebar_trash": "ট্র্যাশ"
   },
   "artist": {
     "title": "Artist",

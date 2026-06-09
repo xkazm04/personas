@@ -253,7 +253,8 @@
     "group_documents": "Dokumenty",
     "group_signatures": "Podpisy",
     "group_other": "Ostatní",
-    "signed": "Podepsáno"
+    "signed": "Podepsáno",
+    "sidebar_trash": "Koš"
   },
   "artist": {
     "title": "Artist",

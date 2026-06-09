@@ -10410,7 +10410,8 @@
       "group_documents": "दस्तावेज़",
       "group_signatures": "हस्ताक्षर",
       "group_other": "अन्य",
-      "signed": "हस्ताक्षरित"
+      "signed": "हस्ताक्षरित",
+      "sidebar_trash": "ट्रैश"
     },
     "artist": {
       "title": "आर्टिस्ट",

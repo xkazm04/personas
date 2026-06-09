@@ -10410,7 +10410,8 @@
       "group_documents": "書類",
       "group_signatures": "署名",
       "group_other": "他の",
-      "signed": "署名済み"
+      "signed": "署名済み",
+      "sidebar_trash": "ゴミ箱"
     },
     "artist": {
       "title": "Artist",
