@@ -1,4 +1,4 @@
-import { Plug, Monitor, BadgeCheck, Sparkles } from 'lucide-react';
+import { Plug, Monitor, BadgeCheck, Sparkles, CheckCircle2 } from 'lucide-react';
 import { motion, type Variants } from 'framer-motion';
 import { ThemedConnectorIcon } from '@/features/shared/components/display/ConnectorMeta';
 import { Tooltip } from '@/features/shared/components/display/Tooltip';
@@ -151,7 +151,7 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
 
       {/* Large icon */}
       <div
-        className="w-14 h-14 min-w-14 min-h-14 rounded-modal flex items-center justify-center border"
+        className="relative w-14 h-14 min-w-14 min-h-14 rounded-modal flex items-center justify-center border"
         style={{
           backgroundColor: `${connector.color}12`,
           borderColor: `${connector.color}25`,
@@ -161,6 +161,13 @@ export function ConnectorCard({ connector, isOwned, isNew, recipeIndicator, onPi
           <ThemedConnectorIcon url={connector.icon_url} label={connector.label} color={connector.color} size="w-10 h-10" />
         ) : (
           <Plug className="w-8 h-8" style={{ color: connector.color }} />
+        )}
+        {/* Owned/ready cue — a shape+text signal, not color alone (the emerald ring is reinforcement). */}
+        {isOwned && (
+          <span className="absolute -bottom-1 -right-1 inline-flex items-center justify-center rounded-full bg-background ring-2 ring-background">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+            <span className="sr-only">Connected</span>
+          </span>
         )}
       </div>
 
