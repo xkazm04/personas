@@ -12186,6 +12186,7 @@
       "no_tasks_queued": "No hay tareas en cola",
       "no_tasks_queued_sub": "Crea tareas manualmente o en lote desde ideas aceptadas.",
       "auto_run_all": "Auto-Run All",
+      "retry_all_failed": "Reintentar fallidas",
       "auto_run_progress": "Auto-Run in progress",
       "auto_run_complete": "Auto-Run finished",
       "auto_run_started": "Could not start Auto-Run",

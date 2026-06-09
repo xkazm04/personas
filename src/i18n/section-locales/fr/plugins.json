@@ -2029,6 +2029,7 @@
     "no_tasks_queued": "Aucune tâche en file",
     "no_tasks_queued_sub": "Créez des tâches manuellement ou par lot depuis les idées acceptées.",
     "auto_run_all": "Auto-Run All",
+    "retry_all_failed": "Relancer les échecs",
     "auto_run_progress": "Auto-Run in progress",
     "auto_run_complete": "Auto-Run finished",
     "auto_run_started": "Could not start Auto-Run",

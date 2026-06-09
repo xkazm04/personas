@@ -2029,6 +2029,7 @@
     "no_tasks_queued": "대기열에 작업 없음",
     "no_tasks_queued_sub": "수동으로 작업을 만들거나 수락된 아이디어에서 배치로 만드세요.",
     "auto_run_all": "Auto-Run All",
+    "retry_all_failed": "실패 재시도",
     "auto_run_progress": "Auto-Run in progress",
     "auto_run_complete": "Auto-Run finished",
     "auto_run_started": "Could not start Auto-Run",

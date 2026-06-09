@@ -2029,6 +2029,7 @@
     "no_tasks_queued": "সারিতে কোনো টাস্ক নেই",
     "no_tasks_queued_sub": "ম্যানুয়ালি টাস্ক তৈরি করুন বা গৃহীত আইডিয়া থেকে ব্যাচ করুন।",
     "auto_run_all": "Auto-Run All",
+    "retry_all_failed": "ব্যর্থগুলো পুনরায়",
     "auto_run_progress": "Auto-Run in progress",
     "auto_run_complete": "Auto-Run finished",
     "auto_run_started": "Could not start Auto-Run",

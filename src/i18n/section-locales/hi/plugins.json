@@ -2029,6 +2029,7 @@
     "no_tasks_queued": "कतार में कोई कार्य नहीं",
     "no_tasks_queued_sub": "कार्यों को मैन्युअल रूप से बनाएँ या स्वीकृत ideas से batch करें।",
     "auto_run_all": "Auto-Run All",
+    "retry_all_failed": "विफल पुनः प्रयास",
     "auto_run_progress": "Auto-Run in progress",
     "auto_run_complete": "Auto-Run finished",
     "auto_run_started": "Could not start Auto-Run",

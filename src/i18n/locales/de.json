@@ -12186,6 +12186,7 @@
       "no_tasks_queued": "Keine Aufgaben in der Warteschlange",
       "no_tasks_queued_sub": "Erstellen Sie Aufgaben manuell oder stapeln Sie aus akzeptierten Ideen.",
       "auto_run_all": "Auto-Run All",
+      "retry_all_failed": "Fehlgeschlagene wiederholen",
       "auto_run_progress": "Auto-Run in progress",
       "auto_run_complete": "Auto-Run finished",
       "auto_run_started": "Could not start Auto-Run",

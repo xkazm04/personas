@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Play, Plus, ListChecks, XCircle, ChevronDown, ChevronRight,
   Loader2, CheckCircle2, AlertCircle, Clock, Ban, X, Link2,
-  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon, Target,
+  Zap, Layers, Building2, AlertTriangle, Infinity as InfinityIcon, Target, RotateCcw,
 } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { EventName } from '@/lib/eventRegistry';
@@ -84,6 +84,10 @@ const STATUS_CONFIG: Record<TaskStatus, { icon: typeof Clock; className: string;
   failed: { icon: AlertCircle, className: 'bg-red-500/15 text-red-400 border-red-500/25' },
   cancelled: { icon: Ban, className: 'bg-primary/10 text-foreground border-primary/10' },
 };
+
+// Cluster the queue so running/queued/failed/done are visually grouped instead
+// of interleaved in creation order.
+const STATUS_ORDER: TaskStatus[] = ['running', 'queued', 'failed', 'completed', 'cancelled'];
 
 const PHASE_CONFIG: Record<TaskPhase, { color: string; range: [number, number] }> = {
   analyzing: { color: 'bg-blue-400', range: [0, 15] },
@@ -580,6 +584,21 @@ export default function TaskRunnerPage() {
     createTask(data);
   }, [createTask]);
 
+  // Bulk recovery: re-queue every failed task as a [Retry] copy (mirrors the
+  // per-task retry in SelfHealingPanel) so a botched auto-run can be re-run in
+  // one click rather than hunting failed cards individually.
+  const handleRetryAllFailed = useCallback(() => {
+    for (const task of tasks.filter((t) => t.status === 'failed')) {
+      createTask({ title: `[Retry] ${task.title}`, description: task.description, goalId: task.goalId });
+    }
+  }, [tasks, createTask]);
+
+  // Group the queue by status for clustered rendering.
+  const tasksByStatus = tasks.reduce((acc, task) => {
+    (acc[task.status] ??= []).push(task);
+    return acc;
+  }, {} as Record<TaskStatus, RunnerTask[]>);
+
   return (
     <ContentBox>
       <ContentHeader
@@ -628,6 +647,16 @@ export default function TaskRunnerPage() {
           >
             {t.plugins.dev_runner.auto_run_all}
           </Button>
+          {failedCount > 0 && (
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={<RotateCcw className="w-3.5 h-3.5" />}
+              onClick={handleRetryAllFailed}
+            >
+              {t.plugins.dev_runner.retry_all_failed} ({failedCount})
+            </Button>
+          )}
           <Button
             variant="danger"
             size="sm"
@@ -767,18 +796,30 @@ export default function TaskRunnerPage() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
-                {tasks.map((task, i) => {
-                  const raw = storeTasks.find((st) => st.id === task.id);
-                  if (!raw) return null;
+              <div className="space-y-4">
+                {STATUS_ORDER.map((status) => {
+                  const group = tasksByStatus[status];
+                  if (!group || group.length === 0) return null;
                   return (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      rawTask={raw}
-                      index={i}
-                      outputLines={taskOutputBuffers[task.id] ?? []}
-                    />
+                    <div key={status} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <StatusBadge status={status} />
+                        <span className="text-[10px] text-foreground tabular-nums">{group.length}</span>
+                      </div>
+                      {group.map((task, i) => {
+                        const raw = storeTasks.find((st) => st.id === task.id);
+                        if (!raw) return null;
+                        return (
+                          <TaskCard
+                            key={task.id}
+                            task={task}
+                            rawTask={raw}
+                            index={i}
+                            outputLines={taskOutputBuffers[task.id] ?? []}
+                          />
+                        );
+                      })}
+                    </div>
                   );
                 })}
               </div>

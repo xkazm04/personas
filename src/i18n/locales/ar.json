@@ -12186,6 +12186,7 @@
       "no_tasks_queued": "لا توجد مهام في قائمة الانتظار",
       "no_tasks_queued_sub": "أنشئ المهام يدوياً أو بدفعة من الأفكار المقبولة.",
       "auto_run_all": "Auto-Run All",
+      "retry_all_failed": "إعادة محاولة الفاشلة",
       "auto_run_progress": "Auto-Run in progress",
       "auto_run_complete": "Auto-Run finished",
       "auto_run_started": "Could not start Auto-Run",

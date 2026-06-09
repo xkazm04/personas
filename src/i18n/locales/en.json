@@ -13230,6 +13230,7 @@
       "no_tasks_queued": "No tasks in queue",
       "no_tasks_queued_sub": "Create tasks manually or batch from accepted ideas.",
       "auto_run_all": "Auto-Run All",
+      "retry_all_failed": "Retry failed",
       "auto_run_progress": "Auto-Run in progress",
       "auto_run_complete": "Auto-Run finished",
       "auto_run_started": "Could not start Auto-Run",

@@ -12186,6 +12186,7 @@
       "no_tasks_queued": "Žádné úkoly ve frontě",
       "no_tasks_queued_sub": "Vytvoř úkoly ručně nebo jako dávku z přijatých nápadů.",
       "auto_run_all": "Auto-Run All",
+      "retry_all_failed": "Opakovat neúspěšné",
       "auto_run_progress": "Auto-Run in progress",
       "auto_run_complete": "Auto-Run finished",
       "auto_run_started": "Could not start Auto-Run",

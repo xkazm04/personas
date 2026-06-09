@@ -13236,6 +13236,7 @@ export type Translations = {
       no_tasks_queued: string;
       no_tasks_queued_sub: string;
       auto_run_all: string;
+      retry_all_failed: string;
       auto_run_progress: string;
       auto_run_complete: string;
       auto_run_started: string;
