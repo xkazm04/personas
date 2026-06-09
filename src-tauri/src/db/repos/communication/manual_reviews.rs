@@ -288,18 +288,31 @@ pub fn update_status(
             ManualReviewStatus::Pending => None,
         };
 
+        // Atomic + idempotent flip: the `AND status = ?6` predicate makes the
+        // transition a single-winner compare-and-swap. Two callers that both read
+        // `Pending` (user vs. Athena, double-click, two windows) interleave between
+        // the get_by_id above and this UPDATE; without the predicate both report 1
+        // row affected and BOTH re-fire react_to_review_decision (re-resume the held
+        // step, re-dispatch the follow-up run). With it only the first commits; the
+        // loser gets 0 rows and its error short-circuits the duplicate side effects.
+        let expected = current.status.as_str();
         let rows = conn.execute(
             "UPDATE persona_manual_reviews
              SET status = ?1,
                  reviewer_notes = COALESCE(?2, reviewer_notes),
                  resolved_at = COALESCE(?3, resolved_at),
                  updated_at = ?4
-             WHERE id = ?5",
-            params![status.as_str(), reviewer_notes, resolved_at, now, id],
+             WHERE id = ?5 AND status = ?6",
+            params![status.as_str(), reviewer_notes, resolved_at, now, id, expected],
         )?;
 
         if rows == 0 {
-            return Err(AppError::NotFound(format!("Manual review {id}")));
+            // get_by_id above succeeded, so the row exists — a 0-row flip means a
+            // concurrent caller already resolved it. Surface a benign error that the
+            // command layer's `?` turns into "someone else won; don't re-fire".
+            return Err(AppError::Validation(format!(
+                "Manual review {id} was already resolved by a concurrent action"
+            )));
         }
 
         // Surfaced reference to whatever the learning loop wrote (Phase 2).
