@@ -2174,16 +2174,26 @@ pub fn execute_local_sqlite(
             truncated: false,
         })
     } else {
-        // Deny-list: block statements that could escape the database sandbox
+        // Deny-list: block statements that could escape the database sandbox.
+        // Derive the leading verb with the SAME comment/whitespace-stripping
+        // tokenizer the classifier uses, so separator tricks (`ATTACH/**/DATABASE`,
+        // `ATTACH\tDATABASE`, a newline before the verb) can't split the verb from
+        // the guard the way the old raw `starts_with("ATTACH ")` did.
         let upper = trimmed.to_uppercase();
-        let forbidden = ["ATTACH ", "DETACH ", "VACUUM INTO"];
-        for kw in &forbidden {
-            if upper.starts_with(kw) {
-                return Err(AppError::Validation(format!(
-                    "Statement type '{}' is not allowed",
-                    kw.trim()
-                )));
+        match extract_first_keyword(trimmed).as_deref() {
+            Some("ATTACH") | Some("DETACH") => {
+                return Err(AppError::Validation(
+                    "Statement type 'ATTACH/DETACH' is not allowed".into(),
+                ));
             }
+            // VACUUM itself is fine (maintenance), but `VACUUM INTO` writes a full
+            // DB copy to an arbitrary path — block it regardless of separators.
+            Some("VACUUM") if upper.contains("INTO") => {
+                return Err(AppError::Validation(
+                    "Statement type 'VACUUM INTO' is not allowed".into(),
+                ));
+            }
+            _ => {}
         }
 
         // Write statement (CREATE TABLE, INSERT, UPDATE, DELETE, etc.)
