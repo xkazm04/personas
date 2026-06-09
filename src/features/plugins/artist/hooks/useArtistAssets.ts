@@ -20,15 +20,21 @@ export function useArtistAssets() {
   const [assets, setAssets] = useState<ArtistAsset[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const artistFolder = useSystemStore((s) => s.artistFolder);
   const setArtistFolder = useSystemStore((s) => s.setArtistFolder);
 
   const loadAssets = useCallback(async (assetType?: string) => {
     setLoading(true);
-    await artistListAssets(assetType)
-      .then(setAssets)
-      .catch(toastCatch('useArtistAssets:loadAssets'));
-    setLoading(false);
+    setError(null);
+    try {
+      setAssets(await artistListAssets(assetType));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      toastCatch('useArtistAssets:loadAssets')(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   const scanAndImport = useCallback(async (folder: string) => {
@@ -89,6 +95,7 @@ export function useArtistAssets() {
   return {
     assets,
     loading,
+    error,
     scanning,
     loadAssets,
     scanAndImport,

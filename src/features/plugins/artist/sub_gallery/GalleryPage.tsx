@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { CalendarDays, Image, Box, FolderOpen, FolderSearch, Search, SortAsc, SortDesc } from 'lucide-react';
+import { CalendarDays, Image, Box, FolderOpen, FolderSearch, Search, SortAsc, SortDesc, AlertTriangle, RefreshCw } from 'lucide-react';
 import { open as openExternal } from '@tauri-apps/plugin-shell';
 import { useArtistAssets } from '../hooks/useArtistAssets';
 import { useSystemStore } from '@/stores/systemStore';
@@ -15,7 +15,7 @@ export default function GalleryPage() {
   const galleryMode = useSystemStore((s) => s.galleryMode);
   const setGalleryMode = useSystemStore((s) => s.setGalleryMode);
   const artistFolder = useSystemStore((s) => s.artistFolder);
-  const { assets, loading, scanning, scanAndImport, deleteAsset, updateTags, renameAsset } = useArtistAssets();
+  const { assets, loading, error, scanning, scanAndImport, deleteAsset, updateTags, renameAsset, loadAssets } = useArtistAssets();
 
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
@@ -176,6 +176,20 @@ export default function GalleryPage() {
       {loading ? (
         <div className="flex items-center justify-center py-16 text-foreground typo-body">
           {t.plugins.artist.loading_assets}
+        </div>
+      ) : error && filteredAssets.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 space-y-3">
+          <div className="w-14 h-14 rounded-2xl bg-red-500/5 border border-red-500/15 flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-red-400" />
+          </div>
+          <p className="typo-section-title">Could not load assets</p>
+          <p className="typo-body text-foreground/70 max-w-xs text-center">{error}</p>
+          <button
+            onClick={() => void loadAssets()}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
         </div>
       ) : filteredAssets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 space-y-3">
