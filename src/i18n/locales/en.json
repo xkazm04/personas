@@ -207,7 +207,8 @@
     "quick_carry_out_hint": "Approves the review and runs the persona to do this",
     "quick_carrying_out": "Carrying out: {action}",
     "learned_view": "View",
-    "quick_source_unknown": "Persona"
+    "quick_source_unknown": "Persona",
+    "channels_goals_tab": "Goals"
   },
   "common": {
     "unknown_error": "Unknown error",

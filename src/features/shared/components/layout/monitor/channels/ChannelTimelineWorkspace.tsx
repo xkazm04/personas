@@ -10,6 +10,7 @@ import { postTeamDirective } from '@/api/pipeline/teamChannel';
 import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { silentCatch } from '@/lib/silentCatch';
 import { QuickAnswerBody } from '@/features/shared/components/layout/quick-answer/QuickAnswerBody';
+import { GoalsTimeline } from '@/features/teams/sub_goals/GoalsTimeline';
 import { MergedChannels } from './mergedFeed';
 import { VirtualStream } from './VirtualStream';
 import { matchesFilter } from './feedFilter';
@@ -158,19 +159,23 @@ const CenterStream = memo(function CenterStream({
   );
 });
 
-/* ── RIGHT — Quick Answer (no feed props → isolated from the stream) ──────── */
-const QuickAnswerSidebar = memo(function QuickAnswerSidebar({ onCollapse }: { onCollapse: () => void }) {
+/* ── RIGHT — switchable Quick Answer / Goals (no feed props → isolated) ────── */
+const RightSidebar = memo(function RightSidebar({ onCollapse }: { onCollapse: () => void }) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<'quick' | 'goals'>('quick');
+  const tabClass = (on: boolean) =>
+    `px-2 py-0.5 rounded-interactive typo-label uppercase tracking-wider transition-colors ${on ? 'text-foreground bg-secondary/40' : 'text-foreground/45 hover:text-foreground/75'}`;
   return (
     <div className="h-full flex flex-col min-h-0 bg-foreground/[0.012]">
-      <div className="flex-shrink-0 h-9 px-3 flex items-center gap-2 border-b border-border">
-        <span className="typo-label uppercase tracking-wider text-foreground/55">{t.monitor.quick_title}</span>
+      <div className="flex-shrink-0 h-9 px-2 flex items-center gap-1 border-b border-border">
+        <button type="button" onClick={() => setTab('quick')} aria-pressed={tab === 'quick'} className={tabClass(tab === 'quick')}>{t.monitor.quick_title}</button>
+        <button type="button" onClick={() => setTab('goals')} aria-pressed={tab === 'goals'} className={tabClass(tab === 'goals')}>{t.monitor.channels_goals_tab}</button>
         <button type="button" onClick={onCollapse} title={t.monitor.channels_hide_panel} className="ml-auto p-1 rounded-interactive text-foreground/40 hover:text-foreground/80 transition-colors">
           <PanelRightClose className="w-3.5 h-3.5" />
         </button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
-        <QuickAnswerBody />
+        {tab === 'quick' ? <QuickAnswerBody /> : <GoalsTimeline compact showProject />}
       </div>
     </div>
   );
@@ -370,7 +375,7 @@ function WorkspaceInner({
           <>
             <ResizeHandle side="right" onDrag={dragRight} onEnd={persistRight} />
             <div ref={rightRef} style={{ width: rightW.current }} className="flex-shrink-0 min-h-0">
-              <QuickAnswerSidebar onCollapse={collapseRight} />
+              <RightSidebar onCollapse={collapseRight} />
             </div>
           </>
         )}

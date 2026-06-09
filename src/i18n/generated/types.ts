@@ -214,6 +214,7 @@ export type Translations = {
     quick_carrying_out: string;
     learned_view: string;
     quick_source_unknown: string;
+    channels_goals_tab: string;
   };
   common: {
     unknown_error: string;
