@@ -7265,6 +7265,8 @@ export type Translations = {
       used_references: string;
       no_design_data: string;
       no_design_data_hint: string;
+      tab_use_cases: string;
+      open_diagram: string;
     };
     detail_overview: {
       use_case_flows: string;
@@ -7878,6 +7880,15 @@ export type Translations = {
       confirmed_capabilities: string;
       issues_label: string;
       suggested_next_steps: string;
+      summary: {
+        connectors: string;
+        tools: string;
+        events: string;
+        channels: string;
+        ready: string;
+        partial: string;
+        blocked: string;
+      };
     };
     card: {
       use_cases_label: string;
@@ -7887,6 +7898,23 @@ export type Translations = {
       none_label: string;
       more_count: string;
       system_prompt: string;
+    };
+    compare: {
+      compare: string;
+      selected: string;
+      clear: string;
+      title: string;
+      subtitle: string;
+      hint_min: string;
+      max_reached: string;
+      add_to_compare: string;
+      remove_from_compare: string;
+      col_category: string;
+      col_goal: string;
+      col_complexity: string;
+      col_setup: string;
+      none: string;
+      differs: string;
     };
     matrix_grid: {
       prerequisites: string;

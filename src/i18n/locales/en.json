@@ -7258,7 +7258,9 @@
       "review_error": "Error",
       "used_references": "Used reference patterns",
       "no_design_data": "No design data available",
-      "no_design_data_hint": "Design data unavailable for this template."
+      "no_design_data_hint": "Design data unavailable for this template.",
+      "tab_use_cases": "Use cases",
+      "open_diagram": "Open full diagram"
     },
     "detail_overview": {
       "use_case_flows": "Use Case Flows",
@@ -7871,7 +7873,16 @@
       "feasibility_assessment": "Feasibility Assessment",
       "confirmed_capabilities": "Confirmed Capabilities",
       "issues_label": "Issues",
-      "suggested_next_steps": "Suggested Next Steps"
+      "suggested_next_steps": "Suggested Next Steps",
+      "summary": {
+        "connectors": "Connectors",
+        "tools": "Tools",
+        "events": "Events",
+        "channels": "Channels",
+        "ready": "Ready",
+        "partial": "Partial",
+        "blocked": "Blocked"
+      }
     },
     "card": {
       "use_cases_label": "Use Cases",
@@ -7881,6 +7892,23 @@
       "none_label": "None",
       "more_count": "+{count} more",
       "system_prompt": "System Prompt"
+    },
+    "compare": {
+      "compare": "Compare",
+      "selected": "{count} selected",
+      "clear": "Clear",
+      "title": "Compare templates",
+      "subtitle": "Side-by-side across {count} templates",
+      "hint_min": "Select at least 2 templates to compare",
+      "max_reached": "Compare up to {max} at once",
+      "add_to_compare": "Add to compare",
+      "remove_from_compare": "Remove from compare",
+      "col_category": "Category",
+      "col_goal": "Goal",
+      "col_complexity": "Complexity",
+      "col_setup": "Setup time",
+      "none": "—",
+      "differs": "Differs"
     },
     "matrix_grid": {
       "prerequisites": "Prerequisites",

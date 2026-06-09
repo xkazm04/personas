@@ -21,6 +21,7 @@ interface ConnectorsSectionProps {
   onToolToggle: (toolName: string) => void;
   onConnectorClick?: (connector: SuggestedConnector) => void;
   readOnly: boolean;
+  anchorId?: string;
 }
 
 export function ConnectorsSection({
@@ -33,6 +34,7 @@ export function ConnectorsSection({
   onToolToggle,
   onConnectorClick,
   readOnly,
+  anchorId,
 }: ConnectorsSectionProps) {
   const { t } = useTranslation();
   // credentialLinks is per-persona { connectorName -> credentialId }, the
@@ -71,7 +73,7 @@ export function ConnectorsSection({
   if (connectorToolMap.length === 0 && suggestedTools.length === 0) return null;
 
   return (
-    <div className="space-y-3">
+    <div id={anchorId} className="space-y-3">
       <div className={SECTION_LABEL}>
         <Plug className="w-4 h-4 text-emerald-400" />
         {t.templates.design.connectors_and_tools}

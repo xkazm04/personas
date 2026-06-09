@@ -6729,7 +6729,9 @@
       "review_error": "Lỗi",
       "used_references": "Đã sử dụng mẫu tham chiếu",
       "no_design_data": "Không có dữ liệu thiết kế",
-      "no_design_data_hint": "Dữ liệu thiết kế không khả dụng cho mẫu này."
+      "no_design_data_hint": "Dữ liệu thiết kế không khả dụng cho mẫu này.",
+      "tab_use_cases": "Trường hợp sử dụng",
+      "open_diagram": "Mở sơ đồ đầy đủ"
     },
     "detail_overview": {
       "use_case_flows": "Luồng trường hợp sử dụng",
@@ -7342,7 +7344,16 @@
       "feasibility_assessment": "Đánh giá tính khả thi",
       "confirmed_capabilities": "Khả năng đã xác nhận",
       "issues_label": "Vấn đề",
-      "suggested_next_steps": "Các bước tiếp theo đề xuất"
+      "suggested_next_steps": "Các bước tiếp theo đề xuất",
+      "summary": {
+        "connectors": "Trình kết nối",
+        "tools": "Công cụ",
+        "events": "Sự kiện",
+        "channels": "Kênh",
+        "ready": "Sẵn sàng",
+        "partial": "Một phần",
+        "blocked": "Bị chặn"
+      }
     },
     "card": {
       "use_cases_label": "Trường hợp sử dụng",
@@ -7840,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} câu hỏi, {customized} đã tùy chỉnh",
       "questionnaire_member_no_config": "Không cần cấu hình",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "So sánh",
+      "selected": "Đã chọn {count}",
+      "clear": "Xóa",
+      "title": "So sánh mẫu",
+      "subtitle": "So sánh song song {count} mẫu",
+      "hint_min": "Chọn ít nhất 2 mẫu để so sánh",
+      "max_reached": "So sánh tối đa {max} cùng lúc",
+      "add_to_compare": "Thêm vào so sánh",
+      "remove_from_compare": "Xóa khỏi so sánh",
+      "col_category": "Danh mục",
+      "col_goal": "Mục tiêu",
+      "col_complexity": "Độ phức tạp",
+      "col_setup": "Thời gian thiết lập",
+      "none": "—",
+      "differs": "Khác nhau"
     }
   },
   "triggers": {
