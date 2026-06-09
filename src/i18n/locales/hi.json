@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} को {group} में स्थानांतरित किया गया",
       "filter_clear_title": "इस फ़िल्टर को साफ़ करने के लिए क्लिक करें",
       "filter_all": "कोई preference"
-    }
+    },
+    "sigil_edit_active": "इस क्षमता के लिए सक्रिय",
+    "sigil_edit_inactive": "निष्क्रिय — सक्षम करने के लिए चालू करें",
+    "sigil_edit_enable": "इस क्षमता के लिए सक्षम करें",
+    "sigil_edit_disable": "इस क्षमता के लिए अक्षम करें"
   },
   "vault": {
     "title": "वॉल्ट",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "आयाम"
     },
     "diagrams": {
       "no_flow_data": "कोई फ्लो डेटा उपलब्ध नहीं",

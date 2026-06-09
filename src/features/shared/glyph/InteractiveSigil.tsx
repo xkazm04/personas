@@ -173,7 +173,7 @@ export function InteractiveSigil({
         </text>
         <text x={center} y={center + size * 0.065} textAnchor="middle" dominantBaseline="middle" className="fill-current"
           style={{ fontSize: `${size * 0.027}px`, letterSpacing: '0.3em', opacity: 0.55 }}>
-          DIMS
+          {c.dims_label}
         </text>
       </svg>
 

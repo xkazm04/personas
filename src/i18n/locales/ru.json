@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} перемещена в {group}",
       "filter_clear_title": "Нажмите, чтобы снять этот фильтр",
       "filter_all": "Нет preference"
-    }
+    },
+    "sigil_edit_active": "Активно для этой возможности",
+    "sigil_edit_inactive": "Неактивно — включите, чтобы активировать",
+    "sigil_edit_enable": "Включить для этой возможности",
+    "sigil_edit_disable": "Отключить для этой возможности"
   },
   "vault": {
     "title": "Хранилище",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "ИЗМ"
     },
     "diagrams": {
       "no_flow_data": "Нет данных потока",

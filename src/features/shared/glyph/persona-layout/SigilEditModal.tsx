@@ -2,8 +2,9 @@ import type { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { X, Power, ChevronRight } from 'lucide-react';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
-import { DIM_LABEL } from '@/features/shared/glyph/persona-sigil';
+import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
 import type { GlyphDimension } from '@/features/shared/glyph';
+import { useTranslation } from '@/i18n/useTranslation';
 import { DebtText } from '@/i18n/DebtText';
 
 
@@ -64,11 +65,13 @@ export function SigilEditModal({
   onToggleActive,
   onClose,
 }: SigilEditModalProps) {
+  const { t } = useTranslation();
+  const dimText = useGlyphDimText();
   if (!dim) return null;
 
   const meta = DIM_META[dim];
   const Icon = meta.icon;
-  const dimLabel = DIM_LABEL[dim];
+  const dimLabel = dimText.label[dim];
 
   return (
     <motion.div
@@ -97,14 +100,14 @@ export function SigilEditModal({
             {dimLabel}
           </span>
           <p className="typo-caption text-foreground mt-0.5">
-            {isActive ? 'Active for this capability' : 'Inactive — toggle on to enable'}
+            {isActive ? t.agents.sigil_edit_active : t.agents.sigil_edit_inactive}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
           className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full text-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
-          aria-label="Close"
+          aria-label={t.common.close}
         >
           <X className="w-4 h-4" />
         </button>
@@ -134,7 +137,7 @@ export function SigilEditModal({
           }`}
         >
           <Power className="w-3.5 h-3.5" />
-          {isActive ? 'Disable for this capability' : 'Enable for this capability'}
+          {isActive ? t.agents.sigil_edit_disable : t.agents.sigil_edit_enable}
         </button>
       </div>
     </motion.div>

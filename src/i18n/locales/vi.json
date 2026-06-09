@@ -3114,7 +3114,11 @@
       "moved_toast": "Đã chuyển {persona} sang {group}",
       "filter_clear_title": "Nhấp để xóa bộ lọc này",
       "filter_all": "Không có preference"
-    }
+    },
+    "sigil_edit_active": "Đang bật cho khả năng này",
+    "sigil_edit_inactive": "Tắt — bật để kích hoạt",
+    "sigil_edit_enable": "Bật cho khả năng này",
+    "sigil_edit_disable": "Tắt cho khả năng này"
   },
   "vault": {
     "title": "Kho lưu trữ",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "CHIỀU"
     },
     "diagrams": {
       "no_flow_data": "Không có dữ liệu luồng",

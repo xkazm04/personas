@@ -797,6 +797,10 @@ export type Translations = {
       event: string;
       error: string;
     };
+    sigil_edit_active: string;
+    sigil_edit_inactive: string;
+    sigil_edit_enable: string;
+    sigil_edit_disable: string;
     title: string;
     loading: string;
     persona_decisions_footer_one: string;
@@ -8112,6 +8116,7 @@ export type Translations = {
       shared_badge: string;
       flow_label: string;
       dims_ratio: string;
+      dims_label: string;
       legend_label: string;
       legend_semantics: string;
       hub_phase_idle: string;

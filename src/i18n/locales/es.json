@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} movida a {group}",
       "filter_clear_title": "Haz clic para borrar este filtro",
       "filter_all": "Sin preference"
-    }
+    },
+    "sigil_edit_active": "Activo para esta capacidad",
+    "sigil_edit_inactive": "Inactivo — actívalo para habilitar",
+    "sigil_edit_enable": "Habilitar para esta capacidad",
+    "sigil_edit_disable": "Deshabilitar para esta capacidad"
   },
   "vault": {
     "title": "Bóveda",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "DIM"
     },
     "diagrams": {
       "no_flow_data": "Sin datos de flujo disponibles",

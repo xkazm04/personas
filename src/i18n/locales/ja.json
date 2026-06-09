@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} を {group} に移動しました",
       "filter_clear_title": "クリックしてこのフィルターを解除",
       "filter_all": "preference"
-    }
+    },
+    "sigil_edit_active": "この機能で有効",
+    "sigil_edit_inactive": "無効 — オンにして有効化",
+    "sigil_edit_enable": "この機能で有効化",
+    "sigil_edit_disable": "この機能で無効化"
   },
   "vault": {
     "title": "保管庫",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "次元"
     },
     "diagrams": {
       "no_flow_data": "フローデータがありません",

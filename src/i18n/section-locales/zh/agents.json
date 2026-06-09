@@ -2542,5 +2542,9 @@
     "moved_toast": "已将 {persona} 移至 {group}",
     "filter_clear_title": "点击以清除此筛选",
     "filter_all": "无preference"
-  }
+  },
+  "sigil_edit_active": "已为此能力启用",
+  "sigil_edit_inactive": "未启用 — 开启以启用",
+  "sigil_edit_enable": "为此能力启用",
+  "sigil_edit_disable": "为此能力停用"
 }

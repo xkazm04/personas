@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} déplacée vers {group}",
       "filter_clear_title": "Cliquez pour effacer ce filtre",
       "filter_all": "Aucun preference"
-    }
+    },
+    "sigil_edit_active": "Actif pour cette capacité",
+    "sigil_edit_inactive": "Inactif — activez pour l’utiliser",
+    "sigil_edit_enable": "Activer pour cette capacité",
+    "sigil_edit_disable": "Désactiver pour cette capacité"
   },
   "vault": {
     "title": "Coffre-fort",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "DIM"
     },
     "diagrams": {
       "no_flow_data": "Aucune donnée de flux disponible",

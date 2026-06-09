@@ -2542,5 +2542,9 @@
     "moved_toast": "{persona} dipindahkan ke {group}",
     "filter_clear_title": "Klik untuk menghapus filter ini",
     "filter_all": "Tidak ada preference"
-  }
+  },
+  "sigil_edit_active": "Aktif untuk kapabilitas ini",
+  "sigil_edit_inactive": "Nonaktif — aktifkan untuk mengaktifkan",
+  "sigil_edit_enable": "Aktifkan untuk kapabilitas ini",
+  "sigil_edit_disable": "Nonaktifkan untuk kapabilitas ini"
 }

@@ -3114,7 +3114,11 @@
       "moved_toast": "已将 {persona} 移至 {group}",
       "filter_clear_title": "点击以清除此筛选",
       "filter_all": "无preference"
-    }
+    },
+    "sigil_edit_active": "已为此能力启用",
+    "sigil_edit_inactive": "未启用 — 开启以启用",
+    "sigil_edit_enable": "为此能力启用",
+    "sigil_edit_disable": "为此能力停用"
   },
   "vault": {
     "title": "密钥库",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "维度"
     },
     "diagrams": {
       "no_flow_data": "没有可用的流程数据",

@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} přesunuta do {group}",
       "filter_clear_title": "Kliknutím vymažete tento filtr",
       "filter_all": "Žádné preference"
-    }
+    },
+    "sigil_edit_active": "Aktivní pro tuto schopnost",
+    "sigil_edit_inactive": "Neaktivní — zapněte pro aktivaci",
+    "sigil_edit_enable": "Zapnout pro tuto schopnost",
+    "sigil_edit_disable": "Vypnout pro tuto schopnost"
   },
   "vault": {
     "title": "Trezor",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "DIM"
     },
     "diagrams": {
       "no_flow_data": "Žádná data toku nejsou k dispozici",

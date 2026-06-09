@@ -791,6 +791,10 @@
       "event": "Other agents it reacts to",
       "error": "What it does when a run fails"
     },
+    "sigil_edit_active": "Active for this capability",
+    "sigil_edit_inactive": "Inactive — toggle on to enable",
+    "sigil_edit_enable": "Enable for this capability",
+    "sigil_edit_disable": "Disable for this capability",
     "title": "Personas",
     "loading": "Loading...",
     "persona_decisions_footer_one": "1 design decision Athena logged",
@@ -8106,6 +8110,7 @@
       "shared_badge": "Shared",
       "flow_label": "Flow · {count} steps",
       "dims_ratio": "{count}/8 dims",
+      "dims_label": "DIMS",
       "legend_label": "Legend",
       "legend_semantics": "filled = linked · dashed = shared · hollow = none",
       "hub_phase_idle": "Idle",

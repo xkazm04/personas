@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona}을(를) {group}(으)로 이동했습니다",
       "filter_clear_title": "이 필터를 지우려면 클릭",
       "filter_all": "preference"
-    }
+    },
+    "sigil_edit_active": "이 기능에 대해 활성화됨",
+    "sigil_edit_inactive": "비활성 — 켜서 활성화",
+    "sigil_edit_enable": "이 기능에 대해 활성화",
+    "sigil_edit_disable": "이 기능에 대해 비활성화"
   },
   "vault": {
     "title": "보관함",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "차원"
     },
     "diagrams": {
       "no_flow_data": "사용 가능한 흐름 데이터 없음",

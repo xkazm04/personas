@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} nach {group} verschoben",
       "filter_clear_title": "Klicken, um diesen Filter zu löschen",
       "filter_all": "Keine preference"
-    }
+    },
+    "sigil_edit_active": "Für diese Fähigkeit aktiv",
+    "sigil_edit_inactive": "Inaktiv — zum Aktivieren einschalten",
+    "sigil_edit_enable": "Für diese Fähigkeit aktivieren",
+    "sigil_edit_disable": "Für diese Fähigkeit deaktivieren"
   },
   "vault": {
     "title": "Tresor",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "DIM"
     },
     "diagrams": {
       "no_flow_data": "Keine Flow-Daten verfügbar",

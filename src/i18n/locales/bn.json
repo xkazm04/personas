@@ -3114,7 +3114,11 @@
       "moved_toast": "{persona} {group}-এ সরানো হয়েছে",
       "filter_clear_title": "এই ফিল্টার সাফ করতে ক্লিক করুন",
       "filter_all": "কোনো preference"
-    }
+    },
+    "sigil_edit_active": "এই সক্ষমতার জন্য সক্রিয়",
+    "sigil_edit_inactive": "নিষ্ক্রিয় — সক্ষম করতে চালু করুন",
+    "sigil_edit_enable": "এই সক্ষমতার জন্য সক্ষম করুন",
+    "sigil_edit_disable": "এই সক্ষমতার জন্য নিষ্ক্রিয় করুন"
   },
   "vault": {
     "title": "ভল্ট",
@@ -7604,7 +7608,8 @@
       "hub_request_change": "Request change",
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
-      "hub_delete_draft": "Delete draft"
+      "hub_delete_draft": "Delete draft",
+      "dims_label": "মাত্রা"
     },
     "diagrams": {
       "no_flow_data": "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",

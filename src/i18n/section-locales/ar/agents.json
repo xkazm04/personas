@@ -2542,5 +2542,9 @@
     "moved_toast": "تم نقل {persona} إلى {group}",
     "filter_clear_title": "انقر لمسح هذا التصفية",
     "filter_all": "لا preference"
-  }
+  },
+  "sigil_edit_active": "مُفعّل لهذه القدرة",
+  "sigil_edit_inactive": "غير مُفعّل — فعّله للتمكين",
+  "sigil_edit_enable": "تفعيل لهذه القدرة",
+  "sigil_edit_disable": "تعطيل لهذه القدرة"
 }
