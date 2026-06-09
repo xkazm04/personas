@@ -14,7 +14,7 @@ function EmptyNote({ label }: { label: string }) {
 export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow; t: Translations }) {
   switch (dim) {
     case 'trigger':
-      if (!row.triggers.length) return <EmptyNote label="No trigger configured" />;
+      if (!row.triggers.length) return <EmptyNote label={t.templates.chronology.empty_trigger} />;
       return (
         <div className="flex flex-col gap-2">
           {row.triggers.map((tr, i) => (
@@ -27,7 +27,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
       );
 
     case 'task':
-      if (!row.steps.length) return <EmptyNote label="No steps defined" />;
+      if (!row.steps.length) return <EmptyNote label={t.templates.chronology.empty_steps} />;
       return (
         <ol className="flex flex-col gap-1.5 list-none">
           {row.steps.slice(0, 8).map((s, i) => (
@@ -44,7 +44,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
       );
 
     case 'connector':
-      if (!row.connectors.length) return <EmptyNote label="No connectors configured" />;
+      if (!row.connectors.length) return <EmptyNote label={t.templates.chronology.empty_connectors} />;
       return (
         <div className="grid grid-cols-2 gap-1.5">
           {row.connectors.slice(0, 6).map((cn, i) => {
@@ -71,7 +71,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
 
     case 'message': {
       const channels = parseChannels(row.messageSummary);
-      if (!channels.length) return <EmptyNote label="No channels configured" />;
+      if (!channels.length) return <EmptyNote label={t.templates.chronology.empty_channels} />;
       return (
         <div className="flex flex-col gap-1.5">
           {channels.map((ch, i) => {
@@ -96,15 +96,15 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
     case 'review':
       return row.reviewSummary
         ? <p className="typo-body text-foreground leading-relaxed">{row.reviewSummary}</p>
-        : <EmptyNote label="No review policy" />;
+        : <EmptyNote label={t.templates.chronology.empty_review} />;
 
     case 'memory':
       return row.memorySummary
         ? <p className="typo-body text-foreground leading-relaxed">{row.memorySummary}</p>
-        : <EmptyNote label="Memory not configured" />;
+        : <EmptyNote label={t.templates.chronology.empty_memory} />;
 
     case 'event':
-      if (!row.events.length) return <EmptyNote label="No event subscriptions" />;
+      if (!row.events.length) return <EmptyNote label={t.templates.chronology.empty_events} />;
       return (
         <div className="flex flex-col gap-1.5">
           {row.events.map((e, i) => (
@@ -119,9 +119,9 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
     case 'error':
       return row.errorSummary
         ? <p className="typo-body text-foreground leading-relaxed">{row.errorSummary}</p>
-        : <EmptyNote label="No error handler" />;
+        : <EmptyNote label={t.templates.chronology.empty_error} />;
 
     default:
-      return <EmptyNote label="No content" />;
+      return <EmptyNote label={t.templates.chronology.empty_generic} />;
   }
 }

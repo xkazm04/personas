@@ -6,7 +6,6 @@ import type { BuildQuestion } from '@/lib/types/buildTypes';
 import { VaultConnectorPicker } from '@/features/shared/components/picker/VaultConnectorPicker';
 import { DIM_META } from './dimMeta';
 import type { GlyphDimension } from './types';
-import { debtText } from '@/i18n/DebtText';
 
 
 /** Maps the backend cell keys to our 8-dimension vocabulary. Used so the
@@ -28,6 +27,7 @@ interface GlyphQuestionCardProps {
 }
 
 function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
+  const { t } = useTranslation();
   const [freeText, setFreeText] = useState('');
   const dim = CELL_KEY_TO_DIM[question.cellKey];
   const color = dim ? DIM_META[dim].color : '#60a5fa';
@@ -98,7 +98,7 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') submit(freeText); }}
-              placeholder={debtText("auto_answer_in_your_own_words_28c70fc2")}
+              placeholder={t.templates.chronology.answer_own_words_placeholder}
               className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border border-card-border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none focus:border-primary/40"
               data-testid="glyph-freetext-input"
             />
@@ -110,7 +110,7 @@ function GlyphQuestionCard({ question, onAnswer }: GlyphQuestionCardProps) {
               data-testid="glyph-submit-button"
             >
               <Send className="w-3.5 h-3.5" />
-              Send
+              {t.common.send}
             </button>
           </div>
         </>

@@ -15,7 +15,6 @@ import { ChannelTotem } from './ChannelTotem';
 import { ConnectorTotem } from './ConnectorTotem';
 import { DimensionPanel } from './DimensionPanel';
 import { ModelBadge } from './ModelBadge';
-import { debtText } from '@/i18n/DebtText';
 
 
 interface GlyphCardProps {
@@ -150,7 +149,7 @@ export function GlyphCard({
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setFlowOpen(true); }}
                 className="w-8 h-8 rounded-full bg-card-bg/80 backdrop-blur border border-card-border shadow-elevation-1 flex items-center justify-center text-foreground hover:text-foreground hover:border-primary/35 cursor-pointer transition-colors shrink-0"
-                title={debtText("auto_open_flow_diagram_5e57c30e")}
+                title={c.open_flow_diagram}
               >
                 <Workflow className="w-4 h-4" />
               </button>

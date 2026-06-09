@@ -6,7 +6,7 @@ import type { BuildQuestion } from "@/lib/types/buildTypes";
 import { VaultConnectorPicker } from "@/features/shared/components/picker/VaultConnectorPicker";
 import { useSystemStore } from "@/stores/systemStore";
 import { CELL_KEY_TO_DIM, DIM_LABEL } from "./glyphLayoutHelpers";
-import { debtText } from '@/i18n/DebtText';
+import { useTranslation } from "@/i18n/useTranslation";
 
 
 interface GlyphAnswerCardProps {
@@ -21,6 +21,7 @@ interface GlyphAnswerCardProps {
  *  visibly "turns off" — the user gets immediate feedback that the
  *  dimension is resolved before the next pending one auto-focuses. */
 export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCardProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const dim = CELL_KEY_TO_DIM[question.cellKey];
   const color = dim ? DIM_META[dim].color : "#60a5fa";
@@ -104,7 +105,7 @@ export function GlyphAnswerCard({ question, onAnswer, onClose }: GlyphAnswerCard
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => { if (e.key === "Enter") submit(text); }}
-              placeholder={debtText("auto_answer_in_your_own_words_28c70fc2")}
+              placeholder={t.templates.chronology.answer_own_words_placeholder}
               className="flex-1 px-3 py-2 rounded-modal bg-primary/5 border typo-body text-foreground placeholder:text-foreground/40 focus:outline-none"
               style={{ borderColor: `${color}40` }}
               autoFocus

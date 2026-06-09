@@ -8149,6 +8149,23 @@ export type Translations = {
       hub_refine_placeholder: string;
       hub_refine_send: string;
       hub_delete_draft: string;
+      open_flow_diagram: string;
+      panel_back: string;
+      refine_dim_label: string;
+      refine_dim_placeholder: string;
+      refine_dim_apply: string;
+      build_locked_note: string;
+      no_dim_editor_note: string;
+      answer_own_words_placeholder: string;
+      empty_trigger: string;
+      empty_steps: string;
+      empty_connectors: string;
+      empty_channels: string;
+      empty_review: string;
+      empty_memory: string;
+      empty_events: string;
+      empty_error: string;
+      empty_generic: string;
     };
     diagrams: {
       no_flow_data: string;
@@ -15630,10 +15647,8 @@ export type Translations = {
     auto_all_scopes_b64efd49: string;
     auto_all_types_eb672cb3: string;
     auto_already_listen_for_ldquo_3aa796ca: string;
-    auto_answer_in_your_own_words_28c70fc2: string;
     auto_applied_8858b48c: string;
     auto_applies_to_ef612870: string;
-    auto_apply_on_rebuild_9a3f781c: string;
     auto_apply_schedule_c8f50c45: string;
     auto_ask_athena_to_compose_a_cockpit_view_try_fcc2f4df: string;
     auto_auto_evolution_panel_lineage_cdb5cb26: string;
@@ -15642,7 +15657,6 @@ export type Translations = {
     auto_avg_3a58f078: string;
     auto_avg_6d5ae115: string;
     auto_awaiting_telemetry_run_the_gate_to_populat_bae1f9a6: string;
-    auto_back_to_leaves_84907682: string;
     auto_back_to_personas_10208a8d: string;
     auto_back_to_picker_2d203d04: string;
     auto_backfill_event_handlers_c8c56de6: string;
@@ -15657,7 +15671,6 @@ export type Translations = {
     auto_breeding_in_progress_1074dca1: string;
     auto_breeding_studio_725018d2: string;
     auto_broadcast_prompt_26edef52: string;
-    auto_build_in_progress_dimensions_are_locked_un_eafcd432: string;
     auto_but_the_current_in_app_http_server_bound_t_ffe9bca1: string;
     auto_buttons_on_any_version_1bdcaa1e: string;
     auto_capability_e2d310aa: string;
@@ -15726,7 +15739,6 @@ export type Translations = {
     auto_custom_topic_a7724b35: string;
     auto_day_of_month_f5dbae0b: string;
     auto_delete_breeding_run_bab97d50: string;
-    auto_describe_the_change_e_g_switch_review_to_o_6839e49f: string;
     auto_describe_what_to_change_the_design_pass_wi_25e2cc2b: string;
     auto_describe_what_you_want_this_agent_to_do_ae7c256d: string;
     auto_describe_your_agent_d2e2c1aa: string;
@@ -15890,7 +15902,6 @@ export type Translations = {
     auto_no_credential_linked_4b88fb9a: string;
     auto_no_data_d802d232: string;
     auto_no_description_6934ceeb: string;
-    auto_no_editor_wired_for_this_dim_yet_toggle_be_84d10bc5: string;
     auto_no_eval_results_for_baseline_run_run_an_ev_301f1ff0: string;
     auto_no_events_11afa11c: string;
     auto_no_events_emitted_f61386b3: string;
@@ -15931,7 +15942,6 @@ export type Translations = {
     auto_open_agent_e247e3d5: string;
     auto_open_catalog_1e8f5a54: string;
     auto_open_composition_e37b3944: string;
-    auto_open_flow_diagram_5e57c30e: string;
     auto_open_in_browser_052269b2: string;
     auto_open_in_langfuse_10b35dbc: string;
     auto_open_project_3a6a0464: string;
@@ -15979,7 +15989,6 @@ export type Translations = {
     auto_publish_as_dfb33055: string;
     auto_recent_learnings_1994aa0a: string;
     auto_refine_capabilities_1d4bbd5f: string;
-    auto_refine_this_dimension_4c22b730: string;
     auto_refresh_error_rate_27711310: string;
     auto_refresh_leaderboard_c53e47fb: string;
     auto_refresh_versions_293273c5: string;

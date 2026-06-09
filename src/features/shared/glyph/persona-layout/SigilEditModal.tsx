@@ -5,7 +5,6 @@ import { DIM_META } from '@/features/shared/glyph/dimMeta';
 import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { useTranslation } from '@/i18n/useTranslation';
-import { DebtText } from '@/i18n/DebtText';
 
 
 export interface SigilEditModalProps {
@@ -118,7 +117,7 @@ export function SigilEditModal({
         {body ?? (
           <div className="flex items-center gap-2 typo-caption text-foreground italic">
             <ChevronRight className="w-3.5 h-3.5" />
-            <DebtText k="auto_no_editor_wired_for_this_dim_yet_toggle_be_84d10bc5" />
+            {t.templates.chronology.no_dim_editor_note}
           </div>
         )}
       </div>
