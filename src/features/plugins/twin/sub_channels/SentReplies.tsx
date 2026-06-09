@@ -1,10 +1,19 @@
 import { useMemo } from 'react';
-import { Send } from 'lucide-react';
+import { CornerUpLeft, Send } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { CopyButton } from '@/features/shared/components/buttons/CopyButton';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
+
+/** A request to adapt a past sent reply in the Reply Outbox. `ts` keys
+ *  consumption so the same row can be reused twice in a row. */
+export interface ReuseRequest {
+  ts: number;
+  channel: string;
+  contactHandle: string;
+  content: string;
+}
 
 /* ------------------------------------------------------------------ *
  *  SentReplies — recently logged outbound messages across the twin's
@@ -18,7 +27,7 @@ import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 
 const MAX_ROWS = 6;
 
-export function SentReplies({ channels }: { channels: TwinChannel[] }) {
+export function SentReplies({ channels, onReuse }: { channels: TwinChannel[]; onReuse: (r: ReuseRequest) => void }) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin.channels;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
@@ -62,7 +71,18 @@ export function SentReplies({ channels }: { channels: TwinChannel[] }) {
                 <RelativeTime timestamp={c.occurred_at} className="text-[10px] text-foreground tabular-nums" />
               </div>
             </div>
-            <CopyButton text={c.content} className="flex-shrink-0 text-foreground" />
+            <span className="flex-shrink-0 flex items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => onReuse({ ts: Date.now(), channel: c.channel, contactHandle: c.contact_handle ?? '', content: c.content })}
+                title={t.sentReuse}
+                aria-label={t.sentReuse}
+                className="p-1 rounded-interactive text-foreground hover:text-violet-300 hover:bg-violet-500/10 transition-colors focus-ring"
+              >
+                <CornerUpLeft className="w-3.5 h-3.5" />
+              </button>
+              <CopyButton text={c.content} className="text-foreground" />
+            </span>
           </li>
         ))}
       </ul>

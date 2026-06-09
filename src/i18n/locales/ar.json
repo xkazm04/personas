@@ -14006,6 +14006,7 @@
       "threadOutbound": "صادر",
       "sentTitle": "المُرسَل مؤخرًا",
       "sentTo": "إلى {handle}",
+      "sentReuse": "تعديل في صندوق الرد",
       "steerLabel": "توجيه سريع",
       "steerShorter": "أقصر",
       "steerWarmer": "أدفأ",

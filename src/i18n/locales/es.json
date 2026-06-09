@@ -14006,6 +14006,7 @@
       "threadOutbound": "Enviado",
       "sentTitle": "Enviado recientemente",
       "sentTo": "a {handle}",
+      "sentReuse": "Adaptar en la bandeja",
       "steerLabel": "Ajuste rápido",
       "steerShorter": "Más corto",
       "steerWarmer": "Más cálido",

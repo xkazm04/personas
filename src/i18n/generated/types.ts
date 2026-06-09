@@ -15007,6 +15007,7 @@ export type Translations = {
       threadOutbound: string;
       sentTitle: string;
       sentTo: string;
+      sentReuse: string;
       steerLabel: string;
       steerShorter: string;
       steerWarmer: string;

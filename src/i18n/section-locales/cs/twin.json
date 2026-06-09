@@ -91,6 +91,7 @@
     "threadOutbound": "Odesláno",
     "sentTitle": "Nedávno odesláno",
     "sentTo": "pro {handle}",
+    "sentReuse": "Upravit v odesílací schránce",
     "steerLabel": "Rychlé doladění",
     "steerShorter": "Kratší",
     "steerWarmer": "Vřelejší",

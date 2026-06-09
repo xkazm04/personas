@@ -91,6 +91,7 @@
     "threadOutbound": "Envoyé",
     "sentTitle": "Envoyés récemment",
     "sentTo": "à {handle}",
+    "sentReuse": "Adapter dans la boîte d'envoi",
     "steerLabel": "Ajustement rapide",
     "steerShorter": "Plus court",
     "steerWarmer": "Plus chaleureux",

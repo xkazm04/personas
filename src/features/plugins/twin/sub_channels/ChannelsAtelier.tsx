@@ -15,7 +15,7 @@ import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../sha
 import { silentCatch } from '@/lib/silentCatch';
 import { useChannelActivity } from './useChannelActivity';
 import { ReplyOutbox } from './ReplyOutbox';
-import { SentReplies } from './SentReplies';
+import { SentReplies, type ReuseRequest } from './SentReplies';
 
 
 /* ------------------------------------------------------------------ *
@@ -67,6 +67,8 @@ export default function ChannelsAtelier() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<TwinChannel | null>(null);
+  // "Adapt this sent reply" handoff from the Recently-sent rail to the outbox.
+  const [reuseRequest, setReuseRequest] = useState<ReuseRequest | null>(null);
 
   useEffect(() => { if (activeTwinId) fetchChannels(activeTwinId); }, [activeTwinId, fetchChannels]);
   useEffect(() => { fetchCredentials(); }, [fetchCredentials]);
@@ -224,10 +226,10 @@ export default function ChannelsAtelier() {
           </AnimatePresence>
 
           {/* Reply outbox — draft + approve-before-send */}
-          {channels.length > 0 && <ReplyOutbox channels={channels} />}
+          {channels.length > 0 && <ReplyOutbox channels={channels} reuseRequest={reuseRequest} />}
 
           {/* Recently sent — a visible record of logged outbound replies */}
-          {channels.length > 0 && <SentReplies channels={channels} />}
+          {channels.length > 0 && <SentReplies channels={channels} onReuse={setReuseRequest} />}
 
           {/* Channel list */}
           {isLoading && channels.length === 0 ? (

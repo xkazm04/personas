@@ -14006,6 +14006,7 @@
       "threadOutbound": "পাঠানো",
       "sentTitle": "সম্প্রতি পাঠানো",
       "sentTo": "{handle}-কে",
+      "sentReuse": "আউটবক্সে সম্পাদনা করুন",
       "steerLabel": "দ্রুত নির্দেশনা",
       "steerShorter": "আরও সংক্ষিপ্ত",
       "steerWarmer": "আরও উষ্ণ",

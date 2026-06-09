@@ -14006,6 +14006,7 @@
       "threadOutbound": "Gesendet",
       "sentTitle": "Kürzlich gesendet",
       "sentTo": "an {handle}",
+      "sentReuse": "In der Outbox anpassen",
       "steerLabel": "Schnell-Steuerung",
       "steerShorter": "Kürzer",
       "steerWarmer": "Wärmer",

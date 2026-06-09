@@ -14006,6 +14006,7 @@
       "threadOutbound": "Terkirim",
       "sentTitle": "Baru dikirim",
       "sentTo": "ke {handle}",
+      "sentReuse": "Adaptasi di outbox",
       "steerLabel": "Arahan cepat",
       "steerShorter": "Lebih singkat",
       "steerWarmer": "Lebih hangat",

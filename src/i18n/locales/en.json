@@ -15001,6 +15001,7 @@
       "threadOutbound": "Sent",
       "sentTitle": "Recently sent",
       "sentTo": "to {handle}",
+      "sentReuse": "Adapt in outbox",
       "steerLabel": "Quick steer",
       "steerShorter": "Shorter",
       "steerWarmer": "Warmer",

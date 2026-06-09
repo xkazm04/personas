@@ -14006,6 +14006,7 @@
       "threadOutbound": "Đã gửi",
       "sentTitle": "Đã gửi gần đây",
       "sentTo": "tới {handle}",
+      "sentReuse": "Chỉnh sửa trong hộp gửi",
       "steerLabel": "Chỉnh nhanh",
       "steerShorter": "Ngắn hơn",
       "steerWarmer": "Ấm áp hơn",

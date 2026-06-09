@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Inbox, Sparkles, Send, Trash2, Loader2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
@@ -7,6 +7,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 import { ContactThread } from './ContactThread';
+import type { ReuseRequest } from './SentReplies';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
@@ -29,7 +30,7 @@ import { silentCatch } from '@/lib/silentCatch';
  *  steers in the user's language). */
 const STEER_CHIPS = ['steerShorter', 'steerWarmer', 'steerFormal', 'steerQuestion'] as const;
 
-export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
+export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[]; reuseRequest?: ReuseRequest | null }) {
   const { t: tFull } = useTranslation();
   const tc = tFull.twin.channels;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
@@ -79,6 +80,24 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
   useEffect(() => {
     if (replyDraft === null) setDraftContext(null);
   }, [replyDraft]);
+
+  // Consume an "adapt this sent reply" request from the Recently-sent rail:
+  // prefill the selectors + draft box with the past reply and freeze the
+  // approve context to its original channel/contact, so editing + Approve
+  // re-logs against the same thread. Keyed on ts so the same row can be
+  // reused again later.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const lastReuseTs = useRef<number | null>(null);
+  useEffect(() => {
+    if (!reuseRequest || lastReuseTs.current === reuseRequest.ts) return;
+    lastReuseTs.current = reuseRequest.ts;
+    const ch = reuseRequest.channel as TwinChannelKind;
+    setChannelType(ch);
+    setContactHandle(reuseRequest.contactHandle);
+    setDraft(reuseRequest.content);
+    setDraftContext({ channel: ch, contactHandle: reuseRequest.contactHandle });
+    rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [reuseRequest, setDraft]);
 
   const channelOptions: ThemedSelectOption[] = useMemo(
     () =>
@@ -158,6 +177,7 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
 
   return (
     <motion.div
+      ref={rootRef}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-card border border-violet-500/25 bg-gradient-to-br from-violet-500/8 to-cyan-500/5 p-5 shadow-elevation-1"

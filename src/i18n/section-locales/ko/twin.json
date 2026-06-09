@@ -91,6 +91,7 @@
     "threadOutbound": "발신",
     "sentTitle": "최근 보냄",
     "sentTo": "{handle}에게",
+    "sentReuse": "아웃박스에서 수정",
     "steerLabel": "빠른 조정",
     "steerShorter": "더 짧게",
     "steerWarmer": "더 따뜻하게",

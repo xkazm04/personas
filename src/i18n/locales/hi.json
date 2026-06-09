@@ -14006,6 +14006,7 @@
       "threadOutbound": "भेजा गया",
       "sentTitle": "हाल में भेजा",
       "sentTo": "{handle} को",
+      "sentReuse": "आउटबॉक्स में संपादित करें",
       "steerLabel": "त्वरित निर्देश",
       "steerShorter": "छोटा करें",
       "steerWarmer": "और आत्मीय",
