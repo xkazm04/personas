@@ -271,7 +271,7 @@ pub async fn execute_team(
         tracing::warn!(
             team_id = %team_id,
             cycle_nodes = ?sort_result.cycle_nodes,
-            "Pipeline contains a non-feedback cycle -- cyclic nodes will be appended after acyclic ones",
+            "Pipeline contains a non-feedback cycle -- refusing to execute",
         );
         let _ = app.emit(
             event_name::PIPELINE_CYCLE_WARNING,
@@ -281,11 +281,21 @@ pub async fn execute_team(
                 "cycle_member_ids": sort_result.cycle_nodes,
             }),
         );
+        // Hard stop. Appending cycle members to the linear order just ran them
+        // once in arbitrary order with NONE of their true upstream outputs (each
+        // fell back to the global pipeline_input) — a result that looks successful
+        // but is semantically garbage and poisons team memory. Refuse instead.
+        let msg = format!(
+            "Pipeline has a non-feedback cycle ({} members) -- refusing to execute. \
+             Remove the A->...->A edges (only feedback edges may loop).",
+            sort_result.cycle_nodes.len()
+        );
+        team_repo::update_pipeline_run(&state.db, &run_id, "failed", "[]", Some(&msg))?;
+        return Ok(run_id);
     }
 
-    // Acyclic nodes in order, then any remaining cycle nodes appended at the end
-    let mut execution_order = sort_result.order;
-    execution_order.extend(sort_result.cycle_nodes);
+    // Acyclic — execute in topological order.
+    let execution_order = sort_result.order;
 
     // Build initial node statuses
     let initial_node_statuses: Vec<serde_json::Value> = members
