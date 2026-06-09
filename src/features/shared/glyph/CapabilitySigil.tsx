@@ -3,6 +3,8 @@ import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
 import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
 import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
+import { SigilPatternDefs, petalPatternFill } from '@/features/shared/glyph/dimPatterns';
+import { useThemeStore } from '@/stores/themeStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   getHealthMeta,
@@ -50,6 +52,7 @@ export function CapabilitySigil({
 }: CapabilitySigilProps) {
   const { t } = useTranslation();
   const dimText = useGlyphDimText();
+  const cvdSafe = useThemeStore((s) => s.cvdSafe);
   const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const center = size / 2;
   const present = new Set(uc.dimensions);
@@ -86,6 +89,7 @@ export function CapabilitySigil({
   })();
 
   const coreId = `mini-core-${uc.id}-${size}`;
+  const uid = `${uc.id}-${size}`;
   const dimOpacityActive = 0.85;
   const dimOpacityIdle = 0.62;
   const ghostOpacity = 0.16;
@@ -111,6 +115,10 @@ export function CapabilitySigil({
           <stop offset="55%" stopColor={isAttention ? '#fbbf24' : isDisabled ? '#94a3b8' : '#34d399'} stopOpacity={isDisabled ? 0.18 : 0.4} />
           <stop offset="100%" stopColor={isAttention ? '#fbbf24' : isDisabled ? '#94a3b8' : '#34d399'} stopOpacity={0.04} />
         </radialGradient>
+        {/* CVD-safe mode: dim-tinted textures so present petals read by
+            pattern, not hue alone (the eight dim colours include several
+            confusable pairs under deuteranopia/protanopia). */}
+        {cvdSafe && <SigilPatternDefs uid={uid} />}
       </defs>
 
       {/* Outer health ring */}
@@ -159,8 +167,8 @@ export function CapabilitySigil({
               <title>{dimText.label[dim]}</title>
               <path
                 d={wedgePath}
-                fill={isPresent ? meta.color : 'transparent'}
-                fillOpacity={isPresent ? (isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
+                fill={isPresent ? (cvdSafe ? petalPatternFill(dim, uid) : meta.color) : 'transparent'}
+                fillOpacity={isPresent ? (cvdSafe ? 1 : isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
                 stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
                 strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
                 strokeWidth={isPresent ? 0.8 : 0.6}

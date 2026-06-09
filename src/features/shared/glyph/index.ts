@@ -7,6 +7,7 @@ export { ConnectorTotem } from './ConnectorTotem';
 export { ChannelTotem } from './ChannelTotem';
 export { CapabilitySigil, EmptyCapabilitySigil } from './CapabilitySigil';
 export { SigilLegend } from './SigilLegend';
+export { SigilPatternDefs, petalPatternFill } from './dimPatterns';
 export { DIM_META, PETAL_ANGLES } from './dimMeta';
 export { humanizeCron } from './cron';
 export { parseChannels, channelIcon, channelTint } from './channels';
