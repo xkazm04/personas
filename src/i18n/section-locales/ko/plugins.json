@@ -259,7 +259,9 @@
     "trash_restore": "복원",
     "trash_empty": "휴지통 비우기",
     "trash_empty_confirm_title": "{count}개 항목을 영구 삭제할까요?",
-    "trash_empty_confirm_body": "휴지통을 비웁니다. 이 항목들은 복구할 수 없습니다."
+    "trash_empty_confirm_body": "휴지통을 비웁니다. 이 항목들은 복구할 수 없습니다.",
+    "trash_purges_in_days": "{days}일 후 삭제",
+    "trash_purges_soon": "곧 삭제됨"
   },
   "artist": {
     "title": "Artist",

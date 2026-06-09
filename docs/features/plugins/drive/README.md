@@ -38,7 +38,7 @@ The backend root is `app_data_dir/drive` in release and `./.dev-drive` in debug.
 `drive_delete` is a **soft delete**: items move into `<root>/.trash/<UTC-stamp>-<basename>/` rather than being removed. The original `drive.document.deleted` event still fires, so triggers behave the same. The sidebar has a dedicated Trash node (with item count) that opens the trash; `.trash` is hidden from the regular folder tree and from the Move-to destination picker. Items in the trash:
 
 - Surface in `drive_list` of the `.trash/` folder, so users can browse and manually move them out (effectively restoring them). Browsing the trash root shows a banner with the retention policy plus **Restore** (moves the selection back to the drive root under its original name, timestamp prefix stripped) and **Empty trash** (confirm dialog → hard-deletes everything via the second-delete path).
-- Are hard-deleted by `purge_old_trash` once their timestamp is older than 7 days. The purge piggybacks on the `drive_storage_info` cache-miss path so it has no extra IPC cost.
+- Are hard-deleted by `purge_old_trash` once their timestamp is older than 7 days. The purge piggybacks on the `drive_storage_info` cache-miss path so it has no extra IPC cost. Trash rows in the list view display the original (pre-delete) name with a "Purges in Nd" countdown chip derived from the timestamp prefix (amber inside the final day).
 - Hard-delete immediately on a second `drive_delete` call when the path is already inside `.trash/` — that's the "Empty Trash" affordance without a dedicated command.
 
 ## Events

@@ -11233,6 +11233,8 @@
       "trash_empty": "Empty trash",
       "trash_empty_confirm_title": "Permanently delete {count} items?",
       "trash_empty_confirm_body": "This empties the trash. These items cannot be recovered.",
+      "trash_purges_in_days": "Purges in {days}d",
+      "trash_purges_soon": "Purges soon",
       "ctx_sign_file": "Sign file…",
       "ctx_verify_file": "Verify signature…",
       "ctx_extract_text": "Extract text (OCR)…",

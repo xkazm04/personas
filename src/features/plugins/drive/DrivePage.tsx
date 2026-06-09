@@ -19,6 +19,7 @@ import { useToastStore } from "@/stores/toastStore";
 import {
   kindBucketWeight,
   kindGroupLabel,
+  trashEntryInfo,
   visualForEntry,
 } from "./designTokens";
 import { useDrive } from "./hooks/useDrive";
@@ -47,14 +48,6 @@ type Dialog =
   | { kind: "delete"; paths: string[] }
   | { kind: "emptyTrash" }
   | null;
-
-// Trash entries are named `<UTC stamp>[-counter]-<original name>` by the
-// backend's move_to_trash. Strips that prefix to recover the display /
-// restore name; returns the input unchanged if it doesn't match.
-const TRASH_NAME_RE = /^\d{8}T\d{6}(?:-\d+)?-(.+)$/;
-function trashOriginalName(name: string): string {
-  return TRASH_NAME_RE.exec(name)?.[1] ?? name;
-}
 
 // Hard limit on a single drag-drop file. Mirrors MAX_WRITE_BYTES on the
 // Rust side — files larger than this are rejected with a toast rather
@@ -367,7 +360,7 @@ export default function DrivePage() {
     const paths = Array.from(drive.selection);
     for (const p of paths) {
       const base = p.split("/").pop() ?? p;
-      await drive.move(p, trashOriginalName(base));
+      await drive.move(p, trashEntryInfo(base).originalName);
     }
     drive.clearSelection();
   }, [drive]);

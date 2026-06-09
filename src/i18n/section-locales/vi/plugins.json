@@ -259,7 +259,9 @@
     "trash_restore": "Khôi phục",
     "trash_empty": "Dọn sạch thùng rác",
     "trash_empty_confirm_title": "Xóa vĩnh viễn {count} mục?",
-    "trash_empty_confirm_body": "Thao tác này sẽ dọn sạch thùng rác. Không thể khôi phục các mục này."
+    "trash_empty_confirm_body": "Thao tác này sẽ dọn sạch thùng rác. Không thể khôi phục các mục này.",
+    "trash_purges_in_days": "Xóa sau {days} ngày",
+    "trash_purges_soon": "Sắp bị xóa"
   },
   "artist": {
     "title": "Artist",

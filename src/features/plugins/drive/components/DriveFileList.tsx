@@ -23,6 +23,7 @@ import {
   formatRelativeTime,
   kindLabel,
   kindGroupLabel,
+  trashEntryInfo,
 } from "../designTokens";
 import { DriveEmptyHint } from "./DriveEmptyHint";
 import { DropCountChip } from "./DropCountChip";
@@ -212,6 +213,31 @@ function FileChip({
     >
       <Icon className={visual.text} style={{ width: iconSize, height: iconSize }} />
     </div>
+  );
+}
+
+/**
+ * Days-until-auto-purge chip on a trash row. Amber inside the final day
+ * (urgency), muted otherwise. Derived from the entry's timestamp prefix —
+ * no extra IPC.
+ */
+function TrashPurgeChip({ purgeAt }: { purgeAt: number }) {
+  const { t, tx } = useTranslation();
+  const msLeft = purgeAt - Date.now();
+  const daysLeft = Math.ceil(msLeft / 86_400_000);
+  const soon = daysLeft <= 1;
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-px rounded-full typo-caption tabular-nums flex-shrink-0 border ${
+        soon
+          ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+          : "border-primary/15 bg-secondary/40 text-foreground"
+      }`}
+    >
+      {soon
+        ? t.plugins.drive.trash_purges_soon
+        : tx(t.plugins.drive.trash_purges_in_days, { days: daysLeft })}
+    </span>
   );
 }
 
@@ -463,6 +489,10 @@ function ListView({
           const drop =
             dragTarget === entry.path || externalDropPath === entry.path;
           const zebra = idx % 2 === 1;
+          // In the trash root, show the pre-delete name (timestamp prefix
+          // stripped) plus a purge countdown derived from that prefix.
+          const trashInfo =
+            currentPath === ".trash" ? trashEntryInfo(entry.name) : null;
           const bucket = buckets?.[idx] ?? null;
           const showGroupHeader =
             !!bucket && (idx === 0 || buckets?.[idx - 1] !== bucket);
@@ -544,8 +574,12 @@ function ListView({
                   ) : (
                     <>
                       <span className="typo-body typo-card-label truncate flex-1">
-                        {entry.name}
+                        {trashInfo?.originalName ?? entry.name}
                       </span>
+                      {trashInfo?.purgeAt !== null &&
+                        trashInfo?.purgeAt !== undefined && (
+                          <TrashPurgeChip purgeAt={trashInfo.purgeAt} />
+                        )}
                       {signedPaths?.has(entry.path) && (
                         <FileSignature
                           className="w-3 h-3 text-rose-300/80 flex-shrink-0"

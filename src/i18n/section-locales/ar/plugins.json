@@ -259,7 +259,9 @@
     "trash_restore": "استعادة",
     "trash_empty": "إفراغ سلة المهملات",
     "trash_empty_confirm_title": "حذف {count} عنصر نهائيًا؟",
-    "trash_empty_confirm_body": "سيؤدي هذا إلى إفراغ سلة المهملات. لا يمكن استعادة هذه العناصر."
+    "trash_empty_confirm_body": "سيؤدي هذا إلى إفراغ سلة المهملات. لا يمكن استعادة هذه العناصر.",
+    "trash_purges_in_days": "يُحذف خلال {days} يوم",
+    "trash_purges_soon": "يُحذف قريبًا"
   },
   "artist": {
     "title": "الفنان",

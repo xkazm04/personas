@@ -10416,7 +10416,9 @@
       "trash_restore": "पुनर्स्थापित करें",
       "trash_empty": "ट्रैश खाली करें",
       "trash_empty_confirm_title": "{count} आइटम स्थायी रूप से हटाएं?",
-      "trash_empty_confirm_body": "इससे ट्रैश खाली हो जाएगा। ये आइटम पुनर्प्राप्त नहीं किए जा सकेंगे।"
+      "trash_empty_confirm_body": "इससे ट्रैश खाली हो जाएगा। ये आइटम पुनर्प्राप्त नहीं किए जा सकेंगे।",
+      "trash_purges_in_days": "{days} दिन में हटेगा",
+      "trash_purges_soon": "जल्द हटेगा"
     },
     "artist": {
       "title": "आर्टिस्ट",

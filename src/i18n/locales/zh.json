@@ -10416,7 +10416,9 @@
       "trash_restore": "恢复",
       "trash_empty": "清空回收站",
       "trash_empty_confirm_title": "永久删除 {count} 个项目？",
-      "trash_empty_confirm_body": "这将清空回收站。这些项目将无法恢复。"
+      "trash_empty_confirm_body": "这将清空回收站。这些项目将无法恢复。",
+      "trash_purges_in_days": "{days} 天后清除",
+      "trash_purges_soon": "即将清除"
     },
     "artist": {
       "title": "Artist",
