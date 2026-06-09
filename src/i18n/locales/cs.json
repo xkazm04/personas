@@ -14004,6 +14004,7 @@
       "threadTitle": "Nedávno s {handle}",
       "threadInbound": "Přijato",
       "threadOutbound": "Odesláno",
+      "threadReplyTo": "Odpovědět na tuto zprávu",
       "sentTitle": "Nedávno odesláno",
       "sentTo": "pro {handle}",
       "sentReuse": "Upravit v odesílací schránce",

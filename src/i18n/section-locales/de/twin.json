@@ -89,6 +89,7 @@
     "threadTitle": "Zuletzt mit {handle}",
     "threadInbound": "Empfangen",
     "threadOutbound": "Gesendet",
+    "threadReplyTo": "Auf diese Nachricht antworten",
     "sentTitle": "Kürzlich gesendet",
     "sentTo": "an {handle}",
     "sentReuse": "In der Outbox anpassen",

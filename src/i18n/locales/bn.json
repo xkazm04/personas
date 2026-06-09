@@ -14004,6 +14004,7 @@
       "threadTitle": "{handle}-এর সাথে সাম্প্রতিক",
       "threadInbound": "প্রাপ্ত",
       "threadOutbound": "পাঠানো",
+      "threadReplyTo": "এই বার্তার উত্তর দিন",
       "sentTitle": "সম্প্রতি পাঠানো",
       "sentTo": "{handle}-কে",
       "sentReuse": "আউটবক্সে সম্পাদনা করুন",

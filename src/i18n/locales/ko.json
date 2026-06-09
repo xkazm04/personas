@@ -14004,6 +14004,7 @@
       "threadTitle": "{handle}와의 최근 대화",
       "threadInbound": "수신",
       "threadOutbound": "발신",
+      "threadReplyTo": "이 메시지에 답장",
       "sentTitle": "최근 보냄",
       "sentTo": "{handle}에게",
       "sentReuse": "아웃박스에서 수정",

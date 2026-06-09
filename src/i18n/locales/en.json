@@ -14999,6 +14999,7 @@
       "threadTitle": "Recent with {handle}",
       "threadInbound": "Received",
       "threadOutbound": "Sent",
+      "threadReplyTo": "Reply to this message",
       "sentTitle": "Recently sent",
       "sentTo": "to {handle}",
       "sentReuse": "Adapt in outbox",

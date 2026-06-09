@@ -15005,6 +15005,7 @@ export type Translations = {
       threadTitle: string;
       threadInbound: string;
       threadOutbound: string;
+      threadReplyTo: string;
       sentTitle: string;
       sentTo: string;
       sentReuse: string;

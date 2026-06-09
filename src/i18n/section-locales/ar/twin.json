@@ -89,6 +89,7 @@
     "threadTitle": "آخر المراسلات مع {handle}",
     "threadInbound": "وارد",
     "threadOutbound": "صادر",
+    "threadReplyTo": "الرد على هذه الرسالة",
     "sentTitle": "المُرسَل مؤخرًا",
     "sentTo": "إلى {handle}",
     "sentReuse": "تعديل في صندوق الرد",

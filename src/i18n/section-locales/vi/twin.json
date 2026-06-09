@@ -89,6 +89,7 @@
     "threadTitle": "Gần đây với {handle}",
     "threadInbound": "Đã nhận",
     "threadOutbound": "Đã gửi",
+    "threadReplyTo": "Trả lời tin nhắn này",
     "sentTitle": "Đã gửi gần đây",
     "sentTo": "tới {handle}",
     "sentReuse": "Chỉnh sửa trong hộp gửi",

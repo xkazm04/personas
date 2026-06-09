@@ -252,7 +252,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         )}
       </div>
 
-      <ContactThread twinId={activeTwinId} channel={channelType} contactHandle={contactHandle} />
+      <ContactThread twinId={activeTwinId} channel={channelType} contactHandle={contactHandle} onReplyTo={setInbound} />
 
       <div className="mt-3">
         <Field label="Inbound message (optional)">

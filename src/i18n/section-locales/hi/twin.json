@@ -89,6 +89,7 @@
     "threadTitle": "{handle} के साथ हालिया",
     "threadInbound": "प्राप्त",
     "threadOutbound": "भेजा गया",
+    "threadReplyTo": "इस संदेश का उत्तर दें",
     "sentTitle": "हाल में भेजा",
     "sentTo": "{handle} को",
     "sentReuse": "आउटबॉक्स में संपादित करें",

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ArrowDownLeft, ArrowUpRight, MessagesSquare } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, MessagesSquare, Reply } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -22,10 +22,14 @@ export function ContactThread({
   twinId,
   channel,
   contactHandle,
+  onReplyTo,
 }: {
   twinId: string;
   channel: TwinChannelKind | '';
   contactHandle: string;
+  /** Use a received message as the inbound being replied to. Inbound rows
+   *  become clickable when provided; sent rows stay static. */
+  onReplyTo?: (content: string) => void;
 }) {
   const { t: tFull, tx } = useTranslation();
   const t = tFull.twin.channels;
@@ -61,8 +65,9 @@ export function ContactThread({
           const outbound = c.direction === 'out';
           const Icon = outbound ? ArrowUpRight : ArrowDownLeft;
           const dirLabel = outbound ? t.threadOutbound : t.threadInbound;
-          return (
-            <li key={c.id} className="flex items-start gap-2 px-3 py-2">
+          const replyable = !outbound && !!onReplyTo;
+          const row = (
+            <>
               <span
                 className={`flex-shrink-0 mt-0.5 w-5 h-5 rounded-full inline-flex items-center justify-center ${
                   outbound ? 'bg-emerald-500/10 text-emerald-300' : 'bg-violet-500/10 text-violet-300'
@@ -72,8 +77,28 @@ export function ContactThread({
               >
                 <Icon className="w-3 h-3" />
               </span>
-              <p className="flex-1 min-w-0 typo-caption text-foreground leading-snug line-clamp-2">{c.content}</p>
+              <span className="flex-1 min-w-0 typo-caption text-foreground leading-snug line-clamp-2">{c.content}</span>
               <RelativeTime timestamp={c.occurred_at} className="flex-shrink-0 text-[10px] text-foreground tabular-nums" />
+              {replyable && (
+                <Reply className="flex-shrink-0 mt-0.5 w-3 h-3 text-violet-300 opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
+              )}
+            </>
+          );
+          return (
+            <li key={c.id}>
+              {replyable ? (
+                <button
+                  type="button"
+                  onClick={() => onReplyTo(c.content)}
+                  title={t.threadReplyTo}
+                  aria-label={t.threadReplyTo}
+                  className="group w-full flex items-start gap-2 px-3 py-2 text-left hover:bg-violet-500/8 transition-colors focus-ring"
+                >
+                  {row}
+                </button>
+              ) : (
+                <span className="flex items-start gap-2 px-3 py-2">{row}</span>
+              )}
             </li>
           );
         })}

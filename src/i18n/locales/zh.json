@@ -14004,6 +14004,7 @@
       "threadTitle": "与 {handle} 的近期往来",
       "threadInbound": "已接收",
       "threadOutbound": "已发送",
+      "threadReplyTo": "回复此消息",
       "sentTitle": "最近发送",
       "sentTo": "发送给 {handle}",
       "sentReuse": "在回复箱中改写",
