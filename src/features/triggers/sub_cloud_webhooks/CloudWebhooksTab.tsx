@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
-import { Cloud, CloudOff, Copy, Check, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
+import { Cloud, CloudOff, Plus, Trash2, Webhook, RefreshCw } from 'lucide-react';
+import { CopyButton } from '@/features/shared/components/buttons';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
 import { ListSkeleton } from '@/features/shared/components/layout/ListSkeleton';
@@ -275,29 +276,23 @@ export function CloudWebhooksTab() {
                         {t.triggers.last_label} {formatRelativeTime(row.trigger.lastTriggeredAt)}
                       </span>
                     )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleCopy(row.webhookUrl, `url-${row.trigger.id}`); }}
-                      className="p-1.5 rounded-card text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
-                      title={t.triggers.copy_webhook_url_title}
-                    >
-                      {copiedId === `url-${row.trigger.id}` ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+                    <span onClick={(e) => e.stopPropagation()}>
+                      <CopyButton
+                        copied={copiedId === `url-${row.trigger.id}`}
+                        onCopy={() => handleCopy(row.webhookUrl, `url-${row.trigger.id}`)}
+                        tooltip={t.triggers.copy_webhook_url_title}
+                      />
+                    </span>
                     {row.deployment.webhookSecret && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleCopy(row.deployment.webhookSecret!, `secret-${row.trigger.id}`); }}
-                        className="px-2 py-1 rounded-card typo-caption text-foreground hover:text-foreground hover:bg-secondary/50 transition-colors border border-border/20"
-                        title={t.triggers.copy_webhook_secret_title}
-                      >
-                        {copiedId === `secret-${row.trigger.id}` ? (
-                          <span className="text-emerald-400">{t.common.copied}</span>
-                        ) : (
-                          t.triggers.secret_label
-                        )}
-                      </button>
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <CopyButton
+                          copied={copiedId === `secret-${row.trigger.id}`}
+                          onCopy={() => handleCopy(row.deployment.webhookSecret!, `secret-${row.trigger.id}`)}
+                          label={t.triggers.secret_label}
+                          copiedLabel={t.common.copied}
+                          tooltip={t.triggers.copy_webhook_secret_title}
+                        />
+                      </span>
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(row.trigger.id); }}
