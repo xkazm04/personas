@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X, ArrowDown } from 'lucide-react';
+import { Radio, ExternalLink, Send, Check, CheckCheck, Pin, AlertCircle, SkipForward, Ban, RotateCcw, ClipboardCheck, Activity, Sparkles, CornerDownRight, Reply, X, ArrowDown, Search } from 'lucide-react';
+import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
 import { useTranslation } from '@/i18n/useTranslation';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
@@ -50,6 +51,38 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   const byId = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
   const [replyTarget, setReplyTarget] = useState<TeamChannelItem | null>(null);
   const [detailItem, setDetailItem] = useState<TeamChannelItem | null>(null);
+
+  // Channel filters — kind (conversation vs system activity), author, text.
+  const [kindFilter, setKindFilter] = useState<'all' | 'talk' | 'activity'>('all');
+  const [authorFilter, setAuthorFilter] = useState('all'); // 'all' | 'you' | 'athena' | personaId
+  const [query, setQuery] = useState('');
+  const filtersActive = kindFilter !== 'all' || authorFilter !== 'all' || query.trim() !== '';
+  const visible = useMemo(() => {
+    if (!filtersActive) return ordered;
+    const q = query.trim().toLowerCase();
+    const TALK = new Set(['persona', 'athena', 'director', 'directive', 'memory']);
+    return ordered.filter((i) => {
+      if (kindFilter === 'talk' && !TALK.has(i.kind)) return false;
+      if (kindFilter === 'activity' && i.kind !== 'step' && i.kind !== 'event') return false;
+      if (authorFilter === 'you') {
+        if (i.kind !== 'directive') return false;
+      } else if (authorFilter === 'athena') {
+        if (i.kind !== 'athena') return false;
+      } else if (authorFilter !== 'all' && i.personaId !== authorFilter) {
+        return false;
+      }
+      if (q) {
+        const authorName = i.personaId ? personaIndex.get(i.personaId)?.name ?? '' : '';
+        if (!`${i.body ?? ''} ${i.label} ${authorName}`.toLowerCase().includes(q)) return false;
+      }
+      return true;
+    });
+  }, [ordered, kindFilter, authorFilter, query, filtersActive, personaIndex]);
+  const clearFilters = () => {
+    setKindFilter('all');
+    setAuthorFilter('all');
+    setQuery('');
+  };
 
   useEffect(() => {
     const box = scrollBox.current;
@@ -189,6 +222,60 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
         </div>
       </div>
 
+      {/* ── Filter bar: text search · kind · author ── */}
+      <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border bg-foreground/[0.01]">
+        <div className="relative flex-1 min-w-0 max-w-[240px]">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-foreground/50 pointer-events-none" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t.monitor.channel_filter_search}
+            className="w-full pl-7 pr-2 py-1 rounded-input bg-secondary/30 border border-border typo-caption text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
+          />
+        </div>
+        <div className="flex items-center gap-0.5 rounded-input border border-border bg-secondary/20 p-0.5">
+          {([
+            ['all', t.monitor.channels_filter_all],
+            ['talk', t.monitor.channel_filter_talk],
+            ['activity', t.monitor.channel_filter_activity],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKindFilter(k)}
+              aria-pressed={kindFilter === k}
+              className={`px-2 py-0.5 rounded-interactive typo-caption transition-colors ${
+                kindFilter === k ? 'bg-primary/15 text-foreground font-medium' : 'text-foreground/55 hover:text-foreground/85'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <ThemedSelect value={authorFilter} onValueChange={setAuthorFilter} className="w-32">
+          <option value="all">{t.monitor.channels_author_all}</option>
+          <option value="you">{t.monitor.channels_author_you}</option>
+          <option value="athena">{t.monitor.channels_author_athena}</option>
+          {members.map((m) => (
+            <option key={m.memberId} value={m.personaId}>{m.name.replace(/^T: /, '')}</option>
+          ))}
+        </ThemedSelect>
+        {filtersActive && (
+          <>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="inline-flex items-center gap-1 typo-caption text-foreground hover:text-primary transition-colors flex-shrink-0"
+            >
+              <X className="w-3 h-3" /> {t.monitor.channel_filter_clear}
+            </button>
+            <span className="ml-auto typo-caption text-foreground tabular-nums flex-shrink-0">
+              {visible.length}/{ordered.length}
+            </span>
+          </>
+        )}
+      </div>
+
       {/* ── Conversation ── */}
       <div className="relative flex-1 min-h-0 flex flex-col">
         <div ref={scrollBox} onScroll={onScroll} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-1">
@@ -220,7 +307,15 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
               </div>
             </div>
           )}
-          {ordered.map((item) => (
+          {filtersActive && visible.length === 0 && ordered.length > 0 && (
+            <div className="flex flex-col items-center gap-1.5 py-8 text-center">
+              <p className="typo-body text-foreground">{t.monitor.channel_filter_no_matches}</p>
+              <button type="button" onClick={clearFilters} className="typo-caption text-primary hover:underline">
+                {t.monitor.channel_filter_clear}
+              </button>
+            </div>
+          )}
+          {visible.map((item) => (
             <CorrespondenceRow
               key={item.id}
               item={item}

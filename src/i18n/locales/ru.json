@@ -148,7 +148,12 @@
     "channel_empty_athena_after": "чтобы пригласить её в разговор",
     "channel_jump_latest": "К последним",
     "channel_new_messages_one": "1 новое сообщение",
-    "channel_new_messages_other": "Новых сообщений: {count}"
+    "channel_new_messages_other": "Новых сообщений: {count}",
+    "channel_filter_search": "Поиск по каналу…",
+    "channel_filter_talk": "Разговор",
+    "channel_filter_activity": "Активность",
+    "channel_filter_no_matches": "Ничего не подходит под эти фильтры.",
+    "channel_filter_clear": "Сбросить фильтры"
   },
   "common": {
     "loading": "Загрузка...",

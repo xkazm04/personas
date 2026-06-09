@@ -76,5 +76,10 @@
   "channel_empty_athena_after": "をタグ付けして会話に招きましょう",
   "channel_jump_latest": "最新へ移動",
   "channel_new_messages_one": "新着メッセージ 1 件",
-  "channel_new_messages_other": "新着メッセージ {count} 件"
+  "channel_new_messages_other": "新着メッセージ {count} 件",
+  "channel_filter_search": "チャンネルを検索…",
+  "channel_filter_talk": "会話",
+  "channel_filter_activity": "アクティビティ",
+  "channel_filter_no_matches": "このフィルターに一致するものはありません。",
+  "channel_filter_clear": "フィルターをクリア"
 }

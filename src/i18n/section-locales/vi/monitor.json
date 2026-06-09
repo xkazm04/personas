@@ -76,5 +76,10 @@
   "channel_empty_athena_after": "để mời cô ấy vào cuộc trò chuyện",
   "channel_jump_latest": "Tới tin mới nhất",
   "channel_new_messages_one": "1 tin nhắn mới",
-  "channel_new_messages_other": "{count} tin nhắn mới"
+  "channel_new_messages_other": "{count} tin nhắn mới",
+  "channel_filter_search": "Tìm trong kênh…",
+  "channel_filter_talk": "Trò chuyện",
+  "channel_filter_activity": "Hoạt động",
+  "channel_filter_no_matches": "Không có gì khớp với bộ lọc này.",
+  "channel_filter_clear": "Xóa bộ lọc"
 }

@@ -148,7 +148,12 @@
     "channel_empty_athena_after": "untuk mengajaknya bergabung dalam percakapan",
     "channel_jump_latest": "Lompat ke terbaru",
     "channel_new_messages_one": "1 pesan baru",
-    "channel_new_messages_other": "{count} pesan baru"
+    "channel_new_messages_other": "{count} pesan baru",
+    "channel_filter_search": "Cari di saluran…",
+    "channel_filter_talk": "Percakapan",
+    "channel_filter_activity": "Aktivitas",
+    "channel_filter_no_matches": "Tidak ada yang cocok dengan filter ini.",
+    "channel_filter_clear": "Hapus filter"
   },
   "common": {
     "loading": "Memuat...",

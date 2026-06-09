@@ -207,6 +207,11 @@ export type Translations = {
     channel_jump_latest: string;
     channel_new_messages_one: string;
     channel_new_messages_other: string;
+    channel_filter_search: string;
+    channel_filter_talk: string;
+    channel_filter_activity: string;
+    channel_filter_no_matches: string;
+    channel_filter_clear: string;
     quick_choose_action: string;
     quick_dismiss: string;
     quick_prev_decision: string;
