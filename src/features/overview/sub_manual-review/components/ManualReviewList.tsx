@@ -317,6 +317,7 @@ export default function ManualReviewList() {
                 onClick={() => setConfirmingDeleteAll(true)}
                 className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-modal typo-heading bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25 transition-colors"
                 title={t.overview.review.delete_all}
+                aria-label={t.overview.review.delete_all}
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>

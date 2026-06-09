@@ -120,6 +120,9 @@ export function ReviewInboxPanel({
                       e.stopPropagation();
                       onToggleSelect(review.id);
                     }}
+                    role="checkbox"
+                    aria-checked={selectedIds.has(review.id)}
+                    aria-label="Select review"
                     className="flex-shrink-0 w-8 flex items-center justify-center pt-3.5 text-foreground hover:text-muted-foreground transition-colors"
                   >
                     {selectedIds.has(review.id) ? (

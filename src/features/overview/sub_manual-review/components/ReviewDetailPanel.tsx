@@ -190,6 +190,8 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                             onClick={() => toggleDecision(d.id, 'accepted')}
                             className={`p-1 rounded-card transition-colors ${state === 'accepted' ? 'bg-emerald-500/15 text-emerald-400' : 'text-foreground hover:text-emerald-400/60 hover:bg-emerald-500/5'}`}
                             title="Accept"
+                            aria-label="Accept"
+                            aria-pressed={state === 'accepted'}
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -197,6 +199,8 @@ export function ConversationThread({ review, onAction, isProcessing }: Conversat
                             onClick={() => toggleDecision(d.id, 'rejected')}
                             className={`p-1 rounded-card transition-colors ${state === 'rejected' ? 'bg-red-500/15 text-red-400' : 'text-foreground hover:text-red-400/60 hover:bg-red-500/5'}`}
                             title="Reject"
+                            aria-label="Reject"
+                            aria-pressed={state === 'rejected'}
                           >
                             <XCircle className="w-4 h-4" />
                           </button>

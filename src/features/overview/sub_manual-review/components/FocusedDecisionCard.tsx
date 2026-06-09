@@ -94,6 +94,8 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
       <button
         onClick={() => onDecide('reject')}
         title={t.overview.focused_decision.reject}
+        aria-label={t.overview.focused_decision.reject}
+        aria-pressed={verdict === 'reject'}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption font-medium transition-all shadow-elevation-1 backdrop-blur-sm ${
           verdict === 'reject'
             ? 'bg-red-500/30 text-red-400 ring-1 ring-red-500/40'
@@ -106,6 +108,8 @@ function VerdictButtons({ verdict, onDecide }: { verdict: DecisionVerdict; onDec
       <button
         onClick={() => onDecide('accept')}
         title={t.overview.focused_decision.accept}
+        aria-label={t.overview.focused_decision.accept}
+        aria-pressed={verdict === 'accept'}
         className={`flex items-center gap-1 px-2.5 py-1.5 rounded-card typo-caption font-medium transition-all shadow-elevation-1 backdrop-blur-sm ${
           verdict === 'accept'
             ? 'bg-emerald-500/30 text-emerald-400 ring-1 ring-emerald-500/40'
