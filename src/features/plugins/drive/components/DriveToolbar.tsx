@@ -160,7 +160,7 @@ export function DriveToolbar({
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10 bg-gradient-to-b from-background/70 to-background/40 backdrop-blur-sm">
+    <div className="flex items-center gap-2 px-4 py-2.5 border-b border-primary/10 bg-background">
       {/* Nav cluster */}
       <div className="flex items-center gap-0.5 p-0.5 rounded-card bg-secondary/40 border border-primary/10">
         <IconButton

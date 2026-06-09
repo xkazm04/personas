@@ -548,7 +548,7 @@ export default function DrivePage() {
       />
       <ErrorBoundary name="Drive">
       <div
-        className="relative flex-1 min-h-0 flex flex-col bg-gradient-to-b from-background via-background to-background/95"
+        className="relative flex-1 min-h-0 flex flex-col bg-background"
         onDragEnter={handleExternalDragEnter}
         onDragOver={handleExternalDragOver}
         onDragLeave={handleExternalDragLeave}

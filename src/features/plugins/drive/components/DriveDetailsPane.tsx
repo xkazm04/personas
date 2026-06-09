@@ -67,7 +67,7 @@ export function DriveDetailsPane({
 
   if (!primary) {
     return (
-      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/80 px-5 py-4 flex flex-col gap-3">
+      <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-background px-5 py-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <Info className="w-4 h-4 text-cyan-300" />
           <span className="typo-section-title">
@@ -100,7 +100,7 @@ export function DriveDetailsPane({
   const Icon = visual.Icon;
 
   return (
-    <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-gradient-to-b from-background to-background/80 flex flex-col overflow-hidden">
+    <aside className="w-72 flex-shrink-0 border-l border-primary/10 bg-background flex flex-col overflow-hidden">
       {/* Hero */}
       <div className="relative px-5 pt-5 pb-4 overflow-hidden">
         <div

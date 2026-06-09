@@ -101,7 +101,7 @@ export function DriveSidebar({
     drive.currentPath.startsWith(`${TRASH_PATH}/`);
 
   return (
-    <aside className="w-60 flex-shrink-0 border-r border-primary/10 bg-gradient-to-b from-background via-background to-background/80 flex flex-col">
+    <aside className="w-60 flex-shrink-0 border-r border-primary/10 bg-background flex flex-col">
       {/* Brand header */}
       <div className="relative px-4 py-3 border-b border-primary/10 overflow-hidden">
         <div

@@ -880,7 +880,7 @@ function ColumnPane({
 }: ColumnPaneProps) {
   const isCurrent = levelPath === drive.currentPath;
   return (
-    <div className="w-64 flex-shrink-0 border-r border-primary/10 overflow-y-auto bg-gradient-to-b from-background to-background/80">
+    <div className="w-64 flex-shrink-0 border-r border-primary/10 overflow-y-auto bg-background">
       {isCurrent ? (
         <ColumnEntries
           entries={drive.visibleEntries}
