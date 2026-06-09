@@ -3,13 +3,14 @@ import {
   motion, AnimatePresence, useMotionValue, useTransform,
 } from 'framer-motion';
 import {
-  ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle,
+  ArrowLeftRight, ThumbsDown, ThumbsUp, Trash2, ChevronLeft, ChevronRight, HelpCircle, Hammer,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
+import { toastCatch } from '@/lib/silentCatch';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
 import { DEFAULT_CATEGORY_TW, CATEGORY_TW } from '../constants/ideaColors';
@@ -213,7 +214,7 @@ function SwipeCard({
 export default function IdeaTriagePage() {
   const { t, tx } = useTranslation();
   const dt = t.plugins.dev_tools;
-  const { triageIdea, deleteIdea } = useDevToolsActions();
+  const { triageIdea, deleteIdea, createTask } = useDevToolsActions();
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const storeIdeas = useSystemStore((s) => s.ideas);
   const storeTasks = useSystemStore((s) => s.tasks);
@@ -335,6 +336,20 @@ export default function IdeaTriagePage() {
     if (!idea) return;
     deleteIdea(idea.id);
   }, [deleteIdea]);
+
+  // "Build now": accept the top card AND queue a linked implementation task in
+  // one move — the direct idea→task path for obvious wins.
+  const handleBuildNow = useCallback(async () => {
+    const idea = pendingRef.current[0];
+    if (!idea) return;
+    try {
+      await createTask({ title: idea.title, description: idea.description, sourceIdeaId: idea.id });
+      triageIdea(idea.id, 'accepted');
+      addToastTriage(dt.triage_build_queued, 'success');
+    } catch (err) {
+      toastCatch('IdeaTriagePage:buildNow')(err);
+    }
+  }, [createTask, triageIdea, addToastTriage, dt.triage_build_queued]);
 
   // Keyboard shortcuts — stable listener (no dep on handleSwipe/pendingIdeas)
   useEffect(() => {
@@ -573,6 +588,16 @@ export default function IdeaTriagePage() {
                   title={dt.shortcuts_btn_delete_title}
                 >
                   <Trash2 className="w-4 h-4 text-foreground" />
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleBuildNow}
+                  className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center hover:bg-amber-500/20 transition-colors"
+                  title={dt.triage_build_now_title}
+                >
+                  <Hammer className="w-4 h-4 text-amber-400" />
                 </motion.button>
 
                 <motion.button

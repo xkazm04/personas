@@ -7,7 +7,7 @@
  *   - ScanHistoryTable  — past scan runs table
  */
 import { motion } from 'framer-motion';
-import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw, TrendingUp, Star } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw, TrendingUp, Star, Hammer, Check } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -221,7 +221,17 @@ export function ScanProgress({
 // IdeaCard
 // ---------------------------------------------------------------------------
 
-export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
+export function IdeaCard({
+  idea,
+  index,
+  onBuild,
+  built = false,
+}: {
+  idea: ScanIdea;
+  index: number;
+  onBuild?: (idea: ScanIdea) => void;
+  built?: boolean;
+}) {
   const { t } = useTranslation();
   const ds = t.plugins.dev_scanner;
   const { staggerDelay } = useMotion();
@@ -254,6 +264,27 @@ export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
         <LevelBadge label={ds.level_effort} value={idea.effort} />
         <LevelBadge label={ds.level_impact} value={idea.impact} />
         <LevelBadge label={ds.level_risk} value={idea.risk} />
+        {onBuild && (
+          built ? (
+            <span
+              title={ds.build_task_done_tip}
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border border-emerald-500/25 bg-emerald-500/10 text-emerald-400"
+            >
+              <Check className="w-3 h-3" />
+              {ds.build_task_btn}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onBuild(idea)}
+              title={ds.build_task_tip}
+              className="ml-auto inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 hover:border-amber-500/50 transition-colors"
+            >
+              <Hammer className="w-3 h-3" />
+              {ds.build_task_btn}
+            </button>
+          )
+        )}
       </div>
     </motion.div>
   );

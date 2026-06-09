@@ -15,6 +15,7 @@ import { Button } from '@/features/shared/components/buttons';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { useSystemStore } from '@/stores/systemStore';
+import { useToastStore } from '@/stores/toastStore';
 import { runStaticScan } from '@/api/devTools/devTools';
 import { silentCatch, toastCatch } from '@/lib/silentCatch';
 import {
@@ -41,7 +42,7 @@ import { matchAgentsToContext } from './ideaScannerHelpers';
 export default function IdeaScannerPage() {
   const { t, tx } = useTranslation();
   const ds = t.plugins.dev_scanner;
-  const { runScan } = useDevToolsActions();
+  const { runScan, createTask } = useDevToolsActions();
 
   // Wire to store for real idea data — survives navigation
   const storeIdeas = useSystemStore((s) => s.scanResults);
@@ -433,6 +434,24 @@ export default function IdeaScannerPage() {
     return map;
   }, []);
 
+  // Ideas that already have a task pointing at them — their Build button
+  // flips to a "queued" state instead of creating duplicates.
+  const builtIdeaIds = useMemo(
+    () => new Set(allTasks.map((task) => task.source_idea_id).filter(Boolean) as string[]),
+    [allTasks],
+  );
+  const addToast = useToastStore((s) => s.addToast);
+  const handleBuildIdea = useCallback(async (idea: ScanIdea) => {
+    try {
+      await createTask({ title: idea.title, description: idea.description, sourceIdeaId: idea.id });
+      addToast(ds.build_task_queued, 'success');
+      const pid = useSystemStore.getState().activeProjectId;
+      if (pid) useSystemStore.getState().fetchTasks(pid);
+    } catch (err) {
+      toastCatch('IdeaScannerPage:buildIdea')(err);
+    }
+  }, [createTask, addToast, ds.build_task_queued]);
+
   // Agents whose accepted ideas have landed well in past triage (>=50% accept
   // rate over a meaningful sample). Drives the recommended star + quick-select.
   const recommendedAgentKeys = useMemo(() => {
@@ -675,7 +694,13 @@ export default function IdeaScannerPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                 {displayedIdeas.map((idea, i) => (
-                  <IdeaCard key={idea.id} idea={idea} index={i} />
+                  <IdeaCard
+                    key={idea.id}
+                    idea={idea}
+                    index={i}
+                    onBuild={handleBuildIdea}
+                    built={builtIdeaIds.has(idea.id)}
+                  />
                 ))}
               </div>
             )}
