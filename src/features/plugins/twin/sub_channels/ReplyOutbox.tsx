@@ -123,10 +123,16 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
   // Tone-register options: 'auto' defers to the backend's per-channel
   // resolution; the rest name the twin's configured tone rows. Channel ids are
   // technical identifiers — shown as-is, like the channel select's description.
+  // Each option previews its voice directives' first line so the user picks a
+  // register by what it sounds like, not by channel name alone.
   const toneOptions: ThemedSelectOption[] = useMemo(
     () => [
       { value: 'auto', label: tc.toneAuto },
-      ...tones.map((tn) => ({ value: tn.channel, label: tn.channel })),
+      ...tones.map((tn) => {
+        const firstLine = tn.voice_directives.trim().split('\n')[0] ?? '';
+        const preview = firstLine.length > 80 ? `${firstLine.slice(0, 80)}…` : firstLine;
+        return { value: tn.channel, label: tn.channel, description: preview || undefined };
+      }),
     ],
     [tones, tc.toneAuto],
   );
