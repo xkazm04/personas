@@ -662,33 +662,19 @@ async fn run_context_generation(
         None
     };
 
-    // Legacy rescan path: clear old context map. Skipped when we have a delta
-    // because the LLM is being asked to update existing contexts, which means
-    // the existing IDs MUST stay live.
+    // Legacy rescan path: the old map is cleared LAZILY — only once the LLM
+    // produces its first group/context (see `map_cleared` in the stream loop) —
+    // so a rescan that fails before producing anything (CLI missing, non-zero
+    // exit, user cancel, zero/garbage output) leaves the hand-curated map intact
+    // instead of destroying it up-front. Skipped entirely for delta rescans,
+    // where existing IDs must stay live.
     if is_rescan && delta_for_prompt.is_none() {
         CONTEXT_GEN_JOBS.emit_line(
             app,
             scan_id,
-            "[Milestone] Rescan: clearing old context map...".to_string(),
+            "[Milestone] Rescan: regenerating context map (old map kept until fresh output arrives)..."
+                .to_string(),
         );
-        match repo::clear_project_context_map(pool, project_id) {
-            Ok((grp, ctx)) => {
-                CONTEXT_GEN_JOBS.emit_line(
-                    app,
-                    scan_id,
-                    format!(
-                        "[Milestone] Cleared {grp} groups, {ctx} contexts. Regenerating fresh..."
-                    ),
-                );
-            }
-            Err(e) => {
-                CONTEXT_GEN_JOBS.emit_line(
-                    app,
-                    scan_id,
-                    format!("[Warn] Failed to clear old context map: {e}. Continuing anyway..."),
-                );
-            }
-        }
     }
 
     let mode_label = if delta_for_prompt.is_some() {
@@ -818,6 +804,10 @@ async fn run_context_generation(
     let mut groups_created = 0i32;
     let mut contexts_created = 0i32;
     let mut files_mapped = 0i32;
+    // Lazy clear: only wipe the existing map once the run produces its first real
+    // output, so a failed/empty rescan can't destroy the curated map up-front.
+    let needs_lazy_clear = is_rescan && delta_for_prompt.is_none();
+    let mut map_cleared = false;
 
     // Extended to 30 minutes to handle large codebases.
     // If timeout fires but contexts were already committed, the scan is treated
@@ -844,6 +834,11 @@ async fn run_context_generation(
                     if let Some(protocol) = parse_context_map_protocol(proto_trimmed) {
                         match protocol {
                             ContextMapProtocol::Group { project_id: pid, name, color } => {
+                                if needs_lazy_clear && !map_cleared {
+                                    let _ = repo::clear_project_context_map(pool, project_id);
+                                    map_cleared = true;
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
+                                }
                                 match repo::create_context_group(pool, &pid, &name, Some(&color), None, None) {
                                     Ok(group) => {
                                         group_name_to_id.insert(name.clone(), group.id.clone());
@@ -861,6 +856,11 @@ async fn run_context_generation(
                                 file_paths, entry_points, keywords, db_tables,
                                 api_surface, cross_refs, tech_stack,
                             } => {
+                                if needs_lazy_clear && !map_cleared {
+                                    let _ = repo::clear_project_context_map(pool, project_id);
+                                    map_cleared = true;
+                                    CONTEXT_GEN_JOBS.emit_line(app, scan_id, "[Milestone] First fresh output — cleared old map, swapping in new.".to_string());
+                                }
                                 let group_id = group_name_to_id.get(&group_name).cloned();
                                 let file_count = file_paths.len() as i32;
                                 let fp_json = serde_json::to_string(&file_paths).unwrap_or_else(|_| "[]".into());
