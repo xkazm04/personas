@@ -309,6 +309,15 @@ pub enum StreamEventKind {
     Error,
 }
 
+/// Single process-wide turn lock. `send_turn` must be the unit of mutual
+/// exclusion: the user path (`companion_send_message`) and the background
+/// spawners (`schedule_autonomous_tick`, `spawn_proactive_turn`) have independent
+/// entry points, and two turns running at once both `--resume` the same Claude
+/// session id (clobbering each other's session-id write) and interleave brain
+/// reads/writes (decisions on half-updated state). Sessions are currently always
+/// DEFAULT_SESSION_ID, so one lock suffices; key by session id if that changes.
+static TURN_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 /// Run one full turn: persist the user message, call Claude, stream events,
 /// persist the assistant reply. Returns (user_episode_id, assistant_episode_id).
 ///
@@ -328,6 +337,24 @@ pub async fn send_turn(
 ) -> Result<TurnResult, AppError> {
     let session_id = DEFAULT_SESSION_ID.to_string();
     let turn_id = format!("turn_{}", short_random());
+
+    // Serialize turns (see TURN_LOCK). The user path waits for any in-flight turn;
+    // background spawners skip rather than queue, so autonomous/proactive work
+    // never preempts the user and two turns never --resume the session at once.
+    let _turn_guard = match &origin {
+        TurnOrigin::User => TURN_LOCK.lock().await,
+        _ => match TURN_LOCK.try_lock() {
+            Ok(g) => g,
+            Err(_) => {
+                tracing::info!(
+                    "companion: a turn is already in flight — skipping this background turn"
+                );
+                return Err(AppError::Internal(
+                    "A companion turn is already in progress; background turn skipped".into(),
+                ));
+            }
+        },
+    };
 
     // Sweep any orphaned self-improve runs so their outcome shows up in
     // this turn's transcript (the detached CLI may have finished after
