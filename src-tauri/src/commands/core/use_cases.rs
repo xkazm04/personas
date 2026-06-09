@@ -41,8 +41,15 @@ pub(crate) mod testable {
     ) -> Result<UseCaseToggleResult, AppError> {
         let now = chrono::Utc::now().to_rfc3339();
 
+        // Read + write inside ONE IMMEDIATE transaction so a concurrent writer
+        // (another backend command, or the frontend writeQueue's full-document
+        // save) cannot interleave between the design_context read and write-back.
+        let tx = conn
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(AppError::Database)?;
+
         // Read current design_context.
-        let dc_str: Option<String> = conn
+        let dc_str: Option<String> = tx
             .prepare("SELECT design_context FROM personas WHERE id = ?1")?
             .query_row(rusqlite::params![persona_id], |row| row.get(0))
             .map_err(|e| match e {
@@ -85,8 +92,6 @@ pub(crate) mod testable {
         let new_dc_str = serde_json::to_string(&dc).map_err(|e| {
             AppError::Validation(format!("failed to re-serialize design_context: {}", e))
         })?;
-
-        let tx = conn.transaction().map_err(AppError::Database)?;
 
         tx.execute(
             "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
@@ -143,7 +148,12 @@ pub(crate) mod testable {
         use_case_id: &str,
         settings: &UseCaseGenerationSettings,
     ) -> Result<UseCaseGenerationSettings, AppError> {
-        let dc_str: Option<String> = conn
+        // Read + write inside ONE transaction so a concurrent design_context
+        // writer can't interleave between read and write-back (lost-update).
+        // DEFERRED is sufficient: SQLite serializes the read+write pair, turning
+        // a racing commit into a surfaced BUSY error rather than a silent loss.
+        let tx = conn.unchecked_transaction().map_err(AppError::Database)?;
+        let dc_str: Option<String> = tx
             .prepare("SELECT design_context FROM personas WHERE id = ?1")?
             .query_row(rusqlite::params![persona_id], |row| row.get(0))
             .map_err(|e| match e {
@@ -191,10 +201,11 @@ pub(crate) mod testable {
             AppError::Validation(format!("failed to re-serialize design_context: {}", e))
         })?;
         let now = chrono::Utc::now().to_rfc3339();
-        conn.execute(
+        tx.execute(
             "UPDATE personas SET design_context = ?1, updated_at = ?2 WHERE id = ?3",
             rusqlite::params![new_dc_str, now, persona_id],
         )?;
+        tx.commit().map_err(AppError::Database)?;
 
         Ok(settings.clone())
     }
