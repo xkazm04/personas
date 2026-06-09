@@ -13,7 +13,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
 import { DEFAULT_CATEGORY_TW, CATEGORY_TW } from '../constants/ideaColors';
-import { LevelBadge } from '../sub_scanner/IdeaScannerCards';
+import { LevelBadge, ValueBadge } from '../sub_scanner/IdeaScannerCards';
 import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -158,6 +158,7 @@ function SwipeCard({
           <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
             {catLabel}
           </span>
+          <ValueBadge idea={idea} />
           {(['effort', 'impact', 'risk'] as const).map((key) => (
             <LevelBadge key={key} label={key} value={idea[key]} />
           ))}
