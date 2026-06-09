@@ -10,6 +10,7 @@ import { silentCatch } from '@/lib/silentCatch';
 import type { DecomposedStep } from '@/lib/bindings/DecomposedStep';
 import type { PersonaTeamMember } from '@/lib/bindings/PersonaTeamMember';
 import type { StudioMember, StudioUseCase } from './useTeamStudioData';
+import { stepMeta } from './boardShared';
 
 /**
  * Shared leaf components for the Team Studio variants. Extracted so the
@@ -227,20 +228,11 @@ interface OrchestrationConsoleProps {
   layout?: 'panel' | 'band';
 }
 
-/** Per-step status dot + label. Status strings come straight from the
- *  orchestrator (TeamAssignmentStep.status); unknown values fall back to a
- *  neutral pending style. */
-const STEP_STATUS_FALLBACK = { dot: 'bg-foreground/30', text: 'text-foreground/60' };
-const STEP_STATUS_STYLE: Record<string, { dot: string; text: string }> = {
-  pending: STEP_STATUS_FALLBACK,
-  matching: { dot: 'bg-amber-400', text: 'text-amber-300' },
-  running: { dot: 'bg-blue-400 animate-pulse', text: 'text-blue-300' },
-  done: { dot: 'bg-emerald-400', text: 'text-emerald-300' },
-  skipped: { dot: 'bg-foreground/30', text: 'text-foreground/50' },
-  failed: { dot: 'bg-red-400', text: 'text-red-300' },
-  awaiting_review: { dot: 'bg-amber-400', text: 'text-amber-300' },
-};
-
+/** Per-step status badge. The visual vocabulary (icon + color) is the canonical
+ *  `stepMeta()` from boardShared so the Orchestration Console and the Flight Deck
+ *  step relay paint the same orchestrator status identically (previously this
+ *  re-implemented its own map: `matching` was amber here, violet there). Labels
+ *  stay localized via the i18n map. */
 export function StepStatusBadge({ status }: { status: string }) {
   const { t } = useTranslation();
   const ts = t.pipeline.team_studio;
@@ -253,11 +245,12 @@ export function StepStatusBadge({ status }: { status: string }) {
     failed: ts.step_status_failed,
     awaiting_review: ts.step_status_awaiting_review,
   };
-  const style = STEP_STATUS_STYLE[status] ?? STEP_STATUS_FALLBACK;
+  const meta = stepMeta(status);
+  const Icon = meta.icon;
   return (
-    <span className={`inline-flex items-center gap-1.5 typo-caption ${style.text}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-      {labelMap[status] ?? status}
+    <span className={`inline-flex items-center gap-1.5 typo-caption ${meta.tone}`}>
+      <Icon className={`w-3 h-3 ${meta.spin ? 'animate-spin' : ''}`} />
+      {labelMap[status] ?? meta.label}
     </span>
   );
 }
