@@ -219,6 +219,7 @@ export default function GeneratedReviewsTab({
             setExpandedRow(t.id);
             modals.open({ type: 'detail', review: t });
           }}
+          onAdoptTemplate={(t) => modals.open({ type: 'adopt', review: t })}
         />
       )}
 
