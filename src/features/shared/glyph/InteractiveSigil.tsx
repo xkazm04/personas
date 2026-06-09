@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -111,6 +111,69 @@ export function InteractiveSigil({
     [row.presence],
   );
 
+  // Roving-tabindex keyboard navigation across the 8 petals. One petal is
+  // the tab stop (focusDim); arrow keys move focus around the ring,
+  // Home/End jump to the first/last dim, Enter/Space drills into the
+  // focused dimension. The sigil is a card's primary navigation, so this
+  // gives keyboard + screen-reader users the same drill-in mouse users
+  // get. Parent owns the handlers (kept stable) so SigilPetal stays memoized.
+  const petalRefs = useRef<Partial<Record<GlyphDimension, SVGGElement | null>>>({});
+  const [focusDim, setFocusDim] = useState<GlyphDimension>(GLYPH_DIMENSIONS[0]);
+  const [groupFocused, setGroupFocused] = useState(false);
+
+  const moveFocus = useCallback((dim: GlyphDimension) => {
+    setFocusDim(dim);
+    petalRefs.current[dim]?.focus();
+  }, []);
+
+  const handlePetalKeyDown = useCallback(
+    (e: React.KeyboardEvent, dim: GlyphDimension) => {
+      const i = GLYPH_DIMENSIONS.indexOf(dim);
+      const last = GLYPH_DIMENSIONS.length - 1;
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          e.preventDefault();
+          moveFocus(GLYPH_DIMENSIONS[i === last ? 0 : i + 1] ?? dim);
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          e.preventDefault();
+          moveFocus(GLYPH_DIMENSIONS[i === 0 ? last : i - 1] ?? dim);
+          break;
+        case 'Home':
+          e.preventDefault();
+          moveFocus(GLYPH_DIMENSIONS[0] ?? dim);
+          break;
+        case 'End':
+          e.preventDefault();
+          moveFocus(GLYPH_DIMENSIONS[last] ?? dim);
+          break;
+        case 'Enter':
+        case ' ':
+          e.preventDefault();
+          onClick(dim);
+          break;
+      }
+    },
+    [moveFocus, onClick],
+  );
+
+  const handlePetalFocus = useCallback(
+    (dim: GlyphDimension) => {
+      setFocusDim(dim);
+      onHover(dim);
+    },
+    [onHover],
+  );
+
+  const registerPetalRef = useCallback(
+    (dim: GlyphDimension, el: SVGGElement | null) => {
+      petalRefs.current[dim] = el;
+    },
+    [],
+  );
+
   const geom = getGeometry(size);
   const { center, petalOuter, coreR, guideInner, petalPath, petalPathDashed, iconLayouts } = geom;
 
@@ -125,6 +188,15 @@ export function InteractiveSigil({
         viewBox={`0 0 ${size} ${size}`}
         className="absolute inset-0"
         style={{ opacity: row.enabled ? 1 : 0.5 }}
+        role="group"
+        aria-label={c.sigil_group_aria}
+        onFocus={() => setGroupFocused(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+            setGroupFocused(false);
+            onHover(null);
+          }
+        }}
       >
         <defs>
           <radialGradient id={coreId} cx="50%" cy="50%" r="50%">
@@ -144,25 +216,43 @@ export function InteractiveSigil({
         <circle cx={center} cy={center} r={petalOuter} fill="none" stroke="currentColor" strokeOpacity="0.08" strokeWidth="1" />
         <circle cx={center} cy={center} r={guideInner} fill="none" stroke="currentColor" strokeOpacity="0.05" strokeWidth="1" strokeDasharray="2,4" />
 
-        {GLYPH_DIMENSIONS.map((dim, i) => (
-          <SigilPetal
-            key={`petal-${dim}`}
-            dim={dim}
-            presence={row.presence[dim]}
-            index={i}
-            size={size}
-            rowId={row.id}
-            rowIndex={rowIndex}
-            glowId={glowId}
-            petalPath={petalPath}
-            petalPathDashed={petalPathDashed}
-            isHovered={hoveredDim === dim}
-            isActive={activeDim === dim}
-            dimOther={activeDim !== null && activeDim !== dim}
-            onHover={onHover}
-            onClick={onClick}
-          />
-        ))}
+        {GLYPH_DIMENSIONS.map((dim, i) => {
+          const presence = row.presence[dim];
+          const dimLabel = c[DIM_META[dim].labelKey];
+          const stateLabel =
+            presence === 'linked'
+              ? c.presence_linked
+              : presence === 'shared'
+                ? c.presence_shared
+                : c.presence_none;
+          return (
+            <SigilPetal
+              key={`petal-${dim}`}
+              dim={dim}
+              presence={presence}
+              index={i}
+              size={size}
+              rowId={row.id}
+              rowIndex={rowIndex}
+              glowId={glowId}
+              petalPath={petalPath}
+              petalPathDashed={petalPathDashed}
+              isHovered={hoveredDim === dim}
+              isActive={activeDim === dim}
+              dimOther={activeDim !== null && activeDim !== dim}
+              onHover={onHover}
+              onClick={onClick}
+              tabIndex={dim === focusDim ? 0 : -1}
+              ariaLabel={c.presence_tooltip
+                .replace('{label}', dimLabel)
+                .replace('{state}', stateLabel)}
+              isFocused={groupFocused && focusDim === dim}
+              onKeyDown={handlePetalKeyDown}
+              onFocusDim={handlePetalFocus}
+              registerRef={registerPetalRef}
+            />
+          );
+        })}
 
         <circle cx={center} cy={center} r={coreR + 10} fill="none" stroke="currentColor" strokeOpacity="0.12" strokeWidth="1" />
         <circle cx={center} cy={center} r={coreR} fill={`url(#${coreId})`} />

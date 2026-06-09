@@ -920,7 +920,11 @@
     "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
     "hub_refine_send": "Send & rebuild",
     "hub_delete_draft": "Delete draft",
-    "dims_label": "DIM"
+    "dims_label": "DIM",
+    "presence_linked": "propojeno",
+    "presence_shared": "sdíleno",
+    "presence_none": "nenastaveno",
+    "sigil_group_aria": "Dimenze persony"
   },
   "diagrams": {
     "no_flow_data": "Žádná data toku nejsou k dispozici",

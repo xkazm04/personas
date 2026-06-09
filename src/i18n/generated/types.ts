@@ -8112,6 +8112,10 @@ export type Translations = {
       no_external_services: string;
       not_configured: string;
       presence_tooltip: string;
+      presence_linked: string;
+      presence_shared: string;
+      presence_none: string;
+      sigil_group_aria: string;
       off_badge: string;
       shared_badge: string;
       flow_label: string;

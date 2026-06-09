@@ -7609,7 +7609,11 @@
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
       "hub_delete_draft": "Delete draft",
-      "dims_label": "CHIỀU"
+      "dims_label": "CHIỀU",
+      "presence_linked": "đã liên kết",
+      "presence_shared": "dùng chung",
+      "presence_none": "chưa đặt",
+      "sigil_group_aria": "Các chiều của persona"
     },
     "diagrams": {
       "no_flow_data": "Không có dữ liệu luồng",

@@ -7609,7 +7609,11 @@
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
       "hub_delete_draft": "Delete draft",
-      "dims_label": "মাত্রা"
+      "dims_label": "মাত্রা",
+      "presence_linked": "সংযুক্ত",
+      "presence_shared": "ভাগ করা",
+      "presence_none": "সেট করা নেই",
+      "sigil_group_aria": "পার্সোনা মাত্রা"
     },
     "diagrams": {
       "no_flow_data": "কোনো প্রবাহ ডেটা পাওয়া যাচ্ছে না",

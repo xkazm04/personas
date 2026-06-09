@@ -7609,7 +7609,11 @@
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
       "hub_delete_draft": "Delete draft",
-      "dims_label": "차원"
+      "dims_label": "차원",
+      "presence_linked": "연결됨",
+      "presence_shared": "공유됨",
+      "presence_none": "설정 안 됨",
+      "sigil_group_aria": "페르소나 차원"
     },
     "diagrams": {
       "no_flow_data": "사용 가능한 흐름 데이터 없음",

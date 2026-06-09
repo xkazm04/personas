@@ -920,7 +920,11 @@
     "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
     "hub_refine_send": "Send & rebuild",
     "hub_delete_draft": "Delete draft",
-    "dims_label": "ИЗМ"
+    "dims_label": "ИЗМ",
+    "presence_linked": "связано",
+    "presence_shared": "общее",
+    "presence_none": "не задано",
+    "sigil_group_aria": "Измерения персоны"
   },
   "diagrams": {
     "no_flow_data": "Нет данных потока",

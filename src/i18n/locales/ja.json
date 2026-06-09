@@ -7609,7 +7609,11 @@
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
       "hub_delete_draft": "Delete draft",
-      "dims_label": "次元"
+      "dims_label": "次元",
+      "presence_linked": "リンク済み",
+      "presence_shared": "共有",
+      "presence_none": "未設定",
+      "sigil_group_aria": "ペルソナのディメンション"
     },
     "diagrams": {
       "no_flow_data": "フローデータがありません",

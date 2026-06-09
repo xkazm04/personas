@@ -17,6 +17,17 @@ interface SigilPetalProps {
   dimOther: boolean;
   onHover: (dim: GlyphDimension | null) => void;
   onClick: (dim: GlyphDimension) => void;
+  /** Roving-tabindex value — 0 for the current tab stop, -1 otherwise. */
+  tabIndex: number;
+  /** Localized "{label}: {state}" announced to screen readers. */
+  ariaLabel: string;
+  /** Render the keyboard focus ring (the petal is the focused tab stop). */
+  isFocused: boolean;
+  /** Keyboard handler — parent owns arrow/Home/End/Enter/Space routing.
+   *  Passed stable + re-bound with `dim` here so the memo stays effective. */
+  onKeyDown: (e: React.KeyboardEvent, dim: GlyphDimension) => void;
+  onFocusDim: (dim: GlyphDimension) => void;
+  registerRef: (dim: GlyphDimension, el: SVGGElement | null) => void;
 }
 
 /** Renders a single petal group — body varies by presence state.
@@ -29,7 +40,8 @@ interface SigilPetalProps {
 function SigilPetalImpl({
   dim, presence, index, size, rowId, rowIndex, glowId,
   petalPath, petalPathDashed, isHovered, isActive, dimOther,
-  onHover, onClick,
+  onHover, onClick, tabIndex, ariaLabel, isFocused,
+  onKeyDown, onFocusDim, registerRef,
 }: SigilPetalProps) {
   const meta = DIM_META[dim];
   const angle = PETAL_ANGLES[dim];
@@ -88,21 +100,43 @@ function SigilPetalImpl({
 
   return (
     <g
+      ref={(el) => registerRef(dim, el)}
       transform={`translate(${center} ${center}) rotate(${angle})`}
+      role="button"
+      tabIndex={tabIndex}
+      aria-label={ariaLabel}
+      aria-pressed={isActive}
       style={{
         opacity: dimOther && !isActive ? 0.25 : 1,
         transition: 'opacity 0.25s ease',
         cursor: 'pointer',
         pointerEvents: 'auto',
+        outline: 'none',
       }}
       onMouseEnter={() => onHover(dim)}
       onMouseLeave={() => onHover(null)}
+      onFocus={() => onFocusDim(dim)}
+      onKeyDown={(e) => onKeyDown(e, dim)}
       onClick={(e) => {
         e.stopPropagation();
         onClick(dim);
       }}
     >
       {body}
+      {/* Keyboard focus ring — a bright white halo distinct from the
+          colored hover treatment, so keyboard focus reads clearly even
+          on a lit petal. Driven by parent state, not :focus-visible,
+          since SVG outline rendering is unreliable. */}
+      {isFocused && (
+        <path
+          d={petalPath}
+          fill="none"
+          stroke="#fff"
+          strokeWidth={2.5}
+          strokeOpacity={0.9}
+          filter={`url(#${glowId})`}
+        />
+      )}
     </g>
   );
 }

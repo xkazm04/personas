@@ -920,7 +920,11 @@
     "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
     "hub_refine_send": "Send & rebuild",
     "hub_delete_draft": "Delete draft",
-    "dims_label": "आयाम"
+    "dims_label": "आयाम",
+    "presence_linked": "लिंक किया गया",
+    "presence_shared": "साझा",
+    "presence_none": "सेट नहीं",
+    "sigil_group_aria": "पर्सोना आयाम"
   },
   "diagrams": {
     "no_flow_data": "कोई फ्लो डेटा उपलब्ध नहीं",

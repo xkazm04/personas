@@ -7609,7 +7609,11 @@
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
       "hub_delete_draft": "Delete draft",
-      "dims_label": "维度"
+      "dims_label": "维度",
+      "presence_linked": "已连接",
+      "presence_shared": "共享",
+      "presence_none": "未设置",
+      "sigil_group_aria": "角色维度"
     },
     "diagrams": {
       "no_flow_data": "没有可用的流程数据",

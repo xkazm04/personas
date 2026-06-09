@@ -7609,7 +7609,11 @@
       "hub_refine_placeholder": "Describe what to change (e.g. 'Switch to weekly cadence, add Slack notifications')…",
       "hub_refine_send": "Send & rebuild",
       "hub_delete_draft": "Delete draft",
-      "dims_label": "DIM"
+      "dims_label": "DIM",
+      "presence_linked": "vinculado",
+      "presence_shared": "compartido",
+      "presence_none": "sin definir",
+      "sigil_group_aria": "Dimensiones del persona"
     },
     "diagrams": {
       "no_flow_data": "Sin datos de flujo disponibles",
