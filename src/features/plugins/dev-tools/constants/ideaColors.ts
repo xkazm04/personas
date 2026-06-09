@@ -51,6 +51,14 @@ export function levelColor(value: number): string {
   return 'bg-red-500/15 text-red-400 border-red-500/25';
 }
 
+/** Non-color severity tier for a 1-10 level value — pairs with levelColor so
+ *  severity is readable without relying on hue alone (WCAG 1.4.1). */
+export function levelSeverity(value: number): 'low' | 'med' | 'high' {
+  if (value <= 3) return 'low';
+  if (value <= 6) return 'med';
+  return 'high';
+}
+
 /** Returns a text color class based on fitness score */
 export function fitnessColor(fitness: number): string {
   if (fitness > 0.3) return 'text-emerald-400';

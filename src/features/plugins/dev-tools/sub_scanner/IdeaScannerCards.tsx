@@ -18,7 +18,7 @@ import {
   type ScanAgentDef,
 } from '../constants/scanAgents';
 import {
-  HEX_COLOR_MAP, DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor,
+  HEX_COLOR_MAP, DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor, levelSeverity,
 } from '../constants/ideaColors';
 
 // ---------------------------------------------------------------------------
@@ -52,8 +52,9 @@ function agentColor(agent: ScanAgentDef) {
 
 export function LevelBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(value)}`}>
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border ${levelColor(value)}`}>
       {label}: {value}
+      <span className="opacity-70">· {levelSeverity(value)}</span>
     </span>
   );
 }
