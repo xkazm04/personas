@@ -10,6 +10,7 @@ import { DIM_META } from './dimMeta';
 import { parseChannels } from './channels';
 import { triggerIcon, prettyTriggerType, triggerDetail } from './triggers';
 import { InteractiveSigil } from './InteractiveSigil';
+import { SigilLegend } from './SigilLegend';
 import { ChannelTotem } from './ChannelTotem';
 import { ConnectorTotem } from './ConnectorTotem';
 import { DimensionPanel } from './DimensionPanel';
@@ -158,8 +159,17 @@ export function GlyphCard({
 
           <div className="flex-1" />
 
-          {/* Footer — promoted subtitle + consumer-owned slot */}
+          {/* Footer — sigil colour key + promoted subtitle + consumer slot.
+              The legend names every petal at once (the sigil only reveals
+              one label on hover) and shares the card's hover/select state. */}
           <div className="relative z-10 flex flex-col gap-2 px-5 py-4 bg-gradient-to-t from-card-bg/95 via-card-bg/75 to-transparent backdrop-blur-sm">
+            <SigilLegend
+              presence={row.presence}
+              hoveredDim={hoveredDim}
+              onHover={setHoveredDim}
+              onSelect={isBuilding ? undefined : setActiveDim}
+              size="sm"
+            />
             {row.summary && (
               <p className="typo-body-lg text-foreground leading-snug font-medium line-clamp-3">{row.summary}</p>
             )}
