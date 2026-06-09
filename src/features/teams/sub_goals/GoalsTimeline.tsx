@@ -5,11 +5,13 @@
  * relative due date, status, and progress, and opens the goal on click. Done
  * goals drop off the timeline (no urgency left).
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useSystemStore } from '@/stores/systemStore';
+import * as devApi from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { isOngoing, goalStatusMeta } from './goalStatus';
@@ -39,12 +41,26 @@ const BUCKET_ACCENT: Record<Bucket, string> = {
   undated: 'bg-foreground/20',
 };
 
-export function GoalsTimeline({ showProject = false, compact = false }: { showProject?: boolean; compact?: boolean } = {}) {
+export function GoalsTimeline({ showProject = false, compact = false, allProjects = false }: { showProject?: boolean; compact?: boolean; allProjects?: boolean } = {}) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const goals = useSystemStore((s) => s.goals);
+  const storeGoals = useSystemStore((s) => s.goals);
   const projects = useSystemStore((s) => s.projects);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
+
+  // Cross-project mode (e.g. the multi-team channel sidebar): show ALL not-done
+  // goals across every project, not just the active one — fetched directly so
+  // it never depends on a single project being loaded into the store.
+  const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
+  useEffect(() => {
+    if (!allProjects) return;
+    let cancelled = false;
+    void fetchProjects?.();
+    void devApi.listAllGoals().then((g) => { if (!cancelled) setAllGoals(g); }).catch(silentCatch('GoalsTimeline.allGoals'));
+    return () => { cancelled = true; };
+  }, [allProjects, fetchProjects]);
+  const goals = allProjects ? (allGoals ?? []) : storeGoals;
 
   // Open the goal modal DIRECTLY (was: spotlight id + switch to the Board tab,
   // which round-tripped through GoalConstellation to open the same drawer).
@@ -80,8 +96,10 @@ export function GoalsTimeline({ showProject = false, compact = false }: { showPr
 
   const openGoal = (goalId: string) => setDetailGoalId(goalId);
 
-  const dated = BUCKET_ORDER.filter((b) => b !== 'undated').reduce((n, b) => n + grouped[b].length, 0);
-  if (dated === 0 && grouped.undated.length === 0) {
+  // Empty only when there are NO ongoing goals at all (dated OR undated) — the
+  // undated group is first-class, never a reason to show the empty state.
+  const ongoingCount = BUCKET_ORDER.reduce((n, b) => n + grouped[b].length, 0);
+  if (ongoingCount === 0) {
     return (
       <div className="relative flex flex-col items-center justify-center py-16 text-center">
         <GoalAtmosphere />
