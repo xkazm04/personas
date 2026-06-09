@@ -17,7 +17,7 @@ The plugin lives under `Plugins -> Drive` and is implemented by `src/features/pl
 | OS file ingest | OS-native drag-drop into the current folder; cap 50 MB per file | `DrivePage.tsx` |
 | Recursive search | Local folder filter escalates to a backend `drive_search` walk via a "Search all of Drive" CTA when there are no in-folder hits | `hooks/useDrive.ts`, `components/DriveFileList.tsx`, `commands/drive.rs::drive_search` |
 | OCR drawer | Gemini OCR through Vault credentials or Claude CLI OCR through local CLI | `ocr/DriveOcrDrawer.tsx`, `ocr/useOcr.ts`, `src/api/drive.ts` |
-| Signing | Generate/attach/verify document signatures and sidecars | `signing/*`, `src/api/signing` |
+| Signing | Generate/attach/verify document signatures and sidecars. The signatures-history panel can re-verify any record in place — "Verify now" re-hashes the live file against the record's exported sidecar and shows valid / modified / invalid inline | `signing/*`, `src/api/signing` |
 
 ## Sandbox and validation
 
