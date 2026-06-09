@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useSystemStore } from '@/stores/systemStore';
 import { detectProcesses } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 import type { FleetDetectedProcess } from '@/lib/bindings/FleetDetectedProcess';
 
 /**
@@ -20,7 +21,12 @@ export function countOrphans(procs: FleetDetectedProcess[]): number {
  */
 export function useFleetOrphanScan(intervalMs = 60_000) {
   const setOrphanCount = useSystemStore((s) => s.fleetSetOrphanCount);
+  const visible = useDocumentVisibility();
   useEffect(() => {
+    // OS process-table scans are the priciest fleet poll — skip them entirely
+    // while the window is hidden; the effect re-runs (scanning immediately)
+    // when it becomes visible again.
+    if (!visible) return;
     let cancelled = false;
     const scan = () =>
       detectProcesses()
@@ -34,5 +40,5 @@ export function useFleetOrphanScan(intervalMs = 60_000) {
       cancelled = true;
       clearInterval(t);
     };
-  }, [intervalMs, setOrphanCount]);
+  }, [intervalMs, setOrphanCount, visible]);
 }

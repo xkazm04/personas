@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { terminalPreviews } from '@/api/fleet/fleet';
 import { silentCatch } from '@/lib/silentCatch';
+import { useDocumentVisibility } from '@/hooks/utility/useDocumentVisibility';
 
 interface Options {
   /** Poll only while true (e.g. the grid overlay is open). */
@@ -30,6 +31,7 @@ export function useFleetTilePreviews(
   const enabled = opts?.enabled ?? true;
   const intervalMs = opts?.intervalMs ?? 1200;
   const lines = opts?.lines ?? 24;
+  const visible = useDocumentVisibility();
   const [previews, setPreviews] = useState<Map<string, string[]>>(new Map());
 
   // Keep the id list in a ref so the poll interval isn't torn down and rebuilt
@@ -49,6 +51,10 @@ export function useFleetTilePreviews(
       setPreviews((prev) => (prev.size ? new Map() : prev));
       return;
     }
+    // Window hidden → stop polling but KEEP the current previews (nothing is
+    // on screen to go stale). Re-becoming visible re-runs the effect, whose
+    // immediate tick refreshes everything in one call.
+    if (!visible) return;
     let cancelled = false;
 
     const tick = async () => {
@@ -99,7 +105,7 @@ export function useFleetTilePreviews(
       cancelled = true;
       window.clearInterval(handle);
     };
-  }, [enabled, intervalMs, lines]);
+  }, [enabled, visible, intervalMs, lines]);
 
   return previews;
 }
