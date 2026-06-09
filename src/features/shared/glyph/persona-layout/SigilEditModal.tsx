@@ -120,7 +120,12 @@ export function SigilEditModal({
           <span className={`typo-label uppercase tracking-[0.18em] ${meta.colorClass}`}>
             {dimLabel}
           </span>
-          <p className="typo-caption text-foreground mt-0.5">
+          {/* Plain-language "what this dimension does" — so editing Memory
+              or Review means something to a first-timer, not just a label. */}
+          {dimText.desc[dim] && (
+            <p className="typo-caption text-foreground mt-0.5">{dimText.desc[dim]}</p>
+          )}
+          <p className="typo-caption text-foreground italic mt-0.5">
             {isActive ? t.agents.sigil_edit_active : t.agents.sigil_edit_inactive}
           </p>
         </div>
