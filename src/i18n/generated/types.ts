@@ -213,6 +213,7 @@ export type Translations = {
     quick_carry_out_hint: string;
     quick_carrying_out: string;
     learned_view: string;
+    quick_source_unknown: string;
   };
   common: {
     unknown_error: string;

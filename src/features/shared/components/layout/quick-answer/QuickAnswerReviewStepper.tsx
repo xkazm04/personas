@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Check, X, MessageSquarePlus, ChevronLeft, ChevronRight, CornerDownRight, Play } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Check, X, MessageSquarePlus, ChevronLeft, ChevronRight, CornerDownRight, Play, Users } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useToastStore } from '@/stores/toastStore';
+import { useAgentStore } from '@/stores/agentStore';
+import { usePipelineStore } from '@/stores/pipelineStore';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { MarkdownRenderer } from '@/features/shared/components/editors/MarkdownRenderer';
 import { severityBucket, SEVERITY_META, severityLabel } from '@/features/shared/components/layout/monitor/monitorModel';
@@ -47,6 +49,18 @@ export function QuickAnswerReviewStepper({
     setNote('');
     setShowNote(false);
   }, [review?.id]);
+
+  // Resolve the source persona's team (home_team_id → team name) so the source
+  // bar can show "who, and which team" behind the review.
+  const personas = useAgentStore((s) => s.personas);
+  const teams = usePipelineStore((s) => s.teams);
+  const fetchTeams = usePipelineStore((s) => s.fetchTeams);
+  useEffect(() => { void fetchTeams(); }, [fetchTeams]);
+  const teamName = useMemo(() => {
+    const teamId = personas.find((p) => p.id === review?.persona_id)?.home_team_id;
+    if (!teamId) return null;
+    return teams.find((tm) => tm.id === teamId)?.name ?? null;
+  }, [personas, teams, review?.persona_id]);
 
   if (reviews.length === 0 || !review) return null;
   const bucket = severityBucket(review.severity);
@@ -105,15 +119,22 @@ export function QuickAnswerReviewStepper({
         </div>
       </div>
 
-      {/* The decision — title, persona, full description */}
-      <div className="px-4 py-3.5 flex flex-col gap-3 max-h-[44vh] overflow-y-auto">
-        <div className="flex items-start gap-2.5">
-          <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize="sm" />
-          <div className="min-w-0 flex-1">
-            <h3 className="typo-body-lg font-semibold text-foreground leading-snug">{review.title}</h3>
-            {review.persona_name && <p className="typo-caption text-foreground/55 mt-0.5">{review.persona_name}</p>}
-          </div>
+      {/* Source bar — who raised this, and which team they belong to */}
+      <div className="flex items-center gap-2.5 px-4 py-2 border-b border-card-border bg-secondary/15">
+        <PersonaIcon icon={review.persona_icon ?? null} color={review.persona_color ?? null} display="framed" frameSize="sm" />
+        <div className="min-w-0 flex-1 leading-tight">
+          <div className="typo-body font-semibold text-foreground truncate">{review.persona_name ?? t.monitor.quick_source_unknown}</div>
+          {teamName && (
+            <div className="inline-flex items-center gap-1 typo-caption text-foreground/55 truncate">
+              <Users className="w-3 h-3 flex-shrink-0" /> {teamName}
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* The decision — title + full description */}
+      <div className="px-4 py-3.5 flex flex-col gap-3 max-h-[44vh] overflow-y-auto">
+        <h3 className="typo-body-lg font-semibold text-foreground leading-snug">{review.title}</h3>
 
         {review.content && (
           <MarkdownRenderer content={review.content} className="typo-body text-foreground/90 leading-relaxed" />
