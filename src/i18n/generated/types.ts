@@ -12802,6 +12802,9 @@ export type Translations = {
       goal_detail_checklist: string;
       goal_detail_subgoals: string;
       goal_detail_dependencies: string;
+      goal_explainer_board: string;
+      goal_explainer_map: string;
+      goal_explainer_timeline: string;
       goal_starters_label: string;
       goal_starter_created: string;
       goal_starter_release_title: string;

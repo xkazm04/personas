@@ -1876,7 +1876,10 @@
     "goal_starter_docs_title": "시작 가이드 작성하기",
     "goal_starter_docs_desc": "프로젝트가 무엇을 하는지, 새로운 사람이 어떻게 실행하는지 설명합니다.",
     "goal_starter_quality_title": "프로젝트를 더 안정적으로 만들기",
-    "goal_starter_quality_desc": "가장 위험한 부분에 검사와 테스트를 추가해 변경이 더 이상 기능을 망가뜨리지 않게 합니다."
+    "goal_starter_quality_desc": "가장 위험한 부분에 검사와 테스트를 추가해 변경이 더 이상 기능을 망가뜨리지 않게 합니다.",
+    "goal_explainer_board": "카드 하나가 목표 하나입니다. \"내 차례\"에는 내 손길이 필요한 목표가, \"에이전트 차례\"에는 AI 팀이 진행 중인 일이 있습니다.",
+    "goal_explainer_map": "목표가 연결 관계에 따라 배치됩니다 — 화살표는 먼저 해야 할 일을 보여줍니다. 드래그로 정리하고, 클릭해 자세히 보세요.",
+    "goal_explainer_timeline": "목표가 목표일 순으로 주·월 단위로 묶여 있습니다. 날짜 없는 목표는 별도 그룹에 있습니다."
   },
   "dev_projects": {
     "active_goals": "활성 목표",

@@ -1876,7 +1876,10 @@
     "goal_starter_docs_title": "编写入门指南",
     "goal_starter_docs_desc": "说明这个项目是做什么的，以及新人如何把它跑起来。",
     "goal_starter_quality_title": "让项目更可靠",
-    "goal_starter_quality_desc": "在最容易出错的地方加上检查和测试，让改动不再破坏功能。"
+    "goal_starter_quality_desc": "在最容易出错的地方加上检查和测试，让改动不再破坏功能。",
+    "goal_explainer_board": "每张卡片是一个目标。「轮到你」是需要你处理的目标；「轮到智能体」是你的 AI 团队正在做的。",
+    "goal_explainer_map": "目标按关联方式排列——箭头表示先后顺序。可拖动排列，点击目标查看详情。",
+    "goal_explainer_timeline": "目标按目标日期排列，按周和月分组。没有日期的目标在单独一组。"
   },
   "dev_projects": {
     "active_goals": "活跃目标",

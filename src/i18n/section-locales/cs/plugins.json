@@ -1876,7 +1876,10 @@
     "goal_starter_docs_title": "Napsat úvodní příručku",
     "goal_starter_docs_desc": "Vysvětlete, co projekt dělá a jak ho nový člověk rozběhne.",
     "goal_starter_quality_title": "Zvýšit spolehlivost projektu",
-    "goal_starter_quality_desc": "Přidejte kontroly a testy kolem nejrizikovějších částí, aby změny přestaly věci rozbíjet."
+    "goal_starter_quality_desc": "Přidejte kontroly a testy kolem nejrizikovějších částí, aby změny přestaly věci rozbíjet.",
+    "goal_explainer_board": "Každá karta je cíl. „Vy jste na tahu\" obsahuje cíle, které vás potřebují; „Na tahu je agent\" je to, na čem pracuje váš AI tým.",
+    "goal_explainer_map": "Cíle jsou rozmístěné podle vazeb — šipky ukazují, co se musí stát dřív. Přetažením uspořádáte, kliknutím zobrazíte detail.",
+    "goal_explainer_timeline": "Cíle seřazené podle cílového data, seskupené po týdnech a měsících. Cíle bez data mají vlastní skupinu."
   },
   "dev_projects": {
     "active_goals": "aktivních cílů",

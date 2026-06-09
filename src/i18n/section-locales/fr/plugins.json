@@ -1876,7 +1876,10 @@
     "goal_starter_docs_title": "Rédiger un guide de démarrage",
     "goal_starter_docs_desc": "Expliquez ce que fait le projet et comment une nouvelle personne le lance.",
     "goal_starter_quality_title": "Rendre le projet plus fiable",
-    "goal_starter_quality_desc": "Ajoutez des vérifications et des tests autour des parties les plus risquées pour que les changements ne cassent plus rien."
+    "goal_starter_quality_desc": "Ajoutez des vérifications et des tests autour des parties les plus risquées pour que les changements ne cassent plus rien.",
+    "goal_explainer_board": "Chaque carte est un objectif. « À vous » contient ceux qui vous attendent ; « Au tour de l'agent », ce sur quoi votre équipe IA travaille.",
+    "goal_explainer_map": "Les objectifs sont disposés selon leurs liens — les flèches montrent ce qui doit arriver d'abord. Glissez pour organiser, cliquez pour les détails.",
+    "goal_explainer_timeline": "Objectifs disposés par date cible, groupés par semaine et par mois. Ceux sans date ont leur propre groupe."
   },
   "dev_projects": {
     "active_goals": "objectifs actifs",

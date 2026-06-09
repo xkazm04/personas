@@ -15,6 +15,7 @@ import { LifecycleProjectPicker } from '@/features/plugins/dev-tools/sub_lifecyc
 import GoalConstellation from './GoalConstellation';
 import { GoalEditorModal } from './GoalEditorModal';
 import { GoalsTimeline } from './GoalsTimeline';
+import { GoalViewExplainer } from './GoalViewExplainer';
 import { isComplete } from './goalStatus';
 
 /** Board preference: whether the Done lane is visible. Hidden by default so
@@ -198,7 +199,10 @@ export default function GoalsPage() {
 
       <ContentBody>
         {goalsTab === 'timeline' ? (
-          <GoalsTimeline showProject={crossProject} />
+          <div className="space-y-3">
+            <GoalViewExplainer key="timeline" view="timeline" text={dl.goal_explainer_timeline} />
+            <GoalsTimeline showProject={crossProject} />
+          </div>
         ) : goals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             {/* Haloed animated-bullseye hero (mirrors the overview illustration look) */}
@@ -287,6 +291,11 @@ export default function GoalsPage() {
                 </Button>
               </div>
             </div>
+            <GoalViewExplainer
+              key={goalsTab}
+              view={goalsTab === 'map' ? 'map' : 'board'}
+              text={goalsTab === 'map' ? dl.goal_explainer_map : dl.goal_explainer_board}
+            />
             <GoalConstellation variant={goalsTab as 'board' | 'map'} showDoneLane={showDone} showProject={crossProject} />
           </div>
         )}

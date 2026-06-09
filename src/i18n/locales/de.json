@@ -12044,7 +12044,10 @@
       "goal_starter_docs_title": "Eine Einstiegsanleitung schreiben",
       "goal_starter_docs_desc": "Erkläre, was das Projekt tut und wie eine neue Person es zum Laufen bringt.",
       "goal_starter_quality_title": "Das Projekt zuverlässiger machen",
-      "goal_starter_quality_desc": "Füge Prüfungen und Tests an den riskantesten Stellen hinzu, damit Änderungen nichts mehr kaputt machen."
+      "goal_starter_quality_desc": "Füge Prüfungen und Tests an den riskantesten Stellen hinzu, damit Änderungen nichts mehr kaputt machen.",
+      "goal_explainer_board": "Jede Karte ist ein Ziel. „Du bist dran\" enthält Ziele, die dich brauchen; „Agent ist dran\" ist das, woran dein KI-Team arbeitet.",
+      "goal_explainer_map": "Ziele sind nach ihren Verbindungen angeordnet — Pfeile zeigen, was zuerst passieren muss. Ziehen zum Anordnen, klicken für Details.",
+      "goal_explainer_timeline": "Ziele nach Zieldatum angeordnet, gruppiert nach Woche und Monat. Ziele ohne Datum haben eine eigene Gruppe."
     },
     "dev_projects": {
       "active_goals": "aktive Ziele",

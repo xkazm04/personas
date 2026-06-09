@@ -12044,7 +12044,10 @@
       "goal_starter_docs_title": "Tulis panduan memulai",
       "goal_starter_docs_desc": "Jelaskan apa fungsi proyek ini dan bagaimana orang baru menjalankannya.",
       "goal_starter_quality_title": "Buat proyek lebih andal",
-      "goal_starter_quality_desc": "Tambahkan pemeriksaan dan pengujian di bagian paling berisiko agar perubahan tidak merusak."
+      "goal_starter_quality_desc": "Tambahkan pemeriksaan dan pengujian di bagian paling berisiko agar perubahan tidak merusak.",
+      "goal_explainer_board": "Setiap kartu adalah sasaran. \"Giliran Anda\" berisi sasaran yang membutuhkan Anda; \"Giliran agen\" adalah yang sedang dikerjakan tim AI Anda.",
+      "goal_explainer_map": "Sasaran disusun menurut keterkaitannya — panah menunjukkan apa yang harus terjadi lebih dulu. Seret untuk mengatur, klik sasaran untuk detail.",
+      "goal_explainer_timeline": "Sasaran disusun menurut tanggal target, dikelompokkan per minggu dan bulan. Sasaran tanpa tanggal berada di grup tersendiri."
     },
     "dev_projects": {
       "active_goals": "tujuan aktif",

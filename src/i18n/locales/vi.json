@@ -12044,7 +12044,10 @@
       "goal_starter_docs_title": "Viết hướng dẫn bắt đầu",
       "goal_starter_docs_desc": "Giải thích dự án làm gì và người mới chạy nó như thế nào.",
       "goal_starter_quality_title": "Làm dự án đáng tin cậy hơn",
-      "goal_starter_quality_desc": "Thêm kiểm tra và thử nghiệm quanh những phần rủi ro nhất để thay đổi không còn phá hỏng mọi thứ."
+      "goal_starter_quality_desc": "Thêm kiểm tra và thử nghiệm quanh những phần rủi ro nhất để thay đổi không còn phá hỏng mọi thứ.",
+      "goal_explainer_board": "Mỗi thẻ là một mục tiêu. \"Lượt của bạn\" chứa các mục tiêu cần bạn; \"Lượt của tác nhân\" là việc đội AI của bạn đang làm.",
+      "goal_explainer_map": "Mục tiêu được sắp theo cách chúng liên kết — mũi tên cho biết việc gì cần làm trước. Kéo để sắp xếp, nhấp vào mục tiêu để xem chi tiết.",
+      "goal_explainer_timeline": "Mục tiêu xếp theo ngày mục tiêu, nhóm theo tuần và tháng. Mục tiêu không có ngày nằm trong nhóm riêng."
     },
     "dev_projects": {
       "active_goals": "mục tiêu đang hoạt động",

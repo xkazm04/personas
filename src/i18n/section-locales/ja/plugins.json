@@ -1876,7 +1876,10 @@
     "goal_starter_docs_title": "はじめてガイドを書く",
     "goal_starter_docs_desc": "プロジェクトが何をするものか、新しい人がどう動かすかを説明します。",
     "goal_starter_quality_title": "プロジェクトの信頼性を高める",
-    "goal_starter_quality_desc": "最もリスクの高い部分にチェックとテストを追加し、変更で壊れないようにします。"
+    "goal_starter_quality_desc": "最もリスクの高い部分にチェックとテストを追加し、変更で壊れないようにします。",
+    "goal_explainer_board": "カードひとつがゴールです。「あなたの番」はあなたの対応待ち、「エージェントの番」は AI チームが進めている内容です。",
+    "goal_explainer_map": "ゴールはつながりで配置され、矢印は先に必要なものを示します。ドラッグで整理、クリックで詳細を表示。",
+    "goal_explainer_timeline": "ゴールは目標日順に、週と月でグループ化されています。日付のないゴールは専用グループに入ります。"
   },
   "dev_projects": {
     "active_goals": "アクティブなゴール",
