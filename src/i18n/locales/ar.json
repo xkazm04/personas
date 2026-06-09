@@ -14298,7 +14298,8 @@
       "openSection": "فتح {section}",
       "nextStep": "الخطوة التالية",
       "scoreDelta": "+{pct}%",
-      "checklistHeading": "أكمل توأمك"
+      "checklistHeading": "أكمل توأمك",
+      "rosterFoundations": "{twins} توائم · {identities} لها هوية · {brains} لها قاعدة معرفة"
     },
     "variantTabs": {
       "prototype": "Prototype",

@@ -383,7 +383,8 @@
     "openSection": "{section} 열기",
     "nextStep": "다음 단계",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "트윈 완성하기"
+    "checklistHeading": "트윈 완성하기",
+    "rosterFoundations": "{twins}개 트윈 · {identities}개 정체성 보유 · {brains}개 지식 베이스 보유"
   },
   "variantTabs": {
     "prototype": "Prototype",

@@ -383,7 +383,8 @@
     "openSection": "{section}を開く",
     "nextStep": "次のステップ",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "ツインを完成させる"
+    "checklistHeading": "ツインを完成させる",
+    "rosterFoundations": "{twins} 体のツイン · {identities} 体に人物像 · {brains} 体に知識ベース"
   },
   "variantTabs": {
     "prototype": "Prototype",

@@ -15398,6 +15398,7 @@ export type Translations = {
       nextStep: string;
       scoreDelta: string;
       checklistHeading: string;
+      rosterFoundations: string;
       ready: string;
       satellites: string;
       rosterSpread: string;

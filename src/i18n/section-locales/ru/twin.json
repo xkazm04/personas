@@ -383,7 +383,8 @@
     "openSection": "Открыть {section}",
     "nextStep": "Следующий шаг",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "Завершите настройку двойника"
+    "checklistHeading": "Завершите настройку двойника",
+    "rosterFoundations": "{twins} двойников · {identities} с личностью · {brains} с базой знаний"
   },
   "variantTabs": {
     "prototype": "Prototype",

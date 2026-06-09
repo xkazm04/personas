@@ -383,7 +383,8 @@
     "openSection": "Buka {section}",
     "nextStep": "Langkah berikutnya",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "Lengkapi twin Anda"
+    "checklistHeading": "Lengkapi twin Anda",
+    "rosterFoundations": "{twins} twin · {identities} punya identitas · {brains} punya basis pengetahuan"
   },
   "variantTabs": {
     "prototype": "Prototype",

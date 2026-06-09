@@ -383,7 +383,8 @@
     "openSection": "打开{section}",
     "nextStep": "下一步",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "完善你的分身"
+    "checklistHeading": "完善你的分身",
+    "rosterFoundations": "{twins} 个分身 · {identities} 个有身份 · {brains} 个有知识库"
   },
   "variantTabs": {
     "prototype": "Prototype",

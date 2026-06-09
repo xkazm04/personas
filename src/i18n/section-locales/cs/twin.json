@@ -383,7 +383,8 @@
     "openSection": "Otevřít {section}",
     "nextStep": "Další krok",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "Dokončete své dvojče"
+    "checklistHeading": "Dokončete své dvojče",
+    "rosterFoundations": "{twins} dvojčat · {identities} s identitou · {brains} se znalostní bází"
   },
   "variantTabs": {
     "prototype": "Prototype",

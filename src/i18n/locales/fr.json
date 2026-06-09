@@ -14298,7 +14298,8 @@
       "openSection": "Ouvrir {section}",
       "nextStep": "Étape suivante",
       "scoreDelta": "+{pct}%",
-      "checklistHeading": "Complétez votre jumeau"
+      "checklistHeading": "Complétez votre jumeau",
+      "rosterFoundations": "{twins} jumeaux · {identities} avec identité · {brains} avec base de connaissances"
     },
     "variantTabs": {
       "prototype": "Prototype",

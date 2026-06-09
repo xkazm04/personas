@@ -14298,7 +14298,8 @@
       "openSection": "Mở {section}",
       "nextStep": "Bước tiếp theo",
       "scoreDelta": "+{pct}%",
-      "checklistHeading": "Hoàn thiện bản sao của bạn"
+      "checklistHeading": "Hoàn thiện bản sao của bạn",
+      "rosterFoundations": "{twins} bản sao · {identities} có danh tính · {brains} có cơ sở tri thức"
     },
     "variantTabs": {
       "prototype": "Prototype",

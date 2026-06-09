@@ -383,7 +383,8 @@
     "openSection": "Abrir {section}",
     "nextStep": "Siguiente paso",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "Completa tu gemelo"
+    "checklistHeading": "Completa tu gemelo",
+    "rosterFoundations": "{twins} gemelos · {identities} con identidad · {brains} con base de conocimiento"
   },
   "variantTabs": {
     "prototype": "Prototype",

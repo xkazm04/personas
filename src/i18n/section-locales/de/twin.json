@@ -383,7 +383,8 @@
     "openSection": "{section} öffnen",
     "nextStep": "Nächster Schritt",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "Vervollständige deinen Twin"
+    "checklistHeading": "Vervollständige deinen Twin",
+    "rosterFoundations": "{twins} Twins · {identities} mit Identität · {brains} mit Wissensdatenbank"
   },
   "variantTabs": {
     "prototype": "Prototype",

@@ -14298,7 +14298,8 @@
       "openSection": "{section} খুলুন",
       "nextStep": "পরবর্তী ধাপ",
       "scoreDelta": "+{pct}%",
-      "checklistHeading": "আপনার টুইন সম্পূর্ণ করুন"
+      "checklistHeading": "আপনার টুইন সম্পূর্ণ করুন",
+      "rosterFoundations": "{twins}টি টুইন · {identities}টিতে পরিচয় · {brains}টিতে জ্ঞানভাণ্ডার"
     },
     "variantTabs": {
       "prototype": "Prototype",

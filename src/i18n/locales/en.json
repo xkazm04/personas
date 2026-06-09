@@ -15392,6 +15392,7 @@
       "nextStep": "Next step",
       "scoreDelta": "+{pct}%",
       "checklistHeading": "Complete your twin",
+      "rosterFoundations": "{twins} twins · {identities} with an identity · {brains} with a knowledge base",
       "ready": "Ready",
       "satellites": "Satellites",
       "rosterSpread": "Roster spread",

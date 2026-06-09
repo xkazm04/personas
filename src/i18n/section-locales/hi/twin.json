@@ -383,7 +383,8 @@
     "openSection": "{section} खोलें",
     "nextStep": "अगला कदम",
     "scoreDelta": "+{pct}%",
-    "checklistHeading": "अपना ट्विन पूरा करें"
+    "checklistHeading": "अपना ट्विन पूरा करें",
+    "rosterFoundations": "{twins} ट्विन · {identities} में पहचान · {brains} में ज्ञानकोष"
   },
   "variantTabs": {
     "prototype": "Prototype",
