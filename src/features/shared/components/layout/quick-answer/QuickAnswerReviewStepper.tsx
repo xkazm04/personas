@@ -78,7 +78,7 @@ export function QuickAnswerReviewStepper({
   // Falls back to a plain approve-with-note when dispatch isn't wired.
   const chooseAction = async (action: string) => {
     if (onDispatchAction) {
-      useToastStore.getState().addToast(`▶ ${tx(t.monitor.quick_carrying_out, { action })}`, 'success', 4000);
+      useToastStore.getState().addToast(tx(t.monitor.quick_carrying_out, { action }), 'success', 4000);
       const combined = note.trim() ? `${action} — ${note.trim()}` : action;
       await onDispatchAction(review.id, combined);
     } else {

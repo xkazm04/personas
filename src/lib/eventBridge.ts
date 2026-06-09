@@ -465,7 +465,7 @@ const registry: EventRegistration[] = [
         const title = learned.title.length > 90 ? `${learned.title.slice(0, 90)}…` : learned.title;
         // "View" → the Knowledge (memories) surface, where the learned memory is
         // listed and editable/deletable (Phase 2b — makes the lesson correctable).
-        useToastStore.getState().addToast(`🧠 ${prefix} — ${title}`, "success", 6000, {
+        useToastStore.getState().addToast(`${prefix}: ${title}`, "success", 6000, {
           label: t.monitor.learned_view,
           onClick: () => {
             useSystemStore.getState().setSidebarSection("overview");
@@ -477,22 +477,29 @@ const registry: EventRegistration[] = [
     },
   },
 
-  // -- Review dispatch blocked → warning toast (GAP 1: no longer silent) -------
-  // The approval was recorded but the chosen action couldn't be carried out
-  // (the follow-up run failed to start — commonly the persona needs a credential).
+  // -- Review dispatch blocked → persistent Notification (GAP 1: real blocker) --
+  // The approval was recorded but the chosen action couldn't be carried out (the
+  // follow-up run failed to start — commonly the persona needs a credential).
+  // The backend already raised an INCIDENT; this mirrors it as a Notification-
+  // Center entry deep-linking to the Incidents inbox — NOT a transient toast, so
+  // the blocker persists until the user clears it.
   {
     event: EventName.REVIEW_DISPATCH_BLOCKED,
     priority: "normal",
     setup: async () => {
       const unlisten = await typedListen(EventName.REVIEW_DISPATCH_BLOCKED, (payload) => {
         const t = getActiveTranslations();
-        const who = payload.personaName ? `${payload.personaName}: ` : "";
-        const reason = payload.reason.length > 140 ? `${payload.reason.slice(0, 140)}…` : payload.reason;
-        useToastStore.getState().addToast(
-          `${who}${t.monitor.review_dispatch_blocked} — ${reason}`,
-          "warning",
-          7000,
-        );
+        const reason = payload.reason.length > 160 ? `${payload.reason.slice(0, 160)}…` : payload.reason;
+        useNotificationCenterStore.getState().addProcessNotification({
+          processType: "execution",
+          personaId: payload.personaId,
+          personaName: payload.personaName ?? null,
+          status: "failed",
+          title: t.monitor.review_dispatch_blocked,
+          summary: reason,
+          redirectSection: "overview",
+          redirectTab: "incidents",
+        });
       });
       return [unlisten];
     },

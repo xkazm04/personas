@@ -1276,6 +1276,37 @@ pub async fn dispatch_review_action(
                         )
                         .ok()
                     });
+                // A real blocker → an INCIDENT (not a transient toast). Lands in
+                // the Incidents inbox AND — because it's attributed to the
+                // persona — gets surfaced in that persona's run context under
+                // "known incidents to avoid" (runner/team_context.rs
+                // gather_open_incidents), so future runs don't burn tokens
+                // re-attempting blocked work until the user clears it. Deduped
+                // by (source_table, source_id=review.id).
+                let reason = e.to_string();
+                let kind = if reason.to_lowercase().contains("credential") {
+                    "missing_credential"
+                } else {
+                    "blocked_dependency"
+                };
+                let _ = crate::db::repos::execution::audit_incidents::promote(
+                    &state.db,
+                    crate::db::models::CreateAuditIncidentInput {
+                        source_table: "review_dispatch".to_string(),
+                        source_id: review.id.clone(),
+                        persona_id: Some(review.persona_id.clone()),
+                        persona_name: persona_name.clone(),
+                        execution_id: Some(review.execution_id.clone()),
+                        severity: "high".to_string(),
+                        kind: kind.to_string(),
+                        title: format!("Couldn't carry out approved action: {}", review.title),
+                        detail: Some(format!(
+                            "The human approved \"{action}\" but the follow-up run could not start: {reason}"
+                        )),
+                    },
+                );
+                // The bell notification (frontend turns this into a persistent
+                // Notification-Center entry deep-linking to the Incidents inbox).
                 let _ = app.emit(
                     event_name::REVIEW_DISPATCH_BLOCKED,
                     ReviewDispatchBlockedEvent {
@@ -1283,7 +1314,7 @@ pub async fn dispatch_review_action(
                         persona_id: review.persona_id.clone(),
                         persona_name,
                         action: action.clone(),
-                        reason: e.to_string(),
+                        reason,
                     },
                 );
             }
