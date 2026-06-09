@@ -72,7 +72,7 @@ export function FieldCaptureRow({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <label className="typo-body font-medium text-foreground">
+        <label htmlFor={fieldId} className="typo-body font-medium text-foreground">
           {label}
           {required && <span className="text-red-400 ml-1">*</span>}
         </label>
@@ -94,6 +94,7 @@ export function FieldCaptureRow({
 
       {inputType === 'select' && options ? (
         <ThemedSelect
+          id={fieldId}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
           onBlur={onBlur}
@@ -114,6 +115,7 @@ export function FieldCaptureRow({
         </ThemedSelect>
       ) : (
         <input
+          id={fieldId}
           type={isSecret && !isVisible ? 'password' : inputType === 'url' ? 'url' : 'text'}
           value={value}
           onChange={(e) => onChange?.(e.target.value)}
