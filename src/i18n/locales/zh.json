@@ -7827,6 +7827,22 @@
       "questionnaire_member_summary_customized": "{count} 个问题，已自定义 {customized} 项",
       "questionnaire_member_no_config": "无需配置",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "对比",
+      "selected": "已选 {count} 个",
+      "clear": "清除",
+      "title": "对比模板",
+      "subtitle": "并排对比 {count} 个模板",
+      "hint_min": "至少选择 2 个模板进行对比",
+      "max_reached": "一次最多对比 {max} 个",
+      "add_to_compare": "加入对比",
+      "remove_from_compare": "移出对比",
+      "col_category": "类别",
+      "col_goal": "目标",
+      "col_complexity": "复杂度",
+      "col_setup": "设置时间",
+      "none": "—"
     }
   },
   "triggers": {

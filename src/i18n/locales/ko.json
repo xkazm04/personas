@@ -7827,6 +7827,22 @@
       "questionnaire_member_summary_customized": "{count}개 질문, {customized}개 맞춤설정",
       "questionnaire_member_no_config": "구성 불필요",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "비교",
+      "selected": "{count}개 선택됨",
+      "clear": "지우기",
+      "title": "템플릿 비교",
+      "subtitle": "{count}개 템플릿 나란히 비교",
+      "hint_min": "비교하려면 템플릿을 2개 이상 선택하세요",
+      "max_reached": "한 번에 최대 {max}개까지 비교",
+      "add_to_compare": "비교에 추가",
+      "remove_from_compare": "비교에서 제거",
+      "col_category": "카테고리",
+      "col_goal": "목표",
+      "col_complexity": "복잡도",
+      "col_setup": "설정 시간",
+      "none": "—"
     }
   },
   "triggers": {

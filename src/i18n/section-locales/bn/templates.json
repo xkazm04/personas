@@ -1142,5 +1142,21 @@
     "questionnaire_member_summary_customized": "{count}টি প্রশ্ন, {customized}টি কাস্টমাইজড",
     "questionnaire_member_no_config": "কোনো কনফিগারেশন প্রয়োজন নেই",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "তুলনা করুন",
+    "selected": "{count}টি নির্বাচিত",
+    "clear": "সাফ করুন",
+    "title": "টেমপ্লেট তুলনা করুন",
+    "subtitle": "{count}টি টেমপ্লেট পাশাপাশি তুলনা",
+    "hint_min": "তুলনার জন্য অন্তত ২টি টেমপ্লেট নির্বাচন করুন",
+    "max_reached": "একসাথে সর্বোচ্চ {max}টি তুলনা করুন",
+    "add_to_compare": "তুলনায় যোগ করুন",
+    "remove_from_compare": "তুলনা থেকে সরান",
+    "col_category": "বিভাগ",
+    "col_goal": "লক্ষ্য",
+    "col_complexity": "জটিলতা",
+    "col_setup": "সেটআপ সময়",
+    "none": "—"
   }
 }

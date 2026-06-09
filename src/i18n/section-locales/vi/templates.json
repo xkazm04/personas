@@ -1142,5 +1142,21 @@
     "questionnaire_member_summary_customized": "{count} câu hỏi, {customized} đã tùy chỉnh",
     "questionnaire_member_no_config": "Không cần cấu hình",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "So sánh",
+    "selected": "Đã chọn {count}",
+    "clear": "Xóa",
+    "title": "So sánh mẫu",
+    "subtitle": "So sánh song song {count} mẫu",
+    "hint_min": "Chọn ít nhất 2 mẫu để so sánh",
+    "max_reached": "So sánh tối đa {max} cùng lúc",
+    "add_to_compare": "Thêm vào so sánh",
+    "remove_from_compare": "Xóa khỏi so sánh",
+    "col_category": "Danh mục",
+    "col_goal": "Mục tiêu",
+    "col_complexity": "Độ phức tạp",
+    "col_setup": "Thời gian thiết lập",
+    "none": "—"
   }
 }

@@ -7875,6 +7875,22 @@ export type Translations = {
       more_count: string;
       system_prompt: string;
     };
+    compare: {
+      compare: string;
+      selected: string;
+      clear: string;
+      title: string;
+      subtitle: string;
+      hint_min: string;
+      max_reached: string;
+      add_to_compare: string;
+      remove_from_compare: string;
+      col_category: string;
+      col_goal: string;
+      col_complexity: string;
+      col_setup: string;
+      none: string;
+    };
     matrix_grid: {
       prerequisites: string;
       all_set_start: string;

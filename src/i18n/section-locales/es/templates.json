@@ -1142,5 +1142,21 @@
     "questionnaire_member_summary_customized": "{count} preguntas, {customized} personalizadas",
     "questionnaire_member_no_config": "No requiere configuración",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "Comparar",
+    "selected": "{count} seleccionados",
+    "clear": "Borrar",
+    "title": "Comparar plantillas",
+    "subtitle": "Comparación de {count} plantillas en paralelo",
+    "hint_min": "Selecciona al menos 2 plantillas para comparar",
+    "max_reached": "Compara hasta {max} a la vez",
+    "add_to_compare": "Añadir a la comparación",
+    "remove_from_compare": "Quitar de la comparación",
+    "col_category": "Categoría",
+    "col_goal": "Objetivo",
+    "col_complexity": "Complejidad",
+    "col_setup": "Tiempo de configuración",
+    "none": "—"
   }
 }

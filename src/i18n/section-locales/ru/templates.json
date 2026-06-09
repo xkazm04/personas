@@ -1142,5 +1142,21 @@
     "questionnaire_member_summary_customized": "{count} вопросов, {customized} настроено",
     "questionnaire_member_no_config": "Настройка не требуется",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "Сравнить",
+    "selected": "Выбрано: {count}",
+    "clear": "Очистить",
+    "title": "Сравнение шаблонов",
+    "subtitle": "Сравнение {count} шаблонов рядом",
+    "hint_min": "Выберите минимум 2 шаблона для сравнения",
+    "max_reached": "Сравнивайте до {max} одновременно",
+    "add_to_compare": "Добавить к сравнению",
+    "remove_from_compare": "Убрать из сравнения",
+    "col_category": "Категория",
+    "col_goal": "Цель",
+    "col_complexity": "Сложность",
+    "col_setup": "Время настройки",
+    "none": "—"
   }
 }

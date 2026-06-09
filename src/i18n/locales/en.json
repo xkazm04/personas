@@ -7869,6 +7869,22 @@
       "more_count": "+{count} more",
       "system_prompt": "System Prompt"
     },
+    "compare": {
+      "compare": "Compare",
+      "selected": "{count} selected",
+      "clear": "Clear",
+      "title": "Compare templates",
+      "subtitle": "Side-by-side across {count} templates",
+      "hint_min": "Select at least 2 templates to compare",
+      "max_reached": "Compare up to {max} at once",
+      "add_to_compare": "Add to compare",
+      "remove_from_compare": "Remove from compare",
+      "col_category": "Category",
+      "col_goal": "Goal",
+      "col_complexity": "Complexity",
+      "col_setup": "Setup time",
+      "none": "—"
+    },
     "matrix_grid": {
       "prerequisites": "Prerequisites",
       "all_set_start": "All set -- Start Adoption",

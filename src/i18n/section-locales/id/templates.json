@@ -1142,5 +1142,21 @@
     "questionnaire_member_summary_customized": "{count} pertanyaan, {customized} disesuaikan",
     "questionnaire_member_no_config": "Tidak perlu konfigurasi",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "Bandingkan",
+    "selected": "{count} dipilih",
+    "clear": "Hapus",
+    "title": "Bandingkan templat",
+    "subtitle": "Berdampingan untuk {count} templat",
+    "hint_min": "Pilih minimal 2 templat untuk dibandingkan",
+    "max_reached": "Bandingkan hingga {max} sekaligus",
+    "add_to_compare": "Tambahkan ke perbandingan",
+    "remove_from_compare": "Hapus dari perbandingan",
+    "col_category": "Kategori",
+    "col_goal": "Tujuan",
+    "col_complexity": "Kompleksitas",
+    "col_setup": "Waktu penyiapan",
+    "none": "—"
   }
 }

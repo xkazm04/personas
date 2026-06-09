@@ -7827,6 +7827,22 @@
       "questionnaire_member_summary_customized": "{count} questions, {customized} personnalisées",
       "questionnaire_member_no_config": "Aucune configuration requise",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "Comparer",
+      "selected": "{count} sélectionnés",
+      "clear": "Effacer",
+      "title": "Comparer les modèles",
+      "subtitle": "Comparaison côte à côte de {count} modèles",
+      "hint_min": "Sélectionnez au moins 2 modèles à comparer",
+      "max_reached": "Comparez jusqu'à {max} à la fois",
+      "add_to_compare": "Ajouter à la comparaison",
+      "remove_from_compare": "Retirer de la comparaison",
+      "col_category": "Catégorie",
+      "col_goal": "Objectif",
+      "col_complexity": "Complexité",
+      "col_setup": "Temps de configuration",
+      "none": "—"
     }
   },
   "triggers": {

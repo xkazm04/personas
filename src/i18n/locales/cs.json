@@ -7827,6 +7827,22 @@
       "questionnaire_member_summary_customized": "{count} otázek, {customized} přizpůsobených",
       "questionnaire_member_no_config": "Žádná konfigurace není potřeba",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "Porovnat",
+      "selected": "Vybráno: {count}",
+      "clear": "Vymazat",
+      "title": "Porovnat šablony",
+      "subtitle": "Souběžné porovnání {count} šablon",
+      "hint_min": "Vyberte alespoň 2 šablony k porovnání",
+      "max_reached": "Porovnejte až {max} najednou",
+      "add_to_compare": "Přidat k porovnání",
+      "remove_from_compare": "Odebrat z porovnání",
+      "col_category": "Kategorie",
+      "col_goal": "Cíl",
+      "col_complexity": "Složitost",
+      "col_setup": "Čas nastavení",
+      "none": "—"
     }
   },
   "triggers": {

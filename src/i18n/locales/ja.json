@@ -7827,6 +7827,22 @@
       "questionnaire_member_summary_customized": "{count}個の質問、{customized}個カスタマイズ",
       "questionnaire_member_no_config": "設定不要",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "比較",
+      "selected": "{count} 件選択中",
+      "clear": "クリア",
+      "title": "テンプレートを比較",
+      "subtitle": "{count} 件のテンプレートを並べて比較",
+      "hint_min": "比較するテンプレートを2件以上選択してください",
+      "max_reached": "一度に最大 {max} 件まで比較できます",
+      "add_to_compare": "比較に追加",
+      "remove_from_compare": "比較から削除",
+      "col_category": "カテゴリ",
+      "col_goal": "目標",
+      "col_complexity": "複雑さ",
+      "col_setup": "セットアップ時間",
+      "none": "—"
     }
   },
   "triggers": {
