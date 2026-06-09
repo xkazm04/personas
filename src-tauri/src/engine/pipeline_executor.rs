@@ -623,7 +623,6 @@ async fn run_command_node(
 enum ApprovalOutcome {
     Approved,
     Cancelled,
-    TimedOut,
 }
 
 /// Poll for human approval of a pipeline node.
@@ -643,8 +642,11 @@ async fn poll_for_approval(
     let approval_key = format!("{}:{}", run_id, member_id);
     let flag = registry.register_run("pipeline_approval", &approval_key);
 
-    // Poll up to 1 hour (3600 seconds)
-    for _ in 0..3600 {
+    // Wait indefinitely for a human decision. A human-in-the-loop gate is not a
+    // failure mode — the previous 1-hour cap force-rejected legitimate overnight /
+    // out-of-hours approvals and broke the whole run. The only exits are an
+    // explicit approve (flag) or a pipeline cancel (cancelled).
+    loop {
         tokio::time::sleep(std::time::Duration::from_secs(1)).await;
 
         if cancelled.load(Ordering::Relaxed) {
@@ -657,9 +659,6 @@ async fn poll_for_approval(
             return ApprovalOutcome::Approved;
         }
     }
-
-    registry.unregister_run("pipeline_approval", &approval_key);
-    ApprovalOutcome::TimedOut
 }
 
 // ============================================================================
@@ -781,18 +780,13 @@ pub async fn run_pipeline(ctx: PipelineContext) {
 
             match outcome {
                 ApprovalOutcome::Approved => {}
-                ApprovalOutcome::Cancelled | ApprovalOutcome::TimedOut => {
-                    let reason = match outcome {
-                        ApprovalOutcome::Cancelled => "Pipeline cancelled by user",
-                        ApprovalOutcome::TimedOut => "Approval timed out (1 hour)",
-                        ApprovalOutcome::Approved => unreachable!(),
-                    };
+                ApprovalOutcome::Cancelled => {
                     update_node_status(
                         &mut statuses,
                         member_id,
                         &[
                             ("status", serde_json::json!("rejected")),
-                            ("error", serde_json::json!(reason)),
+                            ("error", serde_json::json!("Pipeline cancelled by user")),
                         ],
                     );
                     has_failure = true;
