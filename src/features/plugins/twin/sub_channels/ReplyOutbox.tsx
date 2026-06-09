@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Inbox, Sparkles, Send, Trash2, Loader2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
@@ -23,7 +24,14 @@ import { silentCatch } from '@/lib/silentCatch';
  *  over any real channel — the human stays in control.
  * ------------------------------------------------------------------ */
 
+/** Quick-steer presets — the localized label doubles as the direction text
+ *  (mirrors the training presets' localized-prompt convention, so the model
+ *  steers in the user's language). */
+const STEER_CHIPS = ['steerShorter', 'steerWarmer', 'steerFormal', 'steerQuestion'] as const;
+
 export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
+  const { t: tFull } = useTranslation();
+  const tc = tFull.twin.channels;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const replyDraft = useSystemStore((s) => s.twinReplyDraft);
   const drafting = useSystemStore((s) => s.twinReplyDrafting);
@@ -89,7 +97,7 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
 
   const canGenerate = !!activeTwinId && !!channelType && !drafting;
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (dirOverride?: string) => {
     if (!activeTwinId || !channelType) return;
     setLocalError(null);
     try {
@@ -98,13 +106,20 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
         channelType,
         contactHandle.trim() || undefined,
         inbound.trim() || undefined,
-        directions.trim() || undefined,
+        (dirOverride ?? directions).trim() || undefined,
       );
       // Freeze the channel + contact this draft was generated for.
       setDraftContext({ channel: channelType, contactHandle: contactHandle.trim() });
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to draft reply');
     }
+  };
+
+  // One-tap steering: fill the directions box and — when a draft is already
+  // on screen — regenerate immediately with the chip's direction.
+  const handleSteer = (direction: string) => {
+    setDirections(direction);
+    if (replyDraft !== null && canGenerate) void handleGenerate(direction);
   };
 
   const handleApprove = async () => {
@@ -220,10 +235,29 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
             className={INPUT_FIELD}
           />
         </Field>
+        {/* Quick-steer chips — fill the direction in one tap; with a draft on
+            screen the tap regenerates immediately. */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2" role="group" aria-label={tc.steerLabel}>
+          {STEER_CHIPS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handleSteer(tc[key])}
+              disabled={drafting}
+              className={`px-2 py-1 rounded-full border text-[11px] font-medium transition-colors focus-ring disabled:opacity-40 ${
+                directions.trim() === tc[key]
+                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
+                  : 'border-primary/15 bg-secondary/30 text-foreground hover:border-violet-500/30 hover:text-violet-300'
+              }`}
+            >
+              {tc[key]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex justify-end mt-3">
-        <Button onClick={handleGenerate} disabled={!canGenerate} size="sm" variant="accent" accentColor="violet">
+        <Button onClick={() => void handleGenerate()} disabled={!canGenerate} size="sm" variant="accent" accentColor="violet">
           {drafting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
           {drafting ? 'Drafting…' : replyDraft ? 'Regenerate' : 'Generate draft'}
         </Button>
