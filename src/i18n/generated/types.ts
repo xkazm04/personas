@@ -15011,6 +15011,21 @@ export type Translations = {
       lastMinutesAgo: string;
       lastHoursAgo: string;
       lastDaysAgo: string;
+      threadTitle: string;
+      threadInbound: string;
+      threadOutbound: string;
+      threadReplyTo: string;
+      sentTitle: string;
+      sentTo: string;
+      sentReuse: string;
+      sentCount: string;
+      toneRegister: string;
+      toneAuto: string;
+      steerLabel: string;
+      steerShorter: string;
+      steerWarmer: string;
+      steerFormal: string;
+      steerQuestion: string;
       staleTag: string;
       testTooltip: string;
       testDisabledPaused: string;
@@ -15125,6 +15140,15 @@ export type Translations = {
       nextMovesHeading: string;
       nextMovesSubtitle: string;
       nextMovesCoverage: string;
+      coverageThin: string;
+      coverageSome: string;
+      coverageCovered: string;
+      recommendedNext: string;
+      impactHeading: string;
+      impactCount: string;
+      impactPending: string;
+      momentumSessions: string;
+      reviewMemoriesPending: string;
       groundingHint: string;
       followupBadge: string;
       followupCta: string;
@@ -15399,6 +15423,7 @@ export type Translations = {
       nextStep: string;
       scoreDelta: string;
       checklistHeading: string;
+      rosterFoundations: string;
       ready: string;
       satellites: string;
       rosterSpread: string;
@@ -15465,6 +15490,8 @@ export type Translations = {
       toneProgress: string;
       channelsActive: string;
       memoriesApproved: string;
+      celebrateComplete: string;
+      celebrateProgress: string;
     };
     gaps: {
       title: string;

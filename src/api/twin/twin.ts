@@ -325,6 +325,9 @@ export const draftReply = (
   contactHandle?: string,
   inboundMessage?: string,
   directions?: string,
+  /** Override which tone register grounds the draft (e.g. draft an email-tone
+   *  reply for Discord). Omit to use the target channel's tone. */
+  toneChannel?: string,
 ) =>
   invoke<string>("twin_draft_reply", {
     twinId,
@@ -332,6 +335,7 @@ export const draftReply = (
     contactHandle,
     inboundMessage,
     directions,
+    toneChannel,
   });
 
 // ============================================================================

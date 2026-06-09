@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Inbox, Sparkles, Send, Trash2, Loader2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
+import { useTranslation } from '@/i18n/useTranslation';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { ContactThread } from './ContactThread';
+import type { ReuseRequest } from './SentReplies';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
@@ -22,7 +25,14 @@ import { silentCatch } from '@/lib/silentCatch';
  *  over any real channel — the human stays in control.
  * ------------------------------------------------------------------ */
 
-export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
+/** Quick-steer presets — the localized label doubles as the direction text
+ *  (mirrors the training presets' localized-prompt convention, so the model
+ *  steers in the user's language). */
+const STEER_CHIPS = ['steerShorter', 'steerWarmer', 'steerFormal', 'steerQuestion'] as const;
+
+export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[]; reuseRequest?: ReuseRequest | null }) {
+  const { t: tFull } = useTranslation();
+  const tc = tFull.twin.channels;
   const activeTwinId = useSystemStore((s) => s.activeTwinId);
   const replyDraft = useSystemStore((s) => s.twinReplyDraft);
   const drafting = useSystemStore((s) => s.twinReplyDrafting);
@@ -32,9 +42,15 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
   const recordInteraction = useSystemStore((s) => s.recordTwinInteraction);
 
   const activeChannels = useMemo(() => channels.filter((c) => c.is_active), [channels]);
+  const twinTones = useSystemStore((s) => s.twinTones);
+  // Tone rows for the active twin — hydrated at page level by useHydrateActiveTwin.
+  const tones = useMemo(() => twinTones.filter((tn) => tn.twin_id === activeTwinId), [twinTones, activeTwinId]);
 
   const [channelType, setChannelType] = useState<TwinChannelKind | ''>('');
   const [contactHandle, setContactHandle] = useState('');
+  // Which tone register grounds the draft. 'auto' = the target channel's tone
+  // (the backend's default resolution); any other value names a tone row.
+  const [toneChannel, setToneChannel] = useState('auto');
   const [inbound, setInbound] = useState('');
   const [directions, setDirections] = useState('');
   const [contacts, setContacts] = useState<TwinContact[]>([]);
@@ -71,6 +87,24 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
     if (replyDraft === null) setDraftContext(null);
   }, [replyDraft]);
 
+  // Consume an "adapt this sent reply" request from the Recently-sent rail:
+  // prefill the selectors + draft box with the past reply and freeze the
+  // approve context to its original channel/contact, so editing + Approve
+  // re-logs against the same thread. Keyed on ts so the same row can be
+  // reused again later.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const lastReuseTs = useRef<number | null>(null);
+  useEffect(() => {
+    if (!reuseRequest || lastReuseTs.current === reuseRequest.ts) return;
+    lastReuseTs.current = reuseRequest.ts;
+    const ch = reuseRequest.channel as TwinChannelKind;
+    setChannelType(ch);
+    setContactHandle(reuseRequest.contactHandle);
+    setDraft(reuseRequest.content);
+    setDraftContext({ channel: ch, contactHandle: reuseRequest.contactHandle });
+    rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [reuseRequest, setDraft]);
+
   const channelOptions: ThemedSelectOption[] = useMemo(
     () =>
       activeChannels.map((c) => ({
@@ -86,9 +120,26 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
     [contacts],
   );
 
+  // Tone-register options: 'auto' defers to the backend's per-channel
+  // resolution; the rest name the twin's configured tone rows. Channel ids are
+  // technical identifiers — shown as-is, like the channel select's description.
+  // Each option previews its voice directives' first line so the user picks a
+  // register by what it sounds like, not by channel name alone.
+  const toneOptions: ThemedSelectOption[] = useMemo(
+    () => [
+      { value: 'auto', label: tc.toneAuto },
+      ...tones.map((tn) => {
+        const firstLine = tn.voice_directives.trim().split('\n')[0] ?? '';
+        const preview = firstLine.length > 80 ? `${firstLine.slice(0, 80)}…` : firstLine;
+        return { value: tn.channel, label: tn.channel, description: preview || undefined };
+      }),
+    ],
+    [tones, tc.toneAuto],
+  );
+
   const canGenerate = !!activeTwinId && !!channelType && !drafting;
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (dirOverride?: string) => {
     if (!activeTwinId || !channelType) return;
     setLocalError(null);
     try {
@@ -97,13 +148,21 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
         channelType,
         contactHandle.trim() || undefined,
         inbound.trim() || undefined,
-        directions.trim() || undefined,
+        (dirOverride ?? directions).trim() || undefined,
+        toneChannel === 'auto' ? undefined : toneChannel,
       );
       // Freeze the channel + contact this draft was generated for.
       setDraftContext({ channel: channelType, contactHandle: contactHandle.trim() });
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : typeof err === 'string' ? err : 'Failed to draft reply');
     }
+  };
+
+  // One-tap steering: fill the directions box and — when a draft is already
+  // on screen — regenerate immediately with the chip's direction.
+  const handleSteer = (direction: string) => {
+    setDirections(direction);
+    if (replyDraft !== null && canGenerate) void handleGenerate(direction);
   };
 
   const handleApprove = async () => {
@@ -142,6 +201,7 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
 
   return (
     <motion.div
+      ref={rootRef}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       className="rounded-card border border-violet-500/25 bg-gradient-to-br from-violet-500/8 to-cyan-500/5 p-5 shadow-elevation-1"
@@ -191,7 +251,14 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
             />
           )}
         </Field>
+        {tones.length > 0 && (
+          <Field label={tc.toneRegister}>
+            <ThemedSelect options={toneOptions} value={toneChannel} onValueChange={setToneChannel} />
+          </Field>
+        )}
       </div>
+
+      <ContactThread twinId={activeTwinId} channel={channelType} contactHandle={contactHandle} onReplyTo={setInbound} />
 
       <div className="mt-3">
         <Field label="Inbound message (optional)">
@@ -217,10 +284,29 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
             className={INPUT_FIELD}
           />
         </Field>
+        {/* Quick-steer chips — fill the direction in one tap; with a draft on
+            screen the tap regenerates immediately. */}
+        <div className="flex flex-wrap items-center gap-1.5 mt-2" role="group" aria-label={tc.steerLabel}>
+          {STEER_CHIPS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => handleSteer(tc[key])}
+              disabled={drafting}
+              className={`px-2 py-1 rounded-full border text-[11px] font-medium transition-colors focus-ring disabled:opacity-40 ${
+                directions.trim() === tc[key]
+                  ? 'border-violet-500/40 bg-violet-500/15 text-violet-300'
+                  : 'border-primary/15 bg-secondary/30 text-foreground hover:border-violet-500/30 hover:text-violet-300'
+              }`}
+            >
+              {tc[key]}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="flex justify-end mt-3">
-        <Button onClick={handleGenerate} disabled={!canGenerate} size="sm" variant="accent" accentColor="violet">
+        <Button onClick={() => void handleGenerate()} disabled={!canGenerate} size="sm" variant="accent" accentColor="violet">
           {drafting ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <Sparkles className="w-4 h-4 mr-1.5" />}
           {drafting ? 'Drafting…' : replyDraft ? 'Regenerate' : 'Generate draft'}
         </Button>

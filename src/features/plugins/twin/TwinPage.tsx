@@ -3,6 +3,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { SuspenseFallback } from '@/features/shared/components/feedback/SuspenseFallback';
 import { IS_MOBILE } from '@/lib/utils/platform/platform';
 import { useHydrateActiveTwin } from './useTwinReadiness';
+import { useReadinessCelebration } from './useReadinessCelebration';
 
 // Mirrors ContentBox's responsive ladder (see ContentLayout.tsx). Twin
 // Atelier pages render their own hero band instead of ContentHeader, so
@@ -41,6 +42,9 @@ export default function TwinPage() {
   // the active twin changes — so the progress strip + readiness score in
   // the selector banner stay accurate regardless of which subtab is open.
   useHydrateActiveTwin();
+
+  // Celebrate when the active twin's readiness climbs (a milestone just closed).
+  useReadinessCelebration();
 
   // If the user lands on a subpage but has no twin yet, bounce them to
   // Profiles so the selector banner's CTA matches the page they see.

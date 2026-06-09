@@ -788,6 +788,7 @@ pub async fn twin_draft_reply(
     contact_handle: Option<String>,
     inbound_message: Option<String>,
     directions: Option<String>,
+    tone_channel: Option<String>,
 ) -> Result<String, AppError> {
     require_auth(&state).await?;
 
@@ -809,7 +810,15 @@ pub async fn twin_draft_reply(
 
     // Channel-specific tone, falling back to the generic tone so a reply still
     // grounds on the twin's voice even before a per-channel tone is configured.
-    let tone = match repo::get_tone_optional(&state.db, &twin_id, channel)? {
+    // An explicit `tone_channel` overrides the register: the operator can draft
+    // a reply FOR one channel in the voice configured for another (e.g. an
+    // email-register answer on Discord) without editing tone rows first.
+    let tone_key = tone_channel
+        .as_deref()
+        .map(str::trim)
+        .filter(|s| !s.is_empty())
+        .unwrap_or(channel);
+    let tone = match repo::get_tone_optional(&state.db, &twin_id, tone_key)? {
         Some(t) => Some(t),
         None => repo::get_tone_optional(&state.db, &twin_id, "generic")?,
     };
