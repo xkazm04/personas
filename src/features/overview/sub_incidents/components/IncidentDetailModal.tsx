@@ -190,10 +190,10 @@ export function IncidentDetailModal({
       title={incident.title}
       subtitle={incident.personaName ?? undefined}
       onClose={onClose}
-      maxWidthClass="max-w-2xl"
+      maxWidthClass="max-w-4xl"
       actions={footer}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge variant={severityVariant}>
             <span className="inline-flex items-center gap-1.5">
@@ -205,45 +205,47 @@ export function IncidentDetailModal({
           <span className="typo-caption text-foreground">{severityUrgencyLabel(t, incident.severity)}</span>
         </div>
 
-        <div className="flex items-start gap-2 rounded-card border border-primary/15 bg-primary/5 px-3 py-2">
+        <div className="flex items-start gap-2.5 rounded-card border border-primary/15 bg-primary/5 px-3.5 py-3">
           <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" aria-hidden="true" />
           <div className="min-w-0">
-            <span className="typo-overline text-foreground block">
+            <span className="typo-overline text-foreground mb-0.5 block">
               {t.overview.incidents.guidance_label}
             </span>
             <p className="typo-body text-foreground">{incidentGuidance(t, incident.sourceTable)}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t.overview.incidents.detail_label_status}>
-            {statusLabel(t, incident.status)}
-          </Field>
-          <Field label={t.overview.incidents.detail_label_kind}>{incident.kind}</Field>
-          <Field label={t.overview.incidents.detail_label_source}>
-            {sourceTableLabel(t, incident.sourceTable)}
-          </Field>
-          <Field label={t.overview.incidents.detail_label_persona}>
-            {incident.personaName ?? t.overview.incidents.detail_no_persona}
-          </Field>
-          <Field label={t.overview.incidents.detail_label_created}>
-            <RelativeTime timestamp={incident.createdAt} />
-          </Field>
-          {incident.acknowledgedAt && (
-            <Field label={t.overview.incidents.detail_label_acknowledged}>
-              <RelativeTime timestamp={incident.acknowledgedAt} />
+        <div className="rounded-card border border-primary/10 bg-secondary/20 p-4">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+            <Field label={t.overview.incidents.detail_label_status}>
+              {statusLabel(t, incident.status)}
             </Field>
-          )}
-          {incident.resolvedAt && (
-            <Field label={t.overview.incidents.detail_label_resolved}>
-              <RelativeTime timestamp={incident.resolvedAt} />
+            <Field label={t.overview.incidents.detail_label_kind}>{incident.kind}</Field>
+            <Field label={t.overview.incidents.detail_label_source}>
+              {sourceTableLabel(t, incident.sourceTable)}
             </Field>
-          )}
+            <Field label={t.overview.incidents.detail_label_persona}>
+              {incident.personaName ?? t.overview.incidents.detail_no_persona}
+            </Field>
+            <Field label={t.overview.incidents.detail_label_created}>
+              <RelativeTime timestamp={incident.createdAt} />
+            </Field>
+            {incident.acknowledgedAt && (
+              <Field label={t.overview.incidents.detail_label_acknowledged}>
+                <RelativeTime timestamp={incident.acknowledgedAt} />
+              </Field>
+            )}
+            {incident.resolvedAt && (
+              <Field label={t.overview.incidents.detail_label_resolved}>
+                <RelativeTime timestamp={incident.resolvedAt} />
+              </Field>
+            )}
+          </div>
         </div>
 
         {personaId && (
           <div>
-            <h3 className="typo-overline text-foreground mb-1">
+            <h3 className="typo-overline text-foreground mb-1.5">
               {t.overview.incidents.siblings_label}
             </h3>
             {siblings.length === 0 ? (
@@ -284,7 +286,7 @@ export function IncidentDetailModal({
         )}
 
         <div>
-          <h3 className="typo-overline text-foreground mb-1">
+          <h3 className="typo-overline text-foreground mb-1.5">
             {t.overview.incidents.detail_label_detail}
           </h3>
           <IncidentDetailBreakdown detail={incident.detail} />
@@ -292,7 +294,7 @@ export function IncidentDetailModal({
 
         {incident.resolutionNote && (
           <div>
-            <h3 className="typo-overline text-foreground mb-1">
+            <h3 className="typo-overline text-foreground mb-1.5">
               {t.overview.incidents.detail_label_resolution_note}
             </h3>
             <p className="typo-body text-foreground whitespace-pre-wrap break-words">
@@ -305,7 +307,7 @@ export function IncidentDetailModal({
           <div>
             <label
               htmlFor="incident-resolution-note"
-              className="typo-overline text-foreground mb-1 block"
+              className="typo-overline text-foreground mb-1.5 block"
             >
               {t.overview.incidents.detail_note_label}
             </label>
@@ -339,7 +341,7 @@ export function IncidentDetailModal({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="typo-overline text-foreground mb-1">{label}</h3>
+      <h3 className="typo-overline text-foreground mb-1.5">{label}</h3>
       <span className="typo-body text-foreground">{children}</span>
     </div>
   );
