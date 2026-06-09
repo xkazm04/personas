@@ -477,6 +477,27 @@ const registry: EventRegistration[] = [
     },
   },
 
+  // -- Review dispatch blocked → warning toast (GAP 1: no longer silent) -------
+  // The approval was recorded but the chosen action couldn't be carried out
+  // (the follow-up run failed to start — commonly the persona needs a credential).
+  {
+    event: EventName.REVIEW_DISPATCH_BLOCKED,
+    priority: "normal",
+    setup: async () => {
+      const unlisten = await typedListen(EventName.REVIEW_DISPATCH_BLOCKED, (payload) => {
+        const t = getActiveTranslations();
+        const who = payload.personaName ? `${payload.personaName}: ` : "";
+        const reason = payload.reason.length > 140 ? `${payload.reason.slice(0, 140)}…` : payload.reason;
+        useToastStore.getState().addToast(
+          `${who}${t.monitor.review_dispatch_blocked} — ${reason}`,
+          "warning",
+          7000,
+        );
+      });
+      return [unlisten];
+    },
+  },
+
   // -- Execution status → Notification Center ---------------------------------
   // Surfaces failed / cancelled / incomplete executions in the TitleBar
   // notification bell. PROCESS_ACTIVITY already drives the live dock indicator,

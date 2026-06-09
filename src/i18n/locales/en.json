@@ -208,7 +208,8 @@
     "quick_carrying_out": "Carrying out: {action}",
     "learned_view": "View",
     "quick_source_unknown": "Persona",
-    "channels_goals_tab": "Goals"
+    "channels_goals_tab": "Goals",
+    "review_dispatch_blocked": "Approved, but couldn’t carry out the action"
   },
   "common": {
     "unknown_error": "Unknown error",

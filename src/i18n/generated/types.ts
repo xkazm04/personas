@@ -215,6 +215,7 @@ export type Translations = {
     learned_view: string;
     quick_source_unknown: string;
     channels_goals_tab: string;
+    review_dispatch_blocked: string;
   };
   common: {
     unknown_error: string;
