@@ -1,5 +1,5 @@
 import { PromptTabsPreview } from '@/features/shared/components/editors/PromptTabsPreview';
-import { DesignSummaryBar } from './DesignSummaryBar';
+import { DesignSummaryBar, type DesignSection } from './DesignSummaryBar';
 import { ConnectorsSection } from './ConnectorsSection';
 import { EventsSection } from './EventsSection';
 import { MessagesSection } from './MessagesSection';
@@ -61,6 +61,10 @@ export function DesignResultPreview({
   const rawChannels = result.suggested_notification_channels;
   const suggestedChannels = Array.isArray(rawChannels) ? rawChannels : [];
 
+  const handleJump = (target: DesignSection) => {
+    document.getElementById(`design-section-${target}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="space-y-6">
       <DesignSummaryBar
@@ -68,6 +72,7 @@ export function DesignResultPreview({
         channelCount={suggestedChannels.length}
         subscriptionCount={suggestedSubscriptions?.length ?? 0}
         feasibility={feasibility}
+        onJump={handleJump}
       />
 
       <PromptTabsPreview designResult={result} />
@@ -83,6 +88,7 @@ export function DesignResultPreview({
           onToolToggle={onToolToggle}
           onConnectorClick={onConnectorClick}
           readOnly={readOnly}
+          anchorId="design-section-connectors"
         />
       )}
 
@@ -96,6 +102,7 @@ export function DesignResultPreview({
         readOnly={readOnly}
         actualTriggers={actualTriggers}
         onTriggerEnabledToggle={onTriggerEnabledToggle}
+        anchorId="design-section-events"
       />
 
       <MessagesSection
@@ -103,6 +110,7 @@ export function DesignResultPreview({
         selectedChannelIndices={selectedChannelIndices}
         onChannelToggle={onChannelToggle}
         readOnly={readOnly}
+        anchorId="design-section-messages"
       />
 
       {feasibility && <DesignTestResults result={feasibility} />}
