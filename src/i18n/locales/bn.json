@@ -10409,7 +10409,8 @@
       "group_archives": "আর্কাইভস",
       "group_documents": "নথিপত্র",
       "group_signatures": "স্বাক্ষর",
-      "group_other": "অন্যান্য"
+      "group_other": "অন্যান্য",
+      "signed": "স্বাক্ষরিত"
     },
     "artist": {
       "title": "Artist",

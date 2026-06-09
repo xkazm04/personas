@@ -4,6 +4,7 @@ import {
   ChevronUp,
   ChevronDown,
   File as FileIcon,
+  FileSignature,
   Folder as FolderIcon,
   FolderOpen,
   Layers,
@@ -40,6 +41,8 @@ interface Props {
   activeDragCount?: number | null;
   onDragSelectionStart?: (count: number) => void;
   onDragSelectionEnd?: () => void;
+  // Drive-relative paths carrying a signature record — list rows badge these.
+  signedPaths?: Set<string>;
 }
 
 export function DriveFileList({
@@ -57,6 +60,7 @@ export function DriveFileList({
   activeDragCount = null,
   onDragSelectionStart,
   onDragSelectionEnd,
+  signedPaths,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -107,6 +111,7 @@ export function DriveFileList({
       activeDragCount={activeDragCount}
       onDragSelectionStart={onDragSelectionStart}
       onDragSelectionEnd={onDragSelectionEnd}
+      signedPaths={signedPaths}
     />
   );
 }
@@ -240,6 +245,7 @@ function ListView({
   activeDragCount = null,
   onDragSelectionStart,
   onDragSelectionEnd,
+  signedPaths,
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -498,6 +504,12 @@ function ListView({
                       <span className="typo-body typo-card-label truncate flex-1">
                         {entry.name}
                       </span>
+                      {signedPaths?.has(entry.path) && (
+                        <FileSignature
+                          className="w-3 h-3 text-rose-300/80 flex-shrink-0"
+                          aria-label={t.plugins.drive.signed}
+                        />
+                      )}
                       {drop && activeDragCount && (
                         <DropCountChip count={activeDragCount} />
                       )}

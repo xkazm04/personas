@@ -11232,6 +11232,7 @@ export type Translations = {
       time_days_ago_one: string;
       time_days_ago_other: string;
       signatures_button: string;
+      signed: string;
       ctx_sign_file: string;
       ctx_verify_file: string;
       ctx_extract_text: string;

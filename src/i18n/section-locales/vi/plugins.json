@@ -252,7 +252,8 @@
     "group_archives": "Lưu trữ",
     "group_documents": "Tài liệu",
     "group_signatures": "Chữ ký",
-    "group_other": "Khác"
+    "group_other": "Khác",
+    "signed": "Đã ký"
   },
   "artist": {
     "title": "Artist",

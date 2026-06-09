@@ -10409,7 +10409,8 @@
       "group_archives": "أرشيف",
       "group_documents": "وثائق",
       "group_signatures": "التوقيعات",
-      "group_other": "آخر"
+      "group_other": "آخر",
+      "signed": "موقّع"
     },
     "artist": {
       "title": "الفنان",

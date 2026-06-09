@@ -252,7 +252,8 @@
     "group_archives": "अभिलेखागार",
     "group_documents": "दस्तावेज़",
     "group_signatures": "हस्ताक्षर",
-    "group_other": "अन्य"
+    "group_other": "अन्य",
+    "signed": "हस्ताक्षरित"
   },
   "artist": {
     "title": "आर्टिस्ट",

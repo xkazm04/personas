@@ -10409,7 +10409,8 @@
       "group_archives": "档案",
       "group_documents": "文件",
       "group_signatures": "签名",
-      "group_other": "其他"
+      "group_other": "其他",
+      "signed": "已签名"
     },
     "artist": {
       "title": "Artist",

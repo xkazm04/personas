@@ -41,6 +41,9 @@ interface Props {
   onVerify?: (entry: DriveEntry) => void;
   onExtractText?: (entry: DriveEntry) => void;
   hasGemini?: boolean;
+  // Drive-relative paths that carry a signature record — used to badge a
+  // signed file in the hero.
+  signedPaths?: Set<string>;
 }
 
 const TEXT_PREVIEW_MAX_BYTES = 256 * 1024; // 256 KB
@@ -56,6 +59,7 @@ export function DriveDetailsPane({
   onVerify,
   onExtractText,
   hasGemini = false,
+  signedPaths,
 }: Props) {
   const { t, tx } = useTranslation();
   const primary = entries[0] ?? null;
@@ -121,6 +125,14 @@ export function DriveDetailsPane({
                 : kindLabel(t, visual)}
             </div>
           )}
+          {!multi &&
+            primary.kind === "file" &&
+            signedPaths?.has(primary.path) && (
+              <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/25 typo-caption font-medium text-rose-100">
+                <FileSignature className="w-3 h-3 flex-shrink-0" />
+                <span>{t.plugins.drive.signed}</span>
+              </div>
+            )}
           {!multi && (
             <DetailsActionRow
               entry={primary}

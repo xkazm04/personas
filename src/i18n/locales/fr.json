@@ -10409,7 +10409,8 @@
       "group_archives": "Archives",
       "group_documents": "Documents",
       "group_signatures": "Signature",
-      "group_other": "Autre"
+      "group_other": "Autre",
+      "signed": "Signé"
     },
     "artist": {
       "title": "Studio artistique",

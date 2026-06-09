@@ -10409,7 +10409,8 @@
       "group_archives": "アーカイブ",
       "group_documents": "書類",
       "group_signatures": "署名",
-      "group_other": "他の"
+      "group_other": "他の",
+      "signed": "署名済み"
     },
     "artist": {
       "title": "Artist",

@@ -58,6 +58,14 @@ export default function DrivePage() {
   const ocr = useOcr();
   const addToast = useToastStore((s) => s.addToast);
 
+  // Eager-load the signature history on mount so signed files can carry a
+  // badge even before the user ever opens the Signatures panel. Destructured
+  // so the effect depends on the stable callback, not the whole signing object.
+  const { refreshSignatures } = signing;
+  useEffect(() => {
+    refreshSignatures().catch(silentCatch("drive:signatures-eager"));
+  }, [refreshSignatures]);
+
   // OS→Drive drag-drop state. dragCounter handles dragenter/leave on nested
   // children — the events fire per-element, so a naive boolean would flicker
   // when the cursor crosses a child boundary.
@@ -532,6 +540,7 @@ export default function DrivePage() {
               activeDragCount={activeDragCount}
               onDragSelectionStart={handleDragSelectionStart}
               onDragSelectionEnd={handleDragSelectionEnd}
+              signedPaths={signing.signedPaths}
             />
           </div>
           <DriveDetailsPane
@@ -546,6 +555,7 @@ export default function DrivePage() {
             onVerify={(entry) => setVerifyEntry(entry)}
             onExtractText={(entry) => setOcrEntry(entry)}
             hasGemini={ocr.hasGemini}
+            signedPaths={signing.signedPaths}
           />
         </div>
 
@@ -607,6 +617,8 @@ export default function DrivePage() {
           onClose={() => setSignEntry(null)}
           onSidecarWritten={() => {
             drive.refresh();
+            // New signature → refresh the history so the signed badge appears.
+            refreshSignatures().catch(silentCatch("drive:signatures-refresh"));
           }}
         />
       )}

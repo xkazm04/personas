@@ -11226,6 +11226,7 @@
       "time_days_ago_one": "{count}d ago",
       "time_days_ago_other": "{count}d ago",
       "signatures_button": "Signatures",
+      "signed": "Signed",
       "ctx_sign_file": "Sign file…",
       "ctx_verify_file": "Verify signature…",
       "ctx_extract_text": "Extract text (OCR)…",

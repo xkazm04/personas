@@ -252,7 +252,8 @@
     "group_archives": "Archiv",
     "group_documents": "Dokumenty",
     "group_signatures": "Podpisy",
-    "group_other": "Ostatní"
+    "group_other": "Ostatní",
+    "signed": "Podepsáno"
   },
   "artist": {
     "title": "Artist",

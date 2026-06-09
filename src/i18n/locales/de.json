@@ -10409,7 +10409,8 @@
       "group_archives": "Archiv",
       "group_documents": "Unterlagen",
       "group_signatures": "Unterschriften",
-      "group_other": "Andere"
+      "group_other": "Andere",
+      "signed": "Signiert"
     },
     "artist": {
       "title": "Künstler",

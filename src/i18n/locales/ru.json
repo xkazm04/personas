@@ -10409,7 +10409,8 @@
       "group_archives": "Архивы",
       "group_documents": "Документы",
       "group_signatures": "Подписи",
-      "group_other": "Другой"
+      "group_other": "Другой",
+      "signed": "Подписано"
     },
     "artist": {
       "title": "Artist",

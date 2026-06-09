@@ -252,7 +252,8 @@
     "group_archives": "Archivo",
     "group_documents": "Documentos",
     "group_signatures": "Firmas",
-    "group_other": "Otro"
+    "group_other": "Otro",
+    "signed": "Firmado"
   },
   "artist": {
     "title": "Artista",
