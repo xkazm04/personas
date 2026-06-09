@@ -206,10 +206,10 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                     {idx > 0 && aggregates[0] && (
                       <div className="flex items-center gap-0.5 typo-caption text-foreground">
                         {agg.compositeScore < aggregates[0].compositeScore
-                          ? <><TrendingDown className="w-3 h-3 text-red-400/60" /><span>-{aggregates[0].compositeScore - agg.compositeScore}</span></>
+                          ? <><TrendingDown className="w-3 h-3 text-red-400" aria-hidden="true" /><span>-{aggregates[0].compositeScore - agg.compositeScore}</span></>
                           : agg.compositeScore > aggregates[0].compositeScore
-                            ? <><TrendingUp className="w-3 h-3 text-emerald-400/60" /><span>+{agg.compositeScore - aggregates[0].compositeScore}</span></>
-                            : <><Minus className="w-3 h-3" /><span>{t.agents.lab.tied}</span></>
+                            ? <><TrendingUp className="w-3 h-3 text-emerald-400" aria-hidden="true" /><span>+{agg.compositeScore - aggregates[0].compositeScore}</span></>
+                            : <><Minus className="w-3 h-3" aria-hidden="true" /><span>{t.agents.lab.tied}</span></>
                         }
                       </div>
                     )}
@@ -292,7 +292,10 @@ export function ArenaResultsView({ results, runId: _runId, llmSummary, userRatin
                 <th className="text-left px-3 py-2.5 font-medium text-foreground typo-label uppercase tracking-wider">Scenario</th>
                 {models.map((mid) => (
                   <th key={mid} className={`text-center px-3 py-2.5 font-medium typo-label uppercase tracking-wider ${mid === bestModelId ? 'text-primary/80' : 'text-foreground'}`}>
-                    {mid}
+                    <span className="inline-flex items-center justify-center gap-1">
+                      {mid === bestModelId && <Trophy className="w-3 h-3" aria-label={t.agents.lab.best_badge} />}
+                      {mid}
+                    </span>
                   </th>
                 ))}
               </tr>
