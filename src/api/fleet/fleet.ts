@@ -67,9 +67,16 @@ export const unsubscribeTerminal = (sessionId: string) =>
  * Batched cooked previews (last `lines` plain-text lines, ANSI resolved) for
  * the given sessions — the grid's unwatched tiles poll this in one call instead
  * of each mounting a live xterm. Unknown sessions are omitted from the result.
+ *
+ * Change-gated: pass `knownRevs` (session id → the `rev` from the previous
+ * poll) and sessions with unchanged output are omitted too — keep rendering
+ * what you already have for those.
  */
-export const terminalPreviews = (sessionIds: string[], lines?: number) =>
-  invoke<FleetTerminalPreview[]>('fleet_terminal_previews', { sessionIds, lines });
+export const terminalPreviews = (
+  sessionIds: string[],
+  lines?: number,
+  knownRevs?: Record<string, number>,
+) => invoke<FleetTerminalPreview[]>('fleet_terminal_previews', { sessionIds, lines, knownRevs });
 
 /**
  * Kill a session's child process. Idempotent (already-exited sessions

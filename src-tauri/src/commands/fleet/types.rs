@@ -137,6 +137,9 @@ pub struct FleetHookStatus {
 #[serde(rename_all = "camelCase")]
 pub struct FleetTerminalPreview {
     pub session_id: String,
+    /// Ring change cursor — echo it back via `knownRevs` on the next poll and
+    /// the backend omits this session entirely while its output is unchanged.
+    pub rev: u32,
     pub lines: Vec<String>,
 }
 

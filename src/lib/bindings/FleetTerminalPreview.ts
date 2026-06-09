@@ -7,4 +7,9 @@
  * is the last N cooked plain-text lines (ANSI/cursor sequences resolved). The
  * focused/active tile renders a real terminal instead.
  */
-export type FleetTerminalPreview = { sessionId: string, lines: Array<string>, };
+export type FleetTerminalPreview = { sessionId: string, 
+/**
+ * Ring change cursor — echo it back via `knownRevs` on the next poll and
+ * the backend omits this session entirely while its output is unchanged.
+ */
+rev: number, lines: Array<string>, };

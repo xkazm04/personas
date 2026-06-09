@@ -40,20 +40,32 @@ pub struct OutputRing {
     buf: VecDeque<u8>,
     cap: usize,
     subscribed: bool,
+    /// Bumped on every `push` — a cheap change cursor for the preview poll.
+    /// A caller that saw rev N and sees rev N again knows the ring hasn't
+    /// changed and can skip re-cooking/re-rendering that tile entirely.
+    /// Wrapping u32: only ever compared for equality, and a poller can't
+    /// miss 2^32 pushes inside one poll interval.
+    rev: u32,
 }
 
 impl OutputRing {
     pub fn new(cap: usize) -> Self {
-        Self { buf: VecDeque::new(), cap, subscribed: false }
+        Self { buf: VecDeque::new(), cap, subscribed: false, rev: 0 }
     }
 
     /// Append raw PTY bytes, trimming the oldest beyond `cap`.
     pub fn push(&mut self, bytes: &[u8]) {
+        self.rev = self.rev.wrapping_add(1);
         self.buf.extend(bytes.iter().copied());
         let len = self.buf.len();
         if len > self.cap {
             self.buf.drain(0..len - self.cap);
         }
+    }
+
+    /// Change cursor — see the `rev` field.
+    pub fn rev(&self) -> u32 {
+        self.rev
     }
 
     pub fn is_subscribed(&self) -> bool {
@@ -455,14 +467,28 @@ impl FleetRegistry {
     /// terminal instead). Unknown sessions are skipped. One map lock + a brief
     /// per-session ring lock; called at a low poll rate, so cheap even at 16
     /// tiles. `max_lines` caps each entry.
-    pub fn preview_outputs(&self, session_ids: &[String], max_lines: usize) -> Vec<(String, Vec<String>)> {
+    /// Cooked previews for the requested sessions, change-gated: each request
+    /// carries the ring rev the caller last rendered (`None` = never seen).
+    /// A session whose ring rev still equals the known rev is OMITTED from
+    /// the result — its tile hasn't changed, so there's nothing to re-cook,
+    /// re-serialize, or re-render. Idle tiles thus cost ~one u32 compare per
+    /// poll instead of a 64 KiB ANSI cook.
+    pub fn preview_outputs(
+        &self,
+        requests: &[(String, Option<u32>)],
+        max_lines: usize,
+    ) -> Vec<(String, u32, Vec<String>)> {
         let map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
-        session_ids
+        requests
             .iter()
-            .filter_map(|id| {
+            .filter_map(|(id, known_rev)| {
                 let session = map.get(id)?;
                 let ring = session.output.lock().unwrap_or_else(|e| e.into_inner());
-                Some((id.clone(), ring.preview_lines(max_lines)))
+                let rev = ring.rev();
+                if *known_rev == Some(rev) {
+                    return None; // unchanged since the caller last looked
+                }
+                Some((id.clone(), rev, ring.preview_lines(max_lines)))
             })
             .collect()
     }

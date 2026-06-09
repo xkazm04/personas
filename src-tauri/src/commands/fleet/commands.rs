@@ -77,16 +77,30 @@ pub async fn fleet_unsubscribe_terminal(session_id: String) -> Result<(), String
 /// from that session's output ring (ANSI/cursor sequences resolved). Unknown
 /// sessions are omitted. The watched/active tile renders a real terminal and is
 /// not polled here.
+///
+/// Change-gated: `known_revs` maps session id → the `rev` the caller received
+/// last poll. Sessions whose ring rev is unchanged are omitted from the result
+/// (keep rendering what you have) — so a mostly-idle 16-tile grid costs a few
+/// u32 compares per poll instead of 16 ANSI cooks + serializes.
 #[tauri::command]
 pub async fn fleet_terminal_previews(
     session_ids: Vec<String>,
     lines: Option<usize>,
+    known_revs: Option<std::collections::HashMap<String, u32>>,
 ) -> Result<Vec<super::types::FleetTerminalPreview>, String> {
     let max_lines = lines.unwrap_or(24).clamp(1, 200);
-    let previews = registry()
-        .preview_outputs(&session_ids, max_lines)
+    let known = known_revs.unwrap_or_default();
+    let requests: Vec<(String, Option<u32>)> = session_ids
         .into_iter()
-        .map(|(session_id, lines)| super::types::FleetTerminalPreview { session_id, lines })
+        .map(|id| {
+            let rev = known.get(&id).copied();
+            (id, rev)
+        })
+        .collect();
+    let previews = registry()
+        .preview_outputs(&requests, max_lines)
+        .into_iter()
+        .map(|(session_id, rev, lines)| super::types::FleetTerminalPreview { session_id, rev, lines })
         .collect();
     Ok(previews)
 }
