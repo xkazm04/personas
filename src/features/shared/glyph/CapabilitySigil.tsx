@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { GLYPH_DIMENSIONS } from '@/features/shared/glyph';
+import type { GlyphDimension } from '@/features/shared/glyph';
 import { DIM_META, PETAL_ANGLES } from '@/features/shared/glyph/dimMeta';
+import { useGlyphDimText } from '@/features/shared/glyph/persona-sigil';
 import { useTranslation } from '@/i18n/useTranslation';
 import {
   getHealthMeta,
@@ -46,6 +49,8 @@ export function CapabilitySigil({
   uc, size = 84, isHovered = false, isActive = false, petalStyle = 'wedge',
 }: CapabilitySigilProps) {
   const { t } = useTranslation();
+  const dimText = useGlyphDimText();
+  const [hoveredDim, setHoveredDim] = useState<GlyphDimension | null>(null);
   const center = size / 2;
   const present = new Set(uc.dimensions);
   const isDisabled = uc.health === 'disabled';
@@ -136,16 +141,28 @@ export function CapabilitySigil({
         const angle = PETAL_ANGLES[dim];
         const meta = DIM_META[dim];
         const isPresent = present.has(dim);
+        // Hover-to-name: the <title> gives every petal a never-clipped
+        // tooltip (robust at 68px tiles where a styled overlay would
+        // overflow) + names it in the a11y tree; the hover brighten gives
+        // instant feedback before the OS tooltip appears.
+        const isPetalHover = hoveredDim === dim;
 
         if (petalStyle === 'wedge') {
           return (
-            <g key={dim} transform={`translate(${center}, ${center}) rotate(${angle})`}>
+            <g
+              key={dim}
+              transform={`translate(${center}, ${center}) rotate(${angle})`}
+              style={{ pointerEvents: 'all', cursor: 'default' }}
+              onMouseEnter={() => setHoveredDim(dim)}
+              onMouseLeave={() => setHoveredDim(null)}
+            >
+              <title>{dimText.label[dim]}</title>
               <path
                 d={wedgePath}
                 fill={isPresent ? meta.color : 'transparent'}
-                fillOpacity={isPresent ? (isActive ? dimOpacityActive : dimOpacityIdle) : 0}
-                stroke={isPresent ? meta.color : 'currentColor'}
-                strokeOpacity={isPresent ? 0.85 : ghostOpacity}
+                fillOpacity={isPresent ? (isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : 0}
+                stroke={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
+                strokeOpacity={isPresent ? (isPetalHover ? 1 : 0.85) : isPetalHover ? 0.5 : ghostOpacity}
                 strokeWidth={isPresent ? 0.8 : 0.6}
               />
             </g>
@@ -160,10 +177,15 @@ export function CapabilitySigil({
             key={dim}
             cx={x}
             cy={y}
-            r={petalDotR}
-            fill={isPresent ? meta.color : 'currentColor'}
-            fillOpacity={isPresent ? (isActive ? dimOpacityActive : dimOpacityIdle) : ghostOpacity}
-          />
+            r={isPetalHover ? petalDotR * 1.35 : petalDotR}
+            fill={isPresent ? meta.color : isPetalHover ? meta.color : 'currentColor'}
+            fillOpacity={isPresent ? (isActive || isPetalHover ? dimOpacityActive : dimOpacityIdle) : isPetalHover ? 0.5 : ghostOpacity}
+            style={{ pointerEvents: 'all', cursor: 'default' }}
+            onMouseEnter={() => setHoveredDim(dim)}
+            onMouseLeave={() => setHoveredDim(null)}
+          >
+            <title>{dimText.label[dim]}</title>
+          </circle>
         );
       })}
 
