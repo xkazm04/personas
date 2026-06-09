@@ -467,7 +467,7 @@ export function PersonaLayoutAdoption({
   }, [filteredQuestions, userAnswers, t]);
 
   const leftSlot = Object.keys(summaryEntries).length > 0 ? (
-    <PersonaSigilSummary entries={summaryEntries} heading={null} />
+    <PersonaSigilSummary entries={summaryEntries} heading={null} onSelectDim={handlePetalClick} />
   ) : null;
 
   // topSlot is defined below the `continueDisabledReason` derivation so
