@@ -8,6 +8,8 @@
 
 import type { PersonaEventStatus } from '@/lib/bindings/PersonaEventStatus';
 import type { StatusToken } from '@/lib/design/statusTokens';
+import type { LucideIcon } from 'lucide-react';
+import { Clock, Loader2, CheckCircle2, XCircle, MinusCircle, AlertOctagon, Ban } from 'lucide-react';
 
 // -- Event Type Colors ----------------------------------------------------
 
@@ -120,6 +122,27 @@ export const EVENT_STATUS_FALLBACK: EventStatusColor = {
   text: 'text-gray-400',
   border: 'border-gray-500/20',
 };
+
+/**
+ * Status → icon, kept in lockstep with EVENT_STATUS_COLORS so each status is
+ * distinguishable by SHAPE, not color alone (WCAG 1.4.1). `processing` is the
+ * one animated state — render its icon with `animate-spin` at the call site.
+ */
+export const EVENT_STATUS_ICONS: Record<PersonaEventStatus, LucideIcon> = {
+  pending: Clock,
+  processing: Loader2,
+  delivered: CheckCircle2,
+  completed: CheckCircle2,
+  failed: XCircle,
+  skipped: MinusCircle,
+  dead_letter: AlertOctagon,
+  discarded: Ban,
+};
+
+/** Get the event status icon with a neutral fallback for unknown statuses. */
+export function getEventStatusIcon(status: string): LucideIcon {
+  return (EVENT_STATUS_ICONS as Record<string, LucideIcon>)[status] ?? Clock;
+}
 
 /** Get event status color with fallback for unknown statuses */
 export function getEventStatusColor(status: string): EventStatusColor {

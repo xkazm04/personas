@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { Zap, RefreshCw, AlertCircle, CheckCircle2, Clock, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle } from 'lucide-react';
+import { Zap, RefreshCw, Plus, Search, Bookmark, BookmarkX, X, BookOpen, Loader2, Bot, HardDrive, Webhook, CalendarClock, KeyRound, HeartPulse, CloudUpload, Brain, ClipboardCheck, UserCheck, User, Cog, FlaskConical, Workflow, HelpCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import EmptyState from '@/features/shared/components/feedback/EmptyState';
@@ -13,6 +13,7 @@ import { timeGroupKey, timeGroupLabels } from '@/features/shared/components/disp
 import { PersonaColumnFilter } from '@/features/shared/components/forms/PersonaColumnFilter';
 import { ColumnDropdownFilter } from '@/features/shared/components/forms/ColumnDropdownFilter';
 import { EVENT_STATUS_COLORS, getEventTypeColor } from '@/lib/utils/formatters';
+import { getEventStatusIcon } from '@/lib/design/eventTokens';
 import type { PersonaEvent } from '@/lib/types/types';
 import { seedMockEvent } from '@/api/overview/events';
 import { useEventLog } from '../libs/useEventLog';
@@ -247,14 +248,12 @@ export default function EventLogList() {
       onFilterChange: setStatusFilter,
       render: (event) => {
         const statusStyle = EVENT_STATUS_COLORS[event.status] ?? defaultStatus;
-        const statusIcon = event.status === 'completed' || event.status === 'delivered'
-          ? <CheckCircle2 className="w-3 h-3" />
-          : event.status === 'failed' ? <AlertCircle className="w-3 h-3" />
-            : event.status === 'processing' ? <LoadingSpinner size="xs" />
-              : <Clock className="w-3 h-3" />;
+        const StatusIcon = getEventStatusIcon(event.status);
         return (
           <span className={`inline-flex items-center gap-1.5 typo-caption px-2 py-0.5 rounded-card font-medium ${statusStyle.bg} ${statusStyle.text} border ${statusStyle.border}`}>
-            {statusIcon}
+            {event.status === 'processing'
+              ? <LoadingSpinner size="xs" />
+              : <StatusIcon className="w-3 h-3" />}
             {event.status}
           </span>
         );
