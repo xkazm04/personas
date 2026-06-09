@@ -65,11 +65,13 @@ export function LabVersionsTable() {
   const [measureRow, setMeasureRow] = useState<VersionRow | null>(null);
   const [diffRow, setDiffRow] = useState<VersionRow | null>(null);
 
+  const [loading, setLoading] = useState(false);
   useEffect(() => {
     if (!personaId) return;
-    fetchVersions(personaId);
-    fetchVersionRatings(personaId);
+    setLoading(true);
     loadBaseline(personaId);
+    void Promise.all([fetchVersions(personaId), fetchVersionRatings(personaId)])
+      .finally(() => setLoading(false));
   }, [personaId, fetchVersions, fetchVersionRatings, loadBaseline]);
 
   // Refresh ratings + clear the measuring spinner when an arena run finishes.
@@ -225,6 +227,7 @@ export function LabVersionsTable() {
         data={rows}
         getRowKey={(row) => row.key}
         density="compact"
+        isLoading={loading && rows.length === 0}
         ariaLabel={lab.vr_title}
         emptyTitle={lab.vr_empty_title}
         emptyDescription={lab.vr_empty_desc}
