@@ -118,6 +118,13 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
         'out',
         replyDraft.trim(),
         draftContext.contactHandle || undefined,
+        undefined, // summary
+        undefined, // keyFactsJson
+        // Operator-approved outbound draft is the twin's OWN generated text — not
+        // new knowledge. Do NOT queue it as a memory (create_memory defaults true
+        // in Rust): doing so poisons distilled facts / wiki with the twin's output,
+        // which then grounds the next reply — a self-reinforcing corruption loop.
+        false,
       );
       clearDraft();
       setInbound('');
