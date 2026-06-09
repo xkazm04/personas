@@ -7,6 +7,7 @@ import { useToastStore } from '@/stores/toastStore';
 import { useLocalImage } from '../hooks/useLocalImage';
 import { formatFileSize } from '../utils/format';
 import TagEditorModal from './TagEditorModal';
+import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
 
 interface AssetCardProps {
   asset: ArtistAsset;
@@ -38,6 +39,7 @@ export default function AssetCard({
 }: AssetCardProps) {
   const { t } = useTranslation();
   const [editingTags, setEditingTags] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [draftName, setDraftName] = useState(asset.fileName);
   const renameInputRef = useRef<HTMLInputElement>(null);
@@ -161,9 +163,10 @@ export default function AssetCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onDelete(asset.id);
+              setConfirmDelete(true);
             }}
-            className="p-2 rounded-card bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+            aria-label={t.plugins.artist.delete}
+            className="p-2 rounded-card bg-rose-500/20 text-rose-400 hover:bg-rose-500/30 transition-colors"
             title={t.plugins.artist.delete}
           >
             <Trash2 className="w-4 h-4" />
@@ -248,6 +251,20 @@ export default function AssetCard({
           initialTags={asset.tags ?? ''}
           onSave={(tags) => onUpdateTags(asset.id, tags)}
           onClose={() => setEditingTags(false)}
+        />
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={t.plugins.artist.delete}
+          body={`"${asset.fileName}" will be permanently deleted.`}
+          danger
+          confirmLabel={t.plugins.artist.delete}
+          onConfirm={() => {
+            setConfirmDelete(false);
+            onDelete(asset.id);
+          }}
+          onCancel={() => setConfirmDelete(false)}
         />
       )}
     </div>
