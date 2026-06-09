@@ -1,4 +1,5 @@
 // -- Components ----------------------------------------------
+export { default as TeamMemoryPane } from './TeamMemoryPane';
 export { default as TeamMemoryPanel } from './components/panel/TeamMemoryPanel';
 export { default as TeamMemoryBadge } from './components/panel/TeamMemoryBadge';
 export { default as TeamMemoryRow } from './components/panel/TeamMemoryRow';

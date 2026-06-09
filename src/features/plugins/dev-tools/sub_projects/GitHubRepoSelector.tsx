@@ -27,7 +27,7 @@ interface GitHubRepo {
  * GitLab subgroups collapse to the first two segments). Returns null for
  * anything that isn't a plausible repository URL.
  */
-function parseRepoUrl(url: string): { owner: string; name: string } | null {
+export function parseRepoUrl(url: string): { owner: string; name: string } | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
   try {

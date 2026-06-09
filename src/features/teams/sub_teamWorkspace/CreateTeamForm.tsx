@@ -5,11 +5,11 @@ import {
   suggestAlternativeName,
 } from '@/features/shared/components/forms/useAsyncFieldValidation';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
-import { GitHubRepoSelector } from '@/features/plugins/dev-tools/sub_projects/GitHubRepoSelector';
+import { GitHubRepoSelector, parseRepoUrl } from '@/features/plugins/dev-tools/sub_projects/GitHubRepoSelector';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const TEAM_COLORS: Record<string, string> = {
+export const TEAM_COLORS: Record<string, string> = {
   '#6366f1': 'Indigo',
   '#8b5cf6': 'Violet',
   '#ec4899': 'Pink',
@@ -63,6 +63,7 @@ export function CreateTeamForm({
 }: CreateTeamFormProps) {
   const { t, tx } = useTranslation();
   const dp = t.plugins.dev_projects;
+  const repoUrlValid = !githubUrl.trim() || parseRepoUrl(githubUrl) !== null;
 
   const nameCheck = useAsyncFieldValidation({
     check: (value) => {
@@ -109,7 +110,7 @@ export function CreateTeamForm({
             />
           )}
         </FormField>
-        <FormField label="Description">
+        <FormField label={t.common.description}>
           {(inputProps) => (
             <input
               {...inputProps}
@@ -187,7 +188,12 @@ export function CreateTeamForm({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 pt-2">
+        <div className="flex items-center justify-end gap-2 pt-2">
+          {/* The repo selector flags a bad URL inline; this is the matching
+              submit gate so an invalid URL can't be created anyway. */}
+          {!repoUrlValid && (
+            <span className="typo-caption text-status-error mr-auto">{dp.invalid_repo_url}</span>
+          )}
           <button
             onClick={onCancel}
             className="px-3 py-1.5 typo-body text-foreground hover:text-foreground/95 transition-colors"
@@ -196,7 +202,7 @@ export function CreateTeamForm({
           </button>
           <button
             onClick={onSubmit}
-            disabled={!newName.trim()}
+            disabled={!newName.trim() || !repoUrlValid}
             className="px-4 py-1.5 typo-body font-medium rounded-modal bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-500/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
             {t.pipeline.create_team}
