@@ -752,9 +752,18 @@ pub fn update_status_if_not_final(
 
             let status_str = input.status.as_str();
 
-            // Allow overwrite when status is 'running' (normal path) or 'cancelled'
-            // (safety-net wrote a bare cancel that we can now enrich with metrics).
-            let mut stmt = conn.prepare_cached(
+            // Cancellation is a terminal sink: a completion/failure must NEVER
+            // overwrite a user cancel. Only the cancel branch may enrich an existing
+            // 'cancelled' safety-net row with metrics; every other status may only
+            // advance a still-'running' row. Without this split, a result landing in
+            // the window just after the user clicks Stop clobbers the freshly-written
+            // 'cancelled' row back to 'completed' (lost-cancel + success theater).
+            let where_clause = if status_str == "cancelled" {
+                "WHERE id = ?12 AND status IN ('running', 'cancelled')"
+            } else {
+                "WHERE id = ?12 AND status = 'running'"
+            };
+            let sql = format!(
                 "UPDATE persona_executions SET
                 status = ?1,
                 output_data = COALESCE(?2, output_data),
@@ -772,8 +781,9 @@ pub fn update_status_if_not_final(
                 execution_config = COALESCE(?15, execution_config),
                 log_truncated = ?16,
                 business_outcome = COALESCE(?17, business_outcome)
-             WHERE id = ?12 AND status IN ('running', 'cancelled')",
-            )?;
+             {where_clause}"
+            );
+            let mut stmt = conn.prepare_cached(&sql)?;
             let rows_changed = stmt.execute(params![
                 status_str,
                 input.output_data,
