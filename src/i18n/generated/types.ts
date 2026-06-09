@@ -15008,6 +15008,8 @@ export type Translations = {
       sentTitle: string;
       sentTo: string;
       sentReuse: string;
+      toneRegister: string;
+      toneAuto: string;
       steerLabel: string;
       steerShorter: string;
       steerWarmer: string;

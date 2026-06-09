@@ -92,6 +92,8 @@
     "sentTitle": "最近の送信",
     "sentTo": "{handle} 宛",
     "sentReuse": "アウトボックスで再利用",
+    "toneRegister": "下書きのトーン",
+    "toneAuto": "チャンネルに合わせる",
     "steerLabel": "クイック調整",
     "steerShorter": "短く",
     "steerWarmer": "温かく",

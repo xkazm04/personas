@@ -14007,6 +14007,8 @@
       "sentTitle": "最近发送",
       "sentTo": "发送给 {handle}",
       "sentReuse": "在回复箱中改写",
+      "toneRegister": "草稿语气",
+      "toneAuto": "跟随频道",
       "steerLabel": "快速调整",
       "steerShorter": "更简短",
       "steerWarmer": "更亲切",

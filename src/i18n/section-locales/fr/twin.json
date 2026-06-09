@@ -92,6 +92,8 @@
     "sentTitle": "Envoyés récemment",
     "sentTo": "à {handle}",
     "sentReuse": "Adapter dans la boîte d'envoi",
+    "toneRegister": "Voix du brouillon",
+    "toneAuto": "Selon le canal",
     "steerLabel": "Ajustement rapide",
     "steerShorter": "Plus court",
     "steerWarmer": "Plus chaleureux",

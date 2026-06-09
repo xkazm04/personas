@@ -92,6 +92,8 @@
     "sentTitle": "Nedávno odesláno",
     "sentTo": "pro {handle}",
     "sentReuse": "Upravit v odesílací schránce",
+    "toneRegister": "Hlas návrhu",
+    "toneAuto": "Podle kanálu",
     "steerLabel": "Rychlé doladění",
     "steerShorter": "Kratší",
     "steerWarmer": "Vřelejší",

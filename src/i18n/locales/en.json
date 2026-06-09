@@ -15002,6 +15002,8 @@
       "sentTitle": "Recently sent",
       "sentTo": "to {handle}",
       "sentReuse": "Adapt in outbox",
+      "toneRegister": "Draft voice",
+      "toneAuto": "Match channel",
       "steerLabel": "Quick steer",
       "steerShorter": "Shorter",
       "steerWarmer": "Warmer",

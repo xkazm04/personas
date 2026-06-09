@@ -177,13 +177,15 @@ export interface TwinSlice {
   deleteTwinChannel: (id: string) => Promise<void>;
 
   // -- Channels outbox actions -----------------------------------------
-  /** Generate a draft reply and stash it in `twinReplyDraft` for review. */
+  /** Generate a draft reply and stash it in `twinReplyDraft` for review.
+   *  `toneChannel` overrides which tone register grounds the draft. */
   draftTwinReply: (
     twinId: string,
     channel: TwinChannelKind,
     contactHandle?: string,
     inboundMessage?: string,
     directions?: string,
+    toneChannel?: string,
   ) => Promise<string>;
   /** Overwrite the staged draft (used while the operator edits the textarea). */
   setTwinReplyDraft: (draft: string | null) => void;
@@ -586,10 +588,10 @@ export const createTwinSlice: StateCreator<SystemStore, [], [], TwinSlice> = (se
 
   // -- Channels outbox actions -----------------------------------------
 
-  draftTwinReply: async (twinId, channel, contactHandle, inboundMessage, directions) => {
+  draftTwinReply: async (twinId, channel, contactHandle, inboundMessage, directions, toneChannel) => {
     set({ twinReplyDrafting: true });
     try {
-      const draft = await twinApi.draftReply(twinId, channel, contactHandle, inboundMessage, directions);
+      const draft = await twinApi.draftReply(twinId, channel, contactHandle, inboundMessage, directions, toneChannel);
       set({ twinReplyDraft: draft, twinReplyDrafting: false, error: null });
       return draft;
     } catch (err) {

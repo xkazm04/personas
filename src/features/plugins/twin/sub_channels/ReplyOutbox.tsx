@@ -42,9 +42,15 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
   const recordInteraction = useSystemStore((s) => s.recordTwinInteraction);
 
   const activeChannels = useMemo(() => channels.filter((c) => c.is_active), [channels]);
+  const twinTones = useSystemStore((s) => s.twinTones);
+  // Tone rows for the active twin — hydrated at page level by useHydrateActiveTwin.
+  const tones = useMemo(() => twinTones.filter((tn) => tn.twin_id === activeTwinId), [twinTones, activeTwinId]);
 
   const [channelType, setChannelType] = useState<TwinChannelKind | ''>('');
   const [contactHandle, setContactHandle] = useState('');
+  // Which tone register grounds the draft. 'auto' = the target channel's tone
+  // (the backend's default resolution); any other value names a tone row.
+  const [toneChannel, setToneChannel] = useState('auto');
   const [inbound, setInbound] = useState('');
   const [directions, setDirections] = useState('');
   const [contacts, setContacts] = useState<TwinContact[]>([]);
@@ -114,6 +120,17 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
     [contacts],
   );
 
+  // Tone-register options: 'auto' defers to the backend's per-channel
+  // resolution; the rest name the twin's configured tone rows. Channel ids are
+  // technical identifiers — shown as-is, like the channel select's description.
+  const toneOptions: ThemedSelectOption[] = useMemo(
+    () => [
+      { value: 'auto', label: tc.toneAuto },
+      ...tones.map((tn) => ({ value: tn.channel, label: tn.channel })),
+    ],
+    [tones, tc.toneAuto],
+  );
+
   const canGenerate = !!activeTwinId && !!channelType && !drafting;
 
   const handleGenerate = async (dirOverride?: string) => {
@@ -126,6 +143,7 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
         contactHandle.trim() || undefined,
         inbound.trim() || undefined,
         (dirOverride ?? directions).trim() || undefined,
+        toneChannel === 'auto' ? undefined : toneChannel,
       );
       // Freeze the channel + contact this draft was generated for.
       setDraftContext({ channel: channelType, contactHandle: contactHandle.trim() });
@@ -227,6 +245,11 @@ export function ReplyOutbox({ channels, reuseRequest }: { channels: TwinChannel[
             />
           )}
         </Field>
+        {tones.length > 0 && (
+          <Field label={tc.toneRegister}>
+            <ThemedSelect options={toneOptions} value={toneChannel} onValueChange={setToneChannel} />
+          </Field>
+        )}
       </div>
 
       <ContactThread twinId={activeTwinId} channel={channelType} contactHandle={contactHandle} />
