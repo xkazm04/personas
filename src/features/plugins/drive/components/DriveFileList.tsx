@@ -15,6 +15,7 @@ import type { DriveEntry, DriveSearchHit } from "@/api/drive";
 import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
+import { useLazyImageThumb } from "../hooks/useLazyImageThumb";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
@@ -549,6 +550,50 @@ function ListView({
 // Icons view
 // ============================================================================
 
+/**
+ * The 64px visual block of an icons-view tile. Image files render a real
+ * thumbnail — lazy-loaded and freed as the tile scrolls in/out of view via
+ * useLazyImageThumb — so the grid reads as a gallery instead of a wall of
+ * identical "image" glyphs. Everything else keeps its kind icon. The
+ * `hoverScale` flag preserves the button tile's group-hover zoom without
+ * applying it to the static renaming tile.
+ */
+function IconTileVisual({
+  entry,
+  hoverScale = false,
+}: {
+  entry: DriveEntry;
+  hoverScale?: boolean;
+}) {
+  const visual = visualForEntry(entry);
+  const isImage =
+    entry.kind === "file" && (entry.mime ?? "").startsWith("image/");
+  const { ref, url } = useLazyImageThumb<HTMLDivElement>(
+    entry.path,
+    entry.mime,
+    isImage,
+  );
+  return (
+    <div
+      ref={ref}
+      className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner overflow-hidden ${
+        hoverScale ? "group-hover:scale-105 transition-transform" : ""
+      }`}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          draggable={false}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <visual.Icon className={`w-8 h-8 ${visual.text}`} />
+      )}
+    </div>
+  );
+}
+
 function IconsView({
   drive,
   onOpen,
@@ -613,11 +658,7 @@ function IconsView({
                 key={entry.path}
                 className="flex flex-col items-center gap-2.5 p-3 rounded-modal border bg-cyan-500/10 border-cyan-500/50 ring-2 ring-cyan-400/40"
               >
-                <div
-                  className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner`}
-                >
-                  <visual.Icon className={`w-8 h-8 ${visual.text}`} />
-                </div>
+                <IconTileVisual entry={entry} />
                 <InlineRenameInput
                   initialName={entry.name}
                   onCommit={(newName) =>
@@ -654,11 +695,7 @@ function IconsView({
                   : "border-primary/5 bg-secondary/10 hover:bg-secondary/30 hover:border-primary/15 hover:-translate-y-0.5"
               }`}
             >
-              <div
-                className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform`}
-              >
-                <visual.Icon className={`w-8 h-8 ${visual.text}`} />
-              </div>
+              <IconTileVisual entry={entry} hoverScale />
               <div className="w-full typo-body typo-card-label text-center truncate">
                 {entry.name}
               </div>
