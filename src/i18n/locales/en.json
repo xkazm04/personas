@@ -209,7 +209,10 @@
     "learned_view": "View",
     "quick_source_unknown": "Persona",
     "channels_goals_tab": "Goals",
-    "review_dispatch_blocked": "Approved, but couldn’t carry out the action"
+    "review_dispatch_blocked": "Approved, but couldn’t carry out the action",
+    "channels_author_all": "Everyone",
+    "channels_author_you": "You",
+    "channels_author_athena": "Athena"
   },
   "common": {
     "unknown_error": "Unknown error",

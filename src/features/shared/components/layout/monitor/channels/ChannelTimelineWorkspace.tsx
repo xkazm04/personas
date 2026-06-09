@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  Radio, Activity, Send, Users, ChevronDown, Check,
+  Radio, Activity, Send, Users, ChevronDown, Check, Sparkles, User,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen,
 } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -13,11 +13,12 @@ import { QuickAnswerBody } from '@/features/shared/components/layout/quick-answe
 import { GoalsTimeline } from '@/features/teams/sub_goals/GoalsTimeline';
 import { MergedChannels } from './mergedFeed';
 import { VirtualStream } from './VirtualStream';
-import { matchesFilter } from './feedFilter';
-import { type FeedTeam, type FeedFilter, type TaggedItem, type PresenceMap } from './types';
+import { matchesFilter, matchesAuthor } from './feedFilter';
+import { type FeedTeam, type FeedFilter, type AuthorFilter, type TaggedItem, type PresenceMap } from './types';
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
 
 const FILTERS: FeedFilter[] = ['all', 'signal', 'alerts'];
+const AUTHORS: AuthorFilter[] = ['all', 'you', 'athena'];
 const LEFT_DEFAULT = 224;
 const RIGHT_DEFAULT = 384;
 const LS_LEFT = 'personas.channelWs.leftW';
@@ -138,19 +139,23 @@ const TeamSidebar = memo(function TeamSidebar({
   );
 });
 
-/* ── CENTRE — the virtualized stream (re-renders only on merged/filter) ───── */
+/* ── CENTRE — the virtualized stream (re-renders only on merged/filters) ──── */
 const CenterStream = memo(function CenterStream({
-  merged, filter, personaIndex, onOpen, emptyLabel,
+  merged, filter, author, personaIndex, onOpen, emptyLabel,
 }: {
   merged: TaggedItem[];
   filter: FeedFilter;
+  author: AuthorFilter;
   personaIndex: ReturnType<typeof usePersonaIndex>;
   onOpen: (item: TeamChannelItem) => void;
   emptyLabel: string;
 }) {
   const visible = useMemo(
-    () => (filter === 'all' ? merged : merged.filter((r) => matchesFilter(r.item, filter))),
-    [merged, filter],
+    () => {
+      if (filter === 'all' && author === 'all') return merged;
+      return merged.filter((r) => matchesFilter(r.item, filter) && matchesAuthor(r.item, author));
+    },
+    [merged, filter, author],
   );
   return (
     <div className="flex-1 min-w-0 flex flex-col min-h-0">
@@ -284,6 +289,7 @@ function WorkspaceInner({
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [filter, setFilter] = useState<FeedFilter>('all');
+  const [author, setAuthor] = useState<AuthorFilter>('all');
   const [detail, setDetail] = useState<TeamChannelItem | null>(null);
 
   const leftRef = useRef<HTMLDivElement>(null);
@@ -313,6 +319,11 @@ function WorkspaceInner({
     signal: t.monitor.channels_filter_signal,
     alerts: t.monitor.channels_filter_alerts,
   };
+  const authorLabel: Record<AuthorFilter, string> = {
+    all: t.monitor.channels_author_all,
+    you: t.monitor.channels_author_you,
+    athena: t.monitor.channels_author_athena,
+  };
 
   return (
     <div className="h-full flex flex-col min-h-0 rounded-card border border-border bg-foreground/[0.01] overflow-hidden">
@@ -327,6 +338,24 @@ function WorkspaceInner({
           {working > 0 && <span className="text-status-info">{working} working</span>}
         </span>
         <div className="ml-auto flex items-center gap-2">
+          {/* Author filter — who acted (separates autonomous Athena from you) */}
+          <div className="flex items-center gap-0.5 rounded-full bg-secondary/20 p-0.5">
+            {AUTHORS.map((a) => (
+              <button
+                key={a}
+                type="button"
+                onClick={() => setAuthor(a)}
+                aria-pressed={author === a}
+                title={authorLabel[a]}
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full typo-caption transition-colors ${author === a ? (a === 'athena' ? 'bg-violet-500/20 text-violet-200 font-medium' : 'bg-primary/15 text-foreground font-medium') : 'text-foreground/50 hover:text-foreground/80'}`}
+              >
+                {a === 'athena' && <Sparkles className="w-3 h-3" />}
+                {a === 'you' && <User className="w-3 h-3" />}
+                {authorLabel[a]}
+              </button>
+            ))}
+          </div>
+          {/* Noise filter */}
           <div className="flex items-center gap-0.5 rounded-full bg-secondary/20 p-0.5">
             {FILTERS.map((f) => (
               <button
@@ -363,7 +392,7 @@ function WorkspaceInner({
           </>
         )}
 
-        <CenterStream merged={merged} filter={filter} personaIndex={personaIndex} onOpen={onOpen} emptyLabel={t.monitor.channels_combined_quiet} />
+        <CenterStream merged={merged} filter={filter} author={author} personaIndex={personaIndex} onOpen={onOpen} emptyLabel={t.monitor.channels_combined_quiet} />
 
         {rightCollapsed ? (
           <div className="animate-fade-in flex-shrink-0 w-9 border-l border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">

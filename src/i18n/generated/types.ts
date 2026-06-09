@@ -216,6 +216,9 @@ export type Translations = {
     quick_source_unknown: string;
     channels_goals_tab: string;
     review_dispatch_blocked: string;
+    channels_author_all: string;
+    channels_author_you: string;
+    channels_author_athena: string;
   };
   common: {
     unknown_error: string;

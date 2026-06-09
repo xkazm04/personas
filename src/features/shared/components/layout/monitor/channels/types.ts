@@ -23,6 +23,10 @@ export type PresenceMap = Map<string, 'working' | 'waiting'>;
 /** Noise filter for the merged stream. */
 export type FeedFilter = 'all' | 'signal' | 'alerts';
 
+/** Author filter — separate the human-in-the-loop decision-makers so an
+ *  autonomous Athena post never reads as a user decision. */
+export type AuthorFilter = 'all' | 'you' | 'athena';
+
 /** Hard cap on the merged window — bounds memory + keeps the virtualizer cheap
  *  regardless of how many teams are selected. */
 export const MAX_MERGED_ROWS = 600;
