@@ -1,5 +1,4 @@
 import { memo, useMemo, useCallback } from 'react';
-import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { CHART_COLORS_PURPLE, CHART_GRAD, getGridStroke, getAxisTickFill } from '@/features/overview/sub_usage/libs/chartConstants';
@@ -83,7 +82,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
                     if (!viewBox) return null;
                     return (
                       <g>
-                        <title>{`${annotation.label} * ${<AbsoluteTime timestamp={annotation.timestamp} />}`}</title>
+                        <title>{`${annotation.label} · ${Number.isFinite(Date.parse(annotation.timestamp)) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(Date.parse(annotation.timestamp)) : annotation.timestamp}`}</title>
                         <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
                       </g>
                     );
@@ -200,7 +199,7 @@ export const MetricsCharts = memo(function MetricsCharts({ chartData, pieData, a
                   if (!viewBox) return null;
                   return (
                     <g>
-                      <title>{`${annotation.label} * ${<AbsoluteTime timestamp={annotation.timestamp} />}`}</title>
+                      <title>{`${annotation.label} · ${Number.isFinite(Date.parse(annotation.timestamp)) ? new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(Date.parse(annotation.timestamp)) : annotation.timestamp}`}</title>
                       <circle cx={viewBox.x} cy={viewBox.y - 6} r={2.2} fill={getAnnotationColor(annotation.type, annotation.color)} />
                     </g>
                   );
