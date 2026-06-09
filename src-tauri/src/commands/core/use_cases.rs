@@ -495,7 +495,6 @@ pub async fn rename_event_listeners(
     let mut conn = state.db.get()?;
     let exclude = exclude_persona_id.as_deref().unwrap_or("");
     let now = chrono::Utc::now().to_rfc3339();
-    let needle = format!("%\"event_type\":\"{}\"%", from_event.replace('"', "\\\""));
 
     // Atomic: the subscription write and the trigger write must both land or
     // neither. Run as two independent statements, a mid-way failure (DB locked,
@@ -512,18 +511,21 @@ pub async fn rename_event_listeners(
                  WHERE event_type = ?3 AND (?4 = '' OR persona_id <> ?4)",
                 rusqlite::params![to_event, now, from_event, exclude],
             )? as usize;
-            // For triggers we rewrite the config JSON's event_type field. Use a
-            // simple string substitution scoped to '"event_type":"..."' to keep
-            // the operation transparent without parsing each row.
-            let from_token = format!("\"event_type\":\"{}\"", from_event.replace('"', "\\\""));
-            let to_token = format!("\"event_type\":\"{}\"", to_event.replace('"', "\\\""));
+            // Rewrite each trigger's config.event_type via JSON1 json_set,
+            // scoped to rows whose PARSED event_type equals from_event. This
+            // avoids the raw-text REPLACE hazards: partial-name LIKE matches
+            // ("alert" inside "alert_high"), whitespace-sensitive no-ops
+            // (`"event_type": "alert"`), all-occurrence rewrites, and rewriting
+            // unrelated fields that happen to embed the token. json_valid guards
+            // malformed configs so one bad row can't abort the whole rename.
             let trigs = tx.execute(
                 "UPDATE persona_triggers
-                 SET config = REPLACE(config, ?1, ?2), updated_at = ?3
+                 SET config = json_set(config, '$.event_type', ?1), updated_at = ?2
                  WHERE trigger_type = 'event_listener'
-                   AND (?4 = '' OR persona_id <> ?4)
-                   AND config LIKE ?5",
-                rusqlite::params![from_token, to_token, now, exclude, needle],
+                   AND (?3 = '' OR persona_id <> ?3)
+                   AND json_valid(config)
+                   AND json_extract(config, '$.event_type') = ?4",
+                rusqlite::params![to_event, now, exclude, from_event],
             )? as usize;
             (subs, trigs)
         }
@@ -537,8 +539,9 @@ pub async fn rename_event_listeners(
                 "DELETE FROM persona_triggers
                  WHERE trigger_type = 'event_listener'
                    AND (?1 = '' OR persona_id <> ?1)
-                   AND config LIKE ?2",
-                rusqlite::params![exclude, needle],
+                   AND json_valid(config)
+                   AND json_extract(config, '$.event_type') = ?2",
+                rusqlite::params![exclude, from_event],
             )? as usize;
             (subs, trigs)
         }
