@@ -218,7 +218,7 @@ export default function GoalsPage() {
           <div className="space-y-4 pb-6">
             <div className="flex items-center justify-between">
               <h3 className="typo-caption text-primary uppercase tracking-wider">
-                {t.plugins.dev_lifecycle.goal_constellation}({goals.length})
+                {t.plugins.dev_lifecycle.goal_constellation} ({goals.length})
               </h3>
               <div className="flex items-center gap-2">
                 {goalsTab === 'board' && (
