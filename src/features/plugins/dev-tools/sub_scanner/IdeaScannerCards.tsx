@@ -7,7 +7,7 @@
  *   - ScanHistoryTable  — past scan runs table
  */
 import { motion } from 'framer-motion';
-import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw } from 'lucide-react';
+import { CheckSquare, Square, BarChart3, Clock, Info, RotateCcw, TrendingUp } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/formatters';
 import { SCAN_STATUS_STYLES, relativeTime } from './ideaScannerHelpers';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
@@ -56,6 +56,43 @@ export function LevelBadge({ label, value }: { label: string; value: number }) {
       {label}: {value}
       <span className="opacity-70">· {levelSeverity(value)}</span>
     </span>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ValueBadge — synthesises effort/impact/risk into one glanceable verdict.
+// Shared scorer (also drives the scanner + triage queue ordering): reward
+// impact, charge for effort + risk.
+// ---------------------------------------------------------------------------
+
+export function ideaValueScore(i: { impact: number; effort: number; risk: number }): number {
+  return i.impact * 2 - i.effort - i.risk;
+}
+
+function valueTier(score: number): 'high' | 'med' | 'low' {
+  if (score >= 8) return 'high';
+  if (score >= 1) return 'med';
+  return 'low';
+}
+
+export function ValueBadge({ idea }: { idea: { impact: number; effort: number; risk: number } }) {
+  const { t } = useTranslation();
+  const ds = t.plugins.dev_scanner;
+  const tier = valueTier(ideaValueScore(idea));
+  const cfg = {
+    high: { cls: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10', label: ds.value_high },
+    med: { cls: 'text-amber-400 border-amber-500/30 bg-amber-500/10', label: ds.value_med },
+    low: { cls: 'text-foreground border-primary/20 bg-primary/5', label: ds.value_low },
+  }[tier];
+  return (
+    <Tooltip content={ds.value_tip} placement="top">
+      <span
+        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 typo-caption font-medium border ${cfg.cls}`}
+      >
+        <TrendingUp className="w-3 h-3" />
+        {cfg.label}
+      </span>
+    </Tooltip>
   );
 }
 
@@ -198,6 +235,7 @@ export function IdeaCard({ idea, index }: { idea: ScanIdea; index: number }) {
         </div>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap">
+        <ValueBadge idea={idea} />
         <span className={`rounded-full px-2.5 py-0.5 text-md font-medium ${catTw.bg} ${catTw.text} border ${catTw.border}`}>
           {catLabel}
         </span>

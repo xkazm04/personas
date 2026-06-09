@@ -29,7 +29,7 @@ import { AgentScoreboard } from './AgentScoreboard';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useNotificationCenterStore } from '@/stores/notificationCenterStore';
 import {
-  AgentCard, ScanProgress, IdeaCard, ScanHistoryTable,
+  AgentCard, ScanProgress, IdeaCard, ScanHistoryTable, ideaValueScore,
   type CategoryKey, type ScanIdea, type ScanHistoryEntry,
 } from './IdeaScannerCards';
 import { matchAgentsToContext } from './ideaScannerHelpers';
@@ -63,6 +63,7 @@ export default function IdeaScannerPage() {
   const [scanProgress, setScanProgress] = useState(isRunning ? 50 : 0);
   const [currentAgentKey, setCurrentAgentKey] = useState<string | null>(null);
   const [filterCategory, setFilterCategory] = useState<CategoryKey | 'all'>('all');
+  const [ideaSort, setIdeaSort] = useState<'default' | 'value' | 'quick'>('default');
   const [autoScanRunning, setAutoScanRunning] = useState(false);
   const [autoScanStatus, setAutoScanStatus] = useState<string | null>(null);
   const [staticScanRunning, setStaticScanRunning] = useState(false);
@@ -432,6 +433,22 @@ export default function IdeaScannerPage() {
     ? ideas
     : ideas.filter((i) => i.category === filterCategory);
 
+  // Order the result grid. 'default' keeps agent/scan order; 'value' floats the
+  // best impact-for-effort ideas up; 'quick' surfaces low-effort wins first.
+  const displayedIdeas = (() => {
+    if (ideaSort === 'default') return filteredIdeas;
+    const copy = [...filteredIdeas];
+    if (ideaSort === 'value') copy.sort((a, b) => ideaValueScore(b) - ideaValueScore(a));
+    else copy.sort((a, b) => a.effort - b.effort || b.impact - a.impact);
+    return copy;
+  })();
+
+  const ideaSortOptions: { mode: typeof ideaSort; label: string }[] = [
+    { mode: 'default', label: t.plugins.dev_tools.sort_default },
+    { mode: 'value', label: t.plugins.dev_tools.sort_value },
+    { mode: 'quick', label: t.plugins.dev_tools.sort_quick },
+  ];
+
   const currentAgent = SCAN_AGENTS.find((a) => a.key === currentAgentKey) ?? null;
 
   return (
@@ -564,8 +581,24 @@ export default function IdeaScannerPage() {
               <h3 className="text-md font-semibold uppercase tracking-wider text-primary">
                 {ds.results_header}{ideas.length} {ideas.length === 1 ? ds.ideas_count_one : ds.ideas_count_other})
               </h3>
-              {/* Category filter tabs */}
-              <div className="flex items-center gap-1">
+              {/* Sort + category filter tabs */}
+              <div className="flex items-center gap-1 flex-wrap justify-end">
+                {ideas.length > 1 && (
+                  <>
+                    {ideaSortOptions.map((opt) => (
+                      <Button
+                        key={`sort-${opt.mode}`}
+                        variant={ideaSort === opt.mode ? 'secondary' : 'ghost'}
+                        size="xs"
+                        onClick={() => setIdeaSort(opt.mode)}
+                        className={ideaSort === opt.mode ? 'bg-primary/15 border-primary/30' : ''}
+                      >
+                        {opt.label}
+                      </Button>
+                    ))}
+                    <span className="w-px h-4 bg-border/20 mx-1" aria-hidden="true" />
+                  </>
+                )}
                 <Button
                   variant={filterCategory === 'all' ? 'secondary' : 'ghost'}
                   size="xs"
@@ -614,7 +647,7 @@ export default function IdeaScannerPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                {filteredIdeas.map((idea, i) => (
+                {displayedIdeas.map((idea, i) => (
                   <IdeaCard key={idea.id} idea={idea} index={i} />
                 ))}
               </div>

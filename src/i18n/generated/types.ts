@@ -13285,6 +13285,10 @@ export type Translations = {
       level_effort: string;
       level_impact: string;
       level_risk: string;
+      value_high: string;
+      value_med: string;
+      value_low: string;
+      value_tip: string;
       history_col_agents: string;
       history_col_status: string;
       history_col_ideas: string;
