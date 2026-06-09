@@ -386,25 +386,28 @@ pub fn update_with_fields(
             tx.execute(&sql, params_ref.as_slice())?;
 
             // -- 2. Save fields if provided --
+            // `Some(map)` is an AUTHORITATIVE new field set (including empty); only
+            // `None` means "leave fields untouched". Always DELETE on `Some` so a
+            // clear-to-empty (e.g. revoking a leaked key) actually removes the old
+            // encrypted rows instead of silently retaining a decryptable secret.
             if let Some(field_map) = fields {
-                if !field_map.is_empty() {
-                    // Delete existing fields and re-insert within the same transaction
+                // Delete existing fields and re-insert within the same transaction.
+                tx.execute(
+                    "DELETE FROM credential_fields WHERE credential_id = ?1",
+                    params![id],
+                )?;
+
+                for (key, value) in field_map {
+                    let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
+                    let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
+                        .map_err(|e| {
+                            AppError::Internal(format!("Field encryption failed: {e}"))
+                        })?;
+
+                    let field_type = classify_field_type(key);
+                    let field_id = uuid::Uuid::new_v4().to_string();
+
                     tx.execute(
-                        "DELETE FROM credential_fields WHERE credential_id = ?1",
-                        params![id],
-                    )?;
-
-                    for (key, value) in field_map {
-                        let is_sensitive = is_field_sensitive(sens_map.as_ref(), key);
-                        let (enc_val, field_iv) = crypto::encrypt_field(value, is_sensitive)
-                            .map_err(|e| {
-                                AppError::Internal(format!("Field encryption failed: {e}"))
-                            })?;
-
-                        let field_type = classify_field_type(key);
-                        let field_id = uuid::Uuid::new_v4().to_string();
-
-                        tx.execute(
                         "INSERT INTO credential_fields
                          (id, credential_id, field_key, encrypted_value, iv, field_type, is_sensitive, created_at, updated_at)
                          VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?8)",
@@ -413,7 +416,6 @@ pub fn update_with_fields(
                             field_type, is_sensitive as i32, now,
                         ],
                     )?;
-                    }
                 }
             }
 
