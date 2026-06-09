@@ -11668,6 +11668,12 @@ export type Translations = {
       reject: string;
       triage_title: string;
       triage_subtitle: string;
+      sidebar_sort: string;
+      sort_default: string;
+      sort_value: string;
+      sort_quick: string;
+      sort_value_tip: string;
+      sort_quick_tip: string;
       accepted_badge: string;
       rejected_badge: string;
       pending_badge: string;

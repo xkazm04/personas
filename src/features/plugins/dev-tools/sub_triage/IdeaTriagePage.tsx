@@ -48,6 +48,27 @@ interface TriageIdea {
 
 const SWIPE_THRESHOLD = 150;
 
+type TriageSortMode = 'default' | 'value' | 'quick';
+
+// Value heuristic: reward impact, charge for effort + risk. Floats the
+// strongest ideas to the top of the swipe stack so triage attention lands
+// where it pays off most.
+function triageValueScore(i: { impact: number; effort: number; risk: number }): number {
+  return i.impact * 2 - i.effort - i.risk;
+}
+
+function applyTriageSort(list: TriageIdea[], mode: TriageSortMode): TriageIdea[] {
+  if (mode === 'default') return list;
+  const copy = [...list];
+  if (mode === 'value') {
+    copy.sort((a, b) => triageValueScore(b) - triageValueScore(a));
+  } else {
+    // Quick wins: lowest effort first, highest impact as the tiebreak.
+    copy.sort((a, b) => a.effort - b.effort || b.impact - a.impact);
+  }
+  return copy;
+}
+
 
 // ---------------------------------------------------------------------------
 // Swipe Card
@@ -221,6 +242,7 @@ export default function IdeaTriagePage() {
   const [filterScanType, setFilterScanType] = useState<string | null>(null);
   const [effortRange, setEffortRange] = useState<[number, number]>([1, 10]);
   const [riskRange, setRiskRange] = useState<[number, number]>([1, 10]);
+  const [sortMode, setSortMode] = useState<TriageSortMode>('default');
 
   // Load ideas + tasks from store on mount / project change. Tasks are
   // needed so the inline scoreboard rank on each triage card has signal
@@ -289,13 +311,16 @@ export default function IdeaTriagePage() {
     setSummaryFired(true);
   }, [pendingCount, acceptedCount, rejectedCount, sessionStart, summaryFired, addToastTriage, tx, dt.triage_session_summary]);
 
-  const visibleStack = pendingIdeas.slice(0, 3);
+  // Apply the chosen ordering on top of the filtered pending set. 'default'
+  // keeps store order (newest scan first); the others reorder the swipe stack.
+  const sortedPending = applyTriageSort(pendingIdeas, sortMode);
+  const visibleStack = sortedPending.slice(0, 3);
 
   // Keep a ref to always have the latest pending ideas — avoids stale closure
   // in the keyboard handler when the effect teardown/re-register races with
   // rapid keypresses after a triage action.
-  const pendingRef = useRef(pendingIdeas);
-  pendingRef.current = pendingIdeas;
+  const pendingRef = useRef(sortedPending);
+  pendingRef.current = sortedPending;
 
   const handleSwipe = useCallback((direction: 'left' | 'right') => {
     const idea = pendingRef.current[0];
@@ -329,6 +354,12 @@ export default function IdeaTriagePage() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [handleSwipe]);
+
+  const sortOptions: { mode: TriageSortMode; label: string; tip?: string }[] = [
+    { mode: 'default', label: dt.sort_default },
+    { mode: 'value', label: dt.sort_value, tip: dt.sort_value_tip },
+    { mode: 'quick', label: dt.sort_quick, tip: dt.sort_quick_tip },
+  ];
 
   return (
     <ContentBox>
@@ -374,6 +405,31 @@ export default function IdeaTriagePage() {
         <div className="flex gap-2 h-full min-h-[500px]">
           {/* Left sidebar: category + scan type filters + effort/risk filter */}
           <div className="w-52 flex-shrink-0 space-y-1">
+            {/* Order — float the strongest ideas to the top of the swipe stack */}
+            <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
+              {dt.sidebar_sort}
+            </h3>
+            <div className="flex flex-wrap gap-1 mb-3 pb-3 border-b border-border/15">
+              {sortOptions.map((opt) => {
+                const active = sortMode === opt.mode;
+                return (
+                  <button
+                    key={opt.mode}
+                    onClick={() => setSortMode(opt.mode)}
+                    title={opt.tip}
+                    aria-pressed={active}
+                    className={`px-2 py-1 rounded-card typo-caption font-medium transition-colors ${
+                      active
+                        ? 'bg-primary/10 text-foreground border border-primary/25'
+                        : 'text-foreground hover:bg-primary/5 border border-transparent'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <h3 className="text-md uppercase tracking-wider text-primary font-medium mb-2">
               {dt.sidebar_category}
             </h3>
