@@ -298,7 +298,10 @@
     "replay_no_output": "No se registró salida para este paso.",
     "replay_rework_one": "{count} ronda de retrabajo",
     "replay_rework_other": "{count} rondas de retrabajo",
-    "replay_duration": "{seconds} s"
+    "replay_duration": "{seconds} s",
+    "identity_section": "Identidad del equipo",
+    "identity_icon_label": "Icono",
+    "identity_hint": "Renombrar o recolorear se aplica en todos los lugares donde aparece el equipo. Los campos vaciados quedan sin cambios."
   },
   "memory_created": "Memoria guardada en el registro del equipo",
   "memory_updated": "Memoria actualizada",

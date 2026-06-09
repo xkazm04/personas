@@ -14324,6 +14324,9 @@ export type Translations = {
       red_room_label: string;
       collab_label: string;
       memory_label: string;
+      identity_section: string;
+      identity_icon_label: string;
+      identity_hint: string;
       deck_replay: string;
       replay_exit: string;
       replay_step_of: string;

@@ -13542,7 +13542,10 @@
       "replay_no_output": "এই ধাপের কোনো আউটপুট রেকর্ড হয়নি।",
       "replay_rework_one": "{count}টি পুনঃকাজের রাউন্ড",
       "replay_rework_other": "{count}টি পুনঃকাজের রাউন্ড",
-      "replay_duration": "{seconds} সে."
+      "replay_duration": "{seconds} সে.",
+      "identity_section": "টিমের পরিচয়",
+      "identity_icon_label": "আইকন",
+      "identity_hint": "নাম বা রং বদলালে টিম যেখানে যেখানে দেখা যায় সব জায়গায় প্রযোজ্য হবে। খালি করা ঘর অপরিবর্তিত থাকে।"
     },
     "memory_created": "স্মৃতি টিম লেজারে সংরক্ষিত হয়েছে",
     "memory_updated": "স্মৃতি আপডেট হয়েছে",

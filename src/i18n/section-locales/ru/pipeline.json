@@ -298,7 +298,10 @@
     "replay_no_output": "Для этого шага результат не записан.",
     "replay_rework_one": "{count} раунд доработки",
     "replay_rework_other": "Раундов доработки: {count}",
-    "replay_duration": "{seconds} с"
+    "replay_duration": "{seconds} с",
+    "identity_section": "Идентичность команды",
+    "identity_icon_label": "Значок",
+    "identity_hint": "Переименование и смена цвета применяются везде, где появляется команда. Очищенные поля остаются без изменений."
   },
   "memory_created": "Запись сохранена в журнал команды",
   "memory_updated": "Запись обновлена",

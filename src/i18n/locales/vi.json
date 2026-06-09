@@ -13542,7 +13542,10 @@
       "replay_no_output": "Không có kết quả nào được ghi cho bước này.",
       "replay_rework_one": "{count} vòng làm lại",
       "replay_rework_other": "{count} vòng làm lại",
-      "replay_duration": "{seconds} giây"
+      "replay_duration": "{seconds} giây",
+      "identity_section": "Danh tính nhóm",
+      "identity_icon_label": "Biểu tượng",
+      "identity_hint": "Đổi tên hoặc đổi màu áp dụng ở mọi nơi nhóm xuất hiện. Trường bị xóa trống sẽ giữ nguyên."
     },
     "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
     "memory_updated": "Đã cập nhật ghi nhớ",

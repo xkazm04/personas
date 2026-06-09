@@ -13542,7 +13542,10 @@
       "replay_no_output": "Für diesen Schritt wurde kein Ergebnis aufgezeichnet.",
       "replay_rework_one": "{count} Nacharbeitsrunde",
       "replay_rework_other": "{count} Nacharbeitsrunden",
-      "replay_duration": "{seconds} s"
+      "replay_duration": "{seconds} s",
+      "identity_section": "Team-Identität",
+      "identity_icon_label": "Symbol",
+      "identity_hint": "Umbenennen oder Umfärben gilt überall, wo dieses Team erscheint. Geleerte Felder bleiben unverändert."
     },
     "memory_created": "Eintrag im Team-Gedächtnis gespeichert",
     "memory_updated": "Eintrag aktualisiert",

@@ -13542,7 +13542,10 @@
       "replay_no_output": "이 단계의 출력이 기록되지 않았습니다.",
       "replay_rework_one": "재작업 {count}회",
       "replay_rework_other": "재작업 {count}회",
-      "replay_duration": "{seconds}초"
+      "replay_duration": "{seconds}초",
+      "identity_section": "팀 정체성",
+      "identity_icon_label": "아이콘",
+      "identity_hint": "이름이나 색을 바꾸면 이 팀이 나타나는 모든 곳에 적용됩니다. 비운 필드는 변경되지 않습니다."
     },
     "memory_created": "메모리가 팀 장부에 저장되었습니다",
     "memory_updated": "메모리가 업데이트되었습니다",

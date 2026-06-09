@@ -9,7 +9,7 @@ import { GitHubRepoSelector, parseRepoUrl } from '@/features/plugins/dev-tools/s
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import { useTranslation } from '@/i18n/useTranslation';
 
-const TEAM_COLORS: Record<string, string> = {
+export const TEAM_COLORS: Record<string, string> = {
   '#6366f1': 'Indigo',
   '#8b5cf6': 'Violet',
   '#ec4899': 'Pink',

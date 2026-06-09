@@ -298,7 +298,10 @@
     "replay_no_output": "لم يُسجَّل ناتج لهذه الخطوة.",
     "replay_rework_one": "جولة إعادة عمل واحدة",
     "replay_rework_other": "{count} جولات إعادة عمل",
-    "replay_duration": "{seconds} ث"
+    "replay_duration": "{seconds} ث",
+    "identity_section": "هوية الفريق",
+    "identity_icon_label": "الأيقونة",
+    "identity_hint": "إعادة التسمية أو تغيير اللون تنطبق أينما يظهر هذا الفريق. الحقول المفرغة تبقى دون تغيير."
   },
   "memory_created": "تم حفظ الذاكرة في سجل الفريق",
   "memory_updated": "تم تحديث الذاكرة",

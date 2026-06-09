@@ -298,7 +298,10 @@
     "replay_no_output": "इस चरण का कोई आउटपुट दर्ज नहीं है।",
     "replay_rework_one": "{count} पुनर्कार्य दौर",
     "replay_rework_other": "{count} पुनर्कार्य दौर",
-    "replay_duration": "{seconds} से."
+    "replay_duration": "{seconds} से.",
+    "identity_section": "टीम पहचान",
+    "identity_icon_label": "आइकन",
+    "identity_hint": "नाम या रंग बदलना हर जगह लागू होता है जहाँ यह टीम दिखती है। खाली किए गए फ़ील्ड अपरिवर्तित रहते हैं।"
   },
   "memory_created": "स्मृति टीम लेजर में सहेजी गई",
   "memory_updated": "स्मृति अपडेट हुई",

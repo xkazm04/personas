@@ -13542,7 +13542,10 @@
       "replay_no_output": "このステップの出力は記録されていません。",
       "replay_rework_one": "手戻り {count} 回",
       "replay_rework_other": "手戻り {count} 回",
-      "replay_duration": "{seconds} 秒"
+      "replay_duration": "{seconds} 秒",
+      "identity_section": "チームのアイデンティティ",
+      "identity_icon_label": "アイコン",
+      "identity_hint": "名前や色の変更は、このチームが表示されるすべての場所に反映されます。空にしたフィールドは変更されません。"
     },
     "memory_created": "メモリーをチーム台帳に保存しました",
     "memory_updated": "メモリーを更新しました",

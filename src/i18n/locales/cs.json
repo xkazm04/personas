@@ -13542,7 +13542,10 @@
       "replay_no_output": "Pro tento krok nebyl zaznamenán žádný výstup.",
       "replay_rework_one": "{count} kolo přepracování",
       "replay_rework_other": "{count} kol přepracování",
-      "replay_duration": "{seconds} s"
+      "replay_duration": "{seconds} s",
+      "identity_section": "Identita týmu",
+      "identity_icon_label": "Ikona",
+      "identity_hint": "Přejmenování nebo změna barvy se projeví všude, kde se tým objevuje. Vyprázdněná pole zůstávají beze změny."
     },
     "memory_created": "Záznam uložen do týmové paměti",
     "memory_updated": "Záznam aktualizován",

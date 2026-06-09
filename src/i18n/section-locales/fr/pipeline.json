@@ -298,7 +298,10 @@
     "replay_no_output": "Aucune sortie enregistrée pour cette étape.",
     "replay_rework_one": "{count} cycle de reprise",
     "replay_rework_other": "{count} cycles de reprise",
-    "replay_duration": "{seconds} s"
+    "replay_duration": "{seconds} s",
+    "identity_section": "Identité de l'équipe",
+    "identity_icon_label": "Icône",
+    "identity_hint": "Renommer ou recolorer s'applique partout où l'équipe apparaît. Les champs vidés restent inchangés."
   },
   "memory_created": "Mémoire enregistrée dans le registre de l'équipe",
   "memory_updated": "Mémoire mise à jour",
