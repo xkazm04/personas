@@ -73,6 +73,7 @@ mod tests {
             effort: Some(3),
             impact: Some(8),
             risk: Some(2),
+            priority: None,
             provider: None,
             model: None,
             rejection_reason: None,
