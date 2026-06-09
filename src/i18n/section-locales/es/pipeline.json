@@ -284,6 +284,10 @@
     "board_col_review": "Necesita revisión",
     "board_col_done": "Hecho",
     "board_col_stopped": "Detenido",
-    "board_empty": "Aún no hay asignaciones. Define un objetivo en Orchestrate para iniciar una."
-  }
+    "board_empty": "Aún no hay asignaciones. Define un objetivo en Orchestrate para iniciar una.",
+    "memory_label": "Memoria"
+  },
+  "memory_created": "Memoria guardada en el registro del equipo",
+  "memory_updated": "Memoria actualizada",
+  "memory_deleted": "Memoria eliminada"
 }

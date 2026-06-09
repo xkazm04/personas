@@ -22,6 +22,8 @@ interface TeamMemoryPanelProps {
   memories: TeamMemory[];
   total: number;
   stats: TeamMemoryStats | null;
+  /** `floating` (default) overlays a canvas with a resize handle; `pane` fills its host. */
+  layout?: 'floating' | 'pane';
   onClose: () => void;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
@@ -33,7 +35,7 @@ interface TeamMemoryPanelProps {
 }
 
 export default function TeamMemoryPanel({
-  teamId, memories, total, stats, onClose, onDelete, onImportanceChange,
+  teamId, memories, total, stats, layout = 'floating', onClose, onDelete, onImportanceChange,
   onCreate, onFilter, onLoadMore, onFilterByRun, onEdit,
 }: TeamMemoryPanelProps) {
   const { t } = useTranslation();
@@ -120,23 +122,30 @@ export default function TeamMemoryPanel({
   }, [onFilterByRun]);
 
   const hasRunData = stats?.run_counts && stats.run_counts.length > 0;
+  const isPane = layout === 'pane';
 
   return (
     <div
       ref={panelRef}
-      style={{ width: panelWidth }}
-      className="animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden"
+      style={isPane ? undefined : { width: panelWidth }}
+      className={
+        isPane
+          ? 'h-full w-full max-w-xl flex flex-col rounded-modal border border-primary/15 bg-secondary/30 overflow-hidden'
+          : 'animate-fade-slide-in absolute top-14 left-3 z-30 bg-secondary/95 backdrop-blur-xl border border-primary/15 rounded-modal shadow-elevation-4 overflow-hidden'
+      }
     >
-      {/* Resize handle */}
-      <div
-        className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-10"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          draggingRef.current = true;
-          document.body.style.cursor = 'col-resize';
-          document.body.style.userSelect = 'none';
-        }}
-      />
+      {/* Resize handle (floating layout only) */}
+      {!isPane && (
+        <div
+          className="absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-primary/20 active:bg-primary/30 transition-colors z-10"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            draggingRef.current = true;
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+          }}
+        />
+      )}
       <MemoryPanelHeader
         total={total}
         viewMode={viewMode}
@@ -148,11 +157,11 @@ export default function TeamMemoryPanel({
       />
 
       {viewMode === 'diff' ? (
-        <div className="max-h-80 overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10">
+        <div className={`${isPane ? 'flex-1 min-h-0' : 'max-h-80'} overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10`}>
           <RunDiffView stats={stats} onClose={() => setViewMode('list')} />
         </div>
       ) : viewMode === 'timeline' ? (
-        <div className="max-h-80 overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10">
+        <div className={`${isPane ? 'flex-1 min-h-0' : 'max-h-80'} overflow-y-auto px-2 pb-2 space-y-1 scrollbar-thin scrollbar-thumb-primary/10`}>
           <MemoryTimeline memories={memories} stats={stats} onFilterRun={handleFilterByRun} activeRunFilter={activeRunFilter} />
         </div>
       ) : (
@@ -163,6 +172,7 @@ export default function TeamMemoryPanel({
           searchQuery={searchQuery}
           activeRunFilter={activeRunFilter}
           loadingMore={loadingMore}
+          fill={isPane}
           onCategoryChange={handleCategoryChange}
           onSearchChange={handleSearchChange}
           onClearRunFilter={() => handleFilterByRun(null)}

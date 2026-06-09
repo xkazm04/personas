@@ -13502,8 +13502,12 @@
       "board_col_review": "রিভিউ দরকার",
       "board_col_done": "সম্পন্ন",
       "board_col_stopped": "থামানো হয়েছে",
-      "board_empty": "এখনও কোনো অ্যাসাইনমেন্ট নেই। একটি শুরু করতে Orchestrate-এ লক্ষ্য নির্ধারণ করুন।"
-    }
+      "board_empty": "এখনও কোনো অ্যাসাইনমেন্ট নেই। একটি শুরু করতে Orchestrate-এ লক্ষ্য নির্ধারণ করুন।",
+      "memory_label": "স্মৃতি"
+    },
+    "memory_created": "স্মৃতি টিম লেজারে সংরক্ষিত হয়েছে",
+    "memory_updated": "স্মৃতি আপডেট হয়েছে",
+    "memory_deleted": "স্মৃতি মুছে ফেলা হয়েছে"
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."

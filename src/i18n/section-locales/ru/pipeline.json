@@ -284,6 +284,10 @@
     "board_col_review": "Требует проверки",
     "board_col_done": "Готово",
     "board_col_stopped": "Остановлено",
-    "board_empty": "Назначений пока нет. Задайте цель в Orchestrate, чтобы начать."
-  }
+    "board_empty": "Назначений пока нет. Задайте цель в Orchestrate, чтобы начать.",
+    "memory_label": "Память"
+  },
+  "memory_created": "Запись сохранена в журнал команды",
+  "memory_updated": "Запись обновлена",
+  "memory_deleted": "Запись удалена"
 }

@@ -14301,6 +14301,7 @@ export type Translations = {
       deck_goal_chip_tooltip: string;
       red_room_label: string;
       collab_label: string;
+      memory_label: string;
       deck_phase_paused: string;
       deck_pause: string;
       deck_resume: string;
@@ -14315,6 +14316,9 @@ export type Translations = {
     edit_memory: string;
     delete_memory: string;
     edit_memory_title: string;
+    memory_created: string;
+    memory_updated: string;
+    memory_deleted: string;
     auto_label: string;
     manual_label: string;
     version_history: string;

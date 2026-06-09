@@ -13502,8 +13502,12 @@
       "board_col_review": "Perlu ditinjau",
       "board_col_done": "Selesai",
       "board_col_stopped": "Dihentikan",
-      "board_empty": "Belum ada tugas. Tentukan tujuan di Orchestrate untuk memulai."
-    }
+      "board_empty": "Belum ada tugas. Tentukan tujuan di Orchestrate untuk memulai.",
+      "memory_label": "Memori"
+    },
+    "memory_created": "Memori disimpan ke catatan tim",
+    "memory_updated": "Memori diperbarui",
+    "memory_deleted": "Memori dihapus"
   },
   "auth": {
     "login_timed_out": "Login habis waktu. Silakan coba lagi."

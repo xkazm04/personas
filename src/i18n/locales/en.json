@@ -14295,6 +14295,7 @@
       "deck_goal_chip_tooltip": "Advances a goal — open the Goals hub",
       "red_room_label": "Red room",
       "collab_label": "Collab",
+      "memory_label": "Memory",
       "deck_phase_paused": "Paused",
       "deck_pause": "Pause",
       "deck_resume": "Resume"
@@ -14309,6 +14310,9 @@
     "edit_memory": "Edit memory",
     "delete_memory": "Delete memory",
     "edit_memory_title": "Edit memory entry",
+    "memory_created": "Memory saved to the team ledger",
+    "memory_updated": "Memory updated",
+    "memory_deleted": "Memory deleted",
     "auto_label": "auto",
     "manual_label": "manual",
     "version_history": "Version history",

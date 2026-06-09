@@ -13502,8 +13502,12 @@
       "board_col_review": "レビューが必要",
       "board_col_done": "完了",
       "board_col_stopped": "停止済み",
-      "board_empty": "割り当てはまだありません。開始するには Orchestrate で目標を定義してください。"
-    }
+      "board_empty": "割り当てはまだありません。開始するには Orchestrate で目標を定義してください。",
+      "memory_label": "メモリー"
+    },
+    "memory_created": "メモリーをチーム台帳に保存しました",
+    "memory_updated": "メモリーを更新しました",
+    "memory_deleted": "メモリーを削除しました"
   },
   "auth": {
     "login_timed_out": "ログインがタイムアウトしました。もう一度お試しください。"

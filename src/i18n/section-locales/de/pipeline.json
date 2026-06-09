@@ -284,6 +284,10 @@
     "board_col_review": "Überprüfung erforderlich",
     "board_col_done": "Fertig",
     "board_col_stopped": "Angehalten",
-    "board_empty": "Noch keine Aufgaben. Definiere in Orchestrate ein Ziel, um eine zu starten."
-  }
+    "board_empty": "Noch keine Aufgaben. Definiere in Orchestrate ein Ziel, um eine zu starten.",
+    "memory_label": "Gedächtnis"
+  },
+  "memory_created": "Eintrag im Team-Gedächtnis gespeichert",
+  "memory_updated": "Eintrag aktualisiert",
+  "memory_deleted": "Eintrag gelöscht"
 }

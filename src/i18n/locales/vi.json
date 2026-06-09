@@ -13502,8 +13502,12 @@
       "board_col_review": "Cần xem xét",
       "board_col_done": "Hoàn tất",
       "board_col_stopped": "Đã dừng",
-      "board_empty": "Chưa có phân công nào. Xác định mục tiêu trong Orchestrate để bắt đầu."
-    }
+      "board_empty": "Chưa có phân công nào. Xác định mục tiêu trong Orchestrate để bắt đầu.",
+      "memory_label": "Bộ nhớ"
+    },
+    "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
+    "memory_updated": "Đã cập nhật ghi nhớ",
+    "memory_deleted": "Đã xóa ghi nhớ"
   },
   "auth": {
     "login_timed_out": "Đăng nhập hết thời gian. Vui lòng thử lại."

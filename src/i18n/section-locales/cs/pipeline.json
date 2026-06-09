@@ -284,6 +284,10 @@
     "board_col_review": "Vyžaduje kontrolu",
     "board_col_done": "Hotovo",
     "board_col_stopped": "Zastaveno",
-    "board_empty": "Zatím žádné úkoly. Začněte definováním cíle v Orchestrate."
-  }
+    "board_empty": "Zatím žádné úkoly. Začněte definováním cíle v Orchestrate.",
+    "memory_label": "Paměť"
+  },
+  "memory_created": "Záznam uložen do týmové paměti",
+  "memory_updated": "Záznam aktualizován",
+  "memory_deleted": "Záznam smazán"
 }

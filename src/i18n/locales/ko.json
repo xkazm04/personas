@@ -13502,8 +13502,12 @@
       "board_col_review": "검토 필요",
       "board_col_done": "완료",
       "board_col_stopped": "중지됨",
-      "board_empty": "아직 할당이 없습니다. 시작하려면 Orchestrate에서 목표를 정의하세요."
-    }
+      "board_empty": "아직 할당이 없습니다. 시작하려면 Orchestrate에서 목표를 정의하세요.",
+      "memory_label": "메모리"
+    },
+    "memory_created": "메모리가 팀 장부에 저장되었습니다",
+    "memory_updated": "메모리가 업데이트되었습니다",
+    "memory_deleted": "메모리가 삭제되었습니다"
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."
