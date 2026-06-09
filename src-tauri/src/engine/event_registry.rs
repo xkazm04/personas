@@ -79,6 +79,7 @@ event_names! {
     DESIGN_REVIEW_STATUS       => "design-review-status",
     DESIGN_REVIEW_OUTPUT       => "design-review-output",
     MANUAL_REVIEW_RESOLVED     => "manual-review-resolved",
+    REVIEW_DISPATCH_BLOCKED    => "review-dispatch-blocked",
     REVIEW_MESSAGE_ADDED       => "review-message-added",
     // Persona event-bus signals published when a human review is resolved
     // (by the user OR by Athena). Personas subscribe to drive event-orchestrated

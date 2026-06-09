@@ -311,9 +311,22 @@ export interface PipelineTimingRecord {
  */
 const _perfEntryMap = new Map<string, Map<PipelineStage, number>>();
 
+/** Max distinct executions tracked at once. Traces that never complete (so are
+ *  never cleared by completeTrace/clearTimingRecord) would otherwise accumulate
+ *  forever — evict oldest-first once we exceed this. */
+const _MAX_TRACKED_EXECUTIONS = 64;
+function _evictOldestIfFull<V>(map: Map<string, V>): void {
+  if (map.size < _MAX_TRACKED_EXECUTIONS) return;
+  const oldest = map.keys().next().value;
+  if (oldest !== undefined) map.delete(oldest);
+}
+
 /** Record a stage entry using performance.now(). */
 function _recordStageEntry(executionId: string, stage: PipelineStage): void {
-  if (!_perfEntryMap.has(executionId)) _perfEntryMap.set(executionId, new Map());
+  if (!_perfEntryMap.has(executionId)) {
+    _evictOldestIfFull(_perfEntryMap);
+    _perfEntryMap.set(executionId, new Map());
+  }
   _perfEntryMap.get(executionId)!.set(stage, performance.now());
 }
 
@@ -353,7 +366,10 @@ function _finalizeAllStages(executionId: string): StageTiming[] {
 const _timingRecords = new Map<string, StageTiming[]>();
 
 function _appendTiming(executionId: string, timing: StageTiming): void {
-  if (!_timingRecords.has(executionId)) _timingRecords.set(executionId, []);
+  if (!_timingRecords.has(executionId)) {
+    _evictOldestIfFull(_timingRecords);
+    _timingRecords.set(executionId, []);
+  }
   _timingRecords.get(executionId)!.push(timing);
 }
 

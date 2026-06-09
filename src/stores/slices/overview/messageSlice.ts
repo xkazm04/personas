@@ -236,6 +236,13 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
       set((state) => {
         const next = new Map(state.deliverySummaries);
         for (const s of summaries) next.set(s.messageId, s);
+        // Bound the cache — scrolling through a large message history would
+        // otherwise accumulate one summary per message viewed, indefinitely.
+        // Map preserves insertion order, so drop the oldest past the cap.
+        const CAP = 500;
+        if (next.size > CAP) {
+          for (const key of [...next.keys()].slice(0, next.size - CAP)) next.delete(key);
+        }
         return { deliverySummaries: next };
       });
     } catch (err) { silentCatch("stores/slices/overview/messageSlice:catch1")(err); }
@@ -278,6 +285,17 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
       set((state) => {
         const next = new Map(state.threadReplies);
         next.set(threadId, rawReplies);
+        // Bound the cache — it's deliberately kept across collapse for fast
+        // re-expand, so it would otherwise accumulate one entry (with all its
+        // replies) per thread ever opened. Map preserves insertion order; drop
+        // the oldest past the cap, never the thread just opened.
+        const CAP = 30;
+        if (next.size > CAP) {
+          for (const key of [...next.keys()]) {
+            if (next.size <= CAP) break;
+            if (key !== threadId) next.delete(key);
+          }
+        }
         return { threadReplies: next };
       });
     } catch (err) {

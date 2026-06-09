@@ -90,7 +90,7 @@ export default function ProcessActivityIndicator() {
           className={quickCount > 0 ? "text-amber-400" : "text-foreground"}
         />
         {quickCount > 0 && (
-          <span className="absolute top-2 right-1.5 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-amber-500/25 text-amber-300 shadow-elevation-1">
+          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 min-w-[18px] h-[18px] px-[3px] flex items-center justify-center text-[12px] font-bold leading-none rounded-full bg-amber-500/25 text-amber-300 shadow-elevation-1">
             {quickCount > 9 ? "9+" : quickCount}
           </span>
         )}
@@ -128,7 +128,7 @@ export default function ProcessActivityIndicator() {
           className={monitorAttention > 0 ? "text-amber-400" : running ? "text-primary" : "text-foreground"}
         />
         {monitorAttention > 0 && (
-          <span className="absolute top-2 right-1.5 min-w-[16px] h-[16px] px-[3px] flex items-center justify-center text-[9px] font-bold leading-none rounded-full bg-amber-500/25 text-amber-300 shadow-elevation-1">
+          <span className="absolute bottom-0 left-1/2 -translate-x-1/2 min-w-[18px] h-[18px] px-[3px] flex items-center justify-center text-[12px] font-bold leading-none rounded-full bg-amber-500/25 text-amber-300 shadow-elevation-1">
             {monitorAttention > 9 ? "9+" : monitorAttention}
           </span>
         )}

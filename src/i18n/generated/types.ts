@@ -213,6 +213,12 @@ export type Translations = {
     quick_carry_out_hint: string;
     quick_carrying_out: string;
     learned_view: string;
+    quick_source_unknown: string;
+    channels_goals_tab: string;
+    review_dispatch_blocked: string;
+    channels_author_all: string;
+    channels_author_you: string;
+    channels_author_athena: string;
   };
   common: {
     unknown_error: string;
@@ -12804,6 +12810,17 @@ export type Translations = {
       goal_handoff_active: string;
       goal_handoff_confirm_q: string;
       goal_handoff_start: string;
+      goal_handoff_stop: string;
+      goal_handoff_stop_confirm_q: string;
+      goal_handoff_stop_explain: string;
+      goal_handoff_stopping: string;
+      goal_tasks_label: string;
+      goal_tasks_col_task: string;
+      goal_tasks_col_owner: string;
+      goal_tasks_owner_you: string;
+      goal_tasks_empty: string;
+      goal_tasks_step_running: string;
+      goal_tasks_step_failed: string;
       goal_more_details: string;
       goal_more_details_hint: string;
       goal_detail_activity: string;

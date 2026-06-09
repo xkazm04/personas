@@ -5,15 +5,19 @@
  * relative due date, status, and progress, and opens the goal on click. Done
  * goals drop off the timeline (no urgency left).
  */
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { useSystemStore } from '@/stores/systemStore';
+import * as devApi from '@/api/devTools/devTools';
+import { silentCatch } from '@/lib/silentCatch';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { isOngoing, goalStatusMeta } from './goalStatus';
 import { GoalAtmosphere, SectionLabel, GoalProjectBadge } from './goalsTheme';
+import { GoalDetailDrawer } from './GoalDetailDrawer';
+import { GoalEditorModal } from './GoalEditorModal';
 
 type Bucket = 'overdue' | 'this_week' | 'this_month' | 'later' | 'undated';
 const BUCKET_ORDER: Bucket[] = ['overdue', 'this_week', 'this_month', 'later', 'undated'];
@@ -37,13 +41,31 @@ const BUCKET_ACCENT: Record<Bucket, string> = {
   undated: 'bg-foreground/20',
 };
 
-export function GoalsTimeline({ showProject = false }: { showProject?: boolean } = {}) {
+export function GoalsTimeline({ showProject = false, compact = false, allProjects = false }: { showProject?: boolean; compact?: boolean; allProjects?: boolean } = {}) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
-  const goals = useSystemStore((s) => s.goals);
+  const storeGoals = useSystemStore((s) => s.goals);
   const projects = useSystemStore((s) => s.projects);
-  const setPendingGoalSpotlightId = useSystemStore((s) => s.setPendingGoalSpotlightId);
-  const setGoalsTab = useSystemStore((s) => s.setGoalsTab);
+  const fetchProjects = useSystemStore((s) => s.fetchProjects);
+  const activeProjectId = useSystemStore((s) => s.activeProjectId);
+
+  // Cross-project mode (e.g. the multi-team channel sidebar): show ALL not-done
+  // goals across every project, not just the active one — fetched directly so
+  // it never depends on a single project being loaded into the store.
+  const [allGoals, setAllGoals] = useState<DevGoal[] | null>(null);
+  useEffect(() => {
+    if (!allProjects) return;
+    let cancelled = false;
+    void fetchProjects?.();
+    void devApi.listAllGoals().then((g) => { if (!cancelled) setAllGoals(g); }).catch(silentCatch('GoalsTimeline.allGoals'));
+    return () => { cancelled = true; };
+  }, [allProjects, fetchProjects]);
+  const goals = allProjects ? (allGoals ?? []) : storeGoals;
+
+  // Open the goal modal DIRECTLY (was: spotlight id + switch to the Board tab,
+  // which round-tripped through GoalConstellation to open the same drawer).
+  const [detailGoalId, setDetailGoalId] = useState<string | null>(null);
+  const [editGoal, setEditGoal] = useState<DevGoal | null>(null);
 
   const projectNameById = useMemo(
     () => new Map(projects.map((p) => [p.id, p.name])),
@@ -72,13 +94,12 @@ export function GoalsTimeline({ showProject = false }: { showProject?: boolean }
     return buckets;
   }, [goals]);
 
-  const openGoal = (goalId: string) => {
-    setPendingGoalSpotlightId(goalId);
-    setGoalsTab('board');
-  };
+  const openGoal = (goalId: string) => setDetailGoalId(goalId);
 
-  const dated = BUCKET_ORDER.filter((b) => b !== 'undated').reduce((n, b) => n + grouped[b].length, 0);
-  if (dated === 0 && grouped.undated.length === 0) {
+  // Empty only when there are NO ongoing goals at all (dated OR undated) — the
+  // undated group is first-class, never a reason to show the empty state.
+  const ongoingCount = BUCKET_ORDER.reduce((n, b) => n + grouped[b].length, 0);
+  if (ongoingCount === 0) {
     return (
       <div className="relative flex flex-col items-center justify-center py-16 text-center">
         <GoalAtmosphere />
@@ -91,8 +112,8 @@ export function GoalsTimeline({ showProject = false }: { showProject?: boolean }
 
   let rowIndex = 0;
   return (
-    <div className="relative space-y-5 pb-6">
-      <GoalAtmosphere />
+    <div className={`relative ${compact ? 'space-y-3.5 pb-3' : 'space-y-5 pb-6'}`}>
+      {!compact && <GoalAtmosphere />}
       {BUCKET_ORDER.filter((b) => grouped[b].length > 0).map((b) => (
         <div key={b}>
           <div className="mb-2">
@@ -139,6 +160,23 @@ export function GoalsTimeline({ showProject = false }: { showProject?: boolean }
           </ul>
         </div>
       ))}
+
+      {/* The goal modal opens here, directly — no Board round-trip. */}
+      <GoalDetailDrawer
+        isOpen={!!detailGoalId}
+        goalId={detailGoalId}
+        goalFallback={goals.find((g) => g.id === detailGoalId) ?? null}
+        onClose={() => setDetailGoalId(null)}
+        onEdit={(g) => { setDetailGoalId(null); setEditGoal(g); }}
+      />
+      {activeProjectId && (
+        <GoalEditorModal
+          isOpen={!!editGoal}
+          editGoal={editGoal}
+          projectId={activeProjectId}
+          onClose={() => setEditGoal(null)}
+        />
+      )}
     </div>
   );
 }

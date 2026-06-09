@@ -28,6 +28,10 @@ export function VirtualStream({
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  // Animate ONLY genuinely-new rows in (a row arrived in the last few seconds
+  // and hasn't been shown before). The seen-set means scrolling an old row into
+  // view never re-fires the entrance — critical for the virtualized list.
+  const seenRef = useRef<Set<string>>(new Set());
 
   const labels = useMemo(() => timeGroupLabels(t), [t]);
   const { rows, headerIndexes } = useMemo(
@@ -35,7 +39,7 @@ export function VirtualStream({
     [data, labels],
   );
 
-  const { virtualizer, activeStickyRef } = useGroupedVirtualizer({
+  const { virtualizer } = useGroupedVirtualizer({
     count: rows.length,
     headerIndexes,
     getScrollElement: () => scrollRef.current,
@@ -63,15 +67,32 @@ export function VirtualStream({
                   key={`h:${v.index}:${row.key}`}
                   label={row.label}
                   count={row.count}
-                  pinned={activeStickyRef.current === v.index}
+                  // Non-sticky: the day header scrolls with its rows instead of
+                  // pinning to the top (the pinned "Today" lingered unhelpfully).
+                  pinned={false}
                   start={v.start}
                   height={GROUP_HEADER_SIZE}
                 />
               );
             }
+            const id = row.item.item.id;
+            const at = Date.parse(row.item.item.at);
+            // The recency window is what actually decides whether a row animates;
+            // the seen-set only stops a *fresh* row re-firing when it scrolls out
+            // and back. So it never needs to hold more than the recently-arrived
+            // ids — bound it (clear past a cap) so a long session can't grow it
+            // without limit. Old rows are already excluded by the time gate, so a
+            // clear can't make a stale row animate.
+            const recent = Number.isFinite(at) && Date.now() - at < 8000;
+            const fresh = recent && !seenRef.current.has(id);
+            if (recent) {
+              if (seenRef.current.size > 600) seenRef.current.clear();
+              seenRef.current.add(id);
+            }
             return (
               <div
-                key={`${row.item.team.teamId}:${row.item.item.id}`}
+                key={`${row.item.team.teamId}:${id}`}
+                className={fresh ? 'animate-channel-row-in rounded-card' : undefined}
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: MERGED_ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
               >
                 <MergedRow tagged={row.item} showTeam personaIndex={personaIndex} onOpen={onOpen} />

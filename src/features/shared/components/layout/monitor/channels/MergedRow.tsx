@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { ExternalLink, AlertCircle, Pin } from 'lucide-react';
+import { ExternalLink, AlertCircle, Pin, User } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { RelativeTime } from '@/features/shared/components/display/RelativeTime';
 import { usePersonaIndex } from '@/features/teams/sub_teamWorkspace/teamStudio/boardShared';
@@ -62,12 +62,22 @@ export const MergedRow = memo(function MergedRow({
   const source = authorName(item, persona);
   const { event, tone, message, artifact, isError, alert } = resolveCompact(item);
 
+  // Author differentiation — Athena (autonomous) and your directives must NOT
+  // read as the same actor. Each non-persona author gets its own avatar + tint.
+  const authorMeta = item.kind === 'athena' || item.kind === 'director' ? AUTHOR_KIND_META[item.kind] : null;
+  const avatarBg =
+    item.kind === 'athena' ? 'bg-violet-500/15'
+    : item.kind === 'director' ? 'bg-sky-500/15'
+    : item.kind === 'directive' ? 'bg-emerald-500/15'
+    : 'bg-secondary/60';
+  const rowTint = item.kind === 'athena' ? 'bg-violet-500/[0.05]' : item.kind === 'directive' ? 'bg-emerald-500/[0.04]' : '';
+
   return (
     <button
       type="button"
       onClick={() => onOpen(item)}
       style={{ height: MERGED_ROW_HEIGHT, ...(alert ? { boxShadow: 'inset 2px 0 0 var(--color-status-warning, #f59e0b)' } : { boxShadow: `inset 2px 0 0 ${team.teamColor}` }) }}
-      className="w-full text-left flex items-center gap-2 rounded-card px-2.5 hover:bg-foreground/[0.04] transition-colors"
+      className={`w-full text-left flex items-center gap-2 rounded-card px-2.5 hover:bg-foreground/[0.04] transition-colors ${rowTint}`}
     >
       {showTeam && (
         <span className="inline-flex items-center gap-1 flex-shrink-0 typo-caption text-foreground" title={team.teamName}>
@@ -75,8 +85,13 @@ export const MergedRow = memo(function MergedRow({
           <span className="max-w-[88px] truncate">{team.teamName.replace(/^SDLC[ —-]*/i, '') || team.teamName}</span>
         </span>
       )}
-      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-secondary/60 flex-shrink-0">
-        {persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" /> : item.kind === 'memory' ? <Pin className="w-3 h-3 text-amber-300/80" /> : alert ? <AlertCircle className="w-3 h-3 text-status-warning" /> : <span className="typo-caption text-foreground">·</span>}
+      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full flex-shrink-0 ${avatarBg}`}>
+        {persona ? <PersonaIcon icon={persona.icon} color={persona.color} size="w-3 h-3" />
+          : authorMeta ? <authorMeta.Icon className={`w-3 h-3 ${authorMeta.iconColor}`} />
+          : item.kind === 'directive' ? <User className="w-3 h-3 text-emerald-400" />
+          : item.kind === 'memory' ? <Pin className="w-3 h-3 text-amber-300/80" />
+          : alert ? <AlertCircle className="w-3 h-3 text-status-warning" />
+          : <span className="typo-caption text-foreground">·</span>}
       </span>
       <span className="typo-caption font-medium flex-shrink-0 max-w-[110px] truncate" style={{ color: accent }}>{source}</span>
       <span className={`typo-caption uppercase tracking-wider flex-shrink-0 ${tone}`}>{event}</span>

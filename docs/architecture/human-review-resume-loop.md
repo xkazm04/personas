@@ -158,6 +158,58 @@ Overview = deep workspace) but make them feel like one system:
      the data exists on the binding but nothing consumes it yet (it would enable
      a future capability filter). Defer until that filter is built.
 
+## Findings from live approval testing (2026-06-09)
+
+Drove real approvals through the exact backend the bubble/stepper invoke
+(`dispatch_review_action` via the test-automation bridge) against the live
+pending queue, then diffed the DB for the expected reactions.
+
+**What fires correctly on every approval (confirmed):** the review resolves
+(status→approved, chosen branch recorded in `reviewer_notes`); the learning
+memory is written (team `decision`/imp-7); the `review_decision.approved` event
+is published to the bus.
+
+**Status: all five gaps fixed + verified live (2026-06-09).** Each was reproduced
+against the live queue, fixed, and re-tested end-to-end:
+- GAP 1 → blocked dispatch now emits `REVIEW_DISPATCH_BLOCKED` → warning toast.
+- GAP 2 → resume targets the assignment's *failed* step(s); verified an
+  `awaiting_review` assignment went → `running`, its failed step `failed`→`running`.
+- GAP 3 → `bridge_review_decision_to_channel` posts "🧑 Human approved …" to the
+  team channel; verified a new channel message on approval.
+- GAP 4 → held-team approvals no longer spawn a detached run (resume IS the
+  carry-out); verified persona executions unchanged.
+- GAP 5 → `record_review_goal_signal` writes a `human_review_approved`
+  `dev_goal_signal` immediately; verified the goal's signal count incremented.
+  Progress advance still flows via GAP 2 → completion → `apply_resolved_goal_progress`.
+
+**Original gaps (as uncovered — for reference):**
+
+- **GAP 1 — silent failure on `needs_credentials` personas (~38%: 11/29 pending).**
+  `execute_persona_inner` returns `Err` when `persona.setup_status ==
+  "needs_credentials"`; the Phase-4 dispatch swallows it (best-effort `warn`),
+  so the user sees the "Carrying out: …" toast but **no run spawns and there is
+  no feedback**. Fix: surface the block (toast / `raise_incident` "can't carry
+  out — needs a credential"), don't swallow.
+- **GAP 2 — Phase-1 resume targets the WRONG step.** The held-check keys on the
+  review's *linked* step (the one whose execution emitted the review — typically
+  `done`), not the assignment's actual *failed* blocking step. Verified: an
+  assignment with 4 `done` + 1 `failed` step stayed `awaiting_review` after
+  approval (failed step not reset), and a **redundant standalone run** spawned
+  instead. Fix: resume the assignment's failed/held step(s), independent of which
+  step the review linked.
+- **GAP 3 — approval is invisible in the team channel.** The user's #1 expected
+  reaction ("message in channels") never happens: `review_decision.*` is on the
+  bus but is NOT bridged to `team_channel_messages`. The team sees no "human
+  approved/decided X" post (only Athena's own channel reactions appear). Fix:
+  bridge review-decisions into the team channel (like `bridge_verdicts_to_channel`).
+- **GAP 4 — dispatch spawns a DETACHED run, not assignment-advancing.** Even
+  when a run does spawn (ready persona), it's a fresh standalone execution
+  disconnected from the team assignment, so the blocked pipeline doesn't advance.
+  For team-context reviews, "carry out" should advance the ASSIGNMENT (resume /
+  re-dispatch the step), not run the persona in isolation.
+- **GAP 5 — no goal adjustment** on review approval (goals are a separate
+  decision flow; review decisions don't touch `goal_progress`).
+
 ## Deferred — pending a driver
 
 Two items are intentionally NOT built yet because they have no current consumer

@@ -72,6 +72,14 @@ export interface PerfSnapshot {
   dom: {
     nodeCount: number;
   };
+  /** JS heap (Chromium `performance.memory`). Present in WebView2; `null` where
+   *  the non-standard API is unavailable. Bytes. The honest "real memory" read
+   *  for prod-build perf measurement (dev heap is inflated by Vite/HMR). */
+  memory: {
+    usedJSHeapSize: number;
+    totalJSHeapSize: number;
+    jsHeapSizeLimit: number;
+  } | null;
   diagnostics?: {
     ipcSubscribed: boolean;
   };
@@ -195,9 +203,24 @@ function snapshot(): PerfSnapshot {
     dom: {
       nodeCount: document.querySelectorAll('*').length,
     },
+    memory: readJsHeap(),
     diagnostics: {
       ipcSubscribed: unsubscribeIpc !== null,
     },
+  };
+}
+
+/** Read Chromium's non-standard `performance.memory` if present (WebView2 has
+ *  it). Returns null elsewhere so callers can degrade gracefully. */
+function readJsHeap(): PerfSnapshot['memory'] {
+  const mem = (performance as Performance & {
+    memory?: { usedJSHeapSize: number; totalJSHeapSize: number; jsHeapSizeLimit: number };
+  }).memory;
+  if (!mem) return null;
+  return {
+    usedJSHeapSize: mem.usedJSHeapSize,
+    totalJSHeapSize: mem.totalJSHeapSize,
+    jsHeapSizeLimit: mem.jsHeapSizeLimit,
   };
 }
 

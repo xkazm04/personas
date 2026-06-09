@@ -1,5 +1,5 @@
 import type { TeamChannelItem } from '@/lib/bindings/TeamChannelItem';
-import type { FeedFilter } from './types';
+import type { FeedFilter, AuthorFilter } from './types';
 
 /* The combined-stream noise filter. Pure + standalone so it can be unit-tested. */
 
@@ -15,5 +15,13 @@ export function matchesFilter(item: TeamChannelItem, filter: FeedFilter): boolea
   if (filter === 'alerts') return isAlert || item.kind === 'directive';
   // 'signal' — drop routine step churn, keep everything with human meaning.
   if (item.kind === 'step' && ROUTINE_STEPS.has(item.label)) return false;
+  return true;
+}
+
+/** True when an item matches the author filter (who acted). */
+export function matchesAuthor(item: TeamChannelItem, author: AuthorFilter): boolean {
+  if (author === 'all') return true;
+  if (author === 'you') return item.kind === 'directive';
+  if (author === 'athena') return item.kind === 'athena';
   return true;
 }

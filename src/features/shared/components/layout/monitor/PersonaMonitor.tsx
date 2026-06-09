@@ -7,11 +7,12 @@
 // bottom-right. Reviews and messages get their own badges. The global fleet
 // pulse lives in the app chrome (see FleetActivityStrip), not here.
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Activity, Mail, Layers, ChevronDown, Wrench, Search, MessagesSquare } from 'lucide-react';
 import { PersonaIcon } from '@/features/shared/components/display/PersonaIcon';
 import { useReducedMotion } from '@/hooks/utility/interaction/useMotion';
+import FleetActivityStrip from '@/features/shared/components/layout/FleetActivityStrip';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useDebounce } from '@/hooks/utility/timing/useDebounce';
 import { useSystemStore } from '@/stores/systemStore';
@@ -24,10 +25,9 @@ import { MonitorDrawer } from './MonitorDrawer';
 import { MonitorChannelGrid } from './channels';
 import {
   buildMonitorModel, SEVERITY_META,
-  processStatusMeta, processStatusLabel, severityLabel, elapsedStr, severityBucket,
+  processStatusMeta, processStatusLabel, elapsedStr,
   pillarVisual, captionDescriptor, primaryDrawerSection, healthSegments, HEALTH_TONE_CLASS,
-  summarizeFleet,
-  type PersonaCardModel, type SeverityBucket, type ProcessEntry, type DrawerSection,
+  type PersonaCardModel, type ProcessEntry, type DrawerSection,
   type CaptionDescriptor,
 } from './monitorModel';
 
@@ -38,7 +38,6 @@ interface PersonaMonitorProps {
   onClose: () => void;
 }
 
-const SEVERITIES: SeverityBucket[] = ['critical', 'warning', 'info'];
 
 interface Selection {
   personaId: string;
@@ -129,12 +128,22 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!anyRunning) return;
+    // Only fleet view reads `now` (elapsed-time on cards + SystemBand). In
+    // channel view nothing consumes it, so ticking there would re-render the
+    // whole channel workspace once a second for nothing — gate it out.
+    if (!anyRunning || viewMode !== 'fleet') return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [anyRunning]);
+  }, [anyRunning, viewMode]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
+  // Stable open handler (takes personaId) so memoized PersonaCardTiles don't
+  // re-render on every `now` tick just because an inline onOpen closure changed
+  // identity. Keyed by personaId at call time inside the card.
+  const handleCardSelect = useCallback(
+    (personaId: string, section: DrawerSection) => setSelection({ personaId, section }),
+    [],
+  );
   const selectedCard = useMemo(
     () => cards.find((c) => c.personaId === selection?.personaId) ?? null,
     [cards, selection],
@@ -150,12 +159,6 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [selection, onClose]);
 
-  const severityCounts = useMemo(() => {
-    const c: Record<SeverityBucket, number> = { critical: 0, warning: 0, info: 0 };
-    for (const r of reviews) c[severityBucket(r.severity)] += 1;
-    return c;
-  }, [reviews]);
-
   const selectedPersona = useMemo(
     () => personas.find((p) => p.id === selection?.personaId) ?? null,
     [personas, selection],
@@ -165,9 +168,6 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   // alternative is a follow-up). Rendered behind everything at low opacity so
   // it reads as premium texture, not a competing foreground.
   const isDark = useIsDarkTheme();
-
-  // Fleet rollup powers the live-cost chip.
-  const fleet = useMemo(() => summarizeFleet(displayCards), [displayCards]);
 
   // The overlay is fully opaque (was bg-background/98 + backdrop-blur-xl): the
   // blur was invisible at 98% opacity but forced the GPU to re-composite the
@@ -204,19 +204,6 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {fleet.running > 0 && (
-            <span
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary typo-body-lg tabular-nums"
-              title={tx(t.monitor.live_chip_title, { tools: fleet.liveToolCalls })}
-            >
-              <span className="relative flex w-1.5 h-1.5">
-                <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />
-                <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-primary" />
-              </span>
-              {tx(t.monitor.live_chip, { running: fleet.running })}
-              {fleet.liveCostUsd > 0 && <span className="text-foreground">· ${fleet.liveCostUsd.toFixed(3)}</span>}
-            </span>
-          )}
           {viewMode === 'fleet' && (
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-foreground pointer-events-none" />
@@ -272,23 +259,6 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
               {t.monitor.channels_mode}
             </button>
           )}
-          {SEVERITIES.map((sev) =>
-            severityCounts[sev] > 0 ? (
-              <span
-                key={sev}
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border typo-body-lg ${SEVERITY_META[sev].chip}`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${SEVERITY_META[sev].dot}`} />
-                {severityCounts[sev]} {severityLabel(t, sev).toLowerCase()}
-              </span>
-            ) : null,
-          )}
-          {unreadMessages.length > 0 && (
-            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 typo-body-lg">
-              <Mail className="w-3 h-3" />
-              {unreadMessages.length}
-            </span>
-          )}
           <button
             onClick={onClose}
             className="ml-1 p-1.5 rounded-modal border border-primary/15 text-foreground hover:text-foreground hover:bg-secondary/30 transition-colors"
@@ -298,6 +268,13 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
             <X className="w-4 h-4" />
           </button>
         </div>
+      </div>
+
+      {/* Live fleet pulse — the same executions bar shown under the titlebar
+          (reused), so running/queued executions are visible right in the header
+          instead of static count badges. */}
+      <div className="relative flex-shrink-0 h-2.5 border-b border-primary/10">
+        <FleetActivityStrip />
       </div>
 
       {/* System band — app-level activity with no persona (fleet view only) */}
@@ -361,7 +338,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                             card={card}
                             now={now}
                             isSelected={card.personaId === selection?.personaId}
-                            onOpen={(section) => setSelection({ personaId: card.personaId, section })}
+                            onSelect={handleCardSelect}
                           />
                         ))}
                       </div>
@@ -381,7 +358,7 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
                   card={card}
                   now={now}
                   isSelected={card.personaId === selection?.personaId}
-                  onOpen={(section) => setSelection({ personaId: card.personaId, section })}
+                  onSelect={handleCardSelect}
                 />
               ))}
             </div>
@@ -540,11 +517,12 @@ interface PersonaCardTileProps {
   card: PersonaCardModel;
   now: number;
   isSelected: boolean;
-  onOpen: (section: DrawerSection) => void;
+  onSelect: (personaId: string, section: DrawerSection) => void;
 }
 
-function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps) {
+function PersonaCardTileImpl({ card, now, isSelected, onSelect }: PersonaCardTileProps) {
   const { t, tx } = useTranslation();
+  const open = (section: DrawerSection) => onSelect(card.personaId, section);
   // Looping opacity animations slip through the global <MotionConfig
   // reducedMotion> (which only suppresses one-shot transforms), so gate the
   // top-strip pulse explicitly. Reduced-motion users see a steady mid-opacity
@@ -582,7 +560,7 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
       {/* Hover quick-open — opens the capabilities drawer to quick-fire. */}
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); onOpen('capabilities'); }}
+        onClick={(e) => { e.stopPropagation(); open('capabilities'); }}
         aria-label={`${card.personaName} — ${t.monitor.view_capabilities}`}
         title={t.monitor.view_capabilities}
         className="absolute top-1.5 right-1.5 z-10 flex items-center justify-center w-5 h-5 rounded-full border border-primary/20 bg-background/70 text-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity hover:text-primary hover:border-primary/40"
@@ -595,7 +573,7 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
         {/* Title is the primary open affordance for every card. */}
         <button
           type="button"
-          onClick={(e) => { e.stopPropagation(); onOpen(primary); }}
+          onClick={(e) => { e.stopPropagation(); open(primary); }}
           className={`self-start text-left typo-body font-semibold leading-snug line-clamp-2 rounded-[2px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 ${
             muted ? 'text-foreground/60 hover:text-foreground/90' : 'text-foreground/95 hover:text-primary'
           }`}
@@ -608,7 +586,7 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
           {desc.target ? (
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onOpen(desc.target!); }}
+              onClick={(e) => { e.stopPropagation(); open(desc.target!); }}
               className={`self-start typo-caption font-medium ${v.captionText} hover:underline focus-visible:outline-none focus-visible:underline tabular-nums`}
               aria-label={`${caption} — ${t.monitor.open_activity}`}
             >
@@ -637,7 +615,7 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
                   count={card.reviews.length}
                   className={SEVERITY_META[card.topReviewSeverity].badge}
                   icon={SEVERITY_META[card.topReviewSeverity].icon}
-                  onClick={(e) => { e.stopPropagation(); onOpen('reviews'); }}
+                  onClick={(e) => { e.stopPropagation(); open('reviews'); }}
                 />
               )}
               {card.messages.length > 0 && (
@@ -646,7 +624,7 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
                   count={card.messages.length}
                   className="bg-cyan-500/15 text-cyan-300 border-cyan-500/30"
                   icon={Mail}
-                  onClick={(e) => { e.stopPropagation(); onOpen('messages'); }}
+                  onClick={(e) => { e.stopPropagation(); open('messages'); }}
                 />
               )}
             </div>
@@ -664,6 +642,25 @@ function PersonaCardTile({ card, now, isSelected, onOpen }: PersonaCardTileProps
     </div>
   );
 }
+
+/**
+ * Memoized so the fleet's 1s `now` tick doesn't re-render every card. The card
+ * object is referentially stable across a tick (buildMonitorModel only re-runs
+ * when real data changes) and `onSelect` is now a stable callback, so the only
+ * prop that differs on a tick is `now` — and only a *running* card actually
+ * renders live elapsed time. Idle cards skip the re-render entirely.
+ */
+const PersonaCardTile = memo(PersonaCardTileImpl, (prev, next) => {
+  if (
+    prev.card !== next.card ||
+    prev.isSelected !== next.isSelected ||
+    prev.onSelect !== next.onSelect
+  ) {
+    return false; // a real prop changed → re-render
+  }
+  // Only `now` differs: re-render running cards (live elapsed), skip idle ones.
+  return next.card.running === 0;
+});
 
 interface AttentionBadgeProps {
   label: string;

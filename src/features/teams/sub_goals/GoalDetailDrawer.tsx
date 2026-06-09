@@ -13,9 +13,8 @@
  */
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  Target, X, Plus, Trash2, Check, Circle, CheckCircle2, AlertCircle,
-  Clock, Users, ListChecks, Activity, Pencil, SkipForward, Ban, GitMerge, ArrowRight,
-  ChevronRight, ChevronDown,
+  Target, X, Plus, Trash2, Check, Circle, CheckCircle2,
+  Users, ListChecks, Activity, Pencil, GitMerge, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect } from '@/features/shared/components/forms/ThemedSelect';
@@ -30,9 +29,10 @@ import { toastCatch, silentCatch } from '@/lib/silentCatch';
 import * as devApi from '@/api/devTools/devTools';
 import {
   listTeamAssignmentsForGoal, listTeamAssignmentSteps, resolveTeamAssignmentReview,
-  setTeamAssignmentGoal, advanceTeamGoal,
+  setTeamAssignmentGoal, advanceTeamGoal, abortTeamAssignment,
 } from '@/api/pipeline/assignments';
 import { useSystemStore } from '@/stores/systemStore';
+import { useAgentStore } from '@/stores/agentStore';
 import type { DevGoal } from '@/lib/bindings/DevGoal';
 import type { DevGoalItem } from '@/lib/bindings/DevGoalItem';
 import type { DevGoalSignal } from '@/lib/bindings/DevGoalSignal';
@@ -42,6 +42,7 @@ import type { TeamAssignmentStep } from '@/lib/bindings/TeamAssignmentStep';
 import type { TeamAssignment } from '@/lib/bindings/TeamAssignment';
 import { GoalStatusBadge } from './GoalStatusBadge';
 import { GoalHandoffPanel } from './GoalHandoffPanel';
+import { GoalTaskTable } from './GoalTaskTable';
 import { isComplete } from './goalStatus';
 
 /** Dependency kinds the drawer authors (free-text on the wire; cycle-checked
@@ -55,22 +56,32 @@ interface Props {
   goalId: string | null;
   /** Opens the GoalEditorModal in edit mode for this goal. */
   onEdit: (goal: DevGoal) => void;
+  /** Fallback goal object for goals NOT in the active-project store (e.g. the
+   *  cross-project channel sidebar). Used when the store lookup misses. */
+  goalFallback?: DevGoal | null;
 }
 
 /** Neutral chip for team-side statuses (queued/running/awaiting_review/…). */
 const TEAM_CHIP = 'text-foreground border-primary/15 bg-primary/5';
 
-function stepIsDone(status: string) {
-  return status === 'done' || status === 'skipped';
+/** Assignment statuses that mean "the team is actively on this goal". */
+function isActiveAssignment(status: string) {
+  return status === 'queued' || status === 'running' || status === 'awaiting_review';
 }
 
-export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
+export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit, goalFallback = null }: Props) {
   const { t } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const allGoals = useSystemStore((s) => s.goals);
-  const goal = useSystemStore((s) => s.goals.find((g) => g.id === goalId) ?? null);
+  const storeGoal = useSystemStore((s) => s.goals.find((g) => g.id === goalId) ?? null);
+  // Fall back to the passed object for cross-project goals not in the store.
+  const goal = storeGoal ?? (goalFallback && goalFallback.id === goalId ? goalFallback : null);
   const updateGoal = useSystemStore((s) => s.updateGoal);
+  const recordGoalSignal = useSystemStore((s) => s.recordGoalSignal);
   const projects = useSystemStore((s) => s.projects);
+  const personas = useAgentStore((s) => s.personas);
+  // persona id → persona, for the unified task table's Owner cell.
+  const personaById = useMemo(() => new Map(personas.map((p) => [p.id, p])), [personas]);
 
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<GoalProgressSuggestion | null>(null);
@@ -82,6 +93,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   const [deps, setDeps] = useState<DevGoalDependency[]>([]);
   const [newItem, setNewItem] = useState('');
   const [advancing, setAdvancing] = useState(false);
+  const [aborting, setAborting] = useState(false);
 
   const refresh = useCallback(async () => {
     if (!goalId) return;
@@ -143,6 +155,30 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       toastCatch('Failed to advance goal')(err);
     } finally {
       setAdvancing(false);
+    }
+  };
+
+  // Stop the team working this goal: abort every active assignment (gate-close —
+  // the orchestrator stops launching new steps; an in-flight step finishes on
+  // its own) and log the stop to the goal's activity. The goal itself is kept,
+  // so it can be handed back to the team later. NOTE: deleting a goal would NOT
+  // do this — `team_assignments.goal_id` is a soft link with no FK, so a delete
+  // leaves the team running orphaned; this is the safe "stop" path.
+  const handleAbort = async () => {
+    const active = assignments.filter((a) => isActiveAssignment(a.status));
+    if (active.length === 0) return;
+    setAborting(true);
+    try {
+      await Promise.all(active.map((a) => abortTeamAssignment(a.id, 'Stopped from the goal modal')));
+      if (goalId) {
+        await recordGoalSignal(goalId, 'team_aborted', undefined, 'Team work stopped by the user.')
+          .catch(silentCatch('GoalDetailDrawer.recordAbortSignal'));
+      }
+      await refresh();
+    } catch (err) {
+      toastCatch('Failed to stop the team')(err);
+    } finally {
+      setAborting(false);
     }
   };
 
@@ -224,9 +260,7 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
   // Hand-off state: a team is already working this goal when any linked
   // assignment is queued/running/awaiting-review. hasTeam gates the control —
   // there's no AI team to hand to unless the project has one.
-  const hasActiveAssignment = assignments.some(
-    (a) => a.status === 'queued' || a.status === 'running' || a.status === 'awaiting_review',
-  );
+  const hasActiveAssignment = assignments.some((a) => isActiveAssignment(a.status));
   const hasTeam = !!projects.find((p) => p.id === goal.project_id)?.team_id;
 
   return (
@@ -288,35 +322,18 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
         </div>
       )}
 
-      {/* Checklist — ad-hoc items */}
-      <Section icon={ListChecks} label={dl.goal_detail_checklist}>
-        <ul className="space-y-1.5">
-          {items.map((item) => (
-            <li key={item.id} className="group flex items-center gap-2.5">
-              <button
-                type="button"
-                onClick={() => handleToggleItem(item)}
-                className="shrink-0"
-                aria-label={item.done ? dl.goal_item_mark_undone : dl.goal_item_mark_done}
-              >
-                {item.done
-                  ? <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  : <Circle className="w-4 h-4 text-foreground" />}
-              </button>
-              <span className={`flex-1 typo-body ${item.done ? 'text-foreground line-through opacity-60' : 'text-foreground'}`}>
-                {item.title}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleDeleteItem(item.id)}
-                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-foreground hover:text-red-400"
-                aria-label={t.common.delete}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </li>
-          ))}
-        </ul>
+      {/* Tasks — ONE table merging ad-hoc to-dos + team-assignment steps
+          (de-duped by title; team steps carry the responsible persona, status,
+          output, and awaiting-review intervention). */}
+      <Section icon={ListChecks} label={dl.goal_tasks_label}>
+        <GoalTaskTable
+          steps={steps}
+          items={items}
+          personaById={personaById}
+          onToggleItem={handleToggleItem}
+          onDeleteItem={handleDeleteItem}
+          onResolveStep={handleResolveStep}
+        />
         <div className="flex items-center gap-2 mt-2">
           <input
             value={newItem}
@@ -349,33 +366,18 @@ export function GoalDetailDrawer({ isOpen, onClose, goalId, onEdit }: Props) {
       )}
 
       {/* Hand this goal to the project's AI team — plain-language control with
-          an inline confirm explaining, in plain words, what starting the team
-          will do (replaces the developer-worded "advance" affordance). */}
+          an inline confirm. When the team is already on it, the same panel
+          carries the "Stop the team" (abort) control. (The live team steps are
+          now rows in the Tasks table above, so awaiting-review intervention is
+          never buried.) */}
       {!isComplete(goal.status) && hasTeam && (
         <GoalHandoffPanel
           hasActiveAssignment={hasActiveAssignment}
           advancing={advancing}
           onAdvance={handleAdvance}
+          onAbort={handleAbort}
+          aborting={aborting}
         />
-      )}
-
-      {/* What the AI team is doing right now — kept OUTSIDE the fold so an
-          awaiting-review step (the only in-drawer intervention) is never buried. */}
-      {steps.length > 0 && (
-        <Section icon={Users} label={dl.goal_detail_team_steps}>
-          <ul className="space-y-1.5">
-            {steps.map((step) => (
-              <StepRow
-                key={step.id}
-                step={step}
-                statusLabel={tokenLabel(t, 'execution', step.status)}
-                skipLabel={dl.goal_intervene_skip}
-                abortLabel={dl.goal_intervene_abort}
-                onResolve={handleResolveStep}
-              />
-            ))}
-          </ul>
-        </Section>
       )}
 
       {/* More details — secondary / power-user surfaces (dependency authoring,
@@ -505,74 +507,6 @@ function Section({ icon: Icon, label, children, flush = false }: { icon: typeof 
       </div>
       {children}
     </div>
-  );
-}
-
-/**
- * One linked team-assignment step. The title row is collapsed by default; when
- * the step produced an `outputSummary` (the work the role actually did), a
- * chevron expands it as markdown — so a goal's progress is reviewable at a
- * high level instead of a bare title. Awaiting-review steps keep their inline
- * skip/abort intervention.
- */
-function StepRow({
-  step, statusLabel, skipLabel, abortLabel, onResolve,
-}: {
-  step: TeamAssignmentStep;
-  statusLabel: string;
-  skipLabel: string;
-  abortLabel: string;
-  onResolve: (stepId: string, action: 'skip' | 'abort') => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const awaiting = step.status === 'awaiting_review';
-  const output = step.outputSummary?.trim();
-  const hasOutput = !!output;
-  return (
-    <li className="rounded-card border border-primary/10 bg-card/20">
-      <div className="flex items-center gap-2.5 typo-body px-2.5 py-1.5">
-        <button
-          type="button"
-          onClick={() => hasOutput && setOpen((v) => !v)}
-          className={`shrink-0 ${hasOutput ? 'text-foreground' : 'opacity-0 pointer-events-none'}`}
-          aria-label={open ? 'Collapse step output' : 'Expand step output'}
-          aria-expanded={open}
-        >
-          {open ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
-        </button>
-        {stepIsDone(step.status)
-          ? <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          : awaiting
-            ? <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
-            : <Clock className="w-4 h-4 text-foreground shrink-0" />}
-        <button
-          type="button"
-          onClick={() => hasOutput && setOpen((v) => !v)}
-          className={`flex-1 min-w-0 text-left text-foreground truncate ${hasOutput ? '' : 'cursor-default'}`}
-        >
-          {step.title}
-        </button>
-        {awaiting ? (
-          <span className="flex items-center gap-1 shrink-0">
-            <Button variant="ghost" size="icon-sm" title={skipLabel} onClick={() => onResolve(step.id, 'skip')}>
-              <SkipForward className="w-3.5 h-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon-sm" title={abortLabel} onClick={() => onResolve(step.id, 'abort')}>
-              <Ban className="w-3.5 h-3.5 text-red-400" />
-            </Button>
-          </span>
-        ) : (
-          <span className="typo-caption uppercase tracking-wide text-foreground shrink-0">
-            {statusLabel}
-          </span>
-        )}
-      </div>
-      {open && hasOutput && (
-        <div className="border-t border-primary/10 px-3 py-2 max-h-80 overflow-y-auto">
-          <MarkdownRenderer content={output} className="typo-caption leading-relaxed" />
-        </div>
-      )}
-    </li>
   );
 }
 

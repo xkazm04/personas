@@ -68,6 +68,7 @@ export const EventName = {
   DESIGN_REVIEW_STATUS: 'design-review-status',
   DESIGN_REVIEW_OUTPUT: 'design-review-output',
   MANUAL_REVIEW_RESOLVED: 'manual-review-resolved',
+  REVIEW_DISPATCH_BLOCKED: 'review-dispatch-blocked',
   REVIEW_MESSAGE_ADDED: 'review-message-added',
   // Persona event-bus signals published when a human review is resolved (by the
   // user OR by Athena). Backend bus events personas subscribe to for
@@ -344,6 +345,16 @@ export interface DesignReviewOutputPayload {
   run_id: string;
   test_case_index: number;
   line: string;
+}
+
+/** An approved review's chosen action could not be carried out (the follow-up
+ *  run failed to start — commonly needs_credentials). GAP 1. */
+export interface ReviewDispatchBlockedPayload {
+  reviewId: string;
+  personaId: string;
+  personaName?: string | null;
+  action: string;
+  reason: string;
 }
 
 /** Manual review resolved (commands/design/reviews.rs ManualReviewResolvedEvent). */
@@ -684,6 +695,7 @@ export interface EventPayloadMap {
   [EventName.DESIGN_REVIEW_STATUS]: DesignReviewStatusPayload;
   [EventName.DESIGN_REVIEW_OUTPUT]: DesignReviewOutputPayload;
   [EventName.MANUAL_REVIEW_RESOLVED]: ManualReviewResolvedPayload;
+  [EventName.REVIEW_DISPATCH_BLOCKED]: ReviewDispatchBlockedPayload;
   [EventName.REVIEW_MESSAGE_ADDED]: ReviewMessageAddedPayload;
 
   // Build session

@@ -7,9 +7,9 @@ use tauri::{Emitter, State};
 use tokio::io::AsyncBufReadExt;
 
 use crate::db::models::{
-    CategoryWithCount, ConnectorWithCount, CreateDesignReviewInput, CreatePersonaEventInput,
-    CreateReviewMessageInput, ImportDesignReviewInput, LearnedMemoryRef, ManualReviewCounts,
-    ManualReviewPage, PersonaDesignReview, PersonaManualReview, ReviewMessage,
+    CategoryWithCount, ConnectorWithCount, CreateChannelMessageInput, CreateDesignReviewInput,
+    CreatePersonaEventInput, CreateReviewMessageInput, ImportDesignReviewInput, LearnedMemoryRef,
+    ManualReviewCounts, ManualReviewPage, PersonaDesignReview, PersonaManualReview, ReviewMessage,
 };
 use crate::db::repos::communication::{
     events as event_repo, manual_reviews as manual_repo, reviews as repo,
@@ -1016,6 +1016,19 @@ struct ManualReviewResolvedEvent {
     learned: Option<LearnedMemoryRef>,
 }
 
+/// Emitted when an approved review's chosen action could NOT be carried out
+/// (the follow-up run failed to start — commonly `needs_credentials`). GAP 1:
+/// the decision is still recorded, but the user is told it wasn't executed.
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct ReviewDispatchBlockedEvent {
+    review_id: String,
+    persona_id: String,
+    persona_name: Option<String>,
+    action: String,
+    reason: String,
+}
+
 #[tauri::command]
 pub fn update_manual_review_status(
     state: State<'_, Arc<AppState>>,
@@ -1059,6 +1072,11 @@ pub fn update_manual_review_status(
         // never published this.
         publish_review_decision(&state.db, &app, &review);
 
+        // GAP 3: surface the decision in the source persona's team channel.
+        bridge_review_decision_to_channel(&state, &review);
+        // GAP 5: mark the human decision on the linked goal timeline.
+        record_review_goal_signal(&state, &review);
+
         // Resume-loop (Phase 1): if this review gated a team step that is still
         // held, an APPROVAL resumes the blocked assignment. Shared with the
         // Athena path so resolution reacts identically regardless of who acted.
@@ -1091,31 +1109,40 @@ pub(crate) fn react_to_review_decision(
     ) {
         return false;
     }
-    let (Some(assignment_id), Some(step_id)) =
-        (review.assignment_id.clone(), review.step_id.clone())
-    else {
-        return false; // advisory review — nothing linked to resume
+    let Some(assignment_id) = review.assignment_id.clone() else {
+        return false; // advisory review — not linked to a team assignment
     };
 
-    // Only resume when the work is genuinely held; otherwise the run moved on.
-    let held = {
-        match state.db.get() {
-            Ok(conn) => conn
+    // GAP 2 fix: resume the assignment's ACTUAL blocking step(s), not the
+    // review's linked step (the linked step is the one whose run emitted the
+    // review — typically `done`; the blocker is a DIFFERENT `failed` step). Only
+    // act when the assignment is genuinely held (awaiting_review / paused).
+    let (asg_held, failed_steps): (bool, Vec<String>) = match state.db.get() {
+        Ok(conn) => {
+            let held = conn
                 .query_row(
-                    "SELECT 1 FROM team_assignments a
-                     JOIN team_assignment_steps s ON s.assignment_id = a.id
-                     WHERE a.id = ?1 AND s.id = ?2
-                       AND a.status IN ('awaiting_review','paused')
-                       AND s.status = 'failed' LIMIT 1",
-                    rusqlite::params![assignment_id, step_id],
+                    "SELECT 1 FROM team_assignments
+                     WHERE id = ?1 AND status IN ('awaiting_review','paused') LIMIT 1",
+                    rusqlite::params![assignment_id],
                     |_| Ok(()),
                 )
-                .is_ok(),
-            Err(_) => false,
+                .is_ok();
+            let mut steps = Vec::new();
+            if held {
+                if let Ok(mut stmt) = conn.prepare(
+                    "SELECT id FROM team_assignment_steps WHERE assignment_id = ?1 AND status = 'failed'",
+                ) {
+                    if let Ok(rows) = stmt.query_map(rusqlite::params![assignment_id], |r| r.get::<_, String>(0)) {
+                        steps.extend(rows.flatten());
+                    }
+                }
+            }
+            (held, steps)
         }
+        Err(_) => (false, Vec::new()),
     };
-    if !held {
-        tracing::debug!(review_id = %review.id, "review resolved but linked step not held — no resume");
+    if !asg_held {
+        tracing::debug!(review_id = %review.id, "review linked an assignment that is not held — no resume");
         return false;
     }
 
@@ -1123,24 +1150,37 @@ pub(crate) fn react_to_review_decision(
     let engine = state.engine.clone();
     let embedding_manager =
         crate::commands::teams::assignments::embedding_manager_for_state(state);
-    match crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
-        pool,
-        app.clone(),
-        engine,
-        embedding_manager,
-        &assignment_id,
-        &[step_id.clone()],
-    ) {
-        Ok(()) => tracing::info!(
-            review_id = %review.id, assignment_id = %assignment_id, step_id = %step_id,
-            "Resumed blocked team step on review approval"
-        ),
-        Err(e) => tracing::warn!(
-            review_id = %review.id, error = %e,
-            "Failed to resume blocked step on review approval"
-        ),
+    if failed_steps.is_empty() {
+        // Held but no failed step (a soft-pause / gate hold) — re-spawn the tick
+        // loop so the assignment advances from its current step states.
+        crate::engine::team_assignment_orchestrator::resume_assignment(
+            pool,
+            app.clone(),
+            engine,
+            embedding_manager,
+            assignment_id.clone(),
+        );
+        tracing::info!(review_id = %review.id, assignment_id = %assignment_id, "Resumed held assignment (no failed step) on review approval");
+    } else {
+        match crate::engine::team_assignment_orchestrator::auto_resume_retryable_steps(
+            pool,
+            app.clone(),
+            engine,
+            embedding_manager,
+            &assignment_id,
+            &failed_steps,
+        ) {
+            Ok(()) => tracing::info!(
+                review_id = %review.id, assignment_id = %assignment_id, steps = failed_steps.len(),
+                "Resumed blocked team step(s) on review approval"
+            ),
+            Err(e) => tracing::warn!(
+                review_id = %review.id, error = %e,
+                "Failed to resume blocked steps on review approval"
+            ),
+        }
     }
-    true // took the held-resume path
+    true // took the held-resume path → caller skips the detached carry-out run
 }
 
 /// Phase 4 — resolve a review by CHOOSING a suggested action, then DISPATCH a
@@ -1179,6 +1219,11 @@ pub async fn dispatch_review_action(
     );
     publish_review_decision(&state.db, &app, &review);
 
+    // GAP 3: surface the decision in the source persona's team channel.
+    bridge_review_decision_to_channel(&state, &review);
+    // GAP 5: mark the human decision on the linked goal timeline.
+    record_review_goal_signal(&state, &review);
+
     // If this gated a held team step, resuming IS carrying out the action — don't
     // also spawn a standalone run. Otherwise dispatch a follow-up persona run.
     let resumed = react_to_review_decision(&state, &app, &review);
@@ -1210,14 +1255,166 @@ pub async fn dispatch_review_action(
                 review_id = %review.id, persona_id = %review.persona_id, exec_id = %exec.id,
                 "Dispatched follow-up run from chosen review action"
             ),
-            Err(e) => tracing::warn!(
-                review_id = %review.id, error = %e,
-                "Failed to dispatch follow-up run from review action"
-            ),
+            Err(e) => {
+                // GAP 1 fix: the carry-out run could not start (commonly the
+                // persona is `needs_credentials`). Do NOT swallow — surface it
+                // so the user knows their approval was recorded but the action
+                // wasn't carried out, and why.
+                tracing::warn!(
+                    review_id = %review.id, error = %e,
+                    "Could not dispatch follow-up run from review action — surfacing to user"
+                );
+                let persona_name: Option<String> = state
+                    .db
+                    .get()
+                    .ok()
+                    .and_then(|conn| {
+                        conn.query_row(
+                            "SELECT name FROM personas WHERE id = ?1",
+                            rusqlite::params![review.persona_id],
+                            |r| r.get::<_, String>(0),
+                        )
+                        .ok()
+                    });
+                // A real blocker → an INCIDENT (not a transient toast). Lands in
+                // the Incidents inbox AND — because it's attributed to the
+                // persona — gets surfaced in that persona's run context under
+                // "known incidents to avoid" (runner/team_context.rs
+                // gather_open_incidents), so future runs don't burn tokens
+                // re-attempting blocked work until the user clears it. Deduped
+                // by (source_table, source_id=review.id).
+                let reason = e.to_string();
+                let kind = if reason.to_lowercase().contains("credential") {
+                    "missing_credential"
+                } else {
+                    "blocked_dependency"
+                };
+                let _ = crate::db::repos::execution::audit_incidents::promote(
+                    &state.db,
+                    crate::db::models::CreateAuditIncidentInput {
+                        source_table: "review_dispatch".to_string(),
+                        source_id: review.id.clone(),
+                        persona_id: Some(review.persona_id.clone()),
+                        persona_name: persona_name.clone(),
+                        execution_id: Some(review.execution_id.clone()),
+                        severity: "high".to_string(),
+                        kind: kind.to_string(),
+                        title: format!("Couldn't carry out approved action: {}", review.title),
+                        detail: Some(format!(
+                            "The human approved \"{action}\" but the follow-up run could not start: {reason}"
+                        )),
+                    },
+                );
+                // The bell notification (frontend turns this into a persistent
+                // Notification-Center entry deep-linking to the Incidents inbox).
+                let _ = app.emit(
+                    event_name::REVIEW_DISPATCH_BLOCKED,
+                    ReviewDispatchBlockedEvent {
+                        review_id: review.id.clone(),
+                        persona_id: review.persona_id.clone(),
+                        persona_name,
+                        action: action.clone(),
+                        reason,
+                    },
+                );
+            }
         }
     }
 
     Ok(review)
+}
+
+/// GAP 3 — bridge a resolved review's decision into the source persona's team
+/// channel, so the human's call is VISIBLE to the team (the #1 expected
+/// reaction). Posts a `user`-authored line ("🧑 Human approved …") that the
+/// team's next step injects, mirroring `director::bridge_verdicts_to_channel`.
+/// No-op for solo personas (no `home_team_id`). Best-effort.
+pub(crate) fn bridge_review_decision_to_channel(
+    state: &State<'_, Arc<AppState>>,
+    review: &crate::db::models::PersonaManualReview,
+) {
+    let team_id: Option<String> = state.db.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT home_team_id FROM personas WHERE id = ?1",
+            rusqlite::params![review.persona_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
+    });
+    let Some(team_id) = team_id.filter(|s| !s.is_empty()) else {
+        return; // solo persona — no team channel to post into
+    };
+    let verdict = review.status.as_str();
+    let notes = review
+        .reviewer_notes
+        .as_deref()
+        .map(str::trim)
+        .filter(|n| !n.is_empty());
+    let body = format!(
+        "🧑 Human {verdict} the review \"{}\"{}.",
+        review.title,
+        notes.map(|n| format!(" — {n}")).unwrap_or_default(),
+    );
+    if let Err(e) = crate::db::repos::resources::team_channel::create(
+        &state.db,
+        CreateChannelMessageInput {
+            team_id,
+            author_kind: "user".into(),
+            author_id: None,
+            body,
+            addressed_to: None,
+            reply_to: None,
+            assignment_id: review.assignment_id.clone(),
+            consumer: Some("inject".into()),
+        },
+    ) {
+        tracing::warn!(review_id = %review.id, error = %e, "failed to bridge review decision to team channel");
+    }
+}
+
+/// GAP 5 — goal management. When a resolved review's assignment is linked to a
+/// goal, record an immediate `dev_goal_signal` so the goal timeline reflects
+/// the human's call the moment it's made ("human approved/rejected X"). The
+/// actual progress advance still flows through the existing
+/// orchestrator → `apply_resolved_goal_progress` loop when the (now-resumed,
+/// per GAP 2) assignment completes — this is the *immediate* marker on top.
+/// No-op for reviews not tied to a goal-bearing assignment. Best-effort.
+pub(crate) fn record_review_goal_signal(
+    state: &State<'_, Arc<AppState>>,
+    review: &crate::db::models::PersonaManualReview,
+) {
+    use crate::db::models::ManualReviewStatus;
+    let Some(assignment_id) = review.assignment_id.as_deref() else {
+        return;
+    };
+    let goal_id: Option<String> = state.db.get().ok().and_then(|conn| {
+        conn.query_row(
+            "SELECT goal_id FROM team_assignments WHERE id = ?1",
+            rusqlite::params![assignment_id],
+            |r| r.get::<_, Option<String>>(0),
+        )
+        .ok()
+        .flatten()
+    });
+    let Some(goal_id) = goal_id.filter(|s| !s.is_empty()) else {
+        return; // assignment isn't tied to a goal
+    };
+    let signal_type = match review.status {
+        ManualReviewStatus::Approved => "human_review_approved",
+        ManualReviewStatus::Rejected => "human_review_rejected",
+        _ => "human_review_resolved",
+    };
+    if let Err(e) = crate::db::repos::dev_tools::create_goal_signal(
+        &state.db,
+        &goal_id,
+        signal_type,
+        Some(&review.id),
+        None, // timeline marker, not a progress delta — completion advances progress
+        Some(&review.title),
+    ) {
+        tracing::warn!(review_id = %review.id, error = %e, "failed to record review goal signal");
+    }
 }
 
 /// Publish a `review_decision.{status}` event to the persona event bus so
