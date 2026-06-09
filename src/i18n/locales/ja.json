@@ -10409,7 +10409,16 @@
       "group_archives": "アーカイブ",
       "group_documents": "書類",
       "group_signatures": "署名",
-      "group_other": "他の"
+      "group_other": "他の",
+      "signed": "署名済み",
+      "sidebar_trash": "ゴミ箱",
+      "trash_banner": "削除した項目は7日間ここに保管され、その後完全に削除されます。",
+      "trash_restore": "復元",
+      "trash_empty": "ゴミ箱を空にする",
+      "trash_empty_confirm_title": "{count} 件の項目を完全に削除しますか？",
+      "trash_empty_confirm_body": "ゴミ箱を空にします。これらの項目は復元できません。",
+      "trash_purges_in_days": "あと{days}日で削除",
+      "trash_purges_soon": "まもなく削除"
     },
     "artist": {
       "title": "Artist",

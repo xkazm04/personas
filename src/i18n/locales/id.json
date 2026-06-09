@@ -10409,7 +10409,16 @@
       "group_archives": "Arsip",
       "group_documents": "Dokumen",
       "group_signatures": "Tanda tangan",
-      "group_other": "Lainnya"
+      "group_other": "Lainnya",
+      "signed": "Ditandatangani",
+      "sidebar_trash": "Sampah",
+      "trash_banner": "Item yang dihapus disimpan di sini selama 7 hari, lalu dihapus permanen.",
+      "trash_restore": "Pulihkan",
+      "trash_empty": "Kosongkan sampah",
+      "trash_empty_confirm_title": "Hapus permanen {count} item?",
+      "trash_empty_confirm_body": "Ini akan mengosongkan sampah. Item tidak dapat dipulihkan.",
+      "trash_purges_in_days": "Dihapus dalam {days} hari",
+      "trash_purges_soon": "Segera dihapus"
     },
     "artist": {
       "title": "Artist",

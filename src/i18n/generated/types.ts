@@ -11232,6 +11232,15 @@ export type Translations = {
       time_days_ago_one: string;
       time_days_ago_other: string;
       signatures_button: string;
+      signed: string;
+      sidebar_trash: string;
+      trash_banner: string;
+      trash_restore: string;
+      trash_empty: string;
+      trash_empty_confirm_title: string;
+      trash_empty_confirm_body: string;
+      trash_purges_in_days: string;
+      trash_purges_soon: string;
       ctx_sign_file: string;
       ctx_verify_file: string;
       ctx_extract_text: string;

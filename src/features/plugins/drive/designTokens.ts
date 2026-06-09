@@ -309,3 +309,32 @@ export function formatRelativeTime(
     ...(sameYear ? {} : { year: "numeric" }),
   });
 }
+
+// ---------------------------------------------------------------------------
+// Trash-entry names
+// ---------------------------------------------------------------------------
+
+// Trash entries are named `<UTC stamp>[-counter]-<original name>` by the
+// backend's move_to_trash (commands/drive.rs). 7-day TTL mirrors
+// TRASH_TTL_SECS on the Rust side.
+const TRASH_NAME_RE =
+  /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(?:-\d+)?-(.+)$/;
+export const TRASH_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Parse a trash entry's name into the original (pre-delete) display name and
+ * the epoch-ms moment the auto-purge will claim it. Names that don't carry
+ * the trash stamp pass through unchanged with a null purge time.
+ */
+export function trashEntryInfo(name: string): {
+  originalName: string;
+  purgeAt: number | null;
+} {
+  const m = TRASH_NAME_RE.exec(name);
+  if (!m) return { originalName: name, purgeAt: null };
+  const [y, mo, d, h, mi, s] = [m[1], m[2], m[3], m[4], m[5], m[6]].map(Number);
+  const purgeAt =
+    Date.UTC(y ?? 0, (mo ?? 1) - 1, d ?? 1, h ?? 0, mi ?? 0, s ?? 0) +
+    TRASH_TTL_MS;
+  return { originalName: m[7] ?? name, purgeAt };
+}

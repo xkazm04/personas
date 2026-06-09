@@ -10409,7 +10409,16 @@
       "group_archives": "Архивы",
       "group_documents": "Документы",
       "group_signatures": "Подписи",
-      "group_other": "Другой"
+      "group_other": "Другой",
+      "signed": "Подписано",
+      "sidebar_trash": "Корзина",
+      "trash_banner": "Удалённые элементы хранятся здесь 7 дней, затем удаляются навсегда.",
+      "trash_restore": "Восстановить",
+      "trash_empty": "Очистить корзину",
+      "trash_empty_confirm_title": "Навсегда удалить элементов: {count}?",
+      "trash_empty_confirm_body": "Корзина будет очищена. Эти элементы нельзя будет восстановить.",
+      "trash_purges_in_days": "Удалится через {days} дн.",
+      "trash_purges_soon": "Скоро удалится"
     },
     "artist": {
       "title": "Artist",

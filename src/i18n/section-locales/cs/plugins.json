@@ -252,7 +252,16 @@
     "group_archives": "Archiv",
     "group_documents": "Dokumenty",
     "group_signatures": "Podpisy",
-    "group_other": "Ostatní"
+    "group_other": "Ostatní",
+    "signed": "Podepsáno",
+    "sidebar_trash": "Koš",
+    "trash_banner": "Smazané položky se zde uchovávají 7 dní, poté jsou trvale odstraněny.",
+    "trash_restore": "Obnovit",
+    "trash_empty": "Vysypat koš",
+    "trash_empty_confirm_title": "Trvale smazat {count} položek?",
+    "trash_empty_confirm_body": "Tím se koš vysype. Tyto položky nebude možné obnovit.",
+    "trash_purges_in_days": "Smazání za {days} d.",
+    "trash_purges_soon": "Brzy smazáno"
   },
   "artist": {
     "title": "Artist",

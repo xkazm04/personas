@@ -252,7 +252,16 @@
     "group_archives": "Archives",
     "group_documents": "Documents",
     "group_signatures": "Signature",
-    "group_other": "Autre"
+    "group_other": "Autre",
+    "signed": "Signé",
+    "sidebar_trash": "Corbeille",
+    "trash_banner": "Les éléments supprimés sont conservés ici 7 jours, puis supprimés définitivement.",
+    "trash_restore": "Restaurer",
+    "trash_empty": "Vider la corbeille",
+    "trash_empty_confirm_title": "Supprimer définitivement {count} éléments ?",
+    "trash_empty_confirm_body": "Cela videra la corbeille. Ces éléments ne pourront pas être récupérés.",
+    "trash_purges_in_days": "Purge dans {days} j",
+    "trash_purges_soon": "Purge imminente"
   },
   "artist": {
     "title": "Studio artistique",

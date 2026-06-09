@@ -252,7 +252,16 @@
     "group_archives": "Archiv",
     "group_documents": "Unterlagen",
     "group_signatures": "Unterschriften",
-    "group_other": "Andere"
+    "group_other": "Andere",
+    "signed": "Signiert",
+    "sidebar_trash": "Papierkorb",
+    "trash_banner": "Gelöschte Elemente bleiben hier 7 Tage erhalten und werden dann endgültig entfernt.",
+    "trash_restore": "Wiederherstellen",
+    "trash_empty": "Papierkorb leeren",
+    "trash_empty_confirm_title": "{count} Elemente endgültig löschen?",
+    "trash_empty_confirm_body": "Dadurch wird der Papierkorb geleert. Diese Elemente können nicht wiederhergestellt werden.",
+    "trash_purges_in_days": "Löschung in {days} T.",
+    "trash_purges_soon": "Wird bald gelöscht"
   },
   "artist": {
     "title": "Künstler",

@@ -19,12 +19,15 @@ import { useToastStore } from "@/stores/toastStore";
 import {
   kindBucketWeight,
   kindGroupLabel,
+  trashEntryInfo,
   visualForEntry,
 } from "./designTokens";
 import { useDrive } from "./hooks/useDrive";
 import { DriveToolbar } from "./components/DriveToolbar";
 import { DriveSidebar } from "./components/DriveSidebar";
 import { DriveFileList } from "./components/DriveFileList";
+import { DriveKindFilterBar } from "./components/DriveKindFilterBar";
+import { DriveTrashBanner } from "./components/DriveTrashBanner";
 import { DriveDetailsPane } from "./components/DriveDetailsPane";
 import {
   DriveContextMenu,
@@ -39,11 +42,11 @@ import { DriveSignaturesPanel } from "./signing/DriveSignaturesPanel";
 import { useOcr } from "./ocr/useOcr";
 import { DriveOcrDrawer } from "./ocr/DriveOcrDrawer";
 
-// Only the delete confirmation still uses a real modal — create + rename
-// went inline in cycles 9/10/24/27. Keeping the discriminated-union shape
-// in case a future dialog kind needs it.
+// Only the confirmations use a real modal — create + rename went inline in
+// cycles 9/10/24/27. The discriminated union carries each dialog kind.
 type Dialog =
   | { kind: "delete"; paths: string[] }
+  | { kind: "emptyTrash" }
   | null;
 
 // Hard limit on a single drag-drop file. Mirrors MAX_WRITE_BYTES on the
@@ -58,11 +61,26 @@ export default function DrivePage() {
   const ocr = useOcr();
   const addToast = useToastStore((s) => s.addToast);
 
+  // Eager-load the signature history on mount so signed files can carry a
+  // badge even before the user ever opens the Signatures panel. Destructured
+  // so the effect depends on the stable callback, not the whole signing object.
+  const { refreshSignatures } = signing;
+  useEffect(() => {
+    refreshSignatures().catch(silentCatch("drive:signatures-eager"));
+  }, [refreshSignatures]);
+
   // OS→Drive drag-drop state. dragCounter handles dragenter/leave on nested
   // children — the events fire per-element, so a naive boolean would flicker
   // when the cursor crosses a child boundary.
   const [externalDragActive, setExternalDragActive] = useState(false);
   const dragCounterRef = useRef(0);
+  // Folder the cursor is currently over during an OS-file drag (list row or
+  // sidebar tree node). Null = drop targets the open folder. The rows/nodes
+  // report hover via onExternalFolderDragOver; the page-level drop handler
+  // resolves the destination from this.
+  const [externalDropTarget, setExternalDropTarget] = useState<string | null>(
+    null,
+  );
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
   const [dialog, setDialog] = useState<Dialog>(null);
@@ -331,6 +349,30 @@ export default function DrivePage() {
   }, [dialog, drive]);
 
   // ---------------------------------------------------------------------
+  // Trash actions — active while browsing the trash root.
+  // ---------------------------------------------------------------------
+  const inTrashRoot = drive.currentPath === ".trash";
+
+  // Move each selected trash entry back to the drive root under its
+  // original name (timestamp prefix stripped). Name collisions surface as
+  // per-item toasts via drive.move's own error handling.
+  const handleRestoreSelection = useCallback(async () => {
+    const paths = Array.from(drive.selection);
+    for (const p of paths) {
+      const base = p.split("/").pop() ?? p;
+      await drive.move(p, trashEntryInfo(base).originalName);
+    }
+    drive.clearSelection();
+  }, [drive]);
+
+  // Hard-delete everything in the trash. Items already inside .trash
+  // hard-delete on a second drive_delete — no dedicated backend command.
+  const confirmEmptyTrash = useCallback(async () => {
+    await drive.remove(drive.entries.map((e) => e.path));
+    setDialog(null);
+  }, [drive]);
+
+  // ---------------------------------------------------------------------
   // OS → Drive drag-drop
   // ---------------------------------------------------------------------
   const hasFilesPayload = (e: React.DragEvent) =>
@@ -352,7 +394,10 @@ export default function DrivePage() {
   const handleExternalDragLeave = useCallback((e: React.DragEvent) => {
     if (!hasFilesPayload(e)) return;
     dragCounterRef.current = Math.max(0, dragCounterRef.current - 1);
-    if (dragCounterRef.current === 0) setExternalDragActive(false);
+    if (dragCounterRef.current === 0) {
+      setExternalDragActive(false);
+      setExternalDropTarget(null);
+    }
   }, []);
 
   const handleExternalDrop = useCallback(
@@ -361,6 +406,11 @@ export default function DrivePage() {
       e.preventDefault();
       dragCounterRef.current = 0;
       setExternalDragActive(false);
+      // Resolve the destination before clearing the hover state: a drop on a
+      // folder row / tree node writes into that folder, anywhere else into
+      // the open folder.
+      const dest = externalDropTarget ?? drive.currentPath;
+      setExternalDropTarget(null);
 
       const files = Array.from(e.dataTransfer?.files ?? []);
       if (files.length === 0) return;
@@ -375,9 +425,7 @@ export default function DrivePage() {
         }
         try {
           const buf = new Uint8Array(await file.arrayBuffer());
-          const rel = drive.currentPath
-            ? `${drive.currentPath}/${file.name}`
-            : file.name;
+          const rel = dest ? `${dest}/${file.name}` : file.name;
           await driveWrite(rel, buf);
           success += 1;
         } catch (err) {
@@ -387,6 +435,9 @@ export default function DrivePage() {
       }
       drive.refresh();
       drive.refreshStorage();
+      // Dropped files are by definition the newest content — keep the
+      // sidebar's Recent rail in step.
+      drive.refreshRecent();
 
       if (success > 0) {
         addToast(tx(t.plugins.drive.drop_added_n, { count: success }), "success");
@@ -404,7 +455,7 @@ export default function DrivePage() {
         );
       }
     },
-    [drive, addToast, t, tx],
+    [drive, addToast, t, tx, externalDropTarget],
   );
 
   // ---------------------------------------------------------------------
@@ -497,7 +548,7 @@ export default function DrivePage() {
       />
       <ErrorBoundary name="Drive">
       <div
-        className="relative flex-1 min-h-0 flex flex-col bg-gradient-to-b from-background via-background to-background/95"
+        className="relative flex-1 min-h-0 flex flex-col bg-background"
         onDragEnter={handleExternalDragEnter}
         onDragOver={handleExternalDragOver}
         onDragLeave={handleExternalDragLeave}
@@ -515,8 +566,21 @@ export default function DrivePage() {
           activeDragCount={activeDragCount}
         />
         <div className="flex-1 min-h-0 flex">
-          <DriveSidebar drive={drive} activeDragCount={activeDragCount} />
+          <DriveSidebar
+            drive={drive}
+            activeDragCount={activeDragCount}
+            onExternalFolderDragOver={setExternalDropTarget}
+          />
           <div className="flex-1 min-w-0 flex flex-col">
+            {inTrashRoot && (
+              <DriveTrashBanner
+                itemCount={drive.entries.length}
+                selectionCount={drive.selection.size}
+                onRestoreSelection={handleRestoreSelection}
+                onRequestEmpty={() => setDialog({ kind: "emptyTrash" })}
+              />
+            )}
+            <DriveKindFilterBar drive={drive} />
             <DriveFileList
               drive={drive}
               onOpen={handleOpen}
@@ -532,29 +596,46 @@ export default function DrivePage() {
               activeDragCount={activeDragCount}
               onDragSelectionStart={handleDragSelectionStart}
               onDragSelectionEnd={handleDragSelectionEnd}
+              signedPaths={signing.signedPaths}
+              externalDropPath={externalDropTarget}
+              onExternalFolderDragOver={setExternalDropTarget}
             />
           </div>
           <DriveDetailsPane
             entries={selectedEntries}
             currentPath={drive.currentPath}
             onPreviewClick={(entry) => setLightboxPath(entry.path)}
+            onOpen={handleOpen}
+            onReveal={handleReveal}
+            onSign={(entry) => {
+              if (entry.kind === "file") setSignEntry(entry);
+            }}
+            onVerify={(entry) => setVerifyEntry(entry)}
+            onExtractText={(entry) => setOcrEntry(entry)}
+            hasGemini={ocr.hasGemini}
+            signedPaths={signing.signedPaths}
           />
         </div>
 
         {externalDragActive && (
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-cyan-500/15 backdrop-blur-sm border-4 border-dashed border-cyan-400/60 rounded-card"
+            className="pointer-events-none absolute inset-0 z-40 flex items-end justify-center pb-6 bg-cyan-500/5 border-4 border-dashed border-cyan-400/60 rounded-card"
           >
-            <div className="flex flex-col items-center gap-2 px-6 py-4 rounded-modal bg-background/85 border border-cyan-500/40 shadow-elevation-3">
-              <Upload className="w-8 h-8 text-cyan-200" />
-              <div className="typo-section-title text-cyan-100">
-                {t.plugins.drive.drop_overlay_title}
-              </div>
-              <div className="typo-body text-foreground">
-                {tx(t.plugins.drive.drop_overlay_subtitle, {
-                  path: drive.currentPath || "/",
-                })}
+            {/* Bottom pill instead of a centered blur card — folder rows and
+                tree nodes stay visible so they can be targeted mid-drag. The
+                path updates live as the cursor hovers a folder. */}
+            <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-modal bg-background/90 border border-cyan-500/40 shadow-elevation-3">
+              <Upload className="w-5 h-5 text-cyan-200 flex-shrink-0" />
+              <div className="min-w-0">
+                <span className="typo-body font-semibold text-cyan-100">
+                  {t.plugins.drive.drop_overlay_title}
+                </span>{" "}
+                <span className="typo-body text-foreground">
+                  {tx(t.plugins.drive.drop_overlay_subtitle, {
+                    path: (externalDropTarget ?? drive.currentPath) || "/",
+                  })}
+                </span>
               </div>
             </div>
           </div>
@@ -599,6 +680,8 @@ export default function DrivePage() {
           onClose={() => setSignEntry(null)}
           onSidecarWritten={() => {
             drive.refresh();
+            // New signature → refresh the history so the signed badge appears.
+            refreshSignatures().catch(silentCatch("drive:signatures-refresh"));
           }}
         />
       )}
@@ -648,6 +731,18 @@ export default function DrivePage() {
           />
         );
       })()}
+
+      {dialog?.kind === "emptyTrash" && (
+        <DriveConfirm
+          title={tx(t.plugins.drive.trash_empty_confirm_title, {
+            count: drive.entries.length,
+          })}
+          body={t.plugins.drive.trash_empty_confirm_body}
+          danger
+          onConfirm={() => confirmEmptyTrash()}
+          onCancel={() => setDialog(null)}
+        />
+      )}
 
       {dialog?.kind === "delete" && (
         <DriveConfirm

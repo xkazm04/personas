@@ -4,6 +4,7 @@ import {
   ChevronUp,
   ChevronDown,
   File as FileIcon,
+  FileSignature,
   Folder as FolderIcon,
   FolderOpen,
   Layers,
@@ -14,6 +15,7 @@ import type { DriveEntry, DriveSearchHit } from "@/api/drive";
 import { driveFormatBytes, driveList, driveParentPath } from "@/api/drive";
 import { silentCatch } from "@/lib/silentCatch";
 import type { UseDriveResult, SortKey } from "../hooks/useDrive";
+import { useLazyImageThumb } from "../hooks/useLazyImageThumb";
 import { useScrollShadows } from "../hooks/useScrollShadows";
 import { useTranslation } from "@/i18n/useTranslation";
 import {
@@ -21,6 +23,7 @@ import {
   formatRelativeTime,
   kindLabel,
   kindGroupLabel,
+  trashEntryInfo,
 } from "../designTokens";
 import { DriveEmptyHint } from "./DriveEmptyHint";
 import { DropCountChip } from "./DropCountChip";
@@ -40,6 +43,13 @@ interface Props {
   activeDragCount?: number | null;
   onDragSelectionStart?: (count: number) => void;
   onDragSelectionEnd?: () => void;
+  // Drive-relative paths carrying a signature record — list rows badge these.
+  signedPaths?: Set<string>;
+  // OS-file drag targeting: the folder path currently hovered during an
+  // external drag (highlights that row), and the callback rows use to
+  // report hover. The actual file write happens in DrivePage's drop handler.
+  externalDropPath?: string | null;
+  onExternalFolderDragOver?: (path: string | null) => void;
 }
 
 export function DriveFileList({
@@ -57,6 +67,9 @@ export function DriveFileList({
   activeDragCount = null,
   onDragSelectionStart,
   onDragSelectionEnd,
+  signedPaths,
+  externalDropPath = null,
+  onExternalFolderDragOver,
 }: Props) {
   if (drive.viewMode === "icons") {
     return (
@@ -107,6 +120,9 @@ export function DriveFileList({
       activeDragCount={activeDragCount}
       onDragSelectionStart={onDragSelectionStart}
       onDragSelectionEnd={onDragSelectionEnd}
+      signedPaths={signedPaths}
+      externalDropPath={externalDropPath}
+      onExternalFolderDragOver={onExternalFolderDragOver}
     />
   );
 }
@@ -200,6 +216,31 @@ function FileChip({
   );
 }
 
+/**
+ * Days-until-auto-purge chip on a trash row. Amber inside the final day
+ * (urgency), muted otherwise. Derived from the entry's timestamp prefix —
+ * no extra IPC.
+ */
+function TrashPurgeChip({ purgeAt }: { purgeAt: number }) {
+  const { t, tx } = useTranslation();
+  const msLeft = purgeAt - Date.now();
+  const daysLeft = Math.ceil(msLeft / 86_400_000);
+  const soon = daysLeft <= 1;
+  return (
+    <span
+      className={`inline-flex items-center px-1.5 py-px rounded-full typo-caption tabular-nums flex-shrink-0 border ${
+        soon
+          ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+          : "border-primary/15 bg-secondary/40 text-foreground"
+      }`}
+    >
+      {soon
+        ? t.plugins.drive.trash_purges_soon
+        : tx(t.plugins.drive.trash_purges_in_days, { days: daysLeft })}
+    </span>
+  );
+}
+
 function rowStateClass(
   isSelected: boolean,
   isFlash: boolean,
@@ -240,6 +281,9 @@ function ListView({
   activeDragCount = null,
   onDragSelectionStart,
   onDragSelectionEnd,
+  signedPaths,
+  externalDropPath = null,
+  onExternalFolderDragOver,
 }: Props) {
   const { t, tx } = useTranslation();
   const [dragTarget, setDragTarget] = useState<string | null>(null);
@@ -248,6 +292,17 @@ function ListView({
     topShadow,
     bottomShadow,
   } = useScrollShadows<HTMLDivElement>();
+
+  // Restore the folder's remembered scroll offset once its entries are in.
+  // Refreshes within the same folder restore the live position (a no-op);
+  // Back/Up navigation restores where the user left that folder.
+  const { currentPath, loading, recallScroll } = drive;
+  useEffect(() => {
+    if (loading) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = recallScroll(currentPath);
+  }, [currentPath, loading, recallScroll, scrollRef]);
 
   const SortHeader = ({
     column,
@@ -368,6 +423,11 @@ function ListView({
     <div
       ref={scrollRef}
       className="flex-1 overflow-auto"
+      onScroll={(e) => {
+        // Don't record while a navigation's entries are still loading — the
+        // visible content (and its scroll height) belongs to the old folder.
+        if (!loading) drive.rememberScroll(currentPath, e.currentTarget.scrollTop);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenu(null, e.clientX, e.clientY);
@@ -426,8 +486,13 @@ function ListView({
         {drive.visibleEntries.map((entry, idx) => {
           const selected = drive.isSelected(entry.path);
           const flash = drive.recentlyWritten.has(entry.path);
-          const drop = dragTarget === entry.path;
+          const drop =
+            dragTarget === entry.path || externalDropPath === entry.path;
           const zebra = idx % 2 === 1;
+          // In the trash root, show the pre-delete name (timestamp prefix
+          // stripped) plus a purge countdown derived from that prefix.
+          const trashInfo =
+            currentPath === ".trash" ? trashEntryInfo(entry.name) : null;
           const bucket = buckets?.[idx] ?? null;
           const showGroupHeader =
             !!bucket && (idx === 0 || buckets?.[idx - 1] !== bucket);
@@ -448,13 +513,26 @@ function ListView({
                 onDragStart={(e) => handleDragStart(e, entry)}
                 onDragEnd={() => onDragSelectionEnd?.()}
                 onDragOver={(e) => {
-                  if (entry.kind === "folder") {
+                  if (entry.kind !== "folder") return;
+                  // OS-file drags carry a "Files" payload: report this folder
+                  // as the drop target (the page-level drop handler writes
+                  // into it). Drive-internal drags use the local highlight.
+                  if (e.dataTransfer?.types?.includes("Files")) {
                     e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    setDragTarget(entry.path);
+                    e.dataTransfer.dropEffect = "copy";
+                    onExternalFolderDragOver?.(entry.path);
+                    return;
+                  }
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  setDragTarget(entry.path);
+                }}
+                onDragLeave={() => {
+                  setDragTarget(null);
+                  if (externalDropPath === entry.path) {
+                    onExternalFolderDragOver?.(null);
                   }
                 }}
-                onDragLeave={() => setDragTarget(null)}
                 onDrop={(e) => handleDropOn(e, entry)}
                 onClick={(e) => {
                   if (e.shiftKey) drive.selectRange(entry.path);
@@ -496,8 +574,18 @@ function ListView({
                   ) : (
                     <>
                       <span className="typo-body typo-card-label truncate flex-1">
-                        {entry.name}
+                        {trashInfo?.originalName ?? entry.name}
                       </span>
+                      {trashInfo?.purgeAt !== null &&
+                        trashInfo?.purgeAt !== undefined && (
+                          <TrashPurgeChip purgeAt={trashInfo.purgeAt} />
+                        )}
+                      {signedPaths?.has(entry.path) && (
+                        <FileSignature
+                          className="w-3 h-3 text-rose-300/80 flex-shrink-0"
+                          aria-label={t.plugins.drive.signed}
+                        />
+                      )}
                       {drop && activeDragCount && (
                         <DropCountChip count={activeDragCount} />
                       )}
@@ -537,6 +625,50 @@ function ListView({
 // Icons view
 // ============================================================================
 
+/**
+ * The 64px visual block of an icons-view tile. Image files render a real
+ * thumbnail — lazy-loaded and freed as the tile scrolls in/out of view via
+ * useLazyImageThumb — so the grid reads as a gallery instead of a wall of
+ * identical "image" glyphs. Everything else keeps its kind icon. The
+ * `hoverScale` flag preserves the button tile's group-hover zoom without
+ * applying it to the static renaming tile.
+ */
+function IconTileVisual({
+  entry,
+  hoverScale = false,
+}: {
+  entry: DriveEntry;
+  hoverScale?: boolean;
+}) {
+  const visual = visualForEntry(entry);
+  const isImage =
+    entry.kind === "file" && (entry.mime ?? "").startsWith("image/");
+  const { ref, url } = useLazyImageThumb<HTMLDivElement>(
+    entry.path,
+    entry.mime,
+    isImage,
+  );
+  return (
+    <div
+      ref={ref}
+      className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner overflow-hidden ${
+        hoverScale ? "group-hover:scale-105 transition-transform" : ""
+      }`}
+    >
+      {url ? (
+        <img
+          src={url}
+          alt=""
+          draggable={false}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <visual.Icon className={`w-8 h-8 ${visual.text}`} />
+      )}
+    </div>
+  );
+}
+
 function IconsView({
   drive,
   onOpen,
@@ -549,6 +681,17 @@ function IconsView({
   onCommitPendingCreate,
   onCancelPendingCreate,
 }: Props) {
+  // Same per-folder scroll memory as the list view. The hook must run
+  // before the early returns below (rules-of-hooks).
+  const gridRef = useRef<HTMLDivElement>(null);
+  const { currentPath, loading, recallScroll } = drive;
+  useEffect(() => {
+    if (loading) return;
+    const el = gridRef.current;
+    if (!el) return;
+    el.scrollTop = recallScroll(currentPath);
+  }, [currentPath, loading, recallScroll]);
+
   if (drive.loading && drive.entries.length === 0) {
     return <LoadingState />;
   }
@@ -557,7 +700,11 @@ function IconsView({
   }
   return (
     <div
+      ref={gridRef}
       className="flex-1 overflow-auto p-5"
+      onScroll={(e) => {
+        if (!loading) drive.rememberScroll(currentPath, e.currentTarget.scrollTop);
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         onContextMenu(null, e.clientX, e.clientY);
@@ -601,11 +748,7 @@ function IconsView({
                 key={entry.path}
                 className="flex flex-col items-center gap-2.5 p-3 rounded-modal border bg-cyan-500/10 border-cyan-500/50 ring-2 ring-cyan-400/40"
               >
-                <div
-                  className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner`}
-                >
-                  <visual.Icon className={`w-8 h-8 ${visual.text}`} />
-                </div>
+                <IconTileVisual entry={entry} />
                 <InlineRenameInput
                   initialName={entry.name}
                   onCommit={(newName) =>
@@ -642,11 +785,7 @@ function IconsView({
                   : "border-primary/5 bg-secondary/10 hover:bg-secondary/30 hover:border-primary/15 hover:-translate-y-0.5"
               }`}
             >
-              <div
-                className={`w-16 h-16 rounded-modal bg-gradient-to-br ${visual.gradient} border border-primary/10 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform`}
-              >
-                <visual.Icon className={`w-8 h-8 ${visual.text}`} />
-              </div>
+              <IconTileVisual entry={entry} hoverScale />
               <div className="w-full typo-body typo-card-label text-center truncate">
                 {entry.name}
               </div>
@@ -741,7 +880,7 @@ function ColumnPane({
 }: ColumnPaneProps) {
   const isCurrent = levelPath === drive.currentPath;
   return (
-    <div className="w-64 flex-shrink-0 border-r border-primary/10 overflow-y-auto bg-gradient-to-b from-background to-background/80">
+    <div className="w-64 flex-shrink-0 border-r border-primary/10 overflow-y-auto bg-background">
       {isCurrent ? (
         <ColumnEntries
           entries={drive.visibleEntries}

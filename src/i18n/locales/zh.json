@@ -10409,7 +10409,16 @@
       "group_archives": "档案",
       "group_documents": "文件",
       "group_signatures": "签名",
-      "group_other": "其他"
+      "group_other": "其他",
+      "signed": "已签名",
+      "sidebar_trash": "回收站",
+      "trash_banner": "删除的项目会在此保留 7 天，之后将被永久移除。",
+      "trash_restore": "恢复",
+      "trash_empty": "清空回收站",
+      "trash_empty_confirm_title": "永久删除 {count} 个项目？",
+      "trash_empty_confirm_body": "这将清空回收站。这些项目将无法恢复。",
+      "trash_purges_in_days": "{days} 天后清除",
+      "trash_purges_soon": "即将清除"
     },
     "artist": {
       "title": "Artist",
