@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Brain, Plus, Search, X, Sparkles, Shield, Layers, Table2, GitFork, Trash2 } from 'lucide-react';
+import { Brain, Plus, Search, X, Sparkles, Shield, Layers, Table2, GitFork, Trash2, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import { useAgentStore } from "@/stores/agentStore";
@@ -110,12 +110,13 @@ function MemoriesPageBaseline() {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, setMemoryTier, reviewMemories,
+    memories, memoriesTotal, memoriesLoading, memoriesError, memoryStats, fetchMemories, deleteMemory, setMemoryTier, reviewMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
     memoriesLoading: s.memoriesLoading,
+    memoriesError: s.memoriesError,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -378,6 +379,19 @@ function MemoriesPageBaseline() {
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-12 rounded-card bg-secondary/30 animate-pulse" />
               ))}
+            </div>
+          ) : memoriesError && memories.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="max-w-sm w-full rounded-modal border border-red-500/20 bg-red-500/5 p-4 text-center space-y-3">
+                <AlertTriangle className="w-6 h-6 text-red-400 mx-auto" />
+                <p className="typo-body text-foreground">{memoriesError}</p>
+                <button
+                  onClick={() => void fetchMemories()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-card typo-caption bg-red-500/15 text-red-300 border border-red-500/25 hover:bg-red-500/25 transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Retry
+                </button>
+              </div>
             </div>
           ) : memories.length === 0 && !hasFilters ? (
             <div className="flex-1 flex items-center justify-center">

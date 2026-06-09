@@ -15,6 +15,9 @@ export interface MemorySlice {
   /** True while fetchMemories is in flight — lets the page show a skeleton
    *  instead of flashing the "no memories yet" empty state before results land. */
   memoriesLoading: boolean;
+  /** Non-null when the last fetchMemories rejected — lets the page show an
+   *  error + retry card instead of the misleading "no memories yet" empty state. */
+  memoriesError: string | null;
   memoryStats: MemoryStats | null;
   memoryActions: MemoryAction[];
 
@@ -84,6 +87,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
   memories: [],
   memoriesTotal: 0,
   memoriesLoading: false,
+  memoriesError: null,
   memoryStats: null,
   memoryActions: loadActions(),
   memoryReviewRunning: false,
@@ -92,7 +96,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
 
   fetchMemories: async (filters?) => {
     const requestId = ++fetchRequestId;
-    set({ memoriesLoading: true });
+    set({ memoriesLoading: true, memoriesError: null });
     try {
       const hasSearch = !!filters?.search?.trim();
       const limit = hasSearch ? 500 : 100;
@@ -114,7 +118,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
     } catch (err) {
       if (requestId !== fetchRequestId) return;
       reportError(err, "Failed to fetch memories", set);
-      set({ memoriesLoading: false });
+      set({ memoriesLoading: false, memoriesError: err instanceof Error ? err.message : String(err) });
     }
   },
 
