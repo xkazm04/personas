@@ -132,6 +132,7 @@ export function RecipeManager() {
               <RecipeList
                 recipes={filteredRecipes}
                 search={search}
+                loading={loading}
                 onEdit={(id) => dispatch({ type: 'GO_EDIT', recipeId: id })}
                 onPlayground={(id) => dispatch({ type: 'GO_PLAYGROUND', recipeId: id })}
                 onDelete={handleDelete}

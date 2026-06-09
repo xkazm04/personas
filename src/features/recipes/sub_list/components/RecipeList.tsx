@@ -14,12 +14,13 @@ import { useTranslation } from '@/i18n/useTranslation';
 interface RecipeListProps {
   recipes: RecipeDefinition[];
   search: string;
+  loading?: boolean;
   onEdit: (id: string) => void;
   onPlayground: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
-export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: RecipeListProps) {
+export function RecipeList({ recipes, search, loading, onEdit, onPlayground, onDelete }: RecipeListProps) {
   const { t } = useTranslation();
   const [quickTestResults, setQuickTestResults] = useState<Record<string, RecipeExecutionResult | null>>({});
   const [quickTestLoading, setQuickTestLoading] = useState<Record<string, boolean>>({});
@@ -54,6 +55,14 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
       return next;
     });
   }, []);
+
+  if (loading && recipes.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-full py-12">
+        <RecipePageFlipLoader />
+      </div>
+    );
+  }
 
   if (recipes.length === 0) {
     return (
