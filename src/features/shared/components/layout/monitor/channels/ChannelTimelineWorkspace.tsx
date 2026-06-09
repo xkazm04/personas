@@ -347,7 +347,7 @@ function WorkspaceInner({
       {/* Three-zone body */}
       <div className="flex-1 min-h-0 flex">
         {leftCollapsed ? (
-          <div className="flex-shrink-0 w-9 border-r border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">
+          <div className="animate-fade-in flex-shrink-0 w-9 border-r border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">
             <button type="button" onClick={expandLeft} title={t.monitor.channels_teams_label} className="p-1.5 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-secondary/40 transition-colors">
               <PanelLeftOpen className="w-4 h-4" />
             </button>
@@ -356,7 +356,7 @@ function WorkspaceInner({
           </div>
         ) : (
           <>
-            <div ref={leftRef} style={{ width: leftW.current }} className="flex-shrink-0 min-h-0">
+            <div ref={leftRef} style={{ width: leftW.current }} className="animate-fade-in flex-shrink-0 min-h-0">
               <TeamSidebar teams={teams} byTeam={byTeam} onToggle={onToggle} allOn={allOn} onSetAll={onSetAll} onCollapse={collapseLeft} />
             </div>
             <ResizeHandle side="left" onDrag={dragLeft} onEnd={persistLeft} />
@@ -366,7 +366,7 @@ function WorkspaceInner({
         <CenterStream merged={merged} filter={filter} personaIndex={personaIndex} onOpen={onOpen} emptyLabel={t.monitor.channels_combined_quiet} />
 
         {rightCollapsed ? (
-          <div className="flex-shrink-0 w-9 border-l border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">
+          <div className="animate-fade-in flex-shrink-0 w-9 border-l border-border bg-foreground/[0.015] flex flex-col items-center py-2 gap-2">
             <button type="button" onClick={expandRight} title={t.monitor.quick_title} className="p-1.5 rounded-interactive text-foreground/50 hover:text-foreground hover:bg-secondary/40 transition-colors">
               <PanelRightOpen className="w-4 h-4" />
             </button>
@@ -374,7 +374,7 @@ function WorkspaceInner({
         ) : (
           <>
             <ResizeHandle side="right" onDrag={dragRight} onEnd={persistRight} />
-            <div ref={rightRef} style={{ width: rightW.current }} className="flex-shrink-0 min-h-0">
+            <div ref={rightRef} style={{ width: rightW.current }} className="animate-fade-in flex-shrink-0 min-h-0">
               <RightSidebar onCollapse={collapseRight} />
             </div>
           </>

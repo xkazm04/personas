@@ -28,6 +28,10 @@ export function VirtualStream({
   const { t } = useTranslation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
+  // Animate ONLY genuinely-new rows in (a row arrived in the last few seconds
+  // and hasn't been shown before). The seen-set means scrolling an old row into
+  // view never re-fires the entrance — critical for the virtualized list.
+  const seenRef = useRef<Set<string>>(new Set());
 
   const labels = useMemo(() => timeGroupLabels(t), [t]);
   const { rows, headerIndexes } = useMemo(
@@ -69,9 +73,14 @@ export function VirtualStream({
                 />
               );
             }
+            const id = row.item.item.id;
+            const at = Date.parse(row.item.item.at);
+            const fresh = !seenRef.current.has(id) && Number.isFinite(at) && Date.now() - at < 8000;
+            seenRef.current.add(id);
             return (
               <div
-                key={`${row.item.team.teamId}:${row.item.item.id}`}
+                key={`${row.item.team.teamId}:${id}`}
+                className={fresh ? 'animate-channel-row-in rounded-card' : undefined}
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: MERGED_ROW_HEIGHT, transform: `translateY(${v.start}px)` }}
               >
                 <MergedRow tagged={row.item} showTeam personaIndex={personaIndex} onOpen={onOpen} />

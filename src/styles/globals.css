@@ -1858,6 +1858,28 @@ body[data-drag-active="true"] * {
   animation: fade-scale-in 150ms ease-out both;
 }
 
+/* New channel-timeline row: opacity fade + a brief primary-tint flash.
+   Transform-free on purpose — the virtualizer owns the row's translateY, so
+   the entrance must not animate transform. */
+@keyframes channel-row-in {
+  0% {
+    opacity: 0;
+    background-color: color-mix(in srgb, var(--primary) 16%, transparent);
+  }
+  100% {
+    opacity: 1;
+    background-color: transparent;
+  }
+}
+
+.animate-channel-row-in {
+  animation: channel-row-in 650ms ease-out both;
+}
+
+html[data-motion="reduce"] .animate-channel-row-in {
+  animation: none;
+}
+
 .animate-shake-error {
   animation: shake-error 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
