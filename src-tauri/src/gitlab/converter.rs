@@ -98,14 +98,28 @@ pub fn resolve_credentials_for_gitlab(
                     let env_key =
                         format!("{}_{}", prefix, field_key.to_uppercase().replace('-', "_"));
 
-                    // GitLab masking requires values >= 8 chars and no newlines.
-                    // If a value can't be masked, we still set masked: true (GitLab
-                    // will silently ignore the flag if the value is too short) and
-                    // we always set protected: true for defence in depth.
+                    // Only claim masked:true when GitLab will actually mask it.
+                    // GitLab 400s a masked variable whose value is < 8 chars,
+                    // multi-line, or outside its maskable charset — and try_join_all
+                    // then aborts the batch mid-flight, stranding already-pushed
+                    // secrets. The charset test below also excludes whitespace, so
+                    // it covers the multi-line case. Set the flag honestly (false
+                    // when unmaskable) to avoid both the abort and a false claim.
+                    let masked = field_val.len() >= 8
+                        && field_val.chars().all(|c| {
+                            c.is_ascii_alphanumeric()
+                                || matches!(c, '@' | ':' | '.' | '~' | '+' | '=' | '/' | '-' | '_')
+                        });
+                    if !masked {
+                        tracing::warn!(
+                            key = %env_key,
+                            "GitLab variable not maskable (short / multiline / charset) — creating it unmasked"
+                        );
+                    }
                     variables.push(GitLabVariable {
                         key: env_key.clone(),
                         value: field_val.clone(),
-                        masked: true,
+                        masked,
                         protected: true,
                         variable_type: "env_var".to_string(),
                     });
