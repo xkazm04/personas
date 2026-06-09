@@ -36,6 +36,7 @@ timestamp — the next session can recognize it as abandoned.
 - Started: 2026-06-08. Master, atomic commits.
 - Paths: monitor/channels/* (MonitorChannelGrid, new ChannelTimelineWorkspace + resize/sidebar), quick-answer/* (extract QuickAnswerBody), i18n. Frontend only.
 - Note: left teams sidebar + center timeline + right Quick Answer sidebar (resizable/collapsible) + bottom team-targeted chat composer.
+- Perf fork (2026-06-09): heap+render hardening, all pushed. a0f3fa3d4 (6 caps/gates: channel `now`-tick→fleet-only, memo MonitorChannelGrid, bound VirtualStream seenRef, executionsCache LRU-12, deliverySummaries-500 + pipeline-timing-64 caps) · 768c7182d (memo PersonaCardTile via stable onSelect + now-aware comparator → 1s tick skips idle cards) · d53ce2812 (threadReplies-30 + activeToasts-20 caps). Verified-and-SKIPPED (don't redo): ExecutionList virtualization — server-capped at 50 rows (list_executions_summary unwrap_or(50)); CompanionPanel useShallow + MonitorDrawer sorts = audit false positives (plain selectors / already-memoized); systemTrace `_activeSessions` + backgroundChats = self-bounding. Insight: most of the observed ~660MB dev heap was Vite/HMR accumulation, NOT a prod leak.
 
 ### refresh-context — regenerate codebase-context.md + codebase-catalogs.md (kazda machine)
 - Started: 2026-06-05 (this session, follows the Hermes /research run)
