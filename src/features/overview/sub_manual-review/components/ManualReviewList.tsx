@@ -31,7 +31,7 @@ const logger = createLogger("manual-review");
 import { ReviewInboxPanel } from './ReviewInboxPanel';
 import { BacklogInboxGroup } from './BacklogInboxGroup';
 import { ReviewFilterTrailing } from './ReviewFilterTrailing';
-import type { TriageReview } from './TriagePlayer';
+import type { TriageReview } from './reviewFocusHelpers';
 import { ReviewFocusFlow } from './ReviewFocusFlow';
 import { debtText } from '@/i18n/DebtText';
 
