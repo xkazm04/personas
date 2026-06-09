@@ -201,6 +201,12 @@ pub struct FleetSessionInner {
     pub args: Vec<String>,
     pub state: FleetSessionState,
     pub last_activity_ms: i64,
+    /// When the PTY last produced ANY bytes (including idle status redraws).
+    /// claude redraws its status line even when idle, so total PTY silence is
+    /// the "process is frozen" signal the staleness ticker's stall check keys
+    /// on — while output *presence* proves nothing about work. 0 until the
+    /// first byte. Never feeds `last_activity_ms`/freshness.
+    pub last_pty_output_ms: i64,
     pub created_at_ms: i64,
     pub child_pid: Option<u32>,
     pub exit_code: Option<i32>,
@@ -352,6 +358,18 @@ impl FleetRegistry {
                 pixel_height: 0,
             })
             .map_err(|e| format!("resize failed: {e}"))
+    }
+
+    /// Record that the session's PTY produced output — any bytes, including
+    /// the idle status-line redraws. Deliberately does NOT touch
+    /// `last_activity_ms` or state (idle redraws would defeat staleness);
+    /// the ONLY consumer is the ticker's frozen-process stall check, where
+    /// total silence (claude stops redrawing entirely) is the signal.
+    pub fn note_pty_output(&self, session_id: &str) {
+        let mut map = self.sessions.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(session) = map.get_mut(session_id) {
+            session.last_pty_output_ms = now_ms();
+        }
     }
 
     /// First PTY output proves the child actually came up and reached its
@@ -646,6 +664,7 @@ mod tests {
             args: Vec::new(),
             state,
             last_activity_ms: now_ms(),
+            last_pty_output_ms: 0,
             created_at_ms: now_ms(),
             child_pid: Some(1234),
             exit_code: None,
