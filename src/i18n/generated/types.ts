@@ -15116,6 +15116,9 @@ export type Translations = {
       nextMovesHeading: string;
       nextMovesSubtitle: string;
       nextMovesCoverage: string;
+      coverageThin: string;
+      coverageSome: string;
+      coverageCovered: string;
       groundingHint: string;
       followupBadge: string;
       followupCta: string;

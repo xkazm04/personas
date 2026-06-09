@@ -10,6 +10,7 @@ import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession
 import { NextMovesPanel } from './NextMovesPanel';
 import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
+import type { CoverageTier } from './topicCoverage';
 
 
 /* ------------------------------------------------------------------ *
@@ -30,6 +31,14 @@ const TOPIC_TINTS: Record<string, string> = {
   values: 'from-emerald-500/20 to-teal-500/10',
   expertise: 'from-indigo-500/20 to-violet-500/10',
   personal: 'from-rose-500/20 to-pink-500/10',
+};
+
+// Coverage-pill tone per tier. "Thin" borrows the violet recommendation accent
+// (this is where the next session pays off most); "covered" reads as done.
+const COVERAGE_PILL: Record<CoverageTier, string> = {
+  covered: 'text-emerald-300 bg-emerald-500/10 border-emerald-500/25',
+  some: 'text-amber-300 bg-amber-500/10 border-amber-500/25',
+  thin: 'text-violet-300 bg-violet-500/10 border-violet-500/25',
 };
 
 export default function TrainingAtelier() {
@@ -58,6 +67,9 @@ export default function TrainingAtelier() {
   const progressPct = session.questions.length === 0 ? 0
     : ((session.currentIdx + (session.answerDraft ? 0.5 : 0)) / session.questions.length) * 100;
   const groundingTier = session.groundingFacts.length >= 20 ? 'strong' : session.groundingFacts.length >= 5 ? 'medium' : 'light';
+  const coverageById = new Map(session.topicCoverage.map((c) => [c.id, c]));
+  const coverageLabel = (tier: CoverageTier) =>
+    tier === 'covered' ? t.training.coverageCovered : tier === 'some' ? t.training.coverageSome : t.training.coverageThin;
 
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
@@ -130,6 +142,7 @@ export default function TrainingAtelier() {
                 {TRAINING_TOPIC_PRESETS.map((topic) => {
                   const Icon = TOPIC_ICONS[topic.id] ?? Sparkles;
                   const tint = TOPIC_TINTS[topic.id] ?? 'from-violet-500/15 to-fuchsia-500/10';
+                  const cov = coverageById.get(topic.id);
                   return (
                     <motion.button
                       key={topic.id}
@@ -147,6 +160,15 @@ export default function TrainingAtelier() {
                         <div className="flex-1 min-w-0">
                           <p className="typo-card-label">{t.training[topic.labelKey as keyof typeof t.training] as string}</p>
                           <p className="typo-caption text-foreground mt-1.5 line-clamp-2 leading-relaxed">{t.training[topic.promptKey]}</p>
+                          {cov && (
+                            <span
+                              className={`mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-medium ${COVERAGE_PILL[cov.tier]}`}
+                              title={tx(t.training.nextMovesCoverage, { count: cov.count })}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-80" aria-hidden />
+                              {coverageLabel(cov.tier)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </motion.button>

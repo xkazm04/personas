@@ -4,29 +4,21 @@ import * as twinApi from '@/api/twin/twin';
 import { useSystemStore } from '@/stores/systemStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { TRAINING_TOPIC_PRESETS } from './useTrainingSession';
+import { scoreTopicCoverage, type PresetId } from './topicCoverage';
 import type { LucideIcon } from 'lucide-react';
 import type { TwinPendingMemory } from '@/lib/bindings/TwinPendingMemory';
 
 /**
  * "Where to go next" panel rendered on the training completion screen.
  *
- * Stage 1 (this commit): score each preset by how many approved memories
- * on the active twin look like they cover that topic (rough keyword
- * match on the memory title + content). Surface the two presets with
- * the THINNEST coverage — that's where the next session would yield the
- * most new grounding. "Train this next" sends the user back to the topic
- * picker (handleReset). Stage 2 will skip the picker and auto-start the
- * recommended preset directly.
+ * Scores each preset by how many approved memories on the active twin look
+ * like they cover that topic (shared keyword match — see ./topicCoverage),
+ * then surfaces the two presets with the THINNEST coverage: that's where the
+ * next session yields the most new grounding. "Train this next" auto-starts
+ * the recommended preset directly (TrainingAtelier wires onPick to
+ * generateQuestions). The same coverage signal also tints the topic deck up
+ * front via TrainingAtelier's per-card pill.
  */
-
-const TOPIC_KEYWORDS: Record<string, string[]> = {
-  background: ['background', 'history', 'experience', 'started', 'began', 'career', 'grew up', 'where you', 'how did you', 'first job'],
-  opinions: ['opinion', 'think', 'believe', 'view', 'stance', 'agree', 'disagree', 'should', 'controversial', 'unpopular'],
-  communication: ['communication', 'voice', 'tone', 'style', 'write', 'speak', 'audience', 'phrase', 'word'],
-  values: ['value', 'principle', 'matter', 'important', 'priority', 'won\'t', 'never', 'always', 'integrity'],
-  expertise: ['expert', 'specialty', 'skill', 'domain', 'knowledge', 'deep', 'unique', 'advice'],
-  personal: ['personal', 'hobby', 'interest', 'enjoy', 'favorite', 'love', 'weekend', 'family', 'home'],
-};
 
 const TOPIC_ICONS: Record<string, LucideIcon> = {
   background: Briefcase,
@@ -47,7 +39,7 @@ const TOPIC_TINTS: Record<string, string> = {
 };
 
 interface Scored {
-  id: typeof TRAINING_TOPIC_PRESETS[number]['id'];
+  id: PresetId;
   labelKey: typeof TRAINING_TOPIC_PRESETS[number]['labelKey'];
   count: number;
   icon: LucideIcon;
@@ -55,24 +47,15 @@ interface Scored {
 }
 
 function scorePresetCoverage(memories: TwinPendingMemory[]): Scored[] {
-  return TRAINING_TOPIC_PRESETS.map((preset) => {
-    const kws = TOPIC_KEYWORDS[preset.id] ?? [];
-    let count = 0;
-    for (const m of memories) {
-      const hay = `${m.title ?? ''} ${m.content}`.toLowerCase();
-      if (kws.some((kw) => hay.includes(kw))) count += 1;
-    }
-    return {
-      id: preset.id,
-      labelKey: preset.labelKey,
-      count,
-      icon: TOPIC_ICONS[preset.id] ?? Sparkles,
-      tint: TOPIC_TINTS[preset.id] ?? 'border-primary/15 bg-card/40 text-foreground',
-    };
-  });
+  const countById = new Map(scoreTopicCoverage(memories).map((c) => [c.id, c.count]));
+  return TRAINING_TOPIC_PRESETS.map((preset) => ({
+    id: preset.id,
+    labelKey: preset.labelKey,
+    count: countById.get(preset.id) ?? 0,
+    icon: TOPIC_ICONS[preset.id] ?? Sparkles,
+    tint: TOPIC_TINTS[preset.id] ?? 'border-primary/15 bg-card/40 text-foreground',
+  }));
 }
-
-type PresetId = (typeof TRAINING_TOPIC_PRESETS)[number]['id'];
 
 interface Props {
   /** Auto-start the chosen preset: reset session state and immediately
