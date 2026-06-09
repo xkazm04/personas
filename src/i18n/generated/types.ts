@@ -14463,6 +14463,11 @@ export type Translations = {
     new_memories_other: string;
     removed_memories_one: string;
     removed_memories_other: string;
+    timeline_diff_tooltip: string;
+    timeline_memories_one: string;
+    timeline_memories_other: string;
+    timeline_runs_one: string;
+    timeline_runs_other: string;
     clear_all_filters: string;
     diff_legend: string;
   };

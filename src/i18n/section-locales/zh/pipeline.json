@@ -299,5 +299,10 @@
   "auto_team_agents_one": "{count} 个智能体",
   "auto_team_agents_other": "{count} 个智能体",
   "auto_team_connections_one": "{count} 个连接",
-  "auto_team_connections_other": "{count} 个连接"
+  "auto_team_connections_other": "{count} 个连接",
+  "timeline_diff_tooltip": "相对上一次运行的变化",
+  "timeline_memories_one": "{count} 条记忆",
+  "timeline_memories_other": "{count} 条记忆",
+  "timeline_runs_one": "{count} 次运行",
+  "timeline_runs_other": "{count} 次运行"
 }

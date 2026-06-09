@@ -13517,7 +13517,12 @@
     "auto_team_agents_one": "{count}টি এজেন্ট",
     "auto_team_agents_other": "{count}টি এজেন্ট",
     "auto_team_connections_one": "{count}টি সংযোগ",
-    "auto_team_connections_other": "{count}টি সংযোগ"
+    "auto_team_connections_other": "{count}টি সংযোগ",
+    "timeline_diff_tooltip": "আগের রানের তুলনায় পরিবর্তন",
+    "timeline_memories_one": "{count}টি স্মৃতি",
+    "timeline_memories_other": "{count}টি স্মৃতি",
+    "timeline_runs_one": "{count}টি রান",
+    "timeline_runs_other": "{count}টি রান"
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."

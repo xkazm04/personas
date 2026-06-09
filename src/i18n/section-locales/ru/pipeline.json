@@ -299,5 +299,10 @@
   "auto_team_agents_one": "{count} агент",
   "auto_team_agents_other": "Агентов: {count}",
   "auto_team_connections_one": "{count} связь",
-  "auto_team_connections_other": "Связей: {count}"
+  "auto_team_connections_other": "Связей: {count}",
+  "timeline_diff_tooltip": "Изменение относительно предыдущего запуска",
+  "timeline_memories_one": "{count} запись",
+  "timeline_memories_other": "Записей: {count}",
+  "timeline_runs_one": "{count} запуск",
+  "timeline_runs_other": "Запусков: {count}"
 }

@@ -299,5 +299,10 @@
   "auto_team_agents_one": "{count} agente",
   "auto_team_agents_other": "{count} agentes",
   "auto_team_connections_one": "{count} conexión",
-  "auto_team_connections_other": "{count} conexiones"
+  "auto_team_connections_other": "{count} conexiones",
+  "timeline_diff_tooltip": "Cambio respecto a la ejecución anterior",
+  "timeline_memories_one": "{count} memoria",
+  "timeline_memories_other": "{count} memorias",
+  "timeline_runs_one": "{count} ejecución",
+  "timeline_runs_other": "{count} ejecuciones"
 }

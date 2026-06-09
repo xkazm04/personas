@@ -299,5 +299,10 @@
   "auto_team_agents_one": "에이전트 {count}명",
   "auto_team_agents_other": "에이전트 {count}명",
   "auto_team_connections_one": "연결 {count}개",
-  "auto_team_connections_other": "연결 {count}개"
+  "auto_team_connections_other": "연결 {count}개",
+  "timeline_diff_tooltip": "이전 실행 대비 변화",
+  "timeline_memories_one": "메모리 {count}개",
+  "timeline_memories_other": "메모리 {count}개",
+  "timeline_runs_one": "실행 {count}회",
+  "timeline_runs_other": "실행 {count}회"
 }

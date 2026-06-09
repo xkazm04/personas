@@ -13517,7 +13517,12 @@
     "auto_team_agents_one": "وكيل واحد",
     "auto_team_agents_other": "{count} وكلاء",
     "auto_team_connections_one": "اتصال واحد",
-    "auto_team_connections_other": "{count} اتصالات"
+    "auto_team_connections_other": "{count} اتصالات",
+    "timeline_diff_tooltip": "التغيير مقارنة بالتشغيل السابق",
+    "timeline_memories_one": "ذاكرة واحدة",
+    "timeline_memories_other": "{count} ذكريات",
+    "timeline_runs_one": "تشغيل واحد",
+    "timeline_runs_other": "{count} تشغيلات"
   },
   "auth": {
     "login_timed_out": "انتهت مهلة تسجيل الدخول. يرجى المحاولة مجدداً."

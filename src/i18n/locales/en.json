@@ -14457,6 +14457,11 @@
     "new_memories_other": "{count} new memories",
     "removed_memories_one": "{count} removed",
     "removed_memories_other": "{count} removed",
+    "timeline_diff_tooltip": "Change vs the previous run",
+    "timeline_memories_one": "{count} memory",
+    "timeline_memories_other": "{count} memories",
+    "timeline_runs_one": "{count} run",
+    "timeline_runs_other": "{count} runs",
     "clear_all_filters": "Clear all filters",
     "diff_legend": "Green entries are new in the newer run; red entries are gone since the older run."
   },

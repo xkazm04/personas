@@ -299,5 +299,10 @@
   "auto_team_agents_one": "{count} agen",
   "auto_team_agents_other": "{count} agen",
   "auto_team_connections_one": "{count} koneksi",
-  "auto_team_connections_other": "{count} koneksi"
+  "auto_team_connections_other": "{count} koneksi",
+  "timeline_diff_tooltip": "Perubahan dibanding run sebelumnya",
+  "timeline_memories_one": "{count} memori",
+  "timeline_memories_other": "{count} memori",
+  "timeline_runs_one": "{count} run",
+  "timeline_runs_other": "{count} run"
 }

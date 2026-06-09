@@ -13517,7 +13517,12 @@
     "auto_team_agents_one": "{count} tác nhân",
     "auto_team_agents_other": "{count} tác nhân",
     "auto_team_connections_one": "{count} kết nối",
-    "auto_team_connections_other": "{count} kết nối"
+    "auto_team_connections_other": "{count} kết nối",
+    "timeline_diff_tooltip": "Thay đổi so với lần chạy trước",
+    "timeline_memories_one": "{count} ghi nhớ",
+    "timeline_memories_other": "{count} ghi nhớ",
+    "timeline_runs_one": "{count} lần chạy",
+    "timeline_runs_other": "{count} lần chạy"
   },
   "auth": {
     "login_timed_out": "Đăng nhập hết thời gian. Vui lòng thử lại."

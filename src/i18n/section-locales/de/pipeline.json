@@ -299,5 +299,10 @@
   "auto_team_agents_one": "{count} Agent",
   "auto_team_agents_other": "{count} Agenten",
   "auto_team_connections_one": "{count} Verbindung",
-  "auto_team_connections_other": "{count} Verbindungen"
+  "auto_team_connections_other": "{count} Verbindungen",
+  "timeline_diff_tooltip": "Änderung gegenüber dem vorherigen Lauf",
+  "timeline_memories_one": "{count} Eintrag",
+  "timeline_memories_other": "{count} Einträge",
+  "timeline_runs_one": "{count} Lauf",
+  "timeline_runs_other": "{count} Läufe"
 }

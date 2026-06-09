@@ -299,5 +299,10 @@
   "auto_team_agents_one": "エージェント {count} 体",
   "auto_team_agents_other": "エージェント {count} 体",
   "auto_team_connections_one": "接続 {count} 件",
-  "auto_team_connections_other": "接続 {count} 件"
+  "auto_team_connections_other": "接続 {count} 件",
+  "timeline_diff_tooltip": "前回の実行からの変化",
+  "timeline_memories_one": "メモリー {count} 件",
+  "timeline_memories_other": "メモリー {count} 件",
+  "timeline_runs_one": "実行 {count} 回",
+  "timeline_runs_other": "実行 {count} 回"
 }

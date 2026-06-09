@@ -299,5 +299,10 @@
   "auto_team_agents_one": "{count} agent",
   "auto_team_agents_other": "{count} agentů",
   "auto_team_connections_one": "{count} spojení",
-  "auto_team_connections_other": "{count} spojení"
+  "auto_team_connections_other": "{count} spojení",
+  "timeline_diff_tooltip": "Změna oproti předchozímu běhu",
+  "timeline_memories_one": "{count} záznam",
+  "timeline_memories_other": "{count} záznamů",
+  "timeline_runs_one": "{count} běh",
+  "timeline_runs_other": "{count} běhů"
 }
