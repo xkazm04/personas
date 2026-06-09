@@ -5147,6 +5147,19 @@
       "in_window": "ウィンドウ内"
     },
     "incidents": {
+      "filters_active_aria": "{count}件のフィルターが有効",
+      "filters_clear_all": "フィルターをクリア",
+      "group_by_label": "グループ化",
+      "group_by_agent": "エージェント",
+      "group_by_severity": "重大度",
+      "group_by_source": "ソース",
+      "group_by_none": "なし",
+      "siblings_label": "このエージェントの他の未対応インシデント",
+      "siblings_none": "このエージェントに他の未対応インシデントはありません。",
+      "view_all_from_agent": "このエージェントのすべてを表示",
+      "distribution_aria": "重大度別の未対応インシデント",
+      "new_since_last_visit": "前回の訪問以降{count}件の新着",
+      "mark_seen": "既読にする",
       "stale_label": "滞留",
       "sort_newest": "新しい順",
       "sort_oldest": "古い順",
@@ -6716,7 +6729,9 @@
       "review_error": "エラー",
       "used_references": "参照パターンを使用",
       "no_design_data": "デザインデータがありません",
-      "no_design_data_hint": "このテンプレートのデザインデータは利用できません。"
+      "no_design_data_hint": "このテンプレートのデザインデータは利用できません。",
+      "tab_use_cases": "ユースケース",
+      "open_diagram": "完全な図を開く"
     },
     "detail_overview": {
       "use_case_flows": "ユースケースフロー",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "実現可能性評価",
       "confirmed_capabilities": "確認された機能",
       "issues_label": "問題",
-      "suggested_next_steps": "推奨される次のステップ"
+      "suggested_next_steps": "推奨される次のステップ",
+      "summary": {
+        "connectors": "コネクタ",
+        "tools": "ツール",
+        "events": "イベント",
+        "channels": "チャネル",
+        "ready": "準備完了",
+        "partial": "一部",
+        "blocked": "ブロック"
+      }
     },
     "card": {
       "use_cases_label": "ユースケース",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count}個の質問、{customized}個カスタマイズ",
       "questionnaire_member_no_config": "設定不要",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "比較",
+      "selected": "{count} 件選択中",
+      "clear": "クリア",
+      "title": "テンプレートを比較",
+      "subtitle": "{count} 件のテンプレートを並べて比較",
+      "hint_min": "比較するテンプレートを2件以上選択してください",
+      "max_reached": "一度に最大 {max} 件まで比較できます",
+      "add_to_compare": "比較に追加",
+      "remove_from_compare": "比較から削除",
+      "col_category": "カテゴリ",
+      "col_goal": "目標",
+      "col_complexity": "複雑さ",
+      "col_setup": "セットアップ時間",
+      "none": "—",
+      "differs": "差異あり"
     }
   },
   "triggers": {

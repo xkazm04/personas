@@ -18,6 +18,10 @@ import { useAdoptionCompletionNotifier } from './useAdoptionCompletionNotifier';
 import { TemplateModals } from '../modals/TemplateModals';
 import { TemplateDetailModal } from '../modals/TemplateDetailModal';
 import { TemplateVirtualList } from './TemplateVirtualList';
+import { useTemplateCompare } from './useTemplateCompare';
+import { CompareTray } from './CompareTray';
+import { CompareModal } from '../modals/CompareModal';
+import { buildComparison } from './buildComparison';
 import { ErrorBoundary } from '@/features/shared/components/feedback/ErrorBoundary';
 import { useGalleryActions } from './useGalleryActions';
 import { getCachedLightFields, getCachedDesignResult } from './reviewParseCache';
@@ -51,6 +55,8 @@ export default function GeneratedReviewsTab({
   const setAdoptionDraft = useSystemStore((s) => s.setAdoptionDraft);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [density, setDensityRaw] = useState<Density>('comfortable');
+  const compare = useTemplateCompare();
+  const [compareOpen, setCompareOpen] = useState(false);
 
   // Stable refs for the row callbacks. Pairs with React.memo on
   // ComfortableRow so a parent re-render that doesn't touch these deps
@@ -93,6 +99,11 @@ export default function GeneratedReviewsTab({
     credentials, connectorDefinitions, gallery.refresh,
     gallery.unfilteredTotal, gallery.coverageFilter, componentFilter,
     difficultyFilter, setupFilter,
+  );
+
+  const compareColumns = useMemo(
+    () => buildComparison(compare.selected, actions.installedConnectorNames, actions.credentialServiceTypes),
+    [compare.selected, actions.installedConnectorNames, actions.credentialServiceTypes],
   );
 
   const handlePersonaCreated = () => {
@@ -208,6 +219,7 @@ export default function GeneratedReviewsTab({
             setExpandedRow(t.id);
             modals.open({ type: 'detail', review: t });
           }}
+          onAdoptTemplate={(t) => modals.open({ type: 'adopt', review: t })}
         />
       )}
 
@@ -247,6 +259,18 @@ export default function GeneratedReviewsTab({
             hasMore={gallery.hasMore}
             isLoading={gallery.isLoading}
             fetchMore={gallery.fetchMore}
+            compareSelectedIds={compare.selectedIds}
+            compareAtCapacity={!compare.canAdd}
+            onToggleCompare={compare.toggle}
+          />
+        )}
+
+        {!isRoleView && (
+          <CompareTray
+            selected={compare.selected}
+            onRemove={compare.remove}
+            onClear={compare.clear}
+            onCompare={() => setCompareOpen(true)}
           />
         )}
 
@@ -266,6 +290,27 @@ export default function GeneratedReviewsTab({
               preview.resetPreview();
             }
             modals.close('detail');
+            modals.open({ type: 'preview', review });
+          }}
+        />
+
+        <CompareModal
+          isOpen={compareOpen}
+          onClose={() => setCompareOpen(false)}
+          columns={compareColumns}
+          onAdopt={(id) => {
+            const review = compare.selected.find((r) => r.id === id);
+            if (!review) return;
+            setCompareOpen(false);
+            modals.open({ type: 'adopt', review });
+          }}
+          onTryIt={(id) => {
+            const review = compare.selected.find((r) => r.id === id);
+            if (!review) return;
+            if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+              preview.resetPreview();
+            }
+            setCompareOpen(false);
             modals.open({ type: 'preview', review });
           }}
         />

@@ -5526,6 +5526,11 @@ export type Translations = {
       groups_collapse_all: string;
       groups_expand_all: string;
       group_no_persona: string;
+      group_by_label: string;
+      group_by_agent: string;
+      group_by_severity: string;
+      group_by_source: string;
+      group_by_none: string;
       urgency_critical: string;
       urgency_high: string;
       urgency_medium: string;
@@ -5537,6 +5542,7 @@ export type Translations = {
       kpi_acknowledged: string;
       kpi_resolved: string;
       kpi_critical: string;
+      distribution_aria: string;
       filter_status_label: string;
       filter_status_all: string;
       filter_status_open: string;
@@ -5549,6 +5555,8 @@ export type Translations = {
       filter_source_all: string;
       filter_persona_label: string;
       filter_persona_any: string;
+      filters_active_aria: string;
+      filters_clear_all: string;
       action_acknowledge: string;
       action_resolve: string;
       action_dismiss: string;
@@ -5570,6 +5578,9 @@ export type Translations = {
       detail_no_detail: string;
       detail_note_label: string;
       detail_no_persona: string;
+      siblings_label: string;
+      siblings_none: string;
+      view_all_from_agent: string;
       action_failed_prefix: string;
       bulk_acknowledge_count: string;
       bulk_resolve_count: string;
@@ -5581,6 +5592,8 @@ export type Translations = {
       loading: string;
       load_failed: string;
       refresh: string;
+      new_since_last_visit: string;
+      mark_seen: string;
       just_now: string;
       resolved_at_label: string;
       acknowledged_at_label: string;
@@ -7252,6 +7265,8 @@ export type Translations = {
       used_references: string;
       no_design_data: string;
       no_design_data_hint: string;
+      tab_use_cases: string;
+      open_diagram: string;
     };
     detail_overview: {
       use_case_flows: string;
@@ -7865,6 +7880,15 @@ export type Translations = {
       confirmed_capabilities: string;
       issues_label: string;
       suggested_next_steps: string;
+      summary: {
+        connectors: string;
+        tools: string;
+        events: string;
+        channels: string;
+        ready: string;
+        partial: string;
+        blocked: string;
+      };
     };
     card: {
       use_cases_label: string;
@@ -7874,6 +7898,23 @@ export type Translations = {
       none_label: string;
       more_count: string;
       system_prompt: string;
+    };
+    compare: {
+      compare: string;
+      selected: string;
+      clear: string;
+      title: string;
+      subtitle: string;
+      hint_min: string;
+      max_reached: string;
+      add_to_compare: string;
+      remove_from_compare: string;
+      col_category: string;
+      col_goal: string;
+      col_complexity: string;
+      col_setup: string;
+      none: string;
+      differs: string;
     };
     matrix_grid: {
       prerequisites: string;

@@ -4,8 +4,6 @@ import {
   resolveAuditIncident,
   dismissAuditIncident,
   reopenAuditIncident,
-  bulkAcknowledgeAuditIncidents,
-  bulkResolveAuditIncidents,
 } from '@/api/overview/incidents';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -15,7 +13,7 @@ export interface UseIncidentActionsArgs {
 }
 
 /**
- * Lifecycle handlers (acknowledge / resolve / dismiss / reopen / bulk).
+ * Per-incident lifecycle handlers (acknowledge / resolve / dismiss / reopen).
  * Each handler refreshes the parent list via `onAfterChange` after success,
  * and surfaces a toast on failure.
  */
@@ -56,15 +54,6 @@ export function useIncidentActions({ onAfterChange }: UseIncidentActionsArgs) {
     (id: string) => handle(reopenAuditIncident(id), 'reopen'),
     [handle],
   );
-  const bulkAck = useCallback(
-    (ids: string[]) => handle(bulkAcknowledgeAuditIncidents(ids), 'bulk_acknowledge'),
-    [handle],
-  );
-  const bulkResolve = useCallback(
-    (ids: string[], note?: string) =>
-      handle(bulkResolveAuditIncidents(ids, note), 'bulk_resolve'),
-    [handle],
-  );
 
-  return { acknowledge, resolve, dismiss, reopen, bulkAck, bulkResolve };
+  return { acknowledge, resolve, dismiss, reopen };
 }

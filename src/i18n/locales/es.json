@@ -5147,6 +5147,19 @@
       "in_window": "en ventana"
     },
     "incidents": {
+      "filters_active_aria": "{count} filtros activos",
+      "filters_clear_all": "Borrar filtros",
+      "group_by_label": "Agrupar por",
+      "group_by_agent": "Agente",
+      "group_by_severity": "Gravedad",
+      "group_by_source": "Fuente",
+      "group_by_none": "Ninguno",
+      "siblings_label": "Otros incidentes abiertos de este agente",
+      "siblings_none": "No hay otros incidentes abiertos de este agente.",
+      "view_all_from_agent": "Ver todos de este agente",
+      "distribution_aria": "Incidentes abiertos por gravedad",
+      "new_since_last_visit": "{count} nuevos desde tu última visita",
+      "mark_seen": "Marcar como visto",
       "stale_label": "Pendiente",
       "sort_newest": "Más recientes",
       "sort_oldest": "Más antiguos",
@@ -6716,7 +6729,9 @@
       "review_error": "Error",
       "used_references": "Usó patrones de referencia",
       "no_design_data": "No hay datos de diseño disponibles",
-      "no_design_data_hint": "Datos de diseño no disponibles para esta plantilla."
+      "no_design_data_hint": "Datos de diseño no disponibles para esta plantilla.",
+      "tab_use_cases": "Casos de uso",
+      "open_diagram": "Abrir diagrama completo"
     },
     "detail_overview": {
       "use_case_flows": "Flujos de casos de uso",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "Evaluación de Viabilidad",
       "confirmed_capabilities": "Capacidades Confirmadas",
       "issues_label": "Problemas",
-      "suggested_next_steps": "Próximos Pasos Sugeridos"
+      "suggested_next_steps": "Próximos Pasos Sugeridos",
+      "summary": {
+        "connectors": "Conectores",
+        "tools": "Herramientas",
+        "events": "Eventos",
+        "channels": "Canales",
+        "ready": "Listo",
+        "partial": "Parcial",
+        "blocked": "Bloqueado"
+      }
     },
     "card": {
       "use_cases_label": "Casos de Uso",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} preguntas, {customized} personalizadas",
       "questionnaire_member_no_config": "No requiere configuración",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "Comparar",
+      "selected": "{count} seleccionados",
+      "clear": "Borrar",
+      "title": "Comparar plantillas",
+      "subtitle": "Comparación de {count} plantillas en paralelo",
+      "hint_min": "Selecciona al menos 2 plantillas para comparar",
+      "max_reached": "Compara hasta {max} a la vez",
+      "add_to_compare": "Añadir a la comparación",
+      "remove_from_compare": "Quitar de la comparación",
+      "col_category": "Categoría",
+      "col_goal": "Objetivo",
+      "col_complexity": "Complejidad",
+      "col_setup": "Tiempo de configuración",
+      "none": "—",
+      "differs": "Difiere"
     }
   },
   "triggers": {

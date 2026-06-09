@@ -5147,6 +5147,19 @@
       "in_window": "窗口内"
     },
     "incidents": {
+      "filters_active_aria": "{count} 个活动筛选器",
+      "filters_clear_all": "清除筛选器",
+      "group_by_label": "分组依据",
+      "group_by_agent": "代理",
+      "group_by_severity": "严重性",
+      "group_by_source": "来源",
+      "group_by_none": "无",
+      "siblings_label": "该代理的其他未处理事件",
+      "siblings_none": "该代理没有其他未处理事件。",
+      "view_all_from_agent": "查看该代理的全部事件",
+      "distribution_aria": "按严重性划分的未处理事件",
+      "new_since_last_visit": "自上次访问以来新增 {count} 个",
+      "mark_seen": "标记为已读",
       "stale_label": "已搁置",
       "sort_newest": "最新",
       "sort_oldest": "最早",
@@ -6716,7 +6729,9 @@
       "review_error": "错误",
       "used_references": "使用了参考模式",
       "no_design_data": "无设计数据",
-      "no_design_data_hint": "此模板的设计数据不可用。"
+      "no_design_data_hint": "此模板的设计数据不可用。",
+      "tab_use_cases": "用例",
+      "open_diagram": "打开完整流程图"
     },
     "detail_overview": {
       "use_case_flows": "用例流程",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "可行性评估",
       "confirmed_capabilities": "已确认的能力",
       "issues_label": "问题",
-      "suggested_next_steps": "建议的后续步骤"
+      "suggested_next_steps": "建议的后续步骤",
+      "summary": {
+        "connectors": "连接器",
+        "tools": "工具",
+        "events": "事件",
+        "channels": "渠道",
+        "ready": "就绪",
+        "partial": "部分",
+        "blocked": "受阻"
+      }
     },
     "card": {
       "use_cases_label": "用例",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} 个问题，已自定义 {customized} 项",
       "questionnaire_member_no_config": "无需配置",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "对比",
+      "selected": "已选 {count} 个",
+      "clear": "清除",
+      "title": "对比模板",
+      "subtitle": "并排对比 {count} 个模板",
+      "hint_min": "至少选择 2 个模板进行对比",
+      "max_reached": "一次最多对比 {max} 个",
+      "add_to_compare": "加入对比",
+      "remove_from_compare": "移出对比",
+      "col_category": "类别",
+      "col_goal": "目标",
+      "col_complexity": "复杂度",
+      "col_setup": "设置时间",
+      "none": "—",
+      "differs": "存在差异"
     }
   },
   "triggers": {

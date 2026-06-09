@@ -5147,6 +5147,19 @@
       "in_window": "в окне"
     },
     "incidents": {
+      "filters_active_aria": "{count} активных фильтра",
+      "filters_clear_all": "Сбросить фильтры",
+      "group_by_label": "Группировать по",
+      "group_by_agent": "Агент",
+      "group_by_severity": "Серьезность",
+      "group_by_source": "Источник",
+      "group_by_none": "Без группировки",
+      "siblings_label": "Другие открытые инциденты этого агента",
+      "siblings_none": "Других открытых инцидентов у этого агента нет.",
+      "view_all_from_agent": "Все инциденты этого агента",
+      "distribution_aria": "Открытые инциденты по серьезности",
+      "new_since_last_visit": "{count} новых с вашего последнего визита",
+      "mark_seen": "Отметить просмотренными",
       "stale_label": "Залежалось",
       "sort_newest": "Новые",
       "sort_oldest": "Старые",
@@ -6716,7 +6729,9 @@
       "review_error": "Ошибка",
       "used_references": "Использованы эталонные паттерны",
       "no_design_data": "Данные дизайна недоступны",
-      "no_design_data_hint": "Данные дизайна для этого шаблона недоступны."
+      "no_design_data_hint": "Данные дизайна для этого шаблона недоступны.",
+      "tab_use_cases": "Сценарии",
+      "open_diagram": "Открыть полную схему"
     },
     "detail_overview": {
       "use_case_flows": "Потоки сценариев использования",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "Оценка осуществимости",
       "confirmed_capabilities": "Подтверждённые возможности",
       "issues_label": "Проблемы",
-      "suggested_next_steps": "Предлагаемые следующие шаги"
+      "suggested_next_steps": "Предлагаемые следующие шаги",
+      "summary": {
+        "connectors": "Коннекторы",
+        "tools": "Инструменты",
+        "events": "События",
+        "channels": "Каналы",
+        "ready": "Готово",
+        "partial": "Частично",
+        "blocked": "Заблокировано"
+      }
     },
     "card": {
       "use_cases_label": "Сценарии",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} вопросов, {customized} настроено",
       "questionnaire_member_no_config": "Настройка не требуется",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "Сравнить",
+      "selected": "Выбрано: {count}",
+      "clear": "Очистить",
+      "title": "Сравнение шаблонов",
+      "subtitle": "Сравнение {count} шаблонов рядом",
+      "hint_min": "Выберите минимум 2 шаблона для сравнения",
+      "max_reached": "Сравнивайте до {max} одновременно",
+      "add_to_compare": "Добавить к сравнению",
+      "remove_from_compare": "Убрать из сравнения",
+      "col_category": "Категория",
+      "col_goal": "Цель",
+      "col_complexity": "Сложность",
+      "col_setup": "Время настройки",
+      "none": "—",
+      "differs": "Различается"
     }
   },
   "triggers": {

@@ -31,7 +31,9 @@
     "review_error": "خطأ",
     "used_references": "استخدم أنماطًا مرجعية",
     "no_design_data": "لا تتوفر بيانات تصميم",
-    "no_design_data_hint": "بيانات التصميم غير متوفرة لهذا القالب."
+    "no_design_data_hint": "بيانات التصميم غير متوفرة لهذا القالب.",
+    "tab_use_cases": "حالات الاستخدام",
+    "open_diagram": "فتح المخطط الكامل"
   },
   "detail_overview": {
     "use_case_flows": "تدفقات حالات الاستخدام",
@@ -644,7 +646,16 @@
     "feasibility_assessment": "تقييم الجدوى",
     "confirmed_capabilities": "القدرات المؤكدة",
     "issues_label": "المشاكل",
-    "suggested_next_steps": "الخطوات التالية المقترحة"
+    "suggested_next_steps": "الخطوات التالية المقترحة",
+    "summary": {
+      "connectors": "الموصلات",
+      "tools": "الأدوات",
+      "events": "الأحداث",
+      "channels": "القنوات",
+      "ready": "جاهز",
+      "partial": "جزئي",
+      "blocked": "محظور"
+    }
   },
   "card": {
     "use_cases_label": "حالات الاستخدام",
@@ -1142,5 +1153,22 @@
     "questionnaire_member_summary_customized": "{count} أسئلة، {customized} مخصصة",
     "questionnaire_member_no_config": "لا يلزم أي تكوين",
     "preview_members_select_hint": "Click to include / exclude"
+  },
+  "compare": {
+    "compare": "مقارنة",
+    "selected": "{count} محدد",
+    "clear": "مسح",
+    "title": "مقارنة القوالب",
+    "subtitle": "مقارنة جنبًا إلى جنب عبر {count} قوالب",
+    "hint_min": "اختر قالبين على الأقل للمقارنة",
+    "max_reached": "قارن حتى {max} في وقت واحد",
+    "add_to_compare": "إضافة إلى المقارنة",
+    "remove_from_compare": "إزالة من المقارنة",
+    "col_category": "الفئة",
+    "col_goal": "الهدف",
+    "col_complexity": "التعقيد",
+    "col_setup": "وقت الإعداد",
+    "none": "—",
+    "differs": "يختلف"
   }
 }

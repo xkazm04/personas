@@ -5147,6 +5147,19 @@
       "in_window": "dalam jendela"
     },
     "incidents": {
+      "filters_active_aria": "{count} filter aktif",
+      "filters_clear_all": "Hapus filter",
+      "group_by_label": "Kelompokkan berdasarkan",
+      "group_by_agent": "Agen",
+      "group_by_severity": "Keparahan",
+      "group_by_source": "Sumber",
+      "group_by_none": "Tidak ada",
+      "siblings_label": "Insiden terbuka lainnya dari agen ini",
+      "siblings_none": "Tidak ada insiden terbuka lainnya dari agen ini.",
+      "view_all_from_agent": "Lihat semua dari agen ini",
+      "distribution_aria": "Insiden terbuka berdasarkan keparahan",
+      "new_since_last_visit": "{count} baru sejak kunjungan terakhir Anda",
+      "mark_seen": "Tandai sudah dilihat",
       "stale_label": "Tertunda",
       "sort_newest": "Terbaru",
       "sort_oldest": "Terlama",
@@ -6716,7 +6729,9 @@
       "review_error": "Kesalahan",
       "used_references": "Menggunakan pola referensi",
       "no_design_data": "Tidak ada data desain tersedia",
-      "no_design_data_hint": "Data desain tidak tersedia untuk templat ini."
+      "no_design_data_hint": "Data desain tidak tersedia untuk templat ini.",
+      "tab_use_cases": "Kasus penggunaan",
+      "open_diagram": "Buka diagram lengkap"
     },
     "detail_overview": {
       "use_case_flows": "Alur Kasus Penggunaan",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "Penilaian Kelayakan",
       "confirmed_capabilities": "Kemampuan Terkonfirmasi",
       "issues_label": "Masalah",
-      "suggested_next_steps": "Langkah Berikutnya yang Disarankan"
+      "suggested_next_steps": "Langkah Berikutnya yang Disarankan",
+      "summary": {
+        "connectors": "Konektor",
+        "tools": "Alat",
+        "events": "Peristiwa",
+        "channels": "Saluran",
+        "ready": "Siap",
+        "partial": "Sebagian",
+        "blocked": "Terhalang"
+      }
     },
     "card": {
       "use_cases_label": "Kasus Penggunaan",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} pertanyaan, {customized} disesuaikan",
       "questionnaire_member_no_config": "Tidak perlu konfigurasi",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "Bandingkan",
+      "selected": "{count} dipilih",
+      "clear": "Hapus",
+      "title": "Bandingkan templat",
+      "subtitle": "Berdampingan untuk {count} templat",
+      "hint_min": "Pilih minimal 2 templat untuk dibandingkan",
+      "max_reached": "Bandingkan hingga {max} sekaligus",
+      "add_to_compare": "Tambahkan ke perbandingan",
+      "remove_from_compare": "Hapus dari perbandingan",
+      "col_category": "Kategori",
+      "col_goal": "Tujuan",
+      "col_complexity": "Kompleksitas",
+      "col_setup": "Waktu penyiapan",
+      "none": "—",
+      "differs": "Berbeda"
     }
   },
   "triggers": {

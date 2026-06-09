@@ -5520,6 +5520,11 @@
       "groups_collapse_all": "Collapse all",
       "groups_expand_all": "Expand all",
       "group_no_persona": "No agent",
+      "group_by_label": "Group by",
+      "group_by_agent": "Agent",
+      "group_by_severity": "Severity",
+      "group_by_source": "Source",
+      "group_by_none": "None",
       "urgency_critical": "Needs attention now",
       "urgency_high": "Important",
       "urgency_medium": "Worth a look",
@@ -5531,6 +5536,7 @@
       "kpi_acknowledged": "Acked",
       "kpi_resolved": "Resolved",
       "kpi_critical": "Critical",
+      "distribution_aria": "Open incidents by severity",
       "filter_status_label": "Status",
       "filter_status_all": "All",
       "filter_status_open": "Open",
@@ -5543,6 +5549,8 @@
       "filter_source_all": "All sources",
       "filter_persona_label": "Agent",
       "filter_persona_any": "any",
+      "filters_active_aria": "{count} active filters",
+      "filters_clear_all": "Clear filters",
       "action_acknowledge": "Ack",
       "action_resolve": "Resolve",
       "action_dismiss": "Dismiss",
@@ -5564,6 +5572,9 @@
       "detail_no_detail": "No additional detail.",
       "detail_note_label": "Resolution note (optional)",
       "detail_no_persona": "No agent",
+      "siblings_label": "Other open incidents from this agent",
+      "siblings_none": "No other open incidents from this agent.",
+      "view_all_from_agent": "View all from this agent",
       "action_failed_prefix": "Couldn't",
       "bulk_acknowledge_count": "Ack {count}",
       "bulk_resolve_count": "Resolve {count}",
@@ -5575,6 +5586,8 @@
       "loading": "Loading incidents…",
       "load_failed": "Failed to load incidents",
       "refresh": "Refresh",
+      "new_since_last_visit": "{count} new since your last visit",
+      "mark_seen": "Mark seen",
       "just_now": "just now",
       "resolved_at_label": "Resolved",
       "acknowledged_at_label": "Acked",
@@ -7245,7 +7258,9 @@
       "review_error": "Error",
       "used_references": "Used reference patterns",
       "no_design_data": "No design data available",
-      "no_design_data_hint": "Design data unavailable for this template."
+      "no_design_data_hint": "Design data unavailable for this template.",
+      "tab_use_cases": "Use cases",
+      "open_diagram": "Open full diagram"
     },
     "detail_overview": {
       "use_case_flows": "Use Case Flows",
@@ -7858,7 +7873,16 @@
       "feasibility_assessment": "Feasibility Assessment",
       "confirmed_capabilities": "Confirmed Capabilities",
       "issues_label": "Issues",
-      "suggested_next_steps": "Suggested Next Steps"
+      "suggested_next_steps": "Suggested Next Steps",
+      "summary": {
+        "connectors": "Connectors",
+        "tools": "Tools",
+        "events": "Events",
+        "channels": "Channels",
+        "ready": "Ready",
+        "partial": "Partial",
+        "blocked": "Blocked"
+      }
     },
     "card": {
       "use_cases_label": "Use Cases",
@@ -7868,6 +7892,23 @@
       "none_label": "None",
       "more_count": "+{count} more",
       "system_prompt": "System Prompt"
+    },
+    "compare": {
+      "compare": "Compare",
+      "selected": "{count} selected",
+      "clear": "Clear",
+      "title": "Compare templates",
+      "subtitle": "Side-by-side across {count} templates",
+      "hint_min": "Select at least 2 templates to compare",
+      "max_reached": "Compare up to {max} at once",
+      "add_to_compare": "Add to compare",
+      "remove_from_compare": "Remove from compare",
+      "col_category": "Category",
+      "col_goal": "Goal",
+      "col_complexity": "Complexity",
+      "col_setup": "Setup time",
+      "none": "—",
+      "differs": "Differs"
     },
     "matrix_grid": {
       "prerequisites": "Prerequisites",

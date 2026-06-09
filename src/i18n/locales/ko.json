@@ -5147,6 +5147,19 @@
       "in_window": "기간 내"
     },
     "incidents": {
+      "filters_active_aria": "{count}개의 활성 필터",
+      "filters_clear_all": "필터 초기화",
+      "group_by_label": "그룹 기준",
+      "group_by_agent": "에이전트",
+      "group_by_severity": "심각도",
+      "group_by_source": "소스",
+      "group_by_none": "없음",
+      "siblings_label": "이 에이전트의 다른 열린 인시던트",
+      "siblings_none": "이 에이전트의 다른 열린 인시던트가 없습니다.",
+      "view_all_from_agent": "이 에이전트의 모두 보기",
+      "distribution_aria": "심각도별 열린 인시던트",
+      "new_since_last_visit": "마지막 방문 이후 {count}개 신규",
+      "mark_seen": "확인 표시",
       "stale_label": "지연됨",
       "sort_newest": "최신순",
       "sort_oldest": "오래된순",
@@ -6716,7 +6729,9 @@
       "review_error": "오류",
       "used_references": "참조 패턴 사용됨",
       "no_design_data": "디자인 데이터 없음",
-      "no_design_data_hint": "이 템플릿에 대한 디자인 데이터를 사용할 수 없습니다."
+      "no_design_data_hint": "이 템플릿에 대한 디자인 데이터를 사용할 수 없습니다.",
+      "tab_use_cases": "사용 사례",
+      "open_diagram": "전체 다이어그램 열기"
     },
     "detail_overview": {
       "use_case_flows": "사용 사례 흐름",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "실현 가능성 평가",
       "confirmed_capabilities": "확인된 기능",
       "issues_label": "이슈",
-      "suggested_next_steps": "제안된 다음 단계"
+      "suggested_next_steps": "제안된 다음 단계",
+      "summary": {
+        "connectors": "커넥터",
+        "tools": "도구",
+        "events": "이벤트",
+        "channels": "채널",
+        "ready": "준비됨",
+        "partial": "부분",
+        "blocked": "차단됨"
+      }
     },
     "card": {
       "use_cases_label": "사용 사례",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count}개 질문, {customized}개 맞춤설정",
       "questionnaire_member_no_config": "구성 불필요",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "비교",
+      "selected": "{count}개 선택됨",
+      "clear": "지우기",
+      "title": "템플릿 비교",
+      "subtitle": "{count}개 템플릿 나란히 비교",
+      "hint_min": "비교하려면 템플릿을 2개 이상 선택하세요",
+      "max_reached": "한 번에 최대 {max}개까지 비교",
+      "add_to_compare": "비교에 추가",
+      "remove_from_compare": "비교에서 제거",
+      "col_category": "카테고리",
+      "col_goal": "목표",
+      "col_complexity": "복잡도",
+      "col_setup": "설정 시간",
+      "none": "—",
+      "differs": "다름"
     }
   },
   "triggers": {

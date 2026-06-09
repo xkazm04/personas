@@ -5147,6 +5147,19 @@
       "in_window": "विंडो में"
     },
     "incidents": {
+      "filters_active_aria": "{count} सक्रिय फ़िल्टर",
+      "filters_clear_all": "फ़िल्टर साफ़ करें",
+      "group_by_label": "इसके अनुसार समूहित करें",
+      "group_by_agent": "एजेंट",
+      "group_by_severity": "गंभीरता",
+      "group_by_source": "स्रोत",
+      "group_by_none": "कोई नहीं",
+      "siblings_label": "इस एजेंट की अन्य खुली घटनाएँ",
+      "siblings_none": "इस एजेंट की कोई अन्य खुली घटना नहीं।",
+      "view_all_from_agent": "इस एजेंट की सभी घटनाएँ देखें",
+      "distribution_aria": "गंभीरता के अनुसार खुली घटनाएँ",
+      "new_since_last_visit": "आपकी पिछली विज़िट के बाद {count} नई",
+      "mark_seen": "देखा चिह्नित करें",
       "stale_label": "पुराना",
       "sort_newest": "नवीनतम",
       "sort_oldest": "सबसे पुराना",
@@ -6716,7 +6729,9 @@
       "review_error": "त्रुटि",
       "used_references": "संदर्भ पैटर्न का उपयोग किया गया",
       "no_design_data": "कोई डिज़ाइन डेटा उपलब्ध नहीं",
-      "no_design_data_hint": "इस टेम्पलेट के लिए डिज़ाइन डेटा अनुपलब्ध है।"
+      "no_design_data_hint": "इस टेम्पलेट के लिए डिज़ाइन डेटा अनुपलब्ध है।",
+      "tab_use_cases": "उपयोग के मामले",
+      "open_diagram": "पूरा आरेख खोलें"
     },
     "detail_overview": {
       "use_case_flows": "उपयोग मामला फ़्लो",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "व्यवहार्यता मूल्यांकन",
       "confirmed_capabilities": "पुष्टि की गई क्षमताएं",
       "issues_label": "समस्याएं",
-      "suggested_next_steps": "सुझाए गए अगले कदम"
+      "suggested_next_steps": "सुझाए गए अगले कदम",
+      "summary": {
+        "connectors": "कनेक्टर",
+        "tools": "टूल",
+        "events": "इवेंट",
+        "channels": "चैनल",
+        "ready": "तैयार",
+        "partial": "आंशिक",
+        "blocked": "अवरुद्ध"
+      }
     },
     "card": {
       "use_cases_label": "उपयोग मामले",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} प्रश्न, {customized} कस्टमाइज़्ड",
       "questionnaire_member_no_config": "कोई कॉन्फ़िगरेशन आवश्यक नहीं",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "तुलना करें",
+      "selected": "{count} चयनित",
+      "clear": "साफ़ करें",
+      "title": "टेम्पलेट की तुलना करें",
+      "subtitle": "{count} टेम्पलेट में साथ-साथ तुलना",
+      "hint_min": "तुलना के लिए कम से कम 2 टेम्पलेट चुनें",
+      "max_reached": "एक बार में {max} तक तुलना करें",
+      "add_to_compare": "तुलना में जोड़ें",
+      "remove_from_compare": "तुलना से हटाएँ",
+      "col_category": "श्रेणी",
+      "col_goal": "लक्ष्य",
+      "col_complexity": "जटिलता",
+      "col_setup": "सेटअप समय",
+      "none": "—",
+      "differs": "भिन्न"
     }
   },
   "triggers": {

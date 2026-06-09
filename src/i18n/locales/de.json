@@ -5147,6 +5147,19 @@
       "in_window": "im Fenster"
     },
     "incidents": {
+      "filters_active_aria": "{count} aktive Filter",
+      "filters_clear_all": "Filter zurücksetzen",
+      "group_by_label": "Gruppieren nach",
+      "group_by_agent": "Agent",
+      "group_by_severity": "Schweregrad",
+      "group_by_source": "Quelle",
+      "group_by_none": "Keine",
+      "siblings_label": "Weitere offene Vorfälle dieses Agenten",
+      "siblings_none": "Keine weiteren offenen Vorfälle dieses Agenten.",
+      "view_all_from_agent": "Alle von diesem Agenten anzeigen",
+      "distribution_aria": "Offene Vorfälle nach Schweregrad",
+      "new_since_last_visit": "{count} neu seit Ihrem letzten Besuch",
+      "mark_seen": "Als gesehen markieren",
       "stale_label": "Überfällig",
       "sort_newest": "Neueste",
       "sort_oldest": "Älteste",
@@ -6716,7 +6729,9 @@
       "review_error": "Fehler",
       "used_references": "Referenzmuster verwendet",
       "no_design_data": "Keine Designdaten verfügbar",
-      "no_design_data_hint": "Designdaten für diese Vorlage nicht verfügbar."
+      "no_design_data_hint": "Designdaten für diese Vorlage nicht verfügbar.",
+      "tab_use_cases": "Anwendungsfälle",
+      "open_diagram": "Vollständiges Diagramm öffnen"
     },
     "detail_overview": {
       "use_case_flows": "Anwendungsfall-Abläufe",
@@ -7329,7 +7344,16 @@
       "feasibility_assessment": "Machbarkeitsbewertung",
       "confirmed_capabilities": "Bestätigte Fähigkeiten",
       "issues_label": "Probleme",
-      "suggested_next_steps": "Vorgeschlagene nächste Schritte"
+      "suggested_next_steps": "Vorgeschlagene nächste Schritte",
+      "summary": {
+        "connectors": "Konnektoren",
+        "tools": "Tools",
+        "events": "Ereignisse",
+        "channels": "Kanäle",
+        "ready": "Bereit",
+        "partial": "Teilweise",
+        "blocked": "Blockiert"
+      }
     },
     "card": {
       "use_cases_label": "Anwendungsfälle",
@@ -7827,6 +7851,23 @@
       "questionnaire_member_summary_customized": "{count} Fragen, {customized} angepasst",
       "questionnaire_member_no_config": "Keine Konfiguration nötig",
       "preview_members_select_hint": "Click to include / exclude"
+    },
+    "compare": {
+      "compare": "Vergleichen",
+      "selected": "{count} ausgewählt",
+      "clear": "Löschen",
+      "title": "Vorlagen vergleichen",
+      "subtitle": "{count} Vorlagen im direkten Vergleich",
+      "hint_min": "Wählen Sie mindestens 2 Vorlagen zum Vergleichen",
+      "max_reached": "Vergleichen Sie bis zu {max} gleichzeitig",
+      "add_to_compare": "Zum Vergleich hinzufügen",
+      "remove_from_compare": "Aus Vergleich entfernen",
+      "col_category": "Kategorie",
+      "col_goal": "Ziel",
+      "col_complexity": "Komplexität",
+      "col_setup": "Einrichtungszeit",
+      "none": "—",
+      "differs": "Unterschiedlich"
     }
   },
   "triggers": {
