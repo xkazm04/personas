@@ -7631,7 +7631,9 @@
       "empty_events": "Aucun abonnement aux événements",
       "empty_error": "Aucun gestionnaire d’erreurs",
       "empty_generic": "Aucun contenu",
-      "empty_dim_refine_hint": "Vous le voulez ? Décrivez-le ci-dessous — ajouté à la prochaine reconstruction."
+      "empty_dim_refine_hint": "Vous le voulez ? Décrivez-le ci-dessous — ajouté à la prochaine reconstruction.",
+      "show_n_more": "+{count} de plus",
+      "show_less": "Afficher moins"
     },
     "diagrams": {
       "no_flow_data": "Aucune donnée de flux disponible",

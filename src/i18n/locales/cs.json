@@ -7631,7 +7631,9 @@
       "empty_events": "Žádné odběry událostí",
       "empty_error": "Žádná obsluha chyb",
       "empty_generic": "Žádný obsah",
-      "empty_dim_refine_hint": "Chcete to? Popište níže — přidá se při příštím sestavení."
+      "empty_dim_refine_hint": "Chcete to? Popište níže — přidá se při příštím sestavení.",
+      "show_n_more": "+{count} dalších",
+      "show_less": "Zobrazit méně"
     },
     "diagrams": {
       "no_flow_data": "Žádná data toku nejsou k dispozici",

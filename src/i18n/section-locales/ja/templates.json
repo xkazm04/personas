@@ -942,7 +942,9 @@
     "empty_events": "イベント購読なし",
     "empty_error": "エラーハンドラーなし",
     "empty_generic": "コンテンツなし",
-    "empty_dim_refine_hint": "必要なら下に記入 — 次回の再ビルドで追加されます。"
+    "empty_dim_refine_hint": "必要なら下に記入 — 次回の再ビルドで追加されます。",
+    "show_n_more": "他 {count} 件",
+    "show_less": "折りたたむ"
   },
   "diagrams": {
     "no_flow_data": "フローデータがありません",

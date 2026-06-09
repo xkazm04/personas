@@ -942,7 +942,9 @@
     "empty_events": "لا توجد اشتراكات أحداث",
     "empty_error": "لا يوجد معالج أخطاء",
     "empty_generic": "لا يوجد محتوى",
-    "empty_dim_refine_hint": "تريده؟ صفه أدناه — سيُضاف عند إعادة البناء التالية."
+    "empty_dim_refine_hint": "تريده؟ صفه أدناه — سيُضاف عند إعادة البناء التالية.",
+    "show_n_more": "+{count} أخرى",
+    "show_less": "عرض أقل"
   },
   "diagrams": {
     "no_flow_data": "لا توجد بيانات تدفق",

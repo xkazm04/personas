@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ConnectorIcon, getConnectorMeta } from '@/features/shared/components/display/ConnectorMeta';
 import type { Translations } from '@/i18n/en';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -30,6 +31,13 @@ export function isDimEmpty(dim: GlyphDimension, row: GlyphRow): boolean {
  *  mirrors a matrix cell — label + concrete template data, trimmed to
  *  what fits comfortably in the overlay frame. */
 export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow; t: Translations }) {
+  // One flag serves whichever branch renders — only one dim shows at a
+  // time and the panel remounts per dim (AnimatePresence), so the
+  // expansion state naturally resets when switching dimensions.
+  const [showAll, setShowAll] = useState(false);
+  const moreLabel = (count: number) =>
+    t.templates.chronology.show_n_more.replace('{count}', String(count));
+
   switch (dim) {
     case 'trigger':
       if (!row.triggers.length) return <EmptyNote label={t.templates.chronology.empty_trigger} />;
@@ -48,7 +56,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
       if (!row.steps.length) return <EmptyNote label={t.templates.chronology.empty_steps} />;
       return (
         <ol className="flex flex-col gap-1.5 list-none">
-          {row.steps.slice(0, 8).map((s, i) => (
+          {(showAll ? row.steps : row.steps.slice(0, 8)).map((s, i) => (
             <li key={s.id} className="flex gap-2">
               <span className="typo-label text-foreground tabular-nums shrink-0">{i + 1}.</span>
               <div className="flex flex-col min-w-0">
@@ -57,7 +65,17 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
               </div>
             </li>
           ))}
-          {row.steps.length > 8 && <li className="typo-label text-foreground italic">+{row.steps.length - 8} more</li>}
+          {row.steps.length > 8 && (
+            <li>
+              <button
+                type="button"
+                onClick={() => setShowAll((v) => !v)}
+                className="typo-label text-foreground italic underline-offset-2 hover:underline cursor-pointer"
+              >
+                {showAll ? t.templates.chronology.show_less : moreLabel(row.steps.length - 8)}
+              </button>
+            </li>
+          )}
         </ol>
       );
 
@@ -65,7 +83,7 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
       if (!row.connectors.length) return <EmptyNote label={t.templates.chronology.empty_connectors} />;
       return (
         <div className="grid grid-cols-2 gap-1.5">
-          {row.connectors.slice(0, 6).map((cn, i) => {
+          {(showAll ? row.connectors : row.connectors.slice(0, 6)).map((cn, i) => {
             const meta = getConnectorMeta(cn.name);
             return (
               <div key={i} className="flex items-center gap-2 p-1.5 rounded bg-primary/5 border border-card-border">
@@ -80,9 +98,13 @@ export function DimContent({ dim, row, t }: { dim: GlyphDimension; row: GlyphRow
             );
           })}
           {row.connectors.length > 6 && (
-            <div className="flex items-center justify-center rounded border border-dashed border-card-border typo-label text-foreground">
-              +{row.connectors.length - 6} more
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowAll((v) => !v)}
+              className="flex items-center justify-center rounded border border-dashed border-card-border typo-label text-foreground hover:border-primary/40 hover:bg-primary/5 cursor-pointer transition-colors"
+            >
+              {showAll ? t.templates.chronology.show_less : moreLabel(row.connectors.length - 6)}
+            </button>
           )}
         </div>
       );

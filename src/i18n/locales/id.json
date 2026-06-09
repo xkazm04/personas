@@ -7631,7 +7631,9 @@
       "empty_events": "Tidak ada langganan acara",
       "empty_error": "Tidak ada penangan kesalahan",
       "empty_generic": "Tidak ada konten",
-      "empty_dim_refine_hint": "Mau? Jelaskan di bawah — ditambahkan saat pembangunan ulang berikutnya."
+      "empty_dim_refine_hint": "Mau? Jelaskan di bawah — ditambahkan saat pembangunan ulang berikutnya.",
+      "show_n_more": "+{count} lagi",
+      "show_less": "Tampilkan lebih sedikit"
     },
     "diagrams": {
       "no_flow_data": "Tidak ada data aliran yang tersedia",

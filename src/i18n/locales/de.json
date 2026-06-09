@@ -7631,7 +7631,9 @@
       "empty_events": "Keine Ereignis-Abonnements",
       "empty_error": "Kein Fehler-Handler",
       "empty_generic": "Kein Inhalt",
-      "empty_dim_refine_hint": "Gewünscht? Unten beschreiben — wird beim nächsten Neuaufbau ergänzt."
+      "empty_dim_refine_hint": "Gewünscht? Unten beschreiben — wird beim nächsten Neuaufbau ergänzt.",
+      "show_n_more": "+{count} weitere",
+      "show_less": "Weniger anzeigen"
     },
     "diagrams": {
       "no_flow_data": "Keine Flow-Daten verfügbar",
