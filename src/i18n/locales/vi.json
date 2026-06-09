@@ -14004,6 +14004,8 @@
       "threadTitle": "Gần đây với {handle}",
       "threadInbound": "Đã nhận",
       "threadOutbound": "Đã gửi",
+      "sentTitle": "Đã gửi gần đây",
+      "sentTo": "tới {handle}",
       "staleTag": "có vẻ ngưng trệ",
       "testTooltip": "Ghi nhận một ping gửi đi giả lập",
       "testDisabledPaused": "Kích hoạt kênh trước rồi mới có thể kiểm tra",

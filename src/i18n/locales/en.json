@@ -14999,6 +14999,8 @@
       "threadTitle": "Recent with {handle}",
       "threadInbound": "Received",
       "threadOutbound": "Sent",
+      "sentTitle": "Recently sent",
+      "sentTo": "to {handle}",
       "staleTag": "looks stale",
       "testTooltip": "Log a synthetic outbound ping",
       "testDisabledPaused": "Activate the channel first to test it",

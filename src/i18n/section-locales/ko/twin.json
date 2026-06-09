@@ -89,6 +89,8 @@
     "threadTitle": "{handle}와의 최근 대화",
     "threadInbound": "수신",
     "threadOutbound": "발신",
+    "sentTitle": "최근 보냄",
+    "sentTo": "{handle}에게",
     "staleTag": "활동 없음",
     "testTooltip": "합성 아웃바운드 핑 기록",
     "testDisabledPaused": "테스트하려면 먼저 채널을 활성화하세요",

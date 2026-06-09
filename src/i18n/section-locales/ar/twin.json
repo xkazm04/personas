@@ -89,6 +89,8 @@
     "threadTitle": "آخر المراسلات مع {handle}",
     "threadInbound": "وارد",
     "threadOutbound": "صادر",
+    "sentTitle": "المُرسَل مؤخرًا",
+    "sentTo": "إلى {handle}",
     "staleTag": "يبدو خاملاً",
     "testTooltip": "تسجيل اختبار صادر اصطناعي",
     "testDisabledPaused": "فعّل القناة أولاً لاختبارها",

@@ -14004,6 +14004,8 @@
       "threadTitle": "{handle}-এর সাথে সাম্প্রতিক",
       "threadInbound": "প্রাপ্ত",
       "threadOutbound": "পাঠানো",
+      "sentTitle": "সম্প্রতি পাঠানো",
+      "sentTo": "{handle}-কে",
       "staleTag": "নিষ্ক্রিয় মনে হচ্ছে",
       "testTooltip": "একটি কৃত্রিম আউটবাউন্ড পিং লগ করুন",
       "testDisabledPaused": "পরীক্ষা করতে প্রথমে চ্যানেলটি সক্রিয় করুন",

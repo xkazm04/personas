@@ -15005,6 +15005,8 @@ export type Translations = {
       threadTitle: string;
       threadInbound: string;
       threadOutbound: string;
+      sentTitle: string;
+      sentTo: string;
       staleTag: string;
       testTooltip: string;
       testDisabledPaused: string;

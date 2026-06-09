@@ -14004,6 +14004,8 @@
       "threadTitle": "{handle} के साथ हालिया",
       "threadInbound": "प्राप्त",
       "threadOutbound": "भेजा गया",
+      "sentTitle": "हाल में भेजा",
+      "sentTo": "{handle} को",
       "staleTag": "निष्क्रिय प्रतीत",
       "testTooltip": "एक कृत्रिम आउटबाउंड पिंग लॉग करें",
       "testDisabledPaused": "परीक्षण करने के लिए पहले चैनल को सक्रिय करें",

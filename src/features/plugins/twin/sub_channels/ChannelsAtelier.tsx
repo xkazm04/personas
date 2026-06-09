@@ -15,6 +15,7 @@ import { DEPLOYMENT_CHANNELS, getDeploymentChannelMeta, paletteOf } from '../sha
 import { silentCatch } from '@/lib/silentCatch';
 import { useChannelActivity } from './useChannelActivity';
 import { ReplyOutbox } from './ReplyOutbox';
+import { SentReplies } from './SentReplies';
 
 
 /* ------------------------------------------------------------------ *
@@ -224,6 +225,9 @@ export default function ChannelsAtelier() {
 
           {/* Reply outbox — draft + approve-before-send */}
           {channels.length > 0 && <ReplyOutbox channels={channels} />}
+
+          {/* Recently sent — a visible record of logged outbound replies */}
+          {channels.length > 0 && <SentReplies channels={channels} />}
 
           {/* Channel list */}
           {isLoading && channels.length === 0 ? (

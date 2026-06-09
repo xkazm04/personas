@@ -89,6 +89,8 @@
     "threadTitle": "Récent avec {handle}",
     "threadInbound": "Reçu",
     "threadOutbound": "Envoyé",
+    "sentTitle": "Envoyés récemment",
+    "sentTo": "à {handle}",
     "staleTag": "semble inactif",
     "testTooltip": "Consigner un ping sortant synthétique",
     "testDisabledPaused": "Activez d'abord le canal pour le tester",

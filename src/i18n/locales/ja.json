@@ -14004,6 +14004,8 @@
       "threadTitle": "{handle} との最近のやり取り",
       "threadInbound": "受信",
       "threadOutbound": "送信",
+      "sentTitle": "最近の送信",
+      "sentTo": "{handle} 宛",
       "staleTag": "停滞気味",
       "testTooltip": "合成アウトバウンド ping をログに記録",
       "testDisabledPaused": "テストする前にチャンネルをアクティブ化してください",

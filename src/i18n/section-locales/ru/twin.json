@@ -89,6 +89,8 @@
     "threadTitle": "Недавнее с {handle}",
     "threadInbound": "Входящее",
     "threadOutbound": "Отправлено",
+    "sentTitle": "Недавно отправлено",
+    "sentTo": "для {handle}",
     "staleTag": "похоже неактивен",
     "testTooltip": "Записать синтетический исходящий пинг",
     "testDisabledPaused": "Сначала активируйте канал, чтобы его протестировать",

@@ -14004,6 +14004,8 @@
       "threadTitle": "Terbaru dengan {handle}",
       "threadInbound": "Diterima",
       "threadOutbound": "Terkirim",
+      "sentTitle": "Baru dikirim",
+      "sentTo": "ke {handle}",
       "staleTag": "tampak tak aktif",
       "testTooltip": "Catat ping keluar sintetis",
       "testDisabledPaused": "Aktifkan kanalnya terlebih dahulu untuk mengujinya",

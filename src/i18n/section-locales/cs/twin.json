@@ -89,6 +89,8 @@
     "threadTitle": "Nedávno s {handle}",
     "threadInbound": "Přijato",
     "threadOutbound": "Odesláno",
+    "sentTitle": "Nedávno odesláno",
+    "sentTo": "pro {handle}",
     "staleTag": "vypadá nečinně",
     "testTooltip": "Zalogovat syntetický odchozí ping",
     "testDisabledPaused": "Nejprve kanál aktivujte, abyste ho mohli otestovat",
