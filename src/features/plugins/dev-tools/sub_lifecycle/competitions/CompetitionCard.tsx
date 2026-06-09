@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AbsoluteTime } from '@/features/shared/components/display/AbsoluteTime';
-import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff } from 'lucide-react';
+import { Swords, RefreshCw, Ban, Lightbulb, Trash2, FileDiff, Trophy } from 'lucide-react';
 import { Button } from '@/features/shared/components/buttons';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { useToastStore } from '@/stores/toastStore';
@@ -10,6 +10,7 @@ import { CompetitionSlotRow } from './CompetitionSlotRow';
 import { WinnerInsightDialog } from './WinnerInsightDialog';
 import { RacingProgress } from './RacingProgress';
 import { PromptDiffModal, summarizePromptDiff } from './PromptDiffModal';
+import { parseGenesFromPrompt, type StrategyGenes } from './strategyPresets';
 import type { DevCompetition } from '@/lib/bindings/DevCompetition';
 
 const STATUS_BADGES: Record<string, { color: string; label: string }> = {
@@ -50,7 +51,7 @@ function BaselineHealth({ json }: { json: string }) {
   } catch { return null; }
 }
 
-export function CompetitionCard({ competition, onRefresh }: { competition: DevCompetition; onRefresh: () => void }) {
+export function CompetitionCard({ competition, onRefresh, onRematch }: { competition: DevCompetition; onRefresh: () => void; onRematch?: (genes: StrategyGenes) => void }) {
   const { t, tx } = useTranslation();
   const dl = t.plugins.dev_lifecycle;
   const addToast = useToastStore((s) => s.addToast);
@@ -161,6 +162,11 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
   const badge = statusBadge(effectiveStatus);
   const isFinished = effectiveStatus === 'resolved' || effectiveStatus === 'cancelled';
 
+  // For a resolved competition, recover the winning slot + the genes embedded
+  // in its strategy prompt so we can spotlight it and seed a rematch.
+  const winnerSlot = detail?.slots.find((s) => s.slot.task_id === detail.competition.winner_task_id)?.slot ?? null;
+  const winnerGenes = winnerSlot?.strategy_prompt ? parseGenesFromPrompt(winnerSlot.strategy_prompt) : null;
+
   return (
     <div className="border border-primary/15 rounded-card bg-card/30 overflow-hidden">
       <button
@@ -202,6 +208,44 @@ export function CompetitionCard({ competition, onRefresh }: { competition: DevCo
                 </div>
               )}
               {detail.competition.baseline_json && <BaselineHealth json={detail.competition.baseline_json} />}
+
+              {/* Winner spotlight — surfaces the winning strategy + a one-click
+                  rematch that seeds a fresh competition from its genes. */}
+              {isFinished && winnerSlot && (
+                <div className="rounded-interactive border border-emerald-500/25 bg-emerald-500/5 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="typo-caption text-primary uppercase tracking-wider shrink-0">{dl.winner_label}</span>
+                      <span className="typo-card-label truncate">{winnerSlot.strategy_label}</span>
+                    </div>
+                    {winnerGenes && onRematch && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        icon={<Swords className="w-3.5 h-3.5" />}
+                        title={dl.rematch_hint}
+                        onClick={() => onRematch(winnerGenes)}
+                      >
+                        {dl.rematch_with_winner}
+                      </Button>
+                    )}
+                  </div>
+                  {winnerGenes && (
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {Object.entries(winnerGenes).map(([key, val]) => (
+                        <span key={key} className={`rounded px-1.5 py-0.5 typo-caption border ${
+                          (val as number) >= 7 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25'
+                          : (val as number) <= 3 ? 'bg-amber-500/10 text-amber-400 border-amber-500/25'
+                          : 'bg-primary/10 text-foreground border-primary/15'
+                        }`}>
+                          {key.replace(/([A-Z])/g, ' $1').trim()}: {val as number}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Racing progress visualization — shown for active competitions */}
               {!isFinished && (

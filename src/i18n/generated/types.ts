@@ -12913,6 +12913,9 @@ export type Translations = {
       competition_title_placeholder: string;
       competition_desc_placeholder: string;
       regenerate_strategies_title: string;
+      winner_label: string;
+      rematch_with_winner: string;
+      rematch_hint: string;
       worktree_base_ref_label: string;
       worktree_base_ref_head: string;
       worktree_base_ref_fresh: string;

@@ -205,6 +205,23 @@ export function generateStrategies(
 }
 
 /**
+ * Recover the gene weights embedded in a generated strategy prompt.
+ * `generateStrategyPrompt` writes one `- **<key>** (<n>/10): ...` line per
+ * gene, so a stored slot prompt round-trips back to its genes. Returns null if
+ * any gene line is missing — lets callers fall back gracefully when a prompt
+ * was hand-edited or produced by an older format.
+ */
+export function parseGenesFromPrompt(prompt: string): StrategyGenes | null {
+  const out = {} as StrategyGenes;
+  for (const key of GENE_KEYS) {
+    const m = prompt.match(new RegExp(`\\*\\*${key}\\*\\*\\s*\\((\\d+)\\s*/\\s*10\\)`));
+    if (!m) return null;
+    out[key] = clamp(Number(m[1]));
+  }
+  return out;
+}
+
+/**
  * Mutate a losing strategy's genes toward the winner's genes
  * with some random exploration. Used for strategy evolution.
  */
