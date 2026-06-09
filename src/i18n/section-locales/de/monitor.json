@@ -83,5 +83,7 @@
   "channel_filter_no_matches": "Nichts passt zu diesen Filtern.",
   "channel_filter_clear": "Filter zurücksetzen",
   "channel_mention_tab": "Tab zum Vervollständigen",
-  "channel_mention_will_see": "Erwähnt — das Team sieht Direktiven an der nächsten Schrittgrenze"
+  "channel_mention_will_see": "Erwähnt — das Team sieht Direktiven an der nächsten Schrittgrenze",
+  "channel_composer_newline_hint": "Shift+Enter für eine neue Zeile",
+  "channel_composer_reply_placeholder": "Schreibe deine Antwort…"
 }

@@ -208,6 +208,8 @@
     "channel_filter_clear": "Clear filters",
     "channel_mention_tab": "Tab to complete",
     "channel_mention_will_see": "Mentioned — the team sees directives at the next step boundary",
+    "channel_composer_newline_hint": "Shift+Enter for a new line",
+    "channel_composer_reply_placeholder": "Write your reply…",
     "quick_choose_action": "Choose an action",
     "quick_dismiss": "Dismiss",
     "quick_prev_decision": "Previous decision",

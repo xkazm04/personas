@@ -83,5 +83,7 @@
   "channel_filter_no_matches": "इन फ़िल्टरों से कुछ नहीं मिला।",
   "channel_filter_clear": "फ़िल्टर साफ़ करें",
   "channel_mention_tab": "पूरा करने के लिए Tab दबाएँ",
-  "channel_mention_will_see": "उल्लेख किया गया — टीम अगली स्टेप सीमा पर निर्देश देखती है"
+  "channel_mention_will_see": "उल्लेख किया गया — टीम अगली स्टेप सीमा पर निर्देश देखती है",
+  "channel_composer_newline_hint": "नई पंक्ति के लिए Shift+Enter",
+  "channel_composer_reply_placeholder": "अपना जवाब लिखें…"
 }

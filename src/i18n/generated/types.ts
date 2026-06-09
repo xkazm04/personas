@@ -214,6 +214,8 @@ export type Translations = {
     channel_filter_clear: string;
     channel_mention_tab: string;
     channel_mention_will_see: string;
+    channel_composer_newline_hint: string;
+    channel_composer_reply_placeholder: string;
     quick_choose_action: string;
     quick_dismiss: string;
     quick_prev_decision: string;

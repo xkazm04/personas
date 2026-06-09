@@ -83,5 +83,7 @@
   "channel_filter_no_matches": "Ничего не подходит под эти фильтры.",
   "channel_filter_clear": "Сбросить фильтры",
   "channel_mention_tab": "Tab — автодополнение",
-  "channel_mention_will_see": "Упомянут — команда видит директивы на границе следующего шага"
+  "channel_mention_will_see": "Упомянут — команда видит директивы на границе следующего шага",
+  "channel_composer_newline_hint": "Shift+Enter — новая строка",
+  "channel_composer_reply_placeholder": "Напишите ответ…"
 }

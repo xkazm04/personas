@@ -155,7 +155,9 @@
     "channel_filter_no_matches": "Nada coincide con estos filtros.",
     "channel_filter_clear": "Borrar filtros",
     "channel_mention_tab": "Tab para completar",
-    "channel_mention_will_see": "Mencionado: el equipo ve las directivas en el siguiente límite de paso"
+    "channel_mention_will_see": "Mencionado: el equipo ve las directivas en el siguiente límite de paso",
+    "channel_composer_newline_hint": "Shift+Enter para nueva línea",
+    "channel_composer_reply_placeholder": "Escribe tu respuesta…"
   },
   "common": {
     "loading": "Cargando...",

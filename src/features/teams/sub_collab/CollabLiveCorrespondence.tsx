@@ -34,14 +34,49 @@ import type { ManualReviewStatus } from '@/lib/bindings/ManualReviewStatus';
  * inline team-review intervention; pending manual reviews surface via the
  * shared QuickAnswerReviewCard. A designed empty state explains the channel.
  */
+const DRAFT_PREFIX = 'personas.channel.draft.';
+
 export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId: string; members: ChannelMember[]; teamName?: string }) {
   const { t, tx } = useTranslation();
   const personaIndex = usePersonaIndex();
   const { items, loaded, exhausted, posting, presence, loadOlder, sendDirective } = useTeamChannel(teamId);
   const [draft, setDraft] = useState('');
+  const composerRef = useRef<HTMLTextAreaElement | null>(null);
   const topSentinel = useRef<HTMLDivElement | null>(null);
   const scrollBox = useRef<HTMLDivElement | null>(null);
   const stickBottom = useRef(true);
+
+  // Per-team draft persistence: a half-written directive survives switching
+  // teams or closing the app. Persisting happens in updateDraft (not an
+  // effect) so a team switch can't race the load and clobber another key.
+  useEffect(() => {
+    try {
+      setDraft(localStorage.getItem(DRAFT_PREFIX + teamId) ?? '');
+    } catch (err) {
+      silentCatch('collab/correspondence:draftLoad')(err);
+    }
+  }, [teamId]);
+
+  const updateDraft = (next: string | ((d: string) => string)) => {
+    setDraft((prev) => {
+      const value = typeof next === 'function' ? next(prev) : next;
+      try {
+        if (value) localStorage.setItem(DRAFT_PREFIX + teamId, value);
+        else localStorage.removeItem(DRAFT_PREFIX + teamId);
+      } catch (err) {
+        silentCatch('collab/correspondence:draftSave')(err);
+      }
+      return value;
+    });
+  };
+
+  // Autosize the composer up to ~6 lines; beyond that it scrolls.
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [draft]);
   const [atBottom, setAtBottom] = useState(true);
   const [unseen, setUnseen] = useState(0);
   const lastSeenIdRef = useRef<string | null>(null);
@@ -137,7 +172,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
   const send = () => {
     const text = draft.trim();
     if (!text || posting) return;
-    setDraft('');
+    updateDraft('');
     void sendDirective(text, replyTarget?.id);
     setReplyTarget(null);
     stickBottom.current = true;
@@ -179,7 +214,7 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
     return list.length > 0 ? list.slice(0, 4) : null;
   }, [draft, members]);
   const completeMention = (insert: string) => {
-    setDraft((d) => d.replace(/(^|\s)@([\p{L}\d_-]{1,24})$/iu, (_full, pre: string) => `${pre}${insert}`));
+    updateDraft((d) => d.replace(/(^|\s)@([\p{L}\d_-]{1,24})$/iu, (_full, pre: string) => `${pre}${insert}`));
   };
 
   const workingNames = members
@@ -406,16 +441,19 @@ export function CollabLiveCorrespondence({ teamId, members, teamName }: { teamId
             ))}
           </div>
         )}
-        <div className="flex items-center gap-2">
-        <input
+        <div className="flex items-end gap-2">
+        <textarea
+          ref={composerRef}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          rows={1}
+          onChange={(e) => updateDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Tab' && mentionCandidates) { e.preventDefault(); completeMention(mentionCandidates[0]!.insert); return; }
-            if (e.key === 'Enter') send();
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
           }}
-          placeholder={replyTarget ? 'Write your reply…' : 'Say something to the team… Tag @athena to bring her in'}
-          className="flex-1 px-3.5 py-2.5 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
+          placeholder={replyTarget ? t.monitor.channel_composer_reply_placeholder : t.monitor.channels_composer_placeholder}
+          title={t.monitor.channel_composer_newline_hint}
+          className="flex-1 resize-none max-h-40 overflow-y-auto px-3.5 py-2.5 rounded-input bg-secondary/30 border border-border typo-body text-foreground placeholder:text-foreground/35 focus:outline-none focus:border-primary/40"
         />
         <button
           type="button"

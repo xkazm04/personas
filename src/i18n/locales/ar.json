@@ -155,7 +155,9 @@
     "channel_filter_no_matches": "لا شيء يطابق هذه المرشحات.",
     "channel_filter_clear": "مسح المرشحات",
     "channel_mention_tab": "اضغط Tab للإكمال",
-    "channel_mention_will_see": "تمت الإشارة — يرى الفريق التوجيهات عند حدود الخطوة التالية"
+    "channel_mention_will_see": "تمت الإشارة — يرى الفريق التوجيهات عند حدود الخطوة التالية",
+    "channel_composer_newline_hint": "Shift+Enter لسطر جديد",
+    "channel_composer_reply_placeholder": "اكتب ردك…"
   },
   "common": {
     "loading": "جارٍ التحميل...",

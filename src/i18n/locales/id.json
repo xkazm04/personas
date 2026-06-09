@@ -155,7 +155,9 @@
     "channel_filter_no_matches": "Tidak ada yang cocok dengan filter ini.",
     "channel_filter_clear": "Hapus filter",
     "channel_mention_tab": "Tab untuk melengkapi",
-    "channel_mention_will_see": "Disebut — tim melihat arahan pada batas langkah berikutnya"
+    "channel_mention_will_see": "Disebut — tim melihat arahan pada batas langkah berikutnya",
+    "channel_composer_newline_hint": "Shift+Enter untuk baris baru",
+    "channel_composer_reply_placeholder": "Tulis balasan Anda…"
   },
   "common": {
     "loading": "Memuat...",

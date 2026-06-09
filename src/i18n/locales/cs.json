@@ -155,7 +155,9 @@
     "channel_filter_no_matches": "Těmto filtrům nic neodpovídá.",
     "channel_filter_clear": "Vymazat filtry",
     "channel_mention_tab": "Tab pro doplnění",
-    "channel_mention_will_see": "Zmíněno — tým vidí direktivy na hranici dalšího kroku"
+    "channel_mention_will_see": "Zmíněno — tým vidí direktivy na hranici dalšího kroku",
+    "channel_composer_newline_hint": "Shift+Enter pro nový řádek",
+    "channel_composer_reply_placeholder": "Napište odpověď…"
   },
   "common": {
     "loading": "Načítání...",
