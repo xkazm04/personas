@@ -91,8 +91,9 @@ export function PersonaSettingsTab({
             </div>
           )}
           <div className="relative">
-            <label className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_name}</label>
+            <label htmlFor="persona-name" className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_name}</label>
             <input
+              id="persona-name"
               type="text"
               value={draft.name}
               onChange={(e) => patch({ name: e.target.value })}
@@ -110,8 +111,9 @@ export function PersonaSettingsTab({
             )}
           </div>
           <div className="relative">
-            <label className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_description}</label>
+            <label htmlFor="persona-description" className="block typo-body font-medium text-foreground mb-1">{t.agents.settings_status.label_description}</label>
             <textarea
+              id="persona-description"
               value={draft.description}
               onChange={(e) => patch({ description: e.target.value })}
               rows={4}
@@ -121,11 +123,13 @@ export function PersonaSettingsTab({
           </div>
           <div className="relative flex items-center gap-4">
             <div>
-              <label className="block typo-body font-medium text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
+              <label htmlFor="persona-icon-btn" className="block typo-body font-medium text-foreground mb-2">{t.agents.settings_status.label_icon}</label>
               <button
+                id="persona-icon-btn"
                 type="button"
                 onClick={() => setIconPickerOpen(true)}
                 title={t.shared.forms_extra.choose_icon}
+                aria-label={t.shared.forms_extra.choose_icon}
                 className="w-10 h-10 rounded-card border border-primary/15 bg-background/50 hover:border-primary/30 hover:bg-secondary/40 flex items-center justify-center transition-all cursor-pointer"
               >
                 {hasIcon ? (
