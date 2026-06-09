@@ -219,6 +219,9 @@ pub struct FleetSessionInner {
     /// on — while output *presence* proves nothing about work. 0 until the
     /// first byte. Never feeds `last_activity_ms`/freshness.
     pub last_pty_output_ms: i64,
+    /// When the transcript last grew, written by the staleness ticker's size
+    /// polling (0 = not yet observed). Surfaced as a provenance signal.
+    pub last_grew_ms: i64,
     pub created_at_ms: i64,
     pub child_pid: Option<u32>,
     pub exit_code: Option<i32>,
@@ -253,6 +256,8 @@ impl FleetSessionInner {
             args: self.args.clone(),
             state: self.state,
             last_activity_ms: self.last_activity_ms,
+            last_pty_output_ms: self.last_pty_output_ms,
+            last_grew_ms: self.last_grew_ms,
             created_at_ms: self.created_at_ms,
             child_pid: self.child_pid,
             exit_code: self.exit_code,
@@ -691,6 +696,7 @@ mod tests {
             state,
             last_activity_ms: now_ms(),
             last_pty_output_ms: 0,
+            last_grew_ms: 0,
             created_at_ms: now_ms(),
             child_pid: Some(1234),
             exit_code: None,

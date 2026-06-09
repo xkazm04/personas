@@ -80,6 +80,13 @@ pub struct FleetSession {
     /// (hook fired, PTY bytes, JSONL append). Frontend uses this for the
     /// "Xs ago" label and Stale detection cutoff.
     pub last_activity_ms: i64,
+    /// When the PTY last produced ANY bytes — including idle status redraws
+    /// (0 = never). Provenance signal for the state tooltip; total silence
+    /// is what the frozen-process stall check keys on.
+    pub last_pty_output_ms: i64,
+    /// When the transcript (JSONL) last actually grew, per the staleness
+    /// ticker's size polling (0 = not yet observed). Provenance signal.
+    pub last_grew_ms: i64,
     /// Wall-clock ms since UNIX epoch when the PTY was spawned.
     pub created_at_ms: i64,
     /// PID of the `claude` child. `None` after exit.

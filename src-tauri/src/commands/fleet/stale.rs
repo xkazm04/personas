@@ -293,6 +293,11 @@ fn tick_once(app: &AppHandle) {
             if grew {
                 session.last_activity_ms = now;
             }
+            // Persist the growth timestamp onto the row so the UI's state
+            // provenance tooltip can show "transcript grew Xs ago".
+            if let Some(&g) = last_grew.get(&session.id) {
+                session.last_grew_ms = g;
+            }
 
             // AwaitingInput robustness — revive on growth that happens strictly
             // AFTER the await began. The first tick that sees AwaitingInput

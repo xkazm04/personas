@@ -48,6 +48,8 @@ function makeSession(partial: Partial<FleetSession> = {}): FleetSession {
     args: [],
     state: 'spawning',
     lastActivityMs: BigInt(1_000_000),
+    lastPtyOutputMs: BigInt(0),
+    lastGrewMs: BigInt(0),
     createdAtMs: BigInt(1_000_000),
     childPid: 1234,
     exitCode: null,

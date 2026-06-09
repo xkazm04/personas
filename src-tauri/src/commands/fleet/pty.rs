@@ -258,6 +258,7 @@ pub fn spawn_session(
         state: FleetSessionState::Spawning,
         last_activity_ms: now,
         last_pty_output_ms: 0,
+        last_grew_ms: 0,
         created_at_ms: now,
         child_pid,
         exit_code: None,

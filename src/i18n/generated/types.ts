@@ -10836,6 +10836,10 @@ export type Translations = {
       spawn_task_placeholder: string;
       spawn_task_submit: string;
       spawn_task_spawning: string;
+      provenance_hook_activity: string;
+      provenance_console: string;
+      provenance_transcript: string;
+      provenance_never: string;
       legend_process: string;
       legend_activity: string;
       state_awaiting_input: string;
