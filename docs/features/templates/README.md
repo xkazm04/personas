@@ -77,6 +77,20 @@ src-tauri/src/engine/template_checksums.rs        (compiled-in checksum manifest
 src-tauri/src/db/repos/communication/reviews.rs   (persona_design_reviews DAO)
 ```
 
+### Gallery & preview UI surfaces
+
+- **Template comparison** (`gallery/cards/useTemplateCompare.ts`, `CompareTray.tsx`,
+  `gallery/modals/CompareModal.tsx`, `gallery/cards/buildComparison.ts`): in comfortable
+  density a per-row hover/selected checkbox adds up to 3 templates to a floating tray;
+  **Compare** opens a side-by-side modal contrasting category, goal, connectors (with
+  readiness), triggers, use-cases, complexity, setup time, and adoptions. `buildComparison`
+  reuses the same cached-parse / complexity / connector-readiness helpers the cards use, so
+  the compare view never disagrees with what a card shows for the same template.
+- **Design summary bar** (`design-preview/DesignSummaryBar.tsx`): `DesignResultPreview`
+  leads with count pills (connectors / tools / events / channels) plus the feasibility
+  verdict, so a reviewer grasps a generated design's shape before scrolling its full section
+  list. Self-hides when there is nothing to summarise.
+
 ## Common operations
 
 ### Add a new template
