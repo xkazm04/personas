@@ -17,6 +17,10 @@ interface GroupListProps {
   onCreateGroup: (name: string, color: string) => void;
   onScan: () => void;
   goalCoverageByContext?: Map<string, { count: number; firstGoalId: string }>;
+  ideaCoverageByContext?: Map<string, number>;
+  onScanContext?: (contextId: string) => void;
+  scanningContextId?: string | null;
+  scanBusy?: boolean;
 }
 
 const CONTEXTS_INITIAL_RENDER = 30;
@@ -25,6 +29,7 @@ export default function GroupList({
   groups, selectedCtxId, onSelectCtx,
   showNewGroup, onShowNewGroup, onCreateGroup, onScan,
   goalCoverageByContext,
+  ideaCoverageByContext, onScanContext, scanningContextId, scanBusy,
 }: GroupListProps) {
   const { t, tx } = useTranslation();
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
@@ -118,6 +123,10 @@ export default function GroupList({
                                     onSelect={() => onSelectCtx(selectedCtxId === ctx.id ? null : ctx.id)}
                                     goalCount={coverage?.count ?? 0}
                                     firstGoalId={coverage?.firstGoalId}
+                                    ideaCount={ideaCoverageByContext?.get(ctx.id) ?? 0}
+                                    onScan={onScanContext ? () => onScanContext(ctx.id) : undefined}
+                                    scanning={scanningContextId === ctx.id}
+                                    scanDisabled={scanBusy}
                                   />
                                 );
                               })}

@@ -11419,6 +11419,11 @@ export type Translations = {
       context_goal_singular: string;
       context_goal_plural: string;
       context_goal_coverage_tooltip: string;
+      context_idea_singular: string;
+      context_idea_plural: string;
+      context_idea_coverage_tooltip: string;
+      context_scan_ideas_tooltip: string;
+      context_scan_ideas_started: string;
       context_no_goal_label: string;
       context_no_goal_tooltip: string;
       group_show_all: string;
