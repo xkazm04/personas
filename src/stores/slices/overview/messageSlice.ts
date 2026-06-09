@@ -236,6 +236,13 @@ export const createMessageSlice: StateCreator<OverviewStore, [], [], MessageSlic
       set((state) => {
         const next = new Map(state.deliverySummaries);
         for (const s of summaries) next.set(s.messageId, s);
+        // Bound the cache — scrolling through a large message history would
+        // otherwise accumulate one summary per message viewed, indefinitely.
+        // Map preserves insertion order, so drop the oldest past the cap.
+        const CAP = 500;
+        if (next.size > CAP) {
+          for (const key of [...next.keys()].slice(0, next.size - CAP)) next.delete(key);
+        }
         return { deliverySummaries: next };
       });
     } catch (err) { silentCatch("stores/slices/overview/messageSlice:catch1")(err); }

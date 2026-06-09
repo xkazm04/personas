@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { MessagesSquare } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { CollabLiveCorrespondence } from '@/features/teams/sub_collab/CollabLiveCorrespondence';
@@ -16,7 +16,7 @@ type ChannelLayout = 'grid' | 'timeline';
  * virtualized chronological stream). Members are derived from personas by
  * `home_team_id`, so no extra fetch is needed.
  */
-export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; personas: Persona[] }) {
+function MonitorChannelGridImpl({ teams, personas }: { teams: PersonaTeam[]; personas: Persona[] }) {
   const { t } = useTranslation();
 
   // Members per team (lightweight ChannelMember rows from the persona roster).
@@ -180,5 +180,12 @@ export function MonitorChannelGrid({ teams, personas }: { teams: PersonaTeam[]; 
     </div>
   );
 }
+
+/**
+ * Memoized: `teams`/`personas` are stable store selectors, so PersonaMonitor's
+ * frequent re-renders (e.g. the fleet 1s elapsed-time tick) bail out here
+ * instead of cascading into the whole channel workspace + virtualized stream.
+ */
+export const MonitorChannelGrid = memo(MonitorChannelGridImpl);
 
 export default MonitorChannelGrid;

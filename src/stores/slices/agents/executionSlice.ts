@@ -43,6 +43,8 @@ const MAX_COMPLETED_SNAPSHOTS = 5;
  */
 const COMPLETED_OUTPUT_TTL_MS = 30 * 60 * 1000;
 const EXECUTIONS_CACHE_TTL_MS = 30_000;
+/** Max personas kept in the per-persona executions cache (LRU-evicted). */
+const EXECUTIONS_CACHE_MAX_PERSONAS = 12;
 
 /** Finish-time map keyed by executionId. Module-local (not persisted). */
 const completedOutputFinishedAt = new Map<string, number>();
@@ -509,12 +511,28 @@ export const createExecutionSlice: StateCreator<AgentStore, [], [], ExecutionSli
       set({ executionsLoading: true });
       try {
         const executions = await listExecutionsSummary(personaId);
-        set((state) => ({
-          executions,
-          executionsPersonaId: personaId,
-          executionsCache: { ...state.executionsCache, [personaId]: executions },
-          executionsCacheAt: { ...state.executionsCacheAt, [personaId]: Date.now() },
-        }));
+        set((state) => {
+          const nextCache = { ...state.executionsCache, [personaId]: executions };
+          const nextAt = { ...state.executionsCacheAt, [personaId]: Date.now() };
+          // Bound the per-persona cache: across a long session of persona-
+          // switching this would otherwise retain every persona's full execution
+          // list. Keep the N most-recently-fetched, evict the rest by timestamp.
+          const keys = Object.keys(nextCache);
+          if (keys.length > EXECUTIONS_CACHE_MAX_PERSONAS) {
+            keys.sort((a, b) => (nextAt[a] ?? 0) - (nextAt[b] ?? 0));
+            for (const stale of keys.slice(0, keys.length - EXECUTIONS_CACHE_MAX_PERSONAS)) {
+              if (stale === personaId) continue;
+              delete nextCache[stale];
+              delete nextAt[stale];
+            }
+          }
+          return {
+            executions,
+            executionsPersonaId: personaId,
+            executionsCache: nextCache,
+            executionsCacheAt: nextAt,
+          };
+        });
       } catch (err) {
         reportError(err, "Failed to fetch executions", set, { action: "fetchExecutions" });
       } finally {

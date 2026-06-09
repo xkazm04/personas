@@ -128,10 +128,13 @@ export function PersonaMonitor({ onClose }: PersonaMonitorProps) {
   );
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
-    if (!anyRunning) return;
+    // Only fleet view reads `now` (elapsed-time on cards + SystemBand). In
+    // channel view nothing consumes it, so ticking there would re-render the
+    // whole channel workspace once a second for nothing — gate it out.
+    if (!anyRunning || viewMode !== 'fleet') return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [anyRunning]);
+  }, [anyRunning, viewMode]);
 
   const [selection, setSelection] = useState<Selection | null>(null);
   const selectedCard = useMemo(

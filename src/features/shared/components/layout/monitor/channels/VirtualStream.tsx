@@ -77,8 +77,18 @@ export function VirtualStream({
             }
             const id = row.item.item.id;
             const at = Date.parse(row.item.item.at);
-            const fresh = !seenRef.current.has(id) && Number.isFinite(at) && Date.now() - at < 8000;
-            seenRef.current.add(id);
+            // The recency window is what actually decides whether a row animates;
+            // the seen-set only stops a *fresh* row re-firing when it scrolls out
+            // and back. So it never needs to hold more than the recently-arrived
+            // ids — bound it (clear past a cap) so a long session can't grow it
+            // without limit. Old rows are already excluded by the time gate, so a
+            // clear can't make a stale row animate.
+            const recent = Number.isFinite(at) && Date.now() - at < 8000;
+            const fresh = recent && !seenRef.current.has(id);
+            if (recent) {
+              if (seenRef.current.size > 600) seenRef.current.clear();
+              seenRef.current.add(id);
+            }
             return (
               <div
                 key={`${row.item.team.teamId}:${id}`}
