@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Eye, EyeOff, Trash2, Check, X, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Trash2, Check, X, Loader2, Copy } from 'lucide-react';
 import { getAppSetting, getAppSettingsBulk, setAppSetting, deleteAppSetting } from '@/api/system/settings';
+import { PasswordToggleField } from '@/features/shared/components/forms/PasswordToggleField';
+import { useKeyedCopyFlag } from '@/hooks/utility/interaction/useKeyedCopyFlag';
 import { SectionHeading } from '@/features/shared/components/layout/SectionHeading';
 import { useTranslation } from '@/i18n/useTranslation';
 import { createLogger } from '@/lib/log';
@@ -267,6 +269,7 @@ function KeyEntryRow({
   onTest: () => void;
 }) {
   const hasValue = !!entry.savedValue;
+  const { copiedKey, copy } = useKeyedCopyFlag<string>();
   const isDirty = entry.value !== entry.savedValue;
   const { t } = useTranslation();
   const s = t.settings.byom;
@@ -314,20 +317,38 @@ function KeyEntryRow({
       {/* Value display / editor */}
       {entry.editing ? (
         <div className="flex items-center gap-2">
-          <input
-            type={entry.def.isUrl ? 'url' : 'text'}
-            value={entry.value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={entry.def.placeholder}
-            className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
-              text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
-              font-mono"
-            autoFocus
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && isDirty) onSave();
-              if (e.key === 'Escape') onCancel();
-            }}
-          />
+          {entry.def.isUrl ? (
+            <input
+              type="url"
+              value={entry.value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={entry.def.placeholder}
+              className="flex-1 px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
+                text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
+                font-mono"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && isDirty) onSave();
+                if (e.key === 'Escape') onCancel();
+              }}
+            />
+          ) : (
+            <PasswordToggleField
+              className="flex-1"
+              inputClassName="w-full px-3 py-1.5 typo-code rounded-card bg-secondary/50 border border-primary/15
+                text-foreground placeholder:text-foreground/45 focus:outline-none focus:border-primary/40
+                font-mono"
+              value={entry.value}
+              onChange={(e) => onChange(e.target.value)}
+              placeholder={entry.def.placeholder}
+              autoFocus
+              autoComplete="off"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && isDirty) onSave();
+                if (e.key === 'Escape') onCancel();
+              }}
+            />
+          )}
           <button
             onClick={onSave}
             disabled={!isDirty}
@@ -365,10 +386,25 @@ function KeyEntryRow({
                 e.stopPropagation();
                 onToggleReveal();
               }}
+              aria-label={entry.revealed ? s.hide_key : s.reveal_key}
+              aria-pressed={entry.revealed}
               className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
               title={entry.revealed ? s.hide_key : s.reveal_key}
             >
               {entry.revealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
+          )}
+          {hasValue && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                copy('value', entry.savedValue);
+              }}
+              aria-label={copiedKey === 'value' ? 'Copied' : 'Copy value'}
+              className="p-1.5 rounded-input text-foreground hover:text-foreground transition-all"
+              title="Copy value"
+            >
+              {copiedKey === 'value' ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
             </button>
           )}
         </div>
