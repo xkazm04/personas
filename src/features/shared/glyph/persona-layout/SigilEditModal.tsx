@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
 import { X, Power, ChevronRight } from 'lucide-react';
 import { DIM_META } from '@/features/shared/glyph/dimMeta';
@@ -66,6 +66,15 @@ export function SigilEditModal({
 }: SigilEditModalProps) {
   const { t } = useTranslation();
   const dimText = useGlyphDimText();
+
+  // Dialog semantics: take focus on open so Esc closes for keyboard
+  // users. (Hero petals aren't focusable targets, so there's no petal
+  // focus-return here — focus simply falls back to the page.)
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (dim) panelRef.current?.focus();
+  }, [dim]);
+
   if (!dim) return null;
 
   const meta = DIM_META[dim];
@@ -75,11 +84,24 @@ export function SigilEditModal({
   return (
     <motion.div
       key={`sigil-edit-${dim}`}
+      ref={panelRef}
+      // role=region (not dialog): the overlay is non-modal — empty regions
+      // stay click-through and the sigil underneath remains interactive,
+      // so BaseModal's backdrop/focus-trap semantics would be wrong here.
+      role="region"
+      aria-label={dimLabel}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.96 }}
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full max-w-[560px] flex flex-col"
+      className="pointer-events-auto relative rounded-modal border bg-background/95 backdrop-blur-md shadow-elevation-3 w-full max-w-[560px] flex flex-col outline-none"
       style={{
         borderColor: `${meta.color}66`,
         boxShadow: `0 0 24px ${meta.color}33, 0 8px 32px rgba(0,0,0,0.35)`,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -38,6 +38,15 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
   const canRefine = !!onRefine && !isBuilding;
   const dimEmpty = isDimEmpty(dim, row);
 
+  // Dialog semantics: focus moves into the panel on open so Esc closes it
+  // immediately for keyboard users (who arrived via Enter on a petal).
+  // The sigil's own focus-return effect puts focus back on the petal when
+  // the panel unmounts.
+  const panelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    panelRef.current?.focus();
+  }, []);
+
   const submitRefine = () => {
     if (!canRefine || !refineText.trim()) return;
     onRefine!(refineText.trim());
@@ -47,11 +56,24 @@ export function DimensionPanel({ dim, row, onClose, onRefine, isBuilding }: Dime
 
   return (
     <motion.div
+      ref={panelRef}
+      // role=region (not dialog): the panel is non-modal — the sigil and
+      // page stay interactive around it, there's no backdrop or focus
+      // trap, so BaseModal semantics would be wrong here.
+      role="region"
+      aria-label={c[meta.labelKey]}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          e.stopPropagation();
+          onClose();
+        }
+      }}
       initial={motion_.shouldAnimate ? { opacity: 0, scale: 0.92, y: 8 } : { opacity: 1, scale: 1, y: 0 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={motion_.shouldAnimate ? { opacity: 0, scale: 0.94, y: 6 } : { opacity: 0 }}
       transition={motion_.shouldAnimate ? { duration: 0.22, ease: 'easeOut' } : { duration: 0 }}
-      className="absolute inset-x-6 top-16 bottom-24 z-20 rounded-modal bg-card-bg/95 backdrop-blur-md border border-card-border shadow-elevation-3 flex flex-col overflow-hidden"
+      className="absolute inset-x-6 top-16 bottom-24 z-20 rounded-modal bg-card-bg/95 backdrop-blur-md border border-card-border shadow-elevation-3 flex flex-col overflow-hidden outline-none"
       style={{ boxShadow: `0 0 24px ${meta.color}22, 0 4px 16px rgba(0,0,0,0.25)` }}
     >
       <div

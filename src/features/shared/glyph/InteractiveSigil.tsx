@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { GLYPH_DIMENSIONS } from './types';
 import type { GlyphRow, GlyphDimension } from './types';
@@ -173,6 +173,27 @@ export function InteractiveSigil({
     },
     [],
   );
+
+  // Dialog focus return: when the dimension panel closes (activeDim goes
+  // non-null → null) and focus fell back to <body> (the focused panel
+  // unmounted), hand it back to the petal that opened the panel. Skipped
+  // when focus landed somewhere real — the user clicked another control
+  // and we must not steal it.
+  const prevActiveDim = useRef<GlyphDimension | null>(activeDim);
+  useEffect(() => {
+    const prev = prevActiveDim.current;
+    prevActiveDim.current = activeDim;
+    if (prev !== null && activeDim === null) {
+      const ae = document.activeElement;
+      if (!ae || ae === document.body) {
+        const el = petalRefs.current[prev];
+        if (el) {
+          setFocusDim(prev);
+          el.focus();
+        }
+      }
+    }
+  }, [activeDim]);
 
   const geom = getGeometry(size);
   const { center, petalOuter, coreR, guideInner, petalPath, petalPathDashed, iconLayouts } = geom;
