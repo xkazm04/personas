@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { tokenLabel } from '@/i18n/tokenMaps';
 import { sourceTableLabel } from '../libs/incidentTaxonomy';
@@ -23,6 +24,16 @@ const SOURCE_OPTIONS = [
 
 const RANGE_OPTIONS = ['all', '24h', '7d'] as const;
 const HOUR_MS = 3_600_000;
+
+/** The inbox's resting state (open-only, no other narrowing) — what "Clear
+ *  filters" resets to. Mirrors DEFAULT_FILTERS in IncidentsInbox. */
+const OPEN_ONLY_FILTERS: IncidentFilters = {
+  statuses: ['open'],
+  severities: null,
+  source_tables: null,
+  persona_id: null,
+  since: null,
+};
 
 /** Turn a friendly range chip into the `since` timestamp the filter expects. */
 function sinceFromRange(key: string): string | null {
@@ -67,6 +78,17 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
 
   const currentRange = activeRange(filters.since);
   const setRange = (key: string) => onChange({ ...filters, since: sinceFromRange(key) });
+
+  // How many dimensions are narrowed past the resting open-only view. Drives the
+  // "N · Clear filters" affordance so the user can see how filtered they are and
+  // reset in one click — including a persona_id set from the detail-modal "view
+  // all from this agent" action, which has no chip of its own here.
+  const activeFilterCount =
+    (currentStatus !== 'open' ? 1 : 0) +
+    ((filters.severities?.length ?? 0) > 0 ? 1 : 0) +
+    ((filters.source_tables?.length ?? 0) > 0 ? 1 : 0) +
+    (filters.since ? 1 : 0) +
+    (filters.persona_id ? 1 : 0);
 
   return (
     <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-primary/10 bg-secondary/10">
@@ -129,6 +151,24 @@ export function IncidentsFilterBar({ filters, onChange }: Props) {
           </button>
         ))}
       </div>
+
+      {activeFilterCount > 0 && (
+        <div className="ml-auto flex items-center gap-2">
+          <span
+            className="inline-flex min-w-[1.25rem] items-center justify-center rounded-card bg-primary/15 px-1.5 py-0.5 typo-caption text-primary"
+            aria-label={t.overview.incidents.filters_active_aria.replace('{count}', String(activeFilterCount))}
+          >
+            {activeFilterCount}
+          </span>
+          <button
+            onClick={() => onChange(OPEN_ONLY_FILTERS)}
+            className="inline-flex items-center gap-1 px-2 py-0.5 typo-caption rounded-card border border-primary/15 text-foreground hover:bg-secondary/40 transition-colors focus-ring"
+          >
+            <X className="h-3 w-3" aria-hidden="true" />
+            {t.overview.incidents.filters_clear_all}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

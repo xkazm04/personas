@@ -5549,6 +5549,8 @@ export type Translations = {
       filter_source_all: string;
       filter_persona_label: string;
       filter_persona_any: string;
+      filters_active_aria: string;
+      filters_clear_all: string;
       action_acknowledge: string;
       action_resolve: string;
       action_dismiss: string;
