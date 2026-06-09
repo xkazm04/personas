@@ -318,7 +318,7 @@ pub async fn run_test(
                 let (status, scores) = match &result {
                     Ok(r) => {
                         let s = score_result(r, &scenario_c, &persona_c).await;
-                        ("passed".to_string(), s)
+                        (verdict_status(&s), s)
                     }
                     Err(e) => (
                         "error".to_string(),
@@ -723,6 +723,32 @@ fn parse_scenarios_from_output(output: &str) -> Result<Vec<TestScenario>, String
 }
 
 // -- Phase 2: Execute scenario with a specific model ------------
+
+/// Per-scenario pass threshold on the composite score
+/// (tool*0.4 + quality*0.4 + protocol*0.2). Mirrors eval.rs's `>= 50` verdict.
+const SCENARIO_PASS_THRESHOLD: f64 = 50.0;
+
+/// Derive a real pass/fail verdict from the scores instead of conflating "the
+/// CLI returned Ok" with "the scenario passed". A scenario whose evaluation did
+/// not actually run — LLM eval timed out / fell back to heuristics, which return
+/// optimistic "nothing-expected = 100" sentinels — is reported "inconclusive",
+/// never "passed", so a total eval outage can't masquerade as green.
+fn verdict_status(s: &ScoreResult) -> String {
+    if matches!(
+        s.eval_method.as_deref(),
+        Some("timeout") | Some("heuristic_fallback")
+    ) {
+        return "inconclusive".to_string();
+    }
+    let composite = s.tool_accuracy.unwrap_or(0) as f64 * 0.4
+        + s.output_quality.unwrap_or(0) as f64 * 0.4
+        + s.protocol_compliance.unwrap_or(0) as f64 * 0.2;
+    if composite >= SCENARIO_PASS_THRESHOLD {
+        "passed".to_string()
+    } else {
+        "failed".to_string()
+    }
+}
 
 pub(crate) struct ScoreResult {
     pub(crate) tool_accuracy: Option<i32>,
@@ -1610,10 +1636,10 @@ async fn run_lab_loop(
                     let result =
                         execute_scenario(&persona_c, &tools_c, &scenario_c, &model_c).await;
                     let (status, scores) = match &result {
-                        Ok(r) => (
-                            "passed".to_string(),
-                            score_result(r, &scenario_c, &persona_c).await,
-                        ),
+                        Ok(r) => {
+                            let s = score_result(r, &scenario_c, &persona_c).await;
+                            (verdict_status(&s), s)
+                        }
                         Err(e) => (
                             "error".to_string(),
                             ScoreResult {
@@ -1723,10 +1749,27 @@ async fn run_lab_loop(
         return;
     }
 
+    // Completeness gate: a run is "completed" only if every fanned-out cell
+    // produced a result. Panicked / JoinError tasks are `continue`d above without
+    // incrementing `current`, so `current < total` means cells were silently lost.
+    // Finalize as Failed with a count rather than presenting a partial sample as a
+    // trustworthy comparison (the leaderboards would average over missing data).
+    let incomplete = current < total;
+    let (run_status, status_error, phase): (LabRunStatus, Option<String>, &str) = if incomplete {
+        let msg = format!(
+            "Run incomplete: {current}/{total} cells produced results; {} lost to task panics/errors",
+            total - current
+        );
+        tracing::error!(run_id, current, total, "{msg}");
+        (LabRunStatus::Failed, Some(msg), "failed")
+    } else {
+        (LabRunStatus::Completed, None, "completed")
+    };
+
     (cb.update_status)(
         pool,
         run_id,
-        LabRunStatus::Completed,
+        run_status,
         None,
         Some(&summary_str),
         None,
@@ -1737,11 +1780,12 @@ async fn run_lab_loop(
         cb.event_name,
         TestRunStatusEvent {
             run_id: run_id.to_string(),
-            phase: "completed".into(),
+            phase: phase.into(),
             scenarios_count: Some(scenario_count),
-            current: Some(total),
+            current: Some(current),
             total: Some(total),
             summary: Some(summary),
+            error: status_error,
             elapsed_ms: Some(run_start.elapsed().as_millis() as u64),
             ..Default::default()
         },
