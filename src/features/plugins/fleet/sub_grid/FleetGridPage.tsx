@@ -20,6 +20,7 @@ import {
   BookOpen,
   Moon,
   Sun,
+  Keyboard,
 } from 'lucide-react';
 import { ContentBox, ContentHeader, ContentBody } from '@/features/shared/components/layout/ContentLayout';
 import { ActionRow } from '@/features/shared/components/layout/ActionRow';
@@ -48,6 +49,8 @@ import { useCompanionStore } from '@/features/plugins/companion/companionStore';
 import { companionApproveAction, companionRejectAction, companionSendMessage } from '@/api/companion';
 import { actionLabel } from '@/features/plugins/companion/athenaLabels';
 import { FleetNeedsYouBanner } from '../FleetNeedsYouBanner';
+import { useFleetHotkeys } from '../useFleetHotkeys';
+import { FleetHotkeysHelp } from '../FleetHotkeysHelp';
 import { FleetSummaryPills } from '../FleetSummaryPills';
 import { FleetStatusLegend } from '../FleetStatusLegend';
 import type { FleetLabelKey } from '../FleetStatusDots';
@@ -139,6 +142,9 @@ export default function FleetGridPage() {
   const [rightView, setRightView] = useState<'terminal' | 'insights'>('terminal');
   // Left skill-library drawer (F1 surfacing) — applies a skill to the focused session.
   const [skillsDrawerOpen, setSkillsDrawerOpen] = useState(false);
+  // Shortcuts reference modal (opened by `?` or the header keyboard button).
+  const [hotkeysHelpOpen, setHotkeysHelpOpen] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
   const addToast = useToastStore((s) => s.addToast);
 
   const activeProject = useMemo(
@@ -472,6 +478,39 @@ export default function FleetGridPage() {
       .map((g) => ({ ...g, sessions: buckets.get(g.id)! }));
   }, [sessions, filter, query]);
 
+  // Flattened visible sessions in display order (group order, then recency) —
+  // drives the ↑/↓ hotkey focus moves so keyboard order matches what's on screen.
+  const flatVisibleSessions = useMemo(() => groups.flatMap((g) => g.sessions), [groups]);
+
+  const handleMoveFocus = useCallback(
+    (delta: 1 | -1) => {
+      const list = flatVisibleSessions;
+      if (list.length === 0) return;
+      const idx = list.findIndex((s) => s.id === activeSessionId);
+      const next =
+        idx === -1
+          ? (delta === 1 ? list[0] : list[list.length - 1])
+          : list[(idx + delta + list.length) % list.length];
+      if (next) setActiveSession(next.id);
+    },
+    [flatVisibleSessions, activeSessionId, setActiveSession],
+  );
+
+  const handleToggleGrid = useCallback(() => {
+    if (gridOpen) setGridOpen(false);
+    else if (liveSessions.length > 0) setGridOpen(true);
+  }, [gridOpen, liveSessions.length, setGridOpen]);
+
+  // Triage hotkeys (n / ↑↓ / `/` / g / ?). Suspended while any modal or the
+  // skills drawer is open; the hook itself ignores typing contexts.
+  useFleetHotkeys(!broadcastOpen && !skillsDrawerOpen && !hotkeysHelpOpen, gridOpen, {
+    onNextWaiting: handleCycleNext,
+    onMoveFocus: handleMoveFocus,
+    onFocusSearch: () => searchRef.current?.focus(),
+    onToggleGrid: handleToggleGrid,
+    onShowHelp: () => setHotkeysHelpOpen(true),
+  });
+
   const sessionCount =
     sessions.length === 1
       ? tx(t.plugins.fleet.sessions_one, { count: sessions.length })
@@ -500,6 +539,16 @@ export default function FleetGridPage() {
               {notifyAwaiting
                 ? <Bell className="w-3.5 h-3.5" />
                 : <BellOff className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              type="button"
+              data-testid="fleet-hotkeys-open"
+              aria-label={t.plugins.fleet.hotkeys_title}
+              title={t.plugins.fleet.hotkeys_title}
+              onClick={() => setHotkeysHelpOpen(true)}
+              className="flex items-center rounded-interactive px-1.5 py-1 text-foreground transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+            >
+              <Keyboard className="w-3.5 h-3.5" />
             </button>
             <FleetStatusLegend />
             <FleetHooksPill />
@@ -590,6 +639,7 @@ export default function FleetGridPage() {
               <div className="relative mb-2">
                 <Search className="pointer-events-none absolute left-2 top-1/2 w-3.5 h-3.5 -translate-y-1/2 text-foreground" aria-hidden="true" />
                 <input
+                  ref={searchRef}
                   type="text"
                   data-testid="fleet-session-search"
                   value={query}
@@ -784,6 +834,8 @@ export default function FleetGridPage() {
       </ContentBody>
 
       <FleetBroadcastModal open={broadcastOpen} onClose={() => setBroadcastOpen(false)} />
+
+      <FleetHotkeysHelp open={hotkeysHelpOpen} onClose={() => setHotkeysHelpOpen(false)} />
 
       <FleetTerminalOverlay
         open={gridOpen}

@@ -10823,6 +10823,13 @@ export type Translations = {
       dot_biz_awaiting: string;
       dot_biz_stale: string;
       legend_show: string;
+      hotkeys_title: string;
+      hotkey_next_waiting: string;
+      hotkey_move_focus: string;
+      hotkey_focus_search: string;
+      hotkey_toggle_grid: string;
+      hotkey_show_help: string;
+      hotkeys_typing_note: string;
       legend_process: string;
       legend_activity: string;
       state_awaiting_input: string;
