@@ -122,10 +122,12 @@ export function GlyphHeroSigil({
       style={{ opacity: dimmed ? 0.45 : 1 }}
     >
       <defs>
+        {/* Theme-native core — stopColor via style so var(--primary)
+            resolves on every theme instead of the old hardcoded blue. */}
         <radialGradient id={coreGrad} cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#fff" stopOpacity="0.22" />
-          <stop offset="55%" stopColor="#60a5fa" stopOpacity="0.18" />
-          <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.02" />
+          <stop offset="55%" style={{ stopColor: 'var(--primary)' }} stopOpacity="0.18" />
+          <stop offset="100%" style={{ stopColor: 'var(--primary)' }} stopOpacity="0.02" />
         </radialGradient>
         <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="4" result="blur" />

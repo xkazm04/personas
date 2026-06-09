@@ -199,10 +199,13 @@ export function InteractiveSigil({
         }}
       >
         <defs>
+          {/* Core gradient rides the active theme's accent — stopColor via
+              style so var(--primary) resolves (presentation attributes
+              don't reliably take var()). */}
           <radialGradient id={coreId} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#fff" stopOpacity="0.6" />
-            <stop offset="55%" stopColor="#60a5fa" stopOpacity="0.35" />
-            <stop offset="100%" stopColor="#60a5fa" stopOpacity="0.02" />
+            <stop offset="55%" style={{ stopColor: 'var(--primary)' }} stopOpacity="0.35" />
+            <stop offset="100%" style={{ stopColor: 'var(--primary)' }} stopOpacity="0.02" />
           </radialGradient>
           <filter id={glowId} x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="3" result="blur" />
