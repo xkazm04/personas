@@ -13,6 +13,8 @@ import { Button } from '@/features/shared/components/buttons';
 import { useMotion } from '@/hooks/utility/interaction/useMotion';
 import { useDevToolsActions } from '../hooks/useDevToolsActions';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
+import { SCAN_AGENTS } from '../constants/scanAgents';
+import { ValueBadge } from '../sub_scanner/IdeaScannerCards';
 import { useSystemStore } from '@/stores/systemStore';
 import { useOverviewStore } from '@/stores/overviewStore';
 import { TaskOutputPanel } from './TaskOutputPanel';
@@ -279,6 +281,15 @@ function TaskCard({
   const goal = useSystemStore((s) =>
     task.goalId ? s.goals.find((g) => g.id === task.goalId) ?? null : null,
   );
+  // Resolve the source idea so the card shows what the task came from
+  // (title + value + agent) instead of an opaque id. Falls back to the raw
+  // id when the idea has since been deleted.
+  const sourceIdea = useSystemStore((s) =>
+    task.source ? s.ideas.find((i) => i.id === task.source) ?? null : null,
+  );
+  const sourceAgentEmoji = sourceIdea
+    ? SCAN_AGENTS.find((a) => a.key === sourceIdea.scan_type)?.emoji ?? null
+    : null;
   const setDevToolsTab = useSystemStore((s) => s.setDevToolsTab);
   const handleGoalJump = () => {
     setDevToolsTab('goals');
@@ -318,7 +329,18 @@ function TaskCard({
           {(task.source || goal) && (
             <div className="flex items-center gap-2 mt-0.5">
               {task.source && (
-                <p className="text-[10px] text-foreground">{t.plugins.dev_runner.source_label} {task.source}</p>
+                sourceIdea ? (
+                  <span className="inline-flex items-center gap-1.5 min-w-0">
+                    <span className="text-[10px] text-foreground shrink-0">{t.plugins.dev_runner.source_label}</span>
+                    {sourceAgentEmoji && <span className="text-[10px] shrink-0">{sourceAgentEmoji}</span>}
+                    <span className="text-[10px] text-foreground font-medium truncate max-w-[220px]" title={sourceIdea.description ?? sourceIdea.title}>
+                      {sourceIdea.title}
+                    </span>
+                    <ValueBadge idea={{ impact: sourceIdea.impact ?? 5, effort: sourceIdea.effort ?? 5, risk: sourceIdea.risk ?? 5 }} />
+                  </span>
+                ) : (
+                  <p className="text-[10px] text-foreground">{t.plugins.dev_runner.source_label} {task.source}</p>
+                )
               )}
               {goal && (
                 <button
@@ -425,6 +447,7 @@ export default function TaskRunnerPage() {
 
   const storeTasks = useSystemStore((s) => s.tasks);
   const fetchTasks = useSystemStore((s) => s.fetchTasks);
+  const fetchIdeas = useSystemStore((s) => s.fetchIdeas);
   const activeProjectId = useSystemStore((s) => s.activeProjectId);
   const taskOutputBuffers = useSystemStore((s) => s.taskOutputBuffers);
 
@@ -474,12 +497,14 @@ export default function TaskRunnerPage() {
     return () => window.clearTimeout(t);
   }, [pendingFocusId, storeTasks.length]);
 
-  // Fetch tasks on mount and when project changes
+  // Fetch tasks + ideas on mount and when project changes. Ideas power the
+  // source-idea resolution on task cards (title/value/agent instead of an id).
   useEffect(() => {
     if (activeProjectId) {
       fetchTasks(activeProjectId);
+      fetchIdeas(activeProjectId);
     }
-  }, [activeProjectId, fetchTasks]);
+  }, [activeProjectId, fetchTasks, fetchIdeas]);
 
   // Event listeners for task execution streaming — mount once to prevent accumulation
   useEffect(() => {
