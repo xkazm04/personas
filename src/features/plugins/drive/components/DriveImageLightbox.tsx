@@ -24,11 +24,11 @@ import {
   ZoomOut,
 } from "lucide-react";
 
-import { driveRead, type DriveEntry } from "@/api/drive";
+import { driveFormatBytes, driveRead, type DriveEntry } from "@/api/drive";
 import { useTranslation } from "@/i18n/useTranslation";
 import { BaseModal } from "@/lib/ui/BaseModal";
 import { silentCatch } from "@/lib/silentCatch";
-import { visualForEntry } from "../designTokens";
+import { formatRelativeTime, visualForEntry } from "../designTokens";
 
 interface Props {
   entries: DriveEntry[];
@@ -182,6 +182,9 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
   // same way for images / video / pdf — only the rendered tag changes.
   const [url, setUrl] = useState<string | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "failed">("loading");
+  // Natural pixel size of the current image, captured from the <img> onLoad.
+  // Null for non-images and until the image decodes.
+  const [dims, setDims] = useState<{ w: number; h: number } | null>(null);
 
   useEffect(() => {
     if (!current) return;
@@ -189,6 +192,7 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
     let cancelled = false;
     setState("loading");
     setUrl(null);
+    setDims(null);
 
     driveRead(current.path)
       .then((bytes) => {
@@ -307,6 +311,28 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
           <div className="typo-caption text-foreground font-mono truncate">
             {current.path}
           </div>
+          {/* Size · pixel dimensions (images) · modified — a compact metadata
+              line so the viewer answers "how big / how old / what resolution"
+              without leaving for the details pane. */}
+          <div className="mt-0.5 flex items-center gap-1.5 typo-caption text-foreground">
+            {current.kind === "file" && (
+              <span className="tabular-nums">
+                {driveFormatBytes(current.size)}
+              </span>
+            )}
+            {dims && (
+              <>
+                <span aria-hidden>·</span>
+                <span className="tabular-nums">
+                  {dims.w} × {dims.h}
+                </span>
+              </>
+            )}
+            <span aria-hidden>·</span>
+            <span className="tabular-nums">
+              {formatRelativeTime(current.modified, t, tx)}
+            </span>
+          </div>
         </div>
 
         {/* Zoom + rotate cluster — only for images. */}
@@ -401,6 +427,12 @@ export function DriveImageLightbox({ entries, initialPath, onClose }: Props) {
             src={url}
             alt={current.name}
             draggable={false}
+            onLoad={(e) =>
+              setDims({
+                w: e.currentTarget.naturalWidth,
+                h: e.currentTarget.naturalHeight,
+              })
+            }
             style={{
               transform: `translate(${transform.panX}px, ${transform.panY}px) scale(${transform.zoom}) rotate(${transform.rotation}deg)`,
               transition: dragRef.current
