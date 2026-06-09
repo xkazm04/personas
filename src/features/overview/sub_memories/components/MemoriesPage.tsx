@@ -110,11 +110,12 @@ function MemoriesPageBaseline() {
   const { t, tx } = useTranslation();
   const personas = useAgentStore((s) => s.personas);
   const {
-    memories, memoriesTotal, memoryStats, fetchMemories, deleteMemory, setMemoryTier, reviewMemories,
+    memories, memoriesTotal, memoriesLoading, memoryStats, fetchMemories, deleteMemory, setMemoryTier, reviewMemories,
     memoryReviewRunning, memoryReviewResult, memoryReviewError, clearMemoryReviewResult,
   } = useOverviewStore(useShallow((s) => ({
     memories: s.memories,
     memoriesTotal: s.memoriesTotal,
+    memoriesLoading: s.memoriesLoading,
     memoryStats: s.memoryStats,
     fetchMemories: s.fetchMemories,
     deleteMemory: s.deleteMemory,
@@ -372,7 +373,13 @@ function MemoriesPageBaseline() {
             )}
           </div>
 
-          {memories.length === 0 && !hasFilters ? (
+          {memoriesLoading && memories.length === 0 ? (
+            <div className="flex-1 p-4 space-y-2" aria-busy="true" aria-label="Loading memories">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="h-12 rounded-card bg-secondary/30 animate-pulse" />
+              ))}
+            </div>
+          ) : memories.length === 0 && !hasFilters ? (
             <div className="flex-1 flex items-center justify-center">
               <MotionEmptyState
                 motif="memories"

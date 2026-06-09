@@ -12,6 +12,9 @@ export interface MemorySlice {
   // State
   memories: PersonaMemory[];
   memoriesTotal: number;
+  /** True while fetchMemories is in flight — lets the page show a skeleton
+   *  instead of flashing the "no memories yet" empty state before results land. */
+  memoriesLoading: boolean;
   memoryStats: MemoryStats | null;
   memoryActions: MemoryAction[];
 
@@ -80,6 +83,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
   return {
   memories: [],
   memoriesTotal: 0,
+  memoriesLoading: false,
   memoryStats: null,
   memoryActions: loadActions(),
   memoryReviewRunning: false,
@@ -88,6 +92,7 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
 
   fetchMemories: async (filters?) => {
     const requestId = ++fetchRequestId;
+    set({ memoriesLoading: true });
     try {
       const hasSearch = !!filters?.search?.trim();
       const limit = hasSearch ? 500 : 100;
@@ -105,10 +110,11 @@ export const createMemorySlice: StateCreator<OverviewStore, [], [], MemorySlice>
       );
       // Discard stale responses — a newer fetch is already in-flight.
       if (requestId !== fetchRequestId) return;
-      set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats });
+      set({ memories: result.memories, memoriesTotal: result.total, memoryStats: result.stats, memoriesLoading: false });
     } catch (err) {
       if (requestId !== fetchRequestId) return;
       reportError(err, "Failed to fetch memories", set);
+      set({ memoriesLoading: false });
     }
   },
 
