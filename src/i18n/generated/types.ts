@@ -5542,6 +5542,7 @@ export type Translations = {
       kpi_acknowledged: string;
       kpi_resolved: string;
       kpi_critical: string;
+      distribution_aria: string;
       filter_status_label: string;
       filter_status_all: string;
       filter_status_open: string;

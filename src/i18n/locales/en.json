@@ -5536,6 +5536,7 @@
       "kpi_acknowledged": "Acked",
       "kpi_resolved": "Resolved",
       "kpi_critical": "Critical",
+      "distribution_aria": "Open incidents by severity",
       "filter_status_label": "Status",
       "filter_status_all": "All",
       "filter_status_open": "Open",
