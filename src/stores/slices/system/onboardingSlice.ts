@@ -71,6 +71,48 @@ function trackMetric(name: string, attributes?: Record<string, string>) {
   } catch (err) { silentCatch("stores/slices/system/onboardingSlice:catch1")(err); }
 }
 
+// -- Durable persistence (first-run completion survives reload/restart) -------
+//
+// Without this, onboardingCompleted / onboardingDismissedAtStep are in-memory
+// only, so a Tauri webview reload or app restart mid- or post-onboarding loses
+// them: a completed user can be re-prompted (the startOnboarding guard races
+// fetchPersonas), and a dismissed user can never resumeOnboarding. Mirrors
+// tourSlice's localStorage approach; try/catch-guarded so a failure degrades to
+// in-memory (the old behavior) and never crashes.
+
+const ONBOARDING_STORAGE_KEY = "onboarding-state-v1";
+
+interface PersistedOnboarding {
+  completed: boolean;
+  dismissedAtStep: OnboardingStep | null;
+}
+
+function loadPersistedOnboarding(): PersistedOnboarding {
+  const empty: PersistedOnboarding = { completed: false, dismissedAtStep: null };
+  try {
+    if (typeof localStorage === "undefined") return empty;
+    const raw = localStorage.getItem(ONBOARDING_STORAGE_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as Partial<PersistedOnboarding>;
+    return {
+      completed: parsed.completed === true,
+      dismissedAtStep: isOnboardingStep(parsed.dismissedAtStep) ? parsed.dismissedAtStep : null,
+    };
+  } catch (err) {
+    silentCatch("stores/slices/system/onboardingSlice:load")(err);
+    return empty;
+  }
+}
+
+function persistOnboarding(next: PersistedOnboarding): void {
+  try {
+    if (typeof localStorage === "undefined") return;
+    localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(next));
+  } catch (err) {
+    silentCatch("stores/slices/system/onboardingSlice:persist")(err);
+  }
+}
+
 // -- Slice --------------------------------------------------------------
 
 const INITIAL_STEP_STATUS: Record<OnboardingStep, boolean> = {
@@ -89,11 +131,14 @@ export const createOnboardingSlice: StateCreator<
 > = (set, get) => ({
   onboardingActive: false,
   onboardingStep: "discover",
-  onboardingCompleted: false,
+  // Hydrated from localStorage so a reload/restart mid- or post-onboarding does
+  // not reset first-run state (re-prompting a completed user / losing a dismissed
+  // user's resume point). See loadPersistedOnboarding.
+  onboardingCompleted: loadPersistedOnboarding().completed,
   onboardingStepCompleted: { ...INITIAL_STEP_STATUS },
   onboardingSelectedReviewId: null,
   onboardingCreatedPersonaId: null,
-  onboardingDismissedAtStep: null,
+  onboardingDismissedAtStep: loadPersistedOnboarding().dismissedAtStep,
 
   startOnboarding: () => {
     // Don't start if already completed or if user has personas already
@@ -146,6 +191,7 @@ export const createOnboardingSlice: StateCreator<
       onboardingStep: "appearance",
       onboardingDismissedAtStep: null,
     });
+    persistOnboarding({ completed: true, dismissedAtStep: null });
   },
 
   dismissOnboarding: () => {
@@ -155,6 +201,7 @@ export const createOnboardingSlice: StateCreator<
       onboardingActive: false,
       onboardingDismissedAtStep: currentStep,
     });
+    persistOnboarding({ completed: get().onboardingCompleted, dismissedAtStep: currentStep });
   },
 
   reopenOnboarding: () => {
@@ -168,5 +215,6 @@ export const createOnboardingSlice: StateCreator<
       onboardingCreatedPersonaId: null,
       onboardingDismissedAtStep: null,
     });
+    persistOnboarding({ completed: false, dismissedAtStep: null });
   },
 });
