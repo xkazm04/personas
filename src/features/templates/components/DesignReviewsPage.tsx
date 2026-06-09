@@ -25,6 +25,7 @@ export default function DesignReviewsPage() {
     reviews,
     error,
     refresh,
+    isLoading,
   } = useDesignReviews();
 
   const credentials = useVaultStore((s) => s.credentials);
@@ -41,6 +42,11 @@ export default function DesignReviewsPage() {
         iconColor="violet"
         title={t.templates.page.title}
         subtitle={(() => {
+          // Don't flash a misleading "0 templates" while the reviews fetch is in
+          // flight (the hook exposes isLoading; the page previously dropped it).
+          if (isLoading && reviews.length === 0 && !(activeTab === 'generated' && galleryTotal > 0)) {
+            return '…';
+          }
           const count = activeTab === 'generated' && galleryTotal > 0 ? galleryTotal : reviews.length;
           return (count === 1 ? t.templates.page.subtitle_one : t.templates.page.subtitle_other).replace('{count}', String(count));
         })()}
