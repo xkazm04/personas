@@ -102,6 +102,34 @@ pub fn set_auto_hibernate(enabled: bool, after_secs: u64) {
     AUTO_HIBERNATE_AFTER_SECS.store(after_secs.max(60), Ordering::Relaxed);
 }
 
+// ---------------------------------------------------------------------------
+// User-tunable state cutoffs — set from Fleet → Settings via
+// `fleet_set_state_cutoffs`, mirroring the auto-hibernate plumbing (persisted
+// in the frontend slice, pushed on change + on every Fleet refresh). 0 = use
+// the built-in default. Env test knobs still take precedence so harnesses
+// keep working unchanged.
+// ---------------------------------------------------------------------------
+static STALE_OVERRIDE_SECS: AtomicU64 = AtomicU64::new(0);
+static STALLED_OVERRIDE_SECS: AtomicU64 = AtomicU64::new(0);
+
+/// Bounds for the user-tunable cutoffs. Stale below 1 min flaps while the
+/// user is composing; frozen below 30s false-positives on model latency gaps.
+const STALE_TUNE_RANGE: (u64, u64) = (60, 3600);
+const STALLED_TUNE_RANGE: (u64, u64) = (30, 3600);
+
+/// Update the user-tuned staleness / frozen cutoffs (seconds; clamped).
+pub fn set_state_cutoffs(stale_secs: u64, stalled_secs: u64) {
+    STALE_OVERRIDE_SECS.store(stale_secs.clamp(STALE_TUNE_RANGE.0, STALE_TUNE_RANGE.1), Ordering::Relaxed);
+    STALLED_OVERRIDE_SECS.store(stalled_secs.clamp(STALLED_TUNE_RANGE.0, STALLED_TUNE_RANGE.1), Ordering::Relaxed);
+}
+
+/// Effective cutoff in seconds: env test knob > user-tuned override > default.
+fn effective_secs(env_key: &str, override_atomic: &AtomicU64, default: i64) -> i64 {
+    let user = override_atomic.load(Ordering::Relaxed);
+    let base = if user > 0 { user as i64 } else { default };
+    env_secs(env_key, base)
+}
+
 #[derive(Serialize, Clone)]
 struct FleetStatePayload {
     session_id: String,
@@ -209,10 +237,10 @@ fn is_never_attached(
 /// hook-driven `last_activity_ms` cutoff.
 fn tick_once(app: &AppHandle) {
     let now = now_ms();
-    let stale_secs = env_secs("PERSONAS_FLEET_STALE_SECS", STALE_AFTER_SECS);
+    let stale_secs = effective_secs("PERSONAS_FLEET_STALE_SECS", &STALE_OVERRIDE_SECS, STALE_AFTER_SECS);
     let cutoff_ms = stale_secs * 1000;
     let never_attached_ms = env_secs("PERSONAS_FLEET_NEVER_ATTACHED_SECS", NEVER_ATTACHED_SECS) * 1000;
-    let stalled_secs = env_secs("PERSONAS_FLEET_STALLED_SECS", STALLED_AFTER_SECS);
+    let stalled_secs = effective_secs("PERSONAS_FLEET_STALLED_SECS", &STALLED_OVERRIDE_SECS, STALLED_AFTER_SECS);
     let stalled_ms = stalled_secs * 1000;
 
     // Pass A — snapshot the sessions worth checking (no IO under the lock).

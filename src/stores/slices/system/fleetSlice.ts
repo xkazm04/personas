@@ -54,6 +54,12 @@ export interface FleetSlice {
   fleetAutoHibernate: boolean;
   /** Inactivity minutes before auto-hibernate fires. Persisted; floored at 1. */
   fleetAutoHibernateMinutes: number;
+  /** Minutes of flat logs before a session flips Stale. Persisted; pushed to
+   *  the Rust ticker on change + on refresh (clamped server-side too). */
+  fleetStaleMinutes: number;
+  /** Minutes of total PTY silence before a Running session is flagged frozen.
+   *  Persisted; pushed like the stale cutoff. */
+  fleetFrozenMinutes: number;
   /** Recent lifecycle transitions per session id — feeds the card sparkline. In-memory. */
   fleetTransitions: Record<string, FleetTransition[]>;
   /** Terminal font size in px (user zoom). Persisted, clamped 9–22. */
@@ -70,6 +76,8 @@ export interface FleetSlice {
   fleetSetNotifyAwaiting: (on: boolean) => void;
   fleetSetAutoHibernate: (on: boolean) => void;
   fleetSetAutoHibernateMinutes: (minutes: number) => void;
+  fleetSetStaleMinutes: (minutes: number) => void;
+  fleetSetFrozenMinutes: (minutes: number) => void;
   /** Set the terminal font size (clamped); pass a delta via fleetNudgeFont. */
   fleetSetTerminalFontSize: (px: number) => void;
   fleetNudgeTerminalFont: (delta: number) => void;
@@ -94,6 +102,8 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
   fleetNotifyAwaiting: true,
   fleetAutoHibernate: false,
   fleetAutoHibernateMinutes: 30,
+  fleetStaleMinutes: 6,
+  fleetFrozenMinutes: 2,
   fleetTransitions: {},
   fleetTerminalFontSize: FONT_DEFAULT,
   fleetTerminalCopyOnSelect: true,
@@ -104,6 +114,7 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     // (Opening Fleet at least once per app session activates an enabled policy;
     // a startup-side push is a tracked follow-up.)
     fleetApi.setAutoHibernate(get().fleetAutoHibernate, get().fleetAutoHibernateMinutes).catch(() => {});
+    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, get().fleetFrozenMinutes * 60).catch(() => {});
     set({ fleetSessionsLoading: true });
     try {
       const snapshot = await fleetApi.listSessions();
@@ -137,6 +148,17 @@ export const createFleetSlice: StateCreator<SystemStore, [], [], FleetSlice> = (
     const m = Math.max(1, Math.round(minutes) || 1);
     set({ fleetAutoHibernateMinutes: m });
     fleetApi.setAutoHibernate(get().fleetAutoHibernate, m).catch(() => {});
+  },
+
+  fleetSetStaleMinutes: (minutes) => {
+    const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));
+    set({ fleetStaleMinutes: m });
+    fleetApi.setStateCutoffs(m * 60, get().fleetFrozenMinutes * 60).catch(() => {});
+  },
+  fleetSetFrozenMinutes: (minutes) => {
+    const m = Math.min(60, Math.max(1, Math.round(minutes) || 1));
+    set({ fleetFrozenMinutes: m });
+    fleetApi.setStateCutoffs(get().fleetStaleMinutes * 60, m * 60).catch(() => {});
   },
 
   fleetSetTerminalFontSize: (px) => set({ fleetTerminalFontSize: clampFont(px) }),

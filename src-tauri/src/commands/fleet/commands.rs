@@ -205,6 +205,17 @@ pub async fn fleet_set_auto_hibernate(enabled: bool, after_minutes: u32) -> Resu
     Ok(())
 }
 
+/// Tune the staleness cutoffs (in seconds; clamped server-side): how long a
+/// flat-log session may sit before flipping `Stale`, and how long total PTY
+/// silence may last before a `Running` session is flagged frozen. Same
+/// plumbing as auto-hibernate: the frontend owns the persisted values and
+/// pushes them here on change + on every Fleet refresh.
+#[tauri::command]
+pub async fn fleet_set_state_cutoffs(stale_secs: u32, stalled_secs: u32) -> Result<(), String> {
+    super::stale::set_state_cutoffs(stale_secs as u64, stalled_secs as u64);
+    Ok(())
+}
+
 /// Snapshot the registry for the UI's session grid.
 ///
 /// `hook_port` is the resolved local_http port (hosting /fleet/hooks/*).

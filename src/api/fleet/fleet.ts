@@ -155,6 +155,14 @@ export const setAutoHibernate = (enabled: boolean, afterMinutes: number) =>
   invoke<null>('fleet_set_auto_hibernate', { enabled, afterMinutes });
 
 /**
+ * Tune the staleness cutoffs (seconds; clamped server-side): flat-log time
+ * before `Stale`, and total PTY silence before a `Running` session is flagged
+ * frozen. Same push-on-change + push-on-refresh plumbing as auto-hibernate.
+ */
+export const setStateCutoffs = (staleSecs: number, stalledSecs: number) =>
+  invoke<null>('fleet_set_state_cutoffs', { staleSecs, stalledSecs });
+
+/**
  * Read + summarize a session's Claude Code transcript
  * (`~/.claude/projects/**\/<claudeSessionId>.jsonl`) into a structured
  * rollup: token totals, per-tool counts, files touched, message counts,

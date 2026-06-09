@@ -10840,6 +10840,11 @@ export type Translations = {
       provenance_console: string;
       provenance_transcript: string;
       provenance_never: string;
+      state_cutoffs_title: string;
+      state_cutoffs_desc: string;
+      state_cutoffs_stale: string;
+      state_cutoffs_frozen: string;
+      state_cutoffs_minutes_unit: string;
       legend_process: string;
       legend_activity: string;
       state_awaiting_input: string;
