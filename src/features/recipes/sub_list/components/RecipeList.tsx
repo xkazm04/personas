@@ -99,6 +99,7 @@ export function RecipeList({ recipes, search, onEdit, onPlayground, onDelete }: 
                   <p className="typo-body font-medium text-foreground uppercase tracking-wide">{t.recipes.quick_test_result}</p>
                   <button
                     onClick={() => dismissResult(recipe.id)}
+                    aria-label="Dismiss result"
                     className="p-0.5 rounded text-foreground hover:text-foreground transition-colors"
                   >
                     <X className="w-3 h-3" />

@@ -46,6 +46,7 @@ export function TagChipInput({ tags, onChange }: TagChipInputProps) {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); removeTag(i); }}
+              aria-label={`Remove ${tag}`}
               className="inline-flex items-center justify-center rounded-full hover:bg-primary/20 transition-colors p-0.5"
             >
               <X className="w-3 h-3" />

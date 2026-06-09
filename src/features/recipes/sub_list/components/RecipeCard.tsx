@@ -106,6 +106,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
             onClick={() => onQuickTest(recipe.id)}
             className="min-w-8 min-h-8 flex items-center justify-center gap-1 rounded-card typo-body text-emerald-400 hover:bg-emerald-500/10 transition-colors focus-ring"
             title={t.recipes.run_quick_test}
+            aria-label={t.recipes.run_quick_test}
           >
             <Play className="w-3.5 h-3.5" />
           </button>
@@ -114,6 +115,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           onClick={() => onEdit(recipe.id)}
           className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.edit_recipe}
+          aria-label={t.recipes.edit_recipe}
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
@@ -121,6 +123,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
           onClick={() => onPlayground(recipe.id)}
           className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus-ring"
           title={t.recipes.open_settings}
+          aria-label={t.recipes.open_settings}
         >
           <Settings className="w-3.5 h-3.5" />
         </button>
@@ -133,6 +136,7 @@ export function RecipeCard({ recipe, onEdit, onPlayground, onDelete, onQuickTest
             onClick={() => setShowDeleteConfirm(true)}
             className="min-w-8 min-h-8 flex items-center justify-center rounded-card text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-colors opacity-0 group-hover:opacity-100 focus-ring"
             title={t.recipes.delete_recipe}
+            aria-label={t.recipes.delete_recipe}
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>

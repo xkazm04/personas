@@ -52,6 +52,7 @@ export function RecipePlaygroundModal({ recipe, onClose }: RecipePlaygroundModal
         </div>
         <button
           onClick={onClose}
+          aria-label="Close"
           className="flex items-center justify-center w-7 h-7 rounded-card text-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <X className="w-4 h-4" />
