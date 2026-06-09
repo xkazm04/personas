@@ -13507,7 +13507,11 @@
     },
     "memory_created": "Запись сохранена в журнал команды",
     "memory_updated": "Запись обновлена",
-    "memory_deleted": "Запись удалена"
+    "memory_deleted": "Запись удалена",
+    "removed_memories_one": "{count} удалена",
+    "removed_memories_other": "Удалено: {count}",
+    "clear_all_filters": "Сбросить все фильтры",
+    "diff_legend": "Зелёные записи появились в более новом запуске; красные исчезли после более старого."
   },
   "auth": {
     "login_timed_out": "Время входа истекло. Попробуйте снова."

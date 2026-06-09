@@ -289,5 +289,9 @@
   },
   "memory_created": "메모리가 팀 장부에 저장되었습니다",
   "memory_updated": "메모리가 업데이트되었습니다",
-  "memory_deleted": "메모리가 삭제되었습니다"
+  "memory_deleted": "메모리가 삭제되었습니다",
+  "removed_memories_one": "{count}개 제거됨",
+  "removed_memories_other": "{count}개 제거됨",
+  "clear_all_filters": "모든 필터 지우기",
+  "diff_legend": "초록색 항목은 최신 실행에서 새로 추가된 것이고, 빨간색 항목은 이전 실행 이후 사라진 것입니다."
 }

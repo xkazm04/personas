@@ -289,5 +289,9 @@
   },
   "memory_created": "স্মৃতি টিম লেজারে সংরক্ষিত হয়েছে",
   "memory_updated": "স্মৃতি আপডেট হয়েছে",
-  "memory_deleted": "স্মৃতি মুছে ফেলা হয়েছে"
+  "memory_deleted": "স্মৃতি মুছে ফেলা হয়েছে",
+  "removed_memories_one": "{count}টি সরানো হয়েছে",
+  "removed_memories_other": "{count}টি সরানো হয়েছে",
+  "clear_all_filters": "সব ফিল্টার মুছুন",
+  "diff_legend": "সবুজ এন্ট্রিগুলি নতুন রানে যুক্ত হয়েছে; লাল এন্ট্রিগুলি পুরনো রানের পর থেকে নেই।"
 }

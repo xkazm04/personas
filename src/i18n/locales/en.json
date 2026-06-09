@@ -14448,7 +14448,11 @@
     "clear_filter": "Clear filter",
     "filter_to_run": "Filter to this run",
     "new_memories_one": "{count} new memory",
-    "new_memories_other": "{count} new memories"
+    "new_memories_other": "{count} new memories",
+    "removed_memories_one": "{count} removed",
+    "removed_memories_other": "{count} removed",
+    "clear_all_filters": "Clear all filters",
+    "diff_legend": "Green entries are new in the newer run; red entries are gone since the older run."
   },
   "auth": {
     "login_timed_out": "Login timed out. Please try again."

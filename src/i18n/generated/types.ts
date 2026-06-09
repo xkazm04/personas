@@ -14455,6 +14455,10 @@ export type Translations = {
     filter_to_run: string;
     new_memories_one: string;
     new_memories_other: string;
+    removed_memories_one: string;
+    removed_memories_other: string;
+    clear_all_filters: string;
+    diff_legend: string;
   };
   auth: {
     login_timed_out: string;

@@ -289,5 +289,9 @@
   },
   "memory_created": "Eintrag im Team-Gedächtnis gespeichert",
   "memory_updated": "Eintrag aktualisiert",
-  "memory_deleted": "Eintrag gelöscht"
+  "memory_deleted": "Eintrag gelöscht",
+  "removed_memories_one": "{count} entfernt",
+  "removed_memories_other": "{count} entfernt",
+  "clear_all_filters": "Alle Filter zurücksetzen",
+  "diff_legend": "Grüne Einträge sind im neueren Lauf neu; rote Einträge sind seit dem älteren Lauf verschwunden."
 }

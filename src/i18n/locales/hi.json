@@ -13507,7 +13507,11 @@
     },
     "memory_created": "स्मृति टीम लेजर में सहेजी गई",
     "memory_updated": "स्मृति अपडेट हुई",
-    "memory_deleted": "स्मृति हटाई गई"
+    "memory_deleted": "स्मृति हटाई गई",
+    "removed_memories_one": "{count} हटाई गई",
+    "removed_memories_other": "{count} हटाई गईं",
+    "clear_all_filters": "सभी फ़िल्टर साफ़ करें",
+    "diff_legend": "हरी प्रविष्टियाँ नए रन में नई हैं; लाल प्रविष्टियाँ पुराने रन के बाद से हट चुकी हैं।"
   },
   "auth": {
     "login_timed_out": "लॉगिन का समय समाप्त हो गया। कृपया पुनः प्रयास करें।"

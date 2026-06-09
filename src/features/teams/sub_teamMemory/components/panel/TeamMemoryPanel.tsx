@@ -121,6 +121,14 @@ export default function TeamMemoryPanel({
     onFilterByRun?.(runId);
   }, [onFilterByRun]);
 
+  const handleClearAllFilters = useCallback(() => {
+    setActiveCategory('all');
+    setSearchQuery('');
+    setActiveRunFilter(null);
+    onFilterByRun?.(null);
+    onFilter(undefined, undefined);
+  }, [onFilter, onFilterByRun]);
+
   const hasRunData = stats?.run_counts && stats.run_counts.length > 0;
   const isPane = layout === 'pane';
 
@@ -176,6 +184,7 @@ export default function TeamMemoryPanel({
           onCategoryChange={handleCategoryChange}
           onSearchChange={handleSearchChange}
           onClearRunFilter={() => handleFilterByRun(null)}
+          onClearAll={handleClearAllFilters}
           onLoadMore={handleLoadMore}
           onDelete={onDelete}
           onImportanceChange={onImportanceChange}

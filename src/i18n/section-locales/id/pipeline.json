@@ -289,5 +289,9 @@
   },
   "memory_created": "Memori disimpan ke catatan tim",
   "memory_updated": "Memori diperbarui",
-  "memory_deleted": "Memori dihapus"
+  "memory_deleted": "Memori dihapus",
+  "removed_memories_one": "{count} dihapus",
+  "removed_memories_other": "{count} dihapus",
+  "clear_all_filters": "Hapus semua filter",
+  "diff_legend": "Entri hijau baru di run yang lebih baru; entri merah hilang sejak run yang lebih lama."
 }

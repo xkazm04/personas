@@ -64,7 +64,7 @@ export default function RunDiffView({ stats, onClose }: RunDiffViewProps) {
       <div className="text-center py-6 px-3">
         <GitCompareArrows className="w-8 h-8 mx-auto mb-2 text-foreground" />
         <p className="typo-caption text-foreground">{pt.need_two_runs}</p>
-        <button onClick={onClose} className="mt-2 typo-caption text-violet-400 hover:text-violet-300">Back</button>
+        <button onClick={onClose} className="mt-2 typo-caption text-violet-400 hover:text-violet-300">{t.common.back}</button>
       </div>
     );
   }

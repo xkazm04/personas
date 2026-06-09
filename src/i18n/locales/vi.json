@@ -13507,7 +13507,11 @@
     },
     "memory_created": "Đã lưu ghi nhớ vào sổ của nhóm",
     "memory_updated": "Đã cập nhật ghi nhớ",
-    "memory_deleted": "Đã xóa ghi nhớ"
+    "memory_deleted": "Đã xóa ghi nhớ",
+    "removed_memories_one": "{count} đã xóa",
+    "removed_memories_other": "{count} đã xóa",
+    "clear_all_filters": "Xóa tất cả bộ lọc",
+    "diff_legend": "Mục màu xanh là mới trong lần chạy mới hơn; mục màu đỏ đã biến mất kể từ lần chạy cũ hơn."
   },
   "auth": {
     "login_timed_out": "Đăng nhập hết thời gian. Vui lòng thử lại."

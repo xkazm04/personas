@@ -289,5 +289,9 @@
   },
   "memory_created": "تم حفظ الذاكرة في سجل الفريق",
   "memory_updated": "تم تحديث الذاكرة",
-  "memory_deleted": "تم حذف الذاكرة"
+  "memory_deleted": "تم حذف الذاكرة",
+  "removed_memories_one": "{count} محذوفة",
+  "removed_memories_other": "{count} محذوفة",
+  "clear_all_filters": "مسح كل عوامل التصفية",
+  "diff_legend": "الإدخالات الخضراء جديدة في التشغيل الأحدث؛ والإدخالات الحمراء اختفت منذ التشغيل الأقدم."
 }

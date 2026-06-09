@@ -1,4 +1,4 @@
-import { Brain, Search, GitCommitVertical, X } from 'lucide-react';
+import { Brain, Search, GitCommitVertical, X, FilterX } from 'lucide-react';
 import { LoadingSpinner } from '@/features/shared/components/feedback/LoadingSpinner';
 import type { TeamMemory } from '@/lib/bindings/TeamMemory';
 import TeamMemoryRow from './TeamMemoryRow';
@@ -18,6 +18,7 @@ interface MemoryPanelListProps {
   onCategoryChange: (cat: string) => void;
   onSearchChange: (q: string) => void;
   onClearRunFilter: () => void;
+  onClearAll?: () => void;
   onLoadMore: () => void;
   onDelete: (id: string) => void;
   onImportanceChange: (id: string, importance: number) => void;
@@ -35,6 +36,7 @@ export default function MemoryPanelList({
   onCategoryChange,
   onSearchChange,
   onClearRunFilter,
+  onClearAll,
   onLoadMore,
   onDelete,
   onImportanceChange,
@@ -42,6 +44,7 @@ export default function MemoryPanelList({
 }: MemoryPanelListProps) {
   const { t, tx } = useTranslation();
   const hasMore = memories.length < total;
+  const hasActiveFilters = activeCategory !== 'all' || searchQuery !== '' || !!activeRunFilter;
 
   return (
     <>
@@ -87,6 +90,14 @@ export default function MemoryPanelList({
               <X className="w-3 h-3" />
             </button>
           </div>
+        )}
+        {hasActiveFilters && onClearAll && (
+          <button
+            onClick={onClearAll}
+            className="flex items-center gap-1 typo-caption text-violet-400 hover:text-violet-300 transition-colors"
+          >
+            <FilterX className="w-3 h-3" /> {t.pipeline.clear_all_filters}
+          </button>
         )}
       </div>
 

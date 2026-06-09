@@ -13507,7 +13507,11 @@
     },
     "memory_created": "Mémoire enregistrée dans le registre de l'équipe",
     "memory_updated": "Mémoire mise à jour",
-    "memory_deleted": "Mémoire supprimée"
+    "memory_deleted": "Mémoire supprimée",
+    "removed_memories_one": "{count} supprimée",
+    "removed_memories_other": "{count} supprimées",
+    "clear_all_filters": "Effacer tous les filtres",
+    "diff_legend": "Les entrées vertes sont nouvelles dans l'exécution la plus récente ; les rouges ont disparu depuis la plus ancienne."
   },
   "auth": {
     "login_timed_out": "Connexion expirée. Veuillez réessayer."

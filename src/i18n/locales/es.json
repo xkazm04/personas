@@ -13507,7 +13507,11 @@
     },
     "memory_created": "Memoria guardada en el registro del equipo",
     "memory_updated": "Memoria actualizada",
-    "memory_deleted": "Memoria eliminada"
+    "memory_deleted": "Memoria eliminada",
+    "removed_memories_one": "{count} eliminada",
+    "removed_memories_other": "{count} eliminadas",
+    "clear_all_filters": "Borrar todos los filtros",
+    "diff_legend": "Las entradas verdes son nuevas en la ejecución más reciente; las rojas desaparecieron desde la anterior."
   },
   "auth": {
     "login_timed_out": "Tiempo de inicio de sesión agotado. Por favor intenta de nuevo."

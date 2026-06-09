@@ -13507,7 +13507,11 @@
     },
     "memory_created": "Záznam uložen do týmové paměti",
     "memory_updated": "Záznam aktualizován",
-    "memory_deleted": "Záznam smazán"
+    "memory_deleted": "Záznam smazán",
+    "removed_memories_one": "{count} odstraněn",
+    "removed_memories_other": "{count} odstraněno",
+    "clear_all_filters": "Vymazat všechny filtry",
+    "diff_legend": "Zelené záznamy jsou nové v novějším běhu; červené záznamy od staršího běhu zmizely."
   },
   "auth": {
     "login_timed_out": "Přihlášení vypršelo. Zkus to prosím znovu."
