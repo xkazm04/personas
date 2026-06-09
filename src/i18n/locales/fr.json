@@ -5220,7 +5220,20 @@
       "source_provider": "Fournisseur",
       "source_policy": "Politique",
       "source_healing_issue": "Problème de correction",
-      "source_execution_error": "Erreur d'exécution"
+      "source_execution_error": "Erreur d'exécution",
+      "filters_active_aria": "{count} filtres actifs",
+      "filters_clear_all": "Effacer les filtres",
+      "group_by_label": "Grouper par",
+      "group_by_agent": "Agent",
+      "group_by_severity": "Gravité",
+      "group_by_source": "Source",
+      "group_by_none": "Aucun",
+      "siblings_label": "Autres incidents ouverts de cet agent",
+      "siblings_none": "Aucun autre incident ouvert de cet agent.",
+      "view_all_from_agent": "Voir tout de cet agent",
+      "distribution_aria": "Incidents ouverts par gravité",
+      "new_since_last_visit": "{count} nouveaux depuis votre dernière visite",
+      "mark_seen": "Marquer comme vu"
     },
     "observability": {
       "title": "Observabilité",

@@ -5220,7 +5220,20 @@
       "source_provider": "Nhà cung cấp",
       "source_policy": "Chính sách",
       "source_healing_issue": "Vấn đề tự sửa",
-      "source_execution_error": "Lỗi thực thi"
+      "source_execution_error": "Lỗi thực thi",
+      "filters_active_aria": "{count} bộ lọc đang hoạt động",
+      "filters_clear_all": "Xóa bộ lọc",
+      "group_by_label": "Nhóm theo",
+      "group_by_agent": "Tác nhân",
+      "group_by_severity": "Mức độ",
+      "group_by_source": "Nguồn",
+      "group_by_none": "Không có",
+      "siblings_label": "Sự cố đang mở khác từ tác nhân này",
+      "siblings_none": "Không có sự cố đang mở nào khác từ tác nhân này.",
+      "view_all_from_agent": "Xem tất cả từ tác nhân này",
+      "distribution_aria": "Sự cố đang mở theo mức độ",
+      "new_since_last_visit": "{count} mới kể từ lần truy cập cuối",
+      "mark_seen": "Đánh dấu đã xem"
     },
     "observability": {
       "title": "Khả năng quan sát",
