@@ -12,7 +12,8 @@ import { useSystemStore } from '@/stores/systemStore';
 import { useToastStore } from '@/stores/toastStore';
 import { useTranslation } from '@/i18n/useTranslation';
 import { SCAN_AGENTS, AGENT_CATEGORIES } from '../constants/scanAgents';
-import { DEFAULT_CATEGORY_TW, CATEGORY_TW, levelColor } from '../constants/ideaColors';
+import { DEFAULT_CATEGORY_TW, CATEGORY_TW } from '../constants/ideaColors';
+import { LevelBadge } from '../sub_scanner/IdeaScannerCards';
 import { TriageRulesPanel } from './TriageRulesPanel';
 import { EffortRiskFilter } from './EffortRiskFilter';
 import { LifecycleProjectPicker } from '../sub_lifecycle/LifecycleProjectPicker';
@@ -137,12 +138,7 @@ function SwipeCard({
             {catLabel}
           </span>
           {(['effort', 'impact', 'risk'] as const).map((key) => (
-            <span
-              key={key}
-              className={`rounded-full px-2.5 py-0.5 text-md font-medium border ${levelColor(idea[key])}`}
-            >
-              {key}: {idea[key]}
-            </span>
+            <LevelBadge key={key} label={key} value={idea[key]} />
           ))}
         </div>
 
