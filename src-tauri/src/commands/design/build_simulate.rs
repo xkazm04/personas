@@ -178,17 +178,27 @@ pub async fn simulate_build_draft(
     // Restrict to phases where a draft IR is reasonably "complete enough"
     // for dry-run. Resolving / awaiting_input etc. would simulate against an
     // incomplete IR; refuse with a clear error.
+    // Dry-run snapshots a simulation design_context onto the persona row that is
+    // only ever restored by promote_build_draft. A *Promoted* session will never
+    // promote again, so simulating from it would permanently overwrite the live
+    // design_context with the stripped snapshot (broken trigger->use_case UUIDs,
+    // lost channels/policies). Refuse it — post-promotion dry-run goes through the
+    // runtime capability-simulate path, which never mutates design_context.
     let phase_ok = matches!(
         session.phase,
-        BuildPhase::DraftReady
-            | BuildPhase::Testing
-            | BuildPhase::TestComplete
-            | BuildPhase::Promoted
+        BuildPhase::DraftReady | BuildPhase::Testing | BuildPhase::TestComplete
     );
     if !phase_ok {
+        let hint = if matches!(session.phase, BuildPhase::Promoted) {
+            "persona is already promoted — use the capability simulate action, \
+             which does not overwrite design_context"
+        } else {
+            "draft must reach 'draft_ready' first"
+        };
         return Err(AppError::Validation(format!(
-            "Cannot simulate from phase '{}' — draft must reach 'draft_ready' first",
-            session.phase.as_str()
+            "Cannot simulate from phase '{}' — {}",
+            session.phase.as_str(),
+            hint
         )));
     }
 
