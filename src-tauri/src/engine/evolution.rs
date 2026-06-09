@@ -157,6 +157,11 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
     let tool_ids: Vec<String> = tools.iter().map(|t| t.id.clone()).collect();
     let incumbent_genome = PersonaGenome::from_persona(&persona, tool_ids);
 
+    // Snapshot updated_at now as an optimistic-lock token for promotion below: if
+    // a concurrent cycle or a user edit changes the persona during the (minutes-
+    // long) evaluation, promotion is abandoned rather than clobbering it.
+    let base_updated_at = persona.updated_at.clone();
+
     // Compute incumbent fitness
     let (objective, objective_warnings) = parse_fitness_objective(&policy.fitness_objective);
     if !objective_warnings.is_empty() {
@@ -351,7 +356,7 @@ pub async fn run_evolution_cycle(pool: DbPool, policy: EvolutionPolicy, cycle_id
             let winner = &variants[idx];
             let new_prompt = winner.reassemble_prompt();
 
-            match promote_variant(&pool, &persona_id, winner, &new_prompt) {
+            match promote_variant(&pool, &persona_id, winner, &new_prompt, &base_updated_at) {
                 Ok(()) => {
                     tracing::info!(
                         persona_id = %persona_id,
@@ -487,9 +492,15 @@ fn promote_variant(
     persona_id: &str,
     winner: &PersonaGenome,
     new_prompt: &str,
+    expected_updated_at: &str,
 ) -> Result<(), crate::error::AppError> {
     let conn = pool.get()?;
-    conn.execute(
+    // Compare-and-swap on updated_at: the cycle captured the incumbent at its
+    // start and spent minutes evaluating. If the persona changed since then —
+    // a concurrent cycle promoting, or the user editing the prompt in the UI —
+    // updated_at no longer matches, the UPDATE affects 0 rows, and we abandon
+    // promotion instead of silently overwriting the newer state (lost update).
+    let rows = conn.execute(
         "UPDATE personas SET
             system_prompt = ?1,
             structured_prompt = ?2,
@@ -499,7 +510,7 @@ fn promote_variant(
             max_budget_usd = ?6,
             max_turns = ?7,
             updated_at = ?8
-         WHERE id = ?9",
+         WHERE id = ?9 AND updated_at = ?10",
         rusqlite::params![
             new_prompt,
             winner.structured_prompt,
@@ -510,8 +521,14 @@ fn promote_variant(
             winner.model.max_turns,
             chrono::Utc::now().to_rfc3339(),
             persona_id,
+            expected_updated_at,
         ],
     )?;
+    if rows == 0 {
+        return Err(crate::error::AppError::Validation(
+            "Persona changed during the evolution cycle — promotion abandoned to avoid overwriting the newer state".into(),
+        ));
+    }
     Ok(())
 }
 
