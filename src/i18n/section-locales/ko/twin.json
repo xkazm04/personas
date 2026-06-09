@@ -482,7 +482,9 @@
     "statusEmpty": "Not set",
     "toneProgress": "{count} of {total} tones configured",
     "channelsActive": "{active} of {total} channels active",
-    "memoriesApproved": "{count} memories approved"
+    "memoriesApproved": "{count} memories approved",
+    "celebrateComplete": "트윈이 완전히 학습됨 — 100% 준비 완료",
+    "celebrateProgress": "마일스톤 완료 — {pct}% 준비 완료"
   },
   "nudges": {
     "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",

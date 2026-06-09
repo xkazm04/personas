@@ -14397,7 +14397,9 @@
       "statusEmpty": "Not set",
       "toneProgress": "{count} of {total} tones configured",
       "channelsActive": "{active} of {total} channels active",
-      "memoriesApproved": "{count} memories approved"
+      "memoriesApproved": "{count} memories approved",
+      "celebrateComplete": "ツインのトレーニングが完了 — 100% 準備完了",
+      "celebrateProgress": "マイルストーン達成 — {pct}% 準備完了"
     },
     "nudges": {
       "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",

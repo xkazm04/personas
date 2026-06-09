@@ -482,7 +482,9 @@
     "statusEmpty": "Not set",
     "toneProgress": "{count} of {total} tones configured",
     "channelsActive": "{active} of {total} channels active",
-    "memoriesApproved": "{count} memories approved"
+    "memoriesApproved": "{count} memories approved",
+    "celebrateComplete": "Tu gemelo está completamente entrenado — 100% listo",
+    "celebrateProgress": "Hito completado — {pct}% listo"
   },
   "nudges": {
     "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",

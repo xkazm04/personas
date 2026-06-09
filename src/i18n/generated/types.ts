@@ -15464,6 +15464,8 @@ export type Translations = {
       toneProgress: string;
       channelsActive: string;
       memoriesApproved: string;
+      celebrateComplete: string;
+      celebrateProgress: string;
     };
     gaps: {
       title: string;

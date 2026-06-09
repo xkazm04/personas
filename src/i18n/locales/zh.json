@@ -14397,7 +14397,9 @@
       "statusEmpty": "Not set",
       "toneProgress": "{count} of {total} tones configured",
       "channelsActive": "{active} of {total} channels active",
-      "memoriesApproved": "{count} memories approved"
+      "memoriesApproved": "{count} memories approved",
+      "celebrateComplete": "你的分身已完全训练 — 100% 就绪",
+      "celebrateProgress": "里程碑完成 — {pct}% 就绪"
     },
     "nudges": {
       "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",

@@ -14397,7 +14397,9 @@
       "statusEmpty": "Not set",
       "toneProgress": "{count} of {total} tones configured",
       "channelsActive": "{active} of {total} channels active",
-      "memoriesApproved": "{count} memories approved"
+      "memoriesApproved": "{count} memories approved",
+      "celebrateComplete": "आपका ट्विन पूरी तरह प्रशिक्षित — 100% तैयार",
+      "celebrateProgress": "मील का पत्थर पूरा — {pct}% तैयार"
     },
     "nudges": {
       "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",

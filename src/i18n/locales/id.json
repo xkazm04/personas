@@ -14397,7 +14397,9 @@
       "statusEmpty": "Not set",
       "toneProgress": "{count} of {total} tones configured",
       "channelsActive": "{active} of {total} channels active",
-      "memoriesApproved": "{count} memories approved"
+      "memoriesApproved": "{count} memories approved",
+      "celebrateComplete": "Twin Anda terlatih penuh — 100% siap",
+      "celebrateProgress": "Tonggak selesai — {pct}% siap"
     },
     "nudges": {
       "channelWithoutTone": "You added a {channel} channel but haven't set a {channel} tone — messages will use the generic fallback.",
