@@ -223,8 +223,16 @@ pub async fn remote_command_approve(
         .ok_or_else(|| AppError::Auth("Not signed in".into()))?;
     let client = SyncClient::new(jwt)?;
 
+    // Scope the fetch to THIS device. The id is a listable UUID, not a per-device
+    // capability token, and RLS only scopes rows to the tenant — not the device.
+    // Without this filter a multi-device user could approve a run targeted at
+    // device B and have it execute on device A (wrong sandbox / local creds /
+    // working tree). A wrong-device row simply won't return → "not found".
+    let device = cursor::resolve_device_id(&state.db);
     let cmds: Vec<CommandRow> = client
-        .get(&format!("pending_commands?id=eq.{id}&{SELECT}"))
+        .get(&format!(
+            "pending_commands?id=eq.{id}&target_device_id=eq.{device}&{SELECT}"
+        ))
         .await?;
     let cmd = cmds
         .into_iter()
