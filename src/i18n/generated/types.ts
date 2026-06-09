@@ -15002,6 +15002,9 @@ export type Translations = {
       lastMinutesAgo: string;
       lastHoursAgo: string;
       lastDaysAgo: string;
+      threadTitle: string;
+      threadInbound: string;
+      threadOutbound: string;
       staleTag: string;
       testTooltip: string;
       testDisabledPaused: string;

@@ -5,6 +5,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import { Button } from '@/features/shared/components/buttons';
 import { ThemedSelect, type ThemedSelectOption } from '@/features/shared/components/forms/ThemedSelect';
 import { ConfirmDialog } from '@/features/shared/components/feedback/ConfirmDialog';
+import { ContactThread } from './ContactThread';
 import { INPUT_FIELD } from '@/lib/utils/designTokens';
 import type { TwinChannel } from '@/lib/bindings/TwinChannel';
 import type { TwinContact } from '@/lib/bindings/TwinContact';
@@ -192,6 +193,8 @@ export function ReplyOutbox({ channels }: { channels: TwinChannel[] }) {
           )}
         </Field>
       </div>
+
+      <ContactThread twinId={activeTwinId} channel={channelType} contactHandle={contactHandle} />
 
       <div className="mt-3">
         <Field label="Inbound message (optional)">
