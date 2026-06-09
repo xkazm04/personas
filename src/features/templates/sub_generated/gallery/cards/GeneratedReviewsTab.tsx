@@ -298,6 +298,21 @@ export default function GeneratedReviewsTab({
           isOpen={compareOpen}
           onClose={() => setCompareOpen(false)}
           columns={compareColumns}
+          onAdopt={(id) => {
+            const review = compare.selected.find((r) => r.id === id);
+            if (!review) return;
+            setCompareOpen(false);
+            modals.open({ type: 'adopt', review });
+          }}
+          onTryIt={(id) => {
+            const review = compare.selected.find((r) => r.id === id);
+            if (!review) return;
+            if (preview.reviewId !== review.id || preview.phase === 'completed' || preview.phase === 'failed') {
+              preview.resetPreview();
+            }
+            setCompareOpen(false);
+            modals.open({ type: 'preview', review });
+          }}
         />
       </div>
 

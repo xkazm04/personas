@@ -1168,6 +1168,7 @@
     "col_goal": "Tujuan",
     "col_complexity": "Kompleksitas",
     "col_setup": "Waktu penyiapan",
-    "none": "—"
+    "none": "—",
+    "differs": "Berbeda"
   }
 }

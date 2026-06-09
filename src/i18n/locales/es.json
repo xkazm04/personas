@@ -7853,7 +7853,8 @@
       "col_goal": "Objetivo",
       "col_complexity": "Complejidad",
       "col_setup": "Tiempo de configuración",
-      "none": "—"
+      "none": "—",
+      "differs": "Difiere"
     }
   },
   "triggers": {

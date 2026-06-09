@@ -7853,7 +7853,8 @@
       "col_goal": "目標",
       "col_complexity": "複雑さ",
       "col_setup": "セットアップ時間",
-      "none": "—"
+      "none": "—",
+      "differs": "差異あり"
     }
   },
   "triggers": {

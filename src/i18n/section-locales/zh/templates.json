@@ -1168,6 +1168,7 @@
     "col_goal": "目标",
     "col_complexity": "复杂度",
     "col_setup": "设置时间",
-    "none": "—"
+    "none": "—",
+    "differs": "存在差异"
   }
 }

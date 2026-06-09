@@ -1168,6 +1168,7 @@
     "col_goal": "Mục tiêu",
     "col_complexity": "Độ phức tạp",
     "col_setup": "Thời gian thiết lập",
-    "none": "—"
+    "none": "—",
+    "differs": "Khác nhau"
   }
 }

@@ -23,6 +23,8 @@ export interface CompareColumn {
   difficulty: DifficultyLevel;
   setupMinutes: number;
   adoptionCount: number;
+  /** Whether the review carries a parsed design result — gates Try-it. */
+  hasDesign: boolean;
 }
 
 /**
@@ -64,6 +66,7 @@ export function buildComparison(
       difficulty: computeDifficulty(review),
       setupMinutes: estimateSetupMinutes(review),
       adoptionCount: review.adoption_count,
+      hasDesign: designResult != null,
     };
   });
 }

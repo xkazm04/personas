@@ -7853,7 +7853,8 @@
       "col_goal": "목표",
       "col_complexity": "복잡도",
       "col_setup": "설정 시간",
-      "none": "—"
+      "none": "—",
+      "differs": "다름"
     }
   },
   "triggers": {

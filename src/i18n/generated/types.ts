@@ -7901,6 +7901,7 @@ export type Translations = {
       col_complexity: string;
       col_setup: string;
       none: string;
+      differs: string;
     };
     matrix_grid: {
       prerequisites: string;

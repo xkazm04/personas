@@ -1168,6 +1168,7 @@
     "col_goal": "Ziel",
     "col_complexity": "Komplexität",
     "col_setup": "Einrichtungszeit",
-    "none": "—"
+    "none": "—",
+    "differs": "Unterschiedlich"
   }
 }

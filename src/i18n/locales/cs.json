@@ -7853,7 +7853,8 @@
       "col_goal": "Cíl",
       "col_complexity": "Složitost",
       "col_setup": "Čas nastavení",
-      "none": "—"
+      "none": "—",
+      "differs": "Liší se"
     }
   },
   "triggers": {

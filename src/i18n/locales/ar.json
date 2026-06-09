@@ -7853,7 +7853,8 @@
       "col_goal": "الهدف",
       "col_complexity": "التعقيد",
       "col_setup": "وقت الإعداد",
-      "none": "—"
+      "none": "—",
+      "differs": "يختلف"
     }
   },
   "triggers": {

@@ -7853,7 +7853,8 @@
       "col_goal": "लक्ष्य",
       "col_complexity": "जटिलता",
       "col_setup": "सेटअप समय",
-      "none": "—"
+      "none": "—",
+      "differs": "भिन्न"
     }
   },
   "triggers": {
