@@ -233,6 +233,7 @@
     "impactCount": "+{count}",
     "impactPending": "Jawaban ini menunggu tinjauan — setujui di Knowledge agar cakupan bertambah.",
     "momentumSessions": "sesi",
+    "reviewMemoriesPending": "Tinjau Memori ({count} menunggu)",
     "draftAsTwin": "Draf sebagai twin",
     "draftingAsTwin": "Membuat draf sebagai {name}…",
     "twinDraftLabel": "Draf twin — tinjau & edit",

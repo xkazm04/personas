@@ -14148,6 +14148,7 @@
       "impactCount": "+{count}",
       "impactPending": "Estas respuestas están pendientes de revisión — apruébalas en Conocimiento para aumentar la cobertura.",
       "momentumSessions": "sesiones",
+      "reviewMemoriesPending": "Revisar recuerdos ({count} pendientes)",
       "draftAsTwin": "Borrador como gemelo",
       "draftingAsTwin": "Redactando como {name}…",
       "twinDraftLabel": "Borrador del gemelo: revisa y edita",

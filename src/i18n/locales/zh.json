@@ -14148,6 +14148,7 @@
       "impactCount": "+{count}",
       "impactPending": "这些回答尚待审核 — 在知识页批准后才会计入覆盖度。",
       "momentumSessions": "训练次数",
+      "reviewMemoriesPending": "审核记忆（{count} 条待审）",
       "draftAsTwin": "以分身起草",
       "draftingAsTwin": "正在以{name}起草…",
       "twinDraftLabel": "分身草稿 — 审阅并编辑",

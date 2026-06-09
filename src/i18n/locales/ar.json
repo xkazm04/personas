@@ -14148,6 +14148,7 @@
       "impactCount": "+{count}",
       "impactPending": "هذه الإجابات في انتظار المراجعة — اعتمدها في «المعرفة» لتنمو التغطية.",
       "momentumSessions": "جلسات",
+      "reviewMemoriesPending": "مراجعة الذكريات ({count} قيد الانتظار)",
       "draftAsTwin": "صياغة كالتوأم",
       "draftingAsTwin": "جارٍ الصياغة كـ {name}…",
       "twinDraftLabel": "مسودة التوأم — راجع وحرّر",

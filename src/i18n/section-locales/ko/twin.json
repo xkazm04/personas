@@ -233,6 +233,7 @@
     "impactCount": "+{count}",
     "impactPending": "이 답변들은 검토 대기 중입니다 — Knowledge에서 승인하면 커버리지가 늘어납니다.",
     "momentumSessions": "세션",
+    "reviewMemoriesPending": "메모리 검토 ({count}개 대기)",
     "draftAsTwin": "트윈으로 초안 작성",
     "draftingAsTwin": "{name}(으)로 초안 작성 중…",
     "twinDraftLabel": "트윈 초안 — 검토 및 편집",

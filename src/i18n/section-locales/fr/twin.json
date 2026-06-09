@@ -233,6 +233,7 @@
     "impactCount": "+{count}",
     "impactPending": "Ces réponses sont en attente de relecture — approuvez-les dans Connaissances pour faire croître la couverture.",
     "momentumSessions": "sessions",
+    "reviewMemoriesPending": "Relire les souvenirs ({count} en attente)",
     "draftAsTwin": "Brouillon comme le jumeau",
     "draftingAsTwin": "Rédaction en tant que {name}…",
     "twinDraftLabel": "Brouillon du jumeau — relire et modifier",

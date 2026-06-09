@@ -233,6 +233,7 @@
     "impactCount": "+{count}",
     "impactPending": "Tyto odpovědi čekají na kontrolu — schvalte je ve Znalostech, aby pokrytí rostlo.",
     "momentumSessions": "relace",
+    "reviewMemoriesPending": "Zkontrolovat vzpomínky ({count} čeká)",
     "draftAsTwin": "Návrh jako dvojče",
     "draftingAsTwin": "Vytváří se návrh jako {name}…",
     "twinDraftLabel": "Návrh dvojčete — zkontrolovat a upravit",

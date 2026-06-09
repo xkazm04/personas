@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GraduationCap, Send, Sparkles, Save, RotateCcw, BookOpen, ArrowRight, Briefcase, Lightbulb, MessageSquare, Compass, Rocket, Heart, Quote, Bot, Star, Wand2 } from 'lucide-react';
 import { useSystemStore } from '@/stores/systemStore';
@@ -8,6 +8,7 @@ import { TwinEmptyState } from '../TwinEmptyState';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useTrainingSession, TRAINING_TOPIC_PRESETS } from './useTrainingSession';
 import { useTrainingMomentum } from './useTrainingMomentum';
+import * as twinApi from '@/api/twin/twin';
 import { NextMovesPanel } from './NextMovesPanel';
 import TrainingStudio from './TrainingStudio';
 import { DebtText } from '@/i18n/DebtText';
@@ -55,6 +56,27 @@ export default function TrainingAtelier() {
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenComment, setRegenComment] = useState('');
   const [mode, setMode] = useState<'classic' | 'studio'>('classic');
+  // Pending-review tally for the certificate's "Review Memories" CTA — fetched
+  // when a session completes, so the button says how much triage awaits.
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (session.phase !== 'complete' || !activeTwinId) {
+      setPendingCount(null);
+      return;
+    }
+    let cancelled = false;
+    twinApi
+      .listPendingMemories(activeTwinId, 'pending')
+      .then((m) => {
+        if (!cancelled) setPendingCount(m.length);
+      })
+      .catch(() => {
+        if (!cancelled) setPendingCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [session.phase, activeTwinId]);
 
   if (!activeTwinId || !activeTwin) return <TwinEmptyState icon={GraduationCap} title={t.training.title} />;
 
@@ -474,7 +496,8 @@ export default function TrainingAtelier() {
                   <RotateCcw className="w-3.5 h-3.5 mr-1.5" />{t.training.trainMore}
                 </Button>
                 <Button onClick={() => setTwinTab('knowledge')} variant="ghost" size="sm">
-                  <BookOpen className="w-3.5 h-3.5 mr-1.5" />{t.training.reviewMemories}
+                  <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                  {pendingCount ? tx(t.training.reviewMemoriesPending, { count: pendingCount }) : t.training.reviewMemories}
                 </Button>
               </div>
             </div>
