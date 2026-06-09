@@ -4,7 +4,7 @@
 
 # Shared Component Catalog
 
-**195 reusable components** live under `src/features/shared/components/`.
+**197 reusable components** live under `src/features/shared/components/`.
 **Check this list before building any UI** — import what exists; do not hand-roll
 a spinner, empty state, button, modal, tooltip, badge, copy-button, relative-time
 or number-format. Import as `@/features/shared/components/<category>/<Name>`.
@@ -166,6 +166,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `BackgroundServices` | _(add a `@catalog` tag)_ |
 | `BadgeSlot` | Click handler (e. |
 | `BreadcrumbTrail` | Renders a single breadcrumb segment (clickable or current). |
+| `ChannelTimelineWorkspace` | A draggable vertical divider that reports horizontal deltas. |
 | `ContentHeaderSkeleton` | _(add a `@catalog` tag)_ |
 | `DeferUntilIdle` | _(add a `@catalog` tag)_ |
 | `DesktopFooter` | _(add a `@catalog` tag)_ |
@@ -175,7 +176,6 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `MergedRow` | Resolve the compact event label + tone + one-line message for any item. |
 | `MonitorCapabilities` | _(add a `@catalog` tag)_ |
 | `MonitorChannelGrid` | Channel mode — watch multiple team channels at once. |
-| `MonitorChannelTimeline` | _(add a `@catalog` tag)_ |
 | `MonitorDrawer` | _(add a `@catalog` tag)_ |
 | `NowPlayingCard` | Expanded "now playing" card anchored above the footer title segment. |
 | `OrbitDots` | _(add a `@catalog` tag)_ |
@@ -183,10 +183,11 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `PersonaMonitor` | _(add a `@catalog` tag)_ |
 | `PluginsSidebarNav` | _(add a `@catalog` tag)_ |
 | `ProcessActivityIndicator` | Titlebar entry points — Human Review (Quick Answer popover) + Persona Monitor, two separate badged buttons. |
+| `QuickAnswerBody` | _(add a `@catalog` tag)_ |
 | `QuickAnswerPopover` | _(add a `@catalog` tag)_ |
 | `QuickAnswerQuestionGroup` | One persona's pending build questions. |
 | `QuickAnswerReviewCard` | Compact, inline approve/reject for a pending human review. |
-| `QuickAnswerReviewStepper` | _(add a `@catalog` tag)_ |
+| `QuickAnswerReviewStepper` | ONE decision at a time, with its full context. |
 | `RadioFooter` | Time we give either engine to reach playing state after a play/load. |
 | `RadioSettingsCard` | Settings → Account section. |
 | `ReasoningTrace` | _(add a `@catalog` tag)_ |
@@ -212,6 +213,7 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useSomafmMetadata` | Poll cadence for SomaFM metadata. |
 | `useYouTubePlayer` | Thin wrapper around the YouTube IFrame Player API. |
 | `VibeThemeProvider` | Applies persona-derived "vibe" CSS custom properties to a wrapper element. |
+| `VirtualStream` | headers + jump-to-newest). |
 | `VolumePopover` | _(add a `@catalog` tag)_ |
 
 ## modals — Modal/dialog shells
@@ -279,4 +281,4 @@ or number-format. Import as `@/features/shared/components/<category>/<Name>`.
 | `useUseCaseExecution` | _(add a `@catalog` tag)_ |
 
 ---
-_195 components, 98 without a `@catalog` description._
+_197 components, 97 without a `@catalog` description._
