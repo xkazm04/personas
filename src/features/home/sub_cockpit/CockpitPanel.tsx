@@ -39,6 +39,10 @@ export default function CockpitPanel() {
   const { t, tx } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [spec, setSpec] = useState<CompanionCockpitSpec | null>(null);
+  // Distinguish a failed fetch from a genuinely-empty (never-composed) cockpit —
+  // without this both collapse to spec===null, so a first-boot fetch error shows
+  // the "your cockpit is empty" CTA instead of an error + retry.
+  const [error, setError] = useState<unknown>(null);
   const setCompanionState = useCompanionStore((s) => s.setState);
   const contextualCockpit = useSystemStore((s) => s.contextualCockpit);
   const setContextualCockpit = useSystemStore((s) => s.setContextualCockpit);
@@ -57,6 +61,7 @@ export default function CockpitPanel() {
 
   const load = useCallback(() => {
     setLoading(true);
+    setError(null);
     companionGetCockpit()
       .then((s) => {
         setSpec(s);
@@ -64,6 +69,7 @@ export default function CockpitPanel() {
       })
       .catch((err: unknown) => {
         silentCatch('companion_get_cockpit')(err);
+        setError(err);
         setLoading(false);
       });
   }, []);
@@ -159,6 +165,17 @@ export default function CockpitPanel() {
         {!contextualCockpit && loading ? (
           <div className="flex items-center justify-center py-20">
             <LoadingSpinner size="lg" />
+          </div>
+        ) : !contextualCockpit && error && !spec ? (
+          <div className="rounded-modal border border-red-500/20 bg-red-500/5 p-6 flex flex-col items-center gap-3 text-center">
+            <p className="typo-body text-red-400 font-medium">Couldn’t load your cockpit</p>
+            <button
+              type="button"
+              onClick={load}
+              className="rounded-modal border border-primary/20 px-3 py-1.5 typo-body text-primary hover:bg-primary/10 transition-colors"
+            >
+              Retry
+            </button>
           </div>
         ) : !contextualCockpit && !spec ? (
           <CockpitEmptyState onTalk={composePersonaCockpit} />
