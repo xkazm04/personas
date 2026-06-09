@@ -560,6 +560,25 @@ pub fn obsidian_brain_push_sync(
                     continue;
                 }
 
+                // Before overwriting, re-read the on-disk note and refuse to
+                // clobber a divergent vault edit (symmetry with the pull path).
+                if is_update {
+                    let base_hash =
+                        existing.as_ref().map(|e| e.content_hash.as_str()).unwrap_or("");
+                    match classify_push("memory", &memory.id, &file_path, &rel_path, base_hash, &md_content) {
+                        ThreeWayResult::Conflict(_) | ThreeWayResult::VaultChanged => {
+                            // Vault note diverged from what we last pushed — the
+                            // user edited it directly in Obsidian. Skip + record
+                            // instead of overwriting their edit (the data loss
+                            // this guard fixes); they can resolve via pull.
+                            result.skipped += 1;
+                            log_sync(&state.db, "push", "memory", Some(&memory.id), Some(&rel_path), "skipped_vault_conflict", Some(&memory.title));
+                            continue;
+                        }
+                        _ => {}
+                    }
+                }
+
                 // Write file atomically so a kill mid-write doesn't corrupt
                 // an existing vault note (and advance sync state below).
                 if let Err(e) = atomic_write(&file_path, md_content.as_bytes()) {
@@ -640,6 +659,21 @@ pub fn obsidian_brain_push_sync(
                 continue;
             }
 
+            if is_update {
+                let base_hash =
+                    existing.as_ref().map(|e| e.content_hash.as_str()).unwrap_or("");
+                match classify_push("persona", &persona.id, &file_path, &rel_path, base_hash, &md_content) {
+                    ThreeWayResult::Conflict(_) | ThreeWayResult::VaultChanged => {
+                        // Vault profile diverged from our last push — skip rather
+                        // than overwrite the user's direct edit.
+                        result.skipped += 1;
+                        log_sync(&state.db, "push", "persona", Some(&persona.id), Some(&rel_path), "skipped_vault_conflict", Some(&persona.name));
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+
             if let Err(e) = atomic_write(&file_path, md_content.as_bytes()) {
                 result.errors.push(format!("Failed to write profile: {e}"));
                 continue;
@@ -702,6 +736,21 @@ pub fn obsidian_brain_push_sync(
                 }
             }
 
+            if is_update {
+                let base_hash =
+                    existing.as_ref().map(|e| e.content_hash.as_str()).unwrap_or("");
+                match classify_push("connector", &connector.id, &file_path, &rel_path, base_hash, &md_content) {
+                    ThreeWayResult::Conflict(_) | ThreeWayResult::VaultChanged => {
+                        // Vault note diverged from our last push — skip rather
+                        // than overwrite the user's direct edit.
+                        result.skipped += 1;
+                        log_sync(&state.db, "push", "connector", Some(&connector.id), Some(&rel_path), "skipped_vault_conflict", Some(&connector.label));
+                        continue;
+                    }
+                    _ => {}
+                }
+            }
+
             if let Err(e) = atomic_write(&file_path, md_content.as_bytes()) {
                 result
                     .errors
@@ -731,6 +780,28 @@ pub fn obsidian_brain_push_sync(
     }
 
     Ok(result)
+}
+
+/// Re-read the on-disk vault file and classify a pending push against it, so the
+/// push path can refuse to overwrite a note the user edited directly in Obsidian.
+/// The pull path already three-way-compares; push previously blind-wrote and
+/// silently destroyed such edits. A missing/unreadable file is reported as
+/// AppChanged (safe to create). `base_hash` is the content_hash recorded at the
+/// last push.
+fn classify_push(
+    entity_type: &str,
+    entity_id: &str,
+    file_path: &std::path::Path,
+    rel_path: &str,
+    base_hash: &str,
+    app_md: &str,
+) -> ThreeWayResult {
+    match std::fs::read_to_string(file_path) {
+        Ok(current) => {
+            three_way_compare(entity_type, entity_id, rel_path, base_hash, app_md, &current)
+        }
+        Err(_) => ThreeWayResult::AppChanged,
+    }
 }
 
 #[tauri::command]
